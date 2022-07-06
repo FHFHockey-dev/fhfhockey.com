@@ -1,0 +1,31 @@
+{
+  "name": "cms",
+  "private": true,
+  "version": "1.0.0",
+  "description": "The content management system for fhfhockey.com",
+  "main": "package.json",
+  "author": "FHFHockey-dev <fhfhockey@outlook.com>",
+  "license": "UNLICENSED",
+  "scripts": {
+    "dev": "sanity start --port=3002",
+    "build": "sanity build"
+  },
+  "keywords": [
+    "sanity",
+    "cms"
+  ],
+  "dependencies": {
+    "@sanity/base": "^2.30.1",
+    "@sanity/core": "^2.30.2",
+    "@sanity/default-layout": "^2.30.1",
+    "@sanity/default-login": "^2.30.1",
+    "@sanity/desk-tool": "^2.30.1",
+    "@sanity/eslint-config-studio": "^2.0.0",
+    "@sanity/vision": "^2.30.1",
+    "eslint": "^8.6.0",
+    "prop-types": "^15.7",
+    "react": "^17.0",
+    "react-dom": "^17.0",
+    "styled-components": "^5.2.0"
+  }
+}
