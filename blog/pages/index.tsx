@@ -12,7 +12,7 @@ const Home: NextPage = () => {
       </Head>
 
       <main>
-        The blog app
+        The blog app for FHFH
         <div>
           <a href="/">Home Page</a>
         </div>
