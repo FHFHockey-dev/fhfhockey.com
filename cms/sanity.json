@@ -12,10 +12,14 @@
     "@sanity/base",
     "@sanity/default-layout",
     "@sanity/default-login",
-    "@sanity/desk-tool"
+    "@sanity/desk-tool",
+    "cms-studio-logo"
   ],
   "env": {
     "development": {
+      "api": {
+        "dataset": "staging"
+      },
       "plugins": ["@sanity/vision"]
     }
   },
