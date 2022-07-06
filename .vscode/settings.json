@@ -1,4 +1,4 @@
 {
   "editor.formatOnSave": true,
-  "eslint.workingDirectories": ["web", "blog", "cms"]
+  "eslint.workingDirectories": ["web", "cms"]
 }

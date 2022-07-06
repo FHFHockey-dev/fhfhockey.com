@@ -12,5 +12,4 @@ yarn
 ## Project Structure
 
 - Main web `/`
-- Blog app `/blog/**`
 - Sanity CMS studio `/studio/**`

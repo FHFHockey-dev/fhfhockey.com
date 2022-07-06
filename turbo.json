@@ -6,7 +6,7 @@
       "outputs": ["dist/**", ".next/**"]
     },
     "web#build": {
-      "dependsOn": ["^build", "$BLOG_URL", "$CMS_URL"],
+      "dependsOn": ["^build", "$CMS_URL"],
       "outputs": [".next/**"]
     },
     "lint": {
