@@ -8,7 +8,8 @@
   "license": "UNLICENSED",
   "scripts": {
     "dev": "sanity start --port=3002",
-    "build": "sanity build -y"
+    "build": "sanity build -y",
+    "test-build": "sanity build -y --no-minify"
   },
   "keywords": [
     "sanity",
