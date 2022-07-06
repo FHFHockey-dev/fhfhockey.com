@@ -1,5 +1,5 @@
 {
-  "rewrites": [
-    { "source": "/studio/(.*)", "destination": "/studio/index.html" }
-  ]
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
