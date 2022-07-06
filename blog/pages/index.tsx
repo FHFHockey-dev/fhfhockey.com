@@ -12,9 +12,9 @@ const Home: NextPage = () => {
 
       <main>
         The blog app
-        <Link href="/">
-          <a>Home Page</a>
-        </Link>
+        <div>
+          <a href="/">Home Page</a>
+        </div>
       </main>
 
       <footer className={styles.footer}>blog footer</footer>
