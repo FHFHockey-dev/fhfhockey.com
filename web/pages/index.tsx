@@ -15,9 +15,14 @@ const Home: NextPage = () => {
         <h1 className={styles.title}>
           Welcome to <b>FHFH</b>
         </h1>
-
+        <br />
         <Link href="/blog">
-          <a>Open Blog</a>
+          <button>Open Blog</button>
+        </Link>
+
+        <br />
+        <Link href="/studio">
+          <button>Open Sanity Studio</button>
         </Link>
       </main>
 

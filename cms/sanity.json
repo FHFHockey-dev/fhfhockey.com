@@ -1,7 +1,8 @@
 {
   "root": true,
   "project": {
-    "name": "fhfhockey-cms"
+    "name": "fhfhockey-cms",
+    "basePath": "/studio"
   },
   "api": {
     "projectId": "arjjm1dn",
