@@ -15,5 +15,15 @@ function Banner({ children, className }: BannderProps) {
     </section>
   );
 }
+type TextBannerProps = {
+  text: string;
+};
+export function TextBanner({ text }: TextBannerProps) {
+  return (
+    <section className={styles.textBanner}>
+      <h1>{text}</h1>
+    </section>
+  );
+}
 
 export default Banner;

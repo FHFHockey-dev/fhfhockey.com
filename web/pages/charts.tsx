@@ -1,16 +1,16 @@
-import { NextPage } from "next";
+import React from "react";
 import Head from "next/head";
 import Link from "next/link";
-import { TextBanner } from "../components/Banner/Banner";
+import { TextBanner } from "./components/Banner/Banner";
 
-const Blog: NextPage = () => {
+function Charts() {
   return (
     <div>
       <Head>
-        <title>FHFH | Blog</title>
+        <title>FHFH | Charts</title>
       </Head>
       <main>
-        <TextBanner text="FHFH Blog" />
+        <TextBanner text="FHFH Charts" />
 
         <Link href="/">
           <button>Go Home</button>
@@ -18,6 +18,6 @@ const Blog: NextPage = () => {
       </main>
     </div>
   );
-};
+}
 
-export default Blog;
+export default Charts;
