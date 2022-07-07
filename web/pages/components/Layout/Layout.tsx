@@ -26,7 +26,7 @@ function Layout({ children }: LayoutProps) {
   return (
     <div className={styles.container}>
       {/* Placeholder for now */}
-      <div className={styles.navBarLeftSide}>
+      <aside className={styles.navBarLeftSide}>
         <nav>
           <ul>
             <li> Test </li>
@@ -34,8 +34,8 @@ function Layout({ children }: LayoutProps) {
             <li> Test </li>
           </ul>
         </nav>
-      </div>
-      <div className={styles.content}>
+      </aside>
+      <main className={styles.content}>
         <header className={styles.header}>
           <div>
             <div id="branding">
@@ -47,9 +47,9 @@ function Layout({ children }: LayoutProps) {
           </div>
         </header>
         {children}
-      </div>
+      </main>
 
-      <div className={styles.navBarRightSide}>
+      <aside className={styles.navBarRightSide}>
         <nav>
           <ul>
             {links.map(({ label, link }) => (
@@ -75,7 +75,7 @@ function Layout({ children }: LayoutProps) {
             alt="FHFH"
           />
         </div>
-      </div>
+      </aside>
     </div>
   );
 }

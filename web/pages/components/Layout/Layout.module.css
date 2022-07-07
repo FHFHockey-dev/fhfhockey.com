@@ -1,10 +1,18 @@
 .container {
   display: flex;
   justify-content: space-between;
+  height: 100%;
 }
 .content {
   flex: 1;
   margin-left: 35px;
+  overflow-x: hidden;
+  scrollbar-width: none; /* Firefox */
+}
+
+/* scroll bar */
+.content::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
 }
 
 .header {
@@ -41,9 +49,8 @@
 /*////////////////////////////////////////////////////////////////// Right Nav Bar */
 
 .navBarRightSide {
-  height: 100vh;
+  height: 100%;
   width: 125px;
-
   top: 0;
   right: 0;
   padding-top: 40px;
@@ -86,9 +93,8 @@ nav .currentPage a {
 /*////////////////////////////////////////////////////////////////// Left Nav Bar */
 
 .navBarLeftSide {
-  height: 100vh;
+  height: 100%;
   width: 125px;
-  /* position: fixed; */
   top: 0;
   left: 0;
   padding-top: 40px;
