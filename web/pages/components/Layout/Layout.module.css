@@ -1,0 +1,123 @@
+.container {
+  display: flex;
+  justify-content: space-between;
+}
+.content {
+  flex: 1;
+  margin-left: 35px;
+}
+
+.header {
+  background: #07aae2;
+  color: #ffffff;
+  min-height: 70px;
+  border: #ffffff 3px solid;
+  border-radius: 8px;
+  padding-top: 15px;
+  margin-right: -5px;
+  margin-top: 40px;
+  margin-bottom: 20px;
+}
+
+.header #branding {
+  /* float: left; */
+  font-size: 24px;
+}
+
+.header #branding h1 {
+  font-family: "Syncopate", sans-serif;
+
+  margin: 0;
+}
+
+.header .highlight,
+.header .current a {
+  font-family: "Syncopate", sans-serif;
+
+  color: #202020;
+  font-weight: bold;
+  margin-left: 35px;
+}
+
+/*////////////////////////////////////////////////////////////////// Right Nav Bar */
+
+.navBarRightSide {
+  height: 100vh;
+  width: 125px;
+
+  top: 0;
+  right: 0;
+  padding-top: 40px;
+  background-color: #101010;
+  text-transform: uppercase;
+  text-align: left;
+  border-left: 3px solid white;
+}
+
+.navBarRightSide li a {
+  font-family: "Train One", cursive;
+  color: #07aae2;
+  padding: 8px;
+  font-size: 14px;
+  display: block;
+  margin-left: -25px;
+  text-decoration: none;
+}
+
+nav .currentPage a {
+  color: white;
+  font-style: oblique;
+}
+
+.navBarRightSide li a:hover {
+  font-weight: bolder;
+  color: white;
+  cursor: pointer;
+}
+
+.fhfhLogo {
+  max-width: 100px;
+  max-height: 100px;
+  align-content: center;
+  position: absolute;
+  bottom: 25px;
+  padding-left: 10px;
+}
+
+/*////////////////////////////////////////////////////////////////// Left Nav Bar */
+
+.navBarLeftSide {
+  height: 100vh;
+  width: 125px;
+  /* position: fixed; */
+  top: 0;
+  left: 0;
+  padding-top: 40px;
+  background-color: #101010;
+  text-transform: uppercase;
+  text-align: right;
+  border-right: 3px solid white;
+  color: white;
+}
+
+.navBarLeftSide li {
+  font-family: "Train One", cursive;
+  color: #07aae2;
+  padding: 4px;
+  font-size: 14px;
+  display: block;
+  margin-left: -25px;
+  text-decoration: none;
+  padding-right: 25px;
+}
+
+nav .currentPage a {
+  color: white;
+  font-style: oblique;
+}
+
+.navBarLeftSide li a:hover {
+  font-weight: bolder;
+  color: white;
+  cursor: pointer;
+}
