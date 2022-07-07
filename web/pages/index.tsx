@@ -1,33 +1,69 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
-import Link from "next/link";
 import styles from "../styles/Home.module.css";
 
 const Home: NextPage = () => {
   return (
-    <div className={styles.container}>
-      <Head>
-        <title>FHFH</title>
-      </Head>
-
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <b>FHFH</b>
-        </h1>
-        <br />
-        <Link href="/blog">
-          <button>Open Blog</button>
-        </Link>
-
-        <br />
-        <Link href="/studio">
-          <button>Open Sanity Studio</button>
-        </Link>
-      </main>
-
-      <footer className={styles.footer}>Main App Footer</footer>
-    </div>
+    <section id="homePageBanner">
+      <div className="container">
+        <a
+          href="https://www.twitter.com/fhfhockey"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            src="/pictures/twitter.png"
+            alt="Twitter"
+            width={35}
+            height={35}
+            style={{ paddingLeft: "31px" }}
+          />
+        </a>
+        <a
+          href="https://discord.gg/kfnyrn7"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            src="/pictures/discord.png"
+            alt="Discord"
+            width={50}
+            height={28}
+            style={{
+              paddingLeft: "20px",
+              paddingBottom: "3px",
+            }}
+          />
+        </a>
+        <a
+          href="https://www.patreon.com/FHFHRadio"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            src="/pictures/patreon.png"
+            alt="Patreon"
+            width={32}
+            height={32}
+            style={{ paddingLeft: "25px" }}
+          />
+        </a>
+        <a
+          href="https://www.youtube.com/fiveholefantasyhockey"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Image
+            src="/pictures/youtube.png"
+            alt="Youtube"
+            width={35}
+            height={35}
+            style={{ paddingLeft: "25px" }}
+          />
+        </a>
+      </div>
+    </section>
   );
 };
 
