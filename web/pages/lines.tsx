@@ -9,13 +9,11 @@ function Lines() {
       <Head>
         <title>FHFH | Line Combinations</title>
       </Head>
-      <main>
-        <TextBanner text="Line Combinations" />
+      <TextBanner text="Line Combinations" />
 
-        <Link href="/">
-          <button>Go Home</button>
-        </Link>
-      </main>
+      <Link href="/">
+        <button>Go Home</button>
+      </Link>
     </div>
   );
 }

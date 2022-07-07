@@ -9,13 +9,11 @@ function Stats() {
       <Head>
         <title>FHFH | Stat Catalogue</title>
       </Head>
-      <main>
-        <TextBanner text="Stat Catalogue" />
+      <TextBanner text="Stat Catalogue" />
 
-        <Link href="/">
-          <button>Go Home</button>
-        </Link>
-      </main>
+      <Link href="/">
+        <button>Go Home</button>
+      </Link>
     </div>
   );
 }

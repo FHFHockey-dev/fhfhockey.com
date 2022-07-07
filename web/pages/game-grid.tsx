@@ -9,13 +9,12 @@ function GameGrid() {
       <Head>
         <title>FHFH | Game Grid</title>
       </Head>
-      <main>
-        <TextBanner text="Game Grid" />
 
-        <Link href="/">
-          <button>Go Home</button>
-        </Link>
-      </main>
+      <TextBanner text="Game Grid" />
+
+      <Link href="/">
+        <button>Go Home</button>
+      </Link>
     </div>
   );
 }

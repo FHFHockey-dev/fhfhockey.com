@@ -9,13 +9,11 @@ function Charts() {
       <Head>
         <title>FHFH | Charts</title>
       </Head>
-      <main>
-        <TextBanner text="FHFH Charts" />
+      <TextBanner text="FHFH Charts" />
 
-        <Link href="/">
-          <button>Go Home</button>
-        </Link>
-      </main>
+      <Link href="/">
+        <button>Go Home</button>
+      </Link>
     </div>
   );
 }
