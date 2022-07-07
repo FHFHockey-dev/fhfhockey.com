@@ -22,14 +22,13 @@ const links: { label: string; link: string }[] = [
 
 function Layout({ children }: LayoutProps) {
   const router = useRouter();
-  console.log(router.pathname);
 
   return (
     <div className={styles.container}>
+      {/* Placeholder for now */}
       <div className={styles.navBarLeftSide}>
         <nav>
           <ul>
-            {/* Links in Nav Bar ("currentPage" on whichever page you're on) -----------*/}
             <li> Test </li>
             <li> Test </li>
             <li> Test </li>
