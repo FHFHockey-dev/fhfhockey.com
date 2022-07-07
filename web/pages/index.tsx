@@ -2,11 +2,15 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
 import styles from "../styles/Home.module.css";
+import Banner from "./components/Banner";
 
 const Home: NextPage = () => {
   return (
-    <section id="homePageBanner">
-      <div className="container">
+    <div>
+      <Head>
+        <title>FHFH | Home</title>
+      </Head>
+      <Banner className={styles.socialMedia}>
         <a
           href="https://www.twitter.com/fhfhockey"
           target="_blank"
@@ -17,7 +21,6 @@ const Home: NextPage = () => {
             alt="Twitter"
             width={35}
             height={35}
-            style={{ paddingLeft: "31px" }}
           />
         </a>
         <a
@@ -30,10 +33,6 @@ const Home: NextPage = () => {
             alt="Discord"
             width={50}
             height={28}
-            style={{
-              paddingLeft: "20px",
-              paddingBottom: "3px",
-            }}
           />
         </a>
         <a
@@ -46,7 +45,6 @@ const Home: NextPage = () => {
             alt="Patreon"
             width={32}
             height={32}
-            style={{ paddingLeft: "25px" }}
           />
         </a>
         <a
@@ -59,11 +57,10 @@ const Home: NextPage = () => {
             alt="Youtube"
             width={35}
             height={35}
-            style={{ paddingLeft: "25px" }}
           />
         </a>
-      </div>
-    </section>
+      </Banner>
+    </div>
   );
 };
 
