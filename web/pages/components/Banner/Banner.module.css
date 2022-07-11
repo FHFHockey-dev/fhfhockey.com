@@ -13,7 +13,6 @@
 }
 
 .textBanner {
-  padding-top: 15px;
   margin-top: 10px;
   margin-bottom: 10px;
   border-radius: 8px;
@@ -27,7 +26,5 @@
 .textBanner > h1 {
   text-align: left;
   padding-left: 35px;
-  margin-top: 15px;
   font-size: 30px;
-  margin-bottom: 25px;
 }
