@@ -25,30 +25,18 @@ function Layout({ children }: LayoutProps) {
 
   return (
     <div className={styles.container}>
-      {/* Placeholder for now */}
-      <aside className={styles.navBarLeftSide}>
-        <nav>
-          <ul>
-            <li> Test </li>
-            <li> Test </li>
-            <li> Test </li>
-          </ul>
-        </nav>
-      </aside>
+      {/* Main Content */}
       <main className={styles.content}>
         <header className={styles.header}>
-          <div>
-            <div className={styles.branding}>
-              <h1>
-                <span className={styles.highlight}>Five Hole</span> Fantasy
-                Hockey
-              </h1>
-            </div>
+          <div className={styles.branding}>
+            <h1>
+              <span className={styles.highlight}>Five Hole</span> Fantasy Hockey
+            </h1>
           </div>
         </header>
         {children}
       </main>
-
+      {/* Right Nav Bar */}
       <aside className={styles.navBarRightSide}>
         <nav>
           <ul>
