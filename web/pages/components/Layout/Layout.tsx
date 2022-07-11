@@ -38,10 +38,10 @@ function Layout({ children }: LayoutProps) {
       <main className={styles.content}>
         <header className={styles.header}>
           <div>
-            <div id="branding">
+            <div className={styles.branding}>
               <h1>
-                <span className={styles.highlight}>Five Hole</span> FANTASY
-                HOCKeY
+                <span className={styles.highlight}>Five Hole</span> Fantasy
+                Hockey
               </h1>
             </div>
           </div>

@@ -24,16 +24,19 @@
   margin-right: -5px;
   margin-top: 40px;
   margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  padding-top: 15px;
+  padding-bottom: 15px;
 }
 
-.header #branding {
+.header .branding {
   /* float: left; */
   font-size: 24px;
 }
 
-.header #branding h1 {
-  font-family: "Syncopate", sans-serif;
-
+.header .branding h1 {
+  font-family: sans-serif;
   margin: 0;
 }
 
