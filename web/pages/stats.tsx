@@ -18,6 +18,10 @@ function Stats({ teams }: StatsProps) {
     <div>
       <Head>
         <title>FHFH | Stat Catalogue</title>
+        <meta
+          name="description"
+          content="Five Hole Fantasy Hockey Podcast Stats for all teams in NHL."
+        />
       </Head>
       <TextBanner text="Stat Catalogue" />
 

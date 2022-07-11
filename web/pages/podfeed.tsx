@@ -7,6 +7,10 @@ function Podfeed() {
     <div>
       <Head>
         <title>FHFH | Library</title>
+        <meta
+          name="description"
+          content="Five Hole Fantasy Hockey Podcast Podcast Feed."
+        />
       </Head>
       <TextBanner text="FHFH Library" />
 

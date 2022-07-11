@@ -13,6 +13,10 @@ const Home: NextPage = () => {
           name="google-site-verification"
           content="ilj1AkBDPlpfcKH8A0zBJUdKtcUjE8TKIyCLa6buHxk"
         />
+        <meta
+          name="description"
+          content="Five Hole Fantasy Hockey Podcast Home page."
+        />
       </Head>
       <Banner className={styles.socialMedia}>
         <a

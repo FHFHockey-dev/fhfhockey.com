@@ -7,6 +7,10 @@ function GameGrid() {
     <div>
       <Head>
         <title>FHFH | Game Grid</title>
+        <meta
+          name="description"
+          content="Five Hole Fantasy Hockey Podcast Game Grid."
+        />
       </Head>
 
       <TextBanner text="Game Grid" />
