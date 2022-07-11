@@ -1,7 +1,7 @@
 import { NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
-import { TextBanner } from "../components/Banner/Banner";
+import { TextBanner } from "../../components/Banner/Banner";
 
 const Blog: NextPage = () => {
   return (
