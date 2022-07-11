@@ -44,3 +44,11 @@ yarn-error.log*
 
 # wsl
 *:Zone.Identifier
+
+# Sitemap file
+sitemap.xml
+sitemap-0.xml
+
+
+# Robots.txt
+robots.txt
