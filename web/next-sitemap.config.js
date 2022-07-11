@@ -6,6 +6,7 @@ const config = {
     siteUrl: SITE_URL || 'https://fhfhockey.com',
     exclude: ["/404"],
     generateRobotsTxt: true,
+    generateIndexSitemap: false,
     robotsTxtOptions: {
         policies: [
             {
@@ -13,9 +14,6 @@ const config = {
                 disallow: ["/404"],
             },
             { userAgent: "*", allow: "/" },
-        ],
-        additionalSitemaps: [
-            `${SITE_URL}/blog/sitemap.xml`, // TODO: for posts
         ],
     },
 }
