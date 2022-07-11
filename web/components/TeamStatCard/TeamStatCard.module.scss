@@ -1,0 +1,33 @@
+@import url(https://fonts.googleapis.com/css2?family=Kanit:wght@500&display=swap);
+
+.card {
+  border: 2px solid white;
+  border-radius: 8px;
+  background-color: black;
+  color: white;
+  position: relative;
+  width: 100%;
+  .name {
+    padding-top: 20px;
+    text-align: center;
+  }
+  .image {
+    height: 190px;
+    border-radius: 8px;
+  }
+  .body {
+    padding-right: 20px;
+    li {
+      font-family: "Kanit", sans-serif;
+      font-size: 15px;
+      list-style: none;
+      text-align: right;
+      padding: 0px;
+      color: white;
+      .number {
+        margin-left: 10px;
+        color: rgb(7, 170, 226);
+      }
+    }
+  }
+}

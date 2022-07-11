@@ -1,7 +1,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import React from "react";
-import { TextBanner } from "./components/Banner/Banner";
+import { TextBanner } from "../components/Banner/Banner";
 
 function Lines() {
   return (
