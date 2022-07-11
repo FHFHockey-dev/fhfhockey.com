@@ -9,6 +9,10 @@ const Home: NextPage = () => {
     <div>
       <Head>
         <title>FHFH | Home</title>
+        <meta
+          name="google-site-verification"
+          content="ilj1AkBDPlpfcKH8A0zBJUdKtcUjE8TKIyCLa6buHxk"
+        />
       </Head>
       <Banner className={styles.socialMedia}>
         <a
