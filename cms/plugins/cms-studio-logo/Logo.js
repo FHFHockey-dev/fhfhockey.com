@@ -3,7 +3,7 @@ import React from "react";
 import logo from "./logo.png";
 
 const Logo = () => {
-  if (process.env.NODE_ENV === "development") {
+  if (process.env.SANITY_STUDIO_API_DATASET === "staging") {
     return (
       <div style={{ color: "yellow" }}>STAGING</div>
     )
