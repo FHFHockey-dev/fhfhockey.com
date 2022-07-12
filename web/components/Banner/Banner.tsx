@@ -1,7 +1,7 @@
 import classNames from "classnames";
 import React from "react";
 
-import styles from "./Banner.module.css";
+import styles from "./Banner.module.scss";
 
 type BannderProps = {
   className?: string;

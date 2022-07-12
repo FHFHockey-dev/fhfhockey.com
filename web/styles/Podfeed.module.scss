@@ -1,0 +1,7 @@
+@import "styles/vars.scss";
+
+.podbeanWrapper {
+  @media only screen and (min-width: $screen-large) {
+    margin-right: 8px;
+  }
+}
