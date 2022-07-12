@@ -1,0 +1,62 @@
+@import "styles/vars.scss";
+
+.post {
+  border: 3px solid white;
+  padding: 1rem;
+  font-family: sans-serif;
+  &:hover {
+    cursor: pointer;
+  }
+  .header {
+    .title {
+      margin: 0;
+      text-transform: none;
+      &:hover {
+        text-decoration: underline;
+        cursor: pointer;
+      }
+    }
+    color: #18a3d9;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 2px solid white;
+    padding-bottom: 0.2rem;
+  }
+  .body {
+    color: white;
+    margin-top: 1rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) repeat(2, 1fr);
+    .summaryWrapper {
+      grid-column: 1 / 4;
+    }
+    .summary {
+      /* number of lines to show */
+      $lines: 6;
+      margin: 0;
+      padding-right: 0.3rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: $lines;
+      line-clamp: $lines;
+      -webkit-box-orient: vertical;
+      @media only screen and (min-width: $screen-medium) {
+        $lines: 7;
+        -webkit-line-clamp: $lines;
+        line-clamp: $lines;
+      }
+
+      @media only screen and (min-width: $screen-large) {
+        $lines: 10;
+        -webkit-line-clamp: $lines;
+        line-clamp: $lines;
+      }
+    }
+    .image {
+      grid-column: 4 / 6;
+      border: 2px solid #18a3d2;
+    }
+  }
+}
