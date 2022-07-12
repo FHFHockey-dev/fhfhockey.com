@@ -124,6 +124,9 @@
   text-transform: uppercase;
   text-align: left;
   border-left: 3px solid white;
+  ul {
+    list-style-type: none;
+  }
   @media only screen and (min-width: $screen-large) {
     display: block;
   }
