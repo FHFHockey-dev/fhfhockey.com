@@ -1,14 +1,20 @@
-import "../styles/globals.css";
-import type { AppProps } from "next/app";
-import Layout from "../components/Layout";
 import Head from "next/head";
+import type { AppProps } from "next/app";
+
+import Layout from "../components/Layout";
+import "../styles/globals.css";
+import "../styles/vars.scss";
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <Layout>
       <Head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta
+          name="viewport"
+          // https://css-tricks.com/the-notch-and-css/
+          content="width=device-width, initial-scale=1.0,viewport-fit=cover"
+        />
         <meta
           name="keywords"
           content="Fantasy Hockey, Fantasy Hockey Podcast, Five Hole, NHL, Fantasy, Fantasy Sports"

@@ -1,0 +1,160 @@
+@import "styles/vars.scss";
+
+.container {
+  display: flex;
+  justify-content: space-between;
+  height: 100%;
+}
+
+// Main Conetent
+
+.content {
+  flex: 1;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  @media only screen and (min-width: $screen-large) {
+    margin-left: 35px;
+  }
+}
+
+/* scroll bar */
+.content::-webkit-scrollbar {
+  display: none;
+  /* Safari and Chrome */
+}
+
+// Page Specific Content
+.pageContent {
+  padding: 0 1rem;
+  @media only screen and (min-width: $screen-large) {
+    padding: 0;
+  }
+}
+
+// burger menu
+.burgerButton {
+  position: fixed;
+  right: 10px;
+  top: 18px;
+  width: 25px;
+  height: 25px;
+}
+
+@media only screen and (min-width: $screen-medium) {
+  .burgerButton {
+    right: 10px;
+    top: 28px;
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media only screen and (min-width: $screen-large) {
+  .burgerMenu {
+    display: none;
+  }
+  .burgerButton {
+    display: none;
+  }
+}
+
+.header {
+  background: #07aae2;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding-top: 20px;
+  padding-bottom: 10px;
+  padding-left: 13px;
+  margin-bottom: 0;
+
+  .branding {
+    /* float: left; */
+    font-size: 24px;
+    h1 {
+      font-family: sans-serif;
+      margin: 0;
+      @media only screen and (max-width: $screen-small-max) {
+        font-size: 1.4rem;
+        font-weight: 550;
+        text-transform: uppercase;
+      }
+    }
+  }
+
+  @media only screen and (min-width: $screen-medium) {
+    color: #ffffff;
+    padding-left: 20px;
+  }
+
+  @media only screen and (min-width: $screen-large) {
+    position: static;
+
+    min-height: 70px;
+    border: #ffffff 3px solid;
+    border-radius: 8px;
+    margin-right: -5px;
+    margin-top: 40px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    padding-top: 15px;
+    padding-bottom: 15px;
+  }
+}
+
+@media only screen and (min-width: $screen-medium) {
+  .header .highlight {
+    font-family: "Syncopate", sans-serif;
+    color: #202020;
+    font-weight: bold;
+    margin-left: 35px;
+  }
+}
+/*////////////////////////////////////////////////////////////////// Right Nav Bar */
+
+.navBarRightSide {
+  display: none;
+  width: 125px;
+  height: 100%;
+  top: 0;
+  right: 0;
+  padding-top: 40px;
+  background-color: #101010;
+  text-transform: uppercase;
+  text-align: left;
+  border-left: 3px solid white;
+  @media only screen and (min-width: $screen-large) {
+    display: block;
+  }
+}
+
+.navBarRightSide li a {
+  font-family: "Train One", cursive;
+  color: #07aae2;
+  padding: 8px;
+  font-size: 14px;
+  display: block;
+  margin-left: -25px;
+  text-decoration: none;
+}
+
+nav .currentPage a {
+  color: white;
+  font-style: oblique;
+}
+
+.navBarRightSide li a:hover {
+  font-weight: bolder;
+  color: white;
+  cursor: pointer;
+}
+
+.fhfhLogo {
+  max-width: 100px;
+  max-height: 100px;
+  align-content: center;
+  position: absolute;
+  bottom: 25px;
+  padding-left: 10px;
+}

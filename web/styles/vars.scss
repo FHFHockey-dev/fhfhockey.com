@@ -1,0 +1,10 @@
+/* https://docs.microsoft.com/en-us/windows/apps/design/layout/screen-sizes-and-breakpoints-for-responsive-design */
+
+$screen-small-max: 640px; /* handset */
+/* Small devices (portrait tablets and large phones, 641px and up) */
+$screen-medium: 641px;
+$screen-medium-min: 641px; /* tablet */
+$screen-medium-max: 1007px;
+/* Large devices (laptops/desktops, 1024px and up) */
+$screen-large: 1024px;
+$screen-large-min: 1024px; /* PC*/

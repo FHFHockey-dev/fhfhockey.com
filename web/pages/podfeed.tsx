@@ -1,6 +1,7 @@
-import Head from "next/head";
 import React from "react";
+import Head from "next/head";
 import { TextBanner } from "../components/Banner/Banner";
+import styles from "styles/Podfeed.module.scss";
 
 function Podfeed() {
   return (
@@ -14,7 +15,7 @@ function Podfeed() {
       </Head>
       <TextBanner text="FHFH Library" />
 
-      <div style={{ paddingRight: "8px" }}>
+      <div className={styles.podbeanWrapper}>
         <iframe
           title="Five Hole Fantasy Hockey"
           allowTransparency={true}
