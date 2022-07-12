@@ -96,7 +96,7 @@ function Post({ title, content, createdAt }: PostData) {
         value={content}
         components={{
           types: {
-            image: ({ value }) => <img src={urlFor(value).url()} />,
+            image: ({ value }) => <img alt="" src={urlFor(value).url()} />,
           },
         }}
       />
