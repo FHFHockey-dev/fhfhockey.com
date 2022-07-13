@@ -1,19 +1,25 @@
 @import "styles/vars.scss";
 
 .banner {
+  color: #ffffff;
+  background: #101010;
+  border-bottom: 4px solid white;
+  border-top: 4px solid white;
+  margin: 0 -2rem 0.8rem -2rem;
+
   padding-top: 10px;
   padding-bottom: 10px;
-  margin-top: 20px;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  border: 3px solid white;
-  min-height: 40px;
-  background: #101010;
-  color: #ffffff;
-  text-align: left;
-  margin-right: 0px;
   @media only screen and (min-width: $screen-large) {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    margin-left: 0;
     margin-right: -5px;
+    border-radius: 8px;
+    border: 3px solid white;
+    min-height: 40px;
+    background: #101010;
+    color: #ffffff;
+    text-align: left;
   }
 }
 
