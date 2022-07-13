@@ -107,6 +107,12 @@
 /*////////////////////////////////////////////////////////////////// Right Nav Bar */
 
 .navBarRightSide {
+  /* scroll bar */
+  overflow-y: scroll;
+  &::-webkit-scrollbar {
+    display: none;
+    /* Safari and Chrome */
+  }
   display: none;
   width: 125px;
   height: 100%;
@@ -153,4 +159,8 @@ nav .currentPage a {
   position: absolute;
   bottom: 25px;
   padding-left: 10px;
+
+  @media screen and (max-height: 435px) {
+    display: none;
+  }
 }
