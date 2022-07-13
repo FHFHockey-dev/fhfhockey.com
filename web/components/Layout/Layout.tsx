@@ -6,6 +6,7 @@ import classNames from "classnames";
 import { slide as Menu } from "react-burger-menu";
 
 import styles from "./Layout.module.scss";
+import BurgerButton from "components/BurgerButton";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -29,12 +30,6 @@ type BurgerMenuProps = {
 
 function BurgerMenu({ menuOpen, setMenuOpen, pathname }: BurgerMenuProps) {
   const bmStyles = {
-    bmBurgerBars: {
-      background: "#373a47",
-    },
-    bmBurgerBarsHover: {
-      background: "#a90000",
-    },
     bmCrossButton: {
       height: "30px",
       width: "30px",
@@ -112,6 +107,12 @@ function Layout({ children }: LayoutProps) {
               <span className={styles.highlight}>Five Hole</span> Fantasy Hockey
             </h1>
           </div>
+          <BurgerButton
+            className={styles.realBurgerButton}
+            onClick={() => {
+              setMenuOpen(true);
+            }}
+          />
         </header>
         <main className={styles.pageContent}>{children}</main>
       </div>

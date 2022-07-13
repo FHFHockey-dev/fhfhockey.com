@@ -33,27 +33,14 @@
 
 // burger menu
 .burgerButton {
-  position: fixed;
-  right: 10px;
-  top: 18px;
-  width: 25px;
-  height: 25px;
-}
-
-@media only screen and (min-width: $screen-medium) {
-  .burgerButton {
-    right: 10px;
-    top: 28px;
-    width: 36px;
-    height: 36px;
-  }
+  visibility: hidden;
 }
 
 @media only screen and (min-width: $screen-large) {
   .burgerMenu {
     display: none;
   }
-  .burgerButton {
+  .realBurgerButton {
     display: none;
   }
 }
@@ -63,11 +50,15 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  padding-top: 20px;
+  padding-top: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
   padding-bottom: 10px;
-  padding-left: 13px;
   margin-bottom: 0;
   font-family: "Didact Gothic", sans-serif;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
   .branding {
     /* float: left; */
@@ -85,11 +76,14 @@
   @media only screen and (min-width: $screen-medium) {
     color: #ffffff;
     padding-left: 20px;
+    .realBurgerButton {
+      width: 50px;
+      height: 50px;
+    }
   }
 
   @media only screen and (min-width: $screen-large) {
     position: static;
-
     min-height: 70px;
     border: #ffffff 3px solid;
     border-radius: 8px;
@@ -106,7 +100,9 @@
 .header .highlight {
   color: #202020;
   font-weight: bold;
-  margin-left: 35px;
+  @media only screen and (min-width: $screen-large) {
+    margin-left: 10px;
+  }
 }
 /*////////////////////////////////////////////////////////////////// Right Nav Bar */
 
