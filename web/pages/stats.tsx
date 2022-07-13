@@ -45,6 +45,10 @@ export async function getStaticProps() {
       name,
     })
   ) as Team[];
+
+  // sort the teams in alphabetical order
+  teams.sort((a, b) => a.name.localeCompare(b.name));
+
   return {
     props: {
       teams,
