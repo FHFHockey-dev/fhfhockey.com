@@ -12,9 +12,6 @@
   flex: 1;
   overflow-x: hidden;
   scrollbar-width: none;
-  @media only screen and (min-width: $screen-large) {
-    margin-left: 35px;
-  }
 }
 
 /* scroll bar */
@@ -27,7 +24,7 @@
 .pageContent {
   padding: 0 1rem;
   @media only screen and (min-width: $screen-large) {
-    padding: 0;
+    padding: 0 1.5rem;
   }
 }
 
@@ -73,6 +70,15 @@
     }
   }
 
+  .socialMedias {
+    display: none;
+    @media only screen and (min-width: $screen-large) {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+  }
+
   @media only screen and (min-width: $screen-medium) {
     color: #ffffff;
     padding-left: 20px;
@@ -83,26 +89,18 @@
   }
 
   @media only screen and (min-width: $screen-large) {
-    position: static;
     min-height: 70px;
-    border: #ffffff 3px solid;
-    border-radius: 8px;
-    margin-right: -5px;
-    margin-top: 40px;
-    margin-bottom: 10px;
     display: flex;
     align-items: center;
-    padding-top: 15px;
-    padding-bottom: 15px;
+    padding-top: 8px;
+    padding-bottom: 10px;
+    padding-right: 20px;
   }
 }
 
 .header .highlight {
   color: #202020;
   font-weight: bold;
-  @media only screen and (min-width: $screen-large) {
-    margin-left: 10px;
-  }
 }
 /*////////////////////////////////////////////////////////////////// Right Nav Bar */
 

@@ -10,12 +10,10 @@
   padding-top: 10px;
   padding-bottom: 10px;
   @media only screen and (min-width: $screen-large) {
-    margin-top: 20px;
     margin-bottom: 10px;
-    margin-left: 0;
-    margin-right: -5px;
-    border-radius: 8px;
-    border: 3px solid white;
+    border-bottom: 4px solid white;
+    border-top: 4px solid white;
+
     min-height: 40px;
     background: #101010;
     color: #ffffff;
@@ -30,27 +28,16 @@
   background: #101010;
   border-bottom: 4px solid white;
   border-top: 4px solid white;
-  //  medium and smaller
+  margin: 0 -2rem 0.8rem -2rem;
+
   @media only screen and (max-width: $screen-medium-max) {
     & > h1 {
       margin: 0.3rem 0;
       font-size: large;
     }
-    margin: 0 -2rem 0.8rem -2rem;
   }
 
   @media only screen and (min-width: $screen-large) {
-    text-align: left;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    border-radius: 8px;
-    border: 3px solid white;
-    min-height: 50px;
-    margin-right: -5px;
-    & > h1 {
-      text-align: left;
-      padding-left: 35px;
-      font-size: 30px;
-    }
+    margin-bottom: 15px;
   }
 }
