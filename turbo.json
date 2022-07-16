@@ -14,6 +14,14 @@
       ],
       "outputs": [".next/**"]
     },
+    "cms#build": {
+      "dependsOn": [
+        "^build",
+        "$SANITY_STUDIO_API_PROJECT_ID",
+        "$SANITY_STUDIO_API_DATASET"
+      ],
+      "outputs": ["dist/**"]
+    },
     "lint": {
       "outputs": []
     },
