@@ -4,12 +4,9 @@
   display: grid;
   row-gap: 1.3rem;
 
-  @media only screen and (min-width: $screen-medium) {
-    grid-template-columns: 1fr 1fr;
-    column-gap: 1rem;
-  }
-
   @media only screen and (min-width: $screen-large) {
+    column-gap: 1rem;
+    grid-template-columns: 1fr 1fr;
     margin-top: 1rem;
     margin-bottom: 2rem;
   }
