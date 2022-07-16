@@ -6,6 +6,7 @@ import classNames from "classnames";
 import { slide as Menu } from "react-burger-menu";
 
 import styles from "./Layout.module.scss";
+import BurgerButton from "components/BurgerButton";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -29,12 +30,6 @@ type BurgerMenuProps = {
 
 function BurgerMenu({ menuOpen, setMenuOpen, pathname }: BurgerMenuProps) {
   const bmStyles = {
-    bmBurgerBars: {
-      background: "#373a47",
-    },
-    bmBurgerBarsHover: {
-      background: "#a90000",
-    },
     bmCrossButton: {
       height: "30px",
       width: "30px",
@@ -93,6 +88,73 @@ function BurgerMenu({ menuOpen, setMenuOpen, pathname }: BurgerMenuProps) {
   );
 }
 
+function SocialMedias() {
+  return (
+    <div className={styles.socialMedias}>
+      <a
+        href="https://www.twitter.com/fhfhockey"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <Image
+          src="/pictures/white-twitter.png"
+          alt="Twitter"
+          width={32}
+          height={28}
+        />
+      </a>
+      <a
+        href="https://discord.gg/kfnyrn7"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <Image
+          src="/pictures/white-discord.png"
+          alt="Discord"
+          width={38}
+          height={28}
+        />
+      </a>
+      <a
+        href="https://www.patreon.com/FHFHRadio"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <Image
+          src="/pictures/white-patreon.png"
+          alt="Patreon"
+          width={28}
+          height={28}
+        />
+      </a>
+      <a
+        href="https://www.youtube.com/fiveholefantasyhockey"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <Image
+          src="/pictures/white-youtube.png"
+          alt="Youtube"
+          width={28}
+          height={28}
+        />
+      </a>
+      <a
+        href="https://open.spotify.com/show/0tcyfS62ZHdLYA3Xf3QgSQ?si=HtfgMe8_QD6KfwiOw2fC1g"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <Image
+          src="/pictures/white-spotify.png"
+          alt="Spotify"
+          width={28}
+          height={28}
+        />
+      </a>
+    </div>
+  );
+}
+
 function Layout({ children }: LayoutProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -112,6 +174,15 @@ function Layout({ children }: LayoutProps) {
               <span className={styles.highlight}>Five Hole</span> Fantasy Hockey
             </h1>
           </div>
+
+          <SocialMedias />
+          {/* Only show the buger button in small screen */}
+          <BurgerButton
+            className={styles.realBurgerButton}
+            onClick={() => {
+              setMenuOpen(true);
+            }}
+          />
         </header>
         <main className={styles.pageContent}>{children}</main>
       </div>

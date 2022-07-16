@@ -6,7 +6,12 @@
       "outputs": ["dist/**", ".next/**"]
     },
     "web#build": {
-      "dependsOn": ["^build", "$CMS_URL"],
+      "dependsOn": [
+        "^build",
+        "$CMS_URL",
+        "$NEXT_PUBLIC_SANITY_PROJECT_ID",
+        "$NEXT_PUBLIC_SANITY_DATASET"
+      ],
       "outputs": [".next/**"]
     },
     "lint": {

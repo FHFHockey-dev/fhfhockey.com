@@ -12,9 +12,6 @@
   flex: 1;
   overflow-x: hidden;
   scrollbar-width: none;
-  @media only screen and (min-width: $screen-large) {
-    margin-left: 35px;
-  }
 }
 
 /* scroll bar */
@@ -27,33 +24,20 @@
 .pageContent {
   padding: 0 1rem;
   @media only screen and (min-width: $screen-large) {
-    padding: 0;
+    padding: 0 1.5rem;
   }
 }
 
 // burger menu
 .burgerButton {
-  position: fixed;
-  right: 10px;
-  top: 18px;
-  width: 25px;
-  height: 25px;
-}
-
-@media only screen and (min-width: $screen-medium) {
-  .burgerButton {
-    right: 10px;
-    top: 28px;
-    width: 36px;
-    height: 36px;
-  }
+  visibility: hidden;
 }
 
 @media only screen and (min-width: $screen-large) {
   .burgerMenu {
     display: none;
   }
-  .burgerButton {
+  .realBurgerButton {
     display: none;
   }
 }
@@ -63,16 +47,20 @@
   position: sticky;
   top: 0;
   z-index: 10;
-  padding-top: 20px;
+  padding-top: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
   padding-bottom: 10px;
-  padding-left: 13px;
   margin-bottom: 0;
+  font-family: "Didact Gothic", sans-serif;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
   .branding {
     /* float: left; */
     font-size: 24px;
     h1 {
-      font-family: sans-serif;
       margin: 0;
       @media only screen and (max-width: $screen-small-max) {
         font-size: 1.4rem;
@@ -82,38 +70,47 @@
     }
   }
 
+  .socialMedias {
+    display: none;
+    @media only screen and (min-width: $screen-large) {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+  }
+
   @media only screen and (min-width: $screen-medium) {
     color: #ffffff;
     padding-left: 20px;
+    .realBurgerButton {
+      width: 50px;
+      height: 50px;
+    }
   }
 
   @media only screen and (min-width: $screen-large) {
-    position: static;
-
     min-height: 70px;
-    border: #ffffff 3px solid;
-    border-radius: 8px;
-    margin-right: -5px;
-    margin-top: 40px;
-    margin-bottom: 10px;
     display: flex;
     align-items: center;
-    padding-top: 15px;
-    padding-bottom: 15px;
+    padding-top: 8px;
+    padding-bottom: 10px;
+    padding-right: 20px;
   }
 }
 
-@media only screen and (min-width: $screen-medium) {
-  .header .highlight {
-    font-family: "Syncopate", sans-serif;
-    color: #202020;
-    font-weight: bold;
-    margin-left: 35px;
-  }
+.header .highlight {
+  color: #202020;
+  font-weight: bold;
 }
 /*////////////////////////////////////////////////////////////////// Right Nav Bar */
 
 .navBarRightSide {
+  /* scroll bar */
+  overflow-y: scroll;
+  &::-webkit-scrollbar {
+    display: none;
+    /* Safari and Chrome */
+  }
   display: none;
   width: 125px;
   height: 100%;
@@ -124,6 +121,9 @@
   text-transform: uppercase;
   text-align: left;
   border-left: 3px solid white;
+  ul {
+    list-style-type: none;
+  }
   @media only screen and (min-width: $screen-large) {
     display: block;
   }
@@ -157,4 +157,8 @@ nav .currentPage a {
   position: absolute;
   bottom: 25px;
   padding-left: 10px;
+
+  @media screen and (max-height: 435px) {
+    display: none;
+  }
 }
