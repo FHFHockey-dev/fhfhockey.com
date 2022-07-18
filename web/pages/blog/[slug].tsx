@@ -8,6 +8,7 @@ import { urlFor } from "lib/sanity/sanity";
 
 import styles from "styles/Post.module.scss";
 import { TextBanner } from "components/Banner/Banner";
+import IconButton from "components/IconButton";
 
 type PostData = {
   slug: string;
@@ -89,18 +90,27 @@ function Post({ title, content, createdAt }: PostData) {
   }
 
   return (
-    <article className={styles.post}>
-      <h1>{title}</h1>
-      <sub>{createdAt}</sub>
-      <PortableText
-        value={content}
-        components={{
-          types: {
-            image: ({ value }) => <img alt="" src={urlFor(value).url()} />,
-          },
-        }}
-      />
-    </article>
+    <div className={styles.postPage}>
+      <article className={styles.post}>
+        <header className={styles.header}>
+          <h1>{title}</h1>
+          <sub>{createdAt}</sub>
+        </header>
+        <PortableText
+          value={content}
+          components={{
+            types: {
+              image: ({ value }) => <img alt="" src={urlFor(value).url()} />,
+            },
+          }}
+        />
+
+        <div className={styles.actions}>
+          <IconButton icon="heart" />
+          <IconButton icon="share" />
+        </div>
+      </article>
+    </div>
   );
 }
 

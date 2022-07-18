@@ -1,6 +1,30 @@
-.post {
-  margin-bottom: 3rem;
-  img {
-    max-width: 100%;
+.postPage {
+  margin-top: 1rem;
+  .post {
+    border: 2px solid white;
+    padding: 0.5rem 1rem 0.3rem 1rem;
+    .header {
+      h1 {
+        margin: 0;
+      }
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      color: #1b90bc;
+      border-bottom: 2px solid white;
+      padding: 0 0.2rem;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      margin-top: 0.5rem;
+      gap: 0.4rem;
+    }
+
+    img {
+      max-width: 100%;
+    }
   }
 }
