@@ -1,6 +1,8 @@
 import React from "react";
 import { GetStaticPaths, GetStaticProps } from "next";
 import { useRouter } from "next/router";
+import Head from "next/head";
+
 import { groq } from "next-sanity";
 import { getClient } from "lib/sanity/sanity.server";
 import { PortableText } from "@portabletext/react";
@@ -9,6 +11,7 @@ import { urlFor } from "lib/sanity/sanity";
 import styles from "styles/Post.module.scss";
 import { TextBanner } from "components/Banner/Banner";
 import IconButton from "components/IconButton";
+import CommentForm from "components/CommentForm";
 
 type PostData = {
   slug: string;
@@ -90,27 +93,38 @@ function Post({ title, content, createdAt }: PostData) {
   }
 
   return (
-    <div className={styles.postPage}>
-      <article className={styles.post}>
-        <header className={styles.header}>
-          <h1>{title}</h1>
-          <sub>{createdAt}</sub>
-        </header>
-        <PortableText
-          value={content}
-          components={{
-            types: {
-              image: ({ value }) => <img alt="" src={urlFor(value).url()} />,
-            },
-          }}
-        />
+    <>
+      <Head>
+        <title>{title}</title>
+      </Head>
+      <div className={styles.postPage}>
+        {/* Post Content */}
+        <article className={styles.post}>
+          <header className={styles.header}>
+            <h1>{title}</h1>
+            <sub>{createdAt}</sub>
+          </header>
+          <PortableText
+            value={content}
+            components={{
+              types: {
+                image: ({ value }) => <img alt="" src={urlFor(value).url()} />,
+              },
+            }}
+          />
 
-        <div className={styles.actions}>
-          <IconButton icon="heart" />
-          <IconButton icon="share" />
-        </div>
-      </article>
-    </div>
+          <div className={styles.actions}>
+            <IconButton icon="heart" />
+            <IconButton icon="share" />
+          </div>
+        </article>
+
+        {/* Comment Form*/}
+        <CommentForm className={styles.commentForm} />
+
+        {/* Comments */}
+      </div>
+    </>
   );
 }
 

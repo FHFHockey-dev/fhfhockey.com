@@ -1,0 +1,56 @@
+@import "styles/vars.scss";
+
+.form {
+  .contentWrapper {
+    border: 2px solid white;
+    background-color: $bg-light;
+    color: white;
+    padding: 0.3rem;
+    .name {
+      display: block;
+      width: 100%;
+      border: 1px solid white;
+      background-color: inherit;
+      color: inherit;
+      padding: 0.3rem;
+      &::placeholder {
+        color: inherit;
+        font-style: italic;
+        opacity: 0.7;
+      }
+      margin-bottom: 0.3rem;
+    }
+    .comment {
+      display: block;
+      width: 100%;
+      border: 1px solid white;
+      background-color: inherit;
+      color: inherit;
+      padding: 0.2rem 0.3rem;
+      font-family: "Didact Gothic", sans-serif;
+
+      &::placeholder {
+        color: inherit;
+        font-style: italic;
+        opacity: 0.7;
+      }
+    }
+  }
+
+  .actions {
+    margin-top: 0.5rem;
+    display: flex;
+    justify-content: flex-end;
+    .commentButton {
+      all: unset;
+      color: white;
+      background-color: #202020;
+      border: 2px solid #1190bc;
+      padding: 6px 16px;
+      border-radius: 1rem;
+      &:hover {
+        cursor: pointer;
+      }
+    }
+  }
+}
