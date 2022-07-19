@@ -12,6 +12,7 @@ import styles from "styles/Post.module.scss";
 import { TextBanner } from "components/Banner/Banner";
 import IconButton from "components/IconButton";
 import CommentForm from "components/CommentForm";
+import Comments from "components/Comments";
 
 type PostData = {
   slug: string;
@@ -123,6 +124,29 @@ function Post({ title, content, createdAt }: PostData) {
         <CommentForm className={styles.commentForm} />
 
         {/* Comments */}
+        <Comments
+          comments={[
+            {
+              id: "1",
+              content: "I am a post",
+              createdAt: new Date(2010, 6, 3).toISOString(),
+              userName: "Xiaohai",
+            },
+            {
+              id: "2",
+              content: "I am a silly poooost",
+              createdAt: new Date(2010, 1, 3).toISOString(),
+              userName: "Xiaohai",
+            },
+            {
+              id: "3",
+              content: "asdawdawd21",
+              createdAt: new Date(2014, 11, 3).toISOString(),
+              userName: "Xiaohai",
+            },
+          ]}
+          loading={false}
+        />
       </div>
     </>
   );
