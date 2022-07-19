@@ -123,14 +123,14 @@ type PostPageProps = {
 };
 
 function Post({ post, recentPosts }: PostPageProps) {
-  const { title, content, createdAt } = post;
   const router = useRouter();
-
   // If the page is not yet generated, this will be displayed
   // initially until getStaticProps() finishes running
   if (router.isFallback) {
     return <TextBanner text="Loading..." />;
   }
+
+  const { title, content, createdAt } = post;
 
   return (
     <>
@@ -150,6 +150,7 @@ function Post({ post, recentPosts }: PostPageProps) {
               components={{
                 types: {
                   image: ({ value }) => (
+                    // eslint-disable-next-line
                     <img alt="" src={urlFor(value).url()} />
                   ),
                 },
