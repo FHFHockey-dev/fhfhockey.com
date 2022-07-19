@@ -17,6 +17,10 @@ import Comments from "components/Comments";
 type PostData = {
   slug: string;
   title: string;
+  /**
+   * LocaleDateString
+   * e.g., '7/19/2022'
+   */
   createdAt: string;
   /**
    * PortableText value
@@ -73,7 +77,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     slug,
     title,
     content: body,
-    createdAt: new Date(publishedAt).toLocaleDateString(),
+    createdAt: new Date(publishedAt).toLocaleDateString("en-US"),
   };
   return {
     props: post,

@@ -11,6 +11,10 @@ import styles from "styles/Blog.module.scss";
 export type Post = {
   slug: string;
   title: string;
+  /**
+   * LocaleDateString.
+   * '7/19/2022'
+   */
   createdAt: string;
   summary: string;
   /**
@@ -37,7 +41,7 @@ export const getStaticProps: GetStaticProps = async () => {
       slug,
       title,
       summary,
-      createdAt: new Date(publishedAt).toLocaleDateString(),
+      createdAt: new Date(publishedAt).toLocaleDateString("en-US"),
       imageUrl: urlFor(mainImage).url(),
     })
   );
