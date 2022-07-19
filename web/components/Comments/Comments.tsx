@@ -1,5 +1,20 @@
+import { useQuery, gql } from "@apollo/client";
+
 import formatDate from "utils/formatDate";
 import styles from "./Comments.module.scss";
+
+const QUERY = gql`
+  query GetComments($slug: String) {
+    comments: allComment(
+      where: { post: { slug: { current: { eq: $slug } } } }
+    ) {
+      id: _id
+      userName: name
+      content: comment
+      createdAt: _updatedAt
+    }
+  }
+`;
 
 type CommentData = {
   id: string;
@@ -17,33 +32,33 @@ function Comment({ userName, content, createdAt }: CommentData) {
     <li className={styles.comment}>
       <div className={styles.content}>{content}</div>
       <div className={styles.footer}>
-        <span className={styles.userName}>{userName}</span> -{" "}
+        <span className={styles.userName}>{userName}</span>
+        <span style={{ margin: "0 0.3rem" }}>-</span>
         <span>{formatDate(createdAt)}</span>
       </div>
     </li>
   );
 }
 
-type CommentsProps = {
-  comments: CommentData[];
-  loading: boolean;
-};
+function Comments({ slug }: { slug: string }) {
+  const { data, loading } = useQuery(QUERY, {
+    variables: { slug },
+  });
 
-function Comments({ comments, loading }: CommentsProps) {
+  if (loading) return <p>loading...</p>;
+
+  const comments: CommentData[] = data.comments;
+
   return (
     <section className={styles.comments}>
       <h2 className={styles.title}>Comments</h2>
-      {loading ? (
-        <p>loading...</p>
-      ) : (
-        <ul className={styles.list}>
-          {comments.map((comment) => (
-            <Comment key={comment.id} {...comment} />
-          ))}
+      <ul className={styles.list}>
+        {comments.map((comment) => (
+          <Comment key={comment.id} {...comment} />
+        ))}
 
-          {comments.length === 0 ? <p>No comments</p> : ""}
-        </ul>
-      )}
+        {comments.length === 0 ? <p>No comments</p> : ""}
+      </ul>
     </section>
   );
 }

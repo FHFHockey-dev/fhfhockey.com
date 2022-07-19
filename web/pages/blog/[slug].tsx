@@ -2,6 +2,7 @@ import React from "react";
 import { GetStaticPaths, GetStaticProps } from "next";
 import { useRouter } from "next/router";
 import Head from "next/head";
+import dynamic from "next/dynamic";
 
 import { groq } from "next-sanity";
 import { getClient } from "lib/sanity/sanity.server";
@@ -12,9 +13,11 @@ import styles from "styles/Post.module.scss";
 import { TextBanner } from "components/Banner/Banner";
 import IconButton from "components/IconButton";
 import CommentForm from "components/CommentForm";
-import Comments from "components/Comments";
+
 import RecentPosts from "components/RecentPosts";
 import { PostPreviewData } from ".";
+
+const Comments = dynamic(() => import("components/Comments"), { ssr: false });
 
 type PostDetailsData = {
   slug: string;
@@ -167,29 +170,7 @@ function Post({ post, recentPosts }: PostPageProps) {
           <CommentForm className={styles.commentForm} />
 
           {/* Comments */}
-          <Comments
-            comments={[
-              {
-                id: "1",
-                content: "I am a post",
-                createdAt: new Date(2010, 6, 3).toISOString(),
-                userName: "Xiaohai",
-              },
-              {
-                id: "2",
-                content: "I am a silly poooost",
-                createdAt: new Date(2010, 1, 3).toISOString(),
-                userName: "Xiaohai",
-              },
-              {
-                id: "3",
-                content: "asdawdawd21",
-                createdAt: new Date(2014, 11, 3).toISOString(),
-                userName: "Xiaohai",
-              },
-            ]}
-            loading={false}
-          />
+          <Comments slug={post.slug} />
         </div>
         <div className={styles.recentPosts}>
           <RecentPosts posts={recentPosts} />
