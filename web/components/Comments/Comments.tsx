@@ -1,4 +1,4 @@
-import formatDate from "lib/formatDate";
+import formatDate from "utils/formatDate";
 import styles from "./Comments.module.scss";
 
 type CommentData = {
