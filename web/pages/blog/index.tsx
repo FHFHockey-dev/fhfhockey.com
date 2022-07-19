@@ -8,7 +8,7 @@ import { TextBanner } from "../../components/Banner/Banner";
 import BlogPost from "components/BlogPost";
 import styles from "styles/Blog.module.scss";
 
-export type Post = {
+export type PostPreviewData = {
   slug: string;
   title: string;
   /**
@@ -54,7 +54,7 @@ export const getStaticProps: GetStaticProps = async () => {
   };
 };
 
-const Blog: NextPage<{ posts: Post[] }> = ({ posts }) => {
+const Blog: NextPage<{ posts: PostPreviewData[] }> = ({ posts }) => {
   return (
     <div>
       <Head>
