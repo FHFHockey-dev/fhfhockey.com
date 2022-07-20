@@ -20,7 +20,7 @@ import RecentPosts from "components/RecentPosts";
 import { PostPreviewData } from ".";
 import Comments from "components/Comments";
 import client from "lib/apollo-client";
-// const Comments = dynamic(() => import("components/Comments"), { ssr: false });
+import Tooltip from "components/Tooltip";
 
 type PostDetailsData = {
   _id: string;
@@ -177,7 +177,14 @@ function Post({ post, recentPosts }: PostPageProps) {
 
             <div className={styles.actions}>
               <IconButton icon="heart" />
-              <IconButton icon="share" />
+              <Tooltip onHoverText="Share" onClickText="Copied!">
+                <IconButton
+                  icon="share"
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                  }}
+                />
+              </Tooltip>
             </div>
           </article>
 
