@@ -1,4 +1,6 @@
-import { useQuery, gql } from "@apollo/client";
+import { useQuery, gql, NetworkStatus } from "@apollo/client";
+import Spinner from "components/Spinner";
+import { forwardRef, useImperativeHandle } from "react";
 
 import formatDate from "utils/formatDate";
 import styles from "./Comments.module.scss";
@@ -7,6 +9,7 @@ const QUERY = gql`
   query GetComments($slug: String) {
     comments: allComment(
       where: { post: { slug: { current: { eq: $slug } } } }
+      sort: { _createdAt: DESC }
     ) {
       id: _id
       userName: name
@@ -40,27 +43,35 @@ function Comment({ userName, content, createdAt }: CommentData) {
   );
 }
 
-function Comments({ slug }: { slug: string }) {
-  const { data, loading } = useQuery(QUERY, {
+function Comments({ slug }: { slug: string }, ref: any) {
+  const { data, refetch, networkStatus } = useQuery(QUERY, {
     variables: { slug },
+    notifyOnNetworkStatusChange: true,
   });
-
-  if (loading) return <p>loading...</p>;
-
-  const comments: CommentData[] = data.comments;
+  // allow other componet to refech the comments
+  useImperativeHandle(ref, () => ({
+    refetch: () => {
+      refetch();
+    },
+  }));
 
   return (
     <section className={styles.comments}>
       <h2 className={styles.title}>Comments</h2>
-      <ul className={styles.list}>
-        {comments.map((comment) => (
-          <Comment key={comment.id} {...comment} />
-        ))}
+      {networkStatus === NetworkStatus.loading ? (
+        <Spinner center />
+      ) : (
+        <ul className={styles.list}>
+          {networkStatus === NetworkStatus.refetch && <Spinner center />}
+          {data.comments.map((comment: CommentData) => (
+            <Comment key={comment.id} {...comment} />
+          ))}
 
-        {comments.length === 0 ? <p>No comments</p> : ""}
-      </ul>
+          {data.comments.length === 0 ? <p>No comments</p> : ""}
+        </ul>
+      )}
     </section>
   );
 }
 
-export default Comments;
+export default forwardRef(Comments);

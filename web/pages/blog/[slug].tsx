@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { GetStaticPaths, GetStaticProps } from "next";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -16,10 +16,11 @@ import CommentForm from "components/CommentForm";
 
 import RecentPosts from "components/RecentPosts";
 import { PostPreviewData } from ".";
-
-const Comments = dynamic(() => import("components/Comments"), { ssr: false });
+import Comments from "components/Comments";
+// const Comments = dynamic(() => import("components/Comments"), { ssr: false });
 
 type PostDetailsData = {
+  _id: string;
   slug: string;
   title: string;
   /**
@@ -46,6 +47,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 const postQuery = groq`
   *[_type == "post" && slug.current == $slug][0] {
+    _id,
     title,
     "slug": slug.current,
     publishedAt,
@@ -76,9 +78,10 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     };
   }
 
-  const { title, publishedAt, body } = data;
+  const { _id, title, publishedAt, body } = data;
 
   const post: PostDetailsData = {
+    _id,
     slug,
     title,
     content: body,
@@ -127,6 +130,12 @@ type PostPageProps = {
 
 function Post({ post, recentPosts }: PostPageProps) {
   const router = useRouter();
+  const commentsRef = useRef<any>(null);
+
+  const fetchComments = () => {
+    commentsRef.current?.refetch();
+  };
+
   // If the page is not yet generated, this will be displayed
   // initially until getStaticProps() finishes running
   if (router.isFallback) {
@@ -167,10 +176,14 @@ function Post({ post, recentPosts }: PostPageProps) {
           </article>
 
           {/* Comment Form*/}
-          <CommentForm className={styles.commentForm} />
+          <CommentForm
+            className={styles.commentForm}
+            postId={post._id}
+            fetchComments={fetchComments}
+          />
 
           {/* Comments */}
-          <Comments slug={post.slug} />
+          <Comments ref={commentsRef} slug={post.slug} />
         </div>
         <div className={styles.recentPosts}>
           <RecentPosts posts={recentPosts} />

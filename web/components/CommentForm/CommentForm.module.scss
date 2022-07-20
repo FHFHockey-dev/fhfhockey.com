@@ -1,6 +1,11 @@
 @import "styles/vars.scss";
 
 .form {
+  .error {
+    color: #ffc107;
+    font-size: small;
+    margin: 0.3rem 0;
+  }
   .contentWrapper {
     border: 2px solid white;
     background-color: $bg-light;
@@ -41,6 +46,7 @@
     margin-top: 0.5rem;
     display: flex;
     justify-content: flex-end;
+    align-items: center;
     .commentButton {
       all: unset;
       color: white;
@@ -51,6 +57,9 @@
       &:hover {
         cursor: pointer;
       }
+    }
+    .spinner {
+      margin-right: 0.5rem;
     }
   }
 }

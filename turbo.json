@@ -12,7 +12,8 @@
         "$CMS_URL",
         "$NEXT_PUBLIC_SANITY_PROJECT_ID",
         "$NEXT_PUBLIC_SANITY_DATASET",
-        "$NEXT_PUBLIC_SANITY_GRAPHQL_URI"
+        "$NEXT_PUBLIC_SANITY_GRAPHQL_URI",
+        "$SANITY_API_TOKEN"
       ],
       "outputs": [".next/**"]
     },
