@@ -71,7 +71,6 @@ function CommentForm({
       setTouched({ comment: false });
     },
   });
-  console.log(formik.isSubmitting);
 
   return (
     <form
