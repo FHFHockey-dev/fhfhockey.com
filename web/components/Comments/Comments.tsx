@@ -63,7 +63,7 @@ function Comments({ slug }: { slug: string }, ref: any) {
         {data?.comments.map((comment: CommentData) => (
           <Comment key={comment.id} {...comment} />
         ))}
-        {data?.comments.length === 0 ? <p>No comments</p> : null}
+        {!loading && data?.comments.length === 0 ? <p>No comments</p> : null}
       </ul>
     </section>
   );
