@@ -44,7 +44,7 @@ function Comment({ userName, content, createdAt }: CommentData) {
 }
 
 function Comments({ slug }: { slug: string }, ref: any) {
-  const { data, refetch, networkStatus } = useQuery(QUERY, {
+  const { data, loading, refetch } = useQuery(QUERY, {
     variables: { slug },
     notifyOnNetworkStatusChange: true,
   });
@@ -58,18 +58,13 @@ function Comments({ slug }: { slug: string }, ref: any) {
   return (
     <section className={styles.comments}>
       <h2 className={styles.title}>Comments</h2>
-      {networkStatus === NetworkStatus.loading ? (
-        <Spinner center />
-      ) : (
-        <ul className={styles.list}>
-          {networkStatus === NetworkStatus.refetch && <Spinner center />}
-          {data.comments.map((comment: CommentData) => (
-            <Comment key={comment.id} {...comment} />
-          ))}
-
-          {data.comments.length === 0 ? <p>No comments</p> : ""}
-        </ul>
-      )}
+      <ul className={styles.list}>
+        {loading && <Spinner center />}
+        {data?.comments.map((comment: CommentData) => (
+          <Comment key={comment.id} {...comment} />
+        ))}
+        {data?.comments.length === 0 ? <p>No comments</p> : null}
+      </ul>
     </section>
   );
 }

@@ -8,6 +8,7 @@ import { groq } from "next-sanity";
 import { getClient } from "lib/sanity/sanity.server";
 import { PortableText } from "@portabletext/react";
 import { urlFor } from "lib/sanity/sanity";
+import { gql } from "@apollo/client";
 
 import styles from "styles/Post.module.scss";
 import { TextBanner } from "components/Banner/Banner";
@@ -15,8 +16,10 @@ import IconButton from "components/IconButton";
 import CommentForm from "components/CommentForm";
 
 import RecentPosts from "components/RecentPosts";
+
 import { PostPreviewData } from ".";
 import Comments from "components/Comments";
+import client from "lib/apollo-client";
 // const Comments = dynamic(() => import("components/Comments"), { ssr: false });
 
 type PostDetailsData = {
@@ -55,6 +58,23 @@ const postQuery = groq`
   }
 `;
 
+const RECENT_POSTS_QUERY = gql`
+  query GetRecentPosts($slug: String) {
+    recentPosts: allPost(
+      where: { slug: { current: { neq: $slug } } }
+      limit: 3
+      sort: { publishedAt: DESC }
+    ) {
+      slug {
+        current
+      }
+      title
+      summary
+      publishedAt
+    }
+  }
+`;
+
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   // params contains the post `slug`.
   // If the route is like /blog/1, then params.slug is 1
@@ -68,9 +88,17 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   }
 
   const slug = params.slug as string;
-  const data = await getClient().fetch(postQuery, {
-    slug,
-  });
+  const [data, { data: recentPostsData }] = await Promise.all([
+    getClient().fetch(postQuery, {
+      slug,
+    }),
+    client.query({
+      query: RECENT_POSTS_QUERY,
+      variables: {
+        slug,
+      },
+    }),
+  ]);
 
   if (!data) {
     return {
@@ -88,31 +116,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     createdAt: new Date(publishedAt).toLocaleDateString("en-US"),
   };
 
-  const recentPosts: PostPreviewData[] = [
-    {
-      title: "Blog One",
-      createdAt: new Date(2001, 10, 3).toLocaleDateString("en-US"),
-      slug: "blog-one",
-      summary: "I am the summary of the first post",
-      imageUrl: "",
-    },
-
-    {
-      title: "Blog two",
-      createdAt: new Date(2001, 10, 3).toLocaleDateString("en-US"),
-      slug: "blog-one",
-      summary: "I am the summary of the first post",
-      imageUrl: "",
-    },
-
-    {
-      title: "Blog Three",
-      createdAt: new Date(2001, 10, 3).toLocaleDateString("en-US"),
-      slug: "blog-one",
-      summary: "I am the summary of the first post",
-      imageUrl: "",
-    },
-  ];
+  const recentPosts: PostPreviewData[] = recentPostsData.recentPosts.map(
+    (post: any) => ({ ...post, slug: post.slug.current })
+  );
 
   return {
     props: { post, recentPosts },

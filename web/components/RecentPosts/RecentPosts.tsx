@@ -6,7 +6,7 @@ import styles from "./RecentPosts.module.scss";
 
 function PostCard({ title, slug, summary, createdAt }: PostPreviewData) {
   return (
-    <Link href={`blog/${slug}`}>
+    <Link href={`/blog/${slug}`}>
       <article className={styles.postCard}>
         <header className={styles.header}>
           <h3>{title}</h3>
