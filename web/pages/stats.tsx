@@ -3,8 +3,8 @@ import { NextSeo } from "next-seo";
 
 import { TextBanner } from "../components/Banner/Banner";
 import TeamStatCard from "../components/TeamStatCard";
+import { fetchNHL } from "../lib/NHL/NHL_API";
 import styles from "../styles/Stats.module.scss";
-import { fetchNHL } from "../styles/NHL_API";
 
 type Team = {
   abbreviation: string;
