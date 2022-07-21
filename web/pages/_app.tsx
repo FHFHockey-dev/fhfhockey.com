@@ -2,8 +2,10 @@ import Head from "next/head";
 import type { AppProps } from "next/app";
 import { useRouter } from "next/router";
 import { ApolloProvider } from "@apollo/client";
-import client from "../lib/apollo-client";
+import { DefaultSeo } from "next-seo";
+import SEO from "next-seo.config";
 
+import client from "../lib/apollo-client";
 import Layout from "../components/Layout";
 import "../styles/globals.css";
 import "../styles/vars.scss";
@@ -43,6 +45,7 @@ function MyApp({ Component, pageProps }: AppProps) {
           />
           <link rel="manifest" href="/site.webmanifest" />
         </Head>
+        <DefaultSeo {...SEO} />
         {/* https://nextjs.org/docs/api-reference/next/router#resetting-state-after-navigation */}
         <Component key={router.asPath} {...pageProps} />
       </Layout>

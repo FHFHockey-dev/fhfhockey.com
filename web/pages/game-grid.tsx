@@ -1,17 +1,14 @@
-import Head from "next/head";
 import React from "react";
+import { NextSeo } from "next-seo";
 import { TextBanner } from "../components/Banner/Banner";
 
 function GameGrid() {
   return (
     <div>
-      <Head>
-        <title>FHFH | Game Grid</title>
-        <meta
-          name="description"
-          content="Five Hole Fantasy Hockey Podcast Game Grid."
-        />
-      </Head>
+      <NextSeo
+        title="FHFH | Game Grid"
+        description="Five Hole Fantasy Hockey Podcast Game Grid."
+      />
 
       <TextBanner text="Game Grid" />
 

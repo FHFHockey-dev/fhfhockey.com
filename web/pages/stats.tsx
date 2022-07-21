@@ -1,5 +1,5 @@
 import React from "react";
-import Head from "next/head";
+import { NextSeo } from "next-seo";
 
 import { TextBanner } from "../components/Banner/Banner";
 import TeamStatCard from "../components/TeamStatCard";
@@ -16,13 +16,11 @@ type StatsProps = {
 function Stats({ teams }: StatsProps) {
   return (
     <div>
-      <Head>
-        <title>FHFH | Stat Catalogue</title>
-        <meta
-          name="description"
-          content="Five Hole Fantasy Hockey Podcast Stats for all teams in NHL."
-        />
-      </Head>
+      <NextSeo
+        title="FHFH | Stat Catalogue"
+        description="Five Hole Fantasy Hockey Podcast Stats for all teams in NHL."
+      />
+
       <TextBanner text="Stat Catalogue" />
 
       <section className={styles.cards}>
