@@ -1,0 +1,35 @@
+@import "styles/vars.scss";
+
+.comments {
+  .title {
+    border-bottom: 4px solid #0aa8e2;
+    padding-bottom: 3px;
+    font-size: 1.3em;
+    margin-bottom: 1rem;
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    row-gap: 1rem;
+  }
+  .comment {
+    display: block;
+    .content {
+      border: 2px solid white;
+      padding: 0.3rem;
+      background-color: $bg-light;
+    }
+    .footer {
+      display: flex;
+      justify-content: flex-end;
+      font-style: italic;
+      margin-top: 0.4rem;
+    }
+  }
+
+  ul,
+  li {
+    all: unset;
+  }
+}

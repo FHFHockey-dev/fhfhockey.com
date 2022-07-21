@@ -1,0 +1,30 @@
+@import "styles/vars.scss";
+
+.posts {
+  .postCard {
+    background-color: $bg-light;
+    border: 3px solid #09a7df;
+    padding: 0.7rem 1rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+
+    .header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      border-bottom: 2px solid #09a7df;
+      padding-bottom: 0.3rem;
+      font-style: italic;
+    }
+    .summary {
+      margin-top: 0.8rem;
+    }
+  }
+  all: unset;
+  li {
+    all: unset;
+  }
+  & * {
+    margin: 0;
+  }
+}

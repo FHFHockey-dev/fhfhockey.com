@@ -1,11 +1,17 @@
 import React from "react";
 import Image from "next/image";
 
-import { Post } from "pages/blog";
+import { PostPreviewData } from "pages/blog";
 import styles from "./BlogPost.module.scss";
 import Link from "next/link";
 
-function BlogPost({ title, slug, createdAt, summary, imageUrl }: Post) {
+function BlogPost({
+  title,
+  slug,
+  createdAt,
+  summary,
+  imageUrl,
+}: PostPreviewData) {
   return (
     <Link href={`/blog/${slug}`}>
       <article className={styles.post}>

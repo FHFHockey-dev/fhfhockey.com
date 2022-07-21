@@ -171,7 +171,13 @@ function Layout({ children }: LayoutProps) {
         <header className={styles.header}>
           <div className={styles.branding}>
             <h1>
-              <span className={styles.highlight}>Five Hole</span> Fantasy Hockey
+              <span
+                className={styles.highlight}
+                onClick={() => router.push("/")}
+              >
+                Five Hole
+              </span>{" "}
+              Fantasy Hockey
             </h1>
           </div>
 

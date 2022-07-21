@@ -1,14 +1,19 @@
 {
   "folders": [
-	{
-		"path": ".."
-	},
-	{
-		"path": "../web"
-	},
-	{
-		"path": "../cms"
-	}
-],
-  "settings": {}
+    {
+      "path": ".."
+    },
+    {
+      "path": "../web"
+    },
+    {
+      "path": "../cms"
+    }
+  ],
+  "settings": {
+    "search.exclude": {
+      "**/.next": true,
+      "**/.turbo": true
+    }
+  }
 }

@@ -8,9 +8,13 @@ import { TextBanner } from "../../components/Banner/Banner";
 import BlogPost from "components/BlogPost";
 import styles from "styles/Blog.module.scss";
 
-export type Post = {
+export type PostPreviewData = {
   slug: string;
   title: string;
+  /**
+   * LocaleDateString.
+   * '7/19/2022'
+   */
   createdAt: string;
   summary: string;
   /**
@@ -37,7 +41,7 @@ export const getStaticProps: GetStaticProps = async () => {
       slug,
       title,
       summary,
-      createdAt: new Date(publishedAt).toLocaleDateString(),
+      createdAt: new Date(publishedAt).toLocaleDateString("en-US"),
       imageUrl: urlFor(mainImage).url(),
     })
   );
@@ -50,7 +54,7 @@ export const getStaticProps: GetStaticProps = async () => {
   };
 };
 
-const Blog: NextPage<{ posts: Post[] }> = ({ posts }) => {
+const Blog: NextPage<{ posts: PostPreviewData[] }> = ({ posts }) => {
   return (
     <div>
       <Head>

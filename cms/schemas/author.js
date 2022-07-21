@@ -1,6 +1,9 @@
+import { UserIcon } from '@sanity/icons'
+
 export default {
   name: 'author',
   title: 'Author',
+  icon: UserIcon,
   type: 'document',
   fields: [
     {
@@ -33,7 +36,7 @@ export default {
         {
           title: 'Block',
           type: 'block',
-          styles: [{title: 'Normal', value: 'normal'}],
+          styles: [{ title: 'Normal', value: 'normal' }],
           lists: [],
         },
       ],

@@ -1,7 +1,10 @@
+import { TagIcon } from '@sanity/icons'
+
 export default {
   name: 'category',
   title: 'Category',
   type: 'document',
+  icon: TagIcon,
   fields: [
     {
       name: 'title',
