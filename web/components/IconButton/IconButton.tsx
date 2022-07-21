@@ -33,6 +33,7 @@ function IconButton({ icon, size = "small", ...props }: IconButtonProps) {
         alt="share button"
         width={SIZE_MAP[size]}
         height={SIZE_MAP[size]}
+        priority={true}
       />
     </button>
   );
