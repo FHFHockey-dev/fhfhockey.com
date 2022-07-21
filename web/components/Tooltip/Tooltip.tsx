@@ -1,20 +1,25 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styles from "./Tooltip.module.scss";
 
 type TooltipProps = {
   onHoverText: string;
-  onClickText: string;
+  onClickText?: string;
   children: React.ReactNode;
 };
 
 function Tooltip({ onHoverText, onClickText, children }: TooltipProps) {
   const [text, setText] = useState("");
+
+  useEffect(() => {
+    setText(onHoverText);
+  }, [onHoverText]);
+
   return (
     <div
       className={styles.tooltip}
       onPointerEnter={() => setText(onHoverText)}
       onPointerLeave={() => setText(onHoverText)}
-      onClick={() => setText(onClickText)}
+      onClick={() => onClickText && setText(onClickText)}
     >
       <span className={styles.tooltipText}>{text}</span>
       {children}

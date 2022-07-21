@@ -5,7 +5,7 @@ import styles from "./IconButton.module.scss";
 
 type IconButtonProps =
   | {
-      icon: "share" | "heart";
+      icon: "share" | "heart-filled" | "heart-outlined";
       size?: "small" | "large";
     } & DetailedHTMLProps<
       ButtonHTMLAttributes<HTMLButtonElement>,
@@ -14,7 +14,8 @@ type IconButtonProps =
 
 const ICON_MAP: Map<IconButtonProps["icon"], string> = new Map([
   ["share", "/pictures/share-button.svg"],
-  ["heart", "/pictures/heart-button.svg"],
+  ["heart-filled", "/pictures/heart-filled.png"],
+  ["heart-outlined", "/pictures/heart-outlined.svg"],
 ]);
 
 const SIZE_MAP = {

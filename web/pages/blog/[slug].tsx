@@ -1,8 +1,7 @@
-import React, { useEffect, useRef } from "react";
+import React, { useRef, useState } from "react";
 import { GetStaticPaths, GetStaticProps } from "next";
 import { useRouter } from "next/router";
 import Head from "next/head";
-import dynamic from "next/dynamic";
 
 import { groq } from "next-sanity";
 import { getClient } from "lib/sanity/sanity.server";
@@ -136,6 +135,7 @@ type PostPageProps = {
 
 function Post({ post, recentPosts }: PostPageProps) {
   const router = useRouter();
+  const [like, setLike] = useState(false);
   const commentsRef = useRef<any>(null);
 
   const fetchComments = () => {
@@ -176,7 +176,12 @@ function Post({ post, recentPosts }: PostPageProps) {
             />
 
             <div className={styles.actions}>
-              <IconButton icon="heart" />
+              <Tooltip onHoverText={!like ? "like" : "dislike"}>
+                <IconButton
+                  icon={like ? "heart-filled" : "heart-outlined"}
+                  onClick={() => setLike((prev) => !prev)}
+                />
+              </Tooltip>
               <Tooltip onHoverText="Share" onClickText="Copied!">
                 <IconButton
                   icon="share"

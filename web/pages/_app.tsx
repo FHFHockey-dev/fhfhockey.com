@@ -1,5 +1,6 @@
 import Head from "next/head";
 import type { AppProps } from "next/app";
+import { useRouter } from "next/router";
 import { ApolloProvider } from "@apollo/client";
 import client from "../lib/apollo-client";
 
@@ -8,6 +9,7 @@ import "../styles/globals.css";
 import "../styles/vars.scss";
 
 function MyApp({ Component, pageProps }: AppProps) {
+  const router = useRouter();
   return (
     <ApolloProvider client={client}>
       <Layout>
@@ -41,7 +43,8 @@ function MyApp({ Component, pageProps }: AppProps) {
           />
           <link rel="manifest" href="/site.webmanifest" />
         </Head>
-        <Component {...pageProps} />
+        {/* https://nextjs.org/docs/api-reference/next/router#resetting-state-after-navigation */}
+        <Component key={router.asPath} {...pageProps} />
       </Layout>
     </ApolloProvider>
   );
