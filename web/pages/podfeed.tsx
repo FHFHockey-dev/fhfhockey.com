@@ -1,18 +1,17 @@
 import React from "react";
-import Head from "next/head";
+import { NextSeo } from "next-seo";
+
 import { TextBanner } from "../components/Banner/Banner";
 import styles from "styles/Podfeed.module.scss";
 
 function Podfeed() {
   return (
     <div>
-      <Head>
-        <title>FHFH | Library</title>
-        <meta
-          name="description"
-          content="Five Hole Fantasy Hockey Podcast Podcast Feed."
-        />
-      </Head>
+      <NextSeo
+        title="FHFH | Library"
+        description="Five Hole Fantasy Hockey Podcast Podcast Feed."
+      />
+
       <TextBanner text="FHFH Library" />
 
       <div className={styles.podbeanWrapper}>
