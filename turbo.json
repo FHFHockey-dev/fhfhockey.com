@@ -8,8 +8,8 @@
     "web#build": {
       "dependsOn": [
         "^build",
-        "$SITE_URL",
         "$CMS_URL",
+        "$NEXT_PUBLIC_SITE_URL",
         "$NEXT_PUBLIC_SANITY_PROJECT_ID",
         "$NEXT_PUBLIC_SANITY_DATASET",
         "$NEXT_PUBLIC_SANITY_GRAPHQL_URI",
