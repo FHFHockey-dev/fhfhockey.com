@@ -8,24 +8,29 @@ import { getClient } from "lib/sanity/sanity.server";
 import { PortableText } from "@portabletext/react";
 import { urlFor } from "lib/sanity/sanity";
 import { gql } from "@apollo/client";
+import { NextSeo } from "next-seo";
 
 import styles from "styles/Post.module.scss";
 import { TextBanner } from "components/Banner/Banner";
 import IconButton from "components/IconButton";
+import Tooltip from "components/Tooltip";
 import CommentForm from "components/CommentForm";
-
 import RecentPosts from "components/RecentPosts";
+import Comments from "components/Comments";
 
 import { PostPreviewData } from ".";
-import Comments from "components/Comments";
 import client from "lib/apollo-client";
-import Tooltip from "components/Tooltip";
 import scrollTop from "utils/scrollTop";
 
 type PostDetailsData = {
   _id: string;
   slug: string;
   title: string;
+  summary: string;
+  /**
+   * Preview image url.
+   */
+  imageUrl: string;
   /**
    * LocaleDateString
    * e.g., '7/19/2022'
@@ -52,6 +57,8 @@ const postQuery = groq`
   *[_type == "post" && slug.current == $slug][0] {
     _id,
     title,
+    summary,
+    mainImage,
     "slug": slug.current,
     publishedAt,
     body,
@@ -106,12 +113,14 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     };
   }
 
-  const { _id, title, publishedAt, body } = data;
+  const { _id, title, summary, mainImage, publishedAt, body } = data;
 
   const post: PostDetailsData = {
     _id,
     slug,
     title,
+    summary,
+    imageUrl: urlFor(mainImage).url(),
     content: body,
     createdAt: new Date(publishedAt).toLocaleDateString("en-US"),
   };
@@ -153,13 +162,23 @@ function Post({ post, recentPosts }: PostPageProps) {
     return <TextBanner text="Loading..." />;
   }
 
-  const { title, content, createdAt } = post;
+  const { slug, title, summary, imageUrl, content, createdAt } = post;
 
   return (
     <>
-      <Head>
-        <title>{title}</title>
-      </Head>
+      <NextSeo
+        title={`${title} | FHFH Blog`}
+        description={summary}
+        canonical={`${process.env.NEXT_PUBLIC_SITE_URL}/blog/${slug}`}
+        openGraph={{
+          type: "article",
+          url: `${process.env.NEXT_PUBLIC_SITE_URL}/blog/${slug}`,
+          images: [{ url: imageUrl, alt: title }],
+          article: {
+            publishedTime: new Date(createdAt).toISOString(),
+          },
+        }}
+      />
       <div className={styles.postPage}>
         <div className={styles.mainContent}>
           {/* Post Content */}
