@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { GetStaticPaths, GetStaticProps } from "next";
 import { useRouter } from "next/router";
 import Head from "next/head";
@@ -20,6 +20,7 @@ import { PostPreviewData } from ".";
 import Comments from "components/Comments";
 import client from "lib/apollo-client";
 import Tooltip from "components/Tooltip";
+import scrollTop from "utils/scrollTop";
 
 type PostDetailsData = {
   _id: string;
@@ -141,6 +142,10 @@ function Post({ post, recentPosts }: PostPageProps) {
   const fetchComments = () => {
     commentsRef.current?.refetch();
   };
+
+  useEffect(() => {
+    scrollTop();
+  }, []);
 
   // If the page is not yet generated, this will be displayed
   // initially until getStaticProps() finishes running
