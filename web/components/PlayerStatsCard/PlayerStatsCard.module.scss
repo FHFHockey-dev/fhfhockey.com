@@ -1,0 +1,68 @@
+@import "styles/Charts.module.scss";
+
+.playerCard {
+  display: grid;
+  grid-template-columns: 35% 1fr;
+  grid-template-rows: 20% 80%;
+  grid-template-areas:
+    "image name"
+    "image info";
+  grid-column-gap: 0.7rem;
+
+  .playerImage {
+    grid-area: image;
+    position: relative;
+    border: 3px solid white;
+    padding: 0.3rem;
+  }
+  .name {
+    grid-area: name;
+    padding: 0.1rem 0.1rem;
+    border: 3px solid white;
+  }
+  .info {
+    margin-top: 0.3rem;
+    grid-area: info;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 100px;
+    align-items: center;
+
+    border: 3px solid white;
+    padding: 0.3rem;
+    .stats {
+      justify-self: start;
+      font-size: small;
+      .statsLine {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 80% 5% 1fr;
+        .label {
+          color: #a5a0a2;
+          text-align: right;
+        }
+        .value {
+          font-weight: bold;
+          color: $primary-color;
+        }
+      }
+    }
+    .teamLogoWrapper {
+      height: 100%;
+      padding: 0.3rem;
+      .teamLogo {
+        height: 100%;
+        position: relative;
+
+        color: yellow;
+      }
+    }
+  }
+
+  // remove list default style
+  ul {
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+  }
+}

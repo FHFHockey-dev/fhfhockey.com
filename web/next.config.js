@@ -3,7 +3,7 @@ const CMS_URL = process.env.CMS_URL;
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["images.unsplash.com", "cdn.sanity.io"]
+    domains: ["images.unsplash.com", "cdn.sanity.io", "nhl.bamcontent.com"]
   },
   reactStrictMode: true,
   async rewrites() {
