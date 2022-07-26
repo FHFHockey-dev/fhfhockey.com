@@ -81,24 +81,34 @@
       "info image"
       "teamName teamName";
 
+    & div,
+    .header {
+      border-radius: $rounded-border;
+    }
+
     .header {
       border: $border-thin solid $border-color;
       display: flex;
       justify-content: center;
       align-items: center;
+      margin-bottom: $small;
       .teamAbbreviation {
         display: none;
       }
     }
 
     .playerImageWrapper {
+      border: $border-thin solid $border-color;
       margin-right: 0;
+      margin-left: $small/2;
     }
 
     .info {
       padding-top: 1rem;
       padding-bottom: 1rem;
       margin-top: 0;
+      border: $border-thin solid $border-color;
+      margin-right: $small/2;
 
       .stats {
         // reverse the team logo and stats
@@ -111,6 +121,7 @@
       justify-content: center;
       align-items: center;
       border: $border-thin solid $border-color;
+      margin-top: $small;
     }
   }
 

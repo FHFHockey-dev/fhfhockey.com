@@ -1,5 +1,6 @@
 import React, { useId, useState } from "react";
 import { NextSeo } from "next-seo";
+import classNames from "classnames";
 
 import styles from "styles/Charts.module.scss";
 import PlayerBioCard from "components/PlayerBioCard";
@@ -38,18 +39,22 @@ function Charts() {
           <div className={styles.playerBioCard}>
             <PlayerBioCard id={8475225} />
           </div>
-          <div className={styles.coverageChart}>coverageChart</div>
-          <div className={styles.timeOnIce}>
-            time On Ice
-            <div style={{ height: "100px" }} />
-          </div>
-          <div className={styles.weeklyRank}>weekly Rank</div>
-          <div className={styles.sustainability}>Sustainability</div>
-          <div className={styles.careerAverages}>Career Averages</div>
+          <Box className={styles.timeOnIce}>time On Ice</Box>
+          <Box className={styles.coverageChart}>coverageChart</Box>
+          <Box className={styles.weeklyRank}>weekly Rank</Box>
+          <Box className={styles.sustainability}>Sustainability</Box>
+          <Box className={styles.careerAverages}>Career Averages</Box>
         </div>
       </section>
     </div>
   );
 }
 
+type BoxProps = {
+  children?: React.ReactNode;
+  className?: string;
+};
+function Box({ children, className }: BoxProps) {
+  return <div className={classNames(styles.box, className)}>{children}</div>;
+}
 export default Charts;

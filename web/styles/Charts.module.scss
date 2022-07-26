@@ -3,10 +3,13 @@
 $primary-color: #07aae2;
 $text-primary-color: #ffffff;
 $border-color: #ffffff;
-$border-thin: 2px;
+$border-thin: 1px;
 $border-bold: 3px;
+$rounded-border: 5px;
 $bg-color: #404040;
 $header-bg-color: #202020;
+
+$small: 6px;
 
 .chartsPage {
   // player search form
@@ -32,25 +35,22 @@ $header-bg-color: #202020;
     }
     .coverageChart {
       grid-area: coverageChart;
-      border: 2px solid white;
+      margin-top: $small;
     }
     .timeOnIce {
       grid-area: timeOnIce;
-      border: 2px solid white;
+      margin-top: $small;
     }
 
     .weeklyRank {
       grid-area: weeklyRank;
-      border: 2px solid white;
     }
 
     .sustainability {
       grid-area: sustainability;
-      border: 2px solid white;
     }
     .careerAverages {
       grid-area: careerAverages;
-      border: 2px solid white;
     }
 
     // PC View
@@ -71,6 +71,13 @@ $header-bg-color: #202020;
         "coverageChart careerAverages"
         "coverageChart careerAverages"
         "coverageChart careerAverages";
+    }
+  }
+
+  .box {
+    border: $border-bold solid $border-color;
+    @media only screen and (min-width: $screen-large) {
+      border: none;
     }
   }
 
