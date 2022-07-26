@@ -1,10 +1,8 @@
 import React, { useId, useState } from "react";
-import Link from "next/link";
 import { NextSeo } from "next-seo";
 
-import { TextBanner } from "../components/Banner/Banner";
 import styles from "styles/Charts.module.scss";
-import PlayerStatsCard from "components/PlayerBioCard";
+import PlayerBioCard from "components/PlayerBioCard";
 
 function Charts() {
   const playerNameId = useId();
@@ -19,8 +17,6 @@ function Charts() {
         title="FHFH | Charts"
         description="The underlying stats of a player in NHL."
       />
-
-      <TextBanner text="Underlying Stats" />
 
       <section className={styles.chartsPage}>
         <form className={styles.searchForm} onSubmit={handleSearch}>
@@ -39,7 +35,14 @@ function Charts() {
           <button className={styles.searchButton}>SEARCH</button>
         </form>
         <div className={styles.dashboard}>
-          <PlayerStatsCard id={8475225} />
+          <div className={styles.playerBioCard}>
+            <PlayerBioCard id={8475225} />
+          </div>
+          <div className={styles.coverageChart}>coverageChart</div>
+          <div className={styles.timeOnIce}>time On Ice</div>
+          <div className={styles.weeklyRank}>weekly Rank</div>
+          <div className={styles.sustainability}>Sustainability</div>
+          <div className={styles.careerAverages}>Career Averages</div>
         </div>
       </section>
     </div>

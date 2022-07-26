@@ -1,10 +1,15 @@
+@import "styles/vars.scss";
+
 $primary-color: #07aae2;
 $text-primary-color: #ffffff;
 $border-color: #ffffff;
+$border-thin: 2px;
+$border-bold: 3px;
 $bg-color: #404040;
 $header-bg-color: #202020;
 
 .chartsPage {
+  // player search form
   .searchForm {
     display: none;
     .playerNameInput {
@@ -12,10 +17,61 @@ $header-bg-color: #202020;
     .searchButton {
       margin-left: 0.8rem;
     }
+    @media only screen and (min-width: $screen-large) {
+      display: block;
+    }
   }
+
+  // Dashboard
   .dashboard {
     border: 3px solid white;
     padding: 0.5rem;
+
+    .playerBioCard {
+      grid-area: bioCard;
+    }
+    .coverageChart {
+      grid-area: coverageChart;
+      border: 2px solid white;
+    }
+    .timeOnIce {
+      grid-area: timeOnIce;
+      border: 2px solid white;
+    }
+
+    .weeklyRank {
+      grid-area: weeklyRank;
+      border: 2px solid white;
+    }
+
+    .sustainability {
+      grid-area: sustainability;
+      border: 2px solid white;
+    }
+    .careerAverages {
+      grid-area: careerAverages;
+      border: 2px solid white;
+    }
+
+    // PC View
+    @media only screen and (min-width: $screen-large) {
+      display: grid;
+      grid-template-columns: 40% 60%;
+      grid-template-rows: repeat(12, 1fr);
+      grid-template-areas:
+        "bioCard timeOnIce"
+        "bioCard timeOnIce"
+        "bioCard timeOnIce"
+        "bioCard weeklyRank"
+        "bioCard weeklyRank" // 5
+        "bioCard weeklyRank"
+        "coverageChart sustainability"
+        "coverageChart sustainability"
+        "coverageChart sustainability"
+        "coverageChart careerAverages"
+        "coverageChart careerAverages"
+        "coverageChart careerAverages";
+    }
   }
 
   p {
