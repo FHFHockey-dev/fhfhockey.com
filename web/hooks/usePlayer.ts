@@ -14,6 +14,10 @@ export type Player = {
   shoots: string;
   teamName: string;
   /**
+   * Team abbreviation
+   */
+  teamAbbreviation: string;
+  /**
    * The url of the team logo
    */
   teamLogo: string;
@@ -36,6 +40,7 @@ export default function usePlayer(playerId: number): Player {
     shoots: "R",
     image: getPlayerImage(playerId),
     teamName: "ana TEAM",
+    teamAbbreviation: "OTT",
     teamLogo: getTeamLogo("ANA"),
   };
 }

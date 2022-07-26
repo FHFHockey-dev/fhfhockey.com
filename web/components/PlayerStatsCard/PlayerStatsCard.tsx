@@ -20,7 +20,7 @@ const STATS = [
 
 function PlayerStatsCard({ id }: PlayerStatsCardProps) {
   const player = usePlayer(id);
-  const { name, image, teamName, teamLogo } = player;
+  const { name, image, teamName, teamAbbreviation, teamLogo } = player;
 
   return (
     <section className={styles.playerCard}>
@@ -36,7 +36,10 @@ function PlayerStatsCard({ id }: PlayerStatsCardProps) {
         />
       </div>
 
-      <header className={styles.name}>{name}</header>
+      <header className={styles.header}>
+        <span>{name}</span>
+        <span>{teamAbbreviation}</span>
+      </header>
 
       <div className={styles.info}>
         <ul className={styles.stats}>
