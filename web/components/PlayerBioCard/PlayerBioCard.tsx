@@ -1,6 +1,6 @@
 import Image from "next/image";
 import usePlayer from "hooks/usePlayer";
-import styles from "./PlayerStatsCard.module.scss";
+import styles from "./PlayerBioCard.module.scss";
 
 type PlayerStatsCardProps = {
   /**

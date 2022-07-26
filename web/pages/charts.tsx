@@ -4,7 +4,7 @@ import { NextSeo } from "next-seo";
 
 import { TextBanner } from "../components/Banner/Banner";
 import styles from "styles/Charts.module.scss";
-import PlayerStatsCard from "components/PlayerStatsCard";
+import PlayerStatsCard from "components/PlayerBioCard";
 
 function Charts() {
   const playerNameId = useId();
