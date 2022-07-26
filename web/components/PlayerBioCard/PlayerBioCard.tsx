@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import Image from "next/image";
 import usePlayer from "hooks/usePlayer";
 import styles from "./PlayerBioCard.module.scss";
@@ -24,21 +25,19 @@ function PlayerStatsCard({ id }: PlayerStatsCardProps) {
 
   return (
     <section className={styles.playerCard}>
-      <div className={styles.playerImage}>
-        <Image
+      <div className={styles.playerImageWrapper}>
+        <img
+          style={{ objectFit: "cover" }}
           src={image}
           alt={name}
           width="100%"
           height="100%"
-          layout="fill"
-          objectFit="cover"
-          priority={true}
         />
       </div>
 
       <header className={styles.header}>
         <span>{name}</span>
-        <span>{teamAbbreviation}</span>
+        <span className={styles.teamAbbreviation}>{teamAbbreviation}</span>
       </header>
 
       <div className={styles.info}>
@@ -64,6 +63,10 @@ function PlayerStatsCard({ id }: PlayerStatsCardProps) {
             />
           </div>
         </div>
+      </div>
+
+      <div className={styles.teamName}>
+        <span>{teamName}</span>
       </div>
     </section>
   );

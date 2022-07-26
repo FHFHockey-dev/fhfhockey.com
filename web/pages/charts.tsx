@@ -39,7 +39,10 @@ function Charts() {
             <PlayerBioCard id={8475225} />
           </div>
           <div className={styles.coverageChart}>coverageChart</div>
-          <div className={styles.timeOnIce}>time On Ice</div>
+          <div className={styles.timeOnIce}>
+            time On Ice
+            <div style={{ height: "100px" }} />
+          </div>
           <div className={styles.weeklyRank}>weekly Rank</div>
           <div className={styles.sustainability}>Sustainability</div>
           <div className={styles.careerAverages}>Career Averages</div>
