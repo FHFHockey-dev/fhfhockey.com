@@ -8,7 +8,7 @@ type TimeOption = "L7" | "L14" | "L30" | "SEASON";
 /**
  * Time On Ice | Power Play Time On Ice
  */
-type ChartTypeOption = "TOI" | "PPTOI";
+type ChartTypeOption = "TOI" | "POWER_PLAY_TOI";
 
 type TimeOnIceChartProps = {
   playerId: number;
@@ -16,10 +16,16 @@ type TimeOnIceChartProps = {
 
 function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
   const [timeOption, setTimeOption] = useState<TimeOption>("L7");
+  const [chartTypeOption, setChartTypeOption] =
+    useState<ChartTypeOption>("POWER_PLAY_TOI");
 
   return (
     <div>
       <TimeOptions timeOption={timeOption} setTimeOption={setTimeOption} />
+      <ChartTypeOptions
+        chartTypeOption={chartTypeOption}
+        setChartTypeOption={setChartTypeOption}
+      />
       {playerId}
     </div>
   );
@@ -45,6 +51,35 @@ function TimeOptions({ timeOption, setTimeOption }: TimeOptionsProps) {
           key={option.value}
           checked={timeOption === option.value}
           onClick={() => setTimeOption(option.value)}
+        >
+          {option.label}
+        </CheckButton>
+      ))}
+    </div>
+  );
+}
+
+type ChartTypeOptionsProps = {
+  chartTypeOption: string;
+  setChartTypeOption: Dispatch<SetStateAction<ChartTypeOption>>;
+};
+
+function ChartTypeOptions({
+  chartTypeOption,
+  setChartTypeOption,
+}: ChartTypeOptionsProps) {
+  const options = [
+    { label: "PP%", value: "POWER_PLAY_TOI" },
+    { label: "TOI", value: "TOI" },
+  ] as const;
+
+  return (
+    <div>
+      {options.map((option) => (
+        <CheckButton
+          key={option.value}
+          checked={chartTypeOption === option.value}
+          onClick={() => setChartTypeOption(option.value)}
         >
           {option.label}
         </CheckButton>
