@@ -2,6 +2,7 @@ import { Dispatch, SetStateAction, useState } from "react";
 import CheckButton from "components/CheckButton";
 
 import styles from "./TimeOnIceChart.module.scss";
+import Options from "components/Options";
 
 type TimeOption = "L7" | "L14" | "L30" | "SEASON";
 
@@ -20,19 +21,22 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
     useState<ChartTypeOption>("POWER_PLAY_TOI");
 
   return (
-    <div>
-      <TimeOptions timeOption={timeOption} setTimeOption={setTimeOption} />
-      <ChartTypeOptions
-        chartTypeOption={chartTypeOption}
-        setChartTypeOption={setChartTypeOption}
-      />
+    <section className={styles.container}>
+      <div className={styles.allOptions}>
+        <TimeOptions timeOption={timeOption} setTimeOption={setTimeOption} />
+        <ChartTypeOptions
+          chartTypeOption={chartTypeOption}
+          setChartTypeOption={setChartTypeOption}
+        />
+      </div>
+
       {playerId}
-    </div>
+    </section>
   );
 }
 
 type TimeOptionsProps = {
-  timeOption: string;
+  timeOption: TimeOption;
   setTimeOption: Dispatch<SetStateAction<TimeOption>>;
 };
 
@@ -45,22 +49,16 @@ function TimeOptions({ timeOption, setTimeOption }: TimeOptionsProps) {
   ] as const;
 
   return (
-    <div>
-      {options.map((option) => (
-        <CheckButton
-          key={option.value}
-          checked={timeOption === option.value}
-          onClick={() => setTimeOption(option.value)}
-        >
-          {option.label}
-        </CheckButton>
-      ))}
-    </div>
+    <Options
+      options={options}
+      option={timeOption}
+      onOptionChange={setTimeOption}
+    />
   );
 }
 
 type ChartTypeOptionsProps = {
-  chartTypeOption: string;
+  chartTypeOption: ChartTypeOption;
   setChartTypeOption: Dispatch<SetStateAction<ChartTypeOption>>;
 };
 
@@ -74,17 +72,11 @@ function ChartTypeOptions({
   ] as const;
 
   return (
-    <div>
-      {options.map((option) => (
-        <CheckButton
-          key={option.value}
-          checked={chartTypeOption === option.value}
-          onClick={() => setChartTypeOption(option.value)}
-        >
-          {option.label}
-        </CheckButton>
-      ))}
-    </div>
+    <Options
+      options={options}
+      option={chartTypeOption}
+      onOptionChange={setChartTypeOption}
+    />
   );
 }
 
