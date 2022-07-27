@@ -4,6 +4,7 @@ import classNames from "classnames";
 
 import styles from "styles/Charts.module.scss";
 import PlayerBioCard from "components/PlayerBioCard";
+import TimeOnIceChart from "components/TimeOnIceChart";
 
 function Charts() {
   const playerNameId = useId();
@@ -12,6 +13,7 @@ function Charts() {
     e.preventDefault();
     console.log({ playerName });
   };
+  const playerId = 8475225;
   return (
     <div>
       <NextSeo
@@ -37,9 +39,11 @@ function Charts() {
         </form>
         <div className={styles.dashboard}>
           <div className={styles.playerBioCard}>
-            <PlayerBioCard playerId={8475225} />
+            <PlayerBioCard playerId={playerId} />
           </div>
-          <Box className={styles.timeOnIce}>time On Ice</Box>
+          <Box className={styles.timeOnIce}>
+            <TimeOnIceChart playerId={playerId} />
+          </Box>
           <Box className={styles.coverageChart}>coverageChart</Box>
           <Box className={styles.weeklyRank}>weekly Rank</Box>
           <Box className={styles.sustainability}>Sustainability</Box>
