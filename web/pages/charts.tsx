@@ -37,7 +37,7 @@ function Charts() {
         </form>
         <div className={styles.dashboard}>
           <div className={styles.playerBioCard}>
-            <PlayerBioCard id={8475225} />
+            <PlayerBioCard playerId={8475225} />
           </div>
           <Box className={styles.timeOnIce}>time On Ice</Box>
           <Box className={styles.coverageChart}>coverageChart</Box>

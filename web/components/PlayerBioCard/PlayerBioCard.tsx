@@ -7,7 +7,7 @@ type PlayerStatsCardProps = {
   /**
    * Player Id
    */
-  id: number;
+  playerId: number;
 };
 
 // The stats to be displayed on the card
@@ -19,8 +19,8 @@ const STATS = [
   { label: "Shoots", key: "shoots" },
 ];
 
-function PlayerStatsCard({ id }: PlayerStatsCardProps) {
-  const player = usePlayer(id);
+function PlayerStatsCard({ playerId }: PlayerStatsCardProps) {
+  const player = usePlayer(playerId);
   const { name, image, teamName, teamAbbreviation, teamLogo } = player;
 
   return (
