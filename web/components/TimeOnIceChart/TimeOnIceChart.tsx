@@ -104,14 +104,14 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
             label: "TOI",
             borderColor: "white",
             data: TOI,
-            // pointRadius: 0,
+            pointRadius: 0,
             tension: 0.1,
           }
         : {
             label: "PPTOI",
             borderColor: "white",
             data: ppTOI,
-            // pointRadius: 0,
+            pointRadius: 0,
             tension: 0.1,
           },
     ],
@@ -143,7 +143,7 @@ function TimeOptions({ timeOption, setTimeOption }: TimeOptionsProps) {
     { label: "L7", value: "L7" },
     { label: "L14", value: "L14" },
     { label: "L30", value: "L30" },
-    { label: "Season", value: "SEASON" },
+    { label: "Year", value: "SEASON" },
   ] as const;
 
   return (
