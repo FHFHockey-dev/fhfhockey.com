@@ -57,6 +57,8 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
   }, [playerId]);
 
   const CHART_OPTIONS = {
+    responsive: true,
+    maintainAspectRatio: false,
     scales: {
       x: {
         ticks: {
@@ -124,7 +126,9 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
           setChartTypeOption={setChartTypeOption}
         />
       </div>
-      <Line options={CHART_OPTIONS} data={data} />
+      <div className={styles.chartWrapper}>
+        <Line options={CHART_OPTIONS} data={data} />
+      </div>
     </section>
   );
 }
