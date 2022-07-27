@@ -1,0 +1,23 @@
+@import "styles/vars.scss";
+
+.checkButtonWrapper {
+  display: inline-block;
+
+  .checkButton {
+    font-size: 0.7rem;
+    border: 3px solid $primary-color;
+    border-radius: 8px;
+    padding: 0 1em;
+    &.checked {
+      color: $primary-color;
+      border-color: $border-color;
+    }
+    &:hover {
+      cursor: pointer;
+    }
+  }
+  button {
+    all: unset;
+    line-height: normal;
+  }
+}
