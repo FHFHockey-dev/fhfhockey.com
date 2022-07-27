@@ -1,8 +1,28 @@
-import { Dispatch, SetStateAction, useState } from "react";
-import CheckButton from "components/CheckButton";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 
-import styles from "./TimeOnIceChart.module.scss";
 import Options from "components/Options";
+import fetchTOIData from "lib/NHL/TOI";
+import styles from "./TimeOnIceChart.module.scss";
+
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+ChartJS.register(
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Tooltip,
+  Legend
+);
 
 type TimeOption = "L7" | "L14" | "L30" | "SEASON";
 
@@ -15,10 +35,85 @@ type TimeOnIceChartProps = {
   playerId: number;
 };
 
+const CHART_AXIS_COLOR = "#07aae2";
 function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
   const [timeOption, setTimeOption] = useState<TimeOption>("L7");
   const [chartTypeOption, setChartTypeOption] =
     useState<ChartTypeOption>("POWER_PLAY_TOI");
+
+  const [TOI, setTOI] = useState<number[]>([]);
+  const [ppTOI, setPpTOI] = useState<number[]>([]);
+  const [labels, setLabels] = useState<string[]>([]);
+
+  useEffect(() => {
+    // TODO: pass time option, and receive dates rather than labels
+    fetchTOIData(playerId).then((data) => {
+      console.log(data);
+
+      setTOI(data.TOI);
+      setPpTOI(data.PPTOI);
+      setLabels(data.labels);
+    });
+  }, [playerId]);
+
+  const CHART_OPTIONS = {
+    scales: {
+      x: {
+        ticks: {
+          color: "white",
+        },
+        grid: {
+          borderColor: CHART_AXIS_COLOR,
+          borderWidth: 3,
+        },
+      },
+      y: {
+        type: "linear",
+        beginAtZero: true,
+        min: 0,
+        max: 100,
+
+        title: {
+          display: false,
+          text: "Percentage",
+        },
+        ticks: {
+          color: "white",
+          stepSize: 50,
+        },
+        grid: {
+          borderColor: CHART_AXIS_COLOR,
+          borderWidth: 3,
+        },
+      },
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
+  } as const;
+
+  const data = {
+    labels: labels,
+    datasets: [
+      chartTypeOption === "TOI"
+        ? {
+            label: "TOI",
+            borderColor: "white",
+            data: TOI,
+            // pointRadius: 0,
+            tension: 0.1,
+          }
+        : {
+            label: "PPTOI",
+            borderColor: "white",
+            data: ppTOI,
+            // pointRadius: 0,
+            tension: 0.1,
+          },
+    ],
+  };
 
   return (
     <section className={styles.container}>
@@ -29,8 +124,7 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
           setChartTypeOption={setChartTypeOption}
         />
       </div>
-
-      {playerId}
+      <Line options={CHART_OPTIONS} data={data} />
     </section>
   );
 }
