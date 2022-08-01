@@ -13,11 +13,11 @@ type Input = {
   /**
    * Start time point in the format of yyyy-mm-dd.
    */
-  StartTime: DateString;
+  StartTime: DateString | null;
   /**
    * End time point in the format of yyyy-mm-dd.
    */
-  EndTime: DateString;
+  EndTime: DateString | null;
 
   Season: string;
   /**
@@ -70,14 +70,19 @@ export default async function handler(
   }[];
 
   // filter dates
-  const start = new Date(StartTime);
-  const end = new Date(EndTime);
+  let filteredGames;
+  if (StartTime && EndTime) {
+    const start = new Date(StartTime);
+    const end = new Date(EndTime);
 
-  const filteredGames = games.filter((game) => {
-    const date = new Date(game.date);
-    const inRange = start <= date && date <= end;
-    return inRange;
-  });
+    filteredGames = games.filter((game) => {
+      const date = new Date(game.date);
+      const inRange = start <= date && date <= end;
+      return inRange;
+    });
+  } else {
+    filteredGames = games;
+  }
 
   // Calculate TOI - convert time string into minutes (number)
   const TOI = filteredGames.map((game) => ({
@@ -96,7 +101,7 @@ export default async function handler(
 
       return {
         date: game.date,
-        value: individualPPTOI / teamPPTOI,
+        value: teamPPTOI === 0 ? 0 : (individualPPTOI / teamPPTOI) * 100,
       };
     })
   );
