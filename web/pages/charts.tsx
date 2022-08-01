@@ -13,7 +13,7 @@ function Charts() {
     e.preventDefault();
     console.log({ playerName });
   };
-  const playerId = 8475225;
+  const playerId = 8471698;
   return (
     <div>
       <NextSeo

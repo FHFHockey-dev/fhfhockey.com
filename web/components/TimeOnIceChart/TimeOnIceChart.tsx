@@ -1,10 +1,12 @@
 import { Dispatch, SetStateAction, useEffect, useState } from "react";
 
 import Options from "components/Options";
-import fetchTOIData from "lib/NHL/TOI";
+
 import styles from "./TimeOnIceChart.module.scss";
 
 import { Line } from "react-chartjs-2";
+import "chartjs-adapter-date-fns";
+
 import {
   Chart as ChartJS,
   LineElement,
@@ -12,8 +14,11 @@ import {
   LinearScale,
   CategoryScale,
   Tooltip,
-  Legend,
+  TimeScale,
 } from "chart.js";
+import { subDays, format, differenceInWeeks } from "date-fns";
+import useCurrentSeason from "hooks/useCurrentSeason";
+import Spinner from "components/Spinner";
 
 ChartJS.register(
   LineElement,
@@ -21,7 +26,7 @@ ChartJS.register(
   LinearScale,
   CategoryScale,
   Tooltip,
-  Legend
+  TimeScale
 );
 
 type TimeOption = "L7" | "L14" | "L30" | "SEASON";
@@ -41,61 +46,146 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
   const [chartTypeOption, setChartTypeOption] =
     useState<ChartTypeOption>("POWER_PLAY_TOI");
 
+  const season = useCurrentSeason();
+
+  const [loading, setLoading] = useState(false);
   const [TOI, setTOI] = useState<number[]>([]);
-  const [ppTOI, setPpTOI] = useState<number[]>([]);
+  const [ppTOI, setPPTOI] = useState<number[]>([]);
   const [labels, setLabels] = useState<string[]>([]);
 
   useEffect(() => {
-    // TODO: pass time option, and receive dates rather than labels
-    fetchTOIData(playerId).then((data) => {
-      console.log(data);
+    let mounted = true;
+    (async () => {
+      if (!season) return;
+      setLoading(true);
 
-      setTOI(data.TOI);
-      setPpTOI(data.PPTOI);
-      setLabels(data.labels);
-    });
-  }, [playerId]);
+      let startTime: Date;
+      let endTime: Date;
+      switch (timeOption) {
+        case "L7": {
+          startTime = subDays(new Date(), 7);
+          endTime = new Date();
+          break;
+        }
+        case "L14": {
+          startTime = subDays(new Date(), 14);
+          endTime = new Date();
+          break;
+        }
+        case "L30": {
+          startTime = subDays(new Date(), 30);
+          endTime = new Date();
+          break;
+        }
+        case "SEASON": {
+          break;
+        }
+        default:
+          throw new Error("This time option is not implemented.");
+      }
 
-  const CHART_OPTIONS = {
+      const { data } = await fetch("/api/toi", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          StartTime:
+            // @ts-ignore
+            timeOption === "SEASON" ? null : format(startTime, "yyyy-MM-dd"),
+          EndTime:
+            // @ts-ignore
+            timeOption === "SEASON" ? null : format(endTime, "yyyy-MM-dd"),
+          Season: season.seasonId,
+          PlayerId: playerId,
+        }),
+      }).then((res) => res.json());
+
+      if (mounted) {
+        setTOI(data.TOI.map(({ value }: any) => value));
+        setPPTOI(data.PPTOI.map(({ value }: any) => value));
+        setLabels(data.TOI.map((element: any) => element.date));
+        setLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [season, playerId, timeOption]);
+  // TOI - y-axis range 0,15,30
+  // PPTOI - y-axis 0-100%
+
+  let CHART_OPTIONS = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
       x: {
+        type: "time",
+        time: {
+          unit: "day",
+          displayFormats: {
+            day: "yyyy-MM-dd",
+          },
+        },
         ticks: {
           color: "white",
-        },
-        grid: {
-          borderColor: CHART_AXIS_COLOR,
-          borderWidth: 3,
-        },
-      },
-      y: {
-        type: "linear",
-        beginAtZero: true,
-        min: 0,
-        max: 100,
+          callback: function (value: string, index: number) {
+            if (timeOption === "SEASON") {
+              const startDate = season
+                ? new Date(season.regularSeasonStartDate)
+                : new Date();
+              const date = new Date(value);
 
-        title: {
-          display: false,
-          text: "Percentage",
-        },
-        ticks: {
-          color: "white",
-          stepSize: 50,
+              return differenceInWeeks(date, startDate) + 1;
+            } else {
+              return index + 1;
+            }
+          },
         },
         grid: {
           borderColor: CHART_AXIS_COLOR,
           borderWidth: 3,
         },
       },
-    },
-    plugins: {
-      legend: {
-        display: false,
-      },
+      y:
+        chartTypeOption === "TOI"
+          ? {
+              type: "linear",
+              beginAtZero: true,
+              min: 0,
+              max: 30,
+
+              ticks: {
+                color: "white",
+                stepSize: 15,
+              },
+              grid: {
+                borderColor: CHART_AXIS_COLOR,
+                borderWidth: 3,
+              },
+            }
+          : {
+              type: "linear",
+              beginAtZero: true,
+              min: 0,
+              max: 100,
+              ticks: {
+                color: "white",
+                autoSkip: false,
+                stepSize: 20,
+                callback: function (val: string): string {
+                  // @ts-ignore
+                  return `${this.getLabelForValue(val)}%`;
+                },
+              },
+              grid: {
+                borderColor: CHART_AXIS_COLOR,
+                borderWidth: 3,
+              },
+            },
     },
   } as const;
 
+  // x-axis - if time option is Season, display week number. Otherwise display 1,2,3,4...7
   const data = {
     labels: labels,
     datasets: [
@@ -126,6 +216,7 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
           setChartTypeOption={setChartTypeOption}
         />
       </div>
+      {loading && <Spinner center />}
       <div className={styles.chartWrapper}>
         <Line options={CHART_OPTIONS} data={data} />
       </div>
