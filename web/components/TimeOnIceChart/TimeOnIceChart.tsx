@@ -218,6 +218,7 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
       </div>
       {loading && <Spinner center />}
       <div className={styles.chartWrapper}>
+        {/*  @ts-ignore */}
         <Line options={CHART_OPTIONS} data={data} />
       </div>
     </section>
