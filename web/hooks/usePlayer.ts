@@ -27,9 +27,10 @@ export type Player = {
   teamLogo: string;
   [key: string]: string | number;
 };
+const PROXY_SERVER_URL = process.env.NEXT_PUBLIC_PROXY_SERVER_URL;
 
 const getPlayerImage = (playerId: number) =>
-  `http://nhl.bamcontent.com/images/headshots/current/168x168/${playerId}.jpg`;
+  `${PROXY_SERVER_URL}http://nhl.bamcontent.com/images/headshots/current/168x168/${playerId}.jpg`;
 
 const getTeamLogo = (teamName: string) => `/teamLogos/${teamName}.png`;
 
