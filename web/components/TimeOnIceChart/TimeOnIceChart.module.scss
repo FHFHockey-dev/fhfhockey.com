@@ -1,11 +1,18 @@
+@import "styles/vars.scss";
+
 .container {
   .chartWrapper {
     position: relative;
+    height: 80px;
     .loading {
       position: absolute;
       left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
+      top: 30%;
+      transform: translate(-50%, -30%);
+    }
+
+    @media only screen and (min-width: $screen-large) {
+      height: 150px;
     }
   }
   // target two option groups

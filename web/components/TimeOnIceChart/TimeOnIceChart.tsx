@@ -18,6 +18,7 @@ import {
 } from "chart.js";
 import { subDays, format, differenceInWeeks } from "date-fns";
 import useCurrentSeason from "hooks/useCurrentSeason";
+import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import Spinner from "components/Spinner";
 
 ChartJS.register(
@@ -42,6 +43,7 @@ type TimeOnIceChartProps = {
 
 const CHART_AXIS_COLOR = "#07aae2";
 function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
+  const size = useScreenSize();
   const [timeOption, setTimeOption] = useState<TimeOption>("L7");
   const [chartTypeOption, setChartTypeOption] =
     useState<ChartTypeOption>("POWER_PLAY_TOI");
@@ -52,6 +54,7 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
   const [TOI, setTOI] = useState<number[]>([]);
   const [ppTOI, setPPTOI] = useState<number[]>([]);
   const [labels, setLabels] = useState<string[]>([]);
+  console.log(size.screen, BreakPoint.xs);
 
   useEffect(() => {
     let mounted = true;
@@ -131,6 +134,12 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
         },
         ticks: {
           color: "white",
+          font:
+            size.screen === BreakPoint.s
+              ? {
+                  size: 8,
+                }
+              : {},
           callback: function (value: string, index: number) {
             if (timeOption === "SEASON") {
               const startDate = season
@@ -160,6 +169,12 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
               ticks: {
                 color: "white",
                 stepSize: 15,
+                font:
+                  size.screen === BreakPoint.s
+                    ? {
+                        size: 8,
+                      }
+                    : {},
               },
               grid: {
                 borderColor: CHART_AXIS_COLOR,
@@ -175,6 +190,12 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
                 color: "white",
                 autoSkip: false,
                 stepSize: 50,
+                font:
+                  size.screen === BreakPoint.s
+                    ? {
+                        size: 8,
+                      }
+                    : {},
               },
               grid: {
                 borderColor: CHART_AXIS_COLOR,

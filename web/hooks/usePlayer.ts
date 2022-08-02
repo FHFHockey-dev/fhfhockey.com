@@ -88,7 +88,5 @@ export default function usePlayer(playerId: number | undefined) {
     };
   }, [playerId]);
 
-  console.log(player);
-
   return player;
 }
