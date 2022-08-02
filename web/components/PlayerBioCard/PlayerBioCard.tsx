@@ -69,7 +69,7 @@ function PlayerStatsCard({ playerId }: PlayerStatsCardProps) {
               src={teamLogo || "/pictures/circle.png"}
               alt={teamName}
               layout="fill"
-              objectFit="cover"
+              objectFit="contain"
               priority={true}
             />
           </div>
