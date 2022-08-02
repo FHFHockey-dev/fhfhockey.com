@@ -1,5 +1,6 @@
-import { fetchNHL } from "lib/NHL/NHL_API";
 import { useEffect, useState } from "react";
+import { differenceInYears } from "date-fns";
+import { fetchNHL } from "lib/NHL/NHL_API";
 
 export type Player = {
   /**
@@ -30,8 +31,7 @@ export type Player = {
 const getPlayerImage = (playerId: number) =>
   `http://nhl.bamcontent.com/images/headshots/current/168x168/${playerId}.jpg`;
 
-const getTeamLogo = (abbreviation: string) =>
-  `/teamCardPics/${abbreviation}.jpg`;
+const getTeamLogo = (teamName: string) => `/teamLogos/${teamName}.png`;
 
 export default function usePlayer(playerId: number | undefined) {
   const [player, setPlayer] = useState<Player | null>(null);
@@ -53,7 +53,7 @@ export default function usePlayer(playerId: number | undefined) {
                   return {
                     teamName: people.currentTeam.name,
                     teamAbbreviation: abbreviation,
-                    teamLogo: getTeamLogo(abbreviation),
+                    teamLogo: getTeamLogo(people.currentTeam.name),
                   };
                 }
               )
@@ -61,7 +61,7 @@ export default function usePlayer(playerId: number | undefined) {
 
           const p: Player = {
             name: people.fullName,
-            age: people.currentAge,
+            age: differenceInYears(new Date(), new Date(people.birthDate)),
             position: people.primaryPosition.abbreviation,
             height: people.height,
             weight: people.weight,
