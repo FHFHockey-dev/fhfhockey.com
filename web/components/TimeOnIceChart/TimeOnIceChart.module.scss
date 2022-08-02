@@ -7,8 +7,8 @@
     .loading {
       position: absolute;
       left: 50%;
-      top: 30%;
-      transform: translate(-50%, -30%);
+      top: 25%;
+      transform: translate(-50%, -25%);
     }
 
     @media only screen and (min-width: $screen-large) {
