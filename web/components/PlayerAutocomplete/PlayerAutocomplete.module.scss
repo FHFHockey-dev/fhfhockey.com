@@ -1,0 +1,44 @@
+@import "styles/vars.scss";
+
+.autocomplete {
+  position: relative;
+  input {
+    width: 100%;
+  }
+  ul {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    z-index: 1;
+    position: absolute;
+    list-style: none;
+    overflow-y: scroll;
+    max-height: 200px;
+    background-color: $bg-dark;
+    & li {
+      padding: 0.5rem 0;
+    }
+    & li:active {
+      background-color: $primary-color;
+      color: white;
+    }
+
+    & li:global.Mui-focused {
+      background-color: $primary-color;
+      color: white;
+      cursor: "pointer";
+    }
+
+    & li:hover {
+      cursor: pointer;
+    }
+
+    &::-webkit-scrollbar {
+      width: 10px;
+    }
+    &::-webkit-scrollbar-thumb {
+      background: white;
+      border-radius: 10px;
+    }
+  }
+}

@@ -9,19 +9,27 @@ $header-bg-color: #202020;
 $small: 6px;
 
 .chartsPage {
-  // player search form
-  .searchForm {
-    display: none;
-    .playerNameInput {
-    }
-    .searchButton {
-      margin-left: 0.8rem;
-    }
-    @media only screen and (min-width: $screen-large) {
-      display: block;
+  // player search input
+  .playerAutocomplete {
+    border: $border-bold solid $primary-color;
+    border-radius: 14px;
+    color: $primary-color;
+    background-color: $bg-dark;
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    padding-left: 0.7rem;
+    &::placeholder {
+      color: $primary-color;
+      font-style: italic;
     }
   }
 
+  .autocompleteList {
+    padding: 5px;
+    border: $border-thin solid $primary-color;
+    border-radius: 14px;
+    padding-left: 0.7rem;
+  }
   // Dashboard
   .dashboard {
     border: 3px solid white;

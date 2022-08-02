@@ -1,19 +1,16 @@
-import React, { useId, useState } from "react";
+import React, { useState } from "react";
 import { NextSeo } from "next-seo";
 import classNames from "classnames";
 
-import styles from "styles/Charts.module.scss";
 import PlayerBioCard from "components/PlayerBioCard";
 import TimeOnIceChart from "components/TimeOnIceChart";
+import PlayerAutocomplete from "components/PlayerAutocomplete";
+
+import styles from "styles/Charts.module.scss";
 
 function Charts() {
-  const playerNameId = useId();
-  const [playerName, setPlayerName] = useState("");
-  const handleSearch: React.FormEventHandler<HTMLFormElement> = (e) => {
-    e.preventDefault();
-    console.log({ playerName });
-  };
-  const playerId = 8471698;
+  const [playerId, setPlayerId] = useState<number | undefined>();
+
   return (
     <div>
       <NextSeo
@@ -22,23 +19,17 @@ function Charts() {
       />
 
       <section className={styles.chartsPage}>
-        <form className={styles.searchForm} onSubmit={handleSearch}>
-          <label htmlFor={playerNameId} hidden>
-            Player Name
-          </label>
-          <input
-            className={styles.playerNameInput}
-            id={playerNameId}
-            type="text"
-            name="Player Name"
-            value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
+        <div style={{ margin: "0.5rem 0" }}>
+          <PlayerAutocomplete
+            inputClassName={styles.playerAutocomplete}
+            listClassName={styles.autocompleteList}
+            onPlayerIdChange={(playerId) => setPlayerId(playerId)}
           />
+        </div>
 
-          <button className={styles.searchButton}>SEARCH</button>
-        </form>
         <div className={styles.dashboard}>
           <div className={styles.playerBioCard}>
+            {/* @ts-ignore */}
             <PlayerBioCard playerId={playerId} />
           </div>
           <Box className={styles.timeOnIce}>
