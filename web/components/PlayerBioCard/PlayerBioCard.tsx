@@ -1,13 +1,13 @@
 /* eslint-disable @next/next/no-img-element */
 import Image from "next/image";
-import usePlayer from "hooks/usePlayer";
+import usePlayer, { Player } from "hooks/usePlayer";
 import styles from "./PlayerBioCard.module.scss";
 
 type PlayerStatsCardProps = {
   /**
    * Player Id
    */
-  playerId: number;
+  playerId: number | undefined;
 };
 
 // The stats to be displayed on the card
@@ -19,8 +19,21 @@ const STATS = [
   { label: "Shoots", key: "shoots" },
 ];
 
+const PLACEHOLDER: Player = {
+  name: "Select a player",
+  image: "",
+  teamName: "",
+  teamAbbreviation: "",
+  teamLogo: "",
+  weight: 0,
+  age: 0,
+  height: "0",
+  shoots: "0",
+  position: "R",
+};
+
 function PlayerStatsCard({ playerId }: PlayerStatsCardProps) {
-  const player = usePlayer(playerId);
+  const player = usePlayer(playerId) ?? PLACEHOLDER;
   const { name, image, teamName, teamAbbreviation, teamLogo } = player;
 
   return (
@@ -28,7 +41,7 @@ function PlayerStatsCard({ playerId }: PlayerStatsCardProps) {
       <div className={styles.playerImageWrapper}>
         <img
           style={{ objectFit: "cover" }}
-          src={image}
+          src={image || "/pictures/player-placeholder.jpg"}
           alt={name}
           width="100%"
           height="100%"
@@ -53,7 +66,7 @@ function PlayerStatsCard({ playerId }: PlayerStatsCardProps) {
         <div className={styles.teamLogoWrapper}>
           <div className={styles.teamLogo}>
             <Image
-              src={teamLogo}
+              src={teamLogo || "/pictures/circle.png"}
               alt={teamName}
               layout="fill"
               objectFit="cover"

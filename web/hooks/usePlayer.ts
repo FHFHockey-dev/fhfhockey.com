@@ -1,3 +1,6 @@
+import { fetchNHL } from "lib/NHL/NHL_API";
+import { useEffect, useState } from "react";
+
 export type Player = {
   /**
    * Player name
@@ -30,17 +33,62 @@ const getPlayerImage = (playerId: number) =>
 const getTeamLogo = (abbreviation: string) =>
   `/teamCardPics/${abbreviation}.jpg`;
 
-export default function usePlayer(playerId: number): Player {
-  return {
-    name: "Claude Giroux",
-    age: 34,
-    position: "RW",
-    height: "5'11''",
-    weight: 185,
-    shoots: "R",
-    image: getPlayerImage(playerId),
-    teamName: "ana TEAM",
-    teamAbbreviation: "OTT",
-    teamLogo: getTeamLogo("ANA"),
-  };
+export default function usePlayer(playerId: number | undefined) {
+  const [player, setPlayer] = useState<Player | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    if (playerId) {
+      (async () => {
+        try {
+          const people = await fetchNHL(`/people/${playerId}`).then(
+            ({ people }) => people[0]
+          );
+          console.log(people);
+
+          const team = people.active
+            ? await fetchNHL(`/teams/${people.currentTeam.id}`).then(
+                ({ teams }) => {
+                  const { abbreviation } = teams[0];
+                  return {
+                    teamName: people.currentTeam.name,
+                    teamAbbreviation: abbreviation,
+                    teamLogo: getTeamLogo(abbreviation),
+                  };
+                }
+              )
+            : { teamName: "", teamAbbreviation: "", teamLogo: "" };
+
+          const p: Player = {
+            name: people.fullName,
+            age: people.currentAge,
+            position: people.primaryPosition.abbreviation,
+            height: people.height,
+            weight: people.weight,
+            shoots: people.shootsCatches,
+            image: getPlayerImage(playerId),
+            ...team,
+          };
+
+          if (mounted) {
+            setPlayer(p);
+          }
+        } catch (e) {
+          console.log(e);
+
+          if (mounted) {
+            setPlayer(null);
+          }
+        }
+      })();
+    }
+
+    return () => {
+      mounted = false;
+    };
+  }, [playerId]);
+
+  console.log(player);
+
+  return player;
 }

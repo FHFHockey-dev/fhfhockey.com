@@ -29,7 +29,6 @@ function Charts() {
 
         <div className={styles.dashboard}>
           <div className={styles.playerBioCard}>
-            {/* @ts-ignore */}
             <PlayerBioCard playerId={playerId} />
           </div>
           <Box className={styles.timeOnIce}>
