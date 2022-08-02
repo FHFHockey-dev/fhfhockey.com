@@ -54,7 +54,6 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
   const [TOI, setTOI] = useState<number[]>([]);
   const [ppTOI, setPPTOI] = useState<number[]>([]);
   const [labels, setLabels] = useState<string[]>([]);
-  console.log(size.screen, BreakPoint.xs);
 
   useEffect(() => {
     let mounted = true;
