@@ -102,7 +102,9 @@ export default async function handler(
       // get game type and game number
       // e.g. "gamePk": 2021021276,
       const gameId = game.game.gamePk.toString().slice(4).toString();
-      const individualPPTOI = parseTime(game.stat.powerPlayTimeOnIce);
+      const individualPPTOI = parseTime(
+        game.stat.powerPlayTimeOnIce ?? "00:00"
+      );
       const teamPPTOI = parseTime(await getPPTOI(Season, gameId, game.isHome));
 
       return {
@@ -128,10 +130,15 @@ export default async function handler(
  * @returns The number of minutes.
  */
 function parseTime(timeString: string) {
-  const arr = timeString.split(":");
-  const minutes = Number.parseInt(arr[0]) + Number(arr[1]) / 60; // converting
+  try {
+    const arr = timeString.split(":");
+    const minutes = Number.parseInt(arr[0]) + Number(arr[1]) / 60; // converting
 
-  return minutes;
+    return minutes;
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
 }
 
 /**
