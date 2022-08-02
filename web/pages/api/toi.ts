@@ -1,8 +1,10 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next";
+import { isWithinInterval } from "date-fns";
+import { parse } from "node-html-parser";
+
 import { fetchNHL } from "lib/NHL/NHL_API";
-import jsdom from "jsdom";
-const { JSDOM } = jsdom;
+import fetchWithCache from "lib/fetchWithCache";
 
 /**
  * A date in the format of yyyy-mm-dd.
@@ -82,8 +84,7 @@ export default async function handler(
 
     filteredGames = games.filter((game) => {
       const date = new Date(game.date);
-      const inRange = start <= date && date <= end;
-      return inRange;
+      return isWithinInterval(date, { start, end });
     });
   } else {
     filteredGames = games;
@@ -140,7 +141,8 @@ function parseTime(timeString: string) {
  */
 const getReportContent = (season: string, gameId: string) => {
   const PPTOI_REPORT_URL = `https://www.nhl.com/scores/htmlreports/${season}/GS${gameId}.HTM`;
-  return fetch(PPTOI_REPORT_URL).then((res) => res.text());
+
+  return fetchWithCache(PPTOI_REPORT_URL, false);
 };
 
 /**
@@ -152,21 +154,21 @@ const getReportContent = (season: string, gameId: string) => {
  */
 async function getPPTOI(season: string, gameId: string, isHome: boolean) {
   const content = await getReportContent(season, gameId);
-  const { document } = new JSDOM(content).window;
+
+  const document = parse(content);
   const table = document.querySelectorAll("#PenaltySummary td");
 
   const PPTOIs = [];
   for (const node of table) {
     if (node.textContent === "Power Plays (Goals-Opp./PPTime)") {
       PPTOIs.push(
-        // @ts-ignore
-        node.parentElement.parentElement.parentElement.parentElement.parentElement.lastElementChild.textContent?.split(
-          "/"
-        )[1]
+        [...node.parentNode.parentNode.parentNode.childNodes]
+          .filter((n) => n.nodeType !== 3)
+          .map((n) => n.rawText)[1]
+          .split("/")[1]
       );
     }
   }
-
   // console.log(gameId, PPTOIs);
 
   return PPTOIs[isHome ? 1 : 0] as string;
