@@ -58,6 +58,11 @@ export default async function handler(
       message: "Player not found",
       success: false,
     });
+  } else if (toiData.message?.includes("Invalid Request")) {
+    return res.status(400).json({
+      message: toiData.message,
+      success: false,
+    });
   }
 
   const games = toiData.stats[0].splits as {

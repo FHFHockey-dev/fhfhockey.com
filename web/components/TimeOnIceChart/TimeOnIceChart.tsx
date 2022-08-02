@@ -37,7 +37,7 @@ type TimeOption = "L7" | "L14" | "L30" | "SEASON";
 type ChartTypeOption = "TOI" | "POWER_PLAY_TOI";
 
 type TimeOnIceChartProps = {
-  playerId: number;
+  playerId: number | undefined;
 };
 
 const CHART_AXIS_COLOR = "#07aae2";
@@ -56,7 +56,7 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
   useEffect(() => {
     let mounted = true;
     (async () => {
-      if (!season) return;
+      if (!season || !playerId) return;
       setLoading(true);
 
       let startTime: Date;
@@ -84,7 +84,7 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
           throw new Error("This time option is not implemented.");
       }
 
-      const { data } = await fetch("/api/toi", {
+      const { data, success } = await fetch("/api/toi", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -97,13 +97,16 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
           Season: season.seasonId,
           PlayerId: playerId,
         }),
-      }).then((res) => res.json());
+      })
+        .then((res) => res.json())
+        .finally(() => {
+          setLoading(false);
+        });
 
-      if (mounted) {
+      if (mounted && success) {
         setTOI(data.TOI.map(({ value }: any) => value));
         setPPTOI(data.PPTOI.map(({ value }: any) => value));
         setLabels(data.TOI.map((element: any) => element.date));
-        setLoading(false);
       }
     })();
 
@@ -171,11 +174,7 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
               ticks: {
                 color: "white",
                 autoSkip: false,
-                stepSize: 20,
-                callback: function (val: string): string {
-                  // @ts-ignore
-                  return `${this.getLabelForValue(val)}%`;
-                },
+                stepSize: 50,
               },
               grid: {
                 borderColor: CHART_AXIS_COLOR,
@@ -216,8 +215,8 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
           setChartTypeOption={setChartTypeOption}
         />
       </div>
-      {loading && <Spinner center />}
       <div className={styles.chartWrapper}>
+        {loading && <Spinner className={styles.loading} />}
         {/*  @ts-ignore */}
         <Line options={CHART_OPTIONS} data={data} />
       </div>
