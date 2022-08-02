@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NextSeo } from "next-seo";
 import classNames from "classnames";
 
@@ -7,9 +7,19 @@ import TimeOnIceChart from "components/TimeOnIceChart";
 import PlayerAutocomplete from "components/PlayerAutocomplete";
 
 import styles from "styles/Charts.module.scss";
+import { useRouter } from "next/router";
 
 function Charts() {
+  const router = useRouter();
+  const queryParamPlayerId = router.query.playerId
+    ? Number(router.query.playerId)
+    : undefined;
+
   const [playerId, setPlayerId] = useState<number | undefined>();
+
+  useEffect(() => {
+    setPlayerId(queryParamPlayerId);
+  }, [queryParamPlayerId]);
 
   return (
     <div>
@@ -23,7 +33,17 @@ function Charts() {
           <PlayerAutocomplete
             inputClassName={styles.playerAutocomplete}
             listClassName={styles.autocompleteList}
-            onPlayerIdChange={(playerId) => setPlayerId(playerId)}
+            playerId={playerId}
+            onPlayerIdChange={(playerId) => {
+              setPlayerId(playerId);
+              if (typeof window !== "undefined") {
+                window.history.pushState(
+                  "",
+                  "",
+                  `/charts?playerId=${playerId}`
+                );
+              }
+            }}
           />
         </div>
 

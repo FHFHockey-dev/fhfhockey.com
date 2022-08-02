@@ -45,7 +45,6 @@ export default function usePlayer(playerId: number | undefined) {
           const people = await fetchNHL(`/people/${playerId}`).then(
             ({ people }) => people[0]
           );
-          console.log(people);
 
           const team = people.active
             ? await fetchNHL(`/teams/${people.currentTeam.id}`).then(
@@ -75,7 +74,7 @@ export default function usePlayer(playerId: number | undefined) {
             setPlayer(p);
           }
         } catch (e) {
-          console.log(e);
+          console.error(e);
 
           if (mounted) {
             setPlayer(null);

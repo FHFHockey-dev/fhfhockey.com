@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createFilterOptions, useAutocomplete } from "@mui/material";
 import usePlayers, { Player } from "hooks/usePlayers";
 
@@ -6,12 +6,14 @@ import styles from "./PlayerAutocomplete.module.scss";
 import classNames from "classnames";
 
 type PlayerAutocompleteProps = {
+  playerId: number | undefined;
   onPlayerIdChange: React.Dispatch<React.SetStateAction<number | undefined>>;
   inputClassName?: string;
   listClassName?: string;
 };
 
 function PlayerAutocomplete({
+  playerId,
   onPlayerIdChange,
   inputClassName,
   listClassName,
@@ -47,6 +49,12 @@ function PlayerAutocomplete({
       },
     }),
   });
+
+  useEffect(() => {
+    if (players.length) {
+      setPlayerOption(players.find((p) => p.id === playerId) || null);
+    }
+  }, [playerId, players]);
 
   return (
     <div className={styles.autocomplete}>
