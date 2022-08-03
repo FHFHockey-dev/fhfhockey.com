@@ -29,7 +29,7 @@ function Charts() {
       />
 
       <section className={styles.chartsPage}>
-        <div style={{ margin: "0.5rem 0" }}>
+        <div className={styles.playerAutocompleteWrapper}>
           <PlayerAutocomplete
             inputClassName={styles.playerAutocomplete}
             listClassName={styles.autocompleteList}
