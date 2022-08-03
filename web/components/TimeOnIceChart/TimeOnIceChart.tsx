@@ -20,6 +20,8 @@ import { subDays, format, differenceInWeeks } from "date-fns";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import Spinner from "components/Spinner";
+import Text, { HightText } from "components/Text";
+import ClientOnly from "components/ClientOnly";
 
 ChartJS.register(
   LineElement,
@@ -230,10 +232,20 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
     <section className={styles.container}>
       <div className={styles.allOptions}>
         <TimeOptions timeOption={timeOption} setTimeOption={setTimeOption} />
-        <ChartTypeOptions
-          chartTypeOption={chartTypeOption}
-          setChartTypeOption={setChartTypeOption}
-        />
+        <ClientOnly>
+          {size.screen === BreakPoint.l ? (
+            <div>
+              <Text>
+                Time On <HightText>Ice</HightText>
+              </Text>
+            </div>
+          ) : (
+            <ChartTypeOptions
+              chartTypeOption={chartTypeOption}
+              setChartTypeOption={setChartTypeOption}
+            />
+          )}
+        </ClientOnly>
       </div>
       <div className={styles.chartWrapper}>
         {loading && <Spinner className={styles.loading} />}

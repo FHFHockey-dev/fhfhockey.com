@@ -1,0 +1,13 @@
+@import "styles/vars.scss";
+
+.base {
+  font-size: x-large;
+  font-weight: bold;
+  &.normal {
+    color: $text-primary-color;
+  }
+
+  &.hightlight {
+    color: $primary-color;
+  }
+}

@@ -78,7 +78,13 @@ $small: 6px;
         "coverageChart careerAverages"
         "coverageChart careerAverages";
 
+      & > *:not(:last-child) {
+        margin-bottom: 0.5rem;
+      }
+
       .playerBioCard {
+        margin-right: 0.5rem;
+
         overflow: hidden;
         position: relative;
         & > section {
@@ -92,14 +98,25 @@ $small: 6px;
 
       .timeOnIce {
         margin-top: unset;
+        padding: unset;
+      }
+
+      .coverageChart {
+        margin-right: 0.5rem;
+        margin-bottom: 0;
+
+        grid-area: coverageChart;
+        margin-top: unset;
       }
     }
   }
 
   .box {
     border: $border-bold solid $border-color;
+
     @media only screen and (min-width: $screen-large) {
       border-radius: 25px;
+      overflow: hidden;
     }
   }
 
