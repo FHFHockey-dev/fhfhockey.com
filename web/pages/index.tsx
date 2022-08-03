@@ -34,7 +34,7 @@ const Home: NextPage = () => {
           rel="noopener noreferrer"
         >
           <Image
-            src="/pictures/twitter.png"
+            src="/pictures/white-twitter.png"
             alt="Twitter"
             width={35}
             height={35}
@@ -46,7 +46,7 @@ const Home: NextPage = () => {
           rel="noopener noreferrer"
         >
           <Image
-            src="/pictures/discord.png"
+            src="/pictures/white-discord.png"
             alt="Discord"
             width={50}
             height={28}
@@ -58,7 +58,7 @@ const Home: NextPage = () => {
           rel="noopener noreferrer"
         >
           <Image
-            src="/pictures/patreon.png"
+            src="/pictures/white-patreon.png"
             alt="Patreon"
             width={32}
             height={32}
@@ -70,7 +70,7 @@ const Home: NextPage = () => {
           rel="noopener noreferrer"
         >
           <Image
-            src="/pictures/youtube.png"
+            src="/pictures/white-youtube.png"
             alt="Youtube"
             width={35}
             height={35}
