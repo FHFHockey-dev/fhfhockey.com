@@ -22,7 +22,8 @@ import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import Spinner from "components/Spinner";
 import Text, { HightText } from "components/Text";
 import ClientOnly from "components/ClientOnly";
-import RadioOptions from "components/RadioOptions";
+import TimeOptions from "components/TimeOptions";
+import { TimeOption } from "components/TimeOptions/TimeOptions";
 
 ChartJS.register(
   LineElement,
@@ -32,8 +33,6 @@ ChartJS.register(
   Tooltip,
   TimeScale
 );
-
-type TimeOption = "L7" | "L14" | "L30" | "SEASON";
 
 /**
  * Time On Ice | Power Play Time On Ice
@@ -262,42 +261,6 @@ function TimeOnIceChart({ playerId, chartType }: TimeOnIceChartProps) {
         <Line options={CHART_OPTIONS} data={data} />
       </div>
     </section>
-  );
-}
-
-type TimeOptionsProps = {
-  timeOption: TimeOption;
-  setTimeOption: Dispatch<SetStateAction<TimeOption>>;
-};
-
-const shortOptions = [
-  { label: "L7", value: "L7" },
-  { label: "L14", value: "L14" },
-  { label: "L30", value: "L30" },
-  { label: "Year", value: "SEASON" },
-] as const;
-
-const longOptions = [
-  { label: "Last 7", value: "L7" },
-  { label: "Last 14", value: "L14" },
-  { label: "Last 30", value: "L30" },
-  { label: "Season", value: "SEASON" },
-] as const;
-function TimeOptions({ timeOption, setTimeOption }: TimeOptionsProps) {
-  const size = useScreenSize();
-
-  return size.screen === BreakPoint.l ? (
-    <RadioOptions
-      options={longOptions}
-      option={timeOption}
-      onOptionChange={setTimeOption}
-    />
-  ) : (
-    <Options
-      options={shortOptions}
-      option={timeOption}
-      onOptionChange={setTimeOption}
-    />
   );
 }
 

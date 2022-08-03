@@ -3,7 +3,7 @@ import React from "react";
 import { OptionsProps } from "components/Options/Options";
 import styles from "./RadioOptions.module.scss";
 
-function Options<T extends string>({
+function RadioOptions<T extends string>({
   options,
   option,
   onOptionChange,
@@ -15,6 +15,7 @@ function Options<T extends string>({
           <input
             type="radio"
             checked={option === op.value}
+            onChange={() => {}}
             onClick={() => onOptionChange(op.value)}
           />
           <span className={styles.label}>{op.label}</span>
@@ -24,4 +25,4 @@ function Options<T extends string>({
   );
 }
 
-export default Options;
+export default RadioOptions;
