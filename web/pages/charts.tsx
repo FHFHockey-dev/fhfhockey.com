@@ -52,10 +52,12 @@ function Charts() {
             <PlayerBioCard playerId={playerId} />
           </Box>
           <Box className={styles.timeOnIce}>
-            <TimeOnIceChart playerId={playerId} />
+            <TimeOnIceChart playerId={playerId} chartType="TOI" />
           </Box>
           <Box className={styles.coverageChart}>coverageChart</Box>
-          <Box className={styles.weeklyRank}>weekly Rank</Box>
+          <Box className={styles.ppTimeOnIce}>
+            <TimeOnIceChart playerId={playerId} chartType="POWER_PLAY_TOI" />
+          </Box>
           <Box className={styles.sustainability}>Sustainability</Box>
           <Box className={styles.careerAverages}>Career Averages</Box>
         </div>

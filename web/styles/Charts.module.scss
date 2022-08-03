@@ -48,8 +48,9 @@ $small: 6px;
       padding: 0.3rem 0.2rem 0 0.2rem;
     }
 
-    .weeklyRank {
-      grid-area: weeklyRank;
+    .ppTimeOnIce {
+      grid-area: ppTimeOnIce;
+      display: none;
     }
 
     .sustainability {
@@ -68,9 +69,9 @@ $small: 6px;
         "bioCard timeOnIce"
         "bioCard timeOnIce"
         "bioCard timeOnIce"
-        "bioCard weeklyRank"
-        "bioCard weeklyRank" // 5
-        "bioCard weeklyRank"
+        "bioCard ppTimeOnIce"
+        "bioCard ppTimeOnIce" // 5
+        "bioCard ppTimeOnIce"
         "coverageChart sustainability"
         "coverageChart sustainability"
         "coverageChart sustainability"
@@ -107,6 +108,10 @@ $small: 6px;
 
         grid-area: coverageChart;
         margin-top: unset;
+      }
+
+      .ppTimeOnIce {
+        display: block;
       }
     }
   }

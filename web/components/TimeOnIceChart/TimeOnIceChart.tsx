@@ -40,15 +40,16 @@ type TimeOption = "L7" | "L14" | "L30" | "SEASON";
 type ChartTypeOption = "TOI" | "POWER_PLAY_TOI";
 
 type TimeOnIceChartProps = {
+  chartType: ChartTypeOption;
   playerId: number | undefined;
 };
 
 const CHART_AXIS_COLOR = "#07aae2";
-function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
+function TimeOnIceChart({ playerId, chartType }: TimeOnIceChartProps) {
   const size = useScreenSize();
   const [timeOption, setTimeOption] = useState<TimeOption>("L7");
   const [chartTypeOption, setChartTypeOption] =
-    useState<ChartTypeOption>("POWER_PLAY_TOI");
+    useState<ChartTypeOption>(chartType);
 
   const season = useCurrentSeason();
 
@@ -236,9 +237,15 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
         <ClientOnly>
           {size.screen === BreakPoint.l ? (
             <div>
-              <Text>
-                Time On <HightText>Ice</HightText>
-              </Text>
+              {chartTypeOption === "TOI" ? (
+                <Text>
+                  Time On <HightText>Ice</HightText>
+                </Text>
+              ) : (
+                <Text>
+                  Power Play <HightText>Share</HightText>
+                </Text>
+              )}
             </div>
           ) : (
             <ChartTypeOptions
