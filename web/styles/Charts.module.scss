@@ -78,6 +78,18 @@ $small: 6px;
         "coverageChart careerAverages"
         "coverageChart careerAverages";
 
+      .playerBioCard {
+        overflow: hidden;
+        position: relative;
+        & > section {
+          position: absolute;
+          left: -3px;
+          right: -3px;
+          bottom: -1px;
+          height: 101%;
+        }
+      }
+
       .timeOnIce {
         margin-top: unset;
       }
@@ -87,7 +99,7 @@ $small: 6px;
   .box {
     border: $border-bold solid $border-color;
     @media only screen and (min-width: $screen-large) {
-      border: none;
+      border-radius: 25px;
     }
   }
 

@@ -48,9 +48,9 @@ function Charts() {
         </div>
 
         <div className={styles.dashboard}>
-          <div className={styles.playerBioCard}>
+          <Box className={styles.playerBioCard}>
             <PlayerBioCard playerId={playerId} />
-          </div>
+          </Box>
           <Box className={styles.timeOnIce}>
             <TimeOnIceChart playerId={playerId} />
           </Box>
