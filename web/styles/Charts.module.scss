@@ -59,6 +59,7 @@ $small: 6px;
 
     .playerBioCard {
       grid-area: bioCard;
+      border: none;
     }
     .coverageChart {
       grid-area: coverageChart;
@@ -106,6 +107,7 @@ $small: 6px;
       }
 
       .playerBioCard {
+        border: $border-bold solid $border-color;
         margin-right: 0.5rem;
 
         overflow: hidden;
