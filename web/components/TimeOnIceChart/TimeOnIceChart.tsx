@@ -129,6 +129,7 @@ function TimeOnIceChart({ playerId }: TimeOnIceChartProps) {
         type: "time",
         time: {
           unit: "day",
+          tooltipFormat: "yyyy-MM-dd",
           displayFormats: {
             day: "yyyy-MM-dd",
           },
