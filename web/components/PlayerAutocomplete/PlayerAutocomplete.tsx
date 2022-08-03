@@ -37,9 +37,15 @@ function PlayerAutocomplete({
     getOptionLabel: (option) => `${option.fullName} (${option.primaryNumber})`,
     isOptionEqualToValue: (option, value) => option.id === value.id,
     value: playerOption,
-    onChange: (e: any, newValue) => {
+    onChange: (e, newValue, reason) => {
       onPlayerIdChange(Number(newValue?.id));
       setPlayerOption(newValue);
+
+      // hide keyboard on mobile after a selection has been made
+      if (reason === "selectOption") {
+        // @ts-ignore
+        getInputProps()?.ref.current?.blur();
+      }
     },
     filterOptions: createFilterOptions({
       stringify(option) {
