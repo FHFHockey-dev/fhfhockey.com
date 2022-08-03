@@ -3,7 +3,7 @@ import CheckButton from "components/CheckButton";
 
 import styles from "./Options.module.scss";
 
-type OptionsProps<T> = {
+export type OptionsProps<T> = {
   options: readonly { label: string; value: T }[];
   option: T;
   onOptionChange: Dispatch<SetStateAction<T>>;

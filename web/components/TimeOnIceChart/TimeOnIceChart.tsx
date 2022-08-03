@@ -22,6 +22,7 @@ import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import Spinner from "components/Spinner";
 import Text, { HightText } from "components/Text";
 import ClientOnly from "components/ClientOnly";
+import RadioOptions from "components/RadioOptions";
 
 ChartJS.register(
   LineElement,
@@ -232,9 +233,9 @@ function TimeOnIceChart({ playerId, chartType }: TimeOnIceChartProps) {
 
   return (
     <section className={styles.container}>
-      <div className={styles.allOptions}>
-        <TimeOptions timeOption={timeOption} setTimeOption={setTimeOption} />
-        <ClientOnly>
+      <ClientOnly>
+        <div className={styles.allOptions}>
+          <TimeOptions timeOption={timeOption} setTimeOption={setTimeOption} />
           {size.screen === BreakPoint.l ? (
             <div>
               {chartTypeOption === "TOI" ? (
@@ -253,8 +254,8 @@ function TimeOnIceChart({ playerId, chartType }: TimeOnIceChartProps) {
               setChartTypeOption={setChartTypeOption}
             />
           )}
-        </ClientOnly>
-      </div>
+        </div>
+      </ClientOnly>
       <div className={styles.chartWrapper}>
         {loading && <Spinner className={styles.loading} />}
         {/*  @ts-ignore */}
@@ -269,17 +270,31 @@ type TimeOptionsProps = {
   setTimeOption: Dispatch<SetStateAction<TimeOption>>;
 };
 
-function TimeOptions({ timeOption, setTimeOption }: TimeOptionsProps) {
-  const options = [
-    { label: "L7", value: "L7" },
-    { label: "L14", value: "L14" },
-    { label: "L30", value: "L30" },
-    { label: "Year", value: "SEASON" },
-  ] as const;
+const shortOptions = [
+  { label: "L7", value: "L7" },
+  { label: "L14", value: "L14" },
+  { label: "L30", value: "L30" },
+  { label: "Year", value: "SEASON" },
+] as const;
 
-  return (
+const longOptions = [
+  { label: "Last 7", value: "L7" },
+  { label: "Last 14", value: "L14" },
+  { label: "Last 30", value: "L30" },
+  { label: "Season", value: "SEASON" },
+] as const;
+function TimeOptions({ timeOption, setTimeOption }: TimeOptionsProps) {
+  const size = useScreenSize();
+
+  return size.screen === BreakPoint.l ? (
+    <RadioOptions
+      options={longOptions}
+      option={timeOption}
+      onOptionChange={setTimeOption}
+    />
+  ) : (
     <Options
-      options={options}
+      options={shortOptions}
       option={timeOption}
       onOptionChange={setTimeOption}
     />
