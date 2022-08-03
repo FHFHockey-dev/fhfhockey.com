@@ -1,11 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 
 enum BreakPoint {
-  xs = "xs",
   s = "s",
   m = "m",
   l = "l",
-  xl = "xl",
 }
 
 // Screen Size Hook
@@ -35,16 +33,12 @@ const useScreenSize = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  if (screenSize.width < 576) {
-    screenSize.screen = BreakPoint.xs;
-  } else if (screenSize.width >= 576 && screenSize.width < 768) {
+  if (screenSize.width < 641) {
     screenSize.screen = BreakPoint.s;
-  } else if (screenSize.width >= 768 && screenSize.width < 992) {
+  } else if (screenSize.width >= 641 && screenSize.width < 1007) {
     screenSize.screen = BreakPoint.m;
-  } else if (screenSize.width >= 992 && screenSize.width < 1200) {
+  } else if (screenSize.width >= 1024) {
     screenSize.screen = BreakPoint.l;
-  } else {
-    screenSize.screen = BreakPoint.xl;
   }
 
   return screenSize;
