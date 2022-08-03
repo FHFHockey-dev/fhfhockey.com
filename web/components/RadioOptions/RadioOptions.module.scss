@@ -11,9 +11,15 @@
     align-items: center;
     input {
       accent-color: $primary-color;
+      &:hover {
+        cursor: pointer;
+      }
     }
     .label {
       margin-left: 8px;
+    }
+    &:hover {
+      cursor: pointer;
     }
   }
 
