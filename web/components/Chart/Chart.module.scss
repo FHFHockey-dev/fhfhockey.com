@@ -1,0 +1,43 @@
+@import "styles/vars.scss";
+@import "styles/Charts.module.scss";
+
+.container {
+  padding: 0.3rem 0.2rem 0 0.2rem;
+  .header {
+  }
+
+  @media only screen and (min-width: $screen-large) {
+    padding-top: 3px;
+    .header {
+      padding-left: 1rem;
+      padding-right: 1rem;
+      padding-bottom: 5px;
+      margin-bottom: 6px;
+      position: relative;
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: -13px;
+        height: $border-thin;
+        width: 135%;
+        background-color: white;
+      }
+    }
+    .body {
+      position: relative;
+      padding-left: 5px;
+      padding-right: 5px;
+      padding-top: 3px;
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -13px;
+        height: $border-thin;
+        width: 135%;
+        background-color: white;
+      }
+    }
+  }
+}

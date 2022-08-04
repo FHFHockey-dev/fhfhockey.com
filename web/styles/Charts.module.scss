@@ -68,7 +68,6 @@ $small: 6px;
     .timeOnIce {
       grid-area: timeOnIce;
       margin-top: $small;
-      padding: 0.3rem 0.2rem 0 0.2rem;
     }
 
     .ppTimeOnIce {
@@ -125,7 +124,6 @@ $small: 6px;
 
       .timeOnIce {
         margin-top: unset;
-        padding: unset;
       }
 
       .coverageChart {

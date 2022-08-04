@@ -21,9 +21,9 @@ import useCurrentSeason from "hooks/useCurrentSeason";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import Spinner from "components/Spinner";
 import Text, { HightText } from "components/Text";
-import ClientOnly from "components/ClientOnly";
 import TimeOptions from "components/TimeOptions";
 import { TimeOption } from "components/TimeOptions/TimeOptions";
+import Chart from "components/Chart";
 
 ChartJS.register(
   LineElement,
@@ -231,8 +231,10 @@ function TimeOnIceChart({ playerId, chartType }: TimeOnIceChartProps) {
   };
 
   return (
-    <section className={styles.container}>
-      <ClientOnly>
+    <Chart
+      className={styles.container}
+      bodyClassName={styles.chartWrapper}
+      header={
         <div className={styles.allOptions}>
           <TimeOptions timeOption={timeOption} setTimeOption={setTimeOption} />
           {size.screen === BreakPoint.l ? (
@@ -254,13 +256,12 @@ function TimeOnIceChart({ playerId, chartType }: TimeOnIceChartProps) {
             />
           )}
         </div>
-      </ClientOnly>
-      <div className={styles.chartWrapper}>
-        {loading && <Spinner className={styles.loading} />}
-        {/*  @ts-ignore */}
-        <Line options={CHART_OPTIONS} data={data} />
-      </div>
-    </section>
+      }
+    >
+      {loading && <Spinner className={styles.loading} />}
+      {/*  @ts-ignore */}
+      <Line options={CHART_OPTIONS} data={data} />
+    </Chart>
   );
 }
 
