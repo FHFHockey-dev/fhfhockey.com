@@ -9,7 +9,7 @@ type TextProps = {
 };
 
 function TextBase({ className, children }: TextProps) {
-  return <span className={classNames(className, styles.base)}>{children}</span>;
+  return <div className={classNames(className, styles.base)}>{children}</div>;
 }
 
 export default function Text({ children }: TextProps) {
