@@ -78,9 +78,11 @@ $small: 6px;
 
     .sustainability {
       grid-area: sustainability;
+      margin-top: $small;
     }
     .careerAverages {
       grid-area: careerAverages;
+      display: none;
     }
 
     // PC View
@@ -136,6 +138,10 @@ $small: 6px;
 
       .ppTimeOnIce {
         display: block;
+      }
+
+      .sustainability {
+        margin-top: unset;
       }
     }
   }

@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
 import classNames from "classnames";
 
 import PlayerBioCard from "components/PlayerBioCard";
 import TimeOnIceChart from "components/TimeOnIceChart";
 import PlayerAutocomplete from "components/PlayerAutocomplete";
+import SubstainabilityChart from "components/SubstainabilityChart";
 
 import styles from "styles/Charts.module.scss";
-import { useRouter } from "next/router";
 
 function Charts() {
   const router = useRouter();
@@ -58,7 +59,9 @@ function Charts() {
           <Box className={styles.ppTimeOnIce}>
             <TimeOnIceChart playerId={playerId} chartType="POWER_PLAY_TOI" />
           </Box>
-          <Box className={styles.sustainability}>Sustainability</Box>
+          <Box className={styles.sustainability}>
+            <SubstainabilityChart playerId={playerId} />
+          </Box>
           <Box className={styles.careerAverages}>Career Averages</Box>
         </div>
       </section>

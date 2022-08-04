@@ -2,36 +2,20 @@
 @import "styles/Charts.module.scss";
 
 .container {
-  .chartWrapper {
-    position: relative;
-    height: 80px;
-    .loading {
-      position: absolute;
-      left: 50%;
-      top: 25%;
-      transform: translate(-50%, -25%);
-    }
-
-    @media only screen and (min-width: $screen-large) {
-      height: 150px;
-    }
-  }
-  // target two option groups
-  .allOptions {
+  padding: 0.3rem 0.2rem 0 0.2rem;
+  .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 3px;
   }
 
   @media only screen and (min-width: $screen-large) {
     padding-top: 3px;
-    .allOptions {
+    .header {
       padding-left: 1rem;
       padding-right: 1rem;
       padding-bottom: 5px;
       margin-bottom: 6px;
-
       position: relative;
       &::after {
         content: "";
@@ -43,10 +27,10 @@
         background-color: white;
       }
     }
-
-    .chartWrapper {
+    .body {
+      position: relative;
       padding-left: 5px;
-      padding-right: 8px;
+      padding-right: 5px;
       padding-top: 3px;
       &::before {
         content: "";
