@@ -83,6 +83,16 @@ $small: 6px;
       grid-area: careerAverages;
     }
 
+    // small screen only
+    @media only screen and (max-width: $screen-medium-max) {
+      .sustainability {
+        border-bottom: none;
+      }
+      .careerAverages {
+        border-top: none;
+      }
+    }
+
     // PC View
     @media only screen and (min-width: $screen-large) {
       display: grid;
