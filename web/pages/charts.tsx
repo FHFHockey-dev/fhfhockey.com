@@ -7,6 +7,7 @@ import PlayerBioCard from "components/PlayerBioCard";
 import TimeOnIceChart from "components/TimeOnIceChart";
 import PlayerAutocomplete from "components/PlayerAutocomplete";
 import SubstainabilityChart from "components/SubstainabilityChart";
+import CareerAveragesChart from "components/CareerAveragesChart";
 
 import styles from "styles/Charts.module.scss";
 
@@ -62,7 +63,9 @@ function Charts() {
           <Box className={styles.sustainability}>
             <SubstainabilityChart playerId={playerId} />
           </Box>
-          <Box className={styles.careerAverages}>Career Averages</Box>
+          <Box className={styles.careerAverages}>
+            <CareerAveragesChart playerId={playerId} />
+          </Box>
         </div>
       </section>
     </div>
