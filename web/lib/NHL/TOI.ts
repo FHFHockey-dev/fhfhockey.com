@@ -79,8 +79,12 @@ const fetchTotalPowerPlayTime = async (
  * @param timeString mm:ss
  * @returns The number of minutes.
  */
-function parseTime(timeString: string) {
-  const arr = timeString.split(":");
+export function parseTime(timeString: string) {
+  const arr =
+    timeString.split(":").length === 1
+      ? timeString.split(".")
+      : timeString.split(":");
+
   const minutes = Number.parseInt(arr[0]) + Number.parseInt(arr[1]) / 60; // converting
 
   return minutes;
