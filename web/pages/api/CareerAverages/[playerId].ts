@@ -6,7 +6,15 @@ import { HTMLElement, parse } from "node-html-parser";
 import fetchWithCache from "lib/fetchWithCache";
 import { parseTime } from "lib/NHL/TOI";
 
-type Data = {};
+export type Data = {
+  IPP: number | null;
+  "S%": number | null;
+  "xS%": number | null;
+  "SOG/60": number | null;
+  "oZS%": number | null;
+  "oiSH%": number | null;
+  "secA%": number | null;
+};
 
 type Response = {
   message: string;

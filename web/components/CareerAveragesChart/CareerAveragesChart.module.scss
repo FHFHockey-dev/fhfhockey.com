@@ -1,4 +1,72 @@
-.header {
+@import "styles/vars";
+@import "styles/Charts.module.scss";
+
+.container {
+  height: 100%;
   display: flex;
-  justify-content: flex-end;
+  flex-direction: column;
+}
+
+.content {
+  flex: 1;
+}
+
+.chartHeader {
+  text-align: right;
+}
+
+.mobileTable {
+  margin-bottom: 6px;
+  .values {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    column-gap: 5px;
+    font-size: 10px;
+    & > * {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 50px;
+      border: $border-bold solid $primary-color;
+    }
+  }
+}
+
+.pcTable {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  .header,
+  .values {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .header {
+    flex-basis: 30%;
+    & > * {
+      border: $border-thin solid white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    & > *:not(:last-child) {
+      border-right: none;
+    }
+  }
+
+  .values {
+    flex-basis: 70%;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    gap: 10px;
+
+    & .cell {
+      border: $border-bold solid white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  }
 }
