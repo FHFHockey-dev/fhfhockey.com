@@ -26,9 +26,6 @@
     }
     .body {
       position: relative;
-      padding-left: 5px;
-      padding-right: 5px;
-      padding-top: 3px;
       &::before {
         content: "";
         position: absolute;
