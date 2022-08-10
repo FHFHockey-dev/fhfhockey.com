@@ -45,14 +45,27 @@
 
   .header {
     flex-basis: 30%;
+    position: relative;
     & > * {
       border: $border-thin solid white;
       display: flex;
       justify-content: center;
       align-items: center;
     }
-    & > *:not(:last-child) {
+    & > * {
       border-right: none;
+    }
+    & > :first-child {
+      border-left: none;
+    }
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: -13px;
+      height: $border-thin;
+      width: 135%;
+      background-color: white;
     }
   }
 
@@ -60,6 +73,9 @@
     flex-basis: 70%;
     margin-top: 8px;
     margin-bottom: 8px;
+    margin-left: 4px;
+    margin-right: 4px;
+
     gap: 10px;
 
     & .cell {
