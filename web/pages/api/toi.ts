@@ -11,7 +11,7 @@ import fetchWithCache from "lib/fetchWithCache";
  */
 type DateString = string;
 
-type Input = {
+export type Input = {
   /**
    * Start time point in the format of yyyy-mm-dd.
    */

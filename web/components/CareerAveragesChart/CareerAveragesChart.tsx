@@ -7,6 +7,7 @@ import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import ClientOnly from "components/ClientOnly";
 import { Data } from "pages/api/CareerAverages/[playerId]";
 import styles from "./CareerAveragesChart.module.scss";
+
 type SubstainabilityChartProps = {
   playerId: number | undefined;
 };
@@ -19,48 +20,58 @@ const asPercent = (num: number | null) =>
         minimumFractionDigits: 1,
       });
 
-const COLUMNS = [
+const BLUE = "#07AAE3";
+const RED = "#F65B61";
+
+export const COLUMNS = [
   {
     id: "S%",
     name: "S%",
     description: "Shoting Percentage",
     format: asPercent,
+    bgColor: BLUE,
   },
   {
     id: "xS%",
     name: "xS%",
     description: "XG Per Sixty",
     format: asPercent,
+    bgColor: BLUE,
   },
   {
     id: "IPP",
     name: "IPP",
     description: "IPP",
     format: asPercent,
+    bgColor: RED,
   },
   {
     id: "oiSH%",
     name: "oiSH%",
     description: "On-Ice Shotting Percentage",
     format: asPercent,
+    bgColor: BLUE,
   },
   {
     id: "secA%",
     name: "SecA%",
     description: "Secondary assist %",
     format: asPercent,
+    bgColor: BLUE,
   },
   {
     id: "SOG/60",
     name: "SOG/60",
     description: "SOG/60",
     format: (num: number) => num.toFixed(1),
+    bgColor: RED,
   },
   {
     id: "oZS%",
     name: "oZS%",
     description: "offensive zone start %",
     format: asPercent,
+    bgColor: BLUE,
   },
 ] as const;
 

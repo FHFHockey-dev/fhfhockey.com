@@ -51,7 +51,7 @@ export default async function handler(
   }
 }
 
-function parseTable(table: HTMLElement) {
+export function parseTable(table: HTMLElement) {
   const data = [];
   const rows = table.getElementsByTagName("tr");
 
@@ -127,7 +127,6 @@ async function getStats(playerId: string) {
   // SOG/60 - (shots/toi)*60
   const SOGPerSixty =
     individual.data.reduce((prev, current) => {
-      const v = parseTime(current[individual.headers.indexOf("TOI")]);
       return (
         prev +
         (Number(current[individual.headers.indexOf("Shots")]) /

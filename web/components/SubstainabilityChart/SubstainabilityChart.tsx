@@ -7,58 +7,26 @@ import { TimeOption } from "components/TimeOptions/TimeOptions";
 import styles from "./SubstainabilityChart.module.scss";
 import ClientOnly from "components/ClientOnly";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
+import { Data } from "pages/api/CareerAverages/[playerId]";
+import Spinner from "components/Spinner";
+import { COLUMNS } from "components/CareerAveragesChart/CareerAveragesChart";
+import useSustainabilityStats from "hooks/useSustainabilityStats";
 
 type SubstainabilityChartProps = {
   playerId: number | undefined;
 };
 
-const COLUMNS = [
-  {
-    id: "SH%",
-    name: "S%",
-    description: "Shoting Percentage",
-  },
-  {
-    id: "ixGPerSixty",
-    name: "xS%",
-    description: "XG Per Sixty",
-  },
-  {
-    id: "IPP",
-    name: "IPP",
-    description: "IPP",
-  },
-  {
-    id: "oiSH%",
-    name: "oiSH%",
-    description: "On-Ice Shotting Percentage",
-  },
-  {
-    id: "SecondAssistsPerSixty",
-    name: "SecA%",
-    description: "Secondary assist %",
-  },
-  {
-    id: "SOG/60",
-    name: "SOG/60",
-    description: "SOG/60",
-  },
-  {
-    id: "ozS%",
-    name: "ozS%",
-    description: "offensive zone start %",
-  },
-] as const;
-
 function SubstainabilityChart({ playerId }: SubstainabilityChartProps) {
   const [timeOption, setTimeOption] = useState<TimeOption>("L7");
   const size = useScreenSize();
+  const { stats, loading } = useSustainabilityStats(playerId, timeOption);
 
-  useEffect(() => {}, [playerId]);
   return (
     <Chart
+      className={styles.container}
+      bodyClassName={styles.content}
       header={
-        <div className={styles.header}>
+        <div className={styles.chartHeader}>
           <TimeOptions timeOption={timeOption} setTimeOption={setTimeOption} />
           <Text>
             Substainability <HightText>Stats</HightText>
@@ -66,73 +34,72 @@ function SubstainabilityChart({ playerId }: SubstainabilityChartProps) {
         </div>
       }
     >
-      <ClientOnly>
-        {size.screen === BreakPoint.s ? <MobileTable /> : <PCTable />}
+      <ClientOnly style={{ height: "100%" }}>
+        {size.screen === BreakPoint.l ? (
+          <PCTable data={stats} loading={loading} />
+        ) : (
+          <MobileTable data={stats} loading={loading} />
+        )}
       </ClientOnly>
     </Chart>
   );
 }
 
-type ColumnProps = {
-  name: string;
-  data: React.ReactNode;
-  /**
-   * The color of the data cell.
-   */
-  color: string;
-};
-
-function Column({ name, data, color }: ColumnProps) {
+function MobileTable({
+  data,
+  loading,
+}: {
+  data: Data | undefined;
+  loading: boolean;
+}) {
   return (
-    <div className={styles.column}>
-      <div className={styles.name}>{name}</div>
-      <div className={styles.dataCell} style={{ backgroundColor: color }}>
-        {data}
+    <div className={styles.mobileTable}>
+      <div className={styles.values}>
+        {COLUMNS.map(({ id, name, format, bgColor }) => (
+          <div
+            key={id}
+            className={styles.cell}
+            style={{ backgroundColor: bgColor }}
+          >
+            <div>{name}</div>
+            {/* @ts-ignore */}
+            <div>{loading ? <Spinner /> : data ? format(data[id]) : "-"}</div>
+          </div>
+        ))}
       </div>
     </div>
   );
 }
-
-function MobileTable({ data }: any) {
+function PCTable({
+  data,
+  loading,
+}: {
+  data: Data | undefined;
+  loading: boolean;
+}) {
   return (
-    <table className={styles.mobileTable}>
-      <thead>
-        <tr>
-          {COLUMNS.map((col) => (
-            <th key={col.name}>{col.name}</th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          {COLUMNS.map(({ id, name }) => (
-            <td key={id}>
-              <div>
-                <div>{name}</div>
-                <div>{data && data[id]}</div>
-              </div>
-            </td>
-          ))}
-        </tr>
-      </tbody>
-    </table>
-  );
-}
-
-function PCTable() {
-  return (
-    <table>
-      <tr>
+    <div className={styles.pcTable}>
+      <div className={styles.header}>
         {COLUMNS.map((col) => (
-          <th key={col.name}>{col.name}</th>
+          <div key={col.name} title={col.description}>
+            {col.name}
+          </div>
         ))}
-      </tr>
-      <tr>
-        {COLUMNS.map(() => (
-          <></>
+      </div>
+
+      <div className={styles.values}>
+        {COLUMNS.map(({ id, format, bgColor }) => (
+          <div
+            key={id}
+            className={styles.cell}
+            style={{ backgroundColor: bgColor }}
+          >
+            {/* @ts-ignore */}
+            {loading ? <Spinner /> : data ? format(data[id]) : "-"}
+          </div>
         ))}
-      </tr>
-    </table>
+      </div>
+    </div>
   );
 }
 
