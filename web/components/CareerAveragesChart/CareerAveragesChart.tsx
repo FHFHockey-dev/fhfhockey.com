@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
+import useCareerAveragesStats from "hooks/useCareerAveragesStats";
 import Chart from "components/Chart";
 import Text, { HightText } from "components/Text";
 import Spinner from "components/Spinner";
@@ -77,33 +78,7 @@ export const COLUMNS = [
 
 function CareerAveragesChart({ playerId }: SubstainabilityChartProps) {
   const size = useScreenSize();
-  const [stats, setStats] = useState<Data | undefined>();
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (!playerId) return;
-    (async () => {
-      setLoading(true);
-      const { success, message, data } = await fetch(
-        `/api/CareerAverages/${playerId}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        }
-      )
-        .then((res) => res.json())
-        .finally(() => {
-          setLoading(false);
-        });
-
-      if (success) {
-        setStats(data);
-      } else {
-        setStats(undefined);
-        console.error(message);
-      }
-    })();
-  }, [playerId]);
+  const { stats, loading } = useCareerAveragesStats(playerId);
 
   return (
     <Chart
