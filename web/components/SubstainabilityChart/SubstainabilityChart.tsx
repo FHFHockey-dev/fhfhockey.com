@@ -27,7 +27,11 @@ function SubstainabilityChart({ playerId }: SubstainabilityChartProps) {
       bodyClassName={styles.content}
       header={
         <div className={styles.chartHeader}>
-          <TimeOptions timeOption={timeOption} setTimeOption={setTimeOption} />
+          <TimeOptions
+            className={styles.timeOptions}
+            timeOption={timeOption}
+            setTimeOption={setTimeOption}
+          />
           <Text>
             Substainability <HightText>Stats</HightText>
           </Text>

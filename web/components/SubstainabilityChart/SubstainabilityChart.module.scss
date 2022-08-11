@@ -17,8 +17,12 @@
   flex: 1;
 }
 
-.chartHeader {
-  text-align: right;
+.timeOptions {
+  white-space: nowrap;
+  overflow-y: scroll;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .mobileTable {
