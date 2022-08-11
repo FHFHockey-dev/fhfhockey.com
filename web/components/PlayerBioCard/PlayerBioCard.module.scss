@@ -51,6 +51,7 @@
         .value {
           font-weight: bold;
           color: $primary-color;
+          white-space: nowrap;
         }
       }
     }
