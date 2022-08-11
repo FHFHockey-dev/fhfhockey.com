@@ -184,6 +184,7 @@ function Layout({ children }: LayoutProps) {
           <SocialMedias />
           {/* Only show the buger button in small screen */}
           <BurgerButton
+            className={styles.realBurgerButton}
             onClick={() => {
               setMenuOpen(true);
             }}
