@@ -63,7 +63,7 @@
     font-size: 24px;
     h1 {
       margin: 0;
-      @media only screen and (max-width: $screen-small-max) {
+      @media only screen and (max-width: $screen-medium-max) {
         font-size: 1.4rem;
         font-weight: 550;
         text-transform: uppercase;
@@ -83,10 +83,6 @@
   @media only screen and (min-width: $screen-medium) {
     color: #ffffff;
     padding-left: 20px;
-    .realBurgerButton {
-      width: 50px;
-      height: 50px;
-    }
   }
 
   @media only screen and (min-width: $screen-large) {
