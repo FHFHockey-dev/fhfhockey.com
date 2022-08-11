@@ -65,7 +65,7 @@ function MobileTable({
             className={styles.cell}
             style={{ backgroundColor: bgColor }}
           >
-            <div>{name}</div>
+            <div className={styles.statsName}>{name}</div>
             {/* @ts-ignore */}
             <div>{loading ? <Spinner /> : data ? format(data[id]) : "-"}</div>
           </div>
