@@ -142,7 +142,7 @@ function PCTable({
             }}
           >
             {/* @ts-ignore */}
-            {loading ? <Spinner size="small" /> : data ? format(data[id]) : "-"}
+            {loading ? <Spinner /> : data ? format(data[id]) : "-"}
           </div>
         ))}
       </div>

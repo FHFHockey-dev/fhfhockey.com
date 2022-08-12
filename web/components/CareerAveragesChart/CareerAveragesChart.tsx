@@ -165,7 +165,7 @@ function MobileTable({
         {COLUMNS.map(({ id, format }) => (
           <div key={id} className={styles.cell}>
             {/* @ts-ignore */}
-            {loading ? <Spinner /> : data ? format(data[id]) : "-"}
+            {loading ? <Spinner size="small" /> : data ? format(data[id]) : "-"}
           </div>
         ))}
       </div>
