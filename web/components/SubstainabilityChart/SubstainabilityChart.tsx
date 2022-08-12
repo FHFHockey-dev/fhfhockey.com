@@ -85,15 +85,23 @@ function MobileTable({
             className={styles.cell}
             style={{
               backgroundColor:
-                data && careerAveragesStats && data[id] !== null
+                !loading && data && careerAveragesStats && data[id] !== null
                   ? // @ts-ignore
                     getBgColor(data[id], careerAveragesStats)
                   : BLUE,
             }}
           >
             <div className={styles.statsName}>{name}</div>
-            {/* @ts-ignore */}
-            <div>{loading ? <Spinner /> : data ? format(data[id]) : "-"}</div>
+            <div>
+              {loading ? (
+                <Spinner size="small" />
+              ) : data ? (
+                // @ts-ignore
+                format(data[id])
+              ) : (
+                "-"
+              )}
+            </div>
           </div>
         ))}
       </div>
@@ -125,15 +133,16 @@ function PCTable({
             key={id}
             className={styles.cell}
             style={{
-              backgroundColor:
-                data && careerAveragesStats && data[id] !== null
-                  ? // @ts-ignore
-                    getBgColor(data[id], careerAveragesStats)
-                  : BLUE,
+              backgroundColor: loading
+                ? BLUE
+                : data && careerAveragesStats && data[id] !== null
+                ? // @ts-ignore
+                  getBgColor(data[id], careerAveragesStats)
+                : BLUE,
             }}
           >
             {/* @ts-ignore */}
-            {loading ? <Spinner /> : data ? format(data[id]) : "-"}
+            {loading ? <Spinner size="small" /> : data ? format(data[id]) : "-"}
           </div>
         ))}
       </div>
