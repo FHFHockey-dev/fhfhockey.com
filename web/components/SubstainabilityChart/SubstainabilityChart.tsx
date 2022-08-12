@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Chart from "components/Chart";
 import Text, { HightText } from "components/Text";
 import TimeOptions from "components/TimeOptions";
@@ -9,8 +9,12 @@ import ClientOnly from "components/ClientOnly";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import { Data } from "pages/api/CareerAverages/[playerId]";
 import Spinner from "components/Spinner";
-import { COLUMNS } from "components/CareerAveragesChart/CareerAveragesChart";
+import {
+  BLUE,
+  COLUMNS,
+} from "components/CareerAveragesChart/CareerAveragesChart";
 import useSustainabilityStats from "hooks/useSustainabilityStats";
+import useCareerAveragesStats from "hooks/useCareerAveragesStats";
 
 type SubstainabilityChartProps = {
   playerId: number | undefined;
@@ -19,7 +23,13 @@ type SubstainabilityChartProps = {
 function SubstainabilityChart({ playerId }: SubstainabilityChartProps) {
   const [timeOption, setTimeOption] = useState<TimeOption>("L7");
   const size = useScreenSize();
-  const { stats, loading } = useSustainabilityStats(playerId, timeOption);
+  const { stats, loading: firstLoading } = useSustainabilityStats(
+    playerId,
+    timeOption
+  );
+  const { stats: careerAveragesStats, loading: secondLoading } =
+    useCareerAveragesStats(playerId);
+  const loading = firstLoading || secondLoading;
 
   return (
     <Chart
@@ -40,9 +50,17 @@ function SubstainabilityChart({ playerId }: SubstainabilityChartProps) {
     >
       <ClientOnly style={{ height: "100%" }}>
         {size.screen === BreakPoint.l ? (
-          <PCTable data={stats} loading={loading} />
+          <PCTable
+            data={stats}
+            careerAveragesStats={careerAveragesStats}
+            loading={loading}
+          />
         ) : (
-          <MobileTable data={stats} loading={loading} />
+          <MobileTable
+            data={stats}
+            careerAveragesStats={careerAveragesStats}
+            loading={loading}
+          />
         )}
       </ClientOnly>
     </Chart>
@@ -51,19 +69,27 @@ function SubstainabilityChart({ playerId }: SubstainabilityChartProps) {
 
 function MobileTable({
   data,
+  careerAveragesStats,
   loading,
 }: {
   data: Data | undefined;
+  careerAveragesStats: Data | undefined;
   loading: boolean;
 }) {
   return (
     <div className={styles.mobileTable}>
       <div className={styles.values}>
-        {COLUMNS.map(({ id, name, format, bgColor }) => (
+        {COLUMNS.map(({ id, name, format, getBgColor }) => (
           <div
             key={id}
             className={styles.cell}
-            style={{ backgroundColor: bgColor }}
+            style={{
+              backgroundColor:
+                data && careerAveragesStats && data[id] !== null
+                  ? // @ts-ignore
+                    getBgColor(data[id], careerAveragesStats)
+                  : BLUE,
+            }}
           >
             <div className={styles.statsName}>{name}</div>
             {/* @ts-ignore */}
@@ -76,9 +102,11 @@ function MobileTable({
 }
 function PCTable({
   data,
+  careerAveragesStats,
   loading,
 }: {
   data: Data | undefined;
+  careerAveragesStats: Data | undefined;
   loading: boolean;
 }) {
   return (
@@ -92,11 +120,17 @@ function PCTable({
       </div>
 
       <div className={styles.values}>
-        {COLUMNS.map(({ id, format, bgColor }) => (
+        {COLUMNS.map(({ id, format, getBgColor }) => (
           <div
             key={id}
             className={styles.cell}
-            style={{ backgroundColor: bgColor }}
+            style={{
+              backgroundColor:
+                data && careerAveragesStats && data[id] !== null
+                  ? // @ts-ignore
+                    getBgColor(data[id], careerAveragesStats)
+                  : BLUE,
+            }}
           >
             {/* @ts-ignore */}
             {loading ? <Spinner /> : data ? format(data[id]) : "-"}

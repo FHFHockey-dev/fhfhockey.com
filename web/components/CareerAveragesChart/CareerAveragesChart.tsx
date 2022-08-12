@@ -21,58 +21,107 @@ const asPercent = (num: number | null) =>
         minimumFractionDigits: 1,
       });
 
-const BLUE = "#07AAE3";
-const RED = "#F65B61";
+export const BLUE = "#07AAE3";
+export const RED = "#F65B61";
 
+// How to decide which bg color to use?
+// https://github.com/FHFHockey-dev/fhfhockey.com/issues/14#issuecomment-1208254068
 export const COLUMNS = [
   {
     id: "S%",
     name: "S%",
     description: "Shoting Percentage",
     format: asPercent,
-    bgColor: BLUE,
+    getBgColor: (value: number, cAvg: Data) => {
+      if (cAvg["S%"] === null) {
+        return BLUE;
+      }
+      // Red: If S% is higher than cAvg by 2 or more %
+      const TWO_PERCENT = 0.02;
+      return value - cAvg["S%"] >= TWO_PERCENT ? RED : BLUE;
+    },
   },
   {
     id: "xS%",
     name: "xS%",
     description: "XG Per Sixty",
     format: asPercent,
-    bgColor: BLUE,
+    getBgColor: (value: number, cAvg: Data) => {
+      if (cAvg["xS%"] === null) {
+        return BLUE;
+      }
+      // is xS% is lower than cAvg by 2 or more %
+      const TWO_PERCENT = 0.02;
+      return cAvg["xS%"] - value >= TWO_PERCENT ? RED : BLUE;
+    },
   },
   {
     id: "IPP",
     name: "IPP",
     description: "IPP",
     format: asPercent,
-    bgColor: RED,
+    getBgColor: (value: number, cAvg: Data) => {
+      if (cAvg["IPP"] === null) {
+        return BLUE;
+      }
+      // if IPP is higher than cAvg by 5 or more %
+      const FIVE_PERCENT = 0.05;
+      return value - cAvg["IPP"] >= FIVE_PERCENT ? RED : BLUE;
+    },
   },
   {
     id: "oiSH%",
     name: "oiSH%",
     description: "On-Ice Shotting Percentage",
     format: asPercent,
-    bgColor: BLUE,
+    getBgColor: (value: number, cAvg: Data) => {
+      if (cAvg["oiSH%"] === null) {
+        return BLUE;
+      }
+      // oiSH% is more than 1% above cAvg
+      const ONE_PERCENT = 0.01;
+      return value - cAvg["oiSH%"] >= ONE_PERCENT ? RED : BLUE;
+    },
   },
   {
     id: "secA%",
     name: "SecA%",
     description: "Secondary assist %",
     format: asPercent,
-    bgColor: BLUE,
+    getBgColor: (value: number, cAvg: Data) => {
+      if (cAvg["secA%"] === null) {
+        return BLUE;
+      }
+      // secA% is higher than cAvg in any fashion
+      return value >= cAvg["secA%"] ? RED : BLUE;
+    },
   },
   {
     id: "SOG/60",
     name: "SOG/60",
     description: "SOG/60",
     format: (num: number) => num.toFixed(1),
-    bgColor: RED,
+    getBgColor: (value: number, cAvg: Data) => {
+      if (cAvg["SOG/60"] === null) {
+        return BLUE;
+      }
+      // SOG/60 is lower than cAVG
+      return value <= cAvg["SOG/60"] ? RED : BLUE;
+    },
   },
   {
     id: "oZS%",
     name: "oZS%",
     description: "offensive zone start %",
     format: asPercent,
-    bgColor: BLUE,
+    getBgColor: (value: number, cAvg: Data) => {
+      if (cAvg["oZS%"] === null) {
+        return BLUE;
+      }
+      // oZS% is lower than cAvg by 5 or more %
+      const FIVE_PERCENT = 0.05;
+      return cAvg["oZS%"] - value >= FIVE_PERCENT ? RED : BLUE;
+    },
   },
 ] as const;
 
