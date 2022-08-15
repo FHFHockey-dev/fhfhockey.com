@@ -6,6 +6,7 @@ import styles from "./Options.module.scss";
 
 export type OptionsProps<T> = {
   className?: string;
+  type?: "row" | "column";
   options: readonly { label: string; value: T }[];
   option: T;
   onOptionChange: Dispatch<SetStateAction<T>>;

@@ -8,6 +8,7 @@ export type TimeOption = "L7" | "L14" | "L30" | "SEASON";
 
 type TimeOptionsProps = {
   className?: string;
+  type?: "row" | "column";
   timeOption: TimeOption;
   setTimeOption: Dispatch<SetStateAction<TimeOption>>;
 };

@@ -26,4 +26,14 @@
   input {
     margin: unset;
   }
+
+  .column {
+    flex-direction: column-reverse;
+    margin-right: unset;
+
+    .label {
+      margin-left: unset;
+      margin-bottom: 12px;
+    }
+  }
 }

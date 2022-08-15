@@ -9,11 +9,17 @@ function RadioOptions<T extends string>({
   options,
   option,
   onOptionChange,
+  type = "row",
 }: OptionsProps<T>) {
   return (
     <div className={classNames(styles.options, className)}>
       {options.map((op) => (
-        <label key={op.value} className={styles.radioButton}>
+        <label
+          key={op.value}
+          className={classNames(styles.radioButton, {
+            [styles.column]: type === "column",
+          })}
+        >
           <input
             type="radio"
             checked={option === op.value}
