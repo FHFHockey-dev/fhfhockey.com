@@ -8,6 +8,7 @@ import TimeOnIceChart from "components/TimeOnIceChart";
 import PlayerAutocomplete from "components/PlayerAutocomplete";
 import SubstainabilityChart from "components/SubstainabilityChart";
 import CareerAveragesChart from "components/CareerAveragesChart";
+import CategoryCoverageChart from "components/CategoryCoverageChart";
 
 import styles from "styles/Charts.module.scss";
 
@@ -56,7 +57,9 @@ function Charts() {
           <Box className={styles.timeOnIce}>
             <TimeOnIceChart playerId={playerId} chartType="TOI" />
           </Box>
-          <Box className={styles.coverageChart}>coverageChart</Box>
+          <Box className={styles.coverageChart}>
+            <CategoryCoverageChart playerId={playerId} />
+          </Box>
           <Box className={styles.ppTimeOnIce}>
             <TimeOnIceChart playerId={playerId} chartType="POWER_PLAY_TOI" />
           </Box>

@@ -9,7 +9,7 @@ import fetchWithCache from "lib/fetchWithCache";
 /**
  * A date in the format of yyyy-mm-dd.
  */
-type DateString = string;
+export type DateString = string;
 
 export type Input = {
   /**

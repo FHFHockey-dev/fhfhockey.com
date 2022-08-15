@@ -9,7 +9,6 @@ $header-bg-color: #202020;
 $small: 6px;
 
 .chartsPage {
-  margin-bottom: 2rem;
   // player search input
   .playerAutocompleteWrapper {
     margin: 0.5rem 0 0.5rem 0;
@@ -56,6 +55,16 @@ $small: 6px;
   .dashboard {
     border: 3px solid white;
     padding: 0.5rem;
+
+    // take full height on small screen
+    @media only screen and (max-width: $screen-small-max) {
+      display: flex;
+      height: 85vh;
+      flex-direction: column;
+      .coverageChart {
+        flex: 1;
+      }
+    }
 
     .playerBioCard {
       grid-area: bioCard;
