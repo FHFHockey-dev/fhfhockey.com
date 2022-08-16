@@ -105,7 +105,10 @@ export default async function handler(
       const individualPPTOI = parseTime(
         game.stat.powerPlayTimeOnIce ?? "00:00"
       );
-      const teamPPTOI = parseTime(await getPPTOI(Season, gameId, game.isHome));
+
+      const teamPPTOI = parseTime(
+        (await getPPTOI(Season, gameId, game.isHome)) ?? "00:00"
+      );
 
       return {
         date: game.date,
