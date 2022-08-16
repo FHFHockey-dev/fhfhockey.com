@@ -43,6 +43,17 @@ function MyApp({ Component, pageProps }: AppProps) {
             sizes="16x16"
             href="/favicon-16x16.png"
           />
+
+          {/* theme color */}
+          <meta name="theme-color" content="#07aae2" />
+          {/* <!-- Windows Phone --> */}
+          <meta name="msapplication-navbutton-color" content="#07aae2" />
+          {/* <!-- iOS Safari --> */}
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <meta
+            name="apple-mobile-web-app-status-bar-style"
+            content="black-translucent"
+          />
           <link rel="manifest" href="/site.webmanifest" />
         </Head>
         <DefaultSeo {...SEO} />

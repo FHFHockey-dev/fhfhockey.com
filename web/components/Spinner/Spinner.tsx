@@ -4,9 +4,15 @@ import styles from "./Spinner.module.scss";
 type SpinnerProps = {
   className?: string;
   center?: boolean;
+  size?: "small" | "medium";
 };
 
-function Spinner({ className, center, ...props }: SpinnerProps) {
+function Spinner({
+  className,
+  center,
+  size = "medium",
+  ...props
+}: SpinnerProps) {
   return (
     <div
       className={classNames(styles.spinnerContainer, className, {
@@ -14,7 +20,12 @@ function Spinner({ className, center, ...props }: SpinnerProps) {
       })}
       {...props}
     >
-      <div className={styles.loadingSpinner}></div>
+      <div
+        className={classNames(styles.loadingSpinner, {
+          [styles.small]: size === "small",
+          [styles.medium]: size === "medium",
+        })}
+      ></div>
     </div>
   );
 }

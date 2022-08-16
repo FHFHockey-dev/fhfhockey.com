@@ -1,0 +1,138 @@
+@import "styles/vars.scss";
+@import "styles/Charts.module.scss";
+
+.playerCard {
+  display: grid;
+  grid-template-columns: 35% 65%;
+  grid-template-rows: 20% 80%;
+  grid-template-areas:
+    "image name"
+    "image info";
+
+  .playerImageWrapper {
+    grid-area: image;
+    position: relative;
+    border: 3px solid white;
+    padding: 0.3rem;
+    margin-right: 0.4rem;
+    &:hover {
+      cursor: pointer;
+    }
+  }
+  .header {
+    grid-area: name;
+    padding: 0.1rem 0.1rem;
+    border: 3px solid transparent;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: "Century Gothic";
+    font-weight: bold;
+  }
+  .info {
+    margin-top: 0.3rem;
+    grid-area: info;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+
+    border: 3px solid white;
+    padding: 0.3rem;
+    .stats {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-size: small;
+      .statsLine {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 60% 5% 35%;
+        .label {
+          color: #a5a0a2;
+          text-align: right;
+        }
+        .value {
+          font-weight: bold;
+          color: $primary-color;
+          white-space: nowrap;
+        }
+      }
+    }
+    .teamLogoWrapper {
+      height: 100%;
+      padding: 0.3rem;
+      .teamLogo {
+        height: 100%;
+        position: relative;
+
+        color: yellow;
+      }
+    }
+  }
+  // full team name only exist in PC
+  .teamName {
+    grid-area: teamName;
+    display: none;
+  }
+
+  // PC view
+  @media only screen and (min-width: $screen-large) {
+    height: 100%;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 20% 60% 20%;
+    grid-template-areas:
+      "name name"
+      "info image"
+      "teamName teamName";
+
+    & div,
+    .header {
+      border-radius: $rounded-border;
+    }
+
+    .header {
+      border: $border-thin solid $border-color;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: $small;
+      .teamAbbreviation {
+        display: none;
+      }
+    }
+
+    .playerImageWrapper {
+      border: $border-thin solid $border-color;
+      margin-right: 0;
+      margin-left: $small/2;
+    }
+
+    .info {
+      padding-top: 1rem;
+      padding-bottom: 1rem;
+      margin-top: 0;
+      border: $border-thin solid $border-color;
+      margin-right: $small/2;
+
+      .stats {
+        // reverse the team logo and stats
+        order: 1;
+      }
+    }
+
+    .teamName {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: $border-thin solid $border-color;
+      margin-top: $small;
+    }
+  }
+
+  // remove list default style
+  ul {
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+  }
+}

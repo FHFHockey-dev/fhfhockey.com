@@ -1,0 +1,39 @@
+@import "styles/vars.scss";
+
+.options {
+  display: flex;
+  & > *:not(:last-child) {
+    margin-right: 10px;
+  }
+
+  .radioButton {
+    display: flex;
+    align-items: center;
+    input {
+      accent-color: $primary-color;
+      &:hover {
+        cursor: pointer;
+      }
+    }
+    .label {
+      margin-left: 8px;
+    }
+    &:hover {
+      cursor: pointer;
+    }
+  }
+
+  input {
+    margin: unset;
+  }
+
+  .column {
+    flex-direction: column-reverse;
+    margin-right: unset;
+
+    .label {
+      margin-left: unset;
+      margin-bottom: 12px;
+    }
+  }
+}

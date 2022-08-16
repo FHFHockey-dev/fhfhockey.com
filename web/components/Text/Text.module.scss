@@ -1,0 +1,19 @@
+@import "styles/vars.scss";
+
+.base {
+  font-size: x-large;
+  font-weight: bold;
+  display: inline-block;
+  &.normal {
+    color: $text-primary-color;
+  }
+
+  &.hightlight {
+    color: $primary-color;
+  }
+
+  @media only screen and (max-width: $screen-medium-max) {
+    text-transform: uppercase;
+    font-size: 10px;
+  }
+}

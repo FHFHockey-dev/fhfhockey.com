@@ -1,0 +1,62 @@
+@import "styles/vars";
+@import "styles/Charts.module.scss";
+
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  .chartHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .content {
+    position: relative;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+}
+
+// set to full height after the component is mounted
+.fullHeight {
+  flex: 1;
+}
+
+@media only screen and (min-width: $screen-large) {
+  .container {
+    flex-direction: row-reverse;
+
+    .chartHeader {
+      height: 100%;
+      border-left: $border-thin solid white;
+      margin-left: 6px;
+      margin-bottom: unset;
+      .title {
+        display: none;
+      }
+      .timeOptions {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+      }
+
+      &::after {
+        display: none;
+      }
+    }
+
+    .content {
+      width: 2px;
+
+      border-right: $border-thin solid white;
+      padding-left: 6px;
+      padding-right: 6px;
+
+      &::before {
+        display: none;
+      }
+    }
+  }
+}

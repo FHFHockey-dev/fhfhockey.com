@@ -1,0 +1,6 @@
+// target individual option group
+.options {
+  & > *:not(:last-child) {
+    margin-right: 5px;
+  }
+}
