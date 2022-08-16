@@ -1,6 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
 import Image from "next/image";
-import { Chart } from "chart.js";
 // @ts-ignore
 import fscreen from "fscreen";
 
@@ -37,8 +36,6 @@ const PLACEHOLDER: Player = {
 };
 
 function fullscreenHandler() {
-  window.Chart = Chart;
-
   if (!fscreen.fullscreenEnabled) return;
 
   const dashboard = document.getElementById("dashboard");
@@ -47,15 +44,10 @@ function fullscreenHandler() {
   // fullscreenElement is null if not in fullscreen mode,
   if (fscreen.fullscreenElement === null) {
     fscreen.requestFullscreen(dashboard);
-    console.log(Chart.instances);
-
-    console.log("Entered fullscreen mode");
+    // console.log("Entered fullscreen mode");
   } else {
     fscreen.exitFullscreen();
-    console.log("Exited fullscreen mode");
-  }
-  for (var id in Chart.instances) {
-    Chart.instances[id].resize();
+    // console.log("Exited fullscreen mode");
   }
 }
 
