@@ -53,18 +53,10 @@ $small: 6px;
 
   // Dashboard
   .dashboard {
+    background-color: $bg-dark;
     border: 3px solid white;
     padding: 0.5rem;
-
-    // take full height on small screen
-    @media only screen and (max-width: $screen-small-max) {
-      display: flex;
-      height: 85vh;
-      flex-direction: column;
-      .coverageChart {
-        flex: 1;
-      }
-    }
+    margin-bottom: 1rem;
 
     .playerBioCard {
       grid-area: bioCard;

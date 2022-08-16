@@ -2,7 +2,11 @@
 @import "styles/Charts.module.scss";
 
 .container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   .chartWrapper {
+    flex: 1;
     position: relative;
     height: 80px;
     .loading {
@@ -10,10 +14,6 @@
       left: 50%;
       top: 25%;
       transform: translate(-50%, -25%);
-    }
-
-    @media only screen and (min-width: $screen-large) {
-      height: 150px;
     }
   }
   // target two option groups

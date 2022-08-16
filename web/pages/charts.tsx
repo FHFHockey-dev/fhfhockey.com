@@ -50,7 +50,7 @@ function Charts() {
           />
         </div>
 
-        <div className={styles.dashboard}>
+        <div id="dashboard" className={styles.dashboard}>
           <Box className={styles.playerBioCard}>
             <PlayerBioCard playerId={playerId} />
           </Box>
