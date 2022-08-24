@@ -62,7 +62,7 @@ export default function usePlayer(playerId: number | undefined) {
           const p: Player = {
             name: people.fullName,
             age: differenceInYears(new Date(), new Date(people.birthDate)),
-            position: people.primaryPosition.abbreviation,
+            position: people.primaryPosition.name,
             height: people.height,
             weight: people.weight,
             shoots: people.shootsCatches,
