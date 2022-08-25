@@ -43,7 +43,7 @@ function Charts() {
                 window.history.pushState(
                   "",
                   "",
-                  `/charts?playerId=${playerId}`
+                  playerId ? `/charts?playerId=${playerId}` : "/charts"
                 );
               }
             }}
