@@ -1,5 +1,4 @@
 /* eslint-disable @next/next/no-img-element */
-import Image from "next/image";
 // @ts-ignore
 import fscreen from "fscreen";
 
@@ -31,7 +30,7 @@ const PLACEHOLDER: Player = {
   age: 0,
   height: "0",
   shoots: "0",
-  position: "R",
+  position: "Center",
 };
 
 function fullscreenHandler() {
@@ -65,7 +64,12 @@ function PlayerStatsCard({ playerId }: PlayerStatsCardProps) {
         </div>
 
         <div className={styles.teamLogo} title={teamName}>
-          <img alt={teamName} src={teamLogo} width="100%" height="100%" />
+          <img
+            alt={teamName}
+            src={teamLogo || "/pictures/circle.png"}
+            width="100%"
+            height="100%"
+          />
         </div>
 
         <ul className={styles.stats}>
@@ -78,7 +82,9 @@ function PlayerStatsCard({ playerId }: PlayerStatsCardProps) {
         </ul>
 
         <div className={styles.teamInfo}>
-          <div className={styles.teamAbbreviation}>{teamAbbreviation}</div>
+          <div className={styles.teamAbbreviation}>
+            {teamAbbreviation || "FHFH"}
+          </div>
 
           <div className={styles.position}>{position}</div>
         </div>
