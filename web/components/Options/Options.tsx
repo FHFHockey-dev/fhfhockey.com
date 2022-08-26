@@ -1,6 +1,5 @@
 import React, { Dispatch, SetStateAction } from "react";
 import classNames from "classnames";
-import CheckButton from "components/CheckButton";
 
 import styles from "./Options.module.scss";
 
@@ -21,13 +20,15 @@ function Options<T extends string>({
   return (
     <div className={classNames(styles.options, className)}>
       {options.map((op) => (
-        <CheckButton
+        <div
           key={op.value}
-          checked={option === op.value}
+          className={classNames(styles.button, {
+            [styles.checked]: option === op.value,
+          })}
           onClick={() => onOptionChange(op.value)}
         >
           {op.label}
-        </CheckButton>
+        </div>
       ))}
     </div>
   );
