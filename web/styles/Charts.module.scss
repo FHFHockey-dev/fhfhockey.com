@@ -31,110 +31,51 @@ $small: 6px;
       grid-area: bioCard;
       border-bottom: $border-bold solid white;
     }
+
     .controller {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-left: 5px;
-    }
-    .coverageChart {
-      grid-area: coverageChart;
-      margin-top: $small;
-    }
-    .timeOnIce {
-      grid-area: timeOnIce;
-      margin-top: $small;
+      padding-left: 12px;
+      padding-right: 12px;
+      padding-top: 12px;
     }
 
-    .ppTimeOnIce {
-      grid-area: ppTimeOnIce;
-      display: none;
-    }
+    .stats {
+      padding: 12px;
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      grid-template-columns: 55% 45%;
+      grid-template-areas:
+        "timeOnIce timeOnIce"
+        "coverageChart sustainabilityVScareerAverages";
 
-    .sustainability {
-      grid-area: sustainability;
-      margin-top: $small;
-    }
-    .careerAverages {
-      grid-area: careerAverages;
-    }
-
-    // small screen only
-    @media only screen and (max-width: $screen-medium-max) {
-      .sustainability {
-        border-bottom: none;
+      .timeOnIce {
+        grid-area: timeOnIce;
+        height: 185px;
       }
-      .careerAverages {
-        border-top: none;
+
+      .ppTimeOnIce {
+        grid-area: ppTimeOnIce;
+        display: none;
+      }
+
+      .coverageChart {
+        grid-area: coverageChart;
+      }
+
+      .sustainabilityVScareerAverages {
+        grid-area: sustainabilityVScareerAverages;
       }
     }
 
     // PC View
     @media only screen and (min-width: $screen-large) {
-      display: grid;
-      grid-template-columns: 30% 70%;
-      grid-template-rows: repeat(12, 1fr);
-      grid-template-areas:
-        "bioCard timeOnIce"
-        "bioCard timeOnIce"
-        "bioCard timeOnIce"
-        "bioCard ppTimeOnIce"
-        "bioCard ppTimeOnIce" // 5
-        "bioCard ppTimeOnIce"
-        "coverageChart sustainability"
-        "coverageChart sustainability"
-        "coverageChart sustainability"
-        "coverageChart careerAverages"
-        "coverageChart careerAverages"
-        "coverageChart careerAverages";
-
-      & > *:not(:last-child) {
-        margin-bottom: 0.5rem;
-      }
-
-      .playerBioCard {
-        border: $border-bold solid $border-color;
-        margin-right: 0.5rem;
-
-        overflow: hidden;
-        position: relative;
-        & > section {
-          position: absolute;
-          left: -3px;
-          right: -3px;
-          bottom: -1px;
-          height: 101%;
+      .stats {
+        .ppTimeOnIce {
+          display: block;
         }
       }
-
-      .timeOnIce {
-        margin-top: unset;
-      }
-
-      .coverageChart {
-        margin-right: 0.5rem;
-        margin-bottom: 0;
-
-        grid-area: coverageChart;
-        margin-top: unset;
-      }
-
-      .ppTimeOnIce {
-        display: block;
-      }
-
-      .sustainability {
-        margin-top: unset;
-      }
-    }
-  }
-
-  .box {
-    // border: $border-bold solid $border-color;
-
-    @media only screen and (min-width: $screen-large) {
-      border-radius: 25px;
-      overflow: hidden;
     }
   }
 

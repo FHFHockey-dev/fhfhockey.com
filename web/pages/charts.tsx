@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
-import classNames from "classnames";
 
 import PlayerBioCard from "components/PlayerBioCard";
 import TimeOnIceChart from "components/TimeOnIceChart";
 import PlayerAutocomplete from "components/PlayerAutocomplete";
-import SubstainabilityChart from "components/SubstainabilityChart";
-import CareerAveragesChart from "components/CareerAveragesChart";
 import CategoryCoverageChart from "components/CategoryCoverageChart";
 
 import styles from "styles/Charts.module.scss";
@@ -17,13 +14,16 @@ import {
   ChartTypeOption,
   ChartTypeOptions,
 } from "components/TimeOnIceChart/TimeOnIceChart";
+import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
+import ClientOnly from "components/ClientOnly";
+import SustainabilityVSCareerChart from "components/SustainabilityVSCareerChart";
 
 function Charts() {
   const router = useRouter();
   const queryParamPlayerId = router.query.playerId
     ? Number(router.query.playerId)
     : undefined;
-
+  const size = useScreenSize();
   const [playerId, setPlayerId] = useState<number | undefined>();
   const [timeOption, setTimeOption] = useState<TimeOption>("L7");
   const [chartTypeOption, setChartTypeOption] =
@@ -60,10 +60,11 @@ function Charts() {
         </div>
 
         <div id="dashboard" className={styles.dashboard}>
-          <Box className={styles.playerBioCard}>
+          <div className={styles.playerBioCard}>
             <PlayerBioCard playerId={playerId} />
-          </Box>
-          <div className={styles.controller}>
+          </div>
+
+          <ClientOnly className={styles.controller}>
             <TimeOptions
               timeOption={timeOption}
               setTimeOption={setTimeOption}
@@ -72,45 +73,41 @@ function Charts() {
               chartTypeOption={chartTypeOption}
               setChartTypeOption={setChartTypeOption}
             />
-          </div>
-          <Box className={styles.timeOnIce}>
-            <TimeOnIceChart
-              playerId={playerId}
-              timeOption={timeOption}
-              chartType="TOI"
-            />
-          </Box>
-          <Box className={styles.ppTimeOnIce}>
-            <TimeOnIceChart
-              playerId={playerId}
-              timeOption={timeOption}
-              chartType="POWER_PLAY_TOI"
-            />
-          </Box>
-          <Box className={styles.coverageChart}>
-            <CategoryCoverageChart
-              playerId={playerId}
-              timeOption={timeOption}
-            />
-          </Box>
-
-          <Box className={styles.sustainability}>
-            <SubstainabilityChart playerId={playerId} timeOption={timeOption} />
-          </Box>
-          <Box className={styles.careerAverages}>
-            <CareerAveragesChart playerId={playerId} />
-          </Box>
+          </ClientOnly>
+          <section className={styles.stats}>
+            <div className={styles.timeOnIce}>
+              <TimeOnIceChart
+                playerId={playerId}
+                timeOption={timeOption}
+                chartType={
+                  size.screen === BreakPoint.l ? "TOI" : chartTypeOption
+                }
+              />
+            </div>
+            <div className={styles.ppTimeOnIce}>
+              <TimeOnIceChart
+                playerId={playerId}
+                timeOption={timeOption}
+                chartType="POWER_PLAY_TOI"
+              />
+            </div>
+            <div className={styles.coverageChart}>
+              <CategoryCoverageChart
+                playerId={playerId}
+                timeOption={timeOption}
+              />
+            </div>
+            <div className={styles.sustainabilityVScareerAverages}>
+              <SustainabilityVSCareerChart
+                playerId={playerId}
+                timeOption={timeOption}
+              />
+            </div>
+          </section>
         </div>
       </section>
     </div>
   );
 }
 
-type BoxProps = {
-  children?: React.ReactNode;
-  className?: string;
-};
-function Box({ children, className }: BoxProps) {
-  return <div className={classNames(styles.box, className)}>{children}</div>;
-}
 export default Charts;
