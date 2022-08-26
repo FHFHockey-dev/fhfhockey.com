@@ -51,8 +51,6 @@ function TimeOnIceChart({
   chartType,
 }: TimeOnIceChartProps) {
   const size = useScreenSize();
-  const [chartTypeOption, setChartTypeOption] =
-    useState<ChartTypeOption>(chartType);
 
   const season = useCurrentSeason();
 
@@ -165,7 +163,7 @@ function TimeOnIceChart({
         },
       },
       y:
-        chartTypeOption === "TOI"
+        chartType === "TOI"
           ? {
               type: "linear",
               beginAtZero: true,
@@ -215,7 +213,7 @@ function TimeOnIceChart({
   const data = {
     labels: labels,
     datasets: [
-      chartTypeOption === "TOI"
+      chartType === "TOI"
         ? {
             label: "TOI",
             borderColor: "white",
@@ -241,7 +239,7 @@ function TimeOnIceChart({
         <div className={styles.allOptions}>
           {size.screen === BreakPoint.l ? (
             <div>
-              {chartTypeOption === "TOI" ? (
+              {chartType === "TOI" ? (
                 <Text>
                   Time On <HightText>Ice</HightText>
                 </Text>
