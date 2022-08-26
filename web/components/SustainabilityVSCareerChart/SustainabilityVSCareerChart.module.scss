@@ -7,7 +7,7 @@
 
   .row {
     display: grid;
-    grid-template-columns: 25% 1fr 1fr;
+    grid-template-columns: 30% 1fr 1fr;
     align-items: center;
     &:not(:last-child) {
       margin-bottom: 4px;
@@ -19,7 +19,7 @@
     .careerAveragesStat,
     .sustainabilityStat {
       font-size: 0.8125rem;
-      padding: 5px 9px 5px 3px;
+      padding: 3px;
     }
 
     .careerAveragesStat {
