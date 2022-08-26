@@ -1,7 +1,7 @@
 import React, { Dispatch, SetStateAction } from "react";
 
-import Options from "components/Options";
 import RadioOptions from "components/RadioOptions";
+import Select from "components/Select";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 
 export type TimeOption = "L7" | "L14" | "L30" | "SEASON";
@@ -14,10 +14,10 @@ type TimeOptionsProps = {
 };
 
 const shortOptions = [
-  { label: "L7", value: "L7" },
-  { label: "L14", value: "L14" },
-  { label: "L30", value: "L30" },
-  { label: "Year", value: "SEASON" },
+  { label: "Last 7 Days", value: "L7" },
+  { label: "Last 14 Days", value: "L14" },
+  { label: "Last 30 Days", value: "L30" },
+  { label: "Season Stats", value: "SEASON" },
 ] as const;
 
 const longOptions = [
@@ -38,11 +38,10 @@ function TimeOptions({ timeOption, setTimeOption, ...rest }: TimeOptionsProps) {
       {...rest}
     />
   ) : (
-    <Options
+    <Select
       options={shortOptions}
       option={timeOption}
       onOptionChange={setTimeOption}
-      {...rest}
     />
   );
 }

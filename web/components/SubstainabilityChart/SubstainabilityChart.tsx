@@ -18,10 +18,13 @@ import useCareerAveragesStats from "hooks/useCareerAveragesStats";
 
 type SubstainabilityChartProps = {
   playerId: number | undefined;
+  timeOption: TimeOption;
 };
 
-function SubstainabilityChart({ playerId }: SubstainabilityChartProps) {
-  const [timeOption, setTimeOption] = useState<TimeOption>("L7");
+function SubstainabilityChart({
+  playerId,
+  timeOption,
+}: SubstainabilityChartProps) {
   const size = useScreenSize();
   const { stats, loading: firstLoading } = useSustainabilityStats(
     playerId,
@@ -36,16 +39,9 @@ function SubstainabilityChart({ playerId }: SubstainabilityChartProps) {
       className={styles.container}
       bodyClassName={styles.content}
       header={
-        <div className={styles.chartHeader}>
-          <TimeOptions
-            className={styles.timeOptions}
-            timeOption={timeOption}
-            setTimeOption={setTimeOption}
-          />
-          <Text>
-            Substainability <HightText>Stats</HightText>
-          </Text>
-        </div>
+        <Text>
+          Substainability <HightText>Stats</HightText>
+        </Text>
       }
     >
       <ClientOnly style={{ height: "100%" }}>

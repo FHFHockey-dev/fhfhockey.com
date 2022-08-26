@@ -11,6 +11,12 @@ import CareerAveragesChart from "components/CareerAveragesChart";
 import CategoryCoverageChart from "components/CategoryCoverageChart";
 
 import styles from "styles/Charts.module.scss";
+import TimeOptions from "components/TimeOptions";
+import { TimeOption } from "components/TimeOptions/TimeOptions";
+import {
+  ChartTypeOption,
+  ChartTypeOptions,
+} from "components/TimeOnIceChart/TimeOnIceChart";
 
 function Charts() {
   const router = useRouter();
@@ -19,6 +25,9 @@ function Charts() {
     : undefined;
 
   const [playerId, setPlayerId] = useState<number | undefined>();
+  const [timeOption, setTimeOption] = useState<TimeOption>("L7");
+  const [chartTypeOption, setChartTypeOption] =
+    useState<ChartTypeOption>("POWER_PLAY_TOI");
 
   useEffect(() => {
     setPlayerId(queryParamPlayerId);
@@ -54,17 +63,39 @@ function Charts() {
           <Box className={styles.playerBioCard}>
             <PlayerBioCard playerId={playerId} />
           </Box>
+          <div className={styles.controller}>
+            <TimeOptions
+              timeOption={timeOption}
+              setTimeOption={setTimeOption}
+            />
+            <ChartTypeOptions
+              chartTypeOption={chartTypeOption}
+              setChartTypeOption={setChartTypeOption}
+            />
+          </div>
           <Box className={styles.timeOnIce}>
-            <TimeOnIceChart playerId={playerId} chartType="TOI" />
-          </Box>
-          <Box className={styles.coverageChart}>
-            <CategoryCoverageChart playerId={playerId} />
+            <TimeOnIceChart
+              playerId={playerId}
+              timeOption={timeOption}
+              chartType="TOI"
+            />
           </Box>
           <Box className={styles.ppTimeOnIce}>
-            <TimeOnIceChart playerId={playerId} chartType="POWER_PLAY_TOI" />
+            <TimeOnIceChart
+              playerId={playerId}
+              timeOption={timeOption}
+              chartType="POWER_PLAY_TOI"
+            />
           </Box>
+          <Box className={styles.coverageChart}>
+            <CategoryCoverageChart
+              playerId={playerId}
+              timeOption={timeOption}
+            />
+          </Box>
+
           <Box className={styles.sustainability}>
-            <SubstainabilityChart playerId={playerId} />
+            <SubstainabilityChart playerId={playerId} timeOption={timeOption} />
           </Box>
           <Box className={styles.careerAverages}>
             <CareerAveragesChart playerId={playerId} />

@@ -24,12 +24,18 @@ $small: 6px;
   .dashboard {
     background-color: $bg-dark;
     border: 3px solid white;
-    padding: 0.5rem;
+    // padding: 12px;
     margin-bottom: 1rem;
 
     .playerBioCard {
       grid-area: bioCard;
-      border: none;
+      border-bottom: $border-bold solid white;
+    }
+    .controller {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-left: 5px;
     }
     .coverageChart {
       grid-area: coverageChart;
@@ -124,7 +130,7 @@ $small: 6px;
   }
 
   .box {
-    border: $border-bold solid $border-color;
+    // border: $border-bold solid $border-color;
 
     @media only screen and (min-width: $screen-large) {
       border-radius: 25px;
