@@ -104,6 +104,11 @@ function Charts() {
               />
             </div>
           </section>
+          <footer className={styles.footer}>
+            <span className={styles.blue}>Five Hole</span> Fantasy Hockey{" "}
+            <span className={styles.blue}>•</span> FHFHockey.com{" "}
+            <span className={styles.blue}>•</span> @FHFHockey
+          </footer>
         </div>
       </section>
     </div>

@@ -68,6 +68,19 @@ $small: 6px;
         grid-area: sustainabilityVScareerAverages;
       }
     }
+    .footer {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.5);
+      text-align: center;
+      border-top: $border-bold solid white;
+      padding-top: 5px;
+      padding-bottom: 5px;
+
+      .blue {
+        color: rgba(76, 167, 221, 1);
+      }
+    }
 
     // PC View
     @media only screen and (min-width: $screen-large) {
