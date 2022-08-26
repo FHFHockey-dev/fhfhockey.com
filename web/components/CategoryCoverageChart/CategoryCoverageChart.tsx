@@ -100,9 +100,11 @@ function CategoryCoverageChart({
         [styles.fullHeight]: mounted,
       })}
       header={
-        <Text className={styles.title}>
-          Percentile <HightText>Ranks</HightText>
-        </Text>
+        <>
+          <Text className={styles.title}>
+            Percentile <HightText>Ranks</HightText>
+          </Text>
+        </>
       }
     >
       {/* <div className={styles.chartWrapper}> */}
