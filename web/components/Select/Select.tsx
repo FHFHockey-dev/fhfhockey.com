@@ -36,7 +36,7 @@ function Select({
       {showOptions && (
         <div className={styles.options}>
           {options.map((op) => (
-            <option
+            <div
               className={classNames({ [styles.selected]: op.value === option })}
               key={op.value}
               onClick={() => {
@@ -46,7 +46,7 @@ function Select({
               }}
             >
               {op.label}
-            </option>
+            </div>
           ))}
         </div>
       )}
