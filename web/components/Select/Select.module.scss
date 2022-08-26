@@ -1,0 +1,48 @@
+.selectWrapper {
+  position: relative;
+  font-size: 15px;
+  font-weight: 700;
+  .select {
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 3px 8px;
+    .arrow:hover {
+      cursor: pointer;
+    }
+    .up {
+      transform: rotate(180deg);
+    }
+  }
+
+  .options {
+    position: absolute;
+    z-index: 10;
+    background-color: #4b4b4b;
+    width: 100%;
+    border-radius: 4px;
+    padding: 3px 0px;
+
+    & > option {
+      padding: 0.3rem 8px;
+      cursor: pointer;
+      &:hover {
+        background-color: rgba(217, 217, 217, 0.25);
+      }
+      &:not(:last-child) {
+        margin-bottom: 3px;
+      }
+    }
+
+    .selected {
+      background-color: rgba(217, 217, 217, 0.25);
+
+      font-size: 15px;
+      font-weight: 700;
+    }
+  }
+}
