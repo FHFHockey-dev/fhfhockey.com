@@ -34,7 +34,7 @@ const getPlayerImage = (playerId: number) =>
 
 const getTeamLogo = (teamName: string) => `/teamLogos/${teamName}.png`;
 
-const processPosition = (position: string) => position.split(" ")[0];
+const processPosition = (position: string) => position.split(" ").join("-");
 
 export default function usePlayer(playerId: number | undefined) {
   const [player, setPlayer] = useState<Player | null>(null);
