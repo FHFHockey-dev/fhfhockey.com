@@ -152,7 +152,6 @@ function SustainabilityVSCareerChart({
       <div className={styles.stats}>
         {COLUMNS.map(({ id, name, description, format, getBgColor }) => (
           <div key={id} title={description} className={styles.row}>
-            <span className={styles.label}>{name}</span>
             <span
               className={styles.sustainabilityStat}
               style={{
@@ -172,6 +171,7 @@ function SustainabilityVSCareerChart({
                 "-"
               )}
             </span>
+            <span className={styles.label}>{name}</span>
             <span className={styles.careerAveragesStat}>
               {loading ? (
                 <Spinner size="small" center />
