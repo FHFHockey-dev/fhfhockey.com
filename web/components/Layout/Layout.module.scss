@@ -1,17 +1,16 @@
 @import "styles/vars.scss";
 
-.container {
-  display: flex;
-  justify-content: space-between;
-  height: 100%;
-}
+@media only screen and (min-width: $screen-large) {
+  .container {
+    display: flex;
+    justify-content: space-between;
+  }
 
-// Main Conetent
-
-.content {
-  flex: 1;
-  overflow-x: hidden;
-  scrollbar-width: none;
+  // Main Conetent
+  .content {
+    flex: 1;
+    scrollbar-width: none;
+  }
 }
 
 /* scroll bar */
@@ -23,6 +22,7 @@
 // Page Specific Content
 .pageContent {
   padding: 0 0.75rem;
+  overflow-x: hidden;
   @media only screen and (min-width: $screen-large) {
     padding: 0 1.5rem;
   }
@@ -58,7 +58,10 @@
   justify-content: space-between;
   align-items: center;
   white-space: nowrap;
-
+  transition: transform ease 0.5s;
+  &.hidden {
+    transform: translate3d(0, calc(-100% - 2px), 0);
+  }
   .branding {
     /* float: left; */
     font-size: 24px;
@@ -125,6 +128,8 @@
   }
   @media only screen and (min-width: $screen-large) {
     display: block;
+    position: sticky;
+    height: 100vh;
   }
 }
 

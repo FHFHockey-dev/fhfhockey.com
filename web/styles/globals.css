@@ -8,7 +8,6 @@ body {
   background-color: #202020;
   color: white;
   font-family: sans-serif;
-  height: 100%;
 }
 
 a {
@@ -23,8 +22,4 @@ a {
 textarea:focus,
 input:focus {
   outline: none;
-}
-
-#__next {
-  height: 100%;
 }
