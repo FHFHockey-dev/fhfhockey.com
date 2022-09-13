@@ -1,17 +1,15 @@
 import React from "react";
-import useCareerAveragesStats from "hooks/useCareerAveragesStats";
+
 import Chart from "components/Chart";
 import Text, { HightText } from "components/Text";
+import useScreenSize from "hooks/useScreenSize";
+import useSustainabilityStats from "hooks/useSustainabilityStats";
+import useCareerAveragesStats from "hooks/useCareerAveragesStats";
+import { TimeOption } from "components/TimeOptions/TimeOptions";
+import { Data } from "pages/api/CareerAverages/[playerId]";
 import Spinner from "components/Spinner";
 
-import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
-import ClientOnly from "components/ClientOnly";
-import { Data } from "pages/api/CareerAverages/[playerId]";
-import styles from "./CareerAveragesChart.module.scss";
-
-type SubstainabilityChartProps = {
-  playerId: number | undefined;
-};
+import styles from "./SustainabilityVSCareerChart.module.scss";
 
 const asPercent = (num: number | null) =>
   num === null
@@ -21,12 +19,12 @@ const asPercent = (num: number | null) =>
         minimumFractionDigits: 1,
       });
 
-export const BLUE = "#07AAE3";
-export const RED = "#F65B61";
+const BLUE = "#07AAE3";
+const RED = "#F65B61";
 
 // How to decide which bg color to use?
 // https://github.com/FHFHockey-dev/fhfhockey.com/issues/14#issuecomment-1208254068
-export const COLUMNS = [
+const COLUMNS = [
   {
     id: "S%",
     name: "S%",
@@ -112,7 +110,7 @@ export const COLUMNS = [
   {
     id: "oZS%",
     name: "oZS%",
-    description: "offensive zone start %",
+    description: "Offensive zone start %",
     format: asPercent,
     getBgColor: (value: number, cAvg: Data) => {
       if (cAvg["oZS%"] === null) {
@@ -125,81 +123,70 @@ export const COLUMNS = [
   },
 ] as const;
 
-function CareerAveragesChart({ playerId }: SubstainabilityChartProps) {
-  const size = useScreenSize();
-  const { stats, loading } = useCareerAveragesStats(playerId);
+type SustainabilityVSCareerChartProps = {
+  playerId: number | undefined;
+  timeOption: TimeOption;
+};
 
+function SustainabilityVSCareerChart({
+  playerId,
+  timeOption,
+}: SustainabilityVSCareerChartProps) {
+  const size = useScreenSize();
+  const { stats, loading: firstLoading } = useSustainabilityStats(
+    playerId,
+    timeOption
+  );
+  const { stats: careerAveragesStats, loading: secondLoading } =
+    useCareerAveragesStats(playerId);
+  const loading = firstLoading || secondLoading;
   return (
     <Chart
-      className={styles.container}
-      bodyClassName={styles.content}
+      headerClassName={styles.header}
       header={
-        <div className={styles.chartHeader}>
-          <Text>
-            Career <HightText>Averages</HightText>
-          </Text>
-        </div>
+        <Text>
+          Sustainability <HightText>VS Career</HightText>
+        </Text>
       }
     >
-      <ClientOnly style={{ height: "100%" }}>
-        {size.screen === BreakPoint.l ? (
-          <PCTable data={stats} loading={loading} />
-        ) : (
-          <MobileTable data={stats} loading={loading} />
-        )}
-      </ClientOnly>
+      <div className={styles.stats}>
+        {COLUMNS.map(({ id, name, description, format, getBgColor }) => (
+          <div key={id} title={description} className={styles.row}>
+            <span
+              className={styles.sustainabilityStat}
+              style={{
+                backgroundColor:
+                  !loading && stats && careerAveragesStats && stats[id] !== null
+                    ? // @ts-ignore
+                      getBgColor(stats[id], careerAveragesStats)
+                    : BLUE,
+              }}
+            >
+              {loading ? (
+                <Spinner size="small" center />
+              ) : stats ? (
+                // @ts-ignore
+                format(stats[id])
+              ) : (
+                <span>&nbsp;</span>
+              )}
+            </span>
+            <span className={styles.label}>{name}</span>
+            <span className={styles.careerAveragesStat}>
+              {loading ? (
+                <Spinner size="small" center />
+              ) : careerAveragesStats ? (
+                // @ts-ignore
+                format(careerAveragesStats[id])
+              ) : (
+                <span>&nbsp;</span>
+              )}
+            </span>
+          </div>
+        ))}
+      </div>
     </Chart>
   );
 }
 
-function MobileTable({
-  data,
-  loading,
-}: {
-  data: Data | undefined;
-  loading: boolean;
-}) {
-  return (
-    <div className={styles.mobileTable}>
-      <div className={styles.values}>
-        {COLUMNS.map(({ id, format }) => (
-          <div key={id} className={styles.cell}>
-            {/* @ts-ignore */}
-            {loading ? <Spinner size="small" /> : data ? format(data[id]) : "-"}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function PCTable({
-  data,
-  loading,
-}: {
-  data: Data | undefined;
-  loading: boolean;
-}) {
-  return (
-    <div className={styles.pcTable}>
-      <div className={styles.header}>
-        {COLUMNS.map((col) => (
-          <div key={col.name} title={col.description}>
-            {col.name}
-          </div>
-        ))}
-      </div>
-
-      <div className={styles.values}>
-        {COLUMNS.map(({ id, format }) => (
-          <div key={id} className={styles.cell}>
-            {/* @ts-ignore */}
-            {loading ? <Spinner /> : data ? format(data[id]) : "-"}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-export default CareerAveragesChart;
+export default SustainabilityVSCareerChart;

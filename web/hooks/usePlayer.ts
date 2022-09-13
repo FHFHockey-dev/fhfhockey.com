@@ -34,6 +34,8 @@ const getPlayerImage = (playerId: number) =>
 
 const getTeamLogo = (teamName: string) => `/teamLogos/${teamName}.png`;
 
+const processPosition = (position: string) => position.split(" ").join("-");
+
 export default function usePlayer(playerId: number | undefined) {
   const [player, setPlayer] = useState<Player | null>(null);
 
@@ -62,7 +64,7 @@ export default function usePlayer(playerId: number | undefined) {
           const p: Player = {
             name: people.fullName,
             age: differenceInYears(new Date(), new Date(people.birthDate)),
-            position: people.primaryPosition.abbreviation,
+            position: processPosition(people.primaryPosition.name),
             height: people.height,
             weight: people.weight,
             shoots: people.shootsCatches,

@@ -2,137 +2,96 @@
 @import "styles/Charts.module.scss";
 
 .playerCard {
-  display: grid;
-  grid-template-columns: 35% 65%;
-  grid-template-rows: 20% 80%;
-  grid-template-areas:
-    "image name"
-    "image info";
+  display: flex;
+  height: 100%;
+
+  .info {
+    flex: 7;
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    grid-template-rows: 3fr 2fr;
+    padding-top: 12px;
+    padding-right: 12px;
+    padding-left: 12px;
+    padding-bottom: 8px;
+
+    .names {
+      display: flex;
+      flex-direction: column;
+      .firstName {
+        font-size: 14px;
+        font-weight: 900;
+      }
+      .lastName {
+        color: $primary-color;
+        font-size: 24px;
+        font-weight: 700;
+      }
+      margin-bottom: 9px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      font-size: 10px;
+      .label {
+        opacity: 0.5;
+        font-weight: 400;
+      }
+      .value {
+        font-weight: 800;
+        margin-left: 4px;
+      }
+    }
+
+    .teamLogo {
+      width: 32px;
+      height: 32px;
+      justify-self: end;
+    }
+
+    .teamInfo {
+      display: grid;
+      font-size: 10px;
+      text-align: right;
+
+      .teamAbbreviation {
+        opacity: 0.5;
+      }
+      .position {
+        text-transform: uppercase;
+        white-space: nowrap;
+        font-weight: 800;
+      }
+    }
+  }
 
   .playerImageWrapper {
-    grid-area: image;
-    position: relative;
-    border: 3px solid white;
-    padding: 0.3rem;
-    margin-right: 0.4rem;
     &:hover {
       cursor: pointer;
     }
-  }
-  .header {
-    grid-area: name;
-    padding: 0.1rem 0.1rem;
-    border: 3px solid transparent;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-family: "Century Gothic";
-    font-weight: bold;
-  }
-  .info {
-    margin-top: 0.3rem;
-    grid-area: info;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: center;
 
-    border: 3px solid white;
-    padding: 0.3rem;
-    .stats {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-size: small;
-      .statsLine {
-        width: 100%;
-        display: grid;
-        grid-template-columns: 60% 5% 35%;
-        .label {
-          color: #a5a0a2;
-          text-align: right;
-        }
-        .value {
-          font-weight: bold;
-          color: $primary-color;
-          white-space: nowrap;
-        }
-      }
-    }
-    .teamLogoWrapper {
-      height: 100%;
-      padding: 0.3rem;
-      .teamLogo {
-        height: 100%;
-        position: relative;
-
-        color: yellow;
-      }
-    }
-  }
-  // full team name only exist in PC
-  .teamName {
-    grid-area: teamName;
-    display: none;
-  }
-
-  // PC view
-  @media only screen and (min-width: $screen-large) {
-    height: 100%;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 20% 60% 20%;
-    grid-template-areas:
-      "name name"
-      "info image"
-      "teamName teamName";
-
-    & div,
-    .header {
-      border-radius: $rounded-border;
-    }
-
-    .header {
-      border: $border-thin solid $border-color;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      margin-bottom: $small;
-      .teamAbbreviation {
-        display: none;
-      }
-    }
-
-    .playerImageWrapper {
-      border: $border-thin solid $border-color;
-      margin-right: 0;
-      margin-left: $small/2;
-    }
-
-    .info {
-      padding-top: 1rem;
-      padding-bottom: 1rem;
-      margin-top: 0;
-      border: $border-thin solid $border-color;
-      margin-right: $small/2;
-
-      .stats {
-        // reverse the team logo and stats
-        order: 1;
-      }
-    }
-
-    .teamName {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border: $border-thin solid $border-color;
-      margin-top: $small;
+    flex: 3;
+    // show player's head
+    & > img {
+      object-position: top;
     }
   }
 
   // remove list default style
   ul {
-    padding: 0;
-    margin: 0;
     list-style-type: none;
+    margin-block-start: 0;
+    margin-block-end: 0;
+    margin-inline-start: 0;
+    margin-inline-end: 0;
+    padding-block-start: 0;
+    padding-block-end: 0;
+    padding-inline-start: 0;
+    padding-inline-end: 0;
+  }
+
+  li {
+    display: block;
   }
 }

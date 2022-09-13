@@ -179,7 +179,6 @@ async function getPPTOI(season: string, gameId: string, isHome: boolean) {
       );
     }
   }
-  // console.log(gameId, PPTOIs);
 
   return PPTOIs[isHome ? 1 : 0] as string;
 }

@@ -8,162 +8,167 @@ $header-bg-color: #202020;
 
 $small: 6px;
 
-.chartsPage {
+// small UI
+.small {
   // player search input
   .playerAutocompleteWrapper {
-    margin: 0.5rem 0 0.5rem 0;
-
-    .playerAutocomplete {
-      border: $border-bold solid $primary-color;
-      border-radius: 14px;
-      color: $primary-color;
-      background-color: $bg-dark;
-      padding-top: 0.2rem;
-      padding-bottom: 0.2rem;
-      padding-left: 0.7rem;
-      &::placeholder {
-        color: $primary-color;
-        font-style: italic;
-      }
-    }
-
-    .autocompleteList {
-      padding: 5px;
-      border: $border-thin solid $primary-color;
-      border-radius: 14px;
-      padding-left: 0.7rem;
-    }
-  }
-
-  @media only screen and (min-width: $screen-large) {
-    .playerAutocompleteWrapper {
-      width: 280px;
-      margin: 1rem 0 0.5rem 1rem;
-      .playerAutocomplete {
-        height: 35px;
-        font-size: 1.2rem;
-        border-color: white;
-        border-radius: $rounded-border;
-        padding-top: 0.1rem;
-        padding-bottom: 0.1rem;
-        padding-left: 0.7rem;
-      }
-    }
+    margin: 0.75rem 0 0.9375rem 0;
   }
 
   // Dashboard
   .dashboard {
     background-color: $bg-dark;
     border: 3px solid white;
-    padding: 0.5rem;
-    margin-bottom: 1rem;
+    // padding: 12px;
+    margin-bottom: 2rem;
 
-    .playerBioCard {
+    .bioCard {
       grid-area: bioCard;
-      border: none;
-    }
-    .coverageChart {
-      grid-area: coverageChart;
-      margin-top: $small;
-    }
-    .timeOnIce {
-      grid-area: timeOnIce;
-      margin-top: $small;
+      border-bottom: $border-bold solid white;
     }
 
-    .ppTimeOnIce {
-      grid-area: ppTimeOnIce;
-      display: none;
+    .controller {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-left: 12px;
+      padding-right: 12px;
+      padding-top: 12px;
     }
 
-    .sustainability {
-      grid-area: sustainability;
-      margin-top: $small;
-    }
-    .careerAverages {
-      grid-area: careerAverages;
-    }
-
-    // small screen only
-    @media only screen and (max-width: $screen-medium-max) {
-      .sustainability {
-        border-bottom: none;
-      }
-      .careerAverages {
-        border-top: none;
-      }
-    }
-
-    // PC View
-    @media only screen and (min-width: $screen-large) {
+    .stats {
+      padding: 12px;
       display: grid;
-      grid-template-columns: 30% 70%;
-      grid-template-rows: repeat(12, 1fr);
+      grid-template-rows: 1fr 1fr;
+      grid-template-columns: 55% 45%;
       grid-template-areas:
-        "bioCard timeOnIce"
-        "bioCard timeOnIce"
-        "bioCard timeOnIce"
-        "bioCard ppTimeOnIce"
-        "bioCard ppTimeOnIce" // 5
-        "bioCard ppTimeOnIce"
-        "coverageChart sustainability"
-        "coverageChart sustainability"
-        "coverageChart sustainability"
-        "coverageChart careerAverages"
-        "coverageChart careerAverages"
-        "coverageChart careerAverages";
-
-      & > *:not(:last-child) {
-        margin-bottom: 0.5rem;
-      }
-
-      .playerBioCard {
-        border: $border-bold solid $border-color;
-        margin-right: 0.5rem;
-
-        overflow: hidden;
-        position: relative;
-        & > section {
-          position: absolute;
-          left: -3px;
-          right: -3px;
-          bottom: -1px;
-          height: 101%;
-        }
-      }
+        "timeOnIce timeOnIce"
+        "coverageChart sustainabilityVScareerAverages";
 
       .timeOnIce {
-        margin-top: unset;
+        grid-area: timeOnIce;
+        height: 185px;
       }
 
       .coverageChart {
-        margin-right: 0.5rem;
-        margin-bottom: 0;
-
         grid-area: coverageChart;
-        margin-top: unset;
       }
 
-      .ppTimeOnIce {
-        display: block;
-      }
-
-      .sustainability {
-        margin-top: unset;
+      .sustainabilityVScareerAverages {
+        grid-area: sustainabilityVScareerAverages;
       }
     }
-  }
+    .footer {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.5);
+      text-align: center;
+      border-top: $border-bold solid white;
+      padding-top: 5px;
+      padding-bottom: 5px;
 
-  .box {
-    border: $border-bold solid $border-color;
-
-    @media only screen and (min-width: $screen-large) {
-      border-radius: 25px;
-      overflow: hidden;
+      .blue {
+        color: rgba(76, 167, 221, 1);
+      }
     }
   }
 
   p {
     margin: 0;
+  }
+}
+
+.large {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  max-width: 1080px;
+  margin: 0 auto;
+
+  .title {
+    grid-column: 1 / 4;
+    margin-top: 57px;
+    margin-bottom: 0px;
+    font-family: "Roboto Condensed";
+    font-style: normal;
+    font-weight: 200;
+    font-size: 3rem;
+    line-height: 56px;
+
+    color: #ffffff;
+    .blue {
+      color: rgba(76, 167, 221, 1);
+    }
+  }
+  .playerAutocompleteWrapper {
+    grid-column: 1 / 6;
+    margin-top: 24px;
+    margin-bottom: 24px;
+  }
+
+  .dashboard {
+    grid-column: 1 / 9;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(3, 1fr) 60px repeat(4, 1fr) repeat(4, 1fr) 0.5fr;
+
+    border: $border-bold solid white;
+
+    grid-template-areas:
+      "bioCard bioCard bioCard bioCard bioCard coverageChart coverageChart coverageChart coverageChart"
+      "bioCard bioCard bioCard bioCard bioCard coverageChart coverageChart coverageChart coverageChart"
+      "bioCard bioCard bioCard bioCard bioCard coverageChart coverageChart coverageChart coverageChart"
+      "timeOptions timeOptions timeOptions timeOptions timeOptions coverageChart coverageChart coverageChart coverageChart"
+      "timeOnIce timeOnIce timeOnIce timeOnIce timeOnIce coverageChart coverageChart coverageChart coverageChart"
+      "timeOnIce timeOnIce timeOnIce timeOnIce timeOnIce coverageChart coverageChart coverageChart coverageChart"
+      "timeOnIce timeOnIce timeOnIce timeOnIce timeOnIce sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages"
+      "timeOnIce timeOnIce timeOnIce timeOnIce timeOnIce sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages"
+      "ppTimeOnIce ppTimeOnIce ppTimeOnIce ppTimeOnIce ppTimeOnIce sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages"
+      "ppTimeOnIce ppTimeOnIce ppTimeOnIce ppTimeOnIce ppTimeOnIce sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages"
+      "ppTimeOnIce ppTimeOnIce ppTimeOnIce ppTimeOnIce ppTimeOnIce sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages"
+      "ppTimeOnIce ppTimeOnIce ppTimeOnIce ppTimeOnIce ppTimeOnIce sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages"
+      "footer footer footer footer footer footer footer footer footer";
+    .bioCard {
+      grid-area: bioCard;
+      border-right: $border-bold solid white;
+      border-bottom: $border-bold solid white;
+    }
+
+    .timeOptions {
+      grid-area: timeOptions;
+      border-bottom: $border-bold solid white;
+      // height: 50px;
+    }
+
+    .timeOnIce {
+      grid-area: timeOnIce;
+      border-bottom: $border-bold solid white;
+    }
+    .ppTimeOnIce {
+      grid-area: ppTimeOnIce;
+    }
+
+    .coverageChart {
+      grid-area: coverageChart;
+      border-left: $border-bold solid white;
+      border-bottom: $border-bold solid white;
+    }
+
+    .sustainabilityVScareerAverages {
+      grid-area: sustainabilityVScareerAverages;
+      border-left: $border-bold solid white;
+    }
+    .footer {
+      grid-area: footer;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      border-top: $border-bold solid white;
+      .left {
+        grid-column: 1 / 6;
+      }
+      .right {
+        grid-column: 6 / 9;
+        border-left: $border-bold solid white;
+      }
+    }
   }
 }

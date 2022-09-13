@@ -68,11 +68,14 @@ const OPTIONS = {
 
 type CategoryCoverageChartProps = {
   playerId: number | undefined;
+  timeOption: TimeOption;
 };
 
-function CategoryCoverageChart({ playerId }: CategoryCoverageChartProps) {
+function CategoryCoverageChart({
+  playerId,
+  timeOption,
+}: CategoryCoverageChartProps) {
   const chartRef = useRef<ChartJS>(null);
-  const [timeOption, setTimeOption] = useState<TimeOption>("L7");
   const [mounted, setMounted] = useState(false);
 
   const { data, loading } = usePercentileRank(playerId, timeOption);
@@ -98,12 +101,6 @@ function CategoryCoverageChart({ playerId }: CategoryCoverageChartProps) {
       })}
       header={
         <>
-          <TimeOptions
-            className={styles.timeOptions}
-            type="column"
-            timeOption={timeOption}
-            setTimeOption={setTimeOption}
-          />
           <Text className={styles.title}>
             Percentile <HightText>Ranks</HightText>
           </Text>

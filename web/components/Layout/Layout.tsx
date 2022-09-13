@@ -4,9 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import classNames from "classnames";
 import { slide as Menu } from "react-burger-menu";
+import BurgerButton from "components/BurgerButton";
+import useHideableNavbar from "hooks/useHideableNavbar";
 
 import styles from "./Layout.module.scss";
-import BurgerButton from "components/BurgerButton";
 
 type LayoutProps = {
   children: React.ReactNode;
@@ -159,6 +160,8 @@ function Layout({ children }: LayoutProps) {
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const { navbarRef, isNavbarVisible } = useHideableNavbar();
+
   return (
     <div className={styles.container}>
       {/* Main Content */}
@@ -168,7 +171,12 @@ function Layout({ children }: LayoutProps) {
           setMenuOpen={setMenuOpen}
           pathname={router.pathname}
         />
-        <header className={styles.header}>
+        <header
+          ref={navbarRef}
+          className={classNames(styles.header, {
+            [styles.hidden]: !isNavbarVisible,
+          })}
+        >
           <div className={styles.branding}>
             <h1>
               <span

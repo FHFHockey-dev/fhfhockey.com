@@ -21,7 +21,6 @@ import useCurrentSeason from "hooks/useCurrentSeason";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import Spinner from "components/Spinner";
 import Text, { HightText } from "components/Text";
-import TimeOptions from "components/TimeOptions";
 import { TimeOption } from "components/TimeOptions/TimeOptions";
 import Chart from "components/Chart";
 
@@ -37,19 +36,21 @@ ChartJS.register(
 /**
  * Time On Ice | Power Play Time On Ice
  */
-type ChartTypeOption = "TOI" | "POWER_PLAY_TOI";
+export type ChartTypeOption = "TOI" | "POWER_PLAY_TOI";
 
 type TimeOnIceChartProps = {
   chartType: ChartTypeOption;
+  timeOption: TimeOption;
   playerId: number | undefined;
 };
 
 const CHART_AXIS_COLOR = "#07aae2";
-function TimeOnIceChart({ playerId, chartType }: TimeOnIceChartProps) {
+function TimeOnIceChart({
+  playerId,
+  timeOption,
+  chartType,
+}: TimeOnIceChartProps) {
   const size = useScreenSize();
-  const [timeOption, setTimeOption] = useState<TimeOption>("L7");
-  const [chartTypeOption, setChartTypeOption] =
-    useState<ChartTypeOption>(chartType);
 
   const season = useCurrentSeason();
 
@@ -162,7 +163,7 @@ function TimeOnIceChart({ playerId, chartType }: TimeOnIceChartProps) {
         },
       },
       y:
-        chartTypeOption === "TOI"
+        chartType === "TOI"
           ? {
               type: "linear",
               beginAtZero: true,
@@ -212,7 +213,7 @@ function TimeOnIceChart({ playerId, chartType }: TimeOnIceChartProps) {
   const data = {
     labels: labels,
     datasets: [
-      chartTypeOption === "TOI"
+      chartType === "TOI"
         ? {
             label: "TOI",
             borderColor: "white",
@@ -236,10 +237,9 @@ function TimeOnIceChart({ playerId, chartType }: TimeOnIceChartProps) {
       bodyClassName={styles.chartWrapper}
       header={
         <div className={styles.allOptions}>
-          <TimeOptions timeOption={timeOption} setTimeOption={setTimeOption} />
           {size.screen === BreakPoint.l ? (
             <div>
-              {chartTypeOption === "TOI" ? (
+              {chartType === "TOI" ? (
                 <Text>
                   Time On <HightText>Ice</HightText>
                 </Text>
@@ -250,10 +250,7 @@ function TimeOnIceChart({ playerId, chartType }: TimeOnIceChartProps) {
               )}
             </div>
           ) : (
-            <ChartTypeOptions
-              chartTypeOption={chartTypeOption}
-              setChartTypeOption={setChartTypeOption}
-            />
+            <></>
           )}
         </div>
       }
@@ -270,7 +267,7 @@ type ChartTypeOptionsProps = {
   setChartTypeOption: Dispatch<SetStateAction<ChartTypeOption>>;
 };
 
-function ChartTypeOptions({
+export function ChartTypeOptions({
   chartTypeOption,
   setChartTypeOption,
 }: ChartTypeOptionsProps) {
