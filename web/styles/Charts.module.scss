@@ -8,16 +8,11 @@ $header-bg-color: #202020;
 
 $small: 6px;
 
-.chartsPage {
+// small UI
+.small {
   // player search input
   .playerAutocompleteWrapper {
     margin: 0.75rem 0 0.9375rem 0;
-  }
-
-  @media only screen and (min-width: $screen-large) {
-    .playerAutocompleteWrapper {
-      width: 480px;
-    }
   }
 
   // Dashboard
@@ -27,7 +22,7 @@ $small: 6px;
     // padding: 12px;
     margin-bottom: 2rem;
 
-    .playerBioCard {
+    .bioCard {
       grid-area: bioCard;
       border-bottom: $border-bold solid white;
     }
@@ -55,11 +50,6 @@ $small: 6px;
         height: 185px;
       }
 
-      .ppTimeOnIce {
-        grid-area: ppTimeOnIce;
-        display: none;
-      }
-
       .coverageChart {
         grid-area: coverageChart;
       }
@@ -81,18 +71,104 @@ $small: 6px;
         color: rgba(76, 167, 221, 1);
       }
     }
-
-    // PC View
-    @media only screen and (min-width: $screen-large) {
-      .stats {
-        .ppTimeOnIce {
-          display: block;
-        }
-      }
-    }
   }
 
   p {
     margin: 0;
+  }
+}
+
+.large {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  max-width: 1080px;
+  margin: 0 auto;
+
+  .title {
+    grid-column: 1 / 4;
+    margin-top: 57px;
+    margin-bottom: 0px;
+    font-family: "Roboto Condensed";
+    font-style: normal;
+    font-weight: 200;
+    font-size: 3rem;
+    line-height: 56px;
+
+    color: #ffffff;
+    .blue {
+      color: rgba(76, 167, 221, 1);
+    }
+  }
+  .playerAutocompleteWrapper {
+    grid-column: 1 / 6;
+    margin-top: 24px;
+    margin-bottom: 24px;
+  }
+
+  .dashboard {
+    grid-column: 1 / 9;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(3, 1fr) 60px repeat(4, 1fr) repeat(4, 1fr) 0.5fr;
+
+    border: $border-bold solid white;
+
+    grid-template-areas:
+      "bioCard bioCard bioCard bioCard bioCard coverageChart coverageChart coverageChart coverageChart"
+      "bioCard bioCard bioCard bioCard bioCard coverageChart coverageChart coverageChart coverageChart"
+      "bioCard bioCard bioCard bioCard bioCard coverageChart coverageChart coverageChart coverageChart"
+      "timeOptions timeOptions timeOptions timeOptions timeOptions coverageChart coverageChart coverageChart coverageChart"
+      "timeOnIce timeOnIce timeOnIce timeOnIce timeOnIce coverageChart coverageChart coverageChart coverageChart"
+      "timeOnIce timeOnIce timeOnIce timeOnIce timeOnIce coverageChart coverageChart coverageChart coverageChart"
+      "timeOnIce timeOnIce timeOnIce timeOnIce timeOnIce sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages"
+      "timeOnIce timeOnIce timeOnIce timeOnIce timeOnIce sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages"
+      "ppTimeOnIce ppTimeOnIce ppTimeOnIce ppTimeOnIce ppTimeOnIce sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages"
+      "ppTimeOnIce ppTimeOnIce ppTimeOnIce ppTimeOnIce ppTimeOnIce sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages"
+      "ppTimeOnIce ppTimeOnIce ppTimeOnIce ppTimeOnIce ppTimeOnIce sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages"
+      "ppTimeOnIce ppTimeOnIce ppTimeOnIce ppTimeOnIce ppTimeOnIce sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages sustainabilityVScareerAverages"
+      "footer footer footer footer footer footer footer footer footer";
+    .bioCard {
+      grid-area: bioCard;
+      border-right: $border-bold solid white;
+      border-bottom: $border-bold solid white;
+    }
+
+    .timeOptions {
+      grid-area: timeOptions;
+      border-bottom: $border-bold solid white;
+      // height: 50px;
+    }
+
+    .timeOnIce {
+      grid-area: timeOnIce;
+      border-bottom: $border-bold solid white;
+    }
+    .ppTimeOnIce {
+      grid-area: ppTimeOnIce;
+    }
+
+    .coverageChart {
+      grid-area: coverageChart;
+      border-left: $border-bold solid white;
+      border-bottom: $border-bold solid white;
+    }
+
+    .sustainabilityVScareerAverages {
+      grid-area: sustainabilityVScareerAverages;
+      border-left: $border-bold solid white;
+    }
+    .footer {
+      grid-area: footer;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      border-top: $border-bold solid white;
+      .left {
+        grid-column: 1 / 6;
+      }
+      .right {
+        grid-column: 6 / 9;
+        border-left: $border-bold solid white;
+      }
+    }
   }
 }

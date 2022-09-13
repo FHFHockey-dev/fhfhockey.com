@@ -40,78 +40,162 @@ function Charts() {
         description="The underlying stats of a player in NHL."
       />
 
-      <section className={styles.chartsPage}>
-        <div className={styles.playerAutocompleteWrapper}>
-          <PlayerAutocomplete
-            inputClassName={styles.playerAutocomplete}
-            listClassName={styles.autocompleteList}
+      <ClientOnly>
+        {size.screen === BreakPoint.l ? (
+          <Large
             playerId={playerId}
-            onPlayerIdChange={(playerId) => {
-              setPlayerId(playerId);
-              if (typeof window !== "undefined") {
-                window.history.pushState(
-                  "",
-                  "",
-                  playerId ? `/charts?playerId=${playerId}` : "/charts"
-                );
-              }
-            }}
+            setPlayerId={setPlayerId}
+            timeOption={timeOption}
+            setTimeOption={setTimeOption}
           />
+        ) : (
+          <Small
+            playerId={playerId}
+            setPlayerId={setPlayerId}
+            timeOption={timeOption}
+            setTimeOption={setTimeOption}
+            chartTypeOption={chartTypeOption}
+            setChartTypeOption={setChartTypeOption}
+          />
+        )}
+      </ClientOnly>
+    </div>
+  );
+}
+
+function Small({
+  playerId,
+  setPlayerId,
+  timeOption,
+  setTimeOption,
+  chartTypeOption,
+  setChartTypeOption,
+}: any) {
+  return (
+    <section className={styles.small}>
+      <div className={styles.playerAutocompleteWrapper}>
+        <PlayerAutocomplete
+          inputClassName={styles.playerAutocomplete}
+          listClassName={styles.autocompleteList}
+          playerId={playerId}
+          onPlayerIdChange={(playerId) => {
+            setPlayerId(playerId);
+            if (typeof window !== "undefined") {
+              window.history.pushState(
+                "",
+                "",
+                playerId ? `/charts?playerId=${playerId}` : "/charts"
+              );
+            }
+          }}
+        />
+      </div>
+
+      <div id="dashboard" className={styles.dashboard}>
+        <div className={styles.bioCard}>
+          <PlayerBioCard playerId={playerId} />
         </div>
 
-        <div id="dashboard" className={styles.dashboard}>
-          <div className={styles.playerBioCard}>
-            <PlayerBioCard playerId={playerId} />
+        <ClientOnly className={styles.controller}>
+          <TimeOptions timeOption={timeOption} setTimeOption={setTimeOption} />
+          <ChartTypeOptions
+            chartTypeOption={chartTypeOption}
+            setChartTypeOption={setChartTypeOption}
+          />
+        </ClientOnly>
+        <section className={styles.stats}>
+          <div className={styles.timeOnIce}>
+            <TimeOnIceChart
+              playerId={playerId}
+              timeOption={timeOption}
+              chartType={chartTypeOption}
+            />
           </div>
 
-          <ClientOnly className={styles.controller}>
-            <TimeOptions
+          <div className={styles.coverageChart}>
+            <CategoryCoverageChart
+              playerId={playerId}
               timeOption={timeOption}
-              setTimeOption={setTimeOption}
             />
-            <ChartTypeOptions
-              chartTypeOption={chartTypeOption}
-              setChartTypeOption={setChartTypeOption}
+          </div>
+          <div className={styles.sustainabilityVScareerAverages}>
+            <SustainabilityVSCareerChart
+              playerId={playerId}
+              timeOption={timeOption}
             />
-          </ClientOnly>
-          <section className={styles.stats}>
-            <div className={styles.timeOnIce}>
-              <TimeOnIceChart
-                playerId={playerId}
-                timeOption={timeOption}
-                chartType={
-                  size.screen === BreakPoint.l ? "TOI" : chartTypeOption
-                }
-              />
-            </div>
-            <div className={styles.ppTimeOnIce}>
-              <TimeOnIceChart
-                playerId={playerId}
-                timeOption={timeOption}
-                chartType="POWER_PLAY_TOI"
-              />
-            </div>
-            <div className={styles.coverageChart}>
-              <CategoryCoverageChart
-                playerId={playerId}
-                timeOption={timeOption}
-              />
-            </div>
-            <div className={styles.sustainabilityVScareerAverages}>
-              <SustainabilityVSCareerChart
-                playerId={playerId}
-                timeOption={timeOption}
-              />
-            </div>
-          </section>
-          <footer className={styles.footer}>
-            <span className={styles.blue}>Five Hole</span> Fantasy Hockey{" "}
-            <span className={styles.blue}>•</span> FHFHockey.com{" "}
-            <span className={styles.blue}>•</span> @FHFHockey
-          </footer>
+          </div>
+        </section>
+        <footer className={styles.footer}>
+          <span className={styles.blue}>Five Hole</span> Fantasy Hockey{" "}
+          <span className={styles.blue}>•</span> FHFHockey.com{" "}
+          <span className={styles.blue}>•</span> @FHFHockey
+        </footer>
+      </div>
+    </section>
+  );
+}
+
+function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
+  return (
+    <section className={styles.large}>
+      <h1 className={styles.title}>
+        PLAYER <span className={styles.blue}>CARDS</span>
+      </h1>
+      <div className={styles.playerAutocompleteWrapper}>
+        <PlayerAutocomplete
+          inputClassName={styles.playerAutocomplete}
+          listClassName={styles.autocompleteList}
+          playerId={playerId}
+          onPlayerIdChange={(playerId) => {
+            setPlayerId(playerId);
+            if (typeof window !== "undefined") {
+              window.history.pushState(
+                "",
+                "",
+                playerId ? `/charts?playerId=${playerId}` : "/charts"
+              );
+            }
+          }}
+        />
+      </div>
+
+      <div className={styles.dashboard}>
+        <div className={styles.bioCard}>
+          <PlayerBioCard playerId={playerId} />
         </div>
-      </section>
-    </div>
+        <div className={styles.coverageChart}>
+          <CategoryCoverageChart playerId={playerId} timeOption={timeOption} />
+        </div>
+        <div className={styles.timeOptions}>
+          <TimeOptions timeOption={timeOption} setTimeOption={setTimeOption} />
+        </div>
+
+        <div className={styles.timeOnIce}>
+          <TimeOnIceChart
+            playerId={playerId}
+            timeOption={timeOption}
+            chartType="TOI"
+          />
+        </div>
+        <div className={styles.ppTimeOnIce}>
+          <TimeOnIceChart
+            playerId={playerId}
+            timeOption={timeOption}
+            chartType="POWER_PLAY_TOI"
+          />
+        </div>
+        <div className={styles.sustainabilityVScareerAverages}>
+          <SustainabilityVSCareerChart
+            playerId={playerId}
+            timeOption={timeOption}
+          />
+        </div>
+        <div className={styles.footer}>
+          <div className={styles.left}>left</div>
+          <div className={styles.right}>right</div>
+        </div>
+      </div>
+    </section>
   );
 }
 
