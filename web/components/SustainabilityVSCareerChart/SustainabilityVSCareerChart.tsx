@@ -168,7 +168,7 @@ function SustainabilityVSCareerChart({
                 // @ts-ignore
                 format(stats[id])
               ) : (
-                "-"
+                <span>&nbsp;</span>
               )}
             </span>
             <span className={styles.label}>{name}</span>
@@ -179,7 +179,7 @@ function SustainabilityVSCareerChart({
                 // @ts-ignore
                 format(careerAveragesStats[id])
               ) : (
-                "-"
+                <span>&nbsp;</span>
               )}
             </span>
           </div>
