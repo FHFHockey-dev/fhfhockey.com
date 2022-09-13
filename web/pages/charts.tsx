@@ -159,7 +159,7 @@ function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
         />
       </div>
 
-      <div className={styles.dashboard}>
+      <div id="dashboard" className={styles.dashboard}>
         <div className={styles.bioCard}>
           <PlayerBioCard playerId={playerId} />
         </div>

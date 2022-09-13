@@ -2,10 +2,11 @@
 @import "styles/Charts.module.scss";
 
 .playerCard {
-  display: grid;
-  grid-template-columns: 70% 30%;
+  display: flex;
+  height: 100%;
 
   .info {
+    flex: 7;
     display: grid;
     grid-template-columns: 3fr 1fr;
     grid-template-rows: 3fr 2fr;
@@ -61,8 +62,16 @@
     }
   }
 
-  // PC view
-  @media only screen and (min-width: $screen-large) {
+  .playerImageWrapper {
+    &:hover {
+      cursor: pointer;
+    }
+
+    flex: 3;
+    // show player's head
+    & > img {
+      object-position: top;
+    }
   }
 
   // remove list default style
