@@ -2,38 +2,45 @@
 
 .options {
   display: flex;
-  & > *:not(:last-child) {
-    margin-right: 10px;
+  height: 100%;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px;
+  button {
+    all: unset;
   }
-
-  .radioButton {
-    display: flex;
-    align-items: center;
-    input {
-      accent-color: $primary-color;
-      &:hover {
-        cursor: pointer;
-      }
-    }
-    .label {
-      margin-left: 8px;
-    }
+  & > button:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    opacity: 1;
+    background: rgba(84, 84, 88, 1);
+    height: 26px;
+    width: 3px;
+    right: -25%;
+    top: 5.5px;
+  }
+  button {
     &:hover {
       cursor: pointer;
     }
-  }
+    position: relative;
+    padding: 8px 24px;
+    border-radius: 24px;
+    font-family: "Roboto Condensed";
+    font-weight: 400;
+    font-size: 1.5rem;
+    line-height: 20px;
+    text-transform: uppercase;
 
-  input {
-    margin: unset;
-  }
-
-  .column {
-    flex-direction: column-reverse;
-    margin-right: unset;
-
-    .label {
-      margin-left: unset;
-      margin-bottom: 12px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+    &.checked,
+    &:hover {
+      background-color: #4ca5db;
+      color: white;
+      font-weight: 700;
     }
+
+    transition: background-color 0.5s ease, opacity 0.5s ease;
   }
 }

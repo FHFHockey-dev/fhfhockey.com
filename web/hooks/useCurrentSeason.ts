@@ -1,7 +1,7 @@
 import { fetchNHL } from "lib/NHL/NHL_API";
 import { useEffect, useState } from "react";
 
-type Season = {
+export type Season = {
   seasonId: string;
   regularSeasonStartDate: string;
   regularSeasonEndDate: string;
