@@ -42,7 +42,6 @@ function Select({
               onClick={() => {
                 setShowOptions(false);
                 onOptionChange(op.value);
-                console.log(op.value);
               }}
             >
               {op.label}

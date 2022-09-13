@@ -161,7 +161,6 @@ function Layout({ children }: LayoutProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   const { navbarRef, isNavbarVisible } = useHideableNavbar();
-  console.log({ isNavbarVisible });
 
   return (
     <div className={styles.container}>
