@@ -1,10 +1,6 @@
 @import "styles/vars.scss";
 
-$border-thin: 1px;
 $border-bold: 3px;
-$rounded-border: 5px;
-$bg-color: #404040;
-$header-bg-color: #202020;
 
 $small: 6px;
 
@@ -17,7 +13,7 @@ $small: 6px;
 
   // Dashboard
   .dashboard {
-    background-color: $bg-dark;
+    background-color: $bg-light;
     border: 3px solid white;
     // padding: 12px;
     margin-bottom: 2rem;
@@ -106,6 +102,7 @@ $small: 6px;
   }
 
   .dashboard {
+    background-color: $bg-light;
     grid-column: 1 / 9;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
