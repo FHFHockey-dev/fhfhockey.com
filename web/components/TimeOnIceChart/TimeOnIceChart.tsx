@@ -20,7 +20,6 @@ import { subDays, format, differenceInWeeks } from "date-fns";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import Spinner from "components/Spinner";
-import Text, { HightText } from "components/Text";
 import { TimeOption } from "components/TimeOptions/TimeOptions";
 import Chart from "components/Chart";
 
@@ -240,13 +239,13 @@ function TimeOnIceChart({
           {size.screen === BreakPoint.l ? (
             <div>
               {chartType === "TOI" ? (
-                <Text>
-                  Time On <HightText>Ice</HightText>
-                </Text>
+                <h2 className={styles.title}>
+                  Time <Blue>On Ice</Blue>
+                </h2>
               ) : (
-                <Text>
-                  Power Play <HightText>Share</HightText>
-                </Text>
+                <h2 className={styles.title}>
+                  Power Play <Blue>Share</Blue>
+                </h2>
               )}
             </div>
           ) : (
@@ -283,6 +282,10 @@ export function ChartTypeOptions({
       onOptionChange={setChartTypeOption}
     />
   );
+}
+
+function Blue({ children }: { children: React.ReactNode }) {
+  return <span className={styles.blue}>{children}</span>;
 }
 
 export default TimeOnIceChart;
