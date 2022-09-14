@@ -22,6 +22,7 @@ import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import Spinner from "components/Spinner";
 import { TimeOption } from "components/TimeOptions/TimeOptions";
 import Chart from "components/Chart";
+import ChartTitle, { HightText } from "components/ChartTitle";
 
 ChartJS.register(
   LineElement,
@@ -239,13 +240,13 @@ function TimeOnIceChart({
           {size.screen === BreakPoint.l ? (
             <div>
               {chartType === "TOI" ? (
-                <h2 className={styles.title}>
-                  Time <Blue>On Ice</Blue>
-                </h2>
+                <ChartTitle>
+                  Time <HightText>On Ice</HightText>
+                </ChartTitle>
               ) : (
-                <h2 className={styles.title}>
-                  Power Play <Blue>Share</Blue>
-                </h2>
+                <ChartTitle>
+                  Power Play <HightText>Share</HightText>
+                </ChartTitle>
               )}
             </div>
           ) : (
@@ -282,10 +283,6 @@ export function ChartTypeOptions({
       onOptionChange={setChartTypeOption}
     />
   );
-}
-
-function Blue({ children }: { children: React.ReactNode }) {
-  return <span className={styles.blue}>{children}</span>;
 }
 
 export default TimeOnIceChart;

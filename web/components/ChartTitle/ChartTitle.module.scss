@@ -1,19 +1,23 @@
 @import "styles/vars.scss";
 
 .base {
-  font-size: x-large;
-  font-weight: bold;
+  font-size: 1.5rem;
+  font-weight: 700;
   display: inline-block;
+  text-transform: uppercase;
+  font-family: "Didact Gothic";
+
   &.normal {
     color: $text-primary-color;
   }
 
   &.hightlight {
     color: $primary-color;
+    font-family: "Roboto Condensed";
+    margin-left: 0.1rem;
   }
 
   @media only screen and (max-width: $screen-medium-max) {
-    text-transform: uppercase;
     font-size: 10px;
   }
 }

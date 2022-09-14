@@ -11,7 +11,7 @@ import {
 
 import usePercentileRank from "hooks/usePercentileRank";
 import Chart from "components/Chart";
-import Text, { HightText } from "components/Text";
+import ChartTitle, { HightText } from "components/ChartTitle";
 
 import styles from "./CategoryCoverageChart.module.scss";
 import { TimeOption } from "components/TimeOptions/TimeOptions";
@@ -93,9 +93,9 @@ function CategoryCoverageChart({
       bodyClassName={classNames(styles.content)}
       header={
         <>
-          <Text className={styles.title}>
+          <ChartTitle className={styles.title}>
             Percentile <HightText>Ranks</HightText>
-          </Text>
+          </ChartTitle>
         </>
       }
     >

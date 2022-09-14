@@ -1,7 +1,7 @@
 import React from "react";
 
 import Chart from "components/Chart";
-import Text, { HightText } from "components/Text";
+import ChartTitle, { HightText } from "components/ChartTitle";
 import useScreenSize from "hooks/useScreenSize";
 import useSustainabilityStats from "hooks/useSustainabilityStats";
 import useCareerAveragesStats from "hooks/useCareerAveragesStats";
@@ -144,9 +144,9 @@ function SustainabilityVSCareerChart({
     <Chart
       headerClassName={styles.header}
       header={
-        <Text>
-          Sustainability <HightText>VS Career</HightText>
-        </Text>
+        <ChartTitle>
+          Sustainability <HightText>VS</HightText> Career
+        </ChartTitle>
       }
     >
       <div className={styles.stats}>
