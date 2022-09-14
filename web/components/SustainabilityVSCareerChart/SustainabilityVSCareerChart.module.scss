@@ -30,10 +30,9 @@
         background: rgba(217, 217, 217, 0.2);
       }
     }
-
-    .legends {
-      display: none;
-    }
+  }
+  .legends {
+    display: none;
   }
 
   @media only screen and (min-width: $screen-large) {

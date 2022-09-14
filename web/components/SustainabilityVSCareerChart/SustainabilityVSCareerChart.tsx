@@ -9,6 +9,7 @@ import { Data } from "pages/api/CareerAverages/[playerId]";
 import Spinner from "components/Spinner";
 
 import styles from "./SustainabilityVSCareerChart.module.scss";
+import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 
 const asPercent = (num: number | null) =>
   num === null ? (
@@ -133,6 +134,7 @@ function SustainabilityVSCareerChart({
   playerId,
   timeOption,
 }: SustainabilityVSCareerChartProps) {
+  const size = useScreenSize();
   const { stats, loading: firstLoading } = useSustainabilityStats(
     playerId,
     timeOption
@@ -165,7 +167,10 @@ function SustainabilityVSCareerChart({
               }}
             >
               {loading ? (
-                <Spinner size="small" center />
+                <Spinner
+                  size={size.screen === BreakPoint.l ? "medium" : "small"}
+                  center
+                />
               ) : stats ? (
                 // @ts-ignore
                 format(stats[id])
@@ -176,7 +181,10 @@ function SustainabilityVSCareerChart({
             <span className={styles.label}>{name}</span>
             <span className={styles.careerAveragesStat}>
               {loading ? (
-                <Spinner size="small" center />
+                <Spinner
+                  size={size.screen === BreakPoint.l ? "medium" : "small"}
+                  center
+                />
               ) : careerAveragesStats ? (
                 // @ts-ignore
                 format(careerAveragesStats[id])
