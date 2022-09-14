@@ -6,6 +6,8 @@ $small: 6px;
 
 // small UI
 .small {
+  font-family: "Didact Gothic";
+
   // player search input
   .playerAutocompleteWrapper {
     margin: 0.75rem 0 0.9375rem 0;
@@ -15,7 +17,6 @@ $small: 6px;
   .dashboard {
     background-color: $bg-light;
     border: 3px solid white;
-    // padding: 12px;
     margin-bottom: 2rem;
 
     .bioCard {
@@ -62,10 +63,6 @@ $small: 6px;
       border-top: $border-bold solid white;
       padding-top: 5px;
       padding-bottom: 5px;
-
-      .blue {
-        color: rgba(76, 167, 221, 1);
-      }
     }
   }
 
@@ -75,6 +72,8 @@ $small: 6px;
 }
 
 .large {
+  font-family: "Didact Gothic";
+
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   max-width: 1080px;
@@ -91,9 +90,6 @@ $small: 6px;
     line-height: 56px;
 
     color: #ffffff;
-    .blue {
-      color: rgba(76, 167, 221, 1);
-    }
   }
   .playerAutocompleteWrapper {
     grid-column: 1 / 6;
@@ -102,6 +98,9 @@ $small: 6px;
   }
 
   .dashboard {
+    // create extra space at the bottom
+    margin-bottom: 2rem;
+
     background-color: $bg-light;
     grid-column: 1 / 9;
     display: grid;
@@ -159,13 +158,31 @@ $small: 6px;
       display: grid;
       grid-template-columns: repeat(8, 1fr);
       border-top: $border-bold solid white;
+
       .left {
         grid-column: 1 / 6;
+        font-weight: 600;
+        font-size: 1.375rem;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.5);
+        text-align: center;
+        padding: 12px 0px;
       }
       .right {
         grid-column: 6 / 9;
         border-left: $border-bold solid white;
+        color: rgba(255, 255, 255, 0.5);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 13px;
       }
     }
   }
+}
+
+.blue {
+  color: rgba(76, 167, 221, 1);
 }

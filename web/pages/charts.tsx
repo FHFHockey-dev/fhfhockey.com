@@ -126,9 +126,8 @@ function Small({
           </div>
         </section>
         <footer className={styles.footer}>
-          <span className={styles.blue}>Five Hole</span> Fantasy Hockey{" "}
-          <span className={styles.blue}>•</span> FHFHockey.com{" "}
-          <span className={styles.blue}>•</span> @FHFHockey
+          <Blue>Five Hole</Blue> Fantasy Hockey <Blue>•</Blue> FHFHockey.com{" "}
+          <Blue>•</Blue> @FHFHockey
         </footer>
       </div>
     </section>
@@ -191,12 +190,22 @@ function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
           />
         </div>
         <div className={styles.footer}>
-          <div className={styles.left}>left</div>
-          <div className={styles.right}>right</div>
+          <div className={styles.left}>
+            <Blue>Five Hole</Blue> Fantasy Hockey <Blue>•</Blue> FHFHockey.com{" "}
+            <Blue>•</Blue> @FHFHockey
+          </div>
+          <div className={styles.right}>
+            Fine, fine print, SOURCE, Credit. ETC. Fine, fine print, SOURCE,
+            Credit. ETC.{" "}
+          </div>
         </div>
       </div>
     </section>
   );
+}
+
+function Blue({ children }: { children: React.ReactNode }) {
+  return <span className={styles.blue}>{children}</span>;
 }
 
 export default Charts;
