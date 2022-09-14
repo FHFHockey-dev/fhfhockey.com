@@ -142,7 +142,9 @@ function SustainabilityVSCareerChart({
   const loading = firstLoading || secondLoading;
   return (
     <Chart
+      className={styles.container}
       headerClassName={styles.header}
+      bodyClassName={styles.body}
       header={
         <ChartTitle>
           Sustainability <HightText>VS</HightText> Career
@@ -185,8 +187,36 @@ function SustainabilityVSCareerChart({
           </div>
         ))}
       </div>
+      <Legend />
     </Chart>
   );
 }
 
+const LEGEND_INFO = [
+  {
+    color: "rgba(76, 167, 222, 1)",
+    label: "Blue is sustainable",
+  },
+  {
+    color: "rgba(212, 97, 97, 1)",
+    label: "Red is unsustainable",
+  },
+  {
+    color: "rgba(255, 255, 255, 0.5)",
+    label: "Grey is career average",
+  },
+] as const;
+
+function Legend() {
+  return (
+    <div className={styles.legends}>
+      {LEGEND_INFO.map(({ color, label }) => (
+        <div key={label} className={styles.legend}>
+          <div className={styles.box} style={{ backgroundColor: color }} />
+          <div className={styles.label}>{label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
 export default SustainabilityVSCareerChart;
