@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 
 import Options from "components/Options";
 
@@ -9,11 +9,14 @@ import "chartjs-adapter-date-fns";
 
 import {
   Chart as ChartJS,
-  LineElement,
-  PointElement,
-  LinearScale,
   CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
   Tooltip,
+  Filler,
+  Legend,
   TimeScale,
 } from "chart.js";
 import { subDays, format, differenceInWeeks } from "date-fns";
@@ -25,12 +28,15 @@ import Chart from "components/Chart";
 import ChartTitle, { HightText } from "components/ChartTitle";
 
 ChartJS.register(
-  LineElement,
-  PointElement,
-  LinearScale,
+  TimeScale,
   CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
   Tooltip,
-  TimeScale
+  Filler,
+  Legend
 );
 
 /**
@@ -44,14 +50,13 @@ type TimeOnIceChartProps = {
   playerId: number | undefined;
 };
 
-const CHART_AXIS_COLOR = "#07aae2";
 function TimeOnIceChart({
   playerId,
   timeOption,
   chartType,
 }: TimeOnIceChartProps) {
   const size = useScreenSize();
-
+  const chartRef = useRef<ChartJS | null>(null);
   const season = useCurrentSeason();
 
   const [loading, setLoading] = useState(false);
@@ -59,6 +64,7 @@ function TimeOnIceChart({
   const [ppTOI, setPPTOI] = useState<number[]>([]);
   const [labels, setLabels] = useState<string[]>([]);
 
+  // fetch data when season, player id, time option change
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -120,14 +126,23 @@ function TimeOnIceChart({
       mounted = false;
     };
   }, [season, playerId, timeOption]);
+
   // TOI - y-axis range 0,15,30
   // PPTOI - y-axis 0-100%
-
-  let CHART_OPTIONS = {
+  const CHART_OPTIONS = {
     responsive: true,
     maintainAspectRatio: false,
     scales: {
       x: {
+        title: {
+          display: true,
+          text: timeOption === "SEASON" ? "WEEKS" : "DAYS",
+          font: {
+            size: 12,
+            weight: 500,
+            family: "Didact Gothic",
+          },
+        },
         type: "time",
         time: {
           unit: "day",
@@ -143,7 +158,9 @@ function TimeOnIceChart({
               ? {
                   size: 8,
                 }
-              : {},
+              : {
+                  size: 10,
+                },
           callback: function (value: string, index: number) {
             if (timeOption === "SEASON") {
               const startDate = season
@@ -158,8 +175,10 @@ function TimeOnIceChart({
           },
         },
         grid: {
-          borderColor: CHART_AXIS_COLOR,
+          borderColor: "white",
           borderWidth: 3,
+          // remove vertial lines
+          drawOnChartArea: false,
         },
       },
       y:
@@ -181,8 +200,13 @@ function TimeOnIceChart({
                     : {},
               },
               grid: {
-                borderColor: CHART_AXIS_COLOR,
+                // y axis color
+                borderColor: "rgba(255, 255, 255, 0.25)",
                 borderWidth: 3,
+                // set the color of the background grid
+                color: function (context: any) {
+                  return context.index > 0 ? "rgba(255, 255, 255, 0.25)" : "";
+                },
               },
             }
           : {
@@ -202,12 +226,36 @@ function TimeOnIceChart({
                     : {},
               },
               grid: {
-                borderColor: CHART_AXIS_COLOR,
+                borderColor: "rgba(255, 255, 255, 0.25)",
                 borderWidth: 3,
+                // set the color of the background grid
+                color: function (context: any) {
+                  return context.index > 0 ? "rgba(255, 255, 255, 0.25)" : "";
+                },
               },
             },
     },
+    plugins: {
+      legend: {
+        display: false,
+      },
+    },
   } as const;
+
+  // fill the area with linear color
+  const gradient = chartRef.current
+    ? chartRef.current.ctx.createLinearGradient(
+        0,
+        0,
+        0,
+        chartRef.current.height * 0.8
+      )
+    : "rgba(43, 168, 242, 0.65)";
+
+  if (chartRef.current?.ctx && typeof gradient !== "string") {
+    gradient.addColorStop(0, "rgba(43, 168, 242, 0.65)");
+    gradient.addColorStop(1, "rgba(76, 167, 221, 0)");
+  }
 
   // x-axis - if time option is Season, display week number. Otherwise display 1,2,3,4...7
   const data = {
@@ -216,14 +264,18 @@ function TimeOnIceChart({
       chartType === "TOI"
         ? {
             label: "TOI",
-            borderColor: "white",
+            borderColor: "rgba(76, 167, 221, 1)",
+            fill: true,
+            backgroundColor: gradient,
             data: TOI,
             pointRadius: 0,
             tension: 0.1,
           }
         : {
             label: "PPTOI",
-            borderColor: "white",
+            borderColor: "rgba(76, 167, 221, 1)",
+            fill: true,
+            backgroundColor: gradient,
             data: ppTOI,
             pointRadius: 0,
             tension: 0.1,
@@ -257,7 +309,7 @@ function TimeOnIceChart({
     >
       {loading && <Spinner className={styles.loading} />}
       {/*  @ts-ignore */}
-      <Line options={CHART_OPTIONS} data={data} />
+      <Line ref={chartRef} options={CHART_OPTIONS} data={data} />
     </Chart>
   );
 }
