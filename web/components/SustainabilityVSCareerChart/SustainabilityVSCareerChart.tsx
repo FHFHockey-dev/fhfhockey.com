@@ -154,46 +154,54 @@ function SustainabilityVSCareerChart({
       }
     >
       <div className={styles.stats}>
-        {COLUMNS.map(({ id, name, description, format, getBgColor }) => (
-          <div key={id} title={description} className={styles.row}>
-            <span
-              className={styles.sustainabilityStat}
-              style={{
-                backgroundColor:
-                  !loading && stats && careerAveragesStats && stats[id] !== null
-                    ? // @ts-ignore
-                      getBgColor(stats[id], careerAveragesStats)
-                    : BLUE,
-              }}
-            >
-              {loading ? (
-                <Spinner
-                  size={size.screen === BreakPoint.l ? "medium" : "small"}
-                  center
-                />
-              ) : stats ? (
-                // @ts-ignore
-                format(stats[id])
-              ) : (
-                <span>&nbsp;</span>
-              )}
-            </span>
-            <span className={styles.label}>{name}</span>
-            <span className={styles.careerAveragesStat}>
-              {loading ? (
-                <Spinner
-                  size={size.screen === BreakPoint.l ? "medium" : "small"}
-                  center
-                />
-              ) : careerAveragesStats ? (
-                // @ts-ignore
-                format(careerAveragesStats[id])
-              ) : (
-                <span>&nbsp;</span>
-              )}
-            </span>
-          </div>
-        ))}
+        {COLUMNS.map(({ id, name, description, format, getBgColor }) => {
+          const color =
+            !loading && stats && careerAveragesStats && stats[id] !== null
+              ? // @ts-ignore
+                getBgColor(stats[id], careerAveragesStats)
+              : BLUE;
+          return (
+            <div key={id} title={description} className={styles.row}>
+              <span
+                className={styles.sustainabilityStat}
+                style={{
+                  backgroundColor: color,
+                }}
+              >
+                {loading ? (
+                  <Spinner
+                    size={size.screen === BreakPoint.l ? "medium" : "small"}
+                    center
+                  />
+                ) : stats ? (
+                  // @ts-ignore
+                  format(stats[id])
+                ) : (
+                  <span>&nbsp;</span>
+                )}
+              </span>
+              <span
+                className={styles.label}
+                style={{ color: color === BLUE ? "" : color }}
+              >
+                {name}
+              </span>
+              <span className={styles.careerAveragesStat}>
+                {loading ? (
+                  <Spinner
+                    size={size.screen === BreakPoint.l ? "medium" : "small"}
+                    center
+                  />
+                ) : careerAveragesStats ? (
+                  // @ts-ignore
+                  format(careerAveragesStats[id])
+                ) : (
+                  <span>&nbsp;</span>
+                )}
+              </span>
+            </div>
+          );
+        })}
       </div>
       <Legend />
     </Chart>
