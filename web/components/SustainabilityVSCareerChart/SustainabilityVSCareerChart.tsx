@@ -2,7 +2,6 @@ import React from "react";
 
 import Chart from "components/Chart";
 import ChartTitle, { HightText } from "components/ChartTitle";
-import useScreenSize from "hooks/useScreenSize";
 import useSustainabilityStats from "hooks/useSustainabilityStats";
 import useCareerAveragesStats from "hooks/useCareerAveragesStats";
 import { TimeOption } from "components/TimeOptions/TimeOptions";
@@ -12,12 +11,14 @@ import Spinner from "components/Spinner";
 import styles from "./SustainabilityVSCareerChart.module.scss";
 
 const asPercent = (num: number | null) =>
-  num === null
-    ? "-"
-    : num.toLocaleString(undefined, {
-        style: "percent",
-        minimumFractionDigits: 1,
-      });
+  num === null ? (
+    <span>&nbsp;</span>
+  ) : (
+    num.toLocaleString(undefined, {
+      style: "percent",
+      minimumFractionDigits: 1,
+    })
+  );
 
 const BLUE = "#07AAE3";
 const RED = "#F65B61";
@@ -132,7 +133,6 @@ function SustainabilityVSCareerChart({
   playerId,
   timeOption,
 }: SustainabilityVSCareerChartProps) {
-  const size = useScreenSize();
   const { stats, loading: firstLoading } = useSustainabilityStats(
     playerId,
     timeOption
