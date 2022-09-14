@@ -105,7 +105,8 @@ $small: 6px;
     grid-column: 1 / 9;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(3, 1fr) 50px repeat(4, 1fr) repeat(4, 1fr) 0.5fr;
+    // grid-template-rows: repeat(3, 1fr) 50px repeat(4, 1fr) repeat(4, 1fr) 0.5fr;
+    grid-template-rows: 66px 66px 66px 50px repeat(8, auto) 60px;
 
     border: $border-bold solid white;
 
@@ -149,11 +150,13 @@ $small: 6px;
       grid-area: coverageChart;
       border-left: $border-bold solid white;
       border-bottom: $border-bold solid white;
+      margin-top: 24px;
     }
 
     .sustainabilityVScareerAverages {
       grid-area: sustainabilityVScareerAverages;
       border-left: $border-bold solid white;
+      padding-top: 24px;
     }
     .footer {
       grid-area: footer;
