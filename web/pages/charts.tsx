@@ -191,12 +191,16 @@ function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
         </div>
         <div className={styles.footer}>
           <div className={styles.left}>
-            <Blue>Five Hole</Blue> Fantasy Hockey <Blue>•</Blue> FHFHockey.com{" "}
-            <Blue>•</Blue> @FHFHockey
+            <p>
+              <Blue>Five Hole</Blue> Fantasy Hockey <Blue>•</Blue> FHFHockey.com{" "}
+              <Blue>•</Blue> @FHFHockey
+            </p>
           </div>
           <div className={styles.right}>
-            Fine, fine print, SOURCE, Credit. ETC. Fine, fine print, SOURCE,
-            Credit. ETC.{" "}
+            <p>
+              Fine, fine print, SOURCE, Credit. ETC. Fine, fine print, SOURCE,
+              Credit. ETC.{" "}
+            </p>
           </div>
         </div>
       </div>

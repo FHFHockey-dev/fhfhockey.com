@@ -106,7 +106,7 @@ $small: 6px;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     // grid-template-rows: repeat(3, 1fr) 50px repeat(4, 1fr) repeat(4, 1fr) 0.5fr;
-    grid-template-rows: 66px 66px 66px 50px repeat(8, auto) 60px;
+    grid-template-rows: 66px 66px 66px 50px repeat(8, auto) 1fr;
 
     border: $border-bold solid white;
 
@@ -163,15 +163,18 @@ $small: 6px;
       display: grid;
       grid-template-columns: repeat(8, 1fr);
       border-top: $border-bold solid white;
-
+      p {
+        all: unset;
+      }
       .left {
         grid-column: 1 / 6;
         font-weight: 600;
         font-size: 1.375rem;
         text-transform: uppercase;
         color: rgba(255, 255, 255, 0.5);
-        text-align: center;
-        padding: 12px 0px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
       }
       .right {
         grid-column: 6 / 9;
