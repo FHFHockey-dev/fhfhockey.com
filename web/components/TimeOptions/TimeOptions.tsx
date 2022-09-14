@@ -24,7 +24,6 @@ const shortOptions = [
 function TimeOptions({ timeOption, setTimeOption, ...rest }: TimeOptionsProps) {
   const size = useScreenSize();
   const season = useCurrentSeason();
-  console.log(typeof season?.seasonId);
 
   const longOptions = [
     { label: season ? getSeasonLable(season) : "2021/22", value: "SEASON" },
