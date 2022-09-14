@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import classNames from "classnames";
 import { Radar } from "react-chartjs-2";
 import {
@@ -11,7 +11,6 @@ import {
 
 import usePercentileRank from "hooks/usePercentileRank";
 import Chart from "components/Chart";
-import TimeOptions from "components/TimeOptions";
 import Text, { HightText } from "components/Text";
 
 import styles from "./CategoryCoverageChart.module.scss";
@@ -76,13 +75,8 @@ function CategoryCoverageChart({
   timeOption,
 }: CategoryCoverageChartProps) {
   const chartRef = useRef<ChartJS>(null);
-  const [mounted, setMounted] = useState(false);
 
   const { data, loading } = usePercentileRank(playerId, timeOption);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     const chart = chartRef.current;
@@ -96,9 +90,7 @@ function CategoryCoverageChart({
     <Chart
       className={styles.container}
       headerClassName={styles.chartHeader}
-      bodyClassName={classNames(styles.content, {
-        [styles.fullHeight]: mounted,
-      })}
+      bodyClassName={classNames(styles.content)}
       header={
         <>
           <Text className={styles.title}>

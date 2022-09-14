@@ -11,13 +11,8 @@
   }
 
   .content {
-    position: relative;
+    height: 100%;
     padding-top: 6px;
     padding-bottom: 6px;
   }
-}
-
-// set to full height after the component is mounted
-.fullHeight {
-  flex: 1;
 }
