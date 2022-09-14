@@ -16,7 +16,6 @@ import {
   Title,
   Tooltip,
   Filler,
-  Legend,
   TimeScale,
 } from "chart.js";
 import { subDays, format, differenceInWeeks } from "date-fns";
@@ -35,8 +34,7 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Filler,
-  Legend
+  Filler
 );
 
 /**
