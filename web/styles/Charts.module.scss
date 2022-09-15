@@ -17,7 +17,7 @@ $small: 6px;
   .dashboard {
     background-color: $bg-light;
     border: 3px solid white;
-    margin-bottom: 2rem;
+    margin-bottom: 10vh;
 
     .bioCard {
       grid-area: bioCard;
@@ -99,7 +99,7 @@ $small: 6px;
 
   .dashboard {
     // create extra space at the bottom
-    margin-bottom: 2rem;
+    margin-bottom: 10vh;
 
     background-color: $bg-light;
     grid-column: 1 / 9;
