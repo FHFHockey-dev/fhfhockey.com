@@ -130,6 +130,11 @@ function TimeOnIceChart({
   const CHART_OPTIONS = {
     responsive: true,
     maintainAspectRatio: false,
+    elements: {
+      line: {
+        borderWidth: 1.53,
+      },
+    },
     scales: {
       x: {
         title: {
