@@ -1,0 +1,87 @@
+@import "styles/vars.scss";
+
+.container {
+  .header {
+    text-align: center;
+  }
+  .stats {
+    text-align: right;
+    font-weight: 700;
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 35% 1fr;
+      align-items: center;
+      &:not(:last-child) {
+        margin-bottom: 4px;
+      }
+      .label {
+        font-size: 0.625rem;
+        text-align: center;
+        padding: 0 3px;
+      }
+      .careerAveragesStat,
+      .sustainabilityStat {
+        font-size: 0.8125rem;
+        padding: 3px;
+      }
+
+      .careerAveragesStat {
+        background: rgba(217, 217, 217, 0.2);
+      }
+    }
+  }
+  .legends {
+    display: none;
+  }
+
+  @media only screen and (min-width: $screen-large) {
+    .body {
+      height: 100%;
+    }
+    display: flex;
+    flex-direction: column;
+    .stats {
+      flex: 1;
+      margin: 0 13%;
+
+      .row {
+        &:not(:last-child) {
+          margin-bottom: 8px;
+        }
+        .label {
+          font-size: 1.25rem;
+          font-weight: 500;
+        }
+
+        .careerAveragesStat,
+        .sustainabilityStat {
+          font-size: 1.625rem;
+          padding-left: 3px;
+          padding-right: 4px;
+        }
+      }
+    }
+    .legends {
+      display: flex;
+      justify-content: space-between;
+      margin: 0 46px;
+      margin-top: 19px;
+      .legend {
+        display: flex;
+
+        .box {
+          height: 12px;
+          width: 12px;
+          border-radius: 1px;
+          margin-right: 5px;
+        }
+        .label {
+          font-size: 0.5625rem;
+          font-weight: 400;
+          color: rgba(255, 255, 255, 0.5);
+        }
+      }
+    }
+  }
+}

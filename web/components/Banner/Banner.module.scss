@@ -4,6 +4,7 @@
   color: #ffffff;
   background: #101010;
   border-bottom: 4px solid white;
+  // extend to the left right sides
   margin: 0 -2rem 0.8rem -2rem;
 
   padding-top: 10px;
@@ -25,16 +26,22 @@
   color: #ffffff;
   background: #101010;
   border-bottom: 4px solid white;
+  // extend to the left right sides
   margin: 0 -2rem 0.8rem -2rem;
-
+  & > h1 {
+    margin: 0;
+  }
   @media only screen and (max-width: $screen-medium-max) {
+    padding: 0.3rem;
+
     & > h1 {
-      margin: 0.3rem 0;
       font-size: large;
     }
   }
 
   @media only screen and (min-width: $screen-large) {
+    padding: 0.8rem;
+
     margin-bottom: 15px;
   }
 }

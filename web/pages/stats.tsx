@@ -37,7 +37,7 @@ function Stats({ teams }: StatsProps) {
 }
 
 export async function getStaticProps() {
-  const teams = (await fetchNHL("teams").then((res) => res.teams)).map(
+  const teams = (await fetchNHL("/teams").then((res) => res.teams)).map(
     ({ abbreviation, name }: Team) => ({
       abbreviation,
       name,

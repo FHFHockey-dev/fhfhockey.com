@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import { createFilterOptions, useAutocomplete } from "@mui/material";
 import usePlayers, { Player } from "hooks/usePlayers";
 
@@ -64,7 +65,7 @@ function PlayerAutocomplete({
 
   return (
     <div className={styles.autocomplete}>
-      <div {...getRootProps()}>
+      <div {...getRootProps()} className={styles.wrapper}>
         <label {...getInputLabelProps()} hidden>
           Player Name
         </label>
@@ -73,6 +74,15 @@ function PlayerAutocomplete({
           placeholder="Search Player..."
           className={classNames(inputClassName)}
         />
+        <button className={styles.button} type="submit">
+          <Image
+            src="/pictures/IconSearch.png"
+            alt="search button"
+            layout="fixed"
+            width="32px"
+            height="32px"
+          />
+        </button>
       </div>
       {groupedOptions.length > 0 ? (
         <ul {...getListboxProps()} className={listClassName}>
