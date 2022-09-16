@@ -185,6 +185,17 @@ function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
       });
   };
 
+  const onShareClick = () => {
+    const TWITTER_URL = new URL("https://twitter.com/intent/tweet");
+    TWITTER_URL.searchParams.append("url", window.location.toString());
+    TWITTER_URL.searchParams.append(
+      "text",
+      "The underlying stats of the NHL player."
+    );
+
+    window.open(TWITTER_URL, "_blank");
+  };
+
   return (
     <section className={styles.large}>
       <h1 className={styles.title}>
@@ -216,7 +227,7 @@ function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
             height={24}
           />
         </IconButton>
-        <IconButton onClick={() => window.alert("sharing...")}>
+        <IconButton onClick={onShareClick}>
           <Image
             src="/pictures/share.svg"
             alt="download"
