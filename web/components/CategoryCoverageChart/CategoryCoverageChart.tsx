@@ -97,10 +97,11 @@ function CategoryCoverageChart({
         chart.ctx.textAlign = point.textAlign;
         let x = 0;
         let y = point.y + newY + 20;
+        const distance = size.screen === BreakPoint.l ? 10 : 3;
         if (point.textAlign === "left") {
-          x = point.x + 10;
+          x = point.x + distance;
         } else if (point.textAlign === "right") {
-          x = point.x - 10;
+          x = point.x - distance;
         } else {
           x = point.x;
         }
