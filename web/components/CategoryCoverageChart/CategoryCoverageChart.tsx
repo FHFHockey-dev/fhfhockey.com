@@ -21,18 +21,18 @@ import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Tooltip, Filler);
 
 const LABELS = [
-  "GOALS",
-  "ASSISTS",
-  "PPP",
-  "HITS",
-  "BLKS",
-  "PIM",
-  "SHOTS",
-  "+/-",
-];
+  { key: "Goals", label: "GOALS" },
+  { key: "Assists", label: "ASSISTS" },
+  { key: "PPP", label: "PPP" },
+  { key: "Shots", label: "SOG" },
+  { key: "PlusMinus", label: "+/-" },
+  { key: "PIM", label: "PIM" },
+  { key: "Blocks", label: "BLK" },
+  { key: "Hits", label: "HITS" },
+] as const;
 
 const DATA = {
-  labels: LABELS,
+  labels: LABELS.map((element) => element.label),
   datasets: [
     {
       data: [0, 0, 0, 0, 0, 0, 0, 0],
@@ -104,7 +104,9 @@ function CategoryCoverageChart({
     const chart = chartRef.current;
     if (loading || !chart) return;
     // update the radar chart
-    chart.data.datasets[0].data = data ? Object.values(data) : [];
+    chart.data.datasets[0].data = data
+      ? LABELS.map(({ key }) => data[key])
+      : [];
     chart.update();
   }, [data, loading]);
 
@@ -142,16 +144,21 @@ function CategoryCoverageChart({
         // mobile: 12px
         // pc: 16px
 
-        chart.ctx.font = `700 ${
-          size.screen === BreakPoint.l ? "16px" : "12px"
-        } Roboto Condensed`;
+        chart.ctx.font =
+          size.screen === BreakPoint.l
+            ? "700 16px Roboto Condensed"
+            : "100 10px Didact Gothic";
         chart.ctx.fillStyle = "white";
-        chart.ctx.fillText(LABELS[i], x, y);
+        chart.ctx.fillText(LABELS[i].label, x, y);
 
         // draw percentage
-        chart.ctx.font = "400 14px Roboto Condensed";
+        chart.ctx.font =
+          size.screen === BreakPoint.l
+            ? "400 14px Roboto Condensed"
+            : "700 12px Didact Gothic";
+
         chart.ctx.fillStyle = "rgba(76, 167, 221, 1)";
-        dataset[i] && chart.ctx.fillText(`${dataset[i]}%`, x, y - 16);
+        dataset[i] && chart.ctx.fillText(`${dataset[i]}`, x, y - 16);
       });
     },
   };
