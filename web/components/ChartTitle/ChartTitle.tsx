@@ -1,7 +1,7 @@
 import React from "react";
 import classNames from "classnames";
 
-import styles from "./Text.module.scss";
+import styles from "./ChartTitle.module.scss";
 
 type TextProps = {
   className?: string;
@@ -12,7 +12,7 @@ function TextBase({ className, children }: TextProps) {
   return <div className={classNames(className, styles.base)}>{children}</div>;
 }
 
-export default function Text({ children, className }: TextProps) {
+export default function ChartTitle({ children, className }: TextProps) {
   return (
     <TextBase className={classNames(styles.normal, className)}>
       {children}

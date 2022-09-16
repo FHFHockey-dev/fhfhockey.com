@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
 
@@ -17,6 +17,8 @@ import {
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import ClientOnly from "components/ClientOnly";
 import SustainabilityVSCareerChart from "components/SustainabilityVSCareerChart";
+import Image from "next/image";
+import { toPng } from "html-to-image";
 
 function Charts() {
   const router = useRouter();
@@ -71,6 +73,28 @@ function Small({
   chartTypeOption,
   setChartTypeOption,
 }: any) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const onDownloadClick = (playerName: string) => {
+    if (ref.current === null) {
+      return;
+    }
+
+    toPng(ref.current, {
+      cacheBust: true,
+      canvasWidth: 500,
+      canvasHeight: 844,
+    })
+      .then((dataUrl) => {
+        const link = document.createElement("a");
+        link.download = `${playerId}-${playerName}.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
   return (
     <section className={styles.small}>
       <div className={styles.playerAutocompleteWrapper}>
@@ -91,9 +115,12 @@ function Small({
         />
       </div>
 
-      <div id="dashboard" className={styles.dashboard}>
+      <div ref={ref} id="dashboard" className={styles.dashboard}>
         <div className={styles.bioCard}>
-          <PlayerBioCard playerId={playerId} />
+          <PlayerBioCard
+            playerId={playerId}
+            onPlayerImageClick={onDownloadClick}
+          />
         </div>
 
         <ClientOnly className={styles.controller}>
@@ -126,9 +153,8 @@ function Small({
           </div>
         </section>
         <footer className={styles.footer}>
-          <span className={styles.blue}>Five Hole</span> Fantasy Hockey{" "}
-          <span className={styles.blue}>•</span> FHFHockey.com{" "}
-          <span className={styles.blue}>•</span> @FHFHockey
+          <Blue>Five Hole</Blue> Fantasy Hockey <Blue>•</Blue> FHFHockey.com{" "}
+          <Blue>•</Blue> @FHFHockey
         </footer>
       </div>
     </section>
@@ -136,6 +162,29 @@ function Small({
 }
 
 function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const onDownloadClick = () => {
+    if (ref.current === null) {
+      return;
+    }
+
+    toPng(ref.current, {
+      cacheBust: true,
+      canvasWidth: 1440,
+      canvasHeight: 1080,
+    })
+      .then((dataUrl) => {
+        const link = document.createElement("a");
+        link.download = `${playerId}-player.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
   return (
     <section className={styles.large}>
       <h1 className={styles.title}>
@@ -158,8 +207,26 @@ function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
           }}
         />
       </div>
+      <div className={styles.actions}>
+        <IconButton onClick={onDownloadClick}>
+          <Image
+            src="/pictures/download.svg"
+            alt="download"
+            width={20}
+            height={24}
+          />
+        </IconButton>
+        <IconButton onClick={() => window.alert("sharing...")}>
+          <Image
+            src="/pictures/share.svg"
+            alt="download"
+            width={26}
+            height={20}
+          />
+        </IconButton>
+      </div>
 
-      <div id="dashboard" className={styles.dashboard}>
+      <div ref={ref} id="dashboard" className={styles.dashboard}>
         <div className={styles.bioCard}>
           <PlayerBioCard playerId={playerId} />
         </div>
@@ -191,11 +258,39 @@ function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
           />
         </div>
         <div className={styles.footer}>
-          <div className={styles.left}>left</div>
-          <div className={styles.right}>right</div>
+          <div className={styles.left}>
+            <p>
+              <Blue>Five Hole</Blue> Fantasy Hockey <Blue>•</Blue> FHFHockey.com{" "}
+              <Blue>•</Blue> @FHFHockey
+            </p>
+          </div>
+          <div className={styles.right}>
+            <p>
+              Fine, fine print, SOURCE, Credit. ETC. Fine, fine print, SOURCE,
+              Credit. ETC.{" "}
+            </p>
+          </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function Blue({ children }: { children: React.ReactNode }) {
+  return <span className={styles.blue}>{children}</span>;
+}
+
+function IconButton({
+  children,
+  ...rest
+}: React.DetailedHTMLProps<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  HTMLButtonElement
+>) {
+  return (
+    <button className={styles.button} {...rest}>
+      {children}
+    </button>
   );
 }
 

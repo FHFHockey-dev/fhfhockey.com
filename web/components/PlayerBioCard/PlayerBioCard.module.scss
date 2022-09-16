@@ -26,6 +26,7 @@
         color: $primary-color;
         font-size: 24px;
         font-weight: 700;
+        font-family: "Roboto Condensed";
       }
       margin-bottom: 9px;
     }
@@ -75,6 +76,38 @@
     // show player's head
     & > img {
       object-position: top;
+      outline: 2px solid white;
+    }
+  }
+
+  @media only screen and (min-width: $screen-large) {
+    .info {
+      padding-top: 20px;
+      padding-left: 25px;
+      padding-bottom: 14px;
+      padding-right: 20px;
+
+      .names {
+        .firstName {
+          font-size: 1.75rem;
+          line-height: 32.81px;
+        }
+        .lastName {
+          font-size: 3rem;
+          line-height: 56.25px;
+        }
+      }
+
+      .stats {
+        font-size: 1.25rem;
+      }
+      .teamLogo {
+        width: 77px;
+        height: 79px;
+      }
+      .teamInfo {
+        font-size: 1.25rem;
+      }
     }
   }
 

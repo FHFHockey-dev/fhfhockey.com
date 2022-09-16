@@ -3,6 +3,7 @@ import React, { Dispatch, SetStateAction } from "react";
 import RadioOptions from "components/RadioOptions";
 import Select from "components/Select";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
+import useCurrentSeason, { Season } from "hooks/useCurrentSeason";
 
 export type TimeOption = "L7" | "L14" | "L30" | "SEASON";
 
@@ -20,15 +21,16 @@ const shortOptions = [
   { label: "Season Stats", value: "SEASON" },
 ] as const;
 
-const longOptions = [
-  { label: "Last 7", value: "L7" },
-  { label: "Last 14", value: "L14" },
-  { label: "Last 30", value: "L30" },
-  { label: "Season", value: "SEASON" },
-] as const;
-
 function TimeOptions({ timeOption, setTimeOption, ...rest }: TimeOptionsProps) {
   const size = useScreenSize();
+  const season = useCurrentSeason();
+
+  const longOptions = [
+    { label: season ? getSeasonLable(season) : "2021/22", value: "SEASON" },
+    { label: "Last 7", value: "L7" },
+    { label: "Last 14", value: "L14" },
+    { label: "Last 30", value: "L30" },
+  ] as const;
 
   return size.screen === BreakPoint.l ? (
     <RadioOptions
@@ -44,6 +46,15 @@ function TimeOptions({ timeOption, setTimeOption, ...rest }: TimeOptionsProps) {
       onOptionChange={setTimeOption}
     />
   );
+}
+
+function getSeasonLable(season: Season) {
+  const seasonLabel = `${season?.seasonId.slice(0, 4)}/${season?.seasonId.slice(
+    6,
+    8
+  )}`;
+
+  return seasonLabel;
 }
 
 export default TimeOptions;

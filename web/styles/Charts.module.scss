@@ -1,15 +1,13 @@
 @import "styles/vars.scss";
 
-$border-thin: 1px;
 $border-bold: 3px;
-$rounded-border: 5px;
-$bg-color: #404040;
-$header-bg-color: #202020;
 
 $small: 6px;
 
 // small UI
 .small {
+  font-family: "Didact Gothic";
+
   // player search input
   .playerAutocompleteWrapper {
     margin: 0.75rem 0 0.9375rem 0;
@@ -17,10 +15,9 @@ $small: 6px;
 
   // Dashboard
   .dashboard {
-    background-color: $bg-dark;
+    background-color: $bg-light;
     border: 3px solid white;
-    // padding: 12px;
-    margin-bottom: 2rem;
+    margin-bottom: 10vh;
 
     .bioCard {
       grid-area: bioCard;
@@ -39,19 +36,19 @@ $small: 6px;
     .stats {
       padding: 12px;
       display: grid;
-      grid-template-rows: 1fr 1fr;
-      grid-template-columns: 55% 45%;
+      grid-template-rows: 120px 1fr;
+      grid-template-columns: 58% auto;
       grid-template-areas:
         "timeOnIce timeOnIce"
         "coverageChart sustainabilityVScareerAverages";
 
       .timeOnIce {
         grid-area: timeOnIce;
-        height: 185px;
       }
 
       .coverageChart {
         grid-area: coverageChart;
+        margin-left: -15px;
       }
 
       .sustainabilityVScareerAverages {
@@ -66,10 +63,6 @@ $small: 6px;
       border-top: $border-bold solid white;
       padding-top: 5px;
       padding-bottom: 5px;
-
-      .blue {
-        color: rgba(76, 167, 221, 1);
-      }
     }
   }
 
@@ -79,6 +72,8 @@ $small: 6px;
 }
 
 .large {
+  font-family: "Didact Gothic";
+
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   max-width: 1080px;
@@ -95,21 +90,31 @@ $small: 6px;
     line-height: 56px;
 
     color: #ffffff;
-    .blue {
-      color: rgba(76, 167, 221, 1);
-    }
   }
   .playerAutocompleteWrapper {
     grid-column: 1 / 6;
     margin-top: 24px;
     margin-bottom: 24px;
   }
+  .actions {
+    grid-column: 8 / 9;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+    margin-bottom: 24px;
+    gap: 8px;
+  }
 
   .dashboard {
+    // create extra space at the bottom
+    margin-bottom: 10vh;
+
+    background-color: $bg-light;
     grid-column: 1 / 9;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(3, 1fr) 60px repeat(4, 1fr) repeat(4, 1fr) 0.5fr;
+    // grid-template-rows: repeat(3, 1fr) 50px repeat(4, 1fr) repeat(4, 1fr) 0.5fr;
+    grid-template-rows: 66px 66px 66px 50px repeat(8, auto) 1fr;
 
     border: $border-bold solid white;
 
@@ -129,7 +134,6 @@ $small: 6px;
       "footer footer footer footer footer footer footer footer footer";
     .bioCard {
       grid-area: bioCard;
-      border-right: $border-bold solid white;
       border-bottom: $border-bold solid white;
     }
 
@@ -137,38 +141,80 @@ $small: 6px;
       grid-area: timeOptions;
       border-bottom: $border-bold solid white;
       // height: 50px;
+      background-color: #373739;
     }
 
     .timeOnIce {
       grid-area: timeOnIce;
       border-bottom: $border-bold solid white;
+      padding: 22px 20px 13px 27px;
     }
     .ppTimeOnIce {
       grid-area: ppTimeOnIce;
+      padding: 22px 20px 13px 27px;
     }
 
     .coverageChart {
       grid-area: coverageChart;
       border-left: $border-bold solid white;
       border-bottom: $border-bold solid white;
+      margin-top: 24px;
     }
 
     .sustainabilityVScareerAverages {
       grid-area: sustainabilityVScareerAverages;
       border-left: $border-bold solid white;
+      padding-top: 24px;
     }
     .footer {
       grid-area: footer;
       display: grid;
       grid-template-columns: repeat(8, 1fr);
       border-top: $border-bold solid white;
+      p {
+        all: unset;
+      }
       .left {
         grid-column: 1 / 6;
+        font-weight: 600;
+        font-size: 1.375rem;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
       }
       .right {
         grid-column: 6 / 9;
         border-left: $border-bold solid white;
+        color: rgba(255, 255, 255, 0.5);
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 13px;
       }
     }
+  }
+}
+
+.blue {
+  color: rgba(76, 167, 221, 1);
+}
+
+.button {
+  all: unset;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &:hover {
+    cursor: pointer;
+    opacity: 0.8;
   }
 }

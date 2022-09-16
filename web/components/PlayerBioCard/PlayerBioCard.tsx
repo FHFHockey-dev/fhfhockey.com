@@ -1,6 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
 // @ts-ignore
-import fscreen from "fscreen";
 
 import usePlayer, { Player } from "hooks/usePlayer";
 import styles from "./PlayerBioCard.module.scss";
@@ -10,6 +9,7 @@ type PlayerStatsCardProps = {
    * Player Id
    */
   playerId: number | undefined;
+  onPlayerImageClick?: (playerName: string) => void;
 };
 
 // The stats to be displayed on the card
@@ -33,23 +33,10 @@ const PLACEHOLDER: Player = {
   position: "Center",
 };
 
-function fullscreenHandler() {
-  if (!fscreen.fullscreenEnabled) return;
-
-  const dashboard = document.getElementById("dashboard");
-  if (!dashboard) return;
-
-  // fullscreenElement is null if not in fullscreen mode,
-  if (fscreen.fullscreenElement === null) {
-    fscreen.requestFullscreen(dashboard);
-    // console.log("Entered fullscreen mode");
-  } else {
-    fscreen.exitFullscreen();
-    // console.log("Exited fullscreen mode");
-  }
-}
-
-function PlayerStatsCard({ playerId }: PlayerStatsCardProps) {
+function PlayerStatsCard({
+  playerId,
+  onPlayerImageClick,
+}: PlayerStatsCardProps) {
   const player = usePlayer(playerId) ?? PLACEHOLDER;
   const { name, image, teamName, teamAbbreviation, position, teamLogo } =
     player;
@@ -90,7 +77,10 @@ function PlayerStatsCard({ playerId }: PlayerStatsCardProps) {
         </div>
       </div>
 
-      <div className={styles.playerImageWrapper} onClick={fullscreenHandler}>
+      <div
+        className={styles.playerImageWrapper}
+        onClick={() => onPlayerImageClick && onPlayerImageClick(name)}
+      >
         <img
           style={{ objectFit: "cover" }}
           src={image || "/pictures/player-placeholder.jpg"}

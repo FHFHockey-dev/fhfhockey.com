@@ -8,16 +8,13 @@
 
   .chartHeader {
     text-align: center;
+    margin-bottom: 0;
   }
 
   .content {
-    position: relative;
-    padding-top: 6px;
-    padding-bottom: 6px;
+    height: 100%;
   }
-}
-
-// set to full height after the component is mounted
-.fullHeight {
-  flex: 1;
+  .title {
+    white-space: nowrap;
+  }
 }

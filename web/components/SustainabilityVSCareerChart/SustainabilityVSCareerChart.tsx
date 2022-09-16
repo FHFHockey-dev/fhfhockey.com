@@ -1,8 +1,7 @@
 import React from "react";
 
 import Chart from "components/Chart";
-import Text, { HightText } from "components/Text";
-import useScreenSize from "hooks/useScreenSize";
+import ChartTitle, { HightText } from "components/ChartTitle";
 import useSustainabilityStats from "hooks/useSustainabilityStats";
 import useCareerAveragesStats from "hooks/useCareerAveragesStats";
 import { TimeOption } from "components/TimeOptions/TimeOptions";
@@ -10,14 +9,17 @@ import { Data } from "pages/api/CareerAverages/[playerId]";
 import Spinner from "components/Spinner";
 
 import styles from "./SustainabilityVSCareerChart.module.scss";
+import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 
 const asPercent = (num: number | null) =>
-  num === null
-    ? "-"
-    : num.toLocaleString(undefined, {
-        style: "percent",
-        minimumFractionDigits: 1,
-      });
+  num === null ? (
+    <span>&nbsp;</span>
+  ) : (
+    num.toLocaleString(undefined, {
+      style: "percent",
+      minimumFractionDigits: 1,
+    })
+  );
 
 const BLUE = "#07AAE3";
 const RED = "#F65B61";
@@ -142,51 +144,95 @@ function SustainabilityVSCareerChart({
   const loading = firstLoading || secondLoading;
   return (
     <Chart
+      className={styles.container}
       headerClassName={styles.header}
+      bodyClassName={styles.body}
       header={
-        <Text>
-          Sustainability <HightText>VS Career</HightText>
-        </Text>
+        <ChartTitle>
+          Sustainability <HightText>VS</HightText> Career
+        </ChartTitle>
       }
     >
       <div className={styles.stats}>
-        {COLUMNS.map(({ id, name, description, format, getBgColor }) => (
-          <div key={id} title={description} className={styles.row}>
-            <span
-              className={styles.sustainabilityStat}
-              style={{
-                backgroundColor:
-                  !loading && stats && careerAveragesStats && stats[id] !== null
-                    ? // @ts-ignore
-                      getBgColor(stats[id], careerAveragesStats)
-                    : BLUE,
-              }}
-            >
-              {loading ? (
-                <Spinner size="small" center />
-              ) : stats ? (
-                // @ts-ignore
-                format(stats[id])
-              ) : (
-                <span>&nbsp;</span>
-              )}
-            </span>
-            <span className={styles.label}>{name}</span>
-            <span className={styles.careerAveragesStat}>
-              {loading ? (
-                <Spinner size="small" center />
-              ) : careerAveragesStats ? (
-                // @ts-ignore
-                format(careerAveragesStats[id])
-              ) : (
-                <span>&nbsp;</span>
-              )}
-            </span>
-          </div>
-        ))}
+        {COLUMNS.map(({ id, name, description, format, getBgColor }) => {
+          const color =
+            !loading && stats && careerAveragesStats && stats[id] !== null
+              ? // @ts-ignore
+                getBgColor(stats[id], careerAveragesStats)
+              : BLUE;
+          return (
+            <div key={id} title={description} className={styles.row}>
+              <span
+                className={styles.sustainabilityStat}
+                style={{
+                  backgroundColor: color,
+                }}
+              >
+                {loading ? (
+                  <Spinner
+                    size={size.screen === BreakPoint.l ? "medium" : "small"}
+                    center
+                  />
+                ) : stats ? (
+                  // @ts-ignore
+                  format(stats[id])
+                ) : (
+                  <span>&nbsp;</span>
+                )}
+              </span>
+              <span
+                className={styles.label}
+                style={{ color: color === BLUE ? "" : color }}
+              >
+                {name}
+              </span>
+              <span className={styles.careerAveragesStat}>
+                {loading ? (
+                  <Spinner
+                    size={size.screen === BreakPoint.l ? "medium" : "small"}
+                    center
+                  />
+                ) : careerAveragesStats ? (
+                  // @ts-ignore
+                  format(careerAveragesStats[id])
+                ) : (
+                  <span>&nbsp;</span>
+                )}
+              </span>
+            </div>
+          );
+        })}
       </div>
+      <Legend />
     </Chart>
   );
 }
 
+const LEGEND_INFO = [
+  {
+    color: "rgba(76, 167, 222, 1)",
+    label: "Blue is sustainable",
+  },
+  {
+    color: "rgba(212, 97, 97, 1)",
+    label: "Red is unsustainable",
+  },
+  {
+    color: "rgba(255, 255, 255, 0.5)",
+    label: "Grey is career average",
+  },
+] as const;
+
+function Legend() {
+  return (
+    <div className={styles.legends}>
+      {LEGEND_INFO.map(({ color, label }) => (
+        <div key={label} className={styles.legend}>
+          <div className={styles.box} style={{ backgroundColor: color }} />
+          <div className={styles.label}>{label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
 export default SustainabilityVSCareerChart;
