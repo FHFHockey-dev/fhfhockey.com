@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
 
@@ -18,6 +18,7 @@ import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import ClientOnly from "components/ClientOnly";
 import SustainabilityVSCareerChart from "components/SustainabilityVSCareerChart";
 import Image from "next/image";
+import { toPng } from "html-to-image";
 
 function Charts() {
   const router = useRouter();
@@ -72,6 +73,28 @@ function Small({
   chartTypeOption,
   setChartTypeOption,
 }: any) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const onDownloadClick = (playerName: string) => {
+    if (ref.current === null) {
+      return;
+    }
+
+    toPng(ref.current, {
+      cacheBust: true,
+      canvasWidth: 500,
+      canvasHeight: 844,
+    })
+      .then((dataUrl) => {
+        const link = document.createElement("a");
+        link.download = `${playerId}-${playerName}.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
   return (
     <section className={styles.small}>
       <div className={styles.playerAutocompleteWrapper}>
@@ -92,9 +115,12 @@ function Small({
         />
       </div>
 
-      <div id="dashboard" className={styles.dashboard}>
+      <div ref={ref} id="dashboard" className={styles.dashboard}>
         <div className={styles.bioCard}>
-          <PlayerBioCard playerId={playerId} />
+          <PlayerBioCard
+            playerId={playerId}
+            onPlayerImageClick={onDownloadClick}
+          />
         </div>
 
         <ClientOnly className={styles.controller}>
@@ -136,6 +162,29 @@ function Small({
 }
 
 function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const onDownloadClick = () => {
+    if (ref.current === null) {
+      return;
+    }
+
+    toPng(ref.current, {
+      cacheBust: true,
+      canvasWidth: 1440,
+      canvasHeight: 1080,
+    })
+      .then((dataUrl) => {
+        const link = document.createElement("a");
+        link.download = `${playerId}-player.png`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
   return (
     <section className={styles.large}>
       <h1 className={styles.title}>
@@ -159,7 +208,7 @@ function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
         />
       </div>
       <div className={styles.actions}>
-        <IconButton onClick={() => window.alert("downloading...")}>
+        <IconButton onClick={onDownloadClick}>
           <Image
             src="/pictures/download.svg"
             alt="download"
@@ -177,7 +226,7 @@ function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
         </IconButton>
       </div>
 
-      <div id="dashboard" className={styles.dashboard}>
+      <div ref={ref} id="dashboard" className={styles.dashboard}>
         <div className={styles.bioCard}>
           <PlayerBioCard playerId={playerId} />
         </div>
