@@ -36,19 +36,19 @@ $small: 6px;
     .stats {
       padding: 12px;
       display: grid;
-      grid-template-rows: 1fr 1fr;
-      grid-template-columns: 55% 45%;
+      grid-template-rows: 120px 1fr;
+      grid-template-columns: 60% 40%;
       grid-template-areas:
         "timeOnIce timeOnIce"
         "coverageChart sustainabilityVScareerAverages";
 
       .timeOnIce {
         grid-area: timeOnIce;
-        height: 185px;
       }
 
       .coverageChart {
         grid-area: coverageChart;
+        margin-left: -15px;
       }
 
       .sustainabilityVScareerAverages {

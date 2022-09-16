@@ -50,42 +50,6 @@ const DATA = {
   ],
 };
 
-const OPTIONS = {
-  responsive: true,
-  maintainAspectRatio: false,
-  elements: {
-    line: {
-      borderWidth: 2,
-      color: "rgba(255, 255, 255, 0.25)",
-    },
-  },
-  scales: {
-    r: {
-      angleLines: {
-        color: "rgba(255, 255, 255, 0.25)",
-      },
-      grid: {
-        color: "white",
-      },
-      pointLabels: {
-        color: "white",
-        callback() {
-          return " ";
-        },
-      },
-      ticks: {
-        display: false,
-        stepSize: 20,
-      },
-      min: 0,
-      max: 100,
-    },
-  },
-  layout: {
-    padding: 30,
-  },
-} as const;
-
 type CategoryCoverageChartProps = {
   playerId: number | undefined;
   timeOption: TimeOption;
@@ -162,6 +126,42 @@ function CategoryCoverageChart({
       });
     },
   };
+
+  const OPTIONS = {
+    responsive: true,
+    maintainAspectRatio: false,
+    elements: {
+      line: {
+        borderWidth: 2,
+        color: "rgba(255, 255, 255, 0.25)",
+      },
+    },
+    scales: {
+      r: {
+        angleLines: {
+          color: "rgba(255, 255, 255, 0.25)",
+        },
+        grid: {
+          color: "white",
+        },
+        pointLabels: {
+          color: "white",
+          callback() {
+            return " ";
+          },
+        },
+        ticks: {
+          display: false,
+          stepSize: 20,
+        },
+        min: 0,
+        max: 100,
+      },
+    },
+    layout: {
+      padding: size.screen === BreakPoint.l ? 30 : 20,
+    },
+  } as const;
 
   return (
     <Chart
