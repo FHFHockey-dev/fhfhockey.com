@@ -1,168 +1,122 @@
 @import "styles/vars.scss";
 
-@media only screen and (min-width: $screen-large) {
-  .container {
+$mobile-header-height: 60px;
+.container {
+  button {
+    all: unset;
+    &:hover {
+      cursor: pointer;
+    }
+  }
+  .header {
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    height: $mobile-header-height;
+    background-color: rgba(43, 43, 43, 1);
+    padding: 1rem;
+
+    .burgerButton {
+    }
+
+    // two lines under the header
+    &::before {
+      content: "";
+      background-color: $primary-color;
+      width: 100%;
+      height: 2.5px;
+      position: absolute;
+      left: 0;
+      bottom: 0;
+    }
+    &::after {
+      content: "";
+      background-color: $primary-color;
+      width: 100%;
+      height: 2.5px;
+      position: absolute;
+      left: 0;
+      bottom: 5px;
+    }
+
+    // hideable nav bar
+    position: sticky;
+    top: 0;
+    transition: transform ease 0.5s;
+    z-index: 10;
+    &.hidden {
+      transform: translate3d(0, calc(-100% - 2px), 0);
+    }
   }
 
-  // Main Conetent
-  .content {
-    flex: 1;
-    scrollbar-width: none;
+  .footer {
+    height: 65px;
+    background: rgba(0, 0, 0, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
-}
 
-/* scroll bar */
-.content::-webkit-scrollbar {
-  display: none;
-  /* Safari and Chrome */
-}
+  // mobile menu
+  .menu {
+    background-color: $bg-dark;
+    position: fixed;
+    top: $mobile-header-height;
+    z-index: 10;
+    width: 100%;
+    height: calc(100% - $mobile-header-height);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    touch-action: none;
 
-// Page Specific Content
-.pageContent {
-  padding: 0 0.75rem;
-  overflow-x: hidden;
-  @media only screen and (min-width: $screen-large) {
-    padding: 0 1.5rem;
-  }
-}
+    nav {
+      margin-top: 32px;
+      margin-left: 28px;
+      ul {
+        all: unset;
+        list-style-type: none;
+        font-family: "Roboto Condensed";
+        font-weight: 500;
+        font-size: 2rem;
+        color: rgba(255, 255, 255, 0.75);
 
-// burger menu
-.burgerButton {
-  visibility: hidden;
-}
-
-@media only screen and (min-width: $screen-large) {
-  .burgerMenu {
-    display: none;
-  }
-  .realBurgerButton {
-    display: none;
-  }
-}
-
-.header {
-  border-bottom: 4px solid white;
-  background: #07aae2;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  padding-top: 10px;
-  padding-left: 10px;
-  padding-right: 10px;
-  padding-bottom: 10px;
-  margin-bottom: 0;
-  font-family: "Didact Gothic", sans-serif;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  white-space: nowrap;
-  transition: transform ease 0.5s;
-  &.hidden {
-    transform: translate3d(0, calc(-100% - 2px), 0);
-  }
-  .branding {
-    /* float: left; */
-    font-size: 24px;
-    h1 {
-      margin: 0;
-      @media only screen and (max-width: $screen-medium-max) {
-        font-size: 1.4rem;
-        font-weight: 550;
-        text-transform: uppercase;
+        li:not(:last-child) {
+          margin-bottom: 0.7rem;
+        }
       }
     }
-  }
 
-  .socialMedias {
-    display: none;
-    @media only screen and (min-width: $screen-large) {
+    .socialMedias {
       display: flex;
+      justify-content: center;
+      gap: 26px;
+    }
+
+    .join {
+      margin: 0 auto;
+      margin-bottom: 34px;
+      margin-top: 30px;
+      padding: 10px 55px;
+      font-family: "Roboto Condensed";
+      font-weight: 500;
+      font-size: 1.5rem;
+      filter: drop-shadow(0px 1px 4px #4ca7dd);
+      border-radius: 8px;
+      border: 1.5px solid #5fc3ff;
+      display: flex;
+      justify-content: center;
       align-items: center;
-      gap: 2rem;
     }
   }
 
-  @media only screen and (min-width: $screen-medium) {
-    color: #ffffff;
-    padding-left: 20px;
-  }
-
-  @media only screen and (min-width: $screen-large) {
-    min-height: 70px;
-    display: flex;
-    align-items: center;
-    padding-top: 8px;
-    padding-bottom: 10px;
-    padding-right: 20px;
-  }
-}
-
-.header .highlight {
-  color: #202020;
-  font-weight: bold;
-  cursor: pointer;
-}
-/*////////////////////////////////////////////////////////////////// Right Nav Bar */
-
-.navBarRightSide {
-  /* scroll bar */
-  overflow-y: scroll;
-  &::-webkit-scrollbar {
-    display: none;
-    /* Safari and Chrome */
-  }
-  display: none;
-  width: 125px;
-  height: 100%;
-  top: 0;
-  right: 0;
-  padding-top: 40px;
-  background-color: #101010;
-  text-transform: uppercase;
-  text-align: left;
-  border-left: 3px solid white;
-  ul {
-    list-style-type: none;
-  }
-  @media only screen and (min-width: $screen-large) {
-    display: block;
-    position: sticky;
-    height: 100vh;
-  }
-}
-
-.navBarRightSide li a {
-  font-family: "Train One", cursive;
-  color: #07aae2;
-  padding: 8px;
-  font-size: 14px;
-  display: block;
-  margin-left: -25px;
-  text-decoration: none;
-}
-
-nav .currentPage a {
-  color: white;
-  font-style: oblique;
-}
-
-.navBarRightSide li a:hover {
-  font-weight: bolder;
-  color: white;
-  cursor: pointer;
-}
-
-.fhfhLogo {
-  max-width: 100px;
-  max-height: 100px;
-  align-content: center;
-  position: absolute;
-  bottom: 25px;
-  padding-left: 10px;
-
-  @media screen and (max-height: 435px) {
-    display: none;
+  // Page Specific Content
+  .pageContent {
+    padding: 0 0.75rem;
+    overflow-x: hidden;
+    @media only screen and (min-width: $screen-large) {
+      padding: 0 1.5rem;
+    }
   }
 }

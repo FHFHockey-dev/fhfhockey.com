@@ -1,10 +1,7 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/router";
 import classNames from "classnames";
-import { slide as Menu } from "react-burger-menu";
-import BurgerButton from "components/BurgerButton";
 import useHideableNavbar from "hooks/useHideableNavbar";
 
 import styles from "./Layout.module.scss";
@@ -13,81 +10,15 @@ type LayoutProps = {
   children: React.ReactNode;
 };
 
-const links: { label: string; link: string }[] = [
-  { label: "Home", link: "/" },
-  { label: "Podcast", link: "/podfeed" },
-  { label: "Lines", link: "/lines" },
-  { label: "Game Grid", link: "/game-grid" },
-  { label: "Stats", link: "/stats" },
-  { label: "Charts", link: "/charts" },
-  { label: "Blog", link: "/blog" },
-];
-
-type BurgerMenuProps = {
-  menuOpen: boolean;
-  setMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  pathname: string;
-};
-
-function BurgerMenu({ menuOpen, setMenuOpen, pathname }: BurgerMenuProps) {
-  const bmStyles = {
-    bmCrossButton: {
-      height: "30px",
-      width: "30px",
-    },
-    bmCross: {
-      background: "#297FB0",
-      width: "7px",
-      height: "25px",
-    },
-    bmMenuWrap: {
-      position: "fixed",
-      height: "100%",
-      width: "125px",
-    },
-    bmOverlay: {
-      background: "rgba(0, 0, 0, 0.3)",
-    },
-  };
-  return (
-    <Menu
-      isOpen={menuOpen}
-      onStateChange={(state) => setMenuOpen(state.isOpen)}
-      styles={bmStyles}
-      menuClassName={styles.burgerMenu}
-      burgerButtonClassName={styles.burgerButton}
-      right
-    >
-      <aside className={styles.navBarRightSide}>
-        <nav>
-          <ul>
-            {links.map(({ label, link }) => (
-              <li
-                key={link}
-                // Links in Nav Bar ("currentPage" on whichever page you're on)
-                className={classNames({
-                  [styles.currentPage]: pathname === link,
-                })}
-              >
-                <Link href={link}>
-                  <a onClick={() => setMenuOpen(false)}>{label}</a>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <div className={styles.fhfhLogo}>
-          <Image
-            src="/pictures/circle.png"
-            width={100}
-            height={100}
-            alt="FHFH"
-          />
-        </div>
-      </aside>
-    </Menu>
-  );
-}
+// const links: { label: string; link: string }[] = [
+//   { label: "Home", link: "/" },
+//   { label: "Podcast", link: "/podfeed" },
+//   { label: "Lines", link: "/lines" },
+//   { label: "Game Grid", link: "/game-grid" },
+//   { label: "Stats", link: "/stats" },
+//   { label: "Charts", link: "/charts" },
+//   { label: "Blog", link: "/blog" },
+// ];
 
 function SocialMedias() {
   return (
@@ -156,80 +87,98 @@ function SocialMedias() {
   );
 }
 
-function Layout({ children }: LayoutProps) {
-  const router = useRouter();
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  const { navbarRef, isNavbarVisible } = useHideableNavbar();
-
+function BurgerButton({ onClick }: { onClick: () => void }) {
   return (
-    <div className={styles.container}>
-      {/* Main Content */}
-      <div className={styles.content}>
-        <BurgerMenu
-          menuOpen={menuOpen}
-          setMenuOpen={setMenuOpen}
-          pathname={router.pathname}
-        />
-        <header
-          ref={navbarRef}
-          className={classNames(styles.header, {
-            [styles.hidden]: !isNavbarVisible,
-          })}
-        >
-          <div className={styles.branding}>
-            <h1>
-              <span
-                className={styles.highlight}
-                onClick={() => router.push("/")}
-              >
-                Five Hole
-              </span>{" "}
-              Fantasy Hockey
-            </h1>
-          </div>
+    <button className={styles.burgerButton} onClick={onClick}>
+      <Image src="/pictures/burgerMenu.svg" alt="menu" width={24} height={16} />
+    </button>
+  );
+}
 
-          <SocialMedias />
-          {/* Only show the buger button in small screen */}
-          <BurgerButton
-            className={styles.realBurgerButton}
-            onClick={() => {
-              setMenuOpen(true);
-            }}
-          />
-        </header>
-        <main className={styles.pageContent}>{children}</main>
+function Footer() {
+  return (
+    <footer className={styles.footer}>
+      <Image
+        src="/pictures/logo-fhfh.svg"
+        alt="FHFH logo"
+        width={80}
+        height={24}
+      />
+    </footer>
+  );
+}
+
+type MobileMenuProps = {
+  setMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
+};
+function MobileMenu({ setMenuOpen }: MobileMenuProps) {
+  return (
+    <div className={styles.menu} onClick={() => setMenuOpen(false)}>
+      <nav>
+        {/* links */}
+        <ul>
+          <li>HOME</li>
+          <li>PODCAST</li>
+        </ul>
+      </nav>
+
+      <div>
+        {/* social medias */}
+        <SocialMedias />
+        {/* join button */}
+        <button className={styles.join}>JOIN COMMUNITY</button>
+        <Footer />
       </div>
-      {/* Right Nav Bar */}
-      <aside className={styles.navBarRightSide}>
-        <nav>
-          <ul>
-            {links.map(({ label, link }) => (
-              <li
-                key={link}
-                // Links in Nav Bar ("currentPage" on whichever page you're on)
-                className={classNames({
-                  [styles.currentPage]: router.pathname === link,
-                })}
-              >
-                <Link href={link}>
-                  <a>{label}</a>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-        <div className={styles.fhfhLogo}>
-          <Image
-            src="/pictures/circle.png"
-            width={100}
-            height={100}
-            alt="FHFH"
-          />
-        </div>
-      </aside>
     </div>
   );
 }
 
+function Layout({ children }: LayoutProps) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const { navbarRef, isNavbarVisible } = useHideableNavbar();
+
+  return (
+    <div className={styles.container}>
+      <header
+        ref={navbarRef}
+        className={classNames(styles.header, {
+          // don't hide the nav bar when the menu is open
+          [styles.hidden]: menuOpen ? false : !isNavbarVisible,
+        })}
+      >
+        <Link href="/">
+          <a>
+            <Image
+              src="/pictures/logo.svg"
+              alt="FHFH logo"
+              width={182}
+              height={24}
+            />
+          </a>
+        </Link>
+
+        {!menuOpen ? (
+          <BurgerButton
+            onClick={() => {
+              setMenuOpen(true);
+            }}
+          />
+        ) : (
+          <button onClick={() => setMenuOpen(false)}>
+            <Image
+              src="/pictures/close.svg"
+              alt="close menu"
+              width={22}
+              height={22}
+            />
+          </button>
+        )}
+      </header>
+      {menuOpen && <MobileMenu setMenuOpen={setMenuOpen} />}
+      <main className={styles.pageContent}>{children}</main>
+
+      <Footer />
+    </div>
+  );
+}
 export default Layout;

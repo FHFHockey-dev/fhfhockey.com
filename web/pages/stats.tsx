@@ -21,7 +21,7 @@ function Stats({ teams }: StatsProps) {
         description="Five Hole Fantasy Hockey Podcast Stats for all teams in NHL."
       />
 
-      <TextBanner text="Stat Catalogue" />
+      <h1>Stat Catalogue</h1>
 
       <section className={styles.cards}>
         {teams.map((team) => (
