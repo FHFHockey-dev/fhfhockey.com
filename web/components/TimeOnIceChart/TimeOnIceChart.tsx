@@ -178,7 +178,10 @@ function TimeOnIceChart({
           },
         },
         grid: {
-          borderColor: "white",
+          borderColor:
+            size.screen === BreakPoint.l
+              ? "white"
+              : "rgba(255, 255, 255, 0.25)",
           borderWidth: 3,
           // remove vertial lines
           drawOnChartArea: false,
