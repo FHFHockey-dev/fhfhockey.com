@@ -96,6 +96,14 @@ $small: 6px;
     margin-top: 24px;
     margin-bottom: 24px;
   }
+  .actions {
+    grid-column: 8 / 9;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+    margin-bottom: 24px;
+    gap: 8px;
+  }
 
   .dashboard {
     // create extra space at the bottom
@@ -193,4 +201,20 @@ $small: 6px;
 
 .blue {
   color: rgba(76, 167, 221, 1);
+}
+
+.button {
+  all: unset;
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  &:hover {
+    cursor: pointer;
+    opacity: 0.8;
+  }
 }

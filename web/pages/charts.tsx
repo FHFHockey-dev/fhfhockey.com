@@ -17,6 +17,7 @@ import {
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import ClientOnly from "components/ClientOnly";
 import SustainabilityVSCareerChart from "components/SustainabilityVSCareerChart";
+import Image from "next/image";
 
 function Charts() {
   const router = useRouter();
@@ -157,6 +158,24 @@ function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
           }}
         />
       </div>
+      <div className={styles.actions}>
+        <IconButton onClick={() => window.alert("downloading...")}>
+          <Image
+            src="/pictures/download.svg"
+            alt="download"
+            width={20}
+            height={24}
+          />
+        </IconButton>
+        <IconButton onClick={() => window.alert("sharing...")}>
+          <Image
+            src="/pictures/share.svg"
+            alt="download"
+            width={26}
+            height={20}
+          />
+        </IconButton>
+      </div>
 
       <div id="dashboard" className={styles.dashboard}>
         <div className={styles.bioCard}>
@@ -210,6 +229,20 @@ function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
 
 function Blue({ children }: { children: React.ReactNode }) {
   return <span className={styles.blue}>{children}</span>;
+}
+
+function IconButton({
+  children,
+  ...rest
+}: React.DetailedHTMLProps<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  HTMLButtonElement
+>) {
+  return (
+    <button className={styles.button} {...rest}>
+      {children}
+    </button>
+  );
 }
 
 export default Charts;
