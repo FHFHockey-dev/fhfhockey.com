@@ -98,6 +98,10 @@
   }
 
   .join {
+    all: unset;
+    &:hover {
+      cursor: pointer;
+    }
     margin: 0 auto;
     margin-bottom: 34px;
     margin-top: 30px;

@@ -2,12 +2,6 @@
 
 $mobile-header-height: 60px;
 .container {
-  button {
-    all: unset;
-    &:hover {
-      cursor: pointer;
-    }
-  }
   .header {
     display: flex;
     justify-content: space-between;
@@ -16,7 +10,11 @@ $mobile-header-height: 60px;
     background-color: rgba(43, 43, 43, 1);
     padding: 1rem;
 
-    .burgerButton {
+    button {
+      all: unset;
+      &:hover {
+        cursor: pointer;
+      }
     }
 
     // two lines under the header
