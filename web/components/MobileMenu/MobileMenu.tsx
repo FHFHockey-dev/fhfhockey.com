@@ -1,13 +1,14 @@
+import React, { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import classNames from "classnames";
+
 import { Footer } from "components/Layout/Layout";
 import ITEMS_DATA, {
   NavbarItem,
-  NavbarItemCategory,
+  NavbarItemCategory as NavbarItemCategoryType,
   NavbarItemLink,
 } from "components/Layout/navbarItems";
-import Image from "next/image";
-import Link from "next/link";
-import React from "react";
 
 import styles from "./MobileMenu.module.scss";
 
@@ -16,7 +17,7 @@ type MobileMenuProps = {
 };
 
 function isCategoryActive(
-  category: NavbarItemCategory,
+  category: NavbarItemCategoryType,
   currentPath: string
 ): boolean {
   return category.items.some((item) => {
@@ -33,7 +34,50 @@ function isLinkActive(link: NavbarItemLink, currentPath: string): boolean {
   return link.href === currentPath;
 }
 
-function NavBarItems({ items }: { items: NavbarItem[] }) {
+type NavBarCategoryProps = {
+  item: NavbarItemCategoryType;
+  onItemClick: (item?: NavbarItem) => void;
+};
+
+function NavbarItemCategory({ item, onItemClick }: NavBarCategoryProps) {
+  const [collapsed, setCollapsed] = useState(() =>
+    isCategoryActive(item, window.location.pathname)
+  );
+
+  return (
+    <li
+      className={classNames(styles.category, {
+        [styles.active]: isCategoryActive(item, window.location.pathname),
+        [styles.collapsed]: collapsed,
+      })}
+    >
+      <div
+        onClick={() => {
+          setCollapsed((prev) => !prev);
+        }}
+      >
+        <div className={styles.category_item}>
+          {item.label}{" "}
+          <Image
+            src="/pictures/menu-arrow-drop-down.svg"
+            alt="expand category"
+            width={32}
+            height={32}
+          />
+        </div>
+      </div>
+      {collapsed && (
+        <NavBarItems onItemClick={onItemClick} items={item.items} />
+      )}
+    </li>
+  );
+}
+
+type NavBarItemsProps = {
+  items: NavbarItem[];
+  onItemClick: (item?: NavbarItem) => void;
+};
+function NavBarItems({ items, onItemClick }: NavBarItemsProps) {
   return (
     <>
       {/* navbar items */}
@@ -41,26 +85,11 @@ function NavBarItems({ items }: { items: NavbarItem[] }) {
         {items.map((item, idx) => {
           if (item.type === "category") {
             return (
-              <li
+              <NavbarItemCategory
                 key={idx}
-                className={classNames(styles.category, {
-                  [styles.active]: isCategoryActive(
-                    item,
-                    window.location.pathname
-                  ),
-                })}
-              >
-                <div className={styles.category_item}>
-                  {item.label}{" "}
-                  <Image
-                    src="/pictures/menu-arrow-drop-down.svg"
-                    alt="expand category"
-                    width={32}
-                    height={32}
-                  />
-                </div>
-                <NavBarItems items={item.items} />
-              </li>
+                item={item}
+                onItemClick={onItemClick}
+              />
             );
           } else if (item.type === "link") {
             return (
@@ -69,6 +98,7 @@ function NavBarItems({ items }: { items: NavbarItem[] }) {
                 className={classNames(styles.link, {
                   [styles.active]: isLinkActive(item, window.location.pathname),
                 })}
+                onClick={() => onItemClick(item)}
               >
                 <Link href={item.href}>
                   <a>{item.label}</a>
@@ -85,10 +115,14 @@ function NavBarItems({ items }: { items: NavbarItem[] }) {
 function MobileMenu({ setMenuOpen }: MobileMenuProps) {
   return (
     <div className={styles.menu}>
+      <nav>
+        <NavBarItems
+          items={ITEMS_DATA}
+          onItemClick={() => setMenuOpen(false)}
+        />
+      </nav>
+
       <div>
-        <nav>
-          <NavBarItems items={ITEMS_DATA} />
-        </nav>
         {/* social medias */}
         <SocialMedias />
         {/* join button */}

@@ -14,11 +14,17 @@
   justify-content: space-between;
   //   touch-action: none;
   overflow-y: scroll;
+  overflow-x: hidden;
 
   nav {
     margin-top: 32px;
     margin-left: 20px;
     line-height: 37.5px;
+    li {
+      &:hover {
+        cursor: pointer;
+      }
+    }
     .category {
       margin-top: calc(32px - 2px);
       .category_item {
@@ -27,13 +33,23 @@
         align-items: center;
         padding: 2px 9px;
         padding-right: 0;
-        margin-bottom: 0.3rem;
         transition: background-color 200ms linear;
       }
 
+      // rotate the arrow
       img {
         transition: transform 200ms linear;
         transform: rotate(-90deg);
+      }
+
+      &.collapsed {
+        // rotate the arrow
+        img {
+          transform: rotate(0);
+        }
+        .category_item {
+          margin-bottom: 0.3rem;
+        }
       }
 
       &.active {
@@ -41,11 +57,6 @@
           color: rgba(255, 255, 255, 1);
           background-color: rgba(255, 255, 255, 0.07);
           border-radius: 8px;
-        }
-
-        // rotate the arrow
-        img {
-          transform: rotate(0);
         }
       }
       .menu_list {
@@ -67,8 +78,10 @@
     }
 
     .link {
+      padding: 2px 0;
       padding-left: 9px;
-      &.active {
+      &.active,
+      &:hover {
         color: $primary-color;
       }
     }

@@ -27,7 +27,7 @@ const ITEMS_DATA: NavbarItem[] = [
   {
     type: "category",
     label: "MORE",
-    items: [{ type: "link", label: "SHOP", href: "/more" }],
+    items: [{ type: "link", label: "BLOG", href: "/blog" }],
   },
 ];
 
