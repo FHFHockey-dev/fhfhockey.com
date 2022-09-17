@@ -1,21 +1,15 @@
-import React, { useEffect, useState } from "react";
-import Image from "next/image";
+import { useState } from "react";
 import Link from "next/link";
 import classNames from "classnames";
 
-import { Footer } from "components/Layout/Layout";
-import SocialMedias from "components/SocialMedias";
-import ITEMS_DATA, {
+import {
   NavbarItem,
   NavbarItemCategory as NavbarItemCategoryType,
   NavbarItemLink,
 } from "components/Layout/navbarItems";
+import Image from "next/image";
 
-import styles from "./MobileMenu.module.scss";
-
-type MobileMenuProps = {
-  setMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
-};
+import styles from "./NavbarItems.module.scss";
 
 function isCategoryActive(
   category: NavbarItemCategoryType,
@@ -68,7 +62,7 @@ function NavbarItemCategory({ item, onItemClick }: NavBarCategoryProps) {
         </div>
       </div>
       {collapsed && (
-        <NavBarItems onItemClick={onItemClick} items={item.items} />
+        <NavbarItems_ onItemClick={onItemClick} items={item.items} />
       )}
     </li>
   );
@@ -78,7 +72,8 @@ type NavBarItemsProps = {
   items: NavbarItem[];
   onItemClick: (item?: NavbarItem) => void;
 };
-function NavBarItems({ items, onItemClick }: NavBarItemsProps) {
+
+function NavbarItems_({ items, onItemClick }: NavBarItemsProps) {
   return (
     <>
       {/* navbar items */}
@@ -113,40 +108,10 @@ function NavBarItems({ items, onItemClick }: NavBarItemsProps) {
   );
 }
 
-function MobileMenu({ setMenuOpen }: MobileMenuProps) {
-  // prevent scroll penetration
-  useEffect(() => {
-    document
-      .getElementsByTagName("body")[0]
-      .setAttribute("style", "overflow: hidden;");
-    return () => {
-      document
-        .getElementsByTagName("body")[0]
-        .setAttribute("style", "overflow: visible;");
-    };
-  });
+export default function NavbarItems(props: NavBarItemsProps) {
   return (
-    <div className={styles.menu}>
-      <nav>
-        <NavBarItems
-          items={ITEMS_DATA}
-          onItemClick={() => {
-            setTimeout(() => {
-              setMenuOpen(false);
-            }, 200);
-          }}
-        />
-      </nav>
-
-      <div>
-        {/* social medias */}
-        <SocialMedias />
-        {/* join button */}
-        <button className={styles.join}>JOIN COMMUNITY</button>
-        <Footer />
-      </div>
-    </div>
+    <nav className={styles.items}>
+      <NavbarItems_ {...props} />
+    </nav>
   );
 }
-
-export default MobileMenu;

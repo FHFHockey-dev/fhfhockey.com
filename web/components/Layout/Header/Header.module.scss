@@ -1,0 +1,55 @@
+@import "styles/vars.scss";
+
+$mobile-header-height: 60px;
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: $mobile-header-height;
+  background-color: rgba(43, 43, 43, 1);
+  padding: 1rem;
+
+  button {
+    all: unset;
+    &:hover {
+      cursor: pointer;
+    }
+  }
+
+  // two lines under the header
+  &::before {
+    content: "";
+    background-color: $primary-color;
+    width: 100%;
+    height: 2.5px;
+    position: absolute;
+    left: 0;
+    bottom: 0;
+  }
+  &::after {
+    content: "";
+    background-color: $primary-color;
+    width: 100%;
+    height: 2.5px;
+    position: absolute;
+    left: 0;
+    bottom: 5px;
+  }
+
+  // hideable nav bar
+  position: sticky;
+  top: 0;
+  transition: transform ease 0.5s;
+  z-index: 10;
+  &.hidden {
+    transform: translate3d(0, calc(-100% - 2px), 0);
+  }
+
+  // PC
+  @media only screen and (min-width: $screen-large) {
+    .burgerButton {
+      display: none;
+    }
+  }
+}

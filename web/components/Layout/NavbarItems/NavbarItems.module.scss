@@ -1,0 +1,75 @@
+@import "styles/vars.scss";
+
+nav.items {
+  margin-top: 32px;
+  margin-left: 20px;
+  line-height: 37.5px;
+  li {
+    &:hover {
+      cursor: pointer;
+    }
+  }
+  .category {
+    margin-top: calc(32px - 2px);
+    .category_item {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      padding: 2px 9px;
+      padding-right: 0;
+      transition: background-color 200ms linear;
+    }
+
+    // rotate the arrow
+    img {
+      transition: transform 200ms linear;
+      transform: rotate(-90deg);
+    }
+
+    &.collapsed {
+      // rotate the arrow
+      img {
+        transform: rotate(0);
+      }
+      .category_item {
+        margin-bottom: 0.3rem;
+      }
+    }
+
+    &.active {
+      .category_item {
+        color: rgba(255, 255, 255, 1);
+        background-color: rgba(255, 255, 255, 0.07);
+        border-radius: 8px;
+      }
+    }
+    .menu_list {
+      position: relative;
+      left: 1.3rem;
+    }
+  }
+  .menu_list {
+    all: unset;
+    list-style-type: none;
+    font-family: "Roboto Condensed";
+    font-weight: 500;
+    font-size: 2rem;
+    color: rgba(255, 255, 255, 0.75);
+
+    li:not(:first-child) {
+      margin-top: 0.7rem;
+    }
+  }
+
+  .link {
+    padding: 2px 0;
+    padding-left: 9px;
+    a {
+      display: block;
+    }
+    &.active,
+    &:hover {
+      color: $primary-color;
+    }
+  }
+}
