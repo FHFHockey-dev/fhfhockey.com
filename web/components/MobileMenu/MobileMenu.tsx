@@ -157,10 +157,10 @@ function SocialMedias() {
         rel="noopener noreferrer"
       >
         <Image
-          src="/pictures/white-twitter.png"
+          src="/pictures/socials/twitter.png"
           alt="Twitter"
-          width={32}
-          height={28}
+          width={48}
+          height={48}
         />
       </a>
       <a
@@ -169,10 +169,10 @@ function SocialMedias() {
         rel="noopener noreferrer"
       >
         <Image
-          src="/pictures/white-discord.png"
+          src="/pictures/socials/discord.png"
           alt="Discord"
-          width={38}
-          height={28}
+          width={48}
+          height={48}
         />
       </a>
       <a
@@ -181,10 +181,10 @@ function SocialMedias() {
         rel="noopener noreferrer"
       >
         <Image
-          src="/pictures/white-patreon.png"
+          src="/pictures/socials/patreon.png"
           alt="Patreon"
-          width={28}
-          height={28}
+          width={48}
+          height={48}
         />
       </a>
       <a
@@ -193,10 +193,10 @@ function SocialMedias() {
         rel="noopener noreferrer"
       >
         <Image
-          src="/pictures/white-youtube.png"
+          src="/pictures/socials/youtube.png"
           alt="Youtube"
-          width={28}
-          height={28}
+          width={48}
+          height={48}
         />
       </a>
       <a
@@ -205,10 +205,10 @@ function SocialMedias() {
         rel="noopener noreferrer"
       >
         <Image
-          src="/pictures/white-spotify.png"
+          src="/pictures/socials/spotify.png"
           alt="Spotify"
-          width={28}
-          height={28}
+          width={48}
+          height={48}
         />
       </a>
     </div>
