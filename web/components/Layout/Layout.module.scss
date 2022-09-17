@@ -58,59 +58,6 @@ $mobile-header-height: 60px;
     align-items: center;
   }
 
-  // mobile menu
-  .menu {
-    background-color: $bg-dark;
-    position: fixed;
-    top: $mobile-header-height;
-    z-index: 10;
-    width: 100%;
-    height: calc(100% - $mobile-header-height);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    touch-action: none;
-
-    nav {
-      margin-top: 32px;
-      margin-left: 28px;
-      ul {
-        all: unset;
-        list-style-type: none;
-        font-family: "Roboto Condensed";
-        font-weight: 500;
-        font-size: 2rem;
-        color: rgba(255, 255, 255, 0.75);
-
-        li:not(:last-child) {
-          margin-bottom: 0.7rem;
-        }
-      }
-    }
-
-    .socialMedias {
-      display: flex;
-      justify-content: center;
-      gap: 26px;
-    }
-
-    .join {
-      margin: 0 auto;
-      margin-bottom: 34px;
-      margin-top: 30px;
-      padding: 10px 55px;
-      font-family: "Roboto Condensed";
-      font-weight: 500;
-      font-size: 1.5rem;
-      filter: drop-shadow(0px 1px 4px #4ca7dd);
-      border-radius: 8px;
-      border: 1.5px solid #5fc3ff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-  }
-
   // Page Specific Content
   .pageContent {
     padding: 0 0.75rem;

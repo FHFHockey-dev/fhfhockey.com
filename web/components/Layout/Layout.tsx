@@ -5,87 +5,11 @@ import classNames from "classnames";
 import useHideableNavbar from "hooks/useHideableNavbar";
 
 import styles from "./Layout.module.scss";
+import MobileMenu from "components/MobileMenu";
 
 type LayoutProps = {
   children: React.ReactNode;
 };
-
-// const links: { label: string; link: string }[] = [
-//   { label: "Home", link: "/" },
-//   { label: "Podcast", link: "/podfeed" },
-//   { label: "Lines", link: "/lines" },
-//   { label: "Game Grid", link: "/game-grid" },
-//   { label: "Stats", link: "/stats" },
-//   { label: "Charts", link: "/charts" },
-//   { label: "Blog", link: "/blog" },
-// ];
-
-function SocialMedias() {
-  return (
-    <div className={styles.socialMedias}>
-      <a
-        href="https://www.twitter.com/fhfhockey"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <Image
-          src="/pictures/white-twitter.png"
-          alt="Twitter"
-          width={32}
-          height={28}
-        />
-      </a>
-      <a
-        href="https://discord.gg/kfnyrn7"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <Image
-          src="/pictures/white-discord.png"
-          alt="Discord"
-          width={38}
-          height={28}
-        />
-      </a>
-      <a
-        href="https://www.patreon.com/FHFHRadio"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <Image
-          src="/pictures/white-patreon.png"
-          alt="Patreon"
-          width={28}
-          height={28}
-        />
-      </a>
-      <a
-        href="https://www.youtube.com/fiveholefantasyhockey"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <Image
-          src="/pictures/white-youtube.png"
-          alt="Youtube"
-          width={28}
-          height={28}
-        />
-      </a>
-      <a
-        href="https://open.spotify.com/show/0tcyfS62ZHdLYA3Xf3QgSQ?si=HtfgMe8_QD6KfwiOw2fC1g"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <Image
-          src="/pictures/white-spotify.png"
-          alt="Spotify"
-          width={28}
-          height={28}
-        />
-      </a>
-    </div>
-  );
-}
 
 function BurgerButton({ onClick }: { onClick: () => void }) {
   return (
@@ -95,7 +19,7 @@ function BurgerButton({ onClick }: { onClick: () => void }) {
   );
 }
 
-function Footer() {
+export function Footer() {
   return (
     <footer className={styles.footer}>
       <Image
@@ -105,31 +29,6 @@ function Footer() {
         height={24}
       />
     </footer>
-  );
-}
-
-type MobileMenuProps = {
-  setMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
-};
-function MobileMenu({ setMenuOpen }: MobileMenuProps) {
-  return (
-    <div className={styles.menu} onClick={() => setMenuOpen(false)}>
-      <nav>
-        {/* links */}
-        <ul>
-          <li>HOME</li>
-          <li>PODCAST</li>
-        </ul>
-      </nav>
-
-      <div>
-        {/* social medias */}
-        <SocialMedias />
-        {/* join button */}
-        <button className={styles.join}>JOIN COMMUNITY</button>
-        <Footer />
-      </div>
-    </div>
   );
 }
 
