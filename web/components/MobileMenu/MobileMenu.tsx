@@ -129,7 +129,11 @@ function MobileMenu({ setMenuOpen }: MobileMenuProps) {
       <nav>
         <NavBarItems
           items={ITEMS_DATA}
-          onItemClick={() => setMenuOpen(false)}
+          onItemClick={() => {
+            setTimeout(() => {
+              setMenuOpen(false);
+            }, 200);
+          }}
         />
       </nav>
 
