@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import classNames from "classnames";
@@ -113,6 +113,17 @@ function NavBarItems({ items, onItemClick }: NavBarItemsProps) {
 }
 
 function MobileMenu({ setMenuOpen }: MobileMenuProps) {
+  // prevent scroll penetration
+  useEffect(() => {
+    document
+      .getElementsByTagName("body")[0]
+      .setAttribute("style", "overflow: hidden;");
+    return () => {
+      document
+        .getElementsByTagName("body")[0]
+        .setAttribute("style", "overflow: visible;");
+    };
+  });
   return (
     <div className={styles.menu}>
       <nav>
