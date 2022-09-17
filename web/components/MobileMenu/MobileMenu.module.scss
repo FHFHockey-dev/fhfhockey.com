@@ -80,6 +80,9 @@
     .link {
       padding: 2px 0;
       padding-left: 9px;
+      a {
+        display: block;
+      }
       &.active,
       &:hover {
         color: $primary-color;
