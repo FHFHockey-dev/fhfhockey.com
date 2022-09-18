@@ -3,12 +3,13 @@ import Image from "next/image";
 
 import styles from "./SocialMedias.module.scss";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
+import ClientOnly from "components/ClientOnly";
 
 function SocialMedias() {
   const size = useScreenSize();
   const imgSize = size.screen === BreakPoint.l ? 32 : 48;
   return (
-    <div className={styles.socialMedias}>
+    <ClientOnly className={styles.socialMedias}>
       <a
         href="https://www.twitter.com/fhfhockey"
         target="_blank"
@@ -69,7 +70,7 @@ function SocialMedias() {
           height={imgSize}
         />
       </a>
-    </div>
+    </ClientOnly>
   );
 }
 

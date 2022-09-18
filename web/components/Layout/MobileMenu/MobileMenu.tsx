@@ -8,10 +8,10 @@ import ITEMS_DATA from "components/Layout/navbarItems";
 import styles from "./MobileMenu.module.scss";
 
 type MobileMenuProps = {
-  setMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  onItemClick: () => void;
 };
 
-function MobileMenu({ setMenuOpen }: MobileMenuProps) {
+function MobileMenu({ onItemClick }: MobileMenuProps) {
   // prevent scroll penetration
   useEffect(() => {
     document
@@ -25,18 +25,13 @@ function MobileMenu({ setMenuOpen }: MobileMenuProps) {
   });
   return (
     <div className={styles.menu}>
-      <NavbarItems
-        items={ITEMS_DATA}
-        onItemClick={() => {
-          setTimeout(() => {
-            setMenuOpen(false);
-          }, 200);
-        }}
-      />
+      <NavbarItems items={ITEMS_DATA} onItemClick={onItemClick} />
 
       <div>
         {/* social medias */}
-        <SocialMedias />
+        <div className={styles.socialMediasWrapper}>
+          <SocialMedias />
+        </div>
         {/* join button */}
         <button className={styles.join}>JOIN COMMUNITY</button>
         <Footer />

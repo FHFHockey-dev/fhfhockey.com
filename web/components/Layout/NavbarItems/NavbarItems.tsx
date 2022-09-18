@@ -1,31 +1,32 @@
 import { useState } from "react";
 import Link from "next/link";
 import classNames from "classnames";
+import Image from "next/image";
 
 import {
   NavbarItem,
   NavbarItemCategory as NavbarItemCategoryType,
   NavbarItemLink,
 } from "components/Layout/navbarItems";
-import Image from "next/image";
+import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 
 import styles from "./NavbarItems.module.scss";
 
-function isCategoryActive(
-  category: NavbarItemCategoryType,
-  currentPath: string
-): boolean {
+function isCategoryActive(category: NavbarItemCategoryType): boolean {
   return category.items.some((item) => {
+    const currentPath = window.location.pathname;
+
     if (item.type === "link") {
       // TODO: handle external site
       return item.href === currentPath;
     } else if (item.type === "category") {
-      return isCategoryActive(item, currentPath);
+      return isCategoryActive(item);
     }
   });
 }
 
-function isLinkActive(link: NavbarItemLink, currentPath: string): boolean {
+function isLinkActive(link: NavbarItemLink): boolean {
+  const currentPath = window.location.pathname;
   return link.href === currentPath;
 }
 
@@ -35,14 +36,12 @@ type NavBarCategoryProps = {
 };
 
 function NavbarItemCategory({ item, onItemClick }: NavBarCategoryProps) {
-  const [collapsed, setCollapsed] = useState(() =>
-    isCategoryActive(item, window.location.pathname)
-  );
+  const [collapsed, setCollapsed] = useState(() => isCategoryActive(item));
 
   return (
     <li
       className={classNames(styles.category, {
-        [styles.active]: isCategoryActive(item, window.location.pathname),
+        [styles.active]: isCategoryActive(item),
         [styles.collapsed]: collapsed,
       })}
     >
@@ -53,12 +52,14 @@ function NavbarItemCategory({ item, onItemClick }: NavBarCategoryProps) {
       >
         <div className={styles.category_item}>
           {item.label}{" "}
-          <Image
-            src="/pictures/menu-arrow-drop-down.svg"
-            alt="expand category"
-            width={32}
-            height={32}
-          />
+          <div className={styles.arrow}>
+            <Image
+              src="/pictures/menu-arrow-drop-down.svg"
+              alt="expand category"
+              width={32}
+              height={32}
+            />
+          </div>
         </div>
       </div>
       {collapsed && (
@@ -92,7 +93,7 @@ function NavbarItems_({ items, onItemClick }: NavBarItemsProps) {
               <li
                 key={idx}
                 className={classNames(styles.link, {
-                  [styles.active]: isLinkActive(item, window.location.pathname),
+                  [styles.active]: isLinkActive(item),
                 })}
                 onClick={() => onItemClick(item)}
               >
@@ -109,8 +110,14 @@ function NavbarItems_({ items, onItemClick }: NavBarItemsProps) {
 }
 
 export default function NavbarItems(props: NavBarItemsProps) {
+  const size = useScreenSize();
   return (
-    <nav className={styles.items}>
+    <nav
+      className={classNames(
+        styles.items,
+        size.screen === BreakPoint.l ? styles.large : styles.small
+      )}
+    >
       <NavbarItems_ {...props} />
     </nav>
   );

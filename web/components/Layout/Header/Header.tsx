@@ -1,10 +1,15 @@
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState } from "react";
 import classNames from "classnames";
 
 import useHideableNavbar from "hooks/useHideableNavbar";
 import MobileMenu from "components/Layout/MobileMenu";
+import NavbarItems from "../NavbarItems";
+import ITEMS_DATA from "../navbarItems";
+import ClientOnly from "components/ClientOnly";
+import SocialMedias from "components/SocialMedias";
+
 import styles from "./Header.module.scss";
 
 function BurgerButton({ onClick }: { onClick: () => void }) {
@@ -18,6 +23,13 @@ function BurgerButton({ onClick }: { onClick: () => void }) {
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { navbarRef, isNavbarVisible } = useHideableNavbar();
+
+  const onItemClick = () => {
+    setTimeout(() => {
+      setMenuOpen(false);
+    }, 200);
+  };
+
   return (
     <>
       <header
@@ -27,6 +39,7 @@ function Header() {
           [styles.hidden]: menuOpen ? false : !isNavbarVisible,
         })}
       >
+        {/* logo */}
         <Link href="/">
           <a>
             <Image
@@ -38,6 +51,20 @@ function Header() {
           </a>
         </Link>
 
+        {/* nav bar items */}
+        <ClientOnly className={styles.nav}>
+          <NavbarItems items={ITEMS_DATA} onItemClick={onItemClick} />
+        </ClientOnly>
+
+        {/* social medias */}
+        <div className={styles.socials}>
+          <SocialMedias />
+        </div>
+
+        {/* join button */}
+        <button className={styles.join}>JOIN COMMUNITY</button>
+
+        {/* burger menu - mobile only */}
         {!menuOpen ? (
           <BurgerButton
             onClick={() => {
@@ -55,7 +82,7 @@ function Header() {
           </button>
         )}
       </header>
-      {menuOpen && <MobileMenu setMenuOpen={setMenuOpen} />}
+      {menuOpen && <MobileMenu onItemClick={onItemClick} />}
     </>
   );
 }

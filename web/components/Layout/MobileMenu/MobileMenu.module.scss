@@ -16,6 +16,10 @@
   overflow-y: scroll;
   overflow-x: hidden;
 
+  .socialMediasWrapper {
+    margin-top: 100px;
+  }
+
   .join {
     all: unset;
     &:hover {
