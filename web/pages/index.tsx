@@ -5,6 +5,7 @@ import { NextSeo } from "next-seo";
 
 import styles from "../styles/Home.module.scss";
 import Banner from "../components/Banner";
+import SocialMedias from "components/SocialMedias";
 
 const Home: NextPage = () => {
   return (
@@ -28,54 +29,7 @@ const Home: NextPage = () => {
         />
       </Head>
       <Banner className={styles.socialMedia}>
-        <a
-          href="https://www.twitter.com/fhfhockey"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            src="/pictures/white-twitter.png"
-            alt="Twitter"
-            width={35}
-            height={35}
-          />
-        </a>
-        <a
-          href="https://discord.gg/kfnyrn7"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            src="/pictures/white-discord.png"
-            alt="Discord"
-            width={50}
-            height={28}
-          />
-        </a>
-        <a
-          href="https://www.patreon.com/FHFHRadio"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            src="/pictures/white-patreon.png"
-            alt="Patreon"
-            width={32}
-            height={32}
-          />
-        </a>
-        <a
-          href="https://www.youtube.com/fiveholefantasyhockey"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            src="/pictures/white-youtube.png"
-            alt="Youtube"
-            width={35}
-            height={35}
-          />
-        </a>
+        <SocialMedias />
       </Banner>
     </div>
   );

@@ -3,7 +3,11 @@
 .socialMedias {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 26px;
+  a {
+    display: flex;
+  }
   & > * {
     &:hover {
       opacity: 0.7;
