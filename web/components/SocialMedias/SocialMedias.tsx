@@ -2,8 +2,11 @@ import React from "react";
 import Image from "next/image";
 
 import styles from "./SocialMedias.module.scss";
+import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 
 function SocialMedias() {
+  const size = useScreenSize();
+  const imgSize = size.screen === BreakPoint.l ? 32 : 48;
   return (
     <div className={styles.socialMedias}>
       <a
@@ -14,8 +17,8 @@ function SocialMedias() {
         <Image
           src="/pictures/socials/twitter.png"
           alt="Twitter"
-          width={48}
-          height={48}
+          width={imgSize}
+          height={imgSize}
         />
       </a>
       <a
@@ -26,8 +29,8 @@ function SocialMedias() {
         <Image
           src="/pictures/socials/discord.png"
           alt="Discord"
-          width={48}
-          height={48}
+          width={imgSize}
+          height={imgSize}
         />
       </a>
       <a
@@ -38,8 +41,8 @@ function SocialMedias() {
         <Image
           src="/pictures/socials/patreon.png"
           alt="Patreon"
-          width={48}
-          height={48}
+          width={imgSize}
+          height={imgSize}
         />
       </a>
       <a
@@ -50,8 +53,8 @@ function SocialMedias() {
         <Image
           src="/pictures/socials/youtube.png"
           alt="Youtube"
-          width={48}
-          height={48}
+          width={imgSize}
+          height={imgSize}
         />
       </a>
       <a
@@ -62,8 +65,8 @@ function SocialMedias() {
         <Image
           src="/pictures/socials/spotify.png"
           alt="Spotify"
-          width={48}
-          height={48}
+          width={imgSize}
+          height={imgSize}
         />
       </a>
     </div>
