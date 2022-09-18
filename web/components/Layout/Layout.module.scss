@@ -1,8 +1,12 @@
 @import "styles/vars.scss";
 
 .container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   // Page Specific Content
   .pageContent {
+    flex: 1;
     padding: 0 0.75rem;
     overflow-x: hidden;
     @media only screen and (min-width: $screen-large) {
@@ -11,6 +15,7 @@
   }
 
   .footer {
+    margin-top: 24px;
     height: 65px;
     background: rgba(0, 0, 0, 0.3);
     border-top: 1px solid rgba(255, 255, 255, 0.2);
