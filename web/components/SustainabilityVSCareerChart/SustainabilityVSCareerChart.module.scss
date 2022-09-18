@@ -3,6 +3,7 @@
 .container {
   .header {
     text-align: center;
+    margin-bottom: 0.3rem;
   }
   .stats {
     text-align: right;
@@ -12,6 +13,13 @@
       display: grid;
       grid-template-columns: 1fr 35% 1fr;
       align-items: center;
+      .statsHeader {
+        text-align: center;
+        div {
+          font-size: 0.55rem;
+        }
+      }
+
       &:not(:last-child) {
         margin-bottom: 4px;
       }
@@ -36,6 +44,9 @@
   }
 
   @media only screen and (min-width: $screen-large) {
+    .header {
+      margin-bottom: 0.7rem;
+    }
     .body {
       height: 100%;
     }
@@ -59,6 +70,11 @@
           font-size: 1.625rem;
           padding-left: 3px;
           padding-right: 4px;
+        }
+        .statsHeader {
+          div {
+            font-size: 1rem;
+          }
         }
       }
     }

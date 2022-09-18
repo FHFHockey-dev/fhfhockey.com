@@ -149,11 +149,23 @@ function SustainabilityVSCareerChart({
       bodyClassName={styles.body}
       header={
         <ChartTitle>
-          Sustainability <HightText>VS</HightText> Career
+          Sustainability <HightText>Stats</HightText>
         </ChartTitle>
       }
     >
       <div className={styles.stats}>
+        {/* table header */}
+        <div className={styles.row}>
+          <span className={styles.statsHeader}>
+            <ChartTitle>CURRENT</ChartTitle>
+          </span>
+          <span className={styles.statsHeader}>
+            <HightText>VS</HightText>
+          </span>
+          <span className={styles.statsHeader}>
+            <HightText>CAREER</HightText>
+          </span>
+        </div>
         {COLUMNS.map(({ id, name, description, format, getBgColor }) => {
           const color =
             !loading && stats && careerAveragesStats && stats[id] !== null
