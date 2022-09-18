@@ -18,6 +18,10 @@ nav.items.small {
       padding: 2px 9px;
       padding-right: 0;
       transition: background-color 200ms linear;
+      .arrow {
+        display: flex;
+        align-items: center;
+      }
     }
 
     // rotate the arrow
