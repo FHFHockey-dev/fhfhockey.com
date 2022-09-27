@@ -1,168 +1,26 @@
 @import "styles/vars.scss";
 
-@media only screen and (min-width: $screen-large) {
-  .container {
-    display: flex;
-    justify-content: space-between;
-  }
-
-  // Main Conetent
-  .content {
-    flex: 1;
-    scrollbar-width: none;
-  }
-}
-
-/* scroll bar */
-.content::-webkit-scrollbar {
-  display: none;
-  /* Safari and Chrome */
-}
-
-// Page Specific Content
-.pageContent {
-  padding: 0 0.75rem;
-  overflow-x: hidden;
-  @media only screen and (min-width: $screen-large) {
-    padding: 0 1.5rem;
-  }
-}
-
-// burger menu
-.burgerButton {
-  visibility: hidden;
-}
-
-@media only screen and (min-width: $screen-large) {
-  .burgerMenu {
-    display: none;
-  }
-  .realBurgerButton {
-    display: none;
-  }
-}
-
-.header {
-  border-bottom: 4px solid white;
-  background: #07aae2;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  padding-top: 10px;
-  padding-left: 10px;
-  padding-right: 10px;
-  padding-bottom: 10px;
-  margin-bottom: 0;
-  font-family: "Didact Gothic", sans-serif;
+.container {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  white-space: nowrap;
-  transition: transform ease 0.5s;
-  &.hidden {
-    transform: translate3d(0, calc(-100% - 2px), 0);
-  }
-  .branding {
-    /* float: left; */
-    font-size: 24px;
-    h1 {
-      margin: 0;
-      @media only screen and (max-width: $screen-medium-max) {
-        font-size: 1.4rem;
-        font-weight: 550;
-        text-transform: uppercase;
-      }
-    }
-  }
-
-  .socialMedias {
-    display: none;
+  flex-direction: column;
+  min-height: 100vh;
+  // Page Specific Content
+  .pageContent {
+    flex: 1;
+    padding: 0 0.75rem;
+    overflow-x: hidden;
     @media only screen and (min-width: $screen-large) {
-      display: flex;
-      align-items: center;
-      gap: 2rem;
+      padding: 0 1.5rem;
     }
   }
 
-  @media only screen and (min-width: $screen-medium) {
-    color: #ffffff;
-    padding-left: 20px;
-  }
-
-  @media only screen and (min-width: $screen-large) {
-    min-height: 70px;
+  .footer {
+    margin-top: 24px;
+    height: 65px;
+    background: rgba(0, 0, 0, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
     display: flex;
+    justify-content: center;
     align-items: center;
-    padding-top: 8px;
-    padding-bottom: 10px;
-    padding-right: 20px;
-  }
-}
-
-.header .highlight {
-  color: #202020;
-  font-weight: bold;
-  cursor: pointer;
-}
-/*////////////////////////////////////////////////////////////////// Right Nav Bar */
-
-.navBarRightSide {
-  /* scroll bar */
-  overflow-y: scroll;
-  &::-webkit-scrollbar {
-    display: none;
-    /* Safari and Chrome */
-  }
-  display: none;
-  width: 125px;
-  height: 100%;
-  top: 0;
-  right: 0;
-  padding-top: 40px;
-  background-color: #101010;
-  text-transform: uppercase;
-  text-align: left;
-  border-left: 3px solid white;
-  ul {
-    list-style-type: none;
-  }
-  @media only screen and (min-width: $screen-large) {
-    display: block;
-    position: sticky;
-    height: 100vh;
-  }
-}
-
-.navBarRightSide li a {
-  font-family: "Train One", cursive;
-  color: #07aae2;
-  padding: 8px;
-  font-size: 14px;
-  display: block;
-  margin-left: -25px;
-  text-decoration: none;
-}
-
-nav .currentPage a {
-  color: white;
-  font-style: oblique;
-}
-
-.navBarRightSide li a:hover {
-  font-weight: bolder;
-  color: white;
-  cursor: pointer;
-}
-
-.fhfhLogo {
-  max-width: 100px;
-  max-height: 100px;
-  align-content: center;
-  position: absolute;
-  bottom: 25px;
-  padding-left: 10px;
-
-  @media screen and (max-height: 435px) {
-    display: none;
   }
 }

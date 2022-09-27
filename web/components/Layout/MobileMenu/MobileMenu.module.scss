@@ -1,0 +1,42 @@
+@import "styles/vars.scss";
+@import "../Header/Header.module.scss";
+
+// mobile menu
+.menu {
+  background-color: $bg-dark;
+  position: fixed;
+  top: $mobile-header-height;
+  z-index: 10;
+  width: 100%;
+  height: calc(100% - $mobile-header-height);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  //   touch-action: none;
+  overflow-y: scroll;
+  overflow-x: hidden;
+
+  .socialMediasWrapper {
+    margin-top: 100px;
+  }
+
+  .join {
+    all: unset;
+    &:hover {
+      cursor: pointer;
+    }
+    margin: 0 auto;
+    margin-bottom: 34px;
+    margin-top: 30px;
+    padding: 10px 55px;
+    font-family: "Roboto Condensed";
+    font-weight: 500;
+    font-size: 1.5rem;
+    filter: drop-shadow(0px 1px 4px #4ca7dd);
+    border-radius: 8px;
+    border: 1.5px solid #5fc3ff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+}
