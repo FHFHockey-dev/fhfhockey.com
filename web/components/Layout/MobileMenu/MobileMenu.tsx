@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { animated, useTransition } from "@react-spring/web";
 
 import { Footer } from "components/Layout/Layout";
 import SocialMedias from "components/SocialMedias";
@@ -9,34 +10,55 @@ import styles from "./MobileMenu.module.scss";
 
 type MobileMenuProps = {
   onItemClick: () => void;
+  visible: boolean;
 };
 
-function MobileMenu({ onItemClick }: MobileMenuProps) {
+function MobileMenu({ onItemClick, visible }: MobileMenuProps) {
+  const transitions = useTransition(visible, {
+    from: {
+      opacity: 0,
+      transform: "translateY(300px)",
+    },
+    enter: {
+      opacity: 1,
+      transform: "translateY(0px)",
+    },
+    leave: {
+      opacity: 0,
+      transform: "translateY(300px)",
+    },
+  });
+
   // prevent scroll penetration
   useEffect(() => {
-    document
-      .getElementsByTagName("body")[0]
-      .setAttribute("style", "overflow: hidden;");
+    const body = document.getElementsByTagName("body")[0];
+    if (visible) {
+      body.setAttribute("style", "overflow: hidden;");
+    } else {
+      body.setAttribute("style", "overflow: visible;");
+    }
     return () => {
-      document
-        .getElementsByTagName("body")[0]
-        .setAttribute("style", "overflow: visible;");
+      body.setAttribute("style", "overflow: visible;");
     };
-  });
-  return (
-    <div className={styles.menu}>
-      <NavbarItems items={ITEMS_DATA} onItemClick={onItemClick} />
+  }, [visible]);
 
-      <div>
-        {/* social medias */}
-        <div className={styles.socialMediasWrapper}>
-          <SocialMedias />
-        </div>
-        {/* join button */}
-        <button className={styles.join}>JOIN COMMUNITY</button>
-        <Footer />
-      </div>
-    </div>
+  return transitions(
+    (style, show) =>
+      show && (
+        <animated.div className={styles.menu} style={style}>
+          <NavbarItems items={ITEMS_DATA} onItemClick={onItemClick} />
+
+          <div>
+            {/* social medias */}
+            <div className={styles.socialMediasWrapper}>
+              <SocialMedias />
+            </div>
+            {/* join button */}
+            <button className={styles.join}>JOIN COMMUNITY</button>
+            <Footer />
+          </div>
+        </animated.div>
+      )
   );
 }
 

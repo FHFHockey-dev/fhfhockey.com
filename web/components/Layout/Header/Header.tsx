@@ -82,7 +82,9 @@ function Header() {
           </button>
         )}
       </header>
-      {menuOpen && <MobileMenu onItemClick={onItemClick} />}
+      <ClientOnly>
+        <MobileMenu visible={menuOpen} onItemClick={onItemClick} />
+      </ClientOnly>
     </>
   );
 }

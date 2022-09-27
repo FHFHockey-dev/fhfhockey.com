@@ -16,6 +16,7 @@
     "@emotion/styled": "^11.10.0",
     "@mui/material": "^5.9.2",
     "@portabletext/react": "^1.0.6",
+    "@react-spring/web": "^9.5.5",
     "@sanity/image-url": "^1.0.1",
     "chart.js": "^3.8.2",
     "chartjs-adapter-date-fns": "^2.0.0",
