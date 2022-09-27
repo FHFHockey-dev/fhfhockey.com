@@ -37,7 +37,7 @@ type NavBarCategoryProps = {
 
 function NavbarItemCategory({ item, onItemClick }: NavBarCategoryProps) {
   const [collapsed, setCollapsed] = useState(() => isCategoryActive(item));
-
+  const size = useScreenSize();
   return (
     <li
       className={classNames(styles.category, {
@@ -62,7 +62,8 @@ function NavbarItemCategory({ item, onItemClick }: NavBarCategoryProps) {
           </div>
         </div>
       </div>
-      {collapsed && (
+      {/* always show the sublist but with display: none applied */}
+      {(size.screen === BreakPoint.l || collapsed) && (
         <NavbarItems_ onItemClick={onItemClick} items={item.items} />
       )}
     </li>
