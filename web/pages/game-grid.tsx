@@ -1,8 +1,9 @@
 import React from "react";
 import { NextSeo } from "next-seo";
 import { TextBanner } from "../components/Banner/Banner";
+import GameGrid from "components/GameGrid";
 
-function GameGrid() {
+function GameGridPage() {
   return (
     <div>
       <NextSeo
@@ -13,18 +14,11 @@ function GameGrid() {
       <TextBanner text="Game Grid" />
 
       <div style={{ marginTop: "20px", paddingRight: "8px" }}>
-        <iframe
-          title="Game Gird"
-          src="https://nhl-game-grid.netlify.app/game-grid"
-          height={2000}
-          width="100%"
-          seamless={true}
-          style={{ border: "none" }}
-        />
+        <GameGrid />
       </div>
       <div style={{ marginBottom: "30px" }} />
     </div>
   );
 }
 
-export default GameGrid;
+export default GameGridPage;

@@ -1,0 +1,139 @@
+.dateButtonPrev {
+  position: relative;
+  left: 25%;
+  height: 35px;
+  width: 115px;
+  background: #07aae2;
+  color: #ffffff;
+  border: 1px solid white;
+  padding-left: 20px;
+  padding-right: 20px;
+  border-radius: 8px;
+}
+
+.dateButtonPrev:hover {
+  height: 35px;
+  background: #057fa9;
+  border: 2px solid white;
+}
+
+.dateButtonNext {
+  position: relative;
+  left: 40%;
+  height: 35px;
+  width: 115px;
+  background: #07aae2;
+  color: #ffffff;
+  border: 1px solid white;
+  padding-left: 20px;
+  padding-right: 20px;
+  border-radius: 8px;
+}
+
+.dateButtonNext:hover {
+  height: 35px;
+  background: #057fa9;
+  border: 2px solid white;
+}
+
+.scheduleGrid {
+  color: white;
+  border: 5px solid #ffffff;
+  border-radius: 8px;
+  font-size: 16px;
+  text-align: left;
+  margin-top: 25px;
+}
+
+.scheduleGrid th {
+  flex: content;
+  align-content: center;
+  border-collapse: collapse;
+  background-color: #07aae2;
+  color: white;
+  text-align: left;
+  font-weight: bold;
+  border-radius: 4px;
+  border-bottom: 7px solid black;
+  border-right: 7px solid black;
+  font-family: monospace;
+  height: 20px;
+}
+
+.scheduleGrid tr th:first-child,
+.scheduleGrid tr td:first-child {
+  height: 12px;
+  border-collapse: collapse;
+  font-weight: bold;
+  width: 185px;
+  border-right: 10px solid #07aae2;
+  border-radius: 4px;
+  text-align: left;
+  padding: 10px;
+  font-size: 14px;
+  font-family: monospace;
+}
+
+.scheduleGrid tr th:first-child {
+  border-collapse: collapse;
+  background: #07aae2;
+  text-align: left;
+  font-family: monospace;
+  font-size: 16px;
+  height: 20px;
+}
+
+.scheduleGrid th:nth-child(n + 2),
+.scheduleGrid td:nth-child(n + 2) {
+  padding: 6px 10px;
+  border: 1px solid white;
+  min-width: 65px;
+  text-align: center;
+}
+
+.scheduleGrid tr {
+  font-family: monospace;
+  height: 30px;
+  text-align: center;
+  border-radius: 4px;
+}
+
+.scheduleGrid tr:hover {
+  background-color: #505050;
+}
+
+.scheduleGrid > tbody > tr:nth-of-type(odd) {
+  background-color: #034055;
+}
+
+.scheduleGrid tr:hover:nth-of-type(odd) {
+  background-color: #505050;
+}
+
+.scheduleGrid tr:last-of-type {
+  border-bottom: 3px solid #07aae2;
+}
+
+.scheduleGrid td:last-of-type {
+  border-left: 10px solid black;
+}
+
+.homeAway {
+  font-family: monospace;
+  font-size: 12px;
+  font-weight: bold;
+  float: left;
+  display: flex;
+  align-content: center;
+  vertical-align: middle;
+}
+
+.score {
+  color: lightblue;
+  font-size: 10px;
+}
+
+.totalGamesPerDayCell {
+  background-color: rgb(7, 208, 226);
+  color: white;
+}

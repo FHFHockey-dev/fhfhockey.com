@@ -1,0 +1,31 @@
+.arrow-up {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+
+  border-bottom: 8px solid black;
+}
+
+.arrow-up:hover {
+  cursor: pointer;
+}
+
+.arrow-down:hover {
+  cursor: pointer;
+}
+.arrow-down {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+
+  border-top: 8px solid black;
+}
+
+.disabled {
+  border-top-color: gray;
+  border-bottom-color: gray;
+}
