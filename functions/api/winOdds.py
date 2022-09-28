@@ -5,7 +5,6 @@ from urllib.parse import urlparse, parse_qs
 
 import pandas as pd
 import numpy as np
-from scipy.stats import poisson
 
 class handler(BaseHTTPRequestHandler):
 
@@ -72,6 +71,9 @@ def get_XGF(home_team, away_team, df):
 
     return xGF
 
+def pmf(k,mu):
+    return np.exp(-1*mu) * mu**k / np.math.factorial(k)
+
 def get_game_scores_(home_team, away_team,season_id):
     df = fetch_data(season_id)
     
@@ -85,8 +87,8 @@ def get_game_scores_(home_team, away_team,season_id):
     for row_idx in range(num_rows):
         col = []
         for col_idx in range(num_cols):
-            first = poisson.pmf(mu=home_xGF, k=row_idx)
-            second = poisson.pmf(mu=away_xGF, k=col_idx)
+            first = pmf(mu=home_xGF, k=row_idx)
+            second = pmf(mu=away_xGF, k=col_idx)
             r = first*second
             col.append(r)
         table.append(col)
