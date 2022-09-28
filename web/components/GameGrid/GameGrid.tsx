@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/router";
 
 import Header from "./Header";
 import TeamRow from "./TeamRow";
@@ -10,8 +11,8 @@ import useTeams from "./utils/useTeams";
 import calcWeekScore from "./utils/calcWeekScore";
 import { convertTeamRowToWinOddsList } from "./utils/calcWinOdds";
 
-import styles from "./GameGrid.module.css";
-import { useRouter } from "next/router";
+import styles from "./GameGrid.module.scss";
+import Spinner from "components/Spinner";
 
 export type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 
@@ -98,33 +99,38 @@ export default function GameGrid() {
 
   return (
     <>
-      <button className={styles.dateButtonPrev} onClick={handleClick("PREV")}>
-        Prev
-      </button>
-      <button className={styles.dateButtonNext} onClick={handleClick("NEXT")}>
-        Next
-      </button>
-      {loading && <p style={{ color: "white" }}>loading...</p>}
-      <table className={styles.scheduleGrid}>
-        <Header
-          start={dates[0]}
-          end={dates[1]}
-          setSortKeys={setSortKeys}
-          excludedDays={excludedDays}
-          setExcludedDays={setExcludedDays}
-        />
-        <tbody>
-          {/* Total Games Per Day */}
-          <TotalGamesPerDayRow
-            games={totalGamesPerDay}
+      <div className={styles.actions}>
+        <button className={styles.dateButtonPrev} onClick={handleClick("PREV")}>
+          Prev
+        </button>
+        <button className={styles.dateButtonNext} onClick={handleClick("NEXT")}>
+          Next
+          {loading && <Spinner className={styles.spinner} center />}
+        </button>
+      </div>
+
+      <div className={styles.gridWrapper}>
+        <table className={styles.scheduleGrid}>
+          <Header
+            start={dates[0]}
+            end={dates[1]}
+            setSortKeys={setSortKeys}
             excludedDays={excludedDays}
+            setExcludedDays={setExcludedDays}
           />
-          {/* Teams */}
-          {sortedTeams.map((row) => {
-            return <TeamRow key={row.teamName} {...row} />;
-          })}
-        </tbody>
-      </table>
+          <tbody>
+            {/* Total Games Per Day */}
+            <TotalGamesPerDayRow
+              games={totalGamesPerDay}
+              excludedDays={excludedDays}
+            />
+            {/* Teams */}
+            {sortedTeams.map((row) => {
+              return <TeamRow key={row.teamName} {...row} />;
+            })}
+          </tbody>
+        </table>
+      </div>
     </>
   );
 }

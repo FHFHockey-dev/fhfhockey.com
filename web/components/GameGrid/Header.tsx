@@ -35,7 +35,7 @@ function Header({
     {
       label: (
         <>
-          Total GP
+          GP
           <Switch
             style={{ marginLeft: "2px" }}
             checked={totalGamesPlayed}
@@ -58,7 +58,7 @@ function Header({
     {
       label: (
         <>
-          Total Off-Nights
+          Off-Nights
           <Switch
             style={{ marginLeft: "2px" }}
             checked={totalOffNights}
@@ -81,7 +81,7 @@ function Header({
     {
       label: (
         <>
-          Week Score
+          Score
           <Switch
             style={{ marginLeft: "2px" }}
             checked={totalOffNights}
@@ -135,6 +135,19 @@ function getDayColumns(
   let current = startDate;
   for (let i = 0; i <= days; i++) {
     const day = getDayStr(current);
+    const onChange = () => {
+      setExcludedDays((prev) => {
+        const set = new Set(prev);
+        if (set.has(day)) {
+          set.delete(day);
+        } else {
+          set.add(day);
+        }
+        i = i;
+        return Array.from(set);
+      });
+    };
+
     columns.push({
       label: (
         <>
@@ -145,24 +158,12 @@ function getDayColumns(
               whiteSpace: "nowrap",
               fontSize: "14px",
               marginBottom: "3px",
+              marginTop: "0px",
             }}
           >
             {formatDate(current)}
           </p>
-          <Toggle
-            checked={excludedDays.includes(day)}
-            onChange={() => {
-              setExcludedDays((prev) => {
-                const set = new Set(prev);
-                if (set.has(day)) {
-                  set.delete(day);
-                } else {
-                  set.add(day);
-                }
-                return Array.from(set);
-              });
-            }}
-          />
+          <Toggle checked={excludedDays.includes(day)} onChange={onChange} />
         </>
       ),
       id: getDayStr(current),

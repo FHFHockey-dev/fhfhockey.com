@@ -95,12 +95,10 @@ export function adjustBackToBackGames(
 }
 
 /**
- * WinOdds would have to be adjusted to be within a -5 to 5 range, with 50% being 0.
-  - 75% winOdds = 2.5
-  - 25% winOdds = -2.5
+ * format the number in percentage.
  * @param winOdds A floating point number between 0 and 1
- * @returns A string of floating point number within a -5 to 5 range.
+ * @returns percentage
  */
 export function formatWinOdds(winOdds: number) {
-  return (winOdds * 10 - 5).toFixed(2);
+  return winOdds.toLocaleString(undefined, { style: "percent" });
 }

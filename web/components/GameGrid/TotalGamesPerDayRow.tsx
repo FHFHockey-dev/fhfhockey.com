@@ -1,7 +1,7 @@
 import { Day } from "./GameGrid";
 import { DAYS } from "./TeamRow";
 
-import styles from "./GameGrid.module.css";
+import styles from "./GameGrid.module.scss";
 
 type TotalGamesPerDayRowProps = {
   games: number[];
@@ -13,8 +13,9 @@ function TotalGamesPerDayRow({
   excludedDays,
 }: TotalGamesPerDayRowProps) {
   return (
-    <tr>
-      <td>Total Games Per Day</td>
+    <tr className={styles.totalGamesPerDayRow}>
+      {/* show GP on mobile */}
+      <td className={styles.title}>{/* Total Games Per Day */}</td>
       {games.map((numGames, i) => (
         <td className={styles.totalGamesPerDayCell} key={i}>
           {numGames}

@@ -1,6 +1,24 @@
+@import "styles/vars.scss";
+
+.actions {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  & button:hover {
+    cursor: pointer;
+  }
+
+  .spinner {
+    position: absolute;
+    right: -50%;
+    bottom: 2px;
+  }
+}
+
 .dateButtonPrev {
   position: relative;
-  left: 25%;
   height: 35px;
   width: 115px;
   background: #07aae2;
@@ -19,7 +37,6 @@
 
 .dateButtonNext {
   position: relative;
-  left: 40%;
   height: 35px;
   width: 115px;
   background: #07aae2;
@@ -36,13 +53,18 @@
   border: 2px solid white;
 }
 
+.gridWrapper {
+  overflow-x: scroll;
+  margin-top: 25px;
+}
+
 .scheduleGrid {
   color: white;
   border: 5px solid #ffffff;
   border-radius: 8px;
   font-size: 16px;
   text-align: left;
-  margin-top: 25px;
+  width: 100%;
 }
 
 .scheduleGrid th {
@@ -87,7 +109,7 @@
 .scheduleGrid td:nth-child(n + 2) {
   padding: 6px 10px;
   border: 1px solid white;
-  min-width: 65px;
+  min-width: 70px;
   text-align: center;
 }
 
@@ -131,9 +153,36 @@
 .score {
   color: lightblue;
   font-size: 10px;
+  margin: 0;
+  margin-top: 3px;
 }
 
 .totalGamesPerDayCell {
   background-color: rgb(7, 208, 226);
   color: white;
+}
+
+.totalGamesPerDayRow > .title::before {
+  content: "GP/Day";
+}
+
+.teamRow {
+  .teamName {
+    display: none;
+  }
+}
+
+@media only screen and (min-width: $screen-large) {
+  .teamRow {
+    .teamName {
+      display: block;
+    }
+    .teamAbbreviation {
+      display: none;
+    }
+  }
+
+  .totalGamesPerDayRow > .title::before {
+    content: "Total Games Per Day";
+  }
 }
