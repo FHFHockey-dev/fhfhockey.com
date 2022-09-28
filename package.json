@@ -2,8 +2,7 @@
   "private": true,
   "workspaces": [
     "web",
-    "cms",
-    "functions"
+    "cms"
   ],
   "scripts": {
     "build": "turbo run build",
@@ -14,6 +13,7 @@
   "devDependencies": {
     "eslint": "^7.32.0",
     "prettier": "^2.5.1",
-    "turbo": "latest"
+    "turbo": "latest",
+    "vercel": "^28.4.4"
   }
 }
