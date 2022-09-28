@@ -135,6 +135,19 @@ function getDayColumns(
   let current = startDate;
   for (let i = 0; i <= days; i++) {
     const day = getDayStr(current);
+    const onChange = () => {
+      setExcludedDays((prev) => {
+        const set = new Set(prev);
+        if (set.has(day)) {
+          set.delete(day);
+        } else {
+          set.add(day);
+        }
+        i = i;
+        return Array.from(set);
+      });
+    };
+
     columns.push({
       label: (
         <>
@@ -149,20 +162,7 @@ function getDayColumns(
           >
             {formatDate(current)}
           </p>
-          <Toggle
-            checked={excludedDays.includes(day)}
-            onChange={() => {
-              setExcludedDays((prev) => {
-                const set = new Set(prev);
-                if (set.has(day)) {
-                  set.delete(day);
-                } else {
-                  set.add(day);
-                }
-                return Array.from(set);
-              });
-            }}
-          />
+          <Toggle checked={excludedDays.includes(day)} onChange={onChange} />
         </>
       ),
       id: getDayStr(current),
