@@ -137,6 +137,7 @@ export async function getTeams(
   for (const [teamName, games] of temp) {
     teams.push({
       teamName: teamName,
+      teamAbbreviation: "",
       ...games,
       totalGamesPlayed: 0,
       totalOffNights: 0,
