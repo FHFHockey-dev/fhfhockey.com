@@ -8,6 +8,9 @@
     },
     {
       "path": "../cms"
+    },
+    {
+      "path": "../functions"
     }
   ],
   "settings": {
