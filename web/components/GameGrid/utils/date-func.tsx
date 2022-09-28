@@ -1,4 +1,4 @@
-import { Day } from "../components/GameGrid/GameGrid";
+import { Day } from "../GameGrid";
 
 /**
  *

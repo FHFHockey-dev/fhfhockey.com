@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { formatWinOdds } from "./utils/calcWinOdds";
 import { formatWeekScore } from "./utils/calcWeekScore";
 import styles from "./GameGrid.module.css";
