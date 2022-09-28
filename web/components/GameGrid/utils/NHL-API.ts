@@ -1,6 +1,7 @@
 import { Day } from "../GameGrid";
 import { parseDateStr } from "../Header";
 import { DAYS, MatchUpCellData, TeamRowData } from "../TeamRow";
+import calcWinOdds from "./calcWinOdds";
 import { getDayStr } from "./date-func";
 
 const URL = `https://statsapi.web.nhl.com/api/v1/`;
@@ -43,7 +44,8 @@ type Game = {
  */
 export async function getTeams(
   start: string,
-  end: string
+  end: string,
+  season: string 
 ): Promise<[TeamRowData[], number[]]> {
   // const initWinOddsEnvPromise = initWinOddsEnv();
 
@@ -101,7 +103,7 @@ export async function getTeams(
             win: home.score > away.score,
             loss: home.score < away.score,
             score: `${home.score}-${away.score}`,
-            winOdds: 0,
+            winOdds: await calcWinOdds(home.team.name, away.team.name, season),
           } as MatchUpCellData,
         },
       },
@@ -115,7 +117,7 @@ export async function getTeams(
             win: away.score > home.score,
             loss: away.score < home.score,
             score: `${away.score}-${home.score}`,
-            winOdds: 0,
+            winOdds: await calcWinOdds(away.team.name, home.team.name, season),
           } as MatchUpCellData,
         },
       },

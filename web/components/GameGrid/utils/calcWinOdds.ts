@@ -1,15 +1,21 @@
 import { DAYS, TeamRowData } from "../TeamRow";
 
-let runtime: any = null;
+export default async function calcWinOdds(
+  homeTeam: string,
+  awayTeam: string,
+  season: string
+) {
+  let SERVERLESS_API_URL = process.env.NEXT_PUBLIC_SERVERLESS_API_URL || "";
 
-export default async function calcWinOdds(homeTeam: string, awayTeam: string) {
   // [odds, winOdds, xx]
-  const result = await runtime.runPythonAsync(
-    `get_game_scores("${homeTeam}","${awayTeam}")`
-  );
-  const parsed = JSON.parse(result) as [number, number, number];
+  SERVERLESS_API_URL += "/api/winOdds?";
+  SERVERLESS_API_URL += `HomeTeam=${homeTeam}`;
+  SERVERLESS_API_URL += `&AwayTeam=${awayTeam}`;
+  SERVERLESS_API_URL += `&Season=${season}`;
 
-  return parsed[1];
+  const result = await fetch(SERVERLESS_API_URL).then((res) => res.json());
+
+  return result.winOdds as number;
 }
 
 /**

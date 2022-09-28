@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { DAYS, TeamRowData } from "../TeamRow";
 import { adjustBackToBackGames } from "../utils/calcWinOdds";
 import { getAllTeams, getTeams, Team } from "../utils/NHL-API";
+import useCurrentSeason from "hooks/useCurrentSeason";
 
 export default function useTeams(
   start: string,
@@ -10,6 +11,7 @@ export default function useTeams(
   const [loading, setLoading] = useState(false);
   const [teams, setTeams] = useState<TeamRowData[]>([]);
   const [totalGamesPerDay, setTotalGamesPerDay] = useState<number[]>([]);
+  const season = useCurrentSeason();
   const [allTeams, setAllTeams] = useState<Team[]>([]);
 
   useEffect(() => {
@@ -30,8 +32,13 @@ export default function useTeams(
   useEffect(() => {
     let ignore = false;
     setLoading(true);
+    if (!season) return;
     (async () => {
-      const [teams, totalGamesPerDay] = await getTeams(start, end);
+      const [teams, totalGamesPerDay] = await getTeams(
+        start,
+        end,
+        season.seasonId
+      );
       if (!ignore) {
         const paddedTeams = [...teams];
         // add other teams even they are not playing
@@ -70,7 +77,7 @@ export default function useTeams(
       ignore = true;
       setLoading(false);
     };
-  }, [start, end, allTeams]);
+  }, [start, end, allTeams, season]);
 
   return [teams, totalGamesPerDay, loading];
 }
