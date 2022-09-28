@@ -45,7 +45,7 @@ type Game = {
 export async function getTeams(
   start: string,
   end: string,
-  season: string 
+  season: string
 ): Promise<[TeamRowData[], number[]]> {
   // const initWinOddsEnvPromise = initWinOddsEnv();
 

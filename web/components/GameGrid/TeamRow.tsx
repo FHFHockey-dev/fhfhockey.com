@@ -1,7 +1,8 @@
-/* eslint-disable @next/next/no-img-element */
+import Image from "next/image";
 import { formatWinOdds } from "./utils/calcWinOdds";
 import { formatWeekScore } from "./utils/calcWeekScore";
-import styles from "./GameGrid.module.css";
+
+import styles from "./GameGrid.module.scss";
 
 export type MatchUpCellData = {
   home: boolean;
@@ -31,6 +32,7 @@ export type MatchUpCellData = {
 
 export type TeamRowData = {
   teamName: string;
+  teamAbbreviation: string;
   Mon?: MatchUpCellData;
   Tue?: MatchUpCellData;
   Wed?: MatchUpCellData;
@@ -48,9 +50,14 @@ export const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
 function TeamRow(props: TeamRowData) {
   return (
-    <tr>
+    <tr className={styles.teamRow}>
       {/* Team Name */}
-      <td>{props.teamName}</td>
+      <td>
+        <span className={styles.teamName}>{props.teamName}</span>
+        <span className={styles.teamAbbreviation}>
+          {props.teamAbbreviation}
+        </span>
+      </td>
       {/* Days */}
       {DAYS.map((day) => {
         // @ts-ignore
@@ -98,11 +105,11 @@ function MatchUpCell({
   // game without result, display home/away
   else {
     text = home ? "HOME" : "AWAY";
-    stat = formatWinOdds(winOdds);
+    stat = formatWinOdds(winOdds ?? 0);
   }
 
   return (
-    <div style={{ display: "flex" }}>
+    <div style={{ display: "flex", justifyContent: "space-between" }}>
       <div
         style={{
           display: "flex",
@@ -113,7 +120,11 @@ function MatchUpCell({
         <span className={styles.homeAway}>{text}</span>
         <p className={styles.score}>{stat}</p>
       </div>
-      <img
+      <div style={{ margin: "auto", fontSize: "0.5rem" }}>
+        {home ? "vs." : "@"}
+      </div>
+      <Image
+        objectFit="contain"
         alt={`${opponentName} logo`}
         width={30}
         height={30}

@@ -35,7 +35,7 @@ function Header({
     {
       label: (
         <>
-          Total GP
+          GP
           <Switch
             style={{ marginLeft: "2px" }}
             checked={totalGamesPlayed}
@@ -58,7 +58,7 @@ function Header({
     {
       label: (
         <>
-          Total Off-Nights
+          Off-Nights
           <Switch
             style={{ marginLeft: "2px" }}
             checked={totalOffNights}
@@ -81,7 +81,7 @@ function Header({
     {
       label: (
         <>
-          Week Score
+          Score
           <Switch
             style={{ marginLeft: "2px" }}
             checked={totalOffNights}
@@ -158,6 +158,7 @@ function getDayColumns(
               whiteSpace: "nowrap",
               fontSize: "14px",
               marginBottom: "3px",
+              marginTop: "0px",
             }}
           >
             {formatDate(current)}

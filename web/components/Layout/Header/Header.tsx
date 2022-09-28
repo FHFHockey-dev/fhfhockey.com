@@ -47,6 +47,7 @@ function Header() {
               alt="FHFH logo"
               width={182}
               height={24}
+              priority
             />
           </a>
         </Link>

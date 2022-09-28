@@ -20,7 +20,7 @@ export function formatDate(date: Date) {
   var year = date.getFullYear();
   var month = date.getMonth() + 1;
   var day = date.getDate();
-  return `${month}-${day}-${year}`;
+  return `${month}-${day}`;
 }
 
 const _MS_PER_DAY = 1000 * 60 * 60 * 24;

@@ -3,6 +3,7 @@ import { DAYS, TeamRowData } from "../TeamRow";
 import { adjustBackToBackGames } from "../utils/calcWinOdds";
 import { getAllTeams, getTeams, Team } from "../utils/NHL-API";
 import useCurrentSeason from "hooks/useCurrentSeason";
+import { fetchNHL } from "lib/NHL/NHL_API";
 
 export default function useTeams(
   start: string,
@@ -48,6 +49,7 @@ export default function useTeams(
           if (!exist) {
             paddedTeams.push({
               teamName: team.name,
+              teamAbbreviation: "",
               totalGamesPlayed: 0,
               totalOffNights: 0,
               weekScore: -100, // unknown at this stage
@@ -67,6 +69,8 @@ export default function useTeams(
         // adjust GameScores based on back-to-back plays
         adjustBackToBackGames(paddedTeams);
 
+        // add team abbreviations
+        await addTeamAbbreviations(paddedTeams);
         setTeams(paddedTeams);
         setTotalGamesPerDay(totalGamesPerDay);
         setLoading(false);
@@ -91,4 +95,15 @@ function getOffNights(totalGamesPerDay: number[]) {
     }
   });
   return days;
+}
+
+async function addTeamAbbreviations(teams: TeamRowData[]) {
+  const data = (await fetchNHL("/teams")).teams as any[];
+  const map: { [teamName: string]: string } = {};
+  for (let i = 0; i < data.length; i++) {
+    map[data[i].name] = data[i].abbreviation;
+  }
+  for (let i = 0; i < teams.length; i++) {
+    teams[i].teamAbbreviation = map[teams[i].teamName];
+  }
 }
