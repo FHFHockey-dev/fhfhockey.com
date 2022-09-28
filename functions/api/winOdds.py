@@ -11,7 +11,11 @@ class handler(BaseHTTPRequestHandler):
 
   def do_GET(self):
     self.send_response(200)
+    
     self.send_header('Content-type', 'application/json')
+    self.send_header("Access-Control-Allow-Origin", "*")
+    self.send_header("Cache-Control", "max-age=86400")
+
     self.end_headers()
     # get season, home_team and away_team
     url = urlparse(self.path)
@@ -119,7 +123,6 @@ def get_game_scores(home_team, away_team,season_id):
     # if type(df) == type(None):
     #     print("df is None, fetching data")
     #     df= await fetch_data()
-    print("===input: ",home_team, away_team,season_id)
     scores = get_game_scores_(home_team,away_team,season_id)
     return json.dumps({
         "winOdds":scores[1]

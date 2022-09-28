@@ -14,6 +14,7 @@
         "$NEXT_PUBLIC_SANITY_DATASET",
         "$NEXT_PUBLIC_SANITY_GRAPHQL_URI",
         "$NEXT_PUBLIC_PROXY_SERVER_URL",
+        "$NEXT_PUBLIC_SERVERLESS_API_URL",
         "$SANITY_API_TOKEN"
       ],
       "outputs": [".next/**"]
