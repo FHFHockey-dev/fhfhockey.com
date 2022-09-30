@@ -22,6 +22,8 @@ type RowData = {
   playerName: string;
   previousLine: number;
   currentLine: number;
+  previousPowerPlayerUnit: number;
+  currentPowerPlayerUnit: number;
   /**
    * Team abbreviation
    */
@@ -59,11 +61,62 @@ export const getStaticProps: GetStaticProps = async () => {
     })
   );
 
+  const promotions: RowData[] = [
+    {
+      playerName: "Sidney Crosby",
+      playerId: 8471675,
+      currentLine: 1,
+      previousLine: 2,
+      abbreviation: "PIT",
+      currentPowerPlayerUnit: 1,
+      previousPowerPlayerUnit: 2,
+    },
+    {
+      playerName: "Bryan Rust",
+      playerId: 8475810,
+      currentLine: 1,
+      previousLine: 3,
+      abbreviation: "PIT",
+      currentPowerPlayerUnit: 2,
+      previousPowerPlayerUnit: 2,
+    },
+    {
+      playerName: "Brayden Point",
+      playerId: 8478010,
+      currentLine: 1,
+      previousLine: 1,
+      abbreviation: "TBL",
+      currentPowerPlayerUnit: 1,
+      previousPowerPlayerUnit: 1,
+    },
+  ];
+
+  const demotions: RowData[] = [
+    {
+      playerName: "Jeff Skinner",
+      playerId: 8475784,
+      currentLine: 2,
+      previousLine: 1,
+      abbreviation: "BUF",
+      currentPowerPlayerUnit: 1,
+      previousPowerPlayerUnit: 1,
+    },
+    {
+      playerName: "Andreas Athanasiou",
+      playerId: 8476960,
+      currentLine: 3,
+      previousLine: 1,
+      abbreviation: "CHI",
+      currentPowerPlayerUnit: 1,
+      previousPowerPlayerUnit: 2,
+    },
+  ];
+
   return {
     props: {
       teams,
-      promotions: [],
-      demotions: [],
+      promotions,
+      demotions,
     },
     revalidate: 60, // in seconds
   };
@@ -124,24 +177,39 @@ function Table({
     >
       <Title type={type} />
       {data.map((player) => (
-        <div key={player.playerId} className={styles.row}>
-          <div>{player.playerName}</div>
-          <div>
-            {player.previousLine} x {player.currentLine}
-          </div>
-          <div>{player.abbreviation}</div>
-          <button
-            className={styles.arrowButton}
-            type="button"
-            title="go to player details"
-          >
-            <Image
-              src="/pictures/"
-              alt="go to player details"
-              width={16}
-              height={16}
+        <div className={styles.row} key={player.playerId}>
+          <Link href={`/charts?playerId=${player.playerId}`}>
+            <a className={styles.name} title="go to player details">
+              {player.playerName}
+            </a>
+          </Link>
+          <div className={styles.twoChanges}>
+            {player.previousPowerPlayerUnit !==
+              player.currentPowerPlayerUnit && (
+              <>
+                <PowerUnitChanges
+                  previousPowerUnit={player.previousPowerPlayerUnit}
+                  currentPowerUnit={player.currentPowerPlayerUnit}
+                />
+                <span style={{ width: "5px" }}>:</span>
+              </>
+            )}
+            <LineChanges
+              previousLine={player.previousLine}
+              currentLine={player.currentLine}
             />
-          </button>
+          </div>
+          <div className={styles.abbreviation}>{player.abbreviation}</div>
+          <Link href={`/charts?playerId=${player.playerId}`}>
+            <a className={styles.expand} title="go to player details">
+              <Image
+                src="/pictures/expand-icon.png"
+                alt="go to player details"
+                width={16}
+                height={16}
+              />
+            </a>
+          </Link>
         </div>
       ))}
     </div>
@@ -181,6 +249,67 @@ function Title({ type }: { type: "promotions" | "demotions" }) {
         </div>
       )}
     </>
+  );
+}
+
+type LineChangesProps = {
+  previousLine: number;
+  currentLine: number;
+};
+
+function LineChanges({ previousLine, currentLine }: LineChangesProps) {
+  return (
+    <div className={classNames(styles.changes, styles.lineChanges)}>
+      L{previousLine}
+      {/* the smaller the better */}
+      {previousLine > currentLine ? (
+        <Image
+          src="/pictures/arrow-right-green.png"
+          alt="promote to"
+          width={12}
+          height={24}
+        />
+      ) : (
+        <Image
+          src="/pictures/arrow-right-red.png"
+          alt="demote to"
+          width={12}
+          height={24}
+        />
+      )}
+      L{currentLine}
+    </div>
+  );
+}
+
+type PowerUnitChangesProps = {
+  previousPowerUnit: number;
+  currentPowerUnit: number;
+};
+function PowerUnitChanges({
+  previousPowerUnit,
+  currentPowerUnit,
+}: PowerUnitChangesProps) {
+  return (
+    <div className={styles.changes}>
+      Pp{previousPowerUnit}{" "}
+      {previousPowerUnit > currentPowerUnit ? (
+        <Image
+          src="/pictures/arrow-right-green.png"
+          alt="promote to"
+          width={12}
+          height={24}
+        />
+      ) : (
+        <Image
+          src="/pictures/arrow-right-red.png"
+          alt="demote to"
+          width={12}
+          height={24}
+        />
+      )}
+      Pp{currentPowerUnit}
+    </div>
   );
 }
 

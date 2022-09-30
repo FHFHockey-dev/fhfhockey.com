@@ -3,33 +3,28 @@
 $border-size: 2px;
 
 .lineCombinations {
-  background: $bg-light;
   .teams {
+    background: $bg-light;
     display: grid;
-    grid-template-columns: repeat(16, 1fr);
+    grid-template-columns: repeat(8, 1fr);
     row-gap: 17px;
-    padding: 23px 20px;
+    padding: 20px 12px;
     border: $border-size solid white;
+    margin-bottom: 43px;
   }
   .players {
     position: relative;
-    border: $border-size solid white;
-    border-top: none;
-    padding: 48px;
+    border: none;
     .time {
       position: absolute;
+      top: 4.5px;
       right: 0;
-      top: 17px;
-      right: 38px;
       opacity: 0.4;
       font-size: 1rem;
     }
 
     .tables {
-      display: flex;
-      justify-content: space-between;
       .table {
-        flex: 1;
         .title {
           margin-bottom: 1rem;
           display: flex;
@@ -50,15 +45,84 @@ $border-size: 2px;
             color: $primary-color;
           }
         }
+        .row {
+          background: #323232;
+          padding: 16px;
+          display: grid;
+          align-items: center;
+          grid-template-columns: 50% auto 2rem 16px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+          .name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            &:hover {
+              color: $primary-color;
+              cursor: pointer;
+            }
+          }
+          .twoChanges {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-right: 20px;
+          }
+          .changes {
+            display: flex;
+            align-items: center;
+          }
+
+          .abbreviation {
+            font-weight: 400;
+          }
+          .expand {
+            height: 16px;
+
+            &:hover {
+              opacity: 0.7;
+            }
+          }
+        }
+        margin-bottom: 32px;
       }
       .gap {
-        width: 40px;
+        display: none;
       }
     }
   }
   @media only screen and (min-width: $screen-large) {
     max-width: 1080px;
     margin: 0 auto;
+
+    .teams {
+      grid-template-columns: repeat(16, 1fr);
+      margin-bottom: unset;
+    }
+    .players {
+      background: $bg-light;
+
+      border: $border-size solid white;
+      border-top: none;
+      padding: 48px;
+
+      .time {
+        position: absolute;
+        right: 0;
+        top: 17px;
+        right: 38px;
+      }
+
+      .tables {
+        display: flex;
+        justify-content: space-between;
+        .table {
+          flex: 1;
+        }
+        .gap {
+          display: block;
+          width: 40px;
+        }
+      }
+    }
   }
   h2,
   p {
