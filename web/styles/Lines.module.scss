@@ -1,0 +1,67 @@
+@import "./vars.scss";
+
+$border-size: 2px;
+
+.lineCombinations {
+  background: $bg-light;
+  .teams {
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    row-gap: 17px;
+    padding: 23px 20px;
+    border: $border-size solid white;
+  }
+  .players {
+    position: relative;
+    border: $border-size solid white;
+    border-top: none;
+    padding: 48px;
+    .time {
+      position: absolute;
+      right: 0;
+      top: 17px;
+      right: 38px;
+      opacity: 0.4;
+      font-size: 1rem;
+    }
+
+    .tables {
+      display: flex;
+      justify-content: space-between;
+      .table {
+        flex: 1;
+        .title {
+          margin-bottom: 1rem;
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          .arrow {
+            position: relative;
+            top: 1.5px;
+          }
+          h2 {
+            font-family: Roboto Condensed;
+            font-size: 1.5rem;
+            font-weight: 700;
+            // line-height: 24px;
+            letter-spacing: 0.01em;
+          }
+          .highlight {
+            color: $primary-color;
+          }
+        }
+      }
+      .gap {
+        width: 40px;
+      }
+    }
+  }
+  @media only screen and (min-width: $screen-large) {
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+  h2,
+  p {
+    margin: 0;
+  }
+}
