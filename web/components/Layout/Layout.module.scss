@@ -18,9 +18,25 @@
     margin-top: 24px;
     height: 65px;
     background: rgba(0, 0, 0, 0.3);
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
+    &::before {
+      content: "";
+      position: absolute;
+      background-color: white;
+      height: 2.5px;
+      width: 100%;
+      top: 0;
+    }
+    &::after {
+      content: "";
+      position: absolute;
+      background-color: white;
+      height: 2.5px;
+      width: 100%;
+      top: 3.75px;
+    }
   }
 }
