@@ -112,7 +112,7 @@ function CategoryCoverageChart({
         chart.ctx.font =
           size.screen === BreakPoint.l
             ? "700 16px Roboto Condensed"
-            : "100 10px Didact Gothic";
+            : "100 10px Roboto";
         chart.ctx.fillStyle = "white";
         chart.ctx.fillText(LABELS[i].label, x, y);
 
@@ -120,7 +120,7 @@ function CategoryCoverageChart({
         chart.ctx.font =
           size.screen === BreakPoint.l
             ? "400 14px Roboto Condensed"
-            : "700 12px Didact Gothic";
+            : "700 12px Roboto";
 
         chart.ctx.fillStyle = "rgba(76, 167, 221, 1)";
         dataset[i] && chart.ctx.fillText(`${dataset[i]}`, x, y - 16);

@@ -143,7 +143,7 @@ function TimeOnIceChart({
           font: {
             size: 12,
             weight: 500,
-            family: "Didact Gothic",
+            family: "Roboto",
           },
         },
         type: "time",
