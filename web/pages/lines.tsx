@@ -2,6 +2,7 @@ import React from "react";
 import Head from "next/head";
 import Image from "next/image";
 import { GetStaticProps } from "next";
+import Link from "next/link";
 import classNames from "classnames";
 
 import supabase from "lib/supabase";
@@ -13,6 +14,7 @@ import styles from "styles/Lines.module.scss";
 type Team = {
   logo: string;
   name: string;
+  abbreviation: string;
 };
 
 type RowData = {
@@ -50,7 +52,11 @@ export const getStaticProps: GetStaticProps = async () => {
   );
   console.log(line_combinations);
   const teams: Team[] = ((await fetchNHL("/teams")).teams as any[]).map(
-    (team) => ({ name: team.name, logo: getTeamLogo(team.name) })
+    (team) => ({
+      name: team.name,
+      abbreviation: team.abbreviation,
+      logo: getTeamLogo(team.name),
+    })
   );
 
   return {
@@ -67,14 +73,17 @@ function Teams({ teams }: { teams: Team[] }) {
   return (
     <div className={styles.teams}>
       {teams.map((team) => (
-        <Image
-          key={team.name}
-          src={team.logo}
-          alt={team.name}
-          width={37.35}
-          height={37.35}
-          objectFit="contain"
-        />
+        <Link key={team.name} href={`/lines/${team.abbreviation}`}>
+          <a>
+            <Image
+              src={team.logo}
+              alt={team.name}
+              width={37.35}
+              height={37.35}
+              objectFit="contain"
+            />
+          </a>
+        </Link>
       ))}
     </div>
   );
