@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import { GetStaticProps } from "next";
@@ -9,6 +9,8 @@ import supabase from "lib/supabase";
 import { fetchNHL } from "lib/NHL/NHL_API";
 import { getTeamLogo } from "hooks/usePlayer";
 import PageTitle from "components/PageTitle";
+
+import arrowDown from "public/pictures/arrow-down-white.png";
 
 import styles from "styles/Lines.module.scss";
 
@@ -53,17 +55,16 @@ function Lines({ teams, promotions, demotions }: LandingPageProps) {
 }
 
 export const getStaticProps: GetStaticProps = async () => {
-  let { data: line_combinations, error } = await supabase.from(
-    "line_combinations"
-  );
-  console.log(line_combinations);
-  const teams: Team[] = ((await fetchNHL("/teams")).teams as any[]).map(
-    (team) => ({
+  // let { data: line_combinations, error } = await supabase.from(
+  //   "line_combinations"
+  // );
+  const teams: Team[] = ((await fetchNHL("/teams")).teams as any[])
+    .map((team) => ({
       name: team.name,
       abbreviation: team.abbreviation,
       logo: getTeamLogo(team.name),
-    })
-  );
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const promotions: RowData[] = [
     {
@@ -165,6 +166,8 @@ function Players({
   );
 }
 
+const INITIAL_ROWS = 7;
+
 function Table({
   type,
   data,
@@ -172,6 +175,13 @@ function Table({
   type: "promotions" | "demotions";
   data: RowData[];
 }) {
+  const [numRows, setNumRows] = useState(INITIAL_ROWS);
+  const remainingRows = data.length - numRows;
+
+  const onShowAll = () => {
+    setNumRows(data.length);
+  };
+
   return (
     <div
       className={classNames(styles.table, {
@@ -180,45 +190,21 @@ function Table({
       })}
     >
       <Title type={type} />
-      {data.map((player) => (
-        <div className={styles.row} key={player.playerId}>
-          <Link href={`/charts?playerId=${player.playerId}`}>
-            <a className={styles.name} title="go to player details">
-              <span className={styles.fullName}>{player.playerName}</span>
-              <span className={styles.formattedName}>
-                {shorten(player.playerName)}
-              </span>
-            </a>
-          </Link>
-          <div className={styles.twoChanges}>
-            {player.previousPowerPlayerUnit !==
-              player.currentPowerPlayerUnit && (
-              <>
-                <PowerUnitChanges
-                  previousPowerUnit={player.previousPowerPlayerUnit}
-                  currentPowerUnit={player.currentPowerPlayerUnit}
-                />
-                <span style={{ width: "5px" }}>:</span>
-              </>
-            )}
-            <LineChanges
-              previousLine={player.previousLine}
-              currentLine={player.currentLine}
-            />
-          </div>
-          <div className={styles.abbreviation}>{player.abbreviation}</div>
-          <Link href={`/charts?playerId=${player.playerId}`}>
-            <a className={styles.expand} title="go to player details">
-              <Image
-                src="/pictures/expand-icon.png"
-                alt="go to player details"
-                width={16}
-                height={16}
-              />
-            </a>
-          </Link>
-        </div>
+      {data.slice(0, numRows).map((player) => (
+        <Row key={player.playerId} player={player} />
       ))}
+      {remainingRows > 0 && (
+        <button className={styles.showAll} onClick={onShowAll}>
+          SHOW ALL ({remainingRows})
+          <Image
+            src={arrowDown}
+            alt="expand"
+            placeholder="blur"
+            width={16}
+            height={16}
+          />
+        </button>
+      )}
     </div>
   );
 }
@@ -256,6 +242,47 @@ function Title({ type }: { type: "promotions" | "demotions" }) {
         </div>
       )}
     </>
+  );
+}
+
+function Row({ player }: { player: RowData }) {
+  return (
+    <div className={styles.row}>
+      <Link href={`/charts?playerId=${player.playerId}`}>
+        <a className={styles.name} title="go to player details">
+          <span className={styles.fullName}>{player.playerName}</span>
+          <span className={styles.formattedName}>
+            {shorten(player.playerName)}
+          </span>
+        </a>
+      </Link>
+      <div className={styles.twoChanges}>
+        {player.previousPowerPlayerUnit !== player.currentPowerPlayerUnit && (
+          <>
+            <PowerUnitChanges
+              previousPowerUnit={player.previousPowerPlayerUnit}
+              currentPowerUnit={player.currentPowerPlayerUnit}
+            />
+            <span style={{ width: "5px" }}>:</span>
+          </>
+        )}
+        <LineChanges
+          previousLine={player.previousLine}
+          currentLine={player.currentLine}
+        />
+      </div>
+      <div className={styles.abbreviation}>{player.abbreviation}</div>
+      <Link href={`/charts?playerId=${player.playerId}`}>
+        <a className={styles.expand} title="go to player details">
+          <Image
+            src="/pictures/expand-icon.png"
+            alt="go to player details"
+            width={16}
+            height={16}
+          />
+        </a>
+      </Link>
+    </div>
   );
 }
 

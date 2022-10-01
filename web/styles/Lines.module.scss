@@ -89,6 +89,24 @@ $border-size: 2px;
             }
           }
         }
+        .showAll {
+          all: unset;
+          font-family: Roboto;
+          font-size: 18px;
+          font-weight: 500;
+          line-height: 21px;
+          letter-spacing: 0em;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 6px;
+          margin: auto;
+          margin-top: 1rem;
+          &:hover {
+            opacity: 0.9;
+            cursor: pointer;
+          }
+        }
         margin-bottom: 32px;
       }
       .gap {
@@ -124,6 +142,7 @@ $border-size: 2px;
         justify-content: space-between;
         .table {
           flex: 1;
+          margin-bottom: unset;
           .row {
             grid-template-columns: 45% auto 2rem 16px;
 
