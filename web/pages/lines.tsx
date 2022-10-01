@@ -4,6 +4,7 @@ import Image from "next/image";
 import { GetStaticProps } from "next";
 import Link from "next/link";
 import classNames from "classnames";
+import { formatDistanceToNow } from "date-fns";
 
 import supabase from "lib/supabase";
 import { fetchNHL } from "lib/NHL/NHL_API";
@@ -37,9 +38,15 @@ type LandingPageProps = {
   teams: Team[];
   promotions: RowData[];
   demotions: RowData[];
+  lastUpdated: string;
 };
 
-function Lines({ teams, promotions, demotions }: LandingPageProps) {
+function Lines({
+  teams,
+  lastUpdated,
+  promotions,
+  demotions,
+}: LandingPageProps) {
   return (
     <div className={styles.lineCombinations}>
       <Head>
@@ -49,7 +56,11 @@ function Lines({ teams, promotions, demotions }: LandingPageProps) {
         NHL LINE <PageTitle.Highlight>COMBINATIONS</PageTitle.Highlight>
       </PageTitle>
       <Teams teams={teams} />
-      <Players promotions={promotions} demotions={demotions} />
+      <Players
+        lastUpdated={lastUpdated}
+        promotions={promotions}
+        demotions={demotions}
+      />
     </div>
   );
 }
@@ -125,11 +136,21 @@ export const getStaticProps: GetStaticProps = async () => {
     }
   }
 
+  const {
+    data: { date },
+  } = await supabase
+    .from("line_combinations")
+    .select("date")
+    .order("date", { ascending: false })
+    .limit(1)
+    .single();
+
   return {
     props: {
       teams,
       promotions,
       demotions,
+      lastUpdated: date,
     },
     revalidate: 60, // in seconds
   };
@@ -158,13 +179,17 @@ function Teams({ teams }: { teams: Team[] }) {
 function Players({
   promotions,
   demotions,
+  lastUpdated,
 }: {
   promotions: RowData[];
   demotions: RowData[];
+  lastUpdated: string;
 }) {
   return (
     <section className={styles.players}>
-      <p className={styles.time}>Updated: 2h ago</p>
+      <p className={styles.time}>
+        Updated: {formatDistanceToNow(new Date(lastUpdated))}
+      </p>
       <div className={styles.tables}>
         <Table type="promotions" data={promotions} />
         <div className={styles.gap} />
