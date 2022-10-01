@@ -50,11 +50,18 @@ $border-size: 2px;
           padding: 16px;
           display: grid;
           align-items: center;
-          grid-template-columns: 50% auto 2rem 16px;
+          grid-template-columns: 40% auto 2rem 16px;
           border-bottom: 1px solid rgba(255, 255, 255, 0.5);
           .name {
             font-size: 1.25rem;
             font-weight: 700;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+
+            .fullName {
+              display: none;
+            }
             &:hover {
               color: $primary-color;
               cursor: pointer;
@@ -116,6 +123,21 @@ $border-size: 2px;
         justify-content: space-between;
         .table {
           flex: 1;
+          .row {
+            grid-template-columns: 45% auto 2rem 16px;
+
+            .name {
+              .fullName {
+                display: block;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+              }
+              .formattedName {
+                display: none;
+              }
+            }
+          }
         }
         .gap {
           display: block;

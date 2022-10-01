@@ -72,7 +72,7 @@ export const getStaticProps: GetStaticProps = async () => {
       previousPowerPlayerUnit: 2,
     },
     {
-      playerName: "Bryan Rust",
+      playerName: "T.J. Oshie",
       playerId: 8475810,
       currentLine: 1,
       previousLine: 3,
@@ -102,7 +102,7 @@ export const getStaticProps: GetStaticProps = async () => {
       previousPowerPlayerUnit: 1,
     },
     {
-      playerName: "Andreas Athanasiou",
+      playerName: "Andreas Athanasioulonglong",
       playerId: 8476960,
       currentLine: 3,
       previousLine: 1,
@@ -180,7 +180,10 @@ function Table({
         <div className={styles.row} key={player.playerId}>
           <Link href={`/charts?playerId=${player.playerId}`}>
             <a className={styles.name} title="go to player details">
-              {player.playerName}
+              <span className={styles.fullName}>{player.playerName}</span>
+              <span className={styles.formattedName}>
+                {shorten(player.playerName)}
+              </span>
             </a>
           </Link>
           <div className={styles.twoChanges}>
@@ -311,6 +314,22 @@ function PowerUnitChanges({
       Pp{currentPowerUnit}
     </div>
   );
+}
+
+/**
+ * Shorten a player's name.
+ * @param name player name
+ * @returns First name initial. Last Name e.g. “A. Athanasiou”
+
+ */
+function shorten(name: string) {
+  const names = name.split(" ");
+  if (names.length === 2 && !name.includes(".")) {
+    const firstNameInitial = names[0].charAt(0);
+    return `${firstNameInitial}. ${names.slice(1)}`;
+  } else {
+    return name;
+  }
 }
 
 export default Lines;
