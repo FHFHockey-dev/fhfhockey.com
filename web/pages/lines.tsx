@@ -8,6 +8,7 @@ import classNames from "classnames";
 import supabase from "lib/supabase";
 import { fetchNHL } from "lib/NHL/NHL_API";
 import { getTeamLogo } from "hooks/usePlayer";
+import PageTitle from "components/PageTitle";
 
 import styles from "styles/Lines.module.scss";
 
@@ -42,6 +43,9 @@ function Lines({ teams, promotions, demotions }: LandingPageProps) {
       <Head>
         <title>FHFH | Line Combinations</title>
       </Head>
+      <PageTitle>
+        NHL LINE <PageTitle.Highlight>COMBINATIONS</PageTitle.Highlight>
+      </PageTitle>
       <Teams teams={teams} />
       <Players promotions={promotions} demotions={demotions} />
     </div>
