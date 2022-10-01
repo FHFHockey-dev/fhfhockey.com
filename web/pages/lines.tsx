@@ -55,9 +55,6 @@ function Lines({ teams, promotions, demotions }: LandingPageProps) {
 }
 
 export const getStaticProps: GetStaticProps = async () => {
-  // let { data: line_combinations, error } = await supabase.from(
-  //   "line_combinations"
-  // );
   const teams: Team[] = ((await fetchNHL("/teams")).teams as any[])
     .map((team) => ({
       name: team.name,
@@ -66,56 +63,67 @@ export const getStaticProps: GetStaticProps = async () => {
     }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const promotions: RowData[] = [
-    {
-      playerName: "Sidney Crosby",
-      playerId: 8471675,
-      currentLine: 1,
-      previousLine: 2,
-      abbreviation: "PIT",
-      currentPowerPlayerUnit: 1,
-      previousPowerPlayerUnit: 2,
-    },
-    {
-      playerName: "T.J. Oshie",
-      playerId: 8475810,
-      currentLine: 1,
-      previousLine: 3,
-      abbreviation: "PIT",
-      currentPowerPlayerUnit: 2,
-      previousPowerPlayerUnit: 2,
-    },
-    {
-      playerName: "Brayden Point",
-      playerId: 8478010,
-      currentLine: 1,
-      previousLine: 1,
-      abbreviation: "TBL",
-      currentPowerPlayerUnit: 1,
-      previousPowerPlayerUnit: 1,
-    },
-  ];
+  const allTeamLineUps = (
+    await Promise.all(
+      teams.map(async (team) => {
+        const { data: line_combinations } = await supabase
+          .from("line_combinations")
+          .select(
+            "date, team_name, team_abbreviation, forwards, defensemen, goalies"
+          )
+          .eq("team_name", team.name)
+          .order("date")
+          .limit(2);
+        return line_combinations;
+      })
+    )
+  ).filter((el) => el?.length === 2) as [any, any][];
 
-  const demotions: RowData[] = [
-    {
-      playerName: "Jeff Skinner",
-      playerId: 8475784,
-      currentLine: 2,
-      previousLine: 1,
-      abbreviation: "BUF",
-      currentPowerPlayerUnit: 1,
-      previousPowerPlayerUnit: 1,
-    },
-    {
-      playerName: "Andreas Athanasioulonglong",
-      playerId: 8476960,
-      currentLine: 3,
-      previousLine: 1,
-      abbreviation: "CHI",
-      currentPowerPlayerUnit: 1,
-      previousPowerPlayerUnit: 2,
-    },
-  ];
+  const players: { [playerId: number]: RowData } = {};
+  for (const [previous, current] of allTeamLineUps) {
+    const parse = (type: "forwards" | "defensemen" | "goalies") => {
+      for (const [line, playersOfLine] of Object.entries<any>(previous[type])) {
+        const lineNumber = Number(line.charAt(line.length - 1));
+        for (const player of playersOfLine) {
+          players[player.playerId] = {
+            playerName: player.playerName,
+            abbreviation: previous.team_abbreviation,
+            playerId: player.playerId,
+            previousLine: lineNumber,
+            currentLine: 0, // placeholder
+            previousPowerPlayerUnit: 0, // placeholder
+            currentPowerPlayerUnit: 0, // placeholder
+          };
+        }
+      }
+
+      for (const [line, playersOfLine] of Object.entries<any>(current[type])) {
+        const lineNumber = Number(line.charAt(line.length - 1));
+        for (const player of playersOfLine) {
+          players[player.playerId] = {
+            ...players[player.playerId],
+            currentLine: lineNumber,
+          };
+        }
+      }
+    };
+
+    parse("forwards");
+    parse("defensemen");
+    parse("goalies");
+  }
+
+  const promotions: RowData[] = [];
+  const demotions: RowData[] = [];
+
+  for (const player of Object.values(players)) {
+    // the smaller the better
+    if (player.currentLine < player.previousLine) {
+      promotions.push(player);
+    } else if (player.currentLine > player.previousLine) {
+      demotions.push(player);
+    }
+  }
 
   return {
     props: {
@@ -196,15 +204,10 @@ function Table({
       {remainingRows > 0 && (
         <button className={styles.showAll} onClick={onShowAll}>
           SHOW ALL ({remainingRows})
-          <Image
-            src={arrowDown}
-            alt="expand"
-            placeholder="blur"
-            width={16}
-            height={16}
-          />
+          <Image src={arrowDown} alt="expand" width={16} height={16} />
         </button>
       )}
+      {data.length === 0 && <p>No Data Found</p>}
     </div>
   );
 }
