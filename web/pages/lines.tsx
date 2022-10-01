@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Head from "next/head";
+import { NextSeo } from "next-seo";
 import Image from "next/image";
 import { GetStaticProps } from "next";
 import Link from "next/link";
@@ -49,9 +49,11 @@ function Lines({
 }: LandingPageProps) {
   return (
     <div className={styles.lineCombinations}>
-      <Head>
-        <title>FHFH | Line Combinations</title>
-      </Head>
+      <NextSeo
+        title="FHFH | NHL Line Combinations"
+        description="NHL Line Combinations"
+      />
+
       <PageTitle>
         NHL LINE <PageTitle.Highlight>COMBINATIONS</PageTitle.Highlight>
       </PageTitle>
