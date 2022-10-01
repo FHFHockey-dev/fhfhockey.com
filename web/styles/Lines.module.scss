@@ -72,6 +72,11 @@ $border-size: 2px;
             align-items: center;
             justify-content: flex-end;
             margin-right: 20px;
+            .colon {
+              width: 10px;
+              text-align: center;
+              opacity: 0.6;
+            }
           }
           .changes {
             display: flex;

@@ -263,7 +263,7 @@ function Row({ player }: { player: RowData }) {
               previousPowerUnit={player.previousPowerPlayerUnit}
               currentPowerUnit={player.currentPowerPlayerUnit}
             />
-            <span style={{ width: "5px" }}>:</span>
+            <span className={styles.colon}>:</span>
           </>
         )}
         <LineChanges
