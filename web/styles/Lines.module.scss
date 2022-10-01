@@ -17,10 +17,10 @@ $border-size: 2px;
     border: none;
     .time {
       position: absolute;
-      top: 4.5px;
+      top: 7px;
       right: 0;
       opacity: 0.4;
-      font-size: 1rem;
+      font-size: 0.75rem;
     }
 
     .tables {
@@ -116,6 +116,7 @@ $border-size: 2px;
         right: 0;
         top: 17px;
         right: 38px;
+        font-size: 1rem;
       }
 
       .tables {
