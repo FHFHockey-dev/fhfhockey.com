@@ -4,14 +4,14 @@ import Image from "next/image";
 import { GetStaticProps } from "next";
 import Link from "next/link";
 import classNames from "classnames";
-import { formatDistanceToNow } from "date-fns";
-
 import supabase from "lib/supabase";
+
+import PageTitle from "components/PageTitle";
+import TimeAgo from "components/TimeAgo";
+import arrowDown from "public/pictures/arrow-down-white.png";
+
 import { fetchNHL } from "lib/NHL/NHL_API";
 import { getTeamLogo } from "hooks/usePlayer";
-import PageTitle from "components/PageTitle";
-
-import arrowDown from "public/pictures/arrow-down-white.png";
 
 import styles from "styles/Lines.module.scss";
 
@@ -206,7 +206,7 @@ function Players({
   return (
     <section className={styles.players}>
       <p className={styles.time}>
-        Updated: {formatDistanceToNow(new Date(lastUpdated))}
+        Updated: <TimeAgo date={lastUpdated} />
       </p>
       <div className={styles.tables}>
         <Table type="promotions" data={promotions} />
