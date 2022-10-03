@@ -12,7 +12,7 @@ function Layout({ children }: LayoutProps) {
   return (
     <div className={styles.container}>
       <Header />
-      <main className={styles.pageContent}>{children}</main>
+      {children}
       <Footer />
     </div>
   );

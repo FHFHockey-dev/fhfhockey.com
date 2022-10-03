@@ -7,6 +7,7 @@ import { urlFor } from "lib/sanity/sanity";
 import { TextBanner } from "../../components/Banner/Banner";
 import BlogPost from "components/BlogPost";
 import styles from "styles/Blog.module.scss";
+import Container from "components/Layout/Container";
 
 export type PostPreviewData = {
   slug: string;
@@ -56,19 +57,17 @@ export const getStaticProps: GetStaticProps = async () => {
 
 const Blog: NextPage<{ posts: PostPreviewData[] }> = ({ posts }) => {
   return (
-    <div>
+    <Container>
       <Head>
         <title>FHFH | Blog</title>
       </Head>
-      <main>
-        <TextBanner text="The Blog" />
-        <section className={styles.posts}>
-          {posts.map((post) => (
-            <BlogPost key={post.slug} {...post} />
-          ))}
-        </section>
-      </main>
-    </div>
+      <TextBanner text="The Blog" />
+      <section className={styles.posts}>
+        {posts.map((post) => (
+          <BlogPost key={post.slug} {...post} />
+        ))}
+      </section>
+    </Container>
   );
 };
 

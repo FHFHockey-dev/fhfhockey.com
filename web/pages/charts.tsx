@@ -19,6 +19,7 @@ import ClientOnly from "components/ClientOnly";
 import SustainabilityVSCareerChart from "components/SustainabilityVSCareerChart";
 import Image from "next/image";
 import { toPng } from "html-to-image";
+import Container from "components/Layout/Container";
 
 function Charts() {
   const router = useRouter();
@@ -36,7 +37,7 @@ function Charts() {
   }, [queryParamPlayerId]);
 
   return (
-    <div>
+    <Container>
       <NextSeo
         title="FHFH | Charts"
         description="The underlying stats of a player in NHL."
@@ -61,7 +62,7 @@ function Charts() {
           />
         )}
       </ClientOnly>
-    </div>
+    </Container>
   );
 }
 
