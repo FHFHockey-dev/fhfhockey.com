@@ -1,0 +1,19 @@
+@import "styles/vars.scss";
+
+.title {
+  font-family: "Roboto Condensed";
+  font-size: 3rem;
+  font-weight: 300;
+  line-height: 56px;
+  letter-spacing: 0em;
+  text-align: left;
+
+  @media only screen and (min-width: $screen-large) {
+    margin-top: 2.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .blue {
+    color: $primary-color;
+  }
+}

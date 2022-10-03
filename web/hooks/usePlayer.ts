@@ -32,7 +32,7 @@ const PROXY_SERVER_URL = process.env.NEXT_PUBLIC_PROXY_SERVER_URL;
 const getPlayerImage = (playerId: number) =>
   `${PROXY_SERVER_URL}http://nhl.bamcontent.com/images/headshots/current/168x168/${playerId}.jpg`;
 
-const getTeamLogo = (teamName: string) => `/teamLogos/${teamName}.png`;
+export const getTeamLogo = (teamName: string) => `/teamLogos/${teamName}.png`;
 
 const processPosition = (position: string) => position.split(" ").join("-");
 

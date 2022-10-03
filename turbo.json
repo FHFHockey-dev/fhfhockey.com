@@ -15,6 +15,8 @@
         "$NEXT_PUBLIC_SANITY_GRAPHQL_URI",
         "$NEXT_PUBLIC_PROXY_SERVER_URL",
         "$NEXT_PUBLIC_SERVERLESS_API_URL",
+        "$NEXT_PUBLIC_SUPABASE_URL",
+        "$NEXT_PUBLIC_SUPABASE_PUBLIC_KEY",
         "$SANITY_API_TOKEN"
       ],
       "outputs": [".next/**"]
