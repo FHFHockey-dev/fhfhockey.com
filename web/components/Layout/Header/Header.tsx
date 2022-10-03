@@ -11,6 +11,7 @@ import ClientOnly from "components/ClientOnly";
 import SocialMedias from "components/SocialMedias";
 
 import styles from "./Header.module.scss";
+import LOGO from "public/pictures/logo.png";
 
 function BurgerButton({ onClick }: { onClick: () => void }) {
   return (
@@ -41,12 +42,13 @@ function Header() {
       >
         {/* logo */}
         <Link href="/">
-          <a>
+          <a style={{ height: 47 }}>
             <Image
-              src="/pictures/logo.svg"
+              src={LOGO}
               alt="FHFH logo"
-              width={182}
-              height={24}
+              placeholder="blur"
+              width={206}
+              height={47}
               priority
             />
           </a>
