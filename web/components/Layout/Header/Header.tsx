@@ -42,13 +42,13 @@ function Header() {
       >
         {/* logo */}
         <Link href="/">
-          <a style={{ height: 47 }}>
+          <a className={styles.logo}>
             <Image
               src={LOGO}
               alt="FHFH logo"
               placeholder="blur"
               width={206}
-              height={47}
+              height={53}
               priority
             />
           </a>

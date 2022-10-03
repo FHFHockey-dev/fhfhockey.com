@@ -46,6 +46,13 @@ $mobile-header-height: 72px;
     transform: translate3d(0, calc(-100% - 2px), 0);
   }
 
+  .logo {
+    position: relative;
+    height: 53px;
+    left: -11px;
+    top: -1px;
+  }
+
   .nav {
     display: none;
   }
@@ -60,6 +67,9 @@ $mobile-header-height: 72px;
 
   // PC
   @media only screen and (min-width: $screen-large) {
+    .logo {
+      left: -4px;
+    }
     .nav {
       display: block;
       flex: 1;
