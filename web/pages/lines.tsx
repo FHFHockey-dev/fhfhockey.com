@@ -24,10 +24,10 @@ type Team = {
 type RowData = {
   playerId: number;
   playerName: string;
-  previousLine: number;
-  currentLine: number;
-  previousPowerPlayerUnit: number;
-  currentPowerPlayerUnit: number;
+  previousLine: number | null;
+  currentLine: number | null;
+  previousPowerPlayerUnit: number | null;
+  currentPowerPlayerUnit: number | null;
   /**
    * Team abbreviation
    */
@@ -103,9 +103,9 @@ export const getStaticProps: GetStaticProps = async () => {
             abbreviation: previous.team_abbreviation,
             playerId: player.playerId,
             previousLine: lineNumber,
-            currentLine: 0, // placeholder
-            previousPowerPlayerUnit: 0, // placeholder
-            currentPowerPlayerUnit: 0, // placeholder
+            currentLine: null,
+            previousPowerPlayerUnit: null, // placeholder
+            currentPowerPlayerUnit: null, // placeholder
           };
         }
       }
@@ -113,10 +113,24 @@ export const getStaticProps: GetStaticProps = async () => {
       for (const [line, playersOfLine] of Object.entries<any>(current[type])) {
         const lineNumber = Number(line.charAt(line.length - 1));
         for (const player of playersOfLine) {
-          players[player.playerId] = {
-            ...players[player.playerId],
-            currentLine: lineNumber,
-          };
+          // a player who was in the previous lineup and still in the current lineup
+          if (players[player.playerId]) {
+            players[player.playerId] = {
+              ...players[player.playerId],
+              currentLine: lineNumber,
+            };
+          } else {
+            // a player who was not in the previous lineup, and appears in the current lineup. e.g. new player
+            players[player.playerId] = {
+              playerName: player.playerName,
+              abbreviation: previous.team_abbreviation,
+              playerId: player.playerId,
+              previousLine: null,
+              currentLine: lineNumber,
+              previousPowerPlayerUnit: null, // placeholder
+              currentPowerPlayerUnit: null, // placeholder
+            };
+          }
         }
       }
     };
@@ -130,11 +144,13 @@ export const getStaticProps: GetStaticProps = async () => {
   const demotions: RowData[] = [];
 
   for (const player of Object.values(players)) {
-    // the smaller the better
-    if (player.currentLine < player.previousLine) {
-      promotions.push(player);
-    } else if (player.currentLine > player.previousLine) {
-      demotions.push(player);
+    // hide players who don't have line changes
+    if (player.previousLine !== player.currentLine) {
+      if (isPromotion(player.previousLine, player.currentLine)) {
+        promotions.push(player);
+      } else {
+        demotions.push(player);
+      }
     }
   }
 
@@ -317,16 +333,19 @@ function Row({ player }: { player: RowData }) {
 }
 
 type LineChangesProps = {
-  previousLine: number;
-  currentLine: number;
+  previousLine: number | null;
+  currentLine: number | null;
 };
 
 function LineChanges({ previousLine, currentLine }: LineChangesProps) {
+  const previous = previousLine === null ? "N/A" : `L${previousLine}`;
+  const current = currentLine === null ? "N/A" : `L${currentLine}`;
+
   return (
     <div className={classNames(styles.changes, styles.lineChanges)}>
-      L{previousLine}
+      {previous}
       {/* the smaller the better */}
-      {previousLine > currentLine ? (
+      {isPromotion(previousLine, currentLine) ? (
         <Image
           src="/pictures/arrow-right-green.png"
           alt="promote to"
@@ -341,23 +360,26 @@ function LineChanges({ previousLine, currentLine }: LineChangesProps) {
           height={24}
         />
       )}
-      L{currentLine}
+      {current}
     </div>
   );
 }
 
 type PowerUnitChangesProps = {
-  previousPowerUnit: number;
-  currentPowerUnit: number;
+  previousPowerUnit: number | null;
+  currentPowerUnit: number | null;
 };
 function PowerUnitChanges({
   previousPowerUnit,
   currentPowerUnit,
 }: PowerUnitChangesProps) {
+  const previous =
+    previousPowerUnit === null ? "N/A" : `Pp${previousPowerUnit}`;
+  const current = currentPowerUnit === null ? "N/A" : `Pp${currentPowerUnit}`;
   return (
     <div className={styles.changes}>
-      Pp{previousPowerUnit}{" "}
-      {previousPowerUnit > currentPowerUnit ? (
+      {previous}
+      {isPromotion(previousPowerUnit, currentPowerUnit) ? (
         <Image
           src="/pictures/arrow-right-green.png"
           alt="promote to"
@@ -372,7 +394,7 @@ function PowerUnitChanges({
           height={24}
         />
       )}
-      Pp{currentPowerUnit}
+      {current}
     </div>
   );
 }
@@ -390,6 +412,26 @@ function shorten(name: string) {
     return `${firstNameInitial}. ${names.slice(1)}`;
   } else {
     return name;
+  }
+}
+
+/**
+ * Test if a player is in promotion.
+ * @param previous previous line number
+ * @param current current line number
+ * @returns true if the player is in promotion, otherwise false
+ */
+function isPromotion(previous: number | null, current: number | null) {
+  if (current === null) {
+    return false;
+  } else if (previous === null) {
+    return true;
+  }
+  // the smaller the better
+  if (current < previous) {
+    return true;
+  } else if (current > previous) {
+    return false;
   }
 }
 
