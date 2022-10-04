@@ -14,8 +14,9 @@ import { fetchNHL } from "lib/NHL/NHL_API";
 import { getTeamLogo } from "hooks/usePlayer";
 
 import styles from "styles/Lines.module.scss";
+import Container from "components/Layout/Container";
 
-type Team = {
+export type Team = {
   logo: string;
   name: string;
   abbreviation: string;
@@ -48,7 +49,7 @@ function Lines({
   demotions,
 }: LandingPageProps) {
   return (
-    <div className={styles.lineCombinations}>
+    <Container className={styles.lineCombinations}>
       <NextSeo
         title="FHFH | NHL Line Combinations"
         description="NHL Line Combinations"
@@ -63,7 +64,7 @@ function Lines({
         promotions={promotions}
         demotions={demotions}
       />
-    </div>
+    </Container>
   );
 }
 
