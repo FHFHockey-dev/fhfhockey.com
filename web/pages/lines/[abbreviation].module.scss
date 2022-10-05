@@ -1,0 +1,115 @@
+@import "styles/vars.scss";
+
+.teamSelect {
+  display: none;
+}
+
+.container {
+  padding: 0 !important;
+
+  .top {
+    padding: 0 0.75rem;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-top: 1rem;
+    margin-bottom: 10px;
+    position: relative;
+    .title {
+      font-size: 1.25rem;
+      margin: 0;
+      line-height: initial;
+    }
+    .select {
+      width: 128px;
+    }
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fcb825;
+    border-top: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    color: #041d43; // TODO: use the team theme
+    padding: 0 0.75rem 0 0.75rem;
+    height: 60px;
+    h2 {
+      margin: 0;
+      font-family: "Roboto";
+      font-weight: 400;
+      font-size: 1.375rem;
+      margin-bottom: 2px;
+      .highlight {
+        font-weight: 800;
+      }
+    }
+
+    .time {
+      font-weight: 400;
+      font-size: 0.75rem;
+    }
+
+    .right {
+      .small {
+        display: block;
+        height: 35px;
+      }
+
+      .large {
+        display: none;
+      }
+    }
+  }
+
+  .mainContent {
+    padding: 0 0.75rem;
+
+    .forwards {
+      .line:not(:last-of-type) {
+        margin-bottom: 12px;
+      }
+    }
+
+    .defense {
+      .line:not(:last-of-type) {
+        margin-bottom: 12px;
+      }
+    }
+
+    .goalies {
+      .line:not(:last-of-type) {
+        margin-bottom: 12px;
+      }
+    }
+  }
+}
+
+@media only screen and (min-width: $screen-large) {
+  .teamSelect {
+    display: flex;
+  }
+  .container {
+    width: 1080px;
+    margin: 0 auto;
+
+    .top {
+      .select {
+        display: none;
+      }
+    }
+
+    .header {
+      .right {
+        .small {
+          display: none;
+        }
+
+        .large {
+          display: block;
+        }
+      }
+    }
+  }
+}

@@ -1,12 +1,13 @@
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import Image from "next/image";
 import classNames from "classnames";
 
-import ARROW from "public/pictures/arrow.svg";
 import { getTeamLogo } from "hooks/usePlayer";
+import ARROW from "public/pictures/arrow.svg";
 import styles from "./TeamSelect.module.scss";
 
 type TeamSelectProps = {
+  className?: string;
   /**
    * An array of team info.
    */
@@ -19,9 +20,13 @@ type TeamSelectProps = {
   onTeamChange: (abbreviation: string) => void;
 };
 
-function TeamSelect({ teams = [], team, onTeamChange }: TeamSelectProps) {
+function TeamSelect({
+  teams = [],
+  team,
+  onTeamChange,
+  className,
+}: TeamSelectProps) {
   const logosRef = useRef<HTMLDivElement>(null);
-  const [position, setPosition] = useState(0);
 
   const onPreviousClick = () => {
     if (logosRef.current) {
@@ -36,7 +41,7 @@ function TeamSelect({ teams = [], team, onTeamChange }: TeamSelectProps) {
   };
 
   return (
-    <div className={styles.container}>
+    <div className={classNames(className, styles.container)}>
       <button
         className={styles.button}
         title="show previous"

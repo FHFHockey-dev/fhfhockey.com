@@ -410,7 +410,7 @@ function shorten(name: string) {
   const names = name.split(" ");
   if (names.length === 2 && !name.includes(".")) {
     const firstNameInitial = names[0].charAt(0);
-    return `${firstNameInitial}. ${names.slice(1)}`;
+    return `${firstNameInitial}. ${names.slice(1).join(" ")}`;
   } else {
     return name;
   }
