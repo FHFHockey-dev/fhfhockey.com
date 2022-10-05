@@ -1,17 +1,16 @@
 import React, { useState } from "react";
-
-import { OptionsProps } from "components/Options/Options";
-import styles from "./Select.module.scss";
-import { TimeOption } from "components/TimeOptions/TimeOptions";
 import Image from "next/image";
 import classNames from "classnames";
 
-function Select({
+import { OptionsProps } from "components/Options/Options";
+import styles from "./Select.module.scss";
+
+function Select<T extends string>({
   className,
   options,
   option,
   onOptionChange,
-}: OptionsProps<TimeOption>) {
+}: OptionsProps<T>) {
   const [showOptions, setShowOptions] = useState(false);
   const currentLabel = options.find((op) => op.value === option)?.label;
 
