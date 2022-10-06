@@ -7,6 +7,7 @@ import UP_ARROW from "public/pictures/arrow-up-green.png";
 import DOWN_ARROW from "public/pictures/arrow-down-red.png";
 import ClientOnly from "components/ClientOnly";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
+import { Player } from "pages/lines/[abbreviation]";
 
 // For large devices
 const LARGE_STATS_CONFIG = [
@@ -32,13 +33,9 @@ const SMALL_STATS_CONFIG = [
   { key: "PlusMinus", label: "+/-" },
 ] as const;
 
-type PlayerCardProps = {
-  name: string;
-  jerseyNumber: number;
-  isPromotion?: boolean;
-};
+export type LineChange = "promotion" | "demotion" | "static";
 
-function PlayerCard({ name, jerseyNumber, isPromotion }: PlayerCardProps) {
+function PlayerCard({ name, jerseyNumber, lineChange, ...stats }: Player) {
   const names = name.split(" ");
   const size = useScreenSize();
   const CONFIG =
@@ -50,14 +47,16 @@ function PlayerCard({ name, jerseyNumber, isPromotion }: PlayerCardProps) {
           <span className={styles.firstName}>{names[0]}</span>
           <span className={styles.lastName}>
             {names.slice(1).join(" ")}
-            <Image
-              src={isPromotion ? UP_ARROW : DOWN_ARROW}
-              alt={isPromotion ? "promotion" : "demotion"}
-              layout="fixed"
-              objectFit="contain"
-              width={12}
-              height={12}
-            />
+            {lineChange !== "static" && (
+              <Image
+                src={lineChange === "promotion" ? UP_ARROW : DOWN_ARROW}
+                alt={lineChange}
+                layout="fixed"
+                objectFit="contain"
+                width={12}
+                height={12}
+              />
+            )}
           </span>
         </h3>
         <div className={styles.jerseyNumber}>
@@ -73,7 +72,7 @@ function PlayerCard({ name, jerseyNumber, isPromotion }: PlayerCardProps) {
           {CONFIG.map((stat) => (
             <div key={stat.key} className={styles.stat}>
               <div className={styles.label}>{stat.label}</div>
-              <div className={styles.value}>7</div>
+              <div className={styles.value}>{stats[stat.key] || 0}</div>
             </div>
           ))}
         </section>
