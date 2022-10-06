@@ -16,7 +16,11 @@
   "settings": {
     "search.exclude": {
       "**/.next": true,
-      "**/.turbo": true
-    }
+      "**/.turbo": true,
+      "**/.vercel": true,
+      "**/.yarn": true,
+      "**/dist": true
+    },
+    "cSpell.words": ["defensemen"]
   }
 }
