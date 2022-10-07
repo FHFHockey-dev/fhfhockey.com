@@ -79,7 +79,8 @@ export default function TeamLC({
   const onTeamChange = (newAbbreviation: string) => {
     router.push(`/lines/${newAbbreviation}`);
   };
-  console.log(teamName, teams);
+
+  console.log(teamName, teams, { isFallback: router.isFallback });
 
   return (
     <>
@@ -284,7 +285,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
   return {
     paths: teams,
-    fallback: false,
+    fallback: "blocking",
   };
 };
 
