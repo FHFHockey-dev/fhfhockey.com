@@ -8,14 +8,23 @@ import styles from "./Line.module.scss";
 type LineProps = {
   className?: string;
   players: Player[];
-  columns: 1 | 2 | 3;
+  columns: 2 | 3;
 };
 
 function Line({ className, players, columns }: LineProps) {
+  let twoColumnStyle: React.CSSProperties = {};
+  if (columns === 2) {
+    twoColumnStyle.width = "calc(100% / 3 * 2)";
+    twoColumnStyle.marginLeft = "auto";
+    twoColumnStyle.marginRight = "auto";
+  }
   return (
     <section
       className={classNames(styles.container, className)}
-      style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
+      style={{
+        gridTemplateColumns: `repeat(${columns}, 1fr)`,
+        ...twoColumnStyle,
+      }}
     >
       {players.map((player) => (
         <div key={player.playerId} className={styles.playerCardWrapper}>
