@@ -77,8 +77,10 @@ export default function TeamLC({
   const router = useRouter();
   const { abbreviation } = router.query;
   const onTeamChange = (newAbbreviation: string) => {
-    router.replace(`/lines/${newAbbreviation}`);
+    router.push(`/lines/${newAbbreviation}`);
   };
+  console.log(teamName, teams);
+
   return (
     <>
       <TeamSelect
@@ -271,6 +273,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       lineCombinations: current,
       teams,
     },
+    revalidate: 60, // In seconds
   };
 };
 
