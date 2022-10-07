@@ -15,10 +15,12 @@ import Select from "components/Select";
 import CategoryTitle from "components/LineCombinations/CategoryTitle";
 import Line from "components/LineCombinations/Line";
 
-import styles from "./[abbreviation].module.scss";
 import getLineChanges from "lib/NHL/getLineChanges";
 import { memoizeAsync } from "utils/memoize";
 import { LineChange } from "components/LineCombinations/PlayerCard/PlayerCard";
+import Custom404 from "pages/404";
+
+import styles from "./[abbreviation].module.scss";
 
 export type Player = {
   playerId: number;
@@ -80,7 +82,10 @@ export default function TeamLC({
     router.push(`/lines/${newAbbreviation}`);
   };
 
-  console.log(teamName, teams, { isFallback: router.isFallback });
+  // NOTE: workaround for weird vercel client side bug
+  if (!teams || !lineCombinations) {
+    return <Custom404 />;
+  }
 
   return (
     <>
@@ -197,6 +202,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
   if (error || line_combinations.length !== 2) {
     return {
+      props: {
+        teams: [],
+      },
       notFound: true,
     };
   }
@@ -285,7 +293,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
   return {
     paths: teams,
-    fallback: "blocking",
+    fallback: false,
   };
 };
 
