@@ -1,6 +1,6 @@
+import React from "react";
 import classNames from "classnames";
 import type { Player } from "pages/lines/[abbreviation]";
-import React from "react";
 import PlayerCard from "../PlayerCard";
 
 import styles from "./Line.module.scss";

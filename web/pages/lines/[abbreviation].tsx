@@ -238,6 +238,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
             Blocks: 0,
             PlusMinus: 0,
             name: playerName,
+            playerId,
             jerseyNumber,
             lineChange: getLineChange(playerId),
           };
