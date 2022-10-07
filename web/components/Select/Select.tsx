@@ -20,17 +20,20 @@ function Select<T extends string>({
         className={styles.select}
         onClick={() => setShowOptions((prev) => !prev)}
       >
-        {currentLabel}
-        <Image
+        <div className={styles.label}>{currentLabel}</div>
+        <div
           className={classNames(styles.arrow, {
             [styles.up]: showOptions,
           })}
-          alt="arrow"
-          src="/pictures/arrow.svg"
-          layout="fixed"
-          width={12}
-          height={6.7}
-        />
+        >
+          <Image
+            alt="arrow"
+            src="/pictures/arrow.svg"
+            layout="fixed"
+            width={12}
+            height={6.7}
+          />
+        </div>
       </div>
       {showOptions && (
         <div className={styles.options}>
