@@ -47,6 +47,7 @@ type Props = {
   teams: { abbreviation: string; name: string; shortName: string }[];
 
   lineCombinations: {
+    source_url: string;
     date: string;
     team_name: string;
     team_abbreviation: string;
@@ -66,7 +67,7 @@ type Props = {
       line2: Player[];
     };
   };
-
+  source_url: string;
   lastUpdated: string;
 };
 
@@ -117,6 +118,7 @@ export default function TeamLC({
         </div>
 
         <Header
+          sourceUrl={lineCombinations.source_url}
           teamName={teamName}
           lastUpdated={lastUpdated || new Date(2022, 10, 1).toString()}
         />
@@ -195,10 +197,13 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
   const { data: line_combinations, error } = await supabase
     .from("line_combinations")
-    .select("date, team_name, team_abbreviation, forwards, defensemen, goalies")
+    .select(
+      "date, team_name, team_abbreviation, forwards, defensemen, goalies, source_url"
+    )
     .eq("team_abbreviation", params?.abbreviation)
     .order("date")
     .limit(2);
+  console.log({ line_combinations });
 
   if (error || line_combinations.length !== 2) {
     return {
@@ -239,6 +244,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
             `/people/${playerId}/stats?stats=gameLog&season=${seasonId}`
           ).then((data) => data.stats[0].splits.slice(0, 10));
 
+          // @ts-ignore
           const stats = {
             Goals: 0,
             Assists: 0,
@@ -252,6 +258,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
             playerId,
             jerseyNumber,
             lineChange: getLineChange(playerId),
+            source_url: current.source_url,
           };
           games.forEach(({ stat }) => {
             stats["Goals"] += stat.goals;
@@ -300,9 +307,10 @@ export const getStaticPaths: GetStaticPaths = async () => {
 type HeaderProps = {
   teamName: string;
   lastUpdated: string;
+  sourceUrl: string;
 };
 
-function Header({ teamName, lastUpdated }: HeaderProps) {
+function Header({ teamName, lastUpdated, sourceUrl }: HeaderProps) {
   const names = teamName.split(" ");
   return (
     <div className={styles.header}>
@@ -312,7 +320,9 @@ function Header({ teamName, lastUpdated }: HeaderProps) {
           <span className={styles.highlight}>{names.at(-1)}</span>
         </h2>
         <div className={styles.time}>
-          Updated: <TimeAgo date={lastUpdated} />
+          <a href={sourceUrl} target="_blank" rel="noreferrer">
+            Updated: <TimeAgo date={lastUpdated} />
+          </a>
         </div>
       </div>
       <div className={styles.right}>

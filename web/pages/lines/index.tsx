@@ -110,9 +110,14 @@ function Players({
 }) {
   return (
     <section className={styles.players}>
-      <p className={styles.time}>
+      <a
+        className={styles.time}
+        href="https://twitter.com/fhfhlines"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
         Updated: <TimeAgo date={lastUpdated} />
-      </p>
+      </a>
       <div className={styles.tables}>
         <Table type="promotions" data={promotions} />
         <div className={styles.gap} />

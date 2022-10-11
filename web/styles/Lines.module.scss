@@ -21,6 +21,10 @@ $border-size: 2px;
       right: 0;
       opacity: 0.4;
       font-size: 0.65rem;
+      &:hover {
+        color: $primary-color;
+        opacity: 1;
+      }
     }
 
     .tables {

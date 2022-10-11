@@ -49,6 +49,9 @@
     .time {
       font-weight: 400;
       font-size: 0.75rem;
+      &:hover {
+        color: $primary-color;
+      }
     }
 
     .right {
