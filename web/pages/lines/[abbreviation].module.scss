@@ -33,22 +33,27 @@
     border-bottom: 2px solid #ffffff;
     padding: 0 0.75rem 0 0.75rem;
     height: 60px;
-    h2 {
-      margin: 0;
-      font-family: "Roboto";
-      font-weight: 400;
-      font-size: 1.375rem;
-      margin-bottom: 2px;
-      .highlight {
-        font-weight: 800;
+    .left {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      h2 {
+        margin: 0;
+        font-family: "Roboto";
+        font-weight: 400;
+        font-size: 1.375rem;
+        margin-bottom: 2px;
+        .highlight {
+          font-weight: 800;
+        }
       }
-    }
 
-    .time {
-      font-weight: 400;
-      font-size: 0.75rem;
-      &:hover {
-        color: $primary-color;
+      .time {
+        font-weight: 400;
+        font-size: 0.75rem;
+        &:hover {
+          color: $primary-color;
+        }
       }
     }
 
