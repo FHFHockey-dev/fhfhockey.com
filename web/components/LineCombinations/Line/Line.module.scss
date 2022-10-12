@@ -2,7 +2,6 @@
   display: grid;
   // grid-template-columns: repeat(3, 1fr);
   border: 1.33px solid white;
-  background-color: #154734;
   .playerCardWrapper {
     position: relative;
     &:not(:last-child)::after {
@@ -12,7 +11,7 @@
       height: 83%;
       right: 0;
       top: 7px;
-      background-color: #ddcba4;
+      background-color: white;
     }
   }
 }

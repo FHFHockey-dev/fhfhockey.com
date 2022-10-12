@@ -9,7 +9,6 @@
       .firstName {
         font-weight: 400;
         font-size: 0.75rem;
-        color: #ddcba4;
         margin-bottom: 3px;
       }
       .lastName {
@@ -30,9 +29,6 @@
 
       .number {
         margin-left: 2px;
-        color: red;
-        text-shadow: -1px 0 #ddcba4, 0 1px #ddcba4, 1px 0 #ddcba4,
-          0 -1px #ddcba4;
       }
     }
   }
@@ -44,13 +40,12 @@
     text-align: center;
     .stat {
       .label {
-        color: #ddcba4bf; // TODO: use the team theme
+        color: white;
         font-weight: 500;
         font-size: 0.5rem;
         letter-spacing: 0.05em;
       }
       .value {
-        color: #ddcba4; // TODO: use the team theme
         font-size: 1rem;
         font-weight: 900;
         letter-spacing: -0.05em;

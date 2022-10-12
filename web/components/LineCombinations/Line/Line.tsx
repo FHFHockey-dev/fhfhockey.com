@@ -4,6 +4,7 @@ import type { Player } from "pages/lines/[abbreviation]";
 import PlayerCard from "../PlayerCard";
 
 import styles from "./Line.module.scss";
+import { useTeamColor } from "contexts/TeamColorContext";
 
 type LineProps = {
   className?: string;
@@ -18,11 +19,14 @@ function Line({ className, players, columns }: LineProps) {
     twoColumnStyle.marginLeft = "auto";
     twoColumnStyle.marginRight = "auto";
   }
+  const color = useTeamColor();
+
   return (
     <section
       className={classNames(styles.container, className)}
       style={{
         gridTemplateColumns: `repeat(${columns}, 1fr)`,
+        backgroundColor: color.primary,
         ...twoColumnStyle,
       }}
     >

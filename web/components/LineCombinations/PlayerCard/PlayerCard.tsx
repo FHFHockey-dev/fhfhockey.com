@@ -8,6 +8,7 @@ import DOWN_ARROW from "public/pictures/arrow-down-red.png";
 import ClientOnly from "components/ClientOnly";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import { Player } from "pages/lines/[abbreviation]";
+import { useTeamColor } from "contexts/TeamColorContext";
 
 // For large devices
 const LARGE_STATS_CONFIG = [
@@ -40,11 +41,16 @@ function PlayerCard({ name, jerseyNumber, lineChange, ...stats }: Player) {
   const size = useScreenSize();
   const CONFIG =
     size.screen === BreakPoint.l ? LARGE_STATS_CONFIG : SMALL_STATS_CONFIG;
+
+  const color = useTeamColor();
+
   return (
     <article className={styles.container}>
       <div className={styles.top}>
         <h3 className={styles.names}>
-          <span className={styles.firstName}>{names[0]}</span>
+          <span className={styles.firstName} style={{ color: color.secondary }}>
+            {names[0]}
+          </span>
           <span className={styles.lastName}>
             {names.slice(1).join(" ")}
             {lineChange !== "static" && (
@@ -60,9 +66,16 @@ function PlayerCard({ name, jerseyNumber, lineChange, ...stats }: Player) {
           </span>
         </h3>
         <div className={styles.jerseyNumber}>
-          {/* TODO: use team theme */}
-          <span style={{ color: "#DDCBA4BF" }}>#</span>
-          <span className={styles.number}>{jerseyNumber}</span>
+          <span style={{ color: color.secondary }}>#</span>
+          <span
+            className={styles.number}
+            style={{
+              color: color.jersey,
+              textShadow: `-1px 0 ${color.secondary}, 0 1px ${color.secondary}, 1px 0 ${color.secondary}, 0 -1px ${color.secondary}`,
+            }}
+          >
+            {jerseyNumber}
+          </span>
         </div>
       </div>
       <CategoryTitle type="small">LAST 10 GP</CategoryTitle>
@@ -72,7 +85,9 @@ function PlayerCard({ name, jerseyNumber, lineChange, ...stats }: Player) {
           {CONFIG.map((stat) => (
             <div key={stat.key} className={styles.stat}>
               <div className={styles.label}>{stat.label}</div>
-              <div className={styles.value}>{stats[stat.key] || 0}</div>
+              <div className={styles.value} style={{ color: color.secondary }}>
+                {stats[stat.key] || 0}
+              </div>
             </div>
           ))}
         </section>

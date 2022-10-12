@@ -19,6 +19,7 @@ import getLineChanges from "lib/NHL/getLineChanges";
 import { memoizeAsync } from "utils/memoize";
 import { LineChange } from "components/LineCombinations/PlayerCard/PlayerCard";
 import Custom404 from "pages/404";
+import TeamColorProvider, { useTeamColor } from "contexts/TeamColorContext";
 
 import styles from "./[abbreviation].module.scss";
 
@@ -89,7 +90,7 @@ export default function TeamLC({
   }
 
   return (
-    <>
+    <TeamColorProvider teamName={teamName}>
       <TeamSelect
         className={styles.teamSelect}
         teams={teams}
@@ -179,7 +180,7 @@ export default function TeamLC({
           </section>
         </Container>
       </Container>
-    </>
+    </TeamColorProvider>
   );
 }
 
@@ -203,7 +204,6 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     .eq("team_abbreviation", params?.abbreviation)
     .order("date")
     .limit(2);
-  console.log({ line_combinations });
 
   if (error || line_combinations.length !== 2) {
     return {
@@ -312,8 +312,16 @@ type HeaderProps = {
 
 function Header({ teamName, lastUpdated, sourceUrl }: HeaderProps) {
   const names = teamName.split(" ");
+  const color = useTeamColor();
+
   return (
-    <div className={styles.header}>
+    <div
+      className={styles.header}
+      style={{
+        backgroundColor: color.primary,
+        color: color.secondary,
+      }}
+    >
       <div className={styles.left}>
         <h2 className={styles.teamName}>
           {names.slice(0, -1).join(" ")}{" "}
