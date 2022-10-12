@@ -222,7 +222,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   );
 
   // populate each player object with last 10 GP stats
-  const [_, current] = line_combinations as Props["lineCombinations"][];
+  const [current, _] = line_combinations as Props["lineCombinations"][];
 
   const lastUpdated = current.date;
 

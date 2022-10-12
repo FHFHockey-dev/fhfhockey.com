@@ -41,7 +41,7 @@ export default async function getLineChanges(
   ).filter((el) => el?.length === 2) as [any, any][];
 
   const players: { [playerId: number]: RowData } = {};
-  for (const [previous, current] of allTeamLineUps) {
+  for (const [current, previous] of allTeamLineUps) {
     const parse = (type: "forwards" | "defensemen" | "goalies") => {
       for (const [line, playersOfLine] of Object.entries<any>(previous[type])) {
         const lineNumber = Number(line.charAt(line.length - 1));
