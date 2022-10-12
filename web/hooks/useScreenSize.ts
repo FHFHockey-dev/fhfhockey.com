@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import debounce from "utils/debounce";
 
 enum BreakPoint {
   s = "s",
@@ -6,32 +7,35 @@ enum BreakPoint {
   l = "l",
 }
 
+const isClient = typeof window === "object";
+
+const getSize = () => {
+  return {
+    width: isClient ? window.innerWidth : 0,
+    height: isClient ? window.innerHeight : 0,
+    screen: BreakPoint.s,
+  };
+};
+
 // Screen Size Hook
 const useScreenSize = () => {
-  const isClient = typeof window === "object";
-
-  const getSize = useCallback(() => {
-    return {
-      width: isClient ? window.innerWidth : 0,
-      height: isClient ? window.innerHeight : 0,
-      screen: BreakPoint.s,
-    };
-  }, [isClient]);
-
   const [screenSize, setScreenSize] = useState(getSize);
+
+  const handleResize = useCallback(
+    debounce(() => {
+      setScreenSize(getSize());
+    }, 300),
+    []
+  );
 
   useEffect(() => {
     if (!isClient) {
       return;
     }
 
-    function handleResize() {
-      setScreenSize(getSize());
-    }
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  }, [handleResize]);
 
   if (screenSize.width < 641) {
     screenSize.screen = BreakPoint.s;
