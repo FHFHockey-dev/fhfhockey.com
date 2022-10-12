@@ -66,6 +66,9 @@
       .large {
         display: none;
       }
+      &:hover {
+        cursor: pointer;
+      }
     }
   }
 
@@ -101,7 +104,7 @@
     display: flex;
   }
   .container {
-    min-width: 1080px;
+    min-width: 1024px;
     margin: 0 auto;
 
     .top {

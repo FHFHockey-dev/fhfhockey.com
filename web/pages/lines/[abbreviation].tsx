@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
@@ -22,6 +22,8 @@ import Custom404 from "pages/404";
 import TeamColorProvider, { useTeamColor } from "contexts/TeamColorContext";
 
 import styles from "./[abbreviation].module.scss";
+import { toJpeg, toPng } from "html-to-image";
+import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 
 export type Player = {
   playerId: number;
@@ -84,6 +86,27 @@ export default function TeamLC({
     router.push(`/lines/${newAbbreviation}`);
   };
 
+  // download the line combo
+  const size = useScreenSize();
+  const lineComboRef = useRef<HTMLDivElement>(null);
+  const downloadImage = () => {
+    if (lineComboRef.current === null) return;
+    console.log("downloading...");
+
+    toJpeg(lineComboRef.current)
+      .then((dataUrl) => {
+        const link = document.createElement("a");
+        link.download = `${teamName}-${new Date(
+          lastUpdated
+        ).toLocaleDateString()}-${size.screen}.jpg`;
+        link.href = dataUrl;
+        link.click();
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
   // NOTE: workaround for weird vercel client side bug
   if (!teams || !lineCombinations) {
     return <Custom404 />;
@@ -118,109 +141,112 @@ export default function TeamLC({
           />
         </div>
 
-        <Header
-          sourceUrl={lineCombinations.source_url}
-          teamName={teamName}
-          lastUpdated={lastUpdated || new Date(2022, 10, 1).toString()}
-        />
-        <Container className={styles.mainContent}>
-          <section className={styles.forwards}>
-            <CategoryTitle type="large" className={styles.categoryTitle}>
-              FORWARDS
-            </CategoryTitle>
-            <Line
-              className={styles.line}
-              title="LINE 1"
-              columns={3}
-              players={lineCombinations.forwards.line1}
-            />
-            <Line
-              className={styles.line}
-              title="LINE 2"
-              columns={3}
-              players={lineCombinations.forwards.line2}
-            />
-            <Line
-              className={styles.line}
-              title="LINE 3"
-              columns={3}
-              players={lineCombinations.forwards.line3}
-            />
-            <Line
-              className={styles.line}
-              title="LINE 4"
-              columns={3}
-              players={lineCombinations.forwards.line4}
-            />
-          </section>
+        <div ref={lineComboRef}>
+          <Header
+            sourceUrl={lineCombinations.source_url}
+            teamName={teamName}
+            lastUpdated={lastUpdated || new Date(2022, 10, 1).toString()}
+            onTeamLogoClick={downloadImage}
+          />
+          <Container className={styles.mainContent}>
+            <section className={styles.forwards}>
+              <CategoryTitle type="large" className={styles.categoryTitle}>
+                FORWARDS
+              </CategoryTitle>
+              <Line
+                className={styles.line}
+                title="LINE 1"
+                columns={3}
+                players={lineCombinations.forwards.line1}
+              />
+              <Line
+                className={styles.line}
+                title="LINE 2"
+                columns={3}
+                players={lineCombinations.forwards.line2}
+              />
+              <Line
+                className={styles.line}
+                title="LINE 3"
+                columns={3}
+                players={lineCombinations.forwards.line3}
+              />
+              <Line
+                className={styles.line}
+                title="LINE 4"
+                columns={3}
+                players={lineCombinations.forwards.line4}
+              />
+            </section>
 
-          {/* mobile only */}
-          <section className={styles.defense}>
-            <CategoryTitle type="large">DEFENSE</CategoryTitle>
-            <Line
-              className={styles.line}
-              columns={2}
-              players={lineCombinations.defensemen.line1}
-            />
-            <Line
-              className={styles.line}
-              columns={2}
-              players={lineCombinations.defensemen.line2}
-            />
-            <Line
-              className={styles.line}
-              columns={2}
-              players={lineCombinations.defensemen.line3}
-            />
-          </section>
+            {/* mobile only */}
+            <section className={styles.defense}>
+              <CategoryTitle type="large">DEFENSE</CategoryTitle>
+              <Line
+                className={styles.line}
+                columns={2}
+                players={lineCombinations.defensemen.line1}
+              />
+              <Line
+                className={styles.line}
+                columns={2}
+                players={lineCombinations.defensemen.line2}
+              />
+              <Line
+                className={styles.line}
+                columns={2}
+                players={lineCombinations.defensemen.line3}
+              />
+            </section>
 
-          {/* mobile only */}
-          <section className={styles.goalies}>
-            <CategoryTitle type="large">GOALIES</CategoryTitle>
-            <Line
-              className={styles.line}
-              columns={2}
-              players={[
-                ...lineCombinations.goalies.line1,
-                ...lineCombinations.goalies.line2,
-              ]}
-            />
-          </section>
+            {/* mobile only */}
+            <section className={styles.goalies}>
+              <CategoryTitle type="large">GOALIES</CategoryTitle>
+              <Line
+                className={styles.line}
+                columns={2}
+                players={[
+                  ...lineCombinations.goalies.line1,
+                  ...lineCombinations.goalies.line2,
+                ]}
+              />
+            </section>
 
-          <section className={styles.defenseAndGoalies}>
-            <CategoryTitle type="large" className={styles.categoryTitle}>
-              DEFENSE & GOALIES
-            </CategoryTitle>
-            <Line
-              className={styles.line}
-              title="1ST PAIR"
-              columns={2}
-              players={lineCombinations.defensemen.line1}
-            />
-            <Line
-              className={styles.line}
-              title="2ND PAIR"
-              columns={2}
-              players={lineCombinations.defensemen.line2}
-            />
-            <Line
-              className={styles.line}
-              title="3RD PAIR"
-              columns={2}
-              players={lineCombinations.defensemen.line3}
-            />
+            <section className={styles.defenseAndGoalies}>
+              <CategoryTitle type="large" className={styles.categoryTitle}>
+                DEFENSE & GOALIES
+              </CategoryTitle>
+              <Line
+                className={styles.line}
+                title="1ST PAIR"
+                columns={2}
+                players={lineCombinations.defensemen.line1}
+              />
+              <Line
+                className={styles.line}
+                title="2ND PAIR"
+                columns={2}
+                players={lineCombinations.defensemen.line2}
+              />
+              <Line
+                className={styles.line}
+                title="3RD PAIR"
+                columns={2}
+                players={lineCombinations.defensemen.line3}
+              />
 
-            <Line
-              className={styles.line}
-              title="GOALIES"
-              columns={2}
-              players={[
-                ...lineCombinations.goalies.line1,
-                ...lineCombinations.goalies.line2,
-              ]}
-            />
-          </section>
-        </Container>
+              <Line
+                className={styles.line}
+                title="GOALIES"
+                columns={2}
+                players={[
+                  ...lineCombinations.goalies.line1,
+                  ...lineCombinations.goalies.line2,
+                ]}
+              />
+            </section>
+          </Container>
+        </div>
       </Container>
     </TeamColorProvider>
   );
@@ -352,9 +378,15 @@ type HeaderProps = {
   teamName: string;
   lastUpdated: string;
   sourceUrl: string;
+  onTeamLogoClick: () => void;
 };
 
-function Header({ teamName, lastUpdated, sourceUrl }: HeaderProps) {
+function Header({
+  teamName,
+  lastUpdated,
+  sourceUrl,
+  onTeamLogoClick,
+}: HeaderProps) {
   const names = teamName.split(" ");
   const color = useTeamColor();
 
@@ -377,7 +409,7 @@ function Header({ teamName, lastUpdated, sourceUrl }: HeaderProps) {
           </a>
         </div>
       </div>
-      <div className={styles.right}>
+      <div className={styles.right} onClick={onTeamLogoClick}>
         <div className={styles.large}>
           <Image
             alt={teamName}
