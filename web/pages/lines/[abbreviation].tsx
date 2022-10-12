@@ -128,26 +128,31 @@ export default function TeamLC({
             <CategoryTitle type="large">FORWARDS</CategoryTitle>
             <Line
               className={styles.line}
+              title="LINE 1"
               columns={3}
               players={lineCombinations.forwards.line1}
             />
             <Line
               className={styles.line}
+              title="LINE 2"
               columns={3}
               players={lineCombinations.forwards.line2}
             />
             <Line
               className={styles.line}
+              title="LINE 3"
               columns={3}
               players={lineCombinations.forwards.line3}
             />
             <Line
               className={styles.line}
+              title="LINE 4"
               columns={3}
               players={lineCombinations.forwards.line4}
             />
           </section>
 
+          {/* mobile only */}
           <section className={styles.defense}>
             <CategoryTitle type="large">DEFENSE</CategoryTitle>
             <Line
@@ -167,10 +172,43 @@ export default function TeamLC({
             />
           </section>
 
+          {/* mobile only */}
           <section className={styles.goalies}>
             <CategoryTitle type="large">GOALIES</CategoryTitle>
             <Line
               className={styles.line}
+              columns={2}
+              players={[
+                ...lineCombinations.goalies.line1,
+                ...lineCombinations.goalies.line2,
+              ]}
+            />
+          </section>
+
+          <section className={styles.defenseAndGoalies}>
+            <CategoryTitle type="large">DEFENSE & GOALIES</CategoryTitle>
+            <Line
+              className={styles.line}
+              title="1ST PAIR"
+              columns={2}
+              players={lineCombinations.defensemen.line1}
+            />
+            <Line
+              className={styles.line}
+              title="2ND PAIR"
+              columns={2}
+              players={lineCombinations.defensemen.line2}
+            />
+            <Line
+              className={styles.line}
+              title="3RD PAIR"
+              columns={2}
+              players={lineCombinations.defensemen.line3}
+            />
+
+            <Line
+              className={styles.line}
+              title="GOALIES"
               columns={2}
               players={[
                 ...lineCombinations.goalies.line1,
@@ -340,8 +378,8 @@ function Header({ teamName, lastUpdated, sourceUrl }: HeaderProps) {
           <Image
             alt={teamName}
             src={getTeamLogo(teamName)}
-            width={55}
-            height={53}
+            width={120}
+            height={72}
             layout="fixed"
             objectFit="contain"
           />

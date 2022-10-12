@@ -4,37 +4,34 @@ import type { Player } from "pages/lines/[abbreviation]";
 import PlayerCard from "../PlayerCard";
 
 import styles from "./Line.module.scss";
-import { useTeamColor } from "contexts/TeamColorContext";
 
 type LineProps = {
   className?: string;
+  title?: string;
   players: Player[];
   columns: 2 | 3;
 };
 
-function Line({ className, players, columns }: LineProps) {
-  let twoColumnStyle: React.CSSProperties = {};
-  if (columns === 2) {
-    twoColumnStyle.width = "calc(100% / 3 * 2)";
-    twoColumnStyle.marginLeft = "auto";
-    twoColumnStyle.marginRight = "auto";
-  }
-  const color = useTeamColor();
-
+function Line({ className, title, players, columns }: LineProps) {
   return (
-    <section
-      className={classNames(styles.container, className)}
-      style={{
-        gridTemplateColumns: `repeat(${columns}, 1fr)`,
-        backgroundColor: color.primary,
-        ...twoColumnStyle,
-      }}
-    >
-      {players.map((player) => (
-        <div key={player.playerId} className={styles.playerCardWrapper}>
-          <PlayerCard {...player} />
+    <section className={classNames(styles.container, className)}>
+      {title && (
+        <div className={styles.title}>
+          <h4>{title}</h4>
         </div>
-      ))}
+      )}
+      <div
+        className={classNames(styles.cards, {
+          [styles.twoColumn]: columns === 2,
+          [styles.threeColumn]: columns === 3,
+        })}
+      >
+        {players.map((player) => (
+          <div key={player.playerId} className={styles.playerCardWrapper}>
+            <PlayerCard {...player} />
+          </div>
+        ))}
+      </div>
     </section>
   );
 }

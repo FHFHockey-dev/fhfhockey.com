@@ -1,17 +1,76 @@
+@import "styles/vars.scss";
+
 .container {
-  display: grid;
-  // grid-template-columns: repeat(3, 1fr);
-  border: 1.33px solid white;
-  .playerCardWrapper {
-    position: relative;
-    &:not(:last-child)::after {
-      content: "";
-      position: absolute;
-      width: 0.5px;
-      height: 83%;
-      right: 0;
-      top: 7px;
-      background-color: white;
+  .title {
+    display: none;
+  }
+  .cards {
+    display: grid;
+    &.twoColumn {
+      grid-template-columns: repeat(2, 1fr);
+      width: calc(100% / 3 * 2);
+      margin-left: auto;
+      margin-right: auto;
+    }
+    &.threeColumn {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    border: 1.33px solid white;
+
+    .playerCardWrapper {
+      position: relative;
+      &:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        width: 0.5px;
+        height: 83%;
+        right: 0;
+        top: 7px;
+        background-color: white;
+        z-index: 5;
+      }
+    }
+  }
+}
+
+@media only screen and (min-width: $screen-large) {
+  .container {
+    display: flex;
+    .title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 54px;
+      h4 {
+        white-space: nowrap;
+        transform-origin: center;
+        transform: rotate(-90deg);
+        font-style: italic;
+        font-weight: 700;
+        font-size: 1.125rem;
+        color: rgba(255, 255, 255, 0.5);
+        letter-spacing: 0.1em;
+        margin: 1rem 0;
+      }
+    }
+    .cards {
+      gap: 24px;
+      border: none;
+      flex: 1;
+      &.twoColumn {
+        width: initial;
+        margin-left: initial;
+        margin-right: initial;
+      }
+
+      .playerCardWrapper {
+        border: 2px solid white;
+        flex: 1;
+        &::after {
+          display: none;
+        }
+      }
     }
   }
 }

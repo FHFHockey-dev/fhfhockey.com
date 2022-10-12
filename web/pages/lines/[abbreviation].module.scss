@@ -37,7 +37,7 @@
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      h2 {
+      .teamName {
         margin: 0;
         font-family: "Roboto";
         font-weight: 400;
@@ -89,6 +89,10 @@
         margin-bottom: 12px;
       }
     }
+
+    .defenseAndGoalies {
+      display: none;
+    }
   }
 }
 
@@ -97,16 +101,44 @@
     display: flex;
   }
   .container {
-    width: 1080px;
+    min-width: 1080px;
     margin: 0 auto;
 
     .top {
+      padding: 0;
+      margin: 40px 0;
+      .title {
+        font-size: 3rem;
+        font-weight: 300;
+      }
       .select {
         display: none;
       }
     }
 
     .header {
+      border-left: 2px solid white;
+      border-right: 2px solid white;
+      height: 124px;
+      padding: 0 3rem 0 3.625rem;
+
+      .left {
+        .teamName {
+          font-family: "Roboto Condensed";
+          font-weight: 400;
+          font-size: 2.25rem;
+          margin-bottom: 6px;
+
+          .highlight {
+            font-family: Roboto;
+            font-weight: 800;
+          }
+        }
+
+        .time {
+          font-size: 1rem;
+        }
+      }
       .right {
         .small {
           display: none;
@@ -115,6 +147,36 @@
         .large {
           display: block;
         }
+      }
+    }
+
+    .mainContent {
+      background-color: $bg-light;
+      border: 2px solid white;
+      border-top: none;
+      padding-bottom: 40px;
+
+      display: flex;
+      justify-content: space-between;
+
+      .forwards {
+        flex: 1;
+        margin-right: 24px;
+        .line:not(:last-of-type) {
+          margin-bottom: 24px;
+        }
+      }
+
+      .defenseAndGoalies {
+        display: block;
+        .line:not(:last-of-type) {
+          margin-bottom: 24px;
+        }
+      }
+
+      .defense,
+      .goalies {
+        display: none;
       }
     }
   }

@@ -46,7 +46,12 @@ function PlayerCard({ name, jerseyNumber, lineChange, ...rest }: Player) {
   const color = useTeamColor();
 
   return (
-    <article className={styles.container}>
+    <article
+      className={styles.container}
+      style={{
+        backgroundColor: color.primary,
+      }}
+    >
       <div className={styles.top}>
         <h3 className={styles.names}>
           <span className={styles.firstName} style={{ color: color.secondary }}>

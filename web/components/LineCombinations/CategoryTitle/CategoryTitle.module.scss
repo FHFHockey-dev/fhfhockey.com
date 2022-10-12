@@ -1,3 +1,5 @@
+@import "styles/vars.scss";
+
 .categoryTitle {
   display: flex;
   align-items: center;
@@ -35,6 +37,20 @@
       font-size: 0.415rem;
       letter-spacing: 0.05em;
       padding: 0 3px;
+    }
+  }
+}
+
+@media only screen and (min-width: $screen-large) {
+  .categoryTitle.large {
+    justify-content: center;
+    .line {
+      display: none;
+    }
+    .content {
+      font-weight: 600;
+      font-size: 1.125rem;
+      padding: 6px 0;
     }
   }
 }
