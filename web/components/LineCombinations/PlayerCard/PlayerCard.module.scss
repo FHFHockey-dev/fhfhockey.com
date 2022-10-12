@@ -1,3 +1,5 @@
+@import "styles/vars.scss";
+
 .container {
   padding: 12px 8px;
   .top {
@@ -5,6 +7,7 @@
     .names {
       display: flex;
       flex-direction: column;
+      align-items: flex-start;
       margin: 0;
       .firstName {
         font-weight: 400;
@@ -19,6 +22,9 @@
         font-size: 0.875rem;
         color: white;
         gap: 2px;
+        &:hover {
+          color: $primary-color;
+        }
       }
     }
 

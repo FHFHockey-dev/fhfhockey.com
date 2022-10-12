@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import Image from "next/image";
 import CategoryTitle from "../CategoryTitle";
 
@@ -36,7 +37,7 @@ const SMALL_STATS_CONFIG = [
 
 export type LineChange = "promotion" | "demotion" | "static";
 
-function PlayerCard({ name, jerseyNumber, lineChange, ...stats }: Player) {
+function PlayerCard({ name, jerseyNumber, lineChange, ...rest }: Player) {
   const names = name.split(" ");
   const size = useScreenSize();
   const CONFIG =
@@ -51,20 +52,32 @@ function PlayerCard({ name, jerseyNumber, lineChange, ...stats }: Player) {
           <span className={styles.firstName} style={{ color: color.secondary }}>
             {names[0]}
           </span>
-          <span className={styles.lastName}>
-            {names.slice(1).join(" ")}
-            {lineChange !== "static" && (
-              <Image
-                src={lineChange === "promotion" ? UP_ARROW : DOWN_ARROW}
-                alt={lineChange}
-                layout="fixed"
-                objectFit="contain"
-                width={12}
-                height={12}
-              />
-            )}
-          </span>
+          <Link
+            href={{
+              pathname: "/charts",
+              query: {
+                playerId: rest.playerId,
+              },
+            }}
+          >
+            <a>
+              <span className={styles.lastName}>
+                {names.slice(1).join(" ")}
+                {lineChange !== "static" && (
+                  <Image
+                    src={lineChange === "promotion" ? UP_ARROW : DOWN_ARROW}
+                    alt={lineChange}
+                    layout="fixed"
+                    objectFit="contain"
+                    width={12}
+                    height={12}
+                  />
+                )}
+              </span>
+            </a>
+          </Link>
         </h3>
+
         <div className={styles.jerseyNumber}>
           <span style={{ color: color.secondary }}>#</span>
           <span
@@ -86,7 +99,7 @@ function PlayerCard({ name, jerseyNumber, lineChange, ...stats }: Player) {
             <div key={stat.key} className={styles.stat}>
               <div className={styles.label}>{stat.label}</div>
               <div className={styles.value} style={{ color: color.secondary }}>
-                {stats[stat.key] || 0}
+                {rest[stat.key] || 0}
               </div>
             </div>
           ))}
