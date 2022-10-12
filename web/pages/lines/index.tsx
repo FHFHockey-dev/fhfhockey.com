@@ -66,7 +66,9 @@ function Lines({
 }
 
 export const getStaticProps: GetStaticProps = async () => {
-  const { teams, promotions, demotions, lastUpdated } = await getLineChanges();
+  const { teams, promotions, demotions, lastUpdated } = await getLineChanges({
+    goalies: false,
+  });
 
   return {
     props: {

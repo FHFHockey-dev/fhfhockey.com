@@ -3,7 +3,19 @@ import { RowData, Team } from "pages/lines";
 import { getTeamLogo } from "hooks/usePlayer";
 import { fetchNHL } from "./NHL_API";
 
-export default async function getLineChanges() {
+type Param = {
+  forwards?: boolean;
+  defensemen?: boolean;
+  goalies?: boolean;
+};
+
+export default async function getLineChanges(
+  { forwards = true, defensemen = true, goalies = true }: Param = {
+    forwards: true,
+    defensemen: true,
+    goalies: true,
+  }
+) {
   const teams: Team[] = ((await fetchNHL("/teams")).teams as any[])
     .map((team) => ({
       name: team.name,
@@ -71,9 +83,9 @@ export default async function getLineChanges() {
       }
     };
 
-    parse("forwards");
-    parse("defensemen");
-    parse("goalies");
+    forwards && parse("forwards");
+    defensemen && parse("defensemen");
+    goalies && parse("goalies");
   }
 
   const promotions: RowData[] = [];
