@@ -125,7 +125,9 @@ export default function TeamLC({
         />
         <Container className={styles.mainContent}>
           <section className={styles.forwards}>
-            <CategoryTitle type="large">FORWARDS</CategoryTitle>
+            <CategoryTitle type="large" className={styles.categoryTitle}>
+              FORWARDS
+            </CategoryTitle>
             <Line
               className={styles.line}
               title="LINE 1"
@@ -186,7 +188,9 @@ export default function TeamLC({
           </section>
 
           <section className={styles.defenseAndGoalies}>
-            <CategoryTitle type="large">DEFENSE & GOALIES</CategoryTitle>
+            <CategoryTitle type="large" className={styles.categoryTitle}>
+              DEFENSE & GOALIES
+            </CategoryTitle>
             <Line
               className={styles.line}
               title="1ST PAIR"

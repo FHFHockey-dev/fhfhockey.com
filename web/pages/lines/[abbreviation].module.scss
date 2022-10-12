@@ -159,6 +159,10 @@
       display: flex;
       justify-content: space-between;
 
+      .categoryTitle {
+        padding-left: 54px;
+      }
+
       .forwards {
         flex: 1;
         margin-right: 24px;

@@ -4,15 +4,17 @@ import classNames from "classnames";
 import styles from "./CategoryTitle.module.scss";
 
 function CategoryTitle({
+  className,
   children,
   type,
 }: {
+  className?: string;
   children: React.ReactNode;
   type: "small" | "large";
 }) {
   return (
     <div
-      className={classNames(styles.categoryTitle, {
+      className={classNames(styles.categoryTitle, className, {
         [styles.large]: type === "large",
         [styles.small]: type === "small",
       })}
