@@ -163,7 +163,7 @@ function getDayColumns(
           >
             {formatDate(current)}
           </p>
-          <Toggle checked={excludedDays.includes(day)} onChange={onChange} />
+          <Toggle checked={!excludedDays.includes(day)} onChange={onChange} />
         </>
       ),
       id: getDayStr(current),
