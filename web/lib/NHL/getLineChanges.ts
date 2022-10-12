@@ -33,7 +33,7 @@ export default async function getLineChanges(
             "date, team_name, team_abbreviation, forwards, defensemen, goalies"
           )
           .eq("team_name", team.name)
-          .order("date")
+          .order("date", { ascending: false })
           .limit(2);
         return line_combinations;
       })
