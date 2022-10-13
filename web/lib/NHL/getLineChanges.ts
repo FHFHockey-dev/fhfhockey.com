@@ -1,3 +1,5 @@
+import { compareDesc } from "date-fns";
+
 import supabase from "lib/supabase";
 import { RowData, Team } from "pages/lines";
 import { getTeamLogo } from "hooks/usePlayer";
@@ -54,6 +56,7 @@ export default async function getLineChanges(
             currentLine: null,
             previousPowerPlayerUnit: null, // placeholder
             currentPowerPlayerUnit: null, // placeholder
+            updatedTime: previous.date,
           };
         }
       }
@@ -77,6 +80,7 @@ export default async function getLineChanges(
               currentLine: lineNumber,
               previousPowerPlayerUnit: null, // placeholder
               currentPowerPlayerUnit: null, // placeholder
+              updatedTime: current.date,
             };
           }
         }
@@ -101,6 +105,14 @@ export default async function getLineChanges(
       }
     }
   }
+
+  // order players by date, display most recent at the top
+  promotions.sort((a, b) =>
+    compareDesc(new Date(a.updatedTime), new Date(b.updatedTime))
+  );
+  demotions.sort((a, b) =>
+    compareDesc(new Date(a.updatedTime), new Date(b.updatedTime))
+  );
 
   const {
     data: { date },

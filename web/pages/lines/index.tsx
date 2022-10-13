@@ -30,6 +30,7 @@ export type RowData = {
    * Team abbreviation
    */
   abbreviation: string;
+  updatedTime: string;
 };
 
 type LandingPageProps = {
