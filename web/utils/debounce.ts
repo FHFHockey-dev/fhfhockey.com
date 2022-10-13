@@ -1,13 +1,22 @@
-export default function debounce(callback: Function, timeout: number) {
-  let timer: number | null;
+export default function debounce(
+  callback: Function,
+  timeout: number,
+  immediate: boolean = false
+) {
+  let timer: number | undefined;
 
   return (...args: any[]) => {
-    if (timer) {
-      window.clearTimeout(timer);
-    }
-    timer = window.setTimeout(() => {
+    const callNow = immediate && !timer;
+    if (callNow) {
       callback(...args);
-      timer = null;
+    }
+
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => {
+      timer = undefined;
+      if (!immediate) {
+        callback(...args);
+      }
     }, timeout);
   };
 }

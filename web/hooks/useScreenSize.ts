@@ -22,9 +22,13 @@ const useScreenSize = () => {
   const [screenSize, setScreenSize] = useState(getSize);
 
   const handleResize = useCallback(
-    debounce(() => {
-      setScreenSize(getSize());
-    }, 300),
+    debounce(
+      () => {
+        setScreenSize(getSize());
+      },
+      300,
+      true
+    ),
     []
   );
 
