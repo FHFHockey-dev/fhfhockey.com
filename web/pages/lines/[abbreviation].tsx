@@ -93,12 +93,12 @@ export default function TeamLC({
     if (lineComboRef.current === null) return;
     console.log("downloading...");
 
-    toJpeg(lineComboRef.current)
+    toPng(lineComboRef.current, { backgroundColor: "#202020" })
       .then((dataUrl) => {
         const link = document.createElement("a");
         link.download = `${teamName}-${new Date(
           lastUpdated
-        ).toLocaleDateString()}-${size.screen}.jpg`;
+        ).toLocaleDateString()}-${size.screen}.png`;
         link.href = dataUrl;
         link.click();
       })
@@ -411,24 +411,26 @@ function Header({
       </div>
       <div className={styles.right} onClick={onTeamLogoClick}>
         <div className={styles.large}>
-          <Image
+          <img
             alt={teamName}
             src={getTeamLogo(teamName)}
-            width={120}
-            height={72}
-            layout="fixed"
-            objectFit="contain"
+            style={{
+              width: 120,
+              height: 72,
+              objectFit: "contain",
+            }}
           />
         </div>
 
         <div className={styles.small}>
-          <Image
+          <img
             alt={teamName}
             src={getTeamLogo(teamName)}
-            width={60}
-            height={35}
-            layout="fixed"
-            objectFit="contain"
+            style={{
+              width: 60,
+              height: 35,
+              objectFit: "contain",
+            }}
           />
         </div>
       </div>

@@ -1,15 +1,15 @@
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import CategoryTitle from "../CategoryTitle";
-
-import styles from "./PlayerCard.module.scss";
-import UP_ARROW from "public/pictures/arrow-up-green.png";
-import DOWN_ARROW from "public/pictures/arrow-down-red.png";
 import ClientOnly from "components/ClientOnly";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import { Player } from "pages/lines/[abbreviation]";
 import { useTeamColor } from "contexts/TeamColorContext";
+
+import styles from "./PlayerCard.module.scss";
+
+const UP_ARROW = "/pictures/arrow-up-green.png";
+const DOWN_ARROW = "/pictures/arrow-down-red.png";
 
 // For large devices
 const LARGE_STATS_CONFIG = [
@@ -69,13 +69,14 @@ function PlayerCard({ name, jerseyNumber, lineChange, ...rest }: Player) {
               <span className={styles.lastName}>
                 {names.slice(1).join(" ")}
                 {lineChange !== "static" && (
-                  <Image
+                  <img
                     src={lineChange === "promotion" ? UP_ARROW : DOWN_ARROW}
                     alt={lineChange}
-                    layout="fixed"
-                    objectFit="contain"
-                    width={12}
-                    height={12}
+                    style={{
+                      width: 12,
+                      height: 12,
+                      objectFit: "contain",
+                    }}
                   />
                 )}
               </span>
