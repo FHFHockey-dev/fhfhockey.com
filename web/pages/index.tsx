@@ -1,15 +1,15 @@
 import type { NextPage } from "next";
 import Head from "next/head";
-import Image from "next/image";
 import { NextSeo } from "next-seo";
 
-import styles from "../styles/Home.module.scss";
 import Banner from "../components/Banner";
 import SocialMedias from "components/SocialMedias";
+import Container from "components/Layout/Container";
+import styles from "../styles/Home.module.scss";
 
 const Home: NextPage = () => {
   return (
-    <div>
+    <Container>
       <NextSeo
         title="FHFH | Home"
         description="Five Hole Fantasy Hockey Podcast Home page."
@@ -31,7 +31,7 @@ const Home: NextPage = () => {
       <Banner className={styles.socialMedia}>
         <SocialMedias />
       </Banner>
-    </div>
+    </Container>
   );
 };
 

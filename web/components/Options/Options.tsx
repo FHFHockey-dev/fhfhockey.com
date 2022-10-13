@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction } from "react";
+import React from "react";
 import classNames from "classnames";
 
 import styles from "./Options.module.scss";
@@ -8,7 +8,7 @@ export type OptionsProps<T> = {
   type?: "row" | "column";
   options: readonly { label: string; value: T }[];
   option: T;
-  onOptionChange: Dispatch<SetStateAction<T>>;
+  onOptionChange: (newOption: T) => void;
 };
 
 function Options<T extends string>({

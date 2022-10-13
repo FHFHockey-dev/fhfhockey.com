@@ -1,17 +1,16 @@
 import React, { useState } from "react";
-
-import { OptionsProps } from "components/Options/Options";
-import styles from "./Select.module.scss";
-import { TimeOption } from "components/TimeOptions/TimeOptions";
 import Image from "next/image";
 import classNames from "classnames";
 
-function Select({
+import { OptionsProps } from "components/Options/Options";
+import styles from "./Select.module.scss";
+
+function Select<T extends string>({
   className,
   options,
   option,
   onOptionChange,
-}: OptionsProps<TimeOption>) {
+}: OptionsProps<T>) {
   const [showOptions, setShowOptions] = useState(false);
   const currentLabel = options.find((op) => op.value === option)?.label;
 
@@ -21,17 +20,20 @@ function Select({
         className={styles.select}
         onClick={() => setShowOptions((prev) => !prev)}
       >
-        {currentLabel}
-        <Image
+        <div className={styles.label}>{currentLabel}</div>
+        <div
           className={classNames(styles.arrow, {
             [styles.up]: showOptions,
           })}
-          alt="arrow"
-          src="/pictures/arrow.svg"
-          layout="fixed"
-          width={12}
-          height={6.7}
-        />
+        >
+          <Image
+            alt="arrow"
+            src="/pictures/arrow.svg"
+            layout="fixed"
+            width={12}
+            height={6.7}
+          />
+        </div>
       </div>
       {showOptions && (
         <div className={styles.options}>

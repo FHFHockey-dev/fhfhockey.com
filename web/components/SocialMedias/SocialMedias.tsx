@@ -20,6 +20,7 @@ function SocialMedias() {
           alt="Twitter"
           width={imgSize}
           height={imgSize}
+          priority
         />
       </a>
       <a
@@ -32,6 +33,7 @@ function SocialMedias() {
           alt="Discord"
           width={imgSize}
           height={imgSize}
+          priority
         />
       </a>
       <a
@@ -44,6 +46,7 @@ function SocialMedias() {
           alt="Patreon"
           width={imgSize}
           height={imgSize}
+          priority
         />
       </a>
       <a
@@ -56,6 +59,7 @@ function SocialMedias() {
           alt="Youtube"
           width={imgSize}
           height={imgSize}
+          priority
         />
       </a>
       <a
@@ -68,6 +72,7 @@ function SocialMedias() {
           alt="Spotify"
           width={imgSize}
           height={imgSize}
+          priority
         />
       </a>
     </ClientOnly>

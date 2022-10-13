@@ -2,11 +2,13 @@ import React from "react";
 import { NextSeo } from "next-seo";
 
 import { TextBanner } from "../components/Banner/Banner";
+import Container from "components/Layout/Container";
+
 import styles from "styles/Podfeed.module.scss";
 
 function Podfeed() {
   return (
-    <div>
+    <Container>
       <NextSeo
         title="FHFH | Library"
         description="Five Hole Fantasy Hockey Podcast Podcast Feed."
@@ -32,7 +34,7 @@ function Podfeed() {
       </div>
 
       <div style={{ marginBottom: "30px" }} />
-    </div>
+    </Container>
   );
 }
 

@@ -1,10 +1,10 @@
 import React from "react";
 import { NextSeo } from "next-seo";
 
-import { TextBanner } from "../components/Banner/Banner";
 import TeamStatCard from "../components/TeamStatCard";
 import { fetchNHL } from "../lib/NHL/NHL_API";
 import styles from "../styles/Stats.module.scss";
+import Container from "components/Layout/Container";
 
 type Team = {
   abbreviation: string;
@@ -15,7 +15,7 @@ type StatsProps = {
 };
 function Stats({ teams }: StatsProps) {
   return (
-    <div>
+    <Container>
       <NextSeo
         title="FHFH | Stat Catalogue"
         description="Five Hole Fantasy Hockey Podcast Stats for all teams in NHL."
@@ -32,7 +32,7 @@ function Stats({ teams }: StatsProps) {
           />
         ))}
       </section>
-    </div>
+    </Container>
   );
 }
 

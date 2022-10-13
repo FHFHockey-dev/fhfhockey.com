@@ -21,6 +21,7 @@ import Comments from "components/Comments";
 import { PostPreviewData } from ".";
 import client from "lib/apollo-client";
 import scrollTop from "utils/scrollTop";
+import Container from "components/Layout/Container";
 
 type PostDetailsData = {
   _id: string;
@@ -165,7 +166,7 @@ function Post({ post, recentPosts }: PostPageProps) {
   const { slug, title, summary, imageUrl, content, createdAt } = post;
 
   return (
-    <>
+    <Container>
       <NextSeo
         title={`${title} | FHFH Blog`}
         description={summary}
@@ -231,7 +232,7 @@ function Post({ post, recentPosts }: PostPageProps) {
           <RecentPosts posts={recentPosts} />
         </div>
       </div>
-    </>
+    </Container>
   );
 }
 
