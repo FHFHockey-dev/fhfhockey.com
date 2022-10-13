@@ -5,7 +5,7 @@ import Header from "./Header";
 import TeamRow from "./TeamRow";
 import TotalGamesPerDayRow, { calcTotalGP } from "./TotalGamesPerDayRow";
 
-import { addDays, startAndEndOfWeek } from "./utils/date-func";
+import { startAndEndOfWeek } from "./utils/date-func";
 import { calcTotalOffNights, getTotalGamePlayed } from "./utils/NHL-API";
 import useTeams from "./utils/useTeams";
 import calcWeekScore from "./utils/calcWeekScore";
@@ -13,6 +13,12 @@ import { convertTeamRowToWinOddsList } from "./utils/calcWinOdds";
 
 import styles from "./GameGrid.module.scss";
 import Spinner from "components/Spinner";
+import {
+  nextMonday,
+  nextSunday,
+  previousSunday,
+  previousMonday,
+} from "date-fns";
 
 export type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 
@@ -69,12 +75,18 @@ export default function GameGrid() {
 
   // PREV, NEXT button click
   const handleClick = (action: string) => () => {
-    let days = 7;
-    if (action === "PREV") days = -7;
+    const start = new Date(dates[0]);
+    const end = new Date(dates[1]);
 
-    let [start, end] = dates;
-    const newStart = addDays(new Date(start), days).toISOString().split("T")[0];
-    const newEnd = addDays(new Date(end), days).toISOString().split("T")[0];
+    const newStart = (
+      action === "PREV" ? previousMonday(start) : nextMonday(start)
+    )
+      .toISOString()
+      .split("T")[0];
+    const newEnd = (action === "PREV" ? previousSunday(end) : nextSunday(end))
+      .toISOString()
+      .split("T")[0];
+
     router.replace({
       query: { ...router.query, startDate: newStart, endDate: newEnd },
     });
