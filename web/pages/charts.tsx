@@ -82,7 +82,6 @@ function Small({
     }
 
     toPng(ref.current, {
-      cacheBust: true,
       canvasWidth: 500,
       canvasHeight: 844,
     })
@@ -171,7 +170,6 @@ function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
     }
 
     toPng(ref.current, {
-      cacheBust: true,
       canvasWidth: 1440,
       canvasHeight: 1080,
     })
