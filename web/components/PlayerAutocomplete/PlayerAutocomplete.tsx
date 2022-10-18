@@ -8,16 +8,20 @@ import classNames from "classnames";
 
 type PlayerAutocompleteProps = {
   playerId: number | undefined;
-  onPlayerIdChange: React.Dispatch<React.SetStateAction<number | undefined>>;
+  onPlayerIdChange?: React.Dispatch<React.SetStateAction<number | undefined>>;
+  onPlayerChange?: (player: Player["person"] | null) => void;
   inputClassName?: string;
   listClassName?: string;
+  showButton?: boolean;
 };
 
 function PlayerAutocomplete({
   playerId,
-  onPlayerIdChange,
+  onPlayerIdChange = () => {},
+  onPlayerChange = () => {},
   inputClassName,
   listClassName,
+  showButton = true,
 }: PlayerAutocompleteProps) {
   const players = usePlayers();
   //   const [playerId, setPlayerId] = useState<number>();
@@ -40,6 +44,7 @@ function PlayerAutocomplete({
     value: playerOption,
     onChange: (e, newValue, reason) => {
       onPlayerIdChange(Number(newValue?.id));
+      onPlayerChange(newValue);
       setPlayerOption(newValue);
 
       // hide keyboard on mobile after a selection has been made
@@ -74,15 +79,17 @@ function PlayerAutocomplete({
           placeholder="Search Player..."
           className={classNames(inputClassName)}
         />
-        <button className={styles.button} type="submit">
-          <Image
-            src="/pictures/IconSearch.png"
-            alt="search button"
-            layout="fixed"
-            width="32px"
-            height="32px"
-          />
-        </button>
+        {showButton && (
+          <button className={styles.button} type="submit">
+            <Image
+              src="/pictures/IconSearch.png"
+              alt="search button"
+              layout="fixed"
+              width="32px"
+              height="32px"
+            />
+          </button>
+        )}
       </div>
       {groupedOptions.length > 0 ? (
         <ul {...getListboxProps()} className={listClassName}>
