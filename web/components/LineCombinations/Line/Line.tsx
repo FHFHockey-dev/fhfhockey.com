@@ -8,11 +8,12 @@ import styles from "./Line.module.scss";
 type LineProps = {
   className?: string;
   title?: string;
-  players: Player[];
+  players?: Player[];
   columns: 2 | 3;
+  children?: React.ReactNode;
 };
 
-function Line({ className, title, players, columns }: LineProps) {
+function Line({ className, title, players, columns, children }: LineProps) {
   return (
     <section className={classNames(styles.container, className)}>
       {title && (
@@ -26,11 +27,13 @@ function Line({ className, title, players, columns }: LineProps) {
           [styles.threeColumn]: columns === 3,
         })}
       >
-        {players.map((player) => (
-          <div key={player.playerId} className={styles.playerCardWrapper}>
-            <PlayerCard {...player} />
-          </div>
-        ))}
+        {players
+          ? players.map((player) => (
+              <div key={player.playerId} className={styles.playerCardWrapper}>
+                <PlayerCard {...player} />
+              </div>
+            ))
+          : children}
       </div>
     </section>
   );
