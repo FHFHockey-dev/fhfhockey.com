@@ -1,0 +1,21 @@
+@import "styles/vars.scss";
+
+.container {
+  .top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .select {
+    height: 40px;
+    width: 210px;
+  }
+}
+
+@media only screen and (min-width: $screen-large) {
+  .container {
+    min-width: 1024px;
+    margin: 0 auto;
+    padding-bottom: 8rem;
+  }
+}

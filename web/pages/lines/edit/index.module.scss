@@ -1,0 +1,10 @@
+@import "styles/vars.scss";
+.container {
+  .row {
+    a {
+      &:hover {
+        color: $primary-color;
+      }
+    }
+  }
+}

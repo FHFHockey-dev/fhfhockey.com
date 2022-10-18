@@ -20,7 +20,6 @@
       "**/.vercel": true,
       "**/.yarn": true,
       "**/dist": true
-    },
-    "cSpell.words": ["defensemen"]
+    }
   }
 }

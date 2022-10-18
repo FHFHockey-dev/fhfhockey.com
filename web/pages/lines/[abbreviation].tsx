@@ -1,8 +1,8 @@
 import React, { useRef } from "react";
-import Image from "next/image";
 import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
 import type { GetStaticPaths, GetStaticProps } from "next";
+import { toPng } from "html-to-image";
 
 import supabase from "lib/supabase";
 import { fetchNHL } from "lib/NHL/NHL_API";
@@ -22,13 +22,14 @@ import Custom404 from "pages/404";
 import TeamColorProvider, { useTeamColor } from "contexts/TeamColorContext";
 
 import styles from "./[abbreviation].module.scss";
-import { toJpeg, toPng } from "html-to-image";
-import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
+import useScreenSize from "hooks/useScreenSize";
 
-export type Player = {
+export type PlayerBasic = {
   playerId: number;
   playerName: string;
-} & {
+};
+
+export type Player = PlayerBasic & {
   Goals: number;
   Assists: number;
   PTS: number;
@@ -254,11 +255,13 @@ export default function TeamLC({
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   // for Team Select
-  const teams = ((await fetchNHL("/teams")).teams as any[]).map((team) => ({
-    shortName: team.teamName,
-    name: team.name,
-    abbreviation: team.abbreviation,
-  }));
+  const teams = ((await fetchNHL("/teams")).teams as any[])
+    .map((team) => ({
+      shortName: team.teamName,
+      name: team.name,
+      abbreviation: team.abbreviation,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   const { promotions, demotions } = await memoizeAsync<
     ReturnType<typeof getLineChanges>
