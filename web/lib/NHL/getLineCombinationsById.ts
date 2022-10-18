@@ -2,7 +2,7 @@ import supabase from "lib/supabase";
 import type { PlayerBasic } from "pages/lines/[abbreviation]";
 
 export type LineCombinations = {
-  id: number;
+  id?: number;
   date: string;
   team_name: string;
   team_abbreviation: string;
