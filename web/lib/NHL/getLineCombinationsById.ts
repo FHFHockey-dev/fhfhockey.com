@@ -26,7 +26,7 @@ export type LineCombinations = {
 
 export default async function getLineCombinationsById(
   id: number
-): Promise<LineCombinations> {
+): Promise<LineCombinations | null> {
   const { data: line_combinations } = await supabase
     .from("line_combinations")
     .select(

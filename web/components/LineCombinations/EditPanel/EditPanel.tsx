@@ -85,11 +85,7 @@ type Props = {
   onDelete?: (id: number) => Promise<void>;
 };
 
-function EditPanel({
-  lineCombinations,
-  onSave = async () => null,
-  onDelete = async () => {},
-}: Props) {
+function EditPanel({ lineCombinations, onSave, onDelete }: Props) {
   const user = useUser();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -117,6 +113,7 @@ function EditPanel({
 
   const onSaveClick = async () => {
     setSubmitting(true);
+    // @ts-ignore
     const error = await onSave(draft);
     setError(error);
     setSubmitting(false);
@@ -126,6 +123,7 @@ function EditPanel({
   const onDeleteClick = async () => {
     if (lineCombinations.id) {
       setSubmitting(true);
+      // @ts-ignore
       await onDelete(lineCombinations.id);
       setSubmitting(false);
     }
@@ -161,10 +159,12 @@ function EditPanel({
           </ClientOnly>
         </div>
 
-        <div className={styles.time}>
-          <span>Created at:</span>{" "}
-          {lineCombinations?.date && formatDate(lineCombinations?.date)}
-        </div>
+        {onDelete && (
+          <div className={styles.time}>
+            <span>Created at:</span>{" "}
+            {lineCombinations?.date && formatDate(lineCombinations?.date)}
+          </div>
+        )}
       </div>
       <div className={styles.mainContent}>
         <section className={styles.forwards}>
@@ -396,10 +396,12 @@ function EditPanel({
             />
           </Line>
           <div className={styles.action}>
-            <button onClick={onSaveClick}>SAVE</button>
-            <button className={styles.delete} onClick={onDeleteClick}>
-              DELETE
-            </button>
+            {onSave && <button onClick={onSaveClick}>SAVE</button>}
+            {onDelete && (
+              <button className={styles.delete} onClick={onDeleteClick}>
+                DELETE
+              </button>
+            )}
             {submitting && <Spinner />}
           </div>
         </section>
@@ -416,7 +418,7 @@ function EditPanel({
             severity="success"
             sx={{ width: "100%" }}
           >
-            {`Successfully updated the line combination for '${lineCombinations?.team_name}'!`}
+            {`Successfully updated the line combination!`}
           </Alert>
         )}
       </Snackbar>

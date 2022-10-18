@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { compareDesc } from "date-fns";
 
+import { Button } from "@mui/material";
 import Container from "components/Layout/Container";
 import { fetchNHL } from "lib/NHL/NHL_API";
 import supabase from "lib/supabase";
@@ -26,16 +27,17 @@ function LandingPage() {
       setLineUps(lineUps);
     })();
   }, []);
+
   return (
     <Container className={styles.container}>
       <PageTitle>
         NHL LINE <PageTitle.Highlight>COMBINATIONS</PageTitle.Highlight>
       </PageTitle>
 
-      <Link href="edit/create">
-        <a>
-          <button>Create</button>
-        </a>
+      <Link href="create">
+        <Button variant="contained" size="large">
+          Create
+        </Button>
       </Link>
 
       {lineUps.map((lineup) => (

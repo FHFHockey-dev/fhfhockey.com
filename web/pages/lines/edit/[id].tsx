@@ -77,7 +77,8 @@ const initialState = {
 function EditPage() {
   const router = useRouter();
   const id = Number(router.query.id);
-  const [lineCombinations, setLineCombinations] = useState<LineCombinations>();
+  const [lineCombinations, setLineCombinations] =
+    useState<LineCombinations | null>(null);
 
   const onSave = async (draft: LineCombinations) => {
     const { status } = await supabase
@@ -91,17 +92,28 @@ function EditPage() {
     return null;
   };
 
-  const onDelete = async () => {
-    window.alert("Not implemented");
+  const onDelete = async (id: number) => {
+    const { data, error } = await supabase
+      .from("line_combinations")
+      .delete()
+      .match({ id })
+      .single();
+
+    if (!error) {
+      router.push(`/lines/edit#${data.team_abbreviation}`);
+    }
   };
 
   // fetch line combo
   useEffect(() => {
     if (id)
       getLineCombinationsById(id).then((data) => {
+        console.log({ data });
+        if (!data) router.replace("/404");
+
         setLineCombinations(data);
       });
-  }, [id]);
+  }, [id, router]);
 
   return (
     <Container className={styles.container}>
