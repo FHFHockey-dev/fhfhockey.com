@@ -6,8 +6,8 @@ type Color = {
 
 const TEAM_COLORS: { [teamName: string]: Color } = {
   "Nashville Predators": {
-    primary: "#FFb81c",
-    secondary: "#041E42",
+    primary: "#041e42",
+    secondary: "#FFb81c",
     jersey: "#FFFFFF",
   },
   "Anaheim Ducks": {
@@ -32,8 +32,8 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
   },
   "Carolina Hurricanes": {
     primary: "#000000",
-    secondary: "#a2aaad",
-    jersey: "#c8102e",
+    secondary: "#c8102e",
+    jersey: "#a2aaad",
   },
   "Calgary Flames": {
     primary: "#C8102E",
@@ -42,8 +42,8 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
   },
   "Chicago Blackhawks": {
     primary: "#C8102E",
-    secondary: "#FFFFFF",
-    jersey: "#000000",
+    secondary: "#000000",
+    jersey: "#ffffff",
   },
   "Colorado Avalanche": {
     primary: "#041e42",
@@ -52,8 +52,8 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
   },
   "Columbus Blue Jackets": {
     primary: "#041E42",
-    secondary: "#FFFFFF",
-    jersey: "#c8102e",
+    secondary: "#c8102e",
+    jersey: "#ffffff",
   },
   "Dallas Stars": {
     primary: "#000000",
@@ -71,9 +71,9 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
     jersey: "#FC4C02",
   },
   "Florida Panthers": {
-    primary: "#041E42",
-    secondary: "#C8102E",
-    jersey: "#B9975B",
+    primary: "#c8102e",
+    secondary: "#b9975B",
+    jersey: "#041E42",
   },
   "Los Angeles Kings": {
     primary: "#000000",
