@@ -81,11 +81,6 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
     secondary: "#A6192E",
     jersey: "#FFFFFF",
   },
-  "Nashville Predators": {
-    primary: "#FFB81C",
-    secondary: "#041E42",
-    jersey: "#FFFFFF",
-  },
   "New Jersey Devils": {
     primary: "#000000",
     secondary: "#C8102E",
