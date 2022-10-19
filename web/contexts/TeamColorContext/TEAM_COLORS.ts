@@ -6,14 +6,19 @@ type Color = {
 
 const TEAM_COLORS: { [teamName: string]: Color } = {
   "Nashville Predators": {
-    primary: "#041E42",
-    secondary: "#FFB81C",
+    primary: "#FFb81c",
+    secondary: "#041E42",
     jersey: "#FFFFFF",
   },
   "Anaheim Ducks": {
     primary: "#000000",
     secondary: "#89734C",
     jersey: "#FC4C02",
+  },
+  "Arizona Coyotes": {
+    primary: "#6f263d",
+    secondary: "#ddcba4",
+    jersey: "#ffffff",
   },
   "Boston Bruins": {
     primary: "#000000",
@@ -24,6 +29,11 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
     primary: "#003087",
     secondary: "#FFB81C",
     jersey: "#FFFFFF",
+  },
+  "Carolina Hurricanes": {
+    primary: "#000000",
+    secondary: "#a2aaad",
+    jersey: "#c8102e",
   },
   "Calgary Flames": {
     primary: "#C8102E",
@@ -36,19 +46,19 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
     jersey: "#000000",
   },
   "Colorado Avalanche": {
-    primary: "#6F263D",
-    secondary: "#236192",
-    jersey: "#A2AAAD",
+    primary: "#041e42",
+    secondary: "#6f263d",
+    jersey: "#a2aaad",
   },
   "Columbus Blue Jackets": {
     primary: "#041E42",
     secondary: "#FFFFFF",
-    jersey: "#FFFFFF",
+    jersey: "#c8102e",
   },
   "Dallas Stars": {
     primary: "#000000",
     secondary: "#44D62C",
-    jersey: "#000000",
+    jersey: "#44d62c",
   },
   "Detroit Red Wings": {
     primary: "#C8102E",
@@ -102,8 +112,8 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
     jersey: "#B9975B",
   },
   "Philadelphia Flyers": {
-    primary: "#FA4616",
-    secondary: "#000000",
+    primary: "#000000",
+    secondary: "#FA4616",
     jersey: "#FFFFFF",
   },
   "Pittsburgh Penguins": {
@@ -126,7 +136,7 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
     secondary: "#FFB81C",
     jersey: "#C8102E",
   },
-  "Tempa Bay Lightning": {
+  "Tampa Bay Lightning": {
     primary: "#00205B",
     secondary: "#FFFFFF",
     jersey: "#000000",
@@ -138,8 +148,8 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
   },
   "Vancouver Canucks": {
     primary: "#00205B",
-    secondary: "#FFFFFF",
-    jersey: "#00843D",
+    secondary: "#00843D",
+    jersey: "#ffffff",
   },
   "Vegas Golden Knights": {
     primary: "#333F48",
