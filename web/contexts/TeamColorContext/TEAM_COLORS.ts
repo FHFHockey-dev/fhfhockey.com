@@ -12,7 +12,7 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
   },
   "Anaheim Ducks": {
     primary: "#000000",
-    secondary: "#89734C",
+    secondary: "#c3a776",
     jersey: "#FC4C02",
   },
   "Arizona Coyotes": {
@@ -26,7 +26,7 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
     jersey: "#FFFFFF",
   },
   "Buffalo Sabres": {
-    primary: "#003087",
+    primary: "#02235e",
     secondary: "#FFB81C",
     jersey: "#FFFFFF",
   },
@@ -36,18 +36,18 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
     jersey: "#a2aaad",
   },
   "Calgary Flames": {
-    primary: "#C8102E",
+    primary: "#a20620",
     secondary: "#F1BE48",
     jersey: "#FFFFFF",
   },
   "Chicago Blackhawks": {
-    primary: "#C8102E",
+    primary: "#a20620",
     secondary: "#000000",
     jersey: "#ffffff",
   },
   "Colorado Avalanche": {
     primary: "#041e42",
-    secondary: "#6f263d",
+    secondary: "#883d54",
     jersey: "#a2aaad",
   },
   "Columbus Blue Jackets": {
@@ -61,7 +61,7 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
     jersey: "#44d62c",
   },
   "Detroit Red Wings": {
-    primary: "#C8102E",
+    primary: "#a20620",
     secondary: "#FFFFFF",
     jersey: "#FFFFFF",
   },
@@ -71,9 +71,9 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
     jersey: "#FC4C02",
   },
   "Florida Panthers": {
-    primary: "#c8102e",
+    primary: "#041e42",
     secondary: "#b9975B",
-    jersey: "#041E42",
+    jersey: "#c8102e",
   },
   "Los Angeles Kings": {
     primary: "#000000",
@@ -86,15 +86,15 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
     secondary: "#DDCBA4",
     jersey: "#A6192E",
   },
-  "Montreal Canadiens": {
+  "Montréal Canadiens": {
     primary: "#001E62",
     secondary: "#A6192E",
     jersey: "#FFFFFF",
   },
   "New Jersey Devils": {
     primary: "#000000",
-    secondary: "#C8102E",
-    jersey: "#154734",
+    secondary: "#154734",
+    jersey: "#a20620",
   },
   "New York Islanders": {
     primary: "#003087",
@@ -103,12 +103,12 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
   },
   "New York Rangers": {
     primary: "#0033A0",
-    secondary: "#FFFFFF",
-    jersey: "#C8102E",
+    secondary: "#a20620",
+    jersey: "#ffffff",
   },
   "Ottawa Senators": {
     primary: "#000000",
-    secondary: "#C8102E",
+    secondary: "#a20620",
     jersey: "#B9975B",
   },
   "Philadelphia Flyers": {
