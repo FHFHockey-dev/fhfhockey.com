@@ -63,7 +63,7 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
   "Detroit Red Wings": {
     primary: "#a20620",
     secondary: "#FFFFFF",
-    jersey: "#a20620",
+    jersey: "#FFFFFF",
   },
   "Edmonton Oilers": {
     primary: "#041E42",
