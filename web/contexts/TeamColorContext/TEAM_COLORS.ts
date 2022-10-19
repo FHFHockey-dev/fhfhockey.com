@@ -61,8 +61,8 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
     jersey: "#FC4C02",
   },
   "Florida Panthers": {
-    primary: "#C8102E",
-    secondary: "#041E42",
+    primary: "#041E42",
+    secondary: "#C8102E",
     jersey: "#B9975B",
   },
   "Los Angeles Kings": {
@@ -76,7 +76,91 @@ const TEAM_COLORS: { [teamName: string]: Color } = {
     secondary: "#DDCBA4",
     jersey: "#A6192E",
   },
-  // "Montreal Canadiens": {},
+  "Montreal Canadiens": {
+    primary: "#001E62",
+    secondary: "#A6192E",
+    jersey: "#FFFFFF",
+  },
+  "Nashville Predators": {
+    primary: "#FFB81C",
+    secondary: "#041E42",
+    jersey: "#FFFFFF",
+  },
+  "New Jersey Devils": {
+    primary: "#000000",
+    secondary: "#C8102E",
+    jersey: "#154734",
+  },
+  "New York Islanders": {
+    primary: "#003087",
+    secondary: "#FC4C02",
+    jersey: "#FFFFFF",
+  },
+  "New York Rangers": {
+    primary: "#0033A0",
+    secondary: "#FFFFFF",
+    jersey: "#C8102E",
+  },
+  "Ottawa Senators": {
+    primary: "#000000",
+    secondary: "#C8102E",
+    jersey: "#B9975B",
+  },
+  "Philadelphia Flyers": {
+    primary: "#FA4616",
+    secondary: "#000000",
+    jersey: "#FFFFFF",
+  },
+  "Pittsburgh Penguins": {
+    primary: "#000000",
+    secondary: "#FFB81C",
+    jersey: "#FFFFFF",
+  },
+  "San Jose Sharks": {
+    primary: "#006272",
+    secondary: "#000000",
+    jersey: "#FFFFFF",
+  },
+  "Seattle Kraken": {
+    primary: "#051C2C",
+    secondary: "#6BA4B8",
+    jersey: "#9CDBD9",
+  },
+  "St. Louis Blues": {
+    primary: "#003087",
+    secondary: "#FFB81C",
+    jersey: "#C8102E",
+  },
+  "Tempa Bay Lightning": {
+    primary: "#00205B",
+    secondary: "#FFFFFF",
+    jersey: "#000000",
+  },
+  "Toronto Maple Leafs": {
+    primary: "#00205B",
+    secondary: "#FFFFFF",
+    jersey: "#00205B",
+  },
+  "Vancouver Canucks": {
+    primary: "#00205B",
+    secondary: "#FFFFFF",
+    jersey: "#00843D",
+  },
+  "Vegas Golden Knights": {
+    primary: "#333F48",
+    secondary: "#B9975B",
+    jersey: "#C8102E",
+  },
+  "Washington Capitals": {
+    primary: "#041E42",
+    secondary: "#C8102E",
+    jersey: "#FFFFFF",
+  },
+  "Winnipeg Jets": {
+    primary: "#041E42",
+    secondary: "#A2AAAD",
+    jersey: "#004C97",
+  }, 
 };
 
 export const DEFAULT_COLOR: Color = {
