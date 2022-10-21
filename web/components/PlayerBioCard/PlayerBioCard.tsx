@@ -40,14 +40,14 @@ function PlayerStatsCard({
   const player = usePlayer(playerId) ?? PLACEHOLDER;
   const { name, image, teamName, teamAbbreviation, position, teamLogo } =
     player;
-  const [firstName, lastName] = name.split(" ");
+  const [firstName, ...lastName] = name.split(" ");
 
   return (
     <section className={styles.playerCard}>
       <div className={styles.info}>
         <div className={styles.names}>
           <span className={styles.firstName}>{firstName}</span>
-          <span className={styles.lastName}>{lastName}</span>
+          <span className={styles.lastName}>{lastName.join(" ")}</span>
         </div>
 
         <div className={styles.teamLogo} title={teamName}>
