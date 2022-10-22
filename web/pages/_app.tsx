@@ -19,8 +19,7 @@ function MyApp({ Component, pageProps }: AppProps) {
             <meta charSet="utf-8" />
             <meta
               name="viewport"
-              // https://css-tricks.com/the-notch-and-css/
-              content="width=device-width, initial-scale=1.0,viewport-fit=cover"
+              content="width=device-width, initial-scale=1.0"
             />
             <meta
               name="keywords"
@@ -50,10 +49,7 @@ function MyApp({ Component, pageProps }: AppProps) {
             <meta name="msapplication-navbutton-color" content="#07aae2" />
             {/* <!-- iOS Safari --> */}
             <meta name="apple-mobile-web-app-capable" content="yes" />
-            <meta
-              name="apple-mobile-web-app-status-bar-style"
-              content="black-translucent"
-            />
+            <meta name="apple-mobile-web-app-status-bar-style" content="#000" />
             <link rel="manifest" href="/site.webmanifest" />
           </Head>
           <DefaultSeo {...SEO} />
