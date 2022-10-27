@@ -75,9 +75,10 @@ export default function GameGrid() {
 
   // PREV, NEXT button click
   const handleClick = (action: string) => () => {
-    const iso = new Date().toISOString().split("T")[1];
-    const start = new Date(`${dates[0]}T${iso}`);
-    const end = new Date(`${dates[1]}T${iso}`);
+    const start = new Date(dates[0]);
+    const end = new Date(dates[1]);
+    start.setMinutes(start.getTimezoneOffset());
+    end.setMinutes(end.getTimezoneOffset());
 
     const newStart = (
       action === "PREV" ? previousMonday(start) : nextMonday(start)
