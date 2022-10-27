@@ -1,4 +1,4 @@
-import { endOfISOWeek, startOfISOWeek } from "date-fns";
+import { endOfISOWeek, startOfDay, startOfISOWeek } from "date-fns";
 import { Day } from "../GameGrid";
 
 /**
@@ -36,19 +36,26 @@ export function dateDiffInDays(a: Date, b: Date) {
 }
 
 // https://stackoverflow.com/questions/8381427/get-start-date-and-end-date-of-current-week-week-start-from-monday-and-end-with
-// return an array of date objects for start (monday)
-// and end (sunday) of week based on supplied
-// date object or current date
+
+/**
+ * Get an array of ISO string of monday and sunday
+ * of the week given by the parameter __date__
+ * @param date a date which determines the week
+ * @returns [monday, sunday] - ISO string
+ */
 export function startAndEndOfWeek(date?: Date): [string, string] {
   const monday = startOfISOWeek(date || new Date());
-  const sunday = endOfISOWeek(date || new Date());
+  const sunday = startOfDay(endOfISOWeek(date || new Date()));
 
   // Return array of date objects
-  return [formatYYMMDD(monday), formatYYMMDD(sunday)];
+  return [monday.toISOString(), sunday.toISOString()];
 }
 
-function formatYYMMDD(date: Date) {
-  const offset = date.getTimezoneOffset();
-  date = new Date(date.getTime() - offset * 60 * 1000);
-  return date.toISOString().split("T")[0];
+/**
+ * Parse a date string as a Date obj. Ignore current hh-mm-ss
+ * @param dateStr e.g., "2022-06-13"
+ */
+export function parseDateStr(dateStr: string) {
+  const [year, month, day] = dateStr.split("-");
+  return new Date(Number(year), Number(month) - 1, Number(day));
 }

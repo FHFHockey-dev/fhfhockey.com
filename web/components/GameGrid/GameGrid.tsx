@@ -5,7 +5,7 @@ import Header from "./Header";
 import TeamRow from "./TeamRow";
 import TotalGamesPerDayRow, { calcTotalGP } from "./TotalGamesPerDayRow";
 
-import { startAndEndOfWeek } from "./utils/date-func";
+import { parseDateStr, startAndEndOfWeek } from "./utils/date-func";
 import { calcTotalOffNights, getTotalGamePlayed } from "./utils/NHL-API";
 import useTeams from "./utils/useTeams";
 import calcWeekScore from "./utils/calcWeekScore";
@@ -18,6 +18,7 @@ import {
   nextSunday,
   previousSunday,
   previousMonday,
+  format,
 } from "date-fns";
 
 export type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
@@ -28,7 +29,10 @@ export default function GameGrid() {
   const [dates, setDates] = useState<[string, string]>(() =>
     startAndEndOfWeek()
   );
-  const [teams, totalGamesPerDay, loading] = useTeams(...dates);
+  const [teams, totalGamesPerDay, loading] = useTeams(
+    format(new Date(dates[0]), "yyyy-MM-dd"),
+    format(new Date(dates[1]), "yyyy-MM-dd")
+  );
   const [excludedDays, setExcludedDays] = useState<Day[]>([]);
   const [sortKeys, setSortKeys] = useState<
     { key: string; ascending: boolean }[]
@@ -77,32 +81,36 @@ export default function GameGrid() {
   const handleClick = (action: string) => () => {
     const start = new Date(dates[0]);
     const end = new Date(dates[1]);
-    start.setMinutes(start.getTimezoneOffset());
-    end.setMinutes(end.getTimezoneOffset());
 
-    const newStart = (
-      action === "PREV" ? previousMonday(start) : nextMonday(start)
-    )
-      .toISOString()
-      .split("T")[0];
-    const newEnd = (action === "PREV" ? previousSunday(end) : nextSunday(end))
-      .toISOString()
-      .split("T")[0];
+    const newStart =
+      action === "PREV" ? previousMonday(start) : nextMonday(start);
 
+    const newEnd = action === "PREV" ? previousSunday(end) : nextSunday(end);
+
+    // Only show yyyy-MM-dd on URL
     router.replace({
-      query: { ...router.query, startDate: newStart, endDate: newEnd },
+      query: {
+        ...router.query,
+        startDate: format(newStart, "yyyy-MM-dd"),
+        endDate: format(newEnd, "yyyy-MM-dd"),
+      },
     });
     // setSearchParams({ startDate: newStart, endDate: newEnd });
-    setDates([newStart, newEnd]);
+    setDates([newStart.toISOString(), newEnd.toISOString()]);
   };
 
   // Sync dates with URL search params
   useEffect(() => {
     let ignore = false;
-    const start = router.query.startDate as string;
-    const end = router.query.endDate as string;
+    let start = router.query.startDate as string;
+    let end = router.query.endDate as string;
+
     if (start && end) {
       if (!ignore) {
+        // search params only contain yyyy-MM-dd
+        start = parseDateStr(start).toISOString();
+        end = parseDateStr(end).toISOString();
+
         setDates([start, end]);
       }
     }

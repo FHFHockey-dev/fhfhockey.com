@@ -1,8 +1,7 @@
 import { Day } from "../GameGrid";
-import { parseDateStr } from "../Header";
 import { DAYS, MatchUpCellData, TeamRowData } from "../TeamRow";
 import calcWinOdds from "./calcWinOdds";
-import { getDayStr } from "./date-func";
+import { getDayStr, parseDateStr } from "./date-func";
 
 const URL = `https://statsapi.web.nhl.com/api/v1/`;
 

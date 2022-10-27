@@ -111,24 +111,14 @@ function Header({
   );
 }
 
-/**
- * Parse a date string as a Date obj. Ignore current hh-mm-ss
- * @param dateStr e.g., "2022-06-13"
- */
-export function parseDateStr(dateStr: string) {
-  const [year, month, day] = dateStr.split("-");
-  return new Date(Number(year), Number(month) - 1, Number(day));
-}
-
 function getDayColumns(
   start: string,
   end: string,
   excludedDays: Day[],
   setExcludedDays: React.Dispatch<React.SetStateAction<Day[]>>
 ) {
-  // "2022-06-20", "2022-06-20"
-  const startDate = parseDateStr(start);
-  const endDate = parseDateStr(end);
+  const startDate = new Date(start);
+  const endDate = new Date(end);
 
   const days = dateDiffInDays(startDate, endDate);
   const columns = [] as { label: JSX.Element | string; id: string }[];
