@@ -1,4 +1,5 @@
 import Head from "next/head";
+import { Analytics } from "@vercel/analytics/react";
 import type { AppProps } from "next/app";
 import { ApolloProvider } from "@apollo/client";
 import AuthProvider from "contexts/AuthProviderContext/index";
@@ -56,6 +57,7 @@ function MyApp({ Component, pageProps }: AppProps) {
           {/* https://nextjs.org/docs/api-reference/next/router#resetting-state-after-navigation */}
           <Component {...pageProps} />
         </Layout>
+        <Analytics />
       </AuthProvider>
     </ApolloProvider>
   );
