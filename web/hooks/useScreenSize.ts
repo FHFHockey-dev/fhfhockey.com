@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
-import debounce from "utils/debounce";
+import { useState, useEffect, useDeferredValue } from "react";
 
 enum BreakPoint {
   s = "s",
@@ -21,31 +20,32 @@ const getSize = () => {
 const useScreenSize = () => {
   const [screenSize, setScreenSize] = useState(getSize);
 
-  const handleResize = useCallback(
-    debounce(() => {
-      setScreenSize(getSize());
-    }, 200),
-    []
-  );
-
+  const deferredScreenSize = useDeferredValue(screenSize);
   useEffect(() => {
     if (!isClient) {
       return;
     }
 
+    const handleResize = () => {
+      setScreenSize(getSize);
+    };
+
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [handleResize]);
+  }, []);
 
-  if (screenSize.width < 641) {
-    screenSize.screen = BreakPoint.s;
-  } else if (screenSize.width >= 641 && screenSize.width < 1007) {
-    screenSize.screen = BreakPoint.m;
-  } else if (screenSize.width >= 1024) {
-    screenSize.screen = BreakPoint.l;
+  if (deferredScreenSize.width < 641) {
+    deferredScreenSize.screen = BreakPoint.s;
+  } else if (
+    deferredScreenSize.width >= 641 &&
+    deferredScreenSize.width < 1007
+  ) {
+    deferredScreenSize.screen = BreakPoint.m;
+  } else if (deferredScreenSize.width >= 1024) {
+    deferredScreenSize.screen = BreakPoint.l;
   }
 
-  return screenSize;
+  return deferredScreenSize;
 };
 
 export { BreakPoint, useScreenSize as default };
