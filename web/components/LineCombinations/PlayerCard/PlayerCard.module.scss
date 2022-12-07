@@ -32,6 +32,11 @@
       position: absolute;
       right: 0;
       top: -2px;
+      display: flex;
+      align-items: center;
+      .hash {
+        font-size: 9px;
+      }
 
       .number {
         margin-left: 2px;
@@ -56,6 +61,39 @@
         font-weight: 900;
         letter-spacing: -0.05em;
         text-shadow: 0px 4px 4px #00000040;
+      }
+    }
+  }
+}
+
+@media only screen and (min-width: $screen-large) {
+  .container {
+    .top {
+      margin-bottom: 0.75rem;
+      .names {
+        .firstName {
+          font-size: 0.875rem;
+        }
+        .lastName {
+          font-size: 0.9375rem;
+        }
+      }
+      .jerseyNumber {
+        align-items: flex-start;
+
+        .hash {
+          margin-top: 4px;
+          font-size: 0.875rem;
+        }
+        .number {
+          font-size: 26px;
+        }
+      }
+    }
+    .stats {
+      margin-top: 0.3125rem;
+      .stat {
+        width: 2rem;
       }
     }
   }

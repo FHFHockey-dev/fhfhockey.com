@@ -1,12 +1,12 @@
 import React from "react";
 import Link from "next/link";
 import CategoryTitle from "../CategoryTitle";
-import ClientOnly from "components/ClientOnly";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import { Player } from "pages/lines/[abbreviation]";
 import { useTeamColor } from "contexts/TeamColorContext";
 
 import styles from "./PlayerCard.module.scss";
+import useMounted from "utils/useMounted";
 
 const UP_ARROW = "/pictures/arrow-up-green.png";
 const DOWN_ARROW = "/pictures/arrow-down-red.png";
@@ -14,7 +14,7 @@ const DOWN_ARROW = "/pictures/arrow-down-red.png";
 // For large devices
 const LARGE_STATS_CONFIG = [
   { key: "Goals", label: "GOALS" },
-  { key: "Assists", label: "ASSISTS" },
+  { key: "Assists", label: "ASSTS" },
   { key: "PTS", label: "PTS" },
   { key: "PPP", label: "PPP" },
   { key: "Shots", label: "SOG" },
@@ -43,6 +43,7 @@ function PlayerCard({ name, jerseyNumber, lineChange, ...rest }: Player) {
   const CONFIG =
     size.screen === BreakPoint.l ? LARGE_STATS_CONFIG : SMALL_STATS_CONFIG;
 
+  const mounted = useMounted();
   const color = useTeamColor();
 
   return (
@@ -85,7 +86,9 @@ function PlayerCard({ name, jerseyNumber, lineChange, ...rest }: Player) {
         </h3>
 
         <div className={styles.jerseyNumber}>
-          <span style={{ color: color.secondary }}>#</span>
+          <div className={styles.hash} style={{ color: color.secondary }}>
+            #
+          </div>
           <span
             className={styles.number}
             style={{
@@ -99,18 +102,18 @@ function PlayerCard({ name, jerseyNumber, lineChange, ...rest }: Player) {
       </div>
       <CategoryTitle type="small">LAST 10 GP</CategoryTitle>
 
-      <ClientOnly>
-        <section className={styles.stats}>
-          {CONFIG.map((stat) => (
-            <div key={stat.key} className={styles.stat}>
-              <div className={styles.label}>{stat.label}</div>
-              <div className={styles.value} style={{ color: color.secondary }}>
-                {rest[stat.key] || 0}
-              </div>
+      <section className={styles.stats}>
+        {CONFIG.map((stat) => (
+          <div key={stat.key} className={styles.stat}>
+            <div className={styles.label}>
+              {!mounted ? "-" : <>{stat.label}</>}
             </div>
-          ))}
-        </section>
-      </ClientOnly>
+            <div className={styles.value} style={{ color: color.secondary }}>
+              {rest[stat.key] || 0}
+            </div>
+          </div>
+        ))}
+      </section>
     </article>
   );
 }
