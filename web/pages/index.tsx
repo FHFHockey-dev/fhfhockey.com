@@ -31,6 +31,9 @@ const Home: NextPage = () => {
       <Banner className={styles.socialMedia}>
         <SocialMedias />
       </Banner>
+      <div>
+        <h1>Hello TJ {new Date().getFullYear()}</h1>
+      </div>
     </Container>
   );
 };
