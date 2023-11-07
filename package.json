@@ -16,5 +16,6 @@
     "prettier": "^2.5.1",
     "turbo": "latest",
     "vercel": "^28.4.4"
-  }
+  },
+  "dependencies": {}
 }
