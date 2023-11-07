@@ -195,7 +195,7 @@ const Homepage = () => {
     <div className="homepage">
       <div className="clGames">
         <div className="gamesHeader">
-          <h1>Today's Games</h1>
+          <h1>Today&apos;s Games</h1>
         </div>
         <div className="gamesContainer">
           {games.map((game) => {
