@@ -51,6 +51,11 @@ $mobile-header-height: 72px;
     height: 53px;
     left: -11px;
     top: -1px;
+    // Disbale overflow hidden.
+    // This is designed for the Image component from Next.js 12
+    & > span {
+      overflow: visible !important;
+    }
   }
 
   .nav {
