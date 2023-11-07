@@ -1,0 +1,139 @@
+.game-page {
+  padding-top: 3em;
+  text-align: center;
+  margin: auto;
+  width: 85%;
+}
+
+.gamePageCard {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  border-left: 2px solid #ddd;
+  border-right: 2px solid #ddd;
+  border-top: 2px solid #ddd;
+  border-radius: 5px 5px 0 0;
+  background: linear-gradient(
+    115deg,
+    var(--home-secondary-color) 49%,
+    #fff 49%,
+    #fff 51%,
+    var(--away-primary-color) 51%
+  );
+  text-align: center;
+  margin-top: 10px;
+  overflow: hidden;
+  max-height: 5em;
+}
+
+.team-name {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.home-team {
+  color: var(--home-primary-color);
+  filter: drop-shadow(0 0 5px var(--home-primary-color));
+  width: 12em;
+}
+
+.away-team {
+  color: var(--away-secondary-color);
+  filter: drop-shadow(0 0 5px var(--away-primary-color));
+  width: 12em;
+}
+
+.gamePageCard img {
+  z-index: 2;
+  height: 10em;
+  width: 10em;
+  position: relative;
+  filter: drop-shadow(0 0 3px #fff);
+}
+
+.GPvs {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 0 20px;
+  color: #fff;
+  padding: 0 5px;
+  filter: drop-shadow(0 0 5px #000);
+}
+
+.gamePageVsTable {
+  width: 100%;
+  border: 2px solid #ddd;
+  border-collapse: collapse;
+  background-color: #101010;
+}
+
+.gamePageHomeTeam {
+  width: 40%;
+}
+
+.gamePageHomeTeamStat {
+  width: 35%;
+}
+
+.gamePageHomeTeamStatRank {
+  width: 5%;
+  border-right: #ddd 2px solid;
+}
+
+.gamePageAdvantageDecider {
+  font-weight: 900;
+
+  &__wrapper {
+    flex-direction: column;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.gamePageVsTable tbody tr:not(:first-child) {
+  border-top: 1px solid #ffffff; /* Change #ffffff to the desired border color */
+}
+
+.statName {
+  font-size: 0.8em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.gamePageVsTable tbody tr:nth-child(odd) {
+  background-color: #202020;
+}
+
+.gamePageVsTable tbody tr:nth-child(even) {
+  background-color: #404040;
+}
+
+.gamePageAwayTeamStatRank {
+  width: 5%;
+  border-left: #ddd 2px solid;
+}
+
+.gamePageAwayTeamStat {
+  width: 35%;
+}
+
+.gamePageAdvantage {
+  width: 20%;
+}
+
+.gamePageAwayTeam {
+  width: 40%;
+}
+
+.gamePageVsTable th {
+  border-bottom: 2px solid #ddd;
+  height: 3em;
+}
+
+.gamePageVsTable tr {
+  height: 3em;
+}

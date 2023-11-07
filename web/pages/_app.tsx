@@ -10,7 +10,9 @@ import client from "../lib/apollo-client";
 import Layout from "../components/Layout";
 import "../styles/globals.css";
 import "../styles/vars.scss";
-import "../styles/Home.scss"; // TODO: rewrite using css module
+// TODO: rewrite using css module
+import "../styles/Home.scss";
+import "pages/game/GamePage.scss";
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
