@@ -3,11 +3,11 @@ import Link from "next/link";
 import classNames from "classnames";
 import Image from "next/image";
 
-import {
+import type {
   NavbarItem,
   NavbarItemCategory as NavbarItemCategoryType,
   NavbarItemLink,
-} from "components/Layout/navbarItems";
+} from "./NavbarItemsData";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 
 import styles from "./NavbarItems.module.scss";

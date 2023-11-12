@@ -5,8 +5,8 @@ import classNames from "classnames";
 
 import useHideableNavbar from "hooks/useHideableNavbar";
 import MobileMenu from "components/Layout/MobileMenu";
-import NavbarItems from "../NavbarItems";
-import ITEMS_DATA from "../navbarItems";
+import NavbarItems from "components/Layout/NavbarItems";
+import ITEMS_DATA from "components/Layout/NavbarItems/NavbarItemsData";
 import ClientOnly from "components/ClientOnly";
 import SocialMedias from "components/SocialMedias";
 
