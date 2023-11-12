@@ -141,6 +141,7 @@ const Homepage = () => {
     const fetchStandings = async () => {
       try {
         const response = await axios.get(
+          // UPDATE API ENDPOINT
           "https://statsapi.web.nhl.com/api/v1/standings.record.overall?&season=20232024&site=en_nhl"
         );
         if (response.status !== 200) throw new Error("Failed to fetch");
