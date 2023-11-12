@@ -4,7 +4,7 @@ import { animated, useTransition } from "@react-spring/web";
 import { Footer } from "components/Layout/Layout";
 import SocialMedias from "components/SocialMedias";
 import NavbarItems from "../NavbarItems";
-import ITEMS_DATA from "components/Layout/navbarItems";
+import ITEMS_DATA from "components/Layout/NavbarItems/NavbarItemsData";
 
 import styles from "./MobileMenu.module.scss";
 
