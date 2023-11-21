@@ -6,7 +6,7 @@ import TeamRow from "./TeamRow";
 import TotalGamesPerDayRow, { calcTotalGP } from "./TotalGamesPerDayRow";
 
 import { parseDateStr, startAndEndOfWeek } from "./utils/date-func";
-import { calcTotalOffNights, getTotalGamePlayed } from "./utils/NHL-API";
+import { calcTotalOffNights, getTotalGamePlayed } from "./utils/helper";
 import useSchedule from "./utils/useSchedule";
 import calcWeekScore from "./utils/calcWeekScore";
 import {
