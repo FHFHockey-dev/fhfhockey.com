@@ -1,6 +1,7 @@
 import { DAYS } from "pages/api/v1/schedule/[startDate]";
 import { ScheduleArray } from "./useSchedule";
 
+const cache: any = {};
 export default async function calcWinOdds(
   us: string,
   opponent: string,
@@ -13,11 +14,16 @@ export default async function calcWinOdds(
   SERVERLESS_API_URL += `HomeTeam=${encodeURIComponent(us)}`;
   SERVERLESS_API_URL += `&AwayTeam=${encodeURIComponent(opponent)}`;
   SERVERLESS_API_URL += `&Season=${season}`;
+  const key = SERVERLESS_API_URL;
+  if (cache[key] !== undefined) {
+    return cache[key];
+  }
+
   try {
-    console.log("start to fetch " + SERVERLESS_API_URL);
-    const result = await fetch(SERVERLESS_API_URL).then((res) => res.json());
-    console.log({ SERVERLESS_API_URL, result });
-    return result.winOdds as number;
+    const result = (await fetch(SERVERLESS_API_URL).then((res) => res.json()))
+      .winOdds as number;
+    cache[key] = result;
+    return result;
   } catch (e: any) {
     console.error("failed: " + SERVERLESS_API_URL, e.message);
     return -1;
