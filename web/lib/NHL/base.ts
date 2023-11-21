@@ -15,6 +15,8 @@ export function get<T = any>(path: string): Promise<T> {
  * @param path
  * @returns
  */
-export function restGet(path: string): Promise<{ data: any[]; total: number }> {
+export function restGet<T = any>(
+  path: string
+): Promise<{ data: T[]; total: number }> {
   return fetch(`${BASE_URL_TWO}${path}`).then((res) => res.json());
 }

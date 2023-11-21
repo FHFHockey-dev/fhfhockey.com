@@ -1,4 +1,4 @@
-import { TeamRowData } from "components/GameGrid/TeamRow";
+import { Player } from "pages/api/v1/player/[id]";
 import { ScheduleData } from "pages/api/v1/schedule/[startDate]";
 import { Season } from "pages/api/v1/season";
 import { Team } from "pages/api/v1/team";
@@ -29,4 +29,8 @@ export async function getTeams(): Promise<Team[]> {
  */
 export async function getSchedule(startDate: string): Promise<ScheduleData> {
   return get(`/schedule/${startDate}`);
+}
+
+export async function getPlayer(id: number): Promise<Player> {
+  return get(`/player/${id}`);
 }
