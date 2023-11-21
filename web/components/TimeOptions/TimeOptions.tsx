@@ -3,7 +3,8 @@ import React, { Dispatch, SetStateAction } from "react";
 import RadioOptions from "components/RadioOptions";
 import Select from "components/Select";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
-import useCurrentSeason, { Season } from "hooks/useCurrentSeason";
+import useCurrentSeason from "hooks/useCurrentSeason";
+import { Season } from "pages/api/v1/season";
 
 export type TimeOption = "L7" | "L14" | "L30" | "SEASON";
 
