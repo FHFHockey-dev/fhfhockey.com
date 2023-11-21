@@ -1,5 +1,9 @@
-import { Day } from "../GameGrid";
-import { DAYS, MatchUpCellData, TeamRowData } from "../TeamRow";
+import {
+  DAYS,
+  DAY_ABBREVIATION,
+  WeekData,
+} from "pages/api/v1/schedule/[startDate]";
+import { MatchUpCellData, TeamRowData } from "../TeamRow";
 import calcWinOdds from "./calcWinOdds";
 import { getDayStr, parseDateStr } from "./date-func";
 
@@ -178,7 +182,7 @@ export async function getAllTeams(): Promise<Team[]> {
 }
 
 function getOffNights(totalGamesPerDay: number[]) {
-  const days: Day[] = [];
+  const days: DAY_ABBREVIATION[] = [];
   totalGamesPerDay.forEach((numGames, i) => {
     // when a day has <= 8 games, mark that day as off night
     if (numGames <= 8) {
@@ -194,13 +198,13 @@ function getOffNights(totalGamesPerDay: number[]) {
  * @param matchUp A match up.
  * @returns true if the match up exist, otherwise false.
  */
-function hasMatchUp(matchUp: MatchUpCellData | undefined) {
-  return matchUp?.away || matchUp?.home;
+function hasMatchUp(matchUp: WeekData["MON"] | undefined) {
+  return matchUp !== undefined;
 }
 
 export function getTotalGamePlayed(
-  matchUps: TeamRowData,
-  excludedDays: Day[] = []
+  matchUps: WeekData,
+  excludedDays: DAY_ABBREVIATION[] = []
 ) {
   let num = 0;
   DAYS.forEach((day) => {
@@ -218,16 +222,19 @@ export function getTotalGamePlayed(
  * @returns Total Off Nights
  */
 export function calcTotalOffNights(
-  matchUps: TeamRowData,
-  excludedDays: Day[] = []
+  matchUps: WeekData,
+  numGamesPerDay: number[],
+  excludedDays: DAY_ABBREVIATION[] = []
 ) {
   let num = 0;
-  DAYS.forEach((day) => {
+  DAYS.forEach((day, i) => {
     if (excludedDays.includes(day)) return;
 
     const matchUp = matchUps[day];
     const hasMatchUp_ = hasMatchUp(matchUp);
-    if (hasMatchUp_ && matchUp?.offNight) num++;
+    // when a day has <= 8 games, mark that day as off night
+    const offNight = numGamesPerDay[i] <= 8;
+    if (hasMatchUp_ && offNight) num++;
   });
   return num;
 }

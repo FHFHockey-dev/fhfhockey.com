@@ -26,7 +26,7 @@ type GameWeek = {
 export const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
 export type DAY_ABBREVIATION = typeof DAYS[number];
 
-type GameData = {
+export type GameData = {
   id: number;
   season: number;
   homeTeam: { id: number; score: number; winOdds: number };

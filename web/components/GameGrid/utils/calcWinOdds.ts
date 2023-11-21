@@ -1,21 +1,27 @@
-import { DAYS, TeamRowData } from "../TeamRow";
+import { DAYS } from "pages/api/v1/schedule/[startDate]";
+import { ScheduleArray } from "./useSchedule";
 
 export default async function calcWinOdds(
-  homeTeam: string,
-  awayTeam: string,
-  season: string
+  us: string,
+  opponent: string,
+  season: string | number
 ) {
   let SERVERLESS_API_URL = process.env.NEXT_PUBLIC_SERVERLESS_API_URL || "";
 
   // [odds, winOdds, xx]
   SERVERLESS_API_URL += "/api/winOdds?";
-  SERVERLESS_API_URL += `HomeTeam=${homeTeam}`;
-  SERVERLESS_API_URL += `&AwayTeam=${awayTeam}`;
+  SERVERLESS_API_URL += `HomeTeam=${encodeURIComponent(us)}`;
+  SERVERLESS_API_URL += `&AwayTeam=${encodeURIComponent(opponent)}`;
   SERVERLESS_API_URL += `&Season=${season}`;
-
-  const result = await fetch(SERVERLESS_API_URL).then((res) => res.json());
-
-  return result.winOdds as number;
+  try {
+    console.log("start to fetch " + SERVERLESS_API_URL);
+    const result = await fetch(SERVERLESS_API_URL).then((res) => res.json());
+    console.log({ SERVERLESS_API_URL, result });
+    return result.winOdds as number;
+  } catch (e: any) {
+    console.error("failed: " + SERVERLESS_API_URL, e.message);
+    return -1;
+  }
 }
 
 /**
@@ -39,10 +45,14 @@ export function isBackToBack(winOddsList: (number | null)[], day: number) {
  * @param row A team's stats for a week
  * @returns A list of WinOdds. e.g., [null, 0.3, null, 0.3, 6.4, null, 2.7]
  */
-export function convertTeamRowToWinOddsList(row: TeamRowData) {
+export function convertTeamRowToWinOddsList(row: ScheduleArray[0]) {
   const winOddsList: (number | null)[] = [];
   DAYS.forEach((day, i) => {
-    const winOdds = row[day]?.winOdds;
+    // const winOdds = row[day]?.winOdds;
+    const winOdds =
+      row.teamId === row[day]?.homeTeam.id
+        ? row[day]?.homeTeam.winOdds
+        : row[day]?.awayTeam.winOdds;
     winOddsList[i] = winOdds !== undefined ? winOdds : null;
   });
   return winOddsList;
@@ -62,23 +72,30 @@ export function convertTeamRowToWinOddsList(row: TeamRowData) {
  * @param dilutedFactor The penalty term for the 2d game.
  */
 export function adjustBackToBackGames(
-  teams: TeamRowData[],
+  teams: ScheduleArray,
   dilutedFactor: number = 0.75
 ): void {
   teams.forEach((row) => {
     const winOddsList = convertTeamRowToWinOddsList(row);
     DAYS.forEach((day, i) => {
-      const oldWinOdds = row[day]?.winOdds;
+      const ourTeam =
+        row.teamId === row[day]?.homeTeam.id
+          ? row[day]?.homeTeam
+          : row[day]?.awayTeam;
+      const opponentTeam =
+        row.teamId !== row[day]?.homeTeam.id
+          ? row[day]?.homeTeam
+          : row[day]?.awayTeam;
+
+      const oldWinOdds = ourTeam?.winOdds;
       if (!oldWinOdds) return;
       // test if the current day is the 2d back-to-back game
       if (isBackToBack(winOddsList, i)) {
         // multiply by 0.75
-        row[day]!.winOdds = oldWinOdds * dilutedFactor;
+        ourTeam.winOdds = oldWinOdds * dilutedFactor;
       }
       // test if the opponent is also playing a 2d back-to-back game
-      const opponent = teams.find((item) => {
-        return item.teamName === row[day]?.opponentName;
-      });
+      const opponent = teams.find((team) => team.teamId === opponentTeam?.id);
 
       if (opponent) {
         const opponentWinOddsList = convertTeamRowToWinOddsList(opponent);
@@ -87,7 +104,7 @@ export function adjustBackToBackGames(
           isBackToBack(opponentWinOddsList, i)
         ) {
           // don't multiply by 0.75
-          row[day]!.winOdds = oldWinOdds;
+          ourTeam.winOdds = oldWinOdds;
         }
       }
     });

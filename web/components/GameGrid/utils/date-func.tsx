@@ -1,5 +1,5 @@
 import { endOfISOWeek, startOfDay, startOfISOWeek } from "date-fns";
-import { Day } from "../GameGrid";
+import { DAY_ABBREVIATION } from "pages/api/v1/schedule/[startDate]";
 
 /**
  *
@@ -7,7 +7,9 @@ import { Day } from "../GameGrid";
  * @returns Mon, Tue
  */
 export function getDayStr(date: Date) {
-  return date.toLocaleString("en-us", { weekday: "short" }) as Day;
+  return date
+    .toLocaleString("en-us", { weekday: "short" })
+    .toUpperCase() as DAY_ABBREVIATION;
 }
 
 export function addDays(date: Date, days: number) {

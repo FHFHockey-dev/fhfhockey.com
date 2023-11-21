@@ -7,9 +7,12 @@ import TotalGamesPerDayRow, { calcTotalGP } from "./TotalGamesPerDayRow";
 
 import { parseDateStr, startAndEndOfWeek } from "./utils/date-func";
 import { calcTotalOffNights, getTotalGamePlayed } from "./utils/NHL-API";
-import useTeams from "./utils/useTeams";
+import useSchedule from "./utils/useSchedule";
 import calcWeekScore from "./utils/calcWeekScore";
-import { convertTeamRowToWinOddsList } from "./utils/calcWinOdds";
+import {
+  adjustBackToBackGames,
+  convertTeamRowToWinOddsList,
+} from "./utils/calcWinOdds";
 
 import styles from "./GameGrid.module.scss";
 import Spinner from "components/Spinner";
@@ -20,50 +23,70 @@ import {
   previousMonday,
   format,
 } from "date-fns";
+import { DAY_ABBREVIATION, WeekData } from "pages/api/v1/schedule/[startDate]";
+import { useTeamsMap } from "hooks/useTeams";
+import GameGridContext from "./contexts/GameGridContext";
 
-export type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
-
-export default function GameGrid() {
+function GameGridInteral() {
   const router = useRouter();
   // [startDate, endDate]
   const [dates, setDates] = useState<[string, string]>(() =>
     startAndEndOfWeek()
   );
-  const [teams, totalGamesPerDay, loading] = useTeams(
-    format(new Date(dates[0]), "yyyy-MM-dd"),
-    format(new Date(dates[1]), "yyyy-MM-dd")
+  const teams = useTeamsMap();
+  const [schedule, numGamesPerDay, loading] = useSchedule(
+    format(new Date(dates[0]), "yyyy-MM-dd")
   );
-  const [excludedDays, setExcludedDays] = useState<Day[]>([]);
+  const [excludedDays, setExcludedDays] = useState<DAY_ABBREVIATION[]>([]);
   const [sortKeys, setSortKeys] = useState<
-    { key: string; ascending: boolean }[]
+    {
+      key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
+      ascending: boolean;
+    }[]
   >([]);
 
   // calculate new total GP and total off-nights based on excluded days.
   const filteredColumns = useMemo(() => {
-    const copy = [...teams];
-    const totalGP = calcTotalGP(totalGamesPerDay, excludedDays);
-    copy.forEach((row) => {
+    const adjustedSchedule = [...schedule];
+    adjustBackToBackGames(adjustedSchedule);
+
+    const copy: (WeekData & {
+      teamId: number;
+      totalGamesPlayed: number;
+      totalOffNights: number;
+      weekScore: number;
+    })[] = [];
+    const totalGP = calcTotalGP(numGamesPerDay, excludedDays);
+    adjustedSchedule.forEach((row) => {
       // add Total GP for each team
       const totalGamesPlayed = getTotalGamePlayed(row, excludedDays);
 
       // add Total Off-Nights
-      const totalOffNights = calcTotalOffNights(row, excludedDays);
-
-      row.totalGamesPlayed = totalGamesPlayed;
-      row.totalOffNights = totalOffNights;
+      const totalOffNights = calcTotalOffNights(
+        row,
+        numGamesPerDay,
+        excludedDays
+      );
 
       // add Week Score
       const winOddsList = convertTeamRowToWinOddsList(row);
 
-      row.weekScore = calcWeekScore(
+      const weekScore = calcWeekScore(
         winOddsList,
         totalOffNights,
         totalGP,
         totalGamesPlayed
       );
+      const newRow = {
+        ...row,
+        totalGamesPlayed,
+        totalOffNights,
+        weekScore,
+      };
+      copy.push(newRow);
     });
     return copy;
-  }, [excludedDays, teams, totalGamesPerDay]);
+  }, [excludedDays, schedule, numGamesPerDay]);
 
   const sortedTeams = useMemo(() => {
     return [...filteredColumns].sort((a, b) => {
@@ -73,9 +96,9 @@ export default function GameGrid() {
           return ascending ? a[key] - b[key] : b[key] - a[key];
         }
       }
-      return a.teamName.localeCompare(b.teamName);
+      return teams[a.teamId].name.localeCompare(teams[b.teamId].name);
     });
-  }, [sortKeys, filteredColumns]);
+  }, [filteredColumns, teams, sortKeys]);
 
   // PREV, NEXT button click
   const handleClick = (action: string) => () => {
@@ -143,16 +166,24 @@ export default function GameGrid() {
           <tbody>
             {/* Total Games Per Day */}
             <TotalGamesPerDayRow
-              games={totalGamesPerDay}
+              games={numGamesPerDay}
               excludedDays={excludedDays}
             />
             {/* Teams */}
-            {sortedTeams.map((row) => {
-              return <TeamRow key={row.teamName} {...row} />;
+            {sortedTeams.map(({ teamId, ...rest }) => {
+              return <TeamRow key={teamId} teamId={teamId} {...rest} />;
             })}
           </tbody>
         </table>
       </div>
     </>
+  );
+}
+
+export default function GameGrid() {
+  return (
+    <GameGridContext>
+      <GameGridInteral />
+    </GameGridContext>
   );
 }
