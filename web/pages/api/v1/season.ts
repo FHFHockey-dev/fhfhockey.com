@@ -9,7 +9,7 @@ export type Season = {
   numberOfGames: number;
 };
 
-async function getCurrentSeason(): Promise<Season> {
+export async function getCurrentSeason(): Promise<Season> {
   const data = (
     await restGet(
       `/season?sort=${encodeURIComponent(

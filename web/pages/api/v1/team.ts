@@ -1,5 +1,6 @@
-import { restGet } from "lib/NHL/base";
 import type { NextApiRequest, NextApiResponse } from "next";
+import { restGet } from "lib/NHL/base";
+import { getCurrentSeason } from "./season";
 
 export type Team = {
   /**
@@ -25,20 +26,32 @@ export function getTeamLogo(teamName: string) {
  * Server only
  * @returns
  */
-export async function getTeams(): Promise<Team[]> {
-  const { data } = await restGet("/team");
-  return data.map((item) => ({
-    id: item.id,
-    name: item.fullName,
-    abbreviation: item.triCode,
-    logo: getTeamLogo(item.fullName),
-  }));
+export async function getTeams(seasonId?: number): Promise<Team[]> {
+  const { data: allTeams } = await restGet("/team");
+  const { data: currentSeasonTeams } = await restGet(
+    `/team/summary?cayenneExp=seasonId=${seasonId}`
+  );
+  const currentSeasonTeamIds = new Set(
+    currentSeasonTeams.map((team) => team.teamId)
+  );
+
+  return allTeams
+    .filter((team) => currentSeasonTeamIds.has(team.id))
+    .map((item) => ({
+      id: item.id,
+      name: item.fullName,
+      abbreviation: item.triCode,
+      logo: getTeamLogo(item.fullName),
+    }));
 }
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Team[]>
 ) {
-  const data = await getTeams();
+  const { seasonId: currentSeasonId } = await getCurrentSeason();
+  const data = await getTeams(currentSeasonId);
+
+  res.setHeader("Cache-Control", "max-age=86400");
   res.status(200).json(data);
 }
