@@ -17,5 +17,5 @@
     "turbo": "latest",
     "vercel": "^28.4.4"
   },
-  "dependencies": {}
+  "packageManager": "yarn@1.19.1"
 }
