@@ -17,7 +17,7 @@ export type Team = {
   logo: string;
 };
 
-function getTeamLogo(teamName: string) {
+export function getTeamLogo(teamName: string) {
   return `/teamLogos/${teamName}.png`;
 }
 

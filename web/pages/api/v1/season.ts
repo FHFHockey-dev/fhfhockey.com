@@ -2,7 +2,7 @@ import { restGet } from "lib/NHL/base";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 export type Season = {
-  seasonId: string;
+  seasonId: number;
   regularSeasonStartDate: string;
   regularSeasonEndDate: string;
   seasonEndDate: string;

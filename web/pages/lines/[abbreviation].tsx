@@ -5,12 +5,10 @@ import type { GetStaticPaths, GetStaticProps } from "next";
 import { toPng } from "html-to-image";
 
 import supabase from "lib/supabase";
-import { fetchNHL } from "lib/NHL/NHL_API";
 import PageTitle from "components/PageTitle";
 import Container from "components/Layout/Container";
 import TeamSelect from "components/TeamSelect";
 import TimeAgo from "components/TimeAgo";
-import { getTeamLogo } from "hooks/usePlayer";
 import Select from "components/Select";
 import CategoryTitle from "components/LineCombinations/CategoryTitle";
 import Line from "components/LineCombinations/Line";
@@ -23,6 +21,8 @@ import TeamColorProvider, { useTeamColor } from "contexts/TeamColorContext";
 
 import styles from "./[abbreviation].module.scss";
 import useScreenSize from "hooks/useScreenSize";
+import { getCurrentSeason, getGameLogs, getPlayer } from "lib/NHL/API";
+import { getTeamLogo, getTeams } from "pages/api/v1/team";
 
 export type PlayerBasic = {
   playerId: number;
@@ -255,9 +255,11 @@ export default function TeamLC({
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   // for Team Select
-  const teams = ((await fetchNHL("/teams")).teams as any[])
+  const teams = await getTeams();
+
+  teams
     .map((team) => ({
-      shortName: team.teamName,
+      shortName: team.name,
       name: team.name,
       abbreviation: team.abbreviation,
     }))
@@ -288,9 +290,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   }
 
   // get current season id
-  const seasonId: string = await fetchNHL("/seasons/current").then(
-    (data) => data.seasons[0].seasonId
-  );
+  const seasonId = (await getCurrentSeason()).seasonId;
 
   // populate each player object with last 10 GP stats
   const [current, _] = line_combinations as Props["lineCombinations"][];
@@ -308,16 +308,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       // @ts-ignore
       current[type][line] = await Promise.all(
         players.map(async ({ playerId, playerName }) => {
-          const jerseyNumber =
-            (await fetchNHL(`/people/${playerId}`).then(
-              ({ people }) => people[0].primaryNumber
-            )) || 0;
+          const jerseyNumber = (await getPlayer(playerId)).sweaterNumber ?? 0;
 
-          const games: any[] = await fetchNHL(
-            `/people/${playerId}/stats?stats=gameLog&season=${seasonId}`
-          ).then((data) => data.stats[0].splits.slice(0, 10));
-
-          // @ts-ignore
+          const games = (await getGameLogs(playerId, seasonId)).slice(0, 10);
           const stats = {
             Goals: 0,
             Assists: 0,
@@ -333,14 +326,14 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
             lineChange: getLineChange(playerId),
             source_url: current.source_url,
           };
-          games.forEach(({ stat }) => {
+          games.forEach((stat) => {
             stats["Goals"] += stat.goals;
             stats["Assists"] += stat.assists;
             stats["PTS"] += stat.goals + stat.assists;
             stats["PPP"] += stat.powerPlayPoints;
             stats["Shots"] += stat.shots;
-            stats["Hits"] += stat.hits;
-            stats["Blocks"] += stat.blocked;
+            stats["Hits"] += 0;
+            stats["Blocks"] += 0;
             stats["PlusMinus"] += stat.plusMinus;
           });
           return stats;
@@ -367,7 +360,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 };
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const teams = ((await fetchNHL("/teams")).teams as any[]).map((team) => ({
+  const teams = (await getTeams()).map((team) => ({
     params: { abbreviation: team.abbreviation },
   }));
 

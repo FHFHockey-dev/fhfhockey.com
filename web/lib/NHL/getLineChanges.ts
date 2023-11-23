@@ -1,9 +1,8 @@
 import { compareDesc } from "date-fns";
 
 import supabase from "lib/supabase";
-import { RowData, Team } from "pages/lines";
-import { getTeamLogo } from "hooks/usePlayer";
-import { fetchNHL } from "./NHL_API";
+import { getTeams } from "pages/api/v1/team";
+import { RowData } from "pages/lines";
 
 type Param = {
   forwards?: boolean;
@@ -18,13 +17,7 @@ export default async function getLineChanges(
     goalies: true,
   }
 ) {
-  const teams: Team[] = ((await fetchNHL("/teams")).teams as any[])
-    .map((team) => ({
-      name: team.name,
-      abbreviation: team.abbreviation,
-      logo: getTeamLogo(team.name),
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const teams = (await getTeams()).sort((a, b) => a.name.localeCompare(b.name));
 
   const allTeamLineUps = (
     await Promise.all(

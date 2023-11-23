@@ -50,10 +50,8 @@ function TimeOptions({ timeOption, setTimeOption, ...rest }: TimeOptionsProps) {
 }
 
 function getSeasonLable(season: Season) {
-  const seasonLabel = `${season?.seasonId.slice(0, 4)}/${season?.seasonId.slice(
-    6,
-    8
-  )}`;
+  const id = season.seasonId.toString();
+  const seasonLabel = `${id.slice(0, 4)}/${id.slice(6, 8)}`;
 
   return seasonLabel;
 }
