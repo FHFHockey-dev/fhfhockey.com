@@ -45,7 +45,16 @@ export default async function handler(
   res: NextApiResponse<any>
 ) {
   const { id } = req.query;
-  const player = await getPlayer(Number(id));
-  res.setHeader("Cache-Control", "max-age=86400");
-  res.status(200).json(player);
+  try {
+    const player = await getPlayer(Number(id));
+    res.setHeader("Cache-Control", "max-age=86400");
+    res.status(200).json(player);
+  } catch (e: any) {
+    res
+      .status(404)
+      .json({
+        success: false,
+        message: "Unable to find the player with id: " + id,
+      });
+  }
 }
