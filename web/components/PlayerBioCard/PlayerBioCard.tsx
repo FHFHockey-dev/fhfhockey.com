@@ -2,7 +2,7 @@
 
 import usePlayer from "hooks/usePlayer";
 import styles from "./PlayerBioCard.module.scss";
-import { Player } from "pages/api/v1/player/[id]";
+import type { Player } from "lib/NHL/types";
 
 type PlayerStatsCardProps = {
   /**

@@ -21,8 +21,13 @@ import TeamColorProvider, { useTeamColor } from "contexts/TeamColorContext";
 
 import styles from "./[abbreviation].module.scss";
 import useScreenSize from "hooks/useScreenSize";
-import { getCurrentSeason, getGameLogs, getPlayer } from "lib/NHL/API";
-import { getTeamLogo, getTeams } from "pages/api/v1/team/[seasonId]";
+import {
+  getCurrentSeason,
+  getPlayer,
+  getPlayerGameLog,
+  getTeamLogo,
+  getTeams,
+} from "lib/NHL/server";
 
 export type PlayerBasic = {
   playerId: number;
@@ -308,9 +313,13 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       // @ts-ignore
       current[type][line] = await Promise.all(
         players.map(async ({ playerId, playerName }) => {
-          const jerseyNumber = (await getPlayer(playerId)).sweaterNumber ?? 0;
+          const jerseyNumber = (await getPlayer(playerId))?.sweaterNumber ?? 0;
 
-          const games = (await getGameLogs(playerId, seasonId)).slice(0, 10);
+          const games = (await getPlayerGameLog(playerId, seasonId)).slice(
+            0,
+            10
+          );
+
           const stats = {
             Goals: 0,
             Assists: 0,

@@ -5,7 +5,7 @@ import usePlayers from "hooks/usePlayers";
 
 import styles from "./PlayerAutocomplete.module.scss";
 import classNames from "classnames";
-import type { Player } from "pages/api/v1/player/[id]";
+import type { Player } from "lib/NHL/types";
 
 type PlayerAutocompleteProps = {
   playerId: number | undefined;

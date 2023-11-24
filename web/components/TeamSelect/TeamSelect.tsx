@@ -4,7 +4,7 @@ import classNames from "classnames";
 
 import ARROW from "public/pictures/arrow.svg";
 import styles from "./TeamSelect.module.scss";
-import { getTeamLogo } from "pages/api/v1/team/[seasonId]";
+import { getTeamLogo } from "lib/NHL/server";
 
 type TeamSelectProps = {
   className?: string;

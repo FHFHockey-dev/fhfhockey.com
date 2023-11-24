@@ -11,8 +11,8 @@ import { initialState } from "components/LineCombinations/EditPanel/EditPanel";
 import styles from "./Create.module.scss";
 import { LineCombinations } from "lib/NHL/getLineCombinationsById";
 import supabase from "lib/supabase";
-
-type Team = { shortName: string; name: string; abbreviation: string };
+import { Team } from "lib/NHL/types";
+import { getTeams } from "lib/NHL/server";
 
 type Props = {
   teams: Team[];
@@ -65,13 +65,9 @@ function CreatePage({ teams }: Props) {
 
 export const getStaticProps: GetStaticProps = async () => {
   // for Team Select
-  const teams: Team[] = ((await fetchNHL("/teams")).teams as any[])
-    .map((team) => ({
-      shortName: team.teamName,
-      name: team.name,
-      abbreviation: team.abbreviation,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const teams: Team[] = (await getTeams()).sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
 
   return {
     props: { teams },

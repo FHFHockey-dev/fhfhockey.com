@@ -1,10 +1,8 @@
 import { ScheduleData } from "pages/api/v1/schedule/[startDate]";
-import { Player, PlayerGameLog, Season, Team } from "./types";
+import type { Player, PlayerGameLog, Season, Team } from "../types";
+import { Response } from "pages/api/_types";
 
-const isBrowser = typeof window !== "undefined";
-
-const BASE_URL =
-  (!isBrowser ? process.env.NEXT_PUBLIC_SITE_URL : "") + "/api/v1";
+const BASE_URL = "/api/v1";
 
 /**
  * `BASE_URL` /api/v1
@@ -48,13 +46,12 @@ export async function getGameLogs(
   season: number,
   type: number = 2
 ) {
-  try {
-    return await get<PlayerGameLog[]>(
-      `/player/${playerId}/game-log/${season}/${type}`
-    );
-  } catch (e: any) {
-    console.error(`/player/${playerId}/game-log/${season}/${type}`);
-    console.error("error in getGameLog", e.message);
+  const { success, data } = await get<Response<PlayerGameLog[]>>(
+    `/player/${playerId}/game-log/${season}/${type}`
+  );
+  if (success) {
+    return data;
+  } else {
     return [];
   }
 }

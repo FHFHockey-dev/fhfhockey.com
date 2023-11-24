@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getCurrentSeason } from "lib/NHL/API";
-import { Season } from "pages/api/v1/season";
+import { Season } from "lib/NHL/types";
 
 export default function useCurrentSeason() {
   const [season, setSeason] = useState<Season>();

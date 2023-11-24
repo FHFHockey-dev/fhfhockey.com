@@ -1,26 +1,26 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { get } from "lib/NHL/base";
-
-export type PlayerGameLog = {
-  gameId: number;
-  gameDate: string;
-  goals: number;
-  assists: number;
-  points: number;
-  plusMinus: number;
-  powerPlayGoals: number;
-  powerPlayPoints: number;
-  shots: number;
-  toi: string;
-};
+import { PlayerGameLog } from "lib/NHL/types";
+import { getPlayerGameLog } from "lib/NHL/server";
+import { Response } from "pages/api/_types";
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<PlayerGameLog>
+  res: NextApiResponse<Response<PlayerGameLog[]>>
 ) {
   const { id, season, type } = req.query;
-  const data =
-    (await get(`/player/${id}/game-log/${season}/${type}`)).gameLog ?? [];
+  if (!id || !season || !type) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid input.",
+      data: null,
+    });
+  }
 
-  res.status(200).json(data);
+  const data = await getPlayerGameLog(
+    id as string,
+    season as string,
+    type as string
+  );
+
+  res.status(200).json({ success: true, message: "success", data });
 }

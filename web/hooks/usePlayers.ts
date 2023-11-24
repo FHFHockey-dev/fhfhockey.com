@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getAllPlayers } from "lib/NHL/API";
-import type { Player } from "pages/api/v1/player/[id]";
+import type { Player } from "lib/NHL/types";
 
 export default function usePlayers() {
   const [players, setPlayers] = useState<Player[]>([]);

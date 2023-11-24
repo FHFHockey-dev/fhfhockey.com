@@ -1,8 +1,8 @@
 import { compareDesc } from "date-fns";
 
 import supabase from "lib/supabase";
-import { getTeams } from "pages/api/v1/team/[seasonId]";
 import { RowData } from "pages/lines";
+import { getTeams } from "./server";
 
 type Param = {
   forwards?: boolean;

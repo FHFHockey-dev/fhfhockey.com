@@ -4,7 +4,7 @@ import RadioOptions from "components/RadioOptions";
 import Select from "components/Select";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import useCurrentSeason from "hooks/useCurrentSeason";
-import { Season } from "pages/api/v1/season";
+import { Season } from "lib/NHL/types";
 
 export type TimeOption = "L7" | "L14" | "L30" | "SEASON";
 

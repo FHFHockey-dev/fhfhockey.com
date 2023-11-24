@@ -2,9 +2,9 @@ import React from "react";
 import { NextSeo } from "next-seo";
 
 import TeamStatCard from "../components/TeamStatCard";
-import { fetchNHL } from "../lib/NHL/NHL_API";
 import styles from "../styles/Stats.module.scss";
 import Container from "components/Layout/Container";
+import { getTeams } from "lib/NHL/server";
 
 type Team = {
   abbreviation: string;
@@ -37,12 +37,7 @@ function Stats({ teams }: StatsProps) {
 }
 
 export async function getStaticProps() {
-  const teams = (await fetchNHL("/teams").then((res) => res.teams)).map(
-    ({ abbreviation, name }: Team) => ({
-      abbreviation,
-      name,
-    })
-  ) as Team[];
+  const teams = await getTeams();
 
   // sort the teams in alphabetical order
   teams.sort((a, b) => a.name.localeCompare(b.name));
