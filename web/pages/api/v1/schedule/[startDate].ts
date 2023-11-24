@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { get } from "lib/NHL/base";
 import calcWinOdds from "components/GameGrid/utils/calcWinOdds";
-import { Team, getTeams } from "../team";
+import { Team, getTeams } from "../team/[seasonId]";
 
 type GameWeek = {
   date: string;

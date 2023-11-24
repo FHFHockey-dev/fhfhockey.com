@@ -1,5 +1,5 @@
 import { getTeams } from "lib/NHL/API";
-import { Team } from "pages/api/v1/team";
+import { Team } from "pages/api/v1/team/[seasonId]";
 import { useEffect, useMemo, useState } from "react";
 
 export default function useTeams() {

@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { restGet } from "lib/NHL/base";
-import { getCurrentSeason } from "./season";
+import { getCurrentSeason } from "../../season";
 
 export type Team = {
   /**
@@ -27,6 +27,9 @@ export function getTeamLogo(teamName: string) {
  * @returns
  */
 export async function getTeams(seasonId?: number): Promise<Team[]> {
+  if (seasonId === undefined) {
+    seasonId = (await getCurrentSeason()).seasonId;
+  }
   const { data: allTeams } = await restGet("/team");
   const { data: currentSeasonTeams } = await restGet(
     `/team/summary?cayenneExp=seasonId=${seasonId}`
@@ -49,8 +52,16 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Team[]>
 ) {
-  const { seasonId: currentSeasonId } = await getCurrentSeason();
-  const data = await getTeams(currentSeasonId);
+  const { seasonId } = req.query;
+  if (seasonId === undefined) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Season id is required" });
+  }
+
+  const data = await getTeams(
+    seasonId === "current" ? undefined : Number(seasonId)
+  );
 
   res.setHeader("Cache-Control", "max-age=86400");
   res.status(200).json(data);

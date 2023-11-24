@@ -2,7 +2,7 @@ import { Player } from "pages/api/v1/player/[id]";
 import { PlayerGameLog } from "pages/api/v1/player/[id]/game-log/[season]/[type]";
 import { ScheduleData } from "pages/api/v1/schedule/[startDate]";
 import { Season } from "pages/api/v1/season";
-import { Team } from "pages/api/v1/team";
+import { Team } from "pages/api/v1/team/[seasonId]";
 
 const isBrowser = typeof window !== "undefined";
 
@@ -28,8 +28,8 @@ export async function getCurrentSeason(): Promise<Season> {
   return await get("/season");
 }
 
-export async function getTeams(): Promise<Team[]> {
-  return await get("/team");
+export async function getTeams(seasonId?: number): Promise<Team[]> {
+  return await get(`/team/${seasonId ?? "current"}`);
 }
 
 /**

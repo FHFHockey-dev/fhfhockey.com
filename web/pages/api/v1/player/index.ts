@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { differenceInYears } from "date-fns";
 import { get } from "lib/NHL/base";
-import { getTeams } from "../team";
+import { getTeams } from "../team/[seasonId]";
 import type { Player } from "./[id]";
 
 async function getAllPlayers() {

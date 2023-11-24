@@ -22,7 +22,7 @@ import TeamColorProvider, { useTeamColor } from "contexts/TeamColorContext";
 import styles from "./[abbreviation].module.scss";
 import useScreenSize from "hooks/useScreenSize";
 import { getCurrentSeason, getGameLogs, getPlayer } from "lib/NHL/API";
-import { getTeamLogo, getTeams } from "pages/api/v1/team";
+import { getTeamLogo, getTeams } from "pages/api/v1/team/[seasonId]";
 
 export type PlayerBasic = {
   playerId: number;
