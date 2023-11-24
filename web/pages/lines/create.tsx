@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import type { GetStaticProps } from "next";
-import { fetchNHL } from "lib/NHL/NHL_API";
 
 import Container from "components/Layout/Container";
 import PageTitle from "components/PageTitle";

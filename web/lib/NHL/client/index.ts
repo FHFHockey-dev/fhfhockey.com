@@ -23,7 +23,6 @@ async function get<T = any>(path: string): Promise<T> {
 export async function getCurrentSeason(): Promise<Season> {
   return await get("/season");
 }
-
 export async function getTeams(seasonId?: number): Promise<Team[]> {
   return await get(`/team/${seasonId ?? "current"}`);
 }
