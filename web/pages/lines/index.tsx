@@ -11,13 +11,8 @@ import arrowDown from "public/pictures/arrow-down-white.png";
 
 import Container from "components/Layout/Container";
 import getLineChanges, { isPromotion } from "lib/NHL/getLineChanges";
+import type { Team } from "lib/NHL/types";
 import styles from "styles/Lines.module.scss";
-
-export type Team = {
-  logo: string;
-  name: string;
-  abbreviation: string;
-};
 
 export type RowData = {
   playerId: number;
