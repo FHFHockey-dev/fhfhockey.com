@@ -1,6 +1,6 @@
-import { getTeams } from "lib/NHL/API";
-import { Team } from "lib/NHL/types";
 import { useEffect, useMemo, useState } from "react";
+import { getTeams } from "lib/NHL/client";
+import { Team } from "lib/NHL/types";
 
 export default function useTeams() {
   const [teams, setTeams] = useState<Team[]>([]);

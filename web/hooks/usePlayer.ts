@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { getPlayer } from "lib/NHL/API";
 import type { Player } from "lib/NHL/types";
+import { getPlayer } from "lib/NHL/client";
 
 export default function usePlayer(playerId: number | undefined) {
   const [player, setPlayer] = useState<Player | null>(null);
