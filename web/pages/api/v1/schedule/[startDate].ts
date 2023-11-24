@@ -128,5 +128,6 @@ export default async function handler(
 ) {
   const { startDate } = req.query;
   const data = await getSchedule(startDate as string);
+  res.setHeader("Cache-Control", "max-age=600");
   res.status(200).json(data);
 }
