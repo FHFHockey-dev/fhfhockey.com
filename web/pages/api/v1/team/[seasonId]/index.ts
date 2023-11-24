@@ -54,9 +54,12 @@ export default async function handler(
 ) {
   const { seasonId } = req.query;
   if (seasonId === undefined) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Season id is required" });
+    return (
+      res
+        .status(400)
+        // @ts-expect-error
+        .json({ success: false, message: "Season id is required" })
+    );
   }
 
   const data = await getTeams(

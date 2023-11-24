@@ -19,7 +19,8 @@ async function get<T = any>(path: string): Promise<T> {
   try {
     return await fetch(url).then((res) => res.json());
   } catch (e: any) {
-    console.log(url, e);
+    console.error(url, e);
+    // @ts-expect-error
     return null;
   }
 }
