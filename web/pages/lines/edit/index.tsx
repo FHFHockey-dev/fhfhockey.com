@@ -4,10 +4,9 @@ import { compareDesc } from "date-fns";
 
 import { Button } from "@mui/material";
 import Container from "components/Layout/Container";
-import { fetchNHL } from "lib/NHL/NHL_API";
 import supabase from "lib/supabase";
-import type { Team } from "..";
 import PageTitle from "components/PageTitle";
+import { getTeams } from "lib/NHL/client";
 
 import styles from "./index.module.scss";
 
@@ -84,13 +83,7 @@ function Row({
 }
 
 async function getLineUps() {
-  const teams: Team[] = ((await fetchNHL("/teams")).teams as any[])
-    .map((team) => ({
-      name: team.name,
-      abbreviation: team.abbreviation,
-      logo: "",
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const teams = (await getTeams()).sort((a, b) => a.name.localeCompare(b.name));
 
   const allTeamLineUps = (
     await Promise.all(
