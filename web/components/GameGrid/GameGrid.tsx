@@ -23,9 +23,9 @@ import {
   previousMonday,
   format,
 } from "date-fns";
-import { DAY_ABBREVIATION, WeekData } from "pages/api/v1/schedule/[startDate]";
 import { useTeamsMap } from "hooks/useTeams";
 import GameGridContext from "./contexts/GameGridContext";
+import { DAY_ABBREVIATION, WeekData } from "lib/NHL/types";
 
 function GameGridInteral() {
   const router = useRouter();

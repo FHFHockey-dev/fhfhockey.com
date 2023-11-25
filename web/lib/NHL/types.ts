@@ -52,3 +52,28 @@ export type Season = {
   seasonEndDate: string;
   numberOfGames: number;
 };
+
+export const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
+export type DAY_ABBREVIATION = typeof DAYS[number];
+
+export type GameData = {
+  id: number;
+  season: number;
+  homeTeam: { id: number; score: number; winOdds: number };
+  awayTeam: { id: number; score: number; winOdds: number };
+};
+
+export type WeekData = {
+  MON?: GameData;
+  TUE?: GameData;
+  WED?: GameData;
+  THU?: GameData;
+  FRI?: GameData;
+  SAT?: GameData;
+  SUN?: GameData;
+};
+
+export type ScheduleData = {
+  data: Record<number, WeekData>;
+  numGamesPerDay: number[];
+};

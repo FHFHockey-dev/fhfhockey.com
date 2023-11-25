@@ -1,6 +1,15 @@
+import calcWinOdds from "components/GameGrid/utils/calcWinOdds";
 import { differenceInYears } from "date-fns";
 import { get, restGet } from "lib/NHL/base";
-import type { Player, PlayerGameLog, Season, Team } from "lib/NHL/types";
+import {
+  DAYS,
+  DAY_ABBREVIATION,
+  Player,
+  PlayerGameLog,
+  ScheduleData,
+  Season,
+  Team,
+} from "lib/NHL/types";
 
 export async function getPlayerGameLog(
   id: number | string,
@@ -135,4 +144,97 @@ export async function getAllPlayers() {
   }));
 
   return players;
+}
+
+async function getTeamsMap(): Promise<Record<number, Team>> {
+  const teams = await getTeams();
+  const map: any = {};
+  teams.forEach((team) => {
+    map[team.id] = team;
+  });
+  return map;
+}
+
+type GameWeek = {
+  date: string;
+  dayAbbrev: DAY_ABBREVIATION;
+  numberOfGames: number;
+  games: {
+    id: number;
+    season: number;
+    awayTeam: {
+      id: number;
+      abbrev: string;
+      score: number;
+    };
+    homeTeam: {
+      id: number;
+      abbrev: string;
+      score: number;
+    };
+  }[];
+}[];
+
+/**
+ *
+ * @param startDate e.g., 2023-11-06
+ * @returns
+ */
+export async function getSchedule(startDate: string) {
+  const { gameWeek } = await get<{ gameWeek: GameWeek }>(
+    `/schedule/${startDate}`
+  );
+  const teams = await getTeamsMap();
+  const TEAM_DAY_DATA: ScheduleData["data"] = {};
+  const numGamesPerDay: number[] = [];
+  const result = {
+    data: TEAM_DAY_DATA,
+    numGamesPerDay,
+  };
+
+  // Get number of games per day
+  DAYS.forEach((item) => {
+    numGamesPerDay.push(
+      gameWeek.find((day) => day.dayAbbrev === item)?.numberOfGames ?? 0
+    );
+  });
+
+  const tasksForOneWeek = gameWeek.map((day) => async () => {
+    const tasksForOneDay = day.games.map((game) => async () => {
+      const { homeTeam, awayTeam } = game;
+      const gameData = {
+        id: game.id,
+        season: game.season,
+        homeTeam: {
+          id: homeTeam.id,
+          score: homeTeam.score,
+          winOdds: await calcWinOdds(
+            teams[homeTeam.id].name,
+            teams[awayTeam.id].name,
+            game.season
+          ),
+        },
+        awayTeam: {
+          id: awayTeam.id,
+          score: awayTeam.score,
+          winOdds: await calcWinOdds(
+            teams[awayTeam.id].name,
+            teams[homeTeam.id].name,
+            game.season
+          ),
+        },
+      };
+
+      if (!TEAM_DAY_DATA[homeTeam.id]) TEAM_DAY_DATA[homeTeam.id] = {};
+      TEAM_DAY_DATA[homeTeam.id][day.dayAbbrev] = gameData;
+
+      if (!TEAM_DAY_DATA[awayTeam.id]) TEAM_DAY_DATA[awayTeam.id] = {};
+      TEAM_DAY_DATA[awayTeam.id][day.dayAbbrev] = gameData;
+    });
+    await Promise.all(tasksForOneDay.map((task) => task()));
+  });
+
+  await Promise.all(tasksForOneWeek.map((task) => task()));
+
+  return result;
 }

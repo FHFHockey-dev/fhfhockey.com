@@ -1,5 +1,10 @@
-import { ScheduleData } from "pages/api/v1/schedule/[startDate]";
-import type { Player, PlayerGameLog, Season, Team } from "../types";
+import type {
+  Player,
+  PlayerGameLog,
+  ScheduleData,
+  Season,
+  Team,
+} from "lib/NHL/types";
 import { Response } from "pages/api/_types";
 
 const BASE_URL = "/api/v1";

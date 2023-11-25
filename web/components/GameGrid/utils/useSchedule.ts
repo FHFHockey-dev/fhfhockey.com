@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { WeekData } from "pages/api/v1/schedule/[startDate]";
 import { useTeams } from "../contexts/GameGridContext";
 import { getSchedule } from "lib/NHL/client";
+import { WeekData } from "lib/NHL/types";
 
 export type ScheduleArray = (WeekData & { teamId: number })[];
 

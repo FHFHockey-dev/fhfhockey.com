@@ -1,5 +1,5 @@
 import { endOfISOWeek, startOfDay, startOfISOWeek } from "date-fns";
-import { DAY_ABBREVIATION } from "pages/api/v1/schedule/[startDate]";
+import { DAY_ABBREVIATION } from "lib/NHL/types";
 
 /**
  *

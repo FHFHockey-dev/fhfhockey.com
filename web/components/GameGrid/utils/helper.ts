@@ -1,8 +1,4 @@
-import {
-  DAYS,
-  DAY_ABBREVIATION,
-  WeekData,
-} from "pages/api/v1/schedule/[startDate]";
+import { DAYS, DAY_ABBREVIATION, WeekData } from "lib/NHL/types";
 
 /**
  * Test if the match up exist.

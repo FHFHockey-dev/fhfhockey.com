@@ -1,10 +1,10 @@
 import Image from "next/image";
 import { formatWinOdds } from "./utils/calcWinOdds";
 import { formatWeekScore } from "./utils/calcWeekScore";
-import { DAYS, GameData, WeekData } from "pages/api/v1/schedule/[startDate]";
 import { useTeam } from "./contexts/GameGridContext";
 
 import styles from "./GameGrid.module.scss";
+import { DAYS, GameData, WeekData } from "lib/NHL/types";
 
 export type MatchUpCellData = {
   home: boolean;

@@ -1,4 +1,4 @@
-import { DAYS } from "pages/api/v1/schedule/[startDate]";
+import { DAYS } from "lib/NHL/types";
 import { ScheduleArray } from "./useSchedule";
 
 const cache: any = {};

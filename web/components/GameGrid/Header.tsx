@@ -8,7 +8,7 @@ import {
 } from "./utils/date-func";
 import Switch from "./Switch";
 import Toggle from "./Toggle";
-import { DAY_ABBREVIATION } from "pages/api/v1/schedule/[startDate]";
+import { DAY_ABBREVIATION } from "lib/NHL/types";
 
 type HeaderProps = {
   start: string;
