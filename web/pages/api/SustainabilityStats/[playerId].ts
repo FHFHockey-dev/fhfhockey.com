@@ -4,8 +4,8 @@ import { parse } from "node-html-parser";
 import fetchWithCache from "lib/fetchWithCache";
 import { Data, parseTable } from "../CareerAverages/[playerId]";
 import { Input } from "../toi";
-import { fetchNHL } from "lib/NHL/NHL_API";
 import { parseTime } from "lib/NHL/TOI";
+import { getPlayer } from "lib/NHL/server";
 
 type Response = {
   message: string;
@@ -55,15 +55,11 @@ async function getStats(
   StartTime: string | null,
   EndTime: string | null
 ): Promise<Data> {
-  const player = await fetchNHL(`/people/${playerId}`).then(
-    ({ people }) => people[0]
-  );
+  const player = await getPlayer(Number(playerId));
 
   // NST's team abbreviation
-  const team = player.active
-    ? NST_TEAM_ABBREVATION[player.currentTeam.name]
-    : "";
-  if (!player.active) {
+  const team = player?.teamId ? NST_TEAM_ABBREVATION[player.teamName] : "";
+  if (!player?.teamId) {
     throw new Error("The player is not active " + JSON.stringify(player));
   }
 
