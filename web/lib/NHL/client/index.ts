@@ -60,6 +60,8 @@ export async function getGameLogs(
   }
 }
 
-export async function getAllPlayers(): Promise<Player[]> {
-  return await get("/player");
+export async function getAllPlayers(seasonId?: number): Promise<Player[]> {
+  const query = new URLSearchParams();
+  seasonId !== undefined && query.append("season", seasonId.toString());
+  return await get(`/player?${query.toString()}`);
 }

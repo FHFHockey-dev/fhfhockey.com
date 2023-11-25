@@ -103,8 +103,8 @@ export async function getCurrentSeason(): Promise<Season> {
   };
 }
 
-export async function getAllPlayers() {
-  const teams = await getTeams();
+export async function getAllPlayers(seasonId?: number) {
+  const teams = await getTeams(seasonId);
   const tasks = teams.map((team) => async () => {
     try {
       const { forwards, defensemen, goalies } = await get(
