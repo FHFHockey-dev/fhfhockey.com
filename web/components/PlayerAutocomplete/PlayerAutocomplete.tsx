@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { createFilterOptions, useAutocomplete } from "@mui/material";
-import usePlayers, { Player } from "hooks/usePlayers";
+import usePlayers from "hooks/usePlayers";
 
 import styles from "./PlayerAutocomplete.module.scss";
 import classNames from "classnames";
+import type { Player } from "lib/NHL/types";
 
 type PlayerAutocompleteProps = {
   playerId: number | undefined;
   onPlayerIdChange?: React.Dispatch<React.SetStateAction<number | undefined>>;
-  onPlayerChange?: (player: Player["person"] | null) => void;
+  onPlayerChange?: (player: Player | null) => void;
   inputClassName?: string;
   listClassName?: string;
   showButton?: boolean;
@@ -25,9 +26,7 @@ function PlayerAutocomplete({
 }: PlayerAutocompleteProps) {
   const players = usePlayers();
   //   const [playerId, setPlayerId] = useState<number>();
-  const [playerOption, setPlayerOption] = useState<Player["person"] | null>(
-    null
-  );
+  const [playerOption, setPlayerOption] = useState<Player | null>(null);
 
   const {
     getRootProps,
@@ -39,7 +38,7 @@ function PlayerAutocomplete({
   } = useAutocomplete({
     id: "use-autocomplete-players",
     options: players,
-    getOptionLabel: (option) => `${option.fullName} (${option.primaryNumber})`,
+    getOptionLabel: (option) => `${option.fullName} (${option.sweaterNumber})`,
     isOptionEqualToValue: (option, value) => option.id === value.id,
     value: playerOption,
     onChange: (e, newValue, reason) => {
@@ -95,7 +94,7 @@ function PlayerAutocomplete({
         <ul {...getListboxProps()} className={listClassName}>
           {(groupedOptions as typeof players).map((option, index) => (
             <li {...getOptionProps({ option, index })} key={option.id}>
-              {`${option.fullName} (${option.primaryNumber ?? "unknown"})`}
+              {`${option.fullName} (${option.sweaterNumber ?? "unknown"})`}
             </li>
           ))}
         </ul>

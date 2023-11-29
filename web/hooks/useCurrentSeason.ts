@@ -1,21 +1,12 @@
-import { fetchNHL } from "lib/NHL/NHL_API";
 import { useEffect, useState } from "react";
-
-export type Season = {
-  seasonId: string;
-  regularSeasonStartDate: string;
-  regularSeasonEndDate: string;
-  seasonEndDate: string;
-  numberOfGames: number;
-};
+import { Season } from "lib/NHL/types";
+import { getCurrentSeason } from "lib/NHL/client";
 
 export default function useCurrentSeason() {
   const [season, setSeason] = useState<Season>();
 
   useEffect(() => {
-    fetchNHL("/seasons/current").then((data) => {
-      setSeason(data.seasons[0]);
-    });
+    getCurrentSeason().then((data) => setSeason(data));
   }, []);
 
   return season;

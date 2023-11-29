@@ -8,14 +8,22 @@ import {
 } from "./utils/date-func";
 import Switch from "./Switch";
 import Toggle from "./Toggle";
-import { Day } from "./GameGrid";
+import { DAY_ABBREVIATION } from "pages/api/v1/schedule/[startDate]";
 
 type HeaderProps = {
   start: string;
   end: string;
-  setSortKeys: Dispatch<SetStateAction<{ key: string; ascending: boolean }[]>>;
-  excludedDays: Day[];
-  setExcludedDays: React.Dispatch<React.SetStateAction<Day[]>>;
+  setSortKeys: Dispatch<
+    SetStateAction<
+      {
+        key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
+
+        ascending: boolean;
+      }[]
+    >
+  >;
+  excludedDays: DAY_ABBREVIATION[];
+  setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>;
 };
 
 function Header({
@@ -114,8 +122,8 @@ function Header({
 function getDayColumns(
   start: string,
   end: string,
-  excludedDays: Day[],
-  setExcludedDays: React.Dispatch<React.SetStateAction<Day[]>>
+  excludedDays: DAY_ABBREVIATION[],
+  setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>
 ) {
   const startDate = new Date(start);
   const endDate = new Date(end);

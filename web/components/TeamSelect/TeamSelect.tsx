@@ -2,9 +2,9 @@ import React, { useRef } from "react";
 import Image from "next/image";
 import classNames from "classnames";
 
-import { getTeamLogo } from "hooks/usePlayer";
 import ARROW from "public/pictures/arrow.svg";
 import styles from "./TeamSelect.module.scss";
+import { getTeamLogo } from "lib/NHL/server";
 
 type TeamSelectProps = {
   className?: string;

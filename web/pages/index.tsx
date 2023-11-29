@@ -38,7 +38,7 @@ const Home: NextPage = () => {
       <Banner className={styles.socialMedia}>
         <SocialMedias />
       </Banner>
-      <Homepage />
+      {/* <Homepage /> */}
     </Container>
   );
 };

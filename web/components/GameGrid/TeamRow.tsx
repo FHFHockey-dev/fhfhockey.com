@@ -1,6 +1,8 @@
 import Image from "next/image";
 import { formatWinOdds } from "./utils/calcWinOdds";
 import { formatWeekScore } from "./utils/calcWeekScore";
+import { DAYS, GameData, WeekData } from "pages/api/v1/schedule/[startDate]";
+import { useTeam } from "./contexts/GameGridContext";
 
 import styles from "./GameGrid.module.scss";
 
@@ -46,29 +48,42 @@ export type TeamRowData = {
   [key: string]: any;
 };
 
-export const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
+type TeamRowProps = {
+  teamId: number;
+  totalGamesPlayed: number;
+  totalOffNights: number;
+  weekScore: number;
+} & WeekData;
 
-function TeamRow(props: TeamRowData) {
+function TeamRow(props: TeamRowProps) {
+  const team = useTeam(props.teamId);
+
   return (
     <tr className={styles.teamRow}>
       {/* Team Name */}
       <td>
-        <span className={styles.teamName}>{props.teamName}</span>
-        <span className={styles.teamAbbreviation}>
-          {props.teamAbbreviation}
-        </span>
+        <span className={styles.teamName}>{team.name}</span>
+        <span className={styles.teamAbbreviation}>{team.abbreviation}</span>
       </td>
       {/* Days */}
       {DAYS.map((day) => {
-        // @ts-ignore
-        const cellData = props[day] as MatchUpCellData | undefined;
-        const hasMatchUp_ = cellData && hasMatchUp(cellData);
+        const matchUp = props[day];
+        const hasMatchUp_ = matchUp !== undefined;
         return (
           <td
             key={day}
-            style={cellData?.offNight ? { backgroundColor: "#505050" } : {}}
+            // style={cellData?.offNight ? { backgroundColor: "#505050" } : {}}
           >
-            {hasMatchUp_ ? <MatchUpCell key={day} {...cellData} /> : "-"}
+            {hasMatchUp_ ? (
+              <MatchUpCell
+                key={day}
+                home={matchUp.homeTeam.id === props.teamId}
+                homeTeam={matchUp.homeTeam}
+                awayTeam={matchUp.awayTeam}
+              />
+            ) : (
+              "-"
+            )}
           </td>
         );
       })}
@@ -85,27 +100,28 @@ function TeamRow(props: TeamRowData) {
   );
 }
 
-function MatchUpCell({
-  home,
-  away,
-  win,
-  loss,
-  logo,
-  opponentName,
-  score,
-  winOdds,
-}: MatchUpCellData) {
+type MatchUpCellProps = {
+  home: boolean;
+} & Pick<GameData, "homeTeam" | "awayTeam">;
+
+function MatchUpCell({ home, homeTeam, awayTeam }: MatchUpCellProps) {
+  const us = home ? homeTeam : awayTeam;
+  const opponent = home ? awayTeam : homeTeam;
+  const opponentTeam = useTeam(opponent.id);
+  const hasResult = us.score !== undefined && opponent.score !== undefined;
   let text = "";
   let stat = "";
+
   // game with result
-  if (win || loss) {
+  if (hasResult) {
+    const win = us.score > opponent.score;
     text = win ? "WIN" : "LOSS";
-    stat = score;
+    stat = `${us.score}-${opponent.score}`;
   }
   // game without result, display home/away
   else {
     text = home ? "HOME" : "AWAY";
-    stat = formatWinOdds(winOdds ?? 0);
+    stat = formatWinOdds(us.winOdds ?? 0);
   }
 
   return (
@@ -125,24 +141,14 @@ function MatchUpCell({
       </div>
       <Image
         objectFit="contain"
-        alt={`${opponentName} logo`}
+        alt={`${opponentTeam.name} logo`}
         width={30}
         height={30}
-        src={logo}
-        title={opponentName}
+        src={opponentTeam.logo}
+        title={opponentTeam.name}
       />
     </div>
   );
-}
-
-/**
- * Test if the match up exist.
- * If a match up does not exist, then its home and away will both be false.
- * @param matchUp A match up.
- * @returns true if the match up exist, otherwise false.
- */
-function hasMatchUp(matchUp: MatchUpCellData) {
-  return matchUp?.away || matchUp?.home;
 }
 
 export default TeamRow;

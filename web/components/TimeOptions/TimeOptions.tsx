@@ -3,7 +3,8 @@ import React, { Dispatch, SetStateAction } from "react";
 import RadioOptions from "components/RadioOptions";
 import Select from "components/Select";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
-import useCurrentSeason, { Season } from "hooks/useCurrentSeason";
+import useCurrentSeason from "hooks/useCurrentSeason";
+import { Season } from "lib/NHL/types";
 
 export type TimeOption = "L7" | "L14" | "L30" | "SEASON";
 
@@ -49,10 +50,8 @@ function TimeOptions({ timeOption, setTimeOption, ...rest }: TimeOptionsProps) {
 }
 
 function getSeasonLable(season: Season) {
-  const seasonLabel = `${season?.seasonId.slice(0, 4)}/${season?.seasonId.slice(
-    6,
-    8
-  )}`;
+  const id = season.seasonId.toString();
+  const seasonLabel = `${id.slice(0, 4)}/${id.slice(6, 8)}`;
 
   return seasonLabel;
 }

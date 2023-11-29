@@ -1,8 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
-// @ts-ignore
 
-import usePlayer, { Player } from "hooks/usePlayer";
+import usePlayer from "hooks/usePlayer";
 import styles from "./PlayerBioCard.module.scss";
+import type { Player } from "lib/NHL/types";
 
 type PlayerStatsCardProps = {
   /**
@@ -17,37 +17,51 @@ const STATS = [
   { label: "Age", key: "age" },
   { label: "Height", key: "height" },
   { label: "Weight", key: "weight" },
-  { label: "Shoots", key: "shoots" },
-];
+  // { label: "Shoots", key: "shoots" },
+] as const;
 
 const PLACEHOLDER: Player = {
-  name: "Select Player",
   image: "",
   teamName: "",
   teamAbbreviation: "",
   teamLogo: "",
   weight: 0,
   age: 0,
-  height: "0",
-  shoots: "0",
-  position: "Center",
+  height: 0,
+  positionCode: "Center",
+  id: 0,
+  fullName: "",
+  firstName: "Timothy",
+  lastName: "Branson",
+  sweaterNumber: 0,
+  teamId: 0,
 };
 
 function PlayerStatsCard({
   playerId,
   onPlayerImageClick,
 }: PlayerStatsCardProps) {
-  const player = usePlayer(playerId) ?? PLACEHOLDER;
-  const { name, image, teamName, teamAbbreviation, position, teamLogo } =
-    player;
-  const [firstName, ...lastName] = name.split(" ");
+  let player = usePlayer(playerId);
+  if (player === null) {
+    player = PLACEHOLDER;
+  }
+  const {
+    fullName,
+    firstName,
+    lastName,
+    image,
+    teamName,
+    teamAbbreviation,
+    positionCode,
+    teamLogo,
+  } = player;
 
   return (
     <section className={styles.playerCard}>
       <div className={styles.info}>
         <div className={styles.names}>
           <span className={styles.firstName}>{firstName}</span>
-          <span className={styles.lastName}>{lastName.join(" ")}</span>
+          <span className={styles.lastName}>{lastName}</span>
         </div>
 
         <div className={styles.teamLogo} title={teamName}>
@@ -63,7 +77,9 @@ function PlayerStatsCard({
           {STATS.map((stat) => (
             <li key={stat.key}>
               <span className={styles.label}>{stat.label}:</span>
-              <span className={styles.value}>{player[stat.key]}</span>
+              <span className={styles.value}>
+                {player === null ? "" : player[stat.key]}
+              </span>
             </li>
           ))}
         </ul>
@@ -73,18 +89,18 @@ function PlayerStatsCard({
             {teamAbbreviation || "FHFH"}
           </div>
 
-          <div className={styles.position}>{position}</div>
+          <div className={styles.position}>{positionCode}</div>
         </div>
       </div>
 
       <div
         className={styles.playerImageWrapper}
-        onClick={() => onPlayerImageClick && onPlayerImageClick(name)}
+        onClick={() => onPlayerImageClick && onPlayerImageClick(fullName)}
       >
         <img
           style={{ objectFit: "cover" }}
           src={image || "/pictures/player-placeholder.jpg"}
-          alt={name}
+          alt={fullName}
           width="100%"
           height="100%"
         />

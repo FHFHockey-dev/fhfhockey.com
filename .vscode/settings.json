@@ -1,4 +1,5 @@
 {
   "editor.formatOnSave": true,
-  "eslint.workingDirectories": ["web", "cms"]
+  "eslint.workingDirectories": ["web", "cms"],
+  "cSpell.words": ["defensemen", "fhfhockey", "headshot", "plusminus"]
 }

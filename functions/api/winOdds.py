@@ -29,8 +29,10 @@ class handler(BaseHTTPRequestHandler):
         
     return
 
-
+cache = {}
 def fetch_data(season_id):
+    if season_id in cache:
+        return cache[season_id]
     # seasonId<=20212022 and seasonId>=20212022
     start_season_id = season_id
     end_season_id = season_id
@@ -56,6 +58,7 @@ def fetch_data(season_id):
 
     df["O-Strength"] = df["goalsForPerGame"] / df["goalsForPerGame"].mean()
     df["D-Strength"] = df["goalsAgainstPerGame"] / df["goalsAgainstPerGame"].mean()
+    cache[season_id] = df
     return df
 
 
@@ -129,7 +132,8 @@ def get_game_scores(home_team, away_team,season_id):
     return json.dumps({
         "winOdds":scores[1]
     })
+# from http.server import HTTPServer
 
-# server_address = ('127.0.0.1', 4000)
+# server_address = ('0.0.0.0', 3003)
 # httpd = HTTPServer(server_address, handler)
 # httpd.serve_forever() 

@@ -1,11 +1,9 @@
-import { Day } from "./GameGrid";
-import { DAYS } from "./TeamRow";
-
+import { DAYS, DAY_ABBREVIATION } from "pages/api/v1/schedule/[startDate]";
 import styles from "./GameGrid.module.scss";
 
 type TotalGamesPerDayRowProps = {
   games: number[];
-  excludedDays: Day[];
+  excludedDays: DAY_ABBREVIATION[];
 };
 
 function TotalGamesPerDayRow({
@@ -36,7 +34,7 @@ function TotalGamesPerDayRow({
  * @param excludedDays The days to be ignored.
  * @returns The number of games played in the week.
  */
-export function calcTotalGP(games: number[], excludedDays: Day[]) {
+export function calcTotalGP(games: number[], excludedDays: DAY_ABBREVIATION[]) {
   let total = 0;
   // ["Fri","Tue"] => [4, 1]
   const excludedDaysIdx = excludedDays.map((day) => DAYS.indexOf(day));
@@ -55,7 +53,7 @@ export function calcTotalGP(games: number[], excludedDays: Day[]) {
  * @param games A list of num games played.
  * @returns The number of off-night games for the week.
  */
-function calcTotalOffNights(games: number[], excludedDays: Day[]) {
+function calcTotalOffNights(games: number[], excludedDays: DAY_ABBREVIATION[]) {
   let total = 0;
   // ["Fri","Tue"] => [4, 1]
   const excludedDaysIdx = excludedDays.map((day) => DAYS.indexOf(day));
