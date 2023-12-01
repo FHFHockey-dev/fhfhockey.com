@@ -26,6 +26,7 @@ export type PlayerGameLog = {
   powerPlayGoals: number;
   powerPlayPoints: number;
   shots: number;
+  pim: number;
   toi: string;
 };
 
@@ -76,4 +77,15 @@ export type WeekData = {
 export type ScheduleData = {
   data: Record<number, WeekData>;
   numGamesPerDay: number[];
+};
+
+export type PercentileRank = {
+  Goals: number | null;
+  Assists: number | null;
+  PPP: number | null;
+  Hits: number | null;
+  Blocks: number | null;
+  PIM: number | null;
+  Shots: number | null;
+  PlusMinus: number | null;
 };

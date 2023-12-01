@@ -238,3 +238,5 @@ export async function getSchedule(startDate: string) {
 
   return result;
 }
+
+export async function getPlayerPercentileRank() {}
