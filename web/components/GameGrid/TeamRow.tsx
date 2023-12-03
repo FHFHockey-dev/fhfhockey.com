@@ -55,6 +55,21 @@ type TeamRowProps = {
   weekScore: number;
 } & WeekData;
 
+function getGamesPlayedClass(totalGamesPlayed: number): string {
+  if (totalGamesPlayed <= 1) return styles.redBorder;
+  if (totalGamesPlayed === 2) return styles.orangeBorder;
+  if (totalGamesPlayed === 3) return styles.yellowBorder;
+  return styles.greenBorder;
+}
+
+function getOffNightsClass(totalOffNights: number): string {
+  if (totalOffNights === 0) return styles.redBorder;
+  if (totalOffNights === 1) return styles.orangeBorder;
+  if (totalOffNights === 2) return styles.yellowBorder;
+  return styles.greenBorder;
+}
+
+
 function TeamRow(props: TeamRowProps) {
   const team = useTeam(props.teamId);
 
@@ -62,7 +77,7 @@ function TeamRow(props: TeamRowProps) {
     <tr className={styles.teamRow}>
       {/* Team Name */}
       <td>
-        <span className={styles.teamName}>{team.name}</span>
+        <span className={styles.teamName}>{team.abbreviation}</span>
         <span className={styles.teamAbbreviation}>{team.abbreviation}</span>
       </td>
       {/* Days */}
@@ -89,9 +104,13 @@ function TeamRow(props: TeamRowProps) {
       })}
 
       {/* Total Games Played */}
-      <td>{props.totalGamesPlayed}</td>
+      <td className={getGamesPlayedClass(props.totalGamesPlayed)}>
+        {props.totalGamesPlayed}
+      </td>
       {/* Total Off-Nights */}
-      <td>{props.totalOffNights}</td>
+      <td className={getOffNightsClass(props.totalOffNights)}>
+        {props.totalOffNights}
+      </td>
       {/* Week Score */}
       <td>
         {props.weekScore === -100 ? "-" : formatWeekScore(props.weekScore)}
@@ -126,24 +145,19 @@ function MatchUpCell({ home, homeTeam, awayTeam }: MatchUpCellProps) {
 
   return (
     <div style={{ display: "flex", justifyContent: "space-between" }}>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          marginRight: "4px",
-        }}
-      >
+      <div className={styles.scoreAndHomeAway}>
         <span className={styles.homeAway}>{text}</span>
         <p className={styles.score}>{stat}</p>
       </div>
-      <div style={{ margin: "auto", fontSize: "0.5rem" }}>
+      <div className={`${styles.hideOnMobile}`} style={{ paddingRight: "3px", margin: "auto", fontSize: "0.75rem" }}>
         {home ? "vs." : "@"}
       </div>
       <Image
+        className={`${styles.mobileLogoSize}`}
         objectFit="contain"
         alt={`${opponentTeam.name} logo`}
-        width={30}
-        height={30}
+        width={35}
+        height={35}
         src={opponentTeam.logo}
         title={opponentTeam.name}
       />

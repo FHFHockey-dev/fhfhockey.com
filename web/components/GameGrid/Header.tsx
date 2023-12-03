@@ -1,4 +1,6 @@
 import { Dispatch, SetStateAction, useState } from "react";
+import styles from "./GameGrid.module.scss";
+
 
 import {
   addDays,
@@ -38,14 +40,13 @@ function Header({
   const [weekScore, setWeekScore] = useState(false);
 
   const columns = [
-    { label: "Team Name", id: "teamName" },
+    { label: "Team", id: "teamName" },
     ...getDayColumns(start, end, excludedDays, setExcludedDays),
     {
       label: (
         <>
           GP
           <Switch
-            style={{ marginLeft: "2px" }}
             checked={totalGamesPlayed}
             onClick={() => {
               setTotalGamesPlayed((prev) => !prev);
@@ -66,9 +67,8 @@ function Header({
     {
       label: (
         <>
-          Off-Nights
+          Off
           <Switch
-            style={{ marginLeft: "2px" }}
             checked={totalOffNights}
             onClick={() => {
               setTotalOffNights((prev) => !prev);
@@ -91,8 +91,7 @@ function Header({
         <>
           Score
           <Switch
-            style={{ marginLeft: "2px" }}
-            checked={totalOffNights}
+            checked={weekScore}
             onClick={() => {
               setWeekScore((prev) => !prev);
               setSortKeys((prev) => {
@@ -152,15 +151,17 @@ function getDayColumns(
           {day}
           <br />
           <p
+          className={styles.mobileFontStyle}
             style={{
               whiteSpace: "nowrap",
-              fontSize: "14px",
+              fontFamily: "Tahoma, sans-serif",
+              fontSize: "10px",
               marginBottom: "3px",
-              marginTop: "0px",
+              marginTop: "3px",
             }}
           >
-            {formatDate(current)}
-          </p>
+          {formatDate(current)}
+        </p>
           <Toggle checked={!excludedDays.includes(day)} onChange={onChange} />
         </>
       ),

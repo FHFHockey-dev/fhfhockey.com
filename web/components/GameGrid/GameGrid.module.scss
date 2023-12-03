@@ -54,68 +54,72 @@
 }
 
 .gridWrapper {
-  overflow-x: scroll;
   margin-top: 25px;
 }
 
 .scheduleGrid {
+  margin: 0 auto;
   color: white;
   border: 5px solid #ffffff;
-  border-radius: 8px;
-  font-size: 16px;
+  border-spacing: 0px;
+  font-size: 14px;
   text-align: left;
-  width: 100%;
+  width: 80%;
 }
 
 .scheduleGrid th {
   flex: content;
   align-content: center;
   border-collapse: collapse;
-  background-color: #07aae2;
+  background-color: #101010;
   color: white;
-  text-align: left;
-  font-weight: bold;
-  border-radius: 4px;
-  border-bottom: 7px solid black;
-  border-right: 7px solid black;
-  font-family: monospace;
-  height: 20px;
+  font-weight: 900;
+  font-family: roboto condensed, sans-serif;
+  font-size: 14px;
+  height: 15px;
 }
+
 
 .scheduleGrid tr th:first-child,
 .scheduleGrid tr td:first-child {
   height: 12px;
   border-collapse: collapse;
-  font-weight: bold;
   width: 185px;
-  border-right: 10px solid #07aae2;
-  border-radius: 4px;
+  border-right: 5px solid #07aae2;
   text-align: left;
   padding: 10px;
-  font-size: 14px;
-  font-family: monospace;
+  font-size: 16px;
+  font-family: roboto condensed, sans-serif;
 }
 
 .scheduleGrid tr th:first-child {
   border-collapse: collapse;
-  background: #07aae2;
+  background: #000;
   text-align: left;
-  font-family: monospace;
-  font-size: 16px;
+  font-family: roboto condensed, sans-serif;
+  font-size: 14px;
   height: 20px;
 }
 
 .scheduleGrid th:nth-child(n + 2),
 .scheduleGrid td:nth-child(n + 2) {
   padding: 6px 10px;
-  border: 1px solid white;
-  min-width: 107px;
+  border: .5px solid white;
+  min-width: 85px;
   text-align: center;
 }
 
+.scheduleGrid tr td:nth-child(9),
+.scheduleGrid tr td:nth-child(10),
+.scheduleGrid tr td:nth-child(11) {
+    background-color: #101010; /* Set the background color */
+}
+
+
+
 .scheduleGrid tr {
-  font-family: monospace;
-  height: 30px;
+  font-family: roboto condensed, sans-serif;
+  height: 45px;
   text-align: center;
   border-radius: 4px;
 }
@@ -125,24 +129,24 @@
 }
 
 .scheduleGrid > tbody > tr:nth-of-type(odd) {
-  background-color: #034055;
+  background-color: #101010;
 }
 
 .scheduleGrid tr:hover:nth-of-type(odd) {
   background-color: #505050;
 }
 
-.scheduleGrid tr:last-of-type {
-  border-bottom: 3px solid #07aae2;
-}
 
-.scheduleGrid td:last-of-type {
-  border-left: 10px solid black;
+
+.scoreAndHomeAway {
+  display: flex;
+  flex-direction: column;
+  margin-right: 4px;
 }
 
 .homeAway {
-  font-family: monospace;
-  font-size: 12px;
+  font-family: roboto condensed, sans-serif;
+  font-size: 10px;
   font-weight: bold;
   float: left;
   display: flex;
@@ -152,15 +156,32 @@
 
 .score {
   color: lightblue;
-  font-size: 10px;
+  font-size: 12px;
   margin: 0;
-  margin-top: 3px;
 }
 
 .totalGamesPerDayCell {
-  background-color: rgb(7, 208, 226);
+  background-color: #000;
   color: white;
 }
+
+.greenBorder {
+  background-color: rgb(0, 255, 0, 0.15) !important;
+}
+
+.orangeBorder {
+  background-color: rgb(255, 165, 0, 0.25) !important;
+}
+
+.yellowBorder {
+  background-color: rgb(255, 255, 0, 0.25) !important;
+}
+
+.redBorder {
+  background-color: rgb(255, 0, 0, 0.15) !important;
+}
+
+
 
 .totalGamesPerDayRow > .title::before {
   content: "GP/Day";
@@ -171,6 +192,44 @@
     display: none;
   }
 }
+
+/* Green to Yellow (Ranks 32 to 17) */
+.rank-color-1 { background-color: rgba(0, 255, 0, 0.45); } /* Green */
+.rank-color-2  { background-color: rgba(16, 255, 0, 0.45); }
+.rank-color-3 { background-color: rgba(32, 255, 0, 0.45); }
+.rank-color-4 { background-color: rgba(48, 255, 0, 0.45); }
+.rank-color-5 { background-color: rgba(64, 255, 0, 0.45); }
+.rank-color-6 { background-color: rgba(80, 255, 0, 0.45); }
+.rank-color-7 { background-color: rgba(96, 255, 0, 0.45); }
+.rank-color-8 { background-color: rgba(112, 255, 0, 0.45); }
+.rank-color-9 { background-color: rgba(128, 255, 0, 0.45); }
+.rank-color-10 { background-color: rgba(144, 255, 0, 0.45); }
+.rank-color-11 { background-color: rgba(160, 255, 0, 0.45); }
+.rank-color-12 { background-color: rgba(176, 255, 0, 0.45); }
+.rank-color-13 { background-color: rgba(192, 255, 0, 0.45); }
+.rank-color-14 { background-color: rgba(208, 255, 0, 0.45); }
+.rank-color-15 { background-color: rgba(224, 255, 0, 0.45); }
+.rank-color-16 { background-color: rgba(240, 255, 0, 0.45); } /* Yellow */
+
+/* Yellow to Red (Ranks 17 to 32) */
+.rank-color-17 { background-color: rgba(255, 240, 0, 0.45); }
+.rank-color-18 { background-color: rgba(255, 224, 0, 0.45); }
+.rank-color-19 { background-color: rgba(255, 208, 0, 0.45); }
+.rank-color-20 { background-color: rgba(255, 192, 0, 0.45); }
+.rank-color-21 { background-color: rgba(255, 176, 0, 0.45); }
+.rank-color-22 { background-color: rgba(255, 160, 0, 0.45); }
+.rank-color-23 { background-color: rgba(255, 144, 0, 0.45); }
+.rank-color-24 { background-color: rgba(255, 128, 0, 0.45); }
+.rank-color-25 { background-color: rgba(255, 112, 0, 0.45); }
+.rank-color-26 { background-color: rgba(255, 96, 0, 0.45); }
+.rank-color-27 { background-color: rgba(255, 80, 0, 0.45); }
+.rank-color-28 { background-color: rgba(255, 64, 0, 0.45); }
+.rank-color-29 { background-color: rgba(255, 48, 0, 0.45); }
+.rank-color-30 { background-color: rgba(255, 32, 0, 0.45); }
+.rank-color-31 { background-color: rgba(255, 16, 0, 0.45); }
+.rank-color-32 { background-color: rgba(255, 0, 0, 0.45); } /* Red */
+
+
 
 @media only screen and (min-width: $screen-large) {
   .teamRow {
@@ -183,6 +242,147 @@
   }
 
   .totalGamesPerDayRow > .title::before {
-    content: "Total Games Per Day";
+    content: "GP/Day";
+  }
+}
+
+@media only screen and (min-width: $screen-medium) and (max-width: $screen-large) {
+  .teamRow {
+    .teamName {
+      display: block;
+    }
+    .teamAbbreviation {
+      display: none;
+    }
+  }
+
+  .totalGamesPerDayRow > .title::before {
+    content: "GP/Day";
+  }
+}
+
+@media (max-width: 480px) {
+
+  .dateButtonPrev {
+    font-family: roboto condensed, sans-serif;
+    position: relative;
+    height: 20px;
+    width: 60px;
+    background: #07aae2;
+    color: #ffffff;
+    border: 1px solid white;
+    padding-left: 20px;
+    padding-right: 20px;
+    border-radius: 6px;
+  }
+  
+  .dateButtonNext {
+    font-family: roboto condensed, sans-serif;
+    position: relative;
+    height: 20px;
+    width: 60px;
+    background: #07aae2;
+    color: #ffffff;
+    border: 1px solid white;
+    padding-left: 20px;
+    padding-right: 20px;
+    border-radius: 6px;
+  }
+
+  .scheduleGrid {
+      width: 100%;
+      border: 2px solid white;
+      border-radius: 0;
+      overflow-x: scroll;
+  }
+
+  .scheduleGrid tr {
+    height: 30px;
+  }
+
+  .gridWrapper {
+    width: 100%;
+    margin-top: 20px;
+  }
+
+  .totalGamesPerDayRow {
+    border-bottom: .5px solid white;
+  }
+  
+  .scheduleGrid th {
+      font-family: roboto condensed, sans-serif;
+      position: relative;
+  }
+  
+  .scheduleGrid tr th:first-child,
+  .scheduleGrid tr td:first-child {
+      max-width: 50px;
+      font-size: 10px;
+      border-right: 3px solid #07aae2;
+  }
+
+  
+  .scheduleGrid tr th:nth-child(n + 2),
+  .scheduleGrid td:nth-child(n + 2) {
+      font-family: roboto condensed, sans-serif;
+      padding: 2px 2px;
+      min-width: 30px;
+      text-align: center;
+      font-size: 8px;
+  }
+
+  .scheduleGrid tr th:nth-child(9),
+  .scheduleGrid tr td:nth-child(9) {
+      border-left: 3px solid #07aae2;
+  }
+
+  .scheduleGrid tr th:nth-child(9),
+  .scheduleGrid tr th:nth-child(10),
+  .scheduleGrid tr td:nth-child(9),
+  .scheduleGrid tr td:nth-child(10) {
+    border-right: 1px solid white;
+    border-bottom: 1px solid white;
+  }
+
+  .scoreAndHomeAway {
+    display: none;
+  }
+  
+  .homeAway {
+    display: none;
+  }
+
+  .hideOnMobile {
+    display: none;
+  }
+
+  /* MAGGIE <3 */
+
+  .mobileLogoSize {
+    padding: 2px !important;
+  }
+
+  .mobileFontStyle {
+    font-family: 'Roboto Condensed', sans-serif !important;
+    font-size: 7px !important;
+  }
+  
+  .score {
+    display: none;
+  }
+  
+  .totalGamesPerDayCell {
+      background-color: #000;
+      color: white;
+  }
+  
+  .totalGamesPerDayRow > .title::before {
+      content: "GP/Day";
+  }
+  
+  .teamRow {
+      .teamName {
+      display: none;
+      }
   }
 }

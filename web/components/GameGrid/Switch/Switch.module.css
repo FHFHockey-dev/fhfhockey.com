@@ -1,11 +1,23 @@
 .arrow-up {
-  display: inline-block;
+  display: block;
+  position: absolute;
+  margin-top: 5px;
   width: 0;
   height: 0;
   border-left: 8px solid transparent;
   border-right: 8px solid transparent;
+  border-bottom: 8px solid #07aae2;
+}
 
-  border-bottom: 8px solid black;
+.arrow-down {
+  display: block;
+  position: absolute;
+  margin-top: 5px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid #07aae2;
 }
 
 .arrow-up:hover {
@@ -15,17 +27,28 @@
 .arrow-down:hover {
   cursor: pointer;
 }
-.arrow-down {
-  display: inline-block;
-  width: 0;
-  height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-
-  border-top: 8px solid black;
-}
 
 .disabled {
   border-top-color: gray;
   border-bottom-color: gray;
 }
+
+/* Existing CSS rules... */
+
+@media (max-width: 480px) {
+  .arrow-up, .arrow-down {
+    position: absolute;
+    left: 50%;
+    transform: translate( -50%);
+    margin-top: 3px; /* Reduced margin */
+    border-left: 5px solid transparent; /* Smaller border for a smaller arrow */
+    border-right: 5px solid transparent; /* Smaller border for a smaller arrow */
+    border-bottom: 5px solid #07aae2; /* Adjusted for .arrow-up */
+  }
+
+  .arrow-down {
+    border-top: 5px solid #07aae2; /* Adjusted for .arrow-down */
+    border-bottom: none; /* Remove bottom border for .arrow-down */
+  }
+}
+

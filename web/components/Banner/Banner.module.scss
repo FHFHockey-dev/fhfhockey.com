@@ -2,7 +2,7 @@
 
 .banner {
   color: #ffffff;
-  background: #101010;
+  background: #181818;
   border-bottom: 4px solid white;
   // extend to the left right sides
   margin: 0 -2rem 0.8rem -2rem;
@@ -14,7 +14,7 @@
     border-bottom: 4px solid white;
 
     min-height: 40px;
-    background: #101010;
+    background: #181818;
     color: #ffffff;
     text-align: left;
   }
@@ -24,7 +24,7 @@
   font-family: "Roboto", sans-serif;
   text-align: center;
   color: #ffffff;
-  background: #101010;
+  background: #181818;
   border-bottom: 4px solid white;
   // extend to the left right sides
   margin: 0 -2rem 0.8rem -2rem;
@@ -43,5 +43,14 @@
     padding: 0.8rem;
 
     margin-bottom: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+
+  .textBanner {
+    font-family: roboto condensed, sans-serif;
+    border-bottom: 2px solid white;
+
   }
 }

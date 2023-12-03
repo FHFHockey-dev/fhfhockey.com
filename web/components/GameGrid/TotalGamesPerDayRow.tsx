@@ -10,14 +10,21 @@ function TotalGamesPerDayRow({
   games,
   excludedDays,
 }: TotalGamesPerDayRowProps) {
+
+  
+  
   return (
     <tr className={styles.totalGamesPerDayRow}>
       {/* show GP on mobile */}
       <td className={styles.title}>{/* Total Games Per Day */}</td>
       {games.map((numGames, i) => (
-        <td className={styles.totalGamesPerDayCell} key={i}>
-          {numGames}
-        </td>
+        <td 
+        className={`${styles.totalGamesPerDayCell} ${numGames > 8 ? styles.greenBorder : ''}`} 
+        key={i}
+      >
+        {numGames}
+      </td>     
+
       ))}
       {/* Total GP */}
       <td>{calcTotalGP(games, excludedDays)}</td>
@@ -65,5 +72,6 @@ function calcTotalOffNights(games: number[], excludedDays: DAY_ABBREVIATION[]) {
   });
   return total;
 }
+
 
 export default TotalGamesPerDayRow;
