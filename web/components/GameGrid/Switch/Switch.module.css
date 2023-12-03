@@ -40,7 +40,7 @@
     position: absolute;
     left: 50%;
     transform: translate( -50%);
-    margin-top: 3px; /* Reduced margin */
+    margin-top: 4px; /* Reduced margin */
     border-left: 5px solid transparent; /* Smaller border for a smaller arrow */
     border-right: 5px solid transparent; /* Smaller border for a smaller arrow */
     border-bottom: 5px solid #07aae2; /* Adjusted for .arrow-up */
