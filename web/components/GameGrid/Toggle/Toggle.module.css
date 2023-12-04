@@ -64,9 +64,8 @@ input:checked + .slider:before {
 
 @media (max-width: 480px) {
   .switch {
-
-    width: 15px; /* Half of the original width */
-    height: 7.5px; /* Half of the original height */
+    width: 20px; /* Half of the original width */
+    height: 10px; /* Half of the original height */
   }
 
   .slider {
@@ -76,15 +75,44 @@ input:checked + .slider:before {
 
   .slider:before {
     background-color: #FFF;
-    height: 5px; /* Half of the original height */
-    width: 5px; /* Half of the original width */
-    left: 1.25px; /* Adjusted to maintain the layout */
+    height: 6px; /* Half of the original height */
+    width: 6px; /* Half of the original width */
+    left: 3px; /* Adjusted to maintain the layout */
     bottom: 1.25px; /* Adjusted to maintain the layout */
   }
 
   input:checked + .slider:before {
-    -webkit-transform: translateX(7.5px); /* Half of the original transform */
-    -ms-transform: translateX(7.5px); /* Half of the original transform */
-    transform: translateX(7.5px); /* Half of the original transform */
+    -webkit-transform: translateX(10px); /* Half of the original transform */
+    -ms-transform: translateX(10px); /* Half of the original transform */
+    transform: translateX(8px); /* Half of the original transform */
+  }
+}
+
+@media screen and (orientation:landscape) /* LANDSCAPE */
+and (min-device-width: 479px) 
+and (max-device-width: 932px) {
+    .switch {
+
+    width: 30px; /* Half of the original width */
+    height: 14px; /* Half of the original height */
+  }
+
+  .slider {
+    background-color: #07aae2;  
+    color: #FFF;
+  }
+
+  .slider:before {
+    background-color: #FFF;
+    height: 10px; /* Half of the original height */
+    width: 10px; /* Half of the original width */
+    left: 3px; /* Adjusted to maintain the layout */
+    bottom: 2px; /* Adjusted to maintain the layout */
+  }
+
+  input:checked + .slider:before {
+    -webkit-transform: translateX(14px); /* Half of the original transform */
+    -ms-transform: translateX(14px); /* Half of the original transform */
+    transform: translateX(14px); /* Half of the original transform */
   }
 }

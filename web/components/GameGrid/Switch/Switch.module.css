@@ -35,7 +35,7 @@
 
 /* Existing CSS rules... */
 
-@media (max-width: 480px) {
+@media (min-width: 320px) and (max-width: 480px) {
   .arrow-up, .arrow-down {
     position: absolute;
     left: 50%;
@@ -48,6 +48,25 @@
 
   .arrow-down {
     border-top: 5px solid #07aae2; /* Adjusted for .arrow-down */
+    border-bottom: none; /* Remove bottom border for .arrow-down */
+  }
+}
+
+@media screen and (orientation:landscape) /* LANDSCAPE */
+and (min-device-width: 479px) 
+and (max-device-width: 932px) {
+    .arrow-up, .arrow-down {
+    position: absolute;
+    left: 50%;
+    transform: translate( -50%);
+    margin-top: 4px; /* Reduced margin */
+    border-left: 8px solid transparent; /* Smaller border for a smaller arrow */
+    border-right: 8px solid transparent; /* Smaller border for a smaller arrow */
+    border-bottom: 8px solid #07aae2; /* Adjusted for .arrow-up */
+  }
+
+  .arrow-down {
+    border-top: 8px solid #07aae2; /* Adjusted for .arrow-down */
     border-bottom: none; /* Remove bottom border for .arrow-down */
   }
 }
