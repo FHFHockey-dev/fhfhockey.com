@@ -7,9 +7,15 @@ export async function getPlayerGameLog(
   seasonId: number | string,
   gameType: number | string = 2
 ): Promise<PlayerGameLog[]> {
-  const data =
-    (await get(`/player/${id}/game-log/${seasonId}/${gameType}`)).gameLog ?? [];
-  return data;
+  try {
+    const data =
+      (await get(`/player/${id}/game-log/${seasonId}/${gameType}`)).gameLog ??
+      [];
+    return data;
+  } catch (e: any) {
+    console.error("Cannot find the game log for player " + id);
+    return [];
+  }
 }
 
 /**
