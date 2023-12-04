@@ -276,6 +276,20 @@
     padding-right: 20px;
     border-radius: 6px;
   }
+
+  .dateButtonPrev:hover {
+    font-family: roboto condensed, sans-serif;
+    position: relative;
+    height: 20px;
+    width: 60px;
+    background: #07aae2;
+    color: #ffffff;
+    border: 1px solid white;
+    padding-left: 20px;
+    padding-right: 20px;
+    border-radius: 6px;
+    filter: brightness(120%);
+  }
   
   .dateButtonNext {
     font-family: roboto condensed, sans-serif;
@@ -290,6 +304,20 @@
     border-radius: 6px;
   }
 
+  .dateButtonNext:hover {
+    font-family: roboto condensed, sans-serif;
+    position: relative;
+    height: 20px;
+    width: 60px;
+    background: #07aae2;
+    color: #ffffff;
+    border: 1px solid white;
+    padding-left: 20px;
+    padding-right: 20px;
+    border-radius: 6px;
+    filter: brightness(120%);
+  }
+
   .scheduleGrid {
       width: 100%;
       border: 2px solid white;
@@ -298,7 +326,7 @@
   }
 
   .scheduleGrid tr {
-    height: 30px;
+    height: 35px;
   }
 
   .gridWrapper {
@@ -318,6 +346,7 @@
   .scheduleGrid tr th:first-child,
   .scheduleGrid tr td:first-child {
       max-width: 50px;
+      min-width: 45px;
       font-size: 10px;
       border-right: 3px solid #07aae2;
   }
@@ -328,6 +357,7 @@
       font-family: roboto condensed, sans-serif;
       padding: 2px 2px;
       min-width: 30px;
+      max-width: 50px;
       text-align: center;
       font-size: 8px;
   }
