@@ -19,7 +19,7 @@ function TotalGamesPerDayRow({
       <td className={styles.title}>{/* Total Games Per Day */}</td>
       {games.map((numGames, i) => (
         <td 
-        className={`${styles.totalGamesPerDayCell} ${numGames > 8 ? styles.greenBorder : ''}`} 
+        className={`${styles.totalGamesPerDayCell} ${numGames > 8 ? styles.redBorder : styles.greenBorder}`}
         key={i}
       >
         {numGames}
