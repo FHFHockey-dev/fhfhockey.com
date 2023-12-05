@@ -21,7 +21,7 @@ function Podfeed() {
           title="Five Hole Fantasy Hockey"
           allowTransparency={true}
           height={515}
-          width="100%"
+          width="75%"
           style={{
             border: "5px solid white",
             borderRadius: "8px",

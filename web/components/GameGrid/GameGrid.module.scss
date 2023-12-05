@@ -64,7 +64,7 @@
   border-spacing: 0px;
   font-size: 14px;
   text-align: left;
-  width: 80%;
+  width: 95%;
 }
 
 .scheduleGrid th {
@@ -423,7 +423,7 @@
   }
 }
 
-@media screen and (orientation:landscape) /* LANDSCAPE maggie*/
+@media screen and (orientation:landscape) /* LANDSCAPE */
 and (min-device-width: 479px) 
 and (max-device-width: 932px) {
 
@@ -482,7 +482,7 @@ and (max-device-width: 932px) {
   }
 
   .scheduleGrid {
-      width: 100%;
+      width: 100% !important;
       border: 2px solid white;
       border-radius: 0;
       overflow-x: scroll;

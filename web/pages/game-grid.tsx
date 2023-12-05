@@ -14,7 +14,7 @@ function GameGridPage() {
 
       <TextBanner text="Game Grid" />
 
-      <div style={{ marginTop: "20px", paddingRight: "8px" }}>
+      <div style={{ marginTop: "20px", width: "100%"}}>
         <GameGrid />
       </div>
       <div style={{ marginBottom: "30px" }} />
