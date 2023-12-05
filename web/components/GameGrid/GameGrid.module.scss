@@ -64,7 +64,7 @@
   border-spacing: 0px;
   font-size: 14px;
   text-align: left;
-  width: 95%;
+  width: 100%;
 }
 
 .scheduleGrid th {
@@ -197,7 +197,8 @@
   }
 }
 
-/* Green to Yellow (Ranks 32 to 17) */
+/* Green to Yellow (Ranks 32 to 17) 
+   Trying to Rank the weekScore 1-32 and color code */
 .rank-color-1 { background-color: rgba(0, 255, 0, 0.45); } /* Green */
 .rank-color-2  { background-color: rgba(16, 255, 0, 0.45); }
 .rank-color-3 { background-color: rgba(32, 255, 0, 0.45); }
