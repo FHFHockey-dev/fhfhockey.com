@@ -115,6 +115,7 @@
 .scheduleGrid tr td:nth-child(10),
 .scheduleGrid tr td:nth-child(11) {
     background-color: #101010; /* Set the background color */
+    max-width: 50px;
 }
 
 .scheduleGrid tr th:nth-child(9),
