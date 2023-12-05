@@ -509,8 +509,8 @@ and (max-device-width: 932px) {
   
   .scheduleGrid tr th:first-child,
   .scheduleGrid tr td:first-child {
-      max-width: 100px;
-      min-width: 45px;
+      max-width: 90px;
+      min-width: 40px;
       font-size: 14px;
       margin: auto;
       border-right: 3px solid #07aae2;
@@ -521,7 +521,7 @@ and (max-device-width: 932px) {
       font-family: roboto condensed, sans-serif;
       padding: 2px 2px;
       min-width: 30px;
-      max-width: 60px;
+      max-width: 100px;
       text-align: center;
       font-size: 14px;
       font-weight: 100;
@@ -538,22 +538,22 @@ and (max-device-width: 932px) {
   .scoreAndHomeAway {
     display: block;
     margin: auto;
-    padding: 2px;
+    padding: 1px !important;
   }
   
   .homeAway {
     display: block;
+    font-size: 10px;
   }
 
   .hideOnMobile {
     display: block;
-    padding-right: 0px !important;
   }
 
   /* MAGGIE <3 */
 
   .mobileLogoSize {
-    padding: 2px !important;
+    padding: 1px !important;
   }
 
   .mobileFontStyle {
@@ -563,6 +563,7 @@ and (max-device-width: 932px) {
   
   .score {
     display: block;
+    font-size: 10px;
   }
   
   .totalGamesPerDayCell {
@@ -677,7 +678,7 @@ and (max-device-width: 932px) {
       font-family: roboto condensed, sans-serif;
       padding: 2px 2px;
       min-width: 25px;
-      max-width: 30px;
+      max-width: 40px;
       text-align: center;
       font-size: 8px;
   }
