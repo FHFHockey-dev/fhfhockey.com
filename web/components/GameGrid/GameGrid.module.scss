@@ -79,7 +79,6 @@
   height: 15px;
 }
 
-
 .scheduleGrid tr th:first-child,
 .scheduleGrid tr td:first-child {
   height: 12px;
@@ -124,8 +123,6 @@
   padding-bottom: 14px;
 }
 
-
-
 .scheduleGrid tr {
   font-family: roboto condensed, sans-serif;
   height: 45px;
@@ -144,8 +141,6 @@
 .scheduleGrid tr:hover:nth-of-type(odd) {
   background-color: #505050;
 }
-
-
 
 .scoreAndHomeAway {
   display: flex;
@@ -191,8 +186,6 @@
 .redBorder {
   background-color: rgb(255, 0, 0, 0.15) !important;
 }
-
-
 
 .totalGamesPerDayRow > .title::before {
   content: "GP/Day";
@@ -496,7 +489,7 @@ and (max-device-width: 932px) {
   }
 
   .scheduleGrid tr {
-    height: 45px;
+    height: 50px;
   }
 
   .gridWrapper {
@@ -515,28 +508,22 @@ and (max-device-width: 932px) {
   
   .scheduleGrid tr th:first-child,
   .scheduleGrid tr td:first-child {
-      max-width: 80px;
+      max-width: 100px;
       min-width: 45px;
       font-size: 14px;
       margin: auto;
       border-right: 3px solid #07aae2;
   }
-
   
   .scheduleGrid tr th:nth-child(n + 2),
   .scheduleGrid td:nth-child(n + 2) {
       font-family: roboto condensed, sans-serif;
       padding: 2px 2px;
       min-width: 30px;
-      max-width: 40px;
+      max-width: 60px;
       text-align: center;
       font-size: 14px;
       font-weight: 100;
-  }
-
-  .scheduleGrid tr th:nth-child(9),
-  .scheduleGrid tr td:nth-child(9) {
-      border-left: 3px solid #07aae2;
   }
 
   .scheduleGrid tr th:nth-child(9),
@@ -550,7 +537,7 @@ and (max-device-width: 932px) {
   .scoreAndHomeAway {
     display: block;
     margin: auto;
-    padding: 4px;
+    padding: 2px;
   }
   
   .homeAway {
