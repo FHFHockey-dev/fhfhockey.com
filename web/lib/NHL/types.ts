@@ -52,3 +52,190 @@ export type Season = {
   seasonEndDate: string;
   numberOfGames: number;
 };
+
+// === Boxscore ===
+export interface Boxscore {
+  id: number;
+  season: number;
+  gameType: number;
+  gameDate: Date;
+  venue: Venue;
+  startTimeUTC: Date;
+  easternUTCOffset: string;
+  venueUTCOffset: string;
+  tvBroadcasts: TvBroadcast[];
+  gameState: string;
+  gameScheduleState: string;
+  period: number;
+  periodDescriptor: PeriodDescriptor;
+  awayTeam: BoxscoreTeam;
+  homeTeam: BoxscoreTeam;
+  clock: Clock;
+  boxscore: BoxscoreClass;
+  gameOutcome: GameOutcome;
+  gameVideo: GameVideo;
+}
+
+interface BoxscoreTeam {
+  id: number;
+  name: Venue;
+  abbrev: string;
+  score: number;
+  sog: number;
+  faceoffWinningPctg: number;
+  powerPlayConversion: string;
+  pim: number;
+  hits: number;
+  blocks: number;
+  logo: string;
+}
+
+interface Venue {
+  default: string;
+}
+
+interface BoxscoreClass {
+  linescore: Linescore;
+  shotsByPeriod: ByPeriod[];
+  gameReports: GameReports;
+  playerByGameStats: PlayerByGameStats;
+  gameInfo: GameInfo;
+}
+
+interface GameInfo {
+  referees: Venue[];
+  linesmen: Venue[];
+  awayTeam: GameInfoAwayTeam;
+  homeTeam: GameInfoAwayTeam;
+}
+
+interface GameInfoAwayTeam {
+  headCoach: Venue;
+  scratches: Scratch[];
+}
+
+interface Scratch {
+  id: number;
+  firstName: Venue;
+  lastName: Venue;
+}
+
+interface GameReports {
+  gameSummary: string;
+  eventSummary: string;
+  playByPlay: string;
+  faceoffSummary: string;
+  faceoffComparison: string;
+  rosters: string;
+  shotSummary: string;
+  shiftChart: string;
+  toiAway: string;
+  toiHome: string;
+}
+
+interface Linescore {
+  byPeriod: ByPeriod[];
+  totals: Totals;
+}
+
+interface ByPeriod {
+  period: number;
+  periodDescriptor: PeriodDescriptor;
+  away: number;
+  home: number;
+}
+
+interface PeriodDescriptor {
+  number: number;
+  periodType: string;
+}
+
+interface Totals {
+  away: number;
+  home: number;
+}
+
+interface PlayerByGameStats {
+  awayTeam: PlayerByGameStatsAwayTeam;
+  homeTeam: PlayerByGameStatsAwayTeam;
+}
+
+interface PlayerByGameStatsAwayTeam {
+  forwards: Defense[];
+  defense: Defense[];
+  goalies: Goalie[];
+}
+
+interface Defense {
+  playerId: number;
+  sweaterNumber: number;
+  name: Venue;
+  position: Position;
+  goals: number;
+  assists: number;
+  points: number;
+  plusMinus: number;
+  pim: number;
+  hits: number;
+  blockedShots: number;
+  powerPlayGoals: number;
+  powerPlayPoints: number;
+  shorthandedGoals: number;
+  shPoints: number;
+  shots: number;
+  faceoffs: string;
+  faceoffWinningPctg: number;
+  toi: string;
+  powerPlayToi: string;
+  shorthandedToi: string;
+}
+
+enum Position {
+  C = "C",
+  D = "D",
+  L = "L",
+  R = "R",
+}
+
+interface Goalie {
+  playerId: number;
+  sweaterNumber: number;
+  name: Venue;
+  position: string;
+  evenStrengthShotsAgainst: string;
+  powerPlayShotsAgainst: string;
+  shorthandedShotsAgainst: string;
+  saveShotsAgainst: string;
+  evenStrengthGoalsAgainst: number;
+  powerPlayGoalsAgainst: number;
+  shorthandedGoalsAgainst: number;
+  pim: number;
+  goalsAgainst: number;
+  toi: string;
+  savePctg?: string;
+}
+
+interface Clock {
+  timeRemaining: string;
+  secondsRemaining: number;
+  running: boolean;
+  inIntermission: boolean;
+}
+
+interface GameOutcome {
+  lastPeriodType: string;
+}
+
+interface GameVideo {
+  threeMinRecap: number;
+  condensedGame: number;
+}
+
+interface TvBroadcast {
+  id: number;
+  market: string;
+  countryCode: string;
+  network: string;
+}
+
+// === Boxscore ===

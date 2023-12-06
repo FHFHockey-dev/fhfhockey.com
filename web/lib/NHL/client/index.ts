@@ -1,5 +1,11 @@
 import { ScheduleData } from "pages/api/v1/schedule/[startDate]";
-import type { Player, PlayerGameLog, Season, Team } from "../types";
+import type {
+  Boxscore,
+  Player,
+  PlayerGameLog,
+  Season,
+  Team,
+} from "lib/NHL/types";
 import { Response } from "pages/api/_types";
 
 const BASE_URL = "/api/v1";
@@ -57,4 +63,16 @@ export async function getGameLogs(
 
 export async function getAllPlayers(): Promise<Player[]> {
   return await get("/player");
+}
+
+export async function getBoxscore(id: number): Promise<Boxscore | null> {
+  const { success, data } = await get<Response<Boxscore>>(
+    `/game/${id}/boxscore`
+  );
+
+  if (success) {
+    return data;
+  } else {
+    return null;
+  }
 }

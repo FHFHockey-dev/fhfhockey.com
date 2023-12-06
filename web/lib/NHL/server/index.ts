@@ -1,6 +1,12 @@
 import { differenceInYears } from "date-fns";
 import { get, restGet } from "lib/NHL/base";
-import type { Player, PlayerGameLog, Season, Team } from "lib/NHL/types";
+import type {
+  Boxscore,
+  Player,
+  PlayerGameLog,
+  Season,
+  Team,
+} from "lib/NHL/types";
 
 export async function getPlayerGameLog(
   id: number | string,
@@ -141,4 +147,9 @@ export async function getAllPlayers() {
   }));
 
   return players;
+}
+
+export async function getBoxscore(id: number): Promise<Boxscore> {
+  const data = await get(`/gamecenter/${id}/boxscore`);
+  return data;
 }
