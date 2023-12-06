@@ -4,35 +4,20 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 
 import { teamsInfo } from "lib/NHL/teamsInfo";
+import { getBoxscore } from "lib/NHL/server";
+import { Boxscore } from "lib/NHL/types";
 
-export default function Page() {
+type Props = {
+  game: Boxscore;
+};
+
+export default function Page({ game }: Props) {
   const router = useRouter();
-  const { gameId } = router.query;
-  const [game, setGame] = useState(null);
+  const gameId = router.query.gameId as number;
   const [homeTeamStats, setHomeTeamStats] = useState(null);
   const [awayTeamStats, setAwayTeamStats] = useState(null);
   const [homeTeamRank, setHomeTeamRank] = useState(null);
   const [awayTeamRank, setAwayTeamRank] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchGame = async () => {
-      try {
-        const response = await axios.get(
-          `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
-        );
-        console.log("Fetched Game:", response.data);
-        setGame(response.data.liveData);
-      } catch (err) {
-        console.error("Game Fetching Error:", err);
-        setError(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchGame();
-  }, [gameId]);
 
   useEffect(() => {
     const fetchTeamStats = async (teamId, setType) => {
@@ -60,9 +45,6 @@ export default function Page() {
     }
   }, [game]);
 
-  if (loading) return <p>Loading...</p>;
-  if (error || !game) return <p>Error loading game data.</p>;
-
   const homeTeamName = game.linescore.teams.home.team.name;
   const awayTeamName = game.linescore.teams.away.team.name;
 
@@ -75,8 +57,6 @@ export default function Page() {
 
   const homeTeamColors = teamsInfo[homeTeamAbbreviation] || {};
   const awayTeamColors = teamsInfo[awayTeamAbbreviation] || {};
-
-
 
   return (
     <div className="game-page">
@@ -350,4 +330,14 @@ export default function Page() {
       </table>
     </div>
   );
+}
+
+export async function getServerSideProps({ params }) {
+  const gameId = Number(params.gameId);
+  const data = await getBoxscore(gameId);
+  return {
+    props: {
+      game: data,
+    },
+  };
 }
