@@ -1,5 +1,358 @@
 @import "styles/vars.scss";
 
+.homepage {
+  width: 90%;
+  margin: auto;
+}
+
+.gameLink {
+  text-decoration: none;
+  color: inherit;
+}
+
+.clGames {
+  margin-top: 2em;
+}
+
+.gamesContainer {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 25px;
+}
+
+.separator {
+  border-bottom: 4px double #07aae2;
+  width: 100%;
+}
+
+.gameTimeCard {
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  background: linear-gradient(
+    115deg,
+    var(--home-secondary-color) 49%,
+    #fff 49%,
+    #fff 51%,
+    var(--away-primary-color) 51%
+  );
+  color: #fff;
+  text-align: center;
+  padding: 5px;
+  margin-top: 10px;
+  margin-bottom: 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gameTimeText {
+  font-weight: 900;
+  color: #fff;
+  font-size: 1em;
+  font-family: Montserrat, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  font-style: italic;
+  white-space: nowrap;
+  filter: drop-shadow(0 0 3px #000);
+}
+
+.gameState {
+  font-weight: 800;
+  color: #fff;
+  font-size: 0.8em;
+  font-family: Montserrat, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  font-style: italic;
+  filter: drop-shadow(0 0 5px #000);
+
+}
+
+.gameTime {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  padding: 0 5px;
+  filter: drop-shadow(0 0 5px #000);
+}
+
+
+.column {
+  width: 33.33%;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.homeScore {
+  text-align: left;
+  color: var(--home-primary-color);
+  font-size: 1.5em;
+  font-family: Montserrat, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  font-weight: 900;
+  font-style: italic;
+  padding-left: 10px;
+  filter: drop-shadow(0 0 5px var(--home-primary-color));
+}
+
+.awayScore {
+  text-align: right;
+  color: var(--away-secondary-color);
+  font-size: 1.5em;
+  font-family: Montserrat, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  font-weight: 900;
+  font-style: italic;
+  padding-right: 18px;
+  filter: drop-shadow(0 0 5px var(--away-secondary-color));
+}
+
+.gameCard {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  flex: 1 0 calc(25% - 2%);
+  box-sizing: border-box;
+  overflow: hidden;
+  max-height: 5em;
+  min-height: 5em;
+}
+
+.gamesContainer a .gameCard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    115deg,
+    var(--home-primary-color) 49%,
+    #fff 49%,
+    #fff 51%,
+    var(--away-secondary-color) 51%
+  );
+  z-index: 0;
+}
+
+.leftImage,
+.rightImage {
+  width: 100px;
+  height: auto;
+  position: absolute;
+  display: block;
+}
+
+.leftImage {
+  left: -10px;
+  top: 0;
+}
+
+.rightImage {
+  right: -15px;
+  bottom: 0;
+}
+
+.awayTeamLogo,
+.homeTeamLogo,
+.vs {
+  z-index: 2;
+}
+
+.vs {
+  z-index: 3;
+  color: #fff;
+  padding: 0 5px;
+  filter: drop-shadow(0 0 5px #000);
+}
+
+.gameCard span {
+  position: absolute;
+  padding: 0 1.1em;
+  flex: 0 0 auto;
+  font-weight: 900;
+  color: #fff;
+  z-index: 2;
+  font-size: 1.5em;
+  font-family: Montserrat, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  font-weight: 900;
+  font-style: italic;
+}
+
+.gameLinkImage {
+  z-index: 2;
+  position: relative;
+  filter: drop-shadow(0 0 3px #fff);
+}
+
+.gameLinkImage:hover {
+  filter: brightness(120%) drop-shadow(0px 0px 3px #fff);
+  transform: scale(1.05);
+}
+
+@media (max-width: 767px) {
+  .gameCard {
+    flex: 1 0 48%;
+  }
+}
+
+.standingsInjuriesContainer {
+  display: flex;
+}
+
+.ccStandings {
+  flex: 1;
+  font-family: roboto condensed, sans-serif;
+}
+
+.crInjuries {
+  flex: 1;
+  font-family: roboto condensed, sans-serif;
+}
+
+.clGames h1 {
+  font-family: Montserrat, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 2em;
+  margin-bottom: 0.5em;
+  text-align: center;
+  color: #fff;
+}
+
+.crInjuries h1 {
+  font-family: Montserrat, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 2em;
+  margin-bottom: 0.5em;
+  text-align: center;
+  color: #fff;
+}
+
+.ccStandings h1 {
+  font-family: Montserrat, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 2em;
+  margin-bottom: 0.5em;
+  text-align: center;
+  color: #fff;
+}
+
+.injuryTable {
+  width: 100%;
+  border: 2px solid white;
+  table-layout: auto;
+  border-collapse: collapse;
+}
+
+.dateColumn {
+  width: 75px;
+}
+
+.nameColumn {
+  width: 125px;
+}
+
+.teamColumn {
+  text-align: center;
+}
+
+.statusColumn {
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.descriptionColumn {
+  text-transform: capitalize;
+}
+
+.injuryTableHeader {
+  background-color: #101010;
+}
+
+.injuryTable td,
+.injuryTable th {
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
+
+.standingsTable tr,
+.injuryTable tr {
+  height: 2em;
+}
+
+.standingsTable td,
+.standingsTable th {
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
+
+.rowEven {
+  background-color: #202020;
+}
+
+.rowOdd {
+  background-color: #404040;
+}
+
+.pagination {
+  margin-top: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.standingsTable {
+  border-collapse: collapse;
+  border: 2px solid white;
+  width: 90%;
+  margin-bottom: 5em;
+}
+
+.standingsTable tbody tr:nth-child(odd) {
+  background-color: #202020; /* or any light color of your choice */
+}
+
+.standingsTable tbody tr:nth-child(even) {
+  background-color: #404040; /* or any slightly darker color of your choice */
+}
+
+.standingsTable img {
+  height: 15px;
+}
+
+.standingsTable th {
+  background-color: #101010;
+}
+
+.standingsTeamLogo {
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  float: left;
+  padding-right: 1em;
+}
+
+
+
 .socialMedia {
   @media only screen and (min-width: $screen-large) {
     display: none;

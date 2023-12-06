@@ -20,7 +20,7 @@ export default function Page() {
     const fetchGame = async () => {
       try {
         const response = await axios.get(
-          `https://statsapi.web.nhl.com/api/v1/game/${gameId}/feed/live`
+          `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
         );
         console.log("Fetched Game:", response.data);
         setGame(response.data.liveData);
@@ -76,61 +76,7 @@ export default function Page() {
   const homeTeamColors = teamsInfo[homeTeamAbbreviation] || {};
   const awayTeamColors = teamsInfo[awayTeamAbbreviation] || {};
 
-  const getAdvantage = (
-    homeStat,
-    awayStat,
-    homeAbbreviation,
-    awayAbbreviation,
-    statName,
-    isLowerBetter = false
-  ) => {
-    let homeTeamColors = teamsInfo[homeAbbreviation] || {};
-    let awayTeamColors = teamsInfo[awayAbbreviation] || {};
 
-    if (
-      (!isLowerBetter && homeStat > awayStat) ||
-      (isLowerBetter && homeStat < awayStat)
-    ) {
-      return (
-        <td
-          className="gamePageAdvantageDecider"
-          style={{
-            backgroundColor: homeTeamColors.primaryColor,
-            color: homeTeamColors.secondaryColor,
-          }}
-        >
-          <div className="gamePageAdvantageDecider__wrapper">
-            <div className="statName">{statName}</div>
-            <div>{homeAbbreviation}</div>
-          </div>
-        </td>
-      );
-    } else if (
-      (!isLowerBetter && homeStat < awayStat) ||
-      (isLowerBetter && homeStat > awayStat)
-    ) {
-      return (
-        <td
-          className="gamePageAdvantageDecider"
-          style={{
-            backgroundColor: awayTeamColors.primaryColor,
-            color: awayTeamColors.secondaryColor,
-          }}
-        >
-          <div className="statName">{statName}</div>
-          {awayAbbreviation}
-        </td>
-      );
-    } else {
-      // Handle the case where the stats are equal.
-      return (
-        <td className="gamePageAdvantageDecider">
-          <div className="statName">{statName}</div>
-          TIE
-        </td>
-      );
-    }
-  };
 
   return (
     <div className="game-page">

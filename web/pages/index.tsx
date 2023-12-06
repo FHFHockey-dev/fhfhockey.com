@@ -6,6 +6,8 @@ import { useEffect, useMemo, useState } from "react";
 import moment from "moment";
 import Link from "next/link";
 import axios from "axios";
+import Image from "next/image";
+
 
 import Banner from "../components/Banner";
 import SocialMedias from "components/SocialMedias";
@@ -38,6 +40,7 @@ const Home: NextPage = () => {
       <Banner className={styles.socialMedia}>
         <SocialMedias />
       </Banner>
+      <Homepage />
       {/* <Homepage /> */}
     </Container>
   );
@@ -55,10 +58,12 @@ const Homepage = () => {
     const fetchGames = async () => {
       try {
         const today = moment().format("YYYY-MM-DD"); // Get today's date in the desired format
+        const scheduleUrl = `https://api-web.nhle.com/v1/schedule/${today}`
         const response = await axios.get(
-          `https://statsapi.web.nhl.com/api/v1/schedule?site=en_nhl&startDate=${today}&endDate=${today}`
+          scheduleUrl
         );
-        const gamesData = response.data.dates[0]?.games || []; // Using optional chaining and fallback to an empty array
+        const gamesData = response.data.gameWeek[0].games || []; // Using optional chaining and fallback to an empty array
+        console.log("TODAY'S GAMES: ", gamesData)
         setGames(gamesData);
       } catch (error) {
         console.error("Error fetching games: ", error);
@@ -66,15 +71,23 @@ const Homepage = () => {
     };
 
     const fetchTeams = async () => {
-      const response = await axios.get(
-        "https://statsapi.web.nhl.com/api/v1/teams"
-      );
-      const teamsData = response.data.teams.reduce(
-        (acc, team) => ({ ...acc, [team.id]: team.abbreviation }),
-        {}
-      );
+      const today = moment().format("YYYY-MM-DD"); // Get today's date in the desired format
+      const teamsUrl = `https://api-web.nhle.com/v1/standings/${today}`;
+      const response = await axios.get(teamsUrl);
+      
+      // Assuming the JSON structure is similar to the provided example
+      const teamsData = response.data.standings.reduce((acc, item) => {
+        // Check if teamAbbrev.default exists
+        if (item.teamAbbrev && item.teamAbbrev.default) {
+          acc[item.teamName.default] = item.teamAbbrev.default; // Store the abbreviation with the team name as key
+        }
+        return acc;
+      }, {});
+    
+      console.log(teamsData);
       setTeams(teamsData);
     };
+    
 
     fetchGames();
     fetchTeams();
@@ -125,13 +138,13 @@ const Homepage = () => {
   const displayRows = currentPageInjuries.map((injury, idx) => (
     <tr
       key={injury.player.id}
-      className={idx % 2 === 0 ? "row-even" : "row-odd"}
+      className={idx % 2 === 0 ? styles.rowEven : styles.rowOdd}
     >
-      <td className="date-column">{injury.date}</td>
-      <td className="team-column">{injury.team}</td>
-      <td className="name-column">{injury.player.displayName}</td>
-      <td className="status-column">{injury.status}</td>
-      <td className="description-column">{injury.description}</td>
+      <td className={styles.dateColumn}>{injury.date}</td>
+      <td className={styles.teamColumn}>{injury.team}</td>
+      <td className={styles.nameColumn}>{injury.player.displayName}</td>
+      <td className={styles.statusColumn}>{injury.status}</td>
+      <td className={styles.descriptionColumn}>{injury.description}</td>
     </tr>
   ));
 
@@ -140,14 +153,18 @@ const Homepage = () => {
   useEffect(() => {
     const fetchStandings = async () => {
       try {
+        const today = moment().format("YYYY-MM-DD"); // Get today's date
         const response = await axios.get(
-          // UPDATE API ENDPOINT
-          "https://statsapi.web.nhl.com/api/v1/standings.record.overall?&season=20232024&site=en_nhl"
+          `https://api-web.nhle.com/v1/standings/${today}` // Updated API endpoint
         );
         if (response.status !== 200) throw new Error("Failed to fetch");
-        const standingsData = response.data.records.flatMap(
-          (record) => record.teamRecords
-        );
+  
+        const standingsData = response.data.standings.map((team) => ({
+          leagueSequence: team.leagueSequence, // League sequence as the standing
+          teamName: team.teamName.default, // Team name
+          record: `${team.wins}-${team.losses}-${team.otLosses}` // Record format: Wins-Losses-OT Losses
+        }));
+        console.log("STANDINGS: ", standingsData)
         setStandings(standingsData);
       } catch (error) {
         console.error(error);
@@ -155,186 +172,180 @@ const Homepage = () => {
     };
     fetchStandings();
   }, []);
+  
 
   const [sortConfig, setSortConfig] = useState({
-    key: "gamesPlayed",
+    key: "leagueSequence",
     direction: "ascending",
   });
+
+  const sortedStandings = useMemo(() => {
+    return [...standings].sort((a, b) => {
+      let aValue = a[sortConfig.key];
+      let bValue = b[sortConfig.key];
+
+      if (sortConfig.key === "leagueSequence") {
+        aValue = parseInt(aValue, 10);
+        bValue = parseInt(bValue, 10);
+      }
+
+      if (aValue < bValue) {
+        return sortConfig.direction === "ascending" ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return sortConfig.direction === "ascending" ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [standings, sortConfig]);
 
   const sortDataBy = (key) => {
     let direction = "ascending";
     if (sortConfig.key === key && sortConfig.direction === "ascending") {
       direction = "descending";
     }
-
-    const sortedData = [...standings].sort((a, b) => {
-      let aValue = key.split(".").reduce((obj, key) => obj[key], a);
-      let bValue = key.split(".").reduce((obj, key) => obj[key], b);
-
-      // Convert to number if key is 'leagueL10Rank'
-      if (key === "leagueL10Rank") {
-        aValue = parseInt(aValue, 10);
-        bValue = parseInt(bValue, 10);
-      }
-
-      if (aValue < bValue) {
-        return direction === "ascending" ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return direction === "ascending" ? 1 : -1;
-      }
-      return 0;
-    });
-
-    setStandings(sortedData);
     setSortConfig({ key, direction });
   };
+
+  const getDisplayGameState = (gameState) => {
+    const gameStateMapping = {
+      'FUT': 'Scheduled',
+      'PRE': 'Pregame',
+      'OVER': 'Final',
+      'FINAL': 'Final',
+      'OFF': 'Final',
+      'LIVE': 'In Progress',
+      'CRIT': 'Critical'
+    };
+  
+    return gameStateMapping[gameState] || gameState;
+  };
+  
 
   /////////// JSX //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   return (
     <div className="homepage">
+
       <div className="clGames">
         <div className="gamesHeader">
           <h1>Today&apos;s Games</h1>
         </div>
-        <div className="gamesContainer">
+
+        <div className={styles.gamesContainer}>
           {games.map((game) => {
-            const homeTeamAbbr = teams[game.teams.home.team.id];
-            const homeTeamInfo = teamsInfo[homeTeamAbbr] || {};
-            const awayTeamAbbr = teams[game.teams.away.team.id];
-            const awayTeamInfo = teamsInfo[awayTeamAbbr] || {};
+            // Extracting home and away team data
+            const homeTeam = game.homeTeam;
+            console.log("HOME TEAM: ", homeTeam)
+            const homeTeamInfo = teamsInfo[homeTeam.abbrev] || {};
+            const awayTeam = game.awayTeam;
+            const awayTeamInfo = teamsInfo[awayTeam.abbrev] || {};
+
+            // If either team data is missing, skip rendering this game
+            if (!homeTeam || !awayTeam) {
+              return null;
+            }
+
             return (
-              <Link
-                key={game.gamePk + "-container"}
-                href={`/game/${game.gamePk}`}
-              >
-                <a className="gameLink">
-                  <div
-                    className="gameCard"
-                    style={{
-                      "--home-primary-color": homeTeamInfo.primaryColor,
-                      "--home-secondary-color": homeTeamInfo.secondaryColor,
-                      "--home-jersey-color": homeTeamInfo.jersey,
-                      "--home-accent-color": homeTeamInfo.accent,
-                      "--home-alt-color": homeTeamInfo.alt,
-                      "--away-primary-color": awayTeamInfo.primaryColor,
-                      "--away-secondary-color": awayTeamInfo.secondaryColor,
-                      "--away-jersey-color": awayTeamInfo.jersey,
-                      "--away-accent-color": awayTeamInfo.accent,
-                      "--away-alt-color": awayTeamInfo.alt,
-                    }}
-                  >
-                    <div className="homeTeamLogo">
-                      <img
-                        src={`https://assets.nhle.com/logos/nhl/svg/${homeTeamAbbr}_light.svg`}
-                        className="left-image"
-                        alt={`${homeTeamAbbr} logo`}
-                      />
+              <Link key={game.id} href={`/game/${game.id}` }>
+                <a className={styles.gameLink}>
+                  <div className={styles.gameCard}                    
+                      style={{
+                        '--home-primary-color': homeTeamInfo.primaryColor,
+                        '--home-secondary-color': homeTeamInfo.secondaryColor,
+                        '--home-jersey-color': homeTeamInfo.jersey,
+                        '--home-accent-color': homeTeamInfo.accent,
+                        '--home-alt-color': homeTeamInfo.alt,
+                        '--away-primary-color': awayTeamInfo.primaryColor,
+                        '--away-secondary-color': awayTeamInfo.secondaryColor,
+                        '--away-jersey-color': awayTeamInfo.jersey,
+                        '--away-accent-color': awayTeamInfo.accent,
+                        '--away-alt-color': awayTeamInfo.alt
+                        }}>
+                      <div className={styles.homeTeamLogo}>
+                        <img src={`https://assets.nhle.com/logos/nhl/svg/${homeTeam.abbrev}_light.svg`} className={styles.leftImage} alt={`${homeTeam.abbrev} logo`} />
+                      </div>
+                      <span className={styles.vs}>VS</span>
+                      <div className={styles.awayTeamLogo}>
+                          <img src={`https://assets.nhle.com/logos/nhl/svg/${awayTeam.abbrev}_light.svg`} className={styles.rightImage} alt={`${awayTeam.abbrev} logo`} />
+                      </div>
+                        </div>
+
+                    <div className={styles.gameTimeCard} style={{
+                          '--home-primary-color': homeTeamInfo.primaryColor,
+                          '--home-secondary-color': homeTeamInfo.secondaryColor,
+                          '--home-jersey-color': homeTeamInfo.jersey,
+                          '--home-accent-color': homeTeamInfo.accent,
+                          '--home-alt-color': homeTeamInfo.alt,
+                          '--away-primary-color': awayTeamInfo.primaryColor,
+                          '--away-secondary-color': awayTeamInfo.secondaryColor,
+                          '--away-jersey-color': awayTeamInfo.jersey,
+                          '--away-accent-color': awayTeamInfo.accent,
+                          '--away-alt-color': awayTeamInfo.alt
+                          }}>
+                      <div className={`${styles.column} ${styles.homeScore}`}>{awayTeam.score}
+                      </div>
+                      <div className={`${styles.column} ${styles.gameTime}`}>
+                        <span className={styles.gameState}>
+                          {getDisplayGameState(game.gameState)}
+                        </span>
+                        <span className={styles.gameTimeText}>
+                          {moment(game.startTimeUTC).format("h:mm A")}
+                        </span>
+                      </div>
+
+                      <div className={`${styles.column} ${styles.awayScore}`}>{homeTeam.score}
+                      </div>
+
                     </div>
-                    <span className="vs">VS</span>
-                    <div className="awayTeamLogo">
-                      <img
-                        src={`https://assets.nhle.com/logos/nhl/svg/${awayTeamAbbr}_light.svg`}
-                        className="right-image"
-                        alt={`${teams[game.teams.away.team.id]} logo`}
-                      />
-                    </div>
-                  </div>
-                  <div
-                    className="gameTimeCard"
-                    style={{
-                      "--home-primary-color": homeTeamInfo.primaryColor,
-                      "--home-secondary-color": homeTeamInfo.secondaryColor,
-                      "--home-jersey-color": homeTeamInfo.jersey,
-                      "--home-accent-color": homeTeamInfo.accent,
-                      "--home-alt-color": homeTeamInfo.alt,
-                      "--away-primary-color": awayTeamInfo.primaryColor,
-                      "--away-secondary-color": awayTeamInfo.secondaryColor,
-                      "--away-jersey-color": awayTeamInfo.jersey,
-                      "--away-accent-color": awayTeamInfo.accent,
-                      "--away-alt-color": awayTeamInfo.alt,
-                    }}
-                  >
-                    <div className="column homeScore">
-                      {game.teams.home.score}
-                    </div>
-                    <div className="column gameTime">
-                      <span className="gameTimeText">
-                        {moment(game.gameDate).format("h:mm A")}
-                        <br />
-                      </span>
-                      <span className="gameDetailedState">
-                        {game.status.detailedState}
-                      </span>
-                    </div>
-                    <div className="column awayScore">
-                      {game.teams.away.score}
-                    </div>
-                  </div>
-                </a>
+                  </a>
               </Link>
             );
           })}
         </div>
-      </div>
-      <div className="separator"></div>
 
-      <div className="standingsInjuriesContainer">
-        <div className="ccStandings">
-          <div className="standingsHeader">
-            <h1>Standings</h1>
+      </div>
+      <div className={styles.separator}></div>
+
+      <div className={styles.standingsInjuriesContainer}>
+      <div className={styles.ccStandings}>
+      <div className={styles.standingsHeader}>
+        <h1>Standings</h1>
           </div>
-          <table className="standingsTable">
-            <thead className="standingsTableHeader">
+          <table className={styles.standingsTable}>
+            <thead className={styles.standingsTableHeader}>
               <tr>
-                <th onClick={() => sortDataBy("team.name")}>Team</th>
-                <th onClick={() => sortDataBy("gamesPlayed")}>GP</th>
-                <th onClick={() => sortDataBy("leagueRecord.wins")}>W</th>
-                <th onClick={() => sortDataBy("leagueRecord.losses")}>L</th>
-                <th onClick={() => sortDataBy("leagueRecord.ot")}>O</th>
-                <th onClick={() => sortDataBy("points")}>PTS</th>
-                <th onClick={() => sortDataBy("pointsPercentage")}>PT%</th>
-                <th onClick={() => sortDataBy("leagueL10Rank")}>L10</th>
+                <th onClick={() => sortDataBy("leagueSequence")}>Rank</th>
+                <th onClick={() => sortDataBy("teamName")}>Team</th>
+                <th>Record</th>
               </tr>
             </thead>
             <tbody>
               {standings.map((teamRecord) => (
-                <tr key={teamRecord.team.id}>
+                <tr key={teamRecord.teamName}>
+                  <td>{teamRecord.leagueSequence}</td>
                   <td>
-                    <img
-                      src={`https://assets.nhle.com/logos/nhl/svg/${
-                        teams[teamRecord.team.id]
-                      }_light.svg`}
-                      className="standingsTeamLogo"
-                      alt={`${teamRecord.team.name} logo`}
-                    />
-                    {teamRecord.team.name}
+                    {teamRecord.teamName}
                   </td>
-                  <td>{teamRecord.gamesPlayed}</td>
-                  <td>{teamRecord.leagueRecord.wins}</td>
-                  <td>{teamRecord.leagueRecord.losses}</td>
-                  <td>{teamRecord.leagueRecord.ot}</td>
-                  <td>{teamRecord.points}</td>
-                  <td>{teamRecord.pointsPercentage.toFixed(3)}</td>
-                  <td>{teamRecord.leagueL10Rank}</td>
+                  <td>{teamRecord.record}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        <div className="crInjuries">
-          <div className="injuriesHeader">
+
+        <div className={styles.crInjuries}>
+          <div className={styles.injuriesHeader}>
             <h1>Injury Updates</h1>
           </div>
 
-          <table className="injuryTable">
-            <thead className="injuryTableHeader">
+          <table className={styles.injuryTable}>
+            <thead className={styles.injuryTableHeader}>
               <tr>
-                <th className="date-column">Date</th>
+                <th className={styles.dateColumn}>Date</th>
                 <th>Team</th>
-                <th className="name-column">Player</th>
+                <th className={styles.nameColumn}>Player</th>
                 <th>Status</th>
                 <th>Description</th>
               </tr>
@@ -342,7 +353,7 @@ const Homepage = () => {
             <tbody>{displayRows}</tbody>
           </table>
 
-          <div className="pagination">
+          <div className={styles.pagination}>
             <button
               onClick={() => setInjuryPage((prev) => Math.max(prev - 1, 0))}
               disabled={injuryPage === 0}
