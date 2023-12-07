@@ -362,3 +362,41 @@
 .container {
   padding: 0;
 }
+
+@media (max-width: 767px) {
+  .gamesContainer {
+    grid-template-columns: repeat(2, 1fr); // Adjusting to 2 columns for mobile view
+  }
+
+  .standingsInjuriesContainer {
+    flex-direction: column; // Stack the items vertically
+  }
+
+
+  .ccStandings table, .crInjuries table {
+    margin: auto; // Center the tables
+  }
+
+  .vs {
+    z-index: 10 !important;
+  }
+
+  .rightImage {
+    right: 0px;
+  }
+
+  .leftImage {
+    left: 0px;
+  }
+
+  .leftImage, .rightImage {
+    width: 85px;
+  }
+
+  // .gameCard {
+    // Adjustments for individual game cards if needed
+ // }
+
+  // Any other specific mobile styling can go here
+
+  }
