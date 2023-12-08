@@ -7,6 +7,8 @@ import { teamsInfo } from "lib/NHL/teamsInfo";
 import { getBoxscore } from "lib/NHL/server";
 import { Boxscore } from "lib/NHL/types";
 
+// BROKEN FIX
+
 type Props = {
   game: Boxscore;
 };
@@ -23,6 +25,7 @@ export default function Page({ game }: Props) {
     const fetchTeamStats = async (teamId, setType) => {
       try {
         const response = await axios.get(
+          // https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore
           `https://statsapi.web.nhl.com/api/v1/teams/${teamId}?expand=team.stats`
         );
         console.log("Fetched Team Stats:", response.data);
@@ -335,6 +338,7 @@ export default function Page({ game }: Props) {
 export async function getServerSideProps({ params }) {
   const gameId = Number(params.gameId);
   const data = await getBoxscore(gameId);
+
   return {
     props: {
       game: data,
