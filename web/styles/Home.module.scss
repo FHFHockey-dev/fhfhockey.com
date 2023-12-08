@@ -302,6 +302,17 @@
     font-size: 1.6em;
   }
 
+  .gamesHeader button {
+    cursor: pointer;
+    font-size: 20px; /* Adjust font size as needed */
+    padding: 0 5px; /* Adjust padding as needed */
+    height: 100%;
+    width: 10%;
+    background-color: #000;
+    color: #ddd;
+    font-family: roboto condensed, sans-serif;
+  }
+
   .standingsInjuriesContainer {
     flex-direction: column; // Stack the items vertically
   }
