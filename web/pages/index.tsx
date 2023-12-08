@@ -14,17 +14,24 @@ import styles from "../styles/Home.module.scss";
 
 import { teamsInfo } from "lib/NHL/teamsInfo";
 
-const Home: NextPage = ({ games, injuries, standings }) => {
-  /////////// INJURIES SECTION /////////////////////////////////////////////////////////////////////////////////////////////////
+const Home: NextPage = ({ initialGames, initialInjuries, initialStandings }) => {
+  const [currentDate, setCurrentDate] = useState(moment().utcOffset(-8).format("YYYY-MM-DD"));
+  const [games, setGames] = useState(initialGames);
+  const [injuries, setInjuries] = useState(initialInjuries);
+  const [standings, setStandings] = useState(initialStandings);
   const [injuryPage, setInjuryPage] = useState(0);
   const injuryRowsPerPage = 25;
 
-  const currentPageInjuries = useMemo(() => {
+const currentPageInjuries = useMemo(() => {
+  // Check if 'injuries' is defined and is an array
+  if (Array.isArray(injuries)) {
     return injuries.slice(
       injuryPage * injuryRowsPerPage,
       (injuryPage + 1) * injuryRowsPerPage
     );
-  }, [injuries, injuryPage]);
+  }
+  return []; // Return an empty array if 'injuries' is not defined
+}, [injuries, injuryPage]);
 
   const displayRows = currentPageInjuries.map((injury, idx) => (
     <tr
@@ -72,6 +79,26 @@ const Home: NextPage = ({ games, injuries, standings }) => {
     setSortConfig({ key, direction });
   };
 
+
+  const fetchGames = async (date) => {
+    try {
+      const scheduleUrl = `https://api-web.nhle.com/v1/schedule/${date}`;
+      const response = await axios.get(scheduleUrl);
+      return response.data.gameWeek[0].games || [];
+    } catch (error) {
+      console.error("Error fetching games: ", error);
+      return [];
+    }
+  };
+
+  // Function to change date and fetch games
+  const changeDate = async (days) => {
+    const newDate = moment(currentDate).add(days, 'days').format("YYYY-MM-DD");
+    setCurrentDate(newDate);
+    const newGames = await fetchGames(newDate);
+    setGames(newGames);
+  };
+
   const getDisplayGameState = (gameState) => {
     const gameStateMapping = {
       FUT: "Scheduled",
@@ -109,11 +136,14 @@ const Home: NextPage = ({ games, injuries, standings }) => {
       <Banner className={styles.socialMedia}>
         <SocialMedias />
       </Banner>
-      <div className="homepage">
-        <div className="clGames">
-          <div className="gamesHeader">
-            <h1>Today&apos;s Games</h1>
-          </div>
+      <div className={styles.homepage}>
+        <div className={styles.clGames}>
+
+        <div className={styles.gamesHeader}>
+          <button onClick={() => changeDate(-1)}>&lt;</button>
+          <h1>Today&apos;s Games</h1>
+          <button onClick={() => changeDate(1)}>&gt;</button>
+        </div>
 
           <div className={styles.gamesContainer}>
             {games.map((game) => {
@@ -200,6 +230,7 @@ const Home: NextPage = ({ games, injuries, standings }) => {
               );
             })}
           </div>
+          
         </div>
         <div className={styles.separator}></div>
 
@@ -275,17 +306,21 @@ export async function getServerSideProps({ req, res }) {
     "public, s-maxage=10, stale-while-revalidate=59"
   );
 
-  const fetchGames = async () => {
+  const fetchGames = async (date) => {
     try {
-      const today = moment().format("YYYY-MM-DD"); // Get today's date in the desired format
-      const scheduleUrl = `https://api-web.nhle.com/v1/schedule/${today}`;
+      const scheduleUrl = `https://api-web.nhle.com/v1/schedule/${date}`;
       const response = await axios.get(scheduleUrl);
-      const gamesData = response.data.gameWeek[0].games || []; // Using optional chaining and fallback to an empty array
-      return gamesData;
+      return response.data.gameWeek[0].games || [];
     } catch (error) {
       console.error("Error fetching games: ", error);
+      return [];
     }
   };
+
+  // Fetch games for today's date
+  const today = moment().utcOffset(-8).format("YYYY-MM-DD");
+  const games = await fetchGames(today);
+  
 
   const fetchInjuries = async () => {
     try {
@@ -316,7 +351,7 @@ export async function getServerSideProps({ req, res }) {
 
   const fetchStandings = async () => {
     try {
-      const today = moment().format("YYYY-MM-DD"); // Get today's date
+      const today = moment().utcOffset(-8).format("YYYY-MM-DD");
       const response = await axios.get(
         `https://api-web.nhle.com/v1/standings/${today}` // Updated API endpoint
       );
@@ -334,15 +369,14 @@ export async function getServerSideProps({ req, res }) {
     }
   };
 
-  const games = await fetchGames();
-  const injuries = await fetchInjuries();
+  const injuries = await fetchInjuries() || []; // Ensure it defaults to an empty array
   const standings = await fetchStandings();
 
   return {
     props: {
-      games,
-      injuries,
-      standings,
+      initialGames: games,
+      initialInjuries: injuries,
+      initialStandings: standings,
     },
   };
 }

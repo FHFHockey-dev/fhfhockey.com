@@ -65,3 +65,24 @@ and (max-device-width: 932px) {
 
   }
 }
+
+@media screen and (orientation:landscape) 
+and (min-device-width: 479px) 
+and (max-device-width: 932px) {
+
+  .banner, .textBanner {
+    padding-top: 6.67px; // Two-thirds of 10px
+    padding-bottom: 6.67px; // Two-thirds of 10px
+    font-family: roboto condensed, sans-serif;
+    border-bottom: 4px solid white;
+  }
+}
+
+@media (max-width: 480px) {
+  .banner, .textBanner {
+    padding-top: 6.67px; // Two-thirds of 10px
+    padding-bottom: 6.67px; // Two-thirds of 10px
+    font-family: roboto condensed, sans-serif;
+    border-bottom: 2px solid white;
+  }
+}

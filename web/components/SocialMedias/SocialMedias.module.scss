@@ -16,4 +16,18 @@
   @media only screen and (min-width: $screen-large) {
     gap: 14px;
   }
+
+}
+
+@media (max-width: 767px) {
+  .socialMedias {
+    height: 25px;
+    padding: 5px;
+    gap: 45px;
+  }
+
+  .socialMedias a {
+    height: 35px;
+    width: 35px;
+  }
 }

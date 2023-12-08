@@ -5,6 +5,42 @@
   margin: auto;
 }
 
+.gamesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 65px;
+  margin-bottom: 10px;
+  border-bottom: #07aae2 4px double;
+  background-color: #101010;
+}
+
+.gamesHeader button {
+  cursor: pointer;
+  font-size: 20px; /* Adjust font size as needed */
+  padding: 0 5px; /* Adjust padding as needed */
+  height: 100%;
+  width: 5%;
+  background-color: #000;
+  color: #ddd;
+  font-family: roboto condensed, sans-serif;
+}
+
+.gamesHeader h1 {
+  margin: 0 auto; /* Adjust margin to control spacing */
+  font-family: Montserrat, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  font-weight: 900;
+  font-style: italic;
+  font-size: 2em;
+  text-align: center;
+  color: #fff;
+  position: relative;
+  filter: drop-shadow(0 0 5px #FFF);
+}
+
+
 .gameLink {
   text-decoration: none;
   color: inherit;
@@ -12,22 +48,28 @@
 
 .clGames {
   margin-top: 2em;
+  border: #fff 2px solid;
+  border-radius: 4px;
 }
 
 .gamesContainer {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 25px;
+  align-items: center;
+  margin: 0 auto;
+  padding: 20px;
 }
 
 .separator {
+  margin-top: 20px;
   border-bottom: 4px double #07aae2;
   width: 100%;
 }
 
 .gameTimeCard {
   border: 2px solid #ddd;
-  border-radius: 5px;
+  border-radius: 3px;
   background: linear-gradient(
     115deg,
     var(--home-secondary-color) 49%,
@@ -39,7 +81,7 @@
   text-align: center;
   padding: 5px;
   margin-top: 10px;
-  margin-bottom: 25px;
+  margin-bottom: 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -119,7 +161,7 @@
   align-items: center;
   justify-content: center;
   border: 2px solid #ddd;
-  border-radius: 5px;
+  border-radius: 3px;
   flex: 1 0 calc(25% - 2%);
   box-sizing: border-box;
   overflow: hidden;
@@ -188,6 +230,7 @@
   letter-spacing: -0.015em;
   font-weight: 900;
   font-style: italic;
+  filter: drop-shadow(0 0 3px #000);
 }
 
 .gameLinkImage {
@@ -204,7 +247,88 @@
 @media (max-width: 767px) {
   .gameCard {
     flex: 1 0 48%;
+    min-height: 4em;
+    align-items: center;
+    justify-content: center;
   }
+
+  .gameCard img {
+    align-items: center;
+  }
+
+  .gameCard span {
+    font-size: 1em;
+  }
+
+  .gameTimeCard {
+    min-height: 2em;
+    max-height: 2em;
+  }
+
+  .gamesContainer {
+    grid-template-columns: repeat(2, 1fr); // Adjusting to 2 columns for mobile view
+    gap: 10px;
+    grid-gap: 10px;
+  }
+
+  .gamesHeader {
+    margin-bottom: 0;
+  }
+
+  .gamesHeader h1,
+  .ccStandings > div > h1, 
+  .crInjuries > div > h1 {
+    font-size: 1.6em;
+  }
+
+  .standingsInjuriesContainer {
+    flex-direction: column; // Stack the items vertically
+  }
+
+
+  .ccStandings table, .crInjuries table {
+    margin: auto; // Center the tables
+  }
+
+  .vs {
+    z-index: 3 !important;
+  }
+
+  .gameState {
+    font-size: .6em;
+  }
+
+  .gameTimeText {
+    font-size: .6em;
+  }
+
+  .homeScore {
+    font-size: 1.2em;
+  }
+
+  .awayScore {
+    font-size: 1.2em;
+  }
+
+  .rightImage {
+    right: -10px;
+    bottom: 8px;
+    filter: drop-shadow(0 0 3px #000);
+
+  }
+
+  .leftImage {
+    left: -8px;
+    top: 5px;
+    filter: drop-shadow(0 0 3px #FFF);
+
+  }
+
+  .leftImage, .rightImage {
+    width: 85px;
+    height: 45px;
+  }
+
 }
 
 .standingsInjuriesContainer {
@@ -221,17 +345,6 @@
   font-family: roboto condensed, sans-serif;
 }
 
-.clGames h1 {
-  font-family: Montserrat, sans-serif;
-  text-transform: uppercase;
-  letter-spacing: -0.015em;
-  font-weight: 900;
-  font-style: italic;
-  font-size: 2em;
-  margin-bottom: 0.5em;
-  text-align: center;
-  color: #fff;
-}
 
 .crInjuries h1 {
   font-family: Montserrat, sans-serif;
@@ -259,13 +372,15 @@
 
 .injuryTable {
   width: 100%;
+  font-size: 14px;
+  font-weight: 100;
   border: 2px solid white;
   table-layout: auto;
   border-collapse: collapse;
 }
 
 .dateColumn {
-  width: 75px;
+  width: 100px;
 }
 
 .nameColumn {
@@ -304,6 +419,7 @@
 .standingsTable th {
   padding: 10px;
   border-bottom: 1px solid #ccc;
+  text-align: center;
 }
 
 .rowEven {
@@ -323,7 +439,7 @@
 .standingsTable {
   border-collapse: collapse;
   border: 2px solid white;
-  width: 90%;
+  width: 100%;
   margin-bottom: 5em;
 }
 
@@ -363,40 +479,3 @@
   padding: 0;
 }
 
-@media (max-width: 767px) {
-  .gamesContainer {
-    grid-template-columns: repeat(2, 1fr); // Adjusting to 2 columns for mobile view
-  }
-
-  .standingsInjuriesContainer {
-    flex-direction: column; // Stack the items vertically
-  }
-
-
-  .ccStandings table, .crInjuries table {
-    margin: auto; // Center the tables
-  }
-
-  .vs {
-    z-index: 10 !important;
-  }
-
-  .rightImage {
-    right: 0px;
-  }
-
-  .leftImage {
-    left: 0px;
-  }
-
-  .leftImage, .rightImage {
-    width: 85px;
-  }
-
-  // .gameCard {
-    // Adjustments for individual game cards if needed
- // }
-
-  // Any other specific mobile styling can go here
-
-  }
