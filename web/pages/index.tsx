@@ -2,7 +2,7 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import { NextSeo } from "next-seo";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import moment from "moment";
 import Link from "next/link";
 import axios from "axios";
@@ -21,6 +21,22 @@ const Home: NextPage = ({ initialGames, initialInjuries, initialStandings }) => 
   const [standings, setStandings] = useState(initialStandings);
   const [injuryPage, setInjuryPage] = useState(0);
   const injuryRowsPerPage = 25;
+
+  const changeDate = async (days) => {
+    const newDate = moment(currentDate).add(days, 'days').format("YYYY-MM-DD");
+    setCurrentDate(newDate);
+  };
+  
+  useEffect(() => {
+    const fetchGames = async () => {
+      const res = await fetch(`/api/v1/games?date=${currentDate}`);
+      const data = await res.json();
+      setGames(data);
+    };
+  
+    fetchGames();
+  }, [currentDate]);
+  
 
 const currentPageInjuries = useMemo(() => {
   // Check if 'injuries' is defined and is an array
@@ -80,25 +96,6 @@ const currentPageInjuries = useMemo(() => {
   };
 
 
-  const fetchGames = async (date) => {
-    try {
-      const scheduleUrl = `https://api-web.nhle.com/v1/schedule/${date}`;
-      const response = await axios.get(scheduleUrl);
-      return response.data.gameWeek[0].games || [];
-    } catch (error) {
-      console.error("Error fetching games: ", error);
-      return [];
-    }
-  };
-
-  // Function to change date and fetch games
-  const changeDate = async (days) => {
-    const newDate = moment(currentDate).add(days, 'days').format("YYYY-MM-DD");
-    setCurrentDate(newDate);
-    const newGames = await fetchGames(newDate);
-    setGames(newGames);
-  };
-
   const getDisplayGameState = (gameState) => {
     const gameStateMapping = {
       FUT: "Scheduled",
@@ -141,7 +138,11 @@ const currentPageInjuries = useMemo(() => {
 
         <div className={styles.gamesHeader}>
           <button onClick={() => changeDate(-1)}>&lt;</button>
-          <h1>Today&apos;s Games</h1>
+
+          <div className={styles.headerAndDate}>
+            <h1>Today&apos;s Games</h1>
+            <p className={styles.dateDisplay}>{moment(currentDate).format('MM/DD/YYYY')}</p> {/* Formatted date here */}
+          </div>
           <button onClick={() => changeDate(1)}>&gt;</button>
         </div>
 
