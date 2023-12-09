@@ -282,6 +282,9 @@
   }
 
   .gameTimeCard {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     min-height: 2em;
     max-height: 2em;
   }
@@ -327,11 +330,20 @@
   }
 
   .gameState {
+    font-family: roboto condensed, sans-serif;
     font-size: .6em;
   }
 
   .gameTimeText {
     font-size: .6em;
+  }
+
+  .homeScore, .awayScore {
+    flex: 1;
+  }
+
+  .gameTime {
+    flex: 2;
   }
 
   .homeScore {
