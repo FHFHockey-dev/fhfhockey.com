@@ -1,7 +1,6 @@
 import { Dispatch, SetStateAction, useState } from "react";
 import styles from "./GameGrid.module.scss";
 
-
 import {
   addDays,
   dateDiffInDays,
@@ -15,6 +14,7 @@ import { DAY_ABBREVIATION } from "pages/api/v1/schedule/[startDate]";
 type HeaderProps = {
   start: string;
   end: string;
+  extended: boolean;
   setSortKeys: Dispatch<
     SetStateAction<
       {
@@ -31,6 +31,7 @@ type HeaderProps = {
 function Header({
   start,
   end,
+  extended,
   setSortKeys,
   excludedDays,
   setExcludedDays,
@@ -41,7 +42,7 @@ function Header({
 
   const columns = [
     { label: "Team", id: "teamName" },
-    ...getDayColumns(start, end, excludedDays, setExcludedDays),
+    ...getDayColumns(start, excludedDays, setExcludedDays, extended),
     {
       label: (
         <>
@@ -120,14 +121,14 @@ function Header({
 
 function getDayColumns(
   start: string,
-  end: string,
   excludedDays: DAY_ABBREVIATION[],
-  setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>
+  setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>,
+  extended: boolean
 ) {
   const startDate = new Date(start);
-  const endDate = new Date(end);
 
-  const days = dateDiffInDays(startDate, endDate);
+  // const days = dateDiffInDays(startDate, endDate);
+  const days = extended ? 6 + 3 : 6;
   const columns = [] as { label: JSX.Element | string; id: string }[];
   let current = startDate;
   for (let i = 0; i <= days; i++) {
@@ -151,7 +152,7 @@ function getDayColumns(
           {day}
           <br />
           <p
-          className={styles.mobileFontStyle}
+            className={styles.mobileFontStyle}
             style={{
               whiteSpace: "nowrap",
               fontFamily: "Tahoma, sans-serif",
@@ -160,8 +161,8 @@ function getDayColumns(
               marginTop: "3px",
             }}
           >
-          {formatDate(current)}
-        </p>
+            {formatDate(current)}
+          </p>
           <Toggle checked={!excludedDays.includes(day)} onChange={onChange} />
         </>
       ),

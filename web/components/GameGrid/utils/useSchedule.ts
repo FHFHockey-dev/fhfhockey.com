@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { WeekData } from "pages/api/v1/schedule/[startDate]";
 import { useTeams } from "../contexts/GameGridContext";
 import { getSchedule } from "lib/NHL/client";
+import { format, nextMonday } from "date-fns";
 
 export type ScheduleArray = (WeekData & { teamId: number })[];
 
 export default function useSchedule(
-  start: string
+  start: string,
+  extended = false
 ): [ScheduleArray, number[], boolean] {
   const [loading, setLoading] = useState(false);
   const [scheduleArray, setScheduleArray] = useState<ScheduleArray>([]);
@@ -18,7 +20,21 @@ export default function useSchedule(
     setLoading(true);
     (async () => {
       const schedule = await getSchedule(start);
+      const nextMon = format(nextMonday(new Date(start)), "yyyy-MM-dd");
+      const nextWeekSchedule = await getSchedule(nextMon);
+
       if (!ignore) {
+        if (extended) {
+          schedule.numGamesPerDay = [
+            ...schedule.numGamesPerDay,
+            ...nextWeekSchedule.numGamesPerDay.slice(0, 3),
+          ];
+          Object.entries(nextWeekSchedule.data).forEach(([id, weekData]) => {
+            schedule.data[Number(id)].nMON = weekData.MON;
+            schedule.data[Number(id)].nTUE = weekData.TUE;
+            schedule.data[Number(id)].nWED = weekData.WED;
+          });
+        }
         const paddedTeams = { ...schedule.data };
 
         // add other teams even they are not playing
@@ -46,7 +62,7 @@ export default function useSchedule(
       ignore = true;
       setLoading(false);
     };
-  }, [start, allTeams]);
+  }, [start, allTeams, extended]);
 
   return [scheduleArray, numGamesPerDay, loading];
 }

@@ -1,7 +1,12 @@
 import Image from "next/image";
 import { formatWinOdds } from "./utils/calcWinOdds";
 import { formatWeekScore } from "./utils/calcWeekScore";
-import { DAYS, GameData, WeekData } from "pages/api/v1/schedule/[startDate]";
+import {
+  DAYS,
+  EXTENDED_DAYS,
+  GameData,
+  WeekData,
+} from "pages/api/v1/schedule/[startDate]";
 import { useTeam } from "./contexts/GameGridContext";
 
 import styles from "./GameGrid.module.scss";
@@ -53,6 +58,7 @@ type TeamRowProps = {
   totalGamesPlayed: number;
   totalOffNights: number;
   weekScore: number;
+  extended: boolean;
 } & WeekData;
 
 function getGamesPlayedClass(totalGamesPlayed: number): string {
@@ -69,10 +75,9 @@ function getOffNightsClass(totalOffNights: number): string {
   return styles.greenBorder;
 }
 
-
 function TeamRow(props: TeamRowProps) {
   const team = useTeam(props.teamId);
-
+  const days = props.extended ? EXTENDED_DAYS : DAYS;
   return (
     <tr className={styles.teamRow}>
       {/* Team Name */}
@@ -81,7 +86,7 @@ function TeamRow(props: TeamRowProps) {
         <span className={styles.teamAbbreviation}>{team.abbreviation}</span>
       </td>
       {/* Days */}
-      {DAYS.map((day) => {
+      {days.map((day) => {
         const matchUp = props[day];
         const hasMatchUp_ = matchUp !== undefined;
         return (
@@ -149,7 +154,10 @@ function MatchUpCell({ home, homeTeam, awayTeam }: MatchUpCellProps) {
         <span className={styles.homeAway}>{text}</span>
         <p className={styles.score}>{stat}</p>
       </div>
-      <div className={`${styles.hideOnMobile}`} style={{ paddingRight: "3px", margin: "auto", fontSize: "0.75rem" }}>
+      <div
+        className={`${styles.hideOnMobile}`}
+        style={{ paddingRight: "3px", margin: "auto", fontSize: "0.75rem" }}
+      >
         {home ? "vs." : "@"}
       </div>
       <Image
