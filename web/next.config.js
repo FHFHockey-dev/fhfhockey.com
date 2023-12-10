@@ -3,21 +3,30 @@ const CMS_URL = process.env.CMS_URL;
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["images.unsplash.com", "cdn.sanity.io", "nhl.bamcontent.com"]
+    domains: ["images.unsplash.com", "cdn.sanity.io", "nhl.bamcontent.com"],
   },
   reactStrictMode: true,
   async rewrites() {
     return [
       {
         source: "/studio",
-        destination: `${CMS_URL}/studio`
+        destination: `${CMS_URL}/studio`,
       },
       {
         source: "/studio/:path*",
-        destination: `${CMS_URL}/studio/:path*`
-      }
-    ]
+        destination: `${CMS_URL}/studio/:path*`,
+      },
+    ];
   },
-}
+  async redirects() {
+    return [
+      {
+        source: "/game-grid",
+        destination: "/game-grid/basic",
+        permanent: false,
+      },
+    ];
+  },
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

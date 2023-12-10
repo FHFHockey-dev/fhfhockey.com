@@ -1,12 +1,24 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
-import { TextBanner } from "../components/Banner/Banner";
+import { TextBanner } from "components/Banner/Banner";
 import GameGrid from "components/GameGrid";
 import Container from "components/Layout/Container";
 import { GameGridMode } from "components/GameGrid/GameGrid";
 
 function GameGridPage() {
-  const [mode, setMode] = useState<GameGridMode>("basic");
+  const router = useRouter();
+  const urlMode = router.query.mode as GameGridMode;
+  const [mode, setMode] = useState<GameGridMode>(urlMode ?? "basic");
+
+  useEffect(() => {
+    router.replace({
+      query: {
+        ...router.query,
+        mode,
+      },
+    });
+  }, [mode, router]);
 
   return (
     <Container>
