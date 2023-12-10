@@ -23,7 +23,6 @@ export function getDayStr(start: Date, date: Date): EXTENDED_DAY_ABBREVIATION {
   const currentWeek = getWeek(date, GET_WEEK_OPTIONS);
 
   const dayStr = getDayStrInternal(date);
-  console.log({ dayStr, date });
   // @ts-expect-error
   return startWeek === currentWeek ? dayStr : `n${dayStr}`;
 }
