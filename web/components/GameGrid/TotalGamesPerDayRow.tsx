@@ -4,33 +4,37 @@ import styles from "./GameGrid.module.scss";
 type TotalGamesPerDayRowProps = {
   games: number[];
   excludedDays: DAY_ABBREVIATION[];
+  extended: boolean;
 };
 
 function TotalGamesPerDayRow({
   games,
   excludedDays,
+  extended,
 }: TotalGamesPerDayRowProps) {
-
-  
-  
   return (
     <tr className={styles.totalGamesPerDayRow}>
       {/* show GP on mobile */}
       <td className={styles.title}>{/* Total Games Per Day */}</td>
       {games.map((numGames, i) => (
-        <td 
-        className={`${styles.totalGamesPerDayCell} ${numGames > 8 ? styles.redBorder : styles.greenBorder}`}
-        key={i}
-      >
-        {numGames}
-      </td>     
-
+        <td
+          className={`${styles.totalGamesPerDayCell} ${
+            numGames > 8 ? styles.redBorder : styles.greenBorder
+          }`}
+          key={i}
+        >
+          {numGames}
+        </td>
       ))}
-      {/* Total GP */}
-      <td>{calcTotalGP(games, excludedDays)}</td>
-      {/* Total Off-Nights */}
-      <td>{calcTotalOffNights(games, excludedDays)}</td>
-      <td>-</td>
+      {!extended && (
+        <>
+          {/* Total GP */}
+          <td>{calcTotalGP(games, excludedDays)}</td>
+          {/* Total Off-Nights */}
+          <td>{calcTotalOffNights(games, excludedDays)}</td>
+          <td>-</td>
+        </>
+      )}
     </tr>
   );
 }
@@ -72,6 +76,5 @@ function calcTotalOffNights(games: number[], excludedDays: DAY_ABBREVIATION[]) {
   });
   return total;
 }
-
 
 export default TotalGamesPerDayRow;

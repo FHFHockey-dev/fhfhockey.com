@@ -107,19 +107,22 @@ function TeamRow(props: TeamRowProps) {
           </td>
         );
       })}
-
-      {/* Total Games Played */}
-      <td className={getGamesPlayedClass(props.totalGamesPlayed)}>
-        {props.totalGamesPlayed}
-      </td>
-      {/* Total Off-Nights */}
-      <td className={getOffNightsClass(props.totalOffNights)}>
-        {props.totalOffNights}
-      </td>
-      {/* Week Score */}
-      <td>
-        {props.weekScore === -100 ? "-" : formatWeekScore(props.weekScore)}
-      </td>
+      {!props.extended && (
+        <>
+          {/* Total Games Played */}
+          <td className={getGamesPlayedClass(props.totalGamesPlayed)}>
+            {props.totalGamesPlayed}
+          </td>
+          {/* Total Off-Nights */}
+          <td className={getOffNightsClass(props.totalOffNights)}>
+            {props.totalOffNights}
+          </td>
+          {/* Week Score */}
+          <td>
+            {props.weekScore === -100 ? "-" : formatWeekScore(props.weekScore)}
+          </td>
+        </>
+      )}
     </tr>
   );
 }

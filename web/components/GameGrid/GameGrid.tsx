@@ -38,7 +38,7 @@ function GameGridInternal({ mode }: GameGridProps) {
     format(new Date(dates[0]), "yyyy-MM-dd"),
     mode === "extended"
   );
-  console.log(schedule);
+
   const [excludedDays, setExcludedDays] = useState<DAY_ABBREVIATION[]>([]);
   const [sortKeys, setSortKeys] = useState<
     {
@@ -171,6 +171,7 @@ function GameGridInternal({ mode }: GameGridProps) {
             <TotalGamesPerDayRow
               games={numGamesPerDay}
               excludedDays={excludedDays}
+              extended={mode === "extended"}
             />
             {/* Teams */}
             {sortedTeams.map(({ teamId, ...rest }) => {

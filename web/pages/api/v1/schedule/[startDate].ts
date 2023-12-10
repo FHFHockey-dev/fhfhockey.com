@@ -38,6 +38,7 @@ export const EXTENDED_DAYS = [
   "nWED",
 ] as const;
 export type DAY_ABBREVIATION = typeof DAYS[number];
+export type EXTENDED_DAY_ABBREVIATION = typeof EXTENDED_DAYS[number];
 
 export type GameData = {
   id: number;

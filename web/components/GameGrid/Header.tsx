@@ -1,12 +1,7 @@
 import { Dispatch, SetStateAction, useState } from "react";
 import styles from "./GameGrid.module.scss";
 
-import {
-  addDays,
-  dateDiffInDays,
-  formatDate,
-  getDayStr,
-} from "./utils/date-func";
+import { addDays, formatDate, getDayStr } from "./utils/date-func";
 import Switch from "./Switch";
 import Toggle from "./Toggle";
 import { DAY_ABBREVIATION } from "pages/api/v1/schedule/[startDate]";
@@ -39,73 +34,80 @@ function Header({
   const [totalGamesPlayed, setTotalGamesPlayed] = useState(false);
   const [totalOffNights, setTotalOffNights] = useState(false);
   const [weekScore, setWeekScore] = useState(false);
-
+  const statsColumns = extended
+    ? []
+    : [
+        {
+          label: (
+            <>
+              GP
+              <Switch
+                checked={totalGamesPlayed}
+                onClick={() => {
+                  setTotalGamesPlayed((prev) => !prev);
+                  setSortKeys((prev) => {
+                    const keys = [...prev];
+                    keys.pop();
+                    return [
+                      { key: "totalGamesPlayed", ascending: totalGamesPlayed },
+                      ...keys,
+                    ];
+                  });
+                }}
+              />
+            </>
+          ),
+          id: "totalGamesPlayed",
+        },
+        {
+          label: (
+            <>
+              Off
+              <Switch
+                checked={totalOffNights}
+                onClick={() => {
+                  setTotalOffNights((prev) => !prev);
+                  setSortKeys((prev) => {
+                    const keys = [...prev];
+                    keys.pop();
+                    return [
+                      { key: "totalOffNights", ascending: totalOffNights },
+                      ...keys,
+                    ];
+                  });
+                }}
+              />
+            </>
+          ),
+          id: "totalOffNights",
+        },
+        {
+          label: (
+            <>
+              Score
+              <Switch
+                checked={weekScore}
+                onClick={() => {
+                  setWeekScore((prev) => !prev);
+                  setSortKeys((prev) => {
+                    const keys = [...prev];
+                    keys.pop();
+                    return [
+                      { key: "weekScore", ascending: weekScore },
+                      ...keys,
+                    ];
+                  });
+                }}
+              />
+            </>
+          ),
+          id: "weekScore",
+        },
+      ];
   const columns = [
     { label: "Team", id: "teamName" },
     ...getDayColumns(start, excludedDays, setExcludedDays, extended),
-    {
-      label: (
-        <>
-          GP
-          <Switch
-            checked={totalGamesPlayed}
-            onClick={() => {
-              setTotalGamesPlayed((prev) => !prev);
-              setSortKeys((prev) => {
-                const keys = [...prev];
-                keys.pop();
-                return [
-                  { key: "totalGamesPlayed", ascending: totalGamesPlayed },
-                  ...keys,
-                ];
-              });
-            }}
-          />
-        </>
-      ),
-      id: "totalGamesPlayed",
-    },
-    {
-      label: (
-        <>
-          Off
-          <Switch
-            checked={totalOffNights}
-            onClick={() => {
-              setTotalOffNights((prev) => !prev);
-              setSortKeys((prev) => {
-                const keys = [...prev];
-                keys.pop();
-                return [
-                  { key: "totalOffNights", ascending: totalOffNights },
-                  ...keys,
-                ];
-              });
-            }}
-          />
-        </>
-      ),
-      id: "totalOffNights",
-    },
-    {
-      label: (
-        <>
-          Score
-          <Switch
-            checked={weekScore}
-            onClick={() => {
-              setWeekScore((prev) => !prev);
-              setSortKeys((prev) => {
-                const keys = [...prev];
-                keys.pop();
-                return [{ key: "weekScore", ascending: weekScore }, ...keys];
-              });
-            }}
-          />
-        </>
-      ),
-      id: "weekScore",
-    },
+    ...statsColumns,
   ];
 
   return (
@@ -128,11 +130,12 @@ function getDayColumns(
   const startDate = new Date(start);
 
   // const days = dateDiffInDays(startDate, endDate);
-  const days = extended ? 6 + 3 : 6;
+  const numDays = extended ? 7 + 3 : 7;
   const columns = [] as { label: JSX.Element | string; id: string }[];
   let current = startDate;
-  for (let i = 0; i <= days; i++) {
-    const day = getDayStr(current);
+  for (let i = 0; i < numDays; i++) {
+    const day = getDayStr(startDate, current) as DAY_ABBREVIATION;
+    // Only need this handler in basic mode
     const onChange = () => {
       setExcludedDays((prev) => {
         const set = new Set(prev);
@@ -141,7 +144,6 @@ function getDayColumns(
         } else {
           set.add(day);
         }
-        i = i;
         return Array.from(set);
       });
     };
@@ -163,10 +165,12 @@ function getDayColumns(
           >
             {formatDate(current)}
           </p>
-          <Toggle checked={!excludedDays.includes(day)} onChange={onChange} />
+          {!extended && (
+            <Toggle checked={!excludedDays.includes(day)} onChange={onChange} />
+          )}
         </>
       ),
-      id: getDayStr(current),
+      id: getDayStr(startDate, current),
     });
     current = addDays(current, 1);
   }
