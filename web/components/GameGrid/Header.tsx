@@ -1,13 +1,7 @@
 import { Dispatch, SetStateAction, useState } from "react";
 import styles from "./GameGrid.module.scss";
 
-
-import {
-  addDays,
-  dateDiffInDays,
-  formatDate,
-  getDayStr,
-} from "./utils/date-func";
+import { addDays, formatDate, getDayStr } from "./utils/date-func";
 import Switch from "./Switch";
 import Toggle from "./Toggle";
 import { DAY_ABBREVIATION } from "pages/api/v1/schedule/[startDate]";
@@ -15,6 +9,7 @@ import { DAY_ABBREVIATION } from "pages/api/v1/schedule/[startDate]";
 type HeaderProps = {
   start: string;
   end: string;
+  extended: boolean;
   setSortKeys: Dispatch<
     SetStateAction<
       {
@@ -31,6 +26,7 @@ type HeaderProps = {
 function Header({
   start,
   end,
+  extended,
   setSortKeys,
   excludedDays,
   setExcludedDays,
@@ -38,73 +34,80 @@ function Header({
   const [totalGamesPlayed, setTotalGamesPlayed] = useState(false);
   const [totalOffNights, setTotalOffNights] = useState(false);
   const [weekScore, setWeekScore] = useState(false);
-
+  const statsColumns = extended
+    ? []
+    : [
+        {
+          label: (
+            <>
+              GP
+              <Switch
+                checked={totalGamesPlayed}
+                onClick={() => {
+                  setTotalGamesPlayed((prev) => !prev);
+                  setSortKeys((prev) => {
+                    const keys = [...prev];
+                    keys.pop();
+                    return [
+                      { key: "totalGamesPlayed", ascending: totalGamesPlayed },
+                      ...keys,
+                    ];
+                  });
+                }}
+              />
+            </>
+          ),
+          id: "totalGamesPlayed",
+        },
+        {
+          label: (
+            <>
+              Off
+              <Switch
+                checked={totalOffNights}
+                onClick={() => {
+                  setTotalOffNights((prev) => !prev);
+                  setSortKeys((prev) => {
+                    const keys = [...prev];
+                    keys.pop();
+                    return [
+                      { key: "totalOffNights", ascending: totalOffNights },
+                      ...keys,
+                    ];
+                  });
+                }}
+              />
+            </>
+          ),
+          id: "totalOffNights",
+        },
+        {
+          label: (
+            <>
+              Score
+              <Switch
+                checked={weekScore}
+                onClick={() => {
+                  setWeekScore((prev) => !prev);
+                  setSortKeys((prev) => {
+                    const keys = [...prev];
+                    keys.pop();
+                    return [
+                      { key: "weekScore", ascending: weekScore },
+                      ...keys,
+                    ];
+                  });
+                }}
+              />
+            </>
+          ),
+          id: "weekScore",
+        },
+      ];
   const columns = [
     { label: "Team", id: "teamName" },
-    ...getDayColumns(start, end, excludedDays, setExcludedDays),
-    {
-      label: (
-        <>
-          GP
-          <Switch
-            checked={totalGamesPlayed}
-            onClick={() => {
-              setTotalGamesPlayed((prev) => !prev);
-              setSortKeys((prev) => {
-                const keys = [...prev];
-                keys.pop();
-                return [
-                  { key: "totalGamesPlayed", ascending: totalGamesPlayed },
-                  ...keys,
-                ];
-              });
-            }}
-          />
-        </>
-      ),
-      id: "totalGamesPlayed",
-    },
-    {
-      label: (
-        <>
-          Off
-          <Switch
-            checked={totalOffNights}
-            onClick={() => {
-              setTotalOffNights((prev) => !prev);
-              setSortKeys((prev) => {
-                const keys = [...prev];
-                keys.pop();
-                return [
-                  { key: "totalOffNights", ascending: totalOffNights },
-                  ...keys,
-                ];
-              });
-            }}
-          />
-        </>
-      ),
-      id: "totalOffNights",
-    },
-    {
-      label: (
-        <>
-          Score
-          <Switch
-            checked={weekScore}
-            onClick={() => {
-              setWeekScore((prev) => !prev);
-              setSortKeys((prev) => {
-                const keys = [...prev];
-                keys.pop();
-                return [{ key: "weekScore", ascending: weekScore }, ...keys];
-              });
-            }}
-          />
-        </>
-      ),
-      id: "weekScore",
-    },
+    ...getDayColumns(start, excludedDays, setExcludedDays, extended),
+    ...statsColumns,
   ];
 
   return (
@@ -120,18 +123,19 @@ function Header({
 
 function getDayColumns(
   start: string,
-  end: string,
   excludedDays: DAY_ABBREVIATION[],
-  setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>
+  setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>,
+  extended: boolean
 ) {
   const startDate = new Date(start);
-  const endDate = new Date(end);
 
-  const days = dateDiffInDays(startDate, endDate);
+  // const days = dateDiffInDays(startDate, endDate);
+  const numDays = extended ? 7 + 3 : 7;
   const columns = [] as { label: JSX.Element | string; id: string }[];
   let current = startDate;
-  for (let i = 0; i <= days; i++) {
-    const day = getDayStr(current);
+  for (let i = 0; i < numDays; i++) {
+    const day = getDayStr(startDate, current) as DAY_ABBREVIATION;
+    // Only need this handler in basic mode
     const onChange = () => {
       setExcludedDays((prev) => {
         const set = new Set(prev);
@@ -140,7 +144,6 @@ function getDayColumns(
         } else {
           set.add(day);
         }
-        i = i;
         return Array.from(set);
       });
     };
@@ -151,7 +154,7 @@ function getDayColumns(
           {day}
           <br />
           <p
-          className={styles.mobileFontStyle}
+            className={styles.mobileFontStyle}
             style={{
               whiteSpace: "nowrap",
               fontFamily: "Tahoma, sans-serif",
@@ -160,12 +163,14 @@ function getDayColumns(
               marginTop: "3px",
             }}
           >
-          {formatDate(current)}
-        </p>
-          <Toggle checked={!excludedDays.includes(day)} onChange={onChange} />
+            {formatDate(current)}
+          </p>
+          {!extended && (
+            <Toggle checked={!excludedDays.includes(day)} onChange={onChange} />
+          )}
         </>
       ),
-      id: getDayStr(current),
+      id: getDayStr(startDate, current),
     });
     current = addDays(current, 1);
   }

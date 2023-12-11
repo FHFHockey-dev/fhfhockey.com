@@ -25,7 +25,20 @@ type GameWeek = {
 }[];
 
 export const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
+export const EXTENDED_DAYS = [
+  "MON",
+  "TUE",
+  "WED",
+  "THU",
+  "FRI",
+  "SAT",
+  "SUN",
+  "nMON",
+  "nTUE",
+  "nWED",
+] as const;
 export type DAY_ABBREVIATION = typeof DAYS[number];
+export type EXTENDED_DAY_ABBREVIATION = typeof EXTENDED_DAYS[number];
 
 export type GameData = {
   id: number;
@@ -42,6 +55,9 @@ export type WeekData = {
   FRI?: GameData;
   SAT?: GameData;
   SUN?: GameData;
+  nMON?: GameData;
+  nTUE?: GameData;
+  nWED?: GameData;
 };
 
 export type ScheduleData = {

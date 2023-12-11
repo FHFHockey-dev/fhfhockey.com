@@ -27,7 +27,7 @@ import { DAY_ABBREVIATION, WeekData } from "pages/api/v1/schedule/[startDate]";
 import { useTeamsMap } from "hooks/useTeams";
 import GameGridContext from "./contexts/GameGridContext";
 
-function GameGridInteral() {
+function GameGridInternal({ mode }: GameGridProps) {
   const router = useRouter();
   // [startDate, endDate]
   const [dates, setDates] = useState<[string, string]>(() =>
@@ -35,8 +35,10 @@ function GameGridInteral() {
   );
   const teams = useTeamsMap();
   const [schedule, numGamesPerDay, loading] = useSchedule(
-    format(new Date(dates[0]), "yyyy-MM-dd")
+    format(new Date(dates[0]), "yyyy-MM-dd"),
+    mode === "extended"
   );
+
   const [excludedDays, setExcludedDays] = useState<DAY_ABBREVIATION[]>([]);
   const [sortKeys, setSortKeys] = useState<
     {
@@ -159,6 +161,7 @@ function GameGridInteral() {
           <Header
             start={dates[0]}
             end={dates[1]}
+            extended={mode === "extended"}
             setSortKeys={setSortKeys}
             excludedDays={excludedDays}
             setExcludedDays={setExcludedDays}
@@ -168,10 +171,18 @@ function GameGridInteral() {
             <TotalGamesPerDayRow
               games={numGamesPerDay}
               excludedDays={excludedDays}
+              extended={mode === "extended"}
             />
             {/* Teams */}
             {sortedTeams.map(({ teamId, ...rest }) => {
-              return <TeamRow key={teamId} teamId={teamId} {...rest} />;
+              return (
+                <TeamRow
+                  key={teamId}
+                  teamId={teamId}
+                  extended={mode === "extended"}
+                  {...rest}
+                />
+              );
             })}
           </tbody>
         </table>
@@ -180,10 +191,16 @@ function GameGridInteral() {
   );
 }
 
-export default function GameGrid() {
+export type GameGridMode = "basic" | "extended";
+
+type GameGridProps = {
+  mode: GameGridMode;
+};
+
+export default function GameGrid({ mode }: GameGridProps) {
   return (
     <GameGridContext>
-      <GameGridInteral />
+      <GameGridInternal mode={mode} />
     </GameGridContext>
   );
 }

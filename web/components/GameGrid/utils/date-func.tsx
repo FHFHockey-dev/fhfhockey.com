@@ -1,15 +1,30 @@
-import { endOfISOWeek, startOfDay, startOfISOWeek } from "date-fns";
-import { DAY_ABBREVIATION } from "pages/api/v1/schedule/[startDate]";
+import { endOfISOWeek, getWeek, startOfDay, startOfISOWeek } from "date-fns";
+import {
+  DAY_ABBREVIATION,
+  EXTENDED_DAY_ABBREVIATION,
+} from "pages/api/v1/schedule/[startDate]";
 
-/**
- *
- * @param date An instance of Date
- * @returns Mon, Tue
- */
-export function getDayStr(date: Date) {
+function getDayStrInternal(date: Date) {
   return date
     .toLocaleString("en-us", { weekday: "short" })
     .toUpperCase() as DAY_ABBREVIATION;
+}
+
+const GET_WEEK_OPTIONS = { weekStartsOn: 1 } as const;
+
+/**
+ *
+ * @param start start date
+ * @param date An instance of Date
+ * @returns MON, TUE, nMON
+ */
+export function getDayStr(start: Date, date: Date): EXTENDED_DAY_ABBREVIATION {
+  const startWeek = getWeek(start, GET_WEEK_OPTIONS);
+  const currentWeek = getWeek(date, GET_WEEK_OPTIONS);
+
+  const dayStr = getDayStrInternal(date);
+  // @ts-expect-error
+  return startWeek === currentWeek ? dayStr : `n${dayStr}`;
 }
 
 export function addDays(date: Date, days: number) {
