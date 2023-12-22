@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/router";
+import Router, { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
 import { TextBanner } from "components/Banner/Banner";
 import GameGrid from "components/GameGrid";
@@ -12,13 +12,13 @@ function GameGridPage() {
   const [mode, setMode] = useState<GameGridMode>(urlMode ?? "basic");
 
   useEffect(() => {
-    router.replace({
+    Router.replace({
       query: {
-        ...router.query,
+        ...Router.query,
         mode,
       },
     });
-  }, [mode, router]);
+  }, [mode]);
 
   return (
     <Container>
