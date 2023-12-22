@@ -98,6 +98,7 @@ function GameGridInternal({ mode }: GameGridProps) {
           return ascending ? a[key] - b[key] : b[key] - a[key];
         }
       }
+      if (Object.keys(teams).length === 0) return 0;
       return teams[a.teamId].name.localeCompare(teams[b.teamId].name);
     });
   }, [filteredColumns, teams, sortKeys]);
