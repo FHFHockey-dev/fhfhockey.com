@@ -1,16 +1,14 @@
 import React, { useEffect, useState } from "react";
-import Router, { useRouter } from "next/router";
+import { GetServerSideProps } from "next";
+import Router from "next/router";
 import { NextSeo } from "next-seo";
 import { TextBanner } from "components/Banner/Banner";
 import GameGrid from "components/GameGrid";
 import Container from "components/Layout/Container";
 import { GameGridMode } from "components/GameGrid/GameGrid";
 
-function GameGridPage() {
-  const router = useRouter();
-  const urlMode = router.query.mode as GameGridMode;
-  const [mode, setMode] = useState<GameGridMode>(urlMode ?? "basic");
-
+function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
+  const [mode, setMode] = useState<GameGridMode>(initialMode ?? "basic");
   useEffect(() => {
     Router.replace({
       query: {
@@ -42,5 +40,13 @@ function GameGridPage() {
     </Container>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async ({ query }) => {
+  return {
+    props: {
+      initialMode: query.mode ?? "basic",
+    },
+  };
+};
 
 export default GameGridPage;
