@@ -18,15 +18,6 @@ const nextConfig = {
       },
     ];
   },
-  async redirects() {
-    return [
-      {
-        source: "/game-grid",
-        destination: "/game-grid/basic",
-        permanent: false,
-      },
-    ];
-  },
 };
 
 module.exports = nextConfig;
