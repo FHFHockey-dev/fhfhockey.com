@@ -5,7 +5,7 @@ import Link from "next/link";
 
 import { teamsInfo } from 'lib/NHL/teamsInfo';
 
-import StrengthOfSchedule from './strengthOfSchedule.js'; // Assuming it's in the same directory
+import StrengthOfSchedule from './strengthofSchedule'; // Assuming it's in the same directory
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 
 
