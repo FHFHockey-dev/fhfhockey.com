@@ -1,12 +1,12 @@
 // teamLandingPage.js
 
 import React, { useEffect, useState, useCallback } from 'react';
-import './teamLandingPage.module.scss';
 import Link from "next/link";
 
 import { teamsInfo } from 'lib/NHL/teamsInfo';
 
 import StrengthOfSchedule from './strengthOfSchedule.js'; // Assuming it's in the same directory
+import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 
 
 /// DEV NOTE:
@@ -19,18 +19,11 @@ const TeamStatsComponent = () => {
   const [sortedTableData, setSortedTableData] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [teamsWithPowerScores, setTeamsWithPowerScores] = useState([]);
-  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 600);
-
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobileView(window.innerWidth < 600);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
   
+const size = useScreenSize();
+const isMobileView = size.screen === BreakPoint.s;
+
+
   function calculateLeagueAverages(teamsData) {
     const statsSums = {
       L10ptsPct: 0,

@@ -10,9 +10,13 @@ import client from "../lib/apollo-client";
 import Layout from "../components/Layout";
 import "../styles/globals.css";
 import "../styles/vars.scss";
+
 // TODO: rewrite using css module
 import "../styles/Home.scss";
 import "pages/game/GamePage.scss";
+// C:\Users\timbr\OneDrive\Desktop\reactApp\fhfhockey.com\web\components\teamLandingPage\teamLandingPage.scss
+import "components/teamLandingPage/teamLandingPage.scss"
+
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
