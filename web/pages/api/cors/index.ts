@@ -6,8 +6,9 @@ export default async function handler(
 ) {
   const url = req.query.url as string;
   const method = (req.query.method ?? "GET") as string;
+
   try {
-    const data = await fetch(url, {
+    const data = await fetch(decodeURIComponent(url), {
       method,
     }).then((res) => res.json());
     res.status(200).json(data);
