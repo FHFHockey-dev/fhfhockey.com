@@ -1,5 +1,8 @@
 import React from "react";
 import { NextSeo } from "next-seo";
+import TeamStatsComponent from "components/teamLandingPage/teamLandingPage";
+import './teamLandingPage.module.scss';
+
 
 import TeamStatCard from "../components/TeamStatCard";
 import styles from "../styles/Stats.module.scss";
@@ -22,7 +25,7 @@ function Stats({ teams }: StatsProps) {
       />
 
       <h1>Stat Catalogue</h1>
-
+<TeamStatsComponent />
       <section className={styles.cards}>
         {teams.map((team) => (
           <TeamStatCard

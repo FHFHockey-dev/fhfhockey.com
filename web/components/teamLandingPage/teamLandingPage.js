@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import './teamLandingPage.module.scss';
-import { Link } from 'react-router-dom';
-import { teamsInfo } from './teamsInfo.js'; // Import teamsInfo
+import Link from "next/link";
+
+import { teamsInfo } from 'lib/NHL/teamsInfo';
+
 import StrengthOfSchedule from './strengthOfSchedule.js'; // Assuming it's in the same directory
 
 
@@ -18,6 +20,7 @@ const TeamStatsComponent = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [teamsWithPowerScores, setTeamsWithPowerScores] = useState([]);
   const [isMobileView, setIsMobileView] = useState(window.innerWidth < 600);
+
 
   useEffect(() => {
     const handleResize = () => {
@@ -428,7 +431,7 @@ const fetchDetailedTeamStats = useCallback(async (basicTeamData) => {
         </div>
         <div className="team-logos-grid">
           {teamData.map(team => (
-            <Link key={team.id} to={`/team/${team.abbreviation}`}>
+            <Link key={team.id} href={`/team/${team.abbreviation}`}>
               <img
                 src={`https://assets.nhle.com/logos/nhl/svg/${team.abbreviation}_light.svg`}
                 alt={`${team.fullName} Logo`} 
