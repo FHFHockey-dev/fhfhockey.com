@@ -3,11 +3,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import Link from "next/link";
 
-import { teamsInfo } from 'lib/NHL/teamsInfo';
-
 import StrengthOfSchedule from './strengthofSchedule'; // Assuming it's in the same directory
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
-
+import Fetch from 'lib/cors-fetch';
+import useTeams from 'hooks/useTeams';
 
 /// DEV NOTE:
 /// Move Fetches to server side
@@ -15,7 +14,7 @@ import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 
 
 const TeamStatsComponent = () => {
-  const [teamData, setTeamData] = useState([]);
+  const teams = useTeams();
   const [sortedTableData, setSortedTableData] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
   const [teamsWithPowerScores, setTeamsWithPowerScores] = useState([]);
@@ -172,7 +171,7 @@ const isMobileView = size.screen === BreakPoint.s;
     const boxscoreUrl = `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`;
   
     try {
-      const response = await fetch(boxscoreUrl);
+      const response = await Fetch(boxscoreUrl);
       const data = await response.json();
   
       // Determine if the team is the home or away team
@@ -201,7 +200,6 @@ const isMobileView = size.screen === BreakPoint.s;
 
   const getCurrentDate = () => {
     const today = new Date();
-    console.log(today)
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
     const day = String(today.getDate()).padStart(2, '0');
@@ -212,7 +210,7 @@ const isMobileView = size.screen === BreakPoint.s;
     const currentDate = getCurrentDate();
     const statsUrl = `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22teamId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=franchiseId%3D${franchiseId}%20and%20gameDate%3C=%22${currentDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%222023-09-29%22%20and%20gameTypeId=2`;
     try {
-      const response = await fetch(statsUrl);
+      const response = await Fetch(statsUrl);
       const data = await response.json();
 
       if (data && data.data) {
@@ -247,28 +245,6 @@ const isMobileView = size.screen === BreakPoint.s;
     }
   }, [fetchGameStats]); // Add dependencies if necessary
 
-  const fetchBasicTeamData = useCallback(async () => {
-    const teamsUrl = "https://api.nhle.com/stats/rest/en/franchise?sort=fullName&include=lastSeason.id&include=firstSeason.id";
-  
-    try {
-      const response = await fetch(teamsUrl);
-      const data = await response.json();
-  
-      // Filter out teams that are no longer active (lastSeason is not null)
-      const activeTeams = data.data.filter(team => team.lastSeason === null);
-  
-      return activeTeams.map(team => {
-        const abbreviation = Object.keys(teamsInfo).find(abbr => teamsInfo[abbr].name === team.fullName);
-        return { ...team, abbreviation };
-      });
-    } catch (error) {
-      console.error(`Error fetching basic team data: ${error}`);
-      return [];
-    }
-  }, []);
-  
-
-  
 
 const fetchDetailedTeamStats = useCallback(async (basicTeamData) => {
   const rankTeams = (data) => {
@@ -283,7 +259,7 @@ const fetchDetailedTeamStats = useCallback(async (basicTeamData) => {
   };
 
   const detailedDataPromises = basicTeamData.map(team => {
-    if (team.lastSeason === null) {
+    if (!team.lastSeason) {
       return fetchTeamStats(team.id, team.id)
         .then(stats => {
           return { ...team, lastTenGames: [stats] };
@@ -316,11 +292,10 @@ const fetchDetailedTeamStats = useCallback(async (basicTeamData) => {
 }, [fetchTeamStats]); // Add any additional dependencies as needed
 
   useEffect(() => {
-    fetchBasicTeamData().then(basicData => {
-      setTeamData(basicData); // Set basic team data for logos grid
-      fetchDetailedTeamStats(basicData); // Fetch detailed stats
-    });
-  }, [fetchBasicTeamData, fetchDetailedTeamStats]);
+    if(teams.length > 0){
+      fetchDetailedTeamStats(teams); // Fetch detailed stats
+    }
+  }, [teams,fetchDetailedTeamStats]);
   
   useEffect(() => {
     if (sortedTableData.length > 0) {
@@ -411,8 +386,6 @@ const fetchDetailedTeamStats = useCallback(async (basicTeamData) => {
     const scaledRank = Math.ceil((numericRank / 32) * 32);
     return `rank-color-${scaledRank}`;
   };
-  
-  
 
   return (
     <div className="team-landing-page">
@@ -423,7 +396,7 @@ const fetchDetailedTeamStats = useCallback(async (basicTeamData) => {
           <StrengthOfSchedule type="past" />
         </div>
         <div className="team-logos-grid">
-          {teamData.map(team => (
+          {teams.map(team => (
             <Link key={team.id} href={`/team/${team.abbreviation}`}>
               <img
                 src={`https://assets.nhle.com/logos/nhl/svg/${team.abbreviation}_light.svg`}

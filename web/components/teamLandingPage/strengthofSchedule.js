@@ -1,5 +1,6 @@
 // StrengthOfSchedule.js
 import React, { useState, useEffect } from 'react';
+import Fetch from 'lib/cors-fetch';
 
 const StrengthOfSchedule = ({ type }) => {
     const [teamRecords, setTeamRecords] = useState({});
@@ -7,13 +8,13 @@ const StrengthOfSchedule = ({ type }) => {
 
 
     useEffect(() => {
-        fetch('https://api-web.nhle.com/v1/standings/2023-11-27')
+        Fetch('https://api-web.nhle.com/v1/standings/2023-11-27')
             .then(response => response.json())
             .then(data => {
                 const processedData = processTeamData(data.standings);
                 setTeamRecords(processedData);
-                console.log("Team records:", teamRecords);
-                console.log("Team records:", processedData);
+                // console.log("Team records:", teamRecords);
+                // console.log("Team records:", processedData);
             })
             .catch(error => console.error('Error fetching NHL data:', error));
     }, []);
@@ -74,7 +75,7 @@ const StrengthOfSchedule = ({ type }) => {
     
         for (const abbrev of teamAbbrevs) {
             try {
-                const response = await fetch(`https://api-web.nhle.com/v1/club-schedule-season/${abbrev}/20232024`);
+                const response = await Fetch(`https://api-web.nhle.com/v1/club-schedule-season/${abbrev}/20232024`);
                 const data = await response.json();
                 gameLogs[abbrev] = processGameLogs(data.games, abbrev);
             } catch (error) {
