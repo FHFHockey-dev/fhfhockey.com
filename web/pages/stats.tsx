@@ -18,7 +18,7 @@ function Stats({ teams }: StatsProps) {
   return (
     <Container>
       <NextSeo
-        title="FHFH | Stat Catalogue"
+        title="FHFH | Team Stat Catalogue"
         description="Five Hole Fantasy Hockey Podcast Stats for all teams in NHL."
       />
 
