@@ -1,8 +1,8 @@
-import { ScheduleData } from "pages/api/v1/schedule/[startDate]";
 import type {
   Boxscore,
   Player,
   PlayerGameLog,
+  ScheduleData,
   Season,
   Team,
 } from "lib/NHL/types";
@@ -61,8 +61,10 @@ export async function getGameLogs(
   }
 }
 
-export async function getAllPlayers(): Promise<Player[]> {
-  return await get("/player");
+export async function getAllPlayers(seasonId?: number): Promise<Player[]> {
+  const query = new URLSearchParams();
+  seasonId !== undefined && query.append("season", seasonId.toString());
+  return await get(`/player?${query.toString()}`);
 }
 
 export async function getBoxscore(id: number): Promise<Boxscore | null> {

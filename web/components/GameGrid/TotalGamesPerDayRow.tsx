@@ -1,4 +1,4 @@
-import { DAYS, DAY_ABBREVIATION } from "pages/api/v1/schedule/[startDate]";
+import { DAYS, DAY_ABBREVIATION } from "lib/NHL/types";
 import styles from "./GameGrid.module.scss";
 
 type TotalGamesPerDayRowProps = {

@@ -1,8 +1,5 @@
 import { endOfISOWeek, getWeek, startOfDay, startOfISOWeek } from "date-fns";
-import {
-  DAY_ABBREVIATION,
-  EXTENDED_DAY_ABBREVIATION,
-} from "pages/api/v1/schedule/[startDate]";
+import { DAY_ABBREVIATION, EXTENDED_DAY_ABBREVIATION } from "lib/NHL/types";
 
 function getDayStrInternal(date: Date) {
   return date

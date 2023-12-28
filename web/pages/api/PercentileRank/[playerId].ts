@@ -3,6 +3,7 @@ import { isWithinInterval } from "date-fns";
 
 import { fetchNHL } from "lib/NHL/NHL_API";
 import { DateString, Input } from "../toi";
+import { getAllPlayers, getTeams } from "lib/NHL/server";
 
 export type PercentileRank = {
   Goals: number | null;
@@ -68,24 +69,18 @@ async function calcPercentileRank(
   endTime: string | null,
   season: string
 ): Promise<PercentileRank> {
+  return {
+    Assists: 0,
+    Blocks: 0,
+    Goals: 0,
+    Hits: 0,
+    PIM: 0,
+    PlusMinus: 0,
+    PPP: 0,
+    Shots: 0,
+  };
   // fetch all players
-  const teamIds = (
-    (await fetchNHL("/teams").then((json) => json.teams)) as any[]
-  ).map((team: any) => team.id);
-
-  const playerIds = (
-    await Promise.all(
-      teamIds.map(async (id: string) => {
-        const roster = (await fetchNHL(`/teams/${id}/roster`)).roster;
-        return (
-          (roster as any[])
-            // not a goalie
-            .filter((player) => player.position.abbreviation !== "G")
-            .map((player) => `${player.person.id}`)
-        );
-      })
-    )
-  ).flat(1);
+  const playerIds = (await getAllPlayers()).map((player) => player.id);
 
   const playersStats: Record<
     string,
