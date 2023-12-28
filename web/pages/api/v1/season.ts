@@ -7,5 +7,6 @@ export default async function handler(
   res: NextApiResponse<Season>
 ) {
   const data = await getCurrentSeason();
+  res.setHeader("Cache-Control", "max-age=86400");
   res.status(200).json(data);
 }
