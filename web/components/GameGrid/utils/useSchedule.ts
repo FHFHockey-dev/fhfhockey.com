@@ -41,6 +41,7 @@ export default function useSchedule(
         Object.keys(allTeams).forEach((id) => {
           const exist = paddedTeams[Number(id)] !== undefined;
           if (!exist) {
+            // @ts-expect-error
             paddedTeams[Number(id)] = {};
           }
         });

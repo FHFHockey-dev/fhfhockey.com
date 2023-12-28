@@ -2,8 +2,7 @@ import Image from "next/image";
 import { formatWinOdds } from "./utils/calcWinOdds";
 import { formatWeekScore } from "./utils/calcWeekScore";
 import { useTeam } from "./contexts/GameGridContext";
-import { DAYS, GameData, WeekData } from "lib/NHL/types";
-import { EXTENDED_DAYS } from "pages/api/v1/schedule/[startDate]";
+import { DAYS, EXTENDED_DAYS, GameData, WeekData } from "lib/NHL/types";
 
 import styles from "./GameGrid.module.scss";
 
@@ -83,7 +82,6 @@ function TeamRow(props: TeamRowProps) {
       </td>
       {/* Days */}
       {days.map((day) => {
-        // @ts-expect-error
         const matchUp = props[day];
         const hasMatchUp_ = matchUp !== undefined;
         return (

@@ -265,15 +265,7 @@ export type GameData = {
   awayTeam: { id: number; score: number; winOdds: number };
 };
 
-export type WeekData = {
-  MON?: GameData;
-  TUE?: GameData;
-  WED?: GameData;
-  THU?: GameData;
-  FRI?: GameData;
-  SAT?: GameData;
-  SUN?: GameData;
-};
+export type WeekData = Record<EXTENDED_DAY_ABBREVIATION, GameData>;
 
 export type ScheduleData = {
   data: Record<number, WeekData>;

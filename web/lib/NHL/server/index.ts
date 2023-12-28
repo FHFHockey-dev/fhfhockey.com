@@ -231,10 +231,11 @@ export async function getSchedule(startDate: string) {
           ),
         },
       };
-
+      // @ts-expect-error
       if (!TEAM_DAY_DATA[homeTeam.id]) TEAM_DAY_DATA[homeTeam.id] = {};
       TEAM_DAY_DATA[homeTeam.id][day.dayAbbrev] = gameData;
 
+      // @ts-expect-error
       if (!TEAM_DAY_DATA[awayTeam.id]) TEAM_DAY_DATA[awayTeam.id] = {};
       TEAM_DAY_DATA[awayTeam.id][day.dayAbbrev] = gameData;
     });
