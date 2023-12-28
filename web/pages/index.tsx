@@ -5,7 +5,6 @@ import { NextSeo } from "next-seo";
 import { useMemo, useState, useEffect } from "react";
 import moment from "moment";
 import Link from "next/link";
-import axios from "axios";
 
 import Banner from "../components/Banner";
 import SocialMedias from "components/SocialMedias";
@@ -14,8 +13,14 @@ import styles from "../styles/Home.module.scss";
 
 import { teamsInfo } from "lib/NHL/teamsInfo";
 
-const Home: NextPage = ({ initialGames, initialInjuries, initialStandings }) => {
-  const [currentDate, setCurrentDate] = useState(moment().utcOffset(-8).format("YYYY-MM-DD"));
+const Home: NextPage = ({
+  initialGames,
+  initialInjuries,
+  initialStandings,
+}) => {
+  const [currentDate, setCurrentDate] = useState(
+    moment().utcOffset(-8).format("YYYY-MM-DD")
+  );
   const [games, setGames] = useState(initialGames);
   const [injuries, setInjuries] = useState(initialInjuries);
   const [standings, setStandings] = useState(initialStandings);
@@ -23,31 +28,30 @@ const Home: NextPage = ({ initialGames, initialInjuries, initialStandings }) => 
   const injuryRowsPerPage = 25;
 
   const changeDate = async (days) => {
-    const newDate = moment(currentDate).add(days, 'days').format("YYYY-MM-DD");
+    const newDate = moment(currentDate).add(days, "days").format("YYYY-MM-DD");
     setCurrentDate(newDate);
   };
-  
+
   useEffect(() => {
     const fetchGames = async () => {
       const res = await fetch(`/api/v1/games?date=${currentDate}`);
       const data = await res.json();
       setGames(data);
     };
-  
+
     fetchGames();
   }, [currentDate]);
-  
 
-const currentPageInjuries = useMemo(() => {
-  // Check if 'injuries' is defined and is an array
-  if (Array.isArray(injuries)) {
-    return injuries.slice(
-      injuryPage * injuryRowsPerPage,
-      (injuryPage + 1) * injuryRowsPerPage
-    );
-  }
-  return []; // Return an empty array if 'injuries' is not defined
-}, [injuries, injuryPage]);
+  const currentPageInjuries = useMemo(() => {
+    // Check if 'injuries' is defined and is an array
+    if (Array.isArray(injuries)) {
+      return injuries.slice(
+        injuryPage * injuryRowsPerPage,
+        (injuryPage + 1) * injuryRowsPerPage
+      );
+    }
+    return []; // Return an empty array if 'injuries' is not defined
+  }, [injuries, injuryPage]);
 
   const displayRows = currentPageInjuries.map((injury, idx) => (
     <tr
@@ -95,7 +99,6 @@ const currentPageInjuries = useMemo(() => {
     setSortConfig({ key, direction });
   };
 
-
   const getDisplayGameState = (gameState) => {
     const gameStateMapping = {
       FUT: "Scheduled",
@@ -135,16 +138,18 @@ const currentPageInjuries = useMemo(() => {
       </Banner>
       <div className={styles.homepage}>
         <div className={styles.clGames}>
+          <div className={styles.gamesHeader}>
+            <button onClick={() => changeDate(-1)}>&lt;</button>
 
-        <div className={styles.gamesHeader}>
-          <button onClick={() => changeDate(-1)}>&lt;</button>
-
-          <div className={styles.headerAndDate}>
-            <h1>Today&apos;s Games</h1>
-            <p className={styles.dateDisplay}>{moment(currentDate).format('MM/DD/YYYY')}</p> {/* Formatted date here */}
+            <div className={styles.headerAndDate}>
+              <h1>Today&apos;s Games</h1>
+              <p className={styles.dateDisplay}>
+                {moment(currentDate).format("MM/DD/YYYY")}
+              </p>
+              {/* Formatted date here */}
+            </div>
+            <button onClick={() => changeDate(1)}>&gt;</button>
           </div>
-          <button onClick={() => changeDate(1)}>&gt;</button>
-        </div>
 
           <div className={styles.gamesContainer}>
             {games.map((game) => {
@@ -231,7 +236,6 @@ const currentPageInjuries = useMemo(() => {
               );
             })}
           </div>
-          
         </div>
         <div className={styles.separator}></div>
 
@@ -310,8 +314,8 @@ export async function getServerSideProps({ req, res }) {
   const fetchGames = async (date) => {
     try {
       const scheduleUrl = `https://api-web.nhle.com/v1/schedule/${date}`;
-      const response = await axios.get(scheduleUrl);
-      return response.data.gameWeek[0].games || [];
+      const response = await fetch(scheduleUrl).then((res) => res.json());
+      return response.gameWeek[0].games || [];
     } catch (error) {
       console.error("Error fetching games: ", error);
       return [];
@@ -321,16 +325,15 @@ export async function getServerSideProps({ req, res }) {
   // Fetch games for today's date
   const today = moment().utcOffset(-8).format("YYYY-MM-DD");
   const games = await fetchGames(today);
-  
 
   const fetchInjuries = async () => {
     try {
-      const response = await axios.get(
+      const response = await fetch(
         `https://stats.sports.bellmedia.ca/sports/hockey/leagues/nhl/playerInjuries?brand=tsn&type=json`
-      );
-      if (response.status !== 200) throw new Error("Failed to fetch");
+      ).then((res) => res.json());
+      // if (response.status !== 200) throw new Error("Failed to fetch");
 
-      let injuriesData = response.data.flatMap((team) =>
+      let injuriesData = response.flatMap((team) =>
         team.playerInjuries
           ? team.playerInjuries.map((injury) => ({
               ...injury,
@@ -353,12 +356,12 @@ export async function getServerSideProps({ req, res }) {
   const fetchStandings = async () => {
     try {
       const today = moment().utcOffset(-8).format("YYYY-MM-DD");
-      const response = await axios.get(
+      const response = await fetch(
         `https://api-web.nhle.com/v1/standings/${today}` // Updated API endpoint
-      );
-      if (response.status !== 200) throw new Error("Failed to fetch");
+      ).then((res) => res.json());
+      // if (response.status !== 200) throw new Error("Failed to fetch");
 
-      const standingsData = response.data.standings.map((team) => ({
+      const standingsData = response.standings.map((team) => ({
         leagueSequence: team.leagueSequence, // League sequence as the standing
         teamName: team.teamName.default, // Team name
         record: `${team.wins}-${team.losses}-${team.otLosses}`, // Record format: Wins-Losses-OT Losses
@@ -370,8 +373,8 @@ export async function getServerSideProps({ req, res }) {
     }
   };
 
-  const injuries = await fetchInjuries() || []; // Ensure it defaults to an empty array
-  const standings = await fetchStandings();
+  const injuries = (await fetchInjuries()) || []; // Ensure it defaults to an empty array
+  const standings = (await fetchStandings()) || [];
 
   return {
     props: {
