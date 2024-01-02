@@ -11,6 +11,7 @@ import {
   Season,
   Team,
 } from "lib/NHL/types";
+import supabase from "lib/supabase";
 
 export async function getPlayerGameLog(
   id: number | string,
@@ -96,13 +97,12 @@ export function getTeamLogo(teamName: string) {
  * @returns
  */
 export async function getCurrentSeason(): Promise<Season> {
-  const data = (
-    await restGet(
-      `/season?sort=${encodeURIComponent(
-        '[{"property": "id", "direction":"DESC"}]'
-      )}&limit=1`
-    )
-  ).data[0];
+  const { data } = await supabase
+    .from("seasons")
+    .select("*")
+    .order("startDate", { ascending: false })
+    .limit(1)
+    .single();
 
   return {
     seasonId: data.id,

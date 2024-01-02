@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase/server";
-import { getSeasons } from "lib/NHL/server";
+import { Season } from "lib/NHL/types";
+import { restGet } from "lib/NHL/base";
 
 export default async function handler(
   req: NextApiRequest,
@@ -23,4 +24,15 @@ export default async function handler(
   } catch (e: any) {
     res.status(400).end(e.message);
   }
+}
+
+async function getSeasons(): Promise<Season[]> {
+  const data = (await restGet(`/season`)).data.map((item) => ({
+    seasonId: item.id,
+    regularSeasonStartDate: item.startDate,
+    regularSeasonEndDate: item.regularSeasonEndDate,
+    seasonEndDate: item.endDate,
+    numberOfGames: item.numberOfGames,
+  }));
+  return data;
 }
