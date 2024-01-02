@@ -44,6 +44,9 @@ export async function getPlayer(id: number): Promise<Player | null> {
       sweaterNumber: data.sweaterNumber,
       positionCode: data.position,
       image: data.headshot,
+      birthDate: data.birthDate,
+      birthCity: data.birthCity.default,
+      birthCountry: data.birthCountry,
       age: differenceInYears(new Date(), new Date(data.birthDate)),
       height: data.heightInCentimeters,
       weight: data.weightInKilograms,
@@ -110,6 +113,17 @@ export async function getCurrentSeason(): Promise<Season> {
   };
 }
 
+export async function getSeasons(): Promise<Season[]> {
+  const data = (await restGet(`/season`)).data.map((item) => ({
+    seasonId: item.id,
+    regularSeasonStartDate: item.startDate,
+    regularSeasonEndDate: item.regularSeasonEndDate,
+    seasonEndDate: item.endDate,
+    numberOfGames: item.numberOfGames,
+  }));
+  return data;
+}
+
 export async function getAllPlayers(seasonId?: number) {
   const teams = await getTeams(seasonId);
   const tasks = teams.map((team) => async () => {
@@ -144,6 +158,9 @@ export async function getAllPlayers(seasonId?: number) {
     fullName: `${item.firstName.default} ${item.lastName.default}`,
     positionCode: item.positionCode,
     sweaterNumber: item.sweaterNumber,
+    birthDate: item.birthDate,
+    birthCity: item.birthCity.default,
+    birthCountry: item.birthCountry,
     age: differenceInYears(new Date(), new Date(item.birthDate)),
     height: item.heightInCentimeters,
     weight: item.weightInKilograms,
