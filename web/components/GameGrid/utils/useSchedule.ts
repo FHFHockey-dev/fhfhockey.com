@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTeams } from "../contexts/GameGridContext";
 import { getSchedule } from "lib/NHL/client";
-import { format, nextMonday } from "date-fns";
+import { format, nextMonday, parseISO } from "date-fns";
 import { WeekData } from "lib/NHL/types";
 
 export type ScheduleArray = (WeekData & { teamId: number })[];
@@ -20,7 +20,7 @@ export default function useSchedule(
     setLoading(true);
     (async () => {
       const schedule = await getSchedule(start);
-      const nextMon = format(nextMonday(new Date(start)), "yyyy-MM-dd");
+      const nextMon = format(nextMonday(parseISO(start)), "yyyy-MM-dd");
       const nextWeekSchedule = await getSchedule(nextMon);
 
       if (!ignore) {
