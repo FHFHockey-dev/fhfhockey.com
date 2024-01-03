@@ -3,7 +3,7 @@ import { isWithinInterval } from "date-fns";
 
 import { fetchNHL } from "lib/NHL/NHL_API";
 import { DateString, Input } from "../toi";
-import { getAllPlayers, getTeams } from "lib/NHL/server";
+import { getAllPlayers } from "lib/NHL/server";
 
 export type PercentileRank = {
   Goals: number | null;
