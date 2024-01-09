@@ -2,18 +2,19 @@ import { useEffect, useState } from "react";
 import { Button } from "@mui/material";
 import { TextBanner } from "components/Banner/Banner";
 import Container from "components/Layout/Container";
-import supabase from "lib/supabase";
+import supabase, { doPOST } from "lib/supabase";
 
 async function updatePlayers() {
-  const { session } = (await supabase.auth.getSession()).data;
-  if (!session) return;
+  try {
+    console.log("update players!!!");
+    const result = await doPOST("/api/v1/db/update-players", {
+      info: "hahahha",
+    });
 
-  fetch("/api/v1/db/test", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${session.access_token}`,
-    },
-  });
+    console.log({ result });
+  } catch (e: any) {
+    console.error(e.message);
+  }
 }
 
 export default function Page() {

@@ -1,15 +1,20 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import supabase from "lib/supabase/server";
 import { getAllPlayers, getCurrentSeason } from "lib/NHL/server";
+import { createClientWithToken, getRole } from "lib/supabase";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   try {
+    const supabase = createClientWithToken(req);
+    const isAdmin = (await getRole(supabase)) === "admin";
+    if (!isAdmin) throw new Error("You are not an Admin");
+
     const season = await getCurrentSeason();
     const players = await getAllPlayers(season.seasonId);
-
+    console.log(`${players.length} players fetched from NHL.com `);
+    console.log(`Updating the 'players' table.`);
     const { error: players_error } = await supabase.from("players").upsert(
       players.map((player) => ({
         id: player.id,
@@ -26,6 +31,7 @@ export default async function handler(
     );
     if (players_error) throw players_error;
 
+    console.log(`Updating the 'rosters' table.`);
     const { error: rosters_error } = await supabase.from("rosters").upsert(
       players.map((player) => ({
         playerId: player.id,
