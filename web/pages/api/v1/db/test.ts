@@ -1,33 +1,23 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { CookieOptions, createServerClient, serialize } from "@supabase/ssr";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { createClientWithToken } from "lib/supabase";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   try {
-    const supabase: SupabaseClient = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return req.cookies[name];
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            res.setHeader("Set-Cookie", serialize(name, value, options));
-          },
-          remove(name: string, options: CookieOptions) {
-            res.setHeader("Set-Cookie", serialize(name, "", options));
-          },
-        },
-      }
-    );
-    const seassion = supabase.auth.session();
+    const access_token = req.headers.authorization?.split(" ")[1] ?? "";
+    const client = createClientWithToken(access_token);
+    const { data } = await client.from("users").select("role").single();
+    if (data?.role !== "admin") {
+      return res.status(403).json({
+        message: "Failed to update the table, you are not an admin",
+        success: false,
+      });
+    }
 
-    res.json({
-      data: seassion,
+    return res.json({
+      data: data,
       message: "Successfully updated the players & rosters tables.",
       success: true,
     });

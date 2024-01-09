@@ -23,8 +23,12 @@ export default function AuthProvider({ children }: Props) {
 
   useEffect(() => {
     const extra = { role: isAdmin ? "admin" : null };
-    // on page load, populate the user
-    setUser(mapUser(supabase.auth.user(), extra));
+    (async () => {
+      // on page load, populate the user
+      const { user } = (await supabase.auth.getUser()).data;
+      if (!user) return;
+      setUser(mapUser(user, extra));
+    })();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -33,7 +37,7 @@ export default function AuthProvider({ children }: Props) {
     );
 
     return () => {
-      authListener?.unsubscribe();
+      authListener.subscription.unsubscribe();
     };
   }, [isAdmin]);
 

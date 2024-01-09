@@ -4,12 +4,14 @@ import { TextBanner } from "components/Banner/Banner";
 import Container from "components/Layout/Container";
 import supabase from "lib/supabase";
 
-function updatePlayers() {
-  supabase.auth.user();
-  fetch("/api/db/update-players", {
+async function updatePlayers() {
+  const { session } = (await supabase.auth.getSession()).data;
+  if (!session) return;
+
+  fetch("/api/v1/db/test", {
     method: "POST",
     headers: {
-      Authorization: `Bearer x`,
+      Authorization: `Bearer ${session.access_token}`,
     },
   });
 }
@@ -31,6 +33,10 @@ export default function Page() {
       num players: {numPlayers}
       <Button variant="contained" color="info" onClick={updatePlayers}>
         Update `players` table
+      </Button>
+      <div />
+      <Button variant="contained" onClick={updatePlayers}>
+        Test
       </Button>
     </Container>
   );
