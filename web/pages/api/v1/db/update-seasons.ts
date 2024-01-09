@@ -17,9 +17,12 @@ export default adminOnly(async function handler(req, res) {
     );
     if (error) throw error;
 
-    res.status(200).end("successfully updated the seasons table");
+    res.status(200).json({
+      message: "successfully updated the seasons table",
+      success: true,
+    });
   } catch (e: any) {
-    res.status(400).end(e.message);
+    res.status(400).json({ message: e.message, success: false });
   }
 });
 
