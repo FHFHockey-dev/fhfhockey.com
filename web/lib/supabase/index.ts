@@ -46,9 +46,10 @@ export function createClientWithToken(...args: any) {
 export async function doPOST(url: string, body?: any) {
   const { data } = await supabase.auth.getSession();
   const session = data.session;
-
+  console.log(session);
   if (!session) throw new Error("Failed to authenticate.");
 
+  console.log("send post request to", url);
   const result = await fetch(url, {
     method: "POST",
     headers: {
@@ -58,6 +59,11 @@ export async function doPOST(url: string, body?: any) {
   }).then((res) => res.json());
 
   return result;
+}
+
+export async function getRole(client: SupabaseClient) {
+  const { data } = await client.from("users").select("role").single();
+  return data?.role ?? "";
 }
 
 export default supabase;
