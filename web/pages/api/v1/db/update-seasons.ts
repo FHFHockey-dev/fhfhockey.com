@@ -1,13 +1,10 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import supabase from "lib/supabase/server";
 import { Season } from "lib/NHL/types";
 import { restGet } from "lib/NHL/base";
+import adminOnly from "utils/adminOnlyMiddleware";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default adminOnly(async function handler(req, res) {
   try {
+    const { supabase } = req;
     const seasons = await getSeasons();
     const { error } = await supabase.from("seasons").upsert(
       seasons.map((season) => ({
@@ -24,7 +21,7 @@ export default async function handler(
   } catch (e: any) {
     res.status(400).end(e.message);
   }
-}
+});
 
 async function getSeasons(): Promise<Season[]> {
   const data = (await restGet(`/season`)).data.map((item) => ({

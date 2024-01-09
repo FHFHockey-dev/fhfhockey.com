@@ -1,13 +1,10 @@
-import type { NextApiRequest, NextApiResponse } from "next";
-import supabase from "lib/supabase/server";
 import { restGet } from "lib/NHL/base";
 import { getCurrentSeason } from "lib/NHL/server";
+import adminOnly from "utils/adminOnlyMiddleware";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default adminOnly(async function handler(req, res) {
   try {
+    const { supabase } = req;
     // fetch all teams
     const { data: teams } = await restGet("/team");
     const { error } = await supabase.from("teams").upsert(
@@ -38,4 +35,4 @@ export default async function handler(
   } catch (e: any) {
     res.status(400).end(e.message);
   }
-}
+});

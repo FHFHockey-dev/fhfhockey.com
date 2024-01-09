@@ -1,16 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from "next";
 import { getAllPlayers, getCurrentSeason } from "lib/NHL/server";
-import { createClientWithToken, getRole } from "lib/supabase";
+import adminOnly from "utils/adminOnlyMiddleware";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default adminOnly(async function handler(req, res) {
   try {
-    const supabase = createClientWithToken(req);
-    const isAdmin = (await getRole(supabase)) === "admin";
-    if (!isAdmin) throw new Error("You are not an Admin");
-
+    const { supabase } = req;
     const season = await getCurrentSeason();
     const players = await getAllPlayers(season.seasonId);
     console.log(`${players.length} players fetched from NHL.com `);
@@ -54,4 +47,4 @@ export default async function handler(
 
     console.table(e);
   }
-}
+});
