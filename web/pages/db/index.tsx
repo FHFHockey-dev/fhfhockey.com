@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Button,
   Card,
   CardActions,
   CardContent,
   CardMedia,
-  Snackbar,
   Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2"; // Grid version 2
@@ -14,57 +12,54 @@ import Grid from "@mui/material/Unstable_Grid2"; // Grid version 2
 import { TextBanner } from "components/Banner/Banner";
 import Container from "components/Layout/Container";
 import supabase, { doPOST } from "lib/supabase";
+import { useSnackbar } from "notistack";
 
 export default function Page() {
-  const [open, setOpen] = useState(false);
+  const { enqueueSnackbar } = useSnackbar();
 
   const [numPlayers, setNumPlayers] = useState(0);
   const [numSeasons, setNumSeasons] = useState(0);
   const [numTeams, setNumTeams] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-
-  // snackbar
-  const handleClose = (
-    event: React.SyntheticEvent | Event,
-    reason?: string
-  ) => {
-    if (reason === "clickaway") {
-      return;
-    }
-
-    setOpen(false);
-  };
 
   async function updatePlayers() {
     try {
-      await doPOST("/api/v1/db/update-players");
-      setOpen(true);
-      setError(null);
+      const { message, success } = await doPOST("/api/v1/db/update-players");
+      enqueueSnackbar(message, {
+        variant: success ? "success" : "error",
+      });
     } catch (e: any) {
       console.error(e.message);
-      setError(e.message);
+      enqueueSnackbar(e.message, {
+        variant: "error",
+      });
     }
   }
 
   async function updateSeasons() {
     try {
-      await doPOST("/api/v1/db/update-seasons");
-      setOpen(true);
-      setError(null);
+      const { message, success } = await doPOST("/api/v1/db/update-seasons");
+      enqueueSnackbar(message, {
+        variant: success ? "success" : "error",
+      });
     } catch (e: any) {
       console.error(e.message);
-      setError(e.message);
+      enqueueSnackbar(e.message, {
+        variant: "error",
+      });
     }
   }
 
   async function updateTeams() {
     try {
-      await doPOST("/api/v1/db/update-teams");
-      setOpen(true);
-      setError(null);
+      const { message, success } = await doPOST("/api/v1/db/update-teams");
+      enqueueSnackbar(message, {
+        variant: success ? "success" : "error",
+      });
     } catch (e: any) {
       console.error(e.message);
-      setError(e.message);
+      enqueueSnackbar(e.message, {
+        variant: "error",
+      });
     }
   }
 
@@ -127,8 +122,8 @@ export default function Page() {
                 seasons
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                The table contains the data for {numSeasons} seasons. It updates
-                the `seasons` table.
+                The table contains the data for {numSeasons} seasons. This card
+                updates the `seasons` table.
               </Typography>
             </CardContent>
             <CardActions>
@@ -150,31 +145,28 @@ export default function Page() {
                 teams
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                The table contains the data for {numTeams} teams. It updates the
-                `teams` & `team_season` tables.
+                The table contains the data for {numTeams} teams. This card
+                updates the `teams` & `team_season` tables.
               </Typography>
             </CardContent>
             <CardActions>
-              <Button size="small" onClick={updateSeasons}>
+              <Button size="small" onClick={updateTeams}>
                 Update
               </Button>
             </CardActions>
           </Card>
         </Grid>
       </Grid>
-      <Snackbar open={open} autoHideDuration={6000} onClose={handleClose}>
-        {error ? (
-          <Alert severity="error">Unable to update the table. {error}</Alert>
-        ) : (
-          <Alert
-            onClose={handleClose}
-            severity="success"
-            sx={{ width: "100%" }}
-          >
-            {`Successfully updated the table!`}
-          </Alert>
-        )}
-      </Snackbar>
+
+      <Button
+        onClick={() => {
+          enqueueSnackbar("a simple snackbar", {
+            variant: "success",
+          });
+        }}
+      >
+        Snackbar
+      </Button>
     </Container>
   );
 }

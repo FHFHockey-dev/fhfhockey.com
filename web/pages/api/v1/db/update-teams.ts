@@ -31,8 +31,10 @@ export default adminOnly(async function handler(req, res) {
       );
     if (team_seasonError) throw team_seasonError;
 
-    res.status(200).end("successfully updated the teams table");
+    res
+      .status(200)
+      .json({ message: "successfully updated the teams table", success: true });
   } catch (e: any) {
-    res.status(400).end(e.message);
+    res.status(400).json({ message: e.message, success: false });
   }
 });

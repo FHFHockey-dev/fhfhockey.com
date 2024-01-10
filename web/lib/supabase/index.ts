@@ -46,7 +46,6 @@ export function createClientWithToken(...args: any) {
 export async function doPOST(url: string, body?: any) {
   const { data } = await supabase.auth.getSession();
   const session = data.session;
-  console.log(session);
   if (!session) throw new Error("Failed to authenticate.");
 
   console.log("send post request to", url);
