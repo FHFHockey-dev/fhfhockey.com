@@ -20,6 +20,7 @@ export default function Page() {
 
   const [numPlayers, setNumPlayers] = useState(0);
   const [numSeasons, setNumSeasons] = useState(0);
+  const [numTeams, setNumTeams] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   // snackbar
@@ -56,6 +57,17 @@ export default function Page() {
     }
   }
 
+  async function updateTeams() {
+    try {
+      await doPOST("/api/v1/db/update-teams");
+      setOpen(true);
+      setError(null);
+    } catch (e: any) {
+      console.error(e.message);
+      setError(e.message);
+    }
+  }
+
   useEffect(() => {
     (async () => {
       const { count: numPlayers } = await supabase
@@ -67,6 +79,11 @@ export default function Page() {
         .from("seasons")
         .select("id", { count: "exact", head: true });
       setNumSeasons(numSeasons ?? 0);
+
+      const { count: numTeams } = await supabase
+        .from("teams")
+        .select("id", { count: "exact", head: true });
+      setNumTeams(numTeams ?? 0);
     })();
   }, []);
 
@@ -87,7 +104,8 @@ export default function Page() {
                 players
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                The table contains the data for {numPlayers} players.
+                The table contains the data for {numPlayers} players. The
+                `players` and `rosters` tables will be updated simultaneously.
               </Typography>
             </CardContent>
             <CardActions>
@@ -109,7 +127,31 @@ export default function Page() {
                 seasons
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                The table contains the data for {numSeasons} seasons.
+                The table contains the data for {numSeasons} seasons. It updates
+                the `seasons` table.
+              </Typography>
+            </CardContent>
+            <CardActions>
+              <Button size="small" onClick={updateSeasons}>
+                Update
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+        <Grid xs={4}>
+          <Card>
+            <CardMedia
+              sx={{ height: 140 }}
+              image="https://media.d3.nhle.com/image/private/t_ratio16_9-size20/prd/e0zxtwtpk50zvxkoovim"
+              title="teams"
+            />
+            <CardContent>
+              <Typography gutterBottom variant="h5" component="div">
+                teams
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                The table contains the data for {numTeams} teams. It updates the
+                `teams` & `team_season` tables.
               </Typography>
             </CardContent>
             <CardActions>
