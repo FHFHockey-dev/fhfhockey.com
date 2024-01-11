@@ -7,7 +7,7 @@
 - id
 - date
 - season
-- startTimeUTC
+- startTime
 - gameType
 - homeTeamId
 - awayTeamId
