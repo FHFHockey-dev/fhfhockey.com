@@ -129,7 +129,7 @@ export async function getAllPlayers(seasonId?: number) {
   const tasks = teams.map((team) => async () => {
     try {
       const { forwards, defensemen, goalies } = await get(
-        `/roster/${team.abbreviation}/current`
+        `/roster/${team.abbreviation}/${seasonId ?? "current"}`
       );
       // add current team id
       const array = [...forwards, ...defensemen, ...goalies].map((item) => ({
@@ -166,8 +166,12 @@ export async function getAllPlayers(seasonId?: number) {
     weight: item.weightInKilograms,
     image: item.headshot,
   }));
-
-  return players;
+  // remove duplicate players
+  const playersMap: Record<number, Player> = {};
+  players.forEach((player) => {
+    playersMap[player.id] = player;
+  });
+  return Object.values(playersMap);
 }
 
 async function getTeamsMap(): Promise<Record<number, Team>> {
