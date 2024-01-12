@@ -48,47 +48,13 @@ export async function updateStats(gameId: number, supabase: SupabaseClient) {
     .from("teamGameStats")
     .upsert([homeTeamGameStats, awayTeamGameStats])
     .throwOnError();
-
-  // update forwardsGameStats table
   const { forwards, defense, goalies } = getPlayersGameStats(boxscore);
-  for (const p of forwards) {
-    const { error } = await supabase.from("forwardsGameStats").upsert(p);
-    if (error === null) continue;
-    if (error.details === 'Key is not present in table "players".') {
-      // add the missing player
-      console.log("try to update the missing player " + p.playerId);
-      await updatePlayer(p.playerId, supabase);
-      await supabase.from("forwardsGameStats").upsert(p).throwOnError();
-    } else {
-      throw error;
-    }
-  }
-  // update defenseGameStats table
-  for (const p of defense) {
-    const { error } = await supabase.from("defenseGameStats").upsert(p);
-    if (error === null) continue;
-    if (error.details === 'Key is not present in table "players".') {
-      // add the missing player
-      console.log("try to update the missing player " + p.playerId);
-      await updatePlayer(p.playerId, supabase);
-      await supabase.from("defenseGameStats").upsert(p).throwOnError();
-    } else {
-      throw error;
-    }
-  }
-  // update goaliesGameStats table
-  for (const p of goalies) {
-    const { error } = await supabase.from("goaliesGameStats").upsert(p);
-    if (error === null) continue;
-    if (error.details === 'Key is not present in table "players".') {
-      // add the missing player
-      console.log("try to update the missing player " + p.playerId);
-      await updatePlayer(p.playerId, supabase);
-      await supabase.from("goaliesGameStats").upsert(p).throwOnError();
-    } else {
-      throw error;
-    }
-  }
+
+  await Promise.all([
+    updateGameStats({ playerType: "forwards", players: forwards, supabase }),
+    updateGameStats({ playerType: "defense", players: defense, supabase }),
+    updateGameStats({ playerType: "goalies", players: goalies, supabase }),
+  ]);
 }
 
 type Category =
@@ -130,14 +96,8 @@ function getTeamStats(landing: any, isHomeTeam: boolean) {
   };
 }
 
-type PlayerName = {
-  default: string;
-};
-
 type Forward = {
   playerId: number;
-  sweaterNumber: number;
-  name: PlayerName;
   position: "C" | "L" | "R"; // Assuming these are the only positions for forwards
   goals: number;
   assists: number;
@@ -160,8 +120,6 @@ type Forward = {
 
 type Defense = {
   playerId: number;
-  sweaterNumber: number;
-  name: PlayerName;
   position: "D"; // Assuming 'D' is the only position for defense
   goals: number;
   assists: number;
@@ -184,14 +142,12 @@ type Defense = {
 
 type Goalie = {
   playerId: number;
-  sweaterNumber: number;
-  name: PlayerName;
   position: "G"; // Assuming 'G' is the only position for goalies
   evenStrengthShotsAgainst: string;
   powerPlayShotsAgainst: string;
   shorthandedShotsAgainst: string;
   saveShotsAgainst: string;
-  savePctg: string;
+  savePctg: number;
   evenStrengthGoalsAgainst: number;
   powerPlayGoalsAgainst: number;
   shorthandedGoalsAgainst: number;
@@ -283,4 +239,45 @@ function getPlayersGameStats(boxscore: any) {
     defense,
     goalies,
   };
+}
+
+type BaseType = {
+  supabase: SupabaseClient;
+};
+
+type UpdateGameStatsParams =
+  | (BaseType & { playerType: "forwards"; players: Forward[] })
+  | (BaseType & { playerType: "defense"; players: Defense[] })
+  | (BaseType & { playerType: "goalies"; players: Goalie[] });
+
+async function updateGameStats({
+  playerType,
+  players,
+  supabase,
+}: UpdateGameStatsParams) {
+  if (playerType === "defense") {
+    players;
+  }
+  const promises = players.map(async (player) => {
+    if (!player) return;
+    try {
+      await supabase
+        .from(`${playerType}GameStats`)
+        .upsert(player)
+        .throwOnError();
+    } catch (error: any) {
+      if (error.details === 'Key is not present in table "players".') {
+        console.log(`try to update the missing player ${player.playerId}`);
+        await updatePlayer(player.playerId, supabase);
+        await supabase
+          .from(`${playerType}GameStats`)
+          .upsert(player)
+          .throwOnError();
+      } else {
+        throw error;
+      }
+    }
+  });
+
+  await Promise.all(promises);
 }
