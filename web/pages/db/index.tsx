@@ -22,6 +22,7 @@ export default function Page() {
   const [numSeasons, setNumSeasons] = useState(0);
   const [numTeams, setNumTeams] = useState(0);
   const [numGames, setNumGames] = useState(0);
+  const [games, setGames] = useState<{ id: number; date: string }[]>([]);
   const season = useCurrentSeason();
 
   async function updatePlayers() {
@@ -80,6 +81,26 @@ export default function Page() {
     }
   }
 
+  async function updateStats() {
+    try {
+      if (games.length) {
+        for (const game of games) {
+          const { message, success } = await doPOST(
+            `/api/v1/db/update-stats/${game.id}`
+          );
+          enqueueSnackbar(message, {
+            variant: success ? "success" : "error",
+          });
+        }
+      }
+    } catch (e: any) {
+      console.error(e.message);
+      enqueueSnackbar(e.message, {
+        variant: "error",
+      });
+    }
+  }
+
   useEffect(() => {
     (async () => {
       const { count: numPlayers } = await supabase
@@ -107,6 +128,14 @@ export default function Page() {
         .select("id", { count: "exact", head: true })
         .eq("seasonId", season.seasonId);
       setNumGames(numGames ?? 0);
+
+      const { data: finishedGames } = await supabase
+        .from("games")
+        .select("id,date")
+        .eq("seasonId", season.seasonId)
+        .lte("startTime", new Date().toISOString())
+        .order("date", { ascending: true });
+      setGames(finishedGames?.slice(10, 30) ?? []);
     })();
   }, [season?.seasonId]);
 
@@ -208,13 +237,37 @@ export default function Page() {
             </CardActions>
           </Card>
         </Grid>
+
+        <Grid xs={4}>
+          <Card>
+            <CardMedia
+              sx={{ height: 140 }}
+              image="https://media.d3.nhle.com/image/private/t_ratio16_9-size20/prd/e0zxtwtpk50zvxkoovim"
+              title="teams"
+            />
+            <CardContent>
+              <Typography gutterBottom variant="h5" component="div">
+                stats
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Update stats for {games.length} games between{" "}
+                {games.at(0)?.date} ~ {games.at(-1)?.date}
+              </Typography>
+            </CardContent>
+            <CardActions>
+              <Button size="small" onClick={updateStats}>
+                Update
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
       </Grid>
 
       <Button
-        onClick={() => {
-          enqueueSnackbar("a simple snackbar", {
-            variant: "success",
-          });
+        onClick={async () => {
+          console.log("click clll");
+          const { data } = await supabase.from("goaliesGameStats").select("*");
+          console.log(data);
         }}
       >
         Snackbar
