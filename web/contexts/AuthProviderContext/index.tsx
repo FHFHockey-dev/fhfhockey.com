@@ -31,7 +31,10 @@ export default function AuthProvider({ children }: Props) {
         const extra: any = { role: null };
 
         if (event !== "SIGNED_OUT") {
-          const { data } = await supabase.from("users").select("role").single();
+          const { data } = await supabase
+            .from("users")
+            .select("role")
+            .maybeSingle();
           extra.role = data?.role;
         }
 
