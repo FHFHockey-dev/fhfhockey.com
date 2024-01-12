@@ -13,6 +13,7 @@ import { TextBanner } from "components/Banner/Banner";
 import Container from "components/Layout/Container";
 import supabase, { doPOST } from "lib/supabase";
 import { useSnackbar } from "notistack";
+import useCurrentSeason from "hooks/useCurrentSeason";
 
 export default function Page() {
   const { enqueueSnackbar } = useSnackbar();
@@ -20,6 +21,8 @@ export default function Page() {
   const [numPlayers, setNumPlayers] = useState(0);
   const [numSeasons, setNumSeasons] = useState(0);
   const [numTeams, setNumTeams] = useState(0);
+  const [numGames, setNumGames] = useState(0);
+  const season = useCurrentSeason();
 
   async function updatePlayers() {
     try {
@@ -63,6 +66,20 @@ export default function Page() {
     }
   }
 
+  async function updateGames() {
+    try {
+      const { message, success } = await doPOST("/api/v1/db/update-games");
+      enqueueSnackbar(message, {
+        variant: success ? "success" : "error",
+      });
+    } catch (e: any) {
+      console.error(e.message);
+      enqueueSnackbar(e.message, {
+        variant: "error",
+      });
+    }
+  }
+
   useEffect(() => {
     (async () => {
       const { count: numPlayers } = await supabase
@@ -81,6 +98,17 @@ export default function Page() {
       setNumTeams(numTeams ?? 0);
     })();
   }, []);
+
+  useEffect(() => {
+    if (!season?.seasonId) return;
+    (async () => {
+      const { count: numGames } = await supabase
+        .from("games")
+        .select("id", { count: "exact", head: true })
+        .eq("seasonId", season.seasonId);
+      setNumGames(numGames ?? 0);
+    })();
+  }, [season?.seasonId]);
 
   return (
     <Container>
@@ -151,6 +179,30 @@ export default function Page() {
             </CardContent>
             <CardActions>
               <Button size="small" onClick={updateTeams}>
+                Update
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+
+        <Grid xs={4}>
+          <Card>
+            <CardMedia
+              sx={{ height: 140 }}
+              image="https://media.d3.nhle.com/image/private/t_ratio16_9-size20/prd/e0zxtwtpk50zvxkoovim"
+              title="teams"
+            />
+            <CardContent>
+              <Typography gutterBottom variant="h5" component="div">
+                games
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                The table contains the data for {numGames} games in{" "}
+                {season?.seasonId} season. This card updates the `games` tables.
+              </Typography>
+            </CardContent>
+            <CardActions>
+              <Button size="small" onClick={updateGames}>
                 Update
               </Button>
             </CardActions>
