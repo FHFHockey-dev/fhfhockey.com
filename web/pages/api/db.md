@@ -14,13 +14,64 @@
 
 ### teamGameStats
 
+https://api-web.nhle.com/v1/gamecenter/2023020204/landing
+
+https://api-web.nhle.com/v1/gamecenter/2023020204/boxscore
+
+```json
+{
+"teamGameStats": [
+      {
+        "category": "sog",
+        "awayValue": "35",
+        "homeValue": "25"
+      },
+      {
+        "category": "faceoffPctg",
+        "awayValue": "72.7",
+        "homeValue": "27.3"
+      },
+      {
+        "category": "powerPlay",
+        "awayValue": "2/5",
+        "homeValue": "0/4"
+      },
+      {
+        "category": "pim",
+        "awayValue": "8",
+        "homeValue": "10"
+      },
+      {
+        "category": "hits",
+        "awayValue": "26",
+        "homeValue": "15"
+      },
+      {
+        "category": "blockedShots",
+        "awayValue": "18",
+        "homeValue": "22"
+      },
+      {
+        "category": "giveaways",
+        "awayValue": "6",
+        "homeValue": "6"
+      },
+      {
+        "category": "takeaways",
+        "awayValue": "6",
+        "homeValue": "2"
+      }
+    ]
+}
+```
+
 - gameId
 - teamId
 - score
 - sog
 - faceoffPctg
 - pim
-- powerPlayConversion
+- powerPlayConversion (fetched from boxscore)
 - hits
 - blockedShots
 - giveaways
@@ -61,6 +112,7 @@
 - blockedShots
 - powerPlayGoals
 - powerPlayPoints
+- shorthandedGoals
 - shPoints
 - shots
 - faceoffs
