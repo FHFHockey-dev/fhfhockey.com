@@ -6,8 +6,12 @@ const BASE_URL_TWO = "https://api.nhle.com/stats/rest/en";
  * @param path
  * @returns
  */
-export function get<T = any>(path: string): Promise<T> {
-  return fetch(`${BASE_URL_ONE}${path}`).then((res) => res.json());
+export function get<T = any>(path: string, debug: boolean = false): Promise<T> {
+  const url = `${BASE_URL_ONE}${path}`;
+  if (debug) {
+    console.log({ url });
+  }
+  return fetch(url).then((res) => res.json());
 }
 
 /**
