@@ -16,7 +16,7 @@ export default adminOnly(async (req, res) => {
     await updateStats(gameId, supabase);
     return res.json({
       gameId,
-      message: "Successfully updated the stats for game with id of " + gameId,
+      message: "Successfully updated the stats for game with id " + gameId,
       success: true,
     });
   } catch (e: any) {
@@ -27,9 +27,12 @@ export default adminOnly(async (req, res) => {
   }
 });
 
+type GameState = "OFF" | "FINAL" | "FUT";
+const isGameFinished = (state: GameState) =>
+  (["OFF", "FINAL"] as GameState[]).includes(state);
 export async function updateStats(gameId: number, supabase: SupabaseClient) {
   const landing = await get(`/gamecenter/${gameId}/landing`);
-  if (landing.gameState !== "OFF") {
+  if (!isGameFinished(landing.gameState)) {
     throw new Error("The gameState for the game is " + landing.gameState);
   }
   const homeTeamGameStats = getTeamStats(landing, true);
