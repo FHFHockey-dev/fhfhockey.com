@@ -37,6 +37,7 @@ export async function getPlayerGameLog(
 export async function getPlayer(id: number): Promise<Player | null> {
   try {
     const data = await get(`/player/${id}/landing`);
+
     return {
       id: data.playerId,
       firstName: data.firstName.default,
@@ -46,15 +47,15 @@ export async function getPlayer(id: number): Promise<Player | null> {
       positionCode: data.position,
       image: data.headshot,
       birthDate: data.birthDate,
-      birthCity: data.birthCity.default,
-      birthCountry: data.birthCountry,
+      birthCity: data.birthCity?.default ?? "",
+      birthCountry: data.birthCountry ?? "US",
       age: differenceInYears(new Date(), new Date(data.birthDate)),
-      height: data.heightInCentimeters,
-      weight: data.weightInKilograms,
-      teamId: data.currentTeamId,
-      teamAbbreviation: data.currentTeamAbbrev,
+      height: data.heightInCentimeters ?? 0,
+      weight: data.weightInKilograms ?? 0,
+      teamId: data.currentTeamId ?? 0,
+      teamAbbreviation: data.currentTeamAbbrev ?? "XXX",
       teamLogo: data.teamLogo,
-      teamName: data.fullTeamName?.default,
+      teamName: data.fullTeamName ? data.fullTeamName.default : "",
     };
   } catch (e: any) {
     console.error(e);
