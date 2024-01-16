@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-export default function ClientOnly({ children, ...delegated }) {
+export default function ClientOnly({ children, placeHolder, ...delegated }) {
   const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
@@ -8,7 +8,7 @@ export default function ClientOnly({ children, ...delegated }) {
   }, []);
 
   if (!hasMounted) {
-    return null;
+    return placeHolder ?? null;
   }
 
   return <div {...delegated}>{children}</div>;

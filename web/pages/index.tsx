@@ -9,6 +9,7 @@ import Link from "next/link";
 import Banner from "../components/Banner";
 import SocialMedias from "components/SocialMedias";
 import Container from "components/Layout/Container";
+import ClientOnly from "components/ClientOnly";
 import styles from "../styles/Home.module.scss";
 
 import { teamsInfo } from "lib/NHL/teamsInfo";
@@ -223,7 +224,9 @@ const Home: NextPage = ({
                           {getDisplayGameState(game.gameState)}
                         </span>
                         <span className={styles.gameTimeText}>
-                          {moment(game.startTimeUTC).format("h:mm A")}
+                          <ClientOnly placeHolder={<>&nbsp;</>}>
+                            {moment(game.startTimeUTC).format("h:mm A")}
+                          </ClientOnly>
                         </span>
                       </div>
 
