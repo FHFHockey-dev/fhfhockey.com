@@ -10,6 +10,12 @@ export default adminOnly(async (req, res) => {
       .limit(5)
       .throwOnError();
     const ids: number[] = data.map((game: any) => game.gameid);
+    if (ids.length === 0) {
+      return res.json({
+        success: true,
+        message: "All game statistics have been successfully updated.",
+      });
+    }
     console.log(ids);
 
     // Create an array of promises
