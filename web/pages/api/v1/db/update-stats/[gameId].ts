@@ -269,7 +269,7 @@ async function updateGameStats({
         .upsert(player)
         .throwOnError();
     } catch (error: any) {
-      if (error.details === 'Key is not present in table "players".') {
+      if (error.code === "23503") {
         console.log(`try to update the missing player ${player.playerId}`);
         await updatePlayer(player.playerId, supabase);
         await supabase
@@ -277,6 +277,7 @@ async function updateGameStats({
           .upsert(player)
           .throwOnError();
       } else {
+        console.error("player " + JSON.stringify(player));
         throw error;
       }
     }

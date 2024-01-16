@@ -27,6 +27,6 @@ export default adminOnly(async (req, res) => {
         `Successfully updated the stats for these games` + JSON.stringify(ids),
     });
   } catch (e: any) {
-    res.json({ message: e.message, success: false });
+    res.status(400).json({ message: e.message, success: false });
   }
 });
