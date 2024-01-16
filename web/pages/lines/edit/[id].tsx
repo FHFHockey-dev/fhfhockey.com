@@ -97,6 +97,7 @@ function EditPage() {
       .from("line_combinations")
       .delete()
       .match({ id })
+      .select()
       .single();
 
     if (!error) {

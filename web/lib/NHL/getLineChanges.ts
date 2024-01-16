@@ -109,12 +109,12 @@ export default async function getLineChanges(
 
   const {
     data: { date },
-  } = await supabase
+  } = (await supabase
     .from("line_combinations")
     .select("date")
     .order("date", { ascending: false })
     .limit(1)
-    .single();
+    .single()) as any;
 
   return {
     teams,

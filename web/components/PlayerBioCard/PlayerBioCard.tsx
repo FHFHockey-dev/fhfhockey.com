@@ -33,6 +33,9 @@ const PLACEHOLDER: Player = {
   fullName: "",
   firstName: "Timothy",
   lastName: "Branson",
+  birthCity: "New York",
+  birthCountry: "USA",
+  birthDate: "2022-12-20",
   sweaterNumber: 0,
   teamId: 0,
 };

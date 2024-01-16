@@ -11,6 +11,7 @@ import {
   Season,
   Team,
 } from "lib/NHL/types";
+import supabase from "lib/supabase";
 
 export async function getPlayerGameLog(
   id: number | string,
@@ -36,6 +37,7 @@ export async function getPlayerGameLog(
 export async function getPlayer(id: number): Promise<Player | null> {
   try {
     const data = await get(`/player/${id}/landing`);
+
     return {
       id: data.playerId,
       firstName: data.firstName.default,
@@ -44,13 +46,16 @@ export async function getPlayer(id: number): Promise<Player | null> {
       sweaterNumber: data.sweaterNumber,
       positionCode: data.position,
       image: data.headshot,
+      birthDate: data.birthDate,
+      birthCity: data.birthCity?.default ?? "",
+      birthCountry: data.birthCountry ?? "US",
       age: differenceInYears(new Date(), new Date(data.birthDate)),
-      height: data.heightInCentimeters,
-      weight: data.weightInKilograms,
-      teamId: data.currentTeamId,
-      teamAbbreviation: data.currentTeamAbbrev,
+      height: data.heightInCentimeters ?? 0,
+      weight: data.weightInKilograms ?? 0,
+      teamId: data.currentTeamId ?? 0,
+      teamAbbreviation: data.currentTeamAbbrev ?? "XXX",
       teamLogo: data.teamLogo,
-      teamName: data.fullTeamName?.default,
+      teamName: data.fullTeamName ? data.fullTeamName.default : "",
     };
   } catch (e: any) {
     console.error(e);
@@ -93,13 +98,12 @@ export function getTeamLogo(teamName: string) {
  * @returns
  */
 export async function getCurrentSeason(): Promise<Season> {
-  const data = (
-    await restGet(
-      `/season?sort=${encodeURIComponent(
-        '[{"property": "id", "direction":"DESC"}]'
-      )}&limit=1`
-    )
-  ).data[0];
+  const { data } = await supabase
+    .from("seasons")
+    .select("*")
+    .order("startDate", { ascending: false })
+    .limit(1)
+    .single();
 
   return {
     seasonId: data.id,
@@ -110,12 +114,23 @@ export async function getCurrentSeason(): Promise<Season> {
   };
 }
 
+export async function getSeasons(): Promise<Season[]> {
+  const data = (await restGet(`/season`)).data.map((item) => ({
+    seasonId: item.id,
+    regularSeasonStartDate: item.startDate,
+    regularSeasonEndDate: item.regularSeasonEndDate,
+    seasonEndDate: item.endDate,
+    numberOfGames: item.numberOfGames,
+  }));
+  return data;
+}
+
 export async function getAllPlayers(seasonId?: number) {
   const teams = await getTeams(seasonId);
   const tasks = teams.map((team) => async () => {
     try {
       const { forwards, defensemen, goalies } = await get(
-        `/roster/${team.abbreviation}/current`
+        `/roster/${team.abbreviation}/${seasonId ?? "current"}`
       );
       // add current team id
       const array = [...forwards, ...defensemen, ...goalies].map((item) => ({
@@ -144,13 +159,20 @@ export async function getAllPlayers(seasonId?: number) {
     fullName: `${item.firstName.default} ${item.lastName.default}`,
     positionCode: item.positionCode,
     sweaterNumber: item.sweaterNumber,
+    birthDate: item.birthDate,
+    birthCity: item.birthCity.default,
+    birthCountry: item.birthCountry,
     age: differenceInYears(new Date(), new Date(item.birthDate)),
     height: item.heightInCentimeters,
     weight: item.weightInKilograms,
     image: item.headshot,
   }));
-
-  return players;
+  // remove duplicate players
+  const playersMap: Record<number, Player> = {};
+  players.forEach((player) => {
+    playersMap[player.id] = player;
+  });
+  return Object.values(playersMap);
 }
 
 async function getTeamsMap(): Promise<Record<number, Team>> {

@@ -6,6 +6,9 @@ export type Player = {
   positionCode: string;
   sweaterNumber: number;
   age: number;
+  birthDate: string;
+  birthCity: string;
+  birthCountry: string;
   weight: number;
   height: number;
   image: string;
