@@ -7,11 +7,13 @@ export default adminOnly(async (req, res) => {
     //
     const { data } = await supabase
       .rpc("get_unupdated_games")
-      .limit(10)
+      .limit(5)
       .throwOnError();
-    const ids = data.map((game: any) => game.gameid);
+    const ids: number[] = data.map((game: any) => game.gameid);
     console.log(ids);
-    for (const id of ids) {
+
+    // Create an array of promises
+    const updatePromises = ids.map(async (id) => {
       console.log("updating the stats for game with id " + id);
       await updateStats(id, supabase);
       await supabase
@@ -19,7 +21,10 @@ export default adminOnly(async (req, res) => {
         .update({ updated: true })
         .eq("gameId", id)
         .throwOnError();
-    }
+    });
+
+    // Wait for all promises to resolve
+    await Promise.all(updatePromises);
 
     res.json({
       success: true,
