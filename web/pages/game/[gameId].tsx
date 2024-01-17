@@ -43,19 +43,19 @@ export default function Page({ game }: Props) {
     };
 
     if (game) {
-      fetchTeamStats(game.linescore.teams.home.team.id, "home");
-      fetchTeamStats(game.linescore.teams.away.team.id, "away");
+      fetchTeamStats(game.homeTeam.id, "home");
+      fetchTeamStats(game.awayTeam.id, "away");
     }
   }, [game]);
 
-  const homeTeamName = game.linescore.teams.home.team.name;
-  const awayTeamName = game.linescore.teams.away.team.name;
+  const homeTeamName = game.homeTeam.name.default;
+  const awayTeamName = game.awayTeam.name.default;
 
   const homeTeamAbbreviation = Object.keys(teamsInfo).find(
-    (key) => teamsInfo[key].name === homeTeamName
+    (key) => teamsInfo[key].id === game.homeTeam.id
   );
   const awayTeamAbbreviation = Object.keys(teamsInfo).find(
-    (key) => teamsInfo[key].name === awayTeamName
+    (key) => teamsInfo[key].id === game.awayTeam.id
   );
 
   const homeTeamColors = teamsInfo[homeTeamAbbreviation] || {};
@@ -345,3 +345,59 @@ export async function getServerSideProps({ params }) {
     },
   };
 }
+
+const getAdvantage = (
+  homeStat,
+  awayStat,
+  homeAbbreviation,
+  awayAbbreviation,
+  statName,
+  isLowerBetter = false
+) => {
+  let homeTeamColors = teamsInfo[homeAbbreviation] || {};
+  let awayTeamColors = teamsInfo[awayAbbreviation] || {};
+
+  if (
+    (!isLowerBetter && homeStat > awayStat) ||
+    (isLowerBetter && homeStat < awayStat)
+  ) {
+    return (
+      <td
+        className="gamePageAdvantageDecider"
+        style={{
+          backgroundColor: homeTeamColors.primaryColor,
+          color: homeTeamColors.secondaryColor,
+        }}
+      >
+        <div className="gamePageAdvantageDecider__wrapper">
+          <div className="statName">{statName}</div>
+          <div>{homeAbbreviation}</div>
+        </div>
+      </td>
+    );
+  } else if (
+    (!isLowerBetter && homeStat < awayStat) ||
+    (isLowerBetter && homeStat > awayStat)
+  ) {
+    return (
+      <td
+        className="gamePageAdvantageDecider"
+        style={{
+          backgroundColor: awayTeamColors.primaryColor,
+          color: awayTeamColors.secondaryColor,
+        }}
+      >
+        <div className="statName">{statName}</div>
+        {awayAbbreviation}
+      </td>
+    );
+  } else {
+    // Handle the case where the stats are equal.
+    return (
+      <td className="gamePageAdvantageDecider">
+        <div className="statName">{statName}</div>
+        TIE
+      </td>
+    );
+  }
+};
