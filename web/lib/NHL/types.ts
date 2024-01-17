@@ -3,20 +3,18 @@ export type Player = {
   firstName: string;
   fullName: string;
   lastName: string;
-  positionCode: string;
+  position: string;
   sweaterNumber: number;
   age: number;
   birthDate: string;
-  birthCity: string;
-  birthCountry: string;
-  weight: number;
-  height: number;
-  image: string;
+  birthCity: string | null;
+  birthCountry: string | null;
+  weightInKilograms: number;
+  heightInCentimeters: number;
   // Team info
-  teamId: number;
-  teamName: string;
-  teamAbbreviation: string;
-  teamLogo: string;
+  teamId: number | undefined;
+  teamName: string | undefined;
+  teamAbbreviation: string | undefined;
 };
 
 export type PlayerGameLog = {

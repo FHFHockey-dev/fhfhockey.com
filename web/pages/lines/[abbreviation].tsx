@@ -28,6 +28,7 @@ import {
   getTeamLogo,
   getTeams,
 } from "lib/NHL/server";
+import { Team } from "lib/NHL/types";
 
 export type PlayerBasic = {
   playerId: number;
@@ -53,7 +54,7 @@ type Props = {
   /**
    * An array of team info.
    */
-  teams: { abbreviation: string; name: string; shortName: string }[];
+  teams: Team[];
 
   lineCombinations: {
     source_url: string;
@@ -140,7 +141,7 @@ export default function TeamLC({
             className={styles.select}
             option={abbreviation as string}
             options={teams.map((team) => ({
-              label: team.shortName,
+              label: team.abbreviation,
               value: team.abbreviation,
             }))}
             onOptionChange={onTeamChange}

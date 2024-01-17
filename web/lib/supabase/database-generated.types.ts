@@ -372,21 +372,21 @@ export interface Database {
           created_at: string;
           playerId: number;
           seasonId: number;
-          sweaterNumber: number | null;
+          sweaterNumber: number;
           teamId: number;
         };
         Insert: {
           created_at?: string;
           playerId: number;
           seasonId: number;
-          sweaterNumber?: number | null;
+          sweaterNumber: number;
           teamId: number;
         };
         Update: {
           created_at?: string;
           playerId?: number;
           seasonId?: number;
-          sweaterNumber?: number | null;
+          sweaterNumber?: number;
           teamId?: number;
         };
         Relationships: [

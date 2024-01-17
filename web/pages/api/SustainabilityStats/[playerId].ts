@@ -57,11 +57,11 @@ async function getStats(
 ): Promise<Data> {
   const player = await getPlayer(Number(playerId));
 
-  // NST's team abbreviation
-  const team = player?.teamId ? NST_TEAM_ABBREVATION[player.teamName] : "";
-  if (!player?.teamId) {
+  if (!player?.teamName) {
     throw new Error("The player is not active " + JSON.stringify(player));
   }
+  // NST's team abbreviation
+  const team = player?.teamId ? NST_TEAM_ABBREVATION[player.teamName] : "";
 
   const url = new URL(
     "https://www.naturalstattrick.com/playerteams.php?stype=2&sit=all&score=all&rate=n&pos=S&loc=B&toi=0&gpfilt=gpdate&tgp=410&lines=single&draftteam=ALL"

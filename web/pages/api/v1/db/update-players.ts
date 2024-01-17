@@ -1,4 +1,6 @@
-import { getAllPlayers, getCurrentSeason } from "lib/NHL/server";
+import { getCurrentSeason, getTeams } from "lib/NHL/server";
+import { differenceInYears } from "date-fns";
+import { get } from "lib/NHL/base";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 export default adminOnly(async function handler(req, res) {
@@ -48,3 +50,74 @@ export default adminOnly(async function handler(req, res) {
     console.table(e);
   }
 });
+
+type Player = {
+  id: number;
+  firstName: string;
+  fullName: string;
+  lastName: string;
+  positionCode: string;
+  sweaterNumber: number;
+  age: number;
+  birthDate: string;
+  birthCity: string;
+  birthCountry: string;
+  weight: number;
+  height: number;
+  image: string;
+  // Team info
+  teamId: number;
+  teamName: string;
+  teamAbbreviation: string;
+  teamLogo: string;
+};
+
+async function getAllPlayers(seasonId?: number) {
+  const teams = await getTeams(seasonId);
+  const tasks = teams.map((team) => async () => {
+    try {
+      const { forwards, defensemen, goalies } = await get(
+        `/roster/${team.abbreviation}/${seasonId ?? "current"}`
+      );
+      // add current team id
+      const array = [...forwards, ...defensemen, ...goalies].map((item) => ({
+        ...item,
+        teamId: team.id,
+        teamName: team.name,
+        teamAbbreviation: team.abbreviation,
+        teamLogo: team.logo,
+      }));
+      return array;
+    } catch (e: any) {
+      // console.error(`/roster/${team.abbreviation}/current`, "is missing");
+      return [];
+    }
+  });
+
+  const result = (await Promise.all(tasks.map((task) => task()))).flat();
+  const players: Player[] = result.map((item) => ({
+    id: item.id,
+    teamId: item.teamId,
+    teamName: item.teamName,
+    teamAbbreviation: item.teamAbbreviation,
+    teamLogo: item.teamLogo,
+    firstName: item.firstName.default,
+    lastName: item.lastName.default,
+    fullName: `${item.firstName.default} ${item.lastName.default}`,
+    positionCode: item.positionCode,
+    sweaterNumber: item.sweaterNumber,
+    birthDate: item.birthDate,
+    birthCity: item.birthCity.default,
+    birthCountry: item.birthCountry,
+    age: differenceInYears(new Date(), new Date(item.birthDate)),
+    height: item.heightInCentimeters,
+    weight: item.weightInKilograms,
+    image: item.headshot,
+  }));
+  // remove duplicate players
+  const playersMap: Record<number, Player> = {};
+  players.forEach((player) => {
+    playersMap[player.id] = player;
+  });
+  return Object.values(playersMap);
+}
