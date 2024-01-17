@@ -12,7 +12,7 @@ type Handler = (req: ApiRequest, res: NextApiResponse) => Promise<any>;
 export default function adminOnly(handler: Handler): Handler {
   return async (req, res) => {
     const authHeader = req.headers.authorization ?? "";
-    let client: SupabaseClient;
+    let client: ReturnType<typeof createClientWithToken>;
     // check if this is invoked by cron
     if (invokedByCron(authHeader)) {
       client = serviceRoleClient;

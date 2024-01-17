@@ -279,7 +279,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     .select(
       "date, team_name, team_abbreviation, forwards, defensemen, goalies, source_url"
     )
-    .eq("team_abbreviation", params?.abbreviation)
+    .eq("team_abbreviation", params?.abbreviation ?? "")
     .order("date", {
       ascending: false,
     })

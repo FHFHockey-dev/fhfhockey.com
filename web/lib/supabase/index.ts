@@ -1,18 +1,15 @@
 import { IncomingMessage } from "http";
 import { SupabaseClient, createClient } from "@supabase/supabase-js";
+import type { Database } from "./database-generated.types";
 
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
   "https://fyhftlxokyjtpndbkfse.supabase.co";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
-export function createClientWithToken(
-  access_token: string
-): SupabaseClient<any, "public", any>;
-export function createClientWithToken(
-  req: IncomingMessage
-): SupabaseClient<any, "public", any>;
+export function createClientWithToken(access_token: string): typeof supabase;
+export function createClientWithToken(req: IncomingMessage): typeof supabase;
 export function createClientWithToken(...args: any) {
   let access_token = "";
   if (typeof args[0] === "string") {
@@ -22,7 +19,7 @@ export function createClientWithToken(...args: any) {
     access_token = req.headers["authorization"]?.split(" ")[1] ?? "";
   }
 
-  const client = createClient(supabaseUrl, supabaseKey, {
+  const client = createClient<Database>(supabaseUrl, supabaseKey, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,

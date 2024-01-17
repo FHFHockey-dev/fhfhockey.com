@@ -104,6 +104,7 @@ export async function getCurrentSeason(): Promise<Season> {
     .order("startDate", { ascending: false })
     .limit(1)
     .single();
+  if (data === null) throw Error("Cannot find the current season");
 
   return {
     seasonId: data.id,
