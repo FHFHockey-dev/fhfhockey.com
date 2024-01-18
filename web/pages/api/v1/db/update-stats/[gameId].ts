@@ -1,7 +1,9 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { parse } from "node-html-parser";
 import { get } from "lib/NHL/base";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { updatePlayer } from "../update-player/[playerId]";
+import fetchWithCache from "lib/fetchWithCache";
 
 export default adminOnly(async (req, res) => {
   const { supabase } = req;
@@ -35,8 +37,8 @@ export async function updateStats(gameId: number, supabase: SupabaseClient) {
   if (!isGameFinished(landing.gameState)) {
     throw new Error("The gameState for the game is " + landing.gameState);
   }
-  const homeTeamGameStats = getTeamStats(landing, true);
-  const awayTeamGameStats = getTeamStats(landing, false);
+  const homeTeamGameStats = await getTeamStats(landing, true);
+  const awayTeamGameStats = await getTeamStats(landing, false);
 
   // obtain powerPlayConversion
   const boxscore = await get(`/gamecenter/${gameId}/boxscore`);
@@ -76,13 +78,15 @@ type TeamGameStat = {
   homeValue: string;
 };
 
-function getTeamStats(landing: any, isHomeTeam: boolean) {
+async function getTeamStats(landing: any, isHomeTeam: boolean) {
   const getStat = (key: Category) => {
     const stats: TeamGameStat[] = landing.summary.teamGameStats;
     return stats.find((stat) => stat.category === key)?.[
       isHomeTeam ? "homeValue" : "awayValue"
     ];
   };
+  // get team power play time
+  const powerPlayToi = await getPPTOI(landing.season, landing.id, isHomeTeam);
   return {
     gameId: landing.id,
     teamId: isHomeTeam ? landing.homeTeam.id : landing.awayTeam.id,
@@ -96,7 +100,48 @@ function getTeamStats(landing: any, isHomeTeam: boolean) {
     takeaways: Number(getStat("takeaways")),
     powerPlay: getStat("powerPlay"),
     powerPlayConversion: "0/0", // will be populated later
+    powerPlayToi,
   };
+}
+
+/**
+ * Retrieve the PPTOI report as html string.
+ * @param season The season
+ * @param gameId The first two digits give the type of the game, the final 4 digits identify the specific game number.
+ */
+const getReportContent = (season: string, gameId: string) => {
+  const PPTOI_REPORT_URL = `https://www.nhl.com/scores/htmlreports/${season}/GS${gameId}.HTM`;
+
+  return fetchWithCache(PPTOI_REPORT_URL, false);
+};
+
+/**
+ * Get the team PPTOI in mm:ss format
+ * @param season
+ * @param gameId
+ * @param isHome
+ * @returns team PPTOI
+ */
+async function getPPTOI(season: string, gameId: string, isHome: boolean) {
+  gameId = gameId.toString().slice(4);
+  const content = await getReportContent(season, gameId);
+
+  const document = parse(content);
+  const table = document.querySelectorAll("#PenaltySummary td");
+
+  const PPTOIs = [];
+  for (const node of table) {
+    if (node.textContent === "Power Plays (Goals-Opp./PPTime)") {
+      PPTOIs.push(
+        [...node.parentNode.parentNode.parentNode.childNodes]
+          .filter((n) => n.nodeType !== 3)
+          .map((n) => n.rawText)[1]
+          .split("/")[1]
+      );
+    }
+  }
+
+  return PPTOIs[isHome ? 1 : 0] as string;
 }
 
 type Forward = {
