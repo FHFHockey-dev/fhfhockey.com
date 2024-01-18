@@ -36,30 +36,22 @@ export async function getPlayerGameLog(
  * @returns
  */
 export async function getPlayer(id: number): Promise<Player | null> {
-  try {
-    const { data } = await supabase
-      .from("rosters")
-      .select("teamId, sweaterNumber, players(*), teams(name,abbreviation)")
-      .eq("playerId", id)
-      .limit(1)
-      .maybeSingle()
-      .throwOnError();
-    if (data === null) throw new Error();
-    return {
-      sweaterNumber: data.sweaterNumber,
-      teamId: data.teamId,
-      teamName: data.teams?.name,
-      teamAbbreviation: data.teams?.abbreviation,
-      age: differenceInYears(
-        new Date(),
-        new Date(data.players?.birthDate ?? "")
-      ),
-      ...data.players,
-    } as Player;
-  } catch (e: any) {
-    console.error(e);
-    return null;
-  }
+  const { data } = await supabase
+    .from("rosters")
+    .select("teamId, sweaterNumber, players(*), teams(name,abbreviation)")
+    .eq("playerId", id)
+    .limit(1)
+    .maybeSingle()
+    .throwOnError();
+  if (data === null) throw new Error("Unable to find the player.");
+  return {
+    sweaterNumber: data.sweaterNumber,
+    teamId: data.teamId,
+    teamName: data.teams?.name,
+    teamAbbreviation: data.teams?.abbreviation,
+    age: differenceInYears(new Date(), new Date(data.players?.birthDate ?? "")),
+    ...data.players,
+  } as Player;
 }
 
 /**

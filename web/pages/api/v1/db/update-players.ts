@@ -27,6 +27,10 @@ export default adminOnly(async function handler(req, res) {
     if (players_error) throw players_error;
 
     console.log(`Updating the 'rosters' table.`);
+    // remove the players who play for multiple teams in a given season. aka. exists in multiple rosters.
+    await supabase.rpc("delete_duplicate_players_in_rosters", {
+      _seasonid: season.seasonId,
+    });
     const { error: rosters_error } = await supabase.from("rosters").upsert(
       players.map((player) => ({
         playerId: player.id,
