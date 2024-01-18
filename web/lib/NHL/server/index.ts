@@ -35,7 +35,7 @@ export async function getPlayerGameLog(
  * @param id
  * @returns
  */
-export async function getPlayer(id: number): Promise<Player | null> {
+export async function getPlayer(id: number): Promise<Player> {
   const { data } = await supabase
     .from("rosters")
     .select("teamId, sweaterNumber, players(*), teams(name,abbreviation)")
