@@ -4,6 +4,7 @@ import { compareAsc } from "date-fns";
 
 import { getCurrentSeason, getPlayer } from "lib/NHL/server";
 import supabase from "lib/supabase";
+import { positionMap } from "utils/positionMap";
 
 /**
  * A date in the format of yyyy-mm-dd.
@@ -39,50 +40,52 @@ type Response = {
   success: boolean;
   data?: Data;
 };
+export async function getInterval(
+  Season: string,
+  StartTime: string | null,
+  EndTime: string | null
+) {
+  if (!StartTime || !EndTime) {
+    if (Season) {
+      const { data } = await supabase
+        .from("seasons")
+        .select("startDate, regularSeasonEndDate")
+        .eq("id", Season)
+        .single()
+        .throwOnError();
+      if (data === null) throw new Error("Invalid Season");
+      StartTime = data.startDate;
+      EndTime = data.regularSeasonEndDate;
+    } else {
+      const season = await getCurrentSeason();
+      StartTime = season.regularSeasonStartDate;
+      EndTime = season.regularSeasonEndDate;
+    }
+  }
 
-const positionMap = {
-  L: "forwards",
-  R: "forwards",
-  D: "defense",
-  C: "forwards",
-} as const;
-
+  return [StartTime, EndTime];
+}
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Response>
 ) {
   let { PlayerId, Season, StartTime, EndTime } = req.body as Input;
   try {
-    if (StartTime === null || EndTime === null) {
-      if (Season) {
-        const { data } = await supabase
-          .from("seasons")
-          .select("startDate, regularSeasonEndDate")
-          .eq("id", Season)
-          .single()
-          .throwOnError();
-        if (data === null) throw new Error("Invalid Season");
-        StartTime = data.startDate;
-        EndTime = data.regularSeasonEndDate;
-      } else {
-        const season = await getCurrentSeason();
-        StartTime = season.regularSeasonStartDate;
-        EndTime = season.regularSeasonEndDate;
-      }
-    }
+    [StartTime, EndTime] = await getInterval(Season, StartTime, EndTime);
     const player = await getPlayer(PlayerId);
     if (player.position === "G")
       throw new Error("This endpoint is not for goalies.");
 
-    const teamData = player.teamId
-      ? await getTeamData(player.teamId, StartTime, EndTime)
-      : [];
     const playerData = await getData(
       PlayerId,
       StartTime,
       EndTime,
       positionMap[player.position]
     );
+
+    const teamData = player.teamId
+      ? await getTeamData(playerData.map((data) => data.gameId))
+      : [];
 
     const temp: Record<
       DateString,
@@ -125,6 +128,7 @@ export default async function handler(
       data: result,
     });
   } catch (e: any) {
+    console.error(e);
     res.status(400).json({ message: e.message, success: false });
   }
 }
@@ -171,13 +175,11 @@ async function getData(
   return result;
 }
 
-async function getTeamData(teamId: number, StartTime: string, EndTime: string) {
+async function getTeamData(gameIds: number[]) {
   const { data } = await supabase
     .from("teamGameStats")
     .select("teamId, powerPlayToi, games!inner(date,id)")
-    .eq("teamId", teamId)
-    .gte("games.date", StartTime)
-    .lte("games.date", EndTime)
+    .in("games.id", gameIds)
     .throwOnError();
   const result = data!
     .map((item) => ({

@@ -274,12 +274,12 @@ export type ScheduleData = {
 };
 
 export type PercentileRank = {
-  Goals: number | null;
-  Assists: number | null;
-  PPP: number | null;
-  Hits: number | null;
-  Blocks: number | null;
-  PIM: number | null;
-  Shots: number | null;
-  PlusMinus: number | null;
+  goals: number;
+  assists: number;
+  plusMinus: number;
+  pim: number;
+  hits: number;
+  blockedShots: number;
+  powerPlayPoints: number;
+  shots: number;
 };

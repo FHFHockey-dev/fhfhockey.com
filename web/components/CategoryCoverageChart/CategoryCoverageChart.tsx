@@ -17,18 +17,19 @@ import ChartTitle, { HightText } from "components/ChartTitle";
 import styles from "./CategoryCoverageChart.module.scss";
 import { TimeOption } from "components/TimeOptions/TimeOptions";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
+import { PercentileRank } from "lib/NHL/types";
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Tooltip, Filler);
 
-const LABELS = [
-  { key: "Goals", label: "GOALS" },
-  { key: "Assists", label: "ASSISTS" },
-  { key: "PPP", label: "PPP" },
-  { key: "Shots", label: "SOG" },
-  { key: "PlusMinus", label: "+/-" },
-  { key: "PIM", label: "PIM" },
-  { key: "Blocks", label: "BLK" },
-  { key: "Hits", label: "HITS" },
+const LABELS: { key: keyof PercentileRank; label: string }[] = [
+  { key: "goals", label: "GOALS" },
+  { key: "assists", label: "ASSISTS" },
+  { key: "powerPlayPoints", label: "PPP" },
+  { key: "shots", label: "SOG" },
+  { key: "plusMinus", label: "+/-" },
+  { key: "pim", label: "PIM" },
+  { key: "blockedShots", label: "BLK" },
+  { key: "hits", label: "HITS" },
 ] as const;
 
 const DATA = {
