@@ -3,11 +3,12 @@ import { updateStats } from "../update-stats/[gameId]";
 
 export default adminOnly(async (req, res) => {
   const { supabase } = req;
+  const count = req.query.count ? Number(req.query.count) : 5;
   try {
     //
     const { data } = await supabase
       .rpc("get_unupdated_games")
-      .limit(5)
+      .limit(count)
       .throwOnError();
     const ids: number[] = data.map((game: any) => game.gameid);
     if (ids.length === 0) {
