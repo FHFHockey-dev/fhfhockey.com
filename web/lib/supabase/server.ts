@@ -6,6 +6,9 @@ const supabaseUrl =
   "https://fyhftlxokyjtpndbkfse.supabase.co";
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
-const supabase = createClient<Database>(supabaseUrl, supabaseKey);
+const supabase =
+  typeof window === "undefined"
+    ? createClient<Database>(supabaseUrl, supabaseKey)
+    : null;
 
-export default supabase;
+export default supabase!;
