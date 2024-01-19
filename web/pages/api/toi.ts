@@ -4,7 +4,7 @@ import { compareAsc } from "date-fns";
 
 import { getCurrentSeason, getPlayer } from "lib/NHL/server";
 import supabase from "lib/supabase";
-import { positionMap } from "utils/positionMap";
+import { Player } from "lib/NHL/types";
 
 /**
  * A date in the format of yyyy-mm-dd.
@@ -80,7 +80,7 @@ export default async function handler(
       PlayerId,
       StartTime,
       EndTime,
-      positionMap[player.position]
+      player.position
     );
 
     const teamData = player.teamId
@@ -154,15 +154,17 @@ async function getData(
   PlayerId: number,
   StartTime: string,
   EndTime: string,
-  playerType: "defense" | "forwards"
+  position: Player["position"]
 ) {
   const { data } = await supabase
-    .from(`${playerType}GameStats`)
+    .from("skatersGameStats")
     .select("toi, powerPlayToi, games!inner(date,id)")
     .eq("playerId", PlayerId)
+    .eq("position", position)
     .gte("games.date", StartTime)
     .lte("games.date", EndTime)
     .throwOnError();
+
   const result = data!
     .map((item) => ({
       toi: item.toi,

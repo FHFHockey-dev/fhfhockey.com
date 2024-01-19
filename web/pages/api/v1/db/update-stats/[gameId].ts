@@ -22,6 +22,7 @@ export default adminOnly(async (req, res) => {
       success: true,
     });
   } catch (e: any) {
+    console.error(e);
     return res.status(400).json({
       message: `Failed to update stats for game ${gameId}. ${e.message}`,
       success: false,
@@ -53,11 +54,10 @@ export async function updateStats(gameId: number, supabase: SupabaseClient) {
     .from("teamGameStats")
     .upsert([homeTeamGameStats, awayTeamGameStats])
     .throwOnError();
-  const { forwards, defense, goalies } = getPlayersGameStats(boxscore);
+  const { skaters, goalies } = getPlayersGameStats(boxscore);
 
   await Promise.all([
-    updateGameStats({ playerType: "forwards", players: forwards, supabase }),
-    updateGameStats({ playerType: "defense", players: defense, supabase }),
+    updateGameStats({ playerType: "skaters", players: skaters, supabase }),
     updateGameStats({ playerType: "goalies", players: goalies, supabase }),
   ]);
 }
@@ -217,32 +217,12 @@ function getPlayersGameStats(boxscore: any) {
     awayTeam,
   }: { homeTeam: PlayerGameStats; awayTeam: PlayerGameStats } =
     boxscore.boxscore.playerByGameStats;
-  const forwards = [...homeTeam.forwards, ...awayTeam.forwards].map(
-    (player) => ({
-      playerId: player.playerId,
-      gameId: gameId,
-      position: player.position,
-      goals: player.goals,
-      assists: player.assists,
-      points: player.points,
-      plusMinus: player.plusMinus,
-      pim: player.pim,
-      hits: player.hits,
-      blockedShots: player.blockedShots,
-      powerPlayGoals: player.powerPlayGoals,
-      powerPlayPoints: player.powerPlayPoints,
-      shorthandedGoals: player.shorthandedGoals,
-      shPoints: player.shPoints,
-      shots: player.shots,
-      faceoffs: player.faceoffs,
-      faceoffWinningPctg: player.faceoffWinningPctg,
-      toi: player.toi,
-      powerPlayToi: player.powerPlayToi,
-      shorthandedToi: player.shorthandedToi,
-    })
-  );
-
-  const defense = [...homeTeam.defense, ...awayTeam.defense].map((player) => ({
+  const skaters = [
+    ...homeTeam.forwards,
+    ...awayTeam.forwards,
+    ...homeTeam.defense,
+    ...awayTeam.defense,
+  ].map((player) => ({
     playerId: player.playerId,
     gameId: gameId,
     position: player.position,
@@ -283,8 +263,7 @@ function getPlayersGameStats(boxscore: any) {
   }));
 
   return {
-    forwards,
-    defense,
+    skaters,
     goalies,
   };
 }
@@ -294,8 +273,7 @@ type BaseType = {
 };
 
 type UpdateGameStatsParams =
-  | (BaseType & { playerType: "forwards"; players: Forward[] })
-  | (BaseType & { playerType: "defense"; players: Defense[] })
+  | (BaseType & { playerType: "skaters"; players: (Defense | Forward)[] })
   | (BaseType & { playerType: "goalies"; players: Goalie[] });
 
 async function updateGameStats({
@@ -303,9 +281,6 @@ async function updateGameStats({
   players,
   supabase,
 }: UpdateGameStatsParams) {
-  if (playerType === "defense") {
-    players;
-  }
   const promises = players.map(async (player) => {
     if (!player) return;
     try {
