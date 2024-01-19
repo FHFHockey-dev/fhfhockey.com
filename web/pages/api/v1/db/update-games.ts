@@ -5,11 +5,17 @@ import adminOnly from "utils/adminOnlyMiddleware";
 
 export default adminOnly(async (req, res) => {
   const { supabase } = req;
+  let season = { seasonId: 0 };
+  if (req.query.seasonId) {
+    const seasonId = Number(req.query.seasonId);
+    season.seasonId = seasonId;
+  } else {
+    season = await getCurrentSeason();
+  }
   try {
-    const season = await getCurrentSeason();
     const teams = (await getAllTeams(season.seasonId)) ?? [];
-    const tasks = teams.map(async (abbreviation) => {
-      const games = await getGamesByTeam(abbreviation, season.seasonId);
+    const tasks = teams.map(async (team) => {
+      const games = await getGamesByTeam(team.abbreviation, season.seasonId);
       return games;
     });
     let games = (await Promise.all(tasks)).flat(1);
@@ -19,6 +25,11 @@ export default adminOnly(async (req, res) => {
     });
 
     games = Object.values(gamesMap);
+    // filter out games played by non-nhl teams
+    const teamIds = new Set(teams.map((team) => team.id));
+    games = games.filter(
+      (game) => teamIds.has(game.homeTeam.id) && teamIds.has(game.awayTeam.id)
+    );
 
     await supabase
       .from("games")
@@ -42,6 +53,7 @@ export default adminOnly(async (req, res) => {
       success: true,
     });
   } catch (e: any) {
+    console.error(e);
     res.status(400).json({
       message: e.message,
       success: false,
@@ -57,17 +69,19 @@ async function getGamesByTeam(abbreviation: string, season: number) {
   return games;
 }
 
-async function getAllTeams(season: number): Promise<string[]> {
+async function getAllTeams(
+  season: number
+): Promise<{ abbreviation: string; id: number }[]> {
   const { data: teamIds } = await supabase
     .from("team_season")
     .select("teamId")
     .eq("seasonId", season)
     .throwOnError();
-  const { data: abbreviations } = await supabase
+  const { data } = await supabase
     .from("teams")
-    .select("abbreviation")
+    .select("id, abbreviation")
     .in("id", teamIds?.map(({ teamId }) => teamId) ?? [])
     .throwOnError();
 
-  return abbreviations?.map(({ abbreviation }) => abbreviation) ?? [];
+  return data!;
 }

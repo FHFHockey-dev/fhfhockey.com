@@ -5,6 +5,12 @@ import adminOnly from "utils/adminOnlyMiddleware";
 export default adminOnly(async function handler(req, res) {
   try {
     const { supabase } = req;
+    let season = { seasonId: 0 };
+    if (req.query.seasonId) {
+      season.seasonId = Number(req.query.seasonId);
+    } else {
+      season = await getCurrentSeason();
+    }
     // fetch all teams
     const { data: teams } = await restGet("/team");
     const { error } = await supabase.from("teams").upsert(
@@ -17,7 +23,7 @@ export default adminOnly(async function handler(req, res) {
     if (error) throw error;
 
     // fetch teams participated in the current season
-    const seasonId = (await getCurrentSeason()).seasonId;
+    const seasonId = season.seasonId;
     const { data: currentSeasonTeams } = await restGet(
       `/team/summary?cayenneExp=seasonId=${seasonId}`
     );
@@ -33,7 +39,13 @@ export default adminOnly(async function handler(req, res) {
 
     res
       .status(200)
-      .json({ message: "successfully updated the teams table", success: true });
+      .json({
+        message:
+          "successfully updated the teams table " +
+          "num teams: " +
+          currentSeasonTeamIds.size,
+        success: true,
+      });
   } catch (e: any) {
     res.status(400).json({ message: e.message, success: false });
   }
