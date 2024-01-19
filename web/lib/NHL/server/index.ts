@@ -12,7 +12,9 @@ import {
   Team,
 } from "lib/NHL/types";
 import supabase from "lib/supabase";
+import supabaseServer from "lib/supabase/server";
 import { Tables } from "lib/supabase/database-generated.types";
+import { updatePlayer } from "pages/api/v1/db/update-player/[playerId]";
 
 export async function getPlayerGameLog(
   id: number | string,
@@ -43,7 +45,10 @@ export async function getPlayer(id: number): Promise<Player> {
     .limit(1)
     .maybeSingle()
     .throwOnError();
-  if (data === null) throw new Error("Unable to find the player.");
+  if (data === null) {
+    await updatePlayer(id, supabaseServer);
+    throw new Error("Unable to find the player. " + id);
+  }
   return {
     sweaterNumber: data.sweaterNumber,
     teamId: data.teamId,
@@ -227,8 +232,6 @@ export async function getSchedule(startDate: string) {
 
   return result;
 }
-
-export async function getPlayerPercentileRank() {}
 
 export async function getBoxscore(id: number): Promise<Boxscore> {
   const data = await get(`/gamecenter/${id}/boxscore`);
