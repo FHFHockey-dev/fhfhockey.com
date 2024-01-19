@@ -1,10 +1,9 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import type { NextApiRequest, NextApiResponse } from "next";
-import { isWithinInterval } from "date-fns";
-import { parse } from "node-html-parser";
+import { compareAsc } from "date-fns";
 
-import { fetchNHL } from "lib/NHL/NHL_API";
-import fetchWithCache from "lib/fetchWithCache";
+import { getCurrentSeason, getPlayer } from "lib/NHL/server";
+import supabase from "lib/supabase";
 
 /**
  * A date in the format of yyyy-mm-dd.
@@ -29,16 +28,11 @@ export type Input = {
 };
 
 type Data = {
-  TOI: {
-    date: DateString;
-    value: number;
-  }[];
-
-  PPTOI: {
-    date: DateString;
-    value: number;
-  }[];
-};
+  toi: number;
+  powerPlayToi: number;
+  powerPlayToiShare: number;
+  date: DateString;
+}[];
 
 type Response = {
   message: string;
@@ -46,85 +40,93 @@ type Response = {
   data?: Data;
 };
 
+const positionMap = {
+  L: "forwards",
+  R: "forwards",
+  D: "defense",
+  C: "forwards",
+} as const;
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Response>
 ) {
-  const { PlayerId, Season, StartTime, EndTime } = req.body as Input;
+  let { PlayerId, Season, StartTime, EndTime } = req.body as Input;
+  try {
+    if (StartTime === null || EndTime === null) {
+      if (Season) {
+        const { data } = await supabase
+          .from("seasons")
+          .select("startDate, regularSeasonEndDate")
+          .eq("id", Season)
+          .single()
+          .throwOnError();
+        if (data === null) throw new Error("Invalid Season");
+        StartTime = data.startDate;
+        EndTime = data.regularSeasonEndDate;
+      } else {
+        const season = await getCurrentSeason();
+        StartTime = season.regularSeasonStartDate;
+        EndTime = season.regularSeasonEndDate;
+      }
+    }
+    const player = await getPlayer(PlayerId);
+    if (player.position === "G")
+      throw new Error("This endpoint is not for goalies.");
 
-  const toiData = await fetchNHL(
-    `/people/${PlayerId}/stats?stats=gameLog&season=${Season}`
-  );
-  if (toiData.message === "Internal error occurred") {
-    return res.status(404).json({
-      message: "Player not found",
-      success: false,
+    const teamData = player.teamId
+      ? await getTeamData(player.teamId, StartTime, EndTime)
+      : [];
+    const playerData = await getData(
+      PlayerId,
+      StartTime,
+      EndTime,
+      positionMap[player.position]
+    );
+
+    const temp: Record<
+      DateString,
+      {
+        toi?: string;
+        powerPlayToi?: string;
+        teamPowerPlayToi: string;
+        date: DateString;
+      }
+    > = {};
+    teamData.forEach((item) => {
+      const date = item.date;
+      temp[date] = { teamPowerPlayToi: item.powerPlayToi, date };
     });
-  } else if (toiData.message?.includes("Invalid Request")) {
-    return res.status(400).json({
-      message: toiData.message,
-      success: false,
+    playerData.forEach((item) => {
+      const date = item.date;
+      temp[date].toi = item.toi;
+      temp[date].powerPlayToi = item.powerPlayToi;
     });
+    const result: {
+      toi: number;
+      powerPlayToi: number;
+      powerPlayToiShare: number;
+      date: DateString;
+    }[] = Object.values(temp).map((item) => ({
+      toi: item.toi ? parseTime(item.toi) : 0,
+      powerPlayToi: item.powerPlayToi ? parseTime(item.powerPlayToi) : 0,
+      powerPlayToiShare: item.powerPlayToi
+        ? parseTime(item.teamPowerPlayToi) === 0
+          ? 0
+          : (parseTime(item.powerPlayToi) / parseTime(item.teamPowerPlayToi)) *
+            100
+        : 0,
+      date: item.date,
+    }));
+
+    res.status(200).json({
+      success: true,
+      message: "Success!",
+      data: result,
+    });
+  } catch (e: any) {
+    res.status(400).json({ message: e.message, success: false });
   }
-
-  const games = toiData.stats[0].splits as {
-    stat: { timeOnIce: string; powerPlayTimeOnIce: string };
-    date: DateString;
-    game: {
-      gamePk: number;
-    };
-    isHome: boolean;
-  }[];
-
-  // filter dates
-  let filteredGames;
-  if (StartTime && EndTime) {
-    const start = new Date(StartTime);
-    const end = new Date(EndTime);
-
-    filteredGames = games.filter((game) => {
-      const date = new Date(game.date);
-      return isWithinInterval(date, { start, end });
-    });
-  } else {
-    filteredGames = games;
-  }
-
-  // Calculate TOI - convert time string into minutes (number)
-  const TOI = filteredGames.map((game) => ({
-    date: game.date,
-    value: parseTime(game.stat.timeOnIce),
-  }));
-
-  // Calculate PPTOI
-  const PPTOI = await Promise.all(
-    filteredGames.map(async (game) => {
-      // get game type and game number
-      // e.g. "gamePk": 2021021276,
-      const gameId = game.game.gamePk.toString().slice(4).toString();
-      const individualPPTOI = parseTime(
-        game.stat.powerPlayTimeOnIce ?? "00:00"
-      );
-
-      const teamPPTOI = parseTime(
-        (await getPPTOI(Season, gameId, game.isHome)) ?? "00:00"
-      );
-
-      return {
-        date: game.date,
-        value: teamPPTOI === 0 ? 0 : (individualPPTOI / teamPPTOI) * 100,
-      };
-    })
-  );
-
-  res.status(200).json({
-    success: true,
-    message: "Success!",
-    data: {
-      TOI,
-      PPTOI,
-    },
-  });
 }
 
 /**
@@ -139,46 +141,52 @@ function parseTime(timeString: string) {
 
     return minutes;
   } catch (e) {
-    console.error(e);
+    console.error(e, { timeString });
     throw e;
   }
 }
 
-/**
- * Retrieve the PPTOI report as html string.
- * @param season The season
- * @param gameId The first two digits give the type of the game, the final 4 digits identify the specific game number.
- */
-const getReportContent = (season: string, gameId: string) => {
-  const PPTOI_REPORT_URL = `https://www.nhl.com/scores/htmlreports/${season}/GS${gameId}.HTM`;
+async function getData(
+  PlayerId: number,
+  StartTime: string,
+  EndTime: string,
+  playerType: "defense" | "forwards"
+) {
+  const { data } = await supabase
+    .from(`${playerType}GameStats`)
+    .select("toi, powerPlayToi, games!inner(date,id)")
+    .eq("playerId", PlayerId)
+    .gte("games.date", StartTime)
+    .lte("games.date", EndTime)
+    .throwOnError();
+  const result = data!
+    .map((item) => ({
+      toi: item.toi,
+      powerPlayToi: item.powerPlayToi,
+      date: item.games!.date,
+      gameId: item.games!.id,
+    }))
+    .sort((a, b) => compareAsc(new Date(a.date), new Date(b.date)));
 
-  return fetchWithCache(PPTOI_REPORT_URL, false);
-};
+  return result;
+}
 
-/**
- * Get the team PPTOI in mm:ss format
- * @param season
- * @param gameId
- * @param isHome
- * @returns team PPTOI
- */
-async function getPPTOI(season: string, gameId: string, isHome: boolean) {
-  const content = await getReportContent(season, gameId);
+async function getTeamData(teamId: number, StartTime: string, EndTime: string) {
+  const { data } = await supabase
+    .from("teamGameStats")
+    .select("teamId, powerPlayToi, games!inner(date,id)")
+    .eq("teamId", teamId)
+    .gte("games.date", StartTime)
+    .lte("games.date", EndTime)
+    .throwOnError();
+  const result = data!
+    .map((item) => ({
+      powerPlayToi: item.powerPlayToi,
+      date: item.games!.date,
+      gameId: item.games!.id,
+      teamId: item.teamId,
+    }))
+    .sort((a, b) => compareAsc(new Date(a.date), new Date(b.date)));
 
-  const document = parse(content);
-  const table = document.querySelectorAll("#PenaltySummary td");
-
-  const PPTOIs = [];
-  for (const node of table) {
-    if (node.textContent === "Power Plays (Goals-Opp./PPTime)") {
-      PPTOIs.push(
-        [...node.parentNode.parentNode.parentNode.childNodes]
-          .filter((n) => n.nodeType !== 3)
-          .map((n) => n.rawText)[1]
-          .split("/")[1]
-      );
-    }
-  }
-
-  return PPTOIs[isHome ? 1 : 0] as string;
+  return result;
 }

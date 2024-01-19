@@ -3,7 +3,7 @@ export type Player = {
   firstName: string;
   fullName: string;
   lastName: string;
-  position: string;
+  position: "L" | "R" | "G" | "D" | "C";
   sweaterNumber: number;
   age: number;
   birthDate: string;

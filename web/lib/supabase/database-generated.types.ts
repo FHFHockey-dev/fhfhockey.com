@@ -79,7 +79,22 @@ export interface Database {
           shPoints?: number;
           toi?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "defenseGameStats_gameId_fkey";
+            columns: ["gameId"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "defenseGameStats_playerId_fkey";
+            columns: ["playerId"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       forwardsGameStats: {
         Row: {
@@ -498,48 +513,51 @@ export interface Database {
       };
       teamGameStats: {
         Row: {
-          blockedShots: number | null;
+          blockedShots: number;
           created_at: string;
-          faceoffPctg: number | null;
+          faceoffPctg: number;
           gameId: number;
-          giveaways: number | null;
-          hits: number | null;
-          pim: number | null;
-          powerPlay: string | null;
-          powerPlayConversion: string | null;
-          score: number | null;
-          sog: number | null;
-          takeaways: number | null;
+          giveaways: number;
+          hits: number;
+          pim: number;
+          powerPlay: string;
+          powerPlayConversion: string;
+          powerPlayToi: string;
+          score: number;
+          sog: number;
+          takeaways: number;
           teamId: number;
         };
         Insert: {
-          blockedShots?: number | null;
+          blockedShots?: number;
           created_at?: string;
-          faceoffPctg?: number | null;
+          faceoffPctg?: number;
           gameId?: number;
-          giveaways?: number | null;
-          hits?: number | null;
-          pim?: number | null;
-          powerPlay?: string | null;
-          powerPlayConversion?: string | null;
-          score?: number | null;
-          sog?: number | null;
-          takeaways?: number | null;
+          giveaways?: number;
+          hits?: number;
+          pim?: number;
+          powerPlay?: string;
+          powerPlayConversion?: string;
+          powerPlayToi?: string;
+          score?: number;
+          sog?: number;
+          takeaways?: number;
           teamId: number;
         };
         Update: {
-          blockedShots?: number | null;
+          blockedShots?: number;
           created_at?: string;
-          faceoffPctg?: number | null;
+          faceoffPctg?: number;
           gameId?: number;
-          giveaways?: number | null;
-          hits?: number | null;
-          pim?: number | null;
-          powerPlay?: string | null;
-          powerPlayConversion?: string | null;
-          score?: number | null;
-          sog?: number | null;
-          takeaways?: number | null;
+          giveaways?: number;
+          hits?: number;
+          pim?: number;
+          powerPlay?: string;
+          powerPlayConversion?: string;
+          powerPlayToi?: string;
+          score?: number;
+          sog?: number;
+          takeaways?: number;
           teamId?: number;
         };
         Relationships: [
@@ -614,6 +632,12 @@ export interface Database {
       [_ in never]: never;
     };
     Functions: {
+      delete_duplicate_players_in_rosters: {
+        Args: {
+          _seasonid: number;
+        };
+        Returns: undefined;
+      };
       get_unupdated_games: {
         Args: Record<PropertyKey, never>;
         Returns: {
