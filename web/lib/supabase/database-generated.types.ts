@@ -629,7 +629,32 @@ export interface Database {
       };
     };
     Views: {
-      [_ in never]: never;
+      skatersgamestats: {
+        Row: {
+          assists: number | null;
+          blockedShots: number | null;
+          created_at: string | null;
+          faceoffs: string | null;
+          faceoffWinningPctg: number | null;
+          gameId: number | null;
+          goals: number | null;
+          hits: number | null;
+          pim: number | null;
+          playerId: number | null;
+          plusMinus: number | null;
+          points: number | null;
+          position: Database["public"]["Enums"]["NHL Position Code"] | null;
+          powerPlayGoals: number | null;
+          powerPlayPoints: number | null;
+          powerPlayToi: string | null;
+          shorthandedGoals: number | null;
+          shorthandedToi: string | null;
+          shots: number | null;
+          shPoints: number | null;
+          toi: string | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       delete_duplicate_players_in_rosters: {
@@ -638,10 +663,46 @@ export interface Database {
         };
         Returns: undefined;
       };
+      get_skaters_avg_stats: {
+        Args: {
+          start_date: string;
+          end_date: string;
+        };
+        Returns: {
+          id: number;
+          avggoals: number;
+          avgassists: number;
+          avgplusminus: number;
+          avgpim: number;
+          avghits: number;
+          avgblockedshots: number;
+          avgpowerplaypoints: number;
+          avgshots: number;
+          numgames: number;
+        }[];
+      };
       get_unupdated_games: {
         Args: Record<PropertyKey, never>;
         Returns: {
           gameid: number;
+        }[];
+      };
+      getAverageDefenseStatsByDateRange: {
+        Args: {
+          starttime: string;
+          endtime: string;
+        };
+        Returns: {
+          id: number;
+          avggoals: number;
+          avgassists: number;
+          avgplusminus: number;
+          avgpim: number;
+          avghits: number;
+          avgblockedshots: number;
+          avgpowerplaypoints: number;
+          avgshots: number;
+          count: number;
         }[];
       };
     };

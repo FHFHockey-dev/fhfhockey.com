@@ -30,7 +30,7 @@ const LABELS: { key: keyof PercentileRank; label: string }[] = [
   { key: "pim", label: "PIM" },
   { key: "blockedShots", label: "BLK" },
   { key: "hits", label: "HITS" },
-] as const;
+];
 
 const DATA = {
   labels: LABELS.map((element) => element.label),
