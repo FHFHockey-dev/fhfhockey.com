@@ -23,11 +23,14 @@ export default adminOnly(async (req, res) => {
     const updatePromises = ids.map(async (id) => {
       console.log("updating the stats for game with id " + id);
       await updateStats(id, supabase);
-      await supabase
+      const { error } = await supabase
         .from("statsUpdateStatus")
         .update({ updated: true })
-        .eq("gameId", id)
-        .throwOnError();
+        .eq("gameId", id);
+      if (error) {
+        console.error("Failed to update the stats for game: " + id);
+        throw error;
+      }
     });
 
     // Wait for all promises to resolve

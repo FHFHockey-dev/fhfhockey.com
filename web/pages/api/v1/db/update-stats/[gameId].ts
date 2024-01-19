@@ -86,7 +86,15 @@ async function getTeamStats(landing: any, isHomeTeam: boolean) {
     ];
   };
   // get team power play time
-  const powerPlayToi = await getPPTOI(landing.season, landing.id, isHomeTeam);
+  const powerPlayToi = await getPPTOI(
+    landing.season,
+    landing.id,
+    isHomeTeam
+  ).catch((e) => {
+    console.error(e);
+    return "00:00";
+  });
+
   return {
     gameId: landing.id,
     teamId: isHomeTeam ? landing.homeTeam.id : landing.awayTeam.id,
@@ -140,7 +148,8 @@ async function getPPTOI(season: string, gameId: string, isHome: boolean) {
       );
     }
   }
-
+  if (PPTOIs.length !== 2)
+    throw new Error("Failed to get team powerPlayToi for game: " + gameId);
   return PPTOIs[isHome ? 1 : 0] as string;
 }
 
