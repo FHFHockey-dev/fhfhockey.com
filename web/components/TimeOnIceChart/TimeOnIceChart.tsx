@@ -114,9 +114,9 @@ function TimeOnIceChart({
         });
 
       if (mounted && success) {
-        setTOI(data.TOI.map(({ value }: any) => value));
-        setPPTOI(data.PPTOI.map(({ value }: any) => value));
-        setLabels(data.TOI.map((element: any) => element.date));
+        setTOI(data.map(({ toi }: any) => toi));
+        setPPTOI(data.map(({ powerPlayToiShare }: any) => powerPlayToiShare));
+        setLabels(data.map(({ date }: any) => date));
       }
     })();
 

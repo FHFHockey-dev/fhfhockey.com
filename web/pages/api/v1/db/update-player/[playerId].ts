@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import { getPlayer } from "lib/NHL/server";
+import { differenceInYears } from "date-fns";
+import { get } from "lib/NHL/base";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 export default adminOnly(async (req, res) => {
@@ -45,4 +46,54 @@ export async function updatePlayer(playerId: number, supabase: SupabaseClient) {
       weightInKilograms: player.weight,
     })
     .throwOnError();
+}
+
+type Player = {
+  id: number;
+  firstName: string;
+  fullName: string;
+  lastName: string;
+  positionCode: string;
+  sweaterNumber: number;
+  age: number;
+  birthDate: string;
+  birthCity: string;
+  birthCountry: string;
+  weight: number;
+  height: number;
+  image: string;
+  // Team info
+  teamId: number;
+  teamName: string;
+  teamAbbreviation: string;
+  teamLogo: string;
+};
+
+async function getPlayer(id: number): Promise<Player | null> {
+  try {
+    const data = await get(`/player/${id}/landing`);
+
+    return {
+      id: data.playerId,
+      firstName: data.firstName.default,
+      lastName: data.lastName.default,
+      fullName: `${data.firstName.default} ${data.lastName.default}`,
+      sweaterNumber: data.sweaterNumber,
+      positionCode: data.position,
+      image: data.headshot,
+      birthDate: data.birthDate,
+      birthCity: data.birthCity?.default ?? "",
+      birthCountry: data.birthCountry ?? "US",
+      age: differenceInYears(new Date(), new Date(data.birthDate)),
+      height: data.heightInCentimeters ?? 0,
+      weight: data.weightInKilograms ?? 0,
+      teamId: data.currentTeamId ?? 0,
+      teamAbbreviation: data.currentTeamAbbrev ?? "XXX",
+      teamLogo: data.teamLogo,
+      teamName: data.fullTeamName ? data.fullTeamName.default : "",
+    };
+  } catch (e: any) {
+    console.error(e);
+    return null;
+  }
 }

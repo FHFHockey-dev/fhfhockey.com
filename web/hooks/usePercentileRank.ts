@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 
-import { PercentileRank } from "pages/api/PercentileRank/[playerId]";
 import { TimeOption } from "components/TimeOptions/TimeOptions";
 import getTimes from "lib/getTimes";
 import useCurrentSeason from "./useCurrentSeason";
+import { PercentileRank } from "lib/NHL/types";
 
 /**
  * Calculate the percentile rankings of a player for the current season
@@ -25,7 +25,7 @@ export default function usePercentileRank(
       const { StartTime, EndTime } = getTimes(timeOption);
 
       const { success, message, data } = await fetch(
-        `/api/PercentileRank/${playerId}`,
+        `/api/v1/player/${playerId}/percentile-rank`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

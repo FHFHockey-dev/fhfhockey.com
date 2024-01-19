@@ -3,20 +3,18 @@ export type Player = {
   firstName: string;
   fullName: string;
   lastName: string;
-  positionCode: string;
+  position: "L" | "R" | "G" | "D" | "C";
   sweaterNumber: number;
   age: number;
   birthDate: string;
-  birthCity: string;
-  birthCountry: string;
-  weight: number;
-  height: number;
-  image: string;
+  birthCity: string | null;
+  birthCountry: string | null;
+  weightInKilograms: number;
+  heightInCentimeters: number;
   // Team info
-  teamId: number;
-  teamName: string;
-  teamAbbreviation: string;
-  teamLogo: string;
+  teamId: number | undefined;
+  teamName: string | undefined;
+  teamAbbreviation: string | undefined;
 };
 
 export type PlayerGameLog = {
@@ -276,12 +274,12 @@ export type ScheduleData = {
 };
 
 export type PercentileRank = {
-  Goals: number | null;
-  Assists: number | null;
-  PPP: number | null;
-  Hits: number | null;
-  Blocks: number | null;
-  PIM: number | null;
-  Shots: number | null;
-  PlusMinus: number | null;
+  goals: number;
+  assists: number;
+  plusMinus: number;
+  pim: number;
+  hits: number;
+  blockedShots: number;
+  powerPlayPoints: number;
+  shots: number;
 };

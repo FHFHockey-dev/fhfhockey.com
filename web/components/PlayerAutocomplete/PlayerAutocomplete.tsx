@@ -93,7 +93,10 @@ function PlayerAutocomplete({
       {groupedOptions.length > 0 ? (
         <ul {...getListboxProps()} className={listClassName}>
           {(groupedOptions as typeof players).map((option, index) => (
-            <li {...getOptionProps({ option, index })} key={option.id}>
+            <li
+              {...getOptionProps({ option, index })}
+              key={`${option.teamId}-${option.id}`}
+            >
               {`${option.fullName} (${option.sweaterNumber ?? "unknown"})`}
             </li>
           ))}

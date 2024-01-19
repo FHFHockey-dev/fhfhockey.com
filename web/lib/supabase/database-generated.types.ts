@@ -9,165 +9,6 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      defenseGameStats: {
-        Row: {
-          assists: number;
-          blockedShots: number;
-          created_at: string;
-          faceoffs: string;
-          faceoffWinningPctg: number;
-          gameId: number;
-          goals: number;
-          hits: number;
-          pim: number;
-          playerId: number;
-          plusMinus: number;
-          points: number;
-          position: Database["public"]["Enums"]["NHL Position Code"];
-          powerPlayGoals: number;
-          powerPlayPoints: number;
-          powerPlayToi: string;
-          shorthandedGoals: number;
-          shorthandedToi: string;
-          shots: number;
-          shPoints: number;
-          toi: string;
-        };
-        Insert: {
-          assists?: number;
-          blockedShots?: number;
-          created_at?: string;
-          faceoffs?: string;
-          faceoffWinningPctg?: number;
-          gameId: number;
-          goals?: number;
-          hits?: number;
-          pim?: number;
-          playerId?: number;
-          plusMinus?: number;
-          points?: number;
-          position?: Database["public"]["Enums"]["NHL Position Code"];
-          powerPlayGoals?: number;
-          powerPlayPoints?: number;
-          powerPlayToi?: string;
-          shorthandedGoals?: number;
-          shorthandedToi?: string;
-          shots?: number;
-          shPoints?: number;
-          toi?: string;
-        };
-        Update: {
-          assists?: number;
-          blockedShots?: number;
-          created_at?: string;
-          faceoffs?: string;
-          faceoffWinningPctg?: number;
-          gameId?: number;
-          goals?: number;
-          hits?: number;
-          pim?: number;
-          playerId?: number;
-          plusMinus?: number;
-          points?: number;
-          position?: Database["public"]["Enums"]["NHL Position Code"];
-          powerPlayGoals?: number;
-          powerPlayPoints?: number;
-          powerPlayToi?: string;
-          shorthandedGoals?: number;
-          shorthandedToi?: string;
-          shots?: number;
-          shPoints?: number;
-          toi?: string;
-        };
-        Relationships: [];
-      };
-      forwardsGameStats: {
-        Row: {
-          assists: number;
-          blockedShots: number;
-          created_at: string;
-          faceoffs: string;
-          faceoffWinningPctg: number;
-          gameId: number;
-          goals: number;
-          hits: number;
-          pim: number;
-          playerId: number;
-          plusMinus: number;
-          points: number;
-          position: Database["public"]["Enums"]["NHL Position Code"];
-          powerPlayGoals: number;
-          powerPlayPoints: number;
-          powerPlayToi: string;
-          shorthandedGoals: number;
-          shorthandedToi: string;
-          shots: number;
-          shPoints: number;
-          toi: string;
-        };
-        Insert: {
-          assists?: number;
-          blockedShots?: number;
-          created_at?: string;
-          faceoffs?: string;
-          faceoffWinningPctg?: number;
-          gameId: number;
-          goals?: number;
-          hits?: number;
-          pim?: number;
-          playerId?: number;
-          plusMinus?: number;
-          points?: number;
-          position?: Database["public"]["Enums"]["NHL Position Code"];
-          powerPlayGoals?: number;
-          powerPlayPoints?: number;
-          powerPlayToi?: string;
-          shorthandedGoals?: number;
-          shorthandedToi?: string;
-          shots?: number;
-          shPoints?: number;
-          toi?: string;
-        };
-        Update: {
-          assists?: number;
-          blockedShots?: number;
-          created_at?: string;
-          faceoffs?: string;
-          faceoffWinningPctg?: number;
-          gameId?: number;
-          goals?: number;
-          hits?: number;
-          pim?: number;
-          playerId?: number;
-          plusMinus?: number;
-          points?: number;
-          position?: Database["public"]["Enums"]["NHL Position Code"];
-          powerPlayGoals?: number;
-          powerPlayPoints?: number;
-          powerPlayToi?: string;
-          shorthandedGoals?: number;
-          shorthandedToi?: string;
-          shots?: number;
-          shPoints?: number;
-          toi?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "forwardsGameStats_gameId_fkey";
-            columns: ["gameId"];
-            isOneToOne: false;
-            referencedRelation: "games";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "forwardsGameStats_playerId_fkey";
-            columns: ["playerId"];
-            isOneToOne: false;
-            referencedRelation: "players";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
       games: {
         Row: {
           awayTeamId: number | null;
@@ -372,21 +213,21 @@ export interface Database {
           created_at: string;
           playerId: number;
           seasonId: number;
-          sweaterNumber: number | null;
+          sweaterNumber: number;
           teamId: number;
         };
         Insert: {
           created_at?: string;
           playerId: number;
           seasonId: number;
-          sweaterNumber?: number | null;
+          sweaterNumber: number;
           teamId: number;
         };
         Update: {
           created_at?: string;
           playerId?: number;
           seasonId?: number;
-          sweaterNumber?: number | null;
+          sweaterNumber?: number;
           teamId?: number;
         };
         Relationships: [
@@ -439,6 +280,93 @@ export interface Database {
           startDate?: string;
         };
         Relationships: [];
+      };
+      skatersGameStats: {
+        Row: {
+          assists: number;
+          blockedShots: number;
+          created_at: string;
+          faceoffs: string;
+          faceoffWinningPctg: number;
+          gameId: number;
+          goals: number;
+          hits: number;
+          pim: number;
+          playerId: number;
+          plusMinus: number;
+          points: number;
+          position: Database["public"]["Enums"]["NHL Position Code"];
+          powerPlayGoals: number;
+          powerPlayPoints: number;
+          powerPlayToi: string;
+          shorthandedGoals: number;
+          shorthandedToi: string;
+          shots: number;
+          shPoints: number;
+          toi: string;
+        };
+        Insert: {
+          assists?: number;
+          blockedShots?: number;
+          created_at?: string;
+          faceoffs?: string;
+          faceoffWinningPctg?: number;
+          gameId: number;
+          goals?: number;
+          hits?: number;
+          pim?: number;
+          playerId: number;
+          plusMinus?: number;
+          points?: number;
+          position?: Database["public"]["Enums"]["NHL Position Code"];
+          powerPlayGoals?: number;
+          powerPlayPoints?: number;
+          powerPlayToi?: string;
+          shorthandedGoals?: number;
+          shorthandedToi?: string;
+          shots?: number;
+          shPoints?: number;
+          toi?: string;
+        };
+        Update: {
+          assists?: number;
+          blockedShots?: number;
+          created_at?: string;
+          faceoffs?: string;
+          faceoffWinningPctg?: number;
+          gameId?: number;
+          goals?: number;
+          hits?: number;
+          pim?: number;
+          playerId?: number;
+          plusMinus?: number;
+          points?: number;
+          position?: Database["public"]["Enums"]["NHL Position Code"];
+          powerPlayGoals?: number;
+          powerPlayPoints?: number;
+          powerPlayToi?: string;
+          shorthandedGoals?: number;
+          shorthandedToi?: string;
+          shots?: number;
+          shPoints?: number;
+          toi?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "skatersgamestats_gameid_fkey";
+            columns: ["gameId"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "skatersgamestats_playerid_fkey";
+            columns: ["playerId"];
+            isOneToOne: false;
+            referencedRelation: "players";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       statsUpdateStatus: {
         Row: {
@@ -498,48 +426,51 @@ export interface Database {
       };
       teamGameStats: {
         Row: {
-          blockedShots: number | null;
+          blockedShots: number;
           created_at: string;
-          faceoffPctg: number | null;
+          faceoffPctg: number;
           gameId: number;
-          giveaways: number | null;
-          hits: number | null;
-          pim: number | null;
-          powerPlay: string | null;
-          powerPlayConversion: string | null;
-          score: number | null;
-          sog: number | null;
-          takeaways: number | null;
+          giveaways: number;
+          hits: number;
+          pim: number;
+          powerPlay: string;
+          powerPlayConversion: string;
+          powerPlayToi: string;
+          score: number;
+          sog: number;
+          takeaways: number;
           teamId: number;
         };
         Insert: {
-          blockedShots?: number | null;
+          blockedShots?: number;
           created_at?: string;
-          faceoffPctg?: number | null;
+          faceoffPctg?: number;
           gameId?: number;
-          giveaways?: number | null;
-          hits?: number | null;
-          pim?: number | null;
-          powerPlay?: string | null;
-          powerPlayConversion?: string | null;
-          score?: number | null;
-          sog?: number | null;
-          takeaways?: number | null;
+          giveaways?: number;
+          hits?: number;
+          pim?: number;
+          powerPlay?: string;
+          powerPlayConversion?: string;
+          powerPlayToi?: string;
+          score?: number;
+          sog?: number;
+          takeaways?: number;
           teamId: number;
         };
         Update: {
-          blockedShots?: number | null;
+          blockedShots?: number;
           created_at?: string;
-          faceoffPctg?: number | null;
+          faceoffPctg?: number;
           gameId?: number;
-          giveaways?: number | null;
-          hits?: number | null;
-          pim?: number | null;
-          powerPlay?: string | null;
-          powerPlayConversion?: string | null;
-          score?: number | null;
-          sog?: number | null;
-          takeaways?: number | null;
+          giveaways?: number;
+          hits?: number;
+          pim?: number;
+          powerPlay?: string;
+          powerPlayConversion?: string;
+          powerPlayToi?: string;
+          score?: number;
+          sog?: number;
+          takeaways?: number;
           teamId?: number;
         };
         Relationships: [
@@ -614,6 +545,30 @@ export interface Database {
       [_ in never]: never;
     };
     Functions: {
+      delete_duplicate_players_in_rosters: {
+        Args: {
+          _seasonid: number;
+        };
+        Returns: undefined;
+      };
+      get_skaters_avg_stats: {
+        Args: {
+          start_date: string;
+          end_date: string;
+        };
+        Returns: {
+          id: number;
+          avggoals: number;
+          avgassists: number;
+          avgplusminus: number;
+          avgpim: number;
+          avghits: number;
+          avgblockedshots: number;
+          avgpowerplaypoints: number;
+          avgshots: number;
+          numgames: number;
+        }[];
+      };
       get_unupdated_games: {
         Args: Record<PropertyKey, never>;
         Returns: {

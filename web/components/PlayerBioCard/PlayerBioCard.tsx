@@ -3,6 +3,8 @@
 import usePlayer from "hooks/usePlayer";
 import styles from "./PlayerBioCard.module.scss";
 import type { Player } from "lib/NHL/types";
+import { getTeamLogo } from "lib/NHL/server";
+import useCurrentSeason from "hooks/useCurrentSeason";
 
 type PlayerStatsCardProps = {
   /**
@@ -15,20 +17,18 @@ type PlayerStatsCardProps = {
 // The stats to be displayed on the card
 const STATS = [
   { label: "Age", key: "age" },
-  { label: "Height", key: "height" },
-  { label: "Weight", key: "weight" },
+  { label: "Height", key: "heightInCentimeters" },
+  { label: "Weight", key: "weightInKilograms" },
   // { label: "Shoots", key: "shoots" },
 ] as const;
 
 const PLACEHOLDER: Player = {
-  image: "",
+  age: 0,
   teamName: "",
   teamAbbreviation: "",
-  teamLogo: "",
-  weight: 0,
-  age: 0,
-  height: 0,
-  positionCode: "Center",
+  weightInKilograms: 0,
+  heightInCentimeters: 0,
+  position: "G",
   id: 0,
   fullName: "",
   firstName: "Timothy",
@@ -44,6 +44,7 @@ function PlayerStatsCard({
   playerId,
   onPlayerImageClick,
 }: PlayerStatsCardProps) {
+  const season = useCurrentSeason();
   let player = usePlayer(playerId);
   if (player === null) {
     player = PLACEHOLDER;
@@ -52,11 +53,9 @@ function PlayerStatsCard({
     fullName,
     firstName,
     lastName,
-    image,
     teamName,
     teamAbbreviation,
-    positionCode,
-    teamLogo,
+    position,
   } = player;
 
   return (
@@ -70,7 +69,7 @@ function PlayerStatsCard({
         <div className={styles.teamLogo} title={teamName}>
           <img
             alt={teamName}
-            src={teamLogo || "/pictures/circle.png"}
+            src={getTeamLogo(teamName)}
             width="100%"
             height="100%"
           />
@@ -92,7 +91,7 @@ function PlayerStatsCard({
             {teamAbbreviation || "FHFH"}
           </div>
 
-          <div className={styles.position}>{positionCode}</div>
+          <div className={styles.position}>{position}</div>
         </div>
       </div>
 
@@ -102,7 +101,13 @@ function PlayerStatsCard({
       >
         <img
           style={{ objectFit: "cover" }}
-          src={image || "/pictures/player-placeholder.jpg"}
+          src={
+            getPlayerImage(
+              playerId!,
+              season?.seasonId ?? 0,
+              teamAbbreviation
+            ) || "/pictures/player-placeholder.jpg"
+          }
           alt={fullName}
           width="100%"
           height="100%"
@@ -110,6 +115,15 @@ function PlayerStatsCard({
       </div>
     </section>
   );
+}
+
+function getPlayerImage(
+  playerId: number,
+  seasonId: number,
+  teamAbbreviation?: string
+) {
+  if (!teamAbbreviation) return "";
+  return `https://assets.nhle.com/mugs/nhl/${seasonId}/${teamAbbreviation}/${playerId}.png`;
 }
 
 export default PlayerStatsCard;

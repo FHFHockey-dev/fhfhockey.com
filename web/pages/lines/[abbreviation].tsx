@@ -28,6 +28,7 @@ import {
   getTeamLogo,
   getTeams,
 } from "lib/NHL/server";
+import { Team } from "lib/NHL/types";
 
 export type PlayerBasic = {
   playerId: number;
@@ -53,7 +54,7 @@ type Props = {
   /**
    * An array of team info.
    */
-  teams: { abbreviation: string; name: string; shortName: string }[];
+  teams: Team[];
 
   lineCombinations: {
     source_url: string;
@@ -140,7 +141,7 @@ export default function TeamLC({
             className={styles.select}
             option={abbreviation as string}
             options={teams.map((team) => ({
-              label: team.shortName,
+              label: team.abbreviation,
               value: team.abbreviation,
             }))}
             onOptionChange={onTeamChange}
@@ -313,7 +314,12 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       // @ts-ignore
       current[type][line] = await Promise.all(
         players.map(async ({ playerId, playerName }) => {
-          const jerseyNumber = (await getPlayer(playerId))?.sweaterNumber ?? 0;
+          let jerseyNumber = 0;
+          try {
+            jerseyNumber = (await getPlayer(playerId)).sweaterNumber;
+          } catch (e: any) {
+            console.error(e);
+          }
 
           const games = (await getPlayerGameLog(playerId, seasonId)).slice(
             0,
