@@ -166,7 +166,7 @@ function getDayColumns(
             {formatDate(current)}
           </p>
           {!extended && (
-            <Toggle checked={!excludedDays.includes(day)} onChange={onChange} />
+            <Toggle checked={excludedDays.includes(day)} onChange={onChange} />
           )}
         </>
       ),
