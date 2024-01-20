@@ -23,7 +23,7 @@ import {
   previousMonday,
   format,
 } from "date-fns";
-import { DAY_ABBREVIATION, WeekData } from "lib/NHL/types";
+import { DAYS, DAY_ABBREVIATION, WeekData } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
 import GameGridContext from "./contexts/GameGridContext";
 
@@ -38,8 +38,10 @@ function GameGridInternal({ mode }: GameGridProps) {
     format(new Date(dates[0]), "yyyy-MM-dd"),
     mode === "extended"
   );
-
-  const [excludedDays, setExcludedDays] = useState<DAY_ABBREVIATION[]>([]);
+  // toggle days off depending on what day of the week the grid is accessed
+  const [excludedDays, setExcludedDays] = useState<DAY_ABBREVIATION[]>(() =>
+    getDaysBeforeToday()
+  );
   const [sortKeys, setSortKeys] = useState<
     {
       key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
@@ -189,6 +191,14 @@ function GameGridInternal({ mode }: GameGridProps) {
       </div>
     </>
   );
+}
+
+const mod = (n: number, d: number) => ((n % d) + d) % d;
+
+function getDaysBeforeToday() {
+  const today = new Date();
+  const todayIndex = mod(today.getUTCDay() - 1, 7);
+  return DAYS.slice(0, todayIndex);
 }
 
 export type GameGridMode = "basic" | "extended";
