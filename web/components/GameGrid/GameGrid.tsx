@@ -22,6 +22,7 @@ import {
   previousSunday,
   previousMonday,
   format,
+  isWithinInterval,
 } from "date-fns";
 import { DAYS, DAY_ABBREVIATION, WeekData } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
@@ -38,10 +39,7 @@ function GameGridInternal({ mode }: GameGridProps) {
     format(new Date(dates[0]), "yyyy-MM-dd"),
     mode === "extended"
   );
-  // toggle days off depending on what day of the week the grid is accessed
-  const [excludedDays, setExcludedDays] = useState<DAY_ABBREVIATION[]>(() =>
-    getDaysBeforeToday()
-  );
+  const [excludedDays, setExcludedDays] = useState<DAY_ABBREVIATION[]>([]);
   const [sortKeys, setSortKeys] = useState<
     {
       key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
@@ -124,6 +122,17 @@ function GameGridInternal({ mode }: GameGridProps) {
     });
     // setSearchParams({ startDate: newStart, endDate: newEnd });
     setDates([newStart.toISOString(), newEnd.toISOString()]);
+
+    // check if today is within start and end
+    const withinInterval = isWithinInterval(new Date(), {
+      start: newStart,
+      end: newEnd,
+    });
+
+    // reset toggles to default
+    if (!withinInterval) {
+      setExcludedDays([]);
+    }
   };
 
   // Sync dates with URL search params
@@ -145,6 +154,20 @@ function GameGridInternal({ mode }: GameGridProps) {
       ignore = true;
     };
   }, [router.query]);
+
+  // toggle days off depending on what day of the week the grid is accessed
+  useEffect(() => {
+    const [start, end] = dates;
+    // check if today is within start and end
+    const withinInterval = isWithinInterval(new Date(), {
+      start: new Date(start),
+      end: new Date(end),
+    });
+
+    if (withinInterval) {
+      setExcludedDays(getDaysBeforeToday());
+    }
+  }, [dates]);
 
   return (
     <>
@@ -182,6 +205,7 @@ function GameGridInternal({ mode }: GameGridProps) {
                   key={teamId}
                   teamId={teamId}
                   extended={mode === "extended"}
+                  excludedDays={excludedDays}
                   {...rest}
                 />
               );

@@ -2,7 +2,13 @@ import Image from "next/image";
 import { formatWinOdds } from "./utils/calcWinOdds";
 import { formatWeekScore } from "./utils/calcWeekScore";
 import { useTeam } from "./contexts/GameGridContext";
-import { DAYS, EXTENDED_DAYS, GameData, WeekData } from "lib/NHL/types";
+import {
+  DAYS,
+  DAY_ABBREVIATION,
+  EXTENDED_DAYS,
+  GameData,
+  WeekData,
+} from "lib/NHL/types";
 
 import styles from "./GameGrid.module.scss";
 
@@ -54,6 +60,7 @@ type TeamRowProps = {
   totalOffNights: number;
   weekScore: number;
   extended: boolean;
+  excludedDays: DAY_ABBREVIATION[];
 } & WeekData;
 
 function getGamesPlayedClass(totalGamesPlayed: number): string {
@@ -84,10 +91,14 @@ function TeamRow(props: TeamRowProps) {
       {days.map((day) => {
         const matchUp = props[day];
         const hasMatchUp_ = matchUp !== undefined;
+        // @ts-ignore
+        const excluded = props.excludedDays.includes(day);
         return (
           <td
             key={day}
-            // style={cellData?.offNight ? { backgroundColor: "#505050" } : {}}
+            style={
+              !props.extended && excluded ? { backgroundColor: "#505050" } : {}
+            }
           >
             {hasMatchUp_ ? (
               <MatchUpCell
