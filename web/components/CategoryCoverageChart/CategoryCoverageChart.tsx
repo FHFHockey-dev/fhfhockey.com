@@ -98,7 +98,7 @@ function CategoryCoverageChart({
         chart.ctx.textAlign = point.textAlign;
         let x = 0;
         let y = point.y + newY + 20;
-        const distance = size.screen === BreakPoint.l ? 10 : 3;
+        const distance = size.screen === BreakPoint.l ? 10 : 2;
         if (point.textAlign === "left") {
           x = point.x + distance;
         } else if (point.textAlign === "right") {
@@ -124,7 +124,7 @@ function CategoryCoverageChart({
             : "700 12px Roboto";
 
         chart.ctx.fillStyle = "rgba(76, 167, 221, 1)";
-        dataset[i] && chart.ctx.fillText(`${dataset[i]}`, x, y - 16);
+        dataset[i] && chart.ctx.fillText(`${dataset[i].toFixed(1)}`, x, y - 16);
       });
     },
   };
