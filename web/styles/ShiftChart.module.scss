@@ -1,0 +1,212 @@
+
+// Main container for the shift chart
+.shiftChartContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center; // Centers child elements
+    margin-top: 20px;
+}
+
+// Container for dropdown elements
+.dropdownContainer {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 20px; // Add space below dropdowns
+
+}
+
+// Style for individual dropdowns
+.shiftChartDropdown {
+    margin: 0 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+// Label styling within dropdowns
+.shiftChartDropdown label {
+    margin-bottom: 5px;
+}
+
+// Input and select elements within dropdowns
+.shiftChartDropdown select,
+.shiftChartDropdown input {
+    padding: 5px;
+    font-size: 16px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    width: 200px; // Set a fixed width for consistency
+}
+
+// Grid container for the chart area
+.chartGrid {
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) 30px 3fr; /* Unchanged */
+    grid-template-rows: 20px 20px auto; /* Add rows for period and minute markers */
+    grid-template-areas:
+      "periodLabels periodLabels periodLabels"
+      "minuteMarkers minuteMarkers minuteMarkers"
+      "teamLabelHome teamLabelHome teamLabelHome"
+      "namesHome positionsHome shiftBlocks"
+      "teamLabelAway teamLabelAway teamLabelAway"
+      "namesAway positionsAway shiftBlocks";
+    gap: 4px;
+    width: 100%;
+}
+
+// Canvas for game shifts and timestamps
+.gameCanvas {
+    grid-area: canvas;
+    position: relative;
+    width: 100%; // Ensures it takes the full width available
+}
+
+// Style for the team labels above the chart
+.teamLabel {
+    grid-area: teamLabel;
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+// Column for player names
+.playerName {
+    grid-area: name;
+    /* ... existing styles ... */
+}
+
+// Column for player positions
+.playerPosition {
+    grid-area: position;
+    /* ... existing styles ... */
+}
+
+// Style for each player row in the chart
+.playerRow {
+    display: flex;
+    align-items: center;
+    font-size: .85rem; // Smaller font size for more rows
+    font-weight: 900;
+    padding: 2px 0;
+}
+
+// Player name styling within the chart
+.playerNameInChart {
+    width: 10em; // Ensures enough space for names
+    text-align: left;
+    padding: 0 5px;
+}
+
+// Player position styling within the chart
+.playerPositionInChart {
+    width: 1em; // Small fixed width for positions
+    text-align: center;
+    padding: 0 5px;
+}
+
+// Container for shift blocks
+.shiftBlockContainer {
+    grid-area: shiftBlocks;
+    flex-grow: 1;
+    position: relative;
+    height: 20px;
+    width: 100%; /* Add this to make sure it takes the full width */
+
+}
+
+// Individual shift blocks
+.shiftBlock {
+    top: 0;
+    bottom: 0;
+    position: absolute;
+    height: 100%;
+    border-radius: 0; // Square edges
+    border: 1px solid black; // Visible border for each block
+    min-width: 2px; // Minimum width for visibility
+}
+
+// Row for timestamps within the game canvas
+.timestampsRow {
+    grid-area: timestamps; /* Place in the timestamps row */
+    display: flex;
+    flex-direction: column;
+    height: 40px; /* Adjust height as necessary */
+    align-items: center;
+    width: 100%;
+}
+
+// Individual timestamps
+.timestamp {
+    position: absolute;
+    transform: translateX(-50%);
+    /* Ensure visibility */
+    color: #fff; /* Example: white text */
+    background-color: rgba(0, 0, 0, 0.6); /* Example: semi-transparent black background */
+    z-index: 10; /* Make sure timestamps are above the shift blocks */
+    padding: 2px 4px; /* Padding for legibility */
+}
+
+// Style for the period labels container
+.periodLabels {
+    grid-area: periodLabels; /* Assign to the correct area */
+    display: flex;
+    justify-content: space-between; /* This will space out the period labels */
+    align-items: center; /* Vertically center the content */
+    height: 100%; /* Take full height of the row */
+}
+
+.periodLabel {
+    flex-grow: 1; /* Flex grow to fill the space evenly */
+    text-align: center; /* Center the text */
+    font-size: 14px;
+    color: #333;
+    padding: 2px 5px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 4px;
+    margin: 0 2px;
+    z-index: 12;
+}
+
+/* Special case for the OT label */
+.periodLabel.ot {
+    width: auto; /* Let the OT label take the remaining space */
+    right: 0; /* Align to the right */
+}
+
+
+// Style for the minute markers container
+.minuteMarkers {
+    grid-area: shiftBlocks; /* Align with the shift blocks */
+    position: relative; /* Position relative to the grid area */
+    display: flex;
+    justify-content: space-between; /* Space out the minute markers */
+    align-items: center;
+    height: 100%; /* Take full height of the row */
+}
+
+// Style for each minute marker
+.minuteMarker {
+    position: absolute;
+    transform: translateX(-50%);
+    /* Ensure visibility */
+    color: #fff; /* Example: white text */
+    background-color: rgba(0, 0, 0, 0.6); /* Example: semi-transparent black background */
+    z-index: 10; /* Make sure markers are above the shift blocks */
+    padding: 2px 4px; /* Padding for legibility */
+}
+
+.periodLabels, .minuteMarkers {
+    width: 100%;
+    display: flex; /* Use flexbox for horizontal alignment */
+    align-items: center; /* Center items vertically within the row */
+}
+
+.periodLabel, .minuteMarker {
+    /* ... */
+    text-align: center; /* Center text horizontally */
+    display: block; /* Use block to allow width and margin */
+    margin-right: auto; /* Automatically space out markers */
+    margin-left: auto; /* Automatically space out markers */
+}
+
