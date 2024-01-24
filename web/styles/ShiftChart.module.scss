@@ -1,5 +1,5 @@
-
 // Main container for the shift chart
+
 .shiftChartContainer {
     display: flex;
     flex-direction: column;
@@ -39,21 +39,68 @@
     width: 200px; // Set a fixed width for consistency
 }
 
+/* Last period section should not have a right border if it's the end of the game */
+.periodSection:last-child {
+    border-right: none; /* No border for the last section */
+}
+
+/* Container for shift blocks, updated to handle multiple periods */
+.shiftBlockContainer, .timestampSection {
+    display: flex;
+    width: 100%;
+}
+
+/* Individual period within the shiftBlockContainer and timestampSection */
+.periodSection {
+    flex-grow: 1; /* Each section takes up equal space */
+    position: relative; /* Needed for absolute child positioning */
+    border-right: 1px solid #ccc; /* Separator between periods */
+}
+
 // Grid container for the chart area
 .chartGrid {
     display: grid;
-    grid-template-columns: minmax(150px, 1fr) 30px 3fr; /* Unchanged */
-    grid-template-rows: 20px 20px auto; /* Add rows for period and minute markers */
+    grid-template-columns: minmax(150px, 1fr) 30px 3fr;
+    /* Add a new row for the timestamps and adjust other rows accordingly */
+    grid-template-rows: 20px repeat(6, 20px) 1fr; /* Additional 20px row for timestamps */
     grid-template-areas:
-      "periodLabels periodLabels periodLabels"
-      "minuteMarkers minuteMarkers minuteMarkers"
+      " . . timestamps"
       "teamLabelHome teamLabelHome teamLabelHome"
-      "namesHome positionsHome shiftBlocks"
+      "namesHome positionsHome shiftsHome"
+      "namesHome positionsHome shiftsHome" /* This is the first player row, add as many as needed */
       "teamLabelAway teamLabelAway teamLabelAway"
-      "namesAway positionsAway shiftBlocks";
+      "namesAway positionsAway shiftsAway"
+      "shiftBlocks shiftBlocks shiftBlocks";
     gap: 4px;
     width: 100%;
+  }
+
+  .timestampsRow {
+    grid-area: timestamps;
+    display: flex;
+    /* No changes needed here if .periodSection styles are defined correctly */
+  }
+
+  .timestampPeriodSections {
+    display: flex;
+    /* Add styles for the full width and distribution of period sections */
+  }
+
+/* Styles for period sections must be consistent with shiftBlockContainer */
+.period1Section,
+.period2Section,
+.period3Section,
+.overtimeSection {
+  flex: 1;
+  display: flex;
+  position: relative; /* This allows absolute positioning inside each section */
+  border-right: 1px solid #ccc; /* Add border if needed for separation */
 }
+
+/* Last period section should not have a right border if it's the end of the game */
+.overtimeSection:last-child {
+    border-right: none;
+  }
 
 // Canvas for game shifts and timestamps
 .gameCanvas {
@@ -115,98 +162,51 @@
 
 }
 
-// Individual shift blocks
 .shiftBlock {
+    position: absolute;
     top: 0;
     bottom: 0;
-    position: absolute;
+    background-color: #000; /* Example color, adjust as needed */
     height: 100%;
     border-radius: 0; // Square edges
     border: 1px solid black; // Visible border for each block
     min-width: 2px; // Minimum width for visibility
 }
 
-// Row for timestamps within the game canvas
-.timestampsRow {
-    grid-area: timestamps; /* Place in the timestamps row */
+.timestampSection {
+    grid-area: timestamps; /* Assign to the timestamps area */
     display: flex;
-    flex-direction: column;
-    height: 40px; /* Adjust height as necessary */
+    justify-content: space-between; /* This will space out the timestamps evenly */
     align-items: center;
-    width: 100%;
+    position: relative; /* Needed for absolute positioning of children */
 }
 
-// Individual timestamps
+
+/* Styles for individual timestamps */
 .timestamp {
     position: absolute;
+    /* Center the timestamp */
     transform: translateX(-50%);
     /* Ensure visibility */
-    color: #fff; /* Example: white text */
-    background-color: rgba(0, 0, 0, 0.6); /* Example: semi-transparent black background */
-    z-index: 10; /* Make sure timestamps are above the shift blocks */
-    padding: 2px 4px; /* Padding for legibility */
-}
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 10;
+    padding: 2px 4px;
+  }
 
-// Style for the period labels container
-.periodLabels {
-    grid-area: periodLabels; /* Assign to the correct area */
-    display: flex;
-    justify-content: space-between; /* This will space out the period labels */
-    align-items: center; /* Vertically center the content */
-    height: 100%; /* Take full height of the row */
-}
-
-.periodLabel {
-    flex-grow: 1; /* Flex grow to fill the space evenly */
-    text-align: center; /* Center the text */
-    font-size: 14px;
-    color: #333;
-    padding: 2px 5px;
-    background-color: rgba(255, 255, 255, 0.8);
-    border-radius: 4px;
-    margin: 0 2px;
-    z-index: 12;
-}
-
-/* Special case for the OT label */
-.periodLabel.ot {
-    width: auto; /* Let the OT label take the remaining space */
-    right: 0; /* Align to the right */
-}
-
-
-// Style for the minute markers container
-.minuteMarkers {
-    grid-area: shiftBlocks; /* Align with the shift blocks */
-    position: relative; /* Position relative to the grid area */
-    display: flex;
-    justify-content: space-between; /* Space out the minute markers */
-    align-items: center;
-    height: 100%; /* Take full height of the row */
-}
-
-// Style for each minute marker
-.minuteMarker {
+// Marker for the end of periods
+.periodEndMarker {
     position: absolute;
-    transform: translateX(-50%);
-    /* Ensure visibility */
-    color: #fff; /* Example: white text */
-    background-color: rgba(0, 0, 0, 0.6); /* Example: semi-transparent black background */
-    z-index: 10; /* Make sure markers are above the shift blocks */
-    padding: 2px 4px; /* Padding for legibility */
+    height: 100%; // Full height of the row
+    width: 2px; // Thin line for the marker
+    background-color: black; // Marker color
 }
 
-.periodLabels, .minuteMarkers {
-    width: 100%;
-    display: flex; /* Use flexbox for horizontal alignment */
-    align-items: center; /* Center items vertically within the row */
+/* Add styles for period bars */
+.periodBar {
+    position: absolute;
+    top: 0;
+    height: 20px;
+    background-color: rgba(0, 0, 0, 0.1); /* Light background for visibility */
+    z-index: 9; /* Below the timestamps */
 }
-
-.periodLabel, .minuteMarker {
-    /* ... */
-    text-align: center; /* Center text horizontally */
-    display: block; /* Use block to allow width and margin */
-    margin-right: auto; /* Automatically space out markers */
-    margin-left: auto; /* Automatically space out markers */
-}
-

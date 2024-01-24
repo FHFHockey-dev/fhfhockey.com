@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styles from 'web/styles/ShiftChart.module.scss';
-import * as d3 from 'd3';
 import Fetch from 'lib/cors-fetch';
 
 
@@ -17,11 +16,16 @@ import Fetch from 'lib/cors-fetch';
 // 10) Create the PP Combo Matrix/Splits
 // 11) Create more todo list items
 
+// Initializes the timestamps state with keys for each period and an empty array for each
+const initialTimestamps = {
+    period1: [],
+    period2: [],
+    period3: [],
+    overtime: []
+  };
 
 function ShiftChart() {
     // State hooks to manage component data
-    const svgRef = useRef(null);
-
     const [selectedDate, setSelectedDate] = useState('');
     const [selectedGame, setSelectedGame] = useState('');
     const [games, setGames] = useState([]);
@@ -29,6 +33,9 @@ function ShiftChart() {
     const [totalGameTime, setTotalGameTime] = useState(0);
     const [totalGameTimeInSeconds, setTotalGameTimeInSeconds] = useState(0);
     const [totalGameWidth, setTotalGameWidth] = useState(1000); // State for the dynamic width of the game canvas
+    const [isOvertime, setIsOvertime] = useState(false);
+    const [timestamps, setTimestamps] = useState(initialTimestamps);
+
 
     // Ref hook for direct DOM access to the game canvas for width calculations
     const gameCanvasRef = useRef(null);
@@ -59,7 +66,10 @@ function ShiftChart() {
                 id: playerData.playerId,
                 name: playerData.name.default,
                 position: playerData.position,
+                // Ensure each player has a 'shifts' object
+                shifts: { period1: [], period2: [], period3: [], overtime: [] }
             };
+    
     
             if (teamId === homeTeamId) {
                 homePlayers.push(player);
@@ -153,7 +163,7 @@ function ShiftChart() {
     };
 
     // Function to fetch game shift chart data and game details
-    const fetchShiftChartData = async (gameId) => {
+    const fetchShiftChartData = useCallback(async (gameId) => {
         try {
             // Fetch shift chart data
             console.log(`Fetching shift chart data for game ID: ${gameId}...`);
@@ -161,7 +171,7 @@ function ShiftChart() {
                 .then(res => res.json());
 //            console.log('Shift chart data:', shiftDataResponse.data);
     
-            // Fetch game details
+            // Fetch game details and calculate total game time
             console.log(`Fetching game details for game ID: ${gameId}...`);
             const gameDetailsResponse = await Fetch(`https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`)
                 .then(res => res.json());
@@ -172,6 +182,7 @@ function ShiftChart() {
     
             // Set total game time and calculate total game time in seconds
             setTotalGameTime(totalGameTime);
+            setIsOvertime(gameDetailsResponse.periodDescriptor.periodType === "OT");
 
             const totalGameTimeInMinutes = calculateTotalGameTime(gameDetailsResponse);
             console.log(`Total Game Time in Minutes: ${totalGameTimeInMinutes}`); // Verify this value
@@ -180,9 +191,6 @@ function ShiftChart() {
             const totalSeconds = calculateTotalGameTimeInSeconds(totalGameTimeInMinutes);
             console.log(`Setting total game time in seconds: ${totalSeconds}`); // Verify this value
             setTotalGameTimeInSeconds(totalSeconds);
-
-            // Verify state update before calling calculateShiftWidth and calculateShiftStart
-            // console.log(`Total Game Time in Seconds (State): ${totalGameTimeInSeconds}`);
     
             // Fetch player data
             console.log(`Fetching player data for game ID: ${gameId}...`);
@@ -199,37 +207,7 @@ function ShiftChart() {
         } catch (error) {
             console.error('Error fetching data:', error);
         }
-    };
-
-    // Organizes shift data into structured format for rendering the chart
-    const organizeShiftData = (shiftData) => {
-        const playerShifts = {};
-    
-        shiftData.forEach(shift => {
-            const playerName = `${shift.firstName} ${shift.lastName}`;
-            if (!playerShifts[playerName]) {
-                playerShifts[playerName] = {
-                    name: playerName,
-                    id: shift.playerId,
-                    team: shift.teamAbbrev,
-                    hexValue: shift.hexValue,
-                    shifts: []
-                };
-            }
-            playerShifts[playerName].shifts.push({
-                shiftNumber: shift.shiftNumber,
-                startTime: shift.startTime,
-                endTime: shift.endTime,
-                duration: shift.duration,
-                period: shift.period
-            });
-        });
-    
-        return Object.values(playerShifts).reduce((acc, player) => {
-            acc[player.id] = player; // Use player ID as key for easy lookup
-            return acc;
-        }, {});
-    };
+    }, []); // Empty dependency array to prevent infinite loop
 
     // Function to merge player data with shift data
     const mergePlayerData = (shiftData, playerData) => {
@@ -260,83 +238,214 @@ function ShiftChart() {
         }
     };
 
-    // Function to calculate the width of a shift block
-    const calculateShiftWidth = (shiftDurationString, totalGameTimeInSeconds) => {
-        if (!shiftDurationString) {
-            console.warn('Shift duration string is null or undefined');
-            return 0;
+    // Helper function to convert HH:MM time string to seconds
+    const convertTimeToSeconds = (timeString) => {
+        if (!timeString) {
+            return 0; // Return 0 if timeString is null or undefined
         }
-    
-        const [minutes, seconds] = shiftDurationString.split(":").map(Number);
-        const shiftDurationInSeconds = minutes * 60 + seconds;
-        // Use totalGameTimeInSeconds which now includes overtime
-        const width = (shiftDurationInSeconds / totalGameTimeInSeconds) * totalGameWidth;
-        return width;
+        const [minutes, seconds] = timeString.split(':').map(Number);
+        return minutes * 60 + seconds;
     };
 
-    // Function to calculate the starting position of a shift block    
-    const calculateShiftStart = (startTimeString, totalGameTimeInSeconds) => {
-        const [minutes, seconds] = startTimeString.split(":").map(Number);
-        const startTimeInSeconds = minutes * 60 + seconds;
-        return (startTimeInSeconds / totalGameTimeInSeconds) * totalGameWidth; // Start position relative to total game width
-    };
+    // Function to generate timestamps for every period of the game and the game's end
+    const generateTimestamps = (totalGameTimeInSeconds, isOvertime) => {
+        const periodLengthInSeconds = 20 * 60; // 20 minutes per period in seconds
+        let timestamps = {
+            period1: [],
+            period2: [],
+            period3: [],
+            overtime: []
+        };
 
-    // Generate Period Labels
-    const generatePeriodLabels = (totalGameTimeInSeconds) => {
-        const periodLength = 20 * 60; // 20 minutes in seconds
-        const periods = [];
-        for (let i = 0; i < 4; i++) { // 4 periods max including OT
-            const start = i * periodLength;
-            if (start < totalGameTimeInSeconds) {
-                periods.push(`P${i + 1}`);
+        // Add timestamps for each period
+        for (let period = 1; period <= 3; period++) {
+            for (let time = 0; time <= periodLengthInSeconds; time += 5 * 60) {
+                if (period === 3 && time === periodLengthInSeconds) {
+                    // Add "60" for the end of the third period
+                    timestamps[`period${period}`].push({
+                        label: '60',
+                        seconds: time
+                    });
+                } else {
+                    const label = (period - 1) * 20 + time / 60;
+                    timestamps[`period${period}`].push({
+                        label: label.toString(),
+                        seconds: time
+                    });
+                }
             }
         }
-        if (periods.length === 4) {
-            periods[3] = 'OT'; // Replace P4 with OT
+
+        // Add timestamp for the end of OT
+        if (isOvertime) {
+            const overtimeStart = periodLengthInSeconds * 3;
+            const overtimeDuration = totalGameTimeInSeconds - overtimeStart;
+            timestamps.overtime.push({
+                label: formatOvertimeLabel(overtimeDuration),
+                seconds: totalGameTimeInSeconds
+            });
         }
+
+        return timestamps;
+    };
+
+    // Helper function to format overtime label
+    const formatOvertimeLabel = (overtimeDurationInSeconds) => {
+        const minutes = Math.floor(overtimeDurationInSeconds / 60);
+        const seconds = overtimeDurationInSeconds % 60;
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    // Updated function to generate period bars
+    const generatePeriodBars = (totalGameTimeInSeconds, isOvertime) => {
+        const periodLength = 20 * 60; // 20 minutes per period in seconds
+        let periods = [];
+    
+        // Regular periods
+        for (let period = 1; period <= 3; period++) {
+            const start = (period - 1) * periodLength;
+            const end = period * periodLength;
+            periods.push({
+                period: period,
+                startPercent: (start / totalGameTimeInSeconds) * 100,
+                widthPercent: (periodLength / totalGameTimeInSeconds) * 100,
+            });
+        }
+    
+        // Overtime period
+        if (isOvertime) {
+            const overtimeStart = periodLength * 3;
+            periods.push({
+                period: 'OT',
+                startPercent: (overtimeStart / totalGameTimeInSeconds) * 100,
+                widthPercent: ((totalGameTimeInSeconds - overtimeStart) / totalGameTimeInSeconds) * 100,
+            });
+        }
+    
         return periods;
     };
-    
-    // Function to generate timestamps for every 5 minutes of the game
-    const generateMinuteMarkers = (totalGameTimeInSeconds) => {
-        const markers = [];
-        for (let i = 0; i <= totalGameTimeInSeconds; i += 300) { // Increment by 5 minutes
-            markers.push(i / 60); // Convert seconds to minutes
-            console.log(`Marker Position: ${(markers * 60) / totalGameTimeInSeconds * 100}%`);
+
+    // Organizes shift data into structured format for rendering the chart
+    const organizeShiftData = (shiftData) => {
+        const playerShifts = {};
+
+        shiftData.forEach(shift => {
+            const playerName = `${shift.firstName} ${shift.lastName}`;
+            if (!playerShifts[playerName]) {
+                playerShifts[playerName] = {
+                    name: playerName,
+                    id: shift.playerId,
+                    team: shift.teamAbbrev,
+                    hexValue: shift.hexValue,
+                    shifts: {
+                        period1: [],
+                        period2: [],
+                        period3: [],
+                        overtime: [] // Assuming period 4 is overtime
+                    }
+                };
+            }
+            const periodKey = shift.period === 4 ? 'overtime' : `period${shift.period}`;
+            playerShifts[playerName].shifts[periodKey].push(shift);
+        });
+
+        // Sort the shifts for each player by start time within each period
+        Object.values(playerShifts).forEach(player => {
+            Object.keys(player.shifts).forEach(periodKey => {
+                player.shifts[periodKey].sort((a, b) => {
+                    const startTimeA = convertTimeToSeconds(a.startTime);
+                    const startTimeB = convertTimeToSeconds(b.startTime);
+                    return startTimeA - startTimeB;
+                });
+            });
+        });
+
+        // Function to convert HH:MM time string to seconds
+        function convertTimeToSeconds(timeString) {
+            const [hours, minutes] = timeString.split(':').map(Number);
+            return hours * 3600 + minutes * 60;
         }
-        return markers;
+
+        return Object.values(playerShifts).reduce((acc, player) => {
+            acc[player.id] = player; // Use player ID as key for easy lookup
+            return acc;
+        }, {});
     };
 
-    // Pre-calculate period labels and minute markers to avoid recalculating them on every render
-    const periodLabels = generatePeriodLabels(totalGameTimeInSeconds);
-    const minuteMarkers = generateMinuteMarkers(totalGameTimeInSeconds);
+    // Function to calculate the width of a shift block for a specific period
+    const calculateShiftWidthForPeriod = (shiftDurationString, periodLengthInSeconds) => {
+        const durationInSeconds = convertTimeToSeconds(shiftDurationString);
+        return (durationInSeconds / periodLengthInSeconds) * 100; // Returns a percentage of the period width
+    };
 
-    // Function to render shift blocks 
-    const renderShiftBlocks = (player, totalGameTimeInSeconds) => {
-        // Check if player.shifts is an array before calling map
-        if (!Array.isArray(player.shifts)) {
-            return null; // or return an empty array, or some placeholder content
-        }
-        
-        return player.shifts.map((shift, index) => {
-            const shiftWidth = calculateShiftWidth(shift.duration, totalGameTimeInSeconds);
-            const shiftStart = calculateShiftStart(shift.startTime, totalGameTimeInSeconds);
-            const shiftKey = `player-${player.id}-shift-${shift.shiftNumber}`;
-            
+    // Function to calculate the starting position of a shift block for a specific period
+    const calculateShiftStartForPeriod = (startTimeString, periodLengthInSeconds) => {
+        const startTimeInSeconds = convertTimeToSeconds(startTimeString);
+        return (startTimeInSeconds / periodLengthInSeconds) * 100; // Returns a percentage of the period width
+    };
+
+    const renderPeriodShifts = (shifts, period) => {
+        // Determine the length of the period in seconds
+        const periodLengthInSeconds = (period === 'overtime') ? OVERTIME_LENGTH_SECONDS : REGULAR_PERIOD_LENGTH_SECONDS;
+    
+        const borderColors = {
+            period1: '2px solid yellow',
+            period2: '2px solid blue',
+            period3: '2px solid red',
+            overtime: '2px solid white'
+        };
+    
+        return shifts.map((shift, index) => {
+            const shiftWidth = calculateShiftWidthForPeriod(shift.duration, periodLengthInSeconds);
+            const shiftStart = calculateShiftStartForPeriod(shift.startTime, periodLengthInSeconds);
+            const shiftKey = `shift-${index}`;
+    
+            const borderColor = borderColors[period];
+    
+            // Debugging
+            console.log(`Rendering shift: Period: ${period}, Border Color: ${borderColor}`);
+    
+            const shiftStyle = { 
+                backgroundColor: shift.hexValue,
+                width: `${shiftWidth}%`,
+                left: `${shiftStart}%`,
+                border: borderColor
+            };
+    
             return (
-                <div
-                    key={shiftKey}
-                    className={styles.shiftBlock}
-                    style={{
-                        backgroundColor: player.hexValue, // Use player's hex value for the background color
-                        width: `${shiftWidth}%`, // Note: Using percentage instead of pixels
-                        left: `${shiftStart}%` // Note: Using percentage instead of pixels
-                    }}
-                />
+                <div key={shiftKey} className={styles.shiftBlock} style={shiftStyle} />
             );
         });
+    };    
+
+    // Function to render shift blocks for each period in a container
+    const renderShiftBlocks = (player, totalGameTimeInSeconds) => {
+        // Ensure player.shifts is an object before mapping
+        const shiftsEntries = player && player.shifts ? Object.entries(player.shifts) : [];
+    
+        return (
+            <div className={styles.shiftBlockContainer}>
+                {shiftsEntries.map(([periodKey, shifts]) => (
+                    <div key={periodKey} className={styles.periodSection}>
+                        {renderPeriodShifts(shifts, periodKey, totalGameTimeInSeconds)}
+                    </div>
+                ))}
+            </div>
+        );
     };
 
+    // Constants for period lengths in seconds
+    const REGULAR_PERIOD_LENGTH_SECONDS = 20 * 60; // 20 minutes
+    const OVERTIME_LENGTH_SECONDS = 5 * 60; // 5 minutes
+
+    // Define the length of a period in seconds and calculate the ends of each period
+    const periodLengthInSeconds = 20 * 60; // 20 minutes per period in seconds
+
+    // a game can have up to 4 periods (3 regular and 1 OT) - infitine OTs in the Playoffs
+    const periodEnds = [periodLengthInSeconds, periodLengthInSeconds * 2, periodLengthInSeconds * 3, totalGameTimeInSeconds].filter(end => end <= totalGameTimeInSeconds);
+
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
     // useEffect to fetch season dates on component mount
@@ -369,10 +478,25 @@ function ShiftChart() {
           return () => window.removeEventListener('resize', updateDimensions);
         }
       }, [selectedGame]);
+
+    useEffect(() => {
+        if (selectedGame) {
+            fetchShiftChartData(selectedGame);
+        }
+    }, [fetchShiftChartData, selectedGame]); // Only re-run the effect if selectedGame changes
     
+    // useEffect to recalculate the timestamps when the total game time changes
+    useEffect(() => {
+        const newTimestamps = generateTimestamps(totalGameTimeInSeconds, isOvertime);
+        setTimestamps(newTimestamps); 
+    }, [totalGameTimeInSeconds, isOvertime]);
+    
+    //////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////
+
     return (
         <div className={styles.shiftChartContainer}>
-
             <div className={styles.dropdownContainer}>
 
                 <div className={styles.shiftChartDropdown}>
@@ -389,7 +513,7 @@ function ShiftChart() {
                 <select 
                     id="game-selector" 
                     value={selectedGame} 
-                    onChange={handleGameChange} // Assign handleGameChange here
+                    onChange={handleGameChange} // Assign handleGameChange 
                 >
                         <option value="">Select a game</option>
                         {games.map(game => (
@@ -402,46 +526,49 @@ function ShiftChart() {
 
             </div>
                     
-            {/* Shift chart display using CSS Grid */}
+{/* Shift chart display using CSS Grid */}
+
             <div className={styles.chartGrid}>
-
-            {/* Period Labels and Timestamps Inside Game Canvas */}
-
-                {/* Period Labels */}
-                <div className={styles.periodLabels}>
-                    {periodLabels.map((label, index) => (
-                        <div key={index} className={`${styles.periodLabel} ${label === 'OT' ? 'ot' : ''}`}>
-                            {label}
-                        </div>
+            {/* Timestamps Row */}
+            <div className={styles.timestampsRow}>
+                {['period1', 'period2', 'period3', 'overtime'].map((periodKey, index) => (
+                <div key={periodKey} className={styles[`${periodKey}Section`]}>
+                    {timestamps[periodKey].map((timestamp, idx) => (
+                    <div
+                        key={idx}
+                        className={styles.timestamp}
+                        style={{
+                        left: `${(timestamp.seconds / (20 * 60)) * 100}%`
+                        }}
+                    >
+                        {timestamp.label}
+                    </div>
                     ))}
                 </div>
+                ))}
+            </div>
 
-                {/* Minute Markers */}
-                <div className={styles.minuteMarkers}>
-                    {minuteMarkers.map((marker, index) => (
-                        <div key={index} className={styles.minuteMarker}>
-                            {marker}
-                        </div>
-                    ))}
-                </div>
+{/* Iterating over players to create rows */}
 
-            {/* Iterating over players to create rows */}
             {playerData.home.concat(playerData.away).map((player, index) => (
                 <React.Fragment key={player.id}>
 
-                    {/* Player Name */}
+{/* Player Name */}
+
                     <div className={styles.playerName} style={{ color: player.hexValue, gridColumn: 1, gridRow: index + 2 }}>
                         {player.name}
                     </div>
 
-                    {/* Player Position */}
+{/* Player Position */}
+
                     <div className={styles.playerPosition} style={{ color: player.hexValue, gridColumn: 2, gridRow: index + 2 }}>
                         {player.position}
                     </div>
 
-                    {/* Shift Blocks */}
+{/* Shift Blocks */}
+
                     <div className={styles.shiftBlockContainer} style={{ gridColumn: 3, gridRow: index + 2 }}>
-                        {renderShiftBlocks(player, totalGameTimeInSeconds)}
+                        {renderShiftBlocks(player, totalGameTimeInSeconds, isOvertime)}
                     </div>
 
                     </React.Fragment>
@@ -449,6 +576,8 @@ function ShiftChart() {
 
             </div>
 
+
+                
         </div>
     );
 }
