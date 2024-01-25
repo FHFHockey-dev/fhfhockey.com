@@ -1,212 +1,131 @@
-// Main container for the shift chart
+/* ShiftChart.module.scss */
 
+
+.shiftBlocksCell {
+  position: relative;
+
+  // Applies to period cells (1st, 2nd, 3rd period)
+  &:nth-child(n+3):nth-child(-n+5) {
+    width: calc((100% - 15%) / 3);
+  }
+
+  // Applies to overtime cells
+  &.overtimeCell {
+    width: calc(((100% - 15%) / (3 + 0.25))); // Adjusted calculation
+  }
+}
+
+.timestampPeriod {
+  width: calc((100% - 15%) / 3);
+}
+
+.timestampOvertime {
+  width: calc(((100% - 15%) / (3 + 0.25))); // Adjusted calculation
+}
+
+/* Main container for the shift chart */
 .shiftChartContainer {
-    display: flex;
-    flex-direction: column;
-    align-items: center; // Centers child elements
-    margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+  border: 1px solid white;
+  /* White border around the chart */
+  background-color: #101010;
+  /* Light background color for contrast */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* Optional: Adds shadow for depth */
 }
 
 // Container for dropdown elements
 .dropdownContainer {
-    display: flex;
-    justify-content: center;
-    width: 100%;
-    margin-bottom: 20px; // Add space below dropdowns
-
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 20px; // Add space below dropdowns
 }
 
 // Style for individual dropdowns
 .shiftChartDropdown {
-    margin: 0 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  margin: 0 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 // Label styling within dropdowns
 .shiftChartDropdown label {
-    margin-bottom: 5px;
+  margin-bottom: 5px;
 }
 
 // Input and select elements within dropdowns
 .shiftChartDropdown select,
 .shiftChartDropdown input {
-    padding: 5px;
-    font-size: 16px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-    width: 200px; // Set a fixed width for consistency
+  padding: 5px;
+  font-size: 16px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  width: 200px; // Set a fixed width for consistency
 }
 
-/* Last period section should not have a right border if it's the end of the game */
-.periodSection:last-child {
-    border-right: none; /* No border for the last section */
+
+.shiftChartTable {
+  width: 100%;
+  border-collapse: collapse;
+  color: white;
+  background-color: #606060;
 }
 
-/* Container for shift blocks, updated to handle multiple periods */
-.shiftBlockContainer, .timestampSection {
-    display: flex;
-    width: 100%;
+.shiftChartTable th,
+.shiftChartTable td {
+  border: 1px solid #ccc;
+  text-align: left;
+  padding: 2px;
 }
 
-/* Individual period within the shiftBlockContainer and timestampSection */
-.periodSection {
-    flex-grow: 1; /* Each section takes up equal space */
-    position: relative; /* Needed for absolute child positioning */
-    border-right: 1px solid #ccc; /* Separator between periods */
+.gameInfoHeader {
+  width: 15%; // Adjust as needed
 }
 
-// Grid container for the chart area
-.chartGrid {
-    display: grid;
-    grid-template-columns: minmax(150px, 1fr) 30px 3fr;
-    /* Add a new row for the timestamps and adjust other rows accordingly */
-    grid-template-rows: 20px repeat(6, 20px) 1fr; /* Additional 20px row for timestamps */
-    grid-template-areas:
-      " . . timestamps"
-      "teamLabelHome teamLabelHome teamLabelHome"
-      "namesHome positionsHome shiftsHome"
-      "namesHome positionsHome shiftsHome" /* This is the first player row, add as many as needed */
-      "teamLabelAway teamLabelAway teamLabelAway"
-      "namesAway positionsAway shiftsAway"
-      "shiftBlocks shiftBlocks shiftBlocks";
-    gap: 4px;
-    width: 100%;
-  }
-
-  .timestampsRow {
-    grid-area: timestamps;
-    display: flex;
-    /* No changes needed here if .periodSection styles are defined correctly */
-  }
-
-  .timestampPeriodSections {
-    display: flex;
-    /* Add styles for the full width and distribution of period sections */
-  }
-
-/* Styles for period sections must be consistent with shiftBlockContainer */
-.period1Section,
-.period2Section,
-.period3Section,
-.overtimeSection {
-  flex: 1;
-  display: flex;
-  position: relative; /* This allows absolute positioning inside each section */
-  border-right: 1px solid #ccc; /* Add border if needed for separation */
+.shiftChartTable tbody {
+  font-family: 'Roboto Condensed', sans-serif; // Set the font family to Roboto Condensed
+  font-size: 14px;
+  text-transform: uppercase;
 }
 
-/* Last period section should not have a right border if it's the end of the game */
-.overtimeSection:last-child {
-    border-right: none;
-  }
-
-// Canvas for game shifts and timestamps
-.gameCanvas {
-    grid-area: canvas;
-    position: relative;
-    width: 100%; // Ensures it takes the full width available
-}
-
-// Style for the team labels above the chart
-.teamLabel {
-    grid-area: teamLabel;
-    text-align: center;
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-// Column for player names
-.playerName {
-    grid-area: name;
-    /* ... existing styles ... */
-}
-
-// Column for player positions
-.playerPosition {
-    grid-area: position;
-    /* ... existing styles ... */
-}
-
-// Style for each player row in the chart
 .playerRow {
-    display: flex;
-    align-items: center;
-    font-size: .85rem; // Smaller font size for more rows
-    font-weight: 900;
-    padding: 2px 0;
+  height: .1em;
+  &:hover {
+    background-color: rgba(255,
+        165,
+        0,
+        0.2) !important;// Orange background for hover effect
+    outline: 1px solid orange; // Border for the hovered row
+  }
 }
 
-// Player name styling within the chart
-.playerNameInChart {
-    width: 10em; // Ensures enough space for names
-    text-align: left;
-    padding: 0 5px;
-}
-
-// Player position styling within the chart
-.playerPositionInChart {
-    width: 1em; // Small fixed width for positions
-    text-align: center;
-    padding: 0 5px;
-}
-
-// Container for shift blocks
-.shiftBlockContainer {
-    grid-area: shiftBlocks;
-    flex-grow: 1;
-    position: relative;
-    height: 20px;
-    width: 100%; /* Add this to make sure it takes the full width */
-
-}
 
 .shiftBlock {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    background-color: #000; /* Example color, adjust as needed */
-    height: 100%;
-    border-radius: 0; // Square edges
-    border: 1px solid black; // Visible border for each block
-    min-width: 2px; // Minimum width for visibility
+  position: absolute;
+  bottom: 0; // Align to the bottom of the container
+  height: 100%; // Take full height of the container
+  min-width: 2px; // Minimum width for visibility
+  border: 1px solid black; // Visible border for each block
 }
 
-.timestampSection {
-    grid-area: timestamps; /* Assign to the timestamps area */
-    display: flex;
-    justify-content: space-between; /* This will space out the timestamps evenly */
-    align-items: center;
-    position: relative; /* Needed for absolute positioning of children */
+.gameScoreCell {
+  text-align: center;
+  font-weight: bold;
+  // Add more styles as needed
 }
 
 
-/* Styles for individual timestamps */
 .timestamp {
-    position: absolute;
-    /* Center the timestamp */
-    transform: translateX(-50%);
-    /* Ensure visibility */
-    color: #fff;
-    background-color: rgba(0, 0, 0, 0.6);
-    z-index: 10;
-    padding: 2px 4px;
-  }
-
-// Marker for the end of periods
-.periodEndMarker {
-    position: absolute;
-    height: 100%; // Full height of the row
-    width: 2px; // Thin line for the marker
-    background-color: black; // Marker color
+  display: flex; // Display timestamps in a row
+  justify-content: space-between;
+  margin: 0; // Ensure there's no extra space around timestamps
+  padding: 0; // Reset any default padding
 }
 
-/* Add styles for period bars */
-.periodBar {
-    position: absolute;
-    top: 0;
-    height: 20px;
-    background-color: rgba(0, 0, 0, 0.1); /* Light background for visibility */
-    z-index: 9; /* Below the timestamps */
-}
