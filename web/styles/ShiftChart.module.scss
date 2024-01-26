@@ -1,4 +1,5 @@
 /* ShiftChart.module.scss */
+/* /workspaces/fhfhockey.com/web/styles/ShiftChart.module.scss */
 
 
 .shiftBlocksCell {
@@ -82,7 +83,7 @@
 .shiftChartTable td {
   border: 1px solid #ccc;
   text-align: left;
-  padding: 2px;
+  padding: 1px;
 }
 
 .gameInfoHeader {
@@ -121,6 +122,44 @@
   // Add more styles as needed
 }
 
+.timestampsBar {
+  cursor: pointer;
+  background: linear-gradient(to right, #444 0%, #888 100%);
+  position: relative;
+
+  &:after {
+    content: '';
+    position: absolute;
+    background-color: yellow;
+    width: 2px;
+    height: 100%;
+    left: 50%; /* Adjust this dynamically based on click position */
+    top: 0;
+  }
+
+  .yellowLine {
+    position: absolute;
+    background-color: yellow;
+    width: 2px;
+    height: 100%;
+    left: 50%; /* This will be set dynamically */
+  }
+}
+
+.isActive {
+  background-color: #fb1313 !important;
+}
+
+.activePlayer {
+  // Styles for active players
+  font-weight: bold;
+  background-color: aqua;
+}
+
+.inactivePlayer {
+  // Styles for inactive players, such as a greyed-out look
+  opacity: 0.5;
+}
 
 .timestamp {
   display: flex; // Display timestamps in a row

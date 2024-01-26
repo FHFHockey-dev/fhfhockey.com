@@ -1,3 +1,6 @@
+// shiftChart.js
+// /workspaces/fhfhockey.com/web/pages/shiftChart.js
+
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import styles from "web/styles/ShiftChart.module.scss";
 import Fetch from "lib/cors-fetch";
@@ -34,6 +37,8 @@ function ShiftChart() {
   const [homeTeamAbbrev, setHomeTeamAbbrev] = useState("");
   const [awayTeamAbbrev, setAwayTeamAbbrev] = useState("");
   const [gameScores, setGameScores] = useState({ homeScore: 0, awayScore: 0 });
+  const [selectedTime, setSelectedTime] = useState(null);
+
 
 
   // Ref hook for direct DOM access to the game canvas for width calculations
@@ -42,6 +47,8 @@ function ShiftChart() {
   // Constants for period lengths in seconds
   const REGULAR_PERIOD_LENGTH_SECONDS = 20 * 60; // 20 minutes
   const OVERTIME_LENGTH_SECONDS = 5 * 60; // 5 minutes
+  
+
 
   const fetchShiftChartData = useCallback(async (gameId) => {
     try {
@@ -463,6 +470,86 @@ function ShiftChart() {
     return `#${r}${g}${b}`;
   };
 
+  // Function to handle clicking on the timestamps bar
+  const onTimestampClick = (event) => {
+    const bar = event.currentTarget;
+    const clickPosition = (event.clientX - bar.getBoundingClientRect().left) / bar.offsetWidth;
+    const time = clickPosition * (isOvertime ? OVERTIME_LENGTH_SECONDS : REGULAR_PERIOD_LENGTH_SECONDS * 3);
+    setSelectedTime(time);
+    sortPlayersByTimeAndPosition(time)
+  };
+  
+  const adjustShiftTimeForPeriod = (shift) => {
+    let timeAdjustment = 0;
+    switch (shift.period) {
+      case 2:
+        timeAdjustment = REGULAR_PERIOD_LENGTH_SECONDS;
+        break;
+      case 3:
+        timeAdjustment = REGULAR_PERIOD_LENGTH_SECONDS * 2;
+        break;
+      case 4: // Assuming 4 represents overtime
+        timeAdjustment = REGULAR_PERIOD_LENGTH_SECONDS * 3;
+        break;
+      default:
+        timeAdjustment = 0;
+    }
+    const shiftStartAdjusted = convertTimeToSeconds(shift.startTime) + timeAdjustment;
+    const shiftEndAdjusted = shiftStartAdjusted + convertTimeToSeconds(shift.duration);
+    return { shiftStartAdjusted, shiftEndAdjusted };
+  };
+
+  // Position ranking - lower number means higher priority
+  const positionRanking = {
+    "C": 1, // Center
+    "L": 1, // Left Wing
+    "R": 1, // Right Wing
+    "D": 2, // Defense
+    "G": 3  // Goalie
+  };
+
+  const getPositionRank = (position) => {
+    return positionRanking[position] || 4; // Default rank for unknown positions
+  };
+
+  const sortPlayersByTimeAndPosition = (time) => {
+    const allPlayers = [...playerData.home, ...playerData.away];
+
+    allPlayers.forEach(player => {
+      const isPlayerActive = [].concat(
+        player.shifts.period1,
+        player.shifts.period2,
+        player.shifts.period3,
+        player.shifts.overtime
+      ).some((shift) => {
+        const { shiftStartAdjusted, shiftEndAdjusted } = adjustShiftTimeForPeriod(shift);
+        return time >= shiftStartAdjusted && time <= shiftEndAdjusted;
+      });
+      player.isActive = isPlayerActive;
+    });
+  
+    const sortedPlayers = allPlayers.sort((a, b) => {
+      // Home team first, then active players, then by position ranking
+      if (a.team === homeTeamAbbrev && b.team !== homeTeamAbbrev) {
+        return -1;
+      } else if (a.team !== homeTeamAbbrev && b.team === homeTeamAbbrev) {
+        return 1;
+      } else if (a.isActive && !b.isActive) {
+        return -1;
+      } else if (!a.isActive && b.isActive) {
+        return 1;
+      } else {
+        return getPositionRank(a.position) - getPositionRank(b.position);
+      }
+    });
+  
+    // Update the state with the sorted players
+    setPlayerData({
+      home: sortedPlayers.filter(p => p.team === homeTeamAbbrev),
+      away: sortedPlayers.filter(p => p.team === awayTeamAbbrev)
+    });
+  };
+
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   // useEffect to fetch season dates on component mount
@@ -503,7 +590,6 @@ function ShiftChart() {
       // Set the game scores
     }
   }, [fetchShiftChartData, selectedGame]); // Add dependency on fetchShiftChartData
-
 
   // useEffect to recalculate the timestamps when the total game time changes
   useEffect(() => {
@@ -567,24 +653,52 @@ function ShiftChart() {
           <td className={styles.gameScoreCell} colSpan="2">
             {`${gameScores.homeScore} - ${gameScores.awayScore}`}
           </td>
-          {/* Period 1 Timestamps */}
-          <td className={styles.timestampsBar} colSpan="3">
+          <td className={styles.timestampsBar} colSpan={isOvertime ? "4" : "3"} onClick={onTimestampClick}>
+            <div className={styles.yellowLine} style={{ left: `${(selectedTime / (isOvertime ? OVERTIME_LENGTH_SECONDS : REGULAR_PERIOD_LENGTH_SECONDS * 3)) * 100}%` }}></div>
+          </td>
 
-            </td>
         </tr>
 
           {/* Player Rows */}
         {playerData.home.concat(playerData.away).map((player, index) => {
-          const backgroundColor = player.hexValue 
-            ? index % 2 === 0 
-              ? lightenHexColor(player.hexValue, 75) 
-              : lightenHexColor(player.hexValue, 50)
-            : '#000000'; // A default color in case hexValue is undefined
+
+            // Flatten all period shifts into a single array
+            const allShifts = [].concat(
+              player.shifts.period1,
+              player.shifts.period2,
+              player.shifts.period3,
+              player.shifts.overtime
+            );
+
+            console.log(allShifts);
+
+
+            // Determine if the player is currently active based on the selectedTime
+            const isActive = allShifts.some(shift => {
+              // Check if shift is undefined or null
+              if (!shift || typeof shift.startTime === 'undefined') {
+                console.error('Shift is undefined or does not have a startTime property:', shift);
+                return false; // or handle this case as appropriate for your application
+              }
+              
+              const shiftStart = convertTimeToSeconds(shift.startTime);
+              const shiftEnd = shiftStart + convertTimeToSeconds(shift.duration);
+              return selectedTime >= shiftStart && selectedTime < shiftEnd;
+            });
+
+            // Define the playerClass based on isActive
+            const playerClass = isActive ? styles.activePlayer : styles.inactivePlayer;
+
+            const backgroundColor = player.hexValue 
+              ? index % 2 === 0 
+                ? lightenHexColor(player.hexValue, 75) 
+                : lightenHexColor(player.hexValue, 50)
+              : '#000000'; // A default color in case hexValue is undefined
 
           return (
             <tr 
-              className={styles.playerRow} 
-              key={player.id}
+            className={`${styles.playerRow} ${playerClass}`} 
+            key={player.id}
               style={{ backgroundColor: backgroundColor }}
             >
               <td className={styles.playerNameCell}>{player.name}</td>
