@@ -38,6 +38,7 @@ function ShiftChart() {
   const [awayTeamAbbrev, setAwayTeamAbbrev] = useState("");
   const [gameScores, setGameScores] = useState({ homeScore: 0, awayScore: 0 });
   const [selectedTime, setSelectedTime] = useState(null);
+  const [yellowLinePosition, setYellowLinePosition] = useState("0%");
 
   // Ref hook for direct DOM access to the game canvas for width calculations
   const gameCanvasRef = useRef(null);
@@ -553,16 +554,26 @@ function ShiftChart() {
           const { shiftStartAdjusted, shiftEndAdjusted } =
             adjustShiftTimeForPeriod(shift);
           const active = time >= shiftStartAdjusted && time <= shiftEndAdjusted;
+
           if (active) {
-            console.log(`Player ${player.name} is active at time: ${time}`);
+            console.log(
+              `Player ${player.name} is active at time: ${time}, Shift: Start - ${shiftStartAdjusted}, End - ${shiftEndAdjusted}, Period - ${shift.period}`
+            );
           }
+
           return active;
         });
+
       player.isActive = isPlayerActive;
+
+      // Update the player class based on isActive status
+      player.playerClass = isPlayerActive
+        ? styles.activePlayer
+        : styles.inactivePlayer;
     });
 
+    // Sort the players
     const sortedPlayers = allPlayers.sort((a, b) => {
-      // Home team first, then active players, then by position ranking
       if (a.team === homeTeamAbbrev && b.team !== homeTeamAbbrev) {
         return -1;
       } else if (a.team !== homeTeamAbbrev && b.team === homeTeamAbbrev) {
@@ -576,8 +587,6 @@ function ShiftChart() {
       }
     });
 
-    console.log("Sorted players:", sortedPlayers);
-
     // Update the state with the sorted players
     const homePlayers = sortedPlayers.filter(
       (player) => player.team === homeTeamAbbrev
@@ -585,8 +594,7 @@ function ShiftChart() {
     const awayPlayers = sortedPlayers.filter(
       (player) => player.team === awayTeamAbbrev
     );
-    console.log("Filtered home players:", homePlayers);
-    console.log("Filtered away players:", awayPlayers);
+
     setPlayerData({ home: homePlayers, away: awayPlayers });
   };
 
@@ -761,10 +769,6 @@ function ShiftChart() {
               return selectedTime >= shiftStart && selectedTime < shiftEnd;
             });
 
-            const playerClass = isActive
-              ? styles.activePlayer
-              : styles.inactivePlayer;
-
             const backgroundColor = player.hexValue
               ? index % 2 === 0
                 ? lightenHexColor(player.hexValue, 75)
@@ -773,7 +777,7 @@ function ShiftChart() {
 
             return (
               <tr
-                className={`${styles.playerRow} ${playerClass}`}
+                className={`${styles.playerRow} ${player.playerClass}`}
                 key={player.id}
                 style={{ backgroundColor: backgroundColor }}
               >

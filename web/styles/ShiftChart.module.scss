@@ -126,34 +126,21 @@
   cursor: pointer;
   background: linear-gradient(to right, #444 0%, #888 100%);
   position: relative;
-
-  &:after {
-    content: '';
-    position: absolute;
-    background-color: yellow;
-    width: 2px;
-    height: 100%;
-    left: 50%; /* Adjust this dynamically based on click position */
-    top: 0;
-  }
-
-  .yellowLine {
-    position: absolute;
-    background-color: yellow;
-    width: 2px;
-    height: 100%;
-    left: 50%; /* This will be set dynamically */
-  }
 }
 
-.isActive {
-  background-color: #fb1313 !important;
+.yellowLine {
+  position: absolute;
+  background-color: yellow;
+  width: 2px;
+  height: 100%; // This assumes the parent element spans the full chart height
+  left: 0; // Initialize at 0, will be set dynamically
 }
+
 
 .activePlayer {
   // Styles for active players
   font-weight: bold;
-  background-color: aqua;
+  color: black;
 }
 
 .inactivePlayer {
