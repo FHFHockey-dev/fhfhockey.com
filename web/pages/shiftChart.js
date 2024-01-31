@@ -2,12 +2,23 @@
 // /workspaces/fhfhockey.com/web/pages/shiftChart.js
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { teamsInfo } from "web/lib/NHL/teamsInfo";
 import styles from "web/styles/ShiftChart.module.scss";
 import Fetch from "lib/cors-fetch";
 
 // TODO
-// 3) Team Label Markers
-// 5) Integrate PP spans
+
+// modularize the project
+
+// create components that log play by play data for power play start times, goals, penalties, etc.
+// Get play by play api info
+// loop through events to get penalties and duration
+// log a goal, or end of penalty by way of duration
+// highlight every player row during that time span to create a massive highlight
+// log goals
+
+// create components that log line combos for each team, ES/PP/PK
+// Still need timestamp numbers in the timestamp bar
 // 6) Create dynamic time animations. Use the game clock to animate the shift blocks to show who is on/off the ice
 // 7) Add a play-by-play timeline to the bottom of the chart
 // 8) Add a legend to the chart
@@ -38,7 +49,6 @@ function ShiftChart() {
   const [awayTeamAbbrev, setAwayTeamAbbrev] = useState("");
   const [gameScores, setGameScores] = useState({ homeScore: 0, awayScore: 0 });
   const [selectedTime, setSelectedTime] = useState(null);
-  const [yellowLinePosition, setYellowLinePosition] = useState("0%");
 
   // Ref hook for direct DOM access to the game canvas for width calculations
   const gameCanvasRef = useRef(null);
@@ -50,19 +60,19 @@ function ShiftChart() {
   const fetchShiftChartData = useCallback(async (gameId) => {
     try {
       // Fetch shift chart data
-      console.log(`Fetching shift chart data for game ID: ${gameId}...`);
+      // console.log(`Fetching shift chart data for game ID: ${gameId}...`);
       const shiftDataResponse = await Fetch(
         `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${gameId}`
       ).then((res) => res.json());
 
       // Fetch game details
-      console.log(`Fetching game details for game ID: ${gameId}...`);
+      // console.log(`Fetching game details for game ID: ${gameId}...`);
       const gameDetailsResponse = await Fetch(
         `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
       ).then((res) => res.json());
 
       // Log the game details for the selected game
-      console.log("Game details:", gameDetailsResponse);
+      // console.log("Game details:", gameDetailsResponse);
 
       // Set the game scores
       setGameScores({
@@ -80,33 +90,34 @@ function ShiftChart() {
       // Calculate total game time in minutes and seconds
       const totalGameTimeInMinutes =
         calculateTotalGameTime(gameDetailsResponse);
-      console.log(`Total Game Time in Minutes: ${totalGameTimeInMinutes}`);
+      // console.log(`Total Game Time in Minutes: ${totalGameTimeInMinutes}`);
       setTotalGameTime(totalGameTimeInMinutes);
 
       // Calculate total game time in seconds
       const totalSeconds = calculateTotalGameTimeInSeconds(gameDetailsResponse);
-      console.log(`Setting total game time in seconds: ${totalSeconds}`);
+      // console.log(`Setting total game time in seconds: ${totalSeconds}`);
       setTotalGameTimeInSeconds(totalSeconds);
 
       // Fetch player data
-      console.log(`Fetching player data for game ID: ${gameId}...`);
+      // console.log(`Fetching player data for game ID: ${gameId}...`);
       const fetchedPlayerData = await fetchPlayerData(gameId);
 
       // Organize shift chart data
       const organizedShiftData = organizeShiftData(shiftDataResponse.data);
-      console.log("Organized shift chart data:", organizedShiftData);
+      // console.log("Organized shift chart data:", organizedShiftData);
 
       // Set the home and away team abbreviations
       setHomeTeamAbbrev(gameDetailsResponse.homeTeam.abbrev);
       setAwayTeamAbbrev(gameDetailsResponse.awayTeam.abbrev);
-      console.log("homeTeamAbbrev:", homeTeamAbbrev);
-      console.log("awayTeamAbbrev:", awayTeamAbbrev);
+      // console.log("homeTeamAbbrev:", homeTeamAbbrev);
+      // console.log("awayTeamAbbrev:", awayTeamAbbrev);
 
       // Merge player data with hex values from shift chart data
       const updatedPlayerData = mergePlayerData(
         organizedShiftData,
         fetchedPlayerData
       );
+
       setPlayerData(updatedPlayerData);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -137,10 +148,18 @@ function ShiftChart() {
     let awayPlayers = [];
 
     const addPlayer = (playerData, teamId) => {
+      const teamAbbrev =
+        teamId === homeTeamId
+          ? gameData.homeTeam.abbrev
+          : gameData.awayTeam.abbrev;
+
+      const teamColors = teamsInfo[teamAbbrev] || {};
+
       const player = {
         id: playerData.playerId,
         name: playerData.name.default,
         position: playerData.position,
+        teamColors: teamColors, // Include team colors here
         shifts: {
           period1: [],
           period2: [],
@@ -182,11 +201,11 @@ function ShiftChart() {
   // Fetches season dates for initial component setup
   const fetchSeasonDates = async () => {
     try {
-      console.log("Fetching season dates...");
+      // console.log("Fetching season dates...");
       const response = await Fetch(
         "https://api-web.nhle.com/v1/schedule/now"
       ).then((res) => res.json());
-      // console.log('Season dates:', response);
+      // // console.log('Season dates:', response);
       // Extract and set the season dates here
     } catch (error) {
       console.error("Error fetching season dates:", error);
@@ -196,16 +215,16 @@ function ShiftChart() {
   // Fetches games for a selected date
   const fetchNHLGames = async (date) => {
     try {
-      console.log(`Fetching games for date: ${date}...`);
+      // console.log(`Fetching games for date: ${date}...`);
       const response = await Fetch(
         `https://api-web.nhle.com/v1/schedule/${date}`
       ).then((res) => res.json());
-      // console.log('Games on selected date:', response);
+      // // console.log('Games on selected date:', response);
 
       // Extract the games for the specific date
       const dayData = response.gameWeek.find((day) => day.date === date);
       const gamesOnSelectedDate = dayData ? dayData.games : [];
-      // console.log('Filtered games for the selected date:', gamesOnSelectedDate);
+      // // console.log('Filtered games for the selected date:', gamesOnSelectedDate);
 
       setGames(gamesOnSelectedDate);
     } catch (error) {
@@ -412,7 +431,7 @@ function ShiftChart() {
       return null;
     }
 
-    console.log(`Rendering shift blocks for period ${periodKey}:`, shifts);
+    // console.log(`Rendering shift blocks for period ${periodKey}:`, shifts);
 
     return shifts.map((shift, index) => {
       // Convert shift start time and duration from MM:SS to seconds
@@ -429,12 +448,19 @@ function ShiftChart() {
       // Calculate the left offset of the shift block as a percentage of the period length
       const leftPercent = (startSeconds / periodLengthForCalc) * 100;
 
+      const teamColors = teamsInfo[shift.teamAbbrev] || {};
+
+      const teamPrimaryColor = teamColors.primaryColor || "#000000";
+      const teamSecondaryColor = teamColors.secondaryColor || "#000000";
+      const teamJerseyColor = teamColors.jersey || "#000000";
+      const teamAccentColor = teamColors.accent || "#000000";
+
       // Define the inline style for the shift block
       const shiftStyle = {
-        backgroundColor: shift.hexValue,
+        backgroundColor: teamPrimaryColor,
         width: `${widthPercent}%`,
         left: `${leftPercent}%`,
-        border: `1px solid black`,
+        border: `1px solid ${teamSecondaryColor}`,
         position: "absolute",
       };
 
@@ -480,17 +506,25 @@ function ShiftChart() {
     const bar = event.currentTarget;
     const clickPosition =
       (event.clientX - bar.getBoundingClientRect().left) / bar.offsetWidth;
-    const time =
-      clickPosition *
-      (isOvertime
-        ? OVERTIME_LENGTH_SECONDS
-        : REGULAR_PERIOD_LENGTH_SECONDS * 3);
+
+    console.log("Click position:", clickPosition);
+
+    // Total width in terms of time (seconds)
+    const totalWidthTime = isOvertime
+      ? REGULAR_PERIOD_LENGTH_SECONDS * 3 + OVERTIME_LENGTH_SECONDS
+      : REGULAR_PERIOD_LENGTH_SECONDS * 3;
+
+    // Calculate the selected time based on the click position
+    const time = clickPosition * totalWidthTime;
+
     setSelectedTime(time);
     sortPlayersByTimeAndPosition(time);
+
+    console.log(`Selected Time: ${time} seconds`);
   };
 
   const adjustShiftTimeForPeriod = (shift) => {
-    console.log("Adjusting shift time for period. Shift data:", shift);
+    // console.log("Adjusting shift time for period. Shift data:", shift);
     if (!shift || typeof shift.period === "undefined") {
       console.error("Invalid shift object or period undefined", shift);
       return { shiftStartAdjusted: 0, shiftEndAdjusted: 0 };
@@ -532,10 +566,10 @@ function ShiftChart() {
   };
 
   const sortPlayersByTimeAndPosition = (time) => {
-    console.log(`Sorting players for time: ${time}`);
+    // console.log(`Sorting players for time: ${time}`);
 
     const allPlayers = [...playerData.home, ...playerData.away];
-    console.log("All players before sorting:", allPlayers);
+    // console.log("All players before sorting:", allPlayers);
 
     allPlayers.forEach((player) => {
       const isPlayerActive = []
@@ -556,9 +590,7 @@ function ShiftChart() {
           const active = time >= shiftStartAdjusted && time <= shiftEndAdjusted;
 
           if (active) {
-            console.log(
-              `Player ${player.name} is active at time: ${time}, Shift: Start - ${shiftStartAdjusted}, End - ${shiftEndAdjusted}, Period - ${shift.period}`
-            );
+            // console.log(`Player ${player.name} is active at time: ${time}, Shift: Start - ${shiftStartAdjusted}, End - ${shiftEndAdjusted}, Period - ${shift.period}`);
           }
 
           return active;
@@ -634,7 +666,7 @@ function ShiftChart() {
   useEffect(() => {
     if (selectedGame) {
       fetchShiftChartData(selectedGame);
-      console.log("Selected Game:", selectedGame);
+      // console.log("Selected Game:", selectedGame);
       // Set the game scores
     }
   }, [fetchShiftChartData, selectedGame]); // Add dependency on fetchShiftChartData
@@ -649,15 +681,15 @@ function ShiftChart() {
   }, [totalGameTimeInSeconds, isOvertime]);
 
   useEffect(() => {
-    console.log("Selected time changed:", selectedTime);
-    console.log("Player data updated:", playerData);
+    // console.log("Selected time changed:", selectedTime);
+    // console.log("Player data updated:", playerData);
   }, [selectedTime, playerData]);
 
   //////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////
 
-  console.log("Rendering player data:", playerData);
+  // console.log("Rendering player data:", playerData);
 
   return (
     <div className={styles.shiftChartContainer}>
@@ -697,9 +729,7 @@ function ShiftChart() {
             <th className={styles.timestampPeriod}>Period 1</th>
             <th className={styles.timestampPeriod}>Period 2</th>
             <th className={styles.timestampPeriod}>Period 3</th>
-            {isOvertime && (
-              <th className={styles.timestampOvertime}>Overtime</th>
-            )}
+            {isOvertime && <th className={styles.timestampOvertime}>OT</th>}
           </tr>
         </thead>
         <tbody>
@@ -749,7 +779,7 @@ function ShiftChart() {
               player.shifts.overtime
             );
 
-            console.log(allShifts);
+            // console.log(allShifts);
 
             // Determine if the player is currently active based on the selectedTime
             const isActive = allShifts.some((shift) => {
@@ -769,38 +799,75 @@ function ShiftChart() {
               return selectedTime >= shiftStart && selectedTime < shiftEnd;
             });
 
-            const backgroundColor = player.hexValue
+            const teamColors = player.teamColors; // Access team colors from player object
+
+            const shiftBlockBackgroundColor = teamColors.primaryColor
               ? index % 2 === 0
-                ? lightenHexColor(player.hexValue, 75)
-                : lightenHexColor(player.hexValue, 50)
-              : "#000000"; // A default color in case hexValue is undefined
+                ? lightenHexColor(teamColors.primaryColor, 60)
+                : lightenHexColor(teamColors.primaryColor, 40)
+              : "#000000"; // Default color if secondaryColor is undefined
+
+            const playerNameBackgroundColor = teamColors.primaryColor
+              ? index % 2 === 0
+                ? lightenHexColor(teamColors.primaryColor, 20)
+                : lightenHexColor(teamColors.primaryColor, 10)
+              : "#000000"; // Default color if secondaryColor is undefined
+
+            const playerPositionBackgroundColor = teamColors.primaryColor
+              ? index % 2 === 0
+                ? lightenHexColor(teamColors.primaryColor, 30)
+                : lightenHexColor(teamColors.primaryColor, 20)
+              : "#000000"; // Default color if secondaryColor is undefined
+
+            const textColor = teamColors.accent || "#000000"; // Default to black if jersey color is undefined
 
             return (
               <tr
                 className={`${styles.playerRow} ${player.playerClass}`}
                 key={player.id}
-                style={{ backgroundColor: backgroundColor }}
               >
-                <td className={styles.playerNameCell}>{player.name}</td>
-                <td className={styles.playerPositionCell}>{player.position}</td>
+                <td
+                  className={styles.playerNameCell}
+                  style={{
+                    color: textColor,
+                    backgroundColor: playerNameBackgroundColor,
+                  }}
+                >
+                  {player.name}
+                </td>
+                <td
+                  className={styles.playerPositionCell}
+                  style={{ backgroundColor: playerPositionBackgroundColor }}
+                >
+                  {player.position}
+                </td>
                 {/* Render shifts only if the player is not a backup goalie with no shifts */}
                 {!isBackupGoalie && (
                   <>
-                    <td className={styles.shiftBlocksCell}>
+                    <td
+                      className={styles.shiftBlocksCell}
+                      style={{ backgroundColor: shiftBlockBackgroundColor }}
+                    >
                       {renderShiftBlocks(
                         player.shifts.period1,
                         "period1",
                         REGULAR_PERIOD_LENGTH_SECONDS
                       )}
                     </td>
-                    <td className={styles.shiftBlocksCell}>
+                    <td
+                      className={styles.shiftBlocksCell}
+                      style={{ backgroundColor: shiftBlockBackgroundColor }}
+                    >
                       {renderShiftBlocks(
                         player.shifts.period2,
                         "period2",
                         REGULAR_PERIOD_LENGTH_SECONDS
                       )}
                     </td>
-                    <td className={styles.shiftBlocksCell}>
+                    <td
+                      className={styles.shiftBlocksCell}
+                      style={{ backgroundColor: shiftBlockBackgroundColor }}
+                    >
                       {renderShiftBlocks(
                         player.shifts.period3,
                         "period3",
@@ -810,6 +877,7 @@ function ShiftChart() {
                     {isOvertime && (
                       <td
                         className={`${styles.shiftBlocksCell} ${styles.overtimeCell}`}
+                        style={{ backgroundColor: shiftBlockBackgroundColor }}
                       >
                         {renderShiftBlocks(
                           player.shifts.overtime,

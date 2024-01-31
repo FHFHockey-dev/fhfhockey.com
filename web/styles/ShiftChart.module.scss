@@ -4,24 +4,37 @@
 
 .shiftBlocksCell {
   position: relative;
+  border-right: 1px solid white; // Add a white border to the right of each cell
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px; // Set the height of the white line
+    background-color: white; // White color for the line
+    top: 50%; // Center the line vertically in the row
+    transform: translateY(-50%); // Ensure it's perfectly centered
+    z-index: 1; // Lower z-index to be behind the shift blocks
+  }
 
   // Applies to period cells (1st, 2nd, 3rd period)
   &:nth-child(n+3):nth-child(-n+5) {
-    width: calc((100% - 15%) / 3);
+    width: calc((85% * 4/13)); // Each regular period takes up 4 parts of the 13-part space
   }
 
   // Applies to overtime cells
   &.overtimeCell {
-    width: calc(((100% - 15%) / (3 + 0.25))); // Adjusted calculation
+    width: calc((85% * 1/13)); // Overtime takes up 1 part of the 13-part space
   }
 }
 
 .timestampPeriod {
-  width: calc((100% - 15%) / 3);
+  width: calc((85% * 4/13)); // Each regular period takes up 4 parts of the 13-part space
 }
 
 .timestampOvertime {
-  width: calc(((100% - 15%) / (3 + 0.25))); // Adjusted calculation
+  width: calc((85% * 1/13)); // Overtime takes up 1 part of the 13-part space
 }
 
 /* Main container for the shift chart */
@@ -31,13 +44,8 @@
   align-items: center;
   margin: 20px;
   padding-top: 20px;
-  padding-bottom: 20px;
   border: 1px solid white;
-  /* White border around the chart */
   background-color: #101010;
-  /* Light background color for contrast */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  /* Optional: Adds shadow for depth */
 }
 
 // Container for dropdown elements
@@ -81,9 +89,14 @@
 
 .shiftChartTable th,
 .shiftChartTable td {
-  border: 1px solid #ccc;
-  text-align: left;
   padding: 1px;
+}
+
+.shiftchartTable th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
 }
 
 .gameInfoHeader {
@@ -91,30 +104,37 @@
 }
 
 .shiftChartTable tbody {
-  font-family: 'Roboto Condensed', sans-serif; // Set the font family to Roboto Condensed
-  font-size: 14px;
+  font-stretch: extra-expanded;
+  font-size: 12px;
   text-transform: uppercase;
 }
 
+.playerPositionCell {
+  border-right: 1px solid white; // Add a white border to the right of each cell
+}
+
 .playerRow {
-  height: .1em;
   &:hover {
     background-color: rgba(255,
         165,
         0,
         0.2) !important;// Orange background for hover effect
-    outline: 1px solid orange; // Border for the hovered row
+    outline: 1px solid orange !important; // Border for the hovered row
   }
 }
 
 
 .shiftBlock {
   position: absolute;
-  bottom: 0; // Align to the bottom of the container
-  height: 100%; // Take full height of the container
-  min-width: 2px; // Minimum width for visibility
-  border: 1px solid black; // Visible border for each block
+  bottom: 0;
+  height: 65%;
+  min-width: 2px;
+  border: 1px solid black;
+  left: 50%;
+  transform: translateY(-25%); /* Adjusts the block to be centered based on its width */
+  z-index: 2; // Shift blocks should be above the white line
 }
+
 
 .gameScoreCell {
   text-align: center;
