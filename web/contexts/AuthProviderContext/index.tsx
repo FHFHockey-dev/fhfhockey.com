@@ -34,6 +34,7 @@ export default function AuthProvider({ children }: Props) {
           const { data } = await supabase
             .from("users")
             .select("role")
+            .eq("user_id", session.user.id)
             .maybeSingle();
           extra.role = data?.role;
         }
