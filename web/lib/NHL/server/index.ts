@@ -195,6 +195,13 @@ export async function getSchedule(startDate: string) {
   const tasksForOneWeek = gameWeek.map((day) => async () => {
     const tasksForOneDay = day.games.map((game) => async () => {
       const { homeTeam, awayTeam } = game;
+      if (
+        teams[homeTeam.id] === undefined ||
+        teams[awayTeam.id] === undefined
+      ) {
+        console.error("skip for ", homeTeam.id, teams[awayTeam.id]);
+        return;
+      }
       const gameData = {
         id: game.id,
         season: game.season,
