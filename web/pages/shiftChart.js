@@ -309,9 +309,9 @@ function ShiftChart() {
 
   // Function to generate timestamps for every period of the game, excluding shootout
   const generateTimestamps = (totalGameTimeInSeconds, isOvertime) => {
-    const periodLengthInSeconds = 20 * 60; // 20 minutes per period in seconds
-    const overtimeLengthInSeconds = 5 * 60; // 5 minutes for overtime in seconds
-    const overtimeStart = periodLengthInSeconds * 3; // Start of the overtime period
+    const regularGameLengthInSeconds = REGULAR_PERIOD_LENGTH_SECONDS * 3;
+    const overtimegameLengthInSeconds =
+      regularGameLengthInSeconds + OVERTIME_LENGTH_SECONDS;
 
     let timestamps = {
       period1: [],
@@ -320,47 +320,72 @@ function ShiftChart() {
       overtime: [],
     };
 
-    // Add timestamps for each period
+    const calculatePositionPercent = (timeInSeconds) => {
+      if (isOvertime) {
+        // Regular periods occupy 12/13 of the width in an overtime game
+        const adjustedBaseLength = regularGameLengthInSeconds * (13 / 12);
+        return (timeInSeconds / adjustedBaseLength) * 100;
+      } else {
+        // Regular game length for non-overtime games
+        return (timeInSeconds / regularGameLengthInSeconds) * 100;
+      }
+    };
+
+    // Add timestamps for each regular period
     for (let period = 1; period <= 3; period++) {
-      for (let time = 0; time <= periodLengthInSeconds; time += 5 * 60) {
-        if (period === 3 && time === periodLengthInSeconds) {
-          // Add "60" for the end of the third period
-          timestamps[`period${period}`].push({
-            label: "60",
-            seconds: time,
-          });
-        } else {
-          const label = (period - 1) * 20 + time / 60;
-          timestamps[`period${period}`].push({
-            label: label.toString(),
-            seconds: time,
-          });
-        }
+      for (
+        let time = 0;
+        time <= REGULAR_PERIOD_LENGTH_SECONDS;
+        time += 5 * 60
+      ) {
+        const periodStart = (period - 1) * REGULAR_PERIOD_LENGTH_SECONDS;
+        const timestampTime = periodStart + time;
+        const label =
+          period === 3 && time === REGULAR_PERIOD_LENGTH_SECONDS
+            ? "60"
+            : `${periodStart / 60 + time / 60}`;
+
+        timestamps[`period${period}`].push({
+          label: label,
+          seconds: timestampTime,
+          positionPercent: calculatePositionPercent(timestampTime),
+        });
       }
     }
 
-    // Add '65' timestamp at the theoretical end of the overtime period
+    // Adjusted calculatePositionPercent for overtime
+    const calculateOvertimePositionPercent = (timeInSeconds) => {
+      // Overtime occupies 1/13 of the width, starting after 12/13
+      const adjustedTime = timeInSeconds - regularGameLengthInSeconds;
+      return 92.3077 + (adjustedTime / OVERTIME_LENGTH_SECONDS) * 7.6923; // 92.3077% is 12/13 of the width
+    };
+
+    // Add overtime timestamps
     if (isOvertime) {
-      timestamps.overtime.push({
-        label: "65",
-        seconds: overtimeStart + overtimeLengthInSeconds,
-        positionPercent: 100, // End of the overtime section
-      });
+      const overtimeStart = REGULAR_PERIOD_LENGTH_SECONDS * 3;
+      const overtimeEnd = overtimeStart + OVERTIME_LENGTH_SECONDS;
 
       // Calculate the actual end of the game during overtime
-      const gameEndInSeconds = totalGameTimeInSeconds - overtimeStart;
-      if (gameEndInSeconds < overtimeLengthInSeconds) {
-        const gameEndPercent =
-          (gameEndInSeconds / overtimeLengthInSeconds) * 100;
+      const gameEndInSeconds = totalGameTimeInSeconds;
+      if (
+        gameEndInSeconds < overtimeEnd &&
+        gameEndInSeconds !== overtimegameLengthInSeconds
+      ) {
+        // Add the gameEndInSeconds label if the game ended before 65 and not exactly at the end of overtime
+        console.log("Adding game end timestamp:", gameEndInSeconds);
+        console.log("Overtime end:", overtimeEnd);
         timestamps.overtime.push({
-          label: formatOvertimeLabel(gameEndInSeconds),
-          seconds: totalGameTimeInSeconds,
-          positionPercent: gameEndPercent,
+          label: formatOvertimeLabel(gameEndInSeconds - overtimeStart),
+          seconds: gameEndInSeconds,
+          positionPercent: calculateOvertimePositionPercent(gameEndInSeconds),
         });
       }
 
-      timestamps.overtime.forEach((timestamp) => {
-        timestamp.isOvertime = true;
+      // Always add the "65" timestamp at the theoretical end of overtime
+      timestamps.overtime.push({
+        label: "65",
+        seconds: overtimeEnd,
+        positionPercent: 100, // 100% for the end of the overtime column
       });
     }
 
@@ -742,6 +767,17 @@ function ShiftChart() {
               colSpan={isOvertime ? "4" : "3"}
               onClick={onTimestampClick}
             >
+              {Object.keys(timestamps).map((periodKey) =>
+                timestamps[periodKey].map((timestamp, index) => (
+                  <div
+                    key={index}
+                    className={styles.timestampLabel}
+                    style={{ left: `${timestamp.positionPercent}%` }}
+                  >
+                    {timestamp.label}
+                  </div>
+                ))
+              )}
               <div
                 className={styles.yellowLine}
                 style={{

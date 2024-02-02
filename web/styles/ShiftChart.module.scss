@@ -37,6 +37,13 @@
   width: calc((85% * 1/13)); // Overtime takes up 1 part of the 13-part space
 }
 
+.timestampLabel {
+  position: absolute;
+  bottom: 0%;
+  transform: translateX(-50%); // Center align
+  white-space: nowrap; // Keep the label on a single line
+}
+
 /* Main container for the shift chart */
 .shiftChartContainer {
   display: flex;
