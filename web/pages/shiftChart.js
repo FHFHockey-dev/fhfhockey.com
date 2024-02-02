@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { teamsInfo } from "web/lib/NHL/teamsInfo";
 import styles from "web/styles/ShiftChart.module.scss";
 import Fetch from "lib/cors-fetch";
+import { GoalIndicators } from "hooks/useGoals";
 
 // TODO
 
@@ -790,6 +791,7 @@ function ShiftChart() {
                   }%`,
                 }}
               ></div>
+              <GoalIndicators id={Number(selectedGame)} />
             </td>
           </tr>
 
