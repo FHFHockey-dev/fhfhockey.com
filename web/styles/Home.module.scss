@@ -77,10 +77,12 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 25px;
-  align-items: center;
+  justify-content: center;
+  align-items: start;
   margin: 0 auto;
   padding: 20px;
 }
+
 
 .separator {
   margin-top: 20px;
@@ -188,6 +190,8 @@
   overflow: hidden;
   max-height: 5em;
   min-height: 5em;
+  max-width: 100%;
+
 }
 
 .gamesContainer a .gameCard::before {
@@ -218,11 +222,14 @@
 .leftImage {
   left: -10px;
   top: 0;
+  filter: drop-shadow(0 0 2px #fff);
+
 }
 
 .rightImage {
   right: -15px;
   bottom: 0;
+  filter: drop-shadow(0 0 3px #000);
 }
 
 .awayTeamLogo,
@@ -382,11 +389,13 @@
 .ccStandings {
   flex: 1;
   font-family: roboto condensed, sans-serif;
+  margin-right: 1em;
 }
 
 .crInjuries {
   flex: 1;
   font-family: roboto condensed, sans-serif;
+  margin-left: 1em;
 }
 
 
@@ -424,15 +433,17 @@
 }
 
 .dateColumn {
-  width: 100px;
+  width: 90px;
+  text-align: center;
 }
 
 .nameColumn {
-  width: 125px;
+  width: 150px;
 }
 
 .teamColumn {
   text-align: center;
+  width: 50px;
 }
 
 .statusColumn {
@@ -446,11 +457,15 @@
 
 .injuryTableHeader {
   background-color: #101010;
+  font-size: 16px;
 }
 
 .injuryTable td,
 .injuryTable th {
-  padding: 10px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-left: 6px;
+  padding-right: 6px;
   border-bottom: 1px solid #ccc;
 }
 
@@ -464,6 +479,14 @@
   padding: 10px;
   border-bottom: 1px solid #ccc;
   text-align: center;
+}
+
+.standingsTable td {
+  font-size: 14px;
+}
+
+.injuryTable td {
+  font-size: 14px;
 }
 
 .rowEven {

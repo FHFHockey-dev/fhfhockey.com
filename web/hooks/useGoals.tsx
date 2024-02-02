@@ -1,5 +1,10 @@
+// useGoals.tsx
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-1\web\hooks\useGoals.tsx
+
 import { useEffect, useState } from "react";
+import { teamsInfo } from "lib/NHL/teamsInfo";
 import Fetch from "lib/cors-fetch";
+import styles from "/styles/useGoals.module.scss";
 
 export default function useGoals(id: number) {
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -80,14 +85,32 @@ type Goal = {
 };
 
 // todos:
-// - Colored with the team colors
-// - position
+// - Colored with the team colors - done
+// - position (leftPercent)
 // - hover event
 // - click event
 // - vertical line
 // - style
+// - logic for positioning of overtime games: chart stays same width but goes to 4:4:4:1 column width split for P1:P2:P3:OT as it is 20:20:20:5 in minutes
 const PERIOD_IN_SECONDS = 20 * 60;
 const PERIOD_LENGTH = 0.3;
+
+function brightenColor(hex: string, percent: number): string {
+  // Check if hex starts with "#" and remove it for processing
+  const normalizedHex = hex.startsWith("#") ? hex.slice(1) : hex;
+
+  // Parse the hex color to get red, green, and blue components.
+  const [r, g, b] = normalizedHex.match(/\w\w/g)!.map((x) => parseInt(x, 16));
+
+  // Calculate the adjustment.
+  const adjust = (value: number): string =>
+    Math.min(255, value + Math.floor(255 * (percent / 100)))
+      .toString(16)
+      .padStart(2, "0");
+
+  // Adjust and recombine components.
+  return `#${adjust(r)}${adjust(g)}${adjust(b)}`;
+}
 
 function GoalIndicator({
   scoreTeamAbbreviation,
@@ -99,42 +122,68 @@ function GoalIndicator({
   console.log(period.number * timeInPeriod);
   // 20 minutes per period , each period is 30% of the total length
   // timeInPeriod / 20 minutes * (30% * period.number)
-  const left = `${
+
+  const leftPercentage = `${
     ((timeInPeriod / PERIOD_IN_SECONDS) * PERIOD_LENGTH +
       PERIOD_LENGTH * (period.number - 1)) *
     100
   }%`;
+
   const isHomeScoring = scoreTeamAbbreviation === homeTeam.abbreviation;
+
+  const teamColors =
+    scoreTeamAbbreviation in teamsInfo
+      ? teamsInfo[scoreTeamAbbreviation as keyof typeof teamsInfo]
+      : {
+          primaryColor: "black", // Fallback color if not found
+          secondaryColor: "white", // Fallback color if not found
+        };
+
+  const indicatorPositionStyle = {
+    left: leftPercentage,
+    zIndex: 2, // Ensure it's on top if needed
+  };
+
+  const backgroundColor = isHomeScoring
+    ? teamColors.primaryColor
+    : teamColors.secondaryColor;
+  const borderColor = isHomeScoring
+    ? teamColors.secondaryColor
+    : teamColors.primaryColor;
+  const textColor = brightenColor(
+    isHomeScoring ? teamColors.secondaryColor : teamColors.primaryColor,
+    25
+  );
+
+  const teamColorStyle = {
+    "--backgroundColor": backgroundColor,
+    "--borderColor": borderColor,
+    "--textColor": textColor,
+  } as React.CSSProperties;
+
   return (
-    <div style={{ position: "absolute", left: left, top: 0, zIndex: 2 }}>
+    <div
+      style={{
+        position: "absolute",
+        top: 0,
+        ...indicatorPositionStyle,
+        transform: "translateY(-100%) translateX(-50%)",
+      }}
+    >
+      {/* Score display */}
+      <div className={styles.scoreContainer}>
+        <span>
+          {homeTeam.abbreviation} {homeTeam.score} - {awayTeam.score}{" "}
+          {awayTeam.abbreviation}
+        </span>
+      </div>
+
+      {/* Goal Indicator with dynamic color and home plate shape */}
       <div
-        style={{
-          position: "absolute",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          transform: "translateY(-70%) translateX(-50%)",
-          width: "max-content",
-        }}
+        className={styles.goalIndicator}
+        style={teamColorStyle} // Apply dynamic color styles
       >
-        <span style={{ color: "white" }}>
-          {isHomeScoring && homeTeam.abbreviation} {homeTeam.score}-
-          {awayTeam.score} {awayTeam.abbreviation}
-        </span>
-        <span
-          style={{
-            writingMode: "vertical-rl",
-            textOrientation: "upright",
-            userSelect: "none",
-            backgroundColor: "purple",
-            border: "2px solid white",
-            borderRadius: "8px",
-            fontSize: "8px",
-          }}
-        >
-          {scoreTeamAbbreviation}
-        </span>
+        {scoreTeamAbbreviation}
       </div>
     </div>
   );
@@ -150,5 +199,11 @@ const convertTimeToSeconds = (timeString: string) => {
 
 export function GoalIndicators({ id }: { id: number }) {
   const goals = useGoals(id);
-  return goals.map((goal, i) => <GoalIndicator key={i} {...goal} />);
+  return (
+    <>
+      {goals.map((goal, i) => (
+        <GoalIndicator key={i} {...goal} />
+      ))}
+    </>
+  );
 }

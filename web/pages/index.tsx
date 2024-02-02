@@ -25,7 +25,7 @@ const Home: NextPage = ({
   const [injuries, setInjuries] = useState(initialInjuries);
   const [standings, setStandings] = useState(initialStandings);
   const [injuryPage, setInjuryPage] = useState(0);
-  const injuryRowsPerPage = 25;
+  const injuryRowsPerPage = 32;
 
   const changeDate = async (days) => {
     const newDate = moment(currentDate).add(days, "days").format("YYYY-MM-DD");
