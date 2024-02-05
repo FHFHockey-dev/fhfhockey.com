@@ -161,10 +161,12 @@
 .tables-container {
   display: flex;
   flex-direction: row;
-  justify-content: center;
   align-items: flex-start; /* Aligns items at the top */
   width: 100%;
   margin: 0 auto;
+
+  flex-wrap: wrap; /* Allow items to wrap as needed */
+  justify-content: space-between; /* Adjust spacing between tables */
 }
 
 .team-ranks-table-container {
@@ -595,10 +597,28 @@
 
 /* Resolution for mobile devices */
 
+@media (min-width: 769px) {
+  .sos-container {
+    width: 50%; /* Adjust if necessary for desktop layout */
+    /* Ensure any necessary padding or margin is set here for desktop view */
+  }
+}
+
 @media (max-width: 768px) {
+  .sos-container {
+    width: 50%; /* Adjust width to 50% for mobile devices */
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+  }
+
+  /* Additional adjustments for mobile view */
   .team-ranks-table,
   .fantasy-power-ranks-table {
-    font-size: 0.8em; /* Smaller font size for smaller screens */
+    font-size: 0.8em; /* Adjust font size for readability on smaller screens */
+  }
+
+  .sos-and-logo-grid {
+    flex-direction: column; /* Optionally stack SoS tables vertically on very narrow screens */
   }
 
   .sos-container {
@@ -646,8 +666,17 @@
   }
 
   .team-logos-grid img {
-    max-height: 40px;
+    max-height: 30px;
     filter: drop-shadow(0 0 3px #fff);
+  }
+
+  .sos-and-logo-grid {
+    flex-direction: row; /* Stack SoS tables vertically on very narrow screens */
+  }
+
+  .sos-table.past table img,
+  .sos-table.future table img {
+    margin-right: 0.5em;
   }
 }
 
@@ -719,18 +748,16 @@
     width: 100%;
     margin-top: 0px;
     padding: 1.5em;
-    border: 2px double #fff;
-    border-radius: 8px;
   }
 
-  .team-logos-grid img {
-    max-height: 25px;
+  .team-logos-grid img a {
+    max-height: 15px;
     filter: drop-shadow(0 0 1px #fff);
     justify-content: center;
     align-items: center;
   }
 
-  .team-logos-grid a img {
-    max-width: 60px;
+  .team-logos-grid img a {
+    max-width: 30px;
   }
 }
