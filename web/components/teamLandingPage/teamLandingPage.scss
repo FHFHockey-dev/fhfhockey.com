@@ -597,13 +597,6 @@
 
 /* Resolution for mobile devices */
 
-@media (min-width: 769px) {
-  .sos-container {
-    width: 50%; /* Adjust if necessary for desktop layout */
-    /* Ensure any necessary padding or margin is set here for desktop view */
-  }
-}
-
 @media (max-width: 768px) {
   .sos-container {
     width: 50%; /* Adjust width to 50% for mobile devices */
