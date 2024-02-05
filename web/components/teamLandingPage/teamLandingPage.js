@@ -1,27 +1,28 @@
 // teamLandingPage.js
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
-import StrengthOfSchedule from './strengthofSchedule'; // Assuming it's in the same directory
+import StrengthOfSchedule from "./strengthofSchedule"; // Assuming it's in the same directory
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
-import Fetch from 'lib/cors-fetch';
-import useTeams from 'hooks/useTeams';
+import Fetch from "lib/cors-fetch";
+import useTeams from "hooks/useTeams";
 
 /// DEV NOTE:
-/// Move Fetches to server side
 /// Find out why PP% is messed up in L10
-
 
 const TeamStatsComponent = () => {
   const teams = useTeams();
   const [sortedTableData, setSortedTableData] = useState([]);
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: "ascending",
+  });
   const [teamsWithPowerScores, setTeamsWithPowerScores] = useState([]);
-  
-const size = useScreenSize();
-const isMobileView = size.screen === BreakPoint.s;
 
+  const size = useScreenSize();
+  const isMobileView = size.screen === BreakPoint.s;
 
   function calculateLeagueAverages(teamsData) {
     const statsSums = {
@@ -35,10 +36,10 @@ const isMobileView = size.screen === BreakPoint.s;
       L10powerPlayOpportunities: 0,
       L10hits: 0,
       L10blocks: 0,
-      L10pim: 0
+      L10pim: 0,
     };
-  
-    teamsData.forEach(team => {
+
+    teamsData.forEach((team) => {
       const stats = team.lastTenGames[0].lastTenGames[0]; // Accessing the nested lastTenGames
       statsSums.L10ptsPct += stats.L10ptsPct;
       statsSums.L10goalsFor += stats.L10goalsFor;
@@ -52,7 +53,7 @@ const isMobileView = size.screen === BreakPoint.s;
       statsSums.L10blocks += stats.L10blocks;
       statsSums.L10pim += stats.L10pim;
     });
-  
+
     const numberOfTeams = teamsData.length;
     return {
       L10ptsPct: statsSums.L10ptsPct / numberOfTeams,
@@ -62,10 +63,11 @@ const isMobileView = size.screen === BreakPoint.s;
       L10shotsAgainst: statsSums.L10shotsAgainst / numberOfTeams,
       L10powerPlay: statsSums.L10powerPlay / numberOfTeams,
       L10penaltyKill: statsSums.L10penaltyKill / numberOfTeams,
-      L10powerPlayOpportunities: statsSums.L10powerPlayOpportunities / numberOfTeams,
+      L10powerPlayOpportunities:
+        statsSums.L10powerPlayOpportunities / numberOfTeams,
       L10hits: statsSums.L10hits / numberOfTeams,
       L10blocks: statsSums.L10blocks / numberOfTeams,
-      L10pim: statsSums.L10pim / numberOfTeams
+      L10pim: statsSums.L10pim / numberOfTeams,
     };
   }
 
@@ -81,10 +83,10 @@ const isMobileView = size.screen === BreakPoint.s;
       L10powerPlayOpportunities: 0,
       L10hits: 0,
       L10blocks: 0,
-      L10pim: 0
+      L10pim: 0,
     };
-  
-    teamsData.forEach(team => {
+
+    teamsData.forEach((team) => {
       const stats = team.lastTenGames[0].lastTenGames[0];
       for (const stat in sumsOfSquaredDifferences) {
         if (sumsOfSquaredDifferences.hasOwnProperty(stat)) {
@@ -93,19 +95,25 @@ const isMobileView = size.screen === BreakPoint.s;
         }
       }
     });
-  
+
     let stdDeviations = {};
     const numberOfTeams = teamsData.length;
     for (const stat in sumsOfSquaredDifferences) {
       if (sumsOfSquaredDifferences.hasOwnProperty(stat)) {
-        stdDeviations[stat] = Math.sqrt(sumsOfSquaredDifferences[stat] / numberOfTeams);
+        stdDeviations[stat] = Math.sqrt(
+          sumsOfSquaredDifferences[stat] / numberOfTeams
+        );
       }
     }
-  
+
     return stdDeviations;
   }
-  
-  function calculatePowerScores(teamsData, leagueAverages, leagueStdDeviations) {
+
+  function calculatePowerScores(
+    teamsData,
+    leagueAverages,
+    leagueStdDeviations
+  ) {
     // Define weights for each stat
     const statWeights = {
       L10ptsPct: 10,
@@ -118,202 +126,258 @@ const isMobileView = size.screen === BreakPoint.s;
       L10powerPlayOpportunities: 4,
       L10hits: 1,
       L10blocks: 1,
-      L10pim: 1
+      L10pim: 1,
     };
-  
-    return teamsData.map(team => {
+
+    return teamsData.map((team) => {
       const stats = team.lastTenGames[0].lastTenGames[0];
       let powerScore = 0;
-  
+
       for (const stat in leagueAverages) {
         if (leagueAverages.hasOwnProperty(stat)) {
-          const zScore = (stats[stat] - leagueAverages[stat]) / leagueStdDeviations[stat];
+          const zScore =
+            (stats[stat] - leagueAverages[stat]) / leagueStdDeviations[stat];
           const weightedZScore = zScore * statWeights[stat];
-          
-          if (stat === 'L10goalsAgainst' || stat === 'L10shotsAgainst') {
+
+          if (stat === "L10goalsAgainst" || stat === "L10shotsAgainst") {
             powerScore -= weightedZScore; // Negate the score for these stats
           } else {
             powerScore += weightedZScore;
           }
         }
       }
-  
+
       return { ...team, powerScore };
     });
   }
 
   const requestSort = (key) => {
-    let direction = 'ascending';
-    if (key === 'L10pim' || key === 'L10ptsPct' || key === 'L10hits' || key === 'L10blocks' || key === 'L10powerPlayOpportunities' || key === 'L10goalsFor' || key === 'L10shotsFor' || key === 'L10powerPlay' || key === 'L10penaltyKill') {
-      direction = 'descending';
+    let direction = "ascending";
+    if (
+      key === "L10pim" ||
+      key === "L10ptsPct" ||
+      key === "L10hits" ||
+      key === "L10blocks" ||
+      key === "L10powerPlayOpportunities" ||
+      key === "L10goalsFor" ||
+      key === "L10shotsFor" ||
+      key === "L10powerPlay" ||
+      key === "L10penaltyKill"
+    ) {
+      direction = "descending";
     }
     if (sortConfig.key === key && sortConfig.direction === direction) {
-      direction = direction === 'ascending' ? 'descending' : 'ascending';
+      direction = direction === "ascending" ? "descending" : "ascending";
     }
     setSortConfig({ key, direction });
     sortDataBy(key, direction);
-  }
-  
+  };
+
   const sortDataBy = (key, direction) => {
     const sortedData = [...sortedTableData].sort((a, b) => {
-      const aStats = a.lastTenGames && a.lastTenGames[0].lastTenGames[0] ? a.lastTenGames[0].lastTenGames[0][key] : null;
-      const bStats = b.lastTenGames && b.lastTenGames[0].lastTenGames[0] ? b.lastTenGames[0].lastTenGames[0][key] : null;
-  
-      if (aStats === null) return direction === 'ascending' ? 1 : -1;
-      if (bStats === null) return direction === 'ascending' ? -1 : 1;
-  
-      return direction === 'ascending' ? aStats - bStats : bStats - aStats;
+      const aStats =
+        a.lastTenGames && a.lastTenGames[0].lastTenGames[0]
+          ? a.lastTenGames[0].lastTenGames[0][key]
+          : null;
+      const bStats =
+        b.lastTenGames && b.lastTenGames[0].lastTenGames[0]
+          ? b.lastTenGames[0].lastTenGames[0][key]
+          : null;
+
+      if (aStats === null) return direction === "ascending" ? 1 : -1;
+      if (bStats === null) return direction === "ascending" ? -1 : 1;
+
+      return direction === "ascending" ? aStats - bStats : bStats - aStats;
     });
     setSortedTableData(sortedData);
   };
 
   const fetchGameStats = useCallback(async (gameId, teamId) => {
     const boxscoreUrl = `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`;
-  
+
     try {
       const response = await Fetch(boxscoreUrl);
       const data = await response.json();
-  
+
       // Determine if the team is the home or away team
       const isHomeTeam = data.homeTeam.id === teamId;
       const teamStats = isHomeTeam ? data.homeTeam : data.awayTeam;
-  
+
       // Extract the relevant stats here
-      const powerPlayOpportunities = extractPowerPlayOpportunities(teamStats.powerPlayConversion);
+      const powerPlayOpportunities = extractPowerPlayOpportunities(
+        teamStats.powerPlayConversion
+      );
       const pim = teamStats.pim; // Penalty in minutes
       const hits = teamStats.hits;
       const blocks = teamStats.blocks;
-  
+
       // Return the extracted stats
       return {
         powerPlayOpportunities,
         pim,
         hits,
-        blocks
+        blocks,
       };
     } catch (error) {
       console.error(`Error fetching game stats: ${error}`);
       return null;
     }
   }, []); // This depends on whether you use any external values in this function
-  
 
   const getCurrentDate = () => {
     const today = new Date();
     const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
-    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
+    const day = String(today.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   };
-  
-  const fetchTeamStats = useCallback(async (franchiseId, teamId) => {
-    const currentDate = getCurrentDate();
-    const statsUrl = `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22teamId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=franchiseId%3D${franchiseId}%20and%20gameDate%3C=%22${currentDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%222023-09-29%22%20and%20gameTypeId=2`;
-    try {
-      const response = await Fetch(statsUrl);
-      const data = await response.json();
 
-      if (data && data.data) {
-        data.data.sort((a, b) => new Date(b.gameDate) - new Date(a.gameDate));
-        const lastTenGames = data.data.slice(0, 10);
+  const fetchTeamStats = useCallback(
+    async (franchiseId, teamId) => {
+      const currentDate = getCurrentDate();
+      const statsUrl = `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22teamId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=franchiseId%3D${franchiseId}%20and%20gameDate%3C=%22${currentDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%222023-09-29%22%20and%20gameTypeId=2`;
+      try {
+        const response = await Fetch(statsUrl);
+        const data = await response.json();
 
-        const gameStatsPromises = lastTenGames.map(game => fetchGameStats(game.gameId, teamId));
-        const gamesStats = await Promise.all(gameStatsPromises);
+        if (data && data.data) {
+          data.data.sort((a, b) => new Date(b.gameDate) - new Date(a.gameDate));
+          const lastTenGames = data.data.slice(0, 10);
 
-        const lastTenStats = {
-          lastTenIds: lastTenGames.map(game => game.gameId),
-          L10ptsPct: average(lastTenGames, 'pointPct'),
-          L10goalsAgainst: average(lastTenGames, 'goalsAgainst'),
-          L10goalsFor: average(lastTenGames, 'goalsFor'),
-          L10shotsFor: average(lastTenGames, 'shotsForPerGame'),
-          L10shotsAgainst: average(lastTenGames, 'shotsAgainstPerGame'),
-          L10powerPlay: average(lastTenGames, 'powerPlayPct'),
-          L10penaltyKill: average(lastTenGames, 'penaltyKillPct'),
-          L10powerPlayOpportunities: totalSum(gamesStats, 'powerPlayOpportunities') / gamesStats.length,
-          L10hits: totalSum(gamesStats, 'hits') / gamesStats.length,
-          L10blocks: totalSum(gamesStats, 'blocks') / gamesStats.length,
-          L10pim: totalSum(gamesStats, 'pim') / gamesStats.length
-        };
-        console.log("LAST TEN GAMES: ", lastTenGames, lastTenStats)
-        return { lastTenGames: [lastTenStats] };
+          const gameStatsPromises = lastTenGames.map((game) =>
+            fetchGameStats(game.gameId, teamId)
+          );
+          const gamesStats = await Promise.all(gameStatsPromises);
+
+          const lastTenStats = {
+            lastTenIds: lastTenGames.map((game) => game.gameId),
+            L10ptsPct: average(lastTenGames, "pointPct"),
+            L10goalsAgainst: average(lastTenGames, "goalsAgainst"),
+            L10goalsFor: average(lastTenGames, "goalsFor"),
+            L10shotsFor: average(lastTenGames, "shotsForPerGame"),
+            L10shotsAgainst: average(lastTenGames, "shotsAgainstPerGame"),
+            L10powerPlay: average(lastTenGames, "powerPlayPct"),
+            L10penaltyKill: average(lastTenGames, "penaltyKillPct"),
+            L10powerPlayOpportunities:
+              totalSum(gamesStats, "powerPlayOpportunities") /
+              gamesStats.length,
+            L10hits: totalSum(gamesStats, "hits") / gamesStats.length,
+            L10blocks: totalSum(gamesStats, "blocks") / gamesStats.length,
+            L10pim: totalSum(gamesStats, "pim") / gamesStats.length,
+          };
+          console.log("LAST TEN GAMES: ", lastTenGames, lastTenStats);
+          return { lastTenGames: [lastTenStats] };
+        }
+
+        return null;
+      } catch (error) {
+        console.error(`Error fetching team stats: ${error}`);
+        return null;
       }
+    },
+    [fetchGameStats]
+  ); // Add dependencies if necessary
 
-      return null;
-    } catch (error) {
-      console.error(`Error fetching team stats: ${error}`);
-      return null;
-    }
-  }, [fetchGameStats]); // Add dependencies if necessary
-
-
-const fetchDetailedTeamStats = useCallback(async (basicTeamData) => {
-  const rankTeams = (data) => {
-    return data.sort((a, b) => {
-      // Check if lastTenGames data is available for both teams
-      if (a.lastTenGames && b.lastTenGames && a.lastTenGames[0] && b.lastTenGames[0]) {
-        // Compare the teams based on L10goalsFor
-        return b.lastTenGames[0].L10goalsFor - a.lastTenGames[0].L10goalsFor;
-      }
-      return 0; // If data is not available, keep the original order
-    });
-  };
-
-  const detailedDataPromises = basicTeamData.map(team => {
-    if (!team.lastSeason) {
-      return fetchTeamStats(team.id, team.id)
-        .then(stats => {
-          return { ...team, lastTenGames: [stats] };
-        })
-        .catch(error => {
-          console.error(`Error fetching stats for team ${team.fullName}: ${error}`);
-          return { ...team, lastTenGames: [null] }; // Set to null if error
+  const fetchDetailedTeamStats = useCallback(
+    async (basicTeamData) => {
+      const rankTeams = (data) => {
+        return data.sort((a, b) => {
+          // Check if lastTenGames data is available for both teams
+          if (
+            a.lastTenGames &&
+            b.lastTenGames &&
+            a.lastTenGames[0] &&
+            b.lastTenGames[0]
+          ) {
+            // Compare the teams based on L10goalsFor
+            return (
+              b.lastTenGames[0].L10goalsFor - a.lastTenGames[0].L10goalsFor
+            );
+          }
+          return 0; // If data is not available, keep the original order
         });
-    }
-    return team;
-  });
+      };
 
-  Promise.all(detailedDataPromises).then(detailedData => {
-    const rankedData = rankTeams(detailedData);
-    
-    // Calculate ranks for each stat and add to team data
-    ['L10ptsPct', 'L10goalsFor', 'L10goalsAgainst', 'L10shotsAgainst', 'L10shotsFor', 'L10powerPlay', 'L10penaltyKill', 'L10powerPlayOpportunities', 'L10hits', 'L10blocks', 'L10pim'].forEach(statKey => {
-      const statRanks = calculateStatRanks(rankedData, statKey);
-      rankedData.forEach(team => {
-        const rankEntry = statRanks.find(rank => rank.teamId === team.id);
-        team[`${statKey}Rank`] = rankEntry ? rankEntry.rank : null;
-
-        // Console log for each team's rank in this stat
-        // console.log(`${team.abbreviation} rank in ${statKey}: ${team[`${statKey}Rank`]}`);
+      const detailedDataPromises = basicTeamData.map((team) => {
+        if (!team.lastSeason) {
+          return fetchTeamStats(team.id, team.id)
+            .then((stats) => {
+              return { ...team, lastTenGames: [stats] };
+            })
+            .catch((error) => {
+              console.error(
+                `Error fetching stats for team ${team.fullName}: ${error}`
+              );
+              return { ...team, lastTenGames: [null] }; // Set to null if error
+            });
+        }
+        return team;
       });
-    });
 
-    setSortedTableData(rankedData);    
-  });
-}, [fetchTeamStats]); // Add any additional dependencies as needed
+      Promise.all(detailedDataPromises).then((detailedData) => {
+        const rankedData = rankTeams(detailedData);
+
+        // Calculate ranks for each stat and add to team data
+        [
+          "L10ptsPct",
+          "L10goalsFor",
+          "L10goalsAgainst",
+          "L10shotsAgainst",
+          "L10shotsFor",
+          "L10powerPlay",
+          "L10penaltyKill",
+          "L10powerPlayOpportunities",
+          "L10hits",
+          "L10blocks",
+          "L10pim",
+        ].forEach((statKey) => {
+          const statRanks = calculateStatRanks(rankedData, statKey);
+          rankedData.forEach((team) => {
+            const rankEntry = statRanks.find((rank) => rank.teamId === team.id);
+            team[`${statKey}Rank`] = rankEntry ? rankEntry.rank : null;
+
+            // Console log for each team's rank in this stat
+            // console.log(`${team.abbreviation} rank in ${statKey}: ${team[`${statKey}Rank`]}`);
+          });
+        });
+
+        setSortedTableData(rankedData);
+      });
+    },
+    [fetchTeamStats]
+  ); // Add any additional dependencies as needed
 
   useEffect(() => {
-    if(teams.length > 0){
+    if (teams.length > 0) {
       fetchDetailedTeamStats(teams); // Fetch detailed stats
     }
-  }, [teams,fetchDetailedTeamStats]);
-  
+  }, [teams, fetchDetailedTeamStats]);
+
   useEffect(() => {
     if (sortedTableData.length > 0) {
       const leagueAverages = calculateLeagueAverages(sortedTableData);
       // console.log('League averages:', leagueAverages);
-      const standardDeviations = calculateStandardDeviations(sortedTableData, leagueAverages);
+      const standardDeviations = calculateStandardDeviations(
+        sortedTableData,
+        leagueAverages
+      );
       // console.log('Standard deviations:', standardDeviations);
-      let updatedTeamsWithPowerScores = calculatePowerScores(sortedTableData, leagueAverages, standardDeviations);
+      let updatedTeamsWithPowerScores = calculatePowerScores(
+        sortedTableData,
+        leagueAverages,
+        standardDeviations
+      );
       // console.log('Teams with power scores:', updatedTeamsWithPowerScores);
-      
+
       // Sort teams by powerScore in descending order
-      updatedTeamsWithPowerScores = updatedTeamsWithPowerScores.sort((a, b) => b.powerScore - a.powerScore);
-  
+      updatedTeamsWithPowerScores = updatedTeamsWithPowerScores.sort(
+        (a, b) => b.powerScore - a.powerScore
+      );
+
       setTeamsWithPowerScores(updatedTeamsWithPowerScores);
     }
   }, [sortedTableData]);
-  
-  
+
   function totalSum(games, key) {
     return games.reduce((acc, game) => acc + (game[key] || 0), 0);
   }
@@ -331,24 +395,22 @@ const fetchDetailedTeamStats = useCallback(async (basicTeamData) => {
       // The second element in the matches array will be the total opportunities
       return parseInt(matches[2], 10);
     }
-    
+
     // Return 0 if the format is not as expected
     return 0;
   }
 
-  
-
   function calculateStatRanks(teamsData, statKey) {
     // Define stats for which lower values are better
-    const reverseOrderStats = ['L10goalsAgainst', 'L10shotsAgainst'];
-  
+    const reverseOrderStats = ["L10goalsAgainst", "L10shotsAgainst"];
+
     // Create an array with teams and their respective stat values
-    const teamsWithStat = teamsData.map(team => ({
+    const teamsWithStat = teamsData.map((team) => ({
       teamId: team.id,
       teamName: team.abbreviation,
-      statValue: team.lastTenGames[0].lastTenGames[0][statKey]
+      statValue: team.lastTenGames[0].lastTenGames[0][statKey],
     }));
-  
+
     // Sort the teams by the stat value
     if (reverseOrderStats.includes(statKey)) {
       // For stats where lower is better, sort in ascending order
@@ -357,7 +419,7 @@ const fetchDetailedTeamStats = useCallback(async (basicTeamData) => {
       // For other stats, sort in descending order
       teamsWithStat.sort((a, b) => b.statValue - a.statValue);
     }
-  
+
     // Assign ranks based on sorted order
     let currentRank = 1;
     let previousValue = null;
@@ -371,40 +433,66 @@ const fetchDetailedTeamStats = useCallback(async (basicTeamData) => {
         previousValue = team.statValue;
       }
     });
-  
-    return teamsWithStat.map(team => ({ teamId: team.teamId, rank: team.rank }));
+
+    return teamsWithStat.map((team) => ({
+      teamId: team.teamId,
+      rank: team.rank,
+    }));
   }
-  
+
   const getColorClass = (rank) => {
     // Check if the rank has 'T-' prefix and remove it
-    const cleanRank = rank.startsWith('T-') ? rank.substring(2) : rank;
-  
+    const cleanRank = rank.startsWith("T-") ? rank.substring(2) : rank;
+
     // Convert the cleaned rank to a number for calculation
     const numericRank = Number(cleanRank);
-  
+
     // If you add more colors, change * 10 to * n where n is the number of colors
     const scaledRank = Math.ceil((numericRank / 32) * 32);
     return `rank-color-${scaledRank}`;
   };
 
+  const logosRef = useRef(null);
+
+  const onPreviousClick = () => {
+    if (logosRef.current) {
+      logosRef.current.scrollBy({ left: -60 * 3, behavior: "smooth" });
+    }
+  };
+
+  const onNextClick = () => {
+    if (logosRef.current) {
+      logosRef.current.scrollBy({ left: 60 * 3, behavior: "smooth" });
+    }
+  };
+
   return (
     <div className="team-landing-page">
-      <h1>Team Stat Pages</h1>
-      <div className="sos-and-logo-grid">
-        <div className="sos-container">
-        <h2>Strength of Schedule - Past</h2>
-          <StrengthOfSchedule type="past" />
-        </div>
-        <div className="team-logos-grid">
-          {teams.map(team => (
-            <Link key={team.id} href={`/team/${team.abbreviation}`}>
+      <div className="team-logos-navbar" ref={logosRef}>
+        {teams.map((team) => (
+          <Link key={team.id} href={`/team/${team.abbreviation}`}>
+            <a>
               <img
                 src={`https://assets.nhle.com/logos/nhl/svg/${team.abbreviation}_light.svg`}
-                alt={`${team.fullName} Logo`} 
+                alt={`${team.fullName} Logo`}
+                width="60" // Adjust based on your design
+                height="40"
               />
-            </Link>
-          ))}
+            </a>
+          </Link>
+        ))}
+      </div>
+      {/* Include navigation buttons if needed */}
+      <button onClick={onPreviousClick}>Prev</button>
+      <button onClick={onNextClick}>Next</button>
+
+      <h1>Team Stats Pages</h1>
+      <div className="sos-and-logo-grid">
+        <div className="sos-container">
+          <h2>Strength of Schedule - Past</h2>
+          <StrengthOfSchedule type="past" />
         </div>
+
         <div className="sos-container">
           <h2>Strength of Schedule - Future</h2>
           <StrengthOfSchedule type="future" />
@@ -413,35 +501,50 @@ const fetchDetailedTeamStats = useCallback(async (basicTeamData) => {
       <div className="tables-container">
         <div className="team-ranks-table-container">
           <h1>Team Power Rankings - Last 10 Games</h1>
-          <table className='team-ranks-table'>
-            <thead className='team-ranks-table-header'>
+          <table className="team-ranks-table">
+            <thead className="team-ranks-table-header">
               <tr>
                 <th>Rank</th>
                 <th>Team</th>
-                <th onClick={() => requestSort('L10ptsPct')}>PTS%</th>
-                <th onClick={() => requestSort('L10goalsFor')}>GF/GP</th>
-                <th onClick={() => requestSort('L10goalsAgainst')}>GA/GP</th>
-                <th onClick={() => requestSort('L10shotsFor')}>SF/GP</th>
-                <th onClick={() => requestSort('L10shotsAgainst')}>SA/GP</th>
-                <th onClick={() => requestSort('L10powerPlay')}>PP%</th>
-                <th onClick={() => requestSort('L10penaltyKill')}>PK%</th>
-                <th onClick={() => requestSort('L10powerPlayOpportunities')}>PPO/GP</th>
-                <th onClick={() => requestSort('L10hits')}>HIT/GP</th>
-                <th onClick={() => requestSort('L10blocks')}>BLK/GP</th>
-                <th onClick={() => requestSort('L10pim')}>PIM/GP</th>
+                <th onClick={() => requestSort("L10ptsPct")}>PTS%</th>
+                <th onClick={() => requestSort("L10goalsFor")}>GF/GP</th>
+                <th onClick={() => requestSort("L10goalsAgainst")}>GA/GP</th>
+                <th onClick={() => requestSort("L10shotsFor")}>SF/GP</th>
+                <th onClick={() => requestSort("L10shotsAgainst")}>SA/GP</th>
+                <th onClick={() => requestSort("L10powerPlay")}>PP%</th>
+                <th onClick={() => requestSort("L10penaltyKill")}>PK%</th>
+                <th onClick={() => requestSort("L10powerPlayOpportunities")}>
+                  PPO/GP
+                </th>
+                <th onClick={() => requestSort("L10hits")}>HIT/GP</th>
+                <th onClick={() => requestSort("L10blocks")}>BLK/GP</th>
+                <th onClick={() => requestSort("L10pim")}>PIM/GP</th>
               </tr>
             </thead>
             <tbody>
               {sortedTableData.map((team, index) => {
-                const teamStats = team.lastTenGames ? team.lastTenGames[0] : null;
+                const teamStats = team.lastTenGames
+                  ? team.lastTenGames[0]
+                  : null;
 
                 if (!teamStats) {
-                  console.warn(`Missing detailed stats for team: ${team.abbreviation}`);
+                  console.warn(
+                    `Missing detailed stats for team: ${team.abbreviation}`
+                  );
                   return (
                     <tr key={team.id}>
                       <td>{index + 1}</td>
                       <td>
-                        <img className='tableImg' src={`https://assets.nhle.com/logos/nhl/svg/${team.abbreviation}_light.svg`} alt={`${team.fullName} Logo`} style={{ width: '22px', height: '22px', marginRight: '10px' }} />
+                        <img
+                          className="tableImg"
+                          src={`https://assets.nhle.com/logos/nhl/svg/${team.abbreviation}_light.svg`}
+                          alt={`${team.fullName} Logo`}
+                          style={{
+                            width: "22px",
+                            height: "22px",
+                            marginRight: "10px",
+                          }}
+                        />
                         {team.fullName}
                       </td>
                       {/* Render empty cells for missing stats */}
@@ -451,24 +554,47 @@ const fetchDetailedTeamStats = useCallback(async (basicTeamData) => {
                 }
 
                 return (
-                  <tr key={team.id} className='team-ranks-row'>
+                  <tr key={team.id} className="team-ranks-row">
                     <td>{index + 1}</td>
-                    <td className='team-cell'>
-                      <div className='team-logo-container'>
-                        <img src={`https://assets.nhle.com/logos/nhl/svg/${team.abbreviation}_dark.svg`} alt={`${team.fullName} Logo`} />
+                    <td className="team-cell">
+                      <div className="team-logo-container">
+                        <img
+                          src={`https://assets.nhle.com/logos/nhl/svg/${team.abbreviation}_dark.svg`}
+                          alt={`${team.fullName} Logo`}
+                        />
                       </div>
-                      <div className='team-label-container'>
+                      <div className="team-label-container">
                         {team.abbreviation}
                       </div>
                     </td>
-                    <td>{(teamStats.lastTenGames[0].L10ptsPct * 100).toFixed(1)}%</td>
+                    <td>
+                      {(teamStats.lastTenGames[0].L10ptsPct * 100).toFixed(1)}%
+                    </td>
                     <td>{teamStats.lastTenGames[0].L10goalsFor.toFixed(2)}</td>
-                    <td>{teamStats.lastTenGames[0].L10goalsAgainst.toFixed(2)}</td>
+                    <td>
+                      {teamStats.lastTenGames[0].L10goalsAgainst.toFixed(2)}
+                    </td>
                     <td>{teamStats.lastTenGames[0].L10shotsFor.toFixed(2)}</td>
-                    <td>{teamStats.lastTenGames[0].L10shotsAgainst.toFixed(2)}</td>
-                    <td>{(teamStats.lastTenGames[0].L10powerPlay * 100).toFixed(1)}%</td>
-                    <td>{(teamStats.lastTenGames[0].L10penaltyKill * 100).toFixed(1)}%</td>
-                    <td>{teamStats.lastTenGames[0].L10powerPlayOpportunities.toFixed(2)}</td>
+                    <td>
+                      {teamStats.lastTenGames[0].L10shotsAgainst.toFixed(2)}
+                    </td>
+                    <td>
+                      {(teamStats.lastTenGames[0].L10powerPlay * 100).toFixed(
+                        1
+                      )}
+                      %
+                    </td>
+                    <td>
+                      {(teamStats.lastTenGames[0].L10penaltyKill * 100).toFixed(
+                        1
+                      )}
+                      %
+                    </td>
+                    <td>
+                      {teamStats.lastTenGames[0].L10powerPlayOpportunities.toFixed(
+                        2
+                      )}
+                    </td>
                     <td>{teamStats.lastTenGames[0].L10hits.toFixed(2)}</td>
                     <td>{teamStats.lastTenGames[0].L10blocks.toFixed(2)}</td>
                     <td>{teamStats.lastTenGames[0].L10pim.toFixed(2)}</td>
@@ -478,11 +604,11 @@ const fetchDetailedTeamStats = useCallback(async (basicTeamData) => {
             </tbody>
           </table>
         </div>
-        <div className='table-separator'></div>
+        <div className="table-separator"></div>
         <div className="fantasy-power-ranks-table-container">
           <h1>Fantasy Power Rankings - Last 10 Games</h1>
-          <table className='fantasy-power-ranks-table'>
-            <thead className='fantasy-power-ranks-table-header'>
+          <table className="fantasy-power-ranks-table">
+            <thead className="fantasy-power-ranks-table-header">
               <tr>
                 <th>Rank</th>
                 <th>Team</th>
@@ -501,39 +627,70 @@ const fetchDetailedTeamStats = useCallback(async (basicTeamData) => {
             </thead>
             <tbody>
               {teamsWithPowerScores.map((team, index) => (
-                <tr key={team.id} className='fantasy-power-ranks-row'>
-                  <td className={index % 2 === 0 ? 'odd-row' : ''}>{index + 1}</td>
-                  <td className={`team-cell ${index % 2 === 0 ? 'odd-row' : ''}`}>
-                  <div className='team-logo-container'>
-                    <img src={`https://assets.nhle.com/logos/nhl/svg/${team.abbreviation}_dark.svg`} alt={`${team.fullName} Logo`} />
+                <tr key={team.id} className="fantasy-power-ranks-row">
+                  <td className={index % 2 === 0 ? "odd-row" : ""}>
+                    {index + 1}
+                  </td>
+                  <td
+                    className={`team-cell ${index % 2 === 0 ? "odd-row" : ""}`}
+                  >
+                    <div className="team-logo-container">
+                      <img
+                        src={`https://assets.nhle.com/logos/nhl/svg/${team.abbreviation}_dark.svg`}
+                        alt={`${team.fullName} Logo`}
+                      />
                     </div>
                     {!isMobileView && (
-                      <div className='team-label-container'>
+                      <div className="team-label-container">
                         {team.abbreviation}
                       </div>
                     )}
                   </td>
-                  <td className={getColorClass(team.L10ptsPctRank)}>{team.L10ptsPctRank}</td>
-                  <td className={getColorClass(team.L10goalsForRank)}>{team.L10goalsForRank}</td>
-                  <td className={getColorClass(team.L10goalsAgainstRank)}>{team.L10goalsAgainstRank}</td>
-                  <td className={getColorClass(team.L10shotsForRank)}>{team.L10shotsForRank}</td>
-                  <td className={getColorClass(team.L10shotsAgainstRank)}>{team.L10shotsAgainstRank}</td>
-                  <td className={getColorClass(team.L10powerPlayRank)}>{team.L10powerPlayRank}</td>
-                  <td className={getColorClass(team.L10penaltyKillRank)}>{team.L10penaltyKillRank}</td>
-                  <td className={getColorClass(team.L10powerPlayOpportunitiesRank)}>{team.L10powerPlayOpportunitiesRank}</td>
-                  <td className={getColorClass(team.L10hitsRank)}>{team.L10hitsRank}</td>
-                  <td className={getColorClass(team.L10blocksRank)}>{team.L10blocksRank}</td>
-                  <td className={getColorClass(team.L10pimRank)}>{team.L10pimRank}</td>
+                  <td className={getColorClass(team.L10ptsPctRank)}>
+                    {team.L10ptsPctRank}
+                  </td>
+                  <td className={getColorClass(team.L10goalsForRank)}>
+                    {team.L10goalsForRank}
+                  </td>
+                  <td className={getColorClass(team.L10goalsAgainstRank)}>
+                    {team.L10goalsAgainstRank}
+                  </td>
+                  <td className={getColorClass(team.L10shotsForRank)}>
+                    {team.L10shotsForRank}
+                  </td>
+                  <td className={getColorClass(team.L10shotsAgainstRank)}>
+                    {team.L10shotsAgainstRank}
+                  </td>
+                  <td className={getColorClass(team.L10powerPlayRank)}>
+                    {team.L10powerPlayRank}
+                  </td>
+                  <td className={getColorClass(team.L10penaltyKillRank)}>
+                    {team.L10penaltyKillRank}
+                  </td>
+                  <td
+                    className={getColorClass(
+                      team.L10powerPlayOpportunitiesRank
+                    )}
+                  >
+                    {team.L10powerPlayOpportunitiesRank}
+                  </td>
+                  <td className={getColorClass(team.L10hitsRank)}>
+                    {team.L10hitsRank}
+                  </td>
+                  <td className={getColorClass(team.L10blocksRank)}>
+                    {team.L10blocksRank}
+                  </td>
+                  <td className={getColorClass(team.L10pimRank)}>
+                    {team.L10pimRank}
+                  </td>
                 </tr>
               ))}
             </tbody>
-
           </table>
         </div>
       </div>
     </div>
   );
 };
-
 
 export default TeamStatsComponent;

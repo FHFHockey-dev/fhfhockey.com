@@ -1,71 +1,110 @@
 /* Style for the team landing page */
 
 .team-landing-page {
-    padding: 20px;
-    height: 75%; 
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
+  padding-left: 20px;
+  padding-right: 20px;
+  padding-bottom: 20px;
+  height: 75%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 75px;
+}
 
 .team-landing-page h1 {
   font-family: montesserat, sans-serif;
   text-transform: uppercase;
-  letter-spacing: -.015em;
+  letter-spacing: -0.015em;
   font-weight: 900;
   font-style: italic;
   font-size: 1.9em;
   margin-bottom: 0.5em;
   text-align: center;
-  color: #FFF;
+  color: #fff;
   filter: drop-shadow(0 0 3px #202020);
 }
 
-/* Style for the team logos grid */
-
 .team-logos-grid {
-    flex: 2; /* For the logo grid, giving it more space */
-    width: 85%;
-    display: grid;
-    justify-content: center;
-    align-items: center;
-    grid-template-columns: repeat(4, 1fr); /* 8 columns */
-    gap: 15px; /* Gap between logos */
-    border: #fff 6px double;
-    border-radius: 8px;
-    padding: 2em;
-    background-color: #181818;
-    margin: 0 20px; /* Adjust space between logos and SoS components */
-  }
-  
-.team-logos-grid img {
-    max-height: 10em;
-    filter: drop-shadow(0 0 3px #FFF);
-  }
+  background-color: #ffffff1a;
+  display: flex;
+  flex: 1;
+  padding: 10px;
+  overflow-x: auto; /* Scroll horizontally */
+  gap: 15px;
+  height: 100%;
 
-.team-logos-grid a img {
-    max-width: 10em;
-    transition: max-width .2s ease-in-out;
-  }
-
-.team-logos-grid a {
-  display: flex; /* Makes the link a flex container */
-  justify-content: center; /* Centers its children (images) horizontally */
-  align-items: center; /* Centers its children (images) vertically */
-  height: 100%; /* Ensures the link takes full height of the grid cell */
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
-.team-logos-grid a:hover img {
-    filter: brightness(120%) drop-shadow(0px 0px 5px #FFF);
-    transform: scale(1.05);
-  }
+.team-logos-grid::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera*/
+}
+
+.team-logos-container {
+  position: absolute;
+  border-bottom: 1px solid #ffffff40;
+
+  width: 100%; /* Span the full viewport width */
+  left: 0;
+  display: flex; /* Keeps the scrollbar and buttons inline */
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 auto;
+  overflow-x: auto;
+}
+
+.team-logos-grid img {
+  max-height: 40px;
+  transition: transform 0.2s ease-in-out;
+  filter: drop-shadow(0 0 3px #fff);
+  cursor: pointer;
+  flex-shrink: 0; /* Prevents logos from shrinking */
+  display: inline-flex; /* Use inline-flex for the links */
+  justify-content: center;
+  align-items: center;
+}
+
+.scroll-button {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 4%;
+  cursor: pointer;
+  display: flex;
+  background-color: #2b2b2b;
+  border: none;
+  padding: 10px 10px;
+  font-size: 24px;
+  z-index: 10;
+  color: #07aae2; /* Ensure button icons are visible */
+  align-items: center; /* Center content vertically */
+  justify-content: center; /* Center content horizontally */
+}
+
+.scroll-button.left {
+  left: 0;
+  border-right: 1px solid #07aae2;
+}
+
+.scroll-button.right {
+  right: 0;
+  border-left: 1px solid #07aae2;
+}
+
+.team-logos-grid img:hover {
+  transform: scale(1.1);
+  filter: brightness(1.2);
+}
 
 /* Style for the table container */
 
-.team-ranks-table, .fantasy-power-ranks-table {
-    font-size: 1em; /* Set the font size for table text */
-    width: 100%;
-  }
+.team-ranks-table,
+.fantasy-power-ranks-table {
+  font-size: 0.75em; /* Set the font size for table text */
+  width: 100%;
+}
 
 .team-ranks-table tbody tr:nth-child(odd) {
   background-color: #202020;
@@ -81,13 +120,9 @@
   align-items: center;
 }
 
-.team-logo-container {
-  margin-right: 10px; /* Space between logo and label */
-}
-
 .team-logo-container img {
-  width: 2em; /* Adjust the size of the logo */
-  height: 2em;
+  width: 3em; /* Adjust the size of the logo */
+  height: 3em;
 }
 
 .team-label-container {
@@ -96,14 +131,16 @@
   text-align: left;
 }
 
-.team-ranks-table .team-name, .fantasy-power-ranks-table .team-name {
+.team-ranks-table .team-name,
+.fantasy-power-ranks-table .team-name {
   text-align: center; /* Horizontally center the team label */
   display: flex; /* Use flexbox for alignment */
   align-items: center; /* Align items vertically in the center */
   justify-content: center; /* Horizontally center the content */
 }
 
-.team-ranks-table th, .fantasy-power-ranks-table th {
+.team-ranks-table th,
+.fantasy-power-ranks-table th {
   text-align: center;
   vertical-align: middle; /* Vertically center text in table cells */
   background-color: #101010;
@@ -113,7 +150,8 @@
   border: 1px solid #505050; /* Add a border for separation */
 }
 
-.team-ranks-table td, .fantasy-power-ranks-table td {
+.team-ranks-table td,
+.fantasy-power-ranks-table td {
   text-align: center;
   vertical-align: middle; /* Vertically center text in table cells */
   padding: 5px;
@@ -125,11 +163,11 @@
   flex-direction: row;
   justify-content: center;
   align-items: flex-start; /* Aligns items at the top */
-  width: 85%;
+  width: 100%;
   margin: 0 auto;
 }
 
-.team-ranks-table-container{
+.team-ranks-table-container {
   flex: 1; /* Each child takes equal width */
   max-width: 48%; /* Maximum width for each child */
 }
@@ -179,18 +217,19 @@
   background-color: #202020;
 }
 
-.team-ranks-table, .fantasy-power-ranks-table {
+.team-ranks-table,
+.fantasy-power-ranks-table {
   width: 100%;
   margin: 0 auto;
-  border: 2px solid #FFF;
+  border: 2px solid #fff;
   border-collapse: collapse;
   font-family: roboto condensed, sans-serif;
   font-weight: 500;
   color: #b6b6b6;
-;}
+}
 
 .team-ranks-table table {
-  border: solid 2px #FFF;
+  border: solid 2px #fff;
   padding: 5px;
 }
 
@@ -213,9 +252,10 @@
   padding: 5px;
 }
 
-.team-ranks-row:hover, .fantasy-power-ranks-row:hover{
+.team-ranks-row:hover,
+.fantasy-power-ranks-row:hover {
   background-color: #101010;
-  color: #FFF;
+  color: #fff;
   cursor: pointer;
 }
 
@@ -225,7 +265,7 @@
 }
 
 .team-name {
-  vertical-align: middle;  /* Optional, aligns the text middle to the image */
+  vertical-align: middle; /* Optional, aligns the text middle to the image */
   align-items: center;
   justify-content: center;
 }
@@ -243,10 +283,11 @@
   margin-bottom: 2em;
 }
 
-/* SoS components on the sides */
+/* SoS components on the sides
 .sos-and-logo-grid > .sos-container {
-  flex: 1; /* Take up 1 part of the space */
+  flex: 1; 
 }
+*/
 
 .sos-table {
   /* Shared styles for both past and future tables */
@@ -255,7 +296,6 @@
   margin-bottom: 20px;
   border: #fff 6px double;
   border-radius: 8px;
-  
 }
 
 /* Specific style for past SoS table */
@@ -312,7 +352,6 @@
   font-family: roboto condensed, sans-serif;
   font-weight: 500;
   color: #b6b6b6;
-
 }
 
 .sos-table.future table tr:nth-child(odd) {
@@ -338,7 +377,6 @@
   align-items: center;
   justify-content: center;
   margin-right: 1em;
-
 }
 
 .sos-table.future table td {
@@ -348,6 +386,7 @@
 .sos-container {
   padding-left: 1em;
   padding-right: 1em;
+  width: 33%;
 }
 
 .sos-container h2 {
@@ -357,138 +396,267 @@
   font-style: italic;
 }
 
-.sosTableClass tr:nth-child(1) .sosDataCell { border: 2px solid rgba(255, 0, 0, 0.45); } /* Red */
-.sosTableClass tr:nth-child(2) .sosDataCell { border: 2px solid rgba(255, 16, 0, 0.45); }
-.sosTableClass tr:nth-child(3) .sosDataCell { border: 2px solid rgba(255, 32, 0, 0.45); }
-.sosTableClass tr:nth-child(4) .sosDataCell { border: 2px solid rgba(255, 48, 0, 0.45); }
-.sosTableClass tr:nth-child(5) .sosDataCell { border: 2px solid rgba(255, 64, 0, 0.45); }
-.sosTableClass tr:nth-child(6) .sosDataCell { border: 2px solid rgba(255, 80, 0, 0.45); }
-.sosTableClass tr:nth-child(7) .sosDataCell { border: 2px solid rgba(255, 96, 0, 0.45); }
-.sosTableClass tr:nth-child(8) .sosDataCell { border: 2px solid rgba(255, 112, 0, 0.45); }
-.sosTableClass tr:nth-child(9) .sosDataCell { border: 2px solid rgba(255, 128, 0, 0.45); }
-.sosTableClass tr:nth-child(10) .sosDataCell { border: 2px solid rgba(255, 144, 0, 0.45); }
-.sosTableClass tr:nth-child(11) .sosDataCell { border: 2px solid rgba(255, 160, 0, 0.45); }
-.sosTableClass tr:nth-child(12) .sosDataCell { border: 2px solid rgba(255, 176, 0, 0.45); }
-.sosTableClass tr:nth-child(13) .sosDataCell { border: 2px solid rgba(255, 192, 0, 0.45); }
-.sosTableClass tr:nth-child(14) .sosDataCell { border: 2px solid rgba(255, 208, 0, 0.45); }
-.sosTableClass tr:nth-child(15) .sosDataCell { border: 2px solid rgba(255, 224, 0, 0.45); }
-.sosTableClass tr:nth-child(16) .sosDataCell { border: 2px solid rgba(255, 240, 0, 0.45); } /* Yellow */
-.sosTableClass tr:nth-child(17) .sosDataCell { border: 2px solid rgba(240, 255, 0, 0.45); }
-.sosTableClass tr:nth-child(18) .sosDataCell { border: 2px solid rgba(224, 255, 0, 0.45); }
-.sosTableClass tr:nth-child(19) .sosDataCell { border: 2px solid rgba(208, 255, 0, 0.45); }
-.sosTableClass tr:nth-child(20) .sosDataCell { border: 2px solid rgba(192, 255, 0, 0.45); }
-.sosTableClass tr:nth-child(21) .sosDataCell { border: 2px solid rgba(176, 255, 0, 0.45); }
-.sosTableClass tr:nth-child(22) .sosDataCell { border: 2px solid rgba(160, 255, 0, 0.45); }
-.sosTableClass tr:nth-child(23) .sosDataCell { border: 2px solid rgba(144, 255, 0, 0.45); }
-.sosTableClass tr:nth-child(24) .sosDataCell { border: 2px solid rgba(128, 255, 0, 0.45); }
-.sosTableClass tr:nth-child(25) .sosDataCell { border: 2px solid rgba(112, 255, 0, 0.45); }
-.sosTableClass tr:nth-child(26) .sosDataCell { border: 2px solid rgba(96, 255, 0, 0.45); }
-.sosTableClass tr:nth-child(27) .sosDataCell { border: 2px solid rgba(80, 255, 0, 0.45); }
-.sosTableClass tr:nth-child(28) .sosDataCell { border: 2px solid rgba(64, 255, 0, 0.45); }
-.sosTableClass tr:nth-child(29) .sosDataCell { border: 2px solid rgba(48, 255, 0, 0.45); }
-.sosTableClass tr:nth-child(30) .sosDataCell { border: 2px solid rgba(32, 255, 0, 0.45); }
-.sosTableClass tr:nth-child(31) .sosDataCell { border: 2px solid rgba(16, 255, 0, 0.45); }
-.sosTableClass tr:nth-child(32) .sosDataCell { border: 2px solid rgba(0, 255, 0, 0.45); } /* Green */
-
+.sosTableClass tr:nth-child(1) .sosDataCell {
+  border: 2px solid rgba(255, 0, 0, 0.45);
+} /* Red */
+.sosTableClass tr:nth-child(2) .sosDataCell {
+  border: 2px solid rgba(255, 16, 0, 0.45);
+}
+.sosTableClass tr:nth-child(3) .sosDataCell {
+  border: 2px solid rgba(255, 32, 0, 0.45);
+}
+.sosTableClass tr:nth-child(4) .sosDataCell {
+  border: 2px solid rgba(255, 48, 0, 0.45);
+}
+.sosTableClass tr:nth-child(5) .sosDataCell {
+  border: 2px solid rgba(255, 64, 0, 0.45);
+}
+.sosTableClass tr:nth-child(6) .sosDataCell {
+  border: 2px solid rgba(255, 80, 0, 0.45);
+}
+.sosTableClass tr:nth-child(7) .sosDataCell {
+  border: 2px solid rgba(255, 96, 0, 0.45);
+}
+.sosTableClass tr:nth-child(8) .sosDataCell {
+  border: 2px solid rgba(255, 112, 0, 0.45);
+}
+.sosTableClass tr:nth-child(9) .sosDataCell {
+  border: 2px solid rgba(255, 128, 0, 0.45);
+}
+.sosTableClass tr:nth-child(10) .sosDataCell {
+  border: 2px solid rgba(255, 144, 0, 0.45);
+}
+.sosTableClass tr:nth-child(11) .sosDataCell {
+  border: 2px solid rgba(255, 160, 0, 0.45);
+}
+.sosTableClass tr:nth-child(12) .sosDataCell {
+  border: 2px solid rgba(255, 176, 0, 0.45);
+}
+.sosTableClass tr:nth-child(13) .sosDataCell {
+  border: 2px solid rgba(255, 192, 0, 0.45);
+}
+.sosTableClass tr:nth-child(14) .sosDataCell {
+  border: 2px solid rgba(255, 208, 0, 0.45);
+}
+.sosTableClass tr:nth-child(15) .sosDataCell {
+  border: 2px solid rgba(255, 224, 0, 0.45);
+}
+.sosTableClass tr:nth-child(16) .sosDataCell {
+  border: 2px solid rgba(255, 240, 0, 0.45);
+} /* Yellow */
+.sosTableClass tr:nth-child(17) .sosDataCell {
+  border: 2px solid rgba(240, 255, 0, 0.45);
+}
+.sosTableClass tr:nth-child(18) .sosDataCell {
+  border: 2px solid rgba(224, 255, 0, 0.45);
+}
+.sosTableClass tr:nth-child(19) .sosDataCell {
+  border: 2px solid rgba(208, 255, 0, 0.45);
+}
+.sosTableClass tr:nth-child(20) .sosDataCell {
+  border: 2px solid rgba(192, 255, 0, 0.45);
+}
+.sosTableClass tr:nth-child(21) .sosDataCell {
+  border: 2px solid rgba(176, 255, 0, 0.45);
+}
+.sosTableClass tr:nth-child(22) .sosDataCell {
+  border: 2px solid rgba(160, 255, 0, 0.45);
+}
+.sosTableClass tr:nth-child(23) .sosDataCell {
+  border: 2px solid rgba(144, 255, 0, 0.45);
+}
+.sosTableClass tr:nth-child(24) .sosDataCell {
+  border: 2px solid rgba(128, 255, 0, 0.45);
+}
+.sosTableClass tr:nth-child(25) .sosDataCell {
+  border: 2px solid rgba(112, 255, 0, 0.45);
+}
+.sosTableClass tr:nth-child(26) .sosDataCell {
+  border: 2px solid rgba(96, 255, 0, 0.45);
+}
+.sosTableClass tr:nth-child(27) .sosDataCell {
+  border: 2px solid rgba(80, 255, 0, 0.45);
+}
+.sosTableClass tr:nth-child(28) .sosDataCell {
+  border: 2px solid rgba(64, 255, 0, 0.45);
+}
+.sosTableClass tr:nth-child(29) .sosDataCell {
+  border: 2px solid rgba(48, 255, 0, 0.45);
+}
+.sosTableClass tr:nth-child(30) .sosDataCell {
+  border: 2px solid rgba(32, 255, 0, 0.45);
+}
+.sosTableClass tr:nth-child(31) .sosDataCell {
+  border: 2px solid rgba(16, 255, 0, 0.45);
+}
+.sosTableClass tr:nth-child(32) .sosDataCell {
+  border: 2px solid rgba(0, 255, 0, 0.45);
+} /* Green */
 
 /* Green to Yellow (Ranks 32 to 17) */
-.rank-color-1 { background-color: rgba(0, 255, 0, 0.45); } /* Green */
-.rank-color-2 { background-color: rgba(16, 255, 0, 0.45); }
-.rank-color-3 { background-color: rgba(32, 255, 0, 0.45); }
-.rank-color-4 { background-color: rgba(48, 255, 0, 0.45); }
-.rank-color-5 { background-color: rgba(64, 255, 0, 0.45); }
-.rank-color-6 { background-color: rgba(80, 255, 0, 0.45); }
-.rank-color-7 { background-color: rgba(96, 255, 0, 0.45); }
-.rank-color-8 { background-color: rgba(112, 255, 0, 0.45); }
-.rank-color-9 { background-color: rgba(128, 255, 0, 0.45); }
-.rank-color-10 { background-color: rgba(144, 255, 0, 0.45); }
-.rank-color-11 { background-color: rgba(160, 255, 0, 0.45); }
-.rank-color-12 { background-color: rgba(176, 255, 0, 0.45); }
-.rank-color-13 { background-color: rgba(192, 255, 0, 0.45); }
-.rank-color-14 { background-color: rgba(208, 255, 0, 0.45); }
-.rank-color-15 { background-color: rgba(224, 255, 0, 0.45); }
-.rank-color-16 { background-color: rgba(240, 255, 0, 0.45); } /* Yellow */
+.rank-color-1 {
+  background-color: rgba(0, 255, 0, 0.45);
+} /* Green */
+.rank-color-2 {
+  background-color: rgba(16, 255, 0, 0.45);
+}
+.rank-color-3 {
+  background-color: rgba(32, 255, 0, 0.45);
+}
+.rank-color-4 {
+  background-color: rgba(48, 255, 0, 0.45);
+}
+.rank-color-5 {
+  background-color: rgba(64, 255, 0, 0.45);
+}
+.rank-color-6 {
+  background-color: rgba(80, 255, 0, 0.45);
+}
+.rank-color-7 {
+  background-color: rgba(96, 255, 0, 0.45);
+}
+.rank-color-8 {
+  background-color: rgba(112, 255, 0, 0.45);
+}
+.rank-color-9 {
+  background-color: rgba(128, 255, 0, 0.45);
+}
+.rank-color-10 {
+  background-color: rgba(144, 255, 0, 0.45);
+}
+.rank-color-11 {
+  background-color: rgba(160, 255, 0, 0.45);
+}
+.rank-color-12 {
+  background-color: rgba(176, 255, 0, 0.45);
+}
+.rank-color-13 {
+  background-color: rgba(192, 255, 0, 0.45);
+}
+.rank-color-14 {
+  background-color: rgba(208, 255, 0, 0.45);
+}
+.rank-color-15 {
+  background-color: rgba(224, 255, 0, 0.45);
+}
+.rank-color-16 {
+  background-color: rgba(240, 255, 0, 0.45);
+} /* Yellow */
 
 /* Yellow to Red (Ranks 17 to 32) */
-.rank-color-17 { background-color: rgba(255, 240, 0, 0.45); }
-.rank-color-18 { background-color: rgba(255, 224, 0, 0.45); }
-.rank-color-19 { background-color: rgba(255, 208, 0, 0.45); }
-.rank-color-20 { background-color: rgba(255, 192, 0, 0.45); }
-.rank-color-21 { background-color: rgba(255, 176, 0, 0.45); }
-.rank-color-22 { background-color: rgba(255, 160, 0, 0.45); }
-.rank-color-23 { background-color: rgba(255, 144, 0, 0.45); }
-.rank-color-24 { background-color: rgba(255, 128, 0, 0.45); }
-.rank-color-25 { background-color: rgba(255, 112, 0, 0.45); }
-.rank-color-26 { background-color: rgba(255, 96, 0, 0.45); }
-.rank-color-27 { background-color: rgba(255, 80, 0, 0.45); }
-.rank-color-28 { background-color: rgba(255, 64, 0, 0.45); }
-.rank-color-29 { background-color: rgba(255, 48, 0, 0.45); }
-.rank-color-30 { background-color: rgba(255, 32, 0, 0.45); }
-.rank-color-31 { background-color: rgba(255, 16, 0, 0.45); }
-.rank-color-32 { background-color: rgba(255, 0, 0, 0.45); } /* Red */
+.rank-color-17 {
+  background-color: rgba(255, 240, 0, 0.45);
+}
+.rank-color-18 {
+  background-color: rgba(255, 224, 0, 0.45);
+}
+.rank-color-19 {
+  background-color: rgba(255, 208, 0, 0.45);
+}
+.rank-color-20 {
+  background-color: rgba(255, 192, 0, 0.45);
+}
+.rank-color-21 {
+  background-color: rgba(255, 176, 0, 0.45);
+}
+.rank-color-22 {
+  background-color: rgba(255, 160, 0, 0.45);
+}
+.rank-color-23 {
+  background-color: rgba(255, 144, 0, 0.45);
+}
+.rank-color-24 {
+  background-color: rgba(255, 128, 0, 0.45);
+}
+.rank-color-25 {
+  background-color: rgba(255, 112, 0, 0.45);
+}
+.rank-color-26 {
+  background-color: rgba(255, 96, 0, 0.45);
+}
+.rank-color-27 {
+  background-color: rgba(255, 80, 0, 0.45);
+}
+.rank-color-28 {
+  background-color: rgba(255, 64, 0, 0.45);
+}
+.rank-color-29 {
+  background-color: rgba(255, 48, 0, 0.45);
+}
+.rank-color-30 {
+  background-color: rgba(255, 32, 0, 0.45);
+}
+.rank-color-31 {
+  background-color: rgba(255, 16, 0, 0.45);
+}
+.rank-color-32 {
+  background-color: rgba(255, 0, 0, 0.45);
+} /* Red */
 
 /* Resolution for mobile devices */
 
 @media (max-width: 768px) {
-  .team-ranks-table, .fantasy-power-ranks-table {
+  .team-ranks-table,
+  .fantasy-power-ranks-table {
     font-size: 0.8em; /* Smaller font size for smaller screens */
   }
 
   .sos-container {
     flex-direction: column;
   }
-
-  .team-logos-grid {
-    margin: 20px 0;
-  }
 }
 
 @media (max-width: 480px) {
-
-  .team-ranks-table th, .fantasy-power-ranks-table th {
+  .team-ranks-table th,
+  .fantasy-power-ranks-table th {
     padding: 5px;
     height: 30px;
-    font-size: .75em;
-}
+    font-size: 0.75em;
+  }
 
-.team-cell {
-  display:block;
-  height: 100%;
-}
+  .team-cell {
+    display: block;
+    height: 100%;
+  }
 
-  .team-ranks-table td, .fantasy-power-ranks-table td {
+  .team-ranks-table td,
+  .fantasy-power-ranks-table td {
     padding: 2px;
   }
 
-  .team-ranks-table, .fantasy-power-ranks-table {
+  .team-ranks-table,
+  .fantasy-power-ranks-table {
     font-size: 0.6em; /* Even smaller font size */
   }
 
-  .team-ranks-table tr, .fantasy-power-ranks-table tr {
+  .team-ranks-table tr,
+  .fantasy-power-ranks-table tr {
     height: 20px; /* Further reduced row height */
   }
 
-  .team-ranks-ta0ble-container, .fantasy-power-ranks-table-container {
+  .team-ranks-ta0ble-container,
+  .fantasy-power-ranks-table-container {
     max-width: 100%; /* Use full width for each table */
   }
 
   .team-logos-grid {
     grid-template-columns: repeat(4, 1fr); /* 4 columns */
     gap: 10px;
-    width: 100%; 
+    width: 100%;
   }
 
   .team-logos-grid img {
-    max-height:40px;
-    filter: drop-shadow(0 0 3px #FFF);
+    max-height: 40px;
+    filter: drop-shadow(0 0 3px #fff);
   }
 }
 
-
 /* Styles for smaller screens */
-@media screen and (max-width: 600px) { /* Adjust the max-width as needed */
+@media screen and (max-width: 600px) {
+  /* Adjust the max-width as needed */
 
-  .team-ranks-table, .fantasy-power-ranks-table {
+  .team-ranks-table,
+  .fantasy-power-ranks-table {
     font-size: 0.7em;
   }
 
@@ -521,12 +689,13 @@
     font-weight: 300;
   }
 
- .fantasy-power-ranks-table td {
+  .fantasy-power-ranks-table td {
     padding: 1.5px;
     font-weight: 900;
   }
 
-  .team-ranks-table th, .fantasy-power-ranks-table th {
+  .team-ranks-table th,
+  .fantasy-power-ranks-table th {
     height: 30px;
     padding: 0em;
     font-weight: 900;
@@ -537,7 +706,8 @@
     width: 100%; /* Use full width for each table */
   }
 
-  .team-ranks-table-container, .fantasy-power-ranks-table-container {
+  .team-ranks-table-container,
+  .fantasy-power-ranks-table-container {
     max-width: 100%; /* Use full width for each table */
     width: 100%;
     margin-bottom: 2em;
@@ -545,24 +715,22 @@
 
   .team-logos-grid {
     grid-template-columns: repeat(8, 1fr); /* 4 columns */
-    gap: 10px;
-    width: 100%; 
+    gap: 15px;
+    width: 100%;
     margin-top: 0px;
     padding: 1.5em;
-    border: 2px double #FFF;
+    border: 2px double #fff;
     border-radius: 8px;
   }
 
-
   .team-logos-grid img {
-    max-height:25px;
-    filter: drop-shadow(0 0 1px #FFF);
+    max-height: 25px;
+    filter: drop-shadow(0 0 1px #fff);
     justify-content: center;
     align-items: center;
   }
 
-.team-logos-grid a img {
+  .team-logos-grid a img {
     max-width: 60px;
   }
-
 }
