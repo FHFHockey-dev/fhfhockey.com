@@ -8,6 +8,7 @@ import StrengthOfSchedule from "components/teamLandingPage/strengthofSchedule";
 import { Team } from "lib/NHL/types";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import ClientOnly from "components/ClientOnly";
+import Fetch from "lib/cors-fetch";
 
 type StatsProps = {
   teams: Team[];

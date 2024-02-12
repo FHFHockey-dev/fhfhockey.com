@@ -34,7 +34,6 @@
   margin-bottom: 0;
 }
 
-
 .gamesHeader button {
   cursor: pointer;
   font-size: 20px; /* Adjust font size as needed */
@@ -57,10 +56,9 @@
   text-align: center;
   color: #fff;
   position: relative;
-  filter: drop-shadow(0 0 5px #FFF);
+  filter: drop-shadow(0 0 5px #fff);
   margin-bottom: 0;
 }
-
 
 .gameLink {
   text-decoration: none;
@@ -82,7 +80,6 @@
   margin: 0 auto;
   padding: 20px;
 }
-
 
 .separator {
   margin-top: 20px;
@@ -131,7 +128,6 @@
   letter-spacing: -0.025em;
   font-style: italic;
   filter: drop-shadow(0 0 5px #000);
-
 }
 
 .gameTime {
@@ -143,7 +139,6 @@
   padding: 0 5px;
   filter: drop-shadow(0 0 5px #000);
 }
-
 
 .column {
   width: 33.33%;
@@ -191,7 +186,6 @@
   max-height: 5em;
   min-height: 5em;
   max-width: 100%;
-
 }
 
 .gamesContainer a .gameCard::before {
@@ -223,7 +217,6 @@
   left: -10px;
   top: 0;
   filter: drop-shadow(0 0 2px #fff);
-
 }
 
 .rightImage {
@@ -297,7 +290,10 @@
   }
 
   .gamesContainer {
-    grid-template-columns: repeat(2, 1fr); // Adjusting to 2 columns for mobile view
+    grid-template-columns: repeat(
+      2,
+      1fr
+    ); // Adjusting to 2 columns for mobile view
     gap: 10px;
     grid-gap: 10px;
   }
@@ -307,7 +303,7 @@
   }
 
   .gamesHeader h1,
-  .ccStandings > div > h1, 
+  .ccStandings > div > h1,
   .crInjuries > div > h1 {
     font-size: 1.6em;
   }
@@ -327,8 +323,8 @@
     flex-direction: column; // Stack the items vertically
   }
 
-
-  .ccStandings table, .crInjuries table {
+  .ccStandings table,
+  .crInjuries table {
     margin: auto; // Center the tables
   }
 
@@ -338,14 +334,15 @@
 
   .gameState {
     font-family: roboto condensed, sans-serif;
-    font-size: .5em;
+    font-size: 0.5em;
   }
 
   .gameTimeText {
-    font-size: .6em;
+    font-size: 0.6em;
   }
 
-  .homeScore, .awayScore {
+  .homeScore,
+  .awayScore {
     flex: 1;
   }
 
@@ -365,21 +362,19 @@
     right: -10px;
     bottom: 8px;
     filter: drop-shadow(0 0 3px #000);
-
   }
 
   .leftImage {
     left: -8px;
     top: 5px;
-    filter: drop-shadow(0 0 3px #FFF);
-
+    filter: drop-shadow(0 0 3px #fff);
   }
 
-  .leftImage, .rightImage {
+  .leftImage,
+  .rightImage {
     width: 85px;
     height: 45px;
   }
-
 }
 
 .standingsInjuriesContainer {
@@ -397,7 +392,6 @@
   font-family: roboto condensed, sans-serif;
   margin-left: 1em;
 }
-
 
 .crInjuries h1 {
   font-family: Montserrat, sans-serif;
@@ -534,8 +528,6 @@
   padding-right: 1em;
 }
 
-
-
 .socialMedia {
   @media only screen and (min-width: $screen-large) {
     display: none;
@@ -545,4 +537,3 @@
 .container {
   padding: 0;
 }
-

@@ -106,7 +106,7 @@ const Home: NextPage = ({
       OVER: "Final",
       FINAL: "Final",
       OFF: "Final",
-      LIVE: "In Progress",
+      LIVE: "LIVE",
       CRIT: "Critical",
     };
 
@@ -216,7 +216,7 @@ const Home: NextPage = ({
                       }}
                     >
                       <div className={`${styles.column} ${styles.homeScore}`}>
-                        {awayTeam.score}
+                        {homeTeam.score}
                       </div>
                       <div className={`${styles.column} ${styles.gameTime}`}>
                         <span className={styles.gameState}>
@@ -228,7 +228,7 @@ const Home: NextPage = ({
                       </div>
 
                       <div className={`${styles.column} ${styles.awayScore}`}>
-                        {homeTeam.score}
+                        {awayTeam.score}
                       </div>
                     </div>
                   </a>

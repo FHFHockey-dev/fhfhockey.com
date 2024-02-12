@@ -1,65 +1,497 @@
+/* Base styles */
+.game-page,
+.statsAndPlayerCompContainer,
+.gamePageVsTableContainer,
+.playerCompContainer,
+.playerCompHeader,
+.playerCompDetails,
+.goalieCompContainer,
+.goalieCompHeader,
+.goalieStatsContainer,
+.goalieStatRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+.game-page,
+.playerCompContainer,
+.goalieCompContainer {
+  align-items: center;
+  flex-direction: column;
+  width: 100%;
+}
+
 .game-page {
-  padding-top: 3em;
   text-align: center;
   margin: auto;
-  width: 85%;
+  font-family: roboto condensed, sans-serif;
+  text-align: center;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* Game details styles */
+
+.gameDetailsContainer {
+  justify-content: center;
+  border-bottom: 6px double white;
+  align-items: center;
+  display: flex;
+  width: 100%;
 }
 
 .gamePageCard {
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  overflow: hidden;
+  max-height: 5em;
   width: 100%;
+  align-items: center;
+  padding: 20px;
+  display: flex;
+  justify-content: space-around;
+
+  background: linear-gradient(
+    115deg,
+    var(--home-primary-color) 0%,
+    var(--home-primary-color) 15%,
+    var(--home-secondary-color) 15%,
+    var(--home-secondary-color) 17%,
+    var(--home-jersey-color) 17%,
+    var(--home-jersey-color) 19%,
+    var(--home-secondary-color) 19%,
+    var(--home-secondary-color) 21%,
+    var(--home-primary-color) 21%,
+    var(--home-primary-color) 23%,
+    var(--home-accent-color) 23%,
+    var(--home-accent-color) 25%,
+
+    #101010 25%,
+    #101010 75%,
+
+    var(--away-accent-color) 75%,
+    var(--away-accent-color) 77%,
+    var(--away-primary-color) 77%,
+    var(--away-primary-color) 79%,
+    var(--away-secondary-color) 79%,
+    var(--away-secondary-color) 81%,
+    var(--away-jersey-color) 81%,
+    var(--away-jersey-color) 83%,
+    var(--away-secondary-color) 83%,
+    var(--away-secondary-color) 85%,
+    var(--away-primary-color) 85%,
+    var(--away-primary-color) 100%
+  );
+}
+
+/* Team logos and names */
+
+.team-nameGPvs {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 0;
+}
+
+/* Stats container and rows */
+.statsAndPlayerCompContainer {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  width: 85%;
+}
+
+.gamePageVsTableContainer {
+  flex-basis: 40%;
+  margin-right: 5%; /* Gap between tables */
+}
+
+.statRow,
+.gamePageVsTable,
+.goalieStatRow {
+  width: 100%;
+}
+
+.statRow {
+  flex-direction: column;
+  display: flex;
+  align-items: center;
+}
+
+.statRowHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  border-left: 2px solid #ddd;
-  border-right: 2px solid #ddd;
-  border-top: 2px solid #ddd;
-  border-radius: 5px 5px 0 0;
-  background: linear-gradient(
-    115deg,
-    var(--home-secondary-color) 49%,
-    #fff 49%,
-    #fff 51%,
-    var(--away-primary-color) 51%
-  );
-  text-align: center;
-  margin-top: 10px;
-  overflow: hidden;
-  max-height: 5em;
+  width: 100%;
+  margin-top: 8px;
 }
 
-.team-name {
+.statBarContainer {
+  width: 100%; /* Full width to match the statHeader */
+  margin-top: 10px; /* Space between header content and bar */
+}
+
+/* Comparison bar */
+.comparisonBar {
+  height: 10px;
+}
+
+/* Player comparison styles */
+.playerCompContainer {
+  border: 3px solid white;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%; /* Adjusted width for layout */
+}
+
+.playerCompHeader {
+  height: 3em;
+  border-bottom: white 3px solid;
+  padding: 10px;
+  color: white;
   font-size: 1.5em;
+
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+
+  background: linear-gradient(
+    115deg,
+    var(--home-primary-color) 0%,
+    var(--home-primary-color) 27%,
+    var(--home-secondary-color) 27%,
+    var(--home-secondary-color) 28%,
+    var(--home-jersey-color) 28%,
+    var(--home-jersey-color) 29%,
+    var(--home-secondary-color) 29%,
+    var(--home-secondary-color) 30%,
+
+    #101010 30%,
+    #101010 70%,
+
+    var(--away-secondary-color) 70%,
+    var(--away-secondary-color) 71%,
+    var(--away-jersey-color) 71%,
+    var(--away-jersey-color) 72%,
+    var(--away-secondary-color) 72%,
+    var(--away-secondary-color) 73%,
+    var(--away-primary-color) 73%,
+    var(--away-primary-color) 100%
+  );
+}
+
+.playerCompDetails {
+  height: 6.5em;
+  border-top: #f6f5f5 2px solid;
+  display: flex;
+  width: 100%;
+  justify-content: space-between; /* Space between home and away */
+}
+
+/* Player stats and details */
+.playerStats {
+  flex-direction: column;
+  display: flex;
+}
+
+.playerDetail {
+  align-items: center;
+  display: flex;
+}
+
+.playerHeadshot {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin: 0 10px;
+  filter: drop-shadow(0 0 5px #000);
+}
+
+.value {
+  font-weight: bold;
+  font-size: 2em;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 5px #000);
+}
+
+/* Goalie comparison styles */
+.goalieCompHeader,
+.goalieStatsContainer,
+.goalieStatRow {
+  align-items: center;
+}
+
+.goalieCompHeader {
+  padding: 10px;
+  margin: 0;
+  font-size: 1.5em;
+  font-weight: bold;
+  color: white;
+  border-bottom: white 3px solid;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: center;
+  background: linear-gradient(
+    115deg,
+    var(--home-primary-color) 0%,
+    var(--home-primary-color) 27%,
+    var(--home-secondary-color) 27%,
+    var(--home-secondary-color) 28%,
+    var(--home-jersey-color) 28%,
+    var(--home-jersey-color) 29%,
+    var(--home-secondary-color) 29%,
+    var(--home-secondary-color) 30%,
+
+    #101010 30%,
+    #101010 70%,
+
+    var(--away-secondary-color) 70%,
+    var(--away-secondary-color) 71%,
+    var(--away-jersey-color) 71%,
+    var(--away-jersey-color) 72%,
+    var(--away-secondary-color) 72%,
+    var(--away-secondary-color) 73%,
+    var(--away-primary-color) 73%,
+    var(--away-primary-color) 100%
+  );
+}
+
+.goalieStatsContainer {
+  display: flex;
+  justify-content: space-around; /* Space out home and away goalies */
+  width: 100%;
+}
+
+.goalieStatRow {
+  justify-content: flex-start;
+  padding: 10px;
+  display: flex;
+  width: 100%; /* Slightly less width for padding */
+}
+
+.goalieStatDetails {
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  display: flex;
+}
+
+/* Home and Away specific styles */
+.homeGoalies,
+.awayGoalies {
+  width: 50%;
+}
+
+.goalieName {
+  flex-direction: column;
+  text-align: left;
+  justify-content: center;
+  height: 5em;
+  width: 30%;
+  display: flex;
+}
+
+.playerCompHeader p {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* Add this line */
+}
+
+.teamLogoAwayPC {
+  height: 50px; /* Adjusted height */
+  width: 40px; /* Adjusted width */
+  filter: drop-shadow(
+    0 0 6px var(--away-secondary-color)
+  ); /* Adjusted shadow */
+}
+
+.teamLogoHomePC {
+  height: 50px; /* Adjusted height */
+  width: 40px; /* Adjusted width */
+  filter: drop-shadow(
+    0 0 6px var(--home-secondary-color)
+  ); /* Adjusted shadow */
+}
+
+.verticalText {
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-weight: 900;
+  font-size: 0.7em;
+  color: black; /* Adjust color as needed */
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border-left: 2px solid black;
+  border-right: 2px solid black;
+}
+
+.playerSide {
+  display: flex;
+  align-items: center;
+}
+
+.homeSide .playerStats {
+  text-align: right;
+  margin-right: 10px; /* Adjust spacing */
+}
+
+.awaySide .playerStats {
+  text-align: left;
+  margin-left: 10px; /* Adjust spacing */
+  align-items: flex-start; /* Align text left for away side */
+}
+
+.compColumns {
+  display: flex;
+  justify-content: space-between;
+}
+
+.homePlayer,
+.awayPlayer {
+  display: flex;
+  width: 50%; /* Each player detail takes up half the width */
+}
+
+.homePlayer .value {
+  flex-grow: 1; /* Allow the value to take up available space */
+  text-align: left; /* Align the text to the right */
+  color: var(--home-secondary-color);
+}
+
+.homePlayer .playerStats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* Align text to the right */
+  margin-right: 10px; /* Space between playerStats and headshot */
+  color: var(--home-secondary-color);
+}
+
+.homePlayer .playerHeadshot {
+  margin-right: 0; /* No margin on the right of the headshot */
+  background-color: var(--home-accent-color);
+  border: 2px solid var(--home-jersey-color);
+}
+
+.awayPlayer .value {
+  flex-grow: 1; /* Allow the value to take up available space */
+  text-align: right; /* Align the text to the left */
+  order: 2; /* Move the value to the end */
+  color: var(--away-secondary-color);
+}
+
+.awayPlayer .playerStats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Align text left */
+  margin-left: 10px; /* Space between playerStats and headshot */
+  order: 1; /* Ensure stats are next to headshot */
+  color: var(--away-secondary-color);
+}
+
+.awayPlayer .playerHeadshot {
+  margin-left: 0; /* No margin on the left of the headshot */
+  background-color: var(--away-accent-color);
+  border: 2px solid var(--away-jersey-color);
+}
+
+.lastName {
   font-weight: bold;
 }
 
+.value,
+strong {
+  display: block; /* Stack elements */
+}
+
+.playerDetail.homePlayer {
+  background: linear-gradient(
+    65deg,
+    var(--home-jersey-color) 0%,
+    var(--home-jersey-color) 30%,
+    var(--home-secondary-color) 30%,
+    var(--home-secondary-color) 35%,
+    var(--home-primary-color) 35%,
+    var(--home-primary-color) 40%,
+    var(--home-secondary-color) 40%,
+    var(--home-secondary-color) 45%,
+    var(--home-primary-color) 45%,
+    var(--home-primary-color) 100%
+  );
+  padding: 0 20px;
+  justify-content: flex-end; /* Home details aligned to start */
+}
+
+.playerDetail.awayPlayer {
+  background: linear-gradient(
+    115deg,
+    var(--away-primary-color) 0%,
+    var(--away-primary-color) 55%,
+    var(--away-secondary-color) 55%,
+    var(--away-secondary-color) 60%,
+    var(--away-primary-color) 60%,
+    var(--away-primary-color) 65%,
+    var(--away-secondary-color) 65%,
+    var(--away-secondary-color) 70%,
+    var(--away-jersey-color) 70%,
+    var(--away-jersey-color) 100%
+  );
+  padding: 0 20px;
+  justify-content: flex-start; /* Away details aligned to end */
+}
+
+.team-record {
+  font-size: 0.8em; /* Smaller font for the record */
+}
+
 .home-team {
-  color: var(--home-primary-color);
-  filter: drop-shadow(0 0 5px var(--home-primary-color));
-  width: 12em;
+  font-family: montesserat, sans-serif;
+  text-transform: uppercase;
+  font-style: italic;
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-stroke-color: var(--home-secondary-color);
+  color: var(--home-jersey-color);
 }
 
 .away-team {
-  color: var(--away-secondary-color);
-  filter: drop-shadow(0 0 5px var(--away-primary-color));
-  width: 12em;
+  font-family: montesserat, sans-serif;
+  text-transform: uppercase;
+  font-style: italic;
+  -webkit-text-stroke-width: 1.5px;
+  -webkit-text-stroke-color: var(--away-secondary-color);
+  color: var(--away-jersey-color);
 }
 
-.gamePageCard img {
+.teamLogoHome {
   z-index: 2;
   height: 10em;
-  width: 10em;
+  width: 9em;
+  left: -7%;
   position: relative;
-  filter: drop-shadow(0 0 3px #fff);
+  filter: drop-shadow(0 0 3px var(--home-primary-color));
+}
+
+.teamLogoAway {
+  z-index: 2;
+  height: 10em;
+  width: 9em;
+  right: -7%;
+  position: relative;
+  filter: drop-shadow(0 0 3px var(--away-secondary-color));
 }
 
 .GPvs {
   font-size: 1.5em;
   font-weight: bold;
-  margin: 0 20px;
   color: #fff;
-  padding: 0 5px;
   filter: drop-shadow(0 0 5px #000);
 }
 
@@ -68,40 +500,11 @@
   border: 2px solid #ddd;
   border-collapse: collapse;
   background-color: #101010;
-}
-
-.gamePageHomeTeam {
-  width: 40%;
-}
-
-.gamePageHomeTeamStat {
-  width: 35%;
-}
-
-.gamePageHomeTeamStatRank {
-  width: 5%;
-  border-right: #ddd 2px solid;
-}
-
-.gamePageAdvantageDecider {
-  font-weight: 900;
-
-  &__wrapper {
-    flex-direction: column;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  height: 100%;
 }
 
 .gamePageVsTable tbody tr:not(:first-child) {
-  border-top: 1px solid #ffffff; /* Change #ffffff to the desired border color */
-}
-
-.statName {
-  font-size: 0.8em;
-  text-transform: uppercase;
-  font-weight: 700;
+  border-top: 2px solid #ffffff; /* Change #ffffff to the desired border color */
 }
 
 .gamePageVsTable tbody tr:nth-child(odd) {
@@ -134,6 +537,229 @@
   height: 3em;
 }
 
-.gamePageVsTable tr {
-  height: 3em;
+.statLabel {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  flex-grow: 1;
+}
+
+.statLabel.home-advantage::after,
+.statLabel.away-advantage::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  border: solid transparent;
+  height: 0;
+  width: 0;
+  pointer-events: none;
+  border-width: 8px;
+  margin-top: -8px;
+}
+
+.statLabel.home-advantage::after {
+  right: 85%;
+  border-right-color: var(--home-primary-color);
+}
+
+.statLabel.away-advantage::after {
+  left: 85%;
+  border-left-color: var(--away-secondary-color);
+}
+
+.teamLogoHomeStatTable {
+  height: 100%;
+}
+
+.teamLogoAwayStatTable {
+  height: 100%;
+}
+
+.statTableHeader {
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 4px solid #ddd;
+  color: white;
+  background: linear-gradient(
+    115deg,
+    var(--home-primary-color) 0%,
+    var(--home-primary-color) 27%,
+    var(--home-secondary-color) 27%,
+    var(--home-secondary-color) 28%,
+    var(--home-jersey-color) 28%,
+    var(--home-jersey-color) 29%,
+    var(--home-secondary-color) 29%,
+    var(--home-secondary-color) 30%,
+
+    #101010 30%,
+    #101010 70%,
+
+    var(--away-secondary-color) 70%,
+    var(--away-secondary-color) 71%,
+    var(--away-jersey-color) 71%,
+    var(--away-jersey-color) 72%,
+    var(--away-secondary-color) 72%,
+    var(--away-secondary-color) 73%,
+    var(--away-primary-color) 73%,
+    var(--away-primary-color) 100%
+  );
+}
+
+.statValue {
+  margin: 0 5px; /* Adjust spacing as needed */
+}
+
+.advantageHeaderText {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.statValue.homeValue {
+  margin-left: 10; /* Align to the far left */
+  width: 50px;
+}
+
+.statValue.awayValue {
+  margin-right: 10; /* Align to the far right */
+  width: 50px;
+}
+
+.advantageIndicator {
+  position: absolute;
+  /* Position it based on the advantage */
+}
+
+.gamePageVsTable .statRow {
+  height: 4em;
+}
+
+.goalieCompContainer {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  width: 100%; /* Match the width of playerCompContainer for consistency */
+  margin-top: 20px; /* Space between playerCompContainer and goalieCompContainer */
+  border: 3px solid white; /* Consistent container border */
+  border-radius: 5px;
+}
+
+.homeGoalies {
+  border-right: 3px solid white; /* Border between home and away goalies */
+  background: linear-gradient(
+    115deg,
+    var(--home-primary-color) 40%,
+    var(--home-secondary-color) 60%
+  );
+  height: 100%;
+}
+
+.awayGoalies {
+  background: linear-gradient(
+    115deg,
+    var(--away-primary-color) 40%,
+    var(--away-secondary-color) 100%
+  );
+  height: 100%;
+}
+
+.homeGoalies .goalieStatRow img {
+  height: 80px; /* Slightly larger headshot for visibility */
+  width: 80px;
+  border-radius: 50%; /* Circular headshots */
+  margin-right: 15px; /* Space between headshot and stats */
+  background-color: var(--home-accent-color);
+  border: 2px solid var(--home-jersey-color);
+}
+
+.homeGoalies .goalieStatRow {
+  background: linear-gradient(
+    115deg,
+    var(--home-jersey-color) 0%,
+    var(--home-jersey-color) 15%,
+    var(--home-secondary-color) 15%,
+    var(--home-secondary-color) 20%,
+    var(--home-primary-color) 20%,
+    var(--home-primary-color) 25%,
+    var(--home-secondary-color) 25%,
+    var(--home-secondary-color) 30%,
+    var(--home-primary-color) 30%,
+    var(--home-primary-color) 100%
+  );
+  border-bottom: #ccc 2px solid; /* Adjusted border color */
+}
+
+.awayGoalies .goalieStatRow img {
+  height: 80px; /* Slightly larger headshot for visibility */
+  width: 80px;
+  border-radius: 50%; /* Circular headshots */
+  margin-right: 15px; /* Space between headshot and stats */
+  background-color: var(--away-accent-color);
+  border: 2px solid var(--away-jersey-color);
+}
+
+.awayGoalies .goalieStatRow {
+  background: linear-gradient(
+    115deg,
+    var(--away-jersey-color) 0%,
+    var(--away-jersey-color) 15%,
+    var(--away-secondary-color) 15%,
+    var(--away-secondary-color) 20%,
+    var(--away-primary-color) 20%,
+    var(--away-primary-color) 25%,
+    var(--away-secondary-color) 25%,
+    var(--away-secondary-color) 30%,
+    var(--away-primary-color) 30%,
+    var(--away-primary-color) 100%
+  );
+  border-bottom: #ccc 2px solid; /* Adjusted border color */
+}
+
+.homeGoalieStatHighlight {
+  color: var(--home-accent-color); /* Highlight color */
+  font-weight: bold;
+  width: 40%;
+}
+
+.homeGoalieStatHighlight p {
+  margin: 0; /* Remove margin for cleaner look */
+}
+
+.spanGoalieValue {
+  text-align: left;
+}
+
+.spanGoalieStat {
+  text-align: right;
+}
+
+.goalieImage {
+  width: 35%;
+}
+
+.awayGoalieStatHighlight {
+  color: var(--away-secondary-color); /* Highlight color */
+  font-weight: bold;
+  width: 40%;
+}
+
+.awayGoalieStatHighlight p {
+  margin: 0; /* Remove margin for cleaner look */
+}
+
+.goalieLastName {
+  font-weight: bolder;
+}
+
+.homeGoalies .goalieName {
+  color: var(--home-accent-color); /* Highlight color */
+}
+
+.awayGoalies .goalieName {
+  color: var(--away-secondary-color); /* Highlight color */
 }
