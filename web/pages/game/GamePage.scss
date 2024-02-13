@@ -64,18 +64,10 @@
     var(--home-jersey-color) 19%,
     var(--home-secondary-color) 19%,
     var(--home-secondary-color) 21%,
-    var(--home-primary-color) 21%,
-    var(--home-primary-color) 23%,
-    var(--home-accent-color) 23%,
-    var(--home-accent-color) 25%,
 
-    #101010 25%,
-    #101010 75%,
+    #101010 21%,
+    #101010 79%,
 
-    var(--away-accent-color) 75%,
-    var(--away-accent-color) 77%,
-    var(--away-primary-color) 77%,
-    var(--away-primary-color) 79%,
     var(--away-secondary-color) 79%,
     var(--away-secondary-color) 81%,
     var(--away-jersey-color) 81%,
@@ -721,7 +713,7 @@ strong {
 }
 
 .homeGoalieStatHighlight {
-  color: var(--home-accent-color); /* Highlight color */
+  color: var(--home-secondary-color); /* Highlight color */
   font-weight: bold;
   width: 40%;
 }
@@ -757,9 +749,15 @@ strong {
 }
 
 .homeGoalies .goalieName {
-  color: var(--home-accent-color); /* Highlight color */
+  color: var(--home-secondary-color); /* Highlight color */
 }
 
 .awayGoalies .goalieName {
   color: var(--away-secondary-color); /* Highlight color */
+}
+
+.poissonChartContainer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
 }

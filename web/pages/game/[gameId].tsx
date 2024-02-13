@@ -1,8 +1,10 @@
 // @ts-nocheck
+// PATH: web/pages/game/[gameId].tsx
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Fetch from "lib/cors-fetch";
 import { teamsInfo } from "lib/NHL/teamsInfo";
+import PoissonDistributionChart from "./PoissonDistributionChart";
 
 export default function Page() {
   const router = useRouter();
@@ -267,6 +269,73 @@ export default function Page() {
     return { homePercentage, awayPercentage };
   };
 
+  ///////////////////////// CHART STUFF //////////////////////////////
+  // Prepare the data for PoissonDistributionChart
+
+  const l10pointsPct = (teamType) => {
+    // Check if gameLandingDetails and gameLandingDetails.matchup are loaded
+    if (!gameLandingDetails || !gameLandingDetails.matchup) {
+      return 0; // Return a default value or handle this case as needed
+    }
+
+    // Determine which team's record to use based on the teamType parameter
+    const last10Record =
+      teamType === "home"
+        ? gameLandingDetails?.matchup?.last10Record?.homeTeam?.record
+        : gameLandingDetails?.matchup?.last10Record?.awayTeam?.record;
+
+    // Split the record string into wins, losses, and overtime losses
+    const [wins, losses, overtimeLosses] = last10Record
+      .split("-")
+      .map((num) => parseInt(num, 10));
+
+    // Calculate the points achieved in the last 10 games
+    const points = wins * 2 + overtimeLosses; // Assuming 2 points for a win and 1 point for an overtime loss
+
+    // Calculate the points percentage
+    const totalPossiblePoints = 10 * 2; // 10 games, 2 points possible per game
+    return points / totalPossiblePoints;
+  };
+
+  const chartData = [
+    {
+      team: gameDetails?.homeTeam?.abbrev,
+      logo: gameDetails?.homeTeam?.logo,
+      goalsForPerGame: homeTeamStats.goalsForPerGame || 0,
+      goalsAgainstPerGame: homeTeamStats.goalsAgainstPerGame || 0,
+      shotsForPerGame: homeTeamStats.shotsForPerGame || 0,
+      shotsAgainstPerGame: homeTeamStats.shotsAgainstPerGame || 0,
+      powerPlayPercentage: homeTeamPowerPlayStats.powerPlayPct || 0,
+      penaltyKillPercentage: homeTeamStats.penaltyKillPct || 0,
+      powerPlayGoalsPerGame: homeTeamPowerPlayStats.ppGoalsPerGame || 0,
+      powerPlayOpportunitesPerGame:
+        homeTeamPowerPlayStats.ppOpportunitiesPerGame || 0,
+      shGoalsAgainstPerGame: homeTeamPowerPlayStats.shGoalsAgainstPerGame || 0,
+      l10ptsPct: l10pointsPct("home"),
+      seasonSeriesWins:
+        gameLandingDetails?.matchup?.seasonSeriesWins?.homeTeamWins || 0,
+    },
+    {
+      team: gameDetails?.awayTeam?.abbrev,
+      logo: gameDetails?.awayTeam?.logo,
+      goalsForPerGame: awayTeamStats.goalsForPerGame || 0,
+      goalsAgainstPerGame: awayTeamStats.goalsAgainstPerGame || 0,
+      shotsForPerGame: awayTeamStats.shotsForPerGame || 0,
+      shotsAgainstPerGame: awayTeamStats.shotsAgainstPerGame || 0,
+      powerPlayPercentage: awayTeamPowerPlayStats.powerPlayPct || 0,
+      penaltyKillPercentage: awayTeamStats.penaltyKillPct || 0,
+      powerPlayGoalsPerGame: awayTeamPowerPlayStats.ppGoalsPerGame || 0,
+      powerPlayOpportunitesPerGame:
+        awayTeamPowerPlayStats.ppOpportunitiesPerGame || 0,
+      shGoalsAgainstPerGame: awayTeamPowerPlayStats.shGoalsAgainstPerGame || 0,
+      l10ptsPct: l10pointsPct("away"),
+      seasonSeriesWins:
+        gameLandingDetails?.matchup?.seasonSeriesWins?.awayTeamWins || 0,
+    },
+  ];
+
+  console.log("chartData:", chartData);
+
   if (gameLandingDetails?.gameState === "FUT") {
     return (
       <div className="game-page">
@@ -354,18 +423,30 @@ export default function Page() {
                   />
                   <StatRow
                     statLabel="GF/GM"
-                    homeStat={homeTeamStats.goalsForPerGame.toFixed(2) || "-"}
-                    awayStat={awayTeamStats.goalsForPerGame.toFixed(2) || "-"}
+                    homeStat={
+                      homeTeamStats.goalsForPerGame
+                        ? homeTeamStats.goalsForPerGame.toFixed(2)
+                        : "-"
+                    }
+                    awayStat={
+                      awayTeamStats.goalsForPerGame
+                        ? awayTeamStats.goalsForPerGame.toFixed(2)
+                        : "-"
+                    }
                     homeTeamColors={homeTeamColors}
                     awayTeamColors={awayTeamColors}
                   />
                   <StatRow
                     statLabel="GA/GM"
                     homeStat={
-                      homeTeamStats.goalsAgainstPerGame.toFixed(2) || "-"
+                      homeTeamStats.goalsAgainstPerGame
+                        ? homeTeamStats.goalsAgainstPerGame.toFixed(2)
+                        : "-"
                     }
                     awayStat={
-                      awayTeamStats.goalsAgainstPerGame.toFixed(2) || "-"
+                      awayTeamStats.goalsAgainstPerGame
+                        ? awayTeamStats.goalsAgainstPerGame.toFixed(2)
+                        : "-"
                     }
                     isLowerBetter // Lower is better for goals against
                     homeTeamColors={homeTeamColors}
@@ -374,12 +455,18 @@ export default function Page() {
                   <StatRow
                     statLabel="PP%"
                     homeStat={
-                      (homeTeamPowerPlayStats.powerPlayPct * 100).toFixed(1) +
-                        "%" || "-"
+                      homeTeamPowerPlayStats.powerPlayPct
+                        ? (homeTeamPowerPlayStats.powerPlayPct * 100).toFixed(
+                            1
+                          ) + "%"
+                        : "-"
                     }
                     awayStat={
-                      (awayTeamPowerPlayStats.powerPlayPct * 100).toFixed(1) +
-                        "%" || "-"
+                      awayTeamPowerPlayStats.powerPlayPct
+                        ? (awayTeamPowerPlayStats.powerPlayPct * 100).toFixed(
+                            1
+                          ) + "%"
+                        : "-"
                     }
                     homeTeamColors={homeTeamColors}
                     awayTeamColors={awayTeamColors}
@@ -387,30 +474,44 @@ export default function Page() {
                   <StatRow
                     statLabel="PK%"
                     homeStat={
-                      (homeTeamStats.penaltyKillPct * 100).toFixed(1) + "%" ||
-                      "-"
+                      homeTeamStats.penaltyKillPct
+                        ? (homeTeamStats.penaltyKillPct * 100).toFixed(1) + "%"
+                        : "-"
                     }
                     awayStat={
-                      (awayTeamStats.penaltyKillPct * 100).toFixed(1) + "%" ||
-                      "-"
+                      awayTeamStats.penaltyKillPct
+                        ? (awayTeamStats.penaltyKillPct * 100).toFixed(1) + "%"
+                        : "-"
                     }
                     homeTeamColors={homeTeamColors}
                     awayTeamColors={awayTeamColors}
                   />
                   <StatRow
                     statLabel="SF/GM"
-                    homeStat={homeTeamStats.shotsForPerGame.toFixed(1) || "-"}
-                    awayStat={awayTeamStats.shotsForPerGame.toFixed(1) || "-"}
+                    homeStat={
+                      homeTeamStats.shotsForPerGame
+                        ? homeTeamStats.shotsForPerGame.toFixed(1)
+                        : "-"
+                    }
+                    awayStat={
+                      awayTeamStats.shotsForPerGame
+                        ? awayTeamStats.shotsForPerGame.toFixed(1)
+                        : "-"
+                    }
                     homeTeamColors={homeTeamColors}
                     awayTeamColors={awayTeamColors}
                   />
                   <StatRow
                     statLabel="SA/GM"
                     homeStat={
-                      homeTeamStats.shotsAgainstPerGame.toFixed(1) || "-"
+                      homeTeamStats.shotsAgainstPerGame
+                        ? homeTeamStats.shotsAgainstPerGame.toFixed(1)
+                        : "-"
                     }
                     awayStat={
-                      awayTeamStats.shotsAgainstPerGame.toFixed(1) || "-"
+                      awayTeamStats.shotsAgainstPerGame
+                        ? awayTeamStats.shotsAgainstPerGame.toFixed(1)
+                        : "-"
                     }
                     isLowerBetter // Lower is better for shots against
                     homeTeamColors={homeTeamColors}
@@ -419,14 +520,18 @@ export default function Page() {
                   <StatRow
                     statLabel="PPO/GM"
                     homeStat={
-                      homeTeamPowerPlayStats.ppOpportunitiesPerGame.toFixed(
-                        1
-                      ) || "-"
+                      homeTeamPowerPlayStats.ppOpportunitiesPerGame
+                        ? homeTeamPowerPlayStats.ppOpportunitiesPerGame.toFixed(
+                            2
+                          )
+                        : "-"
                     }
                     awayStat={
-                      awayTeamPowerPlayStats.ppOpportunitiesPerGame.toFixed(
-                        1
-                      ) || "-"
+                      awayTeamPowerPlayStats.ppOpportunitiesPerGame
+                        ? awayTeamPowerPlayStats.ppOpportunitiesPerGame.toFixed(
+                            2
+                          )
+                        : "-"
                     }
                     homeTeamColors={homeTeamColors}
                     awayTeamColors={awayTeamColors}
@@ -434,10 +539,14 @@ export default function Page() {
                   <StatRow
                     statLabel="PPG/GM"
                     homeStat={
-                      homeTeamPowerPlayStats.ppGoalsPerGame.toFixed(2) || "-"
+                      homeTeamPowerPlayStats.ppGoalsPerGame
+                        ? homeTeamPowerPlayStats.ppGoalsPerGame.toFixed(2)
+                        : "-"
                     }
                     awayStat={
-                      awayTeamPowerPlayStats.ppGoalsPerGame.toFixed(2) || "-"
+                      awayTeamPowerPlayStats.ppGoalsPerGame
+                        ? awayTeamPowerPlayStats.ppGoalsPerGame.toFixed(2)
+                        : "-"
                     }
                     homeTeamColors={homeTeamColors}
                     awayTeamColors={awayTeamColors}
@@ -651,22 +760,22 @@ export default function Page() {
                               <div className="goalieStatDetails">
                                 <span className="spanGoalieValue">GAA:</span>
                                 <span className="spanGoalieStat">
-                                  {goalie.gaa.toFixed(2)}
+                                  {goalie?.gaa?.toFixed(2)}
                                 </span>
                               </div>
                               <div className="goalieStatDetails">
                                 <span className="spanGoalieValue">SV%:</span>
                                 <span className="spanGoalieStat">
-                                  {goalie.savePctg
-                                    .toFixed(3)
-                                    .replace(/^0+/, "")}
+                                  {goalie?.savePctg
+                                    ?.toFixed(3)
+                                    ?.replace(/^0+/, "")}
                                   %
                                 </span>
                               </div>
                               <div className="goalieStatDetails">
                                 <span className="spanGoalieValue">SO:</span>
                                 <span className="spanGoalieStat">
-                                  {goalie.shutouts}
+                                  {goalie?.shutouts}
                                 </span>
                               </div>
                             </div>
@@ -730,6 +839,9 @@ export default function Page() {
                   </div>
                 </div>
               </div>
+            </div>
+            <div className="poissonChartContainer">
+              <PoissonDistributionChart chartData={chartData} />
             </div>
           </>
         ) : (
