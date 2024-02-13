@@ -164,7 +164,7 @@ export default function Page() {
     );
     const gradientBackground = `linear-gradient(115deg, ${homeColor} ${
       homePercentage - 2
-    }%, #101010 ${homePercentage - 2}%, #101010 ${
+    }%, #303030 ${homePercentage - 2}%, #303030 ${
       homePercentage + 2
     }%, ${awayColor} ${homePercentage + 2}%)`;
 
@@ -621,19 +621,24 @@ export default function Page() {
                   }}
                 >
                   <div className="playerCompHeader">
-                    <img
-                      className="teamLogoHomePC"
-                      src={gameDetails.homeTeam.logo}
-                      alt={`${gameDetails.homeTeam.name.default} logo`}
-                      style={{ width: "60px" }}
-                    />
+                    <div className="playerCompHeaderLeft">
+                      <img
+                        className="teamLogoHomePC"
+                        src={gameDetails.homeTeam.logo}
+                        alt={`${gameDetails.homeTeam.name.default} logo`}
+                        style={{ width: "75px" }}
+                      />
+                    </div>
+
                     <p>Last 5 Games</p>
-                    <img
-                      className="teamLogoAwayPC"
-                      src={gameDetails.awayTeam.logo}
-                      alt={`${gameDetails.awayTeam.name.default} logo`}
-                      style={{ width: "60px" }}
-                    />
+                    <div className="playerCompHeaderRight">
+                      <img
+                        className="teamLogoAwayPC"
+                        src={gameDetails.awayTeam.logo}
+                        alt={`${gameDetails.awayTeam.name.default} logo`}
+                        style={{ width: "75px" }}
+                      />
+                    </div>
                   </div>
                   {gameLandingDetails?.matchup?.teamLeadersL5
                     ?.filter(
@@ -643,9 +648,11 @@ export default function Page() {
                       <div className="playerCompDetails" key={index}>
                         {/* Home player side */}
                         <div className="playerDetail homePlayer">
-                          <span className="value">
-                            {leader.homeLeader.value}
-                          </span>
+                          <img
+                            src={leader.homeLeader.headshot}
+                            alt="Home player headshot"
+                            className="playerHeadshot"
+                          />
 
                           <div className="playerStats">
                             <span>{leader.homeLeader.firstName.default}</span>
@@ -657,11 +664,9 @@ export default function Page() {
                               {leader.homeLeader.positionCode}
                             </span>
                           </div>
-                          <img
-                            src={leader.homeLeader.headshot}
-                            alt="Home player headshot"
-                            className="playerHeadshot"
-                          />
+                          <span className="value">
+                            {leader.homeLeader.value}
+                          </span>
                         </div>
 
                         {/* Vertical text between players */}
@@ -671,12 +676,9 @@ export default function Page() {
 
                         {/* Away player side */}
                         <div className="playerDetail awayPlayer">
-                          <img
-                            src={leader.awayLeader.headshot}
-                            alt="Away player headshot"
-                            className="playerHeadshot"
-                          />
-
+                          <span className="value">
+                            {leader.awayLeader.value}
+                          </span>
                           <div className="playerStats">
                             <span>{leader.awayLeader.firstName.default}</span>
                             <span className="lastName">
@@ -686,10 +688,12 @@ export default function Page() {
                               {leader.awayLeader.positionCode} • #
                               {leader.awayLeader.sweaterNumber}
                             </span>
+                            <img
+                              src={leader.awayLeader.headshot}
+                              alt="Away player headshot"
+                              className="playerHeadshot"
+                            />
                           </div>
-                          <span className="value">
-                            {leader.awayLeader.value}
-                          </span>
                         </div>
                       </div>
                     ))}
@@ -787,22 +791,6 @@ export default function Page() {
                       {gameLandingDetails?.matchup?.goalieComparison?.awayTeam.map(
                         (goalie) => (
                           <div key={goalie.playerId} className="goalieStatRow">
-                            <div className="goalieImage">
-                              <img
-                                src={goalie.headshot}
-                                alt={`Headshot of ${goalie.name.default}`}
-                              />
-                            </div>
-                            <div className="goalieName">
-                              <span>{goalie.firstName.default}</span>{" "}
-                              {/* First Name */}
-                              <span className="goalieLastName">
-                                {goalie.lastName.default}
-                              </span>{" "}
-                              <span className="goalieSweaterNumber">
-                                #{goalie.sweaterNumber} • {goalie.positionCode}
-                              </span>
-                            </div>
                             <div className="awayGoalieStatHighlight">
                               <div className="goalieStatDetails">
                                 <span className="spanGoalieValue">Record:</span>
@@ -831,6 +819,23 @@ export default function Page() {
                                   {goalie.shutouts}
                                 </span>
                               </div>
+                            </div>
+                            <div className="goalieName">
+                              <span>{goalie.firstName.default}</span>{" "}
+                              {/* First Name */}
+                              <span className="goalieLastName">
+                                {goalie.lastName.default}
+                              </span>{" "}
+                              <span className="goalieSweaterNumber">
+                                #{goalie.sweaterNumber} • {goalie.positionCode}
+                              </span>
+                            </div>
+
+                            <div className="goalieImage">
+                              <img
+                                src={goalie.headshot}
+                                alt={`Headshot of ${goalie.name.default}`}
+                              />
                             </div>
                           </div>
                         )

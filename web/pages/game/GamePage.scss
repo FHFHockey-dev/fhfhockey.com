@@ -138,48 +138,66 @@
   flex-direction: column;
   align-items: center;
   width: 100%; /* Adjusted width for layout */
+  background-color: #fff;
 }
 
 .playerCompHeader {
   height: 3em;
-  border-bottom: white 3px solid;
-  padding: 10px;
   color: white;
   font-size: 1.5em;
-
   display: flex;
   justify-content: space-between;
   width: 100%;
+}
 
+.playerCompHeaderLeft,
+.playerCompHeaderRight {
+  width: 100%; /* Split the width */
+  height: 100%;
+  display: flex;
+}
+
+.playerCompHeaderLeft {
+  align-items: center;
+  justify-content: flex-start;
+  background: linear-gradient(
+    65deg,
+    var(--home-jersey-color) 0%,
+    var(--home-jersey-color) 50%,
+    var(--home-secondary-color) 50%,
+    var(--home-secondary-color) 55%,
+    var(--home-primary-color) 55%,
+    var(--home-primary-color) 60%,
+    var(--home-secondary-color) 60%,
+    var(--home-secondary-color) 65%,
+    var(--home-primary-color) 65%,
+    var(--home-primary-color) 100%
+  );
+}
+
+.playerCompHeaderRight {
+  align-items: center;
+  justify-content: flex-end;
   background: linear-gradient(
     115deg,
-    var(--home-primary-color) 0%,
-    var(--home-primary-color) 27%,
-    var(--home-secondary-color) 27%,
-    var(--home-secondary-color) 28%,
-    var(--home-jersey-color) 28%,
-    var(--home-jersey-color) 29%,
-    var(--home-secondary-color) 29%,
-    var(--home-secondary-color) 30%,
-
-    #101010 30%,
-    #101010 70%,
-
-    var(--away-secondary-color) 70%,
-    var(--away-secondary-color) 71%,
-    var(--away-jersey-color) 71%,
-    var(--away-jersey-color) 72%,
-    var(--away-secondary-color) 72%,
-    var(--away-secondary-color) 73%,
-    var(--away-primary-color) 73%,
-    var(--away-primary-color) 100%
+    var(--away-primary-color) 0%,
+    var(--away-primary-color) 35%,
+    var(--away-secondary-color) 35%,
+    var(--away-secondary-color) 40%,
+    var(--away-jersey-color) 40%,
+    var(--away-jersey-color) 45%,
+    var(--away-secondary-color) 45%,
+    var(--away-secondary-color) 50%,
+    var(--away-jersey-color) 50%,
+    var(--away-jersey-color) 100%
   );
 }
 
 .playerCompDetails {
   height: 6.5em;
-  border-top: #f6f5f5 2px solid;
+  border-top: white 4px solid;
   display: flex;
+  position: relative;
   width: 100%;
   justify-content: space-between; /* Space between home and away */
 }
@@ -281,7 +299,6 @@
 
 .goalieName {
   flex-direction: column;
-  text-align: left;
   justify-content: center;
   height: 5em;
   width: 30%;
@@ -290,40 +307,46 @@
 
 .playerCompHeader p {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center; /* Add this line */
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: linear-gradient(
+    90deg,
+    var(--home-primary-color) 0%,
+    var(--away-primary-color) 100%
+  );
 }
 
 .teamLogoAwayPC {
+  margin-right: 10%;
   height: 50px; /* Adjusted height */
   width: 40px; /* Adjusted width */
   filter: drop-shadow(
-    0 0 6px var(--away-secondary-color)
+    0 0 10px var(--away-secondary-color)
   ); /* Adjusted shadow */
 }
 
 .teamLogoHomePC {
+  margin-left: 10%;
   height: 50px; /* Adjusted height */
-  width: 40px; /* Adjusted width */
   filter: drop-shadow(
-    0 0 6px var(--home-secondary-color)
+    0 0 10px var(--home-secondary-color)
   ); /* Adjusted shadow */
 }
 
 .verticalText {
   font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
-  writing-mode: vertical-rl;
-  text-orientation: upright;
-  font-weight: 900;
-  font-size: 0.7em;
-  color: black; /* Adjust color as needed */
-  background-color: white;
-  display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 5px;
-  border-left: 2px solid black;
-  border-right: 2px solid black;
+  align-items: center;
+  background-color: transparent;
+  border: none;
+  color: black;
+  position: absolute;
+  top: 5px; /* Adjust as needed */
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .playerSide {
@@ -356,19 +379,27 @@
 .homePlayer .value {
   flex-grow: 1; /* Allow the value to take up available space */
   text-align: left; /* Align the text to the right */
-  color: var(--home-secondary-color);
+  color: var(--home-accent-color);
 }
 
 .homePlayer .playerStats {
+  width: 60%;
   display: flex;
   flex-direction: column;
-  align-items: flex-end; /* Align text to the right */
+  align-items: flex-start; /* Align text to the right */
   margin-right: 10px; /* Space between playerStats and headshot */
-  color: var(--home-secondary-color);
+  color: var(--home-accent-color);
+}
+
+.homePlayer .playerHeadshot,
+.awayPlayer .playerHeadshot {
+  position: absolute;
+  top: 50%; /* Center vertically */
+  transform: translateY(-50%); /* Ensure vertical centering */
 }
 
 .homePlayer .playerHeadshot {
-  margin-right: 0; /* No margin on the right of the headshot */
+  left: 10px; /* Spacing from the left edge */
   background-color: var(--home-accent-color);
   border: 2px solid var(--home-jersey-color);
 }
@@ -381,16 +412,17 @@
 }
 
 .awayPlayer .playerStats {
+  width: 60%;
   display: flex;
   flex-direction: column;
-  align-items: flex-start; /* Align text left */
+  align-items: flex-end; /* Align text left */
   margin-left: 10px; /* Space between playerStats and headshot */
   order: 1; /* Ensure stats are next to headshot */
   color: var(--away-secondary-color);
 }
 
 .awayPlayer .playerHeadshot {
-  margin-left: 0; /* No margin on the left of the headshot */
+  right: 10px; /* Spacing from the right edge */
   background-color: var(--away-accent-color);
   border: 2px solid var(--away-jersey-color);
 }
@@ -404,40 +436,65 @@ strong {
   display: block; /* Stack elements */
 }
 
+.homePlayer .value,
+.awayPlayer .value {
+  position: absolute;
+  top: 60%; /* Center vertically */
+  transform: translateY(-50%); /* Ensure vertical centering */
+}
+
 .playerDetail.homePlayer {
   background: linear-gradient(
     65deg,
     var(--home-jersey-color) 0%,
-    var(--home-jersey-color) 30%,
-    var(--home-secondary-color) 30%,
-    var(--home-secondary-color) 35%,
-    var(--home-primary-color) 35%,
-    var(--home-primary-color) 40%,
-    var(--home-secondary-color) 40%,
-    var(--home-secondary-color) 45%,
-    var(--home-primary-color) 45%,
+    var(--home-jersey-color) 10%,
+    var(--home-secondary-color) 10%,
+    var(--home-secondary-color) 15%,
+    var(--home-primary-color) 15%,
+    var(--home-primary-color) 20%,
+    var(--home-secondary-color) 20%,
+    var(--home-secondary-color) 25%,
+    var(--home-primary-color) 25%,
     var(--home-primary-color) 100%
   );
   padding: 0 20px;
   justify-content: flex-end; /* Home details aligned to start */
+  clip-path: polygon(
+    0 0,
+    /* top left */ 75% 0,
+    /* left of notch */ 85% 30%,
+    /* right of notch */ 100% 30%,
+    /* top right */ 100% 100%,
+    /* bottom right */ 0 100% /* bottom left */
+  );
+  border-right: #fff 2px solid; /* Adjusted border color */
 }
 
 .playerDetail.awayPlayer {
   background: linear-gradient(
     115deg,
     var(--away-primary-color) 0%,
-    var(--away-primary-color) 55%,
-    var(--away-secondary-color) 55%,
-    var(--away-secondary-color) 60%,
-    var(--away-primary-color) 60%,
-    var(--away-primary-color) 65%,
-    var(--away-secondary-color) 65%,
-    var(--away-secondary-color) 70%,
-    var(--away-jersey-color) 70%,
+    var(--away-primary-color) 75%,
+    var(--away-secondary-color) 75%,
+    var(--away-secondary-color) 80%,
+    var(--away-primary-color) 80%,
+    var(--away-primary-color) 85%,
+    var(--away-secondary-color) 85%,
+    var(--away-secondary-color) 90%,
+    var(--away-jersey-color) 90%,
     var(--away-jersey-color) 100%
   );
   padding: 0 20px;
   justify-content: flex-start; /* Away details aligned to end */
+  clip-path: polygon(
+    /* top left */ 0% 30%,
+    /* left of notch */ 15% 30%,
+    /* right of notch */ 25% 0%,
+    /* top right */ 100% 0%,
+    /* bottom right */ 100% 100%,
+    /* bottom left */ 0 100%
+  );
+  border-left: #fff 2px solid; /* Adjusted border color */
 }
 
 .team-record {
@@ -468,7 +525,7 @@ strong {
   width: 9em;
   left: -7%;
   position: relative;
-  filter: drop-shadow(0 0 3px var(--home-primary-color));
+  filter: drop-shadow(0 0 3px var(--home-secondary-color));
 }
 
 .teamLogoAway {
@@ -489,9 +546,10 @@ strong {
 
 .gamePageVsTable {
   width: 100%;
-  border: 2px solid #ddd;
+  border: 3px solid #fff;
+  border-radius: 5px;
   border-collapse: collapse;
-  background-color: #101010;
+  background-color: #303030;
   height: 100%;
 }
 
@@ -563,10 +621,12 @@ strong {
 
 .teamLogoHomeStatTable {
   height: 100%;
+  filter: drop-shadow(0 0 3px var(--home-secondary-color));
 }
 
 .teamLogoAwayStatTable {
   height: 100%;
+  filter: drop-shadow(0 0 3px var(--away-secondary-color));
 }
 
 .statTableHeader {
@@ -671,16 +731,16 @@ strong {
 
 .homeGoalies .goalieStatRow {
   background: linear-gradient(
-    115deg,
+    65deg,
     var(--home-jersey-color) 0%,
-    var(--home-jersey-color) 15%,
+    var(--home-jersey-color) 10%,
+    var(--home-secondary-color) 10%,
     var(--home-secondary-color) 15%,
-    var(--home-secondary-color) 20%,
+    var(--home-primary-color) 15%,
     var(--home-primary-color) 20%,
-    var(--home-primary-color) 25%,
+    var(--home-secondary-color) 20%,
     var(--home-secondary-color) 25%,
-    var(--home-secondary-color) 30%,
-    var(--home-primary-color) 30%,
+    var(--home-primary-color) 25%,
     var(--home-primary-color) 100%
   );
   border-bottom: #ccc 2px solid; /* Adjusted border color */
@@ -690,7 +750,7 @@ strong {
   height: 80px; /* Slightly larger headshot for visibility */
   width: 80px;
   border-radius: 50%; /* Circular headshots */
-  margin-right: 15px; /* Space between headshot and stats */
+  margin-left: 15px; /* Space between headshot and stats */
   background-color: var(--away-accent-color);
   border: 2px solid var(--away-jersey-color);
 }
@@ -698,21 +758,22 @@ strong {
 .awayGoalies .goalieStatRow {
   background: linear-gradient(
     115deg,
-    var(--away-jersey-color) 0%,
-    var(--away-jersey-color) 15%,
-    var(--away-secondary-color) 15%,
-    var(--away-secondary-color) 20%,
-    var(--away-primary-color) 20%,
-    var(--away-primary-color) 25%,
-    var(--away-secondary-color) 25%,
-    var(--away-secondary-color) 30%,
-    var(--away-primary-color) 30%,
-    var(--away-primary-color) 100%
+    var(--away-primary-color) 0%,
+    var(--away-primary-color) 75%,
+    var(--away-secondary-color) 75%,
+    var(--away-secondary-color) 80%,
+    var(--away-primary-color) 80%,
+    var(--away-primary-color) 85%,
+    var(--away-secondary-color) 85%,
+    var(--away-secondary-color) 90%,
+    var(--away-jersey-color) 90%,
+    var(--away-jersey-color) 100%
   );
   border-bottom: #ccc 2px solid; /* Adjusted border color */
 }
 
 .homeGoalieStatHighlight {
+  margin-right: 15px;
   color: var(--home-secondary-color); /* Highlight color */
   font-weight: bold;
   width: 40%;
@@ -738,6 +799,7 @@ strong {
   color: var(--away-secondary-color); /* Highlight color */
   font-weight: bold;
   width: 40%;
+  margin-left: 15px;
 }
 
 .awayGoalieStatHighlight p {
@@ -750,10 +812,12 @@ strong {
 
 .homeGoalies .goalieName {
   color: var(--home-secondary-color); /* Highlight color */
+  text-align: left;
 }
 
 .awayGoalies .goalieName {
   color: var(--away-secondary-color); /* Highlight color */
+  text-align: right;
 }
 
 .poissonChartContainer {
