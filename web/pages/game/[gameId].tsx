@@ -357,25 +357,29 @@ export default function Page() {
                   "--away-alt-color": awayTeamColors.alt,
                 }}
               >
-                <img
-                  className="teamLogoHome"
-                  src={gameDetails.homeTeam.logo}
-                  alt={`${gameDetails.homeTeam.name.default} logo`}
-                />
-                <span className="team-nameGPvs home-team">
-                  {gameDetails.homeTeam.name.default} <br />
-                  <span className="team-record">{homeTeamRecord}</span>
-                </span>
+                <div className="gamePageCardLeft">
+                  <img
+                    className="teamLogoHome"
+                    src={gameDetails.homeTeam.logo}
+                    alt={`${gameDetails.homeTeam.name.default} logo`}
+                  />
+                  <span className="team-nameGPvs home-team">
+                    {gameDetails.homeTeam.name.default} <br />
+                    <span className="team-record">{homeTeamRecord}</span>
+                  </span>
+                </div>
                 <span className="GPvs">VS</span>
-                <span className="team-nameGPvs away-team">
-                  {gameDetails.awayTeam.name.default} <br />
-                  <span className="team-record">{awayTeamRecord}</span>
-                </span>
-                <img
-                  className="teamLogoAway"
-                  src={gameDetails.awayTeam.logo}
-                  alt={`${gameDetails.awayTeam.name.default} logo`}
-                />
+                <div className="gamePageCardRight">
+                  <span className="team-nameGPvs away-team">
+                    {gameDetails.awayTeam.name.default} <br />
+                    <span className="team-record">{awayTeamRecord}</span>
+                  </span>
+                  <img
+                    className="teamLogoAway"
+                    src={gameDetails.awayTeam.logo}
+                    alt={`${gameDetails.awayTeam.name.default} logo`}
+                  />
+                </div>
               </div>
             </div>
 
@@ -398,20 +402,24 @@ export default function Page() {
                       "--away-alt-color": awayTeamColors.alt,
                     }}
                   >
-                    <img
-                      className="teamLogoHomeStatTable"
-                      src={gameDetails.homeTeam.logo}
-                      alt={`${gameDetails.homeTeam.name.default} logo`}
-                      style={{ width: "40px" }}
-                    />
+                    <div className="statTableLeft">
+                      <img
+                        className="teamLogoHomeStatTable"
+                        src={gameDetails.homeTeam.logo}
+                        alt={`${gameDetails.homeTeam.name.default} logo`}
+                        style={{ width: "40px" }}
+                      />
+                    </div>
                     <span className="advantageHeaderText">Advantage</span>
 
-                    <img
-                      className="teamLogoAwayStatTable"
-                      src={gameDetails.awayTeam.logo}
-                      alt={`${gameDetails.awayTeam.name.default} logo`}
-                      style={{ width: "40px" }}
-                    />
+                    <div className="statTableRight">
+                      <img
+                        className="teamLogoAwayStatTable"
+                        src={gameDetails.awayTeam.logo}
+                        alt={`${gameDetails.awayTeam.name.default} logo`}
+                        style={{ width: "40px" }}
+                      />
+                    </div>
                   </div>
                   {/* Use StatRow for each statistic you want to display */}
                   <StatRow
@@ -718,19 +726,23 @@ export default function Page() {
                   {" "}
                   {/* Add some margin for spacing */}
                   <div className="goalieCompHeader">
-                    <img
-                      className="teamLogoHomePC"
-                      src={gameDetails.homeTeam.logo}
-                      alt={`${gameDetails.homeTeam.name.default} logo`}
-                      style={{ width: "60px" }}
-                    />
-                    Goalie Comparison
-                    <img
-                      className="teamLogoAwayPC"
-                      src={gameDetails.awayTeam.logo}
-                      alt={`${gameDetails.awayTeam.name.default} logo`}
-                      style={{ width: "60px" }}
-                    />
+                    <div className="goalieCompHeaderLeft">
+                      <img
+                        className="teamLogoHomePC"
+                        src={gameDetails.homeTeam.logo}
+                        alt={`${gameDetails.homeTeam.name.default} logo`}
+                        style={{ width: "75px" }}
+                      />
+                    </div>
+                    <p>Goalie Comparison</p>
+                    <div className="goalieCompHeaderRight">
+                      <img
+                        className="teamLogoAwayPC"
+                        src={gameDetails.awayTeam.logo}
+                        alt={`${gameDetails.awayTeam.name.default} logo`}
+                        style={{ width: "75px" }}
+                      />
+                    </div>
                   </div>
                   <div className="goalieStatsContainer">
                     <div className="homeGoalies">

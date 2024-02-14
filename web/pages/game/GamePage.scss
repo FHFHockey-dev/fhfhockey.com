@@ -44,38 +44,52 @@
 }
 
 .gamePageCard {
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   text-align: center;
   overflow: hidden;
   max-height: 5em;
   width: 100%;
   align-items: center;
-  padding: 20px;
   display: flex;
   justify-content: space-around;
+}
 
+.gamePageCardLeft {
+  align-items: center;
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  background: linear-gradient(
+    65deg,
+    var(--home-jersey-color) 0%,
+    var(--home-jersey-color) 40%,
+    var(--home-secondary-color) 40%,
+    var(--home-secondary-color) 45%,
+    var(--home-primary-color) 45%,
+    var(--home-primary-color) 50%,
+    var(--home-secondary-color) 50%,
+    var(--home-secondary-color) 55%,
+    var(--home-primary-color) 55%,
+    var(--home-primary-color) 100%
+  );
+}
+
+.gamePageCardRight {
+  align-items: center;
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
   background: linear-gradient(
     115deg,
-    var(--home-primary-color) 0%,
-    var(--home-primary-color) 15%,
-    var(--home-secondary-color) 15%,
-    var(--home-secondary-color) 17%,
-    var(--home-jersey-color) 17%,
-    var(--home-jersey-color) 19%,
-    var(--home-secondary-color) 19%,
-    var(--home-secondary-color) 21%,
-
-    #101010 21%,
-    #101010 79%,
-
-    var(--away-secondary-color) 79%,
-    var(--away-secondary-color) 81%,
-    var(--away-jersey-color) 81%,
-    var(--away-jersey-color) 83%,
-    var(--away-secondary-color) 83%,
-    var(--away-secondary-color) 85%,
-    var(--away-primary-color) 85%,
-    var(--away-primary-color) 100%
+    var(--away-primary-color) 0%,
+    var(--away-primary-color) 45%,
+    var(--away-secondary-color) 45%,
+    var(--away-secondary-color) 50%,
+    var(--away-jersey-color) 50%,
+    var(--away-jersey-color) 55%,
+    var(--away-secondary-color) 55%,
+    var(--away-secondary-color) 60%,
+    var(--away-jersey-color) 60%,
+    var(--away-jersey-color) 100%
   );
 }
 
@@ -236,38 +250,68 @@
 }
 
 .goalieCompHeader {
-  padding: 10px;
-  margin: 0;
-  font-size: 1.5em;
-  font-weight: bold;
+  height: 3em;
   color: white;
-  border-bottom: white 3px solid;
+  font-size: 1.5em;
   display: flex;
   justify-content: space-between;
   width: 100%;
+}
+
+.goalieCompHeader p {
+  display: flex;
+  justify-content: center;
+  align-items: center; /* Add this line */
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: linear-gradient(
+    90deg,
+    var(--home-primary-color) 0%,
+    var(--away-primary-color) 100%
+  );
+}
+
+.goalieCompHeaderRight,
+.goalieCompHeaderLeft {
+  width: 100%; /* Split the width */
+  height: 100%;
+  display: flex;
+}
+
+.goalieCompHeaderRight {
   align-items: center;
+  justify-content: flex-end;
   background: linear-gradient(
     115deg,
-    var(--home-primary-color) 0%,
-    var(--home-primary-color) 27%,
-    var(--home-secondary-color) 27%,
-    var(--home-secondary-color) 28%,
-    var(--home-jersey-color) 28%,
-    var(--home-jersey-color) 29%,
-    var(--home-secondary-color) 29%,
-    var(--home-secondary-color) 30%,
+    var(--away-primary-color) 0%,
+    var(--away-primary-color) 35%,
+    var(--away-secondary-color) 35%,
+    var(--away-secondary-color) 40%,
+    var(--away-jersey-color) 40%,
+    var(--away-jersey-color) 45%,
+    var(--away-secondary-color) 45%,
+    var(--away-secondary-color) 50%,
+    var(--away-jersey-color) 50%,
+    var(--away-jersey-color) 100%
+  );
+}
 
-    #101010 30%,
-    #101010 70%,
-
-    var(--away-secondary-color) 70%,
-    var(--away-secondary-color) 71%,
-    var(--away-jersey-color) 71%,
-    var(--away-jersey-color) 72%,
-    var(--away-secondary-color) 72%,
-    var(--away-secondary-color) 73%,
-    var(--away-primary-color) 73%,
-    var(--away-primary-color) 100%
+.goalieCompHeaderLeft {
+  align-items: center;
+  justify-content: flex-start;
+  background: linear-gradient(
+    65deg,
+    var(--home-jersey-color) 0%,
+    var(--home-jersey-color) 50%,
+    var(--home-secondary-color) 50%,
+    var(--home-secondary-color) 55%,
+    var(--home-primary-color) 55%,
+    var(--home-primary-color) 60%,
+    var(--home-secondary-color) 60%,
+    var(--home-secondary-color) 65%,
+    var(--home-primary-color) 65%,
+    var(--home-primary-color) 100%
   );
 }
 
@@ -282,6 +326,7 @@
   padding: 10px;
   display: flex;
   width: 100%; /* Slightly less width for padding */
+  border-top: 4px solid white;
 }
 
 .goalieStatDetails {
@@ -331,9 +376,7 @@
 .teamLogoHomePC {
   margin-left: 10%;
   height: 50px; /* Adjusted height */
-  filter: drop-shadow(
-    0 0 10px var(--home-secondary-color)
-  ); /* Adjusted shadow */
+  filter: drop-shadow(0 0 10px var(--home-primary-color)); /* Adjusted shadow */
 }
 
 .verticalText {
@@ -379,7 +422,7 @@
 .homePlayer .value {
   flex-grow: 1; /* Allow the value to take up available space */
   text-align: left; /* Align the text to the right */
-  color: var(--home-accent-color);
+  color: var(--home-secondary-color);
 }
 
 .homePlayer .playerStats {
@@ -388,7 +431,7 @@
   flex-direction: column;
   align-items: flex-start; /* Align text to the right */
   margin-right: 10px; /* Space between playerStats and headshot */
-  color: var(--home-accent-color);
+  color: white;
 }
 
 .homePlayer .playerHeadshot,
@@ -400,7 +443,7 @@
 
 .homePlayer .playerHeadshot {
   left: 10px; /* Spacing from the left edge */
-  background-color: var(--home-accent-color);
+  background-color: var(--home-primary-color);
   border: 2px solid var(--home-jersey-color);
 }
 
@@ -418,12 +461,12 @@
   align-items: flex-end; /* Align text left */
   margin-left: 10px; /* Space between playerStats and headshot */
   order: 1; /* Ensure stats are next to headshot */
-  color: var(--away-secondary-color);
+  color: white;
 }
 
 .awayPlayer .playerHeadshot {
   right: 10px; /* Spacing from the right edge */
-  background-color: var(--away-accent-color);
+  background-color: var(--away-primary-color);
   border: 2px solid var(--away-jersey-color);
 }
 
@@ -525,7 +568,7 @@ strong {
   width: 9em;
   left: -7%;
   position: relative;
-  filter: drop-shadow(0 0 3px var(--home-secondary-color));
+  filter: drop-shadow(0 0 3px var(--home-primary-color));
 }
 
 .teamLogoAway {
@@ -541,7 +584,19 @@ strong {
   font-size: 1.5em;
   font-weight: bold;
   color: #fff;
-  filter: drop-shadow(0 0 5px #000);
+  width: 50%;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  height: 5em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(
+    90deg,
+    var(--home-primary-color) 0%,
+    var(--away-primary-color) 100%
+  );
 }
 
 .gamePageVsTable {
@@ -621,7 +676,7 @@ strong {
 
 .teamLogoHomeStatTable {
   height: 100%;
-  filter: drop-shadow(0 0 3px var(--home-secondary-color));
+  filter: drop-shadow(0 0 3px var(--home-primary-color));
 }
 
 .teamLogoAwayStatTable {
@@ -630,33 +685,51 @@ strong {
 }
 
 .statTableHeader {
-  padding: 10px;
   display: flex;
   justify-content: space-between;
   border-bottom: 4px solid #ddd;
   color: white;
+  width: 100%;
+  height: 3em;
+}
+
+.statTableRight {
+  justify-content: flex-end;
+  align-items: center;
+  display: flex;
+  width: 100%;
   background: linear-gradient(
     115deg,
-    var(--home-primary-color) 0%,
-    var(--home-primary-color) 27%,
-    var(--home-secondary-color) 27%,
-    var(--home-secondary-color) 28%,
-    var(--home-jersey-color) 28%,
-    var(--home-jersey-color) 29%,
-    var(--home-secondary-color) 29%,
-    var(--home-secondary-color) 30%,
+    var(--away-primary-color) 0%,
+    var(--away-primary-color) 35%,
+    var(--away-secondary-color) 35%,
+    var(--away-secondary-color) 40%,
+    var(--away-jersey-color) 40%,
+    var(--away-jersey-color) 45%,
+    var(--away-secondary-color) 45%,
+    var(--away-secondary-color) 50%,
+    var(--away-jersey-color) 50%,
+    var(--away-jersey-color) 100%
+  );
+}
 
-    #101010 30%,
-    #101010 70%,
-
-    var(--away-secondary-color) 70%,
-    var(--away-secondary-color) 71%,
-    var(--away-jersey-color) 71%,
-    var(--away-jersey-color) 72%,
-    var(--away-secondary-color) 72%,
-    var(--away-secondary-color) 73%,
-    var(--away-primary-color) 73%,
-    var(--away-primary-color) 100%
+.statTableLeft {
+  justify-content: flex-start;
+  align-items: center;
+  display: flex;
+  width: 100%;
+  background: linear-gradient(
+    65deg,
+    var(--home-jersey-color) 0%,
+    var(--home-jersey-color) 50%,
+    var(--home-secondary-color) 50%,
+    var(--home-secondary-color) 55%,
+    var(--home-primary-color) 55%,
+    var(--home-primary-color) 60%,
+    var(--home-secondary-color) 60%,
+    var(--home-secondary-color) 65%,
+    var(--home-primary-color) 65%,
+    var(--home-primary-color) 100%
   );
 }
 
@@ -669,6 +742,14 @@ strong {
   justify-content: center;
   align-items: center;
   width: 100%;
+  background: linear-gradient(
+    115deg,
+    var(--home-primary-color) 0%,
+    var(--home-primary-color) 15%,
+
+    var(--away-primary-color) 85%,
+    var(--away-primary-color) 100%
+  );
 }
 
 .statValue.homeValue {
@@ -725,7 +806,7 @@ strong {
   width: 80px;
   border-radius: 50%; /* Circular headshots */
   margin-right: 15px; /* Space between headshot and stats */
-  background-color: var(--home-accent-color);
+  background-color: var(--home-primary-color);
   border: 2px solid var(--home-jersey-color);
 }
 
@@ -743,7 +824,6 @@ strong {
     var(--home-primary-color) 25%,
     var(--home-primary-color) 100%
   );
-  border-bottom: #ccc 2px solid; /* Adjusted border color */
 }
 
 .awayGoalies .goalieStatRow img {
@@ -751,7 +831,7 @@ strong {
   width: 80px;
   border-radius: 50%; /* Circular headshots */
   margin-left: 15px; /* Space between headshot and stats */
-  background-color: var(--away-accent-color);
+  background-color: var(--away-primary-color);
   border: 2px solid var(--away-jersey-color);
 }
 
@@ -769,7 +849,6 @@ strong {
     var(--away-jersey-color) 90%,
     var(--away-jersey-color) 100%
   );
-  border-bottom: #ccc 2px solid; /* Adjusted border color */
 }
 
 .homeGoalieStatHighlight {
@@ -811,13 +890,15 @@ strong {
 }
 
 .homeGoalies .goalieName {
-  color: var(--home-secondary-color); /* Highlight color */
+  color: white; /* Highlight color */
   text-align: left;
+  width: 25%;
 }
 
 .awayGoalies .goalieName {
-  color: var(--away-secondary-color); /* Highlight color */
+  color: white; /* Highlight color */
   text-align: right;
+  width: 25%;
 }
 
 .poissonChartContainer {
