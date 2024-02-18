@@ -368,13 +368,19 @@ export default function Page() {
                     alt={`${gameDetails.homeTeam.name.default} logo`}
                   />
                   <span className="team-nameGPvs home-team">
-                    {gameDetails.homeTeam.name.default}
+                    {gameDetails.homeTeam.name.default} <br />
+                    {homeTeamRecord ? (
+                      <span className="team-record">{homeTeamRecord}</span>
+                    ) : null}
                   </span>
                 </div>
                 <span className="GPvs">VS</span>
                 <div className="gamePageCardRight">
                   <span className="team-nameGPvs away-team">
-                    {gameDetails.awayTeam.name.default}
+                    {gameDetails.awayTeam.name.default} <br />
+                    {awayTeamRecord ? (
+                      <span className="team-record">{awayTeamRecord}</span>
+                    ) : null}
                   </span>
                   <img
                     className="teamLogoAway"
