@@ -26,14 +26,13 @@ const PoissonDistributionChart = ({ chartData }) => {
   const [otPrediction, setOtPrediction] = useState(""); // Added for overtime prediction
 
   useEffect(() => {
-    if (
-      !chartData ||
-      chartData.length < 2 ||
-      !chartData.every((item) => item && item.team)
-    ) {
-      console.error("Invalid or incomplete chart data.");
-      return;
+    if (!chartData || chartData.length < 2) {
+      console.error(
+        "chartData is not loaded or does not have enough elements."
+      );
+      return; // Exit the effect hook early
     }
+
     const fetchLeagueData = async () => {
       const today = new Date().toISOString().slice(0, 10); // Gets today's date in "YYYY-MM-DD" format
       const standingsUrl = `https://api-web.nhle.com/v1/standings/${today}`;
@@ -161,8 +160,9 @@ const PoissonDistributionChart = ({ chartData }) => {
       if (chartData.length < 2) {
         return { homeExpectedGoals: 0, awayExpectedGoals: 0 };
       }
-      const homeExpectedGoals = chartData[0].goalsForPerGame || 0;
-      const awayExpectedGoals = chartData[1].goalsForPerGame || 0;
+      const homeExpectedGoals = chartData?.[0]?.goalsForPerGame ?? 0;
+      const awayExpectedGoals = chartData?.[1]?.goalsForPerGame ?? 0;
+
       return { homeExpectedGoals, awayExpectedGoals };
     };
 
