@@ -26,7 +26,7 @@ const Home: NextPage = ({
   const [injuries, setInjuries] = useState(initialInjuries);
   const [standings, setStandings] = useState(initialStandings);
   const [injuryPage, setInjuryPage] = useState(0);
-  const injuryRowsPerPage = 25;
+  const injuryRowsPerPage = 32;
 
   const changeDate = async (days) => {
     const newDate = moment(currentDate).add(days, "days").format("YYYY-MM-DD");
@@ -107,7 +107,7 @@ const Home: NextPage = ({
       OVER: "Final",
       FINAL: "Final",
       OFF: "Final",
-      LIVE: "In Progress",
+      LIVE: "LIVE",
       CRIT: "Critical",
     };
 
@@ -217,7 +217,7 @@ const Home: NextPage = ({
                       }}
                     >
                       <div className={`${styles.column} ${styles.homeScore}`}>
-                        {awayTeam.score}
+                        {homeTeam.score}
                       </div>
                       <div className={`${styles.column} ${styles.gameTime}`}>
                         <span className={styles.gameState}>
@@ -231,7 +231,7 @@ const Home: NextPage = ({
                       </div>
 
                       <div className={`${styles.column} ${styles.awayScore}`}>
-                        {homeTeam.score}
+                        {awayTeam.score}
                       </div>
                     </div>
                   </a>

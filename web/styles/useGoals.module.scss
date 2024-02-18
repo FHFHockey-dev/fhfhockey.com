@@ -1,0 +1,46 @@
+// useGoals.module.scss
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-1\web\styles\useGoals.module.scss
+
+.goalIndicator {
+    position: relative;
+    display: inline-block;
+    padding: 3px;
+    border-left: 2px solid var(--borderColor);
+    border-right: 2px solid var(--borderColor);
+    border-top: 2px solid var(--borderColor);
+    border-radius: 2px;
+    font-weight: 900;
+    text-align: center;
+    background-color: var(--backgroundColor);
+    color: var(--textColor);
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    user-select: none;
+    font-size: 8px;
+    
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: -10px; // Adjust to ensure the elongated shape
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-left: 10px solid transparent;
+      border-right: 10px solid transparent;
+      border-top: 10px solid var(--backgroundColor);
+      transform: translateX(-50%);
+    }
+  }
+  
+  .scoreContainer {
+    display: flex;
+    justify-content: center; // Center content horizontally
+    align-items: center; // Center content vertically
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%); // Center the container itself
+    bottom: 40px; // Adjust as needed
+    white-space: nowrap; // Prevent text from wrapping
+    writing-mode: horizontal-tb; // Ensure horizontal text orientation
+    text-orientation: mixed; // Default but explicitly set for clarity
+  }

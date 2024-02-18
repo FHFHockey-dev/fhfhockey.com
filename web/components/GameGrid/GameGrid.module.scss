@@ -12,7 +12,7 @@
 
   .spinner {
     position: absolute;
-    right: -50%;
+    right: -80%;
     bottom: 2px;
   }
 }
@@ -64,7 +64,7 @@
   border-spacing: 0px;
   font-size: 14px;
   text-align: left;
-  width: 100%;
+  width: 80%;
 }
 
 .scheduleGrid th {
@@ -103,7 +103,7 @@
 .scheduleGrid th:nth-child(n + 2),
 .scheduleGrid td:nth-child(n + 2) {
   padding: 3px 5px;
-  border: .5px solid white;
+  border: 0.5px solid white;
   min-width: 60px;
   max-width: 100px;
   max-height: 40px;
@@ -114,8 +114,8 @@
 .scheduleGrid tr td:nth-child(9),
 .scheduleGrid tr td:nth-child(10),
 .scheduleGrid tr td:nth-child(11) {
-    background-color: #101010; /* Set the background color */
-    max-width: 50px;
+  background-color: #101010; /* Set the background color */
+  max-width: 50px;
 }
 
 .scheduleGrid tr th:nth-child(9),
@@ -200,43 +200,104 @@
 
 /* Green to Yellow (Ranks 32 to 17) 
    Trying to Rank the weekScore 1-32 and color code */
-.rank-color-1 { background-color: rgba(0, 255, 0, 0.45); } /* Green */
-.rank-color-2  { background-color: rgba(16, 255, 0, 0.45); }
-.rank-color-3 { background-color: rgba(32, 255, 0, 0.45); }
-.rank-color-4 { background-color: rgba(48, 255, 0, 0.45); }
-.rank-color-5 { background-color: rgba(64, 255, 0, 0.45); }
-.rank-color-6 { background-color: rgba(80, 255, 0, 0.45); }
-.rank-color-7 { background-color: rgba(96, 255, 0, 0.45); }
-.rank-color-8 { background-color: rgba(112, 255, 0, 0.45); }
-.rank-color-9 { background-color: rgba(128, 255, 0, 0.45); }
-.rank-color-10 { background-color: rgba(144, 255, 0, 0.45); }
-.rank-color-11 { background-color: rgba(160, 255, 0, 0.45); }
-.rank-color-12 { background-color: rgba(176, 255, 0, 0.45); }
-.rank-color-13 { background-color: rgba(192, 255, 0, 0.45); }
-.rank-color-14 { background-color: rgba(208, 255, 0, 0.45); }
-.rank-color-15 { background-color: rgba(224, 255, 0, 0.45); }
-.rank-color-16 { background-color: rgba(240, 255, 0, 0.45); } /* Yellow */
-
+.rank-color-1 {
+  background-color: rgba(0, 255, 0, 0.45);
+} /* Green */
+.rank-color-2 {
+  background-color: rgba(16, 255, 0, 0.45);
+}
+.rank-color-3 {
+  background-color: rgba(32, 255, 0, 0.45);
+}
+.rank-color-4 {
+  background-color: rgba(48, 255, 0, 0.45);
+}
+.rank-color-5 {
+  background-color: rgba(64, 255, 0, 0.45);
+}
+.rank-color-6 {
+  background-color: rgba(80, 255, 0, 0.45);
+}
+.rank-color-7 {
+  background-color: rgba(96, 255, 0, 0.45);
+}
+.rank-color-8 {
+  background-color: rgba(112, 255, 0, 0.45);
+}
+.rank-color-9 {
+  background-color: rgba(128, 255, 0, 0.45);
+}
+.rank-color-10 {
+  background-color: rgba(144, 255, 0, 0.45);
+}
+.rank-color-11 {
+  background-color: rgba(160, 255, 0, 0.45);
+}
+.rank-color-12 {
+  background-color: rgba(176, 255, 0, 0.45);
+}
+.rank-color-13 {
+  background-color: rgba(192, 255, 0, 0.45);
+}
+.rank-color-14 {
+  background-color: rgba(208, 255, 0, 0.45);
+}
+.rank-color-15 {
+  background-color: rgba(224, 255, 0, 0.45);
+}
+.rank-color-16 {
+  background-color: rgba(240, 255, 0, 0.45);
+} /* Yellow */
 
 /* Yellow to Red (Ranks 17 to 32) */
-.rank-color-17 { background-color: rgba(255, 240, 0, 0.45); }
-.rank-color-18 { background-color: rgba(255, 224, 0, 0.45); }
-.rank-color-19 { background-color: rgba(255, 208, 0, 0.45); }
-.rank-color-20 { background-color: rgba(255, 192, 0, 0.45); }
-.rank-color-21 { background-color: rgba(255, 176, 0, 0.45); }
-.rank-color-22 { background-color: rgba(255, 160, 0, 0.45); }
-.rank-color-23 { background-color: rgba(255, 144, 0, 0.45); }
-.rank-color-24 { background-color: rgba(255, 128, 0, 0.45); }
-.rank-color-25 { background-color: rgba(255, 112, 0, 0.45); }
-.rank-color-26 { background-color: rgba(255, 96, 0, 0.45); }
-.rank-color-27 { background-color: rgba(255, 80, 0, 0.45); }
-.rank-color-28 { background-color: rgba(255, 64, 0, 0.45); }
-.rank-color-29 { background-color: rgba(255, 48, 0, 0.45); }
-.rank-color-30 { background-color: rgba(255, 32, 0, 0.45); }
-.rank-color-31 { background-color: rgba(255, 16, 0, 0.45); }
-.rank-color-32 { background-color: rgba(255, 0, 0, 0.45); } /* Red */
-
-
+.rank-color-17 {
+  background-color: rgba(255, 240, 0, 0.45);
+}
+.rank-color-18 {
+  background-color: rgba(255, 224, 0, 0.45);
+}
+.rank-color-19 {
+  background-color: rgba(255, 208, 0, 0.45);
+}
+.rank-color-20 {
+  background-color: rgba(255, 192, 0, 0.45);
+}
+.rank-color-21 {
+  background-color: rgba(255, 176, 0, 0.45);
+}
+.rank-color-22 {
+  background-color: rgba(255, 160, 0, 0.45);
+}
+.rank-color-23 {
+  background-color: rgba(255, 144, 0, 0.45);
+}
+.rank-color-24 {
+  background-color: rgba(255, 128, 0, 0.45);
+}
+.rank-color-25 {
+  background-color: rgba(255, 112, 0, 0.45);
+}
+.rank-color-26 {
+  background-color: rgba(255, 96, 0, 0.45);
+}
+.rank-color-27 {
+  background-color: rgba(255, 80, 0, 0.45);
+}
+.rank-color-28 {
+  background-color: rgba(255, 64, 0, 0.45);
+}
+.rank-color-29 {
+  background-color: rgba(255, 48, 0, 0.45);
+}
+.rank-color-30 {
+  background-color: rgba(255, 32, 0, 0.45);
+}
+.rank-color-31 {
+  background-color: rgba(255, 16, 0, 0.45);
+}
+.rank-color-32 {
+  background-color: rgba(255, 0, 0, 0.45);
+} /* Red */
 
 @media only screen and (min-width: $screen-large) {
   .teamRow {
@@ -268,7 +329,8 @@
   }
 }
 
-@media (max-width: 480px) { /* portrait */
+@media (max-width: 480px) {
+  /* portrait */
 
   .dateButtonPrev {
     font-family: roboto condensed, sans-serif;
@@ -296,7 +358,7 @@
     border-radius: 6px;
     filter: brightness(120%);
   }
-  
+
   .dateButtonNext {
     font-family: roboto condensed, sans-serif;
     position: relative;
@@ -325,10 +387,10 @@
   }
 
   .scheduleGrid {
-      width: 100%;
-      border: 2px solid white;
-      border-radius: 0;
-      overflow-x: scroll;
+    width: 100%;
+    border: 2px solid white;
+    border-radius: 0;
+    overflow-x: scroll;
   }
 
   .scheduleGrid tr {
@@ -341,31 +403,30 @@
   }
 
   .totalGamesPerDayRow {
-    border-bottom: .5px solid white;
-  }
-  
-  .scheduleGrid th {
-      font-family: roboto condensed, sans-serif;
-      position: relative;
-  }
-  
-  .scheduleGrid tr th:first-child,
-  .scheduleGrid tr td:first-child {
-      max-width: 50px !important;
-      min-width: 45px;
-      font-size: 10px;
-      border-right: 3px solid #07aae2;
+    border-bottom: 0.5px solid white;
   }
 
-  
+  .scheduleGrid th {
+    font-family: roboto condensed, sans-serif;
+    position: relative;
+  }
+
+  .scheduleGrid tr th:first-child,
+  .scheduleGrid tr td:first-child {
+    max-width: 50px !important;
+    min-width: 45px;
+    font-size: 10px;
+    border-right: 3px solid #07aae2;
+  }
+
   .scheduleGrid tr th:nth-child(n + 2),
   .scheduleGrid td:nth-child(n + 2) {
-      font-family: roboto condensed, sans-serif;
-      padding: 2px 2px;
-      min-width: 30px;
-      max-width: 50px;
-      text-align: center;
-      font-size: 8px;
+    font-family: roboto condensed, sans-serif;
+    padding: 2px 2px;
+    min-width: 30px;
+    max-width: 50px;
+    text-align: center;
+    font-size: 8px;
   }
 
   .scheduleGrid tr th:nth-child(9),
@@ -385,7 +446,7 @@
   .scoreAndHomeAway {
     display: none;
   }
-  
+
   .homeAway {
     display: none;
   }
@@ -401,34 +462,31 @@
   }
 
   .mobileFontStyle {
-    font-family: 'Roboto Condensed', sans-serif !important;
+    font-family: "Roboto Condensed", sans-serif !important;
     font-size: 8px !important;
   }
-  
+
   .score {
     display: none;
   }
-  
+
   .totalGamesPerDayCell {
-      background-color: #000;
-      color: white;
+    background-color: #000;
+    color: white;
   }
-  
+
   .totalGamesPerDayRow > .title::before {
-      content: "GP/Day";
+    content: "GP/Day";
   }
-  
+
   .teamRow {
-      .teamName {
+    .teamName {
       display: none;
-      }
+    }
   }
 }
 
-@media screen and (orientation:landscape) /* LANDSCAPE */
-and (min-device-width: 479px) 
-and (max-device-width: 932px) {
-
+@media screen and (orientation: landscape) /* LANDSCAPE */ and (min-device-width: 479px) and (max-device-width: 932px) {
   .dateButtonPrev {
     font-family: roboto condensed, sans-serif;
     position: relative;
@@ -455,7 +513,7 @@ and (max-device-width: 932px) {
     border-radius: 6px;
     filter: brightness(120%);
   }
-  
+
   .dateButtonNext {
     font-family: roboto condensed, sans-serif;
     position: relative;
@@ -484,10 +542,10 @@ and (max-device-width: 932px) {
   }
 
   .scheduleGrid {
-      width: 100% !important;
-      border: 2px solid white;
-      border-radius: 0;
-      overflow-x: scroll;
+    width: 100% !important;
+    border: 2px solid white;
+    border-radius: 0;
+    overflow-x: scroll;
   }
 
   .scheduleGrid tr {
@@ -500,32 +558,32 @@ and (max-device-width: 932px) {
   }
 
   .totalGamesPerDayRow {
-    border-bottom: .5px solid white;
+    border-bottom: 0.5px solid white;
   }
-  
+
   .scheduleGrid th {
-      font-family: roboto condensed, sans-serif;
-      position: relative;
+    font-family: roboto condensed, sans-serif;
+    position: relative;
   }
-  
+
   .scheduleGrid tr th:first-child,
   .scheduleGrid tr td:first-child {
-      max-width: 90px;
-      min-width: 40px;
-      font-size: 14px;
-      margin: auto;
-      border-right: 3px solid #07aae2;
+    max-width: 90px;
+    min-width: 40px;
+    font-size: 14px;
+    margin: auto;
+    border-right: 3px solid #07aae2;
   }
-  
+
   .scheduleGrid tr th:nth-child(n + 2),
   .scheduleGrid td:nth-child(n + 2) {
-      font-family: roboto condensed, sans-serif;
-      padding: 2px 2px;
-      min-width: 30px;
-      max-width: 100px;
-      text-align: center;
-      font-size: 14px;
-      font-weight: 100;
+    font-family: roboto condensed, sans-serif;
+    padding: 2px 2px;
+    min-width: 30px;
+    max-width: 100px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 100;
   }
 
   .scheduleGrid tr th:nth-child(9),
@@ -541,7 +599,7 @@ and (max-device-width: 932px) {
     margin: auto;
     padding: 1px !important;
   }
-  
+
   .homeAway {
     display: block;
     font-size: 10px;
@@ -558,28 +616,28 @@ and (max-device-width: 932px) {
   }
 
   .mobileFontStyle {
-    font-family: 'Roboto Condensed', sans-serif !important;
+    font-family: "Roboto Condensed", sans-serif !important;
     font-size: 12px !important;
   }
-  
+
   .score {
     display: block;
     font-size: 10px;
   }
-  
+
   .totalGamesPerDayCell {
-      background-color: #000;
-      color: white;
+    background-color: #000;
+    color: white;
   }
-  
+
   .totalGamesPerDayRow > .title::before {
-      content: "GP/Day";
+    content: "GP/Day";
   }
-  
+
   .teamRow {
-      .teamName {
+    .teamName {
       display: block;
-      }
+    }
   }
 }
 
@@ -610,7 +668,7 @@ and (max-device-width: 932px) {
     border-radius: 6px;
     filter: brightness(120%);
   }
-  
+
   .dateButtonNext {
     font-family: roboto condensed, sans-serif;
     position: relative;
@@ -639,10 +697,10 @@ and (max-device-width: 932px) {
   }
 
   .scheduleGrid {
-      width: 100%;
-      border: 2px solid white;
-      border-radius: 0;
-      overflow-x: scroll;
+    width: 100%;
+    border: 2px solid white;
+    border-radius: 0;
+    overflow-x: scroll;
   }
 
   .scheduleGrid tr {
@@ -655,38 +713,37 @@ and (max-device-width: 932px) {
   }
 
   .totalGamesPerDayRow {
-    border-bottom: .5px solid white;
-  }
-  
-  .scheduleGrid th {
-      font-family: roboto condensed, sans-serif;
-      position: relative;
-  }
-  
-  .scheduleGrid tr th:first-child,
-  .scheduleGrid tr td:first-child {
-      text-align: center;
-      max-width: 40px;
-      min-width: 30px;
-      font-size: 10px;
-      border-right: 5px solid #07aae2;
-      padding-left: 4px !important;
+    border-bottom: 0.5px solid white;
   }
 
-  
+  .scheduleGrid th {
+    font-family: roboto condensed, sans-serif;
+    position: relative;
+  }
+
+  .scheduleGrid tr th:first-child,
+  .scheduleGrid tr td:first-child {
+    text-align: center;
+    max-width: 40px;
+    min-width: 30px;
+    font-size: 10px;
+    border-right: 5px solid #07aae2;
+    padding-left: 4px !important;
+  }
+
   .scheduleGrid tr th:nth-child(n + 2),
   .scheduleGrid td:nth-child(n + 2) {
-      font-family: roboto condensed, sans-serif;
-      padding: 2px 2px;
-      min-width: 25px;
-      max-width: 40px;
-      text-align: center;
-      font-size: 8px;
+    font-family: roboto condensed, sans-serif;
+    padding: 2px 2px;
+    min-width: 25px;
+    max-width: 40px;
+    text-align: center;
+    font-size: 8px;
   }
 
   .scheduleGrid tr th:nth-child(9),
   .scheduleGrid tr td:nth-child(9) {
-      border-left: 5px solid #07aae2;
+    border-left: 5px solid #07aae2;
   }
 
   .scheduleGrid tr th:nth-child(9),
@@ -700,7 +757,7 @@ and (max-device-width: 932px) {
   .scoreAndHomeAway {
     display: none;
   }
-  
+
   .homeAway {
     display: none;
   }
@@ -718,26 +775,26 @@ and (max-device-width: 932px) {
   }
 
   .mobileFontStyle {
-    font-family: 'Roboto Condensed', sans-serif !important;
+    font-family: "Roboto Condensed", sans-serif !important;
     font-size: 7px !important;
   }
-  
+
   .score {
     display: none;
   }
-  
+
   .totalGamesPerDayCell {
-      background-color: #000;
-      color: white;
+    background-color: #000;
+    color: white;
   }
-  
+
   .totalGamesPerDayRow > .title::before {
-      content: "GP/Day";
+    content: "GP/Day";
   }
-  
+
   .teamRow {
-      .teamName {
+    .teamName {
       display: none;
-      }
+    }
   }
 }

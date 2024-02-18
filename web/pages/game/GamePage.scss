@@ -1,107 +1,615 @@
+/* Base styles */
+.game-page,
+.statsAndPlayerCompContainer,
+.gamePageVsTableContainer,
+.playerCompContainer,
+.playerCompHeader,
+.playerCompDetails,
+.goalieCompContainer,
+.goalieCompHeader,
+.goalieStatsContainer,
+.goalieStatRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+.game-page,
+.playerCompContainer,
+.goalieCompContainer {
+  align-items: center;
+  flex-direction: column;
+  width: 100%;
+}
+
 .game-page {
-  padding-top: 3em;
   text-align: center;
   margin: auto;
-  width: 85%;
+  font-family: roboto condensed, sans-serif;
+  text-align: center;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* Game details styles */
+
+.gameDetailsContainer {
+  justify-content: center;
+  border-bottom: 6px double white;
+  align-items: center;
+  display: flex;
+  width: 100%;
 }
 
 .gamePageCard {
+  text-align: center;
+  overflow: hidden;
+  max-height: 5em;
   width: 100%;
+  align-items: center;
+  display: flex;
+  justify-content: space-around;
+}
+
+.gamePageCardLeft {
+  align-items: center;
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  background: linear-gradient(
+    65deg,
+    var(--home-jersey-color) 0%,
+    var(--home-jersey-color) 40%,
+    var(--home-secondary-color) 40%,
+    var(--home-secondary-color) 45%,
+    var(--home-primary-color) 45%,
+    var(--home-primary-color) 50%,
+    var(--home-secondary-color) 50%,
+    var(--home-secondary-color) 55%,
+    var(--home-primary-color) 55%,
+    var(--home-primary-color) 100%
+  );
+}
+
+.gamePageCardRight {
+  align-items: center;
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  background: linear-gradient(
+    115deg,
+    var(--away-primary-color) 0%,
+    var(--away-primary-color) 45%,
+    var(--away-secondary-color) 45%,
+    var(--away-secondary-color) 50%,
+    var(--away-jersey-color) 50%,
+    var(--away-jersey-color) 55%,
+    var(--away-secondary-color) 55%,
+    var(--away-secondary-color) 60%,
+    var(--away-jersey-color) 60%,
+    var(--away-jersey-color) 100%
+  );
+}
+
+/* Team logos and names */
+
+.team-nameGPvs {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 0;
+}
+
+/* Stats container and rows */
+.statsAndPlayerCompContainer {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  width: 85%;
+}
+
+.gamePageVsTableContainer {
+  flex-basis: 40%;
+  margin-right: 5%; /* Gap between tables */
+}
+
+.statRow,
+.gamePageVsTable,
+.goalieStatRow {
+  width: 100%;
+}
+
+.statRow {
+  flex-direction: column;
+  display: flex;
+  align-items: center;
+}
+
+.statRowHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-  border-left: 2px solid #ddd;
-  border-right: 2px solid #ddd;
-  border-top: 2px solid #ddd;
-  border-radius: 5px 5px 0 0;
-  background: linear-gradient(
-    115deg,
-    var(--home-secondary-color) 49%,
-    #fff 49%,
-    #fff 51%,
-    var(--away-primary-color) 51%
-  );
-  text-align: center;
-  margin-top: 10px;
-  overflow: hidden;
-  max-height: 5em;
+  width: 100%;
+  margin-top: 8px;
 }
 
-.team-name {
+.statBarContainer {
+  width: 100%; /* Full width to match the statHeader */
+  margin-top: 10px; /* Space between header content and bar */
+}
+
+/* Comparison bar */
+.comparisonBar {
+  height: 10px;
+}
+
+/* Player comparison styles */
+.playerCompContainer {
+  border: 3px solid white;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%; /* Adjusted width for layout */
+  background-color: #fff;
+}
+
+.playerCompHeader {
+  height: 3em;
+  color: white;
   font-size: 1.5em;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.playerCompHeaderLeft,
+.playerCompHeaderRight {
+  width: 100%; /* Split the width */
+  height: 100%;
+  display: flex;
+}
+
+.playerCompHeaderLeft {
+  align-items: center;
+  justify-content: flex-start;
+  background: linear-gradient(
+    65deg,
+    var(--home-jersey-color) 0%,
+    var(--home-jersey-color) 50%,
+    var(--home-secondary-color) 50%,
+    var(--home-secondary-color) 55%,
+    var(--home-primary-color) 55%,
+    var(--home-primary-color) 60%,
+    var(--home-secondary-color) 60%,
+    var(--home-secondary-color) 65%,
+    var(--home-primary-color) 65%,
+    var(--home-primary-color) 100%
+  );
+}
+
+.playerCompHeaderRight {
+  align-items: center;
+  justify-content: flex-end;
+  background: linear-gradient(
+    115deg,
+    var(--away-primary-color) 0%,
+    var(--away-primary-color) 35%,
+    var(--away-secondary-color) 35%,
+    var(--away-secondary-color) 40%,
+    var(--away-jersey-color) 40%,
+    var(--away-jersey-color) 45%,
+    var(--away-secondary-color) 45%,
+    var(--away-secondary-color) 50%,
+    var(--away-jersey-color) 50%,
+    var(--away-jersey-color) 100%
+  );
+}
+
+.playerCompDetails {
+  height: 6.5em;
+  border-top: white 4px solid;
+  display: flex;
+  position: relative;
+  width: 100%;
+  justify-content: space-between; /* Space between home and away */
+}
+
+/* Player stats and details */
+.playerStats {
+  flex-direction: column;
+  display: flex;
+}
+
+.playerDetail {
+  align-items: center;
+  display: flex;
+}
+
+.playerHeadshot {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  margin: 0 10px;
+  filter: drop-shadow(0 0 5px #000);
+}
+
+.value {
+  font-weight: bold;
+  font-size: 2em;
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 5px #000);
+}
+
+/* Goalie comparison styles */
+.goalieCompHeader,
+.goalieStatsContainer,
+.goalieStatRow {
+  align-items: center;
+}
+
+.goalieCompHeader {
+  height: 3em;
+  color: white;
+  font-size: 1.5em;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.goalieCompHeader p {
+  display: flex;
+  justify-content: center;
+  align-items: center; /* Add this line */
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: linear-gradient(
+    90deg,
+    var(--home-primary-color) 0%,
+    var(--away-primary-color) 100%
+  );
+}
+
+.goalieCompHeaderRight,
+.goalieCompHeaderLeft {
+  width: 100%; /* Split the width */
+  height: 100%;
+  display: flex;
+}
+
+.goalieCompHeaderRight {
+  align-items: center;
+  justify-content: flex-end;
+  background: linear-gradient(
+    115deg,
+    var(--away-primary-color) 0%,
+    var(--away-primary-color) 35%,
+    var(--away-secondary-color) 35%,
+    var(--away-secondary-color) 40%,
+    var(--away-jersey-color) 40%,
+    var(--away-jersey-color) 45%,
+    var(--away-secondary-color) 45%,
+    var(--away-secondary-color) 50%,
+    var(--away-jersey-color) 50%,
+    var(--away-jersey-color) 100%
+  );
+}
+
+.goalieCompHeaderLeft {
+  align-items: center;
+  justify-content: flex-start;
+  background: linear-gradient(
+    65deg,
+    var(--home-jersey-color) 0%,
+    var(--home-jersey-color) 50%,
+    var(--home-secondary-color) 50%,
+    var(--home-secondary-color) 55%,
+    var(--home-primary-color) 55%,
+    var(--home-primary-color) 60%,
+    var(--home-secondary-color) 60%,
+    var(--home-secondary-color) 65%,
+    var(--home-primary-color) 65%,
+    var(--home-primary-color) 100%
+  );
+}
+
+.goalieStatsContainer {
+  display: flex;
+  justify-content: space-around; /* Space out home and away goalies */
+  width: 100%;
+}
+
+.goalieStatRow {
+  justify-content: flex-start;
+  padding: 10px;
+  display: flex;
+  width: 100%; /* Slightly less width for padding */
+  border-top: 4px solid white;
+}
+
+.goalieStatDetails {
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  display: flex;
+}
+
+/* Home and Away specific styles */
+.homeGoalies,
+.awayGoalies {
+  width: 50%;
+}
+
+.goalieName {
+  flex-direction: column;
+  justify-content: center;
+  height: 5em;
+  width: 30%;
+  display: flex;
+}
+
+.playerCompHeader p {
+  display: flex;
+  justify-content: center;
+  align-items: center; /* Add this line */
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: linear-gradient(
+    90deg,
+    var(--home-primary-color) 0%,
+    var(--away-primary-color) 100%
+  );
+}
+
+.teamLogoAwayPC {
+  margin-right: 10%;
+  height: 50px; /* Adjusted height */
+  width: 40px; /* Adjusted width */
+  filter: drop-shadow(
+    0 0 10px var(--away-secondary-color)
+  ); /* Adjusted shadow */
+}
+
+.teamLogoHomePC {
+  margin-left: 10%;
+  height: 50px; /* Adjusted height */
+  filter: drop-shadow(0 0 10px var(--home-primary-color)); /* Adjusted shadow */
+}
+
+.verticalText {
+  font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+  justify-content: center;
+  align-items: center;
+  background-color: transparent;
+  border: none;
+  color: black;
+  position: absolute;
+  top: 5px; /* Adjust as needed */
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.playerSide {
+  display: flex;
+  align-items: center;
+}
+
+.homeSide .playerStats {
+  text-align: right;
+  margin-right: 10px; /* Adjust spacing */
+}
+
+.awaySide .playerStats {
+  text-align: left;
+  margin-left: 10px; /* Adjust spacing */
+  align-items: flex-start; /* Align text left for away side */
+}
+
+.compColumns {
+  display: flex;
+  justify-content: space-between;
+}
+
+.homePlayer,
+.awayPlayer {
+  display: flex;
+  width: 50%; /* Each player detail takes up half the width */
+}
+
+.homePlayer .value {
+  flex-grow: 1; /* Allow the value to take up available space */
+  text-align: left; /* Align the text to the right */
+  color: var(--home-secondary-color);
+}
+
+.homePlayer .playerStats {
+  width: 60%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Align text to the right */
+  margin-right: 10px; /* Space between playerStats and headshot */
+  color: white;
+}
+
+.homePlayer .playerHeadshot,
+.awayPlayer .playerHeadshot {
+  position: absolute;
+  top: 50%; /* Center vertically */
+  transform: translateY(-50%); /* Ensure vertical centering */
+}
+
+.homePlayer .playerHeadshot {
+  left: 10px; /* Spacing from the left edge */
+  background-color: var(--home-primary-color);
+  border: 2px solid var(--home-jersey-color);
+}
+
+.awayPlayer .value {
+  flex-grow: 1; /* Allow the value to take up available space */
+  text-align: right; /* Align the text to the left */
+  order: 2; /* Move the value to the end */
+  color: var(--away-secondary-color);
+}
+
+.awayPlayer .playerStats {
+  width: 60%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* Align text left */
+  margin-left: 10px; /* Space between playerStats and headshot */
+  order: 1; /* Ensure stats are next to headshot */
+  color: white;
+}
+
+.awayPlayer .playerHeadshot {
+  right: 10px; /* Spacing from the right edge */
+  background-color: var(--away-primary-color);
+  border: 2px solid var(--away-jersey-color);
+}
+
+.lastName {
   font-weight: bold;
 }
 
+.value,
+strong {
+  display: block; /* Stack elements */
+}
+
+.homePlayer .value,
+.awayPlayer .value {
+  position: absolute;
+  top: 60%; /* Center vertically */
+  transform: translateY(-50%); /* Ensure vertical centering */
+}
+
+.playerDetail.homePlayer {
+  background: linear-gradient(
+    65deg,
+    var(--home-jersey-color) 0%,
+    var(--home-jersey-color) 10%,
+    var(--home-secondary-color) 10%,
+    var(--home-secondary-color) 15%,
+    var(--home-primary-color) 15%,
+    var(--home-primary-color) 20%,
+    var(--home-secondary-color) 20%,
+    var(--home-secondary-color) 25%,
+    var(--home-primary-color) 25%,
+    var(--home-primary-color) 100%
+  );
+  padding: 0 20px;
+  justify-content: flex-end; /* Home details aligned to start */
+  clip-path: polygon(
+    0 0,
+    /* top left */ 75% 0,
+    /* left of notch */ 85% 30%,
+    /* right of notch */ 100% 30%,
+    /* top right */ 100% 100%,
+    /* bottom right */ 0 100% /* bottom left */
+  );
+  border-right: #fff 2px solid; /* Adjusted border color */
+}
+
+.playerDetail.awayPlayer {
+  background: linear-gradient(
+    115deg,
+    var(--away-primary-color) 0%,
+    var(--away-primary-color) 75%,
+    var(--away-secondary-color) 75%,
+    var(--away-secondary-color) 80%,
+    var(--away-primary-color) 80%,
+    var(--away-primary-color) 85%,
+    var(--away-secondary-color) 85%,
+    var(--away-secondary-color) 90%,
+    var(--away-jersey-color) 90%,
+    var(--away-jersey-color) 100%
+  );
+  padding: 0 20px;
+  justify-content: flex-start; /* Away details aligned to end */
+  clip-path: polygon(
+    /* top left */ 0% 30%,
+    /* left of notch */ 15% 30%,
+    /* right of notch */ 25% 0%,
+    /* top right */ 100% 0%,
+    /* bottom right */ 100% 100%,
+    /* bottom left */ 0 100%
+  );
+  border-left: #fff 2px solid; /* Adjusted border color */
+}
+
+.team-record {
+  font-size: 0.8em; /* Smaller font for the record */
+}
+
 .home-team {
-  color: var(--home-primary-color);
-  filter: drop-shadow(0 0 5px var(--home-primary-color));
-  width: 12em;
+  font-family: montesserat, sans-serif;
+  text-transform: uppercase;
+  font-style: italic;
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-stroke-color: var(--home-secondary-color);
+  color: var(--home-jersey-color);
 }
 
 .away-team {
-  color: var(--away-secondary-color);
-  filter: drop-shadow(0 0 5px var(--away-primary-color));
-  width: 12em;
+  font-family: montesserat, sans-serif;
+  text-transform: uppercase;
+  font-style: italic;
+  -webkit-text-stroke-width: 1.5px;
+  -webkit-text-stroke-color: var(--away-secondary-color);
+  color: var(--away-jersey-color);
 }
 
-.gamePageCard img {
+.teamLogoHome {
   z-index: 2;
   height: 10em;
-  width: 10em;
+  width: 9em;
+  left: -7%;
   position: relative;
-  filter: drop-shadow(0 0 3px #fff);
+  filter: drop-shadow(0 0 3px var(--home-primary-color));
+}
+
+.teamLogoAway {
+  z-index: 2;
+  height: 10em;
+  width: 9em;
+  right: -7%;
+  position: relative;
+  filter: drop-shadow(0 0 3px var(--away-secondary-color));
 }
 
 .GPvs {
   font-size: 1.5em;
   font-weight: bold;
-  margin: 0 20px;
   color: #fff;
-  padding: 0 5px;
-  filter: drop-shadow(0 0 5px #000);
+  width: 50%;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  height: 5em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(
+    90deg,
+    var(--home-primary-color) 0%,
+    var(--away-primary-color) 100%
+  );
 }
 
 .gamePageVsTable {
   width: 100%;
-  border: 2px solid #ddd;
+  border: 3px solid #fff;
+  border-radius: 5px;
   border-collapse: collapse;
-  background-color: #101010;
-}
-
-.gamePageHomeTeam {
-  width: 40%;
-}
-
-.gamePageHomeTeamStat {
-  width: 35%;
-}
-
-.gamePageHomeTeamStatRank {
-  width: 5%;
-  border-right: #ddd 2px solid;
-}
-
-.gamePageAdvantageDecider {
-  font-weight: 900;
-
-  &__wrapper {
-    flex-direction: column;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  background-color: #303030;
+  height: 100%;
 }
 
 .gamePageVsTable tbody tr:not(:first-child) {
-  border-top: 1px solid #ffffff; /* Change #ffffff to the desired border color */
-}
-
-.statName {
-  font-size: 0.8em;
-  text-transform: uppercase;
-  font-weight: 700;
+  border-top: 2px solid #ffffff; /* Change #ffffff to the desired border color */
 }
 
 .gamePageVsTable tbody tr:nth-child(odd) {
@@ -134,6 +642,660 @@
   height: 3em;
 }
 
-.gamePageVsTable tr {
+.statLabel {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  flex-grow: 1;
+}
+
+.statLabel.home-advantage::after,
+.statLabel.away-advantage::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  border: solid transparent;
+  height: 0;
+  width: 0;
+  pointer-events: none;
+  border-width: 8px;
+  margin-top: -8px;
+}
+
+.statLabel.home-advantage::after {
+  right: 85%;
+  border-right-color: var(--home-primary-color);
+}
+
+.statLabel.away-advantage::after {
+  left: 85%;
+  border-left-color: var(--away-secondary-color);
+}
+
+.teamLogoHomeStatTable {
+  height: 100%;
+  filter: drop-shadow(0 0 3px var(--home-primary-color));
+}
+
+.teamLogoAwayStatTable {
+  height: 100%;
+  filter: drop-shadow(0 0 3px var(--away-secondary-color));
+}
+
+.statTableHeader {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 4px solid #ddd;
+  color: white;
+  width: 100%;
   height: 3em;
+}
+
+.statTableRight {
+  justify-content: flex-end;
+  align-items: center;
+  display: flex;
+  width: 100%;
+  background: linear-gradient(
+    115deg,
+    var(--away-primary-color) 0%,
+    var(--away-primary-color) 35%,
+    var(--away-secondary-color) 35%,
+    var(--away-secondary-color) 40%,
+    var(--away-jersey-color) 40%,
+    var(--away-jersey-color) 45%,
+    var(--away-secondary-color) 45%,
+    var(--away-secondary-color) 50%,
+    var(--away-jersey-color) 50%,
+    var(--away-jersey-color) 100%
+  );
+}
+
+.statTableLeft {
+  justify-content: flex-start;
+  align-items: center;
+  display: flex;
+  width: 100%;
+  background: linear-gradient(
+    65deg,
+    var(--home-jersey-color) 0%,
+    var(--home-jersey-color) 50%,
+    var(--home-secondary-color) 50%,
+    var(--home-secondary-color) 55%,
+    var(--home-primary-color) 55%,
+    var(--home-primary-color) 60%,
+    var(--home-secondary-color) 60%,
+    var(--home-secondary-color) 65%,
+    var(--home-primary-color) 65%,
+    var(--home-primary-color) 100%
+  );
+}
+
+.statValue {
+  margin: 0 5px; /* Adjust spacing as needed */
+}
+
+.advantageHeaderText {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  background: linear-gradient(
+    115deg,
+    var(--home-primary-color) 0%,
+    var(--home-primary-color) 15%,
+
+    var(--away-primary-color) 85%,
+    var(--away-primary-color) 100%
+  );
+}
+
+.statValue.homeValue {
+  margin-left: 10; /* Align to the far left */
+  width: 50px;
+}
+
+.statValue.awayValue {
+  margin-right: 10; /* Align to the far right */
+  width: 50px;
+}
+
+.advantageIndicator {
+  position: absolute;
+  /* Position it based on the advantage */
+}
+
+.gamePageVsTable .statRow {
+  height: 4em;
+}
+
+.goalieCompContainer {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  width: 100%; /* Match the width of playerCompContainer for consistency */
+  margin-top: 20px; /* Space between playerCompContainer and goalieCompContainer */
+  border: 3px solid white; /* Consistent container border */
+  border-radius: 5px;
+}
+
+.homeGoalies {
+  border-right: 3px solid white; /* Border between home and away goalies */
+  background: linear-gradient(
+    115deg,
+    var(--home-primary-color) 40%,
+    var(--home-secondary-color) 60%
+  );
+  height: 100%;
+}
+
+.awayGoalies {
+  background: linear-gradient(
+    115deg,
+    var(--away-primary-color) 40%,
+    var(--away-secondary-color) 100%
+  );
+  height: 100%;
+}
+
+.homeGoalies .goalieStatRow img {
+  height: 80px; /* Slightly larger headshot for visibility */
+  width: 80px;
+  border-radius: 50%; /* Circular headshots */
+  margin-right: 15px; /* Space between headshot and stats */
+  background-color: var(--home-primary-color);
+  border: 2px solid var(--home-jersey-color);
+}
+
+.homeGoalies .goalieStatRow {
+  background: linear-gradient(
+    65deg,
+    var(--home-jersey-color) 0%,
+    var(--home-jersey-color) 10%,
+    var(--home-secondary-color) 10%,
+    var(--home-secondary-color) 15%,
+    var(--home-primary-color) 15%,
+    var(--home-primary-color) 20%,
+    var(--home-secondary-color) 20%,
+    var(--home-secondary-color) 25%,
+    var(--home-primary-color) 25%,
+    var(--home-primary-color) 100%
+  );
+}
+
+.awayGoalies .goalieStatRow img {
+  height: 80px; /* Slightly larger headshot for visibility */
+  width: 80px;
+  border-radius: 50%; /* Circular headshots */
+  margin-left: 15px; /* Space between headshot and stats */
+  background-color: var(--away-primary-color);
+  border: 2px solid var(--away-jersey-color);
+}
+
+.awayGoalies .goalieStatRow {
+  background: linear-gradient(
+    115deg,
+    var(--away-primary-color) 0%,
+    var(--away-primary-color) 75%,
+    var(--away-secondary-color) 75%,
+    var(--away-secondary-color) 80%,
+    var(--away-primary-color) 80%,
+    var(--away-primary-color) 85%,
+    var(--away-secondary-color) 85%,
+    var(--away-secondary-color) 90%,
+    var(--away-jersey-color) 90%,
+    var(--away-jersey-color) 100%
+  );
+}
+
+.homeGoalieStatHighlight {
+  margin-right: 15px;
+  color: var(--home-secondary-color); /* Highlight color */
+  font-weight: bold;
+  width: 40%;
+}
+
+.homeGoalieStatHighlight p {
+  margin: 0; /* Remove margin for cleaner look */
+}
+
+.spanGoalieValue {
+  text-align: left;
+}
+
+.spanGoalieStat {
+  text-align: right;
+}
+
+.goalieImage {
+  width: 35%;
+}
+
+.awayGoalieStatHighlight {
+  color: var(--away-secondary-color); /* Highlight color */
+  font-weight: bold;
+  width: 40%;
+  margin-left: 15px;
+}
+
+.awayGoalieStatHighlight p {
+  margin: 0; /* Remove margin for cleaner look */
+}
+
+.goalieLastName {
+  font-weight: bolder;
+}
+
+.homeGoalies .goalieName {
+  color: white; /* Highlight color */
+  text-align: left;
+  width: 25%;
+}
+
+.awayGoalies .goalieName {
+  color: white; /* Highlight color */
+  text-align: right;
+  width: 25%;
+}
+
+.poissonChartContainer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+/* //////////////////////////////////////////    GAME OVER PAGE STYLES ///////////////////////////////////////////////////// */
+
+.gameOverPage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.gameOverDetailsContainer {
+  justify-content: center;
+  border-bottom: 6px double white;
+  align-items: center;
+  display: flex;
+  width: 100%;
+}
+
+.gameOverPageContainer {
+  width: 85%;
+  display: flex;
+  flex-direction: column;
+}
+
+.gameOverStatsContainer {
+  height: 100%;
+  margin-top: 25px;
+  display: flex;
+  justify-content: space-between;
+  width: 30%;
+}
+
+.gameOverCard {
+  text-align: center;
+  overflow: hidden;
+  max-height: 5em;
+  width: 100%;
+  align-items: center;
+  display: flex;
+  justify-content: space-around;
+}
+
+.gameOverScoreboard {
+  width: 85%;
+  margin-top: 20px;
+}
+
+.gameOverDetails {
+  display: flex;
+  justify-content: space-between;
+  border: 3px solid white;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #303030;
+  width: 100%;
+}
+
+.gameOverDetailsLeft,
+.gameOverDetailsRight {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gameOverDetailsLabel,
+.gameOverDetailsValue {
+  font-size: 1.2em;
+  color: white;
+  margin: 0 10px;
+}
+
+.team-nameGPvs {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: white; /* or use var(--home-accent-color) for dynamic coloring */
+}
+
+.GOtable {
+  width: 100%;
+  height: 100%;
+
+  text-align: center;
+  border-collapse: collapse; /* Ensures the table is neatly packed together */
+}
+
+.GOtable table {
+  width: 100%;
+  height: 100%;
+
+  text-align: center;
+  border-collapse: collapse; /* Ensures the table is neatly packed together */
+  border-spacing: 0px;
+}
+
+.GOtable,
+.GOtable table {
+  flex-grow: 1; /* Allows the table to grow and fill its container */
+}
+
+.GOtable tbody,
+.GOtable tr,
+.GOtable td {
+  height: 100%;
+}
+
+.GOtable th {
+  padding: 10px;
+}
+
+.GOtable tr {
+  padding: 10px;
+  border: 3px solid white; /* Matches the style of other components */
+  background-color: #303030; /* Matches the style of other components */
+}
+
+.GOtable tbody td {
+  padding: 10px;
+  border: 3px solid white; /* Matches the style of other components */
+  background-color: #303030; /* Matches the style of other components */
+}
+
+.GOtable img.GOteamLogoHome,
+.GOtable img.GOteamLogoAway {
+  height: 50px; /* Adjust as needed */
+  width: auto; /* Maintain aspect ratio */
+}
+
+/* Optional: Add a background or any additional styling to the th or td elements to match your design */
+.GOTLHcell {
+  background: linear-gradient(
+    65deg,
+    var(--home-jersey-color) 0%,
+    var(--home-jersey-color) 50%,
+    var(--home-secondary-color) 50%,
+    var(--home-secondary-color) 55%,
+    var(--home-primary-color) 55%,
+    var(--home-primary-color) 60%,
+    var(--home-secondary-color) 60%,
+    var(--home-secondary-color) 65%,
+    var(--home-primary-color) 65%,
+    var(--home-primary-color) 100%
+  );
+  color: white;
+}
+
+.GOTLAcell {
+  background: linear-gradient(
+    115deg,
+    var(--away-primary-color) 0%,
+    var(--away-primary-color) 35%,
+    var(--away-secondary-color) 35%,
+    var(--away-secondary-color) 40%,
+    var(--away-jersey-color) 40%,
+    var(--away-jersey-color) 45%,
+    var(--away-secondary-color) 45%,
+    var(--away-secondary-color) 50%,
+    var(--away-jersey-color) 50%,
+    var(--away-jersey-color) 100%
+  );
+  color: white;
+}
+
+.GOTLHcell img {
+  filter: drop-shadow(0 0 5px var(--home-primary-color));
+}
+
+.GOgameDetailsCell {
+  font-weight: bold;
+  font-size: 1.2em;
+  background: linear-gradient(
+    90deg,
+    var(--home-primary-color) 0%,
+    var(--away-primary-color) 100%
+  );
+}
+
+/* Styling for the 'Game Details' header if needed */
+.GOtable th:nth-child(2) {
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.GOscratches {
+  margin-top: 25px;
+  display: flex;
+  flex-direction: column; /* Align items in a column for better structure */
+  align-items: center; /* Center align the contents */
+  width: 30%;
+  background-color: #303030; /* Ensure background consistency */
+  color: white; /* Text color consistency */
+  border: 3px solid white; /* Consistent separator style */
+  border-radius: 5px; /* Rounded corners for a softer look */
+}
+
+.GOscratchHeader {
+  width: 100%;
+  display: flex;
+  justify-content: center; /* Center align the text */
+  align-items: center;
+  font-size: 1.25em; /* Match heading sizes */
+  padding: 10px; /* Consistent padding */
+  margin-bottom: 15px; /* Consistent spacing */
+  color: var(--home-accent-color); /* Use dynamic coloring for headings */
+  border-bottom: 2px solid white;
+}
+
+.GOscratchDetails {
+  display: flex;
+  width: 90%; /* Slightly reduce width for padding effect */
+  justify-content: space-evenly; /* Evenly space the columns */
+}
+
+.GOhomeScratches,
+.GOawayScratches {
+  width: 45%; /* Allocate equal width to both columns */
+  text-align: center; /* Center align text for readability */
+  padding: 10px 0; /* Consistent padding */
+}
+
+.GOscratchHomeHeader,
+.GOscratchAwayHeader {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.scratchesName {
+  display: block; /* Ensure each name is on its own line */
+  margin-bottom: 5px; /* Add space between names */
+  font-size: 11px;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 4px 0;
+}
+
+/* Enhanced table styling */
+.GOtable th,
+.GOtable td {
+  padding: 8px; /* Adjust padding for comfort */
+  background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent for depth */
+}
+
+/* Ensure consistency in visual effects */
+.GOtable img.GOteamLogoHome,
+.GOtable img.GOteamLogoAway {
+  filter: drop-shadow(0 0 10px #000); /* Consistent shadow effect */
+}
+
+.gameOverFlexContainer {
+  display: flex;
+  height: 100%;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.gameOverStatsContainer,
+.threeStarsContainer {
+  flex: 1; /* Allows each child to grow and fill the container equally */
+  display: flex;
+  flex-direction: column; /* Ensures content flows top to bottom */
+  background-color: #303030; /* Consistent with other components */
+  border: 3px solid white;
+  border-radius: 5px;
+  margin-right: 2%; /* Add space between the two containers */
+}
+
+.gameOverStatsContainer:last-child,
+.threeStarsContainer:last-child {
+  margin-right: 0;
+}
+
+.threeStarsHeader,
+.gameOverHeader {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-align: center;
+  padding: 10px;
+  border-radius: 5px;
+  width: 100%;
+  height: 3em;
+}
+
+.starRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.starStats {
+  display: flex;
+  flex-direction: column;
+  margin-left: 20px;
+}
+
+.starStats span {
+  margin-bottom: 5px;
+}
+
+.gameOverScratchesContainer {
+  width: 85%;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 25px;
+}
+
+.threeStarsContainer {
+  margin-top: 25px;
+  width: 48%;
+  background-color: #303030; /* Matches gameOverDetails */
+  border: 3px solid white;
+  border-radius: 5px;
+  color: white;
+  flex-direction: column;
+  display: flex;
+  margin-left: 2%; /* Ensure some space between the stats and three stars container */
+  justify-content: space-between;
+}
+
+.starRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Adjust alignment */
+  background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent for depth */
+  padding: 10px;
+  border-radius: 5px; /* Soften edges */
+  margin-bottom: 10px;
+}
+
+.starStats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Align stats text to the start */
+  margin: 0 20px; /* Adjust spacing around stats */
+}
+
+.starName {
+  font-weight: bold;
+  margin-left: auto; /* Push name to the right */
+}
+
+/* Additional Styling for Consistency */
+.threeStarsHeader {
+  background: linear-gradient(
+    115deg,
+    var(--home-primary-color) 0%,
+    var(--home-primary-color) 25%,
+    var(--home-secondary-color) 25%,
+    var(--home-secondary-color) 30%,
+    var(--home-primary-color) 30%,
+    var(--home-primary-color) 35%,
+    var(--home-secondary-color) 35%,
+    var(--home-secondary-color) 40%,
+    var(--home-jersey-color) 40%,
+    var(--home-jersey-color) 45%,
+    #fff 45%,
+    #fff 55%,
+    var(--away-jersey-color) 55%,
+    var(--away-jersey-color) 60%,
+    var(--away-secondary-color) 60%,
+    var(--away-secondary-color) 65%,
+    var(--away-primary-color) 65%,
+    var(--away-primary-color) 70%,
+    var(--away-secondary-color) 70%,
+    var(--away-secondary-color) 75%,
+    var(--away-primary-color) 75%,
+    var(--away-primary-color) 100%
+  );
+  color: white;
+}
+
+/* Ensure images and stats are well-spaced and aligned */
+.starRow img {
+  border-radius: 50%; /* Circular images */
+  border: 2px solid white; /* Define border for images */
+  filter: drop-shadow(0 0 10px #000);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .gameOverFlexContainer {
+    flex-direction: column;
+  }
+
+  .gameOverStatsContainer,
+  .threeStarsContainer {
+    width: 100%; /* Full width for smaller screens */
+    margin-bottom: 20px; /* Add space between containers */
+  }
 }

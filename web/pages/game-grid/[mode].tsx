@@ -27,11 +27,21 @@ function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
 
       <TextBanner text="Game Grid" />
       <button
+        style={{
+          backgroundColor: "#07aae2",
+          border: "1px solid white",
+          borderRadius: "8px",
+          color: "white",
+          padding: "10px",
+          cursor: "pointer",
+          marginLeft: "45%",
+          width: "10%",
+        }}
         onClick={() => {
           setMode(mode === "basic" ? "extended" : "basic");
         }}
       >
-        mode: {mode}
+        Mode: {mode}
       </button>
       <div style={{ marginTop: "20px", width: "100%" }}>
         <GameGrid mode={mode} />

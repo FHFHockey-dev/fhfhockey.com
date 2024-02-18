@@ -1,0 +1,184 @@
+/* ShiftChart.module.scss */
+/* /workspaces/fhfhockey.com/web/styles/ShiftChart.module.scss */
+
+
+.shiftBlocksCell {
+  position: relative;
+  border-right: 1px solid white; // Add a white border to the right of each cell
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px; // Set the height of the white line
+    background-color: white; // White color for the line
+    top: 50%; // Center the line vertically in the row
+    transform: translateY(-50%); // Ensure it's perfectly centered
+    z-index: 1; // Lower z-index to be behind the shift blocks
+  }
+
+  // Applies to period cells (1st, 2nd, 3rd period)
+  &:nth-child(n+3):nth-child(-n+5) {
+    width: calc((85% * 4/13)); // Each regular period takes up 4 parts of the 13-part space
+  }
+
+  // Applies to overtime cells
+  &.overtimeCell {
+    width: calc((85% * 1/13)); // Overtime takes up 1 part of the 13-part space
+  }
+}
+
+.timestampPeriod {
+  width: calc((85% * 4/13)); // Each regular period takes up 4 parts of the 13-part space
+}
+
+.timestampOvertime {
+  width: calc((85% * 1/13)); // Overtime takes up 1 part of the 13-part space
+}
+
+.timestampLabel {
+  position: absolute;
+  bottom: 0%;
+  transform: translateX(-50%); // Center align
+  white-space: nowrap; // Keep the label on a single line
+}
+
+/* Main container for the shift chart */
+.shiftChartContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px;
+  padding-top: 20px;
+  border: 1px solid white;
+  background-color: #101010;
+}
+
+// Container for dropdown elements
+.dropdownContainer {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 50px; // Add space below dropdowns
+}
+
+// Style for individual dropdowns
+.shiftChartDropdown {
+  margin: 0 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+// Label styling within dropdowns
+.shiftChartDropdown label {
+  margin-bottom: 5px;
+}
+
+// Input and select elements within dropdowns
+.shiftChartDropdown select,
+.shiftChartDropdown input {
+  padding: 5px;
+  font-size: 16px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  width: 200px; // Set a fixed width for consistency
+}
+
+
+.shiftChartTable {
+  width: 100%;
+  border-collapse: collapse;
+  color: white;
+  background-color: #606060;
+}
+
+.shiftChartTable th,
+.shiftChartTable td {
+  padding: 1px;
+}
+
+.shiftchartTable th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.gameInfoHeader {
+  width: 15%; // Adjust as needed
+}
+
+.shiftChartTable tbody {
+  font-stretch: extra-expanded;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.playerPositionCell {
+  border-right: 1px solid white; // Add a white border to the right of each cell
+}
+
+.playerRow {
+  &:hover {
+    background-color: rgba(255,
+        165,
+        0,
+        0.2) !important;// Orange background for hover effect
+    outline: 1px solid orange !important; // Border for the hovered row
+  }
+}
+
+
+.shiftBlock {
+  position: absolute;
+  bottom: 0;
+  height: 65%;
+  min-width: 2px;
+  border: 1px solid black;
+  left: 50%;
+  transform: translateY(-25%); /* Adjusts the block to be centered based on its width */
+  z-index: 2; // Shift blocks should be above the white line
+}
+
+
+.gameScoreCell {
+  text-align: center;
+  font-weight: bold;
+  // Add more styles as needed
+}
+
+.timestampsBar {
+  cursor: pointer;
+  background: linear-gradient(to right, #444 0%, #888 100%);
+  position: relative;
+}
+
+.yellowLine {
+  position: absolute;
+  background-color: yellow;
+  width: 2px;
+  height: 100%; // This assumes the parent element spans the full chart height
+  left: 0; // Initialize at 0, will be set dynamically
+}
+
+
+.activePlayer {
+  // Styles for active players
+  font-weight: bold;
+  color: black;
+}
+
+.inactivePlayer {
+  // Styles for inactive players, such as a greyed-out look
+  opacity: 0.5;
+}
+
+.timestamp {
+  display: flex; // Display timestamps in a row
+  justify-content: space-between;
+  margin: 0; // Ensure there's no extra space around timestamps
+  padding: 0; // Reset any default padding
+}
+

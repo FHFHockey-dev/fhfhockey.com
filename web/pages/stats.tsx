@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef } from "react";
 import { NextSeo } from "next-seo";
 
 import Container from "components/Layout/Container";
@@ -8,6 +8,7 @@ import StrengthOfSchedule from "components/teamLandingPage/strengthofSchedule";
 import { Team } from "lib/NHL/types";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import ClientOnly from "components/ClientOnly";
+import Fetch from "lib/cors-fetch";
 
 type StatsProps = {
   teams: Team[];
@@ -103,29 +104,56 @@ function Stats({
     sortDataBy(key, direction);
   };
 
+  const logosRef = useRef<HTMLDivElement>(null);
+
+  const scrollLogos = (direction: "left" | "right") => {
+    const container = logosRef.current;
+    if (container) {
+      const scrollAmount = 250; // Use a fixed value for testing
+      console.log("Scroll Amount:", scrollAmount); // Debugging
+      if (direction === "left") {
+        container.scrollLeft -= scrollAmount;
+      } else {
+        container.scrollLeft += scrollAmount;
+      }
+    }
+  };
+
   return (
     <Container>
       <NextSeo
         title="FHFH | Team Stat Catalogue"
         description="Five Hole Fantasy Hockey Podcast Stats for all teams in NHL."
       />
+
+      <div className="team-logos-container">
+        <div className="scroll-button left" onClick={() => scrollLogos("left")}>
+          &lt;
+        </div>
+        <div className="team-logos-grid" ref={logosRef}>
+          {teams.map((team) => (
+            <img
+              key={team.id}
+              src={`https://assets.nhle.com/logos/nhl/svg/${team.abbreviation}_light.svg`}
+              alt={`${team.name} Logo`}
+            />
+          ))}
+        </div>
+        <div
+          className="scroll-button right"
+          onClick={() => scrollLogos("right")}
+        >
+          &gt;
+        </div>
+      </div>
+
       <div className="team-landing-page">
-        <h1>Team Stat Pages</h1>
         <div className="sos-and-logo-grid">
           <div className="sos-container">
             <h2>Strength of Schedule - Past</h2>
             <StrengthOfSchedule type="past" rankings={pastSoSRankings} />
           </div>
-          <div className="team-logos-grid">
-            {teams.map((team) => (
-              <Link key={team.id} href={`/team/${team.abbreviation}`}>
-                <img
-                  src={`https://assets.nhle.com/logos/nhl/svg/${team.abbreviation}_light.svg`}
-                  alt={`${team.name} Logo`}
-                />
-              </Link>
-            ))}
-          </div>
+          <div></div>
           <div className="sos-container">
             <h2>Strength of Schedule - Future</h2>
             <StrengthOfSchedule type="future" rankings={futureSoSRankings} />
@@ -196,9 +224,7 @@ function Stats({
                             alt={`${team.name} Logo`}
                           />
                         </div>
-                        <div className="team-label-container">
-                          {team.abbreviation}
-                        </div>
+                        <div className="team-label-container"></div>
                       </td>
                       <td>
                         {(teamStats.lastTenGames[0].L10ptsPct * 100).toFixed(1)}
@@ -282,9 +308,7 @@ function Stats({
                       </div>
                       <ClientOnly>
                         {!isMobileView && (
-                          <div className="team-label-container">
-                            {team.abbreviation}
-                          </div>
+                          <div className="team-label-container"></div>
                         )}
                       </ClientOnly>
                     </td>
