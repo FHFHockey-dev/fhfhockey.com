@@ -341,6 +341,9 @@ export default function Page() {
     gameLandingDetails?.gameState === "FUT" ||
     gameLandingDetails?.gameState === "PRE"
   ) {
+    if (!chartData || chartData.length < 2) {
+      return <p>Loading game details...</p>;
+    }
     return (
       <div className="game-page">
         {gameDetails ? (
