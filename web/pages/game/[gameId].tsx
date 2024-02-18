@@ -17,85 +17,142 @@ export default function Page() {
   const [awayTeamPowerPlayStats, setAwayTeamPowerPlayStats] = useState({});
 
   useEffect(() => {
-    async function fetchGameDetails() {
+    async function fetchData() {
       if (!gameId) return;
-      const endpointURL = `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`;
+
       try {
-        const response = await Fetch(endpointURL).then((res) => res.json());
-        setGameDetails(response);
-        fetchTeamStats(response.homeTeam.abbrev, "home");
-        fetchTeamStats(response.awayTeam.abbrev, "away");
-        fetchPowerPlayStats(response.homeTeam.abbrev, "home");
-        fetchPowerPlayStats(response.awayTeam.abbrev, "away");
-        console.log("(response) Game details:", response);
+        // Fetch game details and game landing details concurrently
+        const gameDetailsResponse = await Fetch(
+          `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
+        ).then((res) => res.json());
+        const gameLandingDetailsResponse = await Fetch(
+          `https://api-web.nhle.com/v1_1/gamecenter/${gameId}/landing`
+        ).then((res) => res.json());
+
+        const homeTeamAbbrev = gameDetailsResponse.homeTeam.abbrev;
+        const awayTeamAbbrev = gameDetailsResponse.awayTeam.abbrev;
+
+        const [homeStats, awayStats, homePPStats, awayPPStats] =
+          await Promise.all([
+            fetchTeamStats(homeTeamAbbrev),
+            fetchTeamStats(awayTeamAbbrev),
+            fetchPowerPlayStats(homeTeamAbbrev),
+            fetchPowerPlayStats(awayTeamAbbrev),
+          ]);
+
+        // Update state with all fetched data
+        setGameDetails(gameDetailsResponse);
+        setGameLandingDetails(gameLandingDetailsResponse);
+        setHomeTeamStats(homeStats);
+        setAwayTeamStats(awayStats);
+        setHomeTeamPowerPlayStats(homePPStats);
+        setAwayTeamPowerPlayStats(awayPPStats);
       } catch (error) {
-        console.error("Error fetching game details:", error);
+        console.error("Error fetching game data:", error);
       }
     }
 
-    async function fetchGameLandingDetails() {
-      if (!gameId) return;
-      const landingURL = `https://api-web.nhle.com/v1_1/gamecenter/${gameId}/landing`;
-      try {
-        const landingResponse = await Fetch(landingURL).then((res) =>
-          res.json()
-        );
-        setGameLandingDetails(landingResponse); // Update state with fetched game landing details
-        console.log("(landingResponse) Game landing details:", landingResponse);
-        console.log("Summary:", landingResponse.summary);
-      } catch (error) {
-        console.error("Error fetching game landing details:", error);
-      }
-    }
-
-    fetchGameDetails();
-    fetchGameLandingDetails();
+    fetchData();
   }, [gameId]);
 
-  async function fetchTeamStats(teamAbbreviation, teamType) {
+  async function fetchTeamStats(teamAbbreviation) {
     const franchiseId = teamsInfo[teamAbbreviation]?.franchiseId;
-    if (!franchiseId) return;
+    if (!franchiseId) return {};
 
     const statsURL = `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"teamId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameTypeId=2 and seasonId<=20232024 and seasonId>=20232024`;
-    try {
-      const response = await Fetch(statsURL).then((res) => res.json());
-      const statsData = response.data[0]; // Assuming the first object contains the relevant stats
-      if (teamType === "home") {
-        setHomeTeamStats(statsData);
-      } else {
-        setAwayTeamStats(statsData);
-      }
-    } catch (error) {
-      console.error(`Error fetching ${teamType} team stats:`, error);
-    }
+    const response = await Fetch(statsURL).then((res) => res.json());
+    return response.data[0] || {};
   }
 
-  async function fetchPowerPlayStats(teamAbbreviation, teamType) {
-    // Match the teamID from teamsInfo to fetch the correct stats
+  async function fetchPowerPlayStats(teamAbbreviation) {
     const teamId = teamsInfo[teamAbbreviation]?.id;
-    if (!teamId) return;
+    if (!teamId) return {};
 
     const powerPlayStatsURL = `https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=false&isGame=false&sort=[{"property":"powerPlayPct","direction":"DESC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=gameTypeId=2 and seasonId<=20232024 and seasonId>=20232024`;
-    try {
-      const response = await Fetch(powerPlayStatsURL).then((res) => res.json());
-      // Use the teamId to find the relevant team's stats
-      const powerPlayStats = response.data.find(
-        (stat) => stat.teamId == teamId
-      ); // Ensure the comparison is correct for the data type (== or === depending on data type consistency)
-      console.log("powerPlayStats:", powerPlayStats);
-      if (!powerPlayStats) {
-        console.error(`No power play stats found for teamId: ${teamId}`);
-        return; // Early return if no stats found for the team
-      }
-      if (teamType === "home") {
-        setHomeTeamPowerPlayStats(powerPlayStats);
-      } else {
-        setAwayTeamPowerPlayStats(powerPlayStats);
-      }
-    } catch (error) {
-      console.error(`Error fetching ${teamType} team power play stats:`, error);
-    }
+    const response = await Fetch(powerPlayStatsURL).then((res) => res.json());
+    return response.data.find((stat) => stat.teamId == teamId) || {};
   }
+
+  // useEffect(() => {
+  //   async function fetchGameDetails() {
+  //     if (!gameId) return;
+  //     const endpointURL = `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`;
+  //     try {
+  //       const response = await Fetch(endpointURL).then((res) => res.json());
+  //       setGameDetails(response);
+  //       fetchTeamStats(response.homeTeam.abbrev, "home");
+  //       fetchTeamStats(response.awayTeam.abbrev, "away");
+  //       fetchPowerPlayStats(response.homeTeam.abbrev, "home");
+  //       fetchPowerPlayStats(response.awayTeam.abbrev, "away");
+  //       console.log("(response) Game details:", response);
+  //     } catch (error) {
+  //       console.error("Error fetching game details:", error);
+  //     }
+  //   }
+
+  //   async function fetchGameLandingDetails() {
+  //     if (!gameId) return;
+  //     const landingURL = `https://api-web.nhle.com/v1_1/gamecenter/${gameId}/landing`;
+  //     try {
+  //       const landingResponse = await Fetch(landingURL).then((res) =>
+  //         res.json()
+  //       );
+  //       setGameLandingDetails(landingResponse); // Update state with fetched game landing details
+  //       console.log("(landingResponse) Game landing details:", landingResponse);
+  //       console.log("Summary:", landingResponse.summary);
+  //     } catch (error) {
+  //       console.error("Error fetching game landing details:", error);
+  //     }
+  //   }
+
+  //   fetchGameDetails();
+  //   fetchGameLandingDetails();
+  // }, [gameId]);
+
+  // async function fetchTeamStats(teamAbbreviation, teamType) {
+  //   const franchiseId = teamsInfo[teamAbbreviation]?.franchiseId;
+  //   if (!franchiseId) return;
+
+  //   const statsURL = `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"teamId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameTypeId=2 and seasonId<=20232024 and seasonId>=20232024`;
+  //   try {
+  //     const response = await Fetch(statsURL).then((res) => res.json());
+  //     const statsData = response.data[0]; // Assuming the first object contains the relevant stats
+  //     if (teamType === "home") {
+  //       setHomeTeamStats(statsData);
+  //     } else {
+  //       setAwayTeamStats(statsData);
+  //     }
+  //   } catch (error) {
+  //     console.error(`Error fetching ${teamType} team stats:`, error);
+  //   }
+  // }
+
+  // async function fetchPowerPlayStats(teamAbbreviation, teamType) {
+  //   // Match the teamID from teamsInfo to fetch the correct stats
+  //   const teamId = teamsInfo[teamAbbreviation]?.id;
+  //   if (!teamId) return;
+
+  //   const powerPlayStatsURL = `https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=false&isGame=false&sort=[{"property":"powerPlayPct","direction":"DESC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=gameTypeId=2 and seasonId<=20232024 and seasonId>=20232024`;
+  //   try {
+  //     const response = await Fetch(powerPlayStatsURL).then((res) => res.json());
+  //     // Use the teamId to find the relevant team's stats
+  //     const powerPlayStats = response.data.find(
+  //       (stat) => stat.teamId == teamId
+  //     ); // Ensure the comparison is correct for the data type (== or === depending on data type consistency)
+  //     console.log("powerPlayStats:", powerPlayStats);
+  //     if (!powerPlayStats) {
+  //       console.error(`No power play stats found for teamId: ${teamId}`);
+  //       return; // Early return if no stats found for the team
+  //     }
+  //     if (teamType === "home") {
+  //       setHomeTeamPowerPlayStats(powerPlayStats);
+  //     } else {
+  //       setAwayTeamPowerPlayStats(powerPlayStats);
+  //     }
+  //   } catch (error) {
+  //     console.error(`Error fetching ${teamType} team power play stats:`, error);
+  //   }
+  // }
 
   const formatTime = (totalSeconds) => {
     if (totalSeconds === undefined || totalSeconds === null) {
