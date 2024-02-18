@@ -26,6 +26,14 @@ const PoissonDistributionChart = ({ chartData }) => {
   const [otPrediction, setOtPrediction] = useState(""); // Added for overtime prediction
 
   useEffect(() => {
+    if (
+      !chartData ||
+      chartData.length < 2 ||
+      !chartData.every((item) => item && item.team)
+    ) {
+      console.error("Invalid or incomplete chart data.");
+      return;
+    }
     const fetchLeagueData = async () => {
       const today = new Date().toISOString().slice(0, 10); // Gets today's date in "YYYY-MM-DD" format
       const standingsUrl = `https://api-web.nhle.com/v1/standings/${today}`;
