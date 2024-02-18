@@ -17,19 +17,20 @@ import ChartTitle, { HightText } from "components/ChartTitle";
 import styles from "./CategoryCoverageChart.module.scss";
 import { TimeOption } from "components/TimeOptions/TimeOptions";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
+import { PercentileRank } from "lib/NHL/types";
 
 ChartJS.register(RadialLinearScale, PointElement, LineElement, Tooltip, Filler);
 
-const LABELS = [
-  { key: "Goals", label: "GOALS" },
-  { key: "Assists", label: "ASSISTS" },
-  { key: "PPP", label: "PPP" },
-  { key: "Shots", label: "SOG" },
-  { key: "PlusMinus", label: "+/-" },
-  { key: "PIM", label: "PIM" },
-  { key: "Blocks", label: "BLK" },
-  { key: "Hits", label: "HITS" },
-] as const;
+const LABELS: { key: keyof PercentileRank; label: string }[] = [
+  { key: "goals", label: "GOALS" },
+  { key: "assists", label: "ASSISTS" },
+  { key: "powerPlayPoints", label: "PPP" },
+  { key: "shots", label: "SOG" },
+  { key: "plusMinus", label: "+/-" },
+  { key: "pim", label: "PIM" },
+  { key: "blockedShots", label: "BLK" },
+  { key: "hits", label: "HITS" },
+];
 
 const DATA = {
   labels: LABELS.map((element) => element.label),
@@ -97,7 +98,7 @@ function CategoryCoverageChart({
         chart.ctx.textAlign = point.textAlign;
         let x = 0;
         let y = point.y + newY + 20;
-        const distance = size.screen === BreakPoint.l ? 10 : 3;
+        const distance = size.screen === BreakPoint.l ? 10 : 2;
         if (point.textAlign === "left") {
           x = point.x + distance;
         } else if (point.textAlign === "right") {
@@ -123,7 +124,7 @@ function CategoryCoverageChart({
             : "700 12px Roboto";
 
         chart.ctx.fillStyle = "rgba(76, 167, 221, 1)";
-        dataset[i] && chart.ctx.fillText(`${dataset[i]}`, x, y - 16);
+        dataset[i] && chart.ctx.fillText(`${dataset[i].toFixed(1)}`, x, y - 16);
       });
     },
   };

@@ -275,10 +275,7 @@ function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
             </p>
           </div>
           <div className={styles.right}>
-            <p>
-              Fine, fine print, SOURCE, Credit. ETC. Fine, fine print, SOURCE,
-              Credit. ETC.{" "}
-            </p>
+            <p>sources, natural stat trick, nhl.com etc.</p>
           </div>
         </div>
       </div>

@@ -35,5 +35,6 @@ export default async function getLineCombinationsById(
     .eq("id", id)
     .single();
 
+  // @ts-ignore
   return line_combinations;
 }

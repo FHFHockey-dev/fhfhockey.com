@@ -19,40 +19,34 @@ type Props = {
 
 export default function AuthProvider({ children }: Props) {
   const [user, setUser] = useState<User>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const extra = { role: isAdmin ? "admin" : null };
-    // on page load, populate the user
-    setUser(mapUser(supabase.auth.user(), extra));
-
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(mapUser(session?.user, extra));
+      async (event, session) => {
+        if (!session) {
+          setUser(null);
+          return;
+        }
+
+        const extra: any = { role: null };
+
+        if (event !== "SIGNED_OUT") {
+          const { data } = await supabase
+            .from("users")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .maybeSingle();
+          extra.role = data?.role;
+        }
+
+        setUser(mapUser(session.user, extra));
       }
     );
 
     return () => {
-      authListener?.unsubscribe();
+      authListener.subscription.unsubscribe();
     };
-  }, [isAdmin]);
-
-  // check if the user is admin
-  useEffect(() => {
-    (async () => {
-      if (user) {
-        const { data } = await supabase
-          .from("users")
-          .select("role")
-          .eq("user_id", user.id)
-          .single();
-
-        if (data?.role === "admin") {
-          setIsAdmin(true);
-        }
-      }
-    })();
-  }, [user]);
+  }, []);
 
   return <AuthContext.Provider value={user}>{children}</AuthContext.Provider>;
 }

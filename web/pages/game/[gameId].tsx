@@ -100,6 +100,9 @@ export default function Page() {
   const formatTime = (totalSeconds) => {
     if (totalSeconds === undefined || totalSeconds === null) {
       return "-";
+    if (game) {
+      fetchTeamStats(game.homeTeam.id, "home");
+      fetchTeamStats(game.awayTeam.id, "away");
     }
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = Math.round(totalSeconds % 60);
@@ -153,6 +156,9 @@ export default function Page() {
   // Extract team abbreviations to access team colors
   const homeTeamAbbreviation = gameDetails?.homeTeam?.abbrev;
   const awayTeamAbbreviation = gameDetails?.awayTeam?.abbrev;
+      
+  const homeTeamName = game.homeTeam.name.default;
+  const awayTeamName = game.awayTeam.name.default;
 
   // Access team colors using abbreviations
   const homeTeamColors = teamsInfo[homeTeamAbbreviation] || {};
@@ -1108,3 +1114,59 @@ export default function Page() {
     );
   }
 }
+
+const getAdvantage = (
+  homeStat,
+  awayStat,
+  homeAbbreviation,
+  awayAbbreviation,
+  statName,
+  isLowerBetter = false
+) => {
+  let homeTeamColors = teamsInfo[homeAbbreviation] || {};
+  let awayTeamColors = teamsInfo[awayAbbreviation] || {};
+
+  if (
+    (!isLowerBetter && homeStat > awayStat) ||
+    (isLowerBetter && homeStat < awayStat)
+  ) {
+    return (
+      <td
+        className="gamePageAdvantageDecider"
+        style={{
+          backgroundColor: homeTeamColors.primaryColor,
+          color: homeTeamColors.secondaryColor,
+        }}
+      >
+        <div className="gamePageAdvantageDecider__wrapper">
+          <div className="statName">{statName}</div>
+          <div>{homeAbbreviation}</div>
+        </div>
+      </td>
+    );
+  } else if (
+    (!isLowerBetter && homeStat < awayStat) ||
+    (isLowerBetter && homeStat > awayStat)
+  ) {
+    return (
+      <td
+        className="gamePageAdvantageDecider"
+        style={{
+          backgroundColor: awayTeamColors.primaryColor,
+          color: awayTeamColors.secondaryColor,
+        }}
+      >
+        <div className="statName">{statName}</div>
+        {awayAbbreviation}
+      </td>
+    );
+  } else {
+    // Handle the case where the stats are equal.
+    return (
+      <td className="gamePageAdvantageDecider">
+        <div className="statName">{statName}</div>
+        TIE
+      </td>
+    );
+  }
+};

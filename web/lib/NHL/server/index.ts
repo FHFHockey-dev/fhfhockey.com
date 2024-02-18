@@ -11,6 +11,10 @@ import {
   Season,
   Team,
 } from "lib/NHL/types";
+import supabase from "lib/supabase";
+import supabaseServer from "lib/supabase/server";
+import { Tables } from "lib/supabase/database-generated.types";
+import { updatePlayer } from "pages/api/v1/db/update-player/[playerId]";
 
 export async function getPlayerGameLog(
   id: number | string,
@@ -33,29 +37,26 @@ export async function getPlayerGameLog(
  * @param id
  * @returns
  */
-export async function getPlayer(id: number): Promise<Player | null> {
-  try {
-    const data = await get(`/player/${id}/landing`);
-    return {
-      id: data.playerId,
-      firstName: data.firstName.default,
-      lastName: data.lastName.default,
-      fullName: `${data.firstName.default} ${data.lastName.default}`,
-      sweaterNumber: data.sweaterNumber,
-      positionCode: data.position,
-      image: data.headshot,
-      age: differenceInYears(new Date(), new Date(data.birthDate)),
-      height: data.heightInCentimeters,
-      weight: data.weightInKilograms,
-      teamId: data.currentTeamId,
-      teamAbbreviation: data.currentTeamAbbrev,
-      teamLogo: data.teamLogo,
-      teamName: data.fullTeamName?.default,
-    };
-  } catch (e: any) {
-    console.error(e);
-    return null;
+export async function getPlayer(id: number): Promise<Player> {
+  const { data } = await supabase
+    .from("rosters")
+    .select("teamId, sweaterNumber, players(*), teams(name,abbreviation)")
+    .eq("playerId", id)
+    .limit(1)
+    .maybeSingle()
+    .throwOnError();
+  if (data === null) {
+    await updatePlayer(id, supabaseServer);
+    throw new Error("Unable to find the player. " + id);
   }
+  return {
+    sweaterNumber: data.sweaterNumber,
+    teamId: data.teamId,
+    teamName: data.teams?.name,
+    teamAbbreviation: data.teams?.abbreviation,
+    age: differenceInYears(new Date(), new Date(data.players?.birthDate ?? "")),
+    ...data.players,
+  } as Player;
 }
 
 /**
@@ -66,26 +67,21 @@ export async function getTeams(seasonId?: number): Promise<Team[]> {
   if (seasonId === undefined) {
     seasonId = (await getCurrentSeason()).seasonId;
   }
-  const { data: allTeams } = await restGet("/team");
-  const { data: currentSeasonTeams } = await restGet(
-    `/team/summary?cayenneExp=seasonId=${seasonId}`
-  );
-  const currentSeasonTeamIds = new Set(
-    currentSeasonTeams.map((team) => team.teamId)
-  );
 
-  return allTeams
-    .filter((team) => currentSeasonTeamIds.has(team.id))
-    .map((item) => ({
-      id: item.id,
-      name: item.fullName,
-      abbreviation: item.triCode,
-      logo: getTeamLogo(item.fullName),
-    }));
+  const { data: teams } = (await supabase
+    .from("teams")
+    .select("id, name, abbreviation, team_season!inner()")
+    .eq("team_season.seasonId", seasonId)) as unknown as {
+    data: Tables<"teams">[];
+  };
+  return teams.map((team) => ({
+    ...team,
+    logo: getTeamLogo(team.name),
+  }));
 }
 
-export function getTeamLogo(teamName: string) {
-  return `/teamLogos/${teamName}.png`;
+export function getTeamLogo(teamName: string | undefined) {
+  return teamName ? `/teamLogos/${teamName}.png` : "/pictures/circle.png";
 }
 
 /**
@@ -93,13 +89,13 @@ export function getTeamLogo(teamName: string) {
  * @returns
  */
 export async function getCurrentSeason(): Promise<Season> {
-  const data = (
-    await restGet(
-      `/season?sort=${encodeURIComponent(
-        '[{"property": "id", "direction":"DESC"}]'
-      )}&limit=1`
-    )
-  ).data[0];
+  const { data } = await supabase
+    .from("seasons")
+    .select("*")
+    .order("startDate", { ascending: false })
+    .limit(1)
+    .single();
+  if (data === null) throw Error("Cannot find the current season");
 
   return {
     seasonId: data.id,
@@ -110,47 +106,37 @@ export async function getCurrentSeason(): Promise<Season> {
   };
 }
 
-export async function getAllPlayers(seasonId?: number) {
-  const teams = await getTeams(seasonId);
-  const tasks = teams.map((team) => async () => {
-    try {
-      const { forwards, defensemen, goalies } = await get(
-        `/roster/${team.abbreviation}/current`
-      );
-      // add current team id
-      const array = [...forwards, ...defensemen, ...goalies].map((item) => ({
-        ...item,
-        teamId: team.id,
-        teamName: team.name,
-        teamAbbreviation: team.abbreviation,
-        teamLogo: team.logo,
-      }));
-      return array;
-    } catch (e: any) {
-      // console.error(`/roster/${team.abbreviation}/current`, "is missing");
-      return [];
-    }
-  });
-
-  const result = (await Promise.all(tasks.map((task) => task()))).flat();
-  const players: Player[] = result.map((item) => ({
-    id: item.id,
-    teamId: item.teamId,
-    teamName: item.teamName,
-    teamAbbreviation: item.teamAbbreviation,
-    teamLogo: item.teamLogo,
-    firstName: item.firstName.default,
-    lastName: item.lastName.default,
-    fullName: `${item.firstName.default} ${item.lastName.default}`,
-    positionCode: item.positionCode,
-    sweaterNumber: item.sweaterNumber,
-    age: differenceInYears(new Date(), new Date(item.birthDate)),
-    height: item.heightInCentimeters,
-    weight: item.weightInKilograms,
-    image: item.headshot,
+export async function getSeasons(): Promise<Season[]> {
+  const data = (await restGet(`/season`)).data.map((item) => ({
+    seasonId: item.id,
+    regularSeasonStartDate: item.startDate,
+    regularSeasonEndDate: item.regularSeasonEndDate,
+    seasonEndDate: item.endDate,
+    numberOfGames: item.numberOfGames,
   }));
+  return data;
+}
 
-  return players;
+export async function getAllPlayers(seasonId?: number): Promise<Player[]> {
+  if (!seasonId) {
+    seasonId = (await getCurrentSeason()).seasonId;
+  }
+  const { data } = await supabase
+    .from("rosters")
+    .select("sweaterNumber, players(*), teams(id, name,abbreviation)")
+    .eq("seasonId", seasonId);
+
+  return data!.map((player) => ({
+    ...player.players!,
+    age: differenceInYears(
+      new Date(),
+      new Date(player.players?.birthDate ?? "")
+    ),
+    sweaterNumber: player.sweaterNumber,
+    teamId: player.teams?.id,
+    teamAbbreviation: player.teams?.abbreviation,
+    teamName: player.teams?.name,
+  }));
 }
 
 async function getTeamsMap(): Promise<Record<number, Team>> {
@@ -209,6 +195,13 @@ export async function getSchedule(startDate: string) {
   const tasksForOneWeek = gameWeek.map((day) => async () => {
     const tasksForOneDay = day.games.map((game) => async () => {
       const { homeTeam, awayTeam } = game;
+      if (
+        teams[homeTeam.id] === undefined ||
+        teams[awayTeam.id] === undefined
+      ) {
+        console.error("skip for ", homeTeam.id, teams[awayTeam.id]);
+        return;
+      }
       const gameData = {
         id: game.id,
         season: game.season,
@@ -246,8 +239,6 @@ export async function getSchedule(startDate: string) {
 
   return result;
 }
-
-export async function getPlayerPercentileRank() {}
 
 export async function getBoxscore(id: number): Promise<Boxscore> {
   const data = await get(`/gamecenter/${id}/boxscore`);

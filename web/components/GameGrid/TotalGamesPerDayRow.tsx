@@ -12,6 +12,9 @@ function TotalGamesPerDayRow({
   excludedDays,
   extended,
 }: TotalGamesPerDayRowProps) {
+  const excludedDaysIdx = excludedDays.map((dayAbbreviation) =>
+    DAYS.findIndex((item) => item === dayAbbreviation)
+  );
   return (
     <tr className={styles.totalGamesPerDayRow}>
       {/* show GP on mobile */}
@@ -22,7 +25,23 @@ function TotalGamesPerDayRow({
             numGames > 8 ? styles.redBorder : styles.greenBorder
           }`}
           key={i}
+          style={{ position: "relative" }}
         >
+          {/* gray block */}
+          <div
+            style={
+              !extended && excludedDaysIdx.includes(i)
+                ? {
+                    backgroundColor: "rgb(80, 80, 80, 0.85)",
+                    width: "100%",
+                    height: "100%",
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                  }
+                : {}
+            }
+          />
           {numGames}
         </td>
       ))}

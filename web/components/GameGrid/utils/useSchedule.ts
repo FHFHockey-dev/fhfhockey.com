@@ -30,6 +30,11 @@ export default function useSchedule(
             ...nextWeekSchedule.numGamesPerDay.slice(0, 3),
           ];
           Object.entries(nextWeekSchedule.data).forEach(([id, weekData]) => {
+            const playedLastWeek = schedule.data[Number(id)] !== undefined;
+            if (!playedLastWeek) {
+              // @ts-expect-error
+              schedule.data[Number(id)] = {};
+            }
             schedule.data[Number(id)].nMON = weekData.MON;
             schedule.data[Number(id)].nTUE = weekData.TUE;
             schedule.data[Number(id)].nWED = weekData.WED;
