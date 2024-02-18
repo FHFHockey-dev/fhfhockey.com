@@ -302,16 +302,16 @@ export default function Page() {
     {
       team: gameDetails?.homeTeam?.abbrev || "HOME",
       logo: gameDetails?.homeTeam?.logo || "",
-      goalsForPerGame: homeTeamStats.goalsForPerGame || 0,
-      goalsAgainstPerGame: homeTeamStats.goalsAgainstPerGame || 0,
-      shotsForPerGame: homeTeamStats.shotsForPerGame || 0,
-      shotsAgainstPerGame: homeTeamStats.shotsAgainstPerGame || 0,
-      powerPlayPercentage: homeTeamPowerPlayStats.powerPlayPct || 0,
-      penaltyKillPercentage: homeTeamStats.penaltyKillPct || 0,
-      powerPlayGoalsPerGame: homeTeamPowerPlayStats.ppGoalsPerGame || 0,
+      goalsForPerGame: homeTeamStats?.goalsForPerGame || 0,
+      goalsAgainstPerGame: homeTeamStats?.goalsAgainstPerGame || 0,
+      shotsForPerGame: homeTeamStats?.shotsForPerGame || 0,
+      shotsAgainstPerGame: homeTeamStats?.shotsAgainstPerGame || 0,
+      powerPlayPercentage: homeTeamPowerPlayStats?.powerPlayPct || 0,
+      penaltyKillPercentage: homeTeamStats?.penaltyKillPct || 0,
+      powerPlayGoalsPerGame: homeTeamPowerPlayStats?.ppGoalsPerGame || 0,
       powerPlayOpportunitesPerGame:
-        homeTeamPowerPlayStats.ppOpportunitiesPerGame || 0,
-      shGoalsAgainstPerGame: homeTeamPowerPlayStats.shGoalsAgainstPerGame || 0,
+        homeTeamPowerPlayStats?.ppOpportunitiesPerGame || 0,
+      shGoalsAgainstPerGame: homeTeamPowerPlayStats?.shGoalsAgainstPerGame || 0,
       l10ptsPct: l10pointsPct("home"),
       seasonSeriesWins:
         gameLandingDetails?.matchup?.seasonSeriesWins?.homeTeamWins || 0,
@@ -319,16 +319,16 @@ export default function Page() {
     {
       team: gameDetails?.awayTeam?.abbrev || "AWAY",
       logo: gameDetails?.awayTeam?.logo || "",
-      goalsForPerGame: awayTeamStats.goalsForPerGame || 0,
-      goalsAgainstPerGame: awayTeamStats.goalsAgainstPerGame || 0,
-      shotsForPerGame: awayTeamStats.shotsForPerGame || 0,
-      shotsAgainstPerGame: awayTeamStats.shotsAgainstPerGame || 0,
-      powerPlayPercentage: awayTeamPowerPlayStats.powerPlayPct || 0,
-      penaltyKillPercentage: awayTeamStats.penaltyKillPct || 0,
-      powerPlayGoalsPerGame: awayTeamPowerPlayStats.ppGoalsPerGame || 0,
+      goalsForPerGame: awayTeamStats?.goalsForPerGame || 0,
+      goalsAgainstPerGame: awayTeamStats?.goalsAgainstPerGame || 0,
+      shotsForPerGame: awayTeamStats?.shotsForPerGame || 0,
+      shotsAgainstPerGame: awayTeamStats?.shotsAgainstPerGame || 0,
+      powerPlayPercentage: awayTeamPowerPlayStats?.powerPlayPct || 0,
+      penaltyKillPercentage: awayTeamStats?.penaltyKillPct || 0,
+      powerPlayGoalsPerGame: awayTeamPowerPlayStats?.ppGoalsPerGame || 0,
       powerPlayOpportunitesPerGame:
-        awayTeamPowerPlayStats.ppOpportunitiesPerGame || 0,
-      shGoalsAgainstPerGame: awayTeamPowerPlayStats.shGoalsAgainstPerGame || 0,
+        awayTeamPowerPlayStats?.ppOpportunitiesPerGame || 0,
+      shGoalsAgainstPerGame: awayTeamPowerPlayStats?.shGoalsAgainstPerGame || 0,
       l10ptsPct: l10pointsPct("away"),
       seasonSeriesWins:
         gameLandingDetails?.matchup?.seasonSeriesWins?.awayTeamWins || 0,
@@ -341,9 +341,6 @@ export default function Page() {
     gameLandingDetails?.gameState === "FUT" ||
     gameLandingDetails?.gameState === "PRE"
   ) {
-    if (!chartData || chartData.length < 2) {
-      return <p>Loading game details...</p>;
-    }
     return (
       <div className="game-page">
         {gameDetails ? (
