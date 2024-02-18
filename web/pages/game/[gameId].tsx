@@ -300,8 +300,8 @@ export default function Page() {
 
   const chartData = [
     {
-      team: gameDetails?.homeTeam?.abbrev,
-      logo: gameDetails?.homeTeam?.logo,
+      team: gameDetails?.homeTeam?.abbrev || "HOME",
+      logo: gameDetails?.homeTeam?.logo || "",
       goalsForPerGame: homeTeamStats.goalsForPerGame || 0,
       goalsAgainstPerGame: homeTeamStats.goalsAgainstPerGame || 0,
       shotsForPerGame: homeTeamStats.shotsForPerGame || 0,
@@ -317,8 +317,8 @@ export default function Page() {
         gameLandingDetails?.matchup?.seasonSeriesWins?.homeTeamWins || 0,
     },
     {
-      team: gameDetails?.awayTeam?.abbrev,
-      logo: gameDetails?.awayTeam?.logo,
+      team: gameDetails?.awayTeam?.abbrev || "AWAY",
+      logo: gameDetails?.awayTeam?.logo || "",
       goalsForPerGame: awayTeamStats.goalsForPerGame || 0,
       goalsAgainstPerGame: awayTeamStats.goalsAgainstPerGame || 0,
       shotsForPerGame: awayTeamStats.shotsForPerGame || 0,
