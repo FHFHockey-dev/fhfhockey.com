@@ -12,6 +12,7 @@ export default function useGoals(id: number) {
   useEffect(() => {
     (async () => {
       if (!id) return;
+      setGoals([]);
       const data = await Fetch(
         `https://api-web.nhle.com/v1/gamecenter/${id}/landing`
       ).then((res) => res.json());
