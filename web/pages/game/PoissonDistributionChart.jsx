@@ -203,8 +203,8 @@ const PoissonDistributionChart = ({ chartData }) => {
     setAwayWinProb(adjustedAwayWinProb.toFixed(2));
 
     // Dynamic team names from chartData
-    const homeTeamName = chartData[0].team;
-    const awayTeamName = chartData[1].team;
+    const homeTeamName = chartData[0]?.team || "Home Team";
+    const awayTeamName = chartData[1]?.team || "Away Team";
 
     // Determine the most likely outcome and consider OT prediction
     let mostLikelyOutcome = { x: 0, y: 0, value: 0 };
