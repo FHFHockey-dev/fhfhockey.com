@@ -24,12 +24,14 @@ const PoissonDistributionChart = ({ chartData }) => {
   const [homeWinProb, setHomeWinProb] = useState(0);
   const [awayWinProb, setAwayWinProb] = useState(0);
   const [otPrediction, setOtPrediction] = useState(""); // Added for overtime prediction
+  const [isLoading, setIsLoading] = useState(true); // State to manage loading status
 
   useEffect(() => {
-    if (!chartData || chartData.length < 2 || !chartData[0] || !chartData[1]) {
-      return <div>Loading chart data...</div>; // Or any other placeholder content
+    // Check if chartData is loaded and has at least the required items
+    if (!chartData || chartData.length < 2) {
+      // If chartData is not ready, display a loading message
+      return <div>Loading chart data...</div>;
     }
-
     const fetchLeagueData = async () => {
       const today = new Date().toISOString().slice(0, 10); // Gets today's date in "YYYY-MM-DD" format
       const standingsUrl = `https://api-web.nhle.com/v1/standings/${today}`;
@@ -339,6 +341,10 @@ const PoissonDistributionChart = ({ chartData }) => {
       .style("font-size", "16px")
       .style("fill", "white"); // Make the text white
   }, [chartData]);
+
+  if (isLoading) {
+    return <div>Loading chart data...</div>;
+  }
 
   return (
     <div

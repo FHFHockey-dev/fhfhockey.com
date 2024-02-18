@@ -15,7 +15,6 @@ export default function Page() {
   const [awayTeamStats, setAwayTeamStats] = useState({});
   const [homeTeamPowerPlayStats, setHomeTeamPowerPlayStats] = useState({});
   const [awayTeamPowerPlayStats, setAwayTeamPowerPlayStats] = useState({});
-  const [chartData, setChartData] = useState([]); // Initialize chartData as part of the component's state
 
   useEffect(() => {
     async function fetchGameDetails() {
@@ -299,64 +298,44 @@ export default function Page() {
     return points / totalPossiblePoints;
   };
 
-  useEffect(() => {
-    // Verify all dependencies are loaded
-    if (
-      gameDetails &&
-      homeTeamStats &&
-      awayTeamStats &&
-      homeTeamPowerPlayStats &&
-      awayTeamPowerPlayStats
-    ) {
-      // Compute chartData here and then set it in state
-      const computedChartData = [
-        {
-          team: gameDetails?.homeTeam?.abbrev || "",
-          logo: gameDetails?.homeTeam?.logo || "",
-          goalsForPerGame: homeTeamStats?.goalsForPerGame || 0,
-          goalsAgainstPerGame: homeTeamStats?.goalsAgainstPerGame || 0,
-          shotsForPerGame: homeTeamStats?.shotsForPerGame || 0,
-          shotsAgainstPerGame: homeTeamStats?.shotsAgainstPerGame || 0,
-          powerPlayPercentage: homeTeamPowerPlayStats?.powerPlayPct || 0,
-          penaltyKillPercentage: homeTeamStats?.penaltyKillPct || 0,
-          powerPlayGoalsPerGame: homeTeamPowerPlayStats?.ppGoalsPerGame || 0,
-          powerPlayOpportunitesPerGame:
-            homeTeamPowerPlayStats?.ppOpportunitiesPerGame || 0,
-          shGoalsAgainstPerGame:
-            homeTeamPowerPlayStats?.shGoalsAgainstPerGame || 0,
-          l10ptsPct: l10pointsPct("home"),
-          seasonSeriesWins:
-            gameLandingDetails?.matchup?.seasonSeriesWins?.homeTeamWins || 0,
-        },
-        {
-          team: gameDetails?.awayTeam?.abbrev || "",
-          logo: gameDetails?.awayTeam?.logo || "",
-          goalsForPerGame: awayTeamStats?.goalsForPerGame || 0,
-          goalsAgainstPerGame: awayTeamStats?.goalsAgainstPerGame || 0,
-          shotsForPerGame: awayTeamStats?.shotsForPerGame || 0,
-          shotsAgainstPerGame: awayTeamStats?.shotsAgainstPerGame || 0,
-          powerPlayPercentage: awayTeamPowerPlayStats?.powerPlayPct || 0,
-          penaltyKillPercentage: awayTeamStats?.penaltyKillPct || 0,
-          powerPlayGoalsPerGame: awayTeamPowerPlayStats?.ppGoalsPerGame || 0,
-          powerPlayOpportunitesPerGame:
-            awayTeamPowerPlayStats?.ppOpportunitiesPerGame || 0,
-          shGoalsAgainstPerGame:
-            awayTeamPowerPlayStats?.shGoalsAgainstPerGame || 0,
-          l10ptsPct: l10pointsPct("away"),
-          seasonSeriesWins:
-            gameLandingDetails?.matchup?.seasonSeriesWins?.awayTeamWins || 0,
-        },
-      ];
-      setChartData(computedChartData);
-    }
-  }, [
-    gameDetails,
-    homeTeamStats,
-    awayTeamStats,
-    homeTeamPowerPlayStats,
-    awayTeamPowerPlayStats,
-    gameLandingDetails,
-  ]); // Ensure all dependencies are listed
+  const chartData = [
+    {
+      team: gameDetails?.homeTeam?.abbrev || "",
+      logo: gameDetails?.homeTeam?.logo || "",
+      goalsForPerGame: homeTeamStats?.goalsForPerGame || 0,
+      goalsAgainstPerGame: homeTeamStats?.goalsAgainstPerGame || 0,
+      shotsForPerGame: homeTeamStats?.shotsForPerGame || 0,
+      shotsAgainstPerGame: homeTeamStats?.shotsAgainstPerGame || 0,
+      powerPlayPercentage: homeTeamPowerPlayStats?.powerPlayPct || 0,
+      penaltyKillPercentage: homeTeamStats?.penaltyKillPct || 0,
+      powerPlayGoalsPerGame: homeTeamPowerPlayStats?.ppGoalsPerGame || 0,
+      powerPlayOpportunitesPerGame:
+        homeTeamPowerPlayStats?.ppOpportunitiesPerGame || 0,
+      shGoalsAgainstPerGame: homeTeamPowerPlayStats?.shGoalsAgainstPerGame || 0,
+      l10ptsPct: l10pointsPct("home"),
+      seasonSeriesWins:
+        gameLandingDetails?.matchup?.seasonSeriesWins?.homeTeamWins || 0,
+    },
+    {
+      team: gameDetails?.awayTeam?.abbrev || "",
+      logo: gameDetails?.awayTeam?.logo || "",
+      goalsForPerGame: awayTeamStats?.goalsForPerGame || 0,
+      goalsAgainstPerGame: awayTeamStats?.goalsAgainstPerGame || 0,
+      shotsForPerGame: awayTeamStats?.shotsForPerGame || 0,
+      shotsAgainstPerGame: awayTeamStats?.shotsAgainstPerGame || 0,
+      powerPlayPercentage: awayTeamPowerPlayStats?.powerPlayPct || 0,
+      penaltyKillPercentage: awayTeamStats?.penaltyKillPct || 0,
+      powerPlayGoalsPerGame: awayTeamPowerPlayStats?.ppGoalsPerGame || 0,
+      powerPlayOpportunitesPerGame:
+        awayTeamPowerPlayStats?.ppOpportunitiesPerGame || 0,
+      shGoalsAgainstPerGame: awayTeamPowerPlayStats?.shGoalsAgainstPerGame || 0,
+      l10ptsPct: l10pointsPct("away"),
+      seasonSeriesWins:
+        gameLandingDetails?.matchup?.seasonSeriesWins?.awayTeamWins || 0,
+    },
+  ];
+
+  console.log("chartData:", chartData);
 
   if (
     gameLandingDetails?.gameState === "FUT" ||
@@ -880,13 +859,9 @@ export default function Page() {
                 </div>
               </div>
             </div>
-            {chartData.length > 0 ? (
-              <div className="poissonChartContainer">
-                <PoissonDistributionChart chartData={chartData} />
-              </div>
-            ) : (
-              <div>Loading chart data...</div>
-            )}
+            <div className="poissonChartContainer">
+              <PoissonDistributionChart chartData={chartData} />
+            </div>
           </>
         ) : (
           <p>Loading game details...</p>
