@@ -241,9 +241,6 @@ const PoissonDistributionChart = ({ chartData }) => {
 
     svg.selectAll("*").remove(); // Clear previous SVG content
 
-    // Remove any previous content before drawing new elements
-    svg.selectAll("*").remove();
-
     // Build X scales and axis:
     const x = d3
       .scaleBand()
