@@ -336,6 +336,13 @@ export default function Page() {
   ];
 
   console.log("chartData:", chartData);
+  const isDataLoaded =
+    gameDetails &&
+    homeTeamStats &&
+    awayTeamStats &&
+    homeTeamPowerPlayStats &&
+    awayTeamPowerPlayStats &&
+    chartData.length > 0;
 
   if (
     gameLandingDetails?.gameState === "FUT" ||
@@ -859,9 +866,13 @@ export default function Page() {
                 </div>
               </div>
             </div>
-            <div className="poissonChartContainer">
-              {/* <PoissonDistributionChart chartData={chartData} /> */}
-            </div>
+            {isDataLoaded ? (
+              <div className="poissonChartContainer">
+                <PoissonDistributionChart chartData={chartData} />
+              </div>
+            ) : (
+              <p>Loading chart data...</p>
+            )}
           </>
         ) : (
           <p>Loading game details...</p>
