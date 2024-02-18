@@ -860,7 +860,7 @@ export default function Page() {
               </div>
             </div>
             <div className="poissonChartContainer">
-              <PoissonDistributionChart chartData={chartData} />
+              {/* <PoissonDistributionChart chartData={chartData} /> */}
             </div>
           </>
         ) : (
