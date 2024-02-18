@@ -17,142 +17,85 @@ export default function Page() {
   const [awayTeamPowerPlayStats, setAwayTeamPowerPlayStats] = useState({});
 
   useEffect(() => {
-    async function fetchData() {
+    async function fetchGameDetails() {
       if (!gameId) return;
-
+      const endpointURL = `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`;
       try {
-        // Fetch game details and game landing details concurrently
-        const gameDetailsResponse = await Fetch(
-          `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
-        ).then((res) => res.json());
-        const gameLandingDetailsResponse = await Fetch(
-          `https://api-web.nhle.com/v1_1/gamecenter/${gameId}/landing`
-        ).then((res) => res.json());
-
-        const homeTeamAbbrev = gameDetailsResponse.homeTeam.abbrev;
-        const awayTeamAbbrev = gameDetailsResponse.awayTeam.abbrev;
-
-        const [homeStats, awayStats, homePPStats, awayPPStats] =
-          await Promise.all([
-            fetchTeamStats(homeTeamAbbrev),
-            fetchTeamStats(awayTeamAbbrev),
-            fetchPowerPlayStats(homeTeamAbbrev),
-            fetchPowerPlayStats(awayTeamAbbrev),
-          ]);
-
-        // Update state with all fetched data
-        setGameDetails(gameDetailsResponse);
-        setGameLandingDetails(gameLandingDetailsResponse);
-        setHomeTeamStats(homeStats);
-        setAwayTeamStats(awayStats);
-        setHomeTeamPowerPlayStats(homePPStats);
-        setAwayTeamPowerPlayStats(awayPPStats);
+        const response = await Fetch(endpointURL).then((res) => res.json());
+        setGameDetails(response);
+        fetchTeamStats(response.homeTeam.abbrev, "home");
+        fetchTeamStats(response.awayTeam.abbrev, "away");
+        fetchPowerPlayStats(response.homeTeam.abbrev, "home");
+        fetchPowerPlayStats(response.awayTeam.abbrev, "away");
+        console.log("(response) Game details:", response);
       } catch (error) {
-        console.error("Error fetching game data:", error);
+        console.error("Error fetching game details:", error);
       }
     }
 
-    fetchData();
+    async function fetchGameLandingDetails() {
+      if (!gameId) return;
+      const landingURL = `https://api-web.nhle.com/v1_1/gamecenter/${gameId}/landing`;
+      try {
+        const landingResponse = await Fetch(landingURL).then((res) =>
+          res.json()
+        );
+        setGameLandingDetails(landingResponse); // Update state with fetched game landing details
+        console.log("(landingResponse) Game landing details:", landingResponse);
+        console.log("Summary:", landingResponse.summary);
+      } catch (error) {
+        console.error("Error fetching game landing details:", error);
+      }
+    }
+
+    fetchGameDetails();
+    fetchGameLandingDetails();
   }, [gameId]);
 
-  async function fetchTeamStats(teamAbbreviation) {
+  async function fetchTeamStats(teamAbbreviation, teamType) {
     const franchiseId = teamsInfo[teamAbbreviation]?.franchiseId;
-    if (!franchiseId) return {};
+    if (!franchiseId) return;
 
     const statsURL = `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"teamId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameTypeId=2 and seasonId<=20232024 and seasonId>=20232024`;
-    const response = await Fetch(statsURL).then((res) => res.json());
-    return response.data[0] || {};
+    try {
+      const response = await Fetch(statsURL).then((res) => res.json());
+      const statsData = response.data[0]; // Assuming the first object contains the relevant stats
+      if (teamType === "home") {
+        setHomeTeamStats(statsData);
+      } else {
+        setAwayTeamStats(statsData);
+      }
+    } catch (error) {
+      console.error(`Error fetching ${teamType} team stats:`, error);
+    }
   }
 
-  async function fetchPowerPlayStats(teamAbbreviation) {
+  async function fetchPowerPlayStats(teamAbbreviation, teamType) {
+    // Match the teamID from teamsInfo to fetch the correct stats
     const teamId = teamsInfo[teamAbbreviation]?.id;
-    if (!teamId) return {};
+    if (!teamId) return;
 
     const powerPlayStatsURL = `https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=false&isGame=false&sort=[{"property":"powerPlayPct","direction":"DESC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=gameTypeId=2 and seasonId<=20232024 and seasonId>=20232024`;
-    const response = await Fetch(powerPlayStatsURL).then((res) => res.json());
-    return response.data.find((stat) => stat.teamId == teamId) || {};
+    try {
+      const response = await Fetch(powerPlayStatsURL).then((res) => res.json());
+      // Use the teamId to find the relevant team's stats
+      const powerPlayStats = response.data.find(
+        (stat) => stat.teamId == teamId
+      ); // Ensure the comparison is correct for the data type (== or === depending on data type consistency)
+      console.log("powerPlayStats:", powerPlayStats);
+      if (!powerPlayStats) {
+        console.error(`No power play stats found for teamId: ${teamId}`);
+        return; // Early return if no stats found for the team
+      }
+      if (teamType === "home") {
+        setHomeTeamPowerPlayStats(powerPlayStats);
+      } else {
+        setAwayTeamPowerPlayStats(powerPlayStats);
+      }
+    } catch (error) {
+      console.error(`Error fetching ${teamType} team power play stats:`, error);
+    }
   }
-
-  // useEffect(() => {
-  //   async function fetchGameDetails() {
-  //     if (!gameId) return;
-  //     const endpointURL = `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`;
-  //     try {
-  //       const response = await Fetch(endpointURL).then((res) => res.json());
-  //       setGameDetails(response);
-  //       fetchTeamStats(response.homeTeam.abbrev, "home");
-  //       fetchTeamStats(response.awayTeam.abbrev, "away");
-  //       fetchPowerPlayStats(response.homeTeam.abbrev, "home");
-  //       fetchPowerPlayStats(response.awayTeam.abbrev, "away");
-  //       console.log("(response) Game details:", response);
-  //     } catch (error) {
-  //       console.error("Error fetching game details:", error);
-  //     }
-  //   }
-
-  //   async function fetchGameLandingDetails() {
-  //     if (!gameId) return;
-  //     const landingURL = `https://api-web.nhle.com/v1_1/gamecenter/${gameId}/landing`;
-  //     try {
-  //       const landingResponse = await Fetch(landingURL).then((res) =>
-  //         res.json()
-  //       );
-  //       setGameLandingDetails(landingResponse); // Update state with fetched game landing details
-  //       console.log("(landingResponse) Game landing details:", landingResponse);
-  //       console.log("Summary:", landingResponse.summary);
-  //     } catch (error) {
-  //       console.error("Error fetching game landing details:", error);
-  //     }
-  //   }
-
-  //   fetchGameDetails();
-  //   fetchGameLandingDetails();
-  // }, [gameId]);
-
-  // async function fetchTeamStats(teamAbbreviation, teamType) {
-  //   const franchiseId = teamsInfo[teamAbbreviation]?.franchiseId;
-  //   if (!franchiseId) return;
-
-  //   const statsURL = `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"teamId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameTypeId=2 and seasonId<=20232024 and seasonId>=20232024`;
-  //   try {
-  //     const response = await Fetch(statsURL).then((res) => res.json());
-  //     const statsData = response.data[0]; // Assuming the first object contains the relevant stats
-  //     if (teamType === "home") {
-  //       setHomeTeamStats(statsData);
-  //     } else {
-  //       setAwayTeamStats(statsData);
-  //     }
-  //   } catch (error) {
-  //     console.error(`Error fetching ${teamType} team stats:`, error);
-  //   }
-  // }
-
-  // async function fetchPowerPlayStats(teamAbbreviation, teamType) {
-  //   // Match the teamID from teamsInfo to fetch the correct stats
-  //   const teamId = teamsInfo[teamAbbreviation]?.id;
-  //   if (!teamId) return;
-
-  //   const powerPlayStatsURL = `https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=false&isGame=false&sort=[{"property":"powerPlayPct","direction":"DESC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=gameTypeId=2 and seasonId<=20232024 and seasonId>=20232024`;
-  //   try {
-  //     const response = await Fetch(powerPlayStatsURL).then((res) => res.json());
-  //     // Use the teamId to find the relevant team's stats
-  //     const powerPlayStats = response.data.find(
-  //       (stat) => stat.teamId == teamId
-  //     ); // Ensure the comparison is correct for the data type (== or === depending on data type consistency)
-  //     console.log("powerPlayStats:", powerPlayStats);
-  //     if (!powerPlayStats) {
-  //       console.error(`No power play stats found for teamId: ${teamId}`);
-  //       return; // Early return if no stats found for the team
-  //     }
-  //     if (teamType === "home") {
-  //       setHomeTeamPowerPlayStats(powerPlayStats);
-  //     } else {
-  //       setAwayTeamPowerPlayStats(powerPlayStats);
-  //     }
-  //   } catch (error) {
-  //     console.error(`Error fetching ${teamType} team power play stats:`, error);
-  //   }
-  // }
 
   const formatTime = (totalSeconds) => {
     if (totalSeconds === undefined || totalSeconds === null) {
@@ -398,14 +341,282 @@ export default function Page() {
     gameLandingDetails?.gameState === "FUT" ||
     gameLandingDetails?.gameState === "PRE"
   ) {
-    if (homeTeamStats.goalsForPerGame && awayTeamStats.goalsForPerGame) {
-      return (
-        <div className="game-page">
-          {gameDetails ? (
-            <>
-              <div className="gameDetailsContainer">
+    return (
+      <div className="game-page">
+        {gameDetails ? (
+          <>
+            <div className="gameDetailsContainer">
+              <div
+                className="gamePageCard"
+                style={{
+                  "--home-primary-color": homeTeamColors.primaryColor,
+                  "--home-secondary-color": homeTeamColors.secondaryColor,
+                  "--home-jersey-color": homeTeamColors.jersey,
+                  "--home-accent-color": homeTeamColors.accent,
+                  "--home-alt-color": homeTeamColors.alt,
+                  "--away-primary-color": awayTeamColors.primaryColor,
+                  "--away-secondary-color": awayTeamColors.secondaryColor,
+                  "--away-jersey-color": awayTeamColors.jersey,
+                  "--away-accent-color": awayTeamColors.accent,
+                  "--away-alt-color": awayTeamColors.alt,
+                }}
+              >
+                <div className="gamePageCardLeft">
+                  <img
+                    className="teamLogoHome"
+                    src={gameDetails.homeTeam.logo}
+                    alt={`${gameDetails.homeTeam.name.default} logo`}
+                  />
+                  <span className="team-nameGPvs home-team">
+                    {gameDetails.homeTeam.name.default}
+                  </span>
+                </div>
+                <span className="GPvs">VS</span>
+                <div className="gamePageCardRight">
+                  <span className="team-nameGPvs away-team">
+                    {gameDetails.awayTeam.name.default}
+                  </span>
+                  <img
+                    className="teamLogoAway"
+                    src={gameDetails.awayTeam.logo}
+                    alt={`${gameDetails.awayTeam.name.default} logo`}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="statsAndPlayerCompContainer">
+              {/* ///////////////////////////////// STAT ROW ///////////////////////////////////////////////////////// */}
+              <div className="gamePageVsTableContainer">
+                <div className="gamePageVsTable">
+                  <div
+                    className="statTableHeader"
+                    style={{
+                      "--home-primary-color": homeTeamColors.primaryColor,
+                      "--home-secondary-color": homeTeamColors.secondaryColor,
+                      "--home-jersey-color": homeTeamColors.jersey,
+                      "--home-accent-color": homeTeamColors.accent,
+                      "--home-alt-color": homeTeamColors.alt,
+                      "--away-primary-color": awayTeamColors.primaryColor,
+                      "--away-secondary-color": awayTeamColors.secondaryColor,
+                      "--away-jersey-color": awayTeamColors.jersey,
+                      "--away-accent-color": awayTeamColors.accent,
+                      "--away-alt-color": awayTeamColors.alt,
+                    }}
+                  >
+                    <div className="statTableLeft">
+                      <img
+                        className="teamLogoHomeStatTable"
+                        src={gameDetails.homeTeam.logo}
+                        alt={`${gameDetails.homeTeam.name.default} logo`}
+                        style={{ width: "40px" }}
+                      />
+                    </div>
+                    <span className="advantageHeaderText">Advantage</span>
+
+                    <div className="statTableRight">
+                      <img
+                        className="teamLogoAwayStatTable"
+                        src={gameDetails.awayTeam.logo}
+                        alt={`${gameDetails.awayTeam.name.default} logo`}
+                        style={{ width: "40px" }}
+                      />
+                    </div>
+                  </div>
+                  {/* Use StatRow for each statistic you want to display */}
+                  <StatRow
+                    statLabel="WINS"
+                    homeStat={homeTeamStats.wins}
+                    awayStat={awayTeamStats.wins}
+                    homeTeamColors={homeTeamColors}
+                    awayTeamColors={awayTeamColors}
+                  />
+                  <StatRow
+                    statLabel="GF/GM"
+                    homeStat={
+                      homeTeamStats.goalsForPerGame
+                        ? homeTeamStats.goalsForPerGame.toFixed(2)
+                        : "-"
+                    }
+                    awayStat={
+                      awayTeamStats.goalsForPerGame
+                        ? awayTeamStats.goalsForPerGame.toFixed(2)
+                        : "-"
+                    }
+                    homeTeamColors={homeTeamColors}
+                    awayTeamColors={awayTeamColors}
+                  />
+                  <StatRow
+                    statLabel="GA/GM"
+                    homeStat={
+                      homeTeamStats.goalsAgainstPerGame
+                        ? homeTeamStats.goalsAgainstPerGame.toFixed(2)
+                        : "-"
+                    }
+                    awayStat={
+                      awayTeamStats.goalsAgainstPerGame
+                        ? awayTeamStats.goalsAgainstPerGame.toFixed(2)
+                        : "-"
+                    }
+                    isLowerBetter // Lower is better for goals against
+                    homeTeamColors={homeTeamColors}
+                    awayTeamColors={awayTeamColors}
+                  />
+                  <StatRow
+                    statLabel="PP%"
+                    homeStat={
+                      homeTeamPowerPlayStats.powerPlayPct
+                        ? (homeTeamPowerPlayStats.powerPlayPct * 100).toFixed(
+                            1
+                          ) + "%"
+                        : "-"
+                    }
+                    awayStat={
+                      awayTeamPowerPlayStats.powerPlayPct
+                        ? (awayTeamPowerPlayStats.powerPlayPct * 100).toFixed(
+                            1
+                          ) + "%"
+                        : "-"
+                    }
+                    homeTeamColors={homeTeamColors}
+                    awayTeamColors={awayTeamColors}
+                  />
+                  <StatRow
+                    statLabel="PK%"
+                    homeStat={
+                      homeTeamStats.penaltyKillPct
+                        ? (homeTeamStats.penaltyKillPct * 100).toFixed(1) + "%"
+                        : "-"
+                    }
+                    awayStat={
+                      awayTeamStats.penaltyKillPct
+                        ? (awayTeamStats.penaltyKillPct * 100).toFixed(1) + "%"
+                        : "-"
+                    }
+                    homeTeamColors={homeTeamColors}
+                    awayTeamColors={awayTeamColors}
+                  />
+                  <StatRow
+                    statLabel="SF/GM"
+                    homeStat={
+                      homeTeamStats.shotsForPerGame
+                        ? homeTeamStats.shotsForPerGame.toFixed(1)
+                        : "-"
+                    }
+                    awayStat={
+                      awayTeamStats.shotsForPerGame
+                        ? awayTeamStats.shotsForPerGame.toFixed(1)
+                        : "-"
+                    }
+                    homeTeamColors={homeTeamColors}
+                    awayTeamColors={awayTeamColors}
+                  />
+                  <StatRow
+                    statLabel="SA/GM"
+                    homeStat={
+                      homeTeamStats.shotsAgainstPerGame
+                        ? homeTeamStats.shotsAgainstPerGame.toFixed(1)
+                        : "-"
+                    }
+                    awayStat={
+                      awayTeamStats.shotsAgainstPerGame
+                        ? awayTeamStats.shotsAgainstPerGame.toFixed(1)
+                        : "-"
+                    }
+                    isLowerBetter // Lower is better for shots against
+                    homeTeamColors={homeTeamColors}
+                    awayTeamColors={awayTeamColors}
+                  />
+                  <StatRow
+                    statLabel="PPO/GM"
+                    homeStat={
+                      homeTeamPowerPlayStats.ppOpportunitiesPerGame
+                        ? homeTeamPowerPlayStats.ppOpportunitiesPerGame.toFixed(
+                            2
+                          )
+                        : "-"
+                    }
+                    awayStat={
+                      awayTeamPowerPlayStats.ppOpportunitiesPerGame
+                        ? awayTeamPowerPlayStats.ppOpportunitiesPerGame.toFixed(
+                            2
+                          )
+                        : "-"
+                    }
+                    homeTeamColors={homeTeamColors}
+                    awayTeamColors={awayTeamColors}
+                  />
+                  <StatRow
+                    statLabel="PPG/GM"
+                    homeStat={
+                      homeTeamPowerPlayStats.ppGoalsPerGame
+                        ? homeTeamPowerPlayStats.ppGoalsPerGame.toFixed(2)
+                        : "-"
+                    }
+                    awayStat={
+                      awayTeamPowerPlayStats.ppGoalsPerGame
+                        ? awayTeamPowerPlayStats.ppGoalsPerGame.toFixed(2)
+                        : "-"
+                    }
+                    homeTeamColors={homeTeamColors}
+                    awayTeamColors={awayTeamColors}
+                  />
+                  <StatRow
+                    statLabel="S%"
+                    homeStat={
+                      (
+                        (homeTeamStats.goalsForPerGame /
+                          homeTeamStats.shotsForPerGame) *
+                        100
+                      ).toFixed(1) + "%"
+                    }
+                    awayStat={
+                      (
+                        (awayTeamStats.goalsForPerGame /
+                          awayTeamStats.shotsForPerGame) *
+                        100
+                      ).toFixed(1) + "%"
+                    }
+                    isLowerBetter
+                    homeTeamColors={homeTeamColors}
+                    awayTeamColors={awayTeamColors}
+                  />
+                  <StatRow
+                    statLabel="SV%"
+                    homeStat={
+                      (
+                        1 -
+                        homeTeamStats.goalsAgainstPerGame /
+                          homeTeamStats.shotsAgainstPerGame
+                      )
+                        .toFixed(3)
+                        .replace(/^0+/, "") + "%"
+                    }
+                    awayStat={
+                      (
+                        1 -
+                        awayTeamStats.goalsAgainstPerGame /
+                          awayTeamStats.shotsAgainstPerGame
+                      )
+                        .toFixed(3)
+                        .replace(/^0+/, "") + "%"
+                    }
+                    homeTeamColors={homeTeamColors}
+                    awayTeamColors={awayTeamColors}
+                  />
+                </div>
+              </div>
+              <div
+                className="statsPlayerAndGoalieCompContainer"
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  width: "100%",
+                }}
+              >
                 <div
-                  className="gamePageCard"
+                  className="playerCompContainer"
                   style={{
                     "--home-primary-color": homeTeamColors.primaryColor,
                     "--home-secondary-color": homeTeamColors.secondaryColor,
@@ -419,529 +630,244 @@ export default function Page() {
                     "--away-alt-color": awayTeamColors.alt,
                   }}
                 >
-                  <div className="gamePageCardLeft">
-                    <img
-                      className="teamLogoHome"
-                      src={gameDetails.homeTeam.logo}
-                      alt={`${gameDetails.homeTeam.name.default} logo`}
-                    />
-                    <span className="team-nameGPvs home-team">
-                      {gameDetails.homeTeam.name.default}
-                    </span>
-                  </div>
-                  <span className="GPvs">VS</span>
-                  <div className="gamePageCardRight">
-                    <span className="team-nameGPvs away-team">
-                      {gameDetails.awayTeam.name.default}
-                    </span>
-                    <img
-                      className="teamLogoAway"
-                      src={gameDetails.awayTeam.logo}
-                      alt={`${gameDetails.awayTeam.name.default} logo`}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="statsAndPlayerCompContainer">
-                {/* ///////////////////////////////// STAT ROW ///////////////////////////////////////////////////////// */}
-                <div className="gamePageVsTableContainer">
-                  <div className="gamePageVsTable">
-                    <div
-                      className="statTableHeader"
-                      style={{
-                        "--home-primary-color": homeTeamColors.primaryColor,
-                        "--home-secondary-color": homeTeamColors.secondaryColor,
-                        "--home-jersey-color": homeTeamColors.jersey,
-                        "--home-accent-color": homeTeamColors.accent,
-                        "--home-alt-color": homeTeamColors.alt,
-                        "--away-primary-color": awayTeamColors.primaryColor,
-                        "--away-secondary-color": awayTeamColors.secondaryColor,
-                        "--away-jersey-color": awayTeamColors.jersey,
-                        "--away-accent-color": awayTeamColors.accent,
-                        "--away-alt-color": awayTeamColors.alt,
-                      }}
-                    >
-                      <div className="statTableLeft">
-                        <img
-                          className="teamLogoHomeStatTable"
-                          src={gameDetails.homeTeam.logo}
-                          alt={`${gameDetails.homeTeam.name.default} logo`}
-                          style={{ width: "40px" }}
-                        />
-                      </div>
-                      <span className="advantageHeaderText">Advantage</span>
-
-                      <div className="statTableRight">
-                        <img
-                          className="teamLogoAwayStatTable"
-                          src={gameDetails.awayTeam.logo}
-                          alt={`${gameDetails.awayTeam.name.default} logo`}
-                          style={{ width: "40px" }}
-                        />
-                      </div>
+                  <div className="playerCompHeader">
+                    <div className="playerCompHeaderLeft">
+                      <img
+                        className="teamLogoHomePC"
+                        src={gameDetails.homeTeam.logo}
+                        alt={`${gameDetails.homeTeam.name.default} logo`}
+                        style={{ width: "75px" }}
+                      />
                     </div>
-                    {/* Use StatRow for each statistic you want to display */}
-                    <StatRow
-                      statLabel="WINS"
-                      homeStat={homeTeamStats.wins}
-                      awayStat={awayTeamStats.wins}
-                      homeTeamColors={homeTeamColors}
-                      awayTeamColors={awayTeamColors}
-                    />
-                    <StatRow
-                      statLabel="GF/GM"
-                      homeStat={
-                        homeTeamStats.goalsForPerGame
-                          ? homeTeamStats.goalsForPerGame.toFixed(2)
-                          : "-"
-                      }
-                      awayStat={
-                        awayTeamStats.goalsForPerGame
-                          ? awayTeamStats.goalsForPerGame.toFixed(2)
-                          : "-"
-                      }
-                      homeTeamColors={homeTeamColors}
-                      awayTeamColors={awayTeamColors}
-                    />
-                    <StatRow
-                      statLabel="GA/GM"
-                      homeStat={
-                        homeTeamStats.goalsAgainstPerGame
-                          ? homeTeamStats.goalsAgainstPerGame.toFixed(2)
-                          : "-"
-                      }
-                      awayStat={
-                        awayTeamStats.goalsAgainstPerGame
-                          ? awayTeamStats.goalsAgainstPerGame.toFixed(2)
-                          : "-"
-                      }
-                      isLowerBetter // Lower is better for goals against
-                      homeTeamColors={homeTeamColors}
-                      awayTeamColors={awayTeamColors}
-                    />
-                    <StatRow
-                      statLabel="PP%"
-                      homeStat={
-                        homeTeamPowerPlayStats.powerPlayPct
-                          ? (homeTeamPowerPlayStats.powerPlayPct * 100).toFixed(
-                              1
-                            ) + "%"
-                          : "-"
-                      }
-                      awayStat={
-                        awayTeamPowerPlayStats.powerPlayPct
-                          ? (awayTeamPowerPlayStats.powerPlayPct * 100).toFixed(
-                              1
-                            ) + "%"
-                          : "-"
-                      }
-                      homeTeamColors={homeTeamColors}
-                      awayTeamColors={awayTeamColors}
-                    />
-                    <StatRow
-                      statLabel="PK%"
-                      homeStat={
-                        homeTeamStats.penaltyKillPct
-                          ? (homeTeamStats.penaltyKillPct * 100).toFixed(1) +
-                            "%"
-                          : "-"
-                      }
-                      awayStat={
-                        awayTeamStats.penaltyKillPct
-                          ? (awayTeamStats.penaltyKillPct * 100).toFixed(1) +
-                            "%"
-                          : "-"
-                      }
-                      homeTeamColors={homeTeamColors}
-                      awayTeamColors={awayTeamColors}
-                    />
-                    <StatRow
-                      statLabel="SF/GM"
-                      homeStat={
-                        homeTeamStats.shotsForPerGame
-                          ? homeTeamStats.shotsForPerGame.toFixed(1)
-                          : "-"
-                      }
-                      awayStat={
-                        awayTeamStats.shotsForPerGame
-                          ? awayTeamStats.shotsForPerGame.toFixed(1)
-                          : "-"
-                      }
-                      homeTeamColors={homeTeamColors}
-                      awayTeamColors={awayTeamColors}
-                    />
-                    <StatRow
-                      statLabel="SA/GM"
-                      homeStat={
-                        homeTeamStats.shotsAgainstPerGame
-                          ? homeTeamStats.shotsAgainstPerGame.toFixed(1)
-                          : "-"
-                      }
-                      awayStat={
-                        awayTeamStats.shotsAgainstPerGame
-                          ? awayTeamStats.shotsAgainstPerGame.toFixed(1)
-                          : "-"
-                      }
-                      isLowerBetter // Lower is better for shots against
-                      homeTeamColors={homeTeamColors}
-                      awayTeamColors={awayTeamColors}
-                    />
-                    <StatRow
-                      statLabel="PPO/GM"
-                      homeStat={
-                        homeTeamPowerPlayStats.ppOpportunitiesPerGame
-                          ? homeTeamPowerPlayStats.ppOpportunitiesPerGame.toFixed(
-                              2
-                            )
-                          : "-"
-                      }
-                      awayStat={
-                        awayTeamPowerPlayStats.ppOpportunitiesPerGame
-                          ? awayTeamPowerPlayStats.ppOpportunitiesPerGame.toFixed(
-                              2
-                            )
-                          : "-"
-                      }
-                      homeTeamColors={homeTeamColors}
-                      awayTeamColors={awayTeamColors}
-                    />
-                    <StatRow
-                      statLabel="PPG/GM"
-                      homeStat={
-                        homeTeamPowerPlayStats.ppGoalsPerGame
-                          ? homeTeamPowerPlayStats.ppGoalsPerGame.toFixed(2)
-                          : "-"
-                      }
-                      awayStat={
-                        awayTeamPowerPlayStats.ppGoalsPerGame
-                          ? awayTeamPowerPlayStats.ppGoalsPerGame.toFixed(2)
-                          : "-"
-                      }
-                      homeTeamColors={homeTeamColors}
-                      awayTeamColors={awayTeamColors}
-                    />
-                    <StatRow
-                      statLabel="S%"
-                      homeStat={
-                        (
-                          (homeTeamStats.goalsForPerGame /
-                            homeTeamStats.shotsForPerGame) *
-                          100
-                        ).toFixed(1) + "%"
-                      }
-                      awayStat={
-                        (
-                          (awayTeamStats.goalsForPerGame /
-                            awayTeamStats.shotsForPerGame) *
-                          100
-                        ).toFixed(1) + "%"
-                      }
-                      isLowerBetter
-                      homeTeamColors={homeTeamColors}
-                      awayTeamColors={awayTeamColors}
-                    />
-                    <StatRow
-                      statLabel="SV%"
-                      homeStat={
-                        (
-                          1 -
-                          homeTeamStats.goalsAgainstPerGame /
-                            homeTeamStats.shotsAgainstPerGame
-                        )
-                          .toFixed(3)
-                          .replace(/^0+/, "") + "%"
-                      }
-                      awayStat={
-                        (
-                          1 -
-                          awayTeamStats.goalsAgainstPerGame /
-                            awayTeamStats.shotsAgainstPerGame
-                        )
-                          .toFixed(3)
-                          .replace(/^0+/, "") + "%"
-                      }
-                      homeTeamColors={homeTeamColors}
-                      awayTeamColors={awayTeamColors}
-                    />
-                  </div>
-                </div>
-                <div
-                  className="statsPlayerAndGoalieCompContainer"
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    width: "100%",
-                  }}
-                >
-                  <div
-                    className="playerCompContainer"
-                    style={{
-                      "--home-primary-color": homeTeamColors.primaryColor,
-                      "--home-secondary-color": homeTeamColors.secondaryColor,
-                      "--home-jersey-color": homeTeamColors.jersey,
-                      "--home-accent-color": homeTeamColors.accent,
-                      "--home-alt-color": homeTeamColors.alt,
-                      "--away-primary-color": awayTeamColors.primaryColor,
-                      "--away-secondary-color": awayTeamColors.secondaryColor,
-                      "--away-jersey-color": awayTeamColors.jersey,
-                      "--away-accent-color": awayTeamColors.accent,
-                      "--away-alt-color": awayTeamColors.alt,
-                    }}
-                  >
-                    <div className="playerCompHeader">
-                      <div className="playerCompHeaderLeft">
-                        <img
-                          className="teamLogoHomePC"
-                          src={gameDetails.homeTeam.logo}
-                          alt={`${gameDetails.homeTeam.name.default} logo`}
-                          style={{ width: "75px" }}
-                        />
-                      </div>
 
-                      <p>Last 5 Games</p>
-                      <div className="playerCompHeaderRight">
-                        <img
-                          className="teamLogoAwayPC"
-                          src={gameDetails.awayTeam.logo}
-                          alt={`${gameDetails.awayTeam.name.default} logo`}
-                          style={{ width: "75px" }}
-                        />
-                      </div>
+                    <p>Last 5 Games</p>
+                    <div className="playerCompHeaderRight">
+                      <img
+                        className="teamLogoAwayPC"
+                        src={gameDetails.awayTeam.logo}
+                        alt={`${gameDetails.awayTeam.name.default} logo`}
+                        style={{ width: "75px" }}
+                      />
                     </div>
-                    {gameLandingDetails?.matchup?.teamLeadersL5
-                      ?.filter(
-                        (leader) =>
-                          leader.category.toLowerCase() !== "plusminus"
-                      )
-                      .map((leader, index) => (
-                        <div className="playerCompDetails" key={index}>
-                          {/* Home player side */}
-                          <div className="playerDetail homePlayer">
+                  </div>
+                  {gameLandingDetails?.matchup?.teamLeadersL5
+                    ?.filter(
+                      (leader) => leader.category.toLowerCase() !== "plusminus"
+                    )
+                    .map((leader, index) => (
+                      <div className="playerCompDetails" key={index}>
+                        {/* Home player side */}
+                        <div className="playerDetail homePlayer">
+                          <img
+                            src={leader.homeLeader.headshot}
+                            alt="Home player headshot"
+                            className="playerHeadshot"
+                          />
+
+                          <div className="playerStats">
+                            <span>{leader.homeLeader.firstName.default}</span>
+                            <span className="lastName">
+                              {leader.homeLeader.lastName.default}
+                            </span>
+                            <span>
+                              #{leader.homeLeader.sweaterNumber} •{" "}
+                              {leader.homeLeader.positionCode}
+                            </span>
+                          </div>
+                          <span className="value">
+                            {leader.homeLeader.value}
+                          </span>
+                        </div>
+
+                        {/* Vertical text between players */}
+                        <div className="verticalText">
+                          {leader.category.toUpperCase()}
+                        </div>
+
+                        {/* Away player side */}
+                        <div className="playerDetail awayPlayer">
+                          <span className="value">
+                            {leader.awayLeader.value}
+                          </span>
+                          <div className="playerStats">
+                            <span>{leader.awayLeader.firstName.default}</span>
+                            <span className="lastName">
+                              {leader.awayLeader.lastName.default}
+                            </span>
+                            <span>
+                              {leader.awayLeader.positionCode} • #
+                              {leader.awayLeader.sweaterNumber}
+                            </span>
                             <img
-                              src={leader.homeLeader.headshot}
-                              alt="Home player headshot"
+                              src={leader.awayLeader.headshot}
+                              alt="Away player headshot"
                               className="playerHeadshot"
                             />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
 
-                            <div className="playerStats">
-                              <span>{leader.homeLeader.firstName.default}</span>
-                              <span className="lastName">
-                                {leader.homeLeader.lastName.default}
-                              </span>
-                              <span>
-                                #{leader.homeLeader.sweaterNumber} •{" "}
-                                {leader.homeLeader.positionCode}
+                {/* Goalie Comparison Container */}
+                <div
+                  className="goalieCompContainer"
+                  style={{
+                    "--home-primary-color": homeTeamColors.primaryColor,
+                    "--home-secondary-color": homeTeamColors.secondaryColor,
+                    "--home-jersey-color": homeTeamColors.jersey,
+                    "--home-accent-color": homeTeamColors.accent,
+                    "--home-alt-color": homeTeamColors.alt,
+                    "--away-primary-color": awayTeamColors.primaryColor,
+                    "--away-secondary-color": awayTeamColors.secondaryColor,
+                    "--away-jersey-color": awayTeamColors.jersey,
+                    "--away-accent-color": awayTeamColors.accent,
+                    "--away-alt-color": awayTeamColors.alt,
+                  }}
+                >
+                  {" "}
+                  {/* Add some margin for spacing */}
+                  <div className="goalieCompHeader">
+                    <div className="goalieCompHeaderLeft">
+                      <img
+                        className="teamLogoHomePC"
+                        src={gameDetails.homeTeam.logo}
+                        alt={`${gameDetails.homeTeam.name.default} logo`}
+                        style={{ width: "75px" }}
+                      />
+                    </div>
+                    <p>Goalie Comparison</p>
+                    <div className="goalieCompHeaderRight">
+                      <img
+                        className="teamLogoAwayPC"
+                        src={gameDetails.awayTeam.logo}
+                        alt={`${gameDetails.awayTeam.name.default} logo`}
+                        style={{ width: "75px" }}
+                      />
+                    </div>
+                  </div>
+                  <div className="goalieStatsContainer">
+                    <div className="homeGoalies">
+                      {gameLandingDetails?.matchup?.goalieComparison?.homeTeam.map(
+                        (goalie) => (
+                          <div key={goalie.playerId} className="goalieStatRow">
+                            <div className="goalieImage">
+                              <img
+                                src={goalie.headshot}
+                                alt={`Headshot of ${goalie.name.default}`}
+                              />
+                            </div>
+                            <div className="goalieName">
+                              <span>{goalie.firstName.default}</span>{" "}
+                              {/* First Name */}
+                              <span className="goalieLastName">
+                                {goalie.lastName.default}
+                              </span>{" "}
+                              {/* Last Name */}
+                              <span className="goalieSweaterNumber">
+                                #{goalie.sweaterNumber} • {goalie.positionCode}
                               </span>
                             </div>
-                            <span className="value">
-                              {leader.homeLeader.value}
-                            </span>
+                            <div className="homeGoalieStatHighlight">
+                              <div className="goalieStatDetails">
+                                <span className="spanGoalieValue">Record:</span>
+                                <span className="spanGoalieStat">
+                                  {goalie.record}
+                                </span>
+                              </div>
+                              <div className="goalieStatDetails">
+                                <span className="spanGoalieValue">GAA:</span>
+                                <span className="spanGoalieStat">
+                                  {goalie?.gaa?.toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="goalieStatDetails">
+                                <span className="spanGoalieValue">SV%:</span>
+                                <span className="spanGoalieStat">
+                                  {goalie?.savePctg
+                                    ?.toFixed(3)
+                                    ?.replace(/^0+/, "")}
+                                  %
+                                </span>
+                              </div>
+                              <div className="goalieStatDetails">
+                                <span className="spanGoalieValue">SO:</span>
+                                <span className="spanGoalieStat">
+                                  {goalie?.shutouts}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-
-                          {/* Vertical text between players */}
-                          <div className="verticalText">
-                            {leader.category.toUpperCase()}
-                          </div>
-
-                          {/* Away player side */}
-                          <div className="playerDetail awayPlayer">
-                            <span className="value">
-                              {leader.awayLeader.value}
-                            </span>
-                            <div className="playerStats">
-                              <span>{leader.awayLeader.firstName.default}</span>
-                              <span className="lastName">
-                                {leader.awayLeader.lastName.default}
+                        )
+                      )}
+                    </div>
+                    <div className="awayGoalies">
+                      {gameLandingDetails?.matchup?.goalieComparison?.awayTeam.map(
+                        (goalie) => (
+                          <div key={goalie.playerId} className="goalieStatRow">
+                            <div className="awayGoalieStatHighlight">
+                              <div className="goalieStatDetails">
+                                <span className="spanGoalieValue">Record:</span>
+                                <span className="spanGoalieStat">
+                                  {goalie.record}
+                                </span>
+                              </div>
+                              <div className="goalieStatDetails">
+                                <span className="spanGoalieValue">GAA:</span>
+                                <span className="spanGoalieStat">
+                                  {goalie.gaa.toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="goalieStatDetails">
+                                <span className="spanGoalieValue">SV%:</span>
+                                <span className="spanGoalieStat">
+                                  {goalie.savePctg
+                                    .toFixed(3)
+                                    .replace(/^0+/, "")}
+                                  %
+                                </span>
+                              </div>
+                              <div className="goalieStatDetails">
+                                <span className="spanGoalieValue">SO:</span>
+                                <span className="spanGoalieStat">
+                                  {goalie.shutouts}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="goalieName">
+                              <span>{goalie.firstName.default}</span>{" "}
+                              {/* First Name */}
+                              <span className="goalieLastName">
+                                {goalie.lastName.default}
+                              </span>{" "}
+                              <span className="goalieSweaterNumber">
+                                #{goalie.sweaterNumber} • {goalie.positionCode}
                               </span>
-                              <span>
-                                {leader.awayLeader.positionCode} • #
-                                {leader.awayLeader.sweaterNumber}
-                              </span>
+                            </div>
+
+                            <div className="goalieImage">
                               <img
-                                src={leader.awayLeader.headshot}
-                                alt="Away player headshot"
-                                className="playerHeadshot"
+                                src={goalie.headshot}
+                                alt={`Headshot of ${goalie.name.default}`}
                               />
                             </div>
                           </div>
-                        </div>
-                      ))}
-                  </div>
-
-                  {/* Goalie Comparison Container */}
-                  <div
-                    className="goalieCompContainer"
-                    style={{
-                      "--home-primary-color": homeTeamColors.primaryColor,
-                      "--home-secondary-color": homeTeamColors.secondaryColor,
-                      "--home-jersey-color": homeTeamColors.jersey,
-                      "--home-accent-color": homeTeamColors.accent,
-                      "--home-alt-color": homeTeamColors.alt,
-                      "--away-primary-color": awayTeamColors.primaryColor,
-                      "--away-secondary-color": awayTeamColors.secondaryColor,
-                      "--away-jersey-color": awayTeamColors.jersey,
-                      "--away-accent-color": awayTeamColors.accent,
-                      "--away-alt-color": awayTeamColors.alt,
-                    }}
-                  >
-                    {" "}
-                    {/* Add some margin for spacing */}
-                    <div className="goalieCompHeader">
-                      <div className="goalieCompHeaderLeft">
-                        <img
-                          className="teamLogoHomePC"
-                          src={gameDetails.homeTeam.logo}
-                          alt={`${gameDetails.homeTeam.name.default} logo`}
-                          style={{ width: "75px" }}
-                        />
-                      </div>
-                      <p>Goalie Comparison</p>
-                      <div className="goalieCompHeaderRight">
-                        <img
-                          className="teamLogoAwayPC"
-                          src={gameDetails.awayTeam.logo}
-                          alt={`${gameDetails.awayTeam.name.default} logo`}
-                          style={{ width: "75px" }}
-                        />
-                      </div>
-                    </div>
-                    <div className="goalieStatsContainer">
-                      <div className="homeGoalies">
-                        {gameLandingDetails?.matchup?.goalieComparison?.homeTeam.map(
-                          (goalie) => (
-                            <div
-                              key={goalie.playerId}
-                              className="goalieStatRow"
-                            >
-                              <div className="goalieImage">
-                                <img
-                                  src={goalie.headshot}
-                                  alt={`Headshot of ${goalie.name.default}`}
-                                />
-                              </div>
-                              <div className="goalieName">
-                                <span>{goalie.firstName.default}</span>{" "}
-                                {/* First Name */}
-                                <span className="goalieLastName">
-                                  {goalie.lastName.default}
-                                </span>{" "}
-                                {/* Last Name */}
-                                <span className="goalieSweaterNumber">
-                                  #{goalie.sweaterNumber} •{" "}
-                                  {goalie.positionCode}
-                                </span>
-                              </div>
-                              <div className="homeGoalieStatHighlight">
-                                <div className="goalieStatDetails">
-                                  <span className="spanGoalieValue">
-                                    Record:
-                                  </span>
-                                  <span className="spanGoalieStat">
-                                    {goalie.record}
-                                  </span>
-                                </div>
-                                <div className="goalieStatDetails">
-                                  <span className="spanGoalieValue">GAA:</span>
-                                  <span className="spanGoalieStat">
-                                    {goalie?.gaa?.toFixed(2)}
-                                  </span>
-                                </div>
-                                <div className="goalieStatDetails">
-                                  <span className="spanGoalieValue">SV%:</span>
-                                  <span className="spanGoalieStat">
-                                    {goalie?.savePctg
-                                      ?.toFixed(3)
-                                      ?.replace(/^0+/, "")}
-                                    %
-                                  </span>
-                                </div>
-                                <div className="goalieStatDetails">
-                                  <span className="spanGoalieValue">SO:</span>
-                                  <span className="spanGoalieStat">
-                                    {goalie?.shutouts}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        )}
-                      </div>
-                      <div className="awayGoalies">
-                        {gameLandingDetails?.matchup?.goalieComparison?.awayTeam.map(
-                          (goalie) => (
-                            <div
-                              key={goalie.playerId}
-                              className="goalieStatRow"
-                            >
-                              <div className="awayGoalieStatHighlight">
-                                <div className="goalieStatDetails">
-                                  <span className="spanGoalieValue">
-                                    Record:
-                                  </span>
-                                  <span className="spanGoalieStat">
-                                    {goalie.record}
-                                  </span>
-                                </div>
-                                <div className="goalieStatDetails">
-                                  <span className="spanGoalieValue">GAA:</span>
-                                  <span className="spanGoalieStat">
-                                    {goalie.gaa.toFixed(2)}
-                                  </span>
-                                </div>
-                                <div className="goalieStatDetails">
-                                  <span className="spanGoalieValue">SV%:</span>
-                                  <span className="spanGoalieStat">
-                                    {goalie.savePctg
-                                      .toFixed(3)
-                                      .replace(/^0+/, "")}
-                                    %
-                                  </span>
-                                </div>
-                                <div className="goalieStatDetails">
-                                  <span className="spanGoalieValue">SO:</span>
-                                  <span className="spanGoalieStat">
-                                    {goalie.shutouts}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="goalieName">
-                                <span>{goalie.firstName.default}</span>{" "}
-                                {/* First Name */}
-                                <span className="goalieLastName">
-                                  {goalie.lastName.default}
-                                </span>{" "}
-                                <span className="goalieSweaterNumber">
-                                  #{goalie.sweaterNumber} •{" "}
-                                  {goalie.positionCode}
-                                </span>
-                              </div>
-
-                              <div className="goalieImage">
-                                <img
-                                  src={goalie.headshot}
-                                  alt={`Headshot of ${goalie.name.default}`}
-                                />
-                              </div>
-                            </div>
-                          )
-                        )}
-                      </div>
+                        )
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="poissonChartContainer">
-                <PoissonDistributionChart chartData={chartData} />
-              </div>
-            </>
-          ) : (
-            <p>Loading game details...</p>
-          )}
-        </div>
-      );
-    }
+            </div>
+            <div className="poissonChartContainer">
+              <PoissonDistributionChart chartData={chartData} />
+            </div>
+          </>
+        ) : (
+          <p>Loading game details...</p>
+        )}
+      </div>
+    );
   } else if (
     gameLandingDetails?.gameState === "OFF" ||
     gameLandingDetails?.gameState === "OVER" ||
