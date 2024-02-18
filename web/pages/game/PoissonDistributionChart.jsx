@@ -26,11 +26,8 @@ const PoissonDistributionChart = ({ chartData }) => {
   const [otPrediction, setOtPrediction] = useState(""); // Added for overtime prediction
 
   useEffect(() => {
-    if (!chartData || chartData.length < 2) {
-      console.error(
-        "chartData is not loaded or does not have enough elements."
-      );
-      return; // Exit the effect hook early
+    if (!chartData || chartData.length < 2 || !chartData[0] || !chartData[1]) {
+      return <div>Loading chart data...</div>; // Or any other placeholder content
     }
 
     const fetchLeagueData = async () => {
