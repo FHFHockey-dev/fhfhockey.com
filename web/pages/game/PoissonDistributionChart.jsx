@@ -41,6 +41,8 @@ const PoissonDistributionChart = ({ chartData }) => {
           return;
         }
 
+        console.log("Standings data:", standings);
+
         const seasonId = standings[0].seasonId; // Assume same seasonId for all teams
         const numberOfTeams = standings.length; // Define numberOfTeams based on the standings length
 
@@ -148,10 +150,11 @@ const PoissonDistributionChart = ({ chartData }) => {
     fetchLeagueData();
 
     const processData = () => {
-      const homeExpectedGoals =
-        chartData.length > 0 ? chartData[0].goalsForPerGame : 0;
-      const awayExpectedGoals =
-        chartData.length > 1 ? chartData[1].goalsForPerGame : 0;
+      if (chartData.length < 2) {
+        return { homeExpectedGoals: 0, awayExpectedGoals: 0 };
+      }
+      const homeExpectedGoals = chartData[0].goalsForPerGame || 0;
+      const awayExpectedGoals = chartData[1].goalsForPerGame || 0;
       return { homeExpectedGoals, awayExpectedGoals };
     };
 

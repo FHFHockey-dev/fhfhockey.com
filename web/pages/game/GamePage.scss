@@ -906,3 +906,396 @@ strong {
   justify-content: space-between;
   margin-top: 20px;
 }
+
+/* //////////////////////////////////////////    GAME OVER PAGE STYLES ///////////////////////////////////////////////////// */
+
+.gameOverPage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.gameOverDetailsContainer {
+  justify-content: center;
+  border-bottom: 6px double white;
+  align-items: center;
+  display: flex;
+  width: 100%;
+}
+
+.gameOverPageContainer {
+  width: 85%;
+  display: flex;
+  flex-direction: column;
+}
+
+.gameOverStatsContainer {
+  height: 100%;
+  margin-top: 25px;
+  display: flex;
+  justify-content: space-between;
+  width: 30%;
+}
+
+.gameOverCard {
+  text-align: center;
+  overflow: hidden;
+  max-height: 5em;
+  width: 100%;
+  align-items: center;
+  display: flex;
+  justify-content: space-around;
+}
+
+.gameOverScoreboard {
+  width: 85%;
+  margin-top: 20px;
+}
+
+.gameOverDetails {
+  display: flex;
+  justify-content: space-between;
+  border: 3px solid white;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #303030;
+  width: 100%;
+}
+
+.gameOverDetailsLeft,
+.gameOverDetailsRight {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gameOverDetailsLabel,
+.gameOverDetailsValue {
+  font-size: 1.2em;
+  color: white;
+  margin: 0 10px;
+}
+
+.team-nameGPvs {
+  font-size: 1.5em;
+  font-weight: bold;
+  color: white; /* or use var(--home-accent-color) for dynamic coloring */
+}
+
+.GOtable {
+  width: 100%;
+  height: 100%;
+
+  text-align: center;
+  border-collapse: collapse; /* Ensures the table is neatly packed together */
+}
+
+.GOtable table {
+  width: 100%;
+  height: 100%;
+
+  text-align: center;
+  border-collapse: collapse; /* Ensures the table is neatly packed together */
+  border-spacing: 0px;
+}
+
+.GOtable,
+.GOtable table {
+  flex-grow: 1; /* Allows the table to grow and fill its container */
+}
+
+.GOtable tbody,
+.GOtable tr,
+.GOtable td {
+  height: 100%;
+}
+
+.GOtable th {
+  padding: 10px;
+}
+
+.GOtable tr {
+  padding: 10px;
+  border: 3px solid white; /* Matches the style of other components */
+  background-color: #303030; /* Matches the style of other components */
+}
+
+.GOtable tbody td {
+  padding: 10px;
+  border: 3px solid white; /* Matches the style of other components */
+  background-color: #303030; /* Matches the style of other components */
+}
+
+.GOtable img.GOteamLogoHome,
+.GOtable img.GOteamLogoAway {
+  height: 50px; /* Adjust as needed */
+  width: auto; /* Maintain aspect ratio */
+}
+
+/* Optional: Add a background or any additional styling to the th or td elements to match your design */
+.GOTLHcell {
+  background: linear-gradient(
+    65deg,
+    var(--home-jersey-color) 0%,
+    var(--home-jersey-color) 50%,
+    var(--home-secondary-color) 50%,
+    var(--home-secondary-color) 55%,
+    var(--home-primary-color) 55%,
+    var(--home-primary-color) 60%,
+    var(--home-secondary-color) 60%,
+    var(--home-secondary-color) 65%,
+    var(--home-primary-color) 65%,
+    var(--home-primary-color) 100%
+  );
+  color: white;
+}
+
+.GOTLAcell {
+  background: linear-gradient(
+    115deg,
+    var(--away-primary-color) 0%,
+    var(--away-primary-color) 35%,
+    var(--away-secondary-color) 35%,
+    var(--away-secondary-color) 40%,
+    var(--away-jersey-color) 40%,
+    var(--away-jersey-color) 45%,
+    var(--away-secondary-color) 45%,
+    var(--away-secondary-color) 50%,
+    var(--away-jersey-color) 50%,
+    var(--away-jersey-color) 100%
+  );
+  color: white;
+}
+
+.GOTLHcell img {
+  filter: drop-shadow(0 0 5px var(--home-primary-color));
+}
+
+.GOgameDetailsCell {
+  font-weight: bold;
+  font-size: 1.2em;
+  background: linear-gradient(
+    90deg,
+    var(--home-primary-color) 0%,
+    var(--away-primary-color) 100%
+  );
+}
+
+/* Styling for the 'Game Details' header if needed */
+.GOtable th:nth-child(2) {
+  font-weight: bold;
+  font-size: 1.2em;
+}
+
+.GOscratches {
+  margin-top: 25px;
+  display: flex;
+  flex-direction: column; /* Align items in a column for better structure */
+  align-items: center; /* Center align the contents */
+  width: 30%;
+  background-color: #303030; /* Ensure background consistency */
+  color: white; /* Text color consistency */
+  border: 3px solid white; /* Consistent separator style */
+  border-radius: 5px; /* Rounded corners for a softer look */
+}
+
+.GOscratchHeader {
+  width: 100%;
+  display: flex;
+  justify-content: center; /* Center align the text */
+  align-items: center;
+  font-size: 1.25em; /* Match heading sizes */
+  padding: 10px; /* Consistent padding */
+  margin-bottom: 15px; /* Consistent spacing */
+  color: var(--home-accent-color); /* Use dynamic coloring for headings */
+  border-bottom: 2px solid white;
+}
+
+.GOscratchDetails {
+  display: flex;
+  width: 90%; /* Slightly reduce width for padding effect */
+  justify-content: space-evenly; /* Evenly space the columns */
+}
+
+.GOhomeScratches,
+.GOawayScratches {
+  width: 45%; /* Allocate equal width to both columns */
+  text-align: center; /* Center align text for readability */
+  padding: 10px 0; /* Consistent padding */
+}
+
+.GOscratchHomeHeader,
+.GOscratchAwayHeader {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.scratchesName {
+  display: block; /* Ensure each name is on its own line */
+  margin-bottom: 5px; /* Add space between names */
+  font-size: 11px;
+  text-transform: uppercase;
+  text-align: left;
+  padding: 4px 0;
+}
+
+/* Enhanced table styling */
+.GOtable th,
+.GOtable td {
+  padding: 8px; /* Adjust padding for comfort */
+  background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent for depth */
+}
+
+/* Ensure consistency in visual effects */
+.GOtable img.GOteamLogoHome,
+.GOtable img.GOteamLogoAway {
+  filter: drop-shadow(0 0 10px #000); /* Consistent shadow effect */
+}
+
+.gameOverFlexContainer {
+  display: flex;
+  height: 100%;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.gameOverStatsContainer,
+.threeStarsContainer {
+  flex: 1; /* Allows each child to grow and fill the container equally */
+  display: flex;
+  flex-direction: column; /* Ensures content flows top to bottom */
+  background-color: #303030; /* Consistent with other components */
+  border: 3px solid white;
+  border-radius: 5px;
+  margin-right: 2%; /* Add space between the two containers */
+}
+
+.gameOverStatsContainer:last-child,
+.threeStarsContainer:last-child {
+  margin-right: 0;
+}
+
+.threeStarsHeader,
+.gameOverHeader {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-align: center;
+  padding: 10px;
+  border-radius: 5px;
+  width: 100%;
+  height: 3em;
+}
+
+.starRow {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.starStats {
+  display: flex;
+  flex-direction: column;
+  margin-left: 20px;
+}
+
+.starStats span {
+  margin-bottom: 5px;
+}
+
+.gameOverScratchesContainer {
+  width: 85%;
+  display: flex;
+  justify-content: space-between;
+  margin-top: 25px;
+}
+
+.threeStarsContainer {
+  margin-top: 25px;
+  width: 48%;
+  background-color: #303030; /* Matches gameOverDetails */
+  border: 3px solid white;
+  border-radius: 5px;
+  color: white;
+  flex-direction: column;
+  display: flex;
+  margin-left: 2%; /* Ensure some space between the stats and three stars container */
+  justify-content: space-between;
+}
+
+.starRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Adjust alignment */
+  background-color: rgba(255, 255, 255, 0.1); /* Semi-transparent for depth */
+  padding: 10px;
+  border-radius: 5px; /* Soften edges */
+  margin-bottom: 10px;
+}
+
+.starStats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* Align stats text to the start */
+  margin: 0 20px; /* Adjust spacing around stats */
+}
+
+.starName {
+  font-weight: bold;
+  margin-left: auto; /* Push name to the right */
+}
+
+/* Additional Styling for Consistency */
+.threeStarsHeader {
+  background: linear-gradient(
+    115deg,
+    var(--home-primary-color) 0%,
+    var(--home-primary-color) 25%,
+    var(--home-secondary-color) 25%,
+    var(--home-secondary-color) 30%,
+    var(--home-primary-color) 30%,
+    var(--home-primary-color) 35%,
+    var(--home-secondary-color) 35%,
+    var(--home-secondary-color) 40%,
+    var(--home-jersey-color) 40%,
+    var(--home-jersey-color) 45%,
+    #fff 45%,
+    #fff 55%,
+    var(--away-jersey-color) 55%,
+    var(--away-jersey-color) 60%,
+    var(--away-secondary-color) 60%,
+    var(--away-secondary-color) 65%,
+    var(--away-primary-color) 65%,
+    var(--away-primary-color) 70%,
+    var(--away-secondary-color) 70%,
+    var(--away-secondary-color) 75%,
+    var(--away-primary-color) 75%,
+    var(--away-primary-color) 100%
+  );
+  color: white;
+}
+
+/* Ensure images and stats are well-spaced and aligned */
+.starRow img {
+  border-radius: 50%; /* Circular images */
+  border: 2px solid white; /* Define border for images */
+  filter: drop-shadow(0 0 10px #000);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .gameOverFlexContainer {
+    flex-direction: column;
+  }
+
+  .gameOverStatsContainer,
+  .threeStarsContainer {
+    width: 100%; /* Full width for smaller screens */
+    margin-bottom: 20px; /* Add space between containers */
+  }
+}

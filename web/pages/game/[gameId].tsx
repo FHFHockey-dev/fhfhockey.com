@@ -42,6 +42,7 @@ export default function Page() {
         );
         setGameLandingDetails(landingResponse); // Update state with fetched game landing details
         console.log("(landingResponse) Game landing details:", landingResponse);
+        console.log("Summary:", landingResponse.summary);
       } catch (error) {
         console.error("Error fetching game landing details:", error);
       }
@@ -336,7 +337,10 @@ export default function Page() {
 
   console.log("chartData:", chartData);
 
-  if (gameLandingDetails?.gameState === "FUT") {
+  if (
+    gameLandingDetails?.gameState === "FUT" ||
+    gameLandingDetails?.gameState === "PRE"
+  ) {
     return (
       <div className="game-page">
         {gameDetails ? (
@@ -364,15 +368,13 @@ export default function Page() {
                     alt={`${gameDetails.homeTeam.name.default} logo`}
                   />
                   <span className="team-nameGPvs home-team">
-                    {gameDetails.homeTeam.name.default} <br />
-                    <span className="team-record">{homeTeamRecord}</span>
+                    {gameDetails.homeTeam.name.default}
                   </span>
                 </div>
                 <span className="GPvs">VS</span>
                 <div className="gamePageCardRight">
                   <span className="team-nameGPvs away-team">
-                    {gameDetails.awayTeam.name.default} <br />
-                    <span className="team-record">{awayTeamRecord}</span>
+                    {gameDetails.awayTeam.name.default}
                   </span>
                   <img
                     className="teamLogoAway"
@@ -866,10 +868,230 @@ export default function Page() {
         )}
       </div>
     );
-  } else if (gameLandingDetails?.gameState === "OFF") {
+  } else if (
+    gameLandingDetails?.gameState === "OFF" ||
+    gameLandingDetails?.gameState === "OVER" ||
+    gameLandingDetails?.gameState === "FINAL"
+  ) {
     return (
-      <div className="game-page">
-        <p>Game is finished.</p>
+      <div className="gameOverPage">
+        {gameDetails ? (
+          <>
+            <div
+              className="gameOverDetailsContainer"
+              style={{
+                "--home-primary-color": homeTeamColors.primaryColor,
+                "--home-secondary-color": homeTeamColors.secondaryColor,
+                "--home-jersey-color": homeTeamColors.jersey,
+                "--home-accent-color": homeTeamColors.accent,
+                "--home-alt-color": homeTeamColors.alt,
+                "--away-primary-color": awayTeamColors.primaryColor,
+                "--away-secondary-color": awayTeamColors.secondaryColor,
+                "--away-jersey-color": awayTeamColors.jersey,
+                "--away-accent-color": awayTeamColors.accent,
+                "--away-alt-color": awayTeamColors.alt,
+              }}
+            >
+              <div className="gameOverCard">
+                <div className="gamePageCardLeft">
+                  <img
+                    className="teamLogoHome"
+                    src={gameDetails.homeTeam.logo}
+                    alt={`${gameDetails.homeTeam.name.default} logo`}
+                  />
+                  <span className="team-nameGPvs home-team">
+                    {gameDetails.homeTeam.name.default} <br />
+                    <span className="team-record">
+                      {gameDetails.homeTeam.score}
+                    </span>
+                  </span>
+                </div>
+                <span className="GPvs">VS</span>
+                <div className="gamePageCardRight">
+                  <span className="team-nameGPvs away-team">
+                    {gameDetails.awayTeam.name.default} <br />
+                    <span className="team-record">
+                      {gameDetails.awayTeam.score}
+                    </span>
+                  </span>
+                  <img
+                    className="teamLogoAway"
+                    src={gameDetails.awayTeam.logo}
+                    alt={`${gameDetails.awayTeam.name.default} logo`}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="gameOverPageContainer"
+              style={{
+                "--home-primary-color": homeTeamColors.primaryColor,
+                "--home-secondary-color": homeTeamColors.secondaryColor,
+                "--home-jersey-color": homeTeamColors.jersey,
+                "--home-accent-color": homeTeamColors.accent,
+                "--home-alt-color": homeTeamColors.alt,
+                "--away-primary-color": awayTeamColors.primaryColor,
+                "--away-secondary-color": awayTeamColors.secondaryColor,
+                "--away-jersey-color": awayTeamColors.jersey,
+                "--away-accent-color": awayTeamColors.accent,
+                "--away-alt-color": awayTeamColors.alt,
+              }}
+            >
+              <div className="gameOverFlexContainer">
+                <div className="gameOverStatsContainer">
+                  <div className="GOtable">
+                    <table>
+                      <thead className="gameOverHeader">
+                        <tr>
+                          <th className="GOTLHcell">
+                            <img
+                              className="GOteamLogoHome"
+                              src={gameDetails.homeTeam.logo}
+                              alt={`${gameDetails.homeTeam.name.default} logo`}
+                              style={{ width: "75px" }}
+                            />
+                          </th>
+                          <th className="GOgameDetailsCell">Game Details</th>
+                          <th className="GOTLAcell">
+                            <img
+                              className="GOteamLogoAway"
+                              src={gameDetails.awayTeam.logo}
+                              alt={`${gameDetails.awayTeam.name.default} logo`}
+                              style={{ width: "75px" }}
+                            />
+                          </th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        <tr>
+                          <td>{gameDetails.homeTeam.sog}</td>
+                          <td>SOG</td>
+                          <td>{gameDetails.awayTeam.sog}</td>
+                        </tr>
+                        <tr>
+                          <td>{gameDetails.homeTeam.hits}</td>
+                          <td>HIT</td>
+                          <td>{gameDetails.awayTeam.hits}</td>
+                        </tr>
+                        <tr>
+                          <td>{gameDetails.homeTeam.blocks}</td>
+                          <td>BLK</td>
+                          <td>{gameDetails.awayTeam.blocks}</td>
+                        </tr>
+                        <tr>
+                          <td>{gameDetails.homeTeam.pim}</td>
+                          <td>PIM</td>
+                          <td>{gameDetails.awayTeam.pim}</td>
+                        </tr>
+                        <tr>
+                          <td>{gameDetails.homeTeam.faceoffWinningPctg}</td>
+                          <td>FO%</td>
+                          <td>{gameDetails.awayTeam.faceoffWinningPctg}</td>
+                        </tr>
+                        <tr>
+                          <td>
+                            {(
+                              (parseFloat(
+                                gameDetails.homeTeam.powerPlayConversion.split(
+                                  "/"
+                                )[0]
+                              ) /
+                                parseFloat(
+                                  gameDetails.homeTeam.powerPlayConversion.split(
+                                    "/"
+                                  )[1]
+                                )) *
+                              100
+                            ).toFixed(2) || "N/A"}
+                            %
+                          </td>
+                          <td>PPG</td>
+                          <td>
+                            {(
+                              (parseFloat(
+                                gameDetails.awayTeam.powerPlayConversion.split(
+                                  "/"
+                                )[0]
+                              ) /
+                                parseFloat(
+                                  gameDetails.awayTeam.powerPlayConversion.split(
+                                    "/"
+                                  )[1]
+                                )) *
+                              100
+                            ).toFixed(2) || "N/A"}
+                            %
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <div className="threeStarsContainer">
+                  <div className="threeStarsHeader">
+                    <span>Three Stars of the Game</span>
+                  </div>
+                  {gameLandingDetails.summary.threeStars.map((star, index) => (
+                    <div className="starRow" key={index}>
+                      <img
+                        src={star.headshot}
+                        alt={`${star.name}'s headshot`}
+                        style={{ height: "75px" }}
+                      />
+                      <div className="starStats">
+                        <span>{`${star.goals}G, ${star.assists}A, ${star.points}P`}</span>
+                        <span>{`${star.sweaterNo} | ${star.position}`}</span>
+                      </div>
+                      <span className="starName">{star.name}</span>{" "}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="gameOverScratchesContainer">
+              <div className="GOscratches">
+                <div className="GOscratchHeader">
+                  <span>Scratches</span>
+                </div>
+                <div className="GOscratchDetails">
+                  <div className="GOhomeScratches">
+                    <div className="GOscratchHomeHeader">
+                      <span>{gameDetails.homeTeam.name.default}</span>
+                    </div>
+                    {gameLandingDetails.summary.gameInfo.homeTeam.scratches.map(
+                      (player) => (
+                        <span className="scratchesName" key={player.id}>
+                          -{" "}
+                          {`${player.firstName.default} ${player.lastName.default}`}
+                          <br />
+                        </span>
+                      )
+                    )}
+                  </div>
+
+                  <div className="GOawayScratches">
+                    <div className="GOscratchAwayHeader">
+                      <span>{gameDetails.awayTeam.name.default}</span>
+                    </div>
+                    {gameLandingDetails.summary.gameInfo.awayTeam.scratches.map(
+                      (player) => (
+                        <span className="scratchesName" key={player.id}>
+                          -{" "}
+                          {`${player.firstName.default} ${player.lastName.default}`}
+                          <br />
+                        </span>
+                      )
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <p>Loading game details...</p>
+        )}
       </div>
     );
   } else {
