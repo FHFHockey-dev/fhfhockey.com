@@ -12,9 +12,11 @@ export default function useGoals(id: number) {
   useEffect(() => {
     (async () => {
       if (!id) return;
+      setGoals([]);
       const data = await Fetch(
         `https://api-web.nhle.com/v1/gamecenter/${id}/landing`
       ).then((res) => res.json());
+      if (!data.summary) return;
       const scoring = data.summary.scoring;
       const homeTeamAbbrev = data.homeTeam.abbrev;
       const awayTeamAbbrev = data.awayTeam.abbrev;
@@ -92,8 +94,8 @@ type Goal = {
 // - vertical line
 // - style
 // - logic for positioning of overtime games: chart stays same width but goes to 4:4:4:1 column width split for P1:P2:P3:OT as it is 20:20:20:5 in minutes
-const PERIOD_IN_SECONDS = 20 * 60;
-const PERIOD_LENGTH = 0.3;
+export const PERIOD_IN_SECONDS = 20 * 60;
+export const PERIOD_LENGTH = 0.3;
 
 function brightenColor(hex: string, percent: number): string {
   // Check if hex starts with "#" and remove it for processing
@@ -119,10 +121,6 @@ function GoalIndicator({
   homeTeam,
   awayTeam,
 }: Goal) {
-  console.log(period.number * timeInPeriod);
-  // 20 minutes per period , each period is 30% of the total length
-  // timeInPeriod / 20 minutes * (30% * period.number)
-
   const leftPercentage = `${
     ((timeInPeriod / PERIOD_IN_SECONDS) * PERIOD_LENGTH +
       PERIOD_LENGTH * (period.number - 1)) *
@@ -189,7 +187,7 @@ function GoalIndicator({
   );
 }
 
-const convertTimeToSeconds = (timeString: string) => {
+export const convertTimeToSeconds = (timeString: string) => {
   if (!timeString) {
     return 0;
   }

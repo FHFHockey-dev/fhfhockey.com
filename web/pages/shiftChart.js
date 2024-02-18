@@ -6,6 +6,7 @@ import { teamsInfo } from "web/lib/NHL/teamsInfo";
 import styles from "web/styles/ShiftChart.module.scss";
 import Fetch from "lib/cors-fetch";
 import { GoalIndicators } from "hooks/useGoals";
+import PowerPlayAreaIndicators from "web/components/ShiftChart/PowerPlayAreaIndicators";
 
 // TODO
 
@@ -792,6 +793,23 @@ function ShiftChart() {
                 }}
               ></div>
               <GoalIndicators id={Number(selectedGame)} />
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: "100%",
+                  width: "100%",
+                  height: `${
+                    (playerData.home.length + playerData.away.length) * 100
+                  }%`,
+                  zIndex: 1,
+                }}
+              >
+                <PowerPlayAreaIndicators
+                  id={Number(selectedGame)}
+                  totalGameTimeInSeconds={totalGameTimeInSeconds}
+                />
+              </div>
             </td>
           </tr>
 
