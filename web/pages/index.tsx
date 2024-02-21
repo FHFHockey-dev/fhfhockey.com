@@ -143,7 +143,9 @@ const Home: NextPage = ({
             <button onClick={() => changeDate(-1)}>&lt;</button>
 
             <div className={styles.headerAndDate}>
-              <h1>Today&apos;s Games</h1>
+              <h1>
+                Today&apos;s <span>Games</span>
+              </h1>
               <p className={styles.dateDisplay}>
                 {moment(currentDate).format("MM/DD/YYYY")}
               </p>
@@ -170,7 +172,7 @@ const Home: NextPage = ({
                 <Link key={game.id} href={`/game/${game.id}`}>
                   <a className={styles.gameLink}>
                     <div
-                      className={styles.gameCard}
+                      className={styles.combinedGameCard}
                       style={{
                         "--home-primary-color": homeTeamInfo.primaryColor,
                         "--home-secondary-color": homeTeamInfo.secondaryColor,
@@ -191,47 +193,27 @@ const Home: NextPage = ({
                           alt={`${homeTeam.abbrev} logo`}
                         />
                       </div>
-                      <span className={styles.vs}>VS</span>
+                      <div className={styles.gameTimeSection}>
+                        <div className={styles.homeScore}>{homeTeam.score}</div>
+                        <div className={styles.gameTimeInfo}>
+                          <span className={styles.gameState}>
+                            {getDisplayGameState(game.gameState)}
+                          </span>
+                          <span className={styles.gameTimeText}>
+                            {/* Assuming ClientOnly and moment are available in your environment */}
+                            <ClientOnly placeHolder={<>&nbsp;</>}>
+                              {moment(game.startTimeUTC).format("h:mm A")}
+                            </ClientOnly>
+                          </span>
+                        </div>
+                        <div className={styles.awayScore}>{awayTeam.score}</div>
+                      </div>
                       <div className={styles.awayTeamLogo}>
                         <img
                           src={`https://assets.nhle.com/logos/nhl/svg/${awayTeam.abbrev}_light.svg`}
                           className={styles.rightImage}
                           alt={`${awayTeam.abbrev} logo`}
                         />
-                      </div>
-                    </div>
-
-                    <div
-                      className={styles.gameTimeCard}
-                      style={{
-                        "--home-primary-color": homeTeamInfo.primaryColor,
-                        "--home-secondary-color": homeTeamInfo.secondaryColor,
-                        "--home-jersey-color": homeTeamInfo.jersey,
-                        "--home-accent-color": homeTeamInfo.accent,
-                        "--home-alt-color": homeTeamInfo.alt,
-                        "--away-primary-color": awayTeamInfo.primaryColor,
-                        "--away-secondary-color": awayTeamInfo.secondaryColor,
-                        "--away-jersey-color": awayTeamInfo.jersey,
-                        "--away-accent-color": awayTeamInfo.accent,
-                        "--away-alt-color": awayTeamInfo.alt,
-                      }}
-                    >
-                      <div className={`${styles.column} ${styles.homeScore}`}>
-                        {homeTeam.score}
-                      </div>
-                      <div className={`${styles.column} ${styles.gameTime}`}>
-                        <span className={styles.gameState}>
-                          {getDisplayGameState(game.gameState)}
-                        </span>
-                        <span className={styles.gameTimeText}>
-                          <ClientOnly placeHolder={<>&nbsp;</>}>
-                            {moment(game.startTimeUTC).format("h:mm A")}
-                          </ClientOnly>
-                        </span>
-                      </div>
-
-                      <div className={`${styles.column} ${styles.awayScore}`}>
-                        {awayTeam.score}
                       </div>
                     </div>
                   </a>
