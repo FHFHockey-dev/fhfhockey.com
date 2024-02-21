@@ -66,6 +66,14 @@
   color: #07aae2;
 }
 
+.standingsHeader h1 span {
+  color: #07aae2;
+}
+
+.injuriesHeader h1 span {
+  color: #07aae2;
+}
+
 .gameLink {
   text-decoration: none;
   color: inherit;
@@ -406,12 +414,6 @@
     margin-bottom: 0;
   }
 
-  .gamesHeader h1,
-  .ccStandings > div > h1,
-  .crInjuries > div > h1 {
-    font-size: 1.6em;
-  }
-
   .gamesHeader button {
     cursor: pointer;
     font-size: 20px; /* Adjust font size as needed */
@@ -488,24 +490,32 @@
   font-family: roboto condensed, sans-serif;
   text-transform: uppercase;
   letter-spacing: -0.015em;
-  font-weight: 900;
-  font-style: italic;
-  font-size: 2em;
+  font-weight: 200;
   margin-bottom: 0.5em;
-  text-align: center;
   color: #fff;
+
+  font-style: normal;
+  font-size: 2.5rem;
+  line-height: 56px;
+  text-align: left;
+  position: relative;
+  margin-bottom: 0;
 }
 
 .ccStandings h1 {
   font-family: roboto condensed, sans-serif;
   text-transform: uppercase;
   letter-spacing: -0.015em;
-  font-weight: 900;
-  font-style: italic;
-  font-size: 2em;
+  font-weight: 200;
   margin-bottom: 0.5em;
-  text-align: center;
   color: #fff;
+
+  font-style: normal;
+  font-size: 2.5rem;
+  line-height: 56px;
+  text-align: left;
+  position: relative;
+  margin-bottom: 0;
 }
 
 .injuryTable {

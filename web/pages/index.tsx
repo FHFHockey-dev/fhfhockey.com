@@ -227,7 +227,9 @@ const Home: NextPage = ({
         <div className={styles.standingsInjuriesContainer}>
           <div className={styles.ccStandings}>
             <div className={styles.standingsHeader}>
-              <h1>Standings</h1>
+              <h1>
+                Current <span>Standings</span>
+              </h1>
             </div>
             <table className={styles.standingsTable}>
               <thead className={styles.standingsTableHeader}>
@@ -251,7 +253,9 @@ const Home: NextPage = ({
 
           <div className={styles.crInjuries}>
             <div className={styles.injuriesHeader}>
-              <h1>Injury Updates</h1>
+              <h1>
+                Injury <span>Updates</span>
+              </h1>
             </div>
 
             <table className={styles.injuryTable}>
