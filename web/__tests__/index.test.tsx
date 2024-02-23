@@ -12,6 +12,6 @@ describe("Home", () => {
 
     const heading = screen.getByRole("heading", { level: 1 });
 
-    expect(heading).toContainHTML("<h1>Good</h1>");
+    expect(heading).toHaveTextContent("Good");
   });
 });
