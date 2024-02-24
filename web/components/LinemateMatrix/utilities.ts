@@ -45,13 +45,14 @@ export function getPairwiseTOI(data: Shift[], p1: number, p2: number): number {
 
   let totalDuration = 0;
   const periods = Object.keys(p1Groups);
+
   periods.forEach((period) => {
     totalDuration += getTogetherDuration(
       p1Groups[period] ?? [],
       p2Groups[period] ?? []
     );
   });
-  return 0;
+  return totalDuration;
 }
 
 function convertToTimeArray(data: Shift[], size: number = 1200) {
