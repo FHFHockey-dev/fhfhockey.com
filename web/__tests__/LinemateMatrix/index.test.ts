@@ -9,7 +9,7 @@ describe("Linemate Matrix", () => {
     const Ryan = 8478585;
     const Ekholm = 8475218;
     expect(getPairwiseTOI(shiftcharts_2023020850.data, Ryan, Ekholm)).toEqual(
-      2.42 * 60
+      145
     );
   });
 
@@ -31,7 +31,7 @@ describe("Linemate Matrix", () => {
         period: 1,
         playerId: 2,
       },
-    ];
+    ] as any;
     expect(getPairwiseTOI(data, 1, 2)).toEqual(30);
   });
 
@@ -53,7 +53,7 @@ describe("Linemate Matrix", () => {
         period: 1,
         playerId: 2,
       },
-    ];
+    ] as any;
     expect(getPairwiseTOI(data, 1, 2)).toEqual(15);
   });
 
@@ -75,11 +75,12 @@ describe("Linemate Matrix", () => {
         period: 2,
         playerId: 2,
       },
-    ];
+    ] as any;
+
     expect(getPairwiseTOI(data, 1, 2)).toEqual(0);
   });
 
-  test("p1 stays 30s at period 1 and p2 stays 1 minute at period 2", () => {
+  test("p1 stays 1:10 at period 1 and p2 stays 1 minute at period 2", () => {
     const data = [
       {
         startTime: "01:00",
@@ -102,7 +103,7 @@ describe("Linemate Matrix", () => {
         period: 2,
         playerId: 2,
       },
-    ];
-    expect(getPairwiseTOI(data, 1, 2)).toEqual(70);
+    ] as any;
+    expect(getPairwiseTOI(data, 1, 2)).toEqual(0);
   });
 });
