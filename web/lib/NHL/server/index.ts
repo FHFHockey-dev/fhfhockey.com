@@ -126,7 +126,10 @@ export async function getAllPlayers(seasonId?: number): Promise<Player[]> {
     .select("sweaterNumber, players(*), teams(id, name,abbreviation)")
     .eq("seasonId", seasonId);
 
-  return data!.map((player) => ({
+
+    // ADDED "ANY" TYPE TO player 
+    // 02/19/2024 10:23AM EST
+  return data!.map((player: any) => ({
     ...player.players!,
     age: differenceInYears(
       new Date(),
