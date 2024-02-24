@@ -1,0 +1,108 @@
+import { describe, expect, test } from "vitest";
+
+import shiftcharts_2023020850 from "./shiftcharts-2023020850.json";
+import { getPairwiseTOI } from "components/LinemateMatrix/utilities";
+
+describe("Linemate Matrix", () => {
+  test("Game: 2023020850. Ryan & Ekholm", () => {
+    // Ekholm and Ryan were on the ice together for 2.42 minutes
+    const Ryan = 8478585;
+    const Ekholm = 8475218;
+    expect(getPairwiseTOI(shiftcharts_2023020850.data, Ryan, Ekholm)).toEqual(
+      2.42 * 60
+    );
+  });
+
+  test("Stay the same amount of time", () => {
+    const data = [
+      {
+        id: 1,
+        startTime: "01:00",
+        endTime: "01:30",
+        duration: "00:30",
+        period: 1,
+        playerId: 1,
+      },
+      {
+        id: 2,
+        startTime: "01:00",
+        endTime: "01:30",
+        duration: "00:30",
+        period: 1,
+        playerId: 2,
+      },
+    ];
+    expect(getPairwiseTOI(data, 1, 2)).toEqual(30);
+  });
+
+  test("p1 stays 30s at period 1 and p2 stays 15s at period 1", () => {
+    const data = [
+      {
+        id: 1,
+        startTime: "01:00",
+        endTime: "01:30",
+        duration: "00:30",
+        period: 1,
+        playerId: 1,
+      },
+      {
+        id: 2,
+        startTime: "01:00",
+        endTime: "01:15",
+        duration: "00:15",
+        period: 1,
+        playerId: 2,
+      },
+    ];
+    expect(getPairwiseTOI(data, 1, 2)).toEqual(15);
+  });
+
+  test("p1 stays 30s at period 1 and p2 stays 1 minute at period 2", () => {
+    const data = [
+      {
+        id: 1,
+        startTime: "01:00",
+        endTime: "01:30",
+        duration: "00:30",
+        period: 1,
+        playerId: 1,
+      },
+      {
+        id: 2,
+        startTime: "01:00",
+        endTime: "02:00",
+        duration: "01:00",
+        period: 2,
+        playerId: 2,
+      },
+    ];
+    expect(getPairwiseTOI(data, 1, 2)).toEqual(0);
+  });
+
+  test("p1 stays 30s at period 1 and p2 stays 1 minute at period 2", () => {
+    const data = [
+      {
+        startTime: "01:00",
+        endTime: "01:30",
+        duration: "00:30",
+        period: 1,
+        playerId: 1,
+      },
+      {
+        startTime: "02:00",
+        endTime: "02:40",
+        duration: "00:40",
+        period: 1,
+        playerId: 1,
+      },
+      {
+        startTime: "01:00",
+        endTime: "02:10",
+        duration: "01:10",
+        period: 2,
+        playerId: 2,
+      },
+    ];
+    expect(getPairwiseTOI(data, 1, 2)).toEqual(70);
+  });
+});

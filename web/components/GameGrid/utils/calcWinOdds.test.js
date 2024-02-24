@@ -1,16 +1,18 @@
+import { describe, expect, test } from "vitest";
+
 import {
   adjustBackToBackGames,
   formatWinOdds,
   isBackToBack,
 } from "./calcWinOdds";
 
-it("format winOdds", () => {
+test("format winOdds", () => {
   expect(formatWinOdds(0.75)).toEqual("75%");
   expect(formatWinOdds(0.25)).toEqual("25%");
 });
 
 describe("Back to back", () => {
-  it("Back to back, begin", () => {
+  test("Back to back, begin", () => {
     const winOddsList = [3, 0.3, null, 0.3, 6.4, null, 2.7];
 
     expect(isBackToBack(winOddsList, 0)).toBe(false);
@@ -21,7 +23,7 @@ describe("Back to back", () => {
     expect(isBackToBack(winOddsList, 6)).toBe(false);
   });
 
-  it("Back to back, middle", () => {
+  test("Back to back, middle", () => {
     const winOddsList = [null, 0.3, null, 0.3, 6.4, null, 2.7];
 
     expect(isBackToBack(winOddsList, 0)).toBe(false);
@@ -32,7 +34,7 @@ describe("Back to back", () => {
     expect(isBackToBack(winOddsList, 6)).toBe(false);
   });
 
-  it("Back to back, end", () => {
+  test("Back to back, end", () => {
     const winOddsList = [null, 0.3, null, 0.3, null, 1, 2.7];
 
     expect(isBackToBack(winOddsList, 0)).toBe(false);
@@ -46,7 +48,7 @@ describe("Back to back", () => {
 
 describe("Adjust back to back Win Odds", () => {
   const dilutedFactor = 0.75;
-  it("No back to back games", () => {
+  test("No back to back games", () => {
     const expected = [
       {
         teamName: "Tampa Bay Lightning",
@@ -942,7 +944,7 @@ describe("Adjust back to back Win Odds", () => {
     expect(copy).toEqual(expected);
   });
 
-  it("Have back to back games, but opponent does not play a 2d back to back game", () => {
+  test("Have back to back games, but opponent does not play a 2d back to back game", () => {
     // startDate=2022-04-25&endDate=2022-05-01
     const original = [
       {
@@ -1117,7 +1119,7 @@ describe("Adjust back to back Win Odds", () => {
     expect(original).toEqual(expected);
   });
 
-  it("Have back to back games, both teams are playing the 2d back to back game", () => {
+  test("Have back to back games, both teams are playing the 2d back to back game", () => {
     const original = [
       {
         teamName: "Arizona Coyotes",
