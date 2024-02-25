@@ -9,7 +9,7 @@
     "postbuild": "next-sitemap",
     "start": "next start",
     "lint": "next lint",
-    "test": "vitest run",
+    "test": "cross-env NODE_ENV=test vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
