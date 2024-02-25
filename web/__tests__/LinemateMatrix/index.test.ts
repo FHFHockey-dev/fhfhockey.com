@@ -13,6 +13,14 @@ describe("Linemate Matrix", () => {
     );
   });
 
+  test("Game: 2023020850. Ryan & Ryan", () => {
+    // Ekholm and Ryan were on the ice together for 2.42 minutes
+    const Ryan = 8478585;
+    expect(getPairwiseTOI(shiftcharts_2023020850.data, Ryan, Ryan)).toEqual(
+      615
+    );
+  });
+
   test("Stay the same amount of time", () => {
     const data = [
       {
