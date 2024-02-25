@@ -23,7 +23,7 @@ export function parseTime(timeString: string) {
   return result;
 }
 
-function formatTime(seconds: number) {
+export function formatTime(seconds: number) {
   const minutes = Math.floor(seconds / 60);
   const _seconds = seconds - minutes * 60;
   return `${minutes.toString().padStart(2, "0")}:${_seconds

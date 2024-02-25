@@ -1,7 +1,7 @@
 import { parseTime } from "utils/getPowerPlayBlocks";
 import groupBy from "utils/groupBy";
 
-type Shift = {
+export type Shift = {
   id: number;
   gameId: number;
   playerId: number;
