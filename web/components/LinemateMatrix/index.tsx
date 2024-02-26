@@ -118,7 +118,7 @@ type Rosters = Record<
   }[]
 >;
 
-function useTOI(id: number, mode: LinemateMatrixInternalProps["mode"]) {
+function useTOI(id: number) {
   const [toi, setTOI] = useState<Record<number, TOIData[]>>({});
   const [rosters, setRosters] = useState<Rosters>({});
   const [loading, setLoading] = useState(false);
@@ -203,7 +203,7 @@ function useGame(id: number) {
 }
 
 export default function LinemateMatrix({ id }: Props) {
-  const [toiData, rosters, loading] = useTOI(id, "total-toi");
+  const [toiData, rosters, loading] = useTOI(id);
   const gameInfo = useGame(id);
   if (!gameInfo || !toiData) return <div>loading...</div>;
   const [homeTeam, awayTeam] = gameInfo;
@@ -216,13 +216,13 @@ export default function LinemateMatrix({ id }: Props) {
           teamName={homeTeam.name}
           roster={rosters[homeTeam.id]}
           toiData={toiData[homeTeam.id]}
-          mode="number"
+          mode="total-toi"
         />
         <LinemateMatrixInternal
           teamName={awayTeam.name}
           roster={rosters[awayTeam.id]}
           toiData={toiData[awayTeam.id]}
-          mode="number"
+          mode="total-toi"
         />
       </div>
     </div>
@@ -236,22 +236,6 @@ type LinemateMatrixInternalProps = {
   mode: "number" | "total-toi" | "line-combination";
 };
 
-/**
- * Transform a `n` dimension array into `n x n` array
- * @param toiData
- */
-function getGridData(toiData: number[]): string[][] {
-  const result: string[][] = [];
-  // fill the result with 00:00
-  for (let row = 0; row < toiData.length; row++) {
-    result.push(new Array(toiData.length).fill("00:00"));
-  }
-  // fill the diagonal with toi data
-  toiData.forEach((item, i) => {
-    result[i][i] = formatTime(item);
-  });
-  return result;
-}
 const getKey = (p1: number, p2: number) => `${[p1, p2].sort()}`;
 function LinemateMatrixInternal({
   teamName,
@@ -269,25 +253,25 @@ function LinemateMatrixInternal({
     return table;
   }, [toiData]);
 
-  const grid = useMemo(() => {
-    const data: TOIData[] = [];
-
+  const sortedRoster = useMemo(() => {
     if (mode === "number") {
       const rosterSortedByNumber = roster.sort(
         (a, b) => a.sweaterNumber - b.sweaterNumber
       );
-      for (let i = 0; i < rosterSortedByNumber.length; i++) {
-        for (let j = 0; j < rosterSortedByNumber.length; j++) {
-          data.push(
-            table[
-              getKey(rosterSortedByNumber[i].id, rosterSortedByNumber[j].id)
-            ]
-          );
-        }
-      }
+      return rosterSortedByNumber.slice(1);
+    } else if (mode === "total-toi") {
+      return Object.values(table)
+        .sort((a, b) => b.toi - a.toi)
+        .filter((item) => item.p1.id === item.p2.id)
+        .map((item) => item.p1)
+        .slice(1);
+    } else if (mode === "line-combination") {
+      return [];
+    } else {
+      console.error("not implemented");
+      return [];
     }
-    return data;
-  }, [table, roster, mode]);
+  }, [table, mode, roster]);
 
   return (
     <section className={styles.container}>
@@ -296,13 +280,17 @@ function LinemateMatrixInternal({
         style={{
           width: "100%",
           display: "grid",
-          gridTemplateRows: `repeat( ${roster.length}, 1fr)`,
-          gridTemplateColumns: `repeat(${roster.length}, 1fr)`,
+          gridTemplateRows: `repeat( ${roster.length - 1}, 1fr)`,
+          gridTemplateColumns: `repeat(${roster.length - 1}, 1fr)`,
         }}
       >
-        {grid.map((cell, rowIndex) => (
-          <div key={`${rowIndex}`}>{formatTime(cell.toi)}</div>
-        ))}
+        {sortedRoster.map((p1, rowIndex) =>
+          sortedRoster.map((p2, colIndex) => (
+            <div key={`${rowIndex}-${colIndex}`}>
+              {formatTime(table[getKey(p1.id, p2.id)].toi)}
+            </div>
+          ))
+        )}
       </div>
     </section>
   );
