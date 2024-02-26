@@ -15,11 +15,12 @@
   font-family: montesserat, sans-serif;
   text-transform: uppercase;
   letter-spacing: -0.015em;
-  font-weight: 900;
-  font-style: italic;
+  text-align: left;
+  font-family: roboto condensed, sans-serif;
+  font-weight: 200;
+  font-style: normal;
   font-size: 1.9em;
   margin-bottom: 0.5em;
-  text-align: center;
   color: #fff;
   filter: drop-shadow(0 0 3px #202020);
 }
@@ -203,8 +204,10 @@
   justify-content: center;
   align-items: center;
   border-collapse: collapse;
+  text-align: center;
   font-family: roboto condensed, sans-serif;
-  font-weight: 500;
+  font-weight: 200;
+  font-style: normal;
   color: #b6b6b6;
 }
 
@@ -226,7 +229,9 @@
   border: 2px solid #fff;
   border-collapse: collapse;
   font-family: roboto condensed, sans-serif;
-  font-weight: 500;
+  text-align: center;
+  font-weight: 200;
+  font-style: normal;
   color: #b6b6b6;
 }
 
@@ -248,10 +253,6 @@
   font-weight: bold;
   padding: 5px;
   height: 45px;
-}
-
-.team-ranks-table td {
-  padding: 5px;
 }
 
 .team-ranks-row:hover,
@@ -296,8 +297,6 @@
   width: 100%;
   padding: 10px;
   margin-bottom: 20px;
-  border: #fff 6px double;
-  border-radius: 8px;
 }
 
 /* Specific style for past SoS table */
@@ -394,8 +393,16 @@
 .sos-container h2 {
   text-align: center;
   font-family: roboto condensed, sans-serif;
-  font-weight: 900;
-  font-style: italic;
+  font-weight: 200;
+  font-style: normal;
+}
+
+.sos-container h2 span {
+  color: #07aae2;
+}
+
+.spanColorBlue {
+  color: #07aae2;
 }
 
 .sosTableClass tr:nth-child(1) .sosDataCell {
@@ -702,8 +709,10 @@
 
   .team-landing-page h1 {
     font-size: 1.4em; /* Adjust font size for smaller screens */
+    text-align: center;
     font-family: roboto condensed, sans-serif;
-    font-weight: 900;
+    font-weight: 200;
+    font-style: normal;
   }
 
   .team-ranks-table td {
