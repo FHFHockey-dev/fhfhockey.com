@@ -26,7 +26,6 @@ const ITEMS_DATA: NavbarItem[] = [
       // Shot Map Hidden until finished
       //{ type: "link", label: "SHOT MAP", href: "/shotMap" },
       { type: "link", label: "SHIFT CHART", href: "/shiftChart" },
-      { type: "link", label: "PLAYER TRENDS", href: "/goalieTrends" },
 
 
     ],

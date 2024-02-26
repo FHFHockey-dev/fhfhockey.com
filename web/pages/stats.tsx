@@ -9,7 +9,7 @@ import { Team } from "lib/NHL/types";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import ClientOnly from "components/ClientOnly";
 import Fetch from "lib/cors-fetch";
-import GoalieTrends from "./GoalieTrends"; // Adjust the path according to your file structure
+import GoalieTrends from "./goalieTrends";
 
 type StatsProps = {
   teams: Team[];
