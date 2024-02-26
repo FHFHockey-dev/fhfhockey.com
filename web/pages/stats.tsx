@@ -149,22 +149,37 @@ function Stats({
       </div>
 
       <div className="team-landing-page">
-        <div className="sos-and-logo-grid">
-          <div className="sos-container">
-            <h2>
-              Strength of Schedule - <span className="spanColorBlue">Past</span>
-            </h2>
-            <StrengthOfSchedule type="past" rankings={pastSoSRankings} />
+        <div
+          className="stats-and-trends-grid"
+          style={{ display: "flex", alignItems: "flex-start" }}
+        >
+          <div
+            className="sos-tables-container"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              marginRight: "20px",
+            }}
+          >
+            <div className="sos-container">
+              <h2>
+                Strength of Schedule -{" "}
+                <span className="spanColorBlue">Past</span>
+              </h2>
+              <StrengthOfSchedule type="past" rankings={pastSoSRankings} />
+            </div>
+
+            <div className="sos-container">
+              <h2>
+                Strength of Schedule -{" "}
+                <span className="spanColorBlue">Future</span>
+              </h2>
+              <StrengthOfSchedule type="future" rankings={futureSoSRankings} />
+            </div>
           </div>
 
-          <GoalieTrends />
-
-          <div className="sos-container">
-            <h2>
-              Strength of Schedule -{" "}
-              <span className="spanColorBlue">Future</span>
-            </h2>
-            <StrengthOfSchedule type="future" rankings={futureSoSRankings} />
+          <div className="goalie-trends-container">
+            <GoalieTrends />
           </div>
         </div>
 
