@@ -6,7 +6,7 @@ interface Groupable<T> {
 // Define the groupBy function
 export default function groupBy<T>(
   items: T[],
-  keySelector: (item: T) => string
+  keySelector: (item: T) => string | number
 ): Groupable<T> {
   const result: Groupable<T> = {};
 

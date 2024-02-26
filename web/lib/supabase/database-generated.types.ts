@@ -569,6 +569,19 @@ export type Database = {
           numgames: number;
         }[];
       };
+      get_skaters_info_by_game_id: {
+        Args: {
+          p_game_id: number;
+        };
+        Returns: {
+          id: number;
+          teamId: number;
+          sweaterNumber: number;
+          position: string;
+          firstName: string;
+          lastName: string;
+        }[];
+      };
       get_unupdated_games: {
         Args: Record<PropertyKey, never>;
         Returns: {

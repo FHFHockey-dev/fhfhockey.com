@@ -1,73 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import supabase from "lib/supabase";
-import styles from "./index.module.scss";
 import Fetch from "lib/cors-fetch";
 import { Shift, getPairwiseTOI } from "./utilities";
 import { formatTime } from "utils/getPowerPlayBlocks";
+import groupBy from "utils/groupBy";
 
-type Props = {
-  id: number;
-};
-
-const getPlayersInfo = async (seasonId: number, teamId: number) => {
-  const { data: players } = await supabase
-    .from("rosters")
-    .select(
-      "playerId, teamId, sweaterNumber, details:players(firstName, lastName)"
-    )
-    .eq("seasonId", seasonId)
-    .eq("teamId", teamId);
-  return players;
-};
+import styles from "./index.module.scss";
 
 async function getRostersMap(gameId: number) {
-  // get game's season id
-  const { data: gameInfo } = await supabase
-    .from("games")
-    .select("seasonId, homeTeamId, awayTeamId")
-    .eq("id", gameId)
-    .single();
-  if (!gameInfo) throw new Error("Cannot find the game " + gameId);
-  const rostersMap: Record<
-    number,
-    {
-      teamId: number;
-      sweaterNumber: number;
-      firstName: string;
-      lastName: string;
-    }
-  > = {};
-  (
-    await Promise.all([
-      getPlayersInfo(gameInfo.seasonId, gameInfo.homeTeamId),
-      getPlayersInfo(gameInfo.seasonId, gameInfo.awayTeamId),
-    ])
-  )
-    .flat()
-    .forEach(
-      (player) =>
-        player &&
-        (rostersMap[player.playerId] = {
-          teamId: player.teamId,
-          sweaterNumber: player.sweaterNumber,
-          firstName: player.details!.firstName,
-          lastName: player.details!.lastName,
-        })
-    );
+  // get skaters only
+  const { data: players } = await supabase.rpc("get_skaters_info_by_game_id", {
+    p_game_id: gameId,
+  });
+  const rostersMap: Record<number, PlayerData> = {};
+  players?.forEach((player) => (rostersMap[player.id] = player));
   return rostersMap;
 }
 
-const getRosters = (shifts: Shift[]) => {
-  const rosters: Record<number, Set<number>> = {};
-  for (const shift of shifts) {
-    if (rosters[shift.teamId] === undefined) rosters[shift.teamId] = new Set();
-    rosters[shift.teamId].add(shift.playerId);
-  }
-
-  return rosters;
-};
-
-function processShifts(shifts: Shift[], rosters: Record<number, Set<number>>) {
+function processShifts(shifts: Shift[], rosters: Record<number, PlayerData[]>) {
   const teamIds = Object.keys(rosters).map(Number);
   const result: Record<number, { toi: number; p1: number; p2: number }[]> = {};
   teamIds.forEach((teamId) => {
@@ -76,8 +26,8 @@ function processShifts(shifts: Shift[], rosters: Record<number, Set<number>>) {
     for (let i = 0; i < teamRosters.length; i++) {
       for (let j = i; j < teamRosters.length; j++) {
         if (result[teamId] === undefined) result[teamId] = [];
-        const p1 = teamRosters[i];
-        const p2 = teamRosters[j];
+        const p1 = teamRosters[i].id;
+        const p2 = teamRosters[j].id;
         result[teamId].push({
           toi: getPairwiseTOI(shifts, p1, p2),
           p1,
@@ -89,38 +39,24 @@ function processShifts(shifts: Shift[], rosters: Record<number, Set<number>>) {
   return result;
 }
 
-type TOIData = {
-  toi: number;
-  p1: {
-    id: number;
-    teamId: number;
-    firstName: string;
-    lastName: string;
-    sweaterNumber: number;
-  };
-  p2: {
-    id: number;
-    teamId: number;
-    firstName: string;
-    lastName: string;
-    sweaterNumber: number;
-  };
+type PlayerData = {
+  id: number;
+  teamId: number;
+  position: string;
+  sweaterNumber: number;
+  firstName: string;
+  lastName: string;
 };
 
-type Rosters = Record<
-  number,
-  {
-    id: number;
-    teamId: number;
-    sweaterNumber: number;
-    firstName: string;
-    lastName: string;
-  }[]
->;
+type TOIData = {
+  toi: number;
+  p1: PlayerData;
+  p2: PlayerData;
+};
 
 function useTOI(id: number) {
   const [toi, setTOI] = useState<Record<number, TOIData[]>>({});
-  const [rosters, setRosters] = useState<Rosters>({});
+  const [rosters, setRosters] = useState<Record<number, PlayerData[]>>({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -138,30 +74,37 @@ function useTOI(id: number) {
         ).then((res) => res.json()),
         await getRostersMap(id),
       ]);
-      const rosters: any = {};
-      if (mounted) {
-        const data: Record<number, TOIData[]> = {};
-        const playerIds = getRosters(shiftsData);
-        const pairwiseTOIForTwoTeams = processShifts(shiftsData, playerIds);
-        const teamIds = Object.keys(pairwiseTOIForTwoTeams).map(Number);
 
+      if (mounted) {
+        const rosters = groupBy(
+          Object.values(rostersMap),
+          (player) => player.teamId
+        );
+        const data: Record<number, TOIData[]> = {};
+        const pairwiseTOIForTwoTeams = processShifts(shiftsData, rosters);
+        const teamIds = Object.keys(pairwiseTOIForTwoTeams).map(Number);
         // populate player info
         teamIds.forEach((teamId) => {
           if (data[teamId] === undefined) data[teamId] = [];
           pairwiseTOIForTwoTeams[teamId].forEach((item) => {
+            // skip for goalies
+            if (!rostersMap[item.p1] || !rostersMap[item.p2]) {
+              console.log(
+                "skip for goalie",
+                item,
+                rostersMap[item.p1],
+                rostersMap[item.p2]
+              );
+              return;
+            }
             data[teamId].push({
               toi: item.toi,
-              p1: { id: item.p1, ...rostersMap[item.p1] },
-              p2: { id: item.p2, ...rostersMap[item.p2] },
+              p1: rostersMap[item.p1],
+              p2: rostersMap[item.p2],
             });
-            if (rosters[teamId] === undefined) rosters[teamId] = {};
-            rosters[teamId][item.p1] = { id: item.p1, ...rostersMap[item.p1] };
-            rosters[teamId][item.p2] = { id: item.p2, ...rostersMap[item.p2] };
           });
         });
-        Object.keys(rosters).forEach(
-          (teamId) => (rosters[teamId] = Object.values(rosters[teamId]))
-        );
+
         setTOI(data);
         setRosters(rosters);
         setLoading(false);
@@ -178,7 +121,6 @@ function useGame(id: number) {
   useEffect(() => {
     (async () => {
       if (!id) return;
-      console.log("start fetching");
       const { data: teamIds } = await supabase
         .from("games")
         .select("homeTeamId, awayTeamId")
@@ -202,10 +144,14 @@ function useGame(id: number) {
   return game;
 }
 
+type Props = {
+  id: number;
+};
+
 export default function LinemateMatrix({ id }: Props) {
   const [toiData, rosters, loading] = useTOI(id);
   const gameInfo = useGame(id);
-  if (!gameInfo || !toiData) return <div>loading...</div>;
+  if (!gameInfo || !toiData || loading) return <div>loading...</div>;
   const [homeTeam, awayTeam] = gameInfo;
 
   return (
@@ -232,7 +178,7 @@ export default function LinemateMatrix({ id }: Props) {
 type LinemateMatrixInternalProps = {
   teamName: string;
   toiData: TOIData[];
-  roster: Rosters[number];
+  roster: PlayerData[];
   mode: "number" | "total-toi" | "line-combination";
 };
 
@@ -258,13 +204,12 @@ function LinemateMatrixInternal({
       const rosterSortedByNumber = roster.sort(
         (a, b) => a.sweaterNumber - b.sweaterNumber
       );
-      return rosterSortedByNumber.slice(1);
+      return rosterSortedByNumber;
     } else if (mode === "total-toi") {
       return Object.values(table)
         .sort((a, b) => b.toi - a.toi)
         .filter((item) => item.p1.id === item.p2.id)
-        .map((item) => item.p1)
-        .slice(1);
+        .map((item) => item.p1);
     } else if (mode === "line-combination") {
       return [];
     } else {
@@ -280,8 +225,8 @@ function LinemateMatrixInternal({
         style={{
           width: "100%",
           display: "grid",
-          gridTemplateRows: `repeat( ${roster.length - 1}, 1fr)`,
-          gridTemplateColumns: `repeat(${roster.length - 1}, 1fr)`,
+          gridTemplateRows: `repeat( ${roster.length}, 1fr)`,
+          gridTemplateColumns: `repeat(${roster.length}, 1fr)`,
         }}
       >
         {sortedRoster.map((p1, rowIndex) =>
