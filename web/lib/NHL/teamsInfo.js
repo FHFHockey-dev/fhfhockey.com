@@ -306,7 +306,7 @@ export const teamsInfo = {
     name: "Vegas Golden Knights",
     primaryColor: "#24292c",
     secondaryColor: "#B4975A",
-    jersey: "#7d0518",
+    jersey: "#8d0519",
     accent: "#000000",
     alt: "#",
     franchiseId: 38,
