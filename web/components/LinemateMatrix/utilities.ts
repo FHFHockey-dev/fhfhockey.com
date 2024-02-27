@@ -1,5 +1,6 @@
 import { parseTime } from "utils/getPowerPlayBlocks";
 import groupBy from "utils/groupBy";
+import { PlayerData, TOIData } from ".";
 
 export type Shift = {
   id: number;
@@ -70,4 +71,12 @@ function convertToTimeArray(data: Shift[], size: number = 1200) {
   });
 
   return timeArray;
+}
+
+export function sortByLineCombination(
+  data: Record<string, TOIData>,
+  players: PlayerData[]
+): PlayerData[] {
+  // console.log(data, players);
+  return [];
 }

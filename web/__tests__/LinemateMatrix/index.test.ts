@@ -1,9 +1,11 @@
 import { describe, expect, test } from "vitest";
 
 import shiftcharts_2023020850 from "./shiftcharts-2023020850.json";
+import { table, players } from "./LineCombinationData";
 import { getPairwiseTOI } from "components/LinemateMatrix/utilities";
+import { sortByLineCombination } from "components/LinemateMatrix/utilities";
 
-describe("Linemate Matrix", () => {
+describe("getPairwiseTOI", () => {
   test("Game: 2023020850. Ryan & Ekholm", () => {
     // Ekholm and Ryan were on the ice together for 2.42 minutes
     const Ryan = 8478585;
@@ -115,3 +117,20 @@ describe("Linemate Matrix", () => {
     expect(getPairwiseTOI(data, 1, 2)).toEqual(0);
   });
 });
+
+describe("sort by line combination", () => {
+  test("Game: 2023020850", () => {
+    expect(arrayEqual(sortByLineCombination(table, players), [])).toBe(true);
+  });
+});
+
+function arrayEqual(
+  arrayOne: ReturnType<typeof sortByLineCombination>,
+  arrayTwo: ReturnType<typeof sortByLineCombination>
+) {
+  for (let i = 0; i < arrayOne.length; i++) {
+    if (arrayOne[i].id !== arrayTwo[i].id) return false;
+  }
+
+  return true;
+}

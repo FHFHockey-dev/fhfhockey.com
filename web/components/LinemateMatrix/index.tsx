@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import classNames from "classnames";
 import supabase from "lib/supabase";
 import Fetch from "lib/cors-fetch";
-import { Shift, getPairwiseTOI } from "./utilities";
+import { Shift, getPairwiseTOI, sortByLineCombination } from "./utilities";
 import { formatTime } from "utils/getPowerPlayBlocks";
 import groupBy from "utils/groupBy";
 
@@ -42,7 +42,7 @@ function processShifts(shifts: Shift[], rosters: Record<number, PlayerData[]>) {
   return result;
 }
 
-type PlayerData = {
+export type PlayerData = {
   id: number;
   teamId: number;
   position: string;
@@ -51,7 +51,7 @@ type PlayerData = {
   lastName: string;
 };
 
-type TOIData = {
+export type TOIData = {
   toi: number;
   p1: PlayerData;
   p2: PlayerData;
@@ -157,7 +157,7 @@ const OPTIONS = [
     value: "total-toi",
   },
   { label: "Sweater Number", value: "number" },
-  // { label: "Line Combination", value: "line-combination" },
+  { label: "Line Combination", value: "line-combination" },
 ] as const;
 export default function LinemateMatrix({ id }: Props) {
   const [mode, setMode] =
@@ -239,7 +239,7 @@ function LinemateMatrixInternal({
         .filter((item) => item.p1.id === item.p2.id)
         .map((item) => item.p1);
     } else if (mode === "line-combination") {
-      return [];
+      return sortByLineCombination(table, roster);
     } else {
       console.error("not implemented");
       return [];
