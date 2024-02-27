@@ -169,7 +169,6 @@ export default function LinemateMatrix({ id }: Props) {
 
   return (
     <div>
-      <h3>Linemate Matrix :{id}</h3>
       <div style={{ margin: "0 auto", width: "200px" }}>
         <Select
           options={OPTIONS}
@@ -179,7 +178,13 @@ export default function LinemateMatrix({ id }: Props) {
           }}
         />
       </div>
-      <div style={{ margin: "0 10%" }}>
+      <div
+        style={{
+          margin: "0 10%",
+          display: "flex",
+          justifyContent: "space-between",
+        }}
+      >
         <LinemateMatrixInternal
           teamName={homeTeam.name}
           roster={rosters[homeTeam.id]}

@@ -5,6 +5,8 @@
 
   --spacing: 6px;
   --player-info-size: 120px;
+  --cell-size: 20.5px;
+  font-size: 0.875rem;
   .topPlayerName {
     position: relative;
     transition: transform 0.5s;
@@ -19,6 +21,7 @@
     width: var(--player-info-size);
     top: 100%;
     padding: 0 var(--spacing);
+    line-height: var(--cell-size);
   }
 
   .leftPlayerName {
@@ -28,6 +31,7 @@
     white-space: nowrap;
     padding: 0 var(--spacing);
     transition: transform 0.2s ease-in-out;
+    line-height: var(--cell-size);
   }
 
   .active {
@@ -36,8 +40,8 @@
   }
 
   .cell {
-    width: 20.5px;
-    height: 20.5px;
+    width: var(--cell-size);
+    height: var(--cell-size);
     border: 1px solid #fff;
 
     &:hover {
