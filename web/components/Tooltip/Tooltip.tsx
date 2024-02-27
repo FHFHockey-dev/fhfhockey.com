@@ -5,9 +5,15 @@ type TooltipProps = {
   onHoverText: string;
   onClickText?: string;
   children: React.ReactNode;
+  style?: any;
 };
 
-function Tooltip({ onHoverText, onClickText, children }: TooltipProps) {
+function Tooltip({
+  onHoverText,
+  onClickText,
+  style = {},
+  children,
+}: TooltipProps) {
   const [text, setText] = useState("");
 
   useEffect(() => {
@@ -17,6 +23,7 @@ function Tooltip({ onHoverText, onClickText, children }: TooltipProps) {
   return (
     <div
       className={styles.tooltip}
+      style={style}
       onPointerEnter={() => setText(onHoverText)}
       onPointerLeave={() => setText(onHoverText)}
       onClick={() => onClickText && setText(onClickText)}
