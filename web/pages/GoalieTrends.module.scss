@@ -1,10 +1,12 @@
+// Base container styles
 .container {
   max-width: 1200px;
   margin: auto;
   padding: 20px;
-  font-family: roboto condensed, sans-serif;
+  font-family: "Roboto Condensed", sans-serif;
 }
 
+// Game span selector styles
 .selectors {
   margin-bottom: 20px;
   display: flex;
@@ -22,23 +24,20 @@
     &:hover {
       background-color: darken(#07aae2, 10%);
     }
-  }
 
-  input[type="radio"] {
-    display: none;
-
-    &:checked + label {
+    // This styles the label when the associated radio button is checked
+    .radio:checked + & {
       background-color: darken(#07aae2, 15%);
     }
   }
+
+  // Hide the actual radio button because we are styling the label
+  .radio {
+    display: none;
+  }
 }
 
-.goalieTrendsTable tr,
-.goalieTrendsTable td {
-  height: 100px; /* Or whatever height keeps your content consistent */
-  min-height: 100px; /* Use min-height to ensure content doesn't shrink below this */
-}
-
+// Styles for the goalie trends table
 .goalieTrendsTable {
   width: 100%;
   border-collapse: collapse;
@@ -56,94 +55,121 @@
     background-color: #101010;
     color: white;
   }
+}
 
-  .goalieNames {
-    div {
-      padding: 4px;
-      margin: 2px 0;
-      font-weight: 500;
-    }
-  }
+// Styles for the team goalie bar row
+.teamGoalieBarRow {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
 
-  .goalieComparisonCell {
-    width: 400px; /* Or whatever width is appropriate */
-    min-width: 400px; /* Ensures width doesn't shrink below this size */
-  }
-
-  .comparisonBarContainer {
-    display: flex; /* Align bar segments horizontally */
-    width: 100%;
-    background-color: #f0f0f0;
-    height: 30px; /* Adjust based on your design */
-    border-radius: 10px;
-    overflow: hidden; /* Ensure contents don't overflow */
-    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
-
-    .barSegment {
-      height: 100%; /* Fill the container height */
-      flex-grow: 0; /* Prevent the segment from growing beyond its set width */
-      flex-shrink: 0; /* Prevent the segment from shrinking below its set width */
-      background-color: #07aae2; /* Default color, use your logic to alternate colors */
-
-      display: flex; // Make this a flex container
-      align-items: center; // Center content vertically
-      justify-content: center; // Center content horizontally
-      height: 100%; // Ensure it fills the container height
-      position: relative; // If not already set, to ensure proper positioning
-      text-align: center; // Center text for single line names
-      overflow: hidden; // Prevent text from spilling out of the bar
-      border-right: #f0f0f0 1px solid; // Add a border to separate segments
-    }
-
-    .goalieName {
-      font-weight: 900;
-      padding: 0 5px; // Add some padding to prevent text from touching the edges
-      white-space: nowrap; // Prevent names from breaking into multiple lines
-      overflow: hidden; // Hide overflow text
-      text-overflow: ellipsis; // Add ellipsis if the text is too long
-    }
-  }
-
+  // Styles for team logo
   .teamLogoCell {
+    flex: 0 0 50px;
     text-align: center;
-    width: 50px; // Adjust width as needed
+    padding-right: 20px;
   }
 
   .teamLogo {
-    height: 30px; // Adjust size as needed
+    height: 30px;
     width: auto;
   }
 
+  // Styles for the goalie stats and comparison bars
   .goalieComparisonCell {
-    background-color: #404040;
-    width: 200px;
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: space-between;
+    padding-left: 10px;
+    gap: 20px;
   }
 }
 
-.teamStatsCell {
-  padding: 10px;
-  font-size: 0.75rem; // Adjust as needed
-  vertical-align: top; // Align content to the top of the cell
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start; // Align items to the start of the cell
-}
-
-.goalieStats {
+// Styles for the goalie stats container to use CSS Grid
+.goalieStatsContainer {
   display: grid;
-  grid-template-columns: 100px 60px 60px 60px; /* This line sets the width of each column */
+  grid-template-columns: auto repeat(auto-fill, minmax(120px, 1fr)); // First column for GP, remaining for goalies
+  gap: 10px;
+  align-items: start;
+}
 
-  gap: 5px; // This sets the space between grid items, adjust as needed
-  border-bottom: #07aae2 1px solid; // Add a border between each goalie's stats
+// Styles for the team GP goalie row to make it its own column
+.teamGPgoalieRow {
+  grid-column: 1; // Place in the first column
+  grid-row: 1 / span 2; // Span two rows
+  align-self: start; // Align to the start of the container
+}
 
-  > span {
-    // This targets each stat within a goalie's stats
-    display: block; // Makes sure each stat takes up the full cell
-    text-align: center; // Center-aligns the text within each cell
+// Adjustment to goalieStats to ensure they fill the available space and wrap correctly
+.goalieStats {
+  width: 100%; // Take up full width of the cell
+  display: flex;
+  flex-direction: column; // Keep stats stacked vertically
+  gap: 5px;
+  border-bottom: 1px solid #07aae2; // Visual separation
+}
+
+// Ensure comparison bar is below everything
+.comparisonBarContainer {
+  grid-column: 1 / -1; // Stretch across all columns
+  margin-top: 20px; // Space between stats and comparison bar
+}
+
+// Styles for the individual goalie stats container
+.goalieStatsContainer {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  max-width: calc(100% - 200px);
+  align-items: flex-start;
+
+  .goalieStats {
+    width: calc(50% - 5px);
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    border-bottom: #07aae2 1px solid;
+  }
+
+  .teamGPgoalieRow {
+    display: flex;
+    flex-direction: row;
+    width: 15%;
+    grid-column: 1; // Place in the first column
+    grid-row: 1 / span 2; // Span two rows
+    align-self: start; // Align to the start of the container
   }
 }
 
-.goalieTrendsTable tr,
-.goalieTrendsTable td {
-  height: 100px;
+// Styles for the comparison bar container
+.comparisonBarContainer {
+  display: flex;
+  height: 30px;
+  width: 600px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+
+  .barSegment {
+    flex-grow: 0;
+    flex-shrink: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    overflow: hidden;
+    border-right: #f0f0f0 1px solid;
+
+    .goalieName {
+      font-weight: 900;
+      padding: 0 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
 }

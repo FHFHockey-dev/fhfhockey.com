@@ -248,6 +248,7 @@ const GoalieTrends = () => {
       <div className={styles.selectors}>
         <input
           type="radio"
+          className="radioSelector"
           id="l10"
           name="gameSpan"
           value="L10"
@@ -257,6 +258,7 @@ const GoalieTrends = () => {
         <label htmlFor="l10">L10 GP</label>
         <input
           type="radio"
+          className="radioSelector"
           id="l20"
           name="gameSpan"
           value="L20"
@@ -266,6 +268,7 @@ const GoalieTrends = () => {
         <label htmlFor="l20">L20 GP</label>
         <input
           type="radio"
+          className="radioSelector"
           id="l30"
           name="gameSpan"
           value="L30"
@@ -275,6 +278,7 @@ const GoalieTrends = () => {
         <label htmlFor="l30">L30 GP</label>
         <input
           type="radio"
+          className="radioSelector"
           id="szn"
           name="gameSpan"
           value="SZN"
@@ -290,7 +294,6 @@ const GoalieTrends = () => {
           <tr>
             <th>Team</th>
             <th>Goalies & Comparison Bar</th>
-            <th>Stats</th>
           </tr>
         </thead>
         <tbody>
@@ -298,16 +301,33 @@ const GoalieTrends = () => {
             const teamStats = goalieStats[teamAbbrev] || {}; // Ensure teamStats is an object, even if it's empty
             const goalies = teamStats.goalies || []; // Ensure goalies is an array, even if it's empty
             return (
-              <tr key={teamAbbrev}>
+              <tr key={teamAbbrev} className="teamGoalieBarRow">
                 <td className={styles.teamLogoCell}>
                   <img
                     src={`https://assets.nhle.com/logos/nhl/svg/${teamAbbrev}_dark.svg`}
                     alt={`${teamInfo.name} Logo`}
                     className={styles.teamLogo}
                   />
-                  <div>GP: {teamStats.totalGames}</div>
                 </td>
                 <td className={styles.goalieComparisonCell}>
+                  <div className={styles.goalieStatsContainer}>
+                    <div className={styles.teamGPgoalieRow}>
+                      GP: {teamStats.totalGames}
+                    </div>
+
+                    {goalies.map((goalie) => (
+                      <div key={goalie.goalieId} className={styles.goalieStats}>
+                        <span>
+                          {goalie.lastName}: ({goalie.percentage.toFixed(1)}%)
+                        </span>
+                        <span>GP: {goalie.gamesPlayed}</span>
+                        <span>SV%: {goalie.savePercentage.toFixed(3)}</span>
+                        <span>
+                          GAA: {goalie.goalsAgainstAverage.toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                   <div
                     className={styles.comparisonBarContainer}
                     style={{
@@ -341,19 +361,6 @@ const GoalieTrends = () => {
                       );
                     })}
                   </div>
-                </td>
-                <td className={styles.teamStatsCell}>
-                  {goalies.map((goalie) => (
-                    <div key={goalie.goalieId} className={styles.goalieStats}>
-                      <span>
-                        {goalie.lastName}: ({goalie.percentage.toFixed(1)}
-                        %)
-                      </span>
-                      <span>GP: {goalie.gamesPlayed}</span>
-                      <span>SV%: {goalie.savePercentage.toFixed(3)}</span>
-                      <span>GAA: {goalie.goalsAgainstAverage.toFixed(2)}</span>
-                    </div>
-                  ))}
                 </td>
               </tr>
             );

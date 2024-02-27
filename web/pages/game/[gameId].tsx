@@ -385,6 +385,10 @@ export default function Page() {
             <div className="statsAndPlayerCompContainer">
               {/* ///////////////////////////////// STAT ROW ///////////////////////////////////////////////////////// */}
               <div className="gamePageVsTableContainer">
+                <h1 className="tableHeader" style={{ marginTop: "0" }}>
+                  Team <span className="spanColorBlue">Advantage</span>
+                </h1>
+
                 <div className="gamePageVsTable">
                   <div
                     className="statTableHeader"
@@ -409,7 +413,7 @@ export default function Page() {
                         style={{ width: "40px" }}
                       />
                     </div>
-                    <span className="advantageHeaderText">Advantage</span>
+                    <span className="advantageHeaderText">VS</span>
 
                     <div className="statTableRight">
                       <img
@@ -603,15 +607,18 @@ export default function Page() {
                   />
                 </div>
               </div>
+
               <div
                 className="statsPlayerAndGoalieCompContainer"
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  alignItems: "center",
                   width: "100%",
                 }}
               >
+                <h1 className="tableHeader">
+                  Last <span className="spanColorBlue">5 Games</span>
+                </h1>
                 <div
                   className="playerCompContainer"
                   style={{
@@ -637,7 +644,7 @@ export default function Page() {
                       />
                     </div>
 
-                    <p>Last 5 Games</p>
+                    <p>Leaders</p>
                     <div className="playerCompHeaderRight">
                       <img
                         className="teamLogoAwayPC"
@@ -707,6 +714,12 @@ export default function Page() {
                 </div>
 
                 {/* Goalie Comparison Container */}
+                <h1
+                  className="tableHeader"
+                  style={{ marginTop: "15px", marginBottom: "0" }}
+                >
+                  Goalie <span className="spanColorBlue">Comparison</span>
+                </h1>
                 <div
                   className="goalieCompContainer"
                   style={{
@@ -733,7 +746,7 @@ export default function Page() {
                         style={{ width: "75px" }}
                       />
                     </div>
-                    <p>Goalie Comparison</p>
+                    <div className="goalieCompHeaderMiddle">Goalies</div>
                     <div className="goalieCompHeaderRight">
                       <img
                         className="teamLogoAwayPC"
@@ -755,12 +768,12 @@ export default function Page() {
                               />
                             </div>
                             <div className="goalieName">
-                              <span>{goalie.firstName.default}</span>{" "}
-                              {/* First Name */}
-                              <span className="goalieLastName">
-                                {goalie.lastName.default}
+                              <span>
+                                {goalie.firstName.default}{" "}
+                                <span className="goalieLastName">
+                                  {goalie.lastName.default}
+                                </span>
                               </span>{" "}
-                              {/* Last Name */}
                               <span className="goalieSweaterNumber">
                                 #{goalie.sweaterNumber} • {goalie.positionCode}
                               </span>
@@ -832,11 +845,13 @@ export default function Page() {
                               </div>
                             </div>
                             <div className="goalieName">
-                              <span>{goalie.firstName.default}</span>{" "}
-                              {/* First Name */}
-                              <span className="goalieLastName">
-                                {goalie.lastName.default}
+                              <span>
+                                {goalie.firstName.default}{" "}
+                                <span className="goalieLastName">
+                                  {goalie.lastName.default}
+                                </span>
                               </span>{" "}
+                              {/* First Name */}{" "}
                               <span className="goalieSweaterNumber">
                                 #{goalie.sweaterNumber} • {goalie.positionCode}
                               </span>
