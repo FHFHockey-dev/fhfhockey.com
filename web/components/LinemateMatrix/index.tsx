@@ -6,6 +6,7 @@ import { formatTime } from "utils/getPowerPlayBlocks";
 import groupBy from "utils/groupBy";
 
 import styles from "./index.module.scss";
+import Tooltip from "components/Tooltip";
 
 async function getRostersMap(gameId: number) {
   // get skaters only
@@ -217,13 +218,20 @@ function LinemateMatrixInternal({
       return [];
     }
   }, [table, mode, roster]);
+  const avgSharedToi = useMemo(() => {
+    let sum = 0;
+    sortedRoster.forEach((player) => {
+      sum += table[getKey(player.id, player.id)].toi;
+    });
+    return sum / sortedRoster.length;
+  }, [table, sortedRoster]);
 
   return (
     <section className={styles.container}>
       <h4>{teamName}</h4>
       <div
         style={{
-          width: "100%",
+          backgroundColor: "white",
           display: "grid",
           gridTemplateRows: `repeat( ${roster.length}, 1fr)`,
           gridTemplateColumns: `repeat(${roster.length}, 1fr)`,
@@ -232,11 +240,76 @@ function LinemateMatrixInternal({
         {sortedRoster.map((p1, rowIndex) =>
           sortedRoster.map((p2, colIndex) => (
             <div key={`${rowIndex}-${colIndex}`}>
-              {formatTime(table[getKey(p1.id, p2.id)].toi)}
+              <Cell
+                teamAvgToi={avgSharedToi}
+                sharedToi={table[getKey(p1.id, p2.id)].toi}
+                p1={p1}
+                p2={p2}
+              />
             </div>
           ))
         )}
       </div>
     </section>
+  );
+}
+
+type CellProps = {
+  teamAvgToi: number;
+  sharedToi: number;
+
+  p1: PlayerData;
+  p2: PlayerData;
+};
+
+const RED = "rgb(214, 39, 40)";
+const BLUE = "rgb(31, 119, 180)";
+const PURPLE = "rgb(148, 103, 189)";
+const FORWARDS_POSITIONS = ["L", "R", "C"];
+const DEFENSE_POSITIONS = ["D"];
+
+function isForward(position: string) {
+  return FORWARDS_POSITIONS.includes(position);
+}
+
+function isDefense(position: string) {
+  return DEFENSE_POSITIONS.includes(position);
+}
+
+function isMixing(p1Pos: string, p2Pos: string) {
+  return (
+    (isForward(p1Pos) && isDefense(p2Pos)) ||
+    (isForward(p2Pos) && isDefense(p1Pos))
+  );
+}
+
+/**
+ * Blue is defensemen, red is forwards, purple is forwards mixing with defensemen
+ */
+function getColor(p1Pos: string, p2Pos: string) {
+  if (isForward(p1Pos) && isForward(p2Pos)) return RED;
+  if (isDefense(p1Pos) && isDefense(p2Pos)) return BLUE;
+  if (isMixing(p1Pos, p2Pos)) return PURPLE; // the check can be omitted
+  throw new Error("impossible");
+}
+
+function Cell({ teamAvgToi, sharedToi, p1, p2 }: CellProps) {
+  const opacity = sharedToi / teamAvgToi;
+  const color = getColor(p1.position, p2.position);
+  return (
+    <div className={styles.cell}>
+      <Tooltip
+        onHoverText={formatTime(sharedToi)}
+        style={{ width: "100%", height: "100%" }}
+      >
+        <div
+          className={styles.content}
+          style={{
+            opacity: opacity,
+            backgroundColor: color,
+          }}
+        ></div>
+      </Tooltip>
+    </div>
   );
 }
