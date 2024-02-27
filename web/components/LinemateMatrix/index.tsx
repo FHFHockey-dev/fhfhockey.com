@@ -8,6 +8,7 @@ import groupBy from "utils/groupBy";
 
 import styles from "./index.module.scss";
 import Tooltip from "components/Tooltip";
+import Select from "components/Select";
 
 async function getRostersMap(gameId: number) {
   // get skaters only
@@ -150,7 +151,17 @@ type Props = {
   id: number;
 };
 
+const OPTIONS = [
+  {
+    label: "Total TOI",
+    value: "total-toi",
+  },
+  { label: "Sweater Number", value: "number" },
+  // { label: "Line Combination", value: "line-combination" },
+] as const;
 export default function LinemateMatrix({ id }: Props) {
+  const [mode, setMode] =
+    useState<LinemateMatrixInternalProps["mode"]>("total-toi");
   const [toiData, rosters, loading] = useTOI(id);
   const gameInfo = useGame(id);
   if (!gameInfo || !toiData || loading) return <div>loading...</div>;
@@ -159,18 +170,27 @@ export default function LinemateMatrix({ id }: Props) {
   return (
     <div>
       <h3>Linemate Matrix :{id}</h3>
+      <div style={{ margin: "0 auto", width: "200px" }}>
+        <Select
+          options={OPTIONS}
+          option={mode}
+          onOptionChange={(newOption) => {
+            setMode(newOption);
+          }}
+        />
+      </div>
       <div style={{ margin: "0 10%" }}>
         <LinemateMatrixInternal
           teamName={homeTeam.name}
           roster={rosters[homeTeam.id]}
           toiData={toiData[homeTeam.id]}
-          mode="total-toi"
+          mode={mode}
         />
         <LinemateMatrixInternal
           teamName={awayTeam.name}
           roster={rosters[awayTeam.id]}
           toiData={toiData[awayTeam.id]}
-          mode="total-toi"
+          mode={mode}
         />
       </div>
     </div>
