@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import classNames from "classnames";
 import supabase from "lib/supabase";
 import Fetch from "lib/cors-fetch";
 import { Shift, getPairwiseTOI } from "./utilities";
@@ -190,6 +191,7 @@ function LinemateMatrixInternal({
   toiData = [],
   mode,
 }: LinemateMatrixInternalProps) {
+  const [selectedCell, setSelectedCell] = useState({ row: -1, col: -1 });
   const table = useMemo(() => {
     const table: Record<string, TOIData> = {};
     toiData.forEach((item) => {
@@ -232,23 +234,69 @@ function LinemateMatrixInternal({
       <div
         style={{
           backgroundColor: "white",
+          color: "black",
           display: "grid",
-          gridTemplateRows: `repeat( ${roster.length}, 1fr)`,
-          gridTemplateColumns: `repeat(${roster.length}, 1fr)`,
+          gridTemplateRows: `var(--player-info-size) repeat( ${roster.length}, 1fr)`,
+          gridTemplateColumns: `var(--player-info-size) repeat(${roster.length}, 1fr)`,
         }}
       >
-        {sortedRoster.map((p1, rowIndex) =>
-          sortedRoster.map((p2, colIndex) => (
-            <div key={`${rowIndex}-${colIndex}`}>
-              <Cell
-                teamAvgToi={avgSharedToi}
-                sharedToi={table[getKey(p1.id, p2.id)].toi}
-                p1={p1}
-                p2={p2}
-              />
-            </div>
-          ))
-        )}
+        {sortedRoster.length > 0 &&
+          new Array(sortedRoster.length + 1).fill(0).map((_, row) => {
+            if (row === 0) {
+              return [
+                <div key="left-up"></div>,
+                ...sortedRoster.map((player, col) => (
+                  <div
+                    key={player.id}
+                    className={classNames(styles.topPlayerName, {
+                      [styles.active]: col === selectedCell.col - 1,
+                    })}
+                  >
+                    <div className={styles.inner}>
+                      {player.sweaterNumber}
+                      <>&nbsp;</>
+                      {player.lastName}
+                    </div>
+                  </div>
+                )),
+              ];
+            } else {
+              return new Array(sortedRoster.length + 1)
+                .fill(0)
+                .map((_, col) => {
+                  const p1 = sortedRoster[col - 1];
+                  const p2 = sortedRoster[row - 1];
+                  if (col === 0) {
+                    return (
+                      <div
+                        key={p2.id}
+                        className={classNames(styles.leftPlayerName, {
+                          [styles.active]: selectedCell.row === row,
+                        })}
+                      >
+                        {p2.sweaterNumber}
+                        <>&nbsp;</>
+                        {p2.lastName}
+                      </div>
+                    );
+                  } else {
+                    return (
+                      <Cell
+                        key={`${row}-${col}`}
+                        teamAvgToi={avgSharedToi}
+                        sharedToi={table[getKey(p1.id, p2.id)].toi}
+                        p1={p1}
+                        p2={p2}
+                        onPointerEnter={() => setSelectedCell({ row, col })}
+                        onPointerLeave={() =>
+                          setSelectedCell({ row: -1, col: -1 })
+                        }
+                      />
+                    );
+                  }
+                });
+            }
+          })}
       </div>
     </section>
   );
@@ -260,6 +308,9 @@ type CellProps = {
 
   p1: PlayerData;
   p2: PlayerData;
+
+  onPointerEnter?: () => void;
+  onPointerLeave?: () => void;
 };
 
 const RED = "rgb(214, 39, 40)";
@@ -293,11 +344,22 @@ function getColor(p1Pos: string, p2Pos: string) {
   throw new Error("impossible");
 }
 
-function Cell({ teamAvgToi, sharedToi, p1, p2 }: CellProps) {
+function Cell({
+  teamAvgToi,
+  sharedToi,
+  p1,
+  p2,
+  onPointerEnter = () => {},
+  onPointerLeave = () => {},
+}: CellProps) {
   const opacity = sharedToi / teamAvgToi;
   const color = getColor(p1.position, p2.position);
   return (
-    <div className={styles.cell}>
+    <div
+      className={styles.cell}
+      onPointerEnter={onPointerEnter}
+      onPointerLeave={onPointerLeave}
+    >
       <Tooltip
         onHoverText={formatTime(sharedToi)}
         style={{ width: "100%", height: "100%" }}

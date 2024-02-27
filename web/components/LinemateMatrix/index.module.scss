@@ -3,6 +3,38 @@
   flex-direction: column;
   align-items: center;
 
+  --spacing: 6px;
+  --player-info-size: 120px;
+  .topPlayerName {
+    position: relative;
+    transition: transform 0.5s;
+  }
+  .topPlayerName .inner {
+    position: absolute;
+    transform: rotate(-90deg);
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    transform-origin: 0 0;
+    width: var(--player-info-size);
+    top: 100%;
+    padding: 0 var(--spacing);
+  }
+
+  .leftPlayerName {
+    text-align: right;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 0 var(--spacing);
+    transition: transform 0.2s ease-in-out;
+  }
+
+  .active {
+    color: darkorange;
+    transform: scale(1.05);
+  }
+
   .cell {
     width: 20.5px;
     height: 20.5px;
