@@ -1,3 +1,4 @@
 import { loadEnvConfig } from "@next/env";
+import path from "path";
 
-loadEnvConfig(process.cwd());
+loadEnvConfig(path.resolve(__dirname, ".."));
