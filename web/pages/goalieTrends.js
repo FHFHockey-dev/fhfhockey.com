@@ -246,46 +246,47 @@ const GoalieTrends = () => {
     <div className={styles.container}>
       {/* Game Span Selectors */}
       <div className={styles.selectors}>
-        <input
-          type="radio"
-          className="radioSelector"
-          id="l10"
-          name="gameSpan"
-          value="L10"
-          checked={selectedGameSpan === "L10"}
-          onChange={handleGameSpanChange}
-        />
-        <label htmlFor="l10">L10 GP</label>
-        <input
-          type="radio"
-          className="radioSelector"
-          id="l20"
-          name="gameSpan"
-          value="L20"
-          checked={selectedGameSpan === "L20"}
-          onChange={handleGameSpanChange}
-        />
-        <label htmlFor="l20">L20 GP</label>
-        <input
-          type="radio"
-          className="radioSelector"
-          id="l30"
-          name="gameSpan"
-          value="L30"
-          checked={selectedGameSpan === "L30"}
-          onChange={handleGameSpanChange}
-        />
-        <label htmlFor="l30">L30 GP</label>
-        <input
-          type="radio"
-          className="radioSelector"
-          id="szn"
-          name="gameSpan"
-          value="SZN"
-          checked={selectedGameSpan === "SZN"}
-          onChange={handleGameSpanChange}
-        />
-        <label htmlFor="szn">Season</label>
+        <h1 style={{ marginTop: "0", marginBottom: "0", textAlign: "left" }}>
+          Goalie <span className="spanColorBlue">Trends</span>
+        </h1>
+        <div className={styles.gameSpanSelectors}>
+          <input
+            type="radio"
+            id="l10"
+            name="gameSpan"
+            value="L10"
+            checked={selectedGameSpan === "L10"}
+            onChange={handleGameSpanChange}
+          />
+          <label htmlFor="l10">L10 GP</label>
+          <input
+            type="radio"
+            id="l20"
+            name="gameSpan"
+            value="L20"
+            checked={selectedGameSpan === "L20"}
+            onChange={handleGameSpanChange}
+          />
+          <label htmlFor="l20">L20 GP</label>
+          <input
+            type="radio"
+            id="l30"
+            name="gameSpan"
+            value="L30"
+            checked={selectedGameSpan === "L30"}
+            onChange={handleGameSpanChange}
+          />
+          <label htmlFor="l30">L30 GP</label>
+          <input
+            type="radio"
+            id="szn"
+            name="gameSpan"
+            value="SZN"
+            checked={selectedGameSpan === "SZN"}
+            onChange={handleGameSpanChange}
+          />
+          <label htmlFor="szn">Season</label>
+        </div>
       </div>
 
       {/* Table for Displaying Teams and Goalie Stats */}
@@ -308,16 +309,15 @@ const GoalieTrends = () => {
                     alt={`${teamInfo.name} Logo`}
                     className={styles.teamLogo}
                   />
+                  <div className={styles.teamGPgoalieRow}>
+                    GP: {teamStats.totalGames}
+                  </div>
                 </td>
                 <td className={styles.goalieComparisonCell}>
                   <div className={styles.goalieStatsContainer}>
-                    <div className={styles.teamGPgoalieRow}>
-                      GP: {teamStats.totalGames}
-                    </div>
-
                     {goalies.map((goalie) => (
                       <div key={goalie.goalieId} className={styles.goalieStats}>
-                        <span>
+                        <span className={styles.spanLastName}>
                           {goalie.lastName}: ({goalie.percentage.toFixed(1)}%)
                         </span>
                         <span>GP: {goalie.gamesPlayed}</span>
@@ -331,7 +331,7 @@ const GoalieTrends = () => {
                   <div
                     className={styles.comparisonBarContainer}
                     style={{
-                      border: `2px solid ${teamInfo.secondaryColor}`,
+                      border: `1px solid ${teamInfo.secondaryColor}`,
                     }}
                   >
                     {goalies.map((goalie, index) => {

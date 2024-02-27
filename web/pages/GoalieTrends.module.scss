@@ -1,22 +1,31 @@
 // Base container styles
 .container {
   max-width: 1200px;
+  width: 1000px;
   margin: auto;
   padding: 20px;
   font-family: "Roboto Condensed", sans-serif;
+}
+
+.gameSpanSelectors {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
 }
 
 // Game span selector styles
 .selectors {
   margin-bottom: 20px;
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   gap: 10px;
+  width: 100%;
 
   label {
     background-color: #07aae2;
     color: white;
-    padding: 10px 20px;
+    padding: 5px 10px;
     border-radius: 20px;
     cursor: pointer;
     transition: background-color 0.3s ease;
@@ -26,13 +35,14 @@
     }
 
     // This styles the label when the associated radio button is checked
-    .radio:checked + & {
-      background-color: darken(#07aae2, 15%);
+    input:checked + & {
+      background-color: #066995; /* Darkened background color, adjust as needed */
+      border: #f0f0f0 1px solid;
     }
   }
 
   // Hide the actual radio button because we are styling the label
-  .radio {
+  input[type="radio" i] {
     display: none;
   }
 }
@@ -43,11 +53,13 @@
   border-collapse: collapse;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   margin-top: 20px;
+  border: #404040 1px solid;
+  outline: 10px solid #181818;
 
   th,
   td {
     text-align: left;
-    padding: 16px;
+    padding: 10px;
     border-bottom: 1px solid #f0f0f0;
   }
 
@@ -56,27 +68,21 @@
     color: white;
   }
 }
+.teamLogo {
+  height: 40px;
+  width: auto;
+  padding: 5px;
+}
+
+// Styles for team logo
+.teamLogoCell {
+  flex: 0 0 50px;
+  text-align: center;
+  padding-right: 20px;
+}
 
 // Styles for the team goalie bar row
-.teamGoalieBarRow {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  align-items: center;
-  gap: 10px;
-
-  // Styles for team logo
-  .teamLogoCell {
-    flex: 0 0 50px;
-    text-align: center;
-    padding-right: 20px;
-  }
-
-  .teamLogo {
-    height: 30px;
-    width: auto;
-  }
-
+.teamGoalieBarRow tr {
   // Styles for the goalie stats and comparison bars
   .goalieComparisonCell {
     display: flex;
@@ -88,68 +94,45 @@
   }
 }
 
-// Styles for the goalie stats container to use CSS Grid
-.goalieStatsContainer {
-  display: grid;
-  grid-template-columns: auto repeat(auto-fill, minmax(120px, 1fr)); // First column for GP, remaining for goalies
-  gap: 10px;
-  align-items: start;
-}
-
 // Styles for the team GP goalie row to make it its own column
 .teamGPgoalieRow {
-  grid-column: 1; // Place in the first column
-  grid-row: 1 / span 2; // Span two rows
-  align-self: start; // Align to the start of the container
+  font-size: 0.8em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 // Adjustment to goalieStats to ensure they fill the available space and wrap correctly
 .goalieStats {
-  width: 100%; // Take up full width of the cell
-  display: flex;
-  flex-direction: column; // Keep stats stacked vertically
-  gap: 5px;
-  border-bottom: 1px solid #07aae2; // Visual separation
-}
-
-// Ensure comparison bar is below everything
-.comparisonBarContainer {
-  grid-column: 1 / -1; // Stretch across all columns
-  margin-top: 20px; // Space between stats and comparison bar
+  font-size: 0.8em;
 }
 
 // Styles for the individual goalie stats container
 .goalieStatsContainer {
   display: flex;
   flex-direction: row;
-  gap: 10px;
-  max-width: calc(100% - 200px);
+  gap: 15px;
+  width: 100%;
   align-items: flex-start;
 
   .goalieStats {
-    width: calc(50% - 5px);
     display: flex;
     flex-direction: row;
     gap: 5px;
     border-bottom: #07aae2 1px solid;
-  }
-
-  .teamGPgoalieRow {
-    display: flex;
-    flex-direction: row;
-    width: 15%;
-    grid-column: 1; // Place in the first column
-    grid-row: 1 / span 2; // Span two rows
-    align-self: start; // Align to the start of the container
+    border-right: #07aae2 1px solid;
+    padding: 5px;
   }
 }
 
 // Styles for the comparison bar container
 .comparisonBarContainer {
+  grid-column: 1 / -1; // Stretch across all columns
+  margin-top: 10px; // Space between stats and comparison bar
   display: flex;
   height: 30px;
-  width: 600px;
-  border-radius: 10px;
+  width: 100%;
   overflow: hidden;
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
 
