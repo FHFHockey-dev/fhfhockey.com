@@ -101,6 +101,14 @@
   margin: 0;
 }
 
+.tableHeader {
+  font-family: roboto condensed, sans-serif;
+  font-size: 2em;
+  font-weight: 200;
+  text-align: left;
+  margin-top: 0;
+}
+
 /* Stats container and rows */
 .statsAndPlayerCompContainer {
   margin-top: 20px;
@@ -110,6 +118,7 @@
 }
 
 .gamePageVsTableContainer {
+  flex-direction: column;
   flex-basis: 40%;
   margin-right: 5%; /* Gap between tables */
 }
@@ -277,6 +286,19 @@
   width: 100%; /* Split the width */
   height: 100%;
   display: flex;
+}
+
+.goalieCompHeaderMiddle {
+  background: linear-gradient(
+    90deg,
+    var(--home-primary-color) 0%,
+    var(--away-primary-color) 100%
+  );
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  display: flex;
+  justify-content: center;
 }
 
 .goalieCompHeaderRight {
@@ -1297,5 +1319,293 @@ strong {
   .threeStarsContainer {
     width: 100%; /* Full width for smaller screens */
     margin-bottom: 20px; /* Add space between containers */
+  }
+
+  .gameDetailsContainer {
+    flex-direction: column; /* Adjust to a column layout */
+  }
+
+  .gamePageCard {
+    width: 100%; /* Full width for smaller screens */
+    height: 50px;
+  }
+
+  .teamLogoHome {
+    height: 50px; /* Adjusted height */
+    left: 15%; /* Adjusted position */
+  }
+
+  .teamLogoAway {
+    height: 50px; /* Adjusted height */
+    right: 15%; /* Adjusted position */
+  }
+
+  .home-team {
+    font-size: 1em; /* Adjusted font size */
+    width: 100%;
+    text-align: right; /* Center align text */
+    -webkit-text-stroke-width: 0.5px;
+  }
+
+  .away-team {
+    font-size: 1em; /* Adjusted font size */
+    width: 100%;
+    text-align: left; /* Center align text */
+    -webkit-text-stroke-width: 0.5px;
+  }
+
+  .GPvs {
+    font-size: 1.2em; /* Adjusted font size */
+    padding: 30px;
+    background: linear-gradient(
+      90deg,
+      var(--home-primary-color) 0%,
+      var(--away-primary-color) 100%
+    );
+  }
+
+  .gamePageCardLeft {
+    width: 100%; /* Full width for smaller screens */
+    background: linear-gradient(
+      65deg,
+      var(--home-jersey-color) 0%,
+      var(--home-jersey-color) 25%,
+      var(--home-secondary-color) 25%,
+      var(--home-secondary-color) 30%,
+      var(--home-primary-color) 30%,
+      var(--home-primary-color) 35%,
+      var(--home-secondary-color) 35%,
+      var(--home-secondary-color) 40%,
+      var(--home-primary-color) 40%,
+      var(--home-primary-color) 100%
+    );
+  }
+
+  .gamePageCardRight {
+    width: 100%; /* Full width for smaller screens */
+    background: linear-gradient(
+      115deg,
+      var(--away-primary-color) 0%,
+      var(--away-primary-color) 60%,
+      var(--away-secondary-color) 60%,
+      var(--away-secondary-color) 65%,
+      var(--away-primary-color) 65%,
+      var(--away-primary-color) 70%,
+      var(--away-secondary-color) 70%,
+      var(--away-secondary-color) 75%,
+      var(--away-jersey-color) 75%,
+      var(--away-jersey-color) 100%
+    );
+  }
+
+  .statTableLeft {
+    background: linear-gradient(
+      65deg,
+      var(--home-jersey-color) 0%,
+      var(--home-jersey-color) 40%,
+      var(--home-secondary-color) 40%,
+      var(--home-secondary-color) 45%,
+      var(--home-primary-color) 45%,
+      var(--home-primary-color) 50%,
+      var(--home-secondary-color) 50%,
+      var(--home-secondary-color) 55%,
+      var(--home-primary-color) 55%,
+      var(--home-primary-color) 75%,
+
+      #fff 75%,
+      #fff 80%,
+      #101010 80%,
+
+      #101010 100%
+    );
+  }
+
+  .statTableRight {
+    background: linear-gradient(
+      115deg,
+      #101010 0%,
+      #101010 20%,
+      #fff 20%,
+      #fff 25%,
+
+      var(--away-primary-color) 25%,
+      var(--away-primary-color) 45%,
+      var(--away-secondary-color) 45%,
+      var(--away-secondary-color) 50%,
+      var(--away-primary-color) 50%,
+      var(--away-primary-color) 55%,
+      var(--away-secondary-color) 55%,
+      var(--away-secondary-color) 60%,
+      var(--away-jersey-color) 60%,
+      var(--away-jersey-color) 100%
+    );
+  }
+
+  .advantageHeaderText {
+    background: #101010;
+  }
+
+  .teamLogoHomeStatTable {
+    margin-left: 5px;
+  }
+
+  .teamLogoAwayStatTable {
+    margin-right: 5px;
+  }
+
+  .statsAndPlayerCompContainer {
+    flex-direction: column; /* Adjust to a column layout */
+  }
+
+  .gamePageVsTableContainer {
+    flex-direction: column;
+    width: 100%; /* Full width for smaller screens */
+    margin: 0;
+  }
+
+  .playerCompHeader {
+    display: none;
+  }
+
+  .tableHeader {
+    margin-bottom: 3px;
+    text-align: left;
+  }
+
+  .goalieCompContainer {
+    margin-top: 0;
+  }
+
+  .goalieCompHeader {
+    display: none;
+  }
+
+  .awayPlayer .playerHeadshot,
+  .homePlayer .playerHeadshot {
+    height: 50px;
+    width: 50px;
+  }
+
+  .awayPlayer .playerHeadshot {
+    right: 0px;
+  }
+
+  .homePlayer .playerHeadshot {
+    left: 0px;
+  }
+
+  .awayPlayer .playerStats,
+  .homePlayer .playerStats {
+    font-size: 0.85em;
+    margin: 5px;
+  }
+
+  .playerCompDetails {
+    height: 5em;
+  }
+
+  .verticalText {
+    font-size: 0.8em;
+    top: 3px;
+  }
+
+  .homeGoalies .goalieStatRow img,
+  .awayGoalies .goalieStatRow img {
+    height: 50px;
+    width: 50px;
+  }
+
+  .homeGoalies .goalieStatRow,
+  .awayGoalies .goalieStatRow {
+    padding: 5px;
+    height: 100%;
+  }
+
+  .homeGoalies .goalieName,
+  .awayGoalies .goalieName {
+    font-size: 0.85em;
+  }
+
+  .homeGoalies .goalieStatRow img {
+    margin: 0;
+  }
+
+  .awayGoalies .goalieStatRow img {
+    margin: 0;
+  }
+  .homeGoalies .goalieStatRow {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+  }
+
+  .homeGoalies .goalieImage {
+    grid-area: 2 / 1 / 3 / 3; /* Adjusted to fit within the second row and first two columns */
+    width: 100%;
+  }
+
+  .homeGoalies .goalieName {
+    grid-area: 1 / 1 / 2 / 6; /* Spans the top, covering all five columns in the first row */
+    height: 100%;
+    margin-left: 15px;
+    width: 100%;
+    justify-content: space-between; /* This property actually does not apply here since it's not a flex container */
+    flex-direction: row; /* This also does not apply for the same reason */
+    font-weight: 900;
+  }
+
+  .homeGoalies .goalieSweaterNumber {
+    margin-right: 15px;
+  }
+
+  .homeGoalieStatHighlight {
+    grid-area: 2 / 3 / 3 / 6; /* Adjusted to fit within the second row and last three columns */
+    margin: 0;
+    width: 100%;
+  }
+
+  .awayGoalies .goalieStatRow {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-column-gap: 0px;
+    grid-row-gap: 0px;
+  }
+
+  .awayGoalies .goalieImage {
+    grid-area: 2 / 4 / 5 / 6;
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .awayGoalies .goalieName {
+    grid-area: 1 / 1 / 2 / 6;
+    width: 100%;
+    height: 100%;
+    justify-content: space-between;
+    flex-direction: row;
+  }
+
+  .awayGoalieStatHighlight {
+    grid-area: 2 / 1 / 5 / 4;
+    margin: 0;
+    width: 100%;
+  }
+
+  .awayGoalies .goalieSweaterNumber {
+    margin-right: 15px;
+  }
+
+  .goalieStatsContainer {
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .statsPlayerAndGoalieCompContainer .tableHeader {
+    margin-top: 10px;
+    margin-bottom: 3px;
+    text-align: left;
   }
 }

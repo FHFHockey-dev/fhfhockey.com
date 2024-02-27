@@ -638,3 +638,25 @@
 .container {
   padding: 0;
 }
+
+@media (max-width: 767px) {
+  .crInjuries {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .ccStandings {
+    margin-right: 0;
+    width: 100%;
+  }
+
+  .gamesContainer {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    grid-gap: 0;
+  }
+
+  .gamesContainer > * {
+    grid-column: span 4;
+  }
+}

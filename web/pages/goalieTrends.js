@@ -246,42 +246,47 @@ const GoalieTrends = () => {
     <div className={styles.container}>
       {/* Game Span Selectors */}
       <div className={styles.selectors}>
-        <input
-          type="radio"
-          id="l10"
-          name="gameSpan"
-          value="L10"
-          checked={selectedGameSpan === "L10"}
-          onChange={handleGameSpanChange}
-        />
-        <label htmlFor="l10">L10 GP</label>
-        <input
-          type="radio"
-          id="l20"
-          name="gameSpan"
-          value="L20"
-          checked={selectedGameSpan === "L20"}
-          onChange={handleGameSpanChange}
-        />
-        <label htmlFor="l20">L20 GP</label>
-        <input
-          type="radio"
-          id="l30"
-          name="gameSpan"
-          value="L30"
-          checked={selectedGameSpan === "L30"}
-          onChange={handleGameSpanChange}
-        />
-        <label htmlFor="l30">L30 GP</label>
-        <input
-          type="radio"
-          id="szn"
-          name="gameSpan"
-          value="SZN"
-          checked={selectedGameSpan === "SZN"}
-          onChange={handleGameSpanChange}
-        />
-        <label htmlFor="szn">Season</label>
+        <h1 style={{ marginTop: "0", marginBottom: "0", textAlign: "left" }}>
+          Goalie <span className="spanColorBlue">Trends</span>
+        </h1>
+        <div className={styles.gameSpanSelectors}>
+          <input
+            type="radio"
+            id="l10"
+            name="gameSpan"
+            value="L10"
+            checked={selectedGameSpan === "L10"}
+            onChange={handleGameSpanChange}
+          />
+          <label htmlFor="l10">L10 GP</label>
+          <input
+            type="radio"
+            id="l20"
+            name="gameSpan"
+            value="L20"
+            checked={selectedGameSpan === "L20"}
+            onChange={handleGameSpanChange}
+          />
+          <label htmlFor="l20">L20 GP</label>
+          <input
+            type="radio"
+            id="l30"
+            name="gameSpan"
+            value="L30"
+            checked={selectedGameSpan === "L30"}
+            onChange={handleGameSpanChange}
+          />
+          <label htmlFor="l30">L30 GP</label>
+          <input
+            type="radio"
+            id="szn"
+            name="gameSpan"
+            value="SZN"
+            checked={selectedGameSpan === "SZN"}
+            onChange={handleGameSpanChange}
+          />
+          <label htmlFor="szn">Season</label>
+        </div>
       </div>
 
       {/* Table for Displaying Teams and Goalie Stats */}
@@ -290,7 +295,6 @@ const GoalieTrends = () => {
           <tr>
             <th>Team</th>
             <th>Goalies & Comparison Bar</th>
-            <th>Stats</th>
           </tr>
         </thead>
         <tbody>
@@ -298,20 +302,36 @@ const GoalieTrends = () => {
             const teamStats = goalieStats[teamAbbrev] || {}; // Ensure teamStats is an object, even if it's empty
             const goalies = teamStats.goalies || []; // Ensure goalies is an array, even if it's empty
             return (
-              <tr key={teamAbbrev}>
+              <tr key={teamAbbrev} className="teamGoalieBarRow">
                 <td className={styles.teamLogoCell}>
                   <img
                     src={`https://assets.nhle.com/logos/nhl/svg/${teamAbbrev}_dark.svg`}
                     alt={`${teamInfo.name} Logo`}
                     className={styles.teamLogo}
                   />
-                  <div>GP: {teamStats.totalGames}</div>
+                  <div className={styles.teamGPgoalieRow}>
+                    GP: {teamStats.totalGames}
+                  </div>
                 </td>
                 <td className={styles.goalieComparisonCell}>
+                  <div className={styles.goalieStatsContainer}>
+                    {goalies.map((goalie) => (
+                      <div key={goalie.goalieId} className={styles.goalieStats}>
+                        <span className={styles.spanLastName}>
+                          {goalie.lastName}: ({goalie.percentage.toFixed(1)}%)
+                        </span>
+                        <span>GP: {goalie.gamesPlayed}</span>
+                        <span>SV%: {goalie.savePercentage.toFixed(3)}</span>
+                        <span>
+                          GAA: {goalie.goalsAgainstAverage.toFixed(2)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                   <div
                     className={styles.comparisonBarContainer}
                     style={{
-                      border: `2px solid ${teamInfo.secondaryColor}`,
+                      border: `1px solid ${teamInfo.secondaryColor}`,
                     }}
                   >
                     {goalies.map((goalie, index) => {
@@ -341,19 +361,6 @@ const GoalieTrends = () => {
                       );
                     })}
                   </div>
-                </td>
-                <td className={styles.teamStatsCell}>
-                  {goalies.map((goalie) => (
-                    <div key={goalie.goalieId} className={styles.goalieStats}>
-                      <span>
-                        {goalie.lastName}: ({goalie.percentage.toFixed(1)}
-                        %)
-                      </span>
-                      <span>GP: {goalie.gamesPlayed}</span>
-                      <span>SV%: {goalie.savePercentage.toFixed(3)}</span>
-                      <span>GAA: {goalie.goalsAgainstAverage.toFixed(2)}</span>
-                    </div>
-                  ))}
                 </td>
               </tr>
             );
