@@ -12,7 +12,7 @@ export default async function fetchWithCache(url, json = true) {
   } else {
     // If data is not found in cache, fetch it from the network
     const hours = 24; // Cache duration
-    console.log(`num: ${num} - ${url}`); // Logging request number and URL
+    // console.log(`num: ${num} - ${url}`); // Logging request number and URL
     num++;
 
     // Using the new Fetch structure

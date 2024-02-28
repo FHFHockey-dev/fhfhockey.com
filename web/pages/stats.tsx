@@ -157,8 +157,7 @@ function Stats({
             className="sos-tables-container"
             style={{
               display: "flex",
-              flexDirection: "column",
-              marginRight: "20px",
+              flexDirection: "row",
             }}
           >
             <div className="sos-container">
@@ -169,6 +168,9 @@ function Stats({
               <StrengthOfSchedule type="past" rankings={pastSoSRankings} />
             </div>
 
+            <div className="goalie-trends-container">
+              <GoalieTrends />
+            </div>
             <div className="sos-container">
               <h2>
                 Strength of Schedule -{" "}
@@ -176,10 +178,6 @@ function Stats({
               </h2>
               <StrengthOfSchedule type="future" rankings={futureSoSRankings} />
             </div>
-          </div>
-
-          <div className="goalie-trends-container">
-            <GoalieTrends />
           </div>
         </div>
 

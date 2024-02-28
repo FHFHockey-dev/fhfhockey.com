@@ -6,6 +6,9 @@ import { teamsInfo } from "lib/NHL/teamsInfo";
 import Fetch from "lib/cors-fetch";
 import styles from "./GoalieTrends.module.scss";
 import fetchWithCache from "lib/fetchWithCache"; // Adjust the path as necessary
+import { Chart } from "chart.js";
+import DoughnutChart from "./DoughnutChart";
+import { border } from "@mui/system";
 
 // Function to mix two colors
 function mix(color1, color2 = "#FFFFFF", percentage) {
@@ -181,6 +184,8 @@ const GoalieTrends = () => {
         percentage,
       };
     }
+    console.log("Processed Goalie Stats:", processedData);
+
     return {
       totalGames,
       goalies: Object.values(processedData),
@@ -238,9 +243,16 @@ const GoalieTrends = () => {
 
   if (loading) return <div>Loading...</div>;
 
+  // Prepare data for table layout
   const sortedTeams = Object.entries(teamsInfo).sort(([aAbbrev], [bAbbrev]) =>
     aAbbrev.localeCompare(bAbbrev)
   );
+
+  // Convert the sorted list of teams into a matrix for table layout
+  const rows = [];
+  for (let i = 0; i < sortedTeams.length; i += 3) {
+    rows.push(sortedTeams.slice(i, i + 3));
+  }
 
   return (
     <div className={styles.container}>
@@ -290,81 +302,89 @@ const GoalieTrends = () => {
       </div>
 
       {/* Table for Displaying Teams and Goalie Stats */}
-      <table className={styles.goalieTrendsTable}>
-        <thead>
-          <tr>
-            <th>Team</th>
-            <th>Goalies & Comparison Bar</th>
-          </tr>
-        </thead>
+      <table className={styles.goalieShareTable}>
         <tbody>
-          {sortedTeams.map(([teamAbbrev, teamInfo]) => {
-            const teamStats = goalieStats[teamAbbrev] || {}; // Ensure teamStats is an object, even if it's empty
-            const goalies = teamStats.goalies || []; // Ensure goalies is an array, even if it's empty
-            return (
-              <tr key={teamAbbrev} className="teamGoalieBarRow">
-                <td className={styles.teamLogoCell}>
-                  <img
-                    src={`https://assets.nhle.com/logos/nhl/svg/${teamAbbrev}_dark.svg`}
-                    alt={`${teamInfo.name} Logo`}
-                    className={styles.teamLogo}
-                  />
-                  <div className={styles.teamGPgoalieRow}>
-                    GP: {teamStats.totalGames}
-                  </div>
-                </td>
-                <td className={styles.goalieComparisonCell}>
-                  <div className={styles.goalieStatsContainer}>
-                    {goalies.map((goalie) => (
-                      <div key={goalie.goalieId} className={styles.goalieStats}>
-                        <span className={styles.spanLastName}>
-                          {goalie.lastName}: ({goalie.percentage.toFixed(1)}%)
-                        </span>
-                        <span>GP: {goalie.gamesPlayed}</span>
-                        <span>SV%: {goalie.savePercentage.toFixed(3)}</span>
-                        <span>
-                          GAA: {goalie.goalsAgainstAverage.toFixed(2)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <div
-                    className={styles.comparisonBarContainer}
-                    style={{
-                      border: `1px solid ${teamInfo.secondaryColor}`,
-                    }}
-                  >
-                    {goalies.map((goalie, index) => {
-                      //                      console.log("Goalie:", goalie);
+          {rows.map((row, rowIndex) => (
+            <tr key={rowIndex}>
+              {row.map(([teamAbbrev, _], cellIndex) => {
+                const goalieData = goalieStats[teamAbbrev]?.goalies || [];
+                const teamColors = teamsInfo[teamAbbrev]
+                  ? [
+                      teamsInfo[teamAbbrev].primaryColor,
+                      teamsInfo[teamAbbrev].secondaryColor,
+                      teamsInfo[teamAbbrev].jersey,
+                      teamsInfo[teamAbbrev].accent,
+                      teamsInfo[teamAbbrev].alt,
+                    ]
+                  : ["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"]; // Default colors if teamInfo is missing
 
-                      return (
-                        <div
-                          key={goalie.goalieId}
-                          className={styles.barSegment}
-                          style={{
-                            width: `${goalie.percentage}%`,
-                            backgroundColor:
-                              index % 2 === 0
-                                ? teamInfo.primaryColor
-                                : mix(teamInfo.primaryColor, "#FFFFFF", 0.1),
-                          }}
-                        >
-                          <span
-                            className={styles.goalieName} // Use the new class for styling
-                            style={{
-                              color: teamInfo.jersey,
-                            }}
-                          >
-                            {goalie.lastName}
-                          </span>
+                const chartData = {
+                  labels: goalieData.map((goalie) => goalie.lastName),
+                  datasets: [
+                    {
+                      data: goalieData.map((goalie) => goalie.percentage),
+                      backgroundColor: goalieData.map(
+                        (_, index) => teamColors[index % teamColors.length]
+                      ), // Cycle through team colors
+                    },
+                  ],
+                };
+
+                return (
+                  <React.Fragment key={`${teamAbbrev}-${cellIndex}`}>
+                    <td
+                      className={styles.teamGroup}
+                      style={{
+                        "--primary-color": teamsInfo[teamAbbrev].primaryColor,
+                        "--secondary-color":
+                          teamsInfo[teamAbbrev].secondaryColor,
+                        "--jersey-color": teamsInfo[teamAbbrev].jersey,
+                        "--accent-color": teamsInfo[teamAbbrev].accent,
+                        "--alt-color": teamsInfo[teamAbbrev].alt,
+                      }}
+                    >
+                      <div
+                        style={{ textAlign: "center" }}
+                        className={styles.teamGroupCell}
+                      >
+                        <div className={styles.teamHeaderChart}>
+                          <div className={styles.logoAndAbbrev}>
+                            <img
+                              className={styles.teamLogoChart}
+                              src={`https://assets.nhle.com/logos/nhl/svg/${teamAbbrev}_light.svg`}
+                              alt={`${teamAbbrev} logo`}
+                            />
+                            <span className={styles.teamNameChart}>
+                              {teamsInfo[teamAbbrev].shortName}
+                            </span>
+                            <span className={styles.teamGPStats}>
+                              <span className={styles.teamGPStatsLabel}>
+                                GP:
+                              </span>
+                              <span className={styles.teamGoalieStatsValue}>
+                                {goalieData.reduce(
+                                  (acc, goalie) => acc + goalie.gamesPlayed,
+                                  0
+                                )}
+                              </span>
+                            </span>
+                          </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
+                        <div className={styles.goalieChart}>
+                          {goalieData.length > 0 && (
+                            <DoughnutChart data={chartData} />
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                  </React.Fragment>
+                );
+              })}
+              {[...Array(3 - row.length)].map((_, index) => (
+                <td key={`empty-${index}`}>&nbsp;</td> // Fill in empty cells if row has less than 4 teams
+              ))}
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
