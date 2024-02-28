@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import classNames from "classnames";
 import supabase from "lib/supabase";
 import Fetch from "lib/cors-fetch";
-import { Shift, getPairwiseTOI, sortByLineCombination } from "./utilities";
+import { Shift, getPairwiseTOI } from "./utilities";
 import { formatTime } from "utils/getPowerPlayBlocks";
 import groupBy from "utils/groupBy";
 
@@ -201,6 +201,47 @@ export default function LinemateMatrix({ id }: Props) {
     </div>
   );
 }
+type PlayerType = "forwards" | "defensemen";
+const NUM_PLAYERS_PER_LINE = {
+  forwards: 3,
+  defensemen: 2,
+} as const;
+export function sortByLineCombination(
+  data: Record<string, TOIData>,
+  players: PlayerData[]
+): PlayerData[] {
+  // TJ: I think that would be the three fwds w most shared toi, then 2nd, 3rd, 4th etc
+
+  const groups = groupBy(players, (player) =>
+    isForward(player.position) ? "forwards" : "defensemen"
+  );
+  const result: PlayerData[] = [];
+  ["forwards", "defensemen"].forEach((playerType) => {
+    const players = [...groups[playerType]];
+    const numPlayersPerLine = NUM_PLAYERS_PER_LINE[playerType as PlayerType];
+    const numLines = players.length / numPlayersPerLine;
+    for (let line = 0; line < numLines; line++) {
+      const pivotPlayer = players
+        .sort(
+          (a, b) => data[getKey(b.id, b.id)].toi - data[getKey(a.id, a.id)].toi
+        )
+        .shift();
+      result.push(pivotPlayer!);
+      for (let i = 0; i < numPlayersPerLine - 1; i++) {
+        const p = players
+          .sort(
+            (a, b) =>
+              data[getKey(pivotPlayer!.id, b.id)].toi -
+              data[getKey(pivotPlayer!.id, a.id)].toi
+          )
+          .shift();
+        result.push(p!);
+      }
+    }
+  });
+
+  return result;
+}
 
 type LinemateMatrixInternalProps = {
   teamName: string;
@@ -235,8 +276,8 @@ function LinemateMatrixInternal({
       return rosterSortedByNumber;
     } else if (mode === "total-toi") {
       return Object.values(table)
-        .sort((a, b) => b.toi - a.toi)
         .filter((item) => item.p1.id === item.p2.id)
+        .sort((a, b) => b.toi - a.toi)
         .map((item) => item.p1);
     } else if (mode === "line-combination") {
       return sortByLineCombination(table, roster);
