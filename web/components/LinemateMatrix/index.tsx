@@ -11,13 +11,41 @@ import Tooltip from "components/Tooltip";
 import Select from "components/Select";
 
 async function getRostersMap(gameId: number) {
-  // get skaters only
-  const { data: players } = await supabase.rpc("get_skaters_info_by_game_id", {
-    p_game_id: gameId,
-  });
   const rostersMap: Record<number, PlayerData> = {};
-  players?.forEach((player) => (rostersMap[player.id] = player));
-  return rostersMap;
+
+  // get skaters only
+  const boxscore = await Fetch(
+    `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
+  ).then((res) => res.json());
+  const seasonId = boxscore.season as number;
+  const playerByGameStats = boxscore.boxscore.playerByGameStats;
+  const transform = (teamId: number) => (item: any) => ({
+    id: item.playerId,
+    seasonId,
+    teamId: teamId,
+    sweaterNumber: item.sweaterNumber,
+    position: item.position,
+    name: item.name.default,
+  });
+  const homeTeamPlayers = [
+    ...playerByGameStats.homeTeam.forwards,
+    ...playerByGameStats.homeTeam.defense,
+  ].map(transform(boxscore.homeTeam.id));
+  const awayTeamPlayers = [
+    ...playerByGameStats.awayTeam.forwards,
+    ...playerByGameStats.awayTeam.defense,
+  ].map(transform(boxscore.awayTeam.id));
+  [...homeTeamPlayers, ...awayTeamPlayers].forEach((p) => {
+    rostersMap[p.id] = p;
+  });
+
+  return {
+    rostersMap,
+    teams: [boxscore.homeTeam, boxscore.awayTeam].map((team) => ({
+      id: team.id,
+      name: team.name.default,
+    })),
+  };
 }
 
 function processShifts(shifts: Shift[], rosters: Record<number, PlayerData[]>) {
@@ -47,8 +75,7 @@ export type PlayerData = {
   teamId: number;
   position: string;
   sweaterNumber: number;
-  firstName: string;
-  lastName: string;
+  name: string;
 };
 
 export type TOIData = {
@@ -61,7 +88,7 @@ function useTOI(id: number) {
   const [toi, setTOI] = useState<Record<number, TOIData[]>>({});
   const [rosters, setRosters] = useState<Record<number, PlayerData[]>>({});
   const [loading, setLoading] = useState(false);
-
+  const [teams, setTeams] = useState<[Team, Team] | null>(null);
   useEffect(() => {
     setLoading(false);
     let mounted = true;
@@ -71,7 +98,7 @@ function useTOI(id: number) {
     }
     (async () => {
       setLoading(true);
-      const [{ data: shiftsData }, rostersMap] = await Promise.all([
+      const [{ data: shiftsData }, { rostersMap, teams }] = await Promise.all([
         await Fetch(
           `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`
         ).then((res) => res.json()),
@@ -110,11 +137,12 @@ function useTOI(id: number) {
 
         setTOI(data);
         setRosters(rosters);
+        setTeams(teams as any);
         setLoading(false);
       }
     })();
   }, [id]);
-  return [toi, rosters, loading] as const;
+  return [toi, rosters, teams, loading] as const;
 }
 
 type Team = { id: number; name: string };
@@ -160,13 +188,10 @@ const OPTIONS = [
   { label: "Line Combination", value: "line-combination" },
 ] as const;
 export default function LinemateMatrix({ id }: Props) {
-  const [mode, setMode] =
-    useState<LinemateMatrixInternalProps["mode"]>("total-toi");
-  const [toiData, rosters, loading] = useTOI(id);
-  const gameInfo = useGame(id);
-  if (!gameInfo || !toiData || loading) return <div>loading...</div>;
+  const [mode, setMode] = useState<Mode>("total-toi");
+  const [toiData, rosters, gameInfo, loading] = useTOI(id);
+  if (!gameInfo) return <></>;
   const [homeTeam, awayTeam] = gameInfo;
-
   return (
     <div>
       <div style={{ margin: "0 auto", width: "200px" }}>
@@ -180,9 +205,8 @@ export default function LinemateMatrix({ id }: Props) {
       </div>
       <div
         style={{
-          margin: "0 10%",
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: "space-around",
         }}
       >
         <LinemateMatrixInternal
@@ -201,6 +225,7 @@ export default function LinemateMatrix({ id }: Props) {
     </div>
   );
 }
+
 type PlayerType = "forwards" | "defensemen";
 const NUM_PLAYERS_PER_LINE = {
   forwards: 3,
@@ -211,7 +236,7 @@ export function sortByLineCombination(
   players: PlayerData[]
 ): PlayerData[] {
   // TJ: I think that would be the three fwds w most shared toi, then 2nd, 3rd, 4th etc
-
+  if (players.length === 0) return [];
   const groups = groupBy(players, (player) =>
     isForward(player.position) ? "forwards" : "defensemen"
   );
@@ -242,12 +267,12 @@ export function sortByLineCombination(
 
   return result;
 }
-
+type Mode = "number" | "total-toi" | "line-combination";
 type LinemateMatrixInternalProps = {
   teamName: string;
   toiData: TOIData[];
   roster: PlayerData[];
-  mode: "number" | "total-toi" | "line-combination";
+  mode: Mode;
 };
 
 const getKey = (p1: number, p2: number) => `${[p1, p2].sort()}`;
@@ -289,7 +314,7 @@ function LinemateMatrixInternal({
   const avgSharedToi = useMemo(() => {
     let sum = 0;
     sortedRoster.forEach((player) => {
-      sum += table[getKey(player.id, player.id)].toi;
+      sum += table[getKey(player.id, player.id)]?.toi ?? 0;
     });
     return sum / sortedRoster.length;
   }, [table, sortedRoster]);
@@ -308,6 +333,7 @@ function LinemateMatrixInternal({
       >
         {sortedRoster.length > 0 &&
           new Array(sortedRoster.length + 1).fill(0).map((_, row) => {
+            // Render the top row aka. player names
             if (row === 0) {
               return [
                 <div key="left-up"></div>,
@@ -321,7 +347,7 @@ function LinemateMatrixInternal({
                     <div className={styles.inner}>
                       {player.sweaterNumber}
                       <>&nbsp;</>
-                      {player.lastName}
+                      {player.name}
                     </div>
                   </div>
                 )),
@@ -332,6 +358,7 @@ function LinemateMatrixInternal({
                 .map((_, col) => {
                   const p1 = sortedRoster[col - 1];
                   const p2 = sortedRoster[row - 1];
+                  // Render the first column aka. player names
                   if (col === 0) {
                     return (
                       <div
@@ -342,13 +369,14 @@ function LinemateMatrixInternal({
                       >
                         {p2.sweaterNumber}
                         <>&nbsp;</>
-                        {p2.lastName}
+                        {p2.name}
                       </div>
                     );
                   } else {
+                    // Render the colored cells
                     return (
                       <Cell
-                        key={`${row}-${col}`}
+                        key={`${p1.id}-${p2.id}}`}
                         teamAvgToi={avgSharedToi}
                         sharedToi={table[getKey(p1.id, p2.id)].toi}
                         p1={p1}
