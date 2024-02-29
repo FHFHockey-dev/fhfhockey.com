@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import classNames from "classnames";
-import supabase from "lib/supabase";
 import Fetch from "lib/cors-fetch";
 import { Shift, getPairwiseTOI } from "./utilities";
 import { formatTime } from "utils/getPowerPlayBlocks";
@@ -17,11 +16,9 @@ async function getRostersMap(gameId: number) {
   const boxscore = await Fetch(
     `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
   ).then((res) => res.json());
-  const seasonId = boxscore.season as number;
   const playerByGameStats = boxscore.boxscore.playerByGameStats;
   const transform = (teamId: number) => (item: any) => ({
     id: item.playerId,
-    seasonId,
     teamId: teamId,
     sweaterNumber: item.sweaterNumber,
     position: item.position,
@@ -146,35 +143,6 @@ function useTOI(id: number) {
 }
 
 type Team = { id: number; name: string };
-function useGame(id: number) {
-  const [game, setGame] = useState<[Team, Team] | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      if (!id) return;
-      const { data: teamIds } = await supabase
-        .from("games")
-        .select("homeTeamId, awayTeamId")
-        .eq("id", id)
-        .single();
-
-      if (!teamIds) return;
-
-      const { data, error } = await supabase
-        .from("teams")
-        .select("id, name")
-        .in("id", [teamIds.homeTeamId, teamIds.awayTeamId]);
-      if (error) return;
-
-      const result =
-        data[0].id === teamIds.homeTeamId ? data : [data[1], data[0]];
-      setGame(result as [Team, Team]);
-    })();
-  }, [id]);
-
-  return game;
-}
-
 type Props = {
   id: number;
 };
@@ -264,7 +232,6 @@ export function sortByLineCombination(
       }
     }
   });
-
   return result;
 }
 type Mode = "number" | "total-toi" | "line-combination";
