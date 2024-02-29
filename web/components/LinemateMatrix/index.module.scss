@@ -1,55 +1,79 @@
+@import "styles/vars.scss";
+
+.gridWrapper {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+
+  @media only screen and (max-width: $screen-medium-max) {
+    flex-direction: column;
+  }
+}
+
+// single matrix container
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
+  flex: 1;
 
   --spacing: 6px;
   --player-info-size: 120px;
-  --cell-size: 20.5px;
   font-size: 0.875rem;
-  .topPlayerName {
-    position: relative;
-    transition: transform 0.5s;
-  }
-  .topPlayerName .inner {
-    position: absolute;
-    transform: rotate(-90deg);
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-    transform-origin: 0 0;
-    width: var(--player-info-size);
-    top: 100%;
-    padding: 0 var(--spacing);
-    line-height: var(--cell-size);
+  @media only screen and (max-width: $screen-small-max) {
+    --player-info-size: 100px;
+    font-size: 0.75rem;
   }
 
-  .leftPlayerName {
-    text-align: right;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-    padding: 0 var(--spacing);
-    transition: transform 0.2s ease-in-out;
-    line-height: var(--cell-size);
-  }
+  .grid {
+    background-color: white;
+    color: black;
+    display: grid;
+    width: 100%;
+    aspect-ratio: 1 / 1;
 
-  .active {
-    color: darkorange;
-    transform: scale(1.05);
-  }
-
-  .cell {
-    width: var(--cell-size);
-    height: var(--cell-size);
-    border: 1px solid #fff;
-
-    &:hover {
-      border-color: darkorange;
+    .topPlayerName {
+      position: relative;
+      transition: transform 0.5s;
     }
-    & .content {
-      width: 100%;
-      height: 100%;
+    .topPlayerName .inner {
+      position: absolute;
+      transform: rotate(-90deg) translateY(-50%);
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      transform-origin: 0 0;
+      width: var(--player-info-size);
+      top: 100%;
+      left: 50%;
+      padding: 0 var(--spacing);
+    }
+
+    .leftPlayerName {
+      text-align: right;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 0 var(--spacing);
+      transition: transform 0.2s ease-in-out;
+      align-self: center;
+    }
+
+    .active {
+      color: darkorange;
+      transform: scale(1.05);
+    }
+
+    .cell {
+      border: 1px solid #fff;
+
+      &:hover {
+        border-color: darkorange;
+      }
+      & .content {
+        width: 100%;
+        height: 100%;
+      }
     }
   }
 }

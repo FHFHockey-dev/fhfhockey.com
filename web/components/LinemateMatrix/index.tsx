@@ -171,12 +171,7 @@ export default function LinemateMatrix({ id }: Props) {
           }}
         />
       </div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-around",
-        }}
-      >
+      <div className={styles.gridWrapper}>
         <LinemateMatrixInternal
           teamName={homeTeam.name}
           roster={rosters[homeTeam.id]}
@@ -290,10 +285,8 @@ function LinemateMatrixInternal({
     <section className={styles.container}>
       <h4>{teamName}</h4>
       <div
+        className={styles.grid}
         style={{
-          backgroundColor: "white",
-          color: "black",
-          display: "grid",
           gridTemplateRows: `var(--player-info-size) repeat( ${roster.length}, 1fr)`,
           gridTemplateColumns: `var(--player-info-size) repeat(${roster.length}, 1fr)`,
         }}
