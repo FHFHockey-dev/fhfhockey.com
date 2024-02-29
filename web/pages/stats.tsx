@@ -9,6 +9,7 @@ import { Team } from "lib/NHL/types";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import ClientOnly from "components/ClientOnly";
 import Fetch from "lib/cors-fetch";
+import GoalieTrends from "./goalieTrends";
 
 type StatsProps = {
   teams: Team[];
@@ -148,21 +149,46 @@ function Stats({
       </div>
 
       <div className="team-landing-page">
-        <div className="sos-and-logo-grid">
-          <div className="sos-container">
-            <h2>Strength of Schedule - Past</h2>
-            <StrengthOfSchedule type="past" rankings={pastSoSRankings} />
+        <div
+          className="stats-and-trends-grid"
+          style={{ display: "flex", alignItems: "flex-start" }}
+        >
+          <div
+            className="sos-tables-container"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              marginRight: "20px",
+            }}
+          >
+            <div className="sos-container">
+              <h2>
+                Strength of Schedule -{" "}
+                <span className="spanColorBlue">Past</span>
+              </h2>
+              <StrengthOfSchedule type="past" rankings={pastSoSRankings} />
+            </div>
+
+            <div className="sos-container">
+              <h2>
+                Strength of Schedule -{" "}
+                <span className="spanColorBlue">Future</span>
+              </h2>
+              <StrengthOfSchedule type="future" rankings={futureSoSRankings} />
+            </div>
           </div>
-          <div></div>
-          <div className="sos-container">
-            <h2>Strength of Schedule - Future</h2>
-            <StrengthOfSchedule type="future" rankings={futureSoSRankings} />
+
+          <div className="goalie-trends-container">
+            <GoalieTrends />
           </div>
         </div>
 
         <div className="tables-container">
           <div className="team-ranks-table-container">
-            <h1>Team Power Rankings - Last 10 Games</h1>
+            <h1>
+              Team Power Rankings -{" "}
+              <span className="spanColorBlue">Last 10 Games</span>
+            </h1>
             <table className="team-ranks-table">
               <thead className="team-ranks-table-header">
                 <tr>
@@ -270,7 +296,10 @@ function Stats({
           </div>
           <div className="table-separator"></div>
           <div className="fantasy-power-ranks-table-container">
-            <h1>Fantasy Power Rankings - Last 10 Games</h1>
+            <h1>
+              Fantasy Power Rankings -{" "}
+              <span className="spanColorBlue">Last 10 Games</span>
+            </h1>
             <table className="fantasy-power-ranks-table">
               <thead className="fantasy-power-ranks-table-header">
                 <tr>

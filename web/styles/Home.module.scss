@@ -9,7 +9,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 65px;
+  height: 85px;
   margin-bottom: 10px;
   border-bottom: #07aae2 4px double;
   background-color: #101010;
@@ -17,21 +17,23 @@
 
 .headerAndDate {
   justify-content: center;
-  align-items: center;
+  width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  margin: 0 auto;
+  padding: 10px;
+  border-left: #07aae2 2px solid;
+  border-right: #07aae2 2px solid;
 }
 
 .dateDisplay {
   color: #fff;
-  font-family: Montserrat, sans-serif;
-  font-style: italic;
+  font-family: roboto condensed, sans-serif;
   font-size: 14px;
-  text-align: center;
-  margin-top: 0; /* Adjust spacing as needed */
-  margin-bottom: 0;
+  text-align: left;
+  margin-top: 0;
+  margin-bottom: 10px;
+  margin-left: 5px;
 }
 
 .gamesHeader button {
@@ -46,18 +48,30 @@
 }
 
 .gamesHeader h1 {
-  margin: 0 auto; /* Adjust margin to control spacing */
-  font-family: Montserrat, sans-serif;
+  margin: 0; /* Adjust margin to control spacing */
+  font-family: Roboto Condensed;
   text-transform: uppercase;
   letter-spacing: -0.015em;
-  font-weight: 900;
-  font-style: italic;
-  font-size: 1.8em;
-  text-align: center;
+  font-weight: 200;
+  font-style: normal;
+  font-size: 2.5rem;
+  line-height: 56px;
+  text-align: left;
   color: #fff;
   position: relative;
-  filter: drop-shadow(0 0 5px #fff);
   margin-bottom: 0;
+}
+
+.gamesHeader h1 span {
+  color: #07aae2;
+}
+
+.standingsHeader h1 span {
+  color: #07aae2;
+}
+
+.injuriesHeader h1 span {
+  color: #07aae2;
 }
 
 .gameLink {
@@ -73,12 +87,30 @@
 
 .gamesContainer {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 25px;
   justify-content: center;
   align-items: start;
   margin: 0 auto;
   padding: 20px;
+}
+
+.gamesContainer > * {
+  grid-column: span 2;
+}
+
+/* Dealing with single orphan game */
+.gamesContainer :last-child:nth-child(3n - 2) {
+  grid-column-end: 5;
+}
+
+/* Dealing with two orphaned game */
+.gamesContainer :last-child:nth-child(3n - 1) {
+  grid-column-end: -2;
+}
+
+.gamesContainer :nth-last-child(2):nth-child(3n + 1) {
+  grid-column-end: 4;
 }
 
 .separator {
@@ -110,11 +142,12 @@
 .gameTimeText {
   font-weight: 900;
   color: #fff;
-  font-size: 1em;
-  font-family: Montserrat, sans-serif;
+  font-size: 0.75em;
+  padding-top: 3px;
+  font-family: roboto condensed, sans-serif;
   text-transform: uppercase;
   letter-spacing: -0.025em;
-  font-style: italic;
+  font-style: normal;
   white-space: nowrap;
   filter: drop-shadow(0 0 3px #000);
 }
@@ -123,10 +156,10 @@
   font-weight: 800;
   color: #fff;
   font-size: 0.8em;
-  font-family: Montserrat, sans-serif;
+  font-family: roboto condensed, sans-serif;
   text-transform: uppercase;
   letter-spacing: -0.025em;
-  font-style: italic;
+  font-style: normal;
   filter: drop-shadow(0 0 5px #000);
 }
 
@@ -148,28 +181,28 @@
 
 .homeScore {
   text-align: left;
-  color: var(--home-primary-color);
-  font-size: 1.5em;
-  font-family: Montserrat, sans-serif;
+  color: #ddd;
+  filter: drop-shadow(0 0 1px var(--home-secondary-color));
+  font-size: 1.7em;
+  font-family: roboto condensed, sans-serif;
   text-transform: uppercase;
   letter-spacing: -0.025em;
   font-weight: 900;
   font-style: italic;
-  padding-left: 10px;
-  filter: drop-shadow(0 0 5px var(--home-primary-color));
+  padding-left: 22%;
 }
 
 .awayScore {
   text-align: right;
-  color: var(--away-secondary-color);
-  font-size: 1.5em;
-  font-family: Montserrat, sans-serif;
+  color: #ddd;
+  filter: drop-shadow(0 0 1px var(--away-secondary-color));
+  font-size: 1.7em;
+  font-family: roboto condensed, sans-serif;
   text-transform: uppercase;
   letter-spacing: -0.025em;
   font-weight: 900;
   font-style: italic;
-  padding-right: 18px;
-  filter: drop-shadow(0 0 5px var(--away-secondary-color));
+  padding-right: 22%;
 }
 
 .gameCard {
@@ -188,6 +221,19 @@
   max-width: 100%;
 }
 
+.combinedGameCard {
+  display: flex;
+  flex-direction: row; /* Ensure they are in a row */
+  background-color: #101010;
+  align-items: center;
+  justify-content: space-between;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  color: #fff;
+  margin-bottom: 15px;
+  height: 4rem;
+}
+
 .gamesContainer a .gameCard::before {
   content: "";
   position: absolute;
@@ -197,7 +243,7 @@
   bottom: 0;
   background: linear-gradient(
     115deg,
-    var(--home-primary-color) 49%,
+    var(--home-primary-color) 25%,
     #fff 49%,
     #fff 51%,
     var(--away-secondary-color) 51%
@@ -207,22 +253,18 @@
 
 .leftImage,
 .rightImage {
-  width: 100px;
-  height: auto;
-  position: absolute;
-  display: block;
+  max-width: 100%; /* Limits the image width to the container width */
+  max-height: 100%; /* Limits the image height to the container height */
+  height: auto; /* Keeps the aspect ratio of the image */
+  filter: drop-shadow(0 0 2px #fff); /* Shadow for left image */
 }
 
 .leftImage {
-  left: -10px;
-  top: 0;
   filter: drop-shadow(0 0 2px #fff);
 }
 
 .rightImage {
-  right: -15px;
-  bottom: 0;
-  filter: drop-shadow(0 0 3px #000);
+  filter: drop-shadow(0 0 3px #fff);
 }
 
 .awayTeamLogo,
@@ -231,11 +273,73 @@
   z-index: 2;
 }
 
-.vs {
-  z-index: 3;
-  color: #fff;
-  padding: 0 5px;
-  filter: drop-shadow(0 0 5px #000);
+.homeTeamLogo,
+.awayTeamLogo {
+  flex: 1; /* This will allow the logos to grow */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 5px;
+}
+
+.homeTeamLogo {
+  height: 100%;
+  background-color: var(--home-primary-color);
+  border-right: #ddd 2px solid;
+}
+
+.awayTeamLogo {
+  height: 100%;
+  background-color: var(--away-primary-color);
+  border-left: #ddd 2px solid;
+}
+
+.gameTimeSection {
+  flex: 3; /* This is the middle section with a 3:1 ratio compared to the logos */
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    var(--home-primary-color) 0%,
+    var(--home-primary-color) 7%,
+    var(--home-secondary-color) 7%,
+    var(--home-secondary-color) 10%,
+    var(--home-primary-color) 10%,
+    var(--home-primary-color) 13%,
+    var(--home-secondary-color) 13%,
+    var(--home-secondary-color) 16%,
+
+    #fff 16%,
+    #fff 19%,
+    var(--home-jersey-color) 19%,
+    var(--home-jersey-color) 20%,
+    #101010 20%,
+    #101010 80%,
+    var(--away-jersey-color) 80%,
+    var(--away-jersey-color) 81%,
+    #fff 81%,
+    #fff 84%,
+
+    var(--away-secondary-color) 84%,
+    var(--away-secondary-color) 87%,
+    var(--away-primary-color) 87%,
+    var(--away-primary-color) 90%,
+    var(--away-secondary-color) 90%,
+    var(--away-secondary-color) 93%,
+    var(--away-primary-color) 93%,
+    var(--away-primary-color) 100%
+  );
+}
+
+.gameTimeInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
 }
 
 .gameCard span {
@@ -246,7 +350,7 @@
   color: #fff;
   z-index: 2;
   font-size: 1.5em;
-  font-family: Montserrat, sans-serif;
+  font-family: roboto condensed, sans-serif;
   text-transform: uppercase;
   letter-spacing: -0.015em;
   font-weight: 900;
@@ -289,6 +393,14 @@
     max-height: 2em;
   }
 
+  .gameTimeInfo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
   .gamesContainer {
     grid-template-columns: repeat(
       2,
@@ -300,12 +412,6 @@
 
   .gamesHeader {
     margin-bottom: 0;
-  }
-
-  .gamesHeader h1,
-  .ccStandings > div > h1,
-  .crInjuries > div > h1 {
-    font-size: 1.6em;
   }
 
   .gamesHeader button {
@@ -329,7 +435,7 @@
   }
 
   .vs {
-    z-index: 3 !important;
+    z-index: 3;
   }
 
   .gameState {
@@ -341,21 +447,8 @@
     font-size: 0.6em;
   }
 
-  .homeScore,
-  .awayScore {
-    flex: 1;
-  }
-
   .gameTime {
     flex: 2;
-  }
-
-  .homeScore {
-    font-size: 1.2em;
-  }
-
-  .awayScore {
-    font-size: 1.2em;
   }
 
   .rightImage {
@@ -394,27 +487,35 @@
 }
 
 .crInjuries h1 {
-  font-family: Montserrat, sans-serif;
+  font-family: roboto condensed, sans-serif;
   text-transform: uppercase;
   letter-spacing: -0.015em;
-  font-weight: 900;
-  font-style: italic;
-  font-size: 2em;
+  font-weight: 200;
   margin-bottom: 0.5em;
-  text-align: center;
   color: #fff;
+
+  font-style: normal;
+  font-size: 2.5rem;
+  line-height: 56px;
+  text-align: left;
+  position: relative;
+  margin-bottom: 0;
 }
 
 .ccStandings h1 {
-  font-family: Montserrat, sans-serif;
+  font-family: roboto condensed, sans-serif;
   text-transform: uppercase;
   letter-spacing: -0.015em;
-  font-weight: 900;
-  font-style: italic;
-  font-size: 2em;
+  font-weight: 200;
   margin-bottom: 0.5em;
-  text-align: center;
   color: #fff;
+
+  font-style: normal;
+  font-size: 2.5rem;
+  line-height: 56px;
+  text-align: left;
+  position: relative;
+  margin-bottom: 0;
 }
 
 .injuryTable {

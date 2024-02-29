@@ -475,7 +475,7 @@ const TeamStatsComponent = () => {
               <img
                 src={`https://assets.nhle.com/logos/nhl/svg/${team.abbreviation}_light.svg`}
                 alt={`${team.fullName} Logo`}
-                width="60" // Adjust based on your design
+                width="60"
                 height="40"
               />
             </a>
@@ -489,12 +489,17 @@ const TeamStatsComponent = () => {
       <h1>Team Stats Pages</h1>
       <div className="sos-and-logo-grid">
         <div className="sos-container">
-          <h2>Strength of Schedule - Past</h2>
+          <h2>
+            Strength of fuckin Schedule -{" "}
+            <span className="spanColorBlue">Past</span>
+          </h2>
           <StrengthOfSchedule type="past" />
         </div>
 
         <div className="sos-container">
-          <h2>Strength of Schedule - Future</h2>
+          <h2>
+            Strength of Schedule - <span className="spanColorBlue">Future</span>
+          </h2>
           <StrengthOfSchedule type="future" />
         </div>
       </div>
