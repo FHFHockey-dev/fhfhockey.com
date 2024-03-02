@@ -6,37 +6,37 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
       games: {
         Row: {
-          awayTeamId: number | null;
+          awayTeamId: number;
           created_at: string;
           date: string;
-          homeTeamId: number | null;
+          homeTeamId: number;
           id: number;
-          seasonId: number | null;
+          seasonId: number;
           startTime: string | null;
           type: number | null;
         };
         Insert: {
-          awayTeamId?: number | null;
+          awayTeamId: number;
           created_at?: string;
           date: string;
-          homeTeamId?: number | null;
-          id?: number;
-          seasonId?: number | null;
+          homeTeamId: number;
+          id: number;
+          seasonId: number;
           startTime?: string | null;
           type?: number | null;
         };
         Update: {
-          awayTeamId?: number | null;
+          awayTeamId?: number;
           created_at?: string;
           date?: string;
-          homeTeamId?: number | null;
+          homeTeamId?: number;
           id?: number;
-          seasonId?: number | null;
+          seasonId?: number;
           startTime?: string | null;
           type?: number | null;
         };
@@ -500,7 +500,7 @@ export interface Database {
         Insert: {
           abbreviation: string;
           created_at?: string;
-          id?: number;
+          id: number;
           name: string;
         };
         Update: {
@@ -569,6 +569,19 @@ export interface Database {
           numgames: number;
         }[];
       };
+      get_skaters_info_by_game_id: {
+        Args: {
+          p_game_id: number;
+        };
+        Returns: {
+          id: number;
+          teamId: number;
+          sweaterNumber: number;
+          position: string;
+          firstName: string;
+          lastName: string;
+        }[];
+      };
       get_unupdated_games: {
         Args: Record<PropertyKey, never>;
         Returns: {
@@ -583,7 +596,7 @@ export interface Database {
       [_ in never]: never;
     };
   };
-}
+};
 
 export type Tables<
   PublicTableNameOrOptions extends

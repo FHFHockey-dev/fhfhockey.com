@@ -7,7 +7,7 @@ import styles from "web/styles/ShiftChart.module.scss";
 import Fetch from "lib/cors-fetch";
 import { GoalIndicators } from "hooks/useGoals";
 import PowerPlayAreaIndicators from "web/components/ShiftChart/PowerPlayAreaIndicators";
-
+import LinemateMatrix from "web/components/LinemateMatrix/index";
 // TODO
 
 // modularize the project
@@ -962,6 +962,9 @@ function ShiftChart() {
           })}
         </tbody>
       </table>
+      <div style={{ margin: "2rem 0", width: "100%" }}>
+        <LinemateMatrix id={Number(selectedGame)} />
+      </div>
     </div>
   );
 }

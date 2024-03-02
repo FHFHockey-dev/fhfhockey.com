@@ -1,12 +1,14 @@
 {
   "$schema": "https://turborepo.org/schema.json",
   "pipeline": {
+    "test": {},
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", ".next/**"]
     },
     "web#build": {
       "dependsOn": [
+        "test",
         "^build",
         "$CMS_URL",
         "$NEXT_PUBLIC_SITE_URL",

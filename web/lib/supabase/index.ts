@@ -6,11 +6,7 @@ const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
   "https://fyhftlxokyjtpndbkfse.supabase.co";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY || "";
-const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
-  global: {
-    fetch,
-  },
-});
+const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
 export function createClientWithToken(access_token: string): typeof supabase;
 export function createClientWithToken(req: IncomingMessage): typeof supabase;
