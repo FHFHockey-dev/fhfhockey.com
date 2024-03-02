@@ -1,10 +1,11 @@
 import Fetch from "lib/cors-fetch"; // Importing the custom fetch module
+// @ts-expect-error
 import cacheData from "memory-cache"; // Importing the caching module
 
 let num = 0; // Counter for logging purposes
 
 // The main function to fetch data with cache support
-export default async function fetchWithCache(url, json = true) {
+export default async function fetchWithCache(url: string, json = true) {
   const value = cacheData.get(url); // Try to get data from cache
   if (value) {
     // If data is found in cache, return it
