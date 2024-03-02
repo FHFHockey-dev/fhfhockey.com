@@ -8,6 +8,7 @@ import groupBy from "utils/groupBy";
 import styles from "./index.module.scss";
 import Tooltip from "components/Tooltip";
 import Select from "components/Select";
+import { isGameFinished } from "pages/api/v1/db/update-stats/[gameId]";
 
 async function getRostersMap(gameId: number) {
   const rostersMap: Record<number, PlayerData> = {};
@@ -16,6 +17,9 @@ async function getRostersMap(gameId: number) {
   const boxscore = await Fetch(
     `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
   ).then((res) => res.json());
+  if (!isGameFinished(boxscore.gameState)) {
+    throw new Error("The gameState for the game is " + boxscore.gameState);
+  }
   const playerByGameStats = boxscore.boxscore.playerByGameStats;
   const transform = (teamId: number) => (item: any) => ({
     id: item.playerId,
@@ -130,11 +134,15 @@ function useTOI(id: number) {
     }
     (async () => {
       setLoading(true);
-      const { toi, rosters, teams } = await getTOIData(id);
-      if (mounted) {
-        setTOI(toi);
-        setRosters(rosters);
-        setTeams(teams as any);
+      try {
+        const { toi, rosters, teams } = await getTOIData(id);
+        if (mounted) {
+          setTOI(toi);
+          setRosters(rosters);
+          setTeams(teams as any);
+          setLoading(false);
+        }
+      } catch (e: any) {
         setLoading(false);
       }
     })();

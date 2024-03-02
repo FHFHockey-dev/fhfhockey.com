@@ -31,7 +31,7 @@ export default adminOnly(async (req, res) => {
 });
 
 type GameState = "OFF" | "FINAL" | "FUT";
-const isGameFinished = (state: GameState) =>
+export const isGameFinished = (state: GameState) =>
   (["OFF", "FINAL"] as GameState[]).includes(state);
 export async function updateStats(gameId: number, supabase: SupabaseClient) {
   const landing = await get(`/gamecenter/${gameId}/landing`);
