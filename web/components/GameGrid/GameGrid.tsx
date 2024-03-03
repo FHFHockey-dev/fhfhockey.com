@@ -28,7 +28,7 @@ import { DAYS, DAY_ABBREVIATION, WeekData } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
 import GameGridContext from "./contexts/GameGridContext";
 
-function GameGridInternal({ mode }: GameGridProps) {
+function GameGridInternal({ mode, setMode }: GameGridProps) {
   const router = useRouter();
   // [startDate, endDate]
   const [dates, setDates] = useState<[string, string]>(() =>
@@ -37,8 +37,9 @@ function GameGridInternal({ mode }: GameGridProps) {
   const teams = useTeamsMap();
   const [schedule, numGamesPerDay, loading] = useSchedule(
     format(new Date(dates[0]), "yyyy-MM-dd"),
-    mode === "extended"
+    mode === "10-Day-Forecast"
   );
+
   const [excludedDays, setExcludedDays] = useState<DAY_ABBREVIATION[]>([]);
   const [sortKeys, setSortKeys] = useState<
     {
@@ -172,13 +173,43 @@ function GameGridInternal({ mode }: GameGridProps) {
   return (
     <>
       <div className={styles.actions}>
-        <button className={styles.dateButtonPrev} onClick={handleClick("PREV")}>
-          Prev
-        </button>
-        <button className={styles.dateButtonNext} onClick={handleClick("NEXT")}>
-          Next
-          {loading && <Spinner className={styles.spinner} center />}
-        </button>
+        <h1 className={styles.gameGridTitle}>
+          Game <span className={styles.spanColorBlue}>Grid</span>
+        </h1>
+        <div className={styles.prevNextButtons}>
+          <button
+            style={{
+              backgroundColor: "#07aae2",
+              border: "1px solid white",
+              borderRadius: "8px",
+              color: "white",
+              padding: "10px",
+              cursor: "pointer",
+              height: "35px",
+            }}
+            onClick={() => {
+              setMode(
+                mode === "7-Day-Forecast" ? "10-Day-Forecast" : "7-Day-Forecast"
+              );
+            }}
+          >
+            {mode}
+          </button>
+          <button
+            className={styles.dateButtonPrev}
+            onClick={handleClick("PREV")}
+          >
+            Prev
+          </button>
+
+          <button
+            className={styles.dateButtonNext}
+            onClick={handleClick("NEXT")}
+          >
+            Next
+            {loading && <Spinner className={styles.spinner} center />}
+          </button>
+        </div>
       </div>
 
       <div className={styles.gridWrapper}>
@@ -186,7 +217,7 @@ function GameGridInternal({ mode }: GameGridProps) {
           <Header
             start={dates[0]}
             end={dates[1]}
-            extended={mode === "extended"}
+            extended={mode === "10-Day-Forecast"}
             setSortKeys={setSortKeys}
             excludedDays={excludedDays}
             setExcludedDays={setExcludedDays}
@@ -196,7 +227,7 @@ function GameGridInternal({ mode }: GameGridProps) {
             <TotalGamesPerDayRow
               games={numGamesPerDay}
               excludedDays={excludedDays}
-              extended={mode === "extended"}
+              extended={mode === "10-Day-Forecast"}
             />
             {/* Teams */}
             {sortedTeams.map(({ teamId, ...rest }) => {
@@ -204,7 +235,7 @@ function GameGridInternal({ mode }: GameGridProps) {
                 <TeamRow
                   key={teamId}
                   teamId={teamId}
-                  extended={mode === "extended"}
+                  extended={mode === "10-Day-Forecast"}
                   excludedDays={excludedDays}
                   {...rest}
                 />
@@ -225,16 +256,17 @@ function getDaysBeforeToday() {
   return DAYS.slice(0, todayIndex);
 }
 
-export type GameGridMode = "basic" | "extended";
+export type GameGridMode = "7-Day-Forecast" | "10-Day-Forecast";
 
 type GameGridProps = {
   mode: GameGridMode;
+  setMode: (newMode: GameGridMode) => void;
 };
 
-export default function GameGrid({ mode }: GameGridProps) {
+export default function GameGrid({ mode, setMode }: GameGridProps) {
   return (
     <GameGridContext>
-      <GameGridInternal mode={mode} />
+      <GameGridInternal mode={mode} setMode={setMode} />
     </GameGridContext>
   );
 }

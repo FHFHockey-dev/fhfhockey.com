@@ -22,7 +22,8 @@ const nextConfig = {
     return [
       {
         source: "/game-grid",
-        destination: "/game-grid/basic",
+        // not the url to change button label
+        destination: "/game-grid/7-Day-Forecast",
         permanent: false,
       },
     ];
