@@ -8,6 +8,7 @@ import groupBy from "utils/groupBy";
 import styles from "./index.module.scss";
 import Tooltip from "components/Tooltip";
 import Select from "components/Select";
+import { isGameFinished } from "pages/api/v1/db/update-stats/[gameId]";
 
 async function getRostersMap(gameId: number) {
   const rostersMap: Record<number, PlayerData> = {};
@@ -16,6 +17,9 @@ async function getRostersMap(gameId: number) {
   const boxscore = await Fetch(
     `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
   ).then((res) => res.json());
+  if (!isGameFinished(boxscore.gameState)) {
+    throw new Error("The gameState for the game is " + boxscore.gameState);
+  }
   const playerByGameStats = boxscore.boxscore.playerByGameStats;
   const transform = (teamId: number) => (item: any) => ({
     id: item.playerId,
@@ -80,7 +84,42 @@ export type TOIData = {
   p1: PlayerData;
   p2: PlayerData;
 };
+export async function getTOIData(id: number) {
+  const [{ data: shiftsData }, { rostersMap, teams }] = await Promise.all([
+    await Fetch(
+      `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`
+    ).then((res) => res.json()),
+    await getRostersMap(id),
+  ]);
 
+  const rosters = groupBy(Object.values(rostersMap), (player) => player.teamId);
+  const data: Record<number, TOIData[]> = {};
+  const pairwiseTOIForTwoTeams = processShifts(shiftsData, rosters);
+  const teamIds = Object.keys(pairwiseTOIForTwoTeams).map(Number);
+  // populate player info
+  teamIds.forEach((teamId) => {
+    if (data[teamId] === undefined) data[teamId] = [];
+    pairwiseTOIForTwoTeams[teamId].forEach((item) => {
+      // skip for goalies
+      if (!rostersMap[item.p1] || !rostersMap[item.p2]) {
+        console.log(
+          "skip for goalie",
+          item,
+          rostersMap[item.p1],
+          rostersMap[item.p2]
+        );
+        return;
+      }
+      data[teamId].push({
+        toi: item.toi,
+        p1: rostersMap[item.p1],
+        p2: rostersMap[item.p2],
+      });
+    });
+  });
+
+  return { toi: data, rosters, teams };
+}
 function useTOI(id: number) {
   const [toi, setTOI] = useState<Record<number, TOIData[]>>({});
   const [rosters, setRosters] = useState<Record<number, PlayerData[]>>({});
@@ -95,46 +134,15 @@ function useTOI(id: number) {
     }
     (async () => {
       setLoading(true);
-      const [{ data: shiftsData }, { rostersMap, teams }] = await Promise.all([
-        await Fetch(
-          `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`
-        ).then((res) => res.json()),
-        await getRostersMap(id),
-      ]);
-
-      if (mounted) {
-        const rosters = groupBy(
-          Object.values(rostersMap),
-          (player) => player.teamId
-        );
-        const data: Record<number, TOIData[]> = {};
-        const pairwiseTOIForTwoTeams = processShifts(shiftsData, rosters);
-        const teamIds = Object.keys(pairwiseTOIForTwoTeams).map(Number);
-        // populate player info
-        teamIds.forEach((teamId) => {
-          if (data[teamId] === undefined) data[teamId] = [];
-          pairwiseTOIForTwoTeams[teamId].forEach((item) => {
-            // skip for goalies
-            if (!rostersMap[item.p1] || !rostersMap[item.p2]) {
-              console.log(
-                "skip for goalie",
-                item,
-                rostersMap[item.p1],
-                rostersMap[item.p2]
-              );
-              return;
-            }
-            data[teamId].push({
-              toi: item.toi,
-              p1: rostersMap[item.p1],
-              p2: rostersMap[item.p2],
-            });
-          });
-        });
-
-        setTOI(data);
-        setRosters(rosters);
-        setTeams(teams as any);
+      try {
+        const { toi, rosters, teams } = await getTOIData(id);
+        if (mounted) {
+          setTOI(toi);
+          setRosters(rosters);
+          setTeams(teams as any);
+          setLoading(false);
+        }
+      } catch (e: any) {
         setLoading(false);
       }
     })();
@@ -214,7 +222,8 @@ export function sortByLineCombination(
           (a, b) => data[getKey(b.id, b.id)].toi - data[getKey(a.id, a.id)].toi
         )
         .shift();
-      result.push(pivotPlayer!);
+      if (!pivotPlayer) break;
+      result.push(pivotPlayer);
       for (let i = 0; i < numPlayersPerLine - 1; i++) {
         const p = players
           .sort(
@@ -223,7 +232,8 @@ export function sortByLineCombination(
               data[getKey(pivotPlayer!.id, a.id)].toi
           )
           .shift();
-        result.push(p!);
+        if (!p) break;
+        result.push(p);
       }
     }
   });
@@ -237,7 +247,7 @@ type LinemateMatrixInternalProps = {
   mode: Mode;
 };
 
-const getKey = (p1: number, p2: number) => `${[p1, p2].sort()}`;
+export const getKey = (p1: number, p2: number) => `${[p1, p2].sort()}`;
 function LinemateMatrixInternal({
   teamName,
   roster = [],
@@ -373,11 +383,11 @@ const PURPLE = "rgb(148, 103, 189)";
 const FORWARDS_POSITIONS = ["L", "R", "C"];
 const DEFENSE_POSITIONS = ["D"];
 
-function isForward(position: string) {
+export function isForward(position: string) {
   return FORWARDS_POSITIONS.includes(position);
 }
 
-function isDefense(position: string) {
+export function isDefense(position: string) {
   return DEFENSE_POSITIONS.includes(position);
 }
 
