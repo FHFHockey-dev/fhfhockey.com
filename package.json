@@ -18,7 +18,5 @@
     "vercel": "^28.4.4"
   },
   "packageManager": "yarn@1.19.1",
-  "dependencies": {
-    "chart.js": "^4.4.1"
-  }
+  "dependencies": {}
 }
