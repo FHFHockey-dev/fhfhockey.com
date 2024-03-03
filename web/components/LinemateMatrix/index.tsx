@@ -18,7 +18,9 @@ async function getRostersMap(gameId: number) {
     `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
   ).then((res) => res.json());
   if (!isGameFinished(boxscore.gameState)) {
-    throw new Error("The gameState for the game is " + boxscore.gameState);
+    throw new Error(
+      `The gameState for the game ${gameId} is ` + boxscore.gameState
+    );
   }
   const playerByGameStats = boxscore.boxscore.playerByGameStats;
   const transform = (teamId: number) => (item: any) => ({

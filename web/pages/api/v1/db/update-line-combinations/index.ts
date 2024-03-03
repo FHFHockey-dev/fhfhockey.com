@@ -18,14 +18,24 @@ export default adminOnly(async (req, res) => {
         success: true,
       });
     }
-    await Promise.all(
+    const results = await Promise.allSettled(
       gameIds.map((item) => updateLineCombos(item.id, supabase))
     );
+    const updated = results.filter(
+      (item) => item.status === "fulfilled"
+    ) as PromiseFulfilledResult<any[]>[];
+    const failed = results.filter(
+      (item) => item.status === "rejected"
+    ) as PromiseRejectedResult[];
     res.json({
       success: true,
       message:
-        `Successfully updated the line combinations for these games ` +
-        JSON.stringify(gameIds.map((item) => item.id)),
+        `Successfully updated the line combinations for these games [${updated.map(
+          (item) => item.value[0].gameId
+        )}]` +
+        (failed.length > 0
+          ? ` failed games [${failed.map((item) => item.reason.message)}]`
+          : ""),
     });
   } catch (e: any) {
     console.error(e);
