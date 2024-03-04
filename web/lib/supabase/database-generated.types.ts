@@ -17,7 +17,7 @@ export type Database = {
           homeTeamId: number;
           id: number;
           seasonId: number;
-          startTime: string | null;
+          startTime: string;
           type: number | null;
         };
         Insert: {
@@ -27,7 +27,7 @@ export type Database = {
           homeTeamId: number;
           id: number;
           seasonId: number;
-          startTime?: string | null;
+          startTime?: string;
           type?: number | null;
         };
         Update: {
@@ -37,7 +37,7 @@ export type Database = {
           homeTeamId?: number;
           id?: number;
           seasonId?: number;
-          startTime?: string | null;
+          startTime?: string;
           type?: number | null;
         };
         Relationships: [
@@ -168,6 +168,45 @@ export type Database = {
           team_name?: string;
         };
         Relationships: [];
+      };
+      lineCombinations: {
+        Row: {
+          defensemen: number[];
+          forwards: number[];
+          gameId: number;
+          goalies: number[];
+          teamId: number;
+        };
+        Insert: {
+          defensemen: number[];
+          forwards: number[];
+          gameId: number;
+          goalies: number[];
+          teamId: number;
+        };
+        Update: {
+          defensemen?: number[];
+          forwards?: number[];
+          gameId?: number;
+          goalies?: number[];
+          teamId?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "lineCombinations_gameId_fkey";
+            columns: ["gameId"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "lineCombinations_teamId_fkey";
+            columns: ["teamId"];
+            isOneToOne: false;
+            referencedRelation: "teams";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       players: {
         Row: {
@@ -580,6 +619,12 @@ export type Database = {
           position: string;
           firstName: string;
           lastName: string;
+        }[];
+      };
+      get_unprocessed_line_combinations: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          id: number;
         }[];
       };
       get_unupdated_games: {

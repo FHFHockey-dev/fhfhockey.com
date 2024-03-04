@@ -33,9 +33,11 @@ import { Team } from "lib/NHL/types";
 export type PlayerBasic = {
   playerId: number;
   playerName: string;
+  sweaterNumber: number;
+  lineChange: LineChange;
 };
 
-export type Player = PlayerBasic & {
+export type SkaterStats = PlayerBasic & {
   Goals: number;
   Assists: number;
   PTS: number;
@@ -44,9 +46,22 @@ export type Player = PlayerBasic & {
   Hits: number;
   Blocks: number;
   PlusMinus: number;
-  name: string;
-  jerseyNumber: string;
-  lineChange: LineChange;
+};
+
+export type GoalieStats = PlayerBasic & {
+  last10Games: {
+    Record: string;
+    SV: number;
+    SVPercentage: number;
+    GAA: number;
+  };
+
+  season: {
+    Record: string;
+    SV: number;
+    SVPercentage: number;
+    GAA: number;
+  };
 };
 
 type Props = {
@@ -62,19 +77,19 @@ type Props = {
     team_name: string;
     team_abbreviation: string;
     forwards: {
-      line1: Player[];
-      line2: Player[];
-      line3: Player[];
-      line4: Player[];
+      line1: SkaterStats[];
+      line2: SkaterStats[];
+      line3: SkaterStats[];
+      line4: SkaterStats[];
     };
     defensemen: {
-      line1: Player[];
-      line2: Player[];
-      line3: Player[];
+      line1: SkaterStats[];
+      line2: SkaterStats[];
+      line3: SkaterStats[];
     };
     goalies: {
-      line1: Player[];
-      line2: Player[];
+      line1: SkaterStats[];
+      line2: SkaterStats[];
     };
   };
   source_url: string;
@@ -314,9 +329,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       // @ts-ignore
       current[type][line] = await Promise.all(
         players.map(async ({ playerId, playerName }) => {
-          let jerseyNumber = 0;
+          let sweaterNumber = 0;
           try {
-            jerseyNumber = (await getPlayer(playerId)).sweaterNumber;
+            sweaterNumber = (await getPlayer(playerId)).sweaterNumber;
           } catch (e: any) {
             console.error(e);
           }
@@ -335,9 +350,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
             Hits: 0,
             Blocks: 0,
             PlusMinus: 0,
-            name: playerName,
+            playerName,
             playerId,
-            jerseyNumber,
+            sweaterNumber,
             lineChange: getLineChange(playerId),
             source_url: current.source_url,
           };

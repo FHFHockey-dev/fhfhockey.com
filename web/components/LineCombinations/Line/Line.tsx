@@ -1,6 +1,6 @@
 import React from "react";
 import classNames from "classnames";
-import type { Player } from "pages/lines/[abbreviation]";
+import type { SkaterStats } from "pages/lines/[abbreviation]";
 import PlayerCard from "../PlayerCard";
 
 import styles from "./Line.module.scss";
@@ -8,7 +8,7 @@ import styles from "./Line.module.scss";
 type LineProps = {
   className?: string;
   title?: string;
-  players?: Player[];
+  players?: SkaterStats[];
   columns: 2 | 3;
   children?: React.ReactNode;
 };

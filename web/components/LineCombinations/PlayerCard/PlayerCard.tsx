@@ -3,7 +3,7 @@ import Link from "next/link";
 import CategoryTitle from "../CategoryTitle";
 import ClientOnly from "components/ClientOnly";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
-import { Player } from "pages/lines/[abbreviation]";
+import { SkaterStats } from "pages/lines/[abbreviation]";
 import { useTeamColor } from "contexts/TeamColorContext";
 
 import styles from "./PlayerCard.module.scss";
@@ -37,8 +37,13 @@ const SMALL_STATS_CONFIG = [
 
 export type LineChange = "promotion" | "demotion" | "static";
 
-function PlayerCard({ name, jerseyNumber, lineChange, ...rest }: Player) {
-  const names = name.split(" ");
+function PlayerCard({
+  playerName,
+  sweaterNumber,
+  lineChange,
+  ...rest
+}: SkaterStats) {
+  const names = playerName.split(" ");
   const size = useScreenSize();
   const CONFIG =
     size.screen === BreakPoint.l ? LARGE_STATS_CONFIG : SMALL_STATS_CONFIG;
@@ -84,7 +89,7 @@ function PlayerCard({ name, jerseyNumber, lineChange, ...rest }: Player) {
           </Link>
         </h3>
 
-        <div className={styles.jerseyNumber}>
+        <div className={styles.sweaterNumber}>
           <span style={{ color: color.secondary }}>#</span>
           <span
             className={styles.number}
@@ -93,7 +98,7 @@ function PlayerCard({ name, jerseyNumber, lineChange, ...rest }: Player) {
               textShadow: `-1px 0 ${color.secondary}, 0 1px ${color.secondary}, 1px 0 ${color.secondary}, 0 -1px ${color.secondary}`,
             }}
           >
-            {jerseyNumber}
+            {sweaterNumber}
           </span>
         </div>
       </div>
