@@ -163,6 +163,7 @@ const PoissonDistributionChart = ({ chartData }) => {
       }
 
       fetchLeagueData();
+      console.log("League Averages:", leagueAverages);
 
       const processData = () => {
         if (chartData.length < 2) {
@@ -171,17 +172,31 @@ const PoissonDistributionChart = ({ chartData }) => {
         const homeExpectedGoals = chartData?.[0]?.goalsForPerGame ?? 0;
         const awayExpectedGoals = chartData?.[1]?.goalsForPerGame ?? 0;
 
+        console.log("Home Expected Goals:", homeExpectedGoals);
+        console.log("Away Expected Goals:", awayExpectedGoals);
+
         return { homeExpectedGoals, awayExpectedGoals };
       };
 
-      const { homeExpectedGoals, awayExpectedGoals } = processData();
+      //      const { homeExpectedGoals, awayExpectedGoals } = processData();
 
       // Initialize heatmapData for Poisson probabilities
       let heatmapData = [];
+      console.log("Chart Data inside heatmapData:", chartData);
+      console.log("Home Expected Goals:", chartData[0].homeExpectedGoals);
+      console.log("Away Expected Goals:", chartData[1].awayExpectedGoals);
+      console.log("GF/gm:", chartData[0].goalsForPerGame);
+      console.log("GA/gm:", chartData[1].goalsAgainstPerGame);
       for (let i = 0; i <= 10; i++) {
         for (let j = 0; j <= 10; j++) {
-          const homeProb = poissonProbability(chartData[0].goalsForPerGame, i);
-          const awayProb = poissonProbability(chartData[1].goalsForPerGame, j);
+          const homeProb = poissonProbability(
+            chartData[0].homeExpectedGoals,
+            i
+          );
+          const awayProb = poissonProbability(
+            chartData[1].awayExpectedGoals,
+            j
+          );
           heatmapData.push({ x: i, y: j, value: homeProb * awayProb });
         }
       }
@@ -351,7 +366,6 @@ const PoissonDistributionChart = ({ chartData }) => {
         .style("font-family", "Helvetica")
         .style("font-size", "16px")
         .style("fill", "white"); // Make the text white
-
       if (chartData && chartData.length >= 2) {
         fetchLeagueData();
       } else {
@@ -361,10 +375,10 @@ const PoissonDistributionChart = ({ chartData }) => {
     };
   }, [chartData]);
 
-  if (isLoading) {
-    return <div>Loading Chart data...</div>;
-  }
-
+  console.log("LOADING STATUS:", isLoading);
+  // if (isLoading) {
+  //   return <div>Loading Chart data...</div>;
+  // }
   return (
     <div
       style={{

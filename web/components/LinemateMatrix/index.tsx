@@ -379,9 +379,9 @@ type CellProps = {
   onPointerLeave?: () => void;
 };
 
-const RED = "rgb(214, 39, 40)";
-const BLUE = "rgb(31, 119, 180)";
-const PURPLE = "rgb(148, 103, 189)";
+const RED = "#E23F07";
+const BLUE = "#07AAE2";
+const PURPLE = "#E2AD07";
 const FORWARDS_POSITIONS = ["L", "R", "C"];
 const DEFENSE_POSITIONS = ["D"];
 
@@ -404,8 +404,8 @@ function isMixing(p1Pos: string, p2Pos: string) {
  * Blue is defensemen, red is forwards, purple is forwards mixing with defensemen
  */
 function getColor(p1Pos: string, p2Pos: string) {
-  if (isForward(p1Pos) && isForward(p2Pos)) return RED;
-  if (isDefense(p1Pos) && isDefense(p2Pos)) return BLUE;
+  if (isForward(p1Pos) && isForward(p2Pos)) return BLUE;
+  if (isDefense(p1Pos) && isDefense(p2Pos)) return RED;
   if (isMixing(p1Pos, p2Pos)) return PURPLE; // the check can be omitted
   throw new Error("impossible");
 }
