@@ -1,19 +1,35 @@
 import React from "react";
 import classNames from "classnames";
-import type { SkaterStats } from "pages/lines/[abbreviation]";
-import PlayerCard from "../PlayerCard";
+import type { GoalieStats, SkaterStats } from "pages/lines/[abbreviation]";
+import SkaterCard from "../PlayerCard";
+import GoalieCard from "../PlayerCard/GoalieCard";
 
 import styles from "./Line.module.scss";
 
 type LineProps = {
   className?: string;
   title?: string;
-  players?: SkaterStats[];
   columns: 2 | 3;
   children?: React.ReactNode;
-};
+} & (
+  | {
+      type?: "skaters";
+      players: SkaterStats[];
+    }
+  | {
+      type: "goalies";
+      players: GoalieStats[];
+    }
+);
 
-function Line({ className, title, players, columns, children }: LineProps) {
+function Line({
+  className,
+  title,
+  type = "skaters",
+  players,
+  columns,
+  children,
+}: LineProps) {
   return (
     <section className={classNames(styles.container, className)}>
       {title && (
@@ -30,7 +46,11 @@ function Line({ className, title, players, columns, children }: LineProps) {
         {players
           ? players.map((player) => (
               <div key={player.playerId} className={styles.playerCardWrapper}>
-                <PlayerCard {...player} />
+                {type === "skaters" ? (
+                  <SkaterCard {...(player as SkaterStats)} />
+                ) : (
+                  <GoalieCard {...(player as GoalieStats)} />
+                )}
               </div>
             ))
           : children}

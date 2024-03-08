@@ -2,57 +2,54 @@ import React from "react";
 import Link from "next/link";
 import CategoryTitle from "../CategoryTitle";
 import ClientOnly from "components/ClientOnly";
-import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
-import { SkaterStats } from "pages/lines/[abbreviation]";
+import { GoalieStats } from "pages/lines/[abbreviation]";
 import { useTeamColor } from "contexts/TeamColorContext";
 
 import styles from "./PlayerCard.module.scss";
+import classNames from "classnames";
 
 const UP_ARROW = "/pictures/arrow-up-green.png";
 const DOWN_ARROW = "/pictures/arrow-down-red.png";
 
-// For large devices
-const LARGE_STATS_CONFIG = [
-  { key: "Goals", label: "GOALS" },
-  { key: "Assists", label: "ASSISTS" },
-  { key: "PTS", label: "PTS" },
-  { key: "PPP", label: "PPP" },
-  { key: "Shots", label: "SOG" },
-  { key: "Hits", label: "HITS" },
-  { key: "Blocks", label: "BLKS" },
-  { key: "PlusMinus", label: "+/-" },
+const SEASON_STATS_CONFIG = [
+  { key: "Record", label: "RECORD" },
+  { key: "GP", label: "GP" },
+  {
+    key: "SVPercentage",
+    label: "SV%",
+    format: (item: number) =>
+      item === 0 ? item.toFixed(3) : item.toFixed(3).slice(1),
+  },
+  { key: "GAA", label: "GAA", format: (item: number) => item.toFixed(2) },
 ] as const;
 
-// For small devices
-const SMALL_STATS_CONFIG = [
-  { key: "Goals", label: "G" },
-  { key: "Assists", label: "A" },
-  { key: "PTS", label: "PTS" },
-  { key: "PPP", label: "PPP" },
-  { key: "Shots", label: "SOG" },
-  { key: "Hits", label: "HITS" },
-  { key: "Blocks", label: "BLKS" },
-  { key: "PlusMinus", label: "+/-" },
+const LAST10_GP_STATS_CONFIG = [
+  { key: "Record", label: "RECORD" },
+  { key: "SV", label: "SV" },
+  {
+    key: "SVPercentage",
+    label: "SV%",
+    format: (item: number) =>
+      item === 0 ? item.toFixed(3) : item.toFixed(3).slice(1),
+  },
+  { key: "GAA", label: "GAA", format: (item: number) => item.toFixed(2) },
 ] as const;
 
 export type LineChange = "promotion" | "demotion" | "static";
 
-function PlayerCard({
+function GoalieCard({
   playerName,
   sweaterNumber,
   lineChange,
   ...rest
-}: SkaterStats) {
+}: GoalieStats) {
   const names = playerName.split(" ");
-  const size = useScreenSize();
-  const CONFIG =
-    size.screen === BreakPoint.l ? LARGE_STATS_CONFIG : SMALL_STATS_CONFIG;
 
   const color = useTeamColor();
 
   return (
     <article
-      className={styles.container}
+      className={classNames(styles.container, styles.goalie)}
       style={{
         backgroundColor: color.primary,
       }}
@@ -106,11 +103,30 @@ function PlayerCard({
 
       <ClientOnly>
         <section className={styles.stats}>
-          {CONFIG.map((stat) => (
+          {LAST10_GP_STATS_CONFIG.map((stat) => (
             <div key={stat.key} className={styles.stat}>
               <div className={styles.label}>{stat.label}</div>
               <div className={styles.value} style={{ color: color.secondary }}>
-                {rest[stat.key] || 0}
+                {"format" in stat
+                  ? stat.format(rest.last10Games[stat.key] || 0)
+                  : rest.last10Games[stat.key] || 0}
+              </div>
+            </div>
+          ))}
+        </section>
+      </ClientOnly>
+
+      <CategoryTitle type="small">SEASON</CategoryTitle>
+
+      <ClientOnly>
+        <section className={styles.stats}>
+          {SEASON_STATS_CONFIG.map((stat) => (
+            <div key={stat.key} className={styles.stat}>
+              <div className={styles.label}>{stat.label}</div>
+              <div className={styles.value} style={{ color: color.secondary }}>
+                {"format" in stat
+                  ? stat.format(rest.season[stat.key] || 0)
+                  : rest.season[stat.key] || 0}
               </div>
             </div>
           ))}
@@ -120,4 +136,4 @@ function PlayerCard({
   );
 }
 
-export default PlayerCard;
+export default GoalieCard;

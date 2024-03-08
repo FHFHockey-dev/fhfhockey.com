@@ -1,10 +1,14 @@
 import { NUM_PLAYERS_PER_LINE } from "components/LinemateMatrix";
-import { getCurrentSeason } from "lib/NHL/client";
+import { getCurrentSeason } from "lib/NHL/server";
 import supabase from "lib/supabase";
 import { GoalieStats, SkaterStats } from "pages/lines/[abbreviation]";
 import { parseTime } from "utils/getPowerPlayBlocks";
 
 type LineCombinations = {
+  game: {
+    id: number;
+    startTime: string;
+  };
   forwards: {
     line1: SkaterStats[];
     line2: SkaterStats[];
@@ -63,8 +67,8 @@ export async function getLineCombinations(
   const { data: skaters } = await supabase
     .from("skatersGameStats")
     .select(
-      `playerId, numGames:playerId.count(), Goals:goals.avg(), Assists:assists.avg(), PTS:points.avg(), PPP:powerPlayPoints.avg(), 
-         Shots:shots.avg(), Hits:hits.avg(), Blocks:blockedShots.avg(), PlusMinus:plusMinus.avg(), 
+      `playerId, numGames:playerId.count(), Goals:goals.sum(), Assists:assists.sum(), PTS:points.sum(), PPP:powerPlayPoints.sum(), 
+         Shots:shots.sum(), Hits:hits.sum(), Blocks:blockedShots.sum(), PlusMinus:plusMinus.sum(), 
          ...players(playerName:fullName)`
     )
     .in(
@@ -127,7 +131,11 @@ export async function getLineCombinations(
     playersStats,
     lines
   ) as any;
-  console.log({ skaters, goalies, lineCombo: lineCombinations[0], result });
+  // console.log({ skaters, goalies, lineCombo: lineCombinations[0], result });
+  result.game = {
+    id: lineCombinations[0].gameId,
+    startTime: lineCombinations[0].startTime,
+  };
 
   return result;
 }
@@ -142,9 +150,14 @@ function mapToLineCombinations(
     Object.keys(lines).forEach((line) => {
       if (result[position] === undefined) result[position] = {};
       // @ts-ignore
-      result[position][line] = (lineCombo[position][line] as number[]).map(
-        (playerId) => playersStats.get(playerId)
-      );
+      result[position][line] = (lineCombo[position][line] as number[])
+        .map((playerId) => {
+          if (playersStats.get(playerId) === undefined) {
+            console.error(`Missing player ${playerId}`);
+          }
+          return playersStats.get(playerId);
+        })
+        .filter((item) => item !== undefined);
     });
   });
 
@@ -323,10 +336,10 @@ async function getGameResults(
   return result;
 }
 
-export function convertToLines(lineCombo: RawLineCombo) {
-  const f = [...lineCombo.forwards];
-  const d = [...lineCombo.defensemen];
-  const g = [...lineCombo.goalies];
+export function convertToLines(lineCombo: RawLineCombo | undefined) {
+  const f = lineCombo === undefined ? [] : [...lineCombo.forwards];
+  const d = lineCombo === undefined ? [] : [...lineCombo.defensemen];
+  const g = lineCombo === undefined ? [] : [...lineCombo.goalies];
   const forwardsLines: {
     line1: number[];
     line2: number[];

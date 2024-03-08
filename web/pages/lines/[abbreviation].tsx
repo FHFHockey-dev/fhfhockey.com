@@ -12,7 +12,7 @@ import Select from "components/Select";
 import CategoryTitle from "components/LineCombinations/CategoryTitle";
 import Line from "components/LineCombinations/Line";
 
-import { LineChange } from "components/LineCombinations/PlayerCard/PlayerCard";
+import { LineChange } from "components/LineCombinations/PlayerCard/SkaterCard";
 import Custom404 from "pages/404";
 import TeamColorProvider, { useTeamColor } from "contexts/TeamColorContext";
 
@@ -219,6 +219,7 @@ export default function TeamLC({
               <Line
                 className={styles.line}
                 columns={2}
+                type="goalies"
                 players={[
                   ...lineCombinations.goalies.line1,
                   ...lineCombinations.goalies.line2,
@@ -253,6 +254,7 @@ export default function TeamLC({
                 className={styles.line}
                 title="GOALIES"
                 columns={2}
+                type="goalies"
                 players={[
                   ...lineCombinations.goalies.line1,
                   ...lineCombinations.goalies.line2,
@@ -285,7 +287,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   return {
     props: {
       teamName: team?.name,
-      lastUpdated: new Date().toISOString(),
+      lastUpdated: lineCombinations.game.startTime,
       lineCombinations,
       teams,
     },
