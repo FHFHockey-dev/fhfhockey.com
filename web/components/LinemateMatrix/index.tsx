@@ -200,7 +200,7 @@ export default function LinemateMatrix({ id }: Props) {
 }
 
 type PlayerType = "forwards" | "defensemen";
-const NUM_PLAYERS_PER_LINE = {
+export const NUM_PLAYERS_PER_LINE = {
   forwards: 3,
   defensemen: 2,
 } as const;

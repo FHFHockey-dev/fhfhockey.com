@@ -393,14 +393,14 @@ export async function getStaticProps() {
   // sort the teams in alphabetical order
   teams.sort((a, b) => a.name.localeCompare(b.name));
   const { pastSoSRankings, futureSoSRankings } = await getSoSRankings();
-  const teamPowerRankings = await getTeamPowerRankings(teams);
+  // const teamPowerRankings = await getTeamPowerRankings(teams);
 
   return {
     props: {
       teams,
       pastSoSRankings,
       futureSoSRankings,
-      teamPowerRankings,
+      teamPowerRankings: [],
     },
     revalidate: 60 * 60, // 1 hour in seconds
   };
@@ -416,7 +416,8 @@ async function getSoSRankings(): Promise<{
   futureSoSRankings: SoS[];
 }> {
   const teamRecords = await fetch(
-    "https://api-web.nhle.com/v1/standings/2023-11-27"
+    "https://api-web.nhle.com/v1/standings/" +
+      new Date().toISOString().slice(0, 10)
   )
     .then((response) => response.json())
     .then((res) => processTeamData(res.standings));

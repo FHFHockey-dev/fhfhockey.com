@@ -4,7 +4,6 @@ import { NextSeo } from "next-seo";
 import type { GetStaticPaths, GetStaticProps } from "next";
 import { toPng } from "html-to-image";
 
-import supabase from "lib/supabase";
 import PageTitle from "components/PageTitle";
 import Container from "components/Layout/Container";
 import TeamSelect from "components/TeamSelect";
@@ -13,29 +12,24 @@ import Select from "components/Select";
 import CategoryTitle from "components/LineCombinations/CategoryTitle";
 import Line from "components/LineCombinations/Line";
 
-import getLineChanges from "lib/NHL/getLineChanges";
-import { memoizeAsync } from "utils/memoize";
-import { LineChange } from "components/LineCombinations/PlayerCard/PlayerCard";
+import { LineChange } from "components/LineCombinations/PlayerCard/SkaterCard";
 import Custom404 from "pages/404";
 import TeamColorProvider, { useTeamColor } from "contexts/TeamColorContext";
 
 import styles from "./[abbreviation].module.scss";
 import useScreenSize from "hooks/useScreenSize";
-import {
-  getCurrentSeason,
-  getPlayer,
-  getPlayerGameLog,
-  getTeamLogo,
-  getTeams,
-} from "lib/NHL/server";
+import { getTeamLogo, getTeams } from "lib/NHL/server";
 import { Team } from "lib/NHL/types";
+import { getLineCombinations } from "components/LineCombinations/utilities";
 
 export type PlayerBasic = {
   playerId: number;
   playerName: string;
+  sweaterNumber: number;
+  lineChange: LineChange;
 };
 
-export type Player = PlayerBasic & {
+export type SkaterStats = PlayerBasic & {
   Goals: number;
   Assists: number;
   PTS: number;
@@ -44,9 +38,22 @@ export type Player = PlayerBasic & {
   Hits: number;
   Blocks: number;
   PlusMinus: number;
-  name: string;
-  jerseyNumber: string;
-  lineChange: LineChange;
+};
+
+export type GoalieStats = PlayerBasic & {
+  last10Games: {
+    Record: string;
+    SV: number;
+    SVPercentage: number;
+    GAA: number;
+  };
+
+  season: {
+    Record: string;
+    GP: number;
+    SVPercentage: number;
+    GAA: number;
+  };
 };
 
 type Props = {
@@ -62,19 +69,19 @@ type Props = {
     team_name: string;
     team_abbreviation: string;
     forwards: {
-      line1: Player[];
-      line2: Player[];
-      line3: Player[];
-      line4: Player[];
+      line1: SkaterStats[];
+      line2: SkaterStats[];
+      line3: SkaterStats[];
+      line4: SkaterStats[];
     };
     defensemen: {
-      line1: Player[];
-      line2: Player[];
-      line3: Player[];
+      line1: SkaterStats[];
+      line2: SkaterStats[];
+      line3: SkaterStats[];
     };
     goalies: {
-      line1: Player[];
-      line2: Player[];
+      line1: GoalieStats[];
+      line2: GoalieStats[];
     };
   };
   source_url: string;
@@ -212,6 +219,7 @@ export default function TeamLC({
               <Line
                 className={styles.line}
                 columns={2}
+                type="goalies"
                 players={[
                   ...lineCombinations.goalies.line1,
                   ...lineCombinations.goalies.line2,
@@ -246,6 +254,7 @@ export default function TeamLC({
                 className={styles.line}
                 title="GOALIES"
                 columns={2}
+                type="goalies"
                 players={[
                   ...lineCombinations.goalies.line1,
                   ...lineCombinations.goalies.line2,
@@ -260,33 +269,12 @@ export default function TeamLC({
 }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const abbreviation = params!.abbreviation;
   // for Team Select
   const teams = await getTeams();
 
-  teams
-    .map((team) => ({
-      shortName: team.name,
-      name: team.name,
-      abbreviation: team.abbreviation,
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  const { promotions, demotions } = await memoizeAsync<
-    ReturnType<typeof getLineChanges>
-  >(getLineChanges, 5 * 60)();
-
-  const { data: line_combinations, error } = await supabase
-    .from("line_combinations")
-    .select(
-      "date, team_name, team_abbreviation, forwards, defensemen, goalies, source_url"
-    )
-    .eq("team_abbreviation", params?.abbreviation ?? "")
-    .order("date", {
-      ascending: false,
-    })
-    .limit(2);
-
-  if (error || line_combinations.length !== 2) {
+  const team = teams.find((team) => team.abbreviation === abbreviation);
+  if (!team) {
     return {
       props: {
         teams: [],
@@ -294,80 +282,13 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       notFound: true,
     };
   }
-
-  // get current season id
-  const seasonId = (await getCurrentSeason()).seasonId;
-
-  // populate each player object with last 10 GP stats
-  const [current, _] = line_combinations as Props["lineCombinations"][];
-
-  const lastUpdated = current.date;
-
-  const getLineChange = (playerId: number): LineChange => {
-    if (promotions.some((p) => p.playerId === playerId)) return "promotion";
-    if (demotions.some((p) => p.playerId === playerId)) return "demotion";
-    return "static";
-  };
-
-  const populateStat = async (type: "forwards" | "defensemen" | "goalies") => {
-    for (const [line, players] of Object.entries(current[type])) {
-      // @ts-ignore
-      current[type][line] = await Promise.all(
-        players.map(async ({ playerId, playerName }) => {
-          let jerseyNumber = 0;
-          try {
-            jerseyNumber = (await getPlayer(playerId)).sweaterNumber;
-          } catch (e: any) {
-            console.error(e);
-          }
-
-          const games = (await getPlayerGameLog(playerId, seasonId)).slice(
-            0,
-            10
-          );
-
-          const stats = {
-            Goals: 0,
-            Assists: 0,
-            PTS: 0,
-            PPP: 0,
-            Shots: 0,
-            Hits: 0,
-            Blocks: 0,
-            PlusMinus: 0,
-            name: playerName,
-            playerId,
-            jerseyNumber,
-            lineChange: getLineChange(playerId),
-            source_url: current.source_url,
-          };
-          games.forEach((stat) => {
-            stats["Goals"] += stat.goals;
-            stats["Assists"] += stat.assists;
-            stats["PTS"] += stat.goals + stat.assists;
-            stats["PPP"] += stat.powerPlayPoints;
-            stats["Shots"] += stat.shots;
-            stats["Hits"] += 0;
-            stats["Blocks"] += 0;
-            stats["PlusMinus"] += stat.plusMinus;
-          });
-          return stats;
-        })
-      );
-    }
-  };
-
-  await Promise.all([
-    populateStat("forwards"),
-    populateStat("defensemen"),
-    populateStat("goalies"),
-  ]);
+  const lineCombinations = await getLineCombinations(team.id);
 
   return {
     props: {
-      teamName: current.team_name,
-      lastUpdated,
-      lineCombinations: current,
+      teamName: team?.name,
+      lastUpdated: lineCombinations.game.startTime,
+      lineCombinations,
       teams,
     },
     revalidate: 60, // In seconds
