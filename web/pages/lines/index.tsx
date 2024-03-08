@@ -10,22 +10,23 @@ import TimeAgo from "components/TimeAgo";
 import arrowDown from "public/pictures/arrow-down-white.png";
 
 import Container from "components/Layout/Container";
-import getLineChanges, { isPromotion } from "lib/NHL/getLineChanges";
+import { isPromotion } from "lib/NHL/getLineChanges";
 import type { Team } from "lib/NHL/types";
 import styles from "styles/Lines.module.scss";
+import { getTeams } from "lib/NHL/server";
+import ClientOnly from "components/ClientOnly";
+import { getLineCombinations } from "components/LineCombinations/utilities";
+import supabase from "lib/supabase";
 
 export type RowData = {
   playerId: number;
   playerName: string;
   previousLine: number | null;
   currentLine: number | null;
-  previousPowerPlayerUnit: number | null;
-  currentPowerPlayerUnit: number | null;
   /**
    * Team abbreviation
    */
   abbreviation: string;
-  updatedTime: string;
 };
 
 type LandingPageProps = {
@@ -62,16 +63,62 @@ function Lines({
 }
 
 export const getStaticProps: GetStaticProps = async () => {
-  const { teams, promotions, demotions, lastUpdated } = await getLineChanges({
-    goalies: false,
+  const teams = await getTeams();
+  const promotions = [] as RowData[];
+  const demotions = [] as RowData[];
+
+  await Promise.all(
+    teams.map(async (team) => {
+      const lineCombos = await getLineCombinations(team.id);
+      // Add team abbreviation
+      promotions.push(
+        ...lineCombos.promotions.map(
+          (p) =>
+            ({
+              ...p,
+              abbreviation: team.abbreviation,
+            } as any)
+        )
+      );
+
+      demotions.push(
+        ...lineCombos.demotions.map(
+          (p) =>
+            ({
+              ...p,
+              abbreviation: team.abbreviation,
+            } as any)
+        )
+      );
+    })
+  );
+  // Add player name
+  const playerIds = new Set<number>();
+  promotions.forEach((p) => playerIds.add(p.playerId));
+  demotions.forEach((p) => playerIds.add(p.playerId));
+  const { data: playersInfo } = await supabase
+    .from("players")
+    .select("id, playerName:fullName")
+    .in("id", [...playerIds])
+    .throwOnError();
+  const playerNamesMap = new Map<number, string>();
+  playersInfo?.forEach((p) => {
+    playerNamesMap.set(p.id, p.playerName);
   });
+
+  promotions.forEach(
+    (p) => (p.playerName = playerNamesMap.get(p.playerId) ?? "Unknown")
+  );
+  demotions.forEach(
+    (p) => (p.playerName = playerNamesMap.get(p.playerId) ?? "Unknown")
+  );
 
   return {
     props: {
       teams,
       promotions,
       demotions,
-      lastUpdated,
+      lastUpdated: new Date().toISOString(),
     },
     revalidate: 60, // in seconds
   };
@@ -114,7 +161,9 @@ function Players({
         target="_blank"
         rel="noopener noreferrer"
       >
-        Updated: <TimeAgo date={lastUpdated} />
+        <ClientOnly style={{ display: "inline" }}>
+          Updated: <TimeAgo date={lastUpdated} />
+        </ClientOnly>
       </a>
       <div className={styles.tables}>
         <Table type="promotions" data={promotions} />
@@ -211,7 +260,7 @@ function Row({ player }: { player: RowData }) {
         </a>
       </Link>
       <div className={styles.twoChanges}>
-        {player.previousPowerPlayerUnit !== player.currentPowerPlayerUnit && (
+        {/* {player.previousPowerPlayerUnit !== player.currentPowerPlayerUnit && (
           <>
             <PowerUnitChanges
               previousPowerUnit={player.previousPowerPlayerUnit}
@@ -219,7 +268,7 @@ function Row({ player }: { player: RowData }) {
             />
             <span className={styles.colon}>:</span>
           </>
-        )}
+        )} */}
         <LineChanges
           previousLine={player.previousLine}
           currentLine={player.currentLine}

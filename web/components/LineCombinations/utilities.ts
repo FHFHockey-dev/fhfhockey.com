@@ -9,6 +9,8 @@ type LineCombinations = {
     id: number;
     startTime: string;
   };
+  promotions: LineChangeInfo[];
+  demotions: LineChangeInfo[];
   forwards: {
     line1: SkaterStats[];
     line2: SkaterStats[];
@@ -48,8 +50,13 @@ export async function getLineCombinations(
     .order("games(startTime)", { ascending: false })
     .returns<any>() // will be fixed after upgrading supabase-js
     .throwOnError();
-  if (!lineCombinations || lineCombinations.length === 0)
-    throw new Error("Cannot find line combo data for team " + teamId);
+  if (!lineCombinations || lineCombinations.length !== 2)
+    throw new Error(
+      `Cannot find 2 games line combo data for team ${teamId} games: ${[
+        last10Games[0].id,
+        last10Games[1].id,
+      ]}`
+    );
   const season = await getCurrentSeason();
   const { data: playerId_sweaterNumber } = await supabase
     .from("rosters")
@@ -136,6 +143,9 @@ export async function getLineCombinations(
     id: lineCombinations[0].gameId,
     startTime: lineCombinations[0].startTime,
   };
+
+  result.promotions = promotions;
+  result.demotions = demotions;
 
   return result;
 }
