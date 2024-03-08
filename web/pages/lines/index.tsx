@@ -10,7 +10,7 @@ import TimeAgo from "components/TimeAgo";
 import arrowDown from "public/pictures/arrow-down-white.png";
 
 import Container from "components/Layout/Container";
-import { isPromotion } from "lib/NHL/getLineChanges";
+
 import type { Team } from "lib/NHL/types";
 import styles from "styles/Lines.module.scss";
 import { getTeams } from "lib/NHL/server";
@@ -369,6 +369,26 @@ function shorten(name: string) {
     return `${firstNameInitial}. ${names.slice(1).join(" ")}`;
   } else {
     return name;
+  }
+}
+
+/**
+ * Test if a player is in promotion.
+ * @param previous previous line number
+ * @param current current line number
+ * @returns true if the player is in promotion, otherwise false
+ */
+function isPromotion(previous: number | null, current: number | null) {
+  if (current === null) {
+    return false;
+  } else if (previous === null) {
+    return true;
+  }
+  // the smaller the better
+  if (current < previous) {
+    return true;
+  } else if (current > previous) {
+    return false;
   }
 }
 
