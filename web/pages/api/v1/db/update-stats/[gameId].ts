@@ -43,11 +43,6 @@ export async function updateStats(gameId: number, supabase: SupabaseClient) {
 
   // obtain powerPlayConversion
   const boxscore = await get(`/gamecenter/${gameId}/boxscore`);
-  const homeTeamPowerPlayConversion = boxscore.homeTeam.powerPlayConversion;
-  const awayTeamPowerPlayConversion = boxscore.awayTeam.powerPlayConversion;
-
-  homeTeamGameStats.powerPlayConversion = homeTeamPowerPlayConversion;
-  awayTeamGameStats.powerPlayConversion = awayTeamPowerPlayConversion;
 
   // update teamGameStats table
   await supabase
@@ -64,8 +59,9 @@ export async function updateStats(gameId: number, supabase: SupabaseClient) {
 
 type Category =
   | "sog"
-  | "faceoffPctg"
+  | "faceoffWinningPctg"
   | "powerPlay"
+  | "powerPlayPctg"
   | "pim"
   | "hits"
   | "blockedShots"
@@ -100,14 +96,14 @@ async function getTeamStats(landing: any, isHomeTeam: boolean) {
     teamId: isHomeTeam ? landing.homeTeam.id : landing.awayTeam.id,
     score: isHomeTeam ? landing.homeTeam.score : landing.awayTeam.score,
     sog: Number(getStat("sog")),
-    faceoffPctg: Number(getStat("faceoffPctg")),
+    faceoffPctg: Number(getStat("faceoffWinningPctg")),
     pim: Number(getStat("pim")),
     hits: Number(getStat("hits")),
     blockedShots: Number(getStat("blockedShots")),
     giveaways: Number(getStat("giveaways")),
     takeaways: Number(getStat("takeaways")),
     powerPlay: getStat("powerPlay"),
-    powerPlayConversion: "0/0", // will be populated later
+    powerPlayConversion: getStat("powerPlayPctg"),
     powerPlayToi,
   };
 }
