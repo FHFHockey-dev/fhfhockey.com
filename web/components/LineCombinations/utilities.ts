@@ -1,4 +1,5 @@
 import { NUM_PLAYERS_PER_LINE } from "components/LinemateMatrix";
+import { addHours } from "date-fns";
 import { getCurrentSeason } from "lib/NHL/server";
 import supabase from "lib/supabase";
 import { GoalieStats, SkaterStats } from "pages/lines/[abbreviation]";
@@ -31,11 +32,12 @@ type LineCombinations = {
 export async function getLineCombinations(
   teamId: number
 ): Promise<LineCombinations> {
+  const FIVE_HOURS_EARLIER = addHours(new Date(), -5).toISOString();
   const { data: last10Games } = await supabase
     .from("games")
     .select("id")
     .or(`homeTeamId.eq.${teamId}, awayTeamId.eq.${teamId}`)
-    .lt("startTime", "now()")
+    .lt("startTime", FIVE_HOURS_EARLIER)
     .order("startTime", { ascending: false })
     .limit(10)
     .throwOnError();
@@ -50,24 +52,33 @@ export async function getLineCombinations(
     .order("games(startTime)", { ascending: false })
     .returns<any>() // will be fixed after upgrading supabase-js
     .throwOnError();
-  if (!lineCombinations || lineCombinations.length !== 2)
+  if (!lineCombinations || lineCombinations.length !== 2) {
+    console.error(lineCombinations);
     throw new Error(
       `Cannot find 2 games line combo data for team ${teamId} games: ${[
         last10Games[0].id,
         last10Games[1].id,
       ]}`
     );
+  }
   const season = await getCurrentSeason();
   const { data: playerId_sweaterNumber } = await supabase
     .from("rosters")
-    .select("playerId, sweaterNumber")
+    .select("playerId, sweaterNumber, ...players(position)")
     .eq("teamId", teamId)
     .eq("seasonId", season.seasonId)
+    .returns<any[]>()
     .throwOnError();
   // transform into a table
-  const playerId_sweaterNumberTable = new Map<number, number>();
+  const playerId_Info = new Map<
+    number,
+    { sweaterNumber: number; position: string }
+  >();
   playerId_sweaterNumber?.forEach((item) =>
-    playerId_sweaterNumberTable.set(item.playerId, item.sweaterNumber)
+    playerId_Info.set(item.playerId, {
+      sweaterNumber: item.sweaterNumber,
+      position: item.position,
+    })
   );
 
   // get stats
@@ -123,7 +134,8 @@ export async function getLineCombinations(
   const playersStats = new Map<number, any>();
   // add sweaterNumber & lineChange
   [...skaters, ...goalies].forEach((item) => {
-    item.sweaterNumber = playerId_sweaterNumberTable.get(item.playerId!) ?? 0;
+    item.sweaterNumber = playerId_Info.get(item.playerId!)?.sweaterNumber ?? 0;
+    item.position = playerId_Info.get(item.playerId!)?.position ?? "L";
     item.lineChange = getLineChangeType(
       promotions.map((p) => p.playerId),
       demotions.map((p) => p.playerId),
@@ -138,6 +150,9 @@ export async function getLineCombinations(
     playersStats,
     lines
   ) as any;
+
+  // Order each line by player position L C R
+  orderLinesByPosition(result);
   // console.log({ skaters, goalies, lineCombo: lineCombinations[0], result });
   result.game = {
     id: lineCombinations[0].gameId,
@@ -389,4 +404,17 @@ export function convertToLines(lineCombo: RawLineCombo | undefined) {
     defensemen: defensemenLines,
     goalies: goaliesLines,
   };
+}
+
+function orderLinesByPosition(lineCombinations: LineCombinations) {
+  Object.keys(lineCombinations.forwards).forEach((line) => {
+    const players = lineCombinations.forwards[line as "line1"];
+
+    const sorted = [
+      ...players.filter((p) => p.position === "L"),
+      ...players.filter((p) => p.position === "C"),
+      ...players.filter((p) => p.position === "R"),
+    ];
+    lineCombinations.forwards[line as "line1"] = sorted;
+  });
 }

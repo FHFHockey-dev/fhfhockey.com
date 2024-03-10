@@ -25,6 +25,7 @@ import { getLineCombinations } from "components/LineCombinations/utilities";
 export type PlayerBasic = {
   playerId: number;
   playerName: string;
+  position: string;
   sweaterNumber: number;
   lineChange: LineChange;
 };
