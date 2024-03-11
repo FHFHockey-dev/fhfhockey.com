@@ -8,6 +8,10 @@ import Fetch from "lib/cors-fetch";
 import { GoalIndicators } from "hooks/useGoals";
 import PowerPlayAreaIndicators from "web/components/ShiftChart/PowerPlayAreaIndicators";
 import LinemateMatrix from "web/components/LinemateMatrix/index";
+import { useQueryState, parseAsInteger } from "next-usequerystate";
+import supabase from "web/lib/supabase";
+import { getTeams } from "web/lib/NHL/client";
+
 // TODO
 
 // modularize the project
@@ -36,10 +40,43 @@ const initialTimestamps = {
   overtime: [],
 };
 
+/**
+ * Get games that played the same date as input game or the date
+ */
+async function getGames({ gameId, date }) {
+  let finalDate = date;
+  if (!date) {
+    const { data } = await supabase
+      .from("games")
+      .select("date")
+      .eq("id", gameId)
+      .single()
+      .throwOnError();
+    finalDate = data.date;
+  }
+
+  const { data: games } = await supabase
+    .from("games")
+    .select("id, homeTeamId, awayTeamId")
+    .eq("date", finalDate)
+    .throwOnError();
+
+  const teams = await getTeams();
+
+  return {
+    date: finalDate,
+    games: games.map((game) => ({
+      id: game.id,
+      homeTeam: teams.find((team) => team.id === game.homeTeamId),
+      awayTeam: teams.find((team) => team.id === game.awayTeamId),
+    })),
+  };
+}
+
 function ShiftChart() {
+  const [gameId, setGameId] = useQueryState("gameId", parseAsInteger);
   // State hooks to manage component data
   const [selectedDate, setSelectedDate] = useState("");
-  const [selectedGame, setSelectedGame] = useState("");
   const [games, setGames] = useState([]);
   const [playerData, setPlayerData] = useState({ home: [], away: [] });
   const [totalGameTime, setTotalGameTime] = useState(0);
@@ -214,26 +251,6 @@ function ShiftChart() {
     }
   };
 
-  // Fetches games for a selected date
-  const fetchNHLGames = async (date) => {
-    try {
-      // console.log(`Fetching games for date: ${date}...`);
-      const response = await Fetch(
-        `https://api-web.nhle.com/v1/schedule/${date}`
-      ).then((res) => res.json());
-      // // console.log('Games on selected date:', response);
-
-      // Extract the games for the specific date
-      const dayData = response.gameWeek.find((day) => day.date === date);
-      const gamesOnSelectedDate = dayData ? dayData.games : [];
-      // // console.log('Filtered games for the selected date:', gamesOnSelectedDate);
-
-      setGames(gamesOnSelectedDate);
-    } catch (error) {
-      console.error("Error fetching games:", error);
-    }
-  };
-
   // Calculates the total game time in minutes and seconds, excluding shootout
   const calculateTotalGameTime = (gameDetails) => {
     const regularPeriodLength = 20; // 20 minutes for a regular period
@@ -292,7 +309,7 @@ function ShiftChart() {
 
   const handleGameChange = (event) => {
     const gameId = event.target.value;
-    setSelectedGame(gameId);
+    setGameId(Number(gameId));
     setSelectedTime(null); // Reset the selected time
     if (gameId) {
       fetchShiftChartData(gameId);
@@ -659,24 +676,26 @@ function ShiftChart() {
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  // useEffect to fetch season dates on component mount
-  useEffect(() => {
-    fetchSeasonDates();
-  }, []);
-
   // useEffect to fetch games whenever the selected date changes
   useEffect(() => {
-    if (selectedDate) {
-      fetchNHLGames(selectedDate);
-    } else {
-      setGames([]);
-    }
+    (async () => {
+      if (selectedDate) {
+        try {
+          // Fetches games for a selected date
+          const { games } = await getGames({ date: selectedDate });
+          setGames(games);
+        } catch (e) {
+          console.error(e);
+          setGames([]);
+        }
+      }
+    })();
   }, [selectedDate]);
 
   // Use useEffect to set the width of the game canvas after the component mounts
   useEffect(() => {
     // Only attempt to set the width if the ref is current and the game has been selected
-    if (gameCanvasRef.current && selectedGame) {
+    if (gameCanvasRef.current && gameId) {
       const updateDimensions = () => {
         setTotalGameWidth(gameCanvasRef.current.offsetWidth);
       };
@@ -688,15 +707,15 @@ function ShiftChart() {
       // Clean up event listener when the component is unmounted or the selected game changes
       return () => window.removeEventListener("resize", updateDimensions);
     }
-  }, [selectedGame]);
+  }, [gameId]);
 
   useEffect(() => {
-    if (selectedGame) {
-      fetchShiftChartData(selectedGame);
+    if (gameId) {
+      fetchShiftChartData(gameId);
       // console.log("Selected Game:", selectedGame);
       // Set the game scores
     }
-  }, [fetchShiftChartData, selectedGame]); // Add dependency on fetchShiftChartData
+  }, [fetchShiftChartData, gameId]); // Add dependency on fetchShiftChartData
 
   // useEffect to recalculate the timestamps when the total game time changes
   useEffect(() => {
@@ -707,10 +726,16 @@ function ShiftChart() {
     setTimestamps(newTimestamps);
   }, [totalGameTimeInSeconds, isOvertime]);
 
+  // fetch date and games on initial load
   useEffect(() => {
-    // console.log("Selected time changed:", selectedTime);
-    // console.log("Player data updated:", playerData);
-  }, [selectedTime, playerData]);
+    if (games.length !== 0 || selectedDate) return;
+    (async () => {
+      const { date, games } = await getGames({ gameId: gameId });
+      if (selectedDate) return;
+      setSelectedDate(date);
+      setGames(games);
+    })();
+  }, [gameId, games, selectedDate]);
 
   //////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////
@@ -734,13 +759,13 @@ function ShiftChart() {
           <label htmlFor="game-selector">Select Game: </label>
           <select
             id="game-selector"
-            value={selectedGame}
+            value={gameId}
             onChange={handleGameChange} // Assign handleGameChange
           >
             <option value="">Select a game</option>
             {games.map((game) => (
               <option key={game.id} value={game.id}>
-                {`${game.homeTeam.abbrev} vs ${game.awayTeam.abbrev}`}
+                {`${game.homeTeam.abbreviation} vs ${game.awayTeam.abbreviation}`}
               </option>
             ))}
           </select>
@@ -792,7 +817,7 @@ function ShiftChart() {
                   }%`,
                 }}
               ></div>
-              <GoalIndicators id={Number(selectedGame)} />
+              <GoalIndicators id={gameId} />
               <div
                 style={{
                   position: "absolute",
@@ -806,7 +831,7 @@ function ShiftChart() {
                 }}
               >
                 <PowerPlayAreaIndicators
-                  id={Number(selectedGame)}
+                  id={gameId}
                   totalGameTimeInSeconds={totalGameTimeInSeconds}
                 />
               </div>
@@ -963,7 +988,7 @@ function ShiftChart() {
         </tbody>
       </table>
       <div style={{ margin: "2rem 0", width: "100%" }}>
-        <LinemateMatrix id={Number(selectedGame)} />
+        <LinemateMatrix id={gameId} />
       </div>
     </div>
   );
