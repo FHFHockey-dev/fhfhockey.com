@@ -745,7 +745,7 @@ function ShiftChart() {
 
   return (
     <div className={styles.shiftChartContainer}>
-      <div className={styles.dropdownContainer}>
+      <div id="shift-chart-table" className={styles.dropdownContainer}>
         <div className={styles.shiftChartDropdown}>
           <label htmlFor="date-selector">Select Date: </label>
           <input
@@ -987,7 +987,7 @@ function ShiftChart() {
           })}
         </tbody>
       </table>
-      <div style={{ margin: "2rem 0", width: "100%" }}>
+      <div id="linemate-matrix" style={{ margin: "2rem 0", width: "100%" }}>
         <LinemateMatrix id={gameId} />
       </div>
     </div>
