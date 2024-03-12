@@ -65,10 +65,10 @@ type Props = {
   teams: Team[];
 
   lineCombinations: {
-    source_url: string;
+    game: {
+      id: number;
+    };
     date: string;
-    team_name: string;
-    team_abbreviation: string;
     forwards: {
       line1: SkaterStats[];
       line2: SkaterStats[];
@@ -85,7 +85,6 @@ type Props = {
       line2: GoalieStats[];
     };
   };
-  source_url: string;
   lastUpdated: string;
 };
 
@@ -158,7 +157,10 @@ export default function TeamLC({
 
         <div ref={lineComboRef}>
           <Header
-            sourceUrl={lineCombinations.source_url}
+            sourceUrl={
+              `/shiftChart?gameId=${lineCombinations.game.id}` +
+              "&linemate-matrix-mode=line-combination#linemate-matrix"
+            }
             teamName={teamName}
             lastUpdated={lastUpdated || new Date(2022, 10, 1).toString()}
             onTeamLogoClick={downloadImage}

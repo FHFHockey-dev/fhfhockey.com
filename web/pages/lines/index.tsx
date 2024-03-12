@@ -157,7 +157,7 @@ function Players({
     <section className={styles.players}>
       <a
         className={styles.time}
-        href="https://twitter.com/fhfhlines"
+        href="/shiftChart"
         target="_blank"
         rel="noopener noreferrer"
       >
