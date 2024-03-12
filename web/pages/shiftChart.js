@@ -7,8 +7,10 @@ import styles from "web/styles/ShiftChart.module.scss";
 import Fetch from "lib/cors-fetch";
 import { GoalIndicators } from "hooks/useGoals";
 import PowerPlayAreaIndicators from "web/components/ShiftChart/PowerPlayAreaIndicators";
-import LinemateMatrix from "web/components/LinemateMatrix/index";
-import { useQueryState, parseAsInteger } from "next-usequerystate";
+import LinemateMatrix, {
+  OPTIONS as LINEMATE_MATRIX_MODES,
+} from "web/components/LinemateMatrix/index";
+import { queryTypes, useQueryState } from "next-usequerystate";
 import supabase from "web/lib/supabase";
 import { getTeams } from "web/lib/NHL/client";
 
@@ -74,7 +76,12 @@ async function getGames({ gameId, date }) {
 }
 
 function ShiftChart() {
-  const [gameId, setGameId] = useQueryState("gameId", parseAsInteger);
+  const [gameId, setGameId] = useQueryState("gameId", queryTypes.integer);
+  const [linemateMatrixMode, setLinemateMatrixMode] = useQueryState(
+    "linemate-matrix-mode",
+    queryTypes.string.withDefault(LINEMATE_MATRIX_MODES[0].value)
+  );
+
   // State hooks to manage component data
   const [selectedDate, setSelectedDate] = useState("");
   const [games, setGames] = useState([]);
@@ -308,8 +315,13 @@ function ShiftChart() {
   };
 
   const handleGameChange = (event) => {
+    // Remove hash section if exists
+    const url = new URL(window.location.href);
+    url.hash = ""; // Set the hash (fragment) to empty string
+    history.replaceState(null, "", url);
+
     const gameId = event.target.value;
-    setGameId(Number(gameId));
+    setGameId(Number(gameId), { shallow: true });
     setSelectedTime(null); // Reset the selected time
     if (gameId) {
       fetchShiftChartData(gameId);
@@ -988,7 +1000,13 @@ function ShiftChart() {
         </tbody>
       </table>
       <div id="linemate-matrix" style={{ margin: "2rem 0", width: "100%" }}>
-        <LinemateMatrix id={gameId} />
+        <LinemateMatrix
+          id={gameId}
+          mode={linemateMatrixMode}
+          onModeChanged={(newMode) => {
+            setLinemateMatrixMode(newMode, { scroll: false });
+          }}
+        />
       </div>
     </div>
   );
