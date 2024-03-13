@@ -32,12 +32,18 @@ export default function PowerPlayAreaIndicators({
     if (!id) return;
     (async () => {
       setPowerPlays([]);
-      const { plays } = await Fetch(
-        `https://api-web.nhle.com/v1/gamecenter/${id}/play-by-play`
-      ).then((res) => res.json());
+      try {
+        const { plays } = await Fetch(
+          `https://api-web.nhle.com/v1/gamecenter/${id}/play-by-play`
+        ).then((res) => res.json());
 
-      const blocks = getPowerPlayBlocks(plays);
-      setPowerPlays(blocks);
+        const blocks = getPowerPlayBlocks(plays);
+        setPowerPlays(blocks);
+      } catch (e: any) {
+        console.error("Error when obtain play by play data", e);
+      } finally {
+        setPowerPlays([]);
+      }
     })();
   }, [id]);
 

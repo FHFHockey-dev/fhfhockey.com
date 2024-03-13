@@ -2,6 +2,7 @@
 // /workspaces/fhfhockey.com/web/pages/shiftChart.js
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useSnackbar } from "notistack";
 import { teamsInfo } from "web/lib/NHL/teamsInfo";
 import styles from "web/styles/ShiftChart.module.scss";
 import Fetch from "lib/cors-fetch";
@@ -83,6 +84,7 @@ function ShiftChart() {
   );
 
   // State hooks to manage component data
+  const { enqueueSnackbar } = useSnackbar();
   const [selectedDate, setSelectedDate] = useState("");
   const [games, setGames] = useState([]);
   const [playerData, setPlayerData] = useState({ home: [], away: [] });
@@ -103,72 +105,80 @@ function ShiftChart() {
   const REGULAR_PERIOD_LENGTH_SECONDS = 20 * 60; // 20 minutes
   const OVERTIME_LENGTH_SECONDS = 5 * 60; // 5 minutes
 
-  const fetchShiftChartData = useCallback(async (gameId) => {
-    try {
-      // Fetch shift chart data
-      // console.log(`Fetching shift chart data for game ID: ${gameId}...`);
-      const shiftDataResponse = await Fetch(
-        `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${gameId}`
-      ).then((res) => res.json());
+  const fetchShiftChartData = useCallback(
+    async (gameId) => {
+      try {
+        // Fetch shift chart data
+        // console.log(`Fetching shift chart data for game ID: ${gameId}...`);
+        const shiftDataResponse = await Fetch(
+          `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${gameId}`
+        ).then((res) => res.json());
 
-      // Fetch game details
-      // console.log(`Fetching game details for game ID: ${gameId}...`);
-      const gameDetailsResponse = await Fetch(
-        `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
-      ).then((res) => res.json());
+        // Fetch game details
+        // console.log(`Fetching game details for game ID: ${gameId}...`);
+        const gameDetailsResponse = await Fetch(
+          `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
+        ).then((res) => res.json());
 
-      // Log the game details for the selected game
-      // console.log("Game details:", gameDetailsResponse);
+        // Log the game details for the selected game
+        // console.log("Game details:", gameDetailsResponse);
 
-      // Set the game scores
-      setGameScores({
-        homeScore: gameDetailsResponse.boxscore.linescore.totals.home,
-        awayScore: gameDetailsResponse.boxscore.linescore.totals.away,
-      });
+        // Set the game scores
+        setGameScores({
+          homeScore: gameDetailsResponse.boxscore.linescore.totals.home,
+          awayScore: gameDetailsResponse.boxscore.linescore.totals.away,
+        });
 
-      // Set the isOvertime state based on whether there was an overtime period
-      setIsOvertime(
-        gameDetailsResponse.periodDescriptor.periodType === "OT" ||
-          gameDetailsResponse.periodDescriptor.periodType === "SO" ||
-          gameDetailsResponse.periodDescriptor.number === 5
-      );
+        // Set the isOvertime state based on whether there was an overtime period
+        setIsOvertime(
+          gameDetailsResponse.periodDescriptor.periodType === "OT" ||
+            gameDetailsResponse.periodDescriptor.periodType === "SO" ||
+            gameDetailsResponse.periodDescriptor.number === 5
+        );
 
-      // Calculate total game time in minutes and seconds
-      const totalGameTimeInMinutes =
-        calculateTotalGameTime(gameDetailsResponse);
-      // console.log(`Total Game Time in Minutes: ${totalGameTimeInMinutes}`);
-      setTotalGameTime(totalGameTimeInMinutes);
+        // Calculate total game time in minutes and seconds
+        const totalGameTimeInMinutes =
+          calculateTotalGameTime(gameDetailsResponse);
+        // console.log(`Total Game Time in Minutes: ${totalGameTimeInMinutes}`);
+        setTotalGameTime(totalGameTimeInMinutes);
 
-      // Calculate total game time in seconds
-      const totalSeconds = calculateTotalGameTimeInSeconds(gameDetailsResponse);
-      // console.log(`Setting total game time in seconds: ${totalSeconds}`);
-      setTotalGameTimeInSeconds(totalSeconds);
+        // Calculate total game time in seconds
+        const totalSeconds =
+          calculateTotalGameTimeInSeconds(gameDetailsResponse);
+        // console.log(`Setting total game time in seconds: ${totalSeconds}`);
+        setTotalGameTimeInSeconds(totalSeconds);
 
-      // Fetch player data
-      // console.log(`Fetching player data for game ID: ${gameId}...`);
-      const fetchedPlayerData = await fetchPlayerData(gameId);
+        // Fetch player data
+        // console.log(`Fetching player data for game ID: ${gameId}...`);
+        const fetchedPlayerData = await fetchPlayerData(gameId);
 
-      // Organize shift chart data
-      const organizedShiftData = organizeShiftData(shiftDataResponse.data);
-      // console.log("Organized shift chart data:", organizedShiftData);
+        // Organize shift chart data
+        const organizedShiftData = organizeShiftData(shiftDataResponse.data);
+        // console.log("Organized shift chart data:", organizedShiftData);
 
-      // Set the home and away team abbreviations
-      setHomeTeamAbbrev(gameDetailsResponse.homeTeam.abbrev);
-      setAwayTeamAbbrev(gameDetailsResponse.awayTeam.abbrev);
-      // console.log("homeTeamAbbrev:", homeTeamAbbrev);
-      // console.log("awayTeamAbbrev:", awayTeamAbbrev);
+        // Set the home and away team abbreviations
+        setHomeTeamAbbrev(gameDetailsResponse.homeTeam.abbrev);
+        setAwayTeamAbbrev(gameDetailsResponse.awayTeam.abbrev);
+        // console.log("homeTeamAbbrev:", homeTeamAbbrev);
+        // console.log("awayTeamAbbrev:", awayTeamAbbrev);
 
-      // Merge player data with hex values from shift chart data
-      const updatedPlayerData = mergePlayerData(
-        organizedShiftData,
-        fetchedPlayerData
-      );
+        // Merge player data with hex values from shift chart data
+        const updatedPlayerData = mergePlayerData(
+          organizedShiftData,
+          fetchedPlayerData
+        );
 
-      setPlayerData(updatedPlayerData);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  }, []); // Empty dependency array to prevent infinite loop
+        setPlayerData(updatedPlayerData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        enqueueSnackbar(
+          `Shift chart data for game ${gameId} is not available`,
+          { variant: "error" }
+        );
+      }
+    },
+    [enqueueSnackbar]
+  ); // Empty dependency array to prevent infinite loop
 
   // Fetches and processes player data for a given game ID
   const fetchPlayerData = async (gameId) => {
@@ -697,12 +707,13 @@ function ShiftChart() {
           const { games } = await getGames({ date: selectedDate });
           setGames(games);
         } catch (e) {
-          console.error(e);
+          enqueueSnackbar("Failed to fetch games", { variant: "error" });
+
           setGames([]);
         }
       }
     })();
-  }, [selectedDate]);
+  }, [selectedDate, enqueueSnackbar]);
 
   // Use useEffect to set the width of the game canvas after the component mounts
   useEffect(() => {
@@ -742,12 +753,17 @@ function ShiftChart() {
   useEffect(() => {
     if (games.length !== 0 || selectedDate) return;
     (async () => {
-      const { date, games } = await getGames({ gameId: gameId });
-      if (selectedDate) return;
-      setSelectedDate(date);
-      setGames(games);
+      try {
+        const { date, games } = await getGames({ gameId: gameId });
+        if (selectedDate) return;
+        setSelectedDate(date);
+        setGames(games);
+      } catch (e) {
+        console.error(e.message);
+        enqueueSnackbar("Failed to fetch games", { variant: "error" });
+      }
     })();
-  }, [gameId, games, selectedDate]);
+  }, [gameId, games, selectedDate, enqueueSnackbar]);
 
   //////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////
