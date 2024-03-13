@@ -787,7 +787,7 @@ function ShiftChart() {
           <label htmlFor="game-selector">Select Game: </label>
           <select
             id="game-selector"
-            value={gameId}
+            value={gameId ?? ""}
             onChange={handleGameChange} // Assign handleGameChange
           >
             <option value="">Select a game</option>

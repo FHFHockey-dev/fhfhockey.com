@@ -41,7 +41,6 @@ export default function PowerPlayAreaIndicators({
         setPowerPlays(blocks);
       } catch (e: any) {
         console.error("Error when obtain play by play data", e);
-      } finally {
         setPowerPlays([]);
       }
     })();
