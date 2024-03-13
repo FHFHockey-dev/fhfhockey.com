@@ -751,7 +751,7 @@ function ShiftChart() {
 
   // fetch date and games on initial load
   useEffect(() => {
-    if (games.length !== 0 || selectedDate) return;
+    if (games.length !== 0 || selectedDate || !gameId) return;
     (async () => {
       try {
         const { date, games } = await getGames({ gameId: gameId });
