@@ -237,6 +237,7 @@ const Home: NextPage = ({
                   <th onClick={() => sortDataBy("leagueSequence")}>Rank</th>
                   <th onClick={() => sortDataBy("teamName")}>Team</th>
                   <th>Record</th>
+                  <th onClick={() => sortDataBy("points")}>PTS</th>
                 </tr>
               </thead>
               <tbody>
@@ -245,6 +246,7 @@ const Home: NextPage = ({
                     <td>{teamRecord.leagueSequence}</td>
                     <td>{teamRecord.teamName}</td>
                     <td>{teamRecord.record}</td>
+                    <td>{teamRecord.points}</td>
                   </tr>
                 ))}
               </tbody>
@@ -354,6 +356,7 @@ export async function getServerSideProps({ req, res }) {
         leagueSequence: team.leagueSequence, // League sequence as the standing
         teamName: team.teamName.default, // Team name
         record: `${team.wins}-${team.losses}-${team.otLosses}`, // Record format: Wins-Losses-OT Losses
+        points: team.points, // Points
       }));
       console.log("STANDINGS: ", standingsData);
       return standingsData;

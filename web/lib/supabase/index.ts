@@ -1,3 +1,6 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-2\web\lib\supabase\index.ts
+
+
 import { IncomingMessage } from "http";
 import { SupabaseClient, createClient } from "@supabase/supabase-js";
 import type { Database } from "./database-generated.types";
