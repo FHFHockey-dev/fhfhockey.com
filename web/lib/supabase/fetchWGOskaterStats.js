@@ -1,5 +1,9 @@
 // lib/supabase/fetchWGOskaterData.js
 
+// DEV NOTE
+// For days that fail, those days need to be retried after the script has finished running
+// maybe an array that stores the failed dates and then a loop that runs through the failed dates
+
 require("dotenv").config({ path: "../../.env.local" });
 
 const { createClient } = require("@supabase/supabase-js");
@@ -158,7 +162,7 @@ async function fetchNHLSkaterData() {
   let seasonStart = scheduleResponse.regularSeasonStartDate || "2023-10-10";
   let currentDate = parseISO(seasonStart);
   const today = new Date();
-  const limit = 100; // Modify as needed
+  const limit = 100;
 
   while (
     isBefore(currentDate, today) ||
