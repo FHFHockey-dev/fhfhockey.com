@@ -149,15 +149,12 @@ async function updateAllGoalieStatsForSeason() {
     };
 }
 
-// API handler to update goalie stats either for a specific date or for the entire season
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     try {
-        // Extract the date parameter from the request query
         const dateParam = req.query.date;
         const date = Array.isArray(dateParam) ? dateParam[0] : dateParam;
 
         if (date) {
-            // If a date is specified, update stats for that specific date
             const result = await updateGoalieStats(date);
             res.json({
                 message: `Successfully updated goalie stats for date ${date}`,
@@ -165,7 +162,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 data: result,
             });
         } else {
-            // If no date is specified, update stats for the entire season
             const result = await updateAllGoalieStatsForSeason();
             res.json({
                 message: result.message,
@@ -174,7 +170,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
         }
     } catch (e: any) {
-        // Handle any errors that occur during the update process
         res.status(400).json({
             message: 'Failed to update goalie stats. Reason: ' + e.message,
             success: false,
