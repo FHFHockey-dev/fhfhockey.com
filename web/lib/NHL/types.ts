@@ -1,3 +1,5 @@
+// lib\NHL\types.ts
+
 export type Player = {
   id: number;
   firstName: string;
@@ -282,4 +284,40 @@ export type PercentileRank = {
   blockedShots: number;
   powerPlayPoints: number;
   shots: number;
+};
+
+export type WGOGoalieStat = {
+  assists: number;
+  gamesPlayed: number;
+  gamesStarted: number;
+  goalieFullName: string;
+  goals: number;
+  goalsAgainst: number;
+  goalsAgainstAverage: number;
+  lastName: string;
+  losses: number;
+  otLosses: number;
+  penaltyMinutes: number;
+  playerId: number;
+  points: number;
+  savePct: number;
+  saves: number;
+  shootsCatches: string;
+  shotsAgainst: number;
+  shutouts: number;
+  ties: number | null;
+  timeOnIce: number;
+  wins: number;
+};
+
+export type WGOAdvancedGoalieStat = {
+  playerId: number;
+  completeGamePct: number;
+  completeGames: number;
+  incompleteGames: number;
+  qualityStart: number;
+  qualityStartsPct: number;
+  regulationLosses: number;
+  regulationWins: number;
+  shotsAgainstPer60: number;
 };

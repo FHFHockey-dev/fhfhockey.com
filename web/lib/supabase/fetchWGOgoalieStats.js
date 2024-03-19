@@ -27,28 +27,18 @@ async function fetchAllDataForDate(formattedDate, limit) {
   // Initialize arrays to store data
   let goalieStats = [];
   let advancedGoalieStats = [];
-  let daysRestStats = [];
 
   while (moreDataAvailable) {
     const goalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`;
     const advancedGoalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22qualityStart%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsAgainstAverage%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`;
-    const daysRestStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/daysrest?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`;
 
-    const [
-      goalieStatsResponse,
-      advancedGoalieStatsResponse,
-      daysRestStatsResponse,
-    ] = await Promise.all([
-      Fetch(goalieStatsUrl),
-      Fetch(advancedGoalieStatsUrl),
-      Fetch(daysRestStatsUrl),
-    ]);
+    const [goalieStatsResponse, advancedGoalieStatsResponse] =
+      await Promise.all([Fetch(goalieStatsUrl), Fetch(advancedGoalieStatsUrl)]);
 
     goalieStats = goalieStats.concat(goalieStatsResponse.data);
     advancedGoalieStats = advancedGoalieStats.concat(
       advancedGoalieStatsResponse.data
     );
-    daysRestStats = daysRestStats.concat(daysRestStatsResponse.data);
 
     moreDataAvailable =
       goalieStatsResponse.data.length === limit ||
@@ -82,27 +72,20 @@ async function fetchNHLSkaterData() {
     let formattedDate = format(currentDate, "yyyy-MM-dd");
     console.log(`Fetching data for ${formattedDate}`);
 
-    const { goalieStats, advancedGoalieStats, daysRestStats } =
-      await fetchAllDataForDate(formattedDate, limit);
+    const { goalieStats, advancedGoalieStats } = await fetchAllDataForDate(
+      formattedDate,
+      limit
+    );
 
     goalieStats.forEach(async (stat, index) => {
       const advStats = advancedGoalieStats.find(
         (aStat) => aStat.playerId === stat.playerId
       );
-      const daysRest = daysRestStats.find(
-        (dStat) => dStat.playerId === stat.playerId
-      );
-      //   const miscStats = miscSkaterStats.find(
-      //     (mStat) => mStat.playerId === stat.playerId
-      //   );
 
       let upsertedStats = ["goalieStatsResponse"];
 
       if (advStats) {
         upsertedStats.push("advancedGoalieStatsResponse");
-      }
-      if (daysRest) {
-        upsertedStats.push("daysRestStatsResponse");
       }
 
       console.log(
@@ -143,17 +126,6 @@ async function fetchNHLSkaterData() {
         regulation_losses: advStats?.regulationLosses, // int
         regulation_wins: advStats?.regulationWins, // int
         shots_against_per_60: advStats?.shotsAgainstPer60, // float
-        // days rest stats from daysRestStatsResponse (daysRest)
-        games_played_days_rest_0: daysRest?.gamesPlayedDaysRest0, // int
-        games_played_days_rest_1: daysRest?.gamesPlayedDaysRest1, // int
-        games_played_days_rest_2: daysRest?.gamesPlayedDaysRest2, // int
-        games_played_days_rest_3: daysRest?.gamesPlayedDaysRest3, // int
-        games_played_days_rest_4_plus: daysRest?.gamesPlayedDaysRest4plus, // int
-        save_pct_days_rest_0: daysRest?.savePctDaysRest0, // float
-        save_pct_days_rest_1: daysRest?.savePctDaysRest1, // float
-        save_pct_days_rest_2: daysRest?.savePctDaysRest2, // float
-        save_pct_days_rest_3: daysRest?.savePctDaysRest3, // float
-        save_pct_days_rest_4_plus: daysRest?.savePctDaysRest4plus, // float
       });
 
       if (response.error) {

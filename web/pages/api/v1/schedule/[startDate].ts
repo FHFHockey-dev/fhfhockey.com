@@ -1,3 +1,5 @@
+// pages\api\v1\schedule\[startDate].ts
+
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getSchedule } from "lib/NHL/server";
 
