@@ -336,8 +336,8 @@ function processGoalie(
   };
 
   return {
-    playerId: seasonStats[0].playerId,
-    playerName: seasonStats[0].playerName,
+    playerId: goalie[0].playerId,
+    playerName: goalie[0].playerName,
     last10Games: getStats(last10GamesStats),
     season: getStats(seasonStats),
   };
