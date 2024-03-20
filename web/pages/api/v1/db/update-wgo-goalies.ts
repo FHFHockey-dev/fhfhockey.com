@@ -82,7 +82,7 @@ async function updateGoalieStats(date: string): Promise<{ updated: boolean; goal
             regulation_losses: advStats?.regulationLosses, // int
             regulation_wins: advStats?.regulationWins, // int
             shots_against_per_60: advStats?.shotsAgainstPer60, // float
-        });
+        }).throwOnError();
     }
 
     return { updated: true, goalieStats, advancedGoalieStats };
@@ -170,6 +170,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             });
         }
     } catch (e: any) {
+        console.error(e);
         res.status(400).json({
             message: 'Failed to update goalie stats. Reason: ' + e.message,
             success: false,
