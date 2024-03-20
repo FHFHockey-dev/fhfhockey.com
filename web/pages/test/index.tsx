@@ -1,5 +1,9 @@
-import LinemateMatrix from "components/LinemateMatrix";
+import { getLineCombinations } from "components/LineCombinations/utilities";
+import { useEffect } from "react";
 
 export default function Page() {
-  return <LinemateMatrix id={2023020850} />;
+  useEffect(() => {
+    getLineCombinations(26);
+  }, []);
+  return <>h</>;
 }

@@ -155,9 +155,11 @@ function useTOI(id: number) {
 type Team = { id: number; name: string };
 type Props = {
   id: number;
+  mode: Mode;
+  onModeChanged?: (newMode: Mode) => void;
 };
 
-const OPTIONS = [
+export const OPTIONS = [
   {
     label: "Total TOI",
     value: "total-toi",
@@ -165,8 +167,11 @@ const OPTIONS = [
   { label: "Sweater Number", value: "number" },
   { label: "Line Combination", value: "line-combination" },
 ] as const;
-export default function LinemateMatrix({ id }: Props) {
-  const [mode, setMode] = useState<Mode>("total-toi");
+export default function LinemateMatrix({
+  id,
+  mode,
+  onModeChanged = () => {},
+}: Props) {
   const [toiData, rosters, gameInfo, loading] = useTOI(id);
   if (!gameInfo) return <></>;
   const [homeTeam, awayTeam] = gameInfo;
@@ -177,7 +182,7 @@ export default function LinemateMatrix({ id }: Props) {
           options={OPTIONS}
           option={mode}
           onOptionChange={(newOption) => {
-            setMode(newOption);
+            onModeChanged(newOption);
           }}
         />
       </div>
@@ -200,7 +205,7 @@ export default function LinemateMatrix({ id }: Props) {
 }
 
 type PlayerType = "forwards" | "defensemen";
-const NUM_PLAYERS_PER_LINE = {
+export const NUM_PLAYERS_PER_LINE = {
   forwards: 3,
   defensemen: 2,
 } as const;

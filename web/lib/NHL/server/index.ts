@@ -42,6 +42,7 @@ export async function getPlayer(id: number): Promise<Player> {
     .from("rosters")
     .select("teamId, sweaterNumber, players(*), teams(name,abbreviation)")
     .eq("playerId", id)
+    .order("seasonId", { ascending: false })
     .limit(1)
     .maybeSingle()
     .throwOnError();
@@ -128,9 +129,8 @@ export async function getAllPlayers(seasonId?: number): Promise<Player[]> {
     .select("sweaterNumber, players(*), teams(id, name,abbreviation)")
     .eq("seasonId", seasonId);
 
-
-    // ADDED "ANY" TYPE TO player 
-    // 02/19/2024 10:23AM EST
+  // ADDED "ANY" TYPE TO player
+  // 02/19/2024 10:23AM EST
   return data!.map((player: any) => ({
     ...player.players!,
     age: differenceInYears(

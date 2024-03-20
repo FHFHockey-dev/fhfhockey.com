@@ -2,12 +2,19 @@
 // /workspaces/fhfhockey.com/web/pages/shiftChart.js
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useSnackbar } from "notistack";
 import { teamsInfo } from "web/lib/NHL/teamsInfo";
 import styles from "web/styles/ShiftChart.module.scss";
 import Fetch from "lib/cors-fetch";
 import { GoalIndicators } from "hooks/useGoals";
 import PowerPlayAreaIndicators from "web/components/ShiftChart/PowerPlayAreaIndicators";
-import LinemateMatrix from "web/components/LinemateMatrix/index";
+import LinemateMatrix, {
+  OPTIONS as LINEMATE_MATRIX_MODES,
+} from "web/components/LinemateMatrix/index";
+import { queryTypes, useQueryState } from "next-usequerystate";
+import supabase from "web/lib/supabase";
+import { getTeams } from "web/lib/NHL/client";
+
 // TODO
 
 // modularize the project
@@ -36,10 +43,49 @@ const initialTimestamps = {
   overtime: [],
 };
 
+/**
+ * Get games that played the same date as input game or the date
+ */
+async function getGames({ gameId, date }) {
+  let finalDate = date;
+  if (!date) {
+    const { data } = await supabase
+      .from("games")
+      .select("date")
+      .eq("id", gameId)
+      .single()
+      .throwOnError();
+    finalDate = data.date;
+  }
+
+  const { data: games } = await supabase
+    .from("games")
+    .select("id, homeTeamId, awayTeamId")
+    .eq("date", finalDate)
+    .throwOnError();
+
+  const teams = await getTeams();
+
+  return {
+    date: finalDate,
+    games: games.map((game) => ({
+      id: game.id,
+      homeTeam: teams.find((team) => team.id === game.homeTeamId),
+      awayTeam: teams.find((team) => team.id === game.awayTeamId),
+    })),
+  };
+}
+
 function ShiftChart() {
+  const [gameId, setGameId] = useQueryState("gameId", queryTypes.integer);
+  const [linemateMatrixMode, setLinemateMatrixMode] = useQueryState(
+    "linemate-matrix-mode",
+    queryTypes.string.withDefault(LINEMATE_MATRIX_MODES[0].value)
+  );
+
   // State hooks to manage component data
+  const { enqueueSnackbar } = useSnackbar();
   const [selectedDate, setSelectedDate] = useState("");
-  const [selectedGame, setSelectedGame] = useState("");
   const [games, setGames] = useState([]);
   const [playerData, setPlayerData] = useState({ home: [], away: [] });
   const [totalGameTime, setTotalGameTime] = useState(0);
@@ -59,72 +105,80 @@ function ShiftChart() {
   const REGULAR_PERIOD_LENGTH_SECONDS = 20 * 60; // 20 minutes
   const OVERTIME_LENGTH_SECONDS = 5 * 60; // 5 minutes
 
-  const fetchShiftChartData = useCallback(async (gameId) => {
-    try {
-      // Fetch shift chart data
-      // console.log(`Fetching shift chart data for game ID: ${gameId}...`);
-      const shiftDataResponse = await Fetch(
-        `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${gameId}`
-      ).then((res) => res.json());
+  const fetchShiftChartData = useCallback(
+    async (gameId) => {
+      try {
+        // Fetch shift chart data
+        // console.log(`Fetching shift chart data for game ID: ${gameId}...`);
+        const shiftDataResponse = await Fetch(
+          `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${gameId}`
+        ).then((res) => res.json());
 
-      // Fetch game details
-      // console.log(`Fetching game details for game ID: ${gameId}...`);
-      const gameDetailsResponse = await Fetch(
-        `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
-      ).then((res) => res.json());
+        // Fetch game details
+        // console.log(`Fetching game details for game ID: ${gameId}...`);
+        const gameDetailsResponse = await Fetch(
+          `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
+        ).then((res) => res.json());
 
-      // Log the game details for the selected game
-      // console.log("Game details:", gameDetailsResponse);
+        // Log the game details for the selected game
+        // console.log("Game details:", gameDetailsResponse);
 
-      // Set the game scores
-      setGameScores({
-        homeScore: gameDetailsResponse.boxscore.linescore.totals.home,
-        awayScore: gameDetailsResponse.boxscore.linescore.totals.away,
-      });
+        // Set the game scores
+        setGameScores({
+          homeScore: gameDetailsResponse.boxscore.linescore.totals.home,
+          awayScore: gameDetailsResponse.boxscore.linescore.totals.away,
+        });
 
-      // Set the isOvertime state based on whether there was an overtime period
-      setIsOvertime(
-        gameDetailsResponse.periodDescriptor.periodType === "OT" ||
-          gameDetailsResponse.periodDescriptor.periodType === "SO" ||
-          gameDetailsResponse.periodDescriptor.number === 5
-      );
+        // Set the isOvertime state based on whether there was an overtime period
+        setIsOvertime(
+          gameDetailsResponse.periodDescriptor.periodType === "OT" ||
+            gameDetailsResponse.periodDescriptor.periodType === "SO" ||
+            gameDetailsResponse.periodDescriptor.number === 5
+        );
 
-      // Calculate total game time in minutes and seconds
-      const totalGameTimeInMinutes =
-        calculateTotalGameTime(gameDetailsResponse);
-      // console.log(`Total Game Time in Minutes: ${totalGameTimeInMinutes}`);
-      setTotalGameTime(totalGameTimeInMinutes);
+        // Calculate total game time in minutes and seconds
+        const totalGameTimeInMinutes =
+          calculateTotalGameTime(gameDetailsResponse);
+        // console.log(`Total Game Time in Minutes: ${totalGameTimeInMinutes}`);
+        setTotalGameTime(totalGameTimeInMinutes);
 
-      // Calculate total game time in seconds
-      const totalSeconds = calculateTotalGameTimeInSeconds(gameDetailsResponse);
-      // console.log(`Setting total game time in seconds: ${totalSeconds}`);
-      setTotalGameTimeInSeconds(totalSeconds);
+        // Calculate total game time in seconds
+        const totalSeconds =
+          calculateTotalGameTimeInSeconds(gameDetailsResponse);
+        // console.log(`Setting total game time in seconds: ${totalSeconds}`);
+        setTotalGameTimeInSeconds(totalSeconds);
 
-      // Fetch player data
-      // console.log(`Fetching player data for game ID: ${gameId}...`);
-      const fetchedPlayerData = await fetchPlayerData(gameId);
+        // Fetch player data
+        // console.log(`Fetching player data for game ID: ${gameId}...`);
+        const fetchedPlayerData = await fetchPlayerData(gameId);
 
-      // Organize shift chart data
-      const organizedShiftData = organizeShiftData(shiftDataResponse.data);
-      // console.log("Organized shift chart data:", organizedShiftData);
+        // Organize shift chart data
+        const organizedShiftData = organizeShiftData(shiftDataResponse.data);
+        // console.log("Organized shift chart data:", organizedShiftData);
 
-      // Set the home and away team abbreviations
-      setHomeTeamAbbrev(gameDetailsResponse.homeTeam.abbrev);
-      setAwayTeamAbbrev(gameDetailsResponse.awayTeam.abbrev);
-      // console.log("homeTeamAbbrev:", homeTeamAbbrev);
-      // console.log("awayTeamAbbrev:", awayTeamAbbrev);
+        // Set the home and away team abbreviations
+        setHomeTeamAbbrev(gameDetailsResponse.homeTeam.abbrev);
+        setAwayTeamAbbrev(gameDetailsResponse.awayTeam.abbrev);
+        // console.log("homeTeamAbbrev:", homeTeamAbbrev);
+        // console.log("awayTeamAbbrev:", awayTeamAbbrev);
 
-      // Merge player data with hex values from shift chart data
-      const updatedPlayerData = mergePlayerData(
-        organizedShiftData,
-        fetchedPlayerData
-      );
+        // Merge player data with hex values from shift chart data
+        const updatedPlayerData = mergePlayerData(
+          organizedShiftData,
+          fetchedPlayerData
+        );
 
-      setPlayerData(updatedPlayerData);
-    } catch (error) {
-      console.error("Error fetching data:", error);
-    }
-  }, []); // Empty dependency array to prevent infinite loop
+        setPlayerData(updatedPlayerData);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        enqueueSnackbar(
+          `Shift chart data for game ${gameId} is not available`,
+          { variant: "error" }
+        );
+      }
+    },
+    [enqueueSnackbar]
+  ); // Empty dependency array to prevent infinite loop
 
   // Fetches and processes player data for a given game ID
   const fetchPlayerData = async (gameId) => {
@@ -214,26 +268,6 @@ function ShiftChart() {
     }
   };
 
-  // Fetches games for a selected date
-  const fetchNHLGames = async (date) => {
-    try {
-      // console.log(`Fetching games for date: ${date}...`);
-      const response = await Fetch(
-        `https://api-web.nhle.com/v1/schedule/${date}`
-      ).then((res) => res.json());
-      // // console.log('Games on selected date:', response);
-
-      // Extract the games for the specific date
-      const dayData = response.gameWeek.find((day) => day.date === date);
-      const gamesOnSelectedDate = dayData ? dayData.games : [];
-      // // console.log('Filtered games for the selected date:', gamesOnSelectedDate);
-
-      setGames(gamesOnSelectedDate);
-    } catch (error) {
-      console.error("Error fetching games:", error);
-    }
-  };
-
   // Calculates the total game time in minutes and seconds, excluding shootout
   const calculateTotalGameTime = (gameDetails) => {
     const regularPeriodLength = 20; // 20 minutes for a regular period
@@ -291,8 +325,13 @@ function ShiftChart() {
   };
 
   const handleGameChange = (event) => {
+    // Remove hash section if exists
+    const url = new URL(window.location.href);
+    url.hash = ""; // Set the hash (fragment) to empty string
+    history.replaceState(null, "", url);
+
     const gameId = event.target.value;
-    setSelectedGame(gameId);
+    setGameId(Number(gameId), { shallow: true });
     setSelectedTime(null); // Reset the selected time
     if (gameId) {
       fetchShiftChartData(gameId);
@@ -659,24 +698,27 @@ function ShiftChart() {
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  // useEffect to fetch season dates on component mount
-  useEffect(() => {
-    fetchSeasonDates();
-  }, []);
-
   // useEffect to fetch games whenever the selected date changes
   useEffect(() => {
-    if (selectedDate) {
-      fetchNHLGames(selectedDate);
-    } else {
-      setGames([]);
-    }
-  }, [selectedDate]);
+    (async () => {
+      if (selectedDate) {
+        try {
+          // Fetches games for a selected date
+          const { games } = await getGames({ date: selectedDate });
+          setGames(games);
+        } catch (e) {
+          enqueueSnackbar("Failed to fetch games", { variant: "error" });
+
+          setGames([]);
+        }
+      }
+    })();
+  }, [selectedDate, enqueueSnackbar]);
 
   // Use useEffect to set the width of the game canvas after the component mounts
   useEffect(() => {
     // Only attempt to set the width if the ref is current and the game has been selected
-    if (gameCanvasRef.current && selectedGame) {
+    if (gameCanvasRef.current && gameId) {
       const updateDimensions = () => {
         setTotalGameWidth(gameCanvasRef.current.offsetWidth);
       };
@@ -688,15 +730,15 @@ function ShiftChart() {
       // Clean up event listener when the component is unmounted or the selected game changes
       return () => window.removeEventListener("resize", updateDimensions);
     }
-  }, [selectedGame]);
+  }, [gameId]);
 
   useEffect(() => {
-    if (selectedGame) {
-      fetchShiftChartData(selectedGame);
+    if (gameId) {
+      fetchShiftChartData(gameId);
       // console.log("Selected Game:", selectedGame);
       // Set the game scores
     }
-  }, [fetchShiftChartData, selectedGame]); // Add dependency on fetchShiftChartData
+  }, [fetchShiftChartData, gameId]); // Add dependency on fetchShiftChartData
 
   // useEffect to recalculate the timestamps when the total game time changes
   useEffect(() => {
@@ -707,10 +749,21 @@ function ShiftChart() {
     setTimestamps(newTimestamps);
   }, [totalGameTimeInSeconds, isOvertime]);
 
+  // fetch date and games on initial load
   useEffect(() => {
-    // console.log("Selected time changed:", selectedTime);
-    // console.log("Player data updated:", playerData);
-  }, [selectedTime, playerData]);
+    if (games.length !== 0 || selectedDate || !gameId) return;
+    (async () => {
+      try {
+        const { date, games } = await getGames({ gameId: gameId });
+        if (selectedDate) return;
+        setSelectedDate(date);
+        setGames(games);
+      } catch (e) {
+        console.error(e.message);
+        enqueueSnackbar("Failed to fetch games", { variant: "error" });
+      }
+    })();
+  }, [gameId, games, selectedDate, enqueueSnackbar]);
 
   //////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////
@@ -720,7 +773,7 @@ function ShiftChart() {
 
   return (
     <div className={styles.shiftChartContainer}>
-      <div className={styles.dropdownContainer}>
+      <div id="shift-chart-table" className={styles.dropdownContainer}>
         <div className={styles.shiftChartDropdown}>
           <label htmlFor="date-selector">Select Date: </label>
           <input
@@ -734,13 +787,13 @@ function ShiftChart() {
           <label htmlFor="game-selector">Select Game: </label>
           <select
             id="game-selector"
-            value={selectedGame}
+            value={gameId ?? ""}
             onChange={handleGameChange} // Assign handleGameChange
           >
             <option value="">Select a game</option>
             {games.map((game) => (
               <option key={game.id} value={game.id}>
-                {`${game.homeTeam.abbrev} vs ${game.awayTeam.abbrev}`}
+                {`${game.homeTeam.abbreviation} vs ${game.awayTeam.abbreviation}`}
               </option>
             ))}
           </select>
@@ -792,7 +845,7 @@ function ShiftChart() {
                   }%`,
                 }}
               ></div>
-              <GoalIndicators id={Number(selectedGame)} />
+              <GoalIndicators id={gameId} />
               <div
                 style={{
                   position: "absolute",
@@ -806,7 +859,7 @@ function ShiftChart() {
                 }}
               >
                 <PowerPlayAreaIndicators
-                  id={Number(selectedGame)}
+                  id={gameId}
                   totalGameTimeInSeconds={totalGameTimeInSeconds}
                 />
               </div>
@@ -962,8 +1015,14 @@ function ShiftChart() {
           })}
         </tbody>
       </table>
-      <div style={{ margin: "2rem 0", width: "100%" }}>
-        <LinemateMatrix id={Number(selectedGame)} />
+      <div id="linemate-matrix" style={{ margin: "2rem 0", width: "100%" }}>
+        <LinemateMatrix
+          id={gameId}
+          mode={linemateMatrixMode}
+          onModeChanged={(newMode) => {
+            setLinemateMatrixMode(newMode, { scroll: false });
+          }}
+        />
       </div>
     </div>
   );
