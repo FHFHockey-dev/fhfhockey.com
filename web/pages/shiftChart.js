@@ -125,8 +125,8 @@ function ShiftChart() {
 
         // Set the game scores
         setGameScores({
-          homeScore: gameDetailsResponse.boxscore.linescore.totals.home,
-          awayScore: gameDetailsResponse.boxscore.linescore.totals.away,
+          homeScore: gameDetailsResponse.summary.linescore.totals.home,
+          awayScore: gameDetailsResponse.summary.linescore.totals.away,
         });
 
         // Set the isOvertime state based on whether there was an overtime period
@@ -238,10 +238,10 @@ function ShiftChart() {
     teams.forEach((team) => {
       roles.forEach((role) => {
         if (
-          gameData.boxscore.playerByGameStats[team] &&
-          gameData.boxscore.playerByGameStats[team][role]
+          gameData.playerByGameStats[team] &&
+          gameData.playerByGameStats[team][role]
         ) {
-          gameData.boxscore.playerByGameStats[team][role].forEach((player) => {
+          gameData.playerByGameStats[team][role].forEach((player) => {
             addPlayer(player, team === "homeTeam" ? homeTeamId : awayTeamId);
           });
         }

@@ -221,7 +221,7 @@ function getPlayersGameStats(boxscore: any) {
     homeTeam,
     awayTeam,
   }: { homeTeam: PlayerGameStats; awayTeam: PlayerGameStats } =
-    boxscore.boxscore.playerByGameStats;
+    boxscore.playerByGameStats;
   const skaters = [
     ...homeTeam.forwards,
     ...awayTeam.forwards,

@@ -22,7 +22,7 @@ async function getRostersMap(gameId: number) {
       `The gameState for the game ${gameId} is ` + boxscore.gameState
     );
   }
-  const playerByGameStats = boxscore.boxscore.playerByGameStats;
+  const playerByGameStats = boxscore.playerByGameStats;
   const transform = (teamId: number) => (item: any) => ({
     id: item.playerId,
     teamId: teamId,
@@ -145,6 +145,7 @@ function useTOI(id: number) {
           setLoading(false);
         }
       } catch (e: any) {
+        console.error(e);
         setLoading(false);
       }
     })();
