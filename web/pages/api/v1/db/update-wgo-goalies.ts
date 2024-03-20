@@ -59,6 +59,7 @@ async function updateGoalieStats(date: string): Promise<{ updated: boolean; goal
             goalie_name: stat.goalieFullName,
             date: formattedDate,
             shoots_catches: stat.shootsCatches,
+            position_code: "G",
             games_played: stat.gamesPlayed,
             games_started: stat.gamesStarted,
             wins: stat.wins,
