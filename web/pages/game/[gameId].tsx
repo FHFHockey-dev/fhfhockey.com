@@ -293,6 +293,7 @@ export default function Page() {
     {
       team: gameDetails?.homeTeam?.abbrev || "",
       logo: gameDetails?.homeTeam?.logo || "",
+      homeExpectedGoals: homeTeamStats?.goalsForPerGame || 0,
       goalsForPerGame: homeTeamStats?.goalsForPerGame || 0,
       goalsAgainstPerGame: homeTeamStats?.goalsAgainstPerGame || 0,
       shotsForPerGame: homeTeamStats?.shotsForPerGame || 0,
@@ -310,6 +311,7 @@ export default function Page() {
     {
       team: gameDetails?.awayTeam?.abbrev || "",
       logo: gameDetails?.awayTeam?.logo || "",
+      awayExpectedGoals: awayTeamStats?.goalsForPerGame || 0,
       goalsForPerGame: awayTeamStats?.goalsForPerGame || 0,
       goalsAgainstPerGame: awayTeamStats?.goalsAgainstPerGame || 0,
       shotsForPerGame: awayTeamStats?.shotsForPerGame || 0,
@@ -327,6 +329,13 @@ export default function Page() {
   ];
 
   console.log("chartData:", chartData);
+
+  const isDataLoaded =
+    gameDetails &&
+    homeTeamStats &&
+    awayTeamStats &&
+    homeTeamPowerPlayStats &&
+    awayTeamPowerPlayStats;
 
   if (
     gameLandingDetails?.gameState === "FUT" ||
@@ -871,9 +880,17 @@ export default function Page() {
                 </div>
               </div>
             </div>
-            <div className="poissonChartContainer">
-              <PoissonDistributionChart chartData={chartData} />
-            </div>
+            {/* Conditionally render PoissonDistributionChart if all data is loaded */}
+            {isDataLoaded ? (
+              (console.log("chartData:", chartData),
+              (
+                <div className="poissonChartContainer">
+                  <PoissonDistributionChart chartData={chartData} />
+                </div>
+              ))
+            ) : (
+              <p>Loading chart data...</p>
+            )}
           </>
         ) : (
           <p>Loading game details...</p>

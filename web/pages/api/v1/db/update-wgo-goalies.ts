@@ -59,7 +59,6 @@ async function updateGoalieStats(date: string): Promise<{ updated: boolean; goal
             goalie_name: stat.goalieFullName,
             date: formattedDate,
             shoots_catches: stat.shootsCatches,
-            position_code: "G",
             games_played: stat.gamesPlayed,
             games_started: stat.gamesStarted,
             wins: stat.wins,
@@ -83,12 +82,11 @@ async function updateGoalieStats(date: string): Promise<{ updated: boolean; goal
             regulation_losses: advStats?.regulationLosses, // int
             regulation_wins: advStats?.regulationWins, // int
             shots_against_per_60: advStats?.shotsAgainstPer60, // float
-        }).throwOnError();
+        });
     }
 
     return { updated: true, goalieStats, advancedGoalieStats };
 }
-
 
 // Function to update goalie stats for the entire season
 async function updateAllGoalieStatsForSeason() {
@@ -150,10 +148,47 @@ async function updateAllGoalieStatsForSeason() {
     };
 }
 
+// Function to fetch data for a specific player across multiple dates
+// Function to fetch data for a specific player across multiple dates
+async function fetchDataForPlayer(playerId: string, playerName: string): Promise<{ goalieStats: WGOGoalieStat[]; advancedGoalieStats: WGOAdvancedGoalieStat[]; }> {
+    let start = 0;
+    let moreDataAvailable = true;
+    let goalieStats: WGOGoalieStat[] = [];
+    let advancedGoalieStats: WGOAdvancedGoalieStat[] = [];
+
+    while (moreDataAvailable) {
+        const encodedPlayerName = encodeURIComponent(`%${playerName}%`);
+        const today = new Date();
+        const formattedToday = format(today, 'yyyy-MM-dd');
+        const regularSeasonStartDate = format(parseISO((await getCurrentSeason()).regularSeasonStartDate), 'yyyy-MM-dd');
+        const goalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedToday}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${regularSeasonStartDate}%22%20and%20gameTypeId=2%20and%20goalieFullName%20likeIgnoreCase%20%22${encodedPlayerName}%22`;
+        const advancedGoalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22qualityStart%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsAgainstAverage%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedToday}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${regularSeasonStartDate}%22%20and%20gameTypeId=2%20and%20goalieFullName%20likeIgnoreCase%20%22${encodedPlayerName}%22`;
+
+        const [goalieStatsResponse, advancedGoalieStatsResponse] = await Promise.all([
+            Fetch(goalieStatsUrl).then(res => res.json() as Promise<NHLApiResponse>),
+            Fetch(advancedGoalieStatsUrl).then(res => res.json() as Promise<NHLApiResponse>),
+        ]);
+
+        goalieStats = goalieStats.concat(goalieStatsResponse.data as WGOGoalieStat[]);
+        advancedGoalieStats = advancedGoalieStats.concat(advancedGoalieStatsResponse.data as WGOAdvancedGoalieStat[]);
+
+        moreDataAvailable = goalieStatsResponse.data.length === 100 || advancedGoalieStatsResponse.data.length === 100;
+        start += 100;
+    }
+
+    return {
+        goalieStats,
+        advancedGoalieStats,
+    };
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     try {
         const dateParam = req.query.date;
+        const playerIdParam = req.query.playerId;
         const date = Array.isArray(dateParam) ? dateParam[0] : dateParam;
+        const playerId = Array.isArray(playerIdParam) ? playerIdParam[0] : playerIdParam;
+        const goalieFullName = Array.isArray(req.query.goalieFullName) ? req.query.goalieFullName[0] : req.query.goalieFullName || 'Unknown Goalie';
 
         if (date) {
             const result = await updateGoalieStats(date);
@@ -162,20 +197,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 success: true,
                 data: result,
             });
-        } else {
-            const result = await updateAllGoalieStatsForSeason();
+        } else if (playerId && goalieFullName) {
+            const result = await fetchDataForPlayer(playerId, goalieFullName);
             res.json({
-                message: result.message,
-                success: result.success,
-                totalUpdates: result.totalUpdates
+                message: `Successfully fetched goalie stats for player ID ${playerId}`,
+                success: true,
+                data: result,
+            });
+        } else {
+            res.status(400).json({
+                message: 'Missing required query parameters. Please provide a date or a player ID and goalie full name.',
+                success: false,
             });
         }
     } catch (e: any) {
-        console.error(e);
         res.status(400).json({
-            message: 'Failed to update goalie stats. Reason: ' + e.message,
+            message: 'Failed to process request. Reason: ' + e.message,
             success: false,
         });
     }
 }
+
 

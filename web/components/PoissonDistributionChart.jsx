@@ -20,19 +20,26 @@ const factorial = (num) => {
 const PoissonDistributionChart = ({ chartData }) => {
   const svgRef = useRef();
   const [leagueAverages, setLeagueAverages] = useState({});
-  const [prediction, setPrediction] = useState("");
+  const [homeExpectedGoals, setHomeExpectedGoals] = useState(0);
+  const [awayExpectedGoals, setAwayExpectedGoals] = useState(0);
   const [homeWinProb, setHomeWinProb] = useState(0);
   const [awayWinProb, setAwayWinProb] = useState(0);
-  const [otPrediction, setOtPrediction] = useState(""); // Added for overtime prediction
-  const [isLoading, setIsLoading] = useState(true); // State to manage loading status
+  const [prediction, setPrediction] = useState("");
+  const [otPrediction, setOtPrediction] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  console.log("LINE 31:", isLoading, chartData);
 
   useEffect(() => {
+    if (!chartData || chartData.length < 2) {
+      setIsLoading(true); // Ensure loading state is true if data is not ready
+      console.error("Chart data is not ready or insufficient.", setIsLoading);
+      return;
+    }
     const fetchLeagueData = async () => {
       // Early exit if chartData is not ready, but handle isLoading state outside
-      if (!chartData || chartData.length < 2) {
-        setIsLoading(true); // Ensure loading state is true if data is not ready
-        return;
-      }
+
+      console.log("INSIDE PDC USEEFFECT:", chartData);
 
       setIsLoading(true); // Set loading true when starting to fetch data
 
@@ -178,7 +185,7 @@ const PoissonDistributionChart = ({ chartData }) => {
         return { homeExpectedGoals, awayExpectedGoals };
       };
 
-      //      const { homeExpectedGoals, awayExpectedGoals } = processData();
+      const { homeExpectedGoals, awayExpectedGoals } = processData();
 
       // Initialize heatmapData for Poisson probabilities
       let heatmapData = [];
@@ -373,7 +380,7 @@ const PoissonDistributionChart = ({ chartData }) => {
         setIsLoading(false); // You might want to set isLoading to false here as well, or handle the condition appropriately
       }
     };
-  }, [chartData]);
+  }, [chartData, leagueAverages]);
 
   console.log("LOADING STATUS:", isLoading);
   // if (isLoading) {
@@ -418,6 +425,7 @@ const PoissonDistributionChart = ({ chartData }) => {
         >
           {prediction}
         </div>
+
         <div
           style={{
             height: "3.5em",
@@ -432,13 +440,18 @@ const PoissonDistributionChart = ({ chartData }) => {
             margin: "10px",
           }}
         >
-          <img
-            src={chartData[0].logo}
-            alt={chartData[0].team}
-            style={{ width: "50px" }}
-          />
-          {chartData[0].team} Win Probability: {homeWinProb}%
+          {chartData && chartData.length > 0 && (
+            <>
+              <img
+                src={chartData[0].logo}
+                alt={chartData[0].team}
+                style={{ width: "50px" }}
+              />
+              {chartData[0].team} Win Probability: {homeWinProb}%
+            </>
+          )}
         </div>
+
         <div
           style={{
             height: "3.5em",
@@ -453,12 +466,16 @@ const PoissonDistributionChart = ({ chartData }) => {
             margin: "10px",
           }}
         >
-          <img
-            src={chartData[1].logo}
-            alt={chartData[1].team}
-            style={{ width: "50px" }}
-          />
-          {chartData[1].team} Win Probability: {awayWinProb}%
+          {chartData && chartData.length > 0 && (
+            <>
+              <img
+                src={chartData[1].logo}
+                alt={chartData[1].team}
+                style={{ width: "50px" }}
+              />
+              {chartData[1].team} Win Probability: {awayWinProb}%
+            </>
+          )}
         </div>
         {otPrediction && <div style={{ marginTop: "5px" }}>{otPrediction}</div>}
       </div>
