@@ -1,13 +1,12 @@
 /* ShiftChart.module.scss */
 /* /workspaces/fhfhockey.com/web/styles/ShiftChart.module.scss */
 
-
 .shiftBlocksCell {
   position: relative;
   border-right: 1px solid white; // Add a white border to the right of each cell
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     left: 0;
     right: 0;
@@ -19,22 +18,28 @@
   }
 
   // Applies to period cells (1st, 2nd, 3rd period)
-  &:nth-child(n+3):nth-child(-n+5) {
-    width: calc((85% * 4/13)); // Each regular period takes up 4 parts of the 13-part space
+  &:nth-child(n + 3):nth-child(-n + 5) {
+    width: calc(
+      (85% * 4 / 13)
+    ); // Each regular period takes up 4 parts of the 13-part space
   }
 
   // Applies to overtime cells
   &.overtimeCell {
-    width: calc((85% * 1/13)); // Overtime takes up 1 part of the 13-part space
+    width: calc(
+      (85% * 1 / 13)
+    ); // Overtime takes up 1 part of the 13-part space
   }
 }
 
 .timestampPeriod {
-  width: calc((85% * 4/13)); // Each regular period takes up 4 parts of the 13-part space
+  width: calc(
+    (85% * 4 / 13)
+  ); // Each regular period takes up 4 parts of the 13-part space
 }
 
 .timestampOvertime {
-  width: calc((85% * 1/13)); // Overtime takes up 1 part of the 13-part space
+  width: calc((85% * 1 / 13)); // Overtime takes up 1 part of the 13-part space
 }
 
 .timestampLabel {
@@ -79,24 +84,28 @@
 // Input and select elements within dropdowns
 .shiftChartDropdown select,
 .shiftChartDropdown input {
+  font-family: roboto condensed, sans-serif;
   padding: 5px;
   font-size: 16px;
   border-radius: 4px;
   border: 1px solid #ccc;
-  width: 200px; // Set a fixed width for consistency
+  width: 150px; // Set a fixed width for consistency
 }
 
-
 .shiftChartTable {
-  width: 100%;
+  width: 98%;
   border-collapse: collapse;
   color: white;
-  background-color: #606060;
+  background-color: #202020;
+  border: #07aae2 4px solid;
+  border-radius: 10px;
 }
 
 .shiftChartTable th,
 .shiftChartTable td {
-  padding: 1px;
+  padding: 1.5px;
+  font-family: roboto condensed, sans-serif;
+  padding-left: 10px;
 }
 
 .shiftchartTable th {
@@ -122,26 +131,28 @@
 
 .playerRow {
   &:hover {
-    background-color: rgba(255,
-        165,
-        0,
-        0.2) !important;// Orange background for hover effect
+    background-color: rgba(
+      255,
+      165,
+      0,
+      0.2
+    ) !important; // Orange background for hover effect
     outline: 1px solid orange !important; // Border for the hovered row
   }
 }
 
-
 .shiftBlock {
   position: absolute;
   bottom: 0;
-  height: 65%;
+  height: 85%;
   min-width: 2px;
   border: 1px solid black;
   left: 50%;
-  transform: translateY(-25%); /* Adjusts the block to be centered based on its width */
+  transform: translateY(
+    -10%
+  ); /* Adjusts the block to be centered based on its width */
   z-index: 2; // Shift blocks should be above the white line
 }
-
 
 .gameScoreCell {
   text-align: center;
@@ -163,7 +174,6 @@
   left: 0; // Initialize at 0, will be set dynamically
 }
 
-
 .activePlayer {
   // Styles for active players
   font-weight: bold;
@@ -181,4 +191,3 @@
   margin: 0; // Ensure there's no extra space around timestamps
   padding: 0; // Reset any default padding
 }
-

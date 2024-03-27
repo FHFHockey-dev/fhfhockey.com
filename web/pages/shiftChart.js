@@ -528,6 +528,7 @@ function ShiftChart() {
         left: `${leftPercent}%`,
         border: `1px solid ${teamSecondaryColor}`,
         position: "absolute",
+        borderRadius: "2px",
       };
 
       // Render the shift block
