@@ -6,6 +6,9 @@ import useSustainabilityStats from "hooks/useSustainabilityStats";
 import TimeOptions, { TimeOption } from "components/TimeOptions/TimeOptions";
 import useCareerAveragesStats from "hooks/useCareerAveragesStats";
 import { teamsInfo } from "web/lib/NHL/teamsInfo";
+import supabase from "web/lib/supabase";
+import WigoLineChart from "components/WiGO/WigoLineChart.js"; // Import the WigoLineChart component
+import WigoDoughnutChart from "components/WiGO/WigoDoughnutChart.js"; // Import the WigoDoughnutChart component
 
 const SustainabilityTool = () => {
   const season = useCurrentSeason();
@@ -19,6 +22,8 @@ const SustainabilityTool = () => {
   const [playerId, setPlayerId] = useState(undefined);
   const [timeOption, setTimeOption] = useState("L7");
   const [playerGameLog, setPlayerGameLog] = useState(null);
+  const [detailedPlayerStats, setDetailedPlayerStats] = useState(null);
+  const [totalPlayerStats, setTotalPlayerStats] = useState(null);
 
   const { stats: sustainabilityStats, loading: sustainabilityLoading } =
     useSustainabilityStats(playerId, timeOption);
@@ -67,7 +72,7 @@ const SustainabilityTool = () => {
         };
 
         p.setup = () => {
-          const scaleFactor = 1.1;
+          const scaleFactor = 1.15;
           const canvasWidth = img.width * scaleFactor;
           const canvasHeight = img.height * scaleFactor;
 
@@ -93,7 +98,8 @@ const SustainabilityTool = () => {
     }
   };
 
-  const handlePlayerSelect = (player) => {
+  // This function is called when a player is selected
+  const handlePlayerSelect = async (player) => {
     setSelectedPlayer(player);
     setPlaceholderText(player.fullName);
     setSearchTerm("");
@@ -101,8 +107,38 @@ const SustainabilityTool = () => {
     setShowPopup(false);
     setTeamColors(teamsInfo[player.teamAbbreviation]);
     setPlayerId(player.id);
+    fetchPlayerGameLog(player.id); // Fetch game log data
 
-    fetchPlayerGameLog(player.id); // Ensure this is called when a player is selected
+    // Fetch and log the detailed stats from 'wgo_skater_stats'
+    const { data, error } = await supabase
+      .from("wgo_skater_stats")
+      .select("*")
+      .eq("player_id", player.id);
+
+    if (data) {
+      setDetailedPlayerStats(data);
+    }
+
+    if (error) {
+      console.error("Error fetching stats:", error);
+    } else {
+      console.log("Player Detailed Stats:", data);
+    }
+
+    // Fetch and log the total stats from 'wgo_skater_stats_totals'
+    const { data: totals, error: e } = await supabase
+      .from("wgo_skater_stats_totals")
+      .select("*")
+      .eq("player_id", player.id);
+
+    if (totals) {
+      setTotalPlayerStats(totals);
+    }
+    if (e) {
+      console.error("Error fetching total player stats:", e);
+    } else {
+      console.log("Player Total Stats:", totals);
+    }
   };
 
   useEffect(() => {
@@ -139,6 +175,17 @@ const SustainabilityTool = () => {
     }
   };
 
+  const getColor = (seasonValue, careerValue, isLowerBetter = false) => {
+    if (seasonValue === undefined || careerValue === undefined) {
+      return ""; // No color if values are not present
+    }
+
+    const isBetter = isLowerBetter
+      ? seasonValue < careerValue
+      : seasonValue > careerValue;
+    return isBetter ? "#4CB944" : "#A8201A";
+  };
+
   return (
     <div
       className={styles.wigoPage}
@@ -154,7 +201,6 @@ const SustainabilityTool = () => {
         <h1 className={styles.headerWigo}>
           WiGO <span className={styles.spanColorBlue}>CHARTS</span>
         </h1>
-        <TimeOptions timeOption={timeOption} setTimeOption={setTimeOption} />
 
         <div className={styles.dropdownContainer}>
           <input
@@ -198,9 +244,177 @@ const SustainabilityTool = () => {
       <div className={styles.wigoChartBorder}>
         <div className={styles.wigoContainer}>
           <div className={styles.wigoDoughnut}>
-            <div className={styles.wigoDoughnutHeader}></div>
-            <div className={styles.wigoDoughnutChart}></div>
-            <div className={styles.wigoDoughnutLegend}></div>
+            <div className={styles.wigoDoughnutChart}>
+              <WigoDoughnutChart stats={totalPlayerStats} />
+            </div>
+            <div className={styles.wigoDoughnutLegend}>
+              <div className={styles.wigoDoughnutDescriptors}>
+                <div className={styles.wigoDoughnutDescriptor}></div>
+                <div className={styles.wigoDoughnutDescriptor}>IPP</div>
+                <div className={styles.wigoDoughnutDescriptor}>S%</div>
+                <div className={styles.wigoDoughnutDescriptor}>SOG/60</div>
+                <div className={styles.wigoDoughnutDescriptor}>oZS%</div>
+                <div className={styles.wigoDoughnutDescriptor}>oiSH%</div>
+                <div className={styles.wigoDoughnutDescriptor}>A2%</div>
+                <div className={styles.wigoDoughnutDescriptor}>xS%</div>
+              </div>
+            </div>
+            <div className={styles.wigoDoughnutHeader}>
+              <div className={styles.wigoDoughnutHeaderCareer}>
+                <div className={styles.susLabelc}>Career</div>
+                <div className={styles.susIPPc}>
+                  {careerStats && careerStats.IPP !== undefined
+                    ? (careerStats.IPP * 100).toFixed(1) + "%"
+                    : ""}
+                </div>
+                <div className={styles.susSPctc}>
+                  {careerStats && careerStats["S%"] !== undefined
+                    ? (careerStats["S%"] * 100).toFixed(1) + "%"
+                    : ""}
+                </div>
+                <div className={styles.susSogP60c}>
+                  {careerStats && careerStats["SOG/60"] !== undefined
+                    ? careerStats["SOG/60"].toFixed(1)
+                    : ""}
+                </div>
+                <div className={styles.susOZsc}>
+                  {careerStats && careerStats["oZS%"] !== undefined
+                    ? (careerStats["oZS%"] * 100).toFixed(1) + "%"
+                    : ""}
+                </div>
+                <div className={styles.susoiSHc}>
+                  {careerStats && careerStats["oiSH%"] !== undefined
+                    ? (careerStats["oiSH%"] * 100).toFixed(1) + "%"
+                    : ""}
+                </div>
+                <div className={styles.susSecAc}>
+                  {careerStats && careerStats["secA%"] !== undefined
+                    ? (careerStats["secA%"] * 100).toFixed(2) + "%"
+                    : ""}
+                </div>
+                <div className={styles.susXSpctc}>
+                  {careerStats && careerStats["xS%"] !== undefined
+                    ? (careerStats["xS%"] * 100).toFixed(1) + "%"
+                    : ""}
+                </div>
+              </div>
+              <div className={styles.wigoDoughnutHeaderSeason}>
+                <div className={styles.susLabeln}>Season</div>
+                <div
+                  className={styles.susIPPn}
+                  style={{
+                    backgroundColor: getColor(
+                      sustainabilityStats?.["IPP"],
+                      careerStats?.["IPP"],
+                      true // Lower is better
+                    ),
+                  }}
+                >
+                  {sustainabilityStats && sustainabilityStats.IPP !== undefined
+                    ? (sustainabilityStats.IPP * 100).toFixed(1) + "%"
+                    : ""}
+                </div>
+                <div
+                  className={styles.susSPctn}
+                  style={{
+                    backgroundColor: getColor(
+                      sustainabilityStats?.["S%"],
+                      careerStats?.["S%"],
+                      true // Lower is better
+                    ),
+                  }}
+                >
+                  {sustainabilityStats &&
+                  sustainabilityStats["S%"] !== undefined
+                    ? (sustainabilityStats["S%"] * 100).toFixed(1) + "%"
+                    : ""}
+                </div>
+                <div
+                  className={styles.susSogP60n}
+                  style={{
+                    backgroundColor: getColor(
+                      sustainabilityStats?.["SOG/60"],
+                      careerStats?.["SOG/60"],
+                      true // Assuming lower is better for demonstration
+                    ),
+                  }}
+                >
+                  {sustainabilityStats &&
+                  sustainabilityStats["SOG/60"] !== undefined
+                    ? sustainabilityStats["SOG/60"].toFixed(1)
+                    : ""}
+                </div>
+                <div
+                  className={styles.susOZsn}
+                  style={{
+                    backgroundColor: getColor(
+                      sustainabilityStats?.["oZS%"],
+                      careerStats?.["oZS%"],
+                      false // Assuming lower is better for demonstration
+                    ),
+                  }}
+                >
+                  {sustainabilityStats &&
+                  sustainabilityStats["oZS%"] !== undefined
+                    ? (sustainabilityStats["oZS%"] * 100).toFixed(1) + "%"
+                    : ""}
+                </div>
+                <div
+                  className={styles.susoiSHn}
+                  style={{
+                    backgroundColor: getColor(
+                      sustainabilityStats?.["oiSH%"],
+                      careerStats?.["oiSH%"],
+                      false // Assuming lower is better for demonstration
+                    ),
+                  }}
+                >
+                  {sustainabilityStats &&
+                  sustainabilityStats["oiSH%"] !== undefined
+                    ? (sustainabilityStats["oiSH%"] * 100).toFixed(1) + "%"
+                    : ""}
+                </div>
+                <div
+                  className={styles.susSecAn}
+                  style={{
+                    backgroundColor: getColor(
+                      sustainabilityStats?.["secA%"],
+                      careerStats?.["secA%"],
+                      true // Assuming lower is better for demonstration
+                    ),
+                  }}
+                >
+                  {sustainabilityStats &&
+                  sustainabilityStats["secA%"] !== undefined
+                    ? (sustainabilityStats["secA%"] * 100).toFixed(2) + "%"
+                    : ""}
+                </div>
+                <div
+                  className={styles.susXSpctn}
+                  style={{
+                    backgroundColor: getColor(
+                      sustainabilityStats?.["xS%"],
+                      careerStats?.["xS%"],
+                      true // Assuming lower is better for demonstration
+                    ),
+                  }}
+                >
+                  {sustainabilityStats &&
+                  sustainabilityStats["xS%"] !== undefined
+                    ? (sustainabilityStats["xS%"] * 100).toFixed(1) + "%"
+                    : ""}
+                </div>
+              </div>
+            </div>
+            <div className={styles.wigoDoughnutFooter}>
+              <div className={styles.wigoDoughnutTimeOption}>
+                <TimeOptions
+                  className={styles.timeOptionsCustom}
+                  timeOption={timeOption}
+                  setTimeOption={setTimeOption}
+                />
+              </div>
+            </div>
           </div>
 
           <div className={styles.bioHeadshot}>
@@ -225,7 +439,9 @@ const SustainabilityTool = () => {
 
           <div className={styles.wigoLineChart}>
             <div className={styles.wigoLineChartHeader}></div>
-            <div className={styles.wigoLineChartContent}></div>
+            <div className={styles.wigoLineChartContent}>
+              <WigoLineChart stats={detailedPlayerStats} />
+            </div>
           </div>
 
           <div className={styles.wigoStatList}></div>

@@ -622,3 +622,273 @@ export type WGOSkaterStat = WGOSummarySkaterStat &
   WGOShotTypeSkaterStat &
   WGOToiSkaterStat;
 
+
+
+export type WGOSummarySkaterTotal = {
+  playerId: number;
+  skaterFullName: string;
+  season: string;
+  shootsCatches: string;
+  positionCode: string;
+  gamesPlayed: number;
+  points: number;
+  pointsPerGame: number;
+  goals: number;
+  assists: number;
+  shots: number;
+  shootingPct: number;
+  plusMinus: number;
+  otGoals: number;
+  gameWinningGoals: number;
+  ppPoints: number;
+  faceoffWinPct: number;
+  timeOnIcePerGame: number;
+};
+
+export type WGORealtimeSkaterTotal = {
+  playerId: number;
+  season: string;
+  blockedShots: number;
+  blockedShotsPer60: number;
+  emptyNetGoals: number;
+  emptyNetPoints: number;
+  giveaways: number;
+  giveawaysPer60: number;
+  hits: number;
+  hitsPer60: number;
+  missedShots: number;
+  takeaways: number;
+  takeawaysPer60: number;
+};
+
+export type WGOFaceoffSkaterTotal = {
+  playerId: number;
+  season: string;
+  defensiveZoneFaceoffPct: number;
+  defensiveZoneFaceoffs: number;
+  evFaceoffPct: number;
+  evFaceoffs: number;
+  neutralZoneFaceoffPct: number;
+  neutralZoneFaceoffs: number;
+  offensiveZoneFaceoffPct: number;
+  offensiveZoneFaceoffs: number;
+  ppFaceoffPct: number;
+  ppFaceoffs: number;
+  shFaceoffPct: number;
+  shFaceoffs: number;
+  totalFaceoffs: number;
+};
+
+export type WGOFaceOffWinLossSkaterTotal = {
+  playerId: number;
+  season: string;
+  defensiveZoneFaceoffLosses: number;
+  defensiveZoneFaceoffWins: number;
+  evFaceoffsLost: number;
+  evFaceoffsWon: number;
+  neutralZoneFaceoffLosses: number;
+  neutralZoneFaceoffWins: number;
+  offensiveZoneFaceoffLosses: number;
+  offensiveZoneFaceoffWins: number;
+  ppFaceoffsLost: number;
+  ppFaceoffsWon: number;
+  shFaceoffsLost: number;
+  shFaceoffsWon: number;
+  totalFaceoffLosses: number;
+  totalFaceoffWins: number;
+};
+
+export type WGOGoalsForAgainstSkaterTotal = {
+  playerId: number;
+  season: string;
+  evenStrengthGoalsAgainst: number;
+  evenStrengthGoalsFor: number;
+  evenStrengthGoalsForPct: number;
+  evenStrengthTimeOnIcePerGame: number;
+  powerPlayGoalsAgainst: number;
+  powerPlayGoalFor: number;
+  powerPlayTimeOnIcePerGame: number;
+  shortHandedGoalsAgainst: number;
+  shortHandedGoalsFor: number;
+  shortHandedTimeOnIcePerGame: number;
+};
+
+export type WGOPenaltySkaterTotal = {
+  playerId: number;
+  season: string;
+  gameMisconductPenalties: number;
+  majorPenalties: number;
+  matchPenalties: number;
+  minorPenalties: number;
+  misconductPenalties: number;
+  penalties: number;
+  penaltiesDrawn: number;
+  penaltiesDrawnPer60: number;
+  penaltiesTakenPer60: number;
+  penaltyMinutes: number;
+  penaltyMinutesPerTimeOnIce: number;
+  penaltySecondsPerGame: number;
+};
+
+export type WGOPenaltyKillSkaterTotal = {
+  playerId: number;
+  season: string;
+  ppGoalsAgainstPer60: number;
+  shAssists: number;
+  shGoals: number;
+  shPoints: number;
+  shGoalsPer60: number;
+  shIndividualSatFor: number;
+  shIndividualSatForPer60: number;
+  shPointsPer60: number;
+  shPrimaryAssists: number;
+  shPrimaryAssistsPer60: number;
+  shSecondaryAssists: number;
+  shSecondaryAssistsPer60: number;
+  shShootingPct: number;
+  shShots: number;
+  shShotsPer60: number;
+  shTimeOnIce: number;
+  shTimeOnIcePctPerGame: number;
+};
+
+export type WGOPowerPlaySkaterTotal = {
+  playerId: number;
+  season: string;
+  ppAssists: number;
+  ppGoals: number;
+  ppGoalsForPer60: number;
+  ppGoalsPer60: number;
+  ppIndividualSatFor: number;
+  ppIndividualSatPer60: number;
+  ppPointsPer60: number;
+  ppPrimaryAssists: number;
+  ppPrimaryAssistsPer60: number;
+  ppSecondaryAssists: number;
+  ppSecondaryAssistsPer60: number;
+  ppShootingPct: number;
+  ppShots: number;
+  ppShotsPer60: number;
+  ppTimeOnIce: number;
+  ppTimeOnIcePctPerGame: number;
+};
+
+export type WGOPuckPossessionSkaterTotal = {
+  playerId: number;
+  season: string;
+  goalsPct: number;
+  faceoffPct5v5: number;
+  individualSatForPer60: number;
+  individualShotsForPer60: number;
+  onIceShootingPct: number;
+  satPct: number;
+  timeOnIcePerGame5v5: number;
+  usatPct: number;
+  zoneStartPct: number;
+};
+
+export type WGOSatCountSkaterTotal = {
+  playerId: number;
+  season: string;
+  satAgainst: number;
+  satAhead: number;
+  satBehind: number;
+  satClose: number;
+  satFor: number;
+  satTied: number;
+  satTotal: number;
+  usatAgainst: number;
+  usatAhead: number;
+  usatBehind: number;
+  usatClose: number;
+  usatFor: number;
+  usatTied: number;
+  usatTotal: number;
+};
+
+export type WGOSatPercentageSkaterTotal = {
+  playerId: number;
+  season: string;
+  satPercentage: number;
+  satPercentageAhead: number;
+  satPercentageBehind: number;
+  satPercentageClose: number;
+  satPercentageTied: number;
+  satRelative: number;
+  shootingPct5v5: number;
+  skaterSavePct5v5: number;
+  skaterShootingPlusSavePct5v5: number;
+  usatPercentage: number;
+  usatPercentageAhead: number;
+  usatPercentageBehind: number;
+  usatPrecentageClose: number;
+  usatPercentageTied: number;
+  usatRelative: number;
+  zoneStartPct5v5: number;
+};
+
+export type WGOScoringRatesSkaterTotal = {
+  playerId: number;
+  season: string;
+  assists5v5: number;
+  assistsPer605v5: number;
+  goals5v5: number;
+  goalsPer605v5: number;
+  offensiveZoneStartPct5v5: number;
+  onIceShootingPct5v5: number;
+  points5v5: number;
+  pointsPer605v5: number;
+  primaryAssists5v5: number;
+  primaryAssistsPer605v5: number;
+  satRelative5v5: number;
+  secondaryAssists5v5: number;
+  secondaryAssistsPer605v5: number;
+};
+
+export type WGOScoringCountsSkaterTotal = {
+  playerId: number;
+  season: string;
+  totalPrimaryAssists: number;
+  totalSecondaryAssists: number;
+};
+
+export type WGOShotTypeSkaterTotal = {
+  playerId: number;
+  season: string;
+  goalsBackhand: number;
+  goalsBat: number;
+  goalsBetweenLegs: number;
+  goalsCradle: number;
+  goalsDeflected: number;
+  goalsPoke: number;
+  goalsSlap: number;
+  goalsSnap: number;
+  goalsTipIn: number;
+  goalsWrapAround: number;
+  goalsWrist: number;
+  shotsOnNetBackhand: number;
+  shotsOnNetBat: number;
+  shotsOnNetBetweenLegs: number;
+  shotsOnNetCradle: number;
+  shotsOnNetDeflected: number;
+  shotsOnNetPoke: number;
+  shotsOnNetSlap: number;
+  shotsOnNetSnap: number;
+  shotsOnNetTipIn : number;
+  shotsOnNetWrapAround: number;
+  shotsOnNetWrist: number;
+};
+
+export type WGOToiSkaterTotal = {
+  playerId: number;
+  season: string;
+  evTimeOnIce: number;
+  evTimeOnIcePerGame: number;
+  otTimeOnIce: number;
+  otTimeOnIcePerOtGame: number;
+  shifts: number;
+  shiftsPerGame: number;
+  timeOnIcePerShift: number;
+};
+
+

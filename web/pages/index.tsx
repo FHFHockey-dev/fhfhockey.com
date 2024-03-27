@@ -14,6 +14,9 @@ import styles from "../styles/Home.module.scss";
 
 import { teamsInfo } from "lib/NHL/teamsInfo";
 
+// DEV NOTE:
+// Integrate Live Period/Time Clock instead of just displaying "LIVE" for live games
+
 const Home: NextPage = ({
   initialGames,
   initialInjuries,

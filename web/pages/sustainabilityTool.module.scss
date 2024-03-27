@@ -36,8 +36,8 @@
 
 .wigoContainer {
   display: grid;
-  grid-template-columns: repeat(21, 1fr);
-  grid-template-rows: repeat(20, 1fr);
+  grid-template-columns: repeat(32, 1fr);
+  grid-template-rows: repeat(33, 1fr);
   border: 1px solid #afcee2;
   gap: 1px;
   width: 97%; /* Take up all available width */
@@ -47,14 +47,8 @@
 }
 
 .wigoDoughnut {
-  grid-area: 1 / 1 / 10 / 8;
+  grid-area: 1 / 1 / 18 / 12;
   z-index: 3;
-
-  .wigoDoughnutHeader {
-    height: 15%;
-    background-color: #38abfe;
-    border-bottom: 1px solid #aac9dd;
-  }
 
   .wigoDoughnutChart {
     height: 70%;
@@ -63,13 +57,137 @@
   }
 
   .wigoDoughnutLegend {
-    height: 15%;
+    height: 5%;
     background-color: #1c77d2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    .wigoDoughnutDescriptors {
+      font-size: 0.55rem;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      width: 100%;
+      text-align: center;
+      letter-spacing: -0.015em;
+
+      .wigoDoughnutDescriptor {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 33%;
+        padding: 5px;
+        text-align: center;
+      }
+    }
+  }
+
+  .wigoDoughnutHeader {
+    height: 17%;
+    background-color: #38abfe;
+    display: flex;
+    flex-direction: column; /* Stack the career and season sections vertically */
+    justify-content: center;
+    align-items: stretch; /* Stretch children to fill the container */
+    font-family: roboto condensed, sans-serif;
+    font-size: 0.75em;
+    text-align: center;
+
+    .wigoDoughnutHeaderCareer,
+    .wigoDoughnutHeaderSeason {
+      height: 50%; /* Each header takes half the height */
+      display: flex; /* Make them flex containers to evenly distribute the child elements */
+    }
+
+    .wigoDoughnutHeaderCareer > div,
+    .wigoDoughnutHeaderSeason > div {
+      flex: 1; /* Give each child equal width */
+      display: flex; /* Add this if you want to center the content of each cell */
+      justify-content: center; /* Center horizontally */
+      align-items: center; /* Center vertically */
+    }
+
+    .wigoDoughnutHeaderCareer {
+      border-bottom: 1px solid #aac9dd; /* Add a border between the two headers */
+      border-top: 1px solid #aac9dd; /* Add a border between the two headers */
+    }
+
+    .wigoDoughnutHeaderCareer > div:not(:last-child),
+    .wigoDoughnutHeaderSeason > div:not(:last-child) {
+      border-right: 1px solid #aac9dd; /* Border on the right except for the last child */
+    }
+  }
+
+  .wigoDoughnutFooter {
+    height: 8%;
+    background-color: #1c77d2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-top: 1px solid #aac9dd;
+
+    .timeOptionsCustom {
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      padding: 1px;
+      display: flex;
+      height: 100%;
+
+      button {
+        position: relative; /* Establish a positioning context for pseudo-elements */
+        border-radius: 6px;
+        font-size: 1rem;
+        line-height: 20px;
+        margin-right: 4px; /* Add right margin to create space between buttons */
+        margin-left: 2px;
+      }
+
+      & > button:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        opacity: 1;
+        background: #aac9dd;
+        height: 26px;
+        width: 2px;
+        right: 0%;
+        top: 0px;
+        right: -4px; /* Adjust this value to control the space between the button and the border */
+      }
+      button {
+        &:hover {
+          cursor: pointer;
+        }
+        position: relative;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-family: "Roboto Condensed";
+        font-weight: 400;
+        font-size: 1rem;
+        line-height: 20px;
+        text-transform: uppercase;
+        white-space: nowrap;
+
+        text-align: center;
+        &.checked,
+        &:hover {
+          width: 90%;
+          background-color: #4ca5db;
+          color: white;
+          font-weight: 700;
+          width: 75%;
+        }
+      }
+    }
   }
 }
 
 .bioHeadshot {
-  grid-area: 1 / 8 / 10 / 15;
+  grid-area: 1 / 12 / 18 / 22;
   position: relative;
   z-index: 1;
   overflow: hidden;
@@ -82,9 +200,9 @@
     height: 15%;
     padding: 10px;
     text-transform: uppercase;
-    font-size: 1.5em;
+    font-size: 1.3em;
     font-family: roboto condensed, sans-serif;
-    background-color: #223d4e;
+    background-color: rgb(34, 61, 78);
     border-bottom: 1px solid #aac9dd;
     z-index: 1;
     position: relative; /* Ensure z-index is applied correctly */
@@ -104,12 +222,10 @@
     &::before {
       content: "";
       position: absolute;
-      width: 14em; /* Adjust the size as needed */
-      height: 14em; /* Adjust the size as needed */
-      background-color: var(
-        --primary-color
-      ); /* Background color of the circle */
-      border: 5px solid var(--secondary-color); /* Border color and size */
+      width: 14em;
+      height: 14em;
+      background-color: rgb(28, 119, 210);
+      border: 5px solid #aac9dd; /* Border color and size */
       border-radius: 50%;
       z-index: 1;
     }
@@ -122,7 +238,7 @@
       height: auto; /* Adjust this as needed to control the canvas size */
       width: 100%;
       display: flex;
-      transform: translateY(17%);
+      transform: translateY(10%);
       justify-content: center; /* Center horizontally */
       align-items: flex-end; /* Align to the bottom */
       z-index: 2;
@@ -134,7 +250,7 @@
 }
 
 .wigoLineChart {
-  grid-area: 1 / 15 / 10 / 22;
+  grid-area: 1 / 22 / 18 / 33;
   background: linear-gradient(to bottom left, #274253, #14252d);
   z-index: 3;
 
@@ -147,26 +263,29 @@
   .wigoLineChartContent {
     height: 85%;
     background-color: #ebfaff;
+    display: flex; /* Use flexbox to allow child elements to expand */
+    justify-content: center; /* Center the chart horizontally */
+    align-items: center; /* Center the chart vertically */
   }
 }
 
 .wigoStatList {
-  grid-area: 10 / 1 / 14 / 8;
+  grid-area: 18 / 1 / 24 / 12;
   background-color: #1b2c36;
 }
 
 .wigoSusCells {
-  grid-area: 10 / 8 / 14 / 15;
+  grid-area: 18 / 12 / 24 / 22;
   background-color: #1b2c36;
 }
 
 .wigoRollingAverage {
-  grid-area: 10 / 15 / 14 / 22;
+  grid-area: 18 / 22 / 24 / 33;
   background-color: #1b2c36;
 }
 
 .wigoLinesDoughnuts {
-  grid-area: 14 / 1 / 21 / 8;
+  grid-area: 24 / 1 / 31 / 12;
   background: linear-gradient(to bottom, #e3f3ff, #c2dae6);
 
   .wigoLinesDoughnutsTop {
@@ -202,7 +321,7 @@
 }
 
 .wigoPercentileLines {
-  grid-area: 14 / 8 / 21 / 15;
+  grid-area: 24 / 12 / 31 / 22;
   background: linear-gradient(to bottom, #e3f3ff, #c2dae6);
 
   .wigoPercentileLinesTop {
@@ -216,7 +335,7 @@
 }
 
 .wigoBars {
-  grid-area: 14 / 15 / 21 / 22;
+  grid-area: 24 / 22 / 31 / 33;
   background: linear-gradient(to bottom, #e3f3ff, #c2dae6);
 
   .wigoBarsTop {
