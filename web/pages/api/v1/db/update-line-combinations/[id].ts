@@ -103,7 +103,7 @@ async function getGoalies(id: number) {
   const boxscore = await fetch(
     `https://api-web.nhle.com/v1/gamecenter/${id}/boxscore`
   ).then((res) => res.json());
-  const playerByGameStats = boxscore.boxscore.playerByGameStats;
+  const playerByGameStats = boxscore.playerByGameStats;
 
   result.homeTeam = playerByGameStats.homeTeam.goalies.map((item: any) => ({
     id: item.playerId,

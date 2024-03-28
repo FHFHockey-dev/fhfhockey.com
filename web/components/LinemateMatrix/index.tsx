@@ -145,6 +145,7 @@ function useTOI(id: number) {
           setLoading(false);
         }
       } catch (e: any) {
+        console.error(e);
         setLoading(false);
       }
     })();
