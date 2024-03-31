@@ -9,8 +9,9 @@ function SkaterStats() {
 
   useEffect(() => {
     // Fetch data from Supabase
+
     const fetchData = async () => {
-      let query = supabase.from("wgo_skater_stats").select("*");
+      let query = supabase.from("wgo_skater_stats_totals").select("*");
 
       // Filter based on the active tab
       if (activeTab === "Forwards") {
@@ -24,6 +25,7 @@ function SkaterStats() {
       if (error) {
         console.error("Error fetching data:", error);
       } else {
+        console.log("Data fetched:", skaterStats);
         setData(skaterStats);
       }
     };
@@ -72,13 +74,14 @@ function SkaterStats() {
               <td>{player.points}</td>
               <td>{player.shots}</td>
               <td>{player.shooting_percentage}</td>
-              <td>{player.time_on_ice}</td>
-              <td>{player.power_play_goals}</td>
-              <td>{player.power_play_assists}</td>
-              <td>{player.power_play_points}</td>
-              <td>{player.short_handed_goals}</td>
-              <td>{player.short_handed_assists}</td>
-              <td>{player.short_handed_points}</td>
+              <td>{player.toi_per_game}</td>
+              <td>{player.pp_goals}</td>
+              <td>{player.pp_assists}</td>
+              <td>{player.pp_points}</td>
+              <td>{player.sh_goals}</td>
+              <td>{player.sh_assists}</td>
+              <td>{player.sh_points}</td>
+              <td>{player.plus_minus}</td>
 
               {/* Add more data cells as needed */}
             </tr>
