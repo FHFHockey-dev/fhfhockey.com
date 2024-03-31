@@ -335,6 +335,7 @@ function LinemateMatrixInternal({
                 .map((_, col) => {
                   const p1 = sortedRoster[col - 1];
                   const p2 = sortedRoster[row - 1];
+
                   // Render the first column aka. player names
                   if (col === 0) {
                     return (
@@ -351,19 +352,27 @@ function LinemateMatrixInternal({
                     );
                   } else {
                     // Render the colored cells
-                    return (
-                      <Cell
-                        key={`${p1.id}-${p2.id}}`}
-                        teamAvgToi={avgSharedToi}
-                        sharedToi={table[getKey(p1.id, p2.id)].toi}
-                        p1={p1}
-                        p2={p2}
-                        onPointerEnter={() => setSelectedCell({ row, col })}
-                        onPointerLeave={() =>
-                          setSelectedCell({ row: -1, col: -1 })
-                        }
-                      />
-                    );
+
+                    if (col !== 0 && row !== 0) {
+                      const p1 = sortedRoster[col - 1];
+                      const p2 = sortedRoster[row - 1];
+                      const isHighlight = p1.id === p2.id; // Check if it's the same player
+
+                      return (
+                        <Cell
+                          key={`${p1.id}-${p2.id}`}
+                          teamAvgToi={avgSharedToi}
+                          sharedToi={table[getKey(p1.id, p2.id)].toi}
+                          p1={p1}
+                          p2={p2}
+                          highlight={isHighlight}
+                          onPointerEnter={() => setSelectedCell({ row, col })}
+                          onPointerLeave={() =>
+                            setSelectedCell({ row: -1, col: -1 })
+                          }
+                        />
+                      );
+                    }
                   }
                 });
             }
@@ -382,6 +391,8 @@ type CellProps = {
 
   onPointerEnter?: () => void;
   onPointerLeave?: () => void;
+
+  highlight: boolean; // New prop to indicate if the cell should be highlighted
 };
 
 const RED = "#E23F07";
@@ -420,14 +431,16 @@ function Cell({
   sharedToi,
   p1,
   p2,
+  highlight,
   onPointerEnter = () => {},
   onPointerLeave = () => {},
 }: CellProps) {
   const opacity = sharedToi / teamAvgToi;
   const color = getColor(p1.position, p2.position);
+
   return (
     <div
-      className={styles.cell}
+      className={classNames(styles.cell, { [styles.highlight]: highlight })}
       onPointerEnter={onPointerEnter}
       onPointerLeave={onPointerLeave}
     >

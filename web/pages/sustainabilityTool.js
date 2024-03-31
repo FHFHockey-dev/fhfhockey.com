@@ -9,6 +9,18 @@ import { teamsInfo } from "web/lib/NHL/teamsInfo";
 import supabase from "web/lib/supabase";
 import WigoLineChart from "components/WiGO/WigoLineChart.js"; // Import the WigoLineChart component
 import WigoDoughnutChart from "components/WiGO/WigoDoughnutChart.js"; // Import the WigoDoughnutChart component
+import PlayerGameScoreLineChart from "components/WiGO/WigoGameScoreLine.js"; // Import the PlayerGameScoreLineChart component
+
+function isLight(color) {
+  const hex = color.replace("#", "");
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+
+  // Using the luminance formula to calculate brightness
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5;
+}
 
 const SustainabilityTool = () => {
   const season = useCurrentSeason();
@@ -24,6 +36,9 @@ const SustainabilityTool = () => {
   const [playerGameLog, setPlayerGameLog] = useState(null);
   const [detailedPlayerStats, setDetailedPlayerStats] = useState(null);
   const [totalPlayerStats, setTotalPlayerStats] = useState(null);
+  const [gameCategories, setGameCategories] = useState(null);
+  const [gameScores, setGameScores] = useState([]);
+  const [pointsDistributionData, setPointsDistributionData] = useState([]);
 
   const { stats: sustainabilityStats, loading: sustainabilityLoading } =
     useSustainabilityStats(playerId, timeOption);
@@ -108,6 +123,7 @@ const SustainabilityTool = () => {
     setTeamColors(teamsInfo[player.teamAbbreviation]);
     setPlayerId(player.id);
     fetchPlayerGameLog(player.id); // Fetch game log data
+    setPointsDistributionData([]); // Reset points distribution data
 
     // Fetch and log the detailed stats from 'wgo_skater_stats'
     const { data, error } = await supabase
@@ -139,7 +155,83 @@ const SustainabilityTool = () => {
     } else {
       console.log("Player Total Stats:", totals);
     }
+
+    if (data) {
+      setDetailedPlayerStats(data);
+
+      // Calculate game scores and accumulate them into an array
+      const gameScores = data.map((game) => {
+        const gameScore = calculateGameScore(game);
+        return {
+          date: game.date,
+          gameScore: gameScore,
+        };
+      });
+
+      // Log the entire gameScores array to the console
+      console.log("All Game Scores:", gameScores);
+    }
+
+    if (data) {
+      setDetailedPlayerStats(data);
+
+      const gameCategories = {
+        Elite: 0,
+        Great: 0,
+        Good: 0,
+        Average: 0,
+        Bad: 0,
+        Abysmal: 0,
+      };
+
+      data.forEach((game) => {
+        const gameScore = calculateGameScore(game);
+
+        if (gameScore >= 3) gameCategories.Elite++;
+        else if (gameScore >= 2) gameCategories.Great++;
+        else if (gameScore >= 1) gameCategories.Good++;
+        else if (gameScore >= 0) gameCategories.Average++;
+        else if (gameScore >= -1) gameCategories.Bad++;
+        else gameCategories.Abysmal++;
+      });
+
+      console.log("Game Categories:", gameCategories);
+      setGameCategories(gameCategories);
+    }
+
+    const gameScoresCalculated = data.map((game) => {
+      const gameScore = calculateGameScore(game);
+      return {
+        date: game.date,
+        gameScore: gameScore,
+      };
+    });
+
+    setGameScores(gameScoresCalculated);
+    console.log("All Game Scores:", gameScoresCalculated);
   };
+
+  useEffect(() => {
+    if (playerGameLog) {
+      const pointsDistribution = {};
+      playerGameLog.forEach((game) => {
+        const points = game.points;
+        pointsDistribution[points] = (pointsDistribution[points] || 0) + 1;
+      });
+
+      const totalGames = playerGameLog.length;
+      const pointsDistributionData = Object.keys(pointsDistribution).map(
+        (points) => ({
+          label: `${points} Points`,
+          value: pointsDistribution[points],
+          percentage: (pointsDistribution[points] / totalGames) * 100,
+        })
+      );
+
+      console.log("Points Distribution Data:", pointsDistributionData);
+      setPointsDistributionData(pointsDistributionData);
+    }
+  }, [playerGameLog]);
 
   useEffect(() => {
     if (playerId && season && season.seasonId) {
@@ -183,7 +275,60 @@ const SustainabilityTool = () => {
     const isBetter = isLowerBetter
       ? seasonValue < careerValue
       : seasonValue > careerValue;
-    return isBetter ? "#4CB944" : "#A8201A";
+    return isBetter ? "#4CB944" : "#EC9A29"; // green : red
+  };
+
+  const calculateGameScore = (game) => {
+    const G = game.goals || 0;
+    const A1 = game.primary_assists_per_game || 0;
+    const A2 = game.secondary_assists_per_game || 0;
+    const SOG = game.shots || 0;
+    const BLK = game.blocked_shots || 0;
+    const PD = game.penalties_drawn || 0;
+    const PT = game.penalties || 0;
+    const FOW = game.total_fow || 0;
+    const FOL = game.total_fol || 0;
+    const CF = game.sat_for || 0;
+    const CA = game.sat_against || 0;
+    const GF =
+      (game.es_goals_for || 0) +
+      (game.pp_goals_for || 0) +
+      (game.sh_goals_for || 0);
+    const GA =
+      (game.es_goals_against || 0) +
+      (game.pp_goals_against || 0) +
+      (game.sh_goals_against || 0);
+
+    return (
+      0.75 * G +
+      0.7 * A1 +
+      0.55 * A2 +
+      0.075 * SOG +
+      0.05 * BLK +
+      0.15 * PD -
+      0.15 * PT +
+      0.01 * FOW -
+      0.01 * FOL +
+      0.05 * CF -
+      0.05 * CA +
+      0.15 * GF -
+      0.15 * GA
+    );
+  };
+
+  const getColorForPoints = (pointsLabel) => {
+    const points = parseInt(pointsLabel.split(" ")[0]); // Get the number of points from the label
+    const colors = [
+      "#E9F2FC", // Color for 0 points
+      "#B1CDED", // Color for 1 point
+      "#77ABE1", // Color for 2 points
+      "#3D89D5", // Color for 3 points
+      "#1B67B2", // Color for 4 points
+      "#13497E", // Color for 5 points
+      "#0B2B4A", // Color for 6 points
+      "#030D16", // Color for 7 points
+    ];
+    return colors[points] || "#FFFFFF"; // Default color if out of range
   };
 
   return (
@@ -245,174 +390,248 @@ const SustainabilityTool = () => {
         <div className={styles.wigoContainer}>
           <div className={styles.wigoDoughnut}>
             <div className={styles.wigoDoughnutChart}>
-              <WigoDoughnutChart stats={totalPlayerStats} />
-            </div>
-            <div className={styles.wigoDoughnutLegend}>
-              <div className={styles.wigoDoughnutDescriptors}>
-                <div className={styles.wigoDoughnutDescriptor}></div>
-                <div className={styles.wigoDoughnutDescriptor}>IPP</div>
-                <div className={styles.wigoDoughnutDescriptor}>S%</div>
-                <div className={styles.wigoDoughnutDescriptor}>SOG/60</div>
-                <div className={styles.wigoDoughnutDescriptor}>oZS%</div>
-                <div className={styles.wigoDoughnutDescriptor}>oiSH%</div>
-                <div className={styles.wigoDoughnutDescriptor}>A2%</div>
-                <div className={styles.wigoDoughnutDescriptor}>xS%</div>
-              </div>
-            </div>
-            <div className={styles.wigoDoughnutHeader}>
-              <div className={styles.wigoDoughnutHeaderCareer}>
-                <div className={styles.susLabelc}>Career</div>
-                <div className={styles.susIPPc}>
-                  {careerStats && careerStats.IPP !== undefined
-                    ? (careerStats.IPP * 100).toFixed(1) + "%"
-                    : ""}
+              <div className={styles.wigoDoughnutLegendLeft}>
+                <div className={styles.wigoDoughnutLegendLeftTitle}>
+                  Game Score
                 </div>
-                <div className={styles.susSPctc}>
-                  {careerStats && careerStats["S%"] !== undefined
-                    ? (careerStats["S%"] * 100).toFixed(1) + "%"
-                    : ""}
+                <div
+                  className={styles.wigoDoughnutLegendLeftValue}
+                  style={{ backgroundColor: "#2B90ED" }}
+                >
+                  Elite
                 </div>
-                <div className={styles.susSogP60c}>
-                  {careerStats && careerStats["SOG/60"] !== undefined
-                    ? careerStats["SOG/60"].toFixed(1)
-                    : ""}
+                <div
+                  className={styles.wigoDoughnutLegendLeftValue}
+                  style={{ backgroundColor: "#4FA9DD" }}
+                >
+                  Great
                 </div>
-                <div className={styles.susOZsc}>
-                  {careerStats && careerStats["oZS%"] !== undefined
-                    ? (careerStats["oZS%"] * 100).toFixed(1) + "%"
-                    : ""}
+                <div
+                  className={styles.wigoDoughnutLegendLeftValue}
+                  style={{ backgroundColor: "#7CC47C" }}
+                >
+                  Good
                 </div>
-                <div className={styles.susoiSHc}>
-                  {careerStats && careerStats["oiSH%"] !== undefined
-                    ? (careerStats["oiSH%"] * 100).toFixed(1) + "%"
-                    : ""}
+                <div
+                  className={styles.wigoDoughnutLegendLeftValue}
+                  style={{ backgroundColor: "#FFEB3B" }}
+                >
+                  Average
                 </div>
-                <div className={styles.susSecAc}>
-                  {careerStats && careerStats["secA%"] !== undefined
-                    ? (careerStats["secA%"] * 100).toFixed(2) + "%"
-                    : ""}
+                <div
+                  className={styles.wigoDoughnutLegendLeftValue}
+                  style={{ backgroundColor: "#FFA500" }}
+                >
+                  Bad
                 </div>
-                <div className={styles.susXSpctc}>
-                  {careerStats && careerStats["xS%"] !== undefined
-                    ? (careerStats["xS%"] * 100).toFixed(1) + "%"
-                    : ""}
+                <div
+                  className={styles.wigoDoughnutLegendLeftValue}
+                  style={{ backgroundColor: "#E23F07" }}
+                >
+                  Abysmal
                 </div>
               </div>
-              <div className={styles.wigoDoughnutHeaderSeason}>
-                <div className={styles.susLabeln}>Season</div>
-                <div
-                  className={styles.susIPPn}
-                  style={{
-                    backgroundColor: getColor(
-                      sustainabilityStats?.["IPP"],
-                      careerStats?.["IPP"],
-                      true // Lower is better
-                    ),
-                  }}
-                >
-                  {sustainabilityStats && sustainabilityStats.IPP !== undefined
-                    ? (sustainabilityStats.IPP * 100).toFixed(1) + "%"
-                    : ""}
-                </div>
-                <div
-                  className={styles.susSPctn}
-                  style={{
-                    backgroundColor: getColor(
-                      sustainabilityStats?.["S%"],
-                      careerStats?.["S%"],
-                      true // Lower is better
-                    ),
-                  }}
-                >
-                  {sustainabilityStats &&
-                  sustainabilityStats["S%"] !== undefined
-                    ? (sustainabilityStats["S%"] * 100).toFixed(1) + "%"
-                    : ""}
-                </div>
-                <div
-                  className={styles.susSogP60n}
-                  style={{
-                    backgroundColor: getColor(
-                      sustainabilityStats?.["SOG/60"],
-                      careerStats?.["SOG/60"],
-                      true // Assuming lower is better for demonstration
-                    ),
-                  }}
-                >
-                  {sustainabilityStats &&
-                  sustainabilityStats["SOG/60"] !== undefined
-                    ? sustainabilityStats["SOG/60"].toFixed(1)
-                    : ""}
-                </div>
-                <div
-                  className={styles.susOZsn}
-                  style={{
-                    backgroundColor: getColor(
-                      sustainabilityStats?.["oZS%"],
-                      careerStats?.["oZS%"],
-                      false // Assuming lower is better for demonstration
-                    ),
-                  }}
-                >
-                  {sustainabilityStats &&
-                  sustainabilityStats["oZS%"] !== undefined
-                    ? (sustainabilityStats["oZS%"] * 100).toFixed(1) + "%"
-                    : ""}
-                </div>
-                <div
-                  className={styles.susoiSHn}
-                  style={{
-                    backgroundColor: getColor(
-                      sustainabilityStats?.["oiSH%"],
-                      careerStats?.["oiSH%"],
-                      false // Assuming lower is better for demonstration
-                    ),
-                  }}
-                >
-                  {sustainabilityStats &&
-                  sustainabilityStats["oiSH%"] !== undefined
-                    ? (sustainabilityStats["oiSH%"] * 100).toFixed(1) + "%"
-                    : ""}
-                </div>
-                <div
-                  className={styles.susSecAn}
-                  style={{
-                    backgroundColor: getColor(
-                      sustainabilityStats?.["secA%"],
-                      careerStats?.["secA%"],
-                      true // Assuming lower is better for demonstration
-                    ),
-                  }}
-                >
-                  {sustainabilityStats &&
-                  sustainabilityStats["secA%"] !== undefined
-                    ? (sustainabilityStats["secA%"] * 100).toFixed(2) + "%"
-                    : ""}
-                </div>
-                <div
-                  className={styles.susXSpctn}
-                  style={{
-                    backgroundColor: getColor(
-                      sustainabilityStats?.["xS%"],
-                      careerStats?.["xS%"],
-                      true // Assuming lower is better for demonstration
-                    ),
-                  }}
-                >
-                  {sustainabilityStats &&
-                  sustainabilityStats["xS%"] !== undefined
-                    ? (sustainabilityStats["xS%"] * 100).toFixed(1) + "%"
-                    : ""}
-                </div>
-              </div>
-            </div>
-            <div className={styles.wigoDoughnutFooter}>
-              <div className={styles.wigoDoughnutTimeOption}>
-                <TimeOptions
-                  className={styles.timeOptionsCustom}
-                  timeOption={timeOption}
-                  setTimeOption={setTimeOption}
+
+              <div className={styles.wigoDoughnutChartContent}>
+                <WigoDoughnutChart
+                  stats={sustainabilityStats}
+                  detailedStats={detailedPlayerStats}
+                  totalStats={totalPlayerStats}
+                  gameCategories={gameCategories}
+                  pointsDistributionData={pointsDistributionData}
                 />
+              </div>
+
+              <div className={styles.wigoDoughnutLegendRight}>
+                <div className={styles.wigoDoughnutLegendRightTitle}>
+                  # of Pt/Gm
+                </div>
+                {pointsDistributionData.map((item, index) => {
+                  const points = parseInt(item.label.split(" ")[0]); // Extract the number of points from the label
+                  const displayLabel = `${points}pt Games:`; // Construct the display label
+                  const backgroundColor = getColorForPoints(item.label);
+                  const textColor = isLight(backgroundColor)
+                    ? "#202020"
+                    : "#FFF";
+
+                  return (
+                    <div
+                      key={index}
+                      className={styles.wigoDoughnutLegendRightValue}
+                      style={{
+                        backgroundColor: backgroundColor,
+                        color: textColor,
+                      }}
+                    >
+                      {displayLabel}
+                      <br />
+                      {""}({item.value})
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className={styles.wigoDoughnutFooter}>
+              <div className={styles.wigoDoughnutLegend}>
+                <div className={styles.wigoDoughnutDescriptors}>
+                  <div className={styles.wigoDoughnutDescriptor}></div>
+                  <div className={styles.wigoDoughnutDescriptor}>IPP</div>
+                  <div className={styles.wigoDoughnutDescriptor}>S%</div>
+                  <div className={styles.wigoDoughnutDescriptor}>SOG/60</div>
+                  <div className={styles.wigoDoughnutDescriptor}>oZS%</div>
+                  <div className={styles.wigoDoughnutDescriptor}>oiSH%</div>
+                  <div className={styles.wigoDoughnutDescriptor}>A2%</div>
+                  <div className={styles.wigoDoughnutDescriptor}>xS%</div>
+                </div>
+              </div>
+              <div className={styles.wigoDoughnutHeader}>
+                <div className={styles.wigoDoughnutHeaderCareer}>
+                  <div className={styles.susLabelc}>Career</div>
+                  <div className={styles.susIPPc}>
+                    {careerStats && careerStats.IPP !== undefined
+                      ? (careerStats.IPP * 100).toFixed(1) + "%"
+                      : ""}
+                  </div>
+                  <div className={styles.susSPctc}>
+                    {careerStats && careerStats["S%"] !== undefined
+                      ? (careerStats["S%"] * 100).toFixed(1) + "%"
+                      : ""}
+                  </div>
+                  <div className={styles.susSogP60c}>
+                    {careerStats && careerStats["SOG/60"] !== undefined
+                      ? careerStats["SOG/60"].toFixed(1)
+                      : ""}
+                  </div>
+                  <div className={styles.susOZsc}>
+                    {careerStats && careerStats["oZS%"] !== undefined
+                      ? (careerStats["oZS%"] * 100).toFixed(1) + "%"
+                      : ""}
+                  </div>
+                  <div className={styles.susoiSHc}>
+                    {careerStats && careerStats["oiSH%"] !== undefined
+                      ? (careerStats["oiSH%"] * 100).toFixed(1) + "%"
+                      : ""}
+                  </div>
+                  <div className={styles.susSecAc}>
+                    {careerStats && careerStats["secA%"] !== undefined
+                      ? (careerStats["secA%"] * 100).toFixed(2) + "%"
+                      : ""}
+                  </div>
+                  <div className={styles.susXSpctc}>
+                    {careerStats && careerStats["xS%"] !== undefined
+                      ? (careerStats["xS%"] * 100).toFixed(1) + "%"
+                      : ""}
+                  </div>
+                </div>
+                <div className={styles.wigoDoughnutHeaderSeason}>
+                  <div className={styles.susLabeln}>Season</div>
+                  <div
+                    className={styles.susIPPn}
+                    style={{
+                      backgroundColor: getColor(
+                        sustainabilityStats?.["IPP"],
+                        careerStats?.["IPP"],
+                        true // Lower is better
+                      ),
+                    }}
+                  >
+                    {sustainabilityStats &&
+                    sustainabilityStats.IPP !== undefined
+                      ? (sustainabilityStats.IPP * 100).toFixed(1) + "%"
+                      : ""}
+                  </div>
+                  <div
+                    className={styles.susSPctn}
+                    style={{
+                      backgroundColor: getColor(
+                        sustainabilityStats?.["S%"],
+                        careerStats?.["S%"],
+                        true // Lower is better
+                      ),
+                    }}
+                  >
+                    {sustainabilityStats &&
+                    sustainabilityStats["S%"] !== undefined
+                      ? (sustainabilityStats["S%"] * 100).toFixed(1) + "%"
+                      : ""}
+                  </div>
+                  <div
+                    className={styles.susSogP60n}
+                    style={{
+                      backgroundColor: getColor(
+                        sustainabilityStats?.["SOG/60"],
+                        careerStats?.["SOG/60"],
+                        true // Assuming lower is better for demonstration
+                      ),
+                    }}
+                  >
+                    {sustainabilityStats &&
+                    sustainabilityStats["SOG/60"] !== undefined
+                      ? sustainabilityStats["SOG/60"].toFixed(1)
+                      : ""}
+                  </div>
+                  <div
+                    className={styles.susOZsn}
+                    style={{
+                      backgroundColor: getColor(
+                        sustainabilityStats?.["oZS%"],
+                        careerStats?.["oZS%"],
+                        false // Assuming lower is better for demonstration
+                      ),
+                    }}
+                  >
+                    {sustainabilityStats &&
+                    sustainabilityStats["oZS%"] !== undefined
+                      ? (sustainabilityStats["oZS%"] * 100).toFixed(1) + "%"
+                      : ""}
+                  </div>
+                  <div
+                    className={styles.susoiSHn}
+                    style={{
+                      backgroundColor: getColor(
+                        sustainabilityStats?.["oiSH%"],
+                        careerStats?.["oiSH%"],
+                        false // Assuming lower is better for demonstration
+                      ),
+                    }}
+                  >
+                    {sustainabilityStats &&
+                    sustainabilityStats["oiSH%"] !== undefined
+                      ? (sustainabilityStats["oiSH%"] * 100).toFixed(1) + "%"
+                      : ""}
+                  </div>
+                  <div
+                    className={styles.susSecAn}
+                    style={{
+                      backgroundColor: getColor(
+                        sustainabilityStats?.["secA%"],
+                        careerStats?.["secA%"],
+                        true // Assuming lower is better for demonstration
+                      ),
+                    }}
+                  >
+                    {sustainabilityStats &&
+                    sustainabilityStats["secA%"] !== undefined
+                      ? (sustainabilityStats["secA%"] * 100).toFixed(2) + "%"
+                      : ""}
+                  </div>
+                  <div
+                    className={styles.susXSpctn}
+                    style={{
+                      backgroundColor: getColor(
+                        sustainabilityStats?.["xS%"],
+                        careerStats?.["xS%"],
+                        true // Assuming lower is better for demonstration
+                      ),
+                    }}
+                  >
+                    {sustainabilityStats &&
+                    sustainabilityStats["xS%"] !== undefined
+                      ? (sustainabilityStats["xS%"] * 100).toFixed(1) + "%"
+                      : ""}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -448,7 +667,9 @@ const SustainabilityTool = () => {
 
           <div className={styles.wigoSusCells}></div>
 
-          <div className={styles.wigoRollingAverage}></div>
+          <div className={styles.wigoRollingAverage}>
+            <PlayerGameScoreLineChart gameScores={gameScores} />
+          </div>
 
           <div className={styles.wigoLinesDoughnuts}>
             <div className={styles.wigoLinesDoughnutsTop}>

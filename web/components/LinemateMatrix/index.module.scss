@@ -85,8 +85,13 @@
       background: #404040;
 
       &:hover {
-        border-color: darkorange;
+        border-color: darkorange; // Ensure hover effect is visible
       }
+
+      &.highlight {
+        border: 2px solid #faa916; // Use a class to apply the highlight style
+      }
+
       & .content {
         width: 100%;
         height: 100%;

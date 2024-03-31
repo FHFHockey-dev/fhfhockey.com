@@ -59,7 +59,7 @@ const WigoLineChart = ({ stats }) => {
               font: {
                 size: 12, // Adjust font size as needed
                 family: "Roboto condensed", // Set the font family for the legend
-                weigh: "bold",
+                weight: "bold",
               },
             },
           },

@@ -5,6 +5,7 @@ import { format, parseISO, addDays, isBefore } from 'date-fns';
 import { getCurrentSeason } from 'lib/NHL/server'; 
 import { 
     WGOSummarySkaterStat, 
+    WGOSkatersBio,
     WGORealtimeSkaterStat,
     WGOFaceoffSkaterStat,
     WGOFaceOffWinLossSkaterStat,
@@ -24,7 +25,23 @@ import {
 
 // Define the structure of the NHL API response for skater stats
 interface NHLApiResponse {
-    data: WGOSummarySkaterStat[] | WGORealtimeSkaterStat[] | WGOFaceoffSkaterStat[] | WGOFaceOffWinLossSkaterStat[] | WGOGoalsForAgainstSkaterStat[] | WGOPenaltySkaterStat[] | WGOPenaltyKillSkaterStat[] | WGOPowerPlaySkaterStat[] | WGOPuckPossessionSkaterStat[] | WGOSatCountSkaterStat[] | WGOSatPercentageSkaterStat[] | WGOScoringRatesSkaterStat[] | WGOScoringCountsSkaterStat[] | WGOShotTypeSkaterStat[] | WGOToiSkaterStat[];
+    data: 
+        WGOSummarySkaterStat[] 
+        | WGOSkatersBio[] 
+        | WGORealtimeSkaterStat[] 
+        | WGOFaceoffSkaterStat[] 
+        | WGOFaceOffWinLossSkaterStat[]
+        | WGOGoalsForAgainstSkaterStat[] 
+        | WGOPenaltySkaterStat[] 
+        | WGOPenaltyKillSkaterStat[] 
+        | WGOPowerPlaySkaterStat[] 
+        | WGOPuckPossessionSkaterStat[] 
+        | WGOSatCountSkaterStat[] 
+        | WGOSatPercentageSkaterStat[] 
+        | WGOScoringRatesSkaterStat[] 
+        | WGOScoringCountsSkaterStat[] 
+        | WGOShotTypeSkaterStat[] 
+        | WGOToiSkaterStat[];
 }
 
 
@@ -32,6 +49,7 @@ interface NHLApiResponse {
 async function fetchAllDataForDate(formattedDate: string, limit: number): 
     Promise<{ 
         skaterStats: WGOSummarySkaterStat[]; 
+        skatersBio: WGOSkatersBio[];
         miscSkaterStats: WGORealtimeSkaterStat[]; 
         faceOffStats: WGOFaceoffSkaterStat[]; 
         faceoffWinLossStats: WGOFaceOffWinLossSkaterStat[]; 
@@ -49,6 +67,7 @@ async function fetchAllDataForDate(formattedDate: string, limit: number):
     let start = 0;
     let moreDataAvailable = true;
     let skaterStats: WGOSummarySkaterStat[] = [];
+    let skatersBio: WGOSkatersBio[] = [];
     let miscSkaterStats: WGORealtimeSkaterStat[] = [];
     let faceOffStats: WGOFaceoffSkaterStat[] = [];
     let faceoffWinLossStats: WGOFaceOffWinLossSkaterStat[] = [];
@@ -68,6 +87,7 @@ async function fetchAllDataForDate(formattedDate: string, limit: number):
     while (moreDataAvailable) {
         // Construct the URL for fetching skater stats
         const skaterStatsUrl = `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goals%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22assists%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`;
+        const skaterBioUrl = `https://api.nhle.com/stats/rest/en/skater/bios?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22lastName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22skaterFullName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`
         const miscSkaterStatsUrl = `https://api.nhle.com/stats/rest/en/skater/realtime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22hits%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`;
         const faceOffStatsUrl = `https://api.nhle.com/stats/rest/en/skater/faceoffpercentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22totalFaceoffs%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`;
         const faceoffWinLossUrl = `https://api.nhle.com/stats/rest/en/skater/faceoffwins?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22totalFaceoffWins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`;
@@ -85,8 +105,25 @@ async function fetchAllDataForDate(formattedDate: string, limit: number):
     
 
         // Fetch data from the URL in parallel using Promise.all
-        const [skaterStatsResponse, miscSkaterStatsResponse, faceOffStatsResponse, faceoffWinLossResponse, goalsForAgainstResponse, penaltiesResponse, penaltyKillResponse, powerPlayResponse, puckPossessionResponse, satCountsResponse, satPercentagesResponse, scoringRatesResponse, scoringPerGameResponse, shotTypeResponse, timeOnIceResponse] = await Promise.all([
+        const [skaterStatsResponse, 
+                bioStatsResponse, 
+                miscSkaterStatsResponse, 
+                faceOffStatsResponse, 
+                faceoffWinLossResponse, 
+                goalsForAgainstResponse, 
+                penaltiesResponse, 
+                penaltyKillResponse, 
+                powerPlayResponse, 
+                puckPossessionResponse, 
+                satCountsResponse, 
+                satPercentagesResponse, 
+                scoringRatesResponse, 
+                scoringPerGameResponse, 
+                shotTypeResponse, 
+                timeOnIceResponse
+        ] = await Promise.all([
             Fetch(skaterStatsUrl).then(res => res.json() as Promise<NHLApiResponse>),
+            Fetch(skaterBioUrl).then(res => res.json() as Promise<NHLApiResponse>),
             Fetch(miscSkaterStatsUrl).then(res => res.json() as Promise<NHLApiResponse>),
             Fetch(faceOffStatsUrl).then(res => res.json() as Promise<NHLApiResponse>),
             Fetch(faceoffWinLossUrl).then(res => res.json() as Promise<NHLApiResponse>),
@@ -105,6 +142,7 @@ async function fetchAllDataForDate(formattedDate: string, limit: number):
 
         // Concatenate the fetched data to the accumulated array
         skaterStats = skaterStats.concat(skaterStatsResponse.data as WGOSummarySkaterStat[]);
+        skatersBio = skatersBio.concat(bioStatsResponse.data as WGOSkatersBio[]);
         miscSkaterStats = miscSkaterStats.concat(miscSkaterStatsResponse.data as WGORealtimeSkaterStat[]);
         faceOffStats = faceOffStats.concat(faceOffStatsResponse.data as WGOFaceoffSkaterStat[]);
         faceoffWinLossStats = faceoffWinLossStats.concat(faceoffWinLossResponse.data as WGOFaceOffWinLossSkaterStat[]);
@@ -120,15 +158,30 @@ async function fetchAllDataForDate(formattedDate: string, limit: number):
         shotTypeStats = shotTypeStats.concat(shotTypeResponse.data as WGOShotTypeSkaterStat[]);
         timeOnIceStats = timeOnIceStats.concat(timeOnIceResponse.data as WGOToiSkaterStat[]);
 
-
-
         // Determine if more data is available to fetch in the next iteration
-        moreDataAvailable = skaterStatsResponse.data.length === limit || miscSkaterStatsResponse.data.length === limit || faceOffStatsResponse.data.length === limit || faceoffWinLossResponse.data.length === limit || goalsForAgainstResponse.data.length === limit || penaltiesResponse.data.length === limit || penaltyKillResponse.data.length === limit || powerPlayResponse.data.length === limit || puckPossessionResponse.data.length === limit || satCountsResponse.data.length === limit || satPercentagesResponse.data.length === limit || scoringRatesResponse.data.length === limit || scoringPerGameResponse.data.length === limit || shotTypeResponse.data.length === limit || timeOnIceResponse.data.length === limit;
+        moreDataAvailable = 
+            skaterStatsResponse.data.length === limit ||
+            bioStatsResponse.data.length === limit ||
+            miscSkaterStatsResponse.data.length === limit || 
+            faceOffStatsResponse.data.length === limit || 
+            faceoffWinLossResponse.data.length === limit || 
+            goalsForAgainstResponse.data.length === limit || 
+            penaltiesResponse.data.length === limit || 
+            penaltyKillResponse.data.length === limit || 
+            powerPlayResponse.data.length === limit || 
+            puckPossessionResponse.data.length === limit || 
+            satCountsResponse.data.length === limit || 
+            satPercentagesResponse.data.length === limit || 
+            scoringRatesResponse.data.length === limit || 
+            scoringPerGameResponse.data.length === limit || 
+            shotTypeResponse.data.length === limit || 
+            timeOnIceResponse.data.length === limit;
         start += limit; // Increment the start index for the next fetch
     }
 
     return {
         skaterStats,
+        skatersBio,
         miscSkaterStats,
         faceOffStats,
         faceoffWinLossStats,
@@ -147,12 +200,44 @@ async function fetchAllDataForDate(formattedDate: string, limit: number):
 }
 
 // Function to update skater stats for a specific date in the Supabase database
-async function updateSkaterStats(date: string): Promise<{ updated: boolean; skaterStats: WGOSummarySkaterStat[]; miscSkaterStats: WGORealtimeSkaterStat[]; faceOffStats: WGOFaceoffSkaterStat[]; faceoffWinLossStats: WGOFaceOffWinLossSkaterStat[]; goalsForAgainstStats: WGOGoalsForAgainstSkaterStat[]; penaltiesStats: WGOPenaltySkaterStat[]; penaltyKillStats: WGOPenaltyKillSkaterStat[]; powerPlayStats: WGOPowerPlaySkaterStat[]; puckPossessionStats: WGOPuckPossessionSkaterStat[]; satCountsStats: WGOSatCountSkaterStat[]; satPercentagesStats: WGOSatPercentageSkaterStat[]; scoringRatesStats: WGOScoringRatesSkaterStat[]; scoringPerGameStats: WGOScoringCountsSkaterStat[]; shotTypeStats: WGOShotTypeSkaterStat[]; timeOnIceStats: WGOToiSkaterStat[]; }> {
+async function updateSkaterStats(date: string): Promise<{ updated: boolean; 
+        skaterStats: WGOSummarySkaterStat[]; 
+        skatersBio: WGOSkatersBio[];
+        miscSkaterStats: WGORealtimeSkaterStat[]; 
+        faceOffStats: WGOFaceoffSkaterStat[]; 
+        faceoffWinLossStats: WGOFaceOffWinLossSkaterStat[]; 
+        goalsForAgainstStats: WGOGoalsForAgainstSkaterStat[]; 
+        penaltiesStats: WGOPenaltySkaterStat[]; 
+        penaltyKillStats: WGOPenaltyKillSkaterStat[]; 
+        powerPlayStats: WGOPowerPlaySkaterStat[]; 
+        puckPossessionStats: WGOPuckPossessionSkaterStat[]; 
+        satCountsStats: WGOSatCountSkaterStat[]; 
+        satPercentagesStats: WGOSatPercentageSkaterStat[]; 
+        scoringRatesStats: WGOScoringRatesSkaterStat[]; 
+        scoringPerGameStats: WGOScoringCountsSkaterStat[]; 
+        shotTypeStats: WGOShotTypeSkaterStat[]; 
+        timeOnIceStats: WGOToiSkaterStat[]; }> {
     const formattedDate = format(parseISO(date), 'yyyy-MM-dd');
-    const { skaterStats, miscSkaterStats, faceOffStats, faceoffWinLossStats, goalsForAgainstStats, penaltiesStats, penaltyKillStats, powerPlayStats, puckPossessionStats, satCountsStats, satPercentagesStats, scoringRatesStats, scoringPerGameStats, shotTypeStats, timeOnIceStats } = await fetchAllDataForDate(formattedDate, 100);
+    const { skaterStats, 
+            skatersBio, 
+            miscSkaterStats, 
+            faceOffStats, 
+            faceoffWinLossStats, 
+            goalsForAgainstStats, 
+            penaltiesStats, 
+            penaltyKillStats, 
+            powerPlayStats, 
+            puckPossessionStats, 
+            satCountsStats, 
+            satPercentagesStats, 
+            scoringRatesStats, 
+            scoringPerGameStats, 
+            shotTypeStats, 
+            timeOnIceStats } = await fetchAllDataForDate(formattedDate, 100);
 
     // Iterate over each skater stat and upsert into the Supabase table
     for (const stat of skaterStats) {
+        const bioStats = skatersBio.find(aStat => aStat.playerId === stat.playerId);
         const miscStats = miscSkaterStats.find(aStat => aStat.playerId === stat.playerId);
         const faceOffStat = faceOffStats.find(aStat => aStat.playerId === stat.playerId);
         const faceoffWinLossStat = faceoffWinLossStats.find(aStat => aStat.playerId === stat.playerId);
@@ -169,7 +254,6 @@ async function updateSkaterStats(date: string): Promise<{ updated: boolean; skat
         const timeOnIceStat = timeOnIceStats.find(aStat => aStat.playerId === stat.playerId);
         await supabase.from("wgo_skater_stats").upsert({
             // Mapping fields from fetched data to Supabase table columns
-
             // summary stats from skaterStatsResponse (stat)
             player_id: stat.playerId, // int
             player_name: stat.skaterFullName, // text
@@ -189,6 +273,19 @@ async function updateSkaterStats(date: string): Promise<{ updated: boolean; skat
             pp_points: stat.ppPoints, // int
             fow_percentage: stat.faceoffWinPct, // float
             toi_per_game: stat.timeOnIcePerGame, // float
+            // bio stats from skatersBioResponse (bioStats)
+            birth_date: bioStats?.birthDate, // date
+            current_team_abbreviation: bioStats?.currentTeamAbbrev, // text
+            current_team_name: bioStats?.currentTeamName, // text
+            birth_city: bioStats?.birthCity, // text
+            birth_country: bioStats?.birthCountryCode, // text
+            height: bioStats?.height, // text
+            weight: bioStats?.weight, // int
+            draft_year: bioStats?.draftYear, // int
+            draft_round: bioStats?.draftRound, // int
+            draft_overall: bioStats?.draftOverall, // int
+            first_season_for_game_type: bioStats?.firstSeasonForGameType, // int
+            nationality_code: bioStats?.nationalityCode, // text
             // realtime stats from miscSkaterStatsResponse (miscStats)
             blocked_shots: miscStats?.blockedShots, // int
             blocks_per_60: miscStats?.blockedShotsPer60, // float
@@ -416,6 +513,7 @@ async function updateSkaterStats(date: string): Promise<{ updated: boolean; skat
     return {
         updated: true,
         skaterStats,
+        skatersBio,
         miscSkaterStats,
         faceOffStats,
         faceoffWinLossStats,
@@ -444,6 +542,7 @@ async function updateSkaterStatsForSeason() {
         console.log(`Updating skater stats for ${formattedDate}`);
 
         const { skaterStats, 
+                skatersBio,
                 miscSkaterStats, 
                 faceOffStats, 
                 faceoffWinLossStats, 
@@ -461,6 +560,7 @@ async function updateSkaterStatsForSeason() {
             } = await fetchAllDataForDate(formattedDate, 100);
 
         for (const stat of skaterStats) {
+            const bioStats = skatersBio.find(aStat => aStat.playerId === stat.playerId);
             const miscStats = miscSkaterStats.find(aStat => aStat.playerId === stat.playerId);
             const faceOffStat = faceOffStats.find(aStat => aStat.playerId === stat.playerId);
             const faceoffWinLossStat = faceoffWinLossStats.find(aStat => aStat.playerId === stat.playerId);
@@ -495,6 +595,18 @@ async function updateSkaterStatsForSeason() {
                 pp_points: stat.ppPoints, // int
                 fow_percentage: stat.faceoffWinPct, // float
                 toi_per_game: stat.timeOnIcePerGame, // float
+                // bio stats from skatersBioResponse (bioStats)
+                birth_date: bioStats?.birthDate, // date
+                current_team_abbreviation: bioStats?.currentTeamAbbrev, // text
+                current_team_name: bioStats?.currentTeamName, // text
+                birth_city: bioStats?.birthCity, // text
+                birth_country: bioStats?.birthCountryCode, // text
+                birth_state_province: bioStats?.birthCountryCode, // text
+                height: bioStats?.height, // text
+                weight: bioStats?.weight, // int
+                draft_year: bioStats?.draftYear, // int
+                draft_round: bioStats?.draftRound, // int
+                draft_overall: bioStats?.draftOverall, // int
                 // realtime stats from miscSkaterStatsResponse (miscStats)
                 blocked_shots: miscStats?.blockedShots, // int
                 blocks_per_60: miscStats?.blockedShotsPer60, // float
@@ -734,6 +846,7 @@ async function updateSkaterStatsForSeason() {
 // Function to fetch data for a specific skater across multiple dates 
 async function fetchDataForPlayer(playerId: string, playerName: string): Promise<{ 
         skaterStats: WGOSummarySkaterStat[]; 
+        skatersBio: WGOSkatersBio[];
         miscSkaterStats: WGORealtimeSkaterStat[]; 
         faceOffStats: WGOFaceoffSkaterStat[]; 
         faceoffWinLossStats: WGOFaceOffWinLossSkaterStat[]; 
@@ -752,6 +865,7 @@ async function fetchDataForPlayer(playerId: string, playerName: string): Promise
     let start = 0
     let moreDataAvailable = true
     let skaterStats: WGOSkaterStat[] = [];
+    let skatersBio: WGOSkatersBio[] = [];
     let miscSkaterStats: WGORealtimeSkaterStat[] = [];
     let faceOffStats: WGOFaceoffSkaterStat[] = [];
     let faceoffWinLossStats: WGOFaceOffWinLossSkaterStat[] = [];
@@ -773,6 +887,7 @@ async function fetchDataForPlayer(playerId: string, playerName: string): Promise
         const formattedDate = format(today, 'yyyy-MM-dd');
         const regularSeasonStartDate = format(parseISO((await getCurrentSeason()).regularSeasonStartDate), 'yyyy-MM-dd');
         const skaterStatsURL = `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goals%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22assists%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${regularSeasonStartDate}%22%20and%20gameTypeId=2%20and%20skaterFullName%20likeIgnoreCase%20%22${encodedPlayerName}%22`
+        const skatersBioURL = `https://api.nhle.com/stats/rest/en/skater/bios?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22lastName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22skaterFullName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&cayenneExp=gameDate%3C=%22${regularSeasonStartDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2%20and%20skaterFullName%20likeIgnoreCase%20%22${encodedPlayerName}%22`
         const miscSkaterStatsURL = `https://api.nhle.com/stats/rest/en/skater/realtime?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22hits%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${regularSeasonStartDate}%22%20and%20gameTypeId=2%20and%20skaterFullName%20likeIgnoreCase%20%22${encodedPlayerName}%22`
         const faceOffStatsURL = `https://api.nhle.com/stats/rest/en/skater/faceoffpercentages?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22totalFaceoffs%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${regularSeasonStartDate}%22%20and%20gameTypeId=2%20and%20skaterFullName%20likeIgnoreCase%20%22${encodedPlayerName}%22`;
         const faceoffWinLossUrl = `https://api.nhle.com/stats/rest/en/skater/faceoffwins?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22totalFaceoffWins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${regularSeasonStartDate}%22%20and%20gameTypeId=2%20and%20skaterFullName%20likeIgnoreCase%20%22${encodedPlayerName}%22`
@@ -790,6 +905,7 @@ async function fetchDataForPlayer(playerId: string, playerName: string): Promise
 
 
         const [skaterStatsResponse, 
+                skatersBioResponse,
                 miscSkaterStatsResponse, 
                 faceOffStatsResponse, 
                 faceoffWinLossResponse, 
@@ -806,6 +922,7 @@ async function fetchDataForPlayer(playerId: string, playerName: string): Promise
                 timeOnIceResponse
             ] = await Promise.all([
             Fetch(skaterStatsURL).then(res => res.json() as Promise<NHLApiResponse>),
+            Fetch(skatersBioURL).then(res => res.json() as Promise<NHLApiResponse>),
             Fetch(miscSkaterStatsURL).then(res => res.json() as Promise<NHLApiResponse>),
             Fetch(faceOffStatsURL).then(res => res.json() as Promise<NHLApiResponse>),
             Fetch(faceoffWinLossUrl).then(res => res.json() as Promise<NHLApiResponse>),
@@ -823,6 +940,7 @@ async function fetchDataForPlayer(playerId: string, playerName: string): Promise
         ]);
 
         skaterStats = skaterStats.concat(skaterStatsResponse.data as WGOSkaterStat[]);
+        skatersBio = skatersBio.concat(skatersBioResponse.data as WGOSkatersBio[]);
         miscSkaterStats = miscSkaterStats.concat(miscSkaterStatsResponse.data as WGORealtimeSkaterStat[]);
         faceOffStats = faceOffStats.concat(faceOffStatsResponse.data as WGOFaceoffSkaterStat[]);
         faceoffWinLossStats = faceoffWinLossStats.concat(faceoffWinLossResponse.data as WGOFaceOffWinLossSkaterStat[]);
@@ -840,6 +958,7 @@ async function fetchDataForPlayer(playerId: string, playerName: string): Promise
 
 
         moreDataAvailable = skaterStatsResponse.data.length === 100 
+                            || skatersBioResponse.data.length === 100
                             || miscSkaterStatsResponse.data.length === 100 
                             || faceOffStatsResponse.data.length === 100 
                             || faceoffWinLossResponse.data.length === 100 
@@ -859,6 +978,7 @@ async function fetchDataForPlayer(playerId: string, playerName: string): Promise
 
     return {
         skaterStats,
+        skatersBio,
         miscSkaterStats,
         faceOffStats,
         faceoffWinLossStats,

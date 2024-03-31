@@ -344,6 +344,23 @@ export type WGOSummarySkaterStat = {
   timeOnIcePerGame: number;
 };
 
+export type WGOSkatersBio = {
+  playerId: number;
+  birthCity: string;
+  birthCountryCode: string;
+  birthDate: string;
+  currentTeamAbbrev: string;
+  currentTeamName: string;
+  draftOverall: number;
+  draftRound: number;
+  draftYear: number;
+  firstSeasonForGameType: number;
+  nationalityCode: string;
+  weight: number;
+  height: number;
+};
+
+
 export type WGORealtimeSkaterStat = {
   playerId: number;
   blockedShots: number;

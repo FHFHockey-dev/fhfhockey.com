@@ -120,7 +120,11 @@ function GoalIndicator({
   timeInPeriod,
   homeTeam,
   awayTeam,
+  scorer,
+  assists,
 }: Goal) {
+  const [showTooltip, setShowTooltip] = useState(false);
+
   const leftPercentage = `${
     ((timeInPeriod / PERIOD_IN_SECONDS) * PERIOD_LENGTH +
       PERIOD_LENGTH * (period.number - 1)) *
@@ -141,6 +145,34 @@ function GoalIndicator({
     left: leftPercentage,
     zIndex: 2, // Ensure it's on top if needed
   };
+
+  const handleMouseEnter = () => setShowTooltip(true);
+  const handleMouseLeave = () => setShowTooltip(false);
+
+  const tooltipContent = (
+    <div
+      className={styles.tooltip}
+      style={{
+        display: showTooltip ? "block" : "none",
+        backgroundColor: teamColors.primaryColor,
+        color: teamColors.secondaryColor,
+        border: `1px solid ${teamColors.secondaryColor}`,
+        borderRadius: "5px",
+        textAlign: "left",
+      }}
+    >
+      <strong>{scoreTeamAbbreviation} Goal:</strong> {scorer.firstName}{" "}
+      {scorer.lastName}
+      <br />
+      <strong>Assists:</strong>{" "}
+      {assists.map((assist) => `${assist.lastName}`).join(", ")}
+      <br />
+      <strong>Time:</strong> P{period.number} - {timeInPeriod} Seconds
+      <br />
+      <strong>Score:</strong> {homeTeam.abbreviation} {homeTeam.score} -{" "}
+      {awayTeam.abbreviation} {awayTeam.score}
+    </div>
+  );
 
   const backgroundColor = isHomeScoring
     ? teamColors.primaryColor
@@ -166,14 +198,19 @@ function GoalIndicator({
         top: 0,
         ...indicatorPositionStyle,
         transform: "translateY(-100%) translateX(-50%)",
+        zIndex: 3,
       }}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
+      {tooltipContent}
+
       {/* Score display */}
       <div className={styles.scoreContainer}>
-        <span>
+        {/* <span>
           {homeTeam.abbreviation} {homeTeam.score} - {awayTeam.score}{" "}
           {awayTeam.abbreviation}
-        </span>
+        </span> */}
       </div>
 
       {/* Goal Indicator with dynamic color and home plate shape */}

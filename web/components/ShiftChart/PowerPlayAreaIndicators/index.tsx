@@ -67,15 +67,41 @@ type PowerPlayAreaIndicatorProps = {
   totalGameTimeInSeconds: number;
 };
 
+function darkenHexColor(hex: string, percent: number): string {
+  if (!hex) return "#000000"; // Return a default color if hex is invalid
+
+  hex = hex.replace("#", "");
+  const num = parseInt(hex, 16);
+
+  let r = (num >> 16) - Math.round(((num >> 16) * percent) / 100);
+  let g =
+    ((num >> 8) & 0x00ff) - Math.round((((num >> 8) & 0x00ff) * percent) / 100);
+  let b = (num & 0x00ff) - Math.round(((num & 0x00ff) * percent) / 100);
+
+  r = Math.max(0, r);
+  g = Math.max(0, g);
+  b = Math.max(0, b);
+
+  return `#${r.toString(16).padStart(2, "0")}${g
+    .toString(16)
+    .padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+
 function PowerPlayAreaIndicator({
   color,
   start,
   end,
   totalGameTimeInSeconds,
 }: PowerPlayAreaIndicatorProps) {
+  const darkenedColor = darkenHexColor(color, 50);
   const areaStyle = {
     width: getWidthPercentage(start, end, totalGameTimeInSeconds),
     left: getLeftPercentage(start),
+    backgroundImage: `
+      repeating-linear-gradient(45deg, ${darkenedColor}, ${darkenedColor} 1px, ${color} 1px, ${color} 3px),
+      repeating-linear-gradient(-45deg, ${darkenedColor}, ${darkenedColor} 1px, ${color} 1px, ${color} 3px)
+    `,
+    backgroundSize: "2px 2px",
   };
   return (
     <div
@@ -83,8 +109,8 @@ function PowerPlayAreaIndicator({
         position: "absolute",
         top: 0,
         height: "100%",
-        backgroundColor: color,
-        opacity: 0.6,
+        // backgroundColor: color,
+        opacity: 0.5,
         ...areaStyle,
       }}
     >
