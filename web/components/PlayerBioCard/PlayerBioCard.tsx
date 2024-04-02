@@ -23,20 +23,20 @@ const STATS = [
 ] as const;
 
 const PLACEHOLDER: Player = {
-  age: 0,
-  teamName: "",
-  teamAbbreviation: "",
-  weightInKilograms: 0,
-  heightInCentimeters: 0,
+  age: 33,
+  teamName: "Five Hole",
+  teamAbbreviation: "SKO",
+  weightInKilograms: 420,
+  heightInCentimeters: 69,
   position: "G",
   id: 0,
   fullName: "",
-  firstName: "Timothy",
+  firstName: "TJ",
   lastName: "Branson",
   birthCity: "New York",
   birthCountry: "USA",
-  birthDate: "2022-12-20",
-  sweaterNumber: 0,
+  birthDate: "1990-05-15",
+  sweaterNumber: 5,
   teamId: 0,
 };
 

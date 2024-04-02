@@ -11,6 +11,8 @@ import WigoLineChart from "components/WiGO/WigoLineChart.js"; // Import the Wigo
 import WigoDoughnutChart from "components/WiGO/WigoDoughnutChart.js"; // Import the WigoDoughnutChart component
 import PlayerGameScoreLineChart from "components/WiGO/WigoGameScoreLine.js"; // Import the PlayerGameScoreLineChart component
 
+// http://localhost:3000/api/ThreeYearAverages/8475786 example
+
 function isLight(color) {
   const hex = color.replace("#", "");
   const r = parseInt(hex.substring(0, 2), 16);
