@@ -884,14 +884,18 @@ function ShiftChart() {
 
             {/* Team Header for Home Team */}
             <tr
+              className={styles.teamHeaderRowHome}
               style={{
-                backgroundColor:
+                "--team-header-bg-color":
                   teamsInfo[homeTeamAbbrev]?.primaryColor || "#000000",
-                color: "#FFFFFF",
-                zIndex: 5,
+                "--team-header-text-color":
+                  teamsInfo[homeTeamAbbrev]?.secondaryColor || "#FFFFFF",
+                "--team-header-border-color":
+                  teamsInfo[homeTeamAbbrev]?.jersey || "#FFFFFF",
               }}
             >
               <td
+                className={styles.teamHeaderCellHome}
                 colSpan={isOvertime ? "6" : "5"}
                 style={{
                   borderRight: "1px solid #FFFFFF",
@@ -1001,9 +1005,9 @@ function ShiftChart() {
                   <td
                     className={styles.playerNameCell}
                     style={{
-                      color: darkenHexColor(textColor, 30),
+                      color: lightenHexColor(textColor, 10),
                       backgroundColor: playerNameBackgroundColor,
-                      fontWeight: isActive ? "bolder" : "normal",
+                      fontWeight: isActive ? "900" : "200",
                       fontStretch: isActive ? "expanded" : "normal",
                     }}
                   >
@@ -1085,13 +1089,18 @@ function ShiftChart() {
 
             {/* Team Header for Away Team */}
             <tr
+              className={styles.teamHeaderRowAway}
               style={{
-                backgroundColor:
+                "--team-header-bg-color":
                   teamsInfo[awayTeamAbbrev]?.primaryColor || "#000000",
-                color: "#FFFFFF",
+                "--team-header-text-color":
+                  teamsInfo[awayTeamAbbrev]?.secondaryColor || "#FFFFFF",
+                "--team-header-border-color":
+                  teamsInfo[awayTeamAbbrev]?.jersey || "#FFFFFF",
               }}
             >
               <td
+                className={styles.teamHeaderCellAway}
                 colSpan={isOvertime ? "6" : "5"}
                 style={{
                   borderRight: "1px solid #FFFFFF",

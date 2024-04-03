@@ -57,7 +57,9 @@
   margin: 20px;
   padding-top: 20px;
   border: 1px solid white;
+  border-radius: 10px;
   background-color: #101010;
+  outline: 10px solid #292929; // Add a blue outline around the container
 }
 
 // Container for dropdown elements
@@ -65,7 +67,7 @@
   display: flex;
   justify-content: center;
   width: 100%;
-  margin-bottom: 50px; // Add space below dropdowns
+  margin-bottom: 30px; // Add space below dropdowns
 }
 
 // Style for individual dropdowns
@@ -84,7 +86,7 @@
 // Input and select elements within dropdowns
 .shiftChartDropdown select,
 .shiftChartDropdown input {
-  background-color: #020202;
+  background-color: #292929;
   color: antiquewhite;
   font-family: roboto condensed, sans-serif;
   padding: 5px;
@@ -218,4 +220,74 @@
   justify-content: space-between;
   margin: 0; // Ensure there's no extra space around timestamps
   padding: 0; // Reset any default padding
+}
+
+.teamHeaderRowAway {
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  padding: 5px;
+  z-index: 15; // Ensure the team header is above the shift blocks
+}
+
+.teamHeaderCellAway {
+  color: var(
+    --team-header-text-color
+  ); // Use a custom color if needed (default is white
+  font-weight: 900;
+  font-size: 1.5em;
+  text-align: left;
+  padding: 5px;
+  position: relative; // Position relative for pseudo-element
+  z-index: 1; // Ensure the team header is above the shift blocks
+  border-top: 2px solid var(--team-header-border-color, white); // Add a border to the top of the cell (customizable color
+  border-bottom: 2px solid var(--team-header-border-color, white); // Add a border to the bottom of the cell (customizable color
+}
+
+.teamHeaderCellAway::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(
+    --team-header-bg-color
+  ); // Or use a specific color if needed
+  z-index: -1; // High value to stack above
+}
+
+.teamHeaderRowHome {
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  padding: 5px;
+  z-index: 15; // Ensure the team header is above the shift blocks
+}
+
+.teamHeaderCellHome {
+  color: var(
+    --team-header-text-color
+  ); // Use a custom color if needed (default is white
+  font-weight: 900;
+  font-size: 1.5em;
+  text-align: left;
+  padding: 5px;
+  position: relative; // Position relative for pseudo-element
+  z-index: 1; // Ensure the team header is above the shift blocks
+  border-top: 2px solid var(--team-header-border-color, white); // Add a border to the top of the cell (customizable color
+  border-bottom: 2px solid var(--team-header-border-color, white); // Add a border to the bottom of the cell (customizable color
+}
+
+.teamHeaderCellHome::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(
+    --team-header-bg-color
+  ); // Or use a specific color if needed
+  z-index: -1; // High value to stack above
 }
