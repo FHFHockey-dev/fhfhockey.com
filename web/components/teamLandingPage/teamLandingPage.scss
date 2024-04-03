@@ -296,6 +296,14 @@
   margin-bottom: 20px;
 }
 
+.sos-tables-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 15%;
+  margin: 0 auto;
+}
+
 /* Specific style for past SoS table */
 .sos-table.past {
   /* Styles specific to the past table */
@@ -338,7 +346,7 @@
 .sos-table.past table td,
 .sos-table.future table td {
   border: 1px solid #505050;
-  padding: 7px;
+  padding: 7px 3px;
 }
 
 .sos-table.future {
@@ -386,7 +394,7 @@
 .sos-container {
   padding-left: 1em;
   padding-right: 1em;
-  width: 100%;
+  width: 20%;
 }
 
 .sos-container h2 {
@@ -398,6 +406,11 @@
 
 .sos-container h2 span {
   color: #07aae2;
+}
+
+.goalie-trends-container {
+  width: 60%;
+  padding: 10px;
 }
 
 .spanColorBlue {
@@ -604,10 +617,24 @@
 /* Resolution for mobile devices */
 
 @media (max-width: 768px) {
+  .team-landing-page {
+    width: 100%;
+  }
+
+  .sos-container h2 {
+    text-align: left;
+    padding-left: 5px;
+    font-size: 1.5em;
+    font-family: roboto condensed, sans-serif;
+    font-weight: 200;
+    font-style: normal;
+  }
+
   .sos-container {
     width: 50%; /* Adjust width to 50% for mobile devices */
     padding-left: 0.5em;
     padding-right: 0.5em;
+    flex-direction: column;
   }
 
   /* Additional adjustments for mobile view */
@@ -620,8 +647,25 @@
     flex-direction: column; /* Optionally stack SoS tables vertically on very narrow screens */
   }
 
-  .sos-container {
+  .goalie-trends-container {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .stats-and-trends-grid {
+    gap: 10px;
+    width: 100%;
     flex-direction: column;
+  }
+
+  .sos-tables-container {
+    width: 100%;
+  }
+
+  .sos-table.past table td,
+  .sos-table.future table td {
+    border: 1px solid #505050;
+    padding: 2px;
   }
 }
 

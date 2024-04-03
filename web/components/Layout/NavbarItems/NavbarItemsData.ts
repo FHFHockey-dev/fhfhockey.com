@@ -30,8 +30,6 @@ const ITEMS_DATA: NavbarItem[] = [
       { type: "link", label: "WGO CHARTS", href: "/WGOcharts" },
       { type: "link", label: "SUSTAINABILITY", href: "/sustainabilityTool" },
       { type: "link", label: "BLSH", href: "/buyLowSellHigh" },
-
-
     ],
   },
   {

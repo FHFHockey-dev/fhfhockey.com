@@ -360,7 +360,6 @@ export type WGOSkatersBio = {
   height: number;
 };
 
-
 export type WGORealtimeSkaterStat = {
   playerId: number;
   blockedShots: number;
@@ -397,7 +396,7 @@ export type WGOFaceoffSkaterStat = {
   ppFaceoffs: number;
   shFaceoffPct: number;
   shFaceoffs: number;
-  totalFaceoffs:  number;
+  totalFaceoffs: number;
 };
 
 export type WGOFaceOffWinLossSkaterStat = {
@@ -607,7 +606,7 @@ export type WGOShotTypeSkaterStat = {
   shotsOnNetPoke: number;
   shotsOnNetSlap: number;
   shotsOnNetSnap: number;
-  shotsOnNetTipIn : number;
+  shotsOnNetTipIn: number;
   shotsOnNetWrapAround: number;
   shotsOnNetWrist: number;
 };
@@ -638,8 +637,6 @@ export type WGOSkaterStat = WGOSummarySkaterStat &
   WGOScoringCountsSkaterStat &
   WGOShotTypeSkaterStat &
   WGOToiSkaterStat;
-
-
 
 export type WGOSummarySkaterTotal = {
   playerId: number;
@@ -891,7 +888,7 @@ export type WGOShotTypeSkaterTotal = {
   shotsOnNetPoke: number;
   shotsOnNetSlap: number;
   shotsOnNetSnap: number;
-  shotsOnNetTipIn : number;
+  shotsOnNetTipIn: number;
   shotsOnNetWrapAround: number;
   shotsOnNetWrist: number;
 };
@@ -907,5 +904,3 @@ export type WGOToiSkaterTotal = {
   shiftsPerGame: number;
   timeOnIcePerShift: number;
 };
-
-

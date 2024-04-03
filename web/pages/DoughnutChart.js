@@ -10,7 +10,7 @@ import {
 // Register the components
 Chart.register(DoughnutController, ArcElement, Tooltip, Legend);
 
-const DoughnutChart = ({ data }) => {
+const DoughnutChart = ({ data, mobileView }) => {
   const chartRef = useRef(null);
   const chartInstance = useRef(null); // Ref to store the chart instance
 
@@ -29,11 +29,11 @@ const DoughnutChart = ({ data }) => {
         options: {
           responsive: true,
           maintainAspectRatio: true, // Now it's true to maintain aspect ratio of the whole canvas
-          aspectRatio: 3 / 1, // Adjust based on your need, but it affects whole canvas
+          aspectRatio: mobileView ? 1 : 2 / 1, // Adjust based on your need, but it affects whole canvas
           plugins: {
             legend: {
-              position: "left",
-              align: "start",
+              position: mobileView ? "bottom" : "left", // Legend at the bottom for mobile view
+              align: mobileView ? "center" : "start",
               labels: {
                 boxWidth: 10,
                 boxHeight: 10,
@@ -65,7 +65,7 @@ const DoughnutChart = ({ data }) => {
         chartInstance.current.destroy();
       }
     };
-  }, [data]); // Re-render the chart if the data changes
+  }, [data, mobileView]); // Re-render the chart if the data changes
 
   return <canvas ref={chartRef} />;
 };
