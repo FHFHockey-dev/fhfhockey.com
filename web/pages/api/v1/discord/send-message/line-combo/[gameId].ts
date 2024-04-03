@@ -80,8 +80,6 @@ ${defensemenLines}
   const message = {
     content: null,
     embeds,
-    username: "Line Combo",
-    attachments: [],
   };
   try {
     await sendMessage(message, WEBHOOK_URL);
