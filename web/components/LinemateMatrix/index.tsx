@@ -10,7 +10,7 @@ import Tooltip from "components/Tooltip";
 import Select from "components/Select";
 import { isGameFinished } from "pages/api/v1/db/update-stats/[gameId]";
 
-async function getRostersMap(gameId: number) {
+async function getRostersMap(gameId: number, _teamId?: number) {
   const rostersMap: Record<number, PlayerData> = {};
 
   // get skaters only
@@ -30,24 +30,48 @@ async function getRostersMap(gameId: number) {
     position: item.position,
     name: item.name.default,
   });
-  const homeTeamPlayers = [
-    ...playerByGameStats.homeTeam.forwards,
-    ...playerByGameStats.homeTeam.defense,
-  ].map(transform(boxscore.homeTeam.id));
-  const awayTeamPlayers = [
-    ...playerByGameStats.awayTeam.forwards,
-    ...playerByGameStats.awayTeam.defense,
-  ].map(transform(boxscore.awayTeam.id));
-  [...homeTeamPlayers, ...awayTeamPlayers].forEach((p) => {
+  const players: PlayerData[] = [];
+  let teams: { id: number; name: string }[] = [
+    boxscore.homeTeam,
+    boxscore.awayTeam,
+  ].map((team) => ({
+    id: team.id,
+    name: team.name.default,
+  }));
+  if (_teamId) {
+    teams = teams.filter((team) => team.id === _teamId);
+    if (_teamId === boxscore.homeTeam.id) {
+      const homeTeamPlayers = [
+        ...playerByGameStats.homeTeam.forwards,
+        ...playerByGameStats.homeTeam.defense,
+      ].map(transform(boxscore.homeTeam.id));
+      players.push(...homeTeamPlayers);
+    } else if (_teamId === boxscore.awayTeam.id) {
+      const awayTeamPlayers = [
+        ...playerByGameStats.awayTeam.forwards,
+        ...playerByGameStats.awayTeam.defense,
+      ].map(transform(boxscore.awayTeam.id));
+      players.push(...awayTeamPlayers);
+    }
+  } else {
+    const homeTeamPlayers = [
+      ...playerByGameStats.homeTeam.forwards,
+      ...playerByGameStats.homeTeam.defense,
+    ].map(transform(boxscore.homeTeam.id));
+    const awayTeamPlayers = [
+      ...playerByGameStats.awayTeam.forwards,
+      ...playerByGameStats.awayTeam.defense,
+    ].map(transform(boxscore.awayTeam.id));
+    players.push(...homeTeamPlayers, ...awayTeamPlayers);
+  }
+
+  players.forEach((p) => {
     rostersMap[p.id] = p;
   });
 
   return {
     rostersMap,
-    teams: [boxscore.homeTeam, boxscore.awayTeam].map((team) => ({
-      id: team.id,
-      name: team.name.default,
-    })),
+    teams,
   };
 }
 
@@ -86,18 +110,23 @@ export type TOIData = {
   p1: PlayerData;
   p2: PlayerData;
 };
-export async function getTOIData(id: number) {
+export async function getTOIData(id: number, _teamId?: number) {
   const [{ data: shiftsData }, { rostersMap, teams }] = await Promise.all([
     await Fetch(
       `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`
     ).then((res) => res.json()),
-    await getRostersMap(id),
+    await getRostersMap(id, _teamId),
   ]);
 
-  const rosters = groupBy(Object.values(rostersMap), (player) => player.teamId);
+  let rosters = groupBy(Object.values(rostersMap), (player) => player.teamId);
+  if (_teamId) {
+    rosters = { [_teamId]: rosters[_teamId] };
+  }
   const data: Record<number, TOIData[]> = {};
   const pairwiseTOIForTwoTeams = processShifts(shiftsData, rosters);
-  const teamIds = Object.keys(pairwiseTOIForTwoTeams).map(Number);
+  const teamIds = _teamId
+    ? [_teamId]
+    : Object.keys(pairwiseTOIForTwoTeams).map(Number);
   // populate player info
   teamIds.forEach((teamId) => {
     if (data[teamId] === undefined) data[teamId] = [];
@@ -256,7 +285,7 @@ type LinemateMatrixInternalProps = {
 };
 
 export const getKey = (p1: number, p2: number) => `${[p1, p2].sort()}`;
-function LinemateMatrixInternal({
+export function LinemateMatrixInternal({
   teamName,
   roster = [],
   toiData = [],
