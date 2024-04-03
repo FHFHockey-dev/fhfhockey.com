@@ -4,6 +4,11 @@ import supabase from "web/lib/supabase";
 import styles from "styles/BLSH.module.scss";
 import useCareerAveragesStats from "hooks/useCareerAveragesStats";
 
+// TO DO:
+// Make Goalie Career Averages Endpoint via NST
+// Make Team Career Averages Endpoint via NST
+// make an algorithm for sustainability using different luck and skill metrics
+
 function SkaterStats() {
   const [data, setData] = useState([]);
   const [activeTab, setActiveTab] = useState("Forwards");

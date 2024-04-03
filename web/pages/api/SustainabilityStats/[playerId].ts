@@ -82,7 +82,7 @@ async function getStats(
 
   // get on-ice and individual URLs
   url.searchParams.set("stdoi", "std");
-  const individualURL = url.toString(); 
+  const individualURL = url.toString();
 
   url.searchParams.set("stdoi", "oi");
   const onIceURL = url.toString();
@@ -92,6 +92,7 @@ async function getStats(
     fetchWithCache(onIceURL, false),
   ])) as string[];
   const individualDocument = parse(individualHtml);
+
   const onIceDocument = parse(onIceHtml);
   const onIces = parseTable(onIceDocument.getElementById("players"));
   const onIce = {
@@ -152,7 +153,6 @@ async function getStats(
 
   // goals - Goals
   const goals = Number(individual.data[individual.headers.indexOf("Goals")]);
-  
 
   return {
     "S%": shootsPct / 100,
@@ -162,10 +162,10 @@ async function getStats(
     "secA%": secAPct,
     "SOG/60": SOGPerSixty,
     "oZS%": oZSPct / 100,
-    "iHDCF": iHDCF,
-    "iSCF": iSCF,
-    "ixG": ixG,
-    "goals": goals,
+    iHDCF: iHDCF,
+    iSCF: iSCF,
+    ixG: ixG,
+    goals: goals,
   };
 }
 

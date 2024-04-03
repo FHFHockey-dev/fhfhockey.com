@@ -369,107 +369,6 @@
   transform: scale(1.05);
 }
 
-@media (max-width: 767px) {
-  .gameCard {
-    flex: 1 0 48%;
-    min-height: 4em;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .gameCard img {
-    align-items: center;
-  }
-
-  .gameCard span {
-    font-size: 1em;
-  }
-
-  .gameTimeCard {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    min-height: 2em;
-    max-height: 2em;
-  }
-
-  .gameTimeInfo {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-  }
-
-  .gamesContainer {
-    grid-template-columns: repeat(
-      2,
-      1fr
-    ); // Adjusting to 2 columns for mobile view
-    gap: 10px;
-    grid-gap: 10px;
-  }
-
-  .gamesHeader {
-    margin-bottom: 0;
-  }
-
-  .gamesHeader button {
-    cursor: pointer;
-    font-size: 20px; /* Adjust font size as needed */
-    padding: 0 5px; /* Adjust padding as needed */
-    height: 100%;
-    width: 10%;
-    background-color: #000;
-    color: #ddd;
-    font-family: roboto condensed, sans-serif;
-  }
-
-  .standingsInjuriesContainer {
-    flex-direction: column; // Stack the items vertically
-  }
-
-  .ccStandings table,
-  .crInjuries table {
-    margin: auto; // Center the tables
-  }
-
-  .vs {
-    z-index: 3;
-  }
-
-  .gameState {
-    font-family: roboto condensed, sans-serif;
-    font-size: 0.5em;
-  }
-
-  .gameTimeText {
-    font-size: 0.6em;
-  }
-
-  .gameTime {
-    flex: 2;
-  }
-
-  .rightImage {
-    right: -10px;
-    bottom: 8px;
-    filter: drop-shadow(0 0 3px #000);
-  }
-
-  .leftImage {
-    left: -8px;
-    top: 5px;
-    filter: drop-shadow(0 0 3px #fff);
-  }
-
-  .leftImage,
-  .rightImage {
-    width: 85px;
-    height: 45px;
-  }
-}
-
 .standingsInjuriesContainer {
   display: flex;
 }
@@ -640,6 +539,109 @@
 }
 
 @media (max-width: 767px) {
+  .gameCard {
+    flex: 1 0 48%;
+    min-height: 4em;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .gameCard img {
+    align-items: center;
+  }
+
+  .gameCard span {
+    font-size: 1em;
+  }
+
+  .gameTimeCard {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 2em;
+    max-height: 2em;
+  }
+
+  .gameTimeInfo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .gamesContainer {
+    grid-template-columns: repeat(
+      4,
+      1fr
+    ); // Adjusting to 2 columns for mobile view
+    gap: 10px;
+    grid-gap: 10px;
+  }
+
+  .gamesContainer :nth-last-child(2):nth-child(3n + 1) {
+    grid-column-end: 1;
+  }
+
+  .gamesHeader {
+    margin-bottom: 0;
+  }
+
+  .gamesHeader button {
+    cursor: pointer;
+    font-size: 20px; /* Adjust font size as needed */
+    padding: 0 5px; /* Adjust padding as needed */
+    height: 100%;
+    width: 10%;
+    background-color: #000;
+    color: #ddd;
+    font-family: roboto condensed, sans-serif;
+  }
+
+  .standingsInjuriesContainer {
+    flex-direction: column; // Stack the items vertically
+  }
+
+  .ccStandings table,
+  .crInjuries table {
+    margin: auto; // Center the tables
+  }
+
+  .vs {
+    z-index: 3;
+  }
+
+  .gameState {
+    font-family: roboto condensed, sans-serif;
+    font-size: 0.5em;
+  }
+
+  .gameTimeText {
+    font-size: 0.6em;
+  }
+
+  .gameTime {
+    flex: 2;
+  }
+
+  .rightImage {
+    right: -10px;
+    bottom: 8px;
+    filter: drop-shadow(0 0 3px #000);
+  }
+
+  .leftImage {
+    left: -8px;
+    top: 5px;
+    filter: drop-shadow(0 0 3px #fff);
+  }
+
+  .leftImage,
+  .rightImage {
+    width: 85px;
+    height: 45px;
+  }
+
   .crInjuries {
     margin-left: 0;
     width: 100%;
@@ -658,5 +660,6 @@
 
   .gamesContainer > * {
     grid-column: span 4;
+    grid-column-start: 1;
   }
 }
