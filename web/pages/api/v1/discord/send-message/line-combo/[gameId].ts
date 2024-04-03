@@ -7,20 +7,24 @@ const WEBHOOK_URL = process.env.LINE_COMBO_WEBHOOK_URL ?? "";
 
 export default adminOnly(async (req, res) => {
   const gameId = Number(req.query.gameId);
-  const { data, error } = await supabase
+  const teamId = req.query.teamId ? Number(req.query.teamId) : 0;
+  let q = supabase
     .from("lineCombinations")
     .select(
       "...teams(teamAbbreviation:abbreviation), forwards, defensemen, ...games(startTime)"
     )
-    .eq("gameId", gameId)
-    .returns<
-      {
-        teamAbbreviation: string;
-        forwards: number[];
-        defensemen: number[];
-        startTime: string;
-      }[]
-    >();
+    .eq("gameId", gameId);
+  if (teamId !== 0) {
+    q = q.eq("teamId", teamId);
+  }
+  const { data, error } = await q.returns<
+    {
+      teamAbbreviation: string;
+      forwards: number[];
+      defensemen: number[];
+      startTime: string;
+    }[]
+  >();
   if (!data) throw error;
 
   const shiftChartUrl = `https://fhfhockey.com/shiftChart?gameId=${gameId}&linemate-matrix-mode=line-combination#linemate-matrix`;
