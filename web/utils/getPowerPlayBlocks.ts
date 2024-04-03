@@ -27,7 +27,7 @@ export function formatTime(seconds: number) {
   const minutes = Math.floor(seconds / 60);
   const _seconds = seconds - minutes * 60;
   return `${minutes.toString().padStart(2, "0")}:${_seconds
-    .toString()
+    .toFixed(0)
     .padStart(2, "0")}`;
 }
 
