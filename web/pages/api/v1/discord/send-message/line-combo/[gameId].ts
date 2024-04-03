@@ -1,3 +1,4 @@
+import { NUM_PLAYERS_PER_LINE } from "components/LinemateMatrix";
 import { teamsInfo } from "lib/NHL/teamsInfo";
 import supabase from "lib/supabase";
 import adminOnly from "utils/adminOnlyMiddleware";
@@ -9,11 +10,16 @@ export default adminOnly(async (req, res) => {
   const { data, error } = await supabase
     .from("lineCombinations")
     .select(
-      "...teams(teamAbbreviation:abbreviation), forwards, ...games(startTime)"
+      "...teams(teamAbbreviation:abbreviation), forwards, defensemen, ...games(startTime)"
     )
     .eq("gameId", gameId)
     .returns<
-      { teamAbbreviation: string; forwards: number[]; startTime: string }[]
+      {
+        teamAbbreviation: string;
+        forwards: number[];
+        defensemen: number[];
+        startTime: string;
+      }[]
     >();
   if (!data) throw error;
 
@@ -22,28 +28,54 @@ export default adminOnly(async (req, res) => {
     new Date(data[0].startTime)
   );
 
-  const embeds = data.map((item) => {
-    const title = `${item.teamAbbreviation} Line Combos ${gameTime}`;
-    const url = shiftChartUrl;
-    const color = parseInt(
-      teamsInfo[item.teamAbbreviation as "NJD"].primaryColor.slice(1),
-      16
-    );
-    // todo
-    const image = {
-      url: "https://fyhftlxokyjtpndbkfse.supabase.co/storage/v1/object/public/images/line-combo-1.png",
-    };
-    const description = "";
+  const embeds = await Promise.all(
+    data.map(async (item) => {
+      const title = `${item.teamAbbreviation} Line Combos ${gameTime}`;
+      const url = `${shiftChartUrl}&team=${item.teamAbbreviation}`;
+      const color = parseInt(
+        teamsInfo[item.teamAbbreviation as "NJD"].primaryColor.slice(1),
+        16
+      );
+      // todo
+      const image = {
+        url: "https://fyhftlxokyjtpndbkfse.supabase.co/storage/v1/object/public/images/line-combo-1.png",
+      };
+      // get players
+      const { data: forwards } = await supabase
+        .from("players")
+        .select("id, lastName")
+        .in("id", item.forwards);
+      const { data: defensemen } = await supabase
+        .from("players")
+        .select("id, lastName")
+        .in("id", item.defensemen);
 
-    const embed = {
-      title,
-      description,
-      url,
-      color,
-      image,
-    };
-    return embed;
-  });
+      const forwardsLines = createPlayersDescription(
+        forwards!,
+        NUM_PLAYERS_PER_LINE.forwards
+      );
+
+      const defensemenLines = createPlayersDescription(
+        defensemen!,
+        NUM_PLAYERS_PER_LINE.defensemen
+      );
+
+      const description = `${forwardsLines}
+
+${defensemenLines}
+
+[ShiftChart](${shiftChartUrl})
+`;
+
+      const embed = {
+        title,
+        description,
+        url,
+        color,
+      };
+      return embed;
+    })
+  );
 
   const message = {
     content: null,
@@ -56,7 +88,7 @@ export default adminOnly(async (req, res) => {
     res.json(message);
   } catch (e) {
     console.error(e);
-    res.json({ error: "Failed to post the line combo to discord" });
+    res.json({ error: "Failed to post the line combo to discord", message });
   }
 });
 
@@ -82,4 +114,42 @@ function sendMessage(payload: any, webhookUrl: string) {
         reject(error);
       });
   });
+}
+
+function getLineNumber(pos: number, numPlayersPerLine: number) {
+  // num players per line : 3
+  // 0  => 1
+  // 1  => 1
+  // 2  => 1
+  // 3  => 2
+  // 4  => 2
+  // 5  => 2
+  // 6  => 3
+  return Math.floor(pos / numPlayersPerLine) + 1;
+}
+
+function createPlayersDescription(
+  players: { lastName: string }[],
+  numPlayersPerLine: number
+) {
+  const lines = [] as string[];
+  // line number => player
+  const map = new Map<number, { lastName: string }[]>();
+  players.forEach((p, i) => {
+    const line = getLineNumber(i, numPlayersPerLine);
+    let playersOfLine = map.get(line);
+    if (!playersOfLine) {
+      playersOfLine = [];
+      map.set(line, playersOfLine);
+    }
+    playersOfLine.push(p);
+  });
+
+  for (const line of map.keys()) {
+    const playersOfLine = map.get(line) ?? [];
+    let str = `L${line}: ${playersOfLine.map((p) => p.lastName).join(", ")}`;
+    lines.push(str);
+  }
+
+  return lines.join("\n");
 }
