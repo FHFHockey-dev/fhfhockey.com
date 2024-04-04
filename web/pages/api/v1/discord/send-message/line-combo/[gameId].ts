@@ -45,37 +45,43 @@ export default adminOnly(async (req, res) => {
         url: "https://fyhftlxokyjtpndbkfse.supabase.co/storage/v1/object/public/images/line-combo-1.png",
       };
       // get players
-      const { data: forwards } = await supabase
+      let { data: forwards } = await supabase
         .from("players")
         .select("id, lastName")
         .in("id", item.forwards);
-      const { data: defensemen } = await supabase
-        .from("players")
-        .select("id, lastName")
-        .in("id", item.defensemen);
-
-      const forwardsLines = createPlayersDescription(
+      forwards =
         forwards!.sort((a, b) => {
           const aPos = item.forwards.indexOf(a.id);
           const bPos = item.forwards.indexOf(b.id);
           return aPos - bPos;
-        }),
-        NUM_PLAYERS_PER_LINE.forwards
-      );
-
-      const defensemenLines = createPlayersDescription(
+        }) ?? [];
+      let { data: defensemen } = await supabase
+        .from("players")
+        .select("id, lastName")
+        .in("id", item.defensemen);
+      defensemen =
         defensemen!.sort((a, b) => {
           const aPos = item.defensemen.indexOf(a.id);
           const bPos = item.defensemen.indexOf(b.id);
           return aPos - bPos;
-        }),
-        NUM_PLAYERS_PER_LINE.defensemen
+        }) ?? [];
+
+      const forwardsLines = createPlayersDescription(forwards, "FORWARDS");
+
+      const defensemenLines = createPlayersDescription(
+        defensemen,
+        "DEFENSEMEN"
       );
+
+      const extras = createExtras({
+        forwards,
+        defensemen,
+      });
 
       const description = `${forwardsLines}
 
 ${defensemenLines}
-
+${extras.length === 0 ? "" : "\n" + extras + "\n"}
 [ShiftChart](${shiftChartUrl})
 `;
 
@@ -140,13 +146,20 @@ function getLineNumber(pos: number, numPlayersPerLine: number) {
 
 function createPlayersDescription(
   players: { lastName: string }[],
-  numPlayersPerLine: number
+  type: "FORWARDS" | "DEFENSEMEN"
 ) {
+  const numPlayersPerLine =
+    type === "FORWARDS"
+      ? NUM_PLAYERS_PER_LINE.forwards
+      : NUM_PLAYERS_PER_LINE.defensemen;
+  const numLines = type === "FORWARDS" ? 4 : 3;
   const lines = [] as string[];
   // line number => player
   const map = new Map<number, { lastName: string }[]>();
   players.forEach((p, i) => {
     const line = getLineNumber(i, numPlayersPerLine);
+    if (line > numLines) return;
+
     let playersOfLine = map.get(line);
     if (!playersOfLine) {
       playersOfLine = [];
@@ -168,4 +181,26 @@ function createPlayersDescription(
   }
 
   return lines.join("\n");
+}
+
+function createExtras(players: {
+  defensemen: { lastName: string }[];
+  forwards: { lastName: string }[];
+}) {
+  const numLines = {
+    forwards: 4,
+    defensemen: 3,
+  };
+  const extras = [] as string[];
+  extras.push(
+    ...players.defensemen
+      .slice(numLines.defensemen * NUM_PLAYERS_PER_LINE.defensemen)
+      .map((p) => p.lastName)
+  );
+  extras.push(
+    ...players.forwards
+      .slice(numLines.forwards * NUM_PLAYERS_PER_LINE.forwards)
+      .map((p) => p.lastName)
+  );
+  return extras.length > 0 ? `Extras: [${extras.join(", ")}]` : "";
 }
