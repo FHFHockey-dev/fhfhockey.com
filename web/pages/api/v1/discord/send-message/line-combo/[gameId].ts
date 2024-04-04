@@ -55,12 +55,20 @@ export default adminOnly(async (req, res) => {
         .in("id", item.defensemen);
 
       const forwardsLines = createPlayersDescription(
-        forwards!,
+        forwards!.sort((a, b) => {
+          const aPos = item.forwards.indexOf(a.id);
+          const bPos = item.forwards.indexOf(b.id);
+          return aPos - bPos;
+        }),
         NUM_PLAYERS_PER_LINE.forwards
       );
 
       const defensemenLines = createPlayersDescription(
-        defensemen!,
+        defensemen!.sort((a, b) => {
+          const aPos = item.defensemen.indexOf(a.id);
+          const bPos = item.defensemen.indexOf(b.id);
+          return aPos - bPos;
+        }),
         NUM_PLAYERS_PER_LINE.defensemen
       );
 
