@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { teamsInfo } from "lib/NHL/teamsInfo";
 import Fetch from "lib/cors-fetch";
 import styles from "/styles/useGoals.module.scss";
+import { formatTime } from "utils/getPowerPlayBlocks";
 
 export default function useGoals(id: number) {
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -164,10 +165,14 @@ function GoalIndicator({
       <strong>{scoreTeamAbbreviation} Goal:</strong> {scorer.firstName}{" "}
       {scorer.lastName}
       <br />
-      <strong>Assists:</strong>{" "}
-      {assists.map((assist) => `${assist.lastName}`).join(", ")}
-      <br />
-      <strong>Time:</strong> P{period.number} - {timeInPeriod} Seconds
+      {assists.length > 0 && (
+        <>
+          <strong>Assists:</strong>{" "}
+          {assists.map((assist) => `${assist.lastName}`).join(", ")}
+          <br />
+        </>
+      )}
+      <strong>Time:</strong> P{period.number} - {formatTime(timeInPeriod)}
       <br />
       <strong>Score:</strong> {homeTeam.abbreviation} {homeTeam.score} -{" "}
       {awayTeam.abbreviation} {awayTeam.score}
