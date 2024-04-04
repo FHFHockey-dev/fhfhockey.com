@@ -149,7 +149,13 @@ function createPlayersDescription(
 
   for (const line of map.keys()) {
     const playersOfLine = map.get(line) ?? [];
-    let str = `L${line}: ${playersOfLine.map((p) => p.lastName).join(", ")}`;
+    // L1 = Line 1
+    // P1 = Pairing 1
+    // Just semantics but Lines are for forwards, Pairings for defensemen
+    const prefix = numPlayersPerLine === 3 ? "L" : "P";
+    let str = `${prefix}${line}: ${playersOfLine
+      .map((p) => p.lastName)
+      .join(", ")}`;
     lines.push(str);
   }
 
