@@ -1,3 +1,5 @@
+@import "styles/vars.scss";
+
 /* ShiftChart.module.scss */
 /* /workspaces/fhfhockey.com/web/styles/ShiftChart.module.scss */
 
@@ -95,9 +97,12 @@
 }
 
 .shiftChartTableContainer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  @media only screen and (min-width: $screen-medium-max) {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
   width: 98%;
   overflow-x: auto; // Add horizontal scroll for smaller screens
   border: #07aae2 3px solid;
