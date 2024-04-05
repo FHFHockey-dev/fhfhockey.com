@@ -88,10 +88,10 @@ export type TOIData = {
 };
 export async function getTOIData(id: number) {
   const [{ data: shiftsData }, { rostersMap, teams }] = await Promise.all([
-    await Fetch(
+    Fetch(
       `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`
     ).then((res) => res.json()),
-    await getRostersMap(id),
+    getRostersMap(id),
   ]);
 
   const rosters = groupBy(Object.values(rostersMap), (player) => player.teamId);
