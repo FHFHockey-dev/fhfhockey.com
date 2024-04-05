@@ -1,6 +1,8 @@
 import { NUM_PLAYERS_PER_LINE } from "components/LinemateMatrix";
 import { teamsInfo } from "lib/NHL/teamsInfo";
 import supabase from "lib/supabase";
+import supabaseServer from "lib/supabase/server";
+import puppeteer from "puppeteer-core";
 import adminOnly from "utils/adminOnlyMiddleware";
 
 const WEBHOOK_URL = process.env.LINE_COMBO_WEBHOOK_URL ?? "";
@@ -11,7 +13,7 @@ export default adminOnly(async (req, res) => {
   let q = supabase
     .from("lineCombinations")
     .select(
-      "...teams(teamAbbreviation:abbreviation), forwards, defensemen, ...games(startTime)"
+      "...teams(teamId:id, teamAbbreviation:abbreviation), forwards, defensemen, ...games(startTime)"
     )
     .eq("gameId", gameId);
   if (teamId !== 0) {
@@ -19,6 +21,7 @@ export default adminOnly(async (req, res) => {
   }
   const { data, error } = await q.returns<
     {
+      teamId: number;
       teamAbbreviation: string;
       forwards: number[];
       defensemen: number[];
@@ -40,9 +43,13 @@ export default adminOnly(async (req, res) => {
         teamsInfo[item.teamAbbreviation as "NJD"].primaryColor.slice(1),
         16
       );
-      // todo
+      const imageUrl = supabase.storage
+        .from("images")
+        .getPublicUrl(
+          `line-combos/${gameId}-linemate-matrix-${item.teamId}.png`
+        ).data.publicUrl;
       const image = {
-        url: "https://fyhftlxokyjtpndbkfse.supabase.co/storage/v1/object/public/images/line-combo-1.png",
+        url: imageUrl,
       };
       // get players
       let { data: forwards } = await supabase
@@ -90,6 +97,7 @@ ${extras.length === 0 ? "" : "\n" + extras + "\n"}
         description,
         url,
         color,
+        image,
       };
       return embed;
     })
@@ -100,11 +108,15 @@ ${extras.length === 0 ? "" : "\n" + extras + "\n"}
     embeds,
   };
   try {
+    await saveLinemateMatrixImages(gameId);
     await sendMessage(message, WEBHOOK_URL);
     res.json(message);
-  } catch (e) {
+  } catch (e: any) {
     console.error(e);
-    res.json({ error: "Failed to post the line combo to discord", message });
+    res.json({
+      error: "Failed to post the line combo to discord " + e.message,
+      message,
+    });
   }
 });
 
@@ -203,4 +215,58 @@ function createExtras(players: {
       .map((p) => p.lastName)
   );
   return extras.length > 0 ? `Extras: [${extras.join(", ")}]` : "";
+}
+
+function createURL(gameId: number) {
+  return `https://fhfhockey.com/shiftChart?gameId=${gameId}&linemate-matrix-mode=line-combination`;
+}
+
+function getAllMatrix() {
+  return "[id^=linemate-matrix-]";
+}
+
+async function saveLinemateMatrixImages(gameId: number) {
+  const browser = await puppeteer.connect({
+    browserWSEndpoint: process.env.PUPPETEER_ENDPOINT,
+  });
+
+  // Create a page
+  const page = await browser.newPage();
+
+  // Go to your site
+  await page.goto(createURL(gameId), {
+    waitUntil: "networkidle2",
+  });
+
+  // Hide header
+  await page.evaluate(() => {
+    const header = document.querySelector("header");
+    if (!header) return;
+    header!.style.display = "none";
+  });
+
+  const teamIds = await page.$$eval(getAllMatrix(), (elements) => {
+    return elements.map((el) => el.id);
+  });
+  console.log(teamIds);
+  const urls = [] as string[];
+  for (const teamId of teamIds) {
+    const content = await page.$(`#${teamId} > .content`);
+    const image = await content!.screenshot({
+      type: "png",
+    });
+    const { data, error } = await supabaseServer.storage
+      .from("images")
+      .upload(`line-combos/${gameId}-${teamId}.png`, image, {
+        cacheControl: "604800",
+        contentType: "image/png",
+        upsert: true,
+      });
+    if (error) throw error;
+    urls.push(data.path);
+  }
+
+  // Close browser.
+  await browser.close();
+  return urls;
 }
