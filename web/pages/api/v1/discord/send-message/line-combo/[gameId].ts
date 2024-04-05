@@ -43,9 +43,8 @@ export default adminOnly(async (req, res) => {
       );
       const imageUrl = supabase.storage
         .from("images")
-        .getPublicUrl(
-          `line-combos/${gameId}-linemate-matrix-${item.teamId}.png`
-        ).data.publicUrl;
+        .getPublicUrl(`line-combos/${gameId}-${item.teamId}.png`)
+        .data.publicUrl;
       const image = {
         url: imageUrl,
       };
