@@ -253,7 +253,14 @@ const Home: NextPage = ({
                                 )
                               : getDisplayGameState(game.gameState)}
                           </span>
-                          <span className={styles.gameTimeText}>
+                          <span
+                            className={styles.gameTimeText}
+                            style={{
+                              display:
+                                game.gameState === "FINAL" ? "none" : "inline",
+                            }}
+                          >
+                            {" "}
                             {game.gameState === "LIVE" ? (
                               game.timeRemaining
                             ) : (
