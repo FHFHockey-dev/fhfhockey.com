@@ -1011,7 +1011,13 @@ function ShiftChart() {
                       fontStretch: isActive ? "expanded" : "normal",
                     }}
                   >
-                    {player.name}
+                    <span
+                      className={`${styles.playerNameText} ${
+                        !isActive ? styles.inactivePlayerText : ""
+                      }`}
+                    >
+                      {player.name}
+                    </span>
                   </td>
                   <td
                     className={styles.playerPositionCell}
@@ -1106,7 +1112,7 @@ function ShiftChart() {
                   borderRight: "1px solid #FFFFFF",
                 }}
               >
-                {awayTeamAbbrev}
+                <span className={styles.teamHeaderText}>{awayTeamAbbrev}</span>
               </td>
             </tr>
 

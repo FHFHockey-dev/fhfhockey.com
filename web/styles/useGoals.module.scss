@@ -29,6 +29,7 @@
     border-right: 10px solid transparent;
     border-top: 10px solid var(--backgroundColor);
     transform: translateX(-50%);
+    z-index: 4; // Ensure it's above the tooltip
   }
 }
 
@@ -54,6 +55,6 @@
   border: 1px solid black; // Or any other border
   padding: 5px;
   display: none; // Start hidden
-  z-index: 3; // Ensure it's above other elements
   white-space: nowrap;
+  z-index: 4; // Ensure it's above the goal indicator
 }

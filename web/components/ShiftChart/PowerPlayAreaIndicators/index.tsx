@@ -108,7 +108,7 @@ function PowerPlayAreaIndicator({
       style={{
         position: "absolute",
         top: 0,
-        height: "100%",
+        height: "125%",
         // backgroundColor: color,
         opacity: 0.5,
         ...areaStyle,

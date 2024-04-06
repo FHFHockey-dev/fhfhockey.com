@@ -22,21 +22,21 @@
   // Applies to period cells (1st, 2nd, 3rd period)
   &:nth-child(n + 3):nth-child(-n + 5) {
     width: calc(
-      (85% * 4 / 13)
+      (90% * 4 / 13)
     ); // Each regular period takes up 4 parts of the 13-part space
   }
 
   // Applies to overtime cells
   &.overtimeCell {
     width: calc(
-      (85% * 1 / 13)
+      (90% * 1 / 13)
     ); // Overtime takes up 1 part of the 13-part space
   }
 }
 
 .timestampPeriod {
   width: calc(
-    (85% * 4 / 13)
+    (90% * 4 / 13)
   ); // Each regular period takes up 4 parts of the 13-part space
 }
 
@@ -105,11 +105,10 @@
     align-items: center;
   }
 
-  width: 98%;
+  width: 100%;
   overflow-x: auto; // Add horizontal scroll for smaller screens
   border: #07aae2 3px solid;
   border-radius: 10px;
-  padding: 5px;
 }
 
 .shiftChartTable {
@@ -135,7 +134,7 @@
 }
 
 .gameInfoHeader {
-  width: 15%; // Adjust as needed
+  width: 10%; // Adjust as needed
 }
 
 .shiftChartTable tbody {
@@ -268,6 +267,7 @@
   text-align: center;
   padding: 5px;
   z-index: 15; // Ensure the team header is above the shift blocks
+  background-color: var(--team-header-bg-color);
 }
 
 .teamHeaderCellHome {
@@ -278,21 +278,33 @@
   font-size: 1.5em;
   text-align: left;
   padding: 5px;
-  position: relative; // Position relative for pseudo-element
+
+  position: sticky; // Position relative for pseudo-element
   z-index: 1; // Ensure the team header is above the shift blocks
   border-top: 2px solid var(--team-header-border-color, white); // Add a border to the top of the cell (customizable color
   border-bottom: 2px solid var(--team-header-border-color, white); // Add a border to the bottom of the cell (customizable color
 }
 
-.teamHeaderCellHome::before {
-  content: "";
-  position: absolute;
-  top: 0;
+/* Apply sticky positioning and styling to the first cell of each row, starting from the second row */
+.shiftChartTable tr:nth-child(n + 3) th:first-child,
+.shiftChartTable tr:nth-child(n + 3) td:first-child {
+  position: sticky;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(
-    --team-header-bg-color
-  ); // Or use a specific color if needed
-  z-index: -1; // High value to stack above
+  background-color: inherit; /* Ensure the background is not transparent */
+  z-index: 3; /* Higher than the table's other cells to ensure it stacks on top */
+  box-shadow: 2px 0px 5px rgba(0, 0, 0, 0.2); /* Slight box shadow to the right */
+}
+
+/* Optional: Add a slight box shadow or border to the sticky column to distinguish it */
+.shiftChartTable th:first-child,
+.shiftChartTable td:first-child {
+  box-shadow: 2px 0px 5px rgba(0, 0, 0, 0.2);
+}
+
+.shiftChartTable th:nth-child(2),
+.shiftChartTable td:nth-child(2) {
+  position: sticky;
+  left: 27%;
+  background-color: inherit; /* Ensure the background is not transparent */
+  z-index: 3; /* Higher than the table's other cells to ensure it stacks on top */
 }
