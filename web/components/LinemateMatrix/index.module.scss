@@ -21,16 +21,32 @@
   --player-info-size: 120px;
   font-size: 0.875rem;
   @media only screen and (max-width: $screen-small-max) {
-    --player-info-size: 100px;
-    font-size: 0.75rem;
+    --player-info-size: 80px;
+    font-size: 0.7rem;
+  }
+
+  // #__next > div > div.ShiftChart_shiftChartContainer__CgnMf > div:nth-child(3) > div > div.LinemateMatrix_gridWrapper__d0Bm9 > section:nth-child(2) > h4
+
+  h4 {
+    font-family: montesserat, sans-serif;
+    font-size: 1.5rem;
+    padding: 0;
+
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.075em;
+    font-style: italic;
   }
 
   .grid {
-    background-color: white;
-    color: black;
+    background-color: #202020;
+    color: #fff;
     display: grid;
-    width: 100%;
+    width: 90%;
     aspect-ratio: 1 / 1;
+    padding: var(--spacing);
+    border: 2px solid #07aae2;
+    border-radius: 10px;
 
     .topPlayerName {
       position: relative;
@@ -50,7 +66,7 @@
     }
 
     .leftPlayerName {
-      text-align: right;
+      text-align: left;
       text-overflow: ellipsis;
       overflow: hidden;
       white-space: nowrap;
@@ -65,11 +81,17 @@
     }
 
     .cell {
-      border: 1px solid #fff;
+      border: 1px solid #585858;
+      background: #292929;
 
       &:hover {
-        border-color: darkorange;
+        border-color: darkorange; // Ensure hover effect is visible
       }
+
+      &.highlight {
+        border: 1px solid #fff; // Use a class to apply the highlight style
+      }
+
       & .content {
         width: 100%;
         height: 100%;

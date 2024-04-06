@@ -1,3 +1,5 @@
+// cors-fetch.ts
+
 const isServer = typeof window === "undefined";
 
 export default function Fetch(url: string) {

@@ -14,6 +14,10 @@ export type Data = {
   "oZS%": number | null;
   "oiSH%": number | null;
   "secA%": number | null;
+  "iHDCF": number | null;
+  "iSCF": number | null;
+  "ixG": number | null;
+  "goals": number | null;
 };
 
 type Response = {
@@ -143,6 +147,30 @@ async function getStats(playerId: string) {
       0
     ) / onIce.data.length;
 
+    const iHDCF = individual.data.reduce(
+      (prev, current) =>
+        prev + Number(current[individual.headers.indexOf("iHDCF")]) || 0,
+      0
+    ) / individual.data.length;
+
+    const iSCF = individual.data.reduce(
+      (prev, current) =>
+        prev + Number(current[individual.headers.indexOf("iSCF")]) || 0,
+      0
+    ) / individual.data.length;
+
+    const ixG = individual.data.reduce(
+      (prev, current) =>
+        prev + Number(current[individual.headers.indexOf("ixG")]) || 0,
+      0
+    ) / individual.data.length;
+
+    const goals = individual.data.reduce(
+      (prev, current) =>
+        prev + Number(current[individual.headers.indexOf("Goals")]) || 0,
+      0
+    ) / individual.data.length;
+
   const data = {
     "S%": shootsPct / 100,
     "xS%": xSPct,
@@ -151,6 +179,11 @@ async function getStats(playerId: string) {
     "secA%": secAPct,
     "SOG/60": SOGPerSixty,
     "oZS%": oZSPct / 100,
+    "iHDCF": iHDCF,
+    "iSCF": iSCF,
+    "ixG": ixG,
+    "goals": goals,
   };
   return data;
 }
+

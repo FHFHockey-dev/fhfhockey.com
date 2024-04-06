@@ -1,0 +1,530 @@
+.spanColorBlue {
+  color: #07aae2;
+}
+
+.headerWigo {
+  font-family: roboto condensed, sans-serif;
+  font-size: 3em;
+  font-weight: 200;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.wigoHeader {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  width: 83%;
+  margin: 0 auto;
+  margin-top: 20px;
+}
+
+/* WiGO CHART CONTAINER */
+
+.wigoChartBorder {
+  height: 100vh; /* 90% of the viewport height */
+  width: 85%;
+  margin: 0 auto;
+  padding: 10px;
+  background-color: #afcee2;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.wigoContainer {
+  display: grid;
+  grid-template-columns: repeat(32, 1fr);
+  grid-template-rows: repeat(33, 1fr);
+  border: 1px solid #afcee2;
+  gap: 1px;
+  width: 97%; /* Take up all available width */
+  height: 97%; /* Take up all available height */
+  box-shadow: 0 10px 30px #123048; /* Horizontal offset, vertical offset, blur radius, and color */
+  z-index: 2; /* Ensure this is lower than the popupContainer if necessary */
+}
+
+.wigoDoughnut {
+  grid-area: 1 / 1 / 18 / 12;
+  z-index: 3;
+
+  .wigoDoughnutChart {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    height: 75%;
+    border-bottom: 1px solid #aac9dd;
+    background: linear-gradient(to bottom left, #34a6fe, #126fcc);
+  }
+
+  .wigoDoughnutLegendLeft {
+    width: 12.5%;
+    height: 100%;
+    font-family: roboto condensed, sans-serif;
+    font-size: 0.75em;
+    letter-spacing: -0.05em;
+    text-align: center;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+
+    .wigoDoughnutLegendLeftTitle {
+      background-color: #1c77d2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 2px solid #aac9dd;
+    }
+
+    .wigoDoughnutLegendLeftValue {
+      border: 1px solid #aac9dd;
+      color: #e3f3ff;
+      font-weight: 400;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  }
+
+  .wigoDoughnutChartContent {
+    width: 75%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .wigoDoughnutLegendRight {
+    width: 12.5%;
+    height: 100%;
+    font-family: roboto condensed, sans-serif;
+    font-size: 0.75em;
+    letter-spacing: -0.05em;
+    text-align: center;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+
+    .wigoDoughnutLegendRightTitle {
+      height: 100%;
+      background-color: #1c77d2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 2px solid #aac9dd;
+    }
+
+    .wigoDoughnutLegendRightValue {
+      border: 1px solid #aac9dd;
+      color: #e3f3ff;
+      font-weight: 400;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  }
+
+  .wigoDoughnutLegend {
+    height: 20%;
+    background-color: #1c77d2;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    .wigoDoughnutDescriptors {
+      font-size: 0.55rem;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      width: 100%;
+      text-align: center;
+      letter-spacing: -0.015em;
+
+      .wigoDoughnutDescriptor {
+        height: 40%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 33%;
+        padding: 5px;
+        text-align: center;
+      }
+    }
+  }
+
+  .wigoDoughnutHeader {
+    height: 80%;
+    background-color: #38abfe;
+    display: flex;
+    flex-direction: column; /* Stack the career and season sections vertically */
+    justify-content: center;
+    align-items: stretch; /* Stretch children to fill the container */
+    font-family: roboto condensed, sans-serif;
+    font-size: 0.75em;
+    text-align: center;
+
+    .wigoDoughnutHeaderCareer,
+    .wigoDoughnutHeaderSeason {
+      height: 50%; /* Each header takes half the height */
+      display: flex; /* Make them flex containers to evenly distribute the child elements */
+    }
+
+    .wigoDoughnutHeaderCareer > div,
+    .wigoDoughnutHeaderSeason > div {
+      flex: 1; /* Give each child equal width */
+      display: flex; /* Add this if you want to center the content of each cell */
+      justify-content: center; /* Center horizontally */
+      align-items: center; /* Center vertically */
+    }
+
+    .wigoDoughnutHeaderCareer {
+      border-bottom: 1px solid #aac9dd; /* Add a border between the two headers */
+      border-top: 1px solid #aac9dd; /* Add a border between the two headers */
+    }
+
+    .wigoDoughnutHeaderCareer > div:not(:last-child),
+    .wigoDoughnutHeaderSeason > div:not(:last-child) {
+      border-right: 1px solid #aac9dd; /* Border on the right except for the last child */
+    }
+  }
+
+  .wigoDoughnutFooter {
+    height: 25%;
+    background-color: #1c77d2;
+    border-top: 1px solid #aac9dd;
+  }
+}
+
+.bioHeadshot {
+  grid-area: 1 / 12 / 18 / 22;
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+
+  .bioHeadshotHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
+    height: 15%;
+    padding: 10px;
+    text-transform: uppercase;
+    font-size: 1.3em;
+    font-family: roboto condensed, sans-serif;
+    background-color: rgb(34, 61, 78);
+    border-bottom: 1px solid #aac9dd;
+    z-index: 1;
+    position: relative; /* Ensure z-index is applied correctly */
+    overflow: visible;
+  }
+
+  .bioHeadshotContent {
+    height: 85%;
+    background: linear-gradient(to bottom left, #274253, #14252d);
+    position: relative;
+    z-index: 3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    /* Add a pseudo-element for the circle */
+    &::before {
+      content: "";
+      position: absolute;
+      width: 14em;
+      height: 14em;
+      background-color: rgb(28, 119, 210);
+      border: 5px solid #aac9dd; /* Border color and size */
+      border-radius: 50%;
+      z-index: 1;
+    }
+
+    .wigoHeadshotImage {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: auto; /* Adjust this as needed to control the canvas size */
+      width: 100%;
+      display: flex;
+      transform: translateY(10%);
+      justify-content: center; /* Center horizontally */
+      align-items: flex-end; /* Align to the bottom */
+      z-index: 2;
+      overflow: visible; /* Allows the canvas to overflow into the header */
+      filter: grayscale(85%) sepia(0.5) hue-rotate(180deg) brightness(60%)
+        drop-shadow(0 0 10px #aac9dd); /* Apply a filter to the image */
+    }
+  }
+}
+
+.wigoLineChart {
+  grid-area: 1 / 22 / 18 / 33;
+  background: linear-gradient(to bottom left, #274253, #14252d);
+  z-index: 3;
+
+  .wigoLineChartHeader {
+    height: 15%;
+    background-color: #223d4e;
+    border-bottom: 1px solid #aac9dd;
+  }
+
+  .wigoLineChartContent {
+    height: 85%;
+    background-color: #ebfaff;
+    display: flex; /* Use flexbox to allow child elements to expand */
+    justify-content: center; /* Center the chart horizontally */
+    align-items: center; /* Center the chart vertically */
+  }
+}
+
+.wigoStatList {
+  grid-area: 18 / 1 / 24 / 12;
+  background-color: #1b2c36;
+}
+
+.wigoSusCells {
+  grid-area: 18 / 12 / 24 / 22;
+  background-color: #1b2c36;
+}
+
+.wigoRollingAverage {
+  grid-area: 18 / 22 / 24 / 33;
+  background-color: #1b2c36;
+  overflow-x: scroll; // Enable horizontal scrolling
+  overflow-y: hidden; // Prevent vertical scrolling
+}
+
+/* Target the scrollbar within .wigoRollingAverage specifically */
+.wigoRollingAverage::-webkit-scrollbar {
+  width: 8px; /* Width of the scrollbar */
+  height: 8px; /* Height of the scrollbar (for horizontal scroll) */
+}
+
+.wigoRollingAverage::-webkit-scrollbar-track {
+  background-color: #2e3b4e; /* Color of the track */
+}
+
+.wigoRollingAverage::-webkit-scrollbar-thumb {
+  background-color: #2b90ed; /* Color of the scrollbar thumb */
+  border-radius: 2px; /* Rounded corners of the scrollbar thumb */
+}
+
+.wigoRollingAverage::-webkit-scrollbar-thumb:hover {
+  background-color: #0590d8; /* Color of the scrollbar thumb on hover */
+}
+
+.wigoLinesDoughnuts {
+  grid-area: 24 / 1 / 31 / 12;
+  background: linear-gradient(to bottom, #e3f3ff, #c2dae6);
+
+  .wigoLinesDoughnutsTop {
+    height: 50%;
+    border-bottom: 1px solid #07aae2;
+    display: flex;
+    flex-direction: row;
+
+    .wigoLinesTop {
+      width: 66%;
+      border-right: 1px solid #07aae2;
+    }
+
+    .wigoDoughnutsTop {
+      width: 33%;
+    }
+  }
+
+  .wigoLinesDoughnutsBottom {
+    height: 50%;
+    display: flex;
+    flex-direction: row;
+
+    .wigoLinesBottom {
+      width: 66%;
+      border-right: 1px solid #07aae2;
+    }
+
+    .wigoDoughnutsBottom {
+      width: 33%;
+    }
+  }
+}
+
+.wigoPercentileLines {
+  grid-area: 24 / 12 / 31 / 22;
+  background: linear-gradient(to bottom, #e3f3ff, #c2dae6);
+
+  .wigoPercentileLinesTop {
+    height: 50%;
+    border-bottom: 1px solid #07aae2;
+  }
+
+  .wigoPercentileLinesBottom {
+    height: 50%;
+  }
+}
+
+.wigoBars {
+  grid-area: 24 / 22 / 31 / 33;
+  background: linear-gradient(to bottom, #e3f3ff, #c2dae6);
+
+  .wigoBarsTop {
+    height: 50%;
+    border-bottom: 1px solid #07aae2;
+  }
+
+  .wigoBarsBottom {
+    height: 50%;
+  }
+}
+
+/* END WiGO CHART CONTAINER */
+
+.dropdownContainer {
+  position: relative;
+  display: inline-block;
+}
+
+.popupContainer {
+  position: absolute;
+  top: 100%; /* Position the popup right below the input field */
+  left: 0; /* Align the popup with the left edge of the dropdown container */
+  width: 250px;
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: #202020;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  z-index: 3; /* Higher z-index to ensure it's on top of other elements */
+
+  /* Styles for the scrollbar */
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background-color: #101010;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: #07aae2;
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #101010;
+  }
+}
+
+.searchInput {
+  width: 250px;
+  padding: 10px;
+  background-color: #202020;
+  border: 2px solid #07aae2;
+  border-radius: 4px;
+  color: #ccc;
+}
+
+.scrollableList {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.popupListItem {
+  padding: 8px 12px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #101010;
+  }
+}
+
+/* gameScoreLineChart */
+.chartWrapper {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.chartWrapper > canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  height: 100%;
+}
+
+.chartAreaWrapper {
+  width: auto; // Allow it to grow as needed
+  height: 100%;
+  min-width: 1000px;
+  flex-grow: 1; // Allow the chart area to take up the remaining space
+}
+
+.yAxisLabel {
+  position: -webkit-sticky;
+  position: sticky;
+  left: 0;
+  background-color: #1b2c36;
+  border-right: 1px solid #aac9dd;
+  height: 100%;
+  display: flex;
+  flex-direction: row; // Stack children vertically
+  justify-content: center; // Center children vertically
+  align-items: center; // Center children horizontally
+  width: auto; // Let the width be determined by the content or set it explicitly
+  min-width: 10%; // Minimum width to ensure visibility of labels
+}
+
+.yAxisLabelTitle {
+  text-align: center;
+  white-space: nowrap;
+  writing-mode: vertical-rl;
+  transform: scale(-1);
+  font-size: 0.75em;
+}
+
+.yAxisLabelValues {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  height: 100%;
+  font-size: 0.75em;
+  font-weight: 900;
+  flex-grow: 1;
+  margin-right: 10%;
+}
+
+.chartContainer {
+  display: flex;
+  height: 100%;
+}
+
+.top,
+.middle,
+.bottom {
+  position: absolute;
+  text-align: right;
+  width: 100%;
+}
+
+.top {
+  top: 0%; /* Adjust this value to align with the chart's y-axis */
+}
+
+.middle {
+  top: 48%; /* Adjust this value to align with the chart's y-axis */
+  transform: translateY(-50%); /* Center align the element with its position */
+}
+
+.bottom {
+  bottom: 20%; /* Adjust this value to align with the chart's y-axis */
+}

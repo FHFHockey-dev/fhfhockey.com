@@ -4,7 +4,7 @@ import { NextSeo } from "next-seo";
 import Container from "components/Layout/Container";
 import { getTeams } from "lib/NHL/server";
 import Link from "next/link";
-import StrengthOfSchedule from "components/teamLandingPage/strengthofSchedule";
+import StrengthOfSchedule from "../components/teamLandingPage/strengthofSchedule";
 import { Team } from "lib/NHL/types";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import ClientOnly from "components/ClientOnly";
@@ -151,34 +151,66 @@ function Stats({
       <div className="team-landing-page">
         <div
           className="stats-and-trends-grid"
-          style={{ display: "flex", alignItems: "flex-start" }}
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            flexDirection: isMobileView ? "column" : "row",
+          }}
         >
-          <div
-            className="sos-tables-container"
-            style={{
-              display: "flex",
-              flexDirection: "row",
-            }}
-          >
-            <div className="sos-container">
-              <h2>
-                Strength of Schedule -{" "}
-                <span className="spanColorBlue">Past</span>
-              </h2>
-              <StrengthOfSchedule type="past" rankings={pastSoSRankings} />
-            </div>
+          {isMobileView && (
+            <>
+              <div className="goalie-trends-container">
+                <GoalieTrends />
+              </div>
+              <div className="sos-tables-container">
+                <div className="sos-container">
+                  <h2>
+                    Strength of Schedule -{" "}
+                    <span className="spanColorBlue">Past</span>
+                  </h2>
+                  <StrengthOfSchedule type="past" rankings={pastSoSRankings} />
+                </div>
 
-            <div className="goalie-trends-container">
-              <GoalieTrends />
-            </div>
-            <div className="sos-container">
-              <h2>
-                Strength of Schedule -{" "}
-                <span className="spanColorBlue">Future</span>
-              </h2>
-              <StrengthOfSchedule type="future" rankings={futureSoSRankings} />
-            </div>
-          </div>
+                <div className="sos-container">
+                  <h2>
+                    Strength of Schedule -{" "}
+                    <span className="spanColorBlue">Future</span>
+                  </h2>
+                  <StrengthOfSchedule
+                    type="future"
+                    rankings={futureSoSRankings}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {!isMobileView && (
+            <>
+              <div className="sos-container">
+                <h2>
+                  Strength of Schedule -{" "}
+                  <span className="spanColorBlue">Past</span>
+                </h2>
+                <StrengthOfSchedule type="past" rankings={pastSoSRankings} />
+              </div>
+
+              <div className="goalie-trends-container">
+                <GoalieTrends />
+              </div>
+
+              <div className="sos-container">
+                <h2>
+                  Strength of Schedule -{" "}
+                  <span className="spanColorBlue">Future</span>
+                </h2>
+                <StrengthOfSchedule
+                  type="future"
+                  rankings={futureSoSRankings}
+                />
+              </div>
+            </>
+          )}
         </div>
 
         <div className="tables-container">

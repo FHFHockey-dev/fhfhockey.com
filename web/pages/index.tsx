@@ -14,6 +14,9 @@ import styles from "../styles/Home.module.scss";
 
 import { teamsInfo } from "lib/NHL/teamsInfo";
 
+// DEV NOTE:
+// Integrate Live Period/Time Clock instead of just displaying "LIVE" for live games
+
 const Home: NextPage = ({
   initialGames,
   initialInjuries,
@@ -37,11 +40,57 @@ const Home: NextPage = ({
     const fetchGames = async () => {
       const res = await fetch(`/api/v1/games?date=${currentDate}`);
       const data = await res.json();
-      setGames(data);
+
+      // Fetch period and time remaining for LIVE games
+      const liveGamePromises = data
+        .filter((game) => game.gameState === "LIVE")
+        .map(async (game) => {
+          const liveDataResponse = await fetch(
+            `https://api-web.nhle.com/v1/gamecenter/${game.id}/landing`
+          );
+          const liveData = await liveDataResponse.json();
+
+          return {
+            ...game,
+            period: liveData.periodDescriptor.number,
+            periodType: liveData.periodDescriptor.periodType,
+            timeRemaining: liveData.clock.timeRemaining,
+            inIntermission: liveData.clock.inIntermission,
+          };
+        });
+
+      const liveGamesData = await Promise.all(liveGamePromises);
+
+      // Combine live games data with other games data
+      const updatedGames = data.map((game) => {
+        const liveGameData = liveGamesData.find(
+          (liveGame) => liveGame.id === game.id
+        );
+        return liveGameData || game;
+      });
+
+      setGames(updatedGames);
     };
 
     fetchGames();
   }, [currentDate]);
+
+  const formatPeriodText = (periodNumber, periodDescriptor, inIntermission) => {
+    if (inIntermission) {
+      return "Intermission";
+    } else if (periodDescriptor === "OT") {
+      return "Overtime";
+    } else {
+      const periodSuffix =
+        {
+          "1": "st",
+          "2": "nd",
+          "3": "rd",
+        }[periodNumber] || "th"; // Default to 'th' for any other cases
+
+      return `${periodNumber}${periodSuffix} Period`;
+    }
+  };
 
   const currentPageInjuries = useMemo(() => {
     // Check if 'injuries' is defined and is an array
@@ -197,13 +246,31 @@ const Home: NextPage = ({
                         <div className={styles.homeScore}>{homeTeam.score}</div>
                         <div className={styles.gameTimeInfo}>
                           <span className={styles.gameState}>
-                            {getDisplayGameState(game.gameState)}
+                            {game.gameState === "LIVE"
+                              ? formatPeriodText(
+                                  game.periodDescriptor.number,
+                                  game.periodDescriptor.periodType
+                                )
+                              : getDisplayGameState(game.gameState)}
                           </span>
-                          <span className={styles.gameTimeText}>
-                            {/* Assuming ClientOnly and moment are available in your environment */}
-                            <ClientOnly placeHolder={<>&nbsp;</>}>
-                              {moment(game.startTimeUTC).format("h:mm A")}
-                            </ClientOnly>
+                          <span
+                            className={styles.gameTimeText}
+                            style={{
+                              display: ["OFF", "OVER", "FINAL"].includes(
+                                game.gameState
+                              )
+                                ? "none"
+                                : "inline",
+                            }}
+                          >
+                            {" "}
+                            {game.gameState === "LIVE" ? (
+                              game.timeRemaining
+                            ) : (
+                              <ClientOnly placeHolder={<>&nbsp;</>}>
+                                {moment(game.startTimeUTC).format("h:mm A")}
+                              </ClientOnly>
+                            )}
                           </span>
                         </div>
                         <div className={styles.awayScore}>{awayTeam.score}</div>
@@ -237,6 +304,7 @@ const Home: NextPage = ({
                   <th onClick={() => sortDataBy("leagueSequence")}>Rank</th>
                   <th onClick={() => sortDataBy("teamName")}>Team</th>
                   <th>Record</th>
+                  <th onClick={() => sortDataBy("points")}>PTS</th>
                 </tr>
               </thead>
               <tbody>
@@ -245,6 +313,7 @@ const Home: NextPage = ({
                     <td>{teamRecord.leagueSequence}</td>
                     <td>{teamRecord.teamName}</td>
                     <td>{teamRecord.record}</td>
+                    <td>{teamRecord.points}</td>
                   </tr>
                 ))}
               </tbody>
@@ -354,6 +423,7 @@ export async function getServerSideProps({ req, res }) {
         leagueSequence: team.leagueSequence, // League sequence as the standing
         teamName: team.teamName.default, // Team name
         record: `${team.wins}-${team.losses}-${team.otLosses}`, // Record format: Wins-Losses-OT Losses
+        points: team.points, // Points
       }));
       console.log("STANDINGS: ", standingsData);
       return standingsData;

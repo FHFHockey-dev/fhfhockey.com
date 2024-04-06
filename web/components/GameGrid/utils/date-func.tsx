@@ -21,7 +21,7 @@ export function getDayStr(start: Date, date: Date): EXTENDED_DAY_ABBREVIATION {
 
   const dayStr = getDayStrInternal(date);
   // @ts-expect-error
-  return startWeek === currentWeek ? dayStr : `n${dayStr}`;
+  return startWeek === currentWeek ? dayStr : `NEXT ${dayStr}`;
 }
 
 export function addDays(date: Date, days: number) {

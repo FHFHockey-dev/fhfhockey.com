@@ -92,6 +92,7 @@ async function getStats(
     fetchWithCache(onIceURL, false),
   ])) as string[];
   const individualDocument = parse(individualHtml);
+
   const onIceDocument = parse(onIceHtml);
   const onIces = parseTable(onIceDocument.getElementById("players"));
   const onIce = {
@@ -141,6 +142,18 @@ async function getStats(
   // oZS% is offensive zone start % - Off. Zone Start %
   const oZSPct = Number(onIce.data[onIce.headers.indexOf("Off. Zone Start %")]);
 
+  // iHDCF - Individual High Danger Chances For
+  const iHDCF = Number(individual.data[individual.headers.indexOf("iHDCF")]);
+
+  // iSCF - Individual Scoring Chances For
+  const iSCF = Number(individual.data[individual.headers.indexOf("iSCF")]);
+
+  // ixG - Individual Expected Goals
+  const ixG = Number(individual.data[individual.headers.indexOf("ixG")]);
+
+  // goals - Goals
+  const goals = Number(individual.data[individual.headers.indexOf("Goals")]);
+
   return {
     "S%": shootsPct / 100,
     "xS%": xSPct,
@@ -149,6 +162,10 @@ async function getStats(
     "secA%": secAPct,
     "SOG/60": SOGPerSixty,
     "oZS%": oZSPct / 100,
+    iHDCF: iHDCF,
+    iSCF: iSCF,
+    ixG: ixG,
+    goals: goals,
   };
 }
 

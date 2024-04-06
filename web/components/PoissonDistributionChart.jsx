@@ -20,19 +20,26 @@ const factorial = (num) => {
 const PoissonDistributionChart = ({ chartData }) => {
   const svgRef = useRef();
   const [leagueAverages, setLeagueAverages] = useState({});
-  const [prediction, setPrediction] = useState("");
+  const [homeExpectedGoals, setHomeExpectedGoals] = useState(0);
+  const [awayExpectedGoals, setAwayExpectedGoals] = useState(0);
   const [homeWinProb, setHomeWinProb] = useState(0);
   const [awayWinProb, setAwayWinProb] = useState(0);
-  const [otPrediction, setOtPrediction] = useState(""); // Added for overtime prediction
-  const [isLoading, setIsLoading] = useState(true); // State to manage loading status
+  const [prediction, setPrediction] = useState("");
+  const [otPrediction, setOtPrediction] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  console.log("LINE 31:", isLoading, chartData);
 
   useEffect(() => {
+    if (!chartData || chartData.length < 2) {
+      setIsLoading(true); // Ensure loading state is true if data is not ready
+      console.error("Chart data is not ready or insufficient.", setIsLoading);
+      return;
+    }
     const fetchLeagueData = async () => {
       // Early exit if chartData is not ready, but handle isLoading state outside
-      if (!chartData || chartData.length < 2) {
-        setIsLoading(true); // Ensure loading state is true if data is not ready
-        return;
-      }
+
+      console.log("INSIDE PDC USEEFFECT:", chartData);
 
       setIsLoading(true); // Set loading true when starting to fetch data
 
@@ -163,6 +170,7 @@ const PoissonDistributionChart = ({ chartData }) => {
       }
 
       fetchLeagueData();
+      console.log("League Averages:", leagueAverages);
 
       const processData = () => {
         if (chartData.length < 2) {
@@ -171,6 +179,9 @@ const PoissonDistributionChart = ({ chartData }) => {
         const homeExpectedGoals = chartData?.[0]?.goalsForPerGame ?? 0;
         const awayExpectedGoals = chartData?.[1]?.goalsForPerGame ?? 0;
 
+        console.log("Home Expected Goals:", homeExpectedGoals);
+        console.log("Away Expected Goals:", awayExpectedGoals);
+
         return { homeExpectedGoals, awayExpectedGoals };
       };
 
@@ -178,10 +189,21 @@ const PoissonDistributionChart = ({ chartData }) => {
 
       // Initialize heatmapData for Poisson probabilities
       let heatmapData = [];
+      console.log("Chart Data inside heatmapData:", chartData);
+      console.log("Home Expected Goals:", chartData[0].homeExpectedGoals);
+      console.log("Away Expected Goals:", chartData[1].awayExpectedGoals);
+      console.log("GF/gm:", chartData[0].goalsForPerGame);
+      console.log("GA/gm:", chartData[1].goalsAgainstPerGame);
       for (let i = 0; i <= 10; i++) {
         for (let j = 0; j <= 10; j++) {
-          const homeProb = poissonProbability(chartData[0].goalsForPerGame, i);
-          const awayProb = poissonProbability(chartData[1].goalsForPerGame, j);
+          const homeProb = poissonProbability(
+            chartData[0].homeExpectedGoals,
+            i
+          );
+          const awayProb = poissonProbability(
+            chartData[1].awayExpectedGoals,
+            j
+          );
           heatmapData.push({ x: i, y: j, value: homeProb * awayProb });
         }
       }
@@ -351,7 +373,6 @@ const PoissonDistributionChart = ({ chartData }) => {
         .style("font-family", "Helvetica")
         .style("font-size", "16px")
         .style("fill", "white"); // Make the text white
-
       if (chartData && chartData.length >= 2) {
         fetchLeagueData();
       } else {
@@ -359,12 +380,12 @@ const PoissonDistributionChart = ({ chartData }) => {
         setIsLoading(false); // You might want to set isLoading to false here as well, or handle the condition appropriately
       }
     };
-  }, [chartData]);
+  }, [chartData, leagueAverages]);
 
-  if (isLoading) {
-    return <div>Loading Chart data...</div>;
-  }
-
+  console.log("LOADING STATUS:", isLoading);
+  // if (isLoading) {
+  //   return <div>Loading Chart data...</div>;
+  // }
   return (
     <div
       style={{
@@ -404,6 +425,7 @@ const PoissonDistributionChart = ({ chartData }) => {
         >
           {prediction}
         </div>
+
         <div
           style={{
             height: "3.5em",
@@ -418,13 +440,18 @@ const PoissonDistributionChart = ({ chartData }) => {
             margin: "10px",
           }}
         >
-          <img
-            src={chartData[0].logo}
-            alt={chartData[0].team}
-            style={{ width: "50px" }}
-          />
-          {chartData[0].team} Win Probability: {homeWinProb}%
+          {chartData && chartData.length > 0 && (
+            <>
+              <img
+                src={chartData[0].logo}
+                alt={chartData[0].team}
+                style={{ width: "50px" }}
+              />
+              {chartData[0].team} Win Probability: {homeWinProb}%
+            </>
+          )}
         </div>
+
         <div
           style={{
             height: "3.5em",
@@ -439,12 +466,16 @@ const PoissonDistributionChart = ({ chartData }) => {
             margin: "10px",
           }}
         >
-          <img
-            src={chartData[1].logo}
-            alt={chartData[1].team}
-            style={{ width: "50px" }}
-          />
-          {chartData[1].team} Win Probability: {awayWinProb}%
+          {chartData && chartData.length > 0 && (
+            <>
+              <img
+                src={chartData[1].logo}
+                alt={chartData[1].team}
+                style={{ width: "50px" }}
+              />
+              {chartData[1].team} Win Probability: {awayWinProb}%
+            </>
+          )}
         </div>
         {otPrediction && <div style={{ marginTop: "5px" }}>{otPrediction}</div>}
       </div>

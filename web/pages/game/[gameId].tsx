@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Fetch from "lib/cors-fetch";
 import { teamsInfo } from "lib/NHL/teamsInfo";
-import PoissonDistributionChart from "./PoissonDistributionChart";
+import PoissonDistributionChart from "web/components/PoissonDistributionChart";
 
 export default function Page() {
   const router = useRouter();
@@ -20,6 +20,7 @@ export default function Page() {
     async function fetchGameDetails() {
       if (!gameId) return;
       const endpointURL = `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`;
+      console.log("endpointURL:", endpointURL);
       try {
         const response = await Fetch(endpointURL).then((res) => res.json());
         setGameDetails(response);
@@ -35,7 +36,8 @@ export default function Page() {
 
     async function fetchGameLandingDetails() {
       if (!gameId) return;
-      const landingURL = `https://api-web.nhle.com/v1_1/gamecenter/${gameId}/landing`;
+      const landingURL = `https://api-web.nhle.com/v1/gamecenter/${gameId}/landing`;
+      console.log("landingURL:", landingURL);
       try {
         const landingResponse = await Fetch(landingURL).then((res) =>
           res.json()
@@ -293,6 +295,7 @@ export default function Page() {
     {
       team: gameDetails?.homeTeam?.abbrev || "",
       logo: gameDetails?.homeTeam?.logo || "",
+      homeExpectedGoals: homeTeamStats?.goalsForPerGame || 0,
       goalsForPerGame: homeTeamStats?.goalsForPerGame || 0,
       goalsAgainstPerGame: homeTeamStats?.goalsAgainstPerGame || 0,
       shotsForPerGame: homeTeamStats?.shotsForPerGame || 0,
@@ -310,6 +313,7 @@ export default function Page() {
     {
       team: gameDetails?.awayTeam?.abbrev || "",
       logo: gameDetails?.awayTeam?.logo || "",
+      awayExpectedGoals: awayTeamStats?.goalsForPerGame || 0,
       goalsForPerGame: awayTeamStats?.goalsForPerGame || 0,
       goalsAgainstPerGame: awayTeamStats?.goalsAgainstPerGame || 0,
       shotsForPerGame: awayTeamStats?.shotsForPerGame || 0,
@@ -327,6 +331,13 @@ export default function Page() {
   ];
 
   console.log("chartData:", chartData);
+
+  const isDataLoaded =
+    gameDetails &&
+    homeTeamStats &&
+    awayTeamStats &&
+    homeTeamPowerPlayStats &&
+    awayTeamPowerPlayStats;
 
   if (
     gameLandingDetails?.gameState === "FUT" ||
@@ -871,9 +882,17 @@ export default function Page() {
                 </div>
               </div>
             </div>
-            <div className="poissonChartContainer">
-              <PoissonDistributionChart chartData={chartData} />
-            </div>
+            {/* Conditionally render PoissonDistributionChart if all data is loaded */}
+            {isDataLoaded ? (
+              (console.log("chartData:", chartData),
+              (
+                <div className="poissonChartContainer">
+                  <PoissonDistributionChart chartData={chartData} />
+                </div>
+              ))
+            ) : (
+              <p>Loading chart data...</p>
+            )}
           </>
         ) : (
           <p>Loading game details...</p>
@@ -983,56 +1002,86 @@ export default function Page() {
                           <td>{gameDetails.awayTeam.sog}</td>
                         </tr>
                         <tr>
-                          <td>{gameDetails.homeTeam.hits}</td>
+                          <td>
+                            {" "}
+                            {gameLandingDetails.summary.teamGameStats.find(
+                              (stat) => stat.category === "hits"
+                            )?.homeValue || "N/A"}
+                          </td>
                           <td>HIT</td>
-                          <td>{gameDetails.awayTeam.hits}</td>
+                          <td>
+                            {" "}
+                            {gameLandingDetails.summary.teamGameStats.find(
+                              (stat) => stat.category === "hits"
+                            )?.awayValue || "N/A"}
+                          </td>
                         </tr>
                         <tr>
-                          <td>{gameDetails.homeTeam.blocks}</td>
+                          <td>
+                            {" "}
+                            {gameLandingDetails.summary.teamGameStats.find(
+                              (stat) => stat.category === "blockedShots"
+                            )?.homeValue || "N/A"}
+                          </td>
                           <td>BLK</td>
-                          <td>{gameDetails.awayTeam.blocks}</td>
+                          <td>
+                            {" "}
+                            {gameLandingDetails.summary.teamGameStats.find(
+                              (stat) => stat.category === "blockedShots"
+                            )?.awayValue || "N/A"}
+                          </td>
                         </tr>
                         <tr>
-                          <td>{gameDetails.homeTeam.pim}</td>
+                          <td>
+                            {" "}
+                            {gameLandingDetails.summary.teamGameStats.find(
+                              (stat) => stat.category === "pim"
+                            )?.homeValue || "N/A"}
+                          </td>
                           <td>PIM</td>
-                          <td>{gameDetails.awayTeam.pim}</td>
+                          <td>
+                            {" "}
+                            {gameLandingDetails.summary.teamGameStats.find(
+                              (stat) => stat.category === "pim"
+                            )?.awayValue || "N/A"}
+                          </td>
                         </tr>
                         <tr>
-                          <td>{gameDetails.homeTeam.faceoffWinningPctg}</td>
+                          <td>
+                            {" "}
+                            {(
+                              gameLandingDetails.summary.teamGameStats.find(
+                                (stat) => stat.category === "faceoffWinningPctg"
+                              )?.homeValue * 100
+                            ).toFixed(2) || "N/A"}
+                            %
+                          </td>
                           <td>FO%</td>
-                          <td>{gameDetails.awayTeam.faceoffWinningPctg}</td>
+                          <td>
+                            {" "}
+                            {(
+                              gameLandingDetails.summary.teamGameStats.find(
+                                (stat) => stat.category === "faceoffWinningPctg"
+                              )?.awayValue * 100
+                            ).toFixed(2) || "N/A"}
+                            %
+                          </td>
                         </tr>
                         <tr>
                           <td>
                             {(
-                              (parseFloat(
-                                gameDetails.homeTeam.powerPlayConversion.split(
-                                  "/"
-                                )[0]
-                              ) /
-                                parseFloat(
-                                  gameDetails.homeTeam.powerPlayConversion.split(
-                                    "/"
-                                  )[1]
-                                )) *
-                              100
+                              gameLandingDetails.summary.teamGameStats.find(
+                                (stat) => stat.category === "powerPlayPctg"
+                              )?.homeValue * 100
                             ).toFixed(2) || "N/A"}
                             %
                           </td>
                           <td>PPG</td>
                           <td>
                             {(
-                              (parseFloat(
-                                gameDetails.awayTeam.powerPlayConversion.split(
-                                  "/"
-                                )[0]
-                              ) /
-                                parseFloat(
-                                  gameDetails.awayTeam.powerPlayConversion.split(
-                                    "/"
-                                  )[1]
-                                )) *
-                              100
+                              gameLandingDetails.summary.teamGameStats.find(
+                                (stat) => stat.category === "powerPlayPctg"
+                              )?.awayValue * 100
                             ).toFixed(2) || "N/A"}
                             %
                           </td>

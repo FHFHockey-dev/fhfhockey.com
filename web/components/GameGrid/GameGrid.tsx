@@ -178,15 +178,7 @@ function GameGridInternal({ mode, setMode }: GameGridProps) {
         </h1>
         <div className={styles.prevNextButtons}>
           <button
-            style={{
-              backgroundColor: "#07aae2",
-              border: "1px solid white",
-              borderRadius: "8px",
-              color: "white",
-              padding: "10px",
-              cursor: "pointer",
-              height: "35px",
-            }}
+            className={styles.dateButtonMode}
             onClick={() => {
               setMode(
                 mode === "7-Day-Forecast" ? "10-Day-Forecast" : "7-Day-Forecast"

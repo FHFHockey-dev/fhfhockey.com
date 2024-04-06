@@ -14,7 +14,13 @@ const GoalieTrends = () => {
   const [loading, setLoading] = useState(true);
   const [selectedGameSpan, setSelectedGameSpan] = useState("SZN");
   const [goalieStats, setGoalieStats] = useState({});
-  const [showNewChart, setShowNewChart] = useState(false); // New state for toggle
+  const [showNewChart, setShowNewChart] = useState(false); // state for toggle
+
+  // state for selected team in mobile view
+  const [selectedTeam, setSelectedTeam] = useState(() => {
+    const sortedTeamAbbrevs = Object.keys(teamsInfo).sort();
+    return sortedTeamAbbrevs[0]; // This will ensure  first team alphabetically is the default
+  });
 
   const fetchCurrentSeasonInfo = async () => {
     const url = `https://api.nhle.com/stats/rest/en/season?sort=[{"property":"id","direction":"DESC"}]`;
@@ -200,6 +206,11 @@ const GoalieTrends = () => {
     });
   };
 
+  // Handle change for the selected team in the dropdown
+  const handleTeamChange = (event) => {
+    setSelectedTeam(event.target.value);
+  };
+
   // Call this function after your goalieStats state is updated
   useEffect(() => {
     if (!loading && Object.keys(goalieStats).length > 0) {
@@ -226,166 +237,186 @@ const GoalieTrends = () => {
 
   if (loading) return <div>Loading...</div>;
 
-  // Prepare data for table layout
+  const isMobile = window.innerWidth < 768; // Adjust breakpoint as needed
+
+  // Prepare data for dropdown and table layout
   const sortedTeams = Object.entries(teamsInfo).sort(([aAbbrev], [bAbbrev]) =>
     aAbbrev.localeCompare(bAbbrev)
   );
 
-  // Convert the sorted list of teams into a matrix for table layout
-  const rows = [];
-  for (let i = 0; i < sortedTeams.length; i += 3) {
-    rows.push(sortedTeams.slice(i, i + 3));
+  let rows = [];
+
+  // For desktop, create rows with 3 teams each for the 11x3 grid
+  if (!isMobile) {
+    for (let i = 0; i < sortedTeams.length; i += 3) {
+      rows.push(sortedTeams.slice(i, i + 3));
+    }
+  } else {
+    // For mobile, only include the selected team in rows
+    const selectedTeamEntry = sortedTeams.find(
+      ([teamAbbrev]) => teamAbbrev === selectedTeam
+    );
+    if (selectedTeamEntry) {
+      rows.push([selectedTeamEntry]);
+    }
   }
 
   return (
     <div className={styles.container}>
-      {/* Game Span Selectors */}
-
-      <div className={styles.selectors}>
-        <h1 style={{ marginTop: "0", marginBottom: "0", textAlign: "left" }}>
-          Goalie <span className="spanColorBlue">Trends</span>
-        </h1>
-        <div className={styles.toggleSwitch}>
-          <label className={styles.toggleLabel}>
-            <input
-              type="checkbox"
-              checked={showNewChart}
-              onChange={() => setShowNewChart(!showNewChart)} // Toggle the state
-            />
-            Toggle New Chart
-          </label>
+      <div
+        className={styles.selectors}
+        style={{ flexDirection: isMobile ? "column" : "row" }}
+      >
+        <div className={styles.titleContainer}>
+          <h1 style={{ marginTop: "0", marginBottom: "0", textAlign: "left" }}>
+            Goalie Net Share <span className="spanColorBlue">Trends</span>
+          </h1>
+          <div className={styles.toggleSwitch}>
+            {/* Game Span Selectors */}
+            {/* Dropdown for team selection on mobile */}
+            <div className={styles.teamSelector}>
+              <select value={selectedTeam} onChange={handleTeamChange}>
+                {sortedTeams.map(([teamAbbrev, teamInfo]) => (
+                  <option key={teamAbbrev} value={teamAbbrev}>
+                    {teamAbbrev}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
-        <div className={styles.gameSpanSelectors}>
-          <input
-            type="radio"
-            id="l10"
-            name="gameSpan"
-            value="L10"
-            checked={selectedGameSpan === "L10"}
-            onChange={handleGameSpanChange}
-          />
-          <label htmlFor="l10">L10 GP</label>
-          <input
-            type="radio"
-            id="l20"
-            name="gameSpan"
-            value="L20"
-            checked={selectedGameSpan === "L20"}
-            onChange={handleGameSpanChange}
-          />
-          <label htmlFor="l20">L20 GP</label>
-          <input
-            type="radio"
-            id="l30"
-            name="gameSpan"
-            value="L30"
-            checked={selectedGameSpan === "L30"}
-            onChange={handleGameSpanChange}
-          />
-          <label htmlFor="l30">L30 GP</label>
-          <input
-            type="radio"
-            id="szn"
-            name="gameSpan"
-            value="SZN"
-            checked={selectedGameSpan === "SZN"}
-            onChange={handleGameSpanChange}
-          />
-          <label htmlFor="szn">Season</label>
+        <div className={styles.controlsContainer}>
+          <div className={styles.gameSpanSelectors}>
+            <input
+              type="radio"
+              id="l10"
+              name="gameSpan"
+              value="L10"
+              checked={selectedGameSpan === "L10"}
+              onChange={handleGameSpanChange}
+            />
+            <label htmlFor="l10">L10 GP</label>
+            <input
+              type="radio"
+              id="l20"
+              name="gameSpan"
+              value="L20"
+              checked={selectedGameSpan === "L20"}
+              onChange={handleGameSpanChange}
+            />
+            <label htmlFor="l20">L20 GP</label>
+            <input
+              type="radio"
+              id="l30"
+              name="gameSpan"
+              value="L30"
+              checked={selectedGameSpan === "L30"}
+              onChange={handleGameSpanChange}
+            />
+            <label htmlFor="l30">L30 GP</label>
+            <input
+              type="radio"
+              id="szn"
+              name="gameSpan"
+              value="SZN"
+              checked={selectedGameSpan === "SZN"}
+              onChange={handleGameSpanChange}
+            />
+            <label htmlFor="szn">Season</label>
+          </div>
         </div>
       </div>
 
       {/* Conditional Rendering */}
-      {showNewChart ? (
-        <div className={styles.newContent}>Hello World!</div>
-      ) : (
-        // Only show the table if showNewChart is false
-        <table className={styles.goalieShareTable}>
-          <tbody>
-            {rows.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {row.map(([teamAbbrev, _], cellIndex) => {
-                  const goalieData = goalieStats[teamAbbrev]?.goalies || [];
-                  const teamColors = teamsInfo[teamAbbrev]
-                    ? [
-                        teamsInfo[teamAbbrev].primaryColor,
-                        teamsInfo[teamAbbrev].secondaryColor,
-                        teamsInfo[teamAbbrev].jersey,
-                        teamsInfo[teamAbbrev].accent,
-                        teamsInfo[teamAbbrev].alt,
-                      ]
-                    : ["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"]; // Default colors if teamInfo is missing
+      <table className={styles.goalieShareTable}>
+        <tbody>
+          {rows.map((row, rowIndex) => (
+            <tr key={rowIndex}>
+              {row.map(([teamAbbrev, _], cellIndex) => {
+                const goalieData = goalieStats[teamAbbrev]?.goalies || [];
+                const teamColors = teamsInfo[teamAbbrev]
+                  ? [
+                      teamsInfo[teamAbbrev].primaryColor,
+                      teamsInfo[teamAbbrev].secondaryColor,
+                      teamsInfo[teamAbbrev].jersey,
+                      teamsInfo[teamAbbrev].accent,
+                      teamsInfo[teamAbbrev].alt,
+                    ]
+                  : ["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"]; // Default colors if teamInfo is missing
 
-                  const chartData = {
-                    labels: goalieData.map((goalie) => goalie.lastName),
-                    datasets: [
-                      {
-                        data: goalieData.map((goalie) => goalie.percentage),
-                        backgroundColor: goalieData.map(
-                          (_, index) => teamColors[index % teamColors.length]
-                        ), // Cycle through team colors
-                      },
-                    ],
-                  };
+                const chartData = {
+                  labels: goalieData.map((goalie) => goalie.lastName),
+                  datasets: [
+                    {
+                      data: goalieData.map((goalie) => goalie.percentage),
+                      backgroundColor: goalieData.map(
+                        (_, index) => teamColors[index % teamColors.length]
+                      ), // Cycle through team colors
+                    },
+                  ],
+                };
 
-                  return (
-                    <React.Fragment key={`${teamAbbrev}-${cellIndex}`}>
-                      <td
-                        className={styles.teamGroup}
-                        style={{
-                          "--primary-color": teamsInfo[teamAbbrev].primaryColor,
-                          "--secondary-color":
-                            teamsInfo[teamAbbrev].secondaryColor,
-                          "--jersey-color": teamsInfo[teamAbbrev].jersey,
-                          "--accent-color": teamsInfo[teamAbbrev].accent,
-                          "--alt-color": teamsInfo[teamAbbrev].alt,
-                        }}
+                return (
+                  <React.Fragment key={`${teamAbbrev}-${cellIndex}`}>
+                    <td
+                      className={styles.teamGroup}
+                      style={{
+                        "--primary-color": teamsInfo[teamAbbrev].primaryColor,
+                        "--secondary-color":
+                          teamsInfo[teamAbbrev].secondaryColor,
+                        "--jersey-color": teamsInfo[teamAbbrev].jersey,
+                        "--accent-color": teamsInfo[teamAbbrev].accent,
+                        "--alt-color": teamsInfo[teamAbbrev].alt,
+                      }}
+                    >
+                      <div
+                        style={{ textAlign: "center" }}
+                        className={styles.teamGroupCell}
                       >
-                        <div
-                          style={{ textAlign: "center" }}
-                          className={styles.teamGroupCell}
-                        >
-                          <div className={styles.teamHeaderChart}>
-                            <div className={styles.logoAndAbbrev}>
-                              <img
-                                className={styles.teamLogoChart}
-                                src={`https://assets.nhle.com/logos/nhl/svg/${teamAbbrev}_light.svg`}
-                                alt={`${teamAbbrev} logo`}
-                              />
-                              <span className={styles.teamNameChart}>
-                                {teamsInfo[teamAbbrev].shortName}
+                        <div className={styles.teamHeaderChart}>
+                          <div className={styles.logoAndAbbrev}>
+                            <img
+                              className={styles.teamLogoChart}
+                              src={`https://assets.nhle.com/logos/nhl/svg/${teamAbbrev}_light.svg`}
+                              alt={`${teamAbbrev} logo`}
+                            />
+                            <span className={styles.teamNameChart}>
+                              {teamsInfo[teamAbbrev].shortName}
+                            </span>
+                            <span className={styles.teamGPStats}>
+                              <span className={styles.teamGPStatsLabel}>
+                                GP: &nbsp;
                               </span>
-                              <span className={styles.teamGPStats}>
-                                <span className={styles.teamGPStatsLabel}>
-                                  GP: &nbsp;
-                                </span>
-                                <span className={styles.teamGoalieStatsValue}>
-                                  {goalieData.reduce(
-                                    (acc, goalie) => acc + goalie.gamesPlayed,
-                                    0
-                                  )}
-                                </span>
+                              <span className={styles.teamGoalieStatsValue}>
+                                {goalieData.reduce(
+                                  (acc, goalie) => acc + goalie.gamesPlayed,
+                                  0
+                                )}
                               </span>
-                            </div>
-                          </div>
-                          <div className={styles.goalieChart}>
-                            {goalieData.length > 0 && (
-                              <DoughnutChart data={chartData} />
-                            )}
+                            </span>
                           </div>
                         </div>
-                      </td>
-                    </React.Fragment>
-                  );
-                })}
-                {[...Array(3 - row.length)].map((_, index) => (
-                  <td key={`empty-${index}`}>&nbsp;</td> // Fill in empty cells if row has less than 4 teams
+                        <div className={styles.goalieChart}>
+                          {goalieData.length > 0 && (
+                            <DoughnutChart
+                              data={chartData}
+                              mobileView={isMobile}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                  </React.Fragment>
+                );
+              })}
+              {!isMobile &&
+                [...Array(3 - row.length)].map((_, index) => (
+                  <td key={`empty-${index}`}>&nbsp;</td> // Fill in empty cells if row has less than 3 teams
                 ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
