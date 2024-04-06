@@ -115,7 +115,7 @@ export async function getTOIData(id: number, _teamId?: number) {
     Fetch(
       `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`
     ).then((res) => res.json()),
-    await getRostersMap(id, _teamId),
+    getRostersMap(id, _teamId),
   ]);
 
   let rosters = groupBy(Object.values(rostersMap), (player) => player.teamId);
