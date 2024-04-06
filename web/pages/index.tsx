@@ -256,8 +256,11 @@ const Home: NextPage = ({
                           <span
                             className={styles.gameTimeText}
                             style={{
-                              display:
-                                game.gameState === "FINAL" ? "none" : "inline",
+                              display: ["OFF", "OVER", "FINAL"].includes(
+                                game.gameState
+                              )
+                                ? "none"
+                                : "inline",
                             }}
                           >
                             {" "}
