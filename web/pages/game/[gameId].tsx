@@ -20,6 +20,7 @@ export default function Page() {
     async function fetchGameDetails() {
       if (!gameId) return;
       const endpointURL = `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`;
+      console.log("endpointURL:", endpointURL);
       try {
         const response = await Fetch(endpointURL).then((res) => res.json());
         setGameDetails(response);
@@ -35,7 +36,8 @@ export default function Page() {
 
     async function fetchGameLandingDetails() {
       if (!gameId) return;
-      const landingURL = `https://api-web.nhle.com/v1_1/gamecenter/${gameId}/landing`;
+      const landingURL = `https://api-web.nhle.com/v1/gamecenter/${gameId}/landing`;
+      console.log("landingURL:", landingURL);
       try {
         const landingResponse = await Fetch(landingURL).then((res) =>
           res.json()
@@ -1000,56 +1002,86 @@ export default function Page() {
                           <td>{gameDetails.awayTeam.sog}</td>
                         </tr>
                         <tr>
-                          <td>{gameDetails.homeTeam.hits}</td>
+                          <td>
+                            {" "}
+                            {gameLandingDetails.summary.teamGameStats.find(
+                              (stat) => stat.category === "hits"
+                            )?.homeValue || "N/A"}
+                          </td>
                           <td>HIT</td>
-                          <td>{gameDetails.awayTeam.hits}</td>
+                          <td>
+                            {" "}
+                            {gameLandingDetails.summary.teamGameStats.find(
+                              (stat) => stat.category === "hits"
+                            )?.awayValue || "N/A"}
+                          </td>
                         </tr>
                         <tr>
-                          <td>{gameDetails.homeTeam.blocks}</td>
+                          <td>
+                            {" "}
+                            {gameLandingDetails.summary.teamGameStats.find(
+                              (stat) => stat.category === "blockedShots"
+                            )?.homeValue || "N/A"}
+                          </td>
                           <td>BLK</td>
-                          <td>{gameDetails.awayTeam.blocks}</td>
+                          <td>
+                            {" "}
+                            {gameLandingDetails.summary.teamGameStats.find(
+                              (stat) => stat.category === "blockedShots"
+                            )?.awayValue || "N/A"}
+                          </td>
                         </tr>
                         <tr>
-                          <td>{gameDetails.homeTeam.pim}</td>
+                          <td>
+                            {" "}
+                            {gameLandingDetails.summary.teamGameStats.find(
+                              (stat) => stat.category === "pim"
+                            )?.homeValue || "N/A"}
+                          </td>
                           <td>PIM</td>
-                          <td>{gameDetails.awayTeam.pim}</td>
+                          <td>
+                            {" "}
+                            {gameLandingDetails.summary.teamGameStats.find(
+                              (stat) => stat.category === "pim"
+                            )?.awayValue || "N/A"}
+                          </td>
                         </tr>
                         <tr>
-                          <td>{gameDetails.homeTeam.faceoffWinningPctg}</td>
+                          <td>
+                            {" "}
+                            {(
+                              gameLandingDetails.summary.teamGameStats.find(
+                                (stat) => stat.category === "faceoffWinningPctg"
+                              )?.homeValue * 100
+                            ).toFixed(2) || "N/A"}
+                            %
+                          </td>
                           <td>FO%</td>
-                          <td>{gameDetails.awayTeam.faceoffWinningPctg}</td>
+                          <td>
+                            {" "}
+                            {(
+                              gameLandingDetails.summary.teamGameStats.find(
+                                (stat) => stat.category === "faceoffWinningPctg"
+                              )?.awayValue * 100
+                            ).toFixed(2) || "N/A"}
+                            %
+                          </td>
                         </tr>
                         <tr>
                           <td>
                             {(
-                              (parseFloat(
-                                gameDetails.homeTeam.powerPlayConversion.split(
-                                  "/"
-                                )[0]
-                              ) /
-                                parseFloat(
-                                  gameDetails.homeTeam.powerPlayConversion.split(
-                                    "/"
-                                  )[1]
-                                )) *
-                              100
+                              gameLandingDetails.summary.teamGameStats.find(
+                                (stat) => stat.category === "powerPlayPctg"
+                              )?.homeValue * 100
                             ).toFixed(2) || "N/A"}
                             %
                           </td>
                           <td>PPG</td>
                           <td>
                             {(
-                              (parseFloat(
-                                gameDetails.awayTeam.powerPlayConversion.split(
-                                  "/"
-                                )[0]
-                              ) /
-                                parseFloat(
-                                  gameDetails.awayTeam.powerPlayConversion.split(
-                                    "/"
-                                  )[1]
-                                )) *
-                              100
+                              gameLandingDetails.summary.teamGameStats.find(
+                                (stat) => stat.category === "powerPlayPctg"
+                              )?.awayValue * 100
                             ).toFixed(2) || "N/A"}
                             %
                           </td>
