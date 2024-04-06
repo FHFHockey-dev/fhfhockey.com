@@ -112,7 +112,7 @@ export type TOIData = {
 };
 export async function getTOIData(id: number, _teamId?: number) {
   const [{ data: shiftsData }, { rostersMap, teams }] = await Promise.all([
-    await Fetch(
+    Fetch(
       `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`
     ).then((res) => res.json()),
     await getRostersMap(id, _teamId),
@@ -218,12 +218,14 @@ export default function LinemateMatrix({
       </div>
       <div className={styles.gridWrapper}>
         <LinemateMatrixInternal
+          teamId={homeTeam.id}
           teamName={homeTeam.name}
           roster={rosters[homeTeam.id]}
           toiData={toiData[homeTeam.id]}
           mode={mode}
         />
         <LinemateMatrixInternal
+          teamId={awayTeam.id}
           teamName={awayTeam.name}
           roster={rosters[awayTeam.id]}
           toiData={toiData[awayTeam.id]}
@@ -278,6 +280,7 @@ export function sortByLineCombination(
 }
 type Mode = "number" | "total-toi" | "line-combination";
 type LinemateMatrixInternalProps = {
+  teamId: number;
   teamName: string;
   toiData: TOIData[];
   roster: PlayerData[];
@@ -286,6 +289,7 @@ type LinemateMatrixInternalProps = {
 
 export const getKey = (p1: number, p2: number) => `${[p1, p2].sort()}`;
 export function LinemateMatrixInternal({
+  teamId,
   teamName,
   roster = [],
   toiData = [],
@@ -329,10 +333,10 @@ export function LinemateMatrixInternal({
   }, [table, sortedRoster]);
 
   return (
-    <section className={styles.container}>
+    <section id={`linemate-matrix-${teamId}`} className={styles.container}>
       <h4>{teamName}</h4>
       <div
-        className={styles.grid}
+        className={classNames(styles.grid, "content")}
         style={{
           gridTemplateRows: `var(--player-info-size) repeat( ${roster.length}, 1fr)`,
           gridTemplateColumns: `var(--player-info-size) repeat(${roster.length}, 1fr)`,
