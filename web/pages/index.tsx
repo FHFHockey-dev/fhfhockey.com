@@ -40,11 +40,57 @@ const Home: NextPage = ({
     const fetchGames = async () => {
       const res = await fetch(`/api/v1/games?date=${currentDate}`);
       const data = await res.json();
-      setGames(data);
+
+      // Fetch period and time remaining for LIVE games
+      const liveGamePromises = data
+        .filter((game) => game.gameState === "LIVE")
+        .map(async (game) => {
+          const liveDataResponse = await fetch(
+            `https://api-web.nhle.com/v1/gamecenter/${game.id}/landing`
+          );
+          const liveData = await liveDataResponse.json();
+
+          return {
+            ...game,
+            period: liveData.periodDescriptor.number,
+            periodType: liveData.periodDescriptor.periodType,
+            timeRemaining: liveData.clock.timeRemaining,
+            inIntermission: liveData.clock.inIntermission,
+          };
+        });
+
+      const liveGamesData = await Promise.all(liveGamePromises);
+
+      // Combine live games data with other games data
+      const updatedGames = data.map((game) => {
+        const liveGameData = liveGamesData.find(
+          (liveGame) => liveGame.id === game.id
+        );
+        return liveGameData || game;
+      });
+
+      setGames(updatedGames);
     };
 
     fetchGames();
   }, [currentDate]);
+
+  const formatPeriodText = (periodNumber, periodDescriptor, inIntermission) => {
+    if (inIntermission) {
+      return "Intermission";
+    } else if (periodDescriptor === "OT") {
+      return "Overtime";
+    } else {
+      const periodSuffix =
+        {
+          "1": "st",
+          "2": "nd",
+          "3": "rd",
+        }[periodNumber] || "th"; // Default to 'th' for any other cases
+
+      return `${periodNumber}${periodSuffix} Period`;
+    }
+  };
 
   const currentPageInjuries = useMemo(() => {
     // Check if 'injuries' is defined and is an array
@@ -200,13 +246,21 @@ const Home: NextPage = ({
                         <div className={styles.homeScore}>{homeTeam.score}</div>
                         <div className={styles.gameTimeInfo}>
                           <span className={styles.gameState}>
-                            {getDisplayGameState(game.gameState)}
+                            {game.gameState === "LIVE"
+                              ? formatPeriodText(
+                                  game.periodDescriptor.number,
+                                  game.periodDescriptor.periodType
+                                )
+                              : getDisplayGameState(game.gameState)}
                           </span>
                           <span className={styles.gameTimeText}>
-                            {/* Assuming ClientOnly and moment are available in your environment */}
-                            <ClientOnly placeHolder={<>&nbsp;</>}>
-                              {moment(game.startTimeUTC).format("h:mm A")}
-                            </ClientOnly>
+                            {game.gameState === "LIVE" ? (
+                              game.timeRemaining
+                            ) : (
+                              <ClientOnly placeHolder={<>&nbsp;</>}>
+                                {moment(game.startTimeUTC).format("h:mm A")}
+                              </ClientOnly>
+                            )}
                           </span>
                         </div>
                         <div className={styles.awayScore}>{awayTeam.score}</div>

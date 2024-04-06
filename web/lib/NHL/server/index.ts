@@ -89,25 +89,23 @@ export function getTeamLogo(teamName: string | undefined) {
  * Server only
  * @returns
  */
-  export async function getCurrentSeason(): Promise<Season> {
-    const { data } = await supabase
-      .from("seasons")
-      .select("*")
-      .order("startDate", { ascending: false })
-      .limit(1)
-      .single();
-    if (data === null) throw Error("Cannot find the current season");
+export async function getCurrentSeason(): Promise<Season> {
+  const { data } = await supabase
+    .from("seasons")
+    .select("*")
+    .order("startDate", { ascending: false })
+    .limit(1)
+    .single();
+  if (data === null) throw Error("Cannot find the current season");
 
-    
-
-    return {
-      seasonId: data.id,
-      regularSeasonStartDate: data.startDate,
-      regularSeasonEndDate: data.regularSeasonEndDate,
-      seasonEndDate: data.endDate,
-      numberOfGames: data.numberOfGames,
-    };
-  }
+  return {
+    seasonId: data.id,
+    regularSeasonStartDate: data.startDate,
+    regularSeasonEndDate: data.regularSeasonEndDate,
+    seasonEndDate: data.endDate,
+    numberOfGames: data.numberOfGames,
+  };
+}
 
 export async function getSeasons(): Promise<Season[]> {
   const data = (await restGet(`/season`)).data.map((item) => ({
