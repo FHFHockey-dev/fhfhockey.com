@@ -28,14 +28,15 @@ export default function LinemateMatrixForGames({
       setTeam(data.team);
     })();
   }, [gameIds, teamId]);
-  return (
+  return team !== undefined ? (
     <LinemateMatrixInternal
+      teamId={team.id}
       mode="line-combination"
-      teamName={team?.name ?? ""}
+      teamName={team.name}
       toiData={toi}
       roster={roster}
     />
-  );
+  ) : null;
 }
 async function getTOIDataForGames(gameIds: number[], teamId: number) {
   const data = await Promise.all(
