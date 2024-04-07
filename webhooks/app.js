@@ -30,8 +30,11 @@ app.post("/on-new-line-combo", adminOnly, async (req, res) => {
   const teamId = Number(req.query.teamId);
   console.log(`start to handle new line combo for ${gameId} team: ${teamId}`);
   try {
-    await saveLinemateMatrixImages(gameId, [teamId]);
-    const resp = await sendLineComboToDiscord(gameId, teamId);
+    await retryAsyncOperation(() => saveLinemateMatrixImages(gameId, [teamId]));
+
+    const resp = await retryAsyncOperation(() =>
+      sendLineComboToDiscord(gameId, teamId)
+    );
     console.log(resp);
     res.json({
       message: "Successfully handled the line combo for " + gameId,
@@ -39,7 +42,9 @@ app.post("/on-new-line-combo", adminOnly, async (req, res) => {
   } catch (e) {
     console.error(e);
     res.json({
-      error: "Failed to handle the line combo " + e.message,
+      error:
+        `Failed to handle the line combo ${teamId}-${gameId} error: ` +
+        e.message,
     });
   }
 });
@@ -115,6 +120,23 @@ function sendLineComboToDiscord(gameId, teamId) {
       },
     }
   ).then((res) => res.json());
+}
+
+// Utility function for retrying asynchronous operations
+async function retryAsyncOperation(operation, maxRetries = 3, delay = 1000) {
+  let retryCount = 0;
+  while (true) {
+    try {
+      return await operation(); // Execute the operation and return the result
+    } catch (error) {
+      if (retryCount >= maxRetries) {
+        throw error; // If max retries reached, rethrow the error
+      }
+      console.error(`Attempt ${retryCount + 1} failed: ${error.message}`);
+      retryCount++;
+      await new Promise((resolve) => setTimeout(resolve, delay)); // Wait before retrying
+    }
+  }
 }
 
 app.listen(port, () => {
