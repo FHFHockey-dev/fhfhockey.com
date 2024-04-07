@@ -38,6 +38,7 @@
   width: calc(
     (90% * 4 / 13)
   ); // Each regular period takes up 4 parts of the 13-part space
+  position: unset !important;
 }
 
 .timestampOvertime {
@@ -107,6 +108,7 @@
 
   width: 100%;
   overflow-x: auto; // Add horizontal scroll for smaller screens
+  overflow-y: hidden;
   border: #07aae2 3px solid;
   border-radius: 10px;
 }
