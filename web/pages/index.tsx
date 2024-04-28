@@ -249,22 +249,14 @@ const Home: NextPage = ({
                             {game.gameState === "LIVE"
                               ? formatPeriodText(
                                   game.periodDescriptor.number,
-                                  game.periodDescriptor.periodType
+                                  game.periodDescriptor.periodType,
+                                  game.inIntermission
                                 )
                               : getDisplayGameState(game.gameState)}
                           </span>
-                          <span
-                            className={styles.gameTimeText}
-                            style={{
-                              display: ["OFF", "OVER", "FINAL"].includes(
-                                game.gameState
-                              )
-                                ? "none"
-                                : "inline",
-                            }}
-                          >
-                            {" "}
-                            {game.gameState === "LIVE" ? (
+                          <span className={styles.gameTimeText}>
+                            {game.gameState === "LIVE" &&
+                            !game.inIntermission ? (
                               game.timeRemaining
                             ) : (
                               <ClientOnly placeHolder={<>&nbsp;</>}>
@@ -275,6 +267,7 @@ const Home: NextPage = ({
                         </div>
                         <div className={styles.awayScore}>{awayTeam.score}</div>
                       </div>
+
                       <div className={styles.awayTeamLogo}>
                         <img
                           src={`https://assets.nhle.com/logos/nhl/svg/${awayTeam.abbrev}_light.svg`}
