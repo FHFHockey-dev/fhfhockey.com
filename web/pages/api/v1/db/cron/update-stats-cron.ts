@@ -1,10 +1,13 @@
 import adminOnly from "utils/adminOnlyMiddleware";
 import { updateStats } from "../update-stats/[gameId]";
+import { processGameData } from "lib/supabase/fetchPbPData";
 
 export default adminOnly(async (req, res) => {
   const { supabase } = req;
   const count = req.query.count ? Number(req.query.count) : 5;
   try {
+    await processGameData(); // updating pbp
+
     //
     const { data } = await supabase
       .rpc("get_unupdated_games")

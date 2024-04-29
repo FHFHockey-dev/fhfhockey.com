@@ -1181,3 +1181,5 @@ export type WGOToiSkaterTotalLY = {
   shiftsPerGame: number;
   timeOnIcePerShift: number;
 };
+
+// PLAY BY PLAY TABLE TYPES
