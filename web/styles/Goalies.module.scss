@@ -1,0 +1,52 @@
+// CSS (Goalies.module.scss)
+.better {
+  background-color: green;
+  color: white;
+}
+
+.worse {
+  background-color: red;
+  color: white;
+}
+
+.goalieTable {
+  margin: 20px 0;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.goalieTable th,
+.goalieTable td {
+  border: 1px solid #07aae2;
+  color: #fff;
+  padding: 8px;
+}
+
+.goalieTable th {
+  background-color: #292929;
+}
+
+.goalieTable tr:nth-child(even) {
+  background-color: #404040;
+}
+
+.goalieTable tr:hover {
+  background-color: #101010;
+}
+
+.dropdown {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  font-size: 16px;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 95%;
+  margin: 0 auto;
+}

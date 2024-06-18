@@ -51,7 +51,7 @@
 
 .wgoChart {
   display: grid;
-  grid-template-columns: repeat(12, 1fr);
+  grid-template-columns: repeat(15, 1fr);
   grid-template-rows: repeat(25, 1fr);
   grid-column-gap: 0px;
   grid-row-gap: 0px;
@@ -60,7 +60,7 @@
 }
 
 .wgoBio {
-  grid-area: 1 / 1 / 7 / 5;
+  grid-area: 1 / 6 / 16 / 11;
 
   display: flex;
   flex-direction: row;
@@ -103,43 +103,54 @@
   }
 }
 
+.wgoShotMap {
+  grid-area: 1 / 1 / 11 / 6;
+
+  border: #07aae2 1px solid;
+}
+
 .wgoRadar {
-  grid-area: 7 / 1 / 19 / 5;
+  grid-area: 16 / 6 / 26 / 11;
 
   border: #07aae2 1px solid;
 }
 
 .wgoLineOne {
-  grid-area: 19 / 1 / 26 / 7;
+  grid-area: 11 / 1 / 16 / 6;
 
   border: #07aae2 1px solid;
 }
 
 .wgoLineTwo {
-  grid-area: 19 / 7 / 26 / 13;
+  grid-area: 16 / 1 / 21 / 6;
+
+  border: #07aae2 1px solid;
+}
+
+.wgoLineThree {
+  grid-area: 21 / 1 / 26 / 6;
 
   border: #07aae2 1px solid;
 }
 
 .wgoTableOptions {
-  grid-area: 1 / 12 / 19 / 13;
-
+  width: 50%;
   border: #07aae2 1px solid;
   display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  flex-direction: row;
+  justify-content: space-around;
   align-items: center;
 }
 
 .wgoTableContainer {
-  grid-area: 1 / 5 / 19 / 12;
+  grid-area: 1 / 11 / 26 / 16;
 
   width: 100%;
   border: #07aae2 1px solid;
 
   .wgoTable {
     width: 100%;
-    font-size: 12px;
+    font-size: 13px;
     border-collapse: collapse;
     border-spacing: 0;
     border: #07aae2 1px solid;
@@ -161,20 +172,16 @@
 .wgoTable th:first-child,
 .wgoTable td:first-child {
   text-align: right;
+  width: 30%;
+  padding: 3px 5px;
 
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.wgoTable th:last-child,
-.wgoTable td:last-child {
-  text-align: left;
+  font-size: 12px;
 }
 
 .wgoTable th,
 .wgoTable td {
   text-align: center;
-  width: 14%;
+  width: 11.666%;
 }
 
 .positive {
@@ -242,7 +249,7 @@
 }
 
 input:checked + .slider {
-  background-color: #006e93;
+  background-color: #07aae2;
 }
 
 input:checked + .slider:before {
@@ -251,7 +258,7 @@ input:checked + .slider:before {
 
 .switchContainer {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   justify-content: center;
   align-items: center;
 }

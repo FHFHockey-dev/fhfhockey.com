@@ -476,36 +476,6 @@ const NHLAnalysisPage: React.FC = () => {
               ))}
           </div>
         </div>
-      </div>
-      <div className={styles.wgoChart}>
-        <div className={styles.wgoBio}>
-          <div className={styles.wgoBioImage}>
-            {playerImage && (
-              <img
-                className={styles.imageContent}
-                src={playerImage}
-                alt="Player"
-              />
-            )}
-          </div>{" "}
-          <div className={styles.wgoBioInfo}>
-            <p className={styles.wgoPtext}>Name: {playerName}</p>
-            <p className={styles.wgoPtext}>Team: {teamName}</p>
-            <p className={styles.wgoPtext}>Position: {position}</p>
-            <p className={styles.wgoPtext}>Height: {height}</p>
-            <p className={styles.wgoPtext}>Weight: {weight}</p>
-            <p className={styles.wgoPtext}>Age: {age}</p>
-          </div>
-        </div>
-        <div className={styles.wgoRadar}>
-          {/* {selectedPlayerStats ? (
-            <WGORadarChart playerStats={selectedPlayerStats.Totals} />
-          ) : (
-            <p>No data available</p>
-          )} */}
-        </div>
-        <div className={styles.wgoLineOne}> </div>
-        <div className={styles.wgoLineTwo}> </div>
         <div className={styles.wgoTableOptions}>
           <h3>Filter Options</h3>
           <div>
@@ -518,7 +488,7 @@ const NHLAnalysisPage: React.FC = () => {
               <option value="L7">L7</option>
               <option value="L14">L14</option>
               <option value="L30">L30</option>
-              <option value="Totals">STD</option>
+              <option value="STD">STD</option>
               <option value="LY">LY</option>
             </select>
           </div>
@@ -532,7 +502,7 @@ const NHLAnalysisPage: React.FC = () => {
               <option value="L7">L7</option>
               <option value="L14">L14</option>
               <option value="L30">L30</option>
-              <option value="Totals">STD</option>
+              <option value="STD">STD</option>
               <option value="LY">LY</option>
             </select>
           </div>
@@ -553,6 +523,39 @@ const NHLAnalysisPage: React.FC = () => {
             <div>82GP Pace</div>
           </div>
         </div>
+      </div>
+
+      <div className={styles.wgoChart}>
+        <div className={styles.wgoBio}>
+          <div className={styles.wgoBioImage}>
+            {playerImage && (
+              <img
+                className={styles.imageContent}
+                src={playerImage}
+                alt="Player"
+              />
+            )}
+          </div>{" "}
+          <div className={styles.wgoBioInfo}>
+            <p className={styles.wgoPtext}>Name: {playerName}</p>
+            <p className={styles.wgoPtext}>Team: {teamName}</p>
+            <p className={styles.wgoPtext}>Position: {position}</p>
+            <p className={styles.wgoPtext}>Height: {height}</p>
+            <p className={styles.wgoPtext}>Weight: {weight}</p>
+            <p className={styles.wgoPtext}>Age: {age}</p>
+          </div>
+        </div>
+        <div className={styles.wgoShotMap}>
+          {/* {selectedPlayerStats ? (
+            <WGORadarChart playerStats={selectedPlayerStats.Totals} />
+          ) : (
+            <p>No data available</p>
+          )} */}
+        </div>
+        <div className={styles.wgoLineOne}> </div>
+        <div className={styles.wgoLineTwo}> </div>
+        <div className={styles.wgoLineThree}> </div>
+        <div className={styles.wgoRadar}> </div>
         <div className={styles.wgoTableContainer}>
           <table className={styles.wgoTable}>
             <thead>
@@ -564,7 +567,7 @@ const NHLAnalysisPage: React.FC = () => {
                 <th>Season To Date</th>
                 <th>Last Year</th>
                 <th>
-                  {compareFrom} VS. {compareTo}
+                  {compareFrom} v. {compareTo}
                 </th>
               </tr>
             </thead>
