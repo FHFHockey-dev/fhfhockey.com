@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { GetStaticPaths, GetStaticProps } from "next";
 import { useRouter } from "next/router";
-import Head from "next/head";
 
 import { groq } from "next-sanity";
 import { getClient } from "lib/sanity/sanity.server";
@@ -14,6 +13,7 @@ import styles from "styles/Post.module.scss";
 import { TextBanner } from "components/Banner/Banner";
 import IconButton from "components/IconButton";
 import Tooltip from "components/Tooltip";
+import { Tooltip as MUI_Tooltip } from "@mui/material";
 import CommentForm from "components/CommentForm";
 import RecentPosts from "components/RecentPosts";
 import Comments from "components/Comments";
@@ -22,6 +22,12 @@ import { PostPreviewData } from ".";
 import client from "lib/apollo-client";
 import scrollTop from "utils/scrollTop";
 import Container from "components/Layout/Container";
+
+type UserData = {
+  name: string;
+  image: string;
+  bio: string;
+};
 
 type PostDetailsData = {
   _id: string;
@@ -41,6 +47,7 @@ type PostDetailsData = {
    * PortableText value
    */
   content: any;
+  author: UserData;
 };
 
 const postsQuery = groq`*[_type == "post" && defined(slug.current)][].slug.current`;
@@ -63,6 +70,12 @@ const postQuery = groq`
     "slug": slug.current,
     publishedAt,
     body,
+    author -> {
+      _id,
+      name,
+      bio,
+      image
+    }
   }
 `;
 
@@ -114,7 +127,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     };
   }
 
-  const { _id, title, summary, mainImage, publishedAt, body } = data;
+  const { _id, title, summary, mainImage, publishedAt, body, author } = data;
 
   const post: PostDetailsData = {
     _id,
@@ -124,6 +137,11 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     imageUrl: urlFor(mainImage).url(),
     content: body,
     createdAt: new Date(publishedAt).toLocaleDateString("en-US"),
+    author: {
+      name: author.name,
+      bio: author.bio,
+      image: urlFor(author.image).url(),
+    },
   };
 
   const recentPosts: PostPreviewData[] = recentPostsData.recentPosts.map(
@@ -163,8 +181,7 @@ function Post({ post, recentPosts }: PostPageProps) {
     return <TextBanner text="Loading..." />;
   }
 
-  const { slug, title, summary, imageUrl, content, createdAt } = post;
-
+  const { slug, title, summary, imageUrl, content, createdAt, author } = post;
   return (
     <Container>
       <NextSeo
@@ -186,7 +203,17 @@ function Post({ post, recentPosts }: PostPageProps) {
           <article className={styles.post}>
             <header className={styles.header}>
               <h1>{title}</h1>
-              <sub>{createdAt}</sub>
+              <div
+                style={{
+                  color: "white",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                }}
+              >
+                <User user={author} />
+                <div>{createdAt}</div>
+              </div>
             </header>
             <PortableText
               value={content}
@@ -217,7 +244,6 @@ function Post({ post, recentPosts }: PostPageProps) {
               </Tooltip>
             </div>
           </article>
-
           {/* Comment Form*/}
           <CommentForm
             className={styles.commentForm}
@@ -233,6 +259,28 @@ function Post({ post, recentPosts }: PostPageProps) {
         </div>
       </div>
     </Container>
+  );
+}
+
+function User({ user }: { user: UserData }) {
+  const { image, name, bio } = user;
+  return (
+    <MUI_Tooltip arrow title={<p style={{ whiteSpace: "pre-line" }}>{bio}</p>}>
+      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+        <div
+          style={{
+            borderRadius: "100%",
+            overflow: "hidden",
+            width: "32px",
+            height: "32px",
+            flexShrink: 0,
+          }}
+        >
+          <img src={image} width={32} height={32} alt={name} />
+        </div>
+        <div>{name}</div>
+      </div>
+    </MUI_Tooltip>
   );
 }
 

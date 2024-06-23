@@ -32,33 +32,20 @@ type LineCombinations = {
 export async function getLineCombinations(
   teamId: number
 ): Promise<LineCombinations> {
-  const FIVE_HOURS_EARLIER = addHours(new Date(), -5).toISOString();
-  const { data: last10Games } = await supabase
-    .from("games")
-    .select("id")
-    .or(`homeTeamId.eq.${teamId}, awayTeamId.eq.${teamId}`)
-    .lt("startTime", FIVE_HOURS_EARLIER)
-    .order("startTime", { ascending: false })
-    .limit(10)
-    .throwOnError();
-  if (!last10Games) throw new Error("No games were found for team " + teamId);
   const { data: lineCombinations } = await supabase
     .from("lineCombinations")
     .select(
       "gameId, teamId, forwards, defensemen, goalies, ...games (startTime)"
     )
     .eq("teamId", teamId)
-    .in("gameId", [last10Games[0].id, last10Games[1].id])
     .order("games(startTime)", { ascending: false })
+    .limit(10)
     .returns<any>() // will be fixed after upgrading supabase-js
     .throwOnError();
-  if (!lineCombinations || lineCombinations.length !== 2) {
+  if (!lineCombinations || lineCombinations.length < 2) {
     console.error(lineCombinations);
     throw new Error(
-      `Cannot find 2 games line combo data for team ${teamId} games: ${[
-        last10Games[0].id,
-        last10Games[1].id,
-      ]}`
+      `Cannot find at least 2 games' line combo data for team ${teamId}`
     );
   }
   const season = await getCurrentSeason();
@@ -91,7 +78,7 @@ export async function getLineCombinations(
     )
     .in(
       "gameId",
-      last10Games.map((game) => game.id)
+      lineCombinations.map((game: any) => game.gameId)
     )
     .in("playerId", [
       ...lineCombinations[0].forwards,
