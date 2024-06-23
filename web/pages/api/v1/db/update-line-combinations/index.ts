@@ -27,6 +27,10 @@ export default adminOnly(async (req, res) => {
     const failed = results.filter(
       (item) => item.status === "rejected"
     ) as PromiseRejectedResult[];
+
+    // log the errors if any
+    failed.forEach((item) => console.error(item.reason));
+
     res.json({
       success: true,
       message:
