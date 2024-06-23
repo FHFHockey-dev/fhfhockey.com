@@ -14,10 +14,11 @@
         }
         display: flex;
         justify-content: space-between;
-        align-items: baseline;
+        align-items: center;
+        gap: 4px;
         color: #1b90bc;
         border-bottom: 2px solid white;
-        padding: 0 0.2rem;
+        padding: 0.3rem 0.2rem;
       }
 
       .actions {

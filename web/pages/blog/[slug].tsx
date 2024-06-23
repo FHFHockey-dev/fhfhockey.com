@@ -203,7 +203,14 @@ function Post({ post, recentPosts }: PostPageProps) {
           <article className={styles.post}>
             <header className={styles.header}>
               <h1>{title}</h1>
-              <div style={{ color: "white" }}>
+              <div
+                style={{
+                  color: "white",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                }}
+              >
                 <User user={author} />
                 <div>{createdAt}</div>
               </div>
@@ -258,12 +265,20 @@ function Post({ post, recentPosts }: PostPageProps) {
 function User({ user }: { user: UserData }) {
   const { image, name, bio } = user;
   return (
-    <MUI_Tooltip title={bio}>
+    <MUI_Tooltip arrow title={<p style={{ whiteSpace: "pre-line" }}>{bio}</p>}>
       <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-        <div style={{ borderRadius: "100%", overflow: "hidden" }}>
+        <div
+          style={{
+            borderRadius: "100%",
+            overflow: "hidden",
+            width: "32px",
+            height: "32px",
+            flexShrink: 0,
+          }}
+        >
           <img src={image} width={32} height={32} alt={name} />
         </div>
-        <p>{name}</p>
+        <div>{name}</div>
       </div>
     </MUI_Tooltip>
   );
