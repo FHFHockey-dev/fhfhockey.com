@@ -93,6 +93,7 @@ export async function getCurrentSeason(): Promise<Season> {
   const { data } = await supabase
     .from("seasons")
     .select("*")
+    .lte("startDate", new Date().toISOString())
     .order("startDate", { ascending: false })
     .limit(1)
     .single();
