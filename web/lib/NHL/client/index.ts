@@ -62,9 +62,9 @@ export async function getGameLogs(
 }
 
 export async function getAllPlayers(seasonId?: number): Promise<Player[]> {
-  const query = new URLSearchParams();
-  seasonId !== undefined && query.append("season", seasonId.toString());
-  return await get(`/player?${query.toString()}`);
+  const query = seasonId ? `?season=${seasonId}` : "";
+  const url = `/player${query}`;
+  return await get(url);
 }
 
 export async function getBoxscore(id: number): Promise<Boxscore | null> {
