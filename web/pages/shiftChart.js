@@ -13,7 +13,6 @@ import LinemateMatrix, {
 } from "web/components/LinemateMatrix/index";
 import { queryTypes, useQueryState } from "next-usequerystate";
 import supabase from "web/lib/supabase";
-import { getTeams } from "web/lib/NHL/client";
 
 // TODO
 
@@ -63,8 +62,14 @@ async function getGames({ gameId, date }) {
     .select("id, homeTeamId, awayTeamId")
     .eq("date", finalDate)
     .throwOnError();
-
-  const teams = await getTeams();
+  const teamIds = [
+    ...new Set(games.map((game) => [game.awayTeamId, game.homeTeamId]).flat()),
+  ];
+  const { data: teams } = await supabase
+    .from("teams")
+    .select("id, name, abbreviation")
+    .in("id", teamIds)
+    .throwOnError();
 
   return {
     date: finalDate,
@@ -723,7 +728,7 @@ function ShiftChart() {
           setGames(games);
         } catch (e) {
           enqueueSnackbar("Failed to fetch games", { variant: "error" });
-
+          console.error(e);
           setGames([]);
         }
       }
