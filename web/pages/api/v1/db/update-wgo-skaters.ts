@@ -291,7 +291,6 @@ async function updateSkaterStats(date: string): Promise<{
     timeOnIceStats,
   } = await fetchAllDataForDate(formattedDate, 100);
 
-  // Iterate over each skater stat and upsert into the Supabase table
   for (const stat of skaterStats) {
     const bioStats = skatersBio.find(
       (aStat) => aStat.playerId === stat.playerId
@@ -338,7 +337,21 @@ async function updateSkaterStats(date: string): Promise<{
     const timeOnIceStat = timeOnIceStats.find(
       (aStat) => aStat.playerId === stat.playerId
     );
-    await supabase.from("wgo_skater_stats").upsert({
+
+    const { data: existingRecord, error } = await supabase
+      .from("wgo_skater_stats")
+      .select("*")
+      .eq("player_id", stat.playerId)
+      .single();
+
+    if (error) {
+      console.error("Error fetching existing record:", error);
+      continue;
+    }
+
+    const mergedData = {
+      ...existingRecord,
+      ...stat,
       // Mapping fields from fetched data to Supabase table columns
       // summary stats from skaterStatsResponse (stat)
       player_id: stat.playerId, // int
@@ -593,9 +606,9 @@ async function updateSkaterStats(date: string): Promise<{
       shifts: timeOnIceStat?.shifts, // int
       shifts_per_game: timeOnIceStat?.shiftsPerGame, // float
       time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift, // float
-    });
+    };
+    await supabase.from("wgo_skater_stats").upsert(mergedData);
   }
-
   return {
     updated: true,
     skaterStats,
@@ -655,14 +668,312 @@ async function updateSkaterStatsForSeason() {
         .eq("player_id", stat.playerId)
         .single();
 
-      // Merge existing data with fetched data, prioritizing new data if not null
-      const mergedData = { ...existingRecord.data, ...stat };
-      Object.keys(mergedData).forEach((key) => {
-        if (mergedData[key] === null && stat[key] !== null) {
-          mergedData[key] = stat[key];
-          totalNullUpdates++;
-        }
-      });
+      const bioStats = skatersBio.find(
+        (aStat) => aStat.playerId === stat.playerId
+      );
+      const miscStats = miscSkaterStats.find(
+        (aStat) => aStat.playerId === stat.playerId
+      );
+      const faceOffStat = faceOffStats.find(
+        (aStat) => aStat.playerId === stat.playerId
+      );
+      const faceoffWinLossStat = faceoffWinLossStats.find(
+        (aStat) => aStat.playerId === stat.playerId
+      );
+      const goalsForAgainstStat = goalsForAgainstStats.find(
+        (aStat) => aStat.playerId === stat.playerId
+      );
+      const penaltiesStat = penaltiesStats.find(
+        (aStat) => aStat.playerId === stat.playerId
+      );
+      const penaltyKillStat = penaltyKillStats.find(
+        (aStat) => aStat.playerId === stat.playerId
+      );
+      const powerPlayStat = powerPlayStats.find(
+        (aStat) => aStat.playerId === stat.playerId
+      );
+      const puckPossessionStat = puckPossessionStats.find(
+        (aStat) => aStat.playerId === stat.playerId
+      );
+      const satCountsStat = satCountsStats.find(
+        (aStat) => aStat.playerId === stat.playerId
+      );
+      const satPercentagesStat = satPercentagesStats.find(
+        (aStat) => aStat.playerId === stat.playerId
+      );
+      const scoringRatesStat = scoringRatesStats.find(
+        (aStat) => aStat.playerId === stat.playerId
+      );
+      const scoringPerGameStat = scoringPerGameStats.find(
+        (aStat) => aStat.playerId === stat.playerId
+      );
+      const shotTypeStat = shotTypeStats.find(
+        (aStat) => aStat.playerId === stat.playerId
+      );
+      const timeOnIceStat = timeOnIceStats.find(
+        (aStat) => aStat.playerId === stat.playerId
+      );
+
+      const mergedData = {
+        ...existingRecord.data,
+        ...stat,
+        // Mapping fields from fetched data to Supabase table columns
+        // summary stats from skaterStatsResponse (stat)
+        player_id: stat.playerId, // int
+        player_name: stat.skaterFullName, // text
+        date: formattedDate, // date
+        shoots_catches: stat.shootsCatches, // text
+        position_code: stat.positionCode, // text
+        games_played: stat.gamesPlayed, // int
+        points: stat.points, // int
+        points_per_game: stat.pointsPerGame, // float
+        goals: stat.goals, // int
+        assists: stat.assists, // int
+        shots: stat.shots, // int
+        shooting_percentage: stat.shootingPct, // float
+        plus_minus: stat.plusMinus, // int
+        ot_goals: stat.otGoals, // int
+        gw_goals: stat.gameWinningGoals, // int
+        pp_points: stat.ppPoints, // int
+        fow_percentage: stat.faceoffWinPct, // float
+        toi_per_game: stat.timeOnIcePerGame, // float
+        // bio stats from skatersBioResponse (bioStats)
+        birth_date: bioStats?.birthDate, // date
+        current_team_abbreviation: bioStats?.currentTeamAbbrev, // text
+        current_team_name: bioStats?.currentTeamName, // text
+        birth_city: bioStats?.birthCity, // text
+        birth_country: bioStats?.birthCountryCode, // text
+        height: bioStats?.height, // text
+        weight: bioStats?.weight, // int
+        draft_year: bioStats?.draftYear, // int
+        draft_round: bioStats?.draftRound, // int
+        draft_overall: bioStats?.draftOverall, // int
+        first_season_for_game_type: bioStats?.firstSeasonForGameType, // int
+        nationality_code: bioStats?.nationalityCode, // text
+        // realtime stats from miscSkaterStatsResponse (miscStats)
+        blocked_shots: miscStats?.blockedShots, // int
+        blocks_per_60: miscStats?.blockedShotsPer60, // float
+        empty_net_assists: miscStats?.emptyNetAssists, // int
+        empty_net_goals: miscStats?.emptyNetGoals, // int
+        empty_net_points: miscStats?.emptyNetPoints, // int
+        first_goals: miscStats?.firstGoals, // int
+        giveaways: miscStats?.giveaways, // int
+        giveaways_per_60: miscStats?.giveawaysPer60, // float
+        hits: miscStats?.hits, // int
+        hits_per_60: miscStats?.hitsPer60, // float
+        missed_shot_crossbar: miscStats?.missedShotCrossbar, // int
+        missed_shot_goal_post: miscStats?.missedShotGoalpost, // int
+        missed_shot_over_net: miscStats?.missedShotOverNet, // int
+        missed_shot_short_side: miscStats?.missedShotShort, // int
+        missed_shot_wide_of_net: miscStats?.missedShotWideOfNet, // int
+        missed_shots: miscStats?.missedShots, // int
+        takeaways: miscStats?.takeaways, // int
+        takeaways_per_60: miscStats?.takeawaysPer60, // float
+        // faceoff stats from faceOffStatsResponse (faceOffStats)
+        d_zone_fo_percentage: faceOffStat?.defensiveZoneFaceoffPct, // float
+        d_zone_faceoffs: faceOffStat?.defensiveZoneFaceoffs, // int
+        ev_faceoff_percentage: faceOffStat?.evFaceoffPct, // float
+        ev_faceoffs: faceOffStat?.evFaceoffs, // int
+        n_zone_fo_percentage: faceOffStat?.neutralZoneFaceoffPct, // float
+        n_zone_faceoffs: faceOffStat?.neutralZoneFaceoffs, // int
+        o_zone_fo_percentage: faceOffStat?.offensiveZoneFaceoffPct, // float
+        o_zone_faceoffs: faceOffStat?.offensiveZoneFaceoffs, // int
+        pp_faceoff_percentage: faceOffStat?.ppFaceoffPct, // float
+        pp_faceoffs: faceOffStat?.ppFaceoffs, // int
+        sh_faceoff_percentage: faceOffStat?.shFaceoffPct, // float
+        sh_faceoffs: faceOffStat?.shFaceoffs, // int
+        total_faceoffs: faceOffStat?.totalFaceoffs, // int
+        // faceoff win/loss stats from faceoffWinLossResponse (faceoffWinLossStats)
+        d_zone_fol: faceoffWinLossStat?.defensiveZoneFaceoffLosses, // int
+        d_zone_fow: faceoffWinLossStat?.defensiveZoneFaceoffWins, // int
+        ev_fol: faceoffWinLossStat?.evFaceoffsLost, // int
+        ev_fow: faceoffWinLossStat?.evFaceoffsWon, // int
+        n_zone_fol: faceoffWinLossStat?.neutralZoneFaceoffLosses, // int
+        n_zone_fow: faceoffWinLossStat?.neutralZoneFaceoffWins, // int
+        o_zone_fol: faceoffWinLossStat?.offensiveZoneFaceoffLosses, // int
+        o_zone_fow: faceoffWinLossStat?.offensiveZoneFaceoffWins, // int
+        pp_fol: faceoffWinLossStat?.ppFaceoffsLost, // int
+        pp_fow: faceoffWinLossStat?.ppFaceoffsWon, // int
+        sh_fol: faceoffWinLossStat?.shFaceoffsLost, // int
+        sh_fow: faceoffWinLossStat?.shFaceoffsWon, // int
+        total_fol: faceoffWinLossStat?.totalFaceoffLosses, // int
+        total_fow: faceoffWinLossStat?.totalFaceoffWins, // int
+        // goals for/against stats from goalsForAgainstResponse (goalsForAgainstStats)
+        es_goal_diff: goalsForAgainstStat?.evenStrengthGoalDifference, // int
+        es_goals_against: goalsForAgainstStat?.evenStrengthGoalsAgainst, // int
+        es_goals_for: goalsForAgainstStat?.evenStrengthGoalsFor, // int
+        es_goals_for_percentage: goalsForAgainstStat?.evenStrengthGoalsForPct, // float
+        es_toi_per_game: goalsForAgainstStat?.evenStrengthTimeOnIcePerGame, // float
+        pp_goals_against: goalsForAgainstStat?.powerPlayGoalsAgainst, // int
+        pp_goals_for: goalsForAgainstStat?.powerPlayGoalFor, // int
+        pp_toi_per_game: goalsForAgainstStat?.powerPlayTimeOnIcePerGame, // float
+        sh_goals_against: goalsForAgainstStat?.shortHandedGoalsAgainst, // int
+        sh_goals_for: goalsForAgainstStat?.shortHandedGoalsFor, // int
+        sh_toi_per_game: goalsForAgainstStat?.shortHandedTimeOnIcePerGame, // float
+        // penalties stats from penaltiesResponse (penaltiesStat)
+        game_misconduct_penalties: penaltiesStat?.gameMisconductPenalties, // int
+        major_penalties: penaltiesStat?.majorPenalties, // int
+        match_penalties: penaltiesStat?.matchPenalties, // int
+        minor_penalties: penaltiesStat?.minorPenalties, // int
+        misconduct_penalties: penaltiesStat?.misconductPenalties, // int
+        net_penalties: penaltiesStat?.netPenalties, // int
+        net_penalties_per_60: penaltiesStat?.netPenaltiesPer60, // float
+        penalties: penaltiesStat?.penalties, // int
+        penalties_drawn: penaltiesStat?.penaltiesDrawn, // int
+        penalties_drawn_per_60: penaltiesStat?.penaltiesDrawnPer60, // float
+        penalties_taken_per_60: penaltiesStat?.penaltiesTakenPer60, // float
+        penalty_minutes: penaltiesStat?.penaltyMinutes, // int
+        penalty_minutes_per_toi: penaltiesStat?.penaltyMinutesPerTimeOnIce, // float
+        penalty_seconds_per_game: penaltiesStat?.penaltySecondsPerGame, // float
+        // penalty kill stats from penaltyKillResponse (penaltyKillStat)
+        pp_goals_against_per_60: penaltyKillStat?.ppGoalsAgainstPer60, // float/
+        sh_assists: penaltyKillStat?.shAssists, // int
+        sh_goals: penaltyKillStat?.shGoals, // int
+        sh_points: penaltyKillStat?.shPoints, // int
+        sh_goals_per_60: penaltyKillStat?.shGoalsPer60, // float
+        sh_individual_sat_for: penaltyKillStat?.shIndividualSatFor, // int
+        sh_individual_sat_per_60: penaltyKillStat?.shIndividualSatForPer60, // float
+        sh_points_per_60: penaltyKillStat?.shPointsPer60, // float
+        sh_primary_assists: penaltyKillStat?.shPrimaryAssists, // int
+        sh_primary_assists_per_60: penaltyKillStat?.shPrimaryAssistsPer60, // float
+        sh_secondary_assists: penaltyKillStat?.shSecondaryAssists, // int
+        sh_secondary_assists_per_60: penaltyKillStat?.shSecondaryAssistsPer60, // float
+        sh_shooting_percentage: penaltyKillStat?.shShootingPct, // float
+        sh_shots: penaltyKillStat?.shShots, // int
+        sh_shots_per_60: penaltyKillStat?.shShotsPer60, // float
+        sh_time_on_ice: penaltyKillStat?.shTimeOnIce, // int
+        sh_time_on_ice_pct_per_game: penaltyKillStat?.shTimeOnIcePctPerGame, // float
+        // power play stats from powerPlayResponse (powerPlayStat)
+        pp_assists: powerPlayStat?.ppAssists, // int
+        pp_goals: powerPlayStat?.ppGoals, // int
+        pp_goals_for_per_60: powerPlayStat?.ppGoalsForPer60, // float
+        pp_goals_per_60: powerPlayStat?.ppGoalsPer60, // float
+        pp_individual_sat_for: powerPlayStat?.ppIndividualSatFor, // int
+        pp_individual_sat_per_60: powerPlayStat?.ppIndividualSatPer60, // float
+        pp_points_per_60: powerPlayStat?.ppPointsPer60, // float
+        pp_primary_assists: powerPlayStat?.ppPrimaryAssists, // int
+        pp_primary_assists_per_60: powerPlayStat?.ppPrimaryAssistsPer60, // float
+        pp_secondary_assists: powerPlayStat?.ppSecondaryAssists, // int
+        pp_secondary_assists_per_60: powerPlayStat?.ppSecondaryAssistsPer60, // float
+        pp_shooting_percentage: powerPlayStat?.ppShootingPct, // float
+        pp_shots: powerPlayStat?.ppShots, // int
+        pp_shots_per_60: powerPlayStat?.ppShotsPer60, // float
+        pp_toi: powerPlayStat?.ppTimeOnIce, // int
+        pp_toi_pct_per_game: powerPlayStat?.ppTimeOnIcePctPerGame, // float
+        // puck possession stats from puckPossessionResponse (puckPossessionStat)
+        goals_pct: puckPossessionStat?.goalsPct, // float
+        faceoff_pct_5v5: puckPossessionStat?.faceoffPct5v5, // float
+        individual_sat_for_per_60: puckPossessionStat?.individualSatForPer60, // float
+        individual_shots_for_per_60:
+          puckPossessionStat?.individualShotsForPer60, // float
+        on_ice_shooting_pct: puckPossessionStat?.onIceShootingPct, // float
+        sat_pct: puckPossessionStat?.satPct, // float
+        toi_per_game_5v5: puckPossessionStat?.timeOnIcePerGame5v5, // float
+        usat_pct: puckPossessionStat?.usatPct, // float
+        zone_start_pct: puckPossessionStat?.zoneStartPct, // float
+        // shooting stats from satCountsResponse (satCountsStat)
+        sat_against: satCountsStat?.satAgainst, // int
+        sat_ahead: satCountsStat?.satAhead, // int
+        sat_behind: satCountsStat?.satBehind, // int
+        sat_close: satCountsStat?.satClose, // int
+        sat_for: satCountsStat?.satFor, // int
+        sat_tied: satCountsStat?.satTied, // int
+        sat_total: satCountsStat?.satTotal, // int
+        usat_against: satCountsStat?.usatAgainst, // int
+        usat_ahead: satCountsStat?.usatAhead, // int
+        usat_behind: satCountsStat?.usatBehind, // int
+        usat_close: satCountsStat?.usatClose, // int
+        usat_for: satCountsStat?.usatFor, // int
+        usat_tied: satCountsStat?.usatTied, // int
+        usat_total: satCountsStat?.usatTotal, // int
+        // shooting percentages from satPercentagesResponse (satPercentagesStat)
+        sat_percentage: satPercentagesStat?.satPercentage, // float
+        sat_percentage_ahead: satPercentagesStat?.satPercentageAhead, // float
+        sat_percentage_behind: satPercentagesStat?.satPercentageBehind, // float
+        sat_percentage_close: satPercentagesStat?.satPercentageClose, // float
+        sat_percentage_tied: satPercentagesStat?.satPercentageTied, // float
+        sat_relative: satPercentagesStat?.satRelative, // float
+        shooting_percentage_5v5: satPercentagesStat?.shootingPct5v5, // float
+        skater_save_pct_5v5: satPercentagesStat?.skaterSavePct5v5, // float
+        skater_shooting_plus_save_pct_5v5:
+          satPercentagesStat?.skaterShootingPlusSavePct5v5, // float
+        usat_percentage: satPercentagesStat?.usatPercentage, // float
+        usat_percentage_ahead: satPercentagesStat?.usatPercentageAhead, // float
+        usat_percentage_behind: satPercentagesStat?.usatPercentageBehind, // float
+        usat_percentage_close: satPercentagesStat?.usatPrecentageClose, // float
+        usat_percentage_tied: satPercentagesStat?.usatPercentageTied, // float
+        usat_relative: satPercentagesStat?.usatRelative, // float
+        zone_start_pct_5v5: satPercentagesStat?.zoneStartPct5v5, // float
+        // scoring rates from scoringRatesResponse (scoringRatesStat)
+        assists_5v5: scoringRatesStat?.assists5v5, // int
+        assists_per_60_5v5: scoringRatesStat?.assistsPer605v5, // float
+        goals_5v5: scoringRatesStat?.goals5v5, // int
+        goals_per_60_5v5: scoringRatesStat?.goalsPer605v5, // float
+        net_minor_penalties_per_60: scoringRatesStat?.netMinorPenaltiesPer60, // float
+        o_zone_start_pct_5v5: scoringRatesStat?.offensiveZoneStartPct5v5, // float
+        on_ice_shooting_pct_5v5: scoringRatesStat?.onIceShootingPct5v5, // float
+        points_5v5: scoringRatesStat?.points5v5, // int
+        points_per_60_5v5: scoringRatesStat?.pointsPer605v5, // float
+        primary_assists_5v5: scoringRatesStat?.primaryAssists5v5, // int
+        primary_assists_per_60_5v5: scoringRatesStat?.primaryAssistsPer605v5, // float
+        sat_relative_5v5: scoringRatesStat?.satRelative5v5, // float
+        secondary_assists_5v5: scoringRatesStat?.secondaryAssists5v5, // int
+        secondary_assists_per_60_5v5:
+          scoringRatesStat?.secondaryAssistsPer605v5, // float
+        // scoring per game from scoringPerGameResponse (scoringPerGameStat)
+        assists_per_game: scoringPerGameStat?.assistsPerGame, // float
+        blocks_per_game: scoringPerGameStat?.blocksPerGame, // float
+        goals_per_game: scoringPerGameStat?.goalsPerGame, // float
+        hits_per_game: scoringPerGameStat?.hitsPerGame, // float
+        penalty_minutes_per_game: scoringPerGameStat?.penaltyMinutesPerGame, // float
+        primary_assists_per_game: scoringPerGameStat?.primaryAssistsPerGame, // float
+        secondary_assists_per_game: scoringPerGameStat?.secondaryAssistsPerGame, // float
+        shots_per_game: scoringPerGameStat?.shotsPerGame, // float
+        total_primary_assists: scoringPerGameStat?.totalPrimaryAssists, // int
+        total_secondary_assists: scoringPerGameStat?.totalSecondaryAssists, // int
+        // shot type stats from shotTypeResponse (shotTypeStat)
+        goals_backhand: shotTypeStat?.goalsBackhand, // int
+        goals_bat: shotTypeStat?.goalsBat, // int
+        goals_between_legs: shotTypeStat?.goalsBetweenLegs, // int
+        goals_cradle: shotTypeStat?.goalsCradle, // int
+        goals_deflected: shotTypeStat?.goalsDeflected, // int
+        goals_poke: shotTypeStat?.goalsPoke, // int
+        goals_slap: shotTypeStat?.goalsSlap, // int
+        goals_snap: shotTypeStat?.goalsSnap, // int
+        goals_tip_in: shotTypeStat?.goalsTipIn, // int
+        goals_wrap_around: shotTypeStat?.goalsWrapAround, // int
+        goals_wrist: shotTypeStat?.goalsWrist, // int
+        shooting_pct_backhand: shotTypeStat?.shootingPctBackhand, // float
+        shooting_pct_bat: shotTypeStat?.shootingPctBat, // float
+        shooting_pct_between_legs: shotTypeStat?.shootingPctBetweenLegs, // float
+        shooting_pct_cradle: shotTypeStat?.shootingPctCradle, // float
+        shooting_pct_deflected: shotTypeStat?.shootingPctDeflected, // float
+        shooting_pct_poke: shotTypeStat?.shootingPctPoke, // float
+        shooting_pct_slap: shotTypeStat?.shootingPctSlap, // float
+        shooting_pct_snap: shotTypeStat?.shootingPctSnap, // float
+        shooting_pct_tip_in: shotTypeStat?.shootingPctTipIn, // float
+        shooting_pct_wrap_around: shotTypeStat?.shootingPctWrapAround, // float
+        shooting_pct_wrist: shotTypeStat?.shootingPctWrist, // float
+        shots_on_net_backhand: shotTypeStat?.shotsOnNetBackhand, // int
+        shots_on_net_bat: shotTypeStat?.shotsOnNetBat, // int
+        shots_on_net_between_legs: shotTypeStat?.shotsOnNetBetweenLegs, // int
+        shots_on_net_cradle: shotTypeStat?.shotsOnNetCradle, // int
+        shots_on_net_deflected: shotTypeStat?.shotsOnNetDeflected, // int
+        shots_on_net_poke: shotTypeStat?.shotsOnNetPoke, // int
+        shots_on_net_slap: shotTypeStat?.shotsOnNetSlap, // int
+        shots_on_net_snap: shotTypeStat?.shotsOnNetSnap, // int
+        shots_on_net_tip_in: shotTypeStat?.shotsOnNetTipIn, // int
+        shots_on_net_wrap_around: shotTypeStat?.shotsOnNetWrapAround, // int
+        shots_on_net_wrist: shotTypeStat?.shotsOnNetWrist, // int
+        // time on ice stats from timeOnIceResponse (timeOnIceStat)
+        ev_time_on_ice: timeOnIceStat?.evTimeOnIce, // int
+        ev_time_on_ice_per_game: timeOnIceStat?.evTimeOnIcePerGame, // float
+        ot_time_on_ice: timeOnIceStat?.otTimeOnIce, // int
+        ot_time_on_ice_per_game: timeOnIceStat?.otTimeOnIcePerOtGame, // float
+        shifts: timeOnIceStat?.shifts, // int
+        shifts_per_game: timeOnIceStat?.shiftsPerGame, // float
+        time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift, // float
+      };
 
       // Update Supabase table if there are new non-null values
       if (totalNullUpdates > 0) {

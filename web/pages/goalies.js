@@ -1,5 +1,3 @@
-// goalies.js
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import GoalieList from "web/components/GoalieList";
@@ -170,8 +168,12 @@ const GoalieTrends = () => {
   const [selectedWeek, setSelectedWeek] = useState(null);
   const [selectedStats, setSelectedStats] = useState(defaultSelectedStats);
   const [goalieRankings, setGoalieRankings] = useState([]);
-  const [view, setView] = useState("leaderboard"); // "leaderboard" or "week"
+  const [goalies, setGoalies] = useState([]);
+  const [view, setView] = useState("leaderboard");
   const [selectedRange, setSelectedRange] = useState({ start: 0, end: 0 });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [useSingleWeek, setUseSingleWeek] = useState(true); // Toggle state
 
   useEffect(() => {
     const fetchSeasonData = async () => {
@@ -192,7 +194,7 @@ const GoalieTrends = () => {
         };
 
         const remainingWeeks = eachWeekOfInterval({
-          start: addDays(firstSunday, 1),
+          start: addDays(firstSunday, 7),
           end: seasonEnd,
         }).map((weekStart) => ({
           start: startOfWeek(weekStart, { weekStartsOn: 1 }),
@@ -213,7 +215,6 @@ const GoalieTrends = () => {
         setSelectedWeek(allWeeks[0].value);
         setSelectedRange({ start: 0, end: allWeeks.length - 1 });
 
-        // Fetch data for all weeks to calculate leaderboard
         const allGoalieData = await Promise.all(
           allWeeks.map((week) =>
             axios.get(
@@ -247,7 +248,6 @@ const GoalieTrends = () => {
         );
         setGoalieRankings(goalieRankings);
 
-        // Log for debugging
         console.log("Season Start:", seasonStart);
         console.log("Season End:", seasonEnd);
         console.log("Total Weeks:", allWeeks.length);
@@ -257,7 +257,37 @@ const GoalieTrends = () => {
     };
 
     fetchSeasonData();
-  }, [selectedStats]);
+  }, []);
+
+  useEffect(() => {
+    if (selectedWeek) {
+      const fetchGoalies = async () => {
+        setLoading(true);
+        try {
+          const startDate = format(
+            new Date(selectedWeek.start),
+            "yyyy-MM-dd HH:mm:ss"
+          );
+          const endDate = format(
+            new Date(selectedWeek.end),
+            "yyyy-MM-dd HH:mm:ss"
+          );
+          console.log(`Fetching data for: ${startDate} to ${endDate}`);
+          const response = await axios.get(
+            `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&cayenneExp=gameDate%3C=%22${endDate}%22%20and%20gameDate%3E=%22${startDate}%22%20and%20gameTypeId=2`
+          );
+          setGoalies(response.data.data);
+        } catch (error) {
+          console.error("Error fetching goalie data:", error);
+          setError("Error fetching data");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchGoalies();
+    }
+  }, [selectedWeek, selectedStats]);
 
   const handleWeekChange = (event) => {
     setSelectedWeek(weeks[event.target.value].value);
@@ -275,78 +305,176 @@ const GoalieTrends = () => {
 
   const handleRangeChange = (start, end) => {
     setSelectedRange({ start, end });
-    const filteredGoalieData = goalieRankings.map((goalie) => {
-      const filteredWeeks = goalie.weeks.slice(start, end + 1);
-      return {
-        ...goalie,
-        weeks: filteredWeeks,
-      };
-    });
-    const filteredRankings = calculateGoalieRankings(
-      filteredGoalieData,
-      selectedStats
-    );
-    setGoalieRankings(filteredRankings);
+  };
+
+  const handleRangeSubmit = async () => {
+    setLoading(true);
+    try {
+      const selectedWeeks = weeks.slice(
+        selectedRange.start,
+        selectedRange.end + 1
+      );
+      const allGoalieData = await Promise.all(
+        selectedWeeks.map((week) =>
+          axios.get(
+            `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&cayenneExp=gameDate%3C=%22${format(
+              new Date(week.end),
+              "yyyy-MM-dd HH:mm:ss"
+            )}%22%20and%20gameDate%3E=%22${format(
+              new Date(week.start),
+              "yyyy-MM-dd HH:mm:ss"
+            )}%22%20and%20gameTypeId=2`
+          )
+        )
+      );
+
+      const aggregatedData = allGoalieData.reduce((acc, weekData, index) => {
+        weekData.data.data.forEach((goalie) => {
+          if (!acc[goalie.playerId]) {
+            acc[goalie.playerId] = { ...goalie, weeks: [] };
+          }
+          acc[goalie.playerId].weeks.push({
+            ...goalie,
+            weekLabel: `Week ${index + 1}`,
+          });
+        });
+        return acc;
+      }, {});
+
+      const goalieRankings = calculateGoalieRankings(
+        Object.values(aggregatedData),
+        selectedStats
+      );
+      setGoalieRankings(goalieRankings);
+      setView("leaderboard");
+    } catch (error) {
+      console.error("Error fetching goalie data:", error);
+      setError("Error fetching data");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className={styles.container}>
-      <h1>NHL Goalie Stats</h1>
-      {weeks.length > 0 && (
-        <select className={styles.dropdown} onChange={handleWeekChange}>
-          {weeks.map((week, index) => (
-            <option key={index} value={index}>
-              {week.label}
-            </option>
-          ))}
-        </select>
-      )}
-      <div>
-        <label>Start Week:</label>
-        <select
-          value={selectedRange.start}
-          onChange={(e) =>
-            handleRangeChange(parseInt(e.target.value), selectedRange.end)
-          }
+      <h1 className={styles.headerText}>NHL Goalie Stats</h1>
+      <div className={styles.toggleContainer}>
+        <button
+          className={`${styles.toggleButton} ${
+            useSingleWeek ? styles.active : ""
+          }`}
+          onClick={() => setUseSingleWeek(true)}
         >
-          {weeks.map((week, index) => (
-            <option key={index} value={index}>
-              {week.label}
-            </option>
-          ))}
-        </select>
-        <label>End Week:</label>
-        <select
-          value={selectedRange.end}
-          onChange={(e) =>
-            handleRangeChange(selectedRange.start, parseInt(e.target.value))
-          }
+          Single Week
+        </button>
+        <button
+          className={`${styles.toggleButton} ${
+            !useSingleWeek ? styles.active : ""
+          }`}
+          onClick={() => setUseSingleWeek(false)}
         >
-          {weeks.map((week, index) => (
-            <option key={index} value={index}>
-              {week.label}
-            </option>
-          ))}
-        </select>
+          Date Range
+        </button>
       </div>
-      <div>
-        <h2>Customize Stats</h2>
-        {statColumns.map((stat) => (
-          <label key={stat.value}>
-            <input
-              type="checkbox"
-              value={stat.value}
-              checked={selectedStats.includes(stat.value)}
-              onChange={handleStatChange}
-            />
-            {stat.label}
-          </label>
-        ))}
+      {useSingleWeek ? (
+        <div className={styles.singleWeekDropdown}>
+          <label className={styles.singleWeekLabel}>Single Week Stats:</label>
+          {weeks.length > 0 && (
+            <select className={styles.customSelect} onChange={handleWeekChange}>
+              {weeks.map((week, index) => (
+                <option key={index} value={index}>
+                  {week.label}
+                </option>
+              ))}
+            </select>
+          )}
+          <p className={styles.singleWeekNote}>
+            Adapted from the{" "}
+            <a
+              href="https://dobberhockey.com/2024/05/19/geek-of-the-week-true-goalie-value-season-recap/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.hyperlink}
+            >
+              {" "}
+              True Goalie Value{" "}
+            </a>
+            Goalie Rankings and Constructs by
+            <a
+              href="https://twitter.com/fantasycheddar"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.hyperlink}
+            >
+              {" "}
+              @TopCheddarFantasy{" "}
+            </a>
+          </p>
+        </div>
+      ) : (
+        <div className={styles.weekRangeDropdowns}>
+          <label className={styles.singleWeekLabel}>Week Range Stats:</label>
+          <div className={styles.startWeekDropdown}>
+            <label className={styles.startEndLabel}>Start:</label>
+            <select
+              className={styles.customSelect}
+              value={selectedRange.start}
+              onChange={(e) =>
+                handleRangeChange(parseInt(e.target.value), selectedRange.end)
+              }
+            >
+              {weeks.map((week, index) => (
+                <option key={index} value={index}>
+                  {week.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.endWeekDropdown}>
+            <label className={styles.startEndLabel}>End:</label>
+            <select
+              className={styles.customSelect}
+              value={selectedRange.end}
+              onChange={(e) =>
+                handleRangeChange(selectedRange.start, parseInt(e.target.value))
+              }
+            >
+              {weeks.map((week, index) => (
+                <option key={index} value={index}>
+                  {week.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            className={styles.weekLeaderboardButton}
+            onClick={handleRangeSubmit}
+          >
+            Submit
+          </button>
+        </div>
+      )}
+      <div className={styles.customizeStatsContainer}>
+        <label className={styles.customizeStatsLabel}>Customize Stats</label>
+        <div className={styles.checkboxContainer}>
+          {statColumns.map((stat) => (
+            <div key={stat.value} className={styles.checkboxItem}>
+              <input
+                type="checkbox"
+                id={`checkbox-${stat.value}`}
+                value={stat.value}
+                checked={selectedStats.includes(stat.value)}
+                onChange={handleStatChange}
+              />
+              <label htmlFor={`checkbox-${stat.value}`}>{stat.label}</label>
+            </div>
+          ))}
+        </div>
       </div>
       {view === "leaderboard" && (
         <GoalieLeaderboard goalieRankings={goalieRankings} setView={setView} />
       )}
-      {view === "week" && (
+      {view === "week" && selectedWeek && (
         <GoalieList
           week={selectedWeek}
           selectedStats={selectedStats}

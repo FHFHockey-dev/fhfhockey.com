@@ -3,8 +3,13 @@ import styles from "styles/Goalies.module.scss";
 
 const GoalieLeaderboard = ({ goalieRankings, setView }) => {
   return (
-    <div>
-      <button onClick={() => setView("week")}>Select Week</button>
+    <div className={styles.tableContainer}>
+      <button
+        className={styles.weekLeaderboardButton}
+        onClick={() => setView("week")}
+      >
+        Select Week
+      </button>
       <table className={styles.goalieTable}>
         <thead>
           <tr>

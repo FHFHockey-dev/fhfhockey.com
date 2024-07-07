@@ -1,18 +1,46 @@
-// CSS (Goalies.module.scss)
 .better {
-  background-color: green;
+  background-color: #0984ad;
   color: white;
 }
 
 .worse {
-  background-color: red;
+  background-color: #b31c1c;
   color: white;
 }
 
+.tableContainer,
+.leaderboardDiv,
+.tableDiv,
+.weeklyDiv {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  margin: 0 auto;
+  width: 90%;
+  background-color: #292929;
+  border: 2px solid #292929;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.tableContainer2 {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  margin: 0 auto;
+  width: 90%;
+  background-color: #292929;
+  border: 2px solid #292929;
+  border-radius: 12px;
+  padding: 10px;
+  margin-top: 25px;
+}
+
 .goalieTable {
-  margin: 20px 0;
   border-collapse: collapse;
   width: 100%;
+  background-color: #292929;
+  border-radius: 12px;
 }
 
 .goalieTable th,
@@ -20,10 +48,11 @@
   border: 1px solid #07aae2;
   color: #fff;
   padding: 8px;
+  text-align: center;
 }
 
 .goalieTable th {
-  background-color: #292929;
+  background-color: #202020;
 }
 
 .goalieTable tr:nth-child(even) {
@@ -34,13 +63,86 @@
   background-color: #101010;
 }
 
-.dropdown {
-  margin: 10px 0;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background-color: #f9f9f9;
+.weekLeaderboardButton {
+  background-color: #07aae2;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
   font-size: 16px;
+  margin-bottom: 15px;
+  width: 100%;
+}
+
+.weekLeaderboardButton:hover {
+  background-color: #0984ad;
+}
+
+.dateRangeDropdowns {
+  display: flex;
+  justify-content: space-around;
+  margin: 20px auto;
+  width: 90%;
+  background-color: #292929;
+  border: 2px solid #292929;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.singleWeekDropdown,
+.weekRangeDropdowns {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  justify-content: center;
+}
+
+.singleWeekLabel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 10%;
+}
+
+.startEndLabel {
+  display: flex;
+  justify-content: left;
+  align-items: center;
+  padding-left: 5%;
+  width: 10%;
+}
+
+.customizeStatsLabel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.dropdown,
+.customSelect,
+select.customSelect {
+  margin: 10px auto;
+  justify-content: center;
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  background-color: #101010;
+  font-size: 16px;
+  color: #07aae2;
+  width: 50%;
+}
+
+.startWeekDropdown {
+  display: flex;
+  flex-direction: row;
+}
+
+.endWeekDropdown {
+  display: flex;
+  flex-direction: row;
 }
 
 .container {
@@ -49,4 +151,124 @@
   align-items: flex-start;
   width: 95%;
   margin: 0 auto;
+  margin-top: 25px;
+  border: #07aae2 3px solid;
+  border-radius: 10px;
+}
+
+.headerText {
+  font-size: 24px;
+  color: #fff;
+  margin: 20px auto;
+}
+
+.customizeStatsContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  margin: 0px auto;
+  width: 90%;
+  background-color: #292929;
+  border: 2px solid #292929;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 25px;
+}
+
+.checkboxContainer {
+  margin: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+}
+
+.checkboxItem {
+  flex: 0 1 15%; // Adjust the percentage to fit six items per ro
+  padding: 3px;
+  padding-left: 3%;
+  box-sizing: border-box;
+  text-align: left;
+  margin: 5px;
+  color: white;
+}
+
+.checkboxItem input[type="checkbox"] {
+  display: none;
+}
+
+.checkboxItem input[type="checkbox"] + label {
+  position: relative;
+  padding-left: 35px;
+  cursor: pointer;
+}
+
+.checkboxItem input[type="checkbox"] + label::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #c9c9c9;
+  background-color: #101010;
+  border-radius: 5px;
+}
+
+.checkboxItem input[type="checkbox"]:checked + label::before {
+  background-color: #07aae2;
+}
+
+.checkboxItem input[type="checkbox"] + label::after {
+  content: "";
+  position: absolute;
+  left: 9px;
+  top: 4px;
+  width: 4px;
+  height: 12px;
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  transform: rotate(45deg);
+  display: none;
+}
+
+.checkboxItem input[type="checkbox"]:checked + label::after {
+  display: block;
+}
+
+.hyperlink {
+  color: #07aae2;
+  text-decoration: none;
+}
+
+.hyperlink:hover {
+  text-decoration: underline;
+}
+
+.singleWeekNote {
+  color: #fff;
+  font-size: 16px;
+  margin: 10px;
+  text-align: center;
+}
+
+.toggleContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.toggleButton {
+  background-color: #07aae2;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  margin: 0 10px;
+}
+
+.toggleButton.active {
+  background-color: #0984ad;
 }

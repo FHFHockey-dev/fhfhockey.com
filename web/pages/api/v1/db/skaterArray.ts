@@ -493,7 +493,6 @@ function calculatePeriodSummary(
   summarizeFields: string[],
   averageFields: string[]
 ): Partial<SkaterStat> & { date_range: string } {
-  // Ensure return type includes date_range as a string
   const summary: Partial<SkaterStat> = {};
 
   stats.forEach((stat) => {
@@ -515,14 +514,13 @@ function calculatePeriodSummary(
     }
   });
 
-  // Ensure date_range is always set to a string, even if stats are empty
-  let date_range = "N/A"; // Default value if no dates are available
+  let date_range = "N/A";
   if (stats.length > 0) {
     const dates = stats.map((stat) => stat.date);
     const sortedDates = dates.sort((a, b) => a.localeCompare(b));
     const startDate = sortedDates[0];
     const endDate = sortedDates[sortedDates.length - 1];
-    date_range = `${endDate} - ${startDate}`; // Most recent - Oldest
+    date_range = `${startDate} - ${endDate}`;
   }
 
   return { ...summary, date_range };
@@ -531,7 +529,7 @@ function calculatePeriodSummary(
 async function fetchSkaterStats(playerId: string): Promise<PlayerStats | null> {
   let playerStats: PlayerStats = {};
   let offset = 0;
-  const limit = 1000; // Adjust based on what your API can handle
+  const limit = 1000;
 
   while (true) {
     let query = supabase
@@ -557,13 +555,12 @@ async function fetchSkaterStats(playerId: string): Promise<PlayerStats | null> {
 
     skaterStats.forEach((stat) => {
       const { player_id, player_name, date } = stat;
-      // Correct initialization and handling within the fetchSkaterStats function
       if (!playerStats[player_id]) {
         playerStats[player_id] = {
           player_name,
           stats: {
             gameLog: {},
-            L7: {}, // These should be initialized to the correct type as per interface
+            L7: {},
             L14: {},
             L30: {},
             Totals: {},
@@ -572,7 +569,7 @@ async function fetchSkaterStats(playerId: string): Promise<PlayerStats | null> {
       }
 
       if (!playerStats[player_id].stats.gameLog[date]) {
-        playerStats[player_id].stats.gameLog[date] = []; // Ensure this is an array
+        playerStats[player_id].stats.gameLog[date] = [];
       }
       playerStats[player_id].stats.gameLog[date].push(stat);
     });
@@ -584,11 +581,11 @@ async function fetchSkaterStats(playerId: string): Promise<PlayerStats | null> {
     offset += limit;
   }
 
-  // Calculate L7, L14, L30, and Totals
   for (const playerId in playerStats) {
     const allStats = Object.values(playerStats[playerId].stats.gameLog)
       .flat()
       .sort((a, b) => b.date.localeCompare(a.date));
+
     playerStats[playerId].stats.L7 = calculatePeriodSummary(
       allStats.slice(0, 7),
       fieldsToSummarize,
@@ -604,11 +601,44 @@ async function fetchSkaterStats(playerId: string): Promise<PlayerStats | null> {
       fieldsToSummarize,
       fieldsToAverage
     );
-    playerStats[playerId].stats.Totals = calculatePeriodSummary(
-      allStats,
-      fieldsToSummarize,
-      fieldsToAverage
-    );
+  }
+
+  // Fetch season-long data from the wgo_skater_stats_totals table
+  if (playerId !== "all") {
+    const { data: seasonStats, error: seasonError } = await supabase
+      .from("wgo_skater_stats_totals")
+      .select("*")
+      .eq("player_id", playerId)
+      .single();
+
+    if (seasonError) {
+      console.error("Error fetching season-long stats:", seasonError);
+      return null;
+    }
+
+    if (seasonStats) {
+      for (const playerId in playerStats) {
+        playerStats[playerId].stats.Totals = seasonStats;
+      }
+    }
+  } else {
+    const { data: seasonStats, error: seasonError } = await supabase
+      .from("wgo_skater_stats_totals")
+      .select("*");
+
+    if (seasonError) {
+      console.error("Error fetching season-long stats:", seasonError);
+      return null;
+    }
+
+    if (seasonStats) {
+      seasonStats.forEach((seasonStat) => {
+        const { player_id } = seasonStat;
+        if (playerStats[player_id]) {
+          playerStats[player_id].stats.Totals = seasonStat;
+        }
+      });
+    }
   }
 
   return playerStats;

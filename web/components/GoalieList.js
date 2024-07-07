@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import GoalieTable from "./GoalieTable";
+import styles from "styles/Goalies.module.scss";
 import { format } from "date-fns";
 
 const GoalieList = ({
@@ -46,7 +47,7 @@ const GoalieList = ({
   if (error) return <p>{error}</p>;
 
   return (
-    <div>
+    <div className={styles.tableContainer}>
       <GoalieTable
         goalies={goalies}
         selectedStats={selectedStats}

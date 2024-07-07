@@ -98,36 +98,34 @@ const GoalieTable = ({
 
   return (
     <div>
-      <button onClick={() => setView("leaderboard")}>
+      <button
+        className={styles.weekLeaderboardButton}
+        onClick={() => setView("leaderboard")}
+      >
         Back to Leaderboard
       </button>
       <table className={styles.goalieTable}>
         <thead>
+          <tr>
+            <td colSpan="2">League Averages: </td>
+            {statColumns.map((stat) => (
+              <td key={stat.value}>
+                {stat.value === "savePct" ||
+                stat.value === "goalsAgainstAverage"
+                  ? parseFloat(averages[stat.value])
+                  : averages[stat.value]}
+              </td>
+            ))}
+            <td colSpan="2"></td>
+          </tr>
           <tr>
             <th>Name</th>
             <th>Team</th>
             {statColumns.map((stat) => (
               <th key={stat.value}>{stat.label}</th>
             ))}
-          </tr>
-          <tr>
-            <td colSpan="2">Compare</td>
-            {statColumns.map((stat) => (
-              <td key={stat.value}>
-                <input
-                  type="checkbox"
-                  value={stat.value}
-                  checked={selectedStats.includes(stat.value)}
-                  onChange={handleStatChange}
-                />
-              </td>
-            ))}
-          </tr>
-          <tr>
-            <td colSpan="2">Averages</td>
-            {statColumns.map((stat) => (
-              <td key={stat.value}>{averages[stat.value]}</td>
-            ))}
+            <th>% &gt; AVG</th>
+            <th>Ranking</th>
           </tr>
         </thead>
         <tbody>
@@ -144,7 +142,10 @@ const GoalieTable = ({
                       : ""
                   }
                 >
-                  {goalie[stat.value]}
+                  {stat.value === "savePct" ||
+                  stat.value === "goalsAgainstAverage"
+                    ? parseFloat(goalie[stat.value]).toFixed(3)
+                    : goalie[stat.value]}
                 </td>
               ))}
               <td>{goalie.percentage.toFixed(2)}%</td>

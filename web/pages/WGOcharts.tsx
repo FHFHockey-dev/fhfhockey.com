@@ -9,7 +9,6 @@ import usePercentileRank from "hooks/usePercentileRank";
 
 type PlayerStatsKey = keyof PlayerStats;
 
-// Define interfaces
 interface StatItem {
   id: string;
   label: string;
@@ -22,36 +21,7 @@ interface Player {
 }
 
 interface StatsPeriod {
-  [key: string]: number; // Adding index signature
-  games_played: number;
-  points: number;
-  goals: number;
-  assists: number;
-  shots: number;
-  hits: number;
-  toi_per_game: number;
-  points_per_game: number;
-  goals_per_game: number;
-  assists_per_game: number;
-  blocks: number;
-  blocks_per_game: number;
-  on_ice_shooting_pct_5v5: number;
-  o_zone_start_pct_5v5: number;
-  pp_points: number;
-  pp_points_per_game: number;
-  pp_points_per_60: number;
-  pp_toi_per_game: number;
-  pp_toi_pct_per_game: number;
-  points_per_60_5v5: number;
-  secondary_assist_ratio: number;
-  shooting_percentage: number;
-  shots_per_game: number;
-  hits_per_game: number;
-  total_primary_assists: number;
-  total_secondary_assists: number;
-  es_goals_for: number;
-  pp_goals_for: number;
-  sh_goals_for: number;
+  [key: string]: number;
 }
 
 interface PlayerStats {
@@ -70,7 +40,7 @@ const NHLAnalysisPage: React.FC = () => {
   const [compareFrom, setCompareFrom] = useState<PlayerStatsKey>("L7");
   const [compareTo, setCompareTo] = useState<PlayerStatsKey>("Totals");
   const [displayMode, setDisplayMode] = useState("per_game");
-  const [playerImage, setPlayerImage] = useState<string>(""); // State to store player image URL
+  const [playerImage, setPlayerImage] = useState<string>("");
   const [playerName, setPlayerName] = useState("");
   const [teamName, setTeamName] = useState("");
   const [position, setPosition] = useState("");
@@ -79,21 +49,6 @@ const NHLAnalysisPage: React.FC = () => {
   const [age, setAge] = useState("");
 
   const tableStats: StatItem[] = [
-    // DEV NOTE:
-    // 1) GP done           14) GP done
-    // 2) ATOI done         15) IPP
-    // 3) Pts done          16) oiSH% done
-    // 4) Pt Pace  done     17) PDO
-    // 5) Goals   done      18) Hits done
-    // 6) G Pace  done      19) Hits Pace done
-    // 7) Assists  done     20) Blocks done
-    // 8) A Pace   done     21) Blocks Pace done
-    // 9) A1:A2 Ratio done  22) oZS% done
-    // 10) SOG    done      23) PPP done
-    // 11) SOG/60           24) PPP Pace
-    // 12) SOG Pace done    26) PPTOI/GM
-    // 13) Shooting %       26) PP%
-
     { id: "gp", label: "GP", statKey: "games_played" },
     { id: "atoi", label: "ATOI", statKey: "toi_per_game" },
     { id: "pts", label: "Pts", statKey: "points" },
@@ -122,7 +77,6 @@ const NHLAnalysisPage: React.FC = () => {
     { id: "pppg", label: "PPP | Per Game", statKey: "pp_points_per_game" },
   ];
 
-  // Function to format seconds to MM:SS
   const formatTime = (seconds: number): string => {
     const roundedSeconds = Math.round(seconds);
     const minutes = Math.floor(roundedSeconds / 60);
@@ -139,12 +93,10 @@ const NHLAnalysisPage: React.FC = () => {
 
   const calculateIPP = (
     statsPeriod: StatsPeriod,
-
     periodLabel: string
   ): string => {
     const { es_goals_for, pp_goals_for, sh_goals_for, points } = statsPeriod;
 
-    // Logging the input values for debugging
     console.log(`--- IPP Calculation for ${periodLabel} ---`);
     console.log(`ES Goals For: ${es_goals_for}`);
     console.log(`PP Goals For: ${pp_goals_for}`);
@@ -156,20 +108,20 @@ const NHLAnalysisPage: React.FC = () => {
 
     if (points === 0) {
       console.log(`${periodLabel} IPP: 0% (no points)`);
-      return "0%"; // Avoid division by zero, handle according to your needs
+      return "0%";
     }
 
     const totalGoalsFor = es_goals_for + pp_goals_for + sh_goals_for;
     if (totalGoalsFor === 0) {
       console.log(`${periodLabel} IPP: N/A (no goals)`);
-      return "N/A"; // Handle cases where no goals were scored while on ice
+      return "N/A";
     }
 
     const ipp = (points / totalGoalsFor) * 100;
     const formattedIPP = ipp.toFixed(2) + "%";
     console.log(`${periodLabel} Calculated IPP: ${formattedIPP}`);
 
-    return formattedIPP; // Format as a percentage with two decimals
+    return formattedIPP;
   };
 
   const formatStatValue = (statKey: string, statsPeriod: StatsPeriod) => {
@@ -180,11 +132,9 @@ const NHLAnalysisPage: React.FC = () => {
       );
     }
 
-    // Other formatting logic
     if (typeof statsPeriod[statKey] !== "number") return "-";
     const value = statsPeriod[statKey];
 
-    // Specific formatting for Time on Ice per game
     if (statKey === "toi_per_game" || statKey === "pp_toi_per_game") {
       return formatTime(value);
     }
@@ -194,9 +144,9 @@ const NHLAnalysisPage: React.FC = () => {
       const calculatedValue = statsPeriod[statKey] * paceMultiplier;
 
       if (displayMode === "season_pace") {
-        return Math.round(calculatedValue).toString(); // Rounded to nearest whole number
+        return Math.round(calculatedValue).toString();
       } else {
-        return calculatedValue.toFixed(2); // Keeping two decimal places for "per game" values
+        return calculatedValue.toFixed(2);
       }
     }
 
@@ -209,16 +159,14 @@ const NHLAnalysisPage: React.FC = () => {
       return (value * 100).toFixed(2) + "%";
     }
 
-    // Handle per game stats and per 60 minutes stats
     if (statKey.endsWith("_per_game")) {
       if (displayMode === "season_pace") {
-        return (value * 82).toFixed(2); // Calculate season pace for per game stats
+        return (value * 82).toFixed(2);
       } else {
         return value.toFixed(2);
       }
     }
 
-    // Handle per 60 minutes stats
     if (statKey.endsWith("_per_60_5v5") || statKey.endsWith("_per_60")) {
       return value.toFixed(2);
     }
@@ -227,7 +175,6 @@ const NHLAnalysisPage: React.FC = () => {
   };
 
   const getStatLabel = (statItem: StatItem) => {
-    // Check if displayMode is "season_pace" and if statKey matches the expected per game stats
     if (
       displayMode === "season_pace" &&
       [
@@ -247,9 +194,9 @@ const NHLAnalysisPage: React.FC = () => {
 
   const calculateA1A2Ratio = (primary: number, secondary: number): string => {
     const totalAssists = primary + secondary;
-    if (totalAssists === 0) return "-"; // Avoid division by zero
+    if (totalAssists === 0) return "-";
     const secARatio = (secondary / totalAssists) * 100;
-    return secARatio.toFixed(2) + "%"; // Format as percentage with two decimals
+    return secARatio.toFixed(2) + "%";
   };
 
   const handleA1A2Display = (
@@ -257,13 +204,12 @@ const NHLAnalysisPage: React.FC = () => {
     statsPeriod: StatsPeriod
   ): string => {
     if (statKey === "secondary_assist_ratio") {
-      // Use this function to show the A1:A2 ratio where it calculates secondary assist ratio
       return calculateA1A2Ratio(
         statsPeriod.total_primary_assists,
         statsPeriod.total_secondary_assists
       );
     }
-    return formatStatValue(statKey, statsPeriod); // Pass the entire statsPeriod object
+    return formatStatValue(statKey, statsPeriod);
   };
 
   const calculatePerGameStat = (
@@ -272,7 +218,7 @@ const NHLAnalysisPage: React.FC = () => {
     applySeasonPace: boolean = false
   ): string => {
     let actualKey = statKey.replace("_per_game", "");
-    if (actualKey === "blocks") actualKey = "blocked_shots"; // Correcting the key
+    if (actualKey === "blocks") actualKey = "blocked_shots";
     const total = statsPeriod[actualKey];
     const gamesPlayed = statsPeriod.games_played;
 
@@ -314,7 +260,6 @@ const NHLAnalysisPage: React.FC = () => {
     }
 
     if (statKey === "secondary_assist_ratio") {
-      // Special handling for A2 Rate where a lower percentage is better
       valueFrom = parseFloat(
         calculateA1A2Ratio(
           selectedPlayerStats[compareFrom]?.total_primary_assists,
@@ -328,14 +273,13 @@ const NHLAnalysisPage: React.FC = () => {
         ).replace("%", "")
       );
 
-      // Calculation adjusted to reflect desired A2 Rate logic
       const percentageDifference = ((valueFrom - valueTo) / valueTo) * 100 * -1;
       return percentageDifference.toFixed(2) + "%";
     }
 
     if (valueTo === 0 && valueFrom === 0) return "-";
-    if (valueTo === 0) return "∞"; // Handle division by zero if necessary
-    if (valueFrom === 0) return "-100.00%"; // Explicit handling when initial value is zero
+    if (valueTo === 0) return "∞";
+    if (valueFrom === 0) return "-100.00%";
 
     const percentageDifference =
       ((Number(valueFrom) - Number(valueTo)) / Number(valueTo)) * 100;
@@ -358,7 +302,6 @@ const NHLAnalysisPage: React.FC = () => {
       return;
     }
 
-    // Removing duplicates
     const uniqueNames = new Set();
     const uniquePlayers = data
       .filter((player) => {
@@ -387,8 +330,8 @@ const NHLAnalysisPage: React.FC = () => {
   };
 
   const handlePlayerSelect = async (playerId: number, playerName: string) => {
-    setQuery(playerName); // Update the search query
-    setPlayers([]); // Clear dropdown
+    setQuery(playerName);
+    setPlayers([]);
     try {
       const statsResponse = await axios.get(
         `/api/v1/db/skaterArray?playerId=${playerId}`
@@ -414,7 +357,6 @@ const NHLAnalysisPage: React.FC = () => {
         const imageURL = `https://assets.nhle.com/mugs/nhl/${currentSeason.seasonId}/${playerDetails.teamAbbreviation}/${playerId}.png`;
         setPlayerImage(imageURL);
 
-        // Set player details with fallbacks to empty strings if undefined
         setPlayerName(playerDetails.fullName || "");
         setTeamName(playerDetails.teamName || "");
         setPosition(playerDetails.position || "");
@@ -429,6 +371,24 @@ const NHLAnalysisPage: React.FC = () => {
             : ""
         );
         setAge(playerDetails.age ? `${playerDetails.age}` : "");
+
+        // Log date ranges in the browser console
+        console.log(
+          "L7 Date Range:",
+          statsResponse.data[playerId].stats.L7.date_range
+        );
+        console.log(
+          "L14 Date Range:",
+          statsResponse.data[playerId].stats.L14.date_range
+        );
+        console.log(
+          "L30 Date Range:",
+          statsResponse.data[playerId].stats.L30.date_range
+        );
+        console.log(
+          "Totals Date Range:",
+          statsResponse.data[playerId].stats.Totals.date_range
+        );
       } else {
         console.error("Failed to fetch player stats");
       }
