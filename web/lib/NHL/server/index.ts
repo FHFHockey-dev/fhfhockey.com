@@ -104,6 +104,9 @@ export async function getCurrentSeason(): Promise<Season> {
     regularSeasonEndDate: data.regularSeasonEndDate,
     seasonEndDate: data.endDate,
     numberOfGames: data.numberOfGames,
+    slice: function (arg0: number, arg1: number): string {
+      return "";
+    },
   };
 }
 
@@ -114,6 +117,9 @@ export async function getSeasons(): Promise<Season[]> {
     regularSeasonEndDate: item.regularSeasonEndDate,
     seasonEndDate: item.endDate,
     numberOfGames: item.numberOfGames,
+    slice: function (arg0: number, arg1: number): string {
+      return "";
+    },
   }));
   return data;
 }
