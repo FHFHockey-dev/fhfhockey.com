@@ -34,5 +34,5 @@ async function getSeasons(): Promise<Season[]> {
     seasonEndDate: item.endDate,
     numberOfGames: item.numberOfGames,
   }));
-  return data;
+  return data as Season[]; // Add type assertion to match the return type
 }

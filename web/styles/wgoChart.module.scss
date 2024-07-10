@@ -1,0 +1,264 @@
+.wgoPage {
+  width: 90%;
+  margin: 0 auto;
+  font-family: roboto condensed, sans-serif;
+}
+
+.wgoHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.25rem;
+  position: relative;
+}
+
+.wgoHeaderSearchBar {
+  width: 20%;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.dropdown {
+  position: absolute;
+  background: #292929;
+  top: 100%;
+  right: 0;
+  width: 100%;
+  border: 1px solid #202020;
+  z-index: 3;
+}
+
+.dropdownItem {
+  padding: 0.5rem;
+  cursor: pointer;
+  &:hover {
+    background-color: #202020;
+    color: #07aae2;
+    border: 1px solid #07aae2;
+  }
+}
+
+.playerSearchbar {
+  width: 100%;
+  padding: 0.5rem;
+  background-color: #292929;
+  color: #07aae2;
+  border: 1px solid #545454;
+  border-radius: 5px;
+  position: relative;
+}
+
+.wgoChart {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(25, 1fr);
+  grid-column-gap: 0px;
+  grid-row-gap: 0px;
+  border: 1px solid #000;
+  height: 100%;
+}
+
+.wgoBio {
+  grid-area: 1 / 6 / 16 / 11;
+
+  display: flex;
+  flex-direction: row;
+  border: #07aae2 1px solid;
+
+  .wgoBioImage {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    position: relative;
+    overflow: hidden;
+
+    .imageContent {
+      width: 100%;
+      max-height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      object-fit: cover;
+    }
+  }
+
+  .wgoBioInfo {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: left;
+    width: 100%;
+    height: 100%;
+    border-left: #07aae2 1px solid;
+    font-family: roboto condensed, sans-serif;
+    font-size: 14px;
+
+    .wgoPtext {
+      margin: 0;
+      padding: 3px 10px;
+    }
+  }
+}
+
+.wgoShotMap {
+  grid-area: 1 / 1 / 11 / 6;
+
+  border: #07aae2 1px solid;
+}
+
+.wgoRadar {
+  grid-area: 16 / 6 / 26 / 11;
+
+  border: #07aae2 1px solid;
+}
+
+.wgoLineOne {
+  grid-area: 11 / 1 / 16 / 6;
+
+  border: #07aae2 1px solid;
+}
+
+.wgoLineTwo {
+  grid-area: 16 / 1 / 21 / 6;
+
+  border: #07aae2 1px solid;
+}
+
+.wgoLineThree {
+  grid-area: 21 / 1 / 26 / 6;
+
+  border: #07aae2 1px solid;
+}
+
+.wgoTableOptions {
+  width: 50%;
+  border: #07aae2 1px solid;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.wgoTableContainer {
+  grid-area: 1 / 11 / 26 / 16;
+
+  width: 100%;
+  border: #07aae2 1px solid;
+
+  .wgoTable {
+    width: 100%;
+    font-size: 13px;
+    border-collapse: collapse;
+    border-spacing: 0;
+    border: #07aae2 1px solid;
+
+    th {
+      background-color: #07aae2;
+      color: #292929;
+      padding: 0.3rem;
+      border: #292929 1px solid;
+    }
+
+    td {
+      padding: 0.15rem;
+      border: #07aae2 1px solid;
+    }
+  }
+}
+
+.wgoTable th:first-child,
+.wgoTable td:first-child {
+  text-align: right;
+  width: 30%;
+  padding: 3px 5px;
+
+  font-size: 12px;
+}
+
+.wgoTable th,
+.wgoTable td {
+  text-align: center;
+  width: 11.666%;
+}
+
+.positive {
+  background-color: #6b962c;
+  color: #fff;
+  font-weight: 900;
+}
+
+.negative {
+  background-color: #e23f07;
+  color: #fff;
+  font-weight: 100;
+}
+
+.selectDropdown {
+  background-color: #292929;
+  color: #07aae2;
+  border: 1px solid #07aae2;
+  padding: 0.1rem 0.2rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.selectDropdown:focus {
+  outline: none;
+  box-shadow: 0 0 5px #07aae2;
+}
+
+.labelLeft,
+.labelRight {
+  color: #74aabb;
+  font-size: 12px;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 24px;
+  margin: 0 10px;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #07aae2;
+}
+
+input:checked + .slider:before {
+  transform: translateX(16px);
+}
+
+.switchContainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}

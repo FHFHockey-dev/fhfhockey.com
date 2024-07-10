@@ -354,4 +354,15 @@ export const teamsInfo = {
     franchiseId: 39,
     id: 55,
   },
+  UTA: {
+    name: "Utah Hockey Club",
+    shortName: "Utah HC",
+    primaryColor: "#010101",
+    secondaryColor: "#69B3E7",
+    jersey: "#FFFFFF",
+    accent: "#69b3e7",
+    alt: "#FFFFFF",
+    franchiseId: 40,
+    id: 59,
+  },
 };

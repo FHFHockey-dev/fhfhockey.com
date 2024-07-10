@@ -429,9 +429,9 @@ type CellProps = {
   highlight: boolean; // New prop to indicate if the cell should be highlighted
 };
 
-const RED = "#E23F07";
-const BLUE = "#07AAE2";
-const PURPLE = "#E2AD07";
+const RED = "#D65108";
+const BLUE = "#0267C1";
+const PURPLE = "#EFA00B";
 const FORWARDS_POSITIONS = ["L", "R", "C"];
 const DEFENSE_POSITIONS = ["D"];
 
