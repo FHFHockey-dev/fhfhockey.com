@@ -1,8 +1,11 @@
+// web\pages\api\v1\db\update-sko-stats.ts
+
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase";
 import Fetch from "lib/cors-fetch";
 import { format, parseISO, addDays, isBefore } from "date-fns";
 import { SKOSummarySkaterStat } from "lib/NHL/types";
+import { getCurrentSeason } from "lib/NHL/client";
 
 // Fetch skater data from NHL API
 async function fetchSkaterStats(
@@ -14,10 +17,10 @@ async function fetchSkaterStats(
   let skaterStats: SKOSummarySkaterStat[] = [];
 
   while (moreDataAvailable) {
-    //           https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goals%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22assists%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=0       &limit=50      &cayenneExp=gameDate%3C=%222024-04-18%2023%3A59%3A59%22%20and%20gameDate%3E=%222023-10-10%22%20and%20gameTypeId=2
     const summaryUrl = `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goals%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22assists%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&cayenneExp=gameDate%3C=%22${date}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${date}%22%20and%20gameTypeId=2`;
 
     const response = await Fetch(summaryUrl).then((res) => res.json());
+    console.log("Fetched skater stats:", response.data);
     skaterStats = skaterStats.concat(response.data as SKOSummarySkaterStat[]);
 
     moreDataAvailable = response.data.length === limit;
@@ -58,30 +61,57 @@ async function upsertSkaterStats(
   }
 }
 
+// Fetch and upsert data for the entire season
+async function fetchAndUpsertSeasonStats(
+  startDate: string,
+  endDate: string
+): Promise<void> {
+  const summaryUrl = `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goals%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22assists%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=100&cayenneExp=gameDate%3C=%22${endDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${startDate}%22%20and%20gameTypeId=2`;
+  const response = await Fetch(summaryUrl).then((res) => res.json());
+  console.log("Fetched season stats:", response.data);
+  await upsertSkaterStats(startDate, response.data as SKOSummarySkaterStat[]);
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
   try {
-    const dateParam = req.query.date;
-    const date = Array.isArray(dateParam) ? dateParam[0] : dateParam;
+    const currentSeason = await getCurrentSeason();
+    let startDate = parseISO(currentSeason.regularSeasonStartDate);
+    const endDate = parseISO(currentSeason.regularSeasonEndDate);
+    const today = new Date();
 
-    if (!date) {
-      res
-        .status(400)
-        .json({ message: "Missing required parameter: date", success: false });
-      return;
+    // Check if today is before the current season's start date
+    if (isBefore(today, startDate)) {
+      // Use the previous season's data
+      const previousSeasonId =
+        (
+          parseInt(currentSeason.seasonId.toString().substring(0, 4)) - 1
+        ).toString() +
+        (
+          parseInt(currentSeason.seasonId.toString().substring(4, 8)) - 1
+        ).toString();
+      const previousSeasonData = await getCurrentSeason(); // Fetch current season data without arguments
+      startDate = parseISO(previousSeasonData.regularSeasonStartDate);
     }
 
-    const formattedDate = format(parseISO(date), "yyyy-MM-dd");
-    const skaterStats = await fetchSkaterStats(formattedDate, 100);
+    while (isBefore(startDate, endDate) || startDate === endDate) {
+      const formattedDate = format(startDate, "yyyy-MM-dd");
+      const skaterStats = await fetchSkaterStats(formattedDate, 100);
+      await upsertSkaterStats(formattedDate, skaterStats);
+      startDate = addDays(startDate, 1);
+    }
 
-    await upsertSkaterStats(formattedDate, skaterStats);
+    // Fetch and upsert season stats
+    await fetchAndUpsertSeasonStats(
+      format(parseISO(currentSeason.regularSeasonStartDate), "yyyy-MM-dd"),
+      format(endDate, "yyyy-MM-dd")
+    );
 
     res.json({
-      message: `Skater stats updated successfully for ${formattedDate}.`,
+      message: `Skater stats updated successfully for the season.`,
       success: true,
-      data: skaterStats,
     });
   } catch (e: any) {
     res.status(500).json({
