@@ -1513,7 +1513,6 @@ export default async function handler(
   try {
     const dateParam = req.query.date;
     const playerIdParam = req.query.playerId;
-    const seasonIdParam = req.query.seasonId;
     const date = Array.isArray(dateParam) ? dateParam[0] : dateParam;
     const playerId = Array.isArray(playerIdParam)
       ? playerIdParam[0]
@@ -1521,9 +1520,6 @@ export default async function handler(
     const playerFullName = Array.isArray(req.query.playerFullName)
       ? req.query.playerFullName[0]
       : req.query.playerFullName || "Unknown Player";
-    const seasonId = Array.isArray(seasonIdParam)
-      ? seasonIdParam[0]
-      : seasonIdParam;
 
     if (date) {
       const result = await updateSkaterStats(date);
@@ -1543,13 +1539,6 @@ export default async function handler(
       const result = await updateSkaterStatsForSeason();
       res.json({
         message: `Skater stats updated successfully for player ID ${playerId}.`,
-        success: true,
-        data: result,
-      });
-    } else if (seasonId) {
-      const result = await updateSkaterStatsForSeason();
-      res.json({
-        message: `Skater stats updated successfully for the season ${seasonId}.`,
         success: true,
         data: result,
       });
