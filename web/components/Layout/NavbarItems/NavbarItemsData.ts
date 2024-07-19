@@ -1,3 +1,5 @@
+// web/components/Layout/NavbarItems/NavbarItemsData.ts
+
 export type NavbarItem = NavbarItemLink | NavbarItemCategory;
 
 export type NavbarItemLink = {
@@ -23,12 +25,14 @@ const ITEMS_DATA: NavbarItem[] = [
       { type: "link", label: "LINES", href: "/lines" },
       { type: "link", label: "STATS", href: "/stats" },
       { type: "link", label: "PLAYER CARDS", href: "/charts" },
-      // Shot Map Hidden until finished
-      //{ type: "link", label: "SHOT MAP", href: "/shotMap" },
       { type: "link", label: "SHIFT CHART", href: "/shiftChart" },
+      //{ type: "link", label: "TEAM STATS", href: "/teamStats" },
+
+      // Hidden until finished
+      // { type: "link", label: "SHOT MAP", href: "/shotMap" },
       { type: "link", label: "GOALIES", href: "/goalies" },
-      //{ type: "link", label: "GOALIES", href: "/goalieShareChart" },
-      { type: "link", label: "WGO CHARTS", href: "/wigoCharts" },
+      // { type: "link", label: "GOALIES", href: "/goalieShareChart" },
+      // { type: "link", label: "WGO CHARTS", href: "/wigoCharts" },
       // { type: "link", label: "SUSTAINABILITY", href: "/sustainabilityTool" },
       // { type: "link", label: "BLSH", href: "/buyLowSellHigh" },
     ],
