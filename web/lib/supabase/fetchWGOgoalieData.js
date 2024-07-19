@@ -4,7 +4,8 @@
 // For days that fail, those days need to be retried after the script has finished running
 // maybe an array that stores the failed dates and then a loop that runs through the failed dates
 
-require("dotenv").config({ path: "../../.env.local" });
+const path = "./../../.env.local";
+require("dotenv").config({ path: path });
 
 const { createClient } = require("@supabase/supabase-js");
 const fetch = require("node-fetch");
@@ -59,6 +60,7 @@ async function fetchNHLSkaterData() {
   const scheduleResponse = await Fetch(
     "https://api-web.nhle.com/v1/schedule/now"
   );
+  // let seasonStart = "2023-10-10"
   let seasonStart = scheduleResponse.regularSeasonStartDate || "2023-10-10";
   let currentDate = parseISO(seasonStart);
   const today = new Date();

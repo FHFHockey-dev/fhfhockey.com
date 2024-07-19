@@ -1,13 +1,14 @@
-// fetchWGOdata.js
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-1\web\lib\supabase\fetchWGOdata.js
 
 require("dotenv").config({ path: "../../.env.local" });
 const { createClient } = require("@supabase/supabase-js");
-const fetch = require("node-fetch"); // Ensure you have node-fetch or equivalent installed
+const fetch = require("node-fetch");
 const { parseISO, format, addDays, isBefore } = require("date-fns");
+const ProgressBar = require("progress");
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use the service role key or another appropriate key for server-side operations
+const supabaseKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function Fetch(url) {
@@ -16,200 +17,55 @@ async function Fetch(url) {
 }
 
 const teamsInfo = {
-  NJD: {
-    name: "New Jersey Devils",
-    franchiseId: 23,
-    id: 1,
-  },
-  NYI: {
-    name: "New York Islanders",
-    franchiseId: 22,
-    id: 2,
-  },
-  NYR: {
-    name: "New York Rangers",
-    franchiseId: 10,
-    id: 3,
-  },
-  PHI: {
-    name: "Philadelphia Flyers",
-    franchiseId: 16,
-    id: 4,
-  },
-  PIT: {
-    name: "Pittsburgh Penguins",
-    franchiseId: 17,
-    id: 5,
-  },
-  BOS: {
-    name: "Boston Bruins",
-    franchiseId: 6,
-    id: 6,
-  },
-  BUF: {
-    name: "Buffalo Sabres",
-    franchiseId: 19,
-    id: 7,
-  },
-  MTL: {
-    name: "Montréal Canadiens",
-    franchiseId: 1,
-    id: 8,
-  },
-  OTT: {
-    name: "Ottawa Senators",
-    franchiseId: 30,
-    id: 9,
-  },
-  TOR: {
-    name: "Toronto Maple Leafs",
-    franchiseId: 5,
-    id: 10,
-  },
-  CAR: {
-    name: "Carolina Hurricanes",
-    franchiseId: 26,
-    id: 12,
-  },
-  FLA: {
-    name: "Florida Panthers",
-    franchiseId: 33,
-    id: 13,
-  },
-  TBL: {
-    name: "Tampa Bay Lightning",
-    franchiseId: 31,
-    id: 14,
-  },
-  WSH: {
-    name: "Washington Capitals",
-    franchiseId: 24,
-    id: 15,
-  },
-  CHI: {
-    name: "Chicago Blackhawks",
-    franchiseId: 11,
-    id: 16,
-  },
-  DET: {
-    name: "Detroit Red Wings",
-    franchiseId: 12,
-    id: 17,
-  },
-  NSH: {
-    name: "Nashville Predators",
-    franchiseId: 34,
-    id: 18,
-  },
-  STL: {
-    name: "St. Louis Blues",
-    franchiseId: 18,
-    id: 19,
-  },
-  CGY: {
-    name: "Calgary Flames",
-    franchiseId: 21,
-    id: 20,
-  },
-  COL: {
-    name: "Colorado Avalanche",
-    franchiseId: 27,
-    id: 21,
-  },
-  EDM: {
-    name: "Edmonton Oilers",
-    franchiseId: 25,
-    id: 22,
-  },
-  VAN: {
-    name: "Vancouver Canucks",
-    franchiseId: 20,
-    id: 23,
-  },
-  ANA: {
-    name: "Anaheim Ducks",
-    franchiseId: 32,
-    id: 24,
-  },
-  DAL: {
-    name: "Dallas Stars",
-    franchiseId: 15,
-    id: 25,
-  },
-  LAK: {
-    name: "Los Angeles Kings",
-    franchiseId: 14,
-    id: 26,
-  },
-  SJS: {
-    name: "San Jose Sharks",
-    franchiseId: 29,
-    id: 28,
-  },
-  CBJ: {
-    name: "Columbus Blue Jackets",
-    franchiseId: 36,
-    id: 29,
-  },
-  MIN: {
-    name: "Minnesota Wild",
-    franchiseId: 37,
-    id: 30,
-  },
-  WPG: {
-    name: "Winnipeg Jets",
-    franchiseId: 35,
-    id: 52,
-  },
-  ARI: {
-    name: "Arizona Coyotes",
-    franchiseId: 28,
-    id: 53,
-  },
-  VGK: {
-    name: "Vegas Golden Knights",
-    franchiseId: 38,
-    id: 54,
-  },
-  SEA: {
-    name: "Seattle Kraken",
-    franchiseId: 39,
-    id: 55,
-  },
+  NJD: { name: "New Jersey Devils", franchiseId: 23, id: 1 },
+  NYI: { name: "New York Islanders", franchiseId: 22, id: 2 },
+  NYR: { name: "New York Rangers", franchiseId: 10, id: 3 },
+  PHI: { name: "Philadelphia Flyers", franchiseId: 16, id: 4 },
+  PIT: { name: "Pittsburgh Penguins", franchiseId: 17, id: 5 },
+  BOS: { name: "Boston Bruins", franchiseId: 6, id: 6 },
+  BUF: { name: "Buffalo Sabres", franchiseId: 19, id: 7 },
+  MTL: { name: "Montréal Canadiens", franchiseId: 1, id: 8 },
+  OTT: { name: "Ottawa Senators", franchiseId: 30, id: 9 },
+  TOR: { name: "Toronto Maple Leafs", franchiseId: 5, id: 10 },
+  CAR: { name: "Carolina Hurricanes", franchiseId: 26, id: 12 },
+  FLA: { name: "Florida Panthers", franchiseId: 33, id: 13 },
+  TBL: { name: "Tampa Bay Lightning", franchiseId: 31, id: 14 },
+  WSH: { name: "Washington Capitals", franchiseId: 24, id: 15 },
+  CHI: { name: "Chicago Blackhawks", franchiseId: 11, id: 16 },
+  DET: { name: "Detroit Red Wings", franchiseId: 12, id: 17 },
+  NSH: { name: "Nashville Predators", franchiseId: 34, id: 18 },
+  STL: { name: "St. Louis Blues", franchiseId: 18, id: 19 },
+  CGY: { name: "Calgary Flames", franchiseId: 21, id: 20 },
+  COL: { name: "Colorado Avalanche", franchiseId: 27, id: 21 },
+  EDM: { name: "Edmonton Oilers", franchiseId: 25, id: 22 },
+  VAN: { name: "Vancouver Canucks", franchiseId: 20, id: 23 },
+  ANA: { name: "Anaheim Ducks", franchiseId: 32, id: 24 },
+  DAL: { name: "Dallas Stars", franchiseId: 15, id: 25 },
+  LAK: { name: "Los Angeles Kings", franchiseId: 14, id: 26 },
+  SJS: { name: "San Jose Sharks", franchiseId: 29, id: 28 },
+  CBJ: { name: "Columbus Blue Jackets", franchiseId: 36, id: 29 },
+  MIN: { name: "Minnesota Wild", franchiseId: 37, id: 30 },
+  WPG: { name: "Winnipeg Jets", franchiseId: 35, id: 52 },
+  ARI: { name: "Arizona Coyotes", franchiseId: 28, id: 53 },
+  VGK: { name: "Vegas Golden Knights", franchiseId: 38, id: 54 },
+  SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
 };
 
-async function upsertTeams() {
-  const teamsArray = Object.values(teamsInfo);
-
-  for (const team of teamsArray) {
-    const { error } = await supabase.from("wgo_teams").upsert({
-      franchise_id: team.franchiseId,
-      franchise_name: team.name,
-    });
-
-    if (error) {
-      console.error("Error upserting team:", error.message);
-    } else {
-      console.log(`Successfully upserted team: ${team.name}`);
-    }
-  }
+async function fetchNHLSeasons() {
+  const url =
+    "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22DESC%22%7D%5D";
+  const response = await Fetch(url);
+  return response.data;
 }
 
-upsertTeams().catch(console.error);
-
-async function fetchNHLData() {
-  const scheduleResponse = await Fetch(
-    "https://api-web.nhle.com/v1/schedule/now"
-  );
-  let seasonStart = scheduleResponse.regularSeasonStartDate || "2023-10-10";
-
-  let currentDate = parseISO(seasonStart);
-  const today = new Date();
+async function fetchNHLData(startDate, endDate, seasonId, bar) {
+  let currentDate = parseISO(startDate);
+  const endDateObj = parseISO(endDate);
 
   while (
-    isBefore(currentDate, today) ||
+    isBefore(currentDate, endDateObj) ||
     currentDate.toISOString().split("T")[0] ===
-      today.toISOString().split("T")[0]
+      endDateObj.toISOString().split("T")[0]
   ) {
     let formattedDate = format(currentDate, "yyyy-MM-dd");
 
@@ -329,6 +185,7 @@ async function fetchNHLData() {
             team_id: stat.franchiseId,
             franchise_name: stat.franchiseName,
             date: formattedDate,
+            season_id: seasonId,
             faceoff_win_pct: stat.faceoffWinPct,
             games_played: stat.gamesPlayed,
             goals_against: stat.goalsAgainst,
@@ -492,6 +349,7 @@ async function fetchNHLData() {
             sh_fow: faceOffWinLossData.shFaceoffsWon,
           });
         }
+        bar.tick();
       }
     } else {
       console.error(
@@ -505,4 +363,46 @@ async function fetchNHLData() {
   }
 }
 
-fetchNHLData();
+async function main() {
+  const seasons = await fetchNHLSeasons();
+  const currentDate = new Date();
+
+  for (const season of seasons) {
+    // Filter out seasons that have not yet started
+    if (isBefore(parseISO(season.startDate), currentDate)) {
+      console.log(`Processing season: ${season.formattedSeasonId}`);
+
+      let totalDays = 0;
+      let currentDate = parseISO(season.startDate);
+      const endDateObj = parseISO(season.regularSeasonEndDate);
+
+      while (
+        isBefore(currentDate, endDateObj) ||
+        currentDate.toISOString().split("T")[0] ===
+          endDateObj.toISOString().split("T")[0]
+      ) {
+        totalDays++;
+        currentDate = addDays(currentDate, 1);
+      }
+
+      const bar = new ProgressBar(
+        `Fetching data for season ${season.formattedSeasonId} [:bar] :percent :etas`,
+        {
+          total: totalDays * Object.keys(teamsInfo).length,
+          width: 40,
+        }
+      );
+
+      await fetchNHLData(
+        season.startDate.split("T")[0],
+        season.regularSeasonEndDate.split("T")[0],
+        season.id.toString(),
+        bar
+      );
+    } else {
+      console.log(`Skipping future season: ${season.formattedSeasonId}`);
+    }
+  }
+}
+
+main().catch(console.error);

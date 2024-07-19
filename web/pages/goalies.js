@@ -181,9 +181,17 @@ const GoalieTrends = () => {
         const response = await axios.get(
           "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22DESC%22%7D%5D"
         );
-        const seasonData = response.data.data[0];
-        const seasonStart = parseISO(seasonData.startDate);
-        const seasonEnd = parseISO(seasonData.regularSeasonEndDate);
+        console.log("Season data:", response.data); // Console log the data
+        let seasonData = response.data.data[0];
+        let seasonStart = parseISO(seasonData.startDate);
+        let seasonEnd = parseISO(seasonData.regularSeasonEndDate);
+        const today = new Date();
+
+        if (today < seasonStart) {
+          seasonData = response.data.data[1];
+          seasonStart = parseISO(seasonData.startDate);
+          seasonEnd = parseISO(seasonData.regularSeasonEndDate);
+        }
 
         setSeason({ start: seasonStart, end: seasonEnd });
 
