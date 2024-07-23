@@ -25,6 +25,19 @@
     font-size: 0.7rem;
   }
 
+  .goalieBar {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-top: 1px solid #ddd;
+  }
+
+  .goalie {
+    font-size: 14px;
+    font-weight: bold;
+  }
+
   // #__next > div > div.ShiftChart_shiftChartContainer__CgnMf > div:nth-child(3) > div > div.DateRangeMatrix_gridWrapper__d0Bm9 > section:nth-child(2) > h4
 
   h4 {

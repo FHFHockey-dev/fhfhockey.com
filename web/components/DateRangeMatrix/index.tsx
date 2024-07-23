@@ -1,3 +1,6 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\DateRangeMatrix\index.tsx
+// WORKING VERSION STOP UNDO HERE
+
 import { useEffect, useMemo, useState, useCallback } from "react";
 import classNames from "classnames";
 import Fetch from "lib/cors-fetch";
@@ -195,6 +198,7 @@ export class MySet<T> {
 
 export async function getRostersMap(gameId: number, _teamId?: number) {
   const rostersMap: Record<number, PlayerData> = {};
+  const goalies: PlayerData[] = [];
   try {
     const boxscore = await Fetch(
       `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
@@ -212,7 +216,10 @@ export async function getRostersMap(gameId: number, _teamId?: number) {
       sweaterNumber: item.sweaterNumber,
       position: item.position,
       name: item.name.default,
+      toi: item.toi,
+      starter: item.starter,
     });
+
     const players: PlayerData[] = [];
     let teams: { id: number; name: string }[] = [
       boxscore.homeTeam,
@@ -221,20 +228,21 @@ export async function getRostersMap(gameId: number, _teamId?: number) {
       id: team.id,
       name: team.name.default,
     }));
+
     if (_teamId) {
       teams = teams.filter((team) => team.id === _teamId);
-      if (_teamId === boxscore.homeTeam.id) {
-        const homeTeamPlayers = [
-          ...playerByGameStats.homeTeam.forwards,
-          ...playerByGameStats.homeTeam.defense,
-        ].map(transform(boxscore.homeTeam.id));
-        players.push(...homeTeamPlayers);
-      } else if (_teamId === boxscore.awayTeam.id) {
-        const awayTeamPlayers = [
-          ...playerByGameStats.awayTeam.forwards,
-          ...playerByGameStats.awayTeam.defense,
-        ].map(transform(boxscore.awayTeam.id));
-        players.push(...awayTeamPlayers);
+      const homeTeam = boxscore.homeTeam.id === _teamId;
+      const relevantTeamStats = homeTeam
+        ? playerByGameStats.homeTeam
+        : playerByGameStats.awayTeam;
+
+      if (relevantTeamStats) {
+        const forwards = relevantTeamStats.forwards.map(transform(_teamId));
+        const defense = relevantTeamStats.defense.map(transform(_teamId));
+        const teamGoalies = relevantTeamStats.goalies.map(transform(_teamId));
+
+        players.push(...forwards, ...defense);
+        goalies.push(...teamGoalies);
       }
     } else {
       const homeTeamPlayers = [
@@ -245,17 +253,25 @@ export async function getRostersMap(gameId: number, _teamId?: number) {
         ...playerByGameStats.awayTeam.forwards,
         ...playerByGameStats.awayTeam.defense,
       ].map(transform(boxscore.awayTeam.id));
+      const homeGoalies = playerByGameStats.homeTeam.goalies.map(
+        transform(boxscore.homeTeam.id)
+      );
+      const awayGoalies = playerByGameStats.awayTeam.goalies.map(
+        transform(boxscore.awayTeam.id)
+      );
+
       players.push(...homeTeamPlayers, ...awayTeamPlayers);
+      goalies.push(...homeGoalies, ...awayGoalies);
     }
 
     players.forEach((p) => {
       rostersMap[p.id] = p;
     });
 
-    return { rostersMap, teams };
+    return { rostersMap, teams, goalies };
   } catch (error) {
     console.error("Error fetching roster map:", error);
-    return { rostersMap, teams: [] };
+    return { rostersMap, teams: [], goalies: [] };
   }
 }
 
