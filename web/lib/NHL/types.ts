@@ -1500,3 +1500,19 @@ export type SKOSummarySkaterStat = {
   ppPoints: number;
   shots: number;
 };
+
+export type DRMShift = {
+  id: number;
+  gameId: number;
+  playerId: number;
+  period: number;
+  firstName: string;
+  lastName: string;
+  teamId: number;
+  teamName: string;
+  duration: string | null;
+  startTime: string;
+  endTime: string;
+  type: "ES" | "SH" | "PP"; // Added type property
+  line: number; // Added line property
+};

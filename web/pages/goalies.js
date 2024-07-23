@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import Fetch from "lib/cors-fetch";
 import GoalieList from "web/components/GoalieList";
 import GoalieLeaderboard from "web/components/GoalieLeaderboard";
 import styles from "styles/Goalies.module.scss";
@@ -12,8 +12,7 @@ import {
   startOfWeek,
 } from "date-fns";
 
-// Helper functions
-export const calculateAverages = (goalies) => {
+const calculateAverages = (goalies) => {
   const totals = goalies.reduce(
     (acc, goalie) => {
       acc.gamesPlayed += goalie.gamesPlayed;
@@ -60,7 +59,7 @@ export const calculateAverages = (goalies) => {
   };
 };
 
-export const calculateRanking = (goalie, averages, selectedStats) => {
+const calculateRanking = (goalie, averages, selectedStats) => {
   const statMap = {
     gamesPlayed: "larger",
     gamesStarted: "larger",
@@ -173,22 +172,22 @@ const GoalieTrends = () => {
   const [selectedRange, setSelectedRange] = useState({ start: 0, end: 0 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [useSingleWeek, setUseSingleWeek] = useState(true); // Toggle state
+  const [useSingleWeek, setUseSingleWeek] = useState(false); // Set default to date range
+  const [fetchData, setFetchData] = useState(false); // Control data fetch
 
   useEffect(() => {
     const fetchSeasonData = async () => {
       try {
-        const response = await axios.get(
+        const response = await Fetch(
           "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22DESC%22%7D%5D"
-        );
-        console.log("Season data:", response.data); // Console log the data
-        let seasonData = response.data.data[0];
+        ).then((res) => res.json());
+        let seasonData = response.data[0];
         let seasonStart = parseISO(seasonData.startDate);
         let seasonEnd = parseISO(seasonData.regularSeasonEndDate);
         const today = new Date();
 
         if (today < seasonStart) {
-          seasonData = response.data.data[1];
+          seasonData = response.data[1];
           seasonStart = parseISO(seasonData.startDate);
           seasonEnd = parseISO(seasonData.regularSeasonEndDate);
         }
@@ -225,7 +224,7 @@ const GoalieTrends = () => {
 
         const allGoalieData = await Promise.all(
           allWeeks.map((week) =>
-            axios.get(
+            Fetch(
               `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&cayenneExp=gameDate%3C=%22${format(
                 new Date(week.end),
                 "yyyy-MM-dd HH:mm:ss"
@@ -233,12 +232,12 @@ const GoalieTrends = () => {
                 new Date(week.start),
                 "yyyy-MM-dd HH:mm:ss"
               )}%22%20and%20gameTypeId=2`
-            )
+            ).then((res) => res.json())
           )
         );
 
         const aggregatedData = allGoalieData.reduce((acc, weekData, index) => {
-          weekData.data.data.forEach((goalie) => {
+          weekData.data.forEach((goalie) => {
             if (!acc[goalie.playerId]) {
               acc[goalie.playerId] = { ...goalie, weeks: [] };
             }
@@ -255,10 +254,6 @@ const GoalieTrends = () => {
           selectedStats
         );
         setGoalieRankings(goalieRankings);
-
-        console.log("Season Start:", seasonStart);
-        console.log("Season End:", seasonEnd);
-        console.log("Total Weeks:", allWeeks.length);
       } catch (error) {
         console.error("Error fetching season data:", error);
       }
@@ -268,38 +263,67 @@ const GoalieTrends = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedWeek) {
-      const fetchGoalies = async () => {
-        setLoading(true);
-        try {
-          const startDate = format(
-            new Date(selectedWeek.start),
-            "yyyy-MM-dd HH:mm:ss"
-          );
-          const endDate = format(
-            new Date(selectedWeek.end),
-            "yyyy-MM-dd HH:mm:ss"
-          );
-          console.log(`Fetching data for: ${startDate} to ${endDate}`);
-          const response = await axios.get(
-            `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&cayenneExp=gameDate%3C=%22${endDate}%22%20and%20gameDate%3E=%22${startDate}%22%20and%20gameTypeId=2`
-          );
-          setGoalies(response.data.data);
-        } catch (error) {
-          console.error("Error fetching goalie data:", error);
-          setError("Error fetching data");
-        } finally {
-          setLoading(false);
-        }
-      };
+    if (!fetchData || !selectedWeek) return;
 
-      fetchGoalies();
-    }
-  }, [selectedWeek, selectedStats]);
+    const fetchGoalies = async () => {
+      setLoading(true);
+      try {
+        const startDate = format(new Date(selectedWeek.start), "yyyy-MM-dd");
+        const endDate = format(new Date(selectedWeek.end), "yyyy-MM-dd");
+        console.log(`Fetching data for: ${startDate} to ${endDate}`);
+        const response = await Fetch(
+          `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&cayenneExp=gameDate%3C=%22${endDate}%22%20and%20gameDate%3E=%22${startDate}%22%20and%20gameTypeId=2`
+        ).then((res) => res.json());
+        setGoalies(response.data);
+        setView("week");
+      } catch (error) {
+        console.error("Error fetching goalie data:", error);
+        setError("Error fetching data");
+      } finally {
+        setLoading(false);
+        setFetchData(false);
+      }
+    };
+
+    fetchGoalies();
+  }, [fetchData, selectedWeek, selectedStats]);
+
+  useEffect(() => {
+    const fetchRankings = async () => {
+      setLoading(true);
+      try {
+        const response = await Fetch(
+          "https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50"
+        ).then((res) => res.json());
+        setGoalies(response.data);
+
+        const aggregatedData = response.data.reduce((acc, goalie) => {
+          if (!acc[goalie.playerId]) {
+            acc[goalie.playerId] = { ...goalie, weeks: [] };
+          }
+          acc[goalie.playerId].weeks.push(goalie);
+          return acc;
+        }, {});
+
+        const goalieRankings = calculateGoalieRankings(
+          Object.values(aggregatedData),
+          selectedStats
+        );
+        setGoalieRankings(goalieRankings);
+      } catch (error) {
+        console.error("Error fetching goalie data:", error);
+        setError("Error fetching data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRankings();
+  }, [selectedStats]);
 
   const handleWeekChange = (event) => {
     setSelectedWeek(weeks[event.target.value].value);
-    setView("week");
+    setFetchData(true);
   };
 
   const handleStatChange = (event) => {
@@ -309,6 +333,7 @@ const GoalieTrends = () => {
         ? [...prevSelectedStats, value]
         : prevSelectedStats.filter((stat) => stat !== value)
     );
+    setFetchData(true);
   };
 
   const handleRangeChange = (start, end) => {
@@ -322,22 +347,29 @@ const GoalieTrends = () => {
         selectedRange.start,
         selectedRange.end + 1
       );
+
       const allGoalieData = await Promise.all(
-        selectedWeeks.map((week) =>
-          axios.get(
-            `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&cayenneExp=gameDate%3C=%22${format(
-              new Date(week.end),
-              "yyyy-MM-dd HH:mm:ss"
-            )}%22%20and%20gameDate%3E=%22${format(
-              new Date(week.start),
-              "yyyy-MM-dd HH:mm:ss"
-            )}%22%20and%20gameTypeId=2`
-          )
-        )
+        selectedWeeks.map((week, index) => {
+          const startDate = new Date(week.value.start);
+          const endDate = new Date(week.value.end);
+
+          if (isNaN(startDate) || isNaN(endDate)) {
+            console.error("Invalid date detected:", { startDate, endDate });
+            throw new Error("Invalid date");
+          }
+
+          const formattedStartDate = format(startDate, "yyyy-MM-dd");
+          const formattedEndDate = format(endDate, "yyyy-MM-dd");
+
+          const url = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&cayenneExp=gameDate%3C=%22${formattedEndDate}%22%20and%20gameDate%3E=%22${formattedStartDate}%22%20and%20gameTypeId=2`;
+
+          console.log("Fetching URL:", url);
+          return Fetch(url).then((res) => res.json());
+        })
       );
 
       const aggregatedData = allGoalieData.reduce((acc, weekData, index) => {
-        weekData.data.data.forEach((goalie) => {
+        weekData.data.forEach((goalie) => {
           if (!acc[goalie.playerId]) {
             acc[goalie.playerId] = { ...goalie, weeks: [] };
           }
@@ -369,19 +401,19 @@ const GoalieTrends = () => {
       <div className={styles.toggleContainer}>
         <button
           className={`${styles.toggleButton} ${
+            useSingleWeek ? "" : styles.active
+          }`}
+          onClick={() => setUseSingleWeek(false)}
+        >
+          Date Range
+        </button>
+        <button
+          className={`${styles.toggleButton} ${
             useSingleWeek ? styles.active : ""
           }`}
           onClick={() => setUseSingleWeek(true)}
         >
           Single Week
-        </button>
-        <button
-          className={`${styles.toggleButton} ${
-            !useSingleWeek ? styles.active : ""
-          }`}
-          onClick={() => setUseSingleWeek(false)}
-        >
-          Date Range
         </button>
       </div>
       {useSingleWeek ? (
@@ -487,7 +519,17 @@ const GoalieTrends = () => {
           week={selectedWeek}
           selectedStats={selectedStats}
           statColumns={statColumns}
-          handleStatChange={handleStatChange}
+          setView={setView}
+        />
+      )}
+      {view === "table" && (
+        <GoalieList
+          week={{
+            start: season?.start,
+            end: season?.end,
+          }}
+          selectedStats={selectedStats}
+          statColumns={statColumns}
           setView={setView}
         />
       )}

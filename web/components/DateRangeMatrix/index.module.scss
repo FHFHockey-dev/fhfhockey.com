@@ -1,0 +1,101 @@
+@import "styles/vars.scss";
+
+.gridWrapper {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+
+  @media only screen and (max-width: $screen-medium-max) {
+    flex-direction: column;
+  }
+}
+
+// single matrix container
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+
+  --spacing: 6px;
+  --player-info-size: 120px;
+  font-size: 0.875rem;
+  @media only screen and (max-width: $screen-small-max) {
+    --player-info-size: 80px;
+    font-size: 0.7rem;
+  }
+
+  // #__next > div > div.ShiftChart_shiftChartContainer__CgnMf > div:nth-child(3) > div > div.DateRangeMatrix_gridWrapper__d0Bm9 > section:nth-child(2) > h4
+
+  h4 {
+    font-family: montesserat, sans-serif;
+    font-size: 1.5rem;
+    padding: 0;
+
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: -0.075em;
+    font-style: italic;
+  }
+
+  .grid {
+    background-color: #202020;
+    color: #fff;
+    display: grid;
+    width: 90%;
+    aspect-ratio: 1 / 1;
+    padding: var(--spacing);
+    border: 2px solid #07aae2;
+    border-radius: 10px;
+
+    .topPlayerName {
+      position: relative;
+      transition: transform 0.5s;
+    }
+    .topPlayerName .inner {
+      position: absolute;
+      transform: rotate(-90deg) translateY(-50%);
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      transform-origin: 0 0;
+      width: var(--player-info-size);
+      top: 100%;
+      left: 50%;
+      padding: 0 var(--spacing);
+    }
+
+    .leftPlayerName {
+      text-align: left;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 0 var(--spacing);
+      transition: transform 0.2s ease-in-out;
+      align-self: center;
+    }
+
+    .active {
+      color: darkorange;
+      transform: scale(1.05);
+    }
+
+    .cell {
+      border: 1px solid #585858;
+      background: #292929;
+
+      &:hover {
+        border-color: darkorange; // Ensure hover effect is visible
+      }
+
+      &.highlight {
+        border: 1px solid #e5d2b0; // Use a class to apply the highlight style
+      }
+
+      & .content {
+        width: 100%;
+        height: 100%;
+      }
+    }
+  }
+}

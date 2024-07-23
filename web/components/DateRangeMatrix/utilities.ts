@@ -1,4 +1,4 @@
-// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\LinemateMatrix\utilities.ts
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\DateRangeMatrix\utilities.ts
 
 import { parseTime } from "utils/getPowerPlayBlocks";
 import groupBy from "utils/groupBy";
@@ -16,8 +16,6 @@ export type Shift = {
   startTime: string;
   endTime: string;
 };
-// [0,0,1,1,0,0,0,1,1,1,1]
-// [1,1,1,0,0,0,0,1,1,0,0,0,0]
 
 /**
  * Calculate the number of seconds that 2 players stay on ice together.
@@ -58,18 +56,46 @@ export function getPairwiseTOI(data: Shift[], p1: number, p2: number): number {
 }
 
 function convertToTimeArray(data: Shift[], size: number = 1200) {
-  // 20 minutes per period
-  // 20 * 60 === 1200 seconds per period
   const timeArray: boolean[] = new Array(size).fill(false);
 
-  // populate the `time`
   data.forEach((item) => {
     const start = parseTime(item.startTime);
     const duration = parseTime(item.duration ?? "00:00");
+    if (duration === 0) {
+      console.warn(
+        `Shift with ID ${item.id} has null duration and is being treated as 0.`
+      );
+    }
     for (let i = 0; i < duration; i++) {
       timeArray[start + i] = true;
     }
   });
 
   return timeArray;
+}
+
+export function isForward(position: string): boolean {
+  const FORWARDS_POSITIONS = ["L", "R", "C"];
+  return FORWARDS_POSITIONS.includes(position);
+}
+
+export function isDefense(position: string): boolean {
+  const DEFENSE_POSITIONS = ["D"];
+  return DEFENSE_POSITIONS.includes(position);
+}
+
+export function getColor(p1Pos: string, p2Pos: string): string {
+  const RED = "#D65108";
+  const BLUE = "#0267C1";
+  const PURPLE = "#EFA00B";
+
+  if (isForward(p1Pos) && isForward(p2Pos)) return RED;
+  if (isDefense(p1Pos) && isDefense(p2Pos)) return BLUE;
+  if (
+    (isForward(p1Pos) && isDefense(p2Pos)) ||
+    (isForward(p2Pos) && isDefense(p1Pos))
+  )
+    return PURPLE;
+
+  throw new Error("impossible");
 }

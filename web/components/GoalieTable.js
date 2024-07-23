@@ -53,8 +53,9 @@ const GoalieTable = ({
   goalies,
   selectedStats,
   statColumns,
-  handleStatChange,
   setView,
+  startDate,
+  endDate,
 }) => {
   const averages = calculateAverages(goalies);
 
@@ -104,6 +105,9 @@ const GoalieTable = ({
       >
         Back to Leaderboard
       </button>
+      <h2 className={styles.tableHeader}>
+        True Goalie Value from {startDate} to {endDate}
+      </h2>
       <table className={styles.goalieTable}>
         <thead>
           <tr>
