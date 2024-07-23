@@ -395,6 +395,7 @@ export default function DateRangeMatrix({
     return tbl;
   }, [toiDataArray]);
 
+  // DateRangeMatrix Component
   const sortedRoster = useMemo(() => {
     if (!team) return [];
     if (mode === "number") {
@@ -425,8 +426,9 @@ export default function DateRangeMatrix({
       console.error("not implemented");
       return [];
     }
-  }, [table, mode, rosters, team?.id, toiDataArray, gameIds]);
+  }, [table, mode, rosters, team, toiDataArray, gameIds]);
 
+  // DateRangeMatrixInternal Component
   useEffect(() => {
     if (team && toiDataArray.length > 0) {
       const logLinesAndPairs = () => {
@@ -574,6 +576,12 @@ export function sortByLineCombination(
           0
         ) / line.length;
 
+      line.sort(
+        (a, b) =>
+          playerTOI[b.id].totalTOI / playerTOI[b.id].gamesPlayed.size -
+          playerTOI[a.id].totalTOI / playerTOI[a.id].gamesPlayed.size
+      );
+
       lines.push({ line, avgTOI });
     }
 
@@ -679,8 +687,21 @@ export function DateRangeMatrixInternal({
       sortedRoster.filter((player) => isDefense(player.position)),
       2
     ).slice(0, 6);
+
+    forwards.sort(
+      (a, b) =>
+        playerTOI[b.id].totalTOI / playerTOI[b.id].gamesPlayed.size -
+        playerTOI[a.id].totalTOI / playerTOI[a.id].gamesPlayed.size
+    );
+
+    defensemen.sort(
+      (a, b) =>
+        playerTOI[b.id].totalTOI / playerTOI[b.id].gamesPlayed.size -
+        playerTOI[a.id].totalTOI / playerTOI[a.id].gamesPlayed.size
+    );
+
     return [...forwards, ...defensemen];
-  }, [sortedRoster, groupPlayersBySharedToi]);
+  }, [sortedRoster, groupPlayersBySharedToi, playerTOI]);
 
   const fullRoster = useMemo(() => {
     const forwards = groupPlayersBySharedToi(
@@ -691,8 +712,21 @@ export function DateRangeMatrixInternal({
       sortedRoster.filter((player) => isDefense(player.position)),
       2
     );
+
+    forwards.sort(
+      (a, b) =>
+        playerTOI[b.id].totalTOI / playerTOI[b.id].gamesPlayed.size -
+        playerTOI[a.id].totalTOI / playerTOI[a.id].gamesPlayed.size
+    );
+
+    defensemen.sort(
+      (a, b) =>
+        playerTOI[b.id].totalTOI / playerTOI[b.id].gamesPlayed.size -
+        playerTOI[a.id].totalTOI / playerTOI[a.id].gamesPlayed.size
+    );
+
     return [...forwards, ...defensemen];
-  }, [sortedRoster, groupPlayersBySharedToi]);
+  }, [sortedRoster, groupPlayersBySharedToi, playerTOI]);
 
   const displayRoster =
     viewMode === "top-lineup" ? topLineupRoster : fullRoster;
