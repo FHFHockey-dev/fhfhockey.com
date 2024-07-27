@@ -9,7 +9,7 @@ const app = express();
 const port = process.env.PORT || 3002;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY || "";
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY || "";
 
 const supabaseServer = createClient(supabaseUrl, supabaseKey);
 

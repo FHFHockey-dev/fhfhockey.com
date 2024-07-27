@@ -19,7 +19,6 @@
         "$NEXT_PUBLIC_SERVERLESS_API_URL",
         "$NEXT_PUBLIC_SUPABASE_URL",
         "$NEXT_PUBLIC_SUPABASE_PUBLIC_KEY",
-        "$NEXT_SUPABASE_SERVICE_ROLE_KEY",
         "$SANITY_API_TOKEN"
       ],
       "outputs": [".next/**"]
