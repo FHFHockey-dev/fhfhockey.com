@@ -1,3 +1,4 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\DateRangeMatrix\TeamDropdown.tsx
 
 import React from "react";
@@ -7,6 +8,7 @@ type TeamAbbreviation = keyof typeof teamsInfo;
 
 type TeamDropdownProps = {
   onSelect: (team: TeamAbbreviation) => void;
+  className?: string;
 };
 
 const TeamDropdown: React.FC<TeamDropdownProps> = ({ onSelect }) => {

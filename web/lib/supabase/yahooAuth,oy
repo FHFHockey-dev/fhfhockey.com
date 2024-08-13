@@ -1,0 +1,63 @@
+# App ID
+# RBz8hxo8
+
+# Client ID (Consumer Key)
+# dj0yJmk9bVJES2c2N091NjdxJmQ9WVdrOVVrSjZPR2g0YnpnbWNHbzlNQT09JnM9Y29uc3VtZXJzZWNyZXQmc3Y9MCZ4PTQ2
+
+# Client Secret (Consumer Secret)
+# 07933164f7ac924d1105542dfbda5435a777767a
+
+# Callback URL
+# https://www.fhfhockey.com
+
+# Access Token:
+# Access Token: 8tkck1OZoAq8whUZcRIkgwPVYUVMjv3fif65QlgAylcD0pkqQADEvUKBsE5VCLI95BS_Z48nKHOxutKcsIWsHf5PsWBXfkcEvZAVHImKJF34RKUq5rsODr4U2v6crNvwWcOts9iEAEXa86Od5quA0.ou4eBHSZVVNdXSHDzYohhXQ2VpMm3lizSYKRNuBxFaaD2rEK8hjfWSNSQn9Kqog0Inn7ieRLsoay2V6prbPuwJQ63VZB4pV9yZdA9eMTiLbFosD38oDQpfjTr_mXldCAvvm4X4SVJCqV91.ENRWH.uDhtXmtM5V2b1Igs5m0d6zYmsVwaJ5AekYdM58hAakdt94RRt7ixr8JbQtkIVBGXInupbrYApCy8h1hI8yFf5Jb1i5OULD5.WKohLI.u978wUcYwCfRe2gpfftnWpWLl8n.74vRVP16i1ylq9_t4KNxggUoxKOySYapOToBwlvA5PMyVge5qhmrIdAODRkgTAc5WK6WxOE2FDOpa5PB1ESjTOaOwsUvbzvJDF1_2M1vv_n1ccGfFgKDlbf7JG49rZ_.0yeSOSJKagn6WBPRqxgTmZ8F_Iv_T4ivFEFS3LwJbcfuUE3D51UD02M7CfBl9Pn8PlxAdPFa53ETzaHLoRVUuT6k_XBzOaLthqAja7uE70yA59AilKOUvZaFKrffilZktacY1rA3YmxfmeNSJ.WFmCKlq2hrcr1SNt8Pi7vNzY1QHWt596Ckq8O5WOlGGgG5H6haLQ_2RtPWTFtOg2MhT5_WlOEiMtDP_WPHP2IFZs5nGwm9xoP9Xfz7xUQB9cyedUyci0UOuD8.XS0xRV3cZD6gvYEriqEs5DIFIJF.4IasUXERIu6iBpe9jC37OLm_0Isk.cnaioMgJjgnHMFGMSs4TzQpVPteOd7W9MCt.hULcKUtfdnlp8wtRsVNCQ5KBH7To3WM9UxmCrLpkWPsyfiJIn9x3IypnOdgvaKKM8KylJ
+# League Key
+# 117061
+
+# API Endpoint:
+# https://fantasysports.yahooapis.com/fantasy/v2/league/117061/players;status=FA
+
+import requests
+from urllib.parse import urlencode
+
+# Constants for the OAuth process
+CLIENT_ID = 'dj0yJmk9bVJES2c2N091NjdxJmQ9WVdrOVVrSjZPR2g0YnpnbWNHbzlNQT09JnM9Y29uc3VtZXJzZWNyZXQmc3Y9MCZ4PTQ2'
+CLIENT_SECRET = '07933164f7ac924d1105542dfbda5435a777767a'
+REDIRECT_URI = 'https://www.fhfhockey.com'
+AUTHORIZATION_URL = 'https://api.login.yahoo.com/oauth2/request_auth'
+TOKEN_URL = 'https://api.login.yahoo.com/oauth2/get_token'
+
+def get_authorization_url():
+    # Prepare the query parameters
+    params = {
+        'client_id': CLIENT_ID,
+        'redirect_uri': REDIRECT_URI,
+        'response_type': 'code',
+        'language': 'en-us'
+    }
+    # Create the URL for authorization
+    url = f"{AUTHORIZATION_URL}?{urlencode(params)}"
+    return url
+
+def get_access_token(authorization_code):
+    # Prepare the data for the token request
+    data = {
+        'client_id': CLIENT_ID,
+        'client_secret': CLIENT_SECRET,
+        'redirect_uri': REDIRECT_URI,
+        'code': authorization_code,
+        'grant_type': 'authorization_code'
+    }
+    # Make the request to get the token
+    response = requests.post(TOKEN_URL, data=data)
+    response_data = response.json()
+    return response_data['access_token']
+
+# Start the process
+print("Visit this URL to authorize:", get_authorization_url())
+authorization_code = input("Enter the authorization code: ")
+access_token = get_access_token(authorization_code)
+print("Access Token:", access_token)
+
+# Access Token: skHRyyeZoApcFJ5zw1CZpb7ZuX_LVP.B0r6VVDzG1oKvMWUxoIb9LFXEQ_m6FnvrPwVBOY4LbC0.sLLZIe6NzQGBFkg1yKqS35bNHD4zPuGTbcf71Lx.M.7iCOP.WZFmu0wJe7LhcYJGI79gvIMMmGF62YvQXEs54SvQhLdMIiJuouSj1iWDICt2rb6EtsUhHtb411edVlk3tBHrOV4xo00WBNiZvZzgajLBDUbYyT6YDFvoNaqU7ppcwc28yvLYxeBosKmeSZSAVSnms3zikFKypkK8mo8wG5PQs2.C6s288ucAdhUOfijmmiS46HDX2BTIE0tKnxQeGA116mRr0sIKgNJGRxZgYK9sBbIxDcpXN4sij.cqCPTZranB7l6NuCxWE.pk85ZGXlBtORvkGH.hwnvfb5_Aga.u932B.13Y4XmvU4toLS7dEDBDGdHF1f9pp4E9Y1l_GKxPmgcLXhTDGXGuL6Mb9sSxaylGqcWtGnEYe_0OGo8rFRJRe0qkRaY3rGwYLpdlL_CJInfBKcjbBaGe5xqIFq_jRnDe6Ow7ycVrOKIgCXXB538Fqk6s8EfilHS9m1x_i9CxEl5_.r0C6KwzEWEFoFPRkcNuSChHITDlrO6DEWlsGNpTjdXpKP5f0nYdd4sLbdoDSrT0WUD.lMdKCapF1Ldf52CMKbFWj0NEpEpipgwYhx5ZP0b_IuTrIuZfiqpEm4lrXSbEU7pcKJUGtlNHn2oy5dCkP1zHraWkvOB8DUK57Eu2zhH.O.Hb5Tux2ZIdEKjjZ9XkVVnv0tyQcqpsdF26gdTB39mprS37kqVjmbpT4f966iQp6qnW2.6LVuwxv3JCNU9SLNe3DPf8sRcwN5pfSKe0LmdH5tT5vp9NsfUBYvC8Mbwc1gPfpjDShcb.rVhz_2XqHnjnyuLa7M2VA3fCm78sK1sFytoOBBS.0up69RKat0RuaiZtM1YftTOgMv15YxgMIWeFSV9T

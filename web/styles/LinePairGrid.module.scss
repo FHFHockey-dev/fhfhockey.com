@@ -1,0 +1,104 @@
+.gridContainer {
+  display: grid;
+  /* Adjust columns: 3 columns for forwards, 1 for the divider, 2 for defensemen/goalies */
+  grid-template-columns: repeat(3, 1fr) min-content repeat(2, 1fr);
+  /* First row takes minimum content, others are equal */
+  grid-template-rows: min-content repeat(4, 1fr);
+  gap: 1rem;
+  height: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.sectionLabel {
+  text-align: center;
+  color: white;
+  grid-column: span 3; /* Spanning 3 columns for forwards */
+  margin: 0;
+  line-height: 1;
+  padding-bottom: 0.25rem;
+  font-family: "Roboto Condensed", sans-serif;
+}
+
+.defenseLabel {
+  grid-column: 5 / span 2; /* Spanning 2 columns for defensemen */
+  margin: 0;
+  line-height: 1;
+  padding-bottom: 0.25rem;
+  font-family: "Roboto Condensed", sans-serif;
+}
+
+.goalieContainer {
+  grid-column: 5 / span 2; /* Spanning 2 columns */
+  display: grid;
+  grid-template-rows: min-content 1fr; /* Label on top takes minimum content */
+  align-items: center;
+}
+
+.goalieLabel {
+  text-align: center;
+  color: white;
+  margin: 0; /* Remove margin */
+  line-height: 1; /* Reduce line height */
+  padding-bottom: 0.75rem; /* Add a small padding if needed */
+  font-family: "Roboto Condensed", sans-serif;
+}
+
+.goalieCards {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Two columns for the goalies */
+  gap: 0.5rem;
+  height: 100%;
+}
+
+.firstNamePlayerCard {
+  font-weight: 900;
+  font-variant: small-caps;
+  letter-spacing: 1.15px;
+  color: var(--secondary-color); /* Use CSS variable for secondary color */
+}
+
+.lastNamePlayerCard {
+  font-variant: small-caps;
+  font-weight: 900;
+  letter-spacing: 1.15px;
+  color: var(--accent-color); /* Use CSS variable for primary color */
+}
+
+.playerCard {
+  background-color: #f0f0f0;
+  font-size: 0.85rem;
+  font-weight: 100;
+  padding: 0.5rem;
+  text-align: left;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  color: #ffffff;
+  font-family: "Roboto Condensed", sans-serif;
+  width: 100%;
+  min-width: 100px;
+  box-sizing: border-box; /* Ensure padding and borders are included in the width */
+}
+
+.divider {
+  background-color: white; /* Set the color of the divider */
+  width: 1px; /* Adjusted width for better visibility */
+  grid-column: 4 / 5; /* The divider will occupy the fourth column */
+  grid-row: 2 / 6; /* Span the entire height of the grid, rows 2 to 6 */
+}
+
+.goalies .playerCard {
+  height: calc(100% - 0.5rem); /* Adjusted height to account for the label */
+  font-family: "Roboto Condensed", sans-serif;
+}
+
+.playerCard::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 0.5px;
+  background-color: var(
+    --jersey-color
+  ); /* Use CSS variable for dynamic accent color */
+  margin: 0.3rem auto; /* Center the line horizontally */
+}

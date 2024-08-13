@@ -33,6 +33,7 @@
     "html-to-image": "^1.10.8",
     "immer": "^9.0.15",
     "jsdom": "^20.0.0",
+    "json2csv": "^6.0.0-alpha.2",
     "memory-cache": "^0.2.0",
     "moment": "^2.29.4",
     "next": "^12.3.1",

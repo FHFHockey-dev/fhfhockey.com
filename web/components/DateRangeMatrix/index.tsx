@@ -1,176 +1,30 @@
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\DateRangeMatrix\index.tsx
-// WORKING VERSION STOP UNDO HERE
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState } from "react";
 import classNames from "classnames";
-import Fetch from "lib/cors-fetch";
 import {
-  Shift,
-  getPairwiseTOI,
   isForward,
   isDefense,
   getColor,
+  parseTime,
+  PlayerData,
 } from "./utilities";
-import { formatTime } from "utils/getPowerPlayBlocks";
-import groupBy from "utils/groupBy";
 import styles from "./index.module.scss";
 import Tooltip from "components/Tooltip";
-import Select from "components/Select";
-import { isGameFinished } from "pages/api/v1/db/update-stats/[gameId]";
 import { teamsInfo } from "lib/NHL/teamsInfo";
+import { useTOI } from "./useTOIData";
+import PulsatingGrid from "components/DateRangeMatrix/PulsatingGrid";
+import { calculateLinesAndPairs } from "./lineCombinationHelper";
 
-export type Mode = "number" | "total-toi" | "line-combination";
+export type Mode = "line-combination" | "full-roster" | "total-toi";
 export type Team = { id: number; name: string };
-
-export type PlayerData = {
-  id: number;
-  teamId: number;
-  position: string;
-  sweaterNumber: number;
-  name: string;
-  totalTOI?: number;
-};
 
 export type TOIData = {
   toi: number;
   p1: PlayerData;
   p2: PlayerData;
 };
-
-export async function getTOIDataForGames(gameIds: number[], teamId: number) {
-  const allTOIData: Record<number, TOIData[]> = {};
-  const allRosters: Record<number, PlayerData[]> = {};
-  const allTeams: Set<Team> = new Set();
-  const allHomeAwayInfo: { gameId: number; homeOrAway: string }[] = [];
-  const playerTOI: Record<
-    number,
-    { totalTOI: number; gamesPlayed: Set<number> }
-  > = {};
-
-  const gameDataPromises = gameIds.map(async (id) => {
-    const shiftDataUrl = `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`;
-    try {
-      const [{ data: shiftsData }, { rostersMap, teams }, boxscore] =
-        await Promise.all([
-          Fetch(shiftDataUrl).then((res) => res.json()),
-          getRostersMap(id, teamId),
-          Fetch(`https://api-web.nhle.com/v1/gamecenter/${id}/boxscore`).then(
-            (res) => res.json()
-          ),
-        ]);
-
-      if (!shiftsData) {
-        console.error(
-          `No shifts data found for game ID ${id}. URL: ${shiftDataUrl}`
-        );
-        return;
-      }
-      if (!rostersMap) {
-        console.error(`No rosters data found for game ID ${id}`);
-        return;
-      }
-
-      if (boxscore.gameType !== 2) {
-        return;
-      }
-
-      let rosters = groupBy(
-        Object.values(rostersMap),
-        (player: PlayerData) => player.teamId
-      );
-      if (teamId) {
-        rosters = { [teamId]: rosters[teamId] };
-      }
-
-      const data: Record<number, TOIData[]> = {};
-      const pairwiseTOIForTwoTeams = processShifts(shiftsData, rosters);
-      const teamIds = teamId
-        ? [teamId]
-        : Object.keys(pairwiseTOIForTwoTeams).map(Number);
-
-      teamIds.forEach((teamId) => {
-        if (data[teamId] === undefined) data[teamId] = [];
-        pairwiseTOIForTwoTeams[teamId].forEach((item) => {
-          if (!rostersMap[item.p1] || !rostersMap[item.p2]) return;
-          data[teamId].push({
-            toi: item.toi,
-            p1: rostersMap[item.p1],
-            p2: rostersMap[item.p2],
-          });
-
-          [item.p1, item.p2].forEach((playerId) => {
-            if (!playerTOI[playerId]) {
-              playerTOI[playerId] = {
-                totalTOI: 0,
-                gamesPlayed: new Set<number>(),
-              };
-            }
-            playerTOI[playerId].totalTOI += item.toi;
-            playerTOI[playerId].gamesPlayed.add(id);
-          });
-        });
-      });
-
-      Object.entries(data).forEach(([teamId, toiData]) => {
-        if (!allTOIData[Number(teamId)]) {
-          allTOIData[Number(teamId)] = [];
-        }
-        allTOIData[Number(teamId)] = allTOIData[Number(teamId)].concat(toiData);
-      });
-
-      Object.entries(rosters).forEach(([teamId, players]) => {
-        if (!allRosters[Number(teamId)]) {
-          allRosters[Number(teamId)] = [];
-        }
-        allRosters[Number(teamId)] = players;
-      });
-
-      teams.forEach((team) => allTeams.add(team));
-
-      const isHome = boxscore.homeTeam.id === teamId;
-      allHomeAwayInfo.push({
-        gameId: id,
-        homeOrAway: isHome ? "home" : "away",
-      });
-    } catch (error) {
-      console.error(
-        `Error fetching TOI data for game ID ${id}. URL: ${shiftDataUrl}. Error:`,
-        error
-      );
-    }
-  });
-
-  await Promise.all(gameDataPromises);
-
-  const avgToi = new Map<string, TOIData>();
-  Object.values(allTOIData).forEach((array) => {
-    array.forEach((item) => {
-      const key = generateKey(item.p1.id, item.p2.id);
-      if (!avgToi.has(key)) {
-        avgToi.set(key, { toi: 0, p1: item.p1, p2: item.p2 });
-      }
-      avgToi.get(key)!.toi += item.toi;
-    });
-  });
-
-  avgToi.forEach((item, key) => {
-    const gamesCount = Math.min(
-      playerTOI[item.p1.id].gamesPlayed.size,
-      playerTOI[item.p2.id].gamesPlayed.size
-    );
-    if (gamesCount > 0) {
-      item.toi /= gamesCount;
-    }
-  });
-
-  return {
-    toiData: [...avgToi.values()],
-    roster: allRosters[teamId] ?? [],
-    team: [...allTeams].find((team) => team.id === teamId),
-    homeAwayInfo: allHomeAwayInfo,
-    playerTOI,
-  };
-}
 
 export function generateKey(p1: number, p2: number): string {
   return p1 > p2 ? `${p1}-${p2}` : `${p2}-${p1}`;
@@ -196,417 +50,188 @@ export class MySet<T> {
   }
 }
 
-export async function getRostersMap(gameId: number, _teamId?: number) {
-  const rostersMap: Record<number, PlayerData> = {};
-  const goalies: PlayerData[] = [];
-  try {
-    const boxscore = await Fetch(
-      `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
-    ).then((res) => res.json());
-
-    if (!isGameFinished(boxscore.gameState)) {
-      throw new Error(
-        `The gameState for the game ${gameId} is ` + boxscore.gameState
-      );
-    }
-    const playerByGameStats = boxscore.playerByGameStats;
-    const transform = (teamId: number) => (item: any) => ({
-      id: item.playerId,
-      teamId: teamId,
-      sweaterNumber: item.sweaterNumber,
-      position: item.position,
-      name: item.name.default,
-      toi: item.toi,
-      starter: item.starter,
-    });
-
-    const players: PlayerData[] = [];
-    let teams: { id: number; name: string }[] = [
-      boxscore.homeTeam,
-      boxscore.awayTeam,
-    ].map((team) => ({
-      id: team.id,
-      name: team.name.default,
-    }));
-
-    if (_teamId) {
-      teams = teams.filter((team) => team.id === _teamId);
-      const homeTeam = boxscore.homeTeam.id === _teamId;
-      const relevantTeamStats = homeTeam
-        ? playerByGameStats.homeTeam
-        : playerByGameStats.awayTeam;
-
-      if (relevantTeamStats) {
-        const forwards = relevantTeamStats.forwards.map(transform(_teamId));
-        const defense = relevantTeamStats.defense.map(transform(_teamId));
-        const teamGoalies = relevantTeamStats.goalies.map(transform(_teamId));
-
-        players.push(...forwards, ...defense);
-        goalies.push(...teamGoalies);
-      }
-    } else {
-      const homeTeamPlayers = [
-        ...playerByGameStats.homeTeam.forwards,
-        ...playerByGameStats.homeTeam.defense,
-      ].map(transform(boxscore.homeTeam.id));
-      const awayTeamPlayers = [
-        ...playerByGameStats.awayTeam.forwards,
-        ...playerByGameStats.awayTeam.defense,
-      ].map(transform(boxscore.awayTeam.id));
-      const homeGoalies = playerByGameStats.homeTeam.goalies.map(
-        transform(boxscore.homeTeam.id)
-      );
-      const awayGoalies = playerByGameStats.awayTeam.goalies.map(
-        transform(boxscore.awayTeam.id)
-      );
-
-      players.push(...homeTeamPlayers, ...awayTeamPlayers);
-      goalies.push(...homeGoalies, ...awayGoalies);
-    }
-
-    players.forEach((p) => {
-      rostersMap[p.id] = p;
-    });
-
-    return { rostersMap, teams, goalies };
-  } catch (error) {
-    console.error("Error fetching roster map:", error);
-    return { rostersMap, teams: [], goalies: [] };
-  }
-}
-
-export function processShifts(
-  shifts: Shift[] = [],
-  rosters: Record<number, PlayerData[]> = {}
-) {
-  if (!shifts.length) {
-    console.error("No shifts data provided.");
-  }
-  if (!Object.keys(rosters).length) {
-    console.error("No rosters data provided.");
-  }
-
-  const teamIds = Object.keys(rosters).map(Number);
-  const result: Record<number, { toi: number; p1: number; p2: number }[]> = {};
-  teamIds.forEach((teamId) => {
-    const teamRosters = rosters[teamId];
-    if (!teamRosters) {
-      console.error(`No rosters found for team ID ${teamId}`);
-      return;
-    }
-
-    for (let i = 0; i < teamRosters.length; i++) {
-      for (let j = i; j < teamRosters.length; j++) {
-        if (result[teamId] === undefined) result[teamId] = [];
-        const p1 = teamRosters[i].id;
-        const p2 = teamRosters[j].id;
-        result[teamId].push({ toi: getPairwiseTOI(shifts, p1, p2), p1, p2 });
-      }
-    }
-  });
-  return result;
-}
-
-function useTOI(gameIds: number[], teamId: number) {
-  const [toi, setTOI] = useState<Record<number, TOIData[]>>({});
-  const [rosters, setRosters] = useState<Record<number, PlayerData[]>>({});
-  const [loading, setLoading] = useState(false);
-  const [team, setTeam] = useState<Team | null>(null);
-  const [homeAwayInfo, setHomeAwayInfo] = useState<
-    { gameId: number; homeOrAway: string }[]
-  >([]);
-  const [playerTOI, setPlayerTOI] = useState<
-    Record<number, { totalTOI: number; gamesPlayed: Set<number> }>
-  >({});
-
-  useEffect(() => {
-    let mounted = true;
-    if (gameIds.length === 0) {
-      return;
-    }
-    setLoading(true);
-    (async () => {
-      try {
-        const {
-          toiData: newToi,
-          roster: newRosters,
-          team: newTeam,
-          homeAwayInfo: newHomeAwayInfo,
-          playerTOI: newPlayerTOI,
-        } = await getTOIDataForGames(gameIds, teamId);
-        if (mounted) {
-          setTOI((prevToi) => {
-            const updatedToi = { ...prevToi };
-            newToi.forEach((item) => {
-              const key = `${teamId}`;
-              if (!updatedToi[teamId]) {
-                updatedToi[teamId] = [];
-              }
-              updatedToi[teamId].push(item);
-            });
-            return updatedToi;
-          });
-          setRosters((prevRosters) => ({
-            ...prevRosters,
-            [teamId]: newRosters,
-          }));
-          if (newTeam) {
-            setTeam(newTeam);
-          }
-          setHomeAwayInfo(newHomeAwayInfo);
-          setPlayerTOI(newPlayerTOI);
-        }
-      } catch (e: any) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [gameIds, teamId]);
-
-  return [toi, rosters, team, loading, homeAwayInfo, playerTOI] as const;
-}
-
 type Props = {
   id: keyof typeof teamsInfo;
   gameIds: number[];
   mode: Mode;
   onModeChanged?: (newMode: Mode) => void;
+  aggregatedData: any[];
+  startDate: string;
+  endDate: string;
+  lines: PlayerData[][];
+  pairs: PlayerData[][];
 };
 
 export const OPTIONS = [
-  {
-    label: "Total TOI",
-    value: "total-toi",
-  },
-  { label: "Sweater Number", value: "number" },
   { label: "Line Combination", value: "line-combination" },
+  { label: "Total TOI", value: "total-toi" },
+  { label: "Full Roster", value: "full-roster" },
 ] as const;
 
 export default function DateRangeMatrix({
   id,
-  gameIds,
   mode,
-  onModeChanged = () => {},
+  aggregatedData,
+  startDate,
+  endDate,
+  lines,
+  pairs,
 }: Props) {
-  const teamId = teamsInfo[id].id;
+  // Call hooks unconditionally at the top of the component
+  const [loading, setLoading] = useState<boolean>(true);
+  const [toiData, rosters, team, loadingData, homeAwayInfo, playerATOI] =
+    useTOI(id, startDate, endDate);
 
-  const [toiData, rosters, team, loading, homeAwayInfo, playerTOI] = useTOI(
-    gameIds,
-    teamId
+  // Determine the teamId and check for valid data early
+  const teamId = teamsInfo[id]?.id;
+
+  useEffect(() => {
+    setLoading(loadingData);
+  }, [loadingData]);
+
+  useEffect(() => {
+    console.log("Received Lines:", lines);
+    console.log("Received Pairs:", pairs);
+  }, [lines, pairs]);
+
+  const convertedPlayerATOI: Record<number, string> = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(playerATOI).map(([key, value]) => [
+          Number(key),
+          String(value),
+        ])
+      ),
+    [playerATOI]
   );
 
-  // Ensure hooks are called unconditionally
-  const toiDataArray = useMemo(() => Object.values(toiData).flat(), [toiData]);
-
-  const table = useMemo(() => {
-    const tbl: Record<string, TOIData> = {};
-    toiDataArray.forEach((item) => {
-      const key = generateKey(item.p1.id, item.p2.id);
-      tbl[key] = item;
-    });
-    return tbl;
-  }, [toiDataArray]);
-
-  // DateRangeMatrix Component
   const sortedRoster = useMemo(() => {
-    if (!team) return [];
-    if (mode === "number") {
-      return rosters[team.id].sort((a, b) => a.sweaterNumber - b.sweaterNumber);
+    if (!aggregatedData || aggregatedData.length === 0) return [];
+    const roster = aggregatedData.map((item) => ({
+      id: item.playerId,
+      teamId: item.teamId,
+      position: item.primaryPosition,
+      sweaterNumber: item.sweaterNumber,
+      name: item.playerName,
+      playerAbbrevName: item.playerAbbrevName,
+      lastName: item.lastName,
+      totalTOI: item.regularSeasonData.totalTOI,
+      timesOnLine: item.regularSeasonData.timesOnLine,
+      timesOnPair: item.regularSeasonData.timesOnPair,
+      percentToiWith: item.regularSeasonData.percentToiWith,
+      percentToiWithMixed: item.regularSeasonData.percentToiWithMixed || {},
+      timeSpentWith: item.regularSeasonData.timeSpentWith || {},
+      timeSpentWithMixed: item.regularSeasonData.timeSpentWithMixed || {},
+      GP: item.regularSeasonData.GP,
+      timesPlayedWith: item.regularSeasonData.timesPlayedWith,
+      ATOI: item.regularSeasonData.ATOI,
+      percentOfSeason: item.regularSeasonData.percentOfSeason,
+      displayPosition: item.regularSeasonData.displayPosition,
+      mutualSharedToi: {},
+      comboPoints: item.comboPoints || 0,
+    }));
+    console.log("Sorted Roster in DateRangeMatrix:", roster);
+    return roster;
+  }, [aggregatedData]);
+
+  const fullRoster = useMemo(() => {
+    if (mode === "line-combination") {
+      return sortByLineCombination(sortedRoster, { lines, pairs });
+    } else if (mode === "full-roster") {
+      return sortByFullRoster(sortedRoster, { lines, pairs });
     } else if (mode === "total-toi") {
-      return Object.values(table)
-        .filter((item) => item.p1.id === item.p2.id)
-        .sort((a, b) => b.toi - a.toi)
-        .map((item) => item.p1);
-    } else if (mode === "line-combination") {
-      return sortByLineCombination(
-        table,
-        rosters[team.id],
-        toiDataArray.reduce<
-          Record<number, { totalTOI: number; gamesPlayed: Set<number> }>
-        >((acc, item) => {
-          [item.p1.id, item.p2.id].forEach((playerId) => {
-            if (!acc[playerId]) {
-              acc[playerId] = { totalTOI: 0, gamesPlayed: new Set<number>() };
-            }
-            acc[playerId].totalTOI += item.toi;
-            acc[playerId].gamesPlayed.add(gameIds[0]);
-          });
-          return acc;
-        }, {})
-      );
+      return sortByTotalTOI(sortedRoster);
     } else {
-      console.error("not implemented");
+      console.error("Mode not implemented:", mode);
       return [];
     }
-  }, [table, mode, rosters, team, toiDataArray, gameIds]);
+  }, [mode, sortedRoster, lines, pairs]);
 
-  // DateRangeMatrixInternal Component
-  useEffect(() => {
-    if (team && toiDataArray.length > 0) {
-      const logLinesAndPairs = () => {
-        const linesAndPairs: {
-          FWD: Record<string, any>;
-          D: Record<string, any>;
-        } = { FWD: {}, D: {} };
-
-        const calculateTotalMinsTogether = (players: PlayerData[]) => {
-          let totalMinsTogether = 0;
-          for (let i = 0; i < players.length; i++) {
-            for (let j = i + 1; j < players.length; j++) {
-              const key = generateKey(players[i].id, players[j].id);
-              totalMinsTogether += table[key]?.toi || 0;
-            }
-          }
-          return totalMinsTogether;
-        };
-
-        const lines = groupBy(sortedRoster, (player: PlayerData) =>
-          isForward(player.position) ? "forwards" : "defensemen"
-        );
-
-        const fwdLines = lines.forwards || [];
-        const defPairs = lines.defensemen || [];
-
-        // Log Forward Lines
-        for (let i = 0; i < fwdLines.length; i += 3) {
-          const line = fwdLines.slice(i, i + 3);
-          if (line.length < 3) continue;
-          const lineAvg =
-            line.reduce(
-              (sum, player) =>
-                sum +
-                playerTOI[player.id].totalTOI /
-                  playerTOI[player.id].gamesPlayed.size,
-              0
-            ) / line.length;
-          const totalMinsTogether = calculateTotalMinsTogether(line);
-
-          linesAndPairs.FWD[`L${i / 3 + 1}`] = {
-            player1:
-              playerTOI[line[0].id].totalTOI /
-              playerTOI[line[0].id].gamesPlayed.size,
-            player2:
-              playerTOI[line[1].id].totalTOI /
-              playerTOI[line[1].id].gamesPlayed.size,
-            player3:
-              playerTOI[line[2].id].totalTOI /
-              playerTOI[line[2].id].gamesPlayed.size,
-            lineAvg,
-            totalMinsTogether,
-          };
-        }
-
-        // Log Defense Pairs
-        for (let i = 0; i < defPairs.length; i += 2) {
-          const pair = defPairs.slice(i, i + 2);
-          if (pair.length < 2) continue;
-          const pairAvg =
-            pair.reduce(
-              (sum, player) =>
-                sum +
-                playerTOI[player.id].totalTOI /
-                  playerTOI[player.id].gamesPlayed.size,
-              0
-            ) / pair.length;
-          const totalMinsTogether = calculateTotalMinsTogether(pair);
-
-          linesAndPairs.D[`P${i / 2 + 1}`] = {
-            player1:
-              playerTOI[pair[0].id].totalTOI /
-              playerTOI[pair[0].id].gamesPlayed.size,
-            player2:
-              playerTOI[pair[1].id].totalTOI /
-              playerTOI[pair[1].id].gamesPlayed.size,
-            pairAvg,
-            totalMinsTogether,
-          };
-        }
-
-        console.log(linesAndPairs);
-      };
-
-      logLinesAndPairs();
-    }
-  }, [team, toiDataArray, table, sortedRoster, playerTOI]);
-
-  if (!team) return null;
+  // Early return if the team is not selected or invalid
+  if (!id || !teamId) {
+    return <div>Please select a valid team to view the matrix.</div>;
+  }
 
   return (
     <div>
-      <div style={{ margin: "0 auto", width: "200px" }}>
-        <Select
-          options={OPTIONS}
-          option={mode}
-          onOptionChange={(newOption) => {
-            onModeChanged(newOption);
-          }}
-        />
-      </div>
-      <div className={styles.gridWrapper}>
-        <DateRangeMatrixInternal
-          teamId={team.id}
-          teamName={team.name}
-          roster={rosters[team.id]}
-          toiData={toiData[team.id]}
-          mode={mode}
-          homeAwayInfo={homeAwayInfo}
-          playerTOI={playerTOI}
-        />
-      </div>
+      {loading && <PulsatingGrid rows={18} cols={18} pulsating={true} />}{" "}
+      {!loading && (
+        <div className={styles.gridWrapper}>
+          <DateRangeMatrixInternal
+            teamId={teamId}
+            teamName={teamsInfo[id].name}
+            roster={fullRoster}
+            toiData={toiData}
+            mode={mode}
+            homeAwayInfo={homeAwayInfo}
+            playerATOI={convertedPlayerATOI}
+            loading={loading}
+            lines={lines} // Pass lines separately
+            pairs={pairs} // Pass pairs separately
+          />
+        </div>
+      )}
     </div>
   );
 }
 
-type PlayerType = "forwards" | "defensemen";
-export const NUM_PLAYERS_PER_LINE = {
-  forwards: 3,
-  defensemen: 2,
-} as const;
-
-export function sortByLineCombination(
-  data: Record<string, TOIData>,
+function sortByFullRoster(
   players: PlayerData[],
-  playerTOI: Record<number, { totalTOI: number; gamesPlayed: Set<number> }>
+  linesAndPairs: { lines: PlayerData[][]; pairs: PlayerData[][] }
 ): PlayerData[] {
-  if (players.length === 0) return [];
-  const groups = groupBy(players, (player: PlayerData) =>
-    isForward(player.position) ? "forwards" : "defensemen"
+  const { lines, pairs } = linesAndPairs;
+
+  const linePlayers = lines.flat();
+  const pairPlayers = pairs.flat();
+
+  // Filter out players already in lines or pairs
+  const remainingPlayers = players.filter(
+    (player) =>
+      !linePlayers.some((lp) => lp.id === player.id) &&
+      !pairPlayers.some((pp) => pp.id === player.id)
   );
 
-  const sortPlayers = (playerType: PlayerType, numPlayersPerLine: number) => {
-    const playerList = groups[playerType] || [];
-    const lines = [];
+  // Sort remaining players (not in lines/pairs) by TOI descending
+  const sortedRemainingPlayers = remainingPlayers.sort((a, b) => {
+    const atoia = parseTime(a.ATOI);
+    const atoib = parseTime(b.ATOI);
+    return atoib - atoia;
+  });
 
-    for (let i = 0; i < playerList.length; i += numPlayersPerLine) {
-      const line = playerList.slice(i, i + numPlayersPerLine);
-      const avgTOI =
-        line.reduce(
-          (sum, player) =>
-            sum +
-            playerTOI[player.id].totalTOI /
-              playerTOI[player.id].gamesPlayed.size,
-          0
-        ) / line.length;
+  return [...linePlayers, ...pairPlayers, ...sortedRemainingPlayers];
+}
 
-      line.sort(
-        (a, b) =>
-          playerTOI[b.id].totalTOI / playerTOI[b.id].gamesPlayed.size -
-          playerTOI[a.id].totalTOI / playerTOI[a.id].gamesPlayed.size
-      );
+function sortByTotalTOI(players: PlayerData[]): PlayerData[] {
+  return players.sort((a, b) => {
+    const atoia = parseTime(a.ATOI);
+    const atoib = parseTime(b.ATOI);
+    return atoib - atoia;
+  });
+}
 
-      lines.push({ line, avgTOI });
-    }
+function sortByLineCombination(
+  players: PlayerData[],
+  linesAndPairs: { lines: PlayerData[][]; pairs: PlayerData[][] }
+): PlayerData[] {
+  const { lines, pairs } = linesAndPairs;
 
-    lines.sort((a, b) => b.avgTOI - a.avgTOI);
+  // Flatten the lines and pairs arrays
+  const flattenedLines = lines.flat();
+  const flattenedPairs = pairs.flat();
 
-    return lines.flatMap((lineData) => lineData.line);
-  };
+  // Create an ordered list starting with lines, then pairs, then remaining players
+  const sortedPlayers: PlayerData[] = [...flattenedLines, ...flattenedPairs];
 
-  return [...sortPlayers("forwards", 3), ...sortPlayers("defensemen", 2)];
+  // Get players not in lines or pairs
+  const remainingPlayers = players.filter(
+    (player) =>
+      !flattenedLines.some((lp) => lp.id === player.id) &&
+      !flattenedPairs.some((pp) => pp.id === player.id)
+  );
+
+  const finalSortedPlayers = [...sortedPlayers, ...remainingPlayers];
+  console.log("Sorted Players by Line Combination:", finalSortedPlayers);
+  return finalSortedPlayers;
 }
 
 type DateRangeMatrixInternalProps = {
@@ -616,7 +241,10 @@ type DateRangeMatrixInternalProps = {
   roster: PlayerData[];
   mode: Mode;
   homeAwayInfo: { gameId: number; homeOrAway: string }[];
-  playerTOI: Record<number, { totalTOI: number; gamesPlayed: Set<number> }>;
+  playerATOI: Record<number, string>;
+  loading: boolean;
+  lines: PlayerData[][];
+  pairs: PlayerData[][];
 };
 
 export function DateRangeMatrixInternal({
@@ -626,225 +254,124 @@ export function DateRangeMatrixInternal({
   toiData = [],
   mode,
   homeAwayInfo,
-  playerTOI,
+  playerATOI,
+  loading,
+  lines,
+  pairs,
 }: DateRangeMatrixInternalProps) {
   const [selectedCell, setSelectedCell] = useState({ row: -1, col: -1 });
-  const [viewMode, setViewMode] = useState<"top-lineup" | "full-roster">(
-    "top-lineup"
-  );
 
-  const table = useMemo(() => {
-    const tbl: Record<string, TOIData> = {};
-    toiData.forEach((item) => {
-      const key = generateKey(item.p1.id, item.p2.id);
-      tbl[key] = item;
-    });
-
-    return tbl;
-  }, [toiData]);
-
-  const groupPlayersBySharedToi = useCallback(
-    (players: PlayerData[], groupSize: number) => {
-      const groups: PlayerData[][] = [];
-      const usedPlayers = new Set<number>();
-
-      while (players.length > 0) {
-        let group: PlayerData[] = [];
-        let totalGroupToi = 0;
-
-        for (let i = 0; i < players.length && group.length < groupSize; i++) {
-          const player = players[i];
-          if (!usedPlayers.has(player.id)) {
-            group.push(player);
-            usedPlayers.add(player.id);
-            totalGroupToi += table[generateKey(player.id, player.id)]?.toi ?? 0;
-          }
-        }
-
-        if (group.length === groupSize) {
-          group.sort(
-            (a, b) =>
-              (table[generateKey(a.id, a.id)]?.toi ?? 0) -
-              (table[generateKey(b.id, b.id)]?.toi ?? 0)
-          );
-          groups.push(group);
-        }
-
-        players = players.filter((player) => !usedPlayers.has(player.id));
-      }
-
-      return groups.flat();
-    },
-    [table]
-  );
+  // Dynamic classes for the container based on mode
+  const containerClass = classNames(styles.container, {
+    [styles.totalToiMode]: mode === "total-toi",
+    [styles.fullRosterMode]: mode === "full-roster",
+  });
 
   const sortedRoster = useMemo(() => {
-    if (mode === "number") {
-      return roster.sort((a, b) => a.sweaterNumber - b.sweaterNumber);
+    if (mode === "line-combination") {
+      const sortedLines = lines.flat();
+      const sortedPairs = pairs.flat();
+      return [...sortedLines, ...sortedPairs];
     } else if (mode === "total-toi") {
-      return Object.values(table)
-        .filter((item) => item.p1.id === item.p2.id)
-        .sort((a, b) => b.toi - a.toi)
-        .map((item) => item.p1);
-    } else if (mode === "line-combination") {
-      return sortByLineCombination(table, roster, playerTOI);
+      return sortByTotalTOI(roster);
+    } else if (mode === "full-roster") {
+      return sortByFullRoster(roster, { lines, pairs });
     } else {
       console.error("not implemented");
       return [];
     }
-  }, [table, mode, roster, playerTOI]);
-
-  const topLineupRoster = useMemo(() => {
-    const forwards = groupPlayersBySharedToi(
-      sortedRoster.filter((player) => isForward(player.position)),
-      3
-    ).slice(0, 12);
-    const defensemen = groupPlayersBySharedToi(
-      sortedRoster.filter((player) => isDefense(player.position)),
-      2
-    ).slice(0, 6);
-
-    forwards.sort(
-      (a, b) =>
-        playerTOI[b.id].totalTOI / playerTOI[b.id].gamesPlayed.size -
-        playerTOI[a.id].totalTOI / playerTOI[a.id].gamesPlayed.size
-    );
-
-    defensemen.sort(
-      (a, b) =>
-        playerTOI[b.id].totalTOI / playerTOI[b.id].gamesPlayed.size -
-        playerTOI[a.id].totalTOI / playerTOI[a.id].gamesPlayed.size
-    );
-
-    return [...forwards, ...defensemen];
-  }, [sortedRoster, groupPlayersBySharedToi, playerTOI]);
-
-  const fullRoster = useMemo(() => {
-    const forwards = groupPlayersBySharedToi(
-      sortedRoster.filter((player) => isForward(player.position)),
-      3
-    );
-    const defensemen = groupPlayersBySharedToi(
-      sortedRoster.filter((player) => isDefense(player.position)),
-      2
-    );
-
-    forwards.sort(
-      (a, b) =>
-        playerTOI[b.id].totalTOI / playerTOI[b.id].gamesPlayed.size -
-        playerTOI[a.id].totalTOI / playerTOI[a.id].gamesPlayed.size
-    );
-
-    defensemen.sort(
-      (a, b) =>
-        playerTOI[b.id].totalTOI / playerTOI[b.id].gamesPlayed.size -
-        playerTOI[a.id].totalTOI / playerTOI[a.id].gamesPlayed.size
-    );
-
-    return [...forwards, ...defensemen];
-  }, [sortedRoster, groupPlayersBySharedToi, playerTOI]);
-
-  const displayRoster =
-    viewMode === "top-lineup" ? topLineupRoster : fullRoster;
+  }, [mode, roster, lines, pairs]);
 
   const avgSharedToi = useMemo(() => {
     let sum = 0;
-    displayRoster.forEach((player) => {
-      sum += table[generateKey(player.id, player.id)]?.toi ?? 0;
+    sortedRoster.forEach((player: PlayerData) => {
+      sum += player.totalTOI ?? 0;
     });
-    return sum / displayRoster.length;
-  }, [table, displayRoster]);
+    return sum / sortedRoster.length;
+  }, [sortedRoster]);
 
   return (
-    <section id={`date-range-matrix-${teamId}`} className={styles.container}>
-      <h4>{teamName}</h4>
-      <div className={styles.toggleWrapper}>
-        <button
-          onClick={() => setViewMode("top-lineup")}
-          className={viewMode === "top-lineup" ? styles.active : ""}
-        >
-          Top Lineup
-        </button>
-        <button
-          onClick={() => setViewMode("full-roster")}
-          className={viewMode === "full-roster" ? styles.active : ""}
-        >
-          Full Roster
-        </button>
-      </div>
-      <div
-        className={classNames(styles.grid, "content")}
-        style={{
-          gridTemplateRows: `var(--player-info-size) repeat(${displayRoster.length}, 1fr)`,
-          gridTemplateColumns: `var(--player-info-size) repeat(${displayRoster.length}, 1fr)`,
-        }}
-      >
-        {displayRoster.length > 0 &&
-          new Array(displayRoster.length + 1).fill(0).map((_, row) => {
-            if (row === 0) {
-              return [
-                <div key="left-up"></div>,
-                ...displayRoster.map((player, col) => (
-                  <div
-                    key={player.id}
-                    className={classNames(styles.topPlayerName, {
-                      [styles.active]: col === selectedCell.col - 1,
-                    })}
-                  >
-                    <div className={styles.inner}>
-                      {player.sweaterNumber}
-                      <>&nbsp;</>
-                      {player.name}
-                    </div>
-                  </div>
-                )),
-              ];
-            } else {
-              return new Array(displayRoster.length + 1)
-                .fill(0)
-                .map((_, col) => {
-                  const p1 = displayRoster[col - 1];
-                  const p2 = displayRoster[row - 1];
-
-                  if (col === 0) {
-                    return (
+    <section id={`date-range-matrix-${teamId}`} className={containerClass}>
+      {loading ? (
+        <PulsatingGrid rows={18} cols={18} pulsating={true} />
+      ) : (
+        <>
+          <div
+            className={classNames(styles.grid, "content")}
+            style={{
+              gridTemplateRows: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`,
+              gridTemplateColumns: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`,
+            }}
+          >
+            {sortedRoster.length > 0 &&
+              new Array(sortedRoster.length + 1).fill(0).map((_, row) => {
+                if (row === 0) {
+                  return [
+                    <div key="left-up"></div>,
+                    ...sortedRoster.map((player: PlayerData, col: number) => (
                       <div
-                        key={p2.id}
-                        className={classNames(styles.leftPlayerName, {
-                          [styles.active]: selectedCell.row === row,
+                        key={player.id}
+                        className={classNames(styles.topPlayerName, {
+                          [styles.active]: col === selectedCell.col - 1,
                         })}
                       >
-                        {p2.sweaterNumber}
-                        <>&nbsp;</>
-                        {p2.name}
+                        <div className={styles.inner}>
+                          {player.playerAbbrevName}
+                        </div>
                       </div>
-                    );
-                  } else {
-                    if (col !== 0 && row !== 0) {
-                      const isHighlight = p1.id === p2.id;
-                      const cellData = table[generateKey(p1.id, p2.id)];
-                      const sharedToi = cellData ? cellData.toi : 0;
+                    )),
+                  ];
+                } else {
+                  return new Array(sortedRoster.length + 1)
+                    .fill(0)
+                    .map((_, col) => {
+                      const p1 = sortedRoster[col - 1];
+                      const p2 = sortedRoster[row - 1];
 
-                      return (
-                        <Cell
-                          key={`${p1.id}-${p2.id}`}
-                          teamAvgToi={avgSharedToi}
-                          sharedToi={sharedToi}
-                          p1={p1}
-                          p2={p2}
-                          highlight={isHighlight}
-                          onPointerEnter={() => setSelectedCell({ row, col })}
-                          onPointerLeave={() =>
-                            setSelectedCell({ row: -1, col: -1 })
-                          }
-                        />
-                      );
-                    }
-                  }
-                });
-            }
-          })}
-      </div>
+                      if (col === 0) {
+                        return (
+                          <div
+                            key={p2.id}
+                            className={classNames(styles.leftPlayerName, {
+                              [styles.active]: selectedCell.row === row,
+                            })}
+                          >
+                            {p2.playerAbbrevName}
+                          </div>
+                        );
+                      } else {
+                        if (col !== 0 && row !== 0) {
+                          const isSelf = p1.id === p2.id;
+                          const sharedToi = isSelf
+                            ? parseFloat(playerATOI[p1.id])
+                            : p1.percentToiWith[p2.id] || 0;
+
+                          return (
+                            <Cell
+                              key={`${p1.id}-${p2.id}`}
+                              teamAvgToi={avgSharedToi}
+                              sharedToi={sharedToi}
+                              p1={p1}
+                              p2={p2}
+                              highlight={isSelf}
+                              onPointerEnter={() =>
+                                setSelectedCell({ row, col })
+                              }
+                              onPointerLeave={() =>
+                                setSelectedCell({ row: -1, col: -1 })
+                              }
+                              isSelf={isSelf}
+                              ATOI={isSelf ? p1.ATOI : undefined}
+                            />
+                          );
+                        }
+                      }
+                    });
+                }
+              })}
+          </div>
+        </>
+      )}
     </section>
   );
 }
@@ -857,6 +384,8 @@ type CellProps = {
   onPointerEnter?: () => void;
   onPointerLeave?: () => void;
   highlight: boolean;
+  isSelf: boolean;
+  ATOI?: string;
 };
 
 function Cell({
@@ -867,8 +396,12 @@ function Cell({
   highlight,
   onPointerEnter = () => {},
   onPointerLeave = () => {},
+  isSelf,
+  ATOI,
 }: CellProps) {
-  const opacity = sharedToi / teamAvgToi;
+  const mixedToi = p1.percentToiWithMixed?.[p2.id] || 0;
+  const effectiveToi = sharedToi || mixedToi;
+  const opacity = (isSelf ? 1 : effectiveToi / 100) * 1.5;
   const color = getColor(p1.position, p2.position);
 
   return (
@@ -878,7 +411,11 @@ function Cell({
       onPointerLeave={onPointerLeave}
     >
       <Tooltip
-        onHoverText={formatTime(sharedToi)}
+        onHoverText={
+          isSelf
+            ? `${formatATOI(ATOI || "N/A")} ATOI`
+            : `${effectiveToi.toFixed(2)}% Shared Ice Time`
+        }
         style={{ width: "100%", height: "100%" }}
       >
         <div
@@ -892,3 +429,12 @@ function Cell({
     </div>
   );
 }
+
+function formatATOI(atoi: string): string {
+  const [minutes, rest] = atoi.split(":");
+  const seconds = rest ? rest.split(".")[0] : "00";
+  return `${minutes}:${seconds}`;
+}
+
+// At the bottom or top of your file
+export { isForward, isDefense };

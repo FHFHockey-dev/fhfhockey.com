@@ -15,10 +15,31 @@ export async function fetchCurrentSeason() {
   const now = new Date();
   const startDate = new Date(currentSeason.startDate);
   const endDate = new Date(currentSeason.regularSeasonEndDate);
+  const prevEndDate = new Date(previousSeason.regularSeasonEndDate);
 
-  if (now < startDate || now > endDate) {
-    return previousSeason.id;
+  // Calculate playoff start and end dates
+  const playoffsStartDate = new Date(currentSeason.regularSeasonEndDate);
+  playoffsStartDate.setDate(playoffsStartDate.getDate() + 1);
+
+  const playoffsEndDate = new Date(currentSeason.endDate);
+
+  if (now < startDate && now > prevEndDate) {
+    return {
+      id: previousSeason.id,
+      startDate: previousSeason.startDate,
+      endDate: previousSeason.regularSeasonEndDate,
+      playoffsStartDate: new Date(previousSeason.regularSeasonEndDate).setDate(
+        new Date(previousSeason.regularSeasonEndDate).getDate() + 1
+      ),
+      playoffsEndDate: new Date(previousSeason.endDate),
+    };
   } else {
-    return currentSeason.id;
+    return {
+      id: currentSeason.id,
+      startDate: currentSeason.startDate,
+      endDate: currentSeason.regularSeasonEndDate,
+      playoffsStartDate,
+      playoffsEndDate,
+    };
   }
 }

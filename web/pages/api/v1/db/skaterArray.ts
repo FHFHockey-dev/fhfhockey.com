@@ -6,6 +6,7 @@ interface SkaterStat {
   [key: string]: any; // Adding an index signature
   player_id: number;
   player_name: string;
+  sweater_number: number;
   date: string;
   shoots_catches: string;
   position_code: string;

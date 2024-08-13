@@ -1,3 +1,5 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\DateRangeMatrix\index.module.scss
+
 @import "styles/vars.scss";
 
 .gridWrapper {
@@ -10,6 +12,41 @@
   }
 }
 
+.toggleWrapper {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+
+  button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    margin: 0 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+
+    &.active {
+      background-color: #0056b3;
+    }
+
+    &:hover {
+      background-color: #0056b3;
+    }
+  }
+}
+
+.date-picker {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem 0;
+
+  .react-datepicker-wrapper {
+    margin: 0 1rem;
+  }
+}
+
 // single matrix container
 .container {
   display: flex;
@@ -18,11 +55,24 @@
   flex: 1;
 
   --spacing: 6px;
-  --player-info-size: 120px;
+  --player-info-size: 90px;
   font-size: 0.875rem;
+
   @media only screen and (max-width: $screen-small-max) {
     --player-info-size: 80px;
     font-size: 0.7rem;
+  }
+
+  &.totalToiMode,
+  &.fullRosterMode {
+    --player-info-size: 60px; // Smaller size for Total TOI and Full Roster modes
+    font-size: 0.55rem; // Smaller font size for the labels
+    text-transform: uppercase;
+
+    @media only screen and (max-width: $screen-small-max) {
+      --player-info-size: 50px;
+      font-size: 0.65rem;
+    }
   }
 
   .goalieBar {
@@ -55,7 +105,7 @@
     background-color: #202020;
     color: #fff;
     display: grid;
-    width: 90%;
+    width: 95%;
     aspect-ratio: 1 / 1;
     padding: var(--spacing);
     border: 2px solid #07aae2;
@@ -64,6 +114,7 @@
     .topPlayerName {
       position: relative;
       transition: transform 0.5s;
+      font-variant: small-caps;
     }
     .topPlayerName .inner {
       position: absolute;
@@ -76,16 +127,19 @@
       top: 100%;
       left: 50%;
       padding: 0 var(--spacing);
+      font-family: roboto condensed, sans-serif;
     }
 
     .leftPlayerName {
-      text-align: left;
+      text-align: right;
       text-overflow: ellipsis;
+      font-variant: small-caps;
       overflow: hidden;
       white-space: nowrap;
       padding: 0 var(--spacing);
       transition: transform 0.2s ease-in-out;
       align-self: center;
+      font-family: roboto condensed, sans-serif;
     }
 
     .active {
