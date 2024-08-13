@@ -42,6 +42,9 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
       setLines(result.lines);
       setPairs(result.pairs);
 
+      console.log("Lines in LinePairGrid.tsx:", result.lines);
+      console.log("Pairs in LinePairGrid.tsx:", result.pairs);
+
       // Invoke the callback with the calculated lines and pairs
       onLinesAndPairsCalculated(result.lines, result.pairs);
     }
@@ -184,12 +187,96 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
         );
 
         setAggregatedData(updatedRoster);
+        console.log("Aggregated Data in LinePairGrid.tsx:", updatedRoster);
         setLoading(false);
       }
     };
 
     fetchData();
   }, [selectedTeam, startDate, endDate, seasonType]);
+
+  const arrangePlayersByDeductiveLogic = (line: PlayerData[]) => {
+    const positions = ["LW", "C", "RW"];
+    const assignedPositions: { [key: string]: PlayerData | null } = {
+      LW: null,
+      C: null,
+      RW: null,
+    };
+    const remainingPlayers: PlayerData[] = [...line];
+
+    // Step 1: Assign unique positions
+    positions.forEach((position) => {
+      const playersWithPosition = remainingPlayers.filter(
+        (player) =>
+          player.displayPosition &&
+          player.displayPosition.split(",").includes(position)
+      );
+
+      if (playersWithPosition.length === 1) {
+        assignedPositions[position] = playersWithPosition[0];
+        remainingPlayers.splice(
+          remainingPlayers.indexOf(playersWithPosition[0]),
+          1
+        );
+      }
+    });
+
+    // Step 2: Deduction through exclusionary comparison
+    while (remainingPlayers.length > 0) {
+      const player1 = remainingPlayers[0];
+      const player2 = remainingPlayers[1];
+
+      // Ensure both players are defined before proceeding
+      if (!player1 || !player2) break;
+
+      let uniquePos1: string | null = null;
+      let uniquePos2: string | null = null;
+
+      // Compare positions
+      positions.forEach((position) => {
+        const player1Has =
+          player1.displayPosition &&
+          player1.displayPosition.split(",").includes(position);
+        const player2Has =
+          player2.displayPosition &&
+          player2.displayPosition.split(",").includes(position);
+
+        if (player1Has && !player2Has) {
+          uniquePos1 = position;
+        } else if (!player1Has && player2Has) {
+          uniquePos2 = position;
+        }
+      });
+
+      // Assign positions based on unique identifiers
+      if (uniquePos1 && !assignedPositions[uniquePos1]) {
+        assignedPositions[uniquePos1] = player1;
+        remainingPlayers.splice(remainingPlayers.indexOf(player1), 1);
+      }
+
+      if (uniquePos2 && !assignedPositions[uniquePos2]) {
+        assignedPositions[uniquePos2] = player2;
+        remainingPlayers.splice(remainingPlayers.indexOf(player2), 1);
+      }
+    }
+
+    // Step 3: Fill remaining positions with ATOI if conflicts remain
+    remainingPlayers.forEach((player) => {
+      const unassignedPosition = positions.find(
+        (position) => !assignedPositions[position]
+      );
+
+      if (unassignedPosition) {
+        assignedPositions[unassignedPosition] = player;
+      }
+    });
+
+    return [
+      assignedPositions.LW,
+      assignedPositions.C,
+      assignedPositions.RW,
+    ].filter(Boolean);
+  };
 
   return (
     <div className={styles.gridContainer}>
@@ -200,15 +287,18 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
 
       {lines.slice(0, 4).map((line, index) => (
         <React.Fragment key={`line-${index}`}>
-          {line.map((player, playerIndex) => (
-            <PlayerCard
-              key={`${player.id}-${index}-${playerIndex}`}
-              name={player.name}
-              firstName={player.name.split(" ")[0]}
-              lastName={player.name.split(" ")[1]}
-              teamId={player.teamId}
-            />
-          ))}
+          {arrangePlayersByDeductiveLogic(line)
+            .filter((player): player is PlayerData => player !== null) // Filter out null values
+
+            .map((player, playerIndex) => (
+              <PlayerCard
+                key={`${player.id}-${index}-${playerIndex}`}
+                name={player.name}
+                firstName={player.name.split(" ")[0]}
+                lastName={player.name.split(" ")[1]}
+                teamId={player.teamId}
+              />
+            ))}
           {pairs[index] &&
             pairs[index].map((player, playerIndex) => (
               <PlayerCard
