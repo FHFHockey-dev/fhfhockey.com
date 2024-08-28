@@ -145,7 +145,9 @@ export default function DRMPage() {
             startDate.toISOString().split("T")[0],
             endDate.toISOString().split("T")[0],
             seasonType,
-            timeFrame // Updated to ensure correct data is fetched
+            timeFrame, // Updated to ensure correct data is fetched
+            "",
+            ""
           );
 
         setRegularSeasonData(regularSeasonPlayersData);

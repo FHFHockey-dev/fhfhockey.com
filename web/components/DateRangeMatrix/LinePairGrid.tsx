@@ -26,6 +26,8 @@ type LinePairGridProps = {
   timeFrame: "L7" | "L14" | "L30" | "Totals";
   dateRange: { start: Date; end: Date };
   onDateRangeChange?: (newDateRange: { start: Date; end: Date }) => void;
+  homeOrAway?: "home" | "away" | undefined;
+  opponentTeamAbbreviation?: string;
 };
 
 const LinePairGrid: React.FC<LinePairGridProps> = ({
@@ -37,6 +39,8 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
   timeFrame,
   dateRange,
   onDateRangeChange,
+  homeOrAway = "",
+  opponentTeamAbbreviation = "",
 }) => {
   const [aggregatedData, setAggregatedData] = useState<PlayerData[]>([]);
   const [lines, setLines] = useState<PlayerData[][]>([]);
@@ -64,7 +68,9 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
             startDate.toISOString().split("T")[0],
             endDate.toISOString().split("T")[0],
             seasonType,
-            timeFrame
+            timeFrame,
+            homeOrAway,
+            opponentTeamAbbreviation
           );
 
         const dateRangeStr =
