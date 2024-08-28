@@ -16,10 +16,34 @@ async function fetchAllDataForTeam(
   let allData: any[] = [];
   let fetchMore = true;
 
+  const fieldsToSelect = [
+    "game_id",
+    "player_id",
+    "player_first_name",
+    "player_last_name",
+    "team_id",
+    "team_abbreviation",
+    "game_toi",
+    "home_or_away",
+    "opponent_team_abbreviation",
+    "opponent_team_id",
+    "display_position",
+    "primary_position",
+    "time_spent_with",
+    "percent_toi_with",
+    "time_spent_with_mixed",
+    "percent_toi_with_mixed",
+    "game_length",
+    "line_combination",
+    "pairing_combination",
+    "season_id",
+    "player_type",
+  ];
+
   while (fetchMore) {
     const { data, error } = await supabase
       .from("shift_charts")
-      .select("*")
+      .select(fieldsToSelect.join(","))
       .eq("team_id", teamId)
       .gte("game_date", startDate)
       .lte("game_date", endDate)
@@ -54,10 +78,34 @@ async function fetchDataForPlayer(
   let allData: any[] = [];
   let fetchMore = true;
 
+  const fieldsToSelect = [
+    "game_id",
+    "player_id",
+    "player_first_name",
+    "player_last_name",
+    "team_id",
+    "team_abbreviation",
+    "game_toi",
+    "home_or_away",
+    "opponent_team_abbreviation",
+    "opponent_team_id",
+    "display_position",
+    "primary_position",
+    "time_spent_with",
+    "percent_toi_with",
+    "time_spent_with_mixed",
+    "percent_toi_with_mixed",
+    "game_length",
+    "line_combination",
+    "pairing_combination",
+    "season_id",
+    "player_type",
+  ];
+
   while (fetchMore) {
     const { data, error } = await supabase
       .from("shift_charts")
-      .select("*")
+      .select(fieldsToSelect.join(","))
       .eq("team_id", teamId)
       .eq("player_id", playerId)
       .eq("game_type", gameType)
