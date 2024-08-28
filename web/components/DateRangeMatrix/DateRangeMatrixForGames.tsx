@@ -1,6 +1,3 @@
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
-// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\DateRangeMatrix\DateRangeMatrixForGames.tsx
-
 import { useEffect, useState, useMemo } from "react";
 import {
   DateRangeMatrixInternal,
@@ -9,7 +6,6 @@ import {
   Mode,
 } from "components/DateRangeMatrix/index";
 import { getTOIDataForGames } from "./useTOIData";
-import PulsatingGrid from "./PulsatingGrid"; // Import the PulsatingGrid component
 import { calculateLinesAndPairs } from "components/DateRangeMatrix/lineCombinationHelper";
 import { PlayerData } from "components/DateRangeMatrix/utilities";
 
@@ -32,6 +28,8 @@ export default function DateRangeMatrixForGames({
   const [roster, setRoster] = useState<PlayerData[]>([]);
   const [team, setTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [lines, setLines] = useState<PlayerData[][]>([]);
+  const [pairs, setPairs] = useState<PlayerData[][]>([]);
 
   useEffect(() => {
     setLoading(true);
@@ -51,23 +49,32 @@ export default function DateRangeMatrixForGames({
     })();
   }, [gameIds, teamId, startDate, endDate]);
 
-  // Log roster data to inspect
+  // Recalculate lines and pairs when roster, startDate, endDate, or mode changes
   useEffect(() => {
-    if (roster.length > 0) {
-      console.log("Roster Data:", roster);
-    }
-  }, [roster]);
+    if (roster.length > 0 && startDate && endDate) {
+      const recalculateLinesAndPairs = () => {
+        if (mode === "line-combination" || mode === "full-roster") {
+          const { lines: newLines, pairs: newPairs } = calculateLinesAndPairs(
+            roster,
+            mode
+          );
+          setLines(newLines);
+          setPairs(newPairs);
+          // console.log("Recalculated Lines:", newLines);
+          // console.log("Recalculated Pairs:", newPairs);
+        } else {
+          // Clear lines and pairs if the mode is not relevant
+          setLines([]);
+          setPairs([]);
+        }
+      };
 
-  const linesAndPairs = useMemo(() => {
-    if (mode === "line-combination" || mode === "full-roster") {
-      return calculateLinesAndPairs(roster, mode);
+      recalculateLinesAndPairs();
     }
-    return { lines: [], pairs: [] }; // If mode is not relevant, return empty arrays
-  }, [roster, mode]);
+  }, [roster, startDate, endDate, mode]);
 
   return (
     <>
-      {loading && <PulsatingGrid rows={18} cols={18} pulsating={true} />}
       {team && !loading && (
         <DateRangeMatrixInternal
           teamId={team.id}
@@ -86,8 +93,8 @@ export default function DateRangeMatrixForGames({
             return acc;
           }, {})}
           loading={loading}
-          lines={linesAndPairs.lines} // Pass lines separately
-          pairs={linesAndPairs.pairs} // Pass pairs separately
+          lines={lines} // Pass lines separately
+          pairs={pairs} // Pass pairs separately
         />
       )}
     </>

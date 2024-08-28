@@ -14,8 +14,6 @@ import styles from "./index.module.scss";
 import Tooltip from "components/Tooltip";
 import { teamsInfo } from "lib/NHL/teamsInfo";
 import { useTOI } from "./useTOIData";
-import PulsatingGrid from "components/DateRangeMatrix/PulsatingGrid";
-import { calculateLinesAndPairs } from "./lineCombinationHelper";
 
 export type Mode = "line-combination" | "full-roster" | "total-toi";
 export type Team = { id: number; name: string };
@@ -77,22 +75,15 @@ export default function DateRangeMatrix({
   lines,
   pairs,
 }: Props) {
-  // Call hooks unconditionally at the top of the component
   const [loading, setLoading] = useState<boolean>(true);
   const [toiData, rosters, team, loadingData, homeAwayInfo, playerATOI] =
     useTOI(id, startDate, endDate);
 
-  // Determine the teamId and check for valid data early
   const teamId = teamsInfo[id]?.id;
 
   useEffect(() => {
     setLoading(loadingData);
   }, [loadingData]);
-
-  useEffect(() => {
-    console.log("Received Lines:", lines);
-    console.log("Received Pairs:", pairs);
-  }, [lines, pairs]);
 
   const convertedPlayerATOI: Record<number, string> = useMemo(
     () =>
@@ -110,6 +101,7 @@ export default function DateRangeMatrix({
     const roster = aggregatedData.map((item) => ({
       id: item.playerId,
       teamId: item.teamId,
+      franchiseId: item.franchiseId,
       position: item.primaryPosition,
       sweaterNumber: item.sweaterNumber,
       name: item.playerName,
@@ -130,9 +122,9 @@ export default function DateRangeMatrix({
       mutualSharedToi: {},
       comboPoints: item.comboPoints || 0,
     }));
-    console.log("Sorted Roster in DateRangeMatrix:", roster);
+    // console.log("Sorted Roster in DateRangeMatrix:", roster);
     return roster;
-  }, [aggregatedData]);
+  }, [aggregatedData, startDate, endDate]); // Make sure startDate and endDate are dependencies
 
   const fullRoster = useMemo(() => {
     if (mode === "line-combination") {
@@ -147,14 +139,12 @@ export default function DateRangeMatrix({
     }
   }, [mode, sortedRoster, lines, pairs]);
 
-  // Early return if the team is not selected or invalid
   if (!id || !teamId) {
     return <div>Please select a valid team to view the matrix.</div>;
   }
 
   return (
     <div>
-      {loading && <PulsatingGrid rows={18} cols={18} pulsating={true} />}{" "}
       {!loading && (
         <div className={styles.gridWrapper}>
           <DateRangeMatrixInternal
@@ -166,8 +156,8 @@ export default function DateRangeMatrix({
             homeAwayInfo={homeAwayInfo}
             playerATOI={convertedPlayerATOI}
             loading={loading}
-            lines={lines} // Pass lines separately
-            pairs={pairs} // Pass pairs separately
+            lines={lines}
+            pairs={pairs}
           />
         </div>
       )}
@@ -184,14 +174,12 @@ function sortByFullRoster(
   const linePlayers = lines.flat();
   const pairPlayers = pairs.flat();
 
-  // Filter out players already in lines or pairs
   const remainingPlayers = players.filter(
     (player) =>
       !linePlayers.some((lp) => lp.id === player.id) &&
       !pairPlayers.some((pp) => pp.id === player.id)
   );
 
-  // Sort remaining players (not in lines/pairs) by TOI descending
   const sortedRemainingPlayers = remainingPlayers.sort((a, b) => {
     const atoia = parseTime(a.ATOI);
     const atoib = parseTime(b.ATOI);
@@ -215,14 +203,11 @@ function sortByLineCombination(
 ): PlayerData[] {
   const { lines, pairs } = linesAndPairs;
 
-  // Flatten the lines and pairs arrays
   const flattenedLines = lines.flat();
   const flattenedPairs = pairs.flat();
 
-  // Create an ordered list starting with lines, then pairs, then remaining players
   const sortedPlayers: PlayerData[] = [...flattenedLines, ...flattenedPairs];
 
-  // Get players not in lines or pairs
   const remainingPlayers = players.filter(
     (player) =>
       !flattenedLines.some((lp) => lp.id === player.id) &&
@@ -230,7 +215,7 @@ function sortByLineCombination(
   );
 
   const finalSortedPlayers = [...sortedPlayers, ...remainingPlayers];
-  console.log("Sorted Players by Line Combination:", finalSortedPlayers);
+  // console.log("Sorted Players by Line Combination:", finalSortedPlayers);
   return finalSortedPlayers;
 }
 
@@ -261,7 +246,6 @@ export function DateRangeMatrixInternal({
 }: DateRangeMatrixInternalProps) {
   const [selectedCell, setSelectedCell] = useState({ row: -1, col: -1 });
 
-  // Dynamic classes for the container based on mode
   const containerClass = classNames(styles.container, {
     [styles.totalToiMode]: mode === "total-toi",
     [styles.fullRosterMode]: mode === "full-roster",
@@ -292,86 +276,78 @@ export function DateRangeMatrixInternal({
 
   return (
     <section id={`date-range-matrix-${teamId}`} className={containerClass}>
-      {loading ? (
-        <PulsatingGrid rows={18} cols={18} pulsating={true} />
-      ) : (
-        <>
-          <div
-            className={classNames(styles.grid, "content")}
-            style={{
-              gridTemplateRows: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`,
-              gridTemplateColumns: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`,
-            }}
-          >
-            {sortedRoster.length > 0 &&
-              new Array(sortedRoster.length + 1).fill(0).map((_, row) => {
-                if (row === 0) {
-                  return [
-                    <div key="left-up"></div>,
-                    ...sortedRoster.map((player: PlayerData, col: number) => (
+      <div
+        className={classNames(styles.grid, "content")}
+        style={{
+          gridTemplateRows: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`,
+          gridTemplateColumns: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`,
+        }}
+      >
+        {sortedRoster.length > 0 &&
+          new Array(sortedRoster.length + 1).fill(0).map((_, row) => {
+            if (row === 0) {
+              return [
+                <div key="left-up"></div>,
+                ...sortedRoster.map((player: PlayerData, col: number) => (
+                  <div
+                    key={player.id}
+                    className={classNames(styles.topPlayerName, {
+                      [styles.active]: col === selectedCell.col - 1,
+                    })}
+                  >
+                    <div className={styles.inner}>
+                      {player.playerAbbrevName}
+                    </div>
+                  </div>
+                )),
+              ];
+            } else {
+              return new Array(sortedRoster.length + 1)
+                .fill(0)
+                .map((_, col) => {
+                  const p1 = sortedRoster[col - 1];
+                  const p2 = sortedRoster[row - 1];
+
+                  if (col === 0) {
+                    return (
                       <div
-                        key={player.id}
-                        className={classNames(styles.topPlayerName, {
-                          [styles.active]: col === selectedCell.col - 1,
+                        key={p2.id}
+                        className={classNames(styles.leftPlayerName, {
+                          [styles.active]: selectedCell.row === row,
                         })}
                       >
-                        <div className={styles.inner}>
-                          {player.playerAbbrevName}
-                        </div>
+                        {p2.playerAbbrevName}
                       </div>
-                    )),
-                  ];
-                } else {
-                  return new Array(sortedRoster.length + 1)
-                    .fill(0)
-                    .map((_, col) => {
-                      const p1 = sortedRoster[col - 1];
-                      const p2 = sortedRoster[row - 1];
+                    );
+                  } else {
+                    if (col !== 0 && row !== 0) {
+                      const isSelf = p1.id === p2.id;
+                      const sharedToi = isSelf
+                        ? parseFloat(playerATOI[p1.id])
+                        : p1.percentToiWith[p2.id] || 0;
 
-                      if (col === 0) {
-                        return (
-                          <div
-                            key={p2.id}
-                            className={classNames(styles.leftPlayerName, {
-                              [styles.active]: selectedCell.row === row,
-                            })}
-                          >
-                            {p2.playerAbbrevName}
-                          </div>
-                        );
-                      } else {
-                        if (col !== 0 && row !== 0) {
-                          const isSelf = p1.id === p2.id;
-                          const sharedToi = isSelf
-                            ? parseFloat(playerATOI[p1.id])
-                            : p1.percentToiWith[p2.id] || 0;
-
-                          return (
-                            <Cell
-                              key={`${p1.id}-${p2.id}`}
-                              teamAvgToi={avgSharedToi}
-                              sharedToi={sharedToi}
-                              p1={p1}
-                              p2={p2}
-                              highlight={isSelf}
-                              onPointerEnter={() =>
-                                setSelectedCell({ row, col })
-                              }
-                              onPointerLeave={() =>
-                                setSelectedCell({ row: -1, col: -1 })
-                              }
-                              isSelf={isSelf}
-                              ATOI={isSelf ? p1.ATOI : undefined}
-                            />
-                          );
-                        }
-                      }
-                    });
-                }
-              })}
-          </div>
-        </>
-      )}
+                      return (
+                        <Cell
+                          key={`${p1.id}-${p2.id}`}
+                          teamAvgToi={avgSharedToi}
+                          sharedToi={sharedToi}
+                          p1={p1}
+                          p2={p2}
+                          highlight={isSelf}
+                          onPointerEnter={() => setSelectedCell({ row, col })}
+                          onPointerLeave={() =>
+                            setSelectedCell({ row: -1, col: -1 })
+                          }
+                          isSelf={isSelf}
+                          ATOI={isSelf ? p1.ATOI : undefined}
+                        />
+                      );
+                    }
+                  }
+                });
+            }
+          })}
+      </div>
     </section>
   );
 }

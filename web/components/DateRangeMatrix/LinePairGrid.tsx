@@ -3,15 +3,16 @@
 
 import React, { useEffect, useState } from "react";
 import styles from "../../styles/LinePairGrid.module.scss";
-import { teamsInfo } from "lib/NHL/teamsInfo";
 import { fetchAggregatedData } from "web/components/DateRangeMatrix/fetchAggregatedData";
 import { calculateLinesAndPairs } from "web/components/DateRangeMatrix/lineCombinationHelper";
 import {
   PlayerData,
   formatTime,
   parseTime,
+  getFranchiseIdByTeamAbbreviation,
 } from "web/components/DateRangeMatrix/utilities";
 import PlayerCard from "web/components/DateRangeMatrix/PlayerCardDRM";
+import GoalieCard from "web/components/DateRangeMatrix/GoalieCardDRM";
 
 type LinePairGridProps = {
   selectedTeam: string;
@@ -22,6 +23,9 @@ type LinePairGridProps = {
     pairs: PlayerData[][]
   ) => void;
   seasonType: "regularSeason" | "playoffs";
+  timeFrame: "L7" | "L14" | "L30" | "Totals";
+  dateRange: { start: Date; end: Date };
+  onDateRangeChange?: (newDateRange: { start: Date; end: Date }) => void;
 };
 
 const LinePairGrid: React.FC<LinePairGridProps> = ({
@@ -30,22 +34,21 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
   endDate,
   onLinesAndPairsCalculated,
   seasonType,
+  timeFrame,
+  dateRange,
+  onDateRangeChange,
 }) => {
   const [aggregatedData, setAggregatedData] = useState<PlayerData[]>([]);
   const [lines, setLines] = useState<PlayerData[][]>([]);
   const [pairs, setPairs] = useState<PlayerData[][]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [dateRangeString, setDateRangeString] = useState<string>("");
 
   useEffect(() => {
     if (aggregatedData.length > 0) {
       const result = calculateLinesAndPairs(aggregatedData, "line-combination");
       setLines(result.lines);
       setPairs(result.pairs);
-
-      console.log("Lines in LinePairGrid.tsx:", result.lines);
-      console.log("Pairs in LinePairGrid.tsx:", result.pairs);
-
-      // Invoke the callback with the calculated lines and pairs
       onLinesAndPairsCalculated(result.lines, result.pairs);
     }
   }, [aggregatedData]);
@@ -60,8 +63,20 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
             selectedTeam,
             startDate.toISOString().split("T")[0],
             endDate.toISOString().split("T")[0],
-            seasonType
+            seasonType,
+            timeFrame
           );
+
+        const dateRangeStr =
+          regularSeasonPlayersData?.[0]?.stats?.[timeFrame]?.date_range || "";
+
+        if (dateRangeStr) {
+          setDateRangeString(dateRangeStr); // Store the date range string
+          const [newStartDate, newEndDate] = dateRangeStr
+            .split(" - ")
+            .map((dateStr: string) => new Date(dateStr));
+          onDateRangeChange?.({ start: newStartDate, end: newEndDate });
+        }
 
         const allPlayersData =
           seasonType === "regularSeason"
@@ -87,9 +102,12 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
           const playerId = player.playerId;
 
           if (!aggregatedPlayersData[playerId]) {
+            const franchiseId = getFranchiseIdByTeamAbbreviation(selectedTeam);
+
             aggregatedPlayersData[playerId] = {
               id: player.playerId,
               teamId: player.teamId,
+              franchiseId: franchiseId || 0,
               position: player.primaryPosition,
               name: player.playerName,
               playerAbbrevName: player.playerAbbrevName,
@@ -187,96 +205,66 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
         );
 
         setAggregatedData(updatedRoster);
-        console.log("Aggregated Data in LinePairGrid.tsx:", updatedRoster);
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [selectedTeam, startDate, endDate, seasonType]);
+  }, [selectedTeam, startDate, endDate, seasonType, timeFrame]);
 
-  const arrangePlayersByDeductiveLogic = (line: PlayerData[]) => {
-    const positions = ["LW", "C", "RW"];
-    const assignedPositions: { [key: string]: PlayerData | null } = {
-      LW: null,
-      C: null,
-      RW: null,
+  const reorderLine = (line: PlayerData[]): PlayerData[] => {
+    // Initialize positions
+    let LW: PlayerData | null = null;
+    let C: PlayerData | null = null;
+    let RW: PlayerData | null = null;
+
+    // First, assign players with only one displayPosition
+    line.forEach((player) => {
+      if (player.displayPosition === "LW" && !LW) {
+        LW = player;
+      } else if (player.displayPosition === "C" && !C) {
+        C = player;
+      } else if (player.displayPosition === "RW" && !RW) {
+        RW = player;
+      }
+    });
+
+    // Next, handle players with multiple display positions
+    line.forEach((player) => {
+      if (!LW && player.displayPosition.includes("LW")) {
+        LW = player;
+      } else if (!C && player.displayPosition.includes("C")) {
+        C = player;
+      } else if (!RW && player.displayPosition.includes("RW")) {
+        RW = player;
+      }
+    });
+
+    // If positions are still unfilled, fill them based on remaining players and ATOI
+    const unassignedPlayers = line.filter(
+      (player) => player !== LW && player !== C && player !== RW
+    );
+
+    // Parse ATOI into seconds for comparison
+    const parseAToiToSeconds = (atoi: string): number => {
+      const [minutes, seconds] = atoi.split(":").map(Number);
+      return minutes * 60 + seconds;
     };
-    const remainingPlayers: PlayerData[] = [...line];
 
-    // Step 1: Assign unique positions
-    positions.forEach((position) => {
-      const playersWithPosition = remainingPlayers.filter(
-        (player) =>
-          player.displayPosition &&
-          player.displayPosition.split(",").includes(position)
-      );
+    unassignedPlayers.sort(
+      (a, b) => parseAToiToSeconds(b.ATOI) - parseAToiToSeconds(a.ATOI)
+    ); // Sort by ATOI descending
 
-      if (playersWithPosition.length === 1) {
-        assignedPositions[position] = playersWithPosition[0];
-        remainingPlayers.splice(
-          remainingPlayers.indexOf(playersWithPosition[0]),
-          1
-        );
-      }
-    });
+    if (!LW && unassignedPlayers.length > 0) LW = unassignedPlayers.shift()!;
+    if (!C && unassignedPlayers.length > 0) C = unassignedPlayers.shift()!;
+    if (!RW && unassignedPlayers.length > 0) RW = unassignedPlayers.shift()!;
 
-    // Step 2: Deduction through exclusionary comparison
-    while (remainingPlayers.length > 0) {
-      const player1 = remainingPlayers[0];
-      const player2 = remainingPlayers[1];
-
-      // Ensure both players are defined before proceeding
-      if (!player1 || !player2) break;
-
-      let uniquePos1: string | null = null;
-      let uniquePos2: string | null = null;
-
-      // Compare positions
-      positions.forEach((position) => {
-        const player1Has =
-          player1.displayPosition &&
-          player1.displayPosition.split(",").includes(position);
-        const player2Has =
-          player2.displayPosition &&
-          player2.displayPosition.split(",").includes(position);
-
-        if (player1Has && !player2Has) {
-          uniquePos1 = position;
-        } else if (!player1Has && player2Has) {
-          uniquePos2 = position;
-        }
-      });
-
-      // Assign positions based on unique identifiers
-      if (uniquePos1 && !assignedPositions[uniquePos1]) {
-        assignedPositions[uniquePos1] = player1;
-        remainingPlayers.splice(remainingPlayers.indexOf(player1), 1);
-      }
-
-      if (uniquePos2 && !assignedPositions[uniquePos2]) {
-        assignedPositions[uniquePos2] = player2;
-        remainingPlayers.splice(remainingPlayers.indexOf(player2), 1);
-      }
-    }
-
-    // Step 3: Fill remaining positions with ATOI if conflicts remain
-    remainingPlayers.forEach((player) => {
-      const unassignedPosition = positions.find(
-        (position) => !assignedPositions[position]
-      );
-
-      if (unassignedPosition) {
-        assignedPositions[unassignedPosition] = player;
-      }
-    });
-
-    return [
-      assignedPositions.LW,
-      assignedPositions.C,
-      assignedPositions.RW,
-    ].filter(Boolean);
+    // Return the reordered line
+    return [LW, C, RW].filter((player) => player !== null) as PlayerData[];
   };
+
+  // Apply the reorder function to each line before rendering
+  const reorderedLines = lines.map((line) => reorderLine(line));
 
   return (
     <div className={styles.gridContainer}>
@@ -285,20 +273,21 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
         Defense Pairs
       </div>
 
-      {lines.slice(0, 4).map((line, index) => (
+      {reorderedLines.slice(0, 4).map((line, index) => (
         <React.Fragment key={`line-${index}`}>
-          {arrangePlayersByDeductiveLogic(line)
-            .filter((player): player is PlayerData => player !== null) // Filter out null values
-
-            .map((player, playerIndex) => (
-              <PlayerCard
-                key={`${player.id}-${index}-${playerIndex}`}
-                name={player.name}
-                firstName={player.name.split(" ")[0]}
-                lastName={player.name.split(" ")[1]}
-                teamId={player.teamId}
-              />
-            ))}
+          {line.map((player, playerIndex) => (
+            <PlayerCard
+              key={`${player.id}-${index}-${playerIndex}`}
+              name={player.name}
+              firstName={player.name.split(" ")[0]}
+              lastName={player.name.split(" ")[1]}
+              teamId={player.teamId}
+              playerId={player.id.toString()}
+              timeFrame={timeFrame}
+              dateRange={dateRange} // Pass dateRange to PlayerCard
+              displayPosition={player.displayPosition} // Pass displayPosition
+            />
+          ))}
           {pairs[index] &&
             pairs[index].map((player, playerIndex) => (
               <PlayerCard
@@ -307,6 +296,10 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
                 firstName={player.name.split(" ")[0]}
                 lastName={player.name.split(" ")[1]}
                 teamId={player.teamId}
+                playerId={player.id.toString()}
+                timeFrame={timeFrame}
+                dateRange={dateRange} // Pass dateRange to PlayerCard
+                displayPosition={player.displayPosition} // Pass displayPosition
               />
             ))}
         </React.Fragment>
@@ -315,21 +308,27 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
       {/* Divider */}
       <div className={styles.divider}></div>
 
+      {/* Goalie Container */}
       <div className={styles.goalieContainer}>
         <div className={styles.goalieLabel}>Goaltenders</div>
         <div className={styles.goalieCards}>
-          <PlayerCard
-            name="GOALIE"
-            firstName="GOALIE"
-            lastName="GOALIE"
-            teamId={0}
-          />
-          <PlayerCard
-            name="GOALIE"
-            firstName="GOALIE"
-            lastName="GOALIE"
-            teamId={0}
-          />
+          {aggregatedData
+            .filter((player) => player.playerType === "G")
+            .sort((a, b) => b.GP - a.GP) // Sort by games played, descending
+            .slice(0, 2) // Limit to top 2 goalies
+            .map((goalie) => (
+              <GoalieCard
+                key={goalie.id}
+                name={goalie.name}
+                firstName={goalie.name.split(" ")[0]}
+                lastName={goalie.name.split(" ")[1]}
+                teamId={goalie.teamId}
+                playerId={goalie.id.toString()}
+                timeFrame={timeFrame} // Pass timeFrame to GoalieCard
+                startDate={startDate?.toISOString().split("T")[0]} // Pass startDate
+                endDate={endDate?.toISOString().split("T")[0]} // Pass endDate
+              />
+            ))}
         </div>
       </div>
     </div>

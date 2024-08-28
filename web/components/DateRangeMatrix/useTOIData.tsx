@@ -5,16 +5,6 @@ import { generateKey, TOIData, Team } from "./index";
 import { parseTime, PlayerData } from "./utilities";
 import supabase from "lib/supabase";
 
-// Function to format total TOI into "MM:SS"
-function formatTotalTOI(totalTOIInSeconds: number): string {
-  const minutes = Math.floor(totalTOIInSeconds / 60);
-  const seconds = totalTOIInSeconds % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
-    2,
-    "0"
-  )}`;
-}
-
 // Function to calculate ATOI
 function calculateATOI(totalTOI: number, GP: number): string {
   if (GP === 0) return "00:00";

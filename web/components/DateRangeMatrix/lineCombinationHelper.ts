@@ -26,8 +26,6 @@ export const calculateLinesAndPairs = (
     return player;
   };
 
-  console.log("Aggregated Data:", aggregatedData);
-
   const sortedRoster = aggregatedData
     .map(calculateComboPoints)
     .sort((a, b) => (b.comboPoints ?? 0) - (a.comboPoints ?? 0));
@@ -74,6 +72,7 @@ export const calculateLinesAndPairs = (
   const forwards = sortedRoster.filter((player) => player.playerType === "F");
   const defensemen = sortedRoster.filter((player) => player.playerType === "D");
 
+  // Assign all forwards to lines
   while (forwards.length > 0) {
     const linePlayers = assignGroups(forwards, 3, assignedPlayers);
     if (linePlayers.length === 3) {
@@ -88,6 +87,7 @@ export const calculateLinesAndPairs = (
     }
   }
 
+  // Assign all defensemen to pairs
   while (defensemen.length > 0) {
     const pairPlayers = assignGroups(defensemen, 2, assignedPlayers);
     if (pairPlayers.length === 2) {
@@ -102,14 +102,12 @@ export const calculateLinesAndPairs = (
     }
   }
 
-  // Apply limits for line-combination mode
+  // Apply limits only in "line-combination" mode
   if (mode === "line-combination") {
-    linesArray.splice(4); // Limit to 4 lines
-    pairsArray.splice(3); // Limit to 3 pairs
+    linesArray.splice(4); // Limit to 4 lines (12 forwards)
+    pairsArray.splice(3); // Limit to 3 pairs (6 defensemen)
   }
 
-  console.log("Calculated Lines:", linesArray);
-  console.log("Calculated Pairs:", pairsArray);
-
+  // Return the calculated lines and pairs
   return { lines: linesArray, pairs: pairsArray };
 };

@@ -3,6 +3,7 @@
 
 import React from "react";
 import { teamsInfo } from "lib/NHL/teamsInfo";
+import styles from "./drm.module.scss"; // Assuming your custom styles are in drm.module.scss
 
 type TeamAbbreviation = keyof typeof teamsInfo;
 
@@ -20,20 +21,23 @@ const TeamDropdown: React.FC<TeamDropdownProps> = ({ onSelect }) => {
     }));
 
   return (
-    <select
-      onChange={(e) => {
-        const selectedTeam = e.target.value as TeamAbbreviation;
-        console.log("Selected team:", selectedTeam);
-        onSelect(selectedTeam);
-      }}
-    >
-      <option value="">Select a team</option>
-      {teamOptions.map((team) => (
-        <option key={team.value} value={team.value}>
-          {team.label}
-        </option>
-      ))}
-    </select>
+    <div className={styles.customSelect}>
+      <select
+        onChange={(e) => {
+          const selectedTeam = e.target.value as TeamAbbreviation;
+          console.log("Selected team:", selectedTeam);
+          onSelect(selectedTeam);
+        }}
+        className={styles.select}
+      >
+        <option value="">Select a team</option>
+        {teamOptions.map((team) => (
+          <option key={team.value} value={team.value}>
+            {team.label}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 };
 
