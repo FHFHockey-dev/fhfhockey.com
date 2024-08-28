@@ -30,7 +30,8 @@ const ITEMS_DATA: NavbarItem[] = [
 
       // Hidden until finished
       // { type: "link", label: "SHOT MAP", href: "/shotMap" },
-      { type: "link", label: "GOALIES", href: "/goalies" },
+      // { type: "link", label: "GOALIES", href: "/goalies" },
+      { type: "link", label: "LINE COMBO MATRIX", href: "/drm" },
       // { type: "link", label: "GOALIES", href: "/goalieShareChart" },
       // { type: "link", label: "WGO CHARTS", href: "/wigoCharts" },
       // { type: "link", label: "SUSTAINABILITY", href: "/sustainabilityTool" },

@@ -1,0 +1,274 @@
+.gridContainer {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr) min-content repeat(2, 1fr);
+  grid-template-rows: min-content repeat(4, 1fr);
+  gap: 0.65rem;
+  height: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.sectionLabel {
+  text-align: center;
+  color: white;
+  grid-column: span 3;
+  margin: 0;
+  line-height: 1;
+  padding-bottom: 0.25rem;
+  font-family: "Roboto Condensed", sans-serif;
+}
+
+.defenseLabel {
+  grid-column: 5 / span 2;
+  margin: 0;
+  line-height: 1;
+  padding-bottom: 0.25rem;
+  font-family: "Roboto Condensed", sans-serif;
+}
+
+.goalieContainer {
+  grid-column: 5 / span 2;
+  display: grid;
+  grid-template-rows: min-content 1fr;
+  align-items: center;
+}
+
+.goalieLabel {
+  text-align: center;
+  color: white;
+  margin: 0;
+  line-height: 1;
+  padding-bottom: 0.5rem;
+  font-family: "Roboto Condensed", sans-serif;
+}
+
+.goalieCards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  width: 100%;
+  align-items: start;
+}
+
+.divider {
+  background-color: white;
+  width: 2px;
+  grid-column: 4 / 5;
+  grid-row: 2 / 6;
+}
+
+.goalies .goalieCard {
+  height: calc(100% - 0.5rem);
+  font-family: "Roboto Condensed", sans-serif;
+}
+
+.goalieCard {
+  background-color: var(--primary-color);
+  border: 2px solid var(--jersey-color);
+  border-radius: 2px;
+  color: white;
+  padding: 0.5rem;
+  text-align: left;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+}
+
+.goalieCardHeader {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.goalieCardName {
+  display: flex;
+  flex-direction: column; /* Changed from column to row */
+  align-items: flex-start;
+  font-family: "Roboto Condensed", sans-serif;
+}
+
+.firstNameGoalieCard {
+  font-weight: 600;
+  font-variant: small-caps;
+  font-size: 0.9rem;
+  letter-spacing: 1.15px;
+  color: var(--secondary-color);
+  margin-right: 0.2rem; /* Add some spacing between first and last names */
+}
+
+.lastNameGoalieCard {
+  font-weight: 900;
+  font-variant: small-caps;
+  font-size: 0.9rem;
+  letter-spacing: 1.15px;
+  color: var(--accent-color);
+}
+
+.goalieRecord {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.goalieRecord .line.left {
+  flex: 1;
+  height: 0.5px;
+  background-color: var(--accent-color);
+  margin-right: 0.2rem;
+}
+
+.goalieRecord .line.right {
+  flex: 1;
+  height: 0.5px;
+  background-color: var(--accent-color);
+  margin-left: 0.2rem;
+}
+
+.goalieRecord span {
+  font-size: 0.6rem;
+  font-weight: bold;
+  color: var(--accent-color);
+  letter-spacing: 1px;
+}
+
+.statsGridGoalies {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.goalieStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.goalieStatLabel {
+  font-size: 0.6rem;
+  font-weight: bold;
+  color: #ccc;
+  margin-bottom: 0.25rem;
+}
+
+.goalieStatValue {
+  font-size: 0.7rem;
+  color: var(--accent-color);
+  font-weight: bold;
+}
+
+.playerCard {
+  background-color: #202020;
+  height: 100%;
+  font-size: 1rem;
+  padding: 0.5rem;
+  text-align: left;
+  border: 2px solid #333;
+  border-radius: 2px;
+  color: white;
+  font-family: "Roboto Condensed", sans-serif;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.playerCardHeader {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.playerCardName {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.firstNamePlayerCard {
+  font-weight: 600;
+  font-variant: small-caps;
+  font-size: 0.75rem;
+  letter-spacing: 1.15px;
+  color: var(--secondary-color);
+}
+
+.lastNamePlayerCard {
+  font-weight: 900;
+  font-variant: small-caps;
+  font-size: 0.9rem;
+  letter-spacing: 1.15px;
+  color: var(--accent-color);
+}
+
+.lastTenGames {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lastTenGames .line.left {
+  flex: 1;
+  height: 0.5px;
+  background-color: var(--accent-color);
+  margin-right: 0.2rem;
+}
+
+.lastTenGames .line.right {
+  flex: 1;
+  height: 0.5px;
+  background-color: var(--accent-color);
+  margin-left: 0.2rem;
+}
+
+.lastTenGames span {
+  font-size: 0.55rem;
+  font-weight: bold;
+  color: var(--accent-color);
+  letter-spacing: 1px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.statLabel {
+  font-size: 0.6rem;
+  font-weight: bold;
+  color: #ccc;
+  margin-bottom: 0.25rem;
+}
+
+.statValue {
+  font-size: 0.9rem;
+  color: var(--accent-color);
+  font-weight: bold;
+}
+
+.displayPosition {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 12px;
+}

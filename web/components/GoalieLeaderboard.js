@@ -6,9 +6,9 @@ const GoalieLeaderboard = ({ goalieRankings, setView }) => {
     <div className={styles.tableContainer}>
       <button
         className={styles.weekLeaderboardButton}
-        onClick={() => setView("week")}
+        onClick={() => setView("table")}
       >
-        Select Week
+        View Table
       </button>
       <table className={styles.goalieTable}>
         <thead>

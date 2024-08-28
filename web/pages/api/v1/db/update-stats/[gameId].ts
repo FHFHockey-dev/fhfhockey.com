@@ -1,3 +1,5 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\api\v1\db\update-stats\[gameId].ts
+
 import { SupabaseClient } from "@supabase/supabase-js";
 import { parse } from "node-html-parser";
 import { get } from "lib/NHL/base";
