@@ -53,6 +53,7 @@ export async function getTOIDataForGames(
     const playerData: PlayerData = {
       id: playerId,
       teamId: row.team_id,
+      franchiseId: row.franchise_id,
       position: row.primary_position,
       name: `${row.player_first_name} ${row.player_last_name}`,
       playerAbbrevName: `${row.player_first_name.charAt(0)}. ${
@@ -85,6 +86,7 @@ export async function getTOIDataForGames(
         p2: {
           id: parseInt(key),
           teamId: row.team_id,
+          franchiseId: row.franchise_id,
           position: "",
           name: "",
           playerAbbrevName: "",
