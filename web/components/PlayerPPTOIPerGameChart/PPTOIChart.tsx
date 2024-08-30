@@ -1,3 +1,6 @@
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\PlayerPPTOIPerGameChart\PPTOIChart.tsx
+
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import supabase from "web/lib/supabase";
@@ -8,6 +11,7 @@ interface PlayerData {
   player_name: string;
   date: Date;
   pp_toi_pct_per_game: number;
+  position_code: string;
 }
 
 interface PPTOIChartProps {
@@ -19,6 +23,8 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
   const yAxisRef = useRef<SVGSVGElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [players, setPlayers] = useState<string[]>([]);
+  const [forwards, setForwards] = useState<string[]>([]);
+  const [defensemen, setDefensemen] = useState<string[]>([]);
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
 
   const width = 1000; // Hardcoded width
@@ -40,6 +46,12 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
     }
   }, [selectedPlayers]);
 
+  const sanitizeName = (name: string) => {
+    return name
+      .replace(/\u001a©/g, "é") // Replace corrupted character sequences with correct characters
+      .normalize("NFC"); // Normalize the string to ensure consistent encoding
+  };
+
   const fetchAllPlayerData = async (abbreviation: string) => {
     const allData: PlayerData[] = [];
     let from = 0;
@@ -49,8 +61,10 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
     do {
       ({ data, error } = await supabase
         .from("sko_pp_stats")
-        .select("player_id, player_name, date, pp_toi_pct_per_game")
-        .eq("current_team_abbreviation", abbreviation)
+        .select(
+          "player_id, player_name, date, pp_toi_pct_per_game, position_code"
+        )
+        .eq("team_abbrev", abbreviation)
         .range(from, from + pageSize - 1));
 
       if (error) {
@@ -59,13 +73,37 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
       }
 
       if (data) {
+        data.forEach((player) => {
+          player.player_name = sanitizeName(player.player_name);
+        });
+
         allData.push(...data);
         from += pageSize;
       }
     } while (data && data.length === pageSize);
 
     console.log("Fetched all data:", allData);
-    setPlayers([...new Set(allData.map((d) => d.player_name))]); // Extract unique player names
+
+    // Use a Set to keep track of unique player names
+    const uniqueForwards = new Set<string>();
+    const uniqueDefensemen = new Set<string>();
+
+    // Separate players by position and ensure uniqueness
+    allData.forEach((player) => {
+      if (["C", "L", "R"].includes(player.position_code)) {
+        uniqueForwards.add(player.player_name);
+      } else if (player.position_code === "D") {
+        uniqueDefensemen.add(player.player_name);
+      }
+    });
+
+    // Convert the sets to arrays and sort alphabetically
+    const forwardsList = Array.from(uniqueForwards).sort();
+    const defensemenList = Array.from(uniqueDefensemen).sort();
+
+    setForwards(forwardsList);
+    setDefensemen(defensemenList);
+
     drawChart(allData);
   };
 
@@ -194,11 +232,11 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
         const value = values[i - 1].pp_toi_pct_per_game;
         let color;
         if (value < 0.5) {
-          color = "#404040";
+          color = "#e207aa";
         } else if (value <= 0.75) {
-          color = "#0f4358";
-        } else {
           color = "#07aae2";
+        } else {
+          color = "#aae207";
         }
         lineSegment(values[i - 1], values[i], color, player);
       }
@@ -268,6 +306,34 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
     );
   };
 
+  const handleSelectAllForwards = () => {
+    setSelectedPlayers((prevSelectedPlayers) => {
+      const allForwardsSelected = forwards.every((fwd) =>
+        prevSelectedPlayers.includes(fwd)
+      );
+      return allForwardsSelected
+        ? prevSelectedPlayers.filter((p) => !forwards.includes(p))
+        : [
+            ...prevSelectedPlayers,
+            ...forwards.filter((fwd) => !prevSelectedPlayers.includes(fwd)),
+          ];
+    });
+  };
+
+  const handleSelectAllDefensemen = () => {
+    setSelectedPlayers((prevSelectedPlayers) => {
+      const allDefensemenSelected = defensemen.every((dman) =>
+        prevSelectedPlayers.includes(dman)
+      );
+      return allDefensemenSelected
+        ? prevSelectedPlayers.filter((p) => !defensemen.includes(p))
+        : [
+            ...prevSelectedPlayers,
+            ...defensemen.filter((dman) => !prevSelectedPlayers.includes(dman)),
+          ];
+    });
+  };
+
   const resetSelection = () => {
     setSelectedPlayers([]);
   };
@@ -275,8 +341,50 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
   return (
     <div className={styles.chartWrapper}>
       <div className={styles.playerSelectContainer}>
+        <button
+          className={styles.selectButton}
+          onClick={handleSelectAllForwards}
+        >
+          {forwards.every((fwd) => selectedPlayers.includes(fwd))
+            ? "Deselect All Forwards"
+            : "Select All Forwards"}
+        </button>
+        <button
+          className={styles.selectButton}
+          onClick={handleSelectAllDefensemen}
+        >
+          {defensemen.every((dman) => selectedPlayers.includes(dman))
+            ? "Deselect All Defensemen"
+            : "Select All Defensemen"}
+        </button>
         <div className={styles.scrollableMenu}>
-          {players.map((player) => (
+          <h3>Forwards</h3>
+          {forwards.map((player) => (
+            <label key={player}>
+              <input
+                type="checkbox"
+                checked={selectedPlayers.includes(player)}
+                onChange={() => handlePlayerSelection(player)}
+                onMouseOver={() => {
+                  d3.selectAll(".line-segment").style("opacity", 0.2);
+                  d3.selectAll(".player-dot").style("opacity", 0.2);
+                  d3.selectAll(
+                    `.line-segment.${player.replace(/\s+/g, "-")}`
+                  ).style("opacity", 1);
+                  d3.selectAll(
+                    `.player-dot.${player.replace(/\s+/g, "-")}`
+                  ).style("opacity", 1);
+                }}
+                onMouseOut={() => {
+                  d3.selectAll(".line-segment").style("opacity", 1);
+                  d3.selectAll(".player-dot").style("opacity", 1);
+                }}
+              />
+              {player}
+            </label>
+          ))}
+          <h3>Defensemen</h3>
+          {defensemen.map((player) => (
             <label key={player}>
               <input
                 type="checkbox"

@@ -178,28 +178,7 @@ const TeamDetail = () => {
         {teamsInfo[teamAbbreviation]?.name}{" "}
         <span className={styles.spanColorBlue}>Stats</span>
       </h1>
-      <div
-        className={styles.teamCard}
-        style={
-          {
-            "--primary-color": teamsInfo[teamAbbreviation]?.primaryColor,
-            "--secondary-color": teamsInfo[teamAbbreviation]?.secondaryColor,
-            "--jersey": teamsInfo[teamAbbreviation]?.jersey,
-            "--accent-color": teamsInfo[teamAbbreviation]?.accent,
-            "--alt-color": teamsInfo[teamAbbreviation]?.alt,
-          } as React.CSSProperties
-        }
-      >
-        <img
-          src={`/teamLogos/${teamsInfo[teamAbbreviation]?.name.replace(
-            /\s+/g,
-            " "
-          )}.png`}
-          alt={teamsInfo[teamAbbreviation]?.name}
-          className={styles.teamLogo}
-        />
-        <div className={styles.teamAbbrev}>{teamAbbreviation}</div>
-      </div>
+
       <div className={styles.statsContainer}>
         <div className={`${styles.statsTableContainer} scrollbar`}>
           {Object.keys(aggregatedStats).length > 0 ? (

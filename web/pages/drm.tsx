@@ -163,7 +163,7 @@ export default function DRMPage() {
       }
     }
     fetchGames();
-  }, [selectedTeam, seasonId, startDate, endDate, timeFrame]);
+  }, [selectedTeam, seasonId, startDate, endDate, timeFrame, seasonType]);
 
   const aggregatedData = useMemo(() => {
     return seasonType === "regularSeason" ? regularSeasonData : playoffData;

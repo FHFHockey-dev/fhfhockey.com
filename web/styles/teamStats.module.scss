@@ -233,6 +233,74 @@
   margin-right: 20px;
 }
 
+.scrollableMenu label {
+  display: block;
+  margin-bottom: 5px;
+  color: white;
+}
+
+.scrollableMenu input {
+  margin-right: 10px;
+}
+
+/* Reset Button Styling */
+.resetButton {
+  background-color: #07aae2;
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  margin-top: 10px;
+  margin-left: 10px;
+  display: block;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: background-color 0.3s ease;
+}
+
+.resetButton:hover {
+  background-color: #056990;
+}
+
+/* Tooltip Styling */
+.tooltip {
+  position: absolute;
+  text-align: center;
+  width: auto;
+  height: auto;
+  padding: 5px;
+  font: 12px sans-serif;
+  background: rgb(48, 76, 112);
+  border: 0px;
+  border-radius: 8px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.selectButton {
+  margin-left: 10px;
+  background-color: #07aae2; /* Primary blue color */
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 15px;
+  cursor: pointer;
+  margin-bottom: 10px; /* Space between buttons */
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: background-color 0.3s ease;
+}
+
+.selectButton:hover {
+  background-color: #0f4358; /* Darker blue on hover */
+}
+
 .scrollableMenu {
   max-height: 400px; /* Adjust this value to your preference */
   width: 190px;
@@ -255,22 +323,6 @@
 
 .scrollableMenu input {
   margin-right: 10px;
-}
-
-/* Reset Button Styling */
-.resetButton {
-  background-color: #07aae2;
-  color: #ffffff;
-  border: none;
-  border-radius: 5px;
-  padding: 10px 20px;
-  cursor: pointer;
-  margin-top: 10px;
-  display: block;
-}
-
-.resetButton:hover {
-  background-color: #0f4358;
 }
 
 /* Tooltip Styling */

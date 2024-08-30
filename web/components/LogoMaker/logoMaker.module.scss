@@ -1,0 +1,103 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\LogoMaker\logoMaker.module.scss
+
+.header {
+  font-family: century gothic, sans-serif;
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary-color);
+  margin-bottom: 20px;
+}
+
+.logoMakerContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+}
+
+.teamSelect {
+  margin-bottom: 20px;
+}
+
+.logoWrapper {
+  position: relative;
+  width: 300px;
+  height: 300px;
+  margin: 0 auto; // Center the logo on the page
+}
+
+.outerCircle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)),
+    var(--primary-color);
+  border: 10px solid var(--jersey-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.innerCircle {
+  width: 80%;
+  height: 80%;
+  border-radius: 50%;
+  background: linear-gradient(
+    180deg,
+    var(--primary-color) 45%,
+    var(--jersey-color) 45%,
+    var(--jersey-color) 55%,
+    var(--secondary-color) 55%
+  );
+  border: 5px solid var(--jersey-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.teamLogo {
+  width: 70%;
+  height: 70%;
+  filter: drop-shadow(0 0 5px var(--accent-color));
+}
+
+.curvedTextSvg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.pokeballBar {
+  fill: var(--jersey-color);
+}
+
+.curvedTextUpper,
+.curvedTextLower {
+  font-family: century gothic, sans-serif;
+  text-transform: uppercase;
+  font-weight: 900;
+  fill: var(--jersey-color);
+  font-size: 20px;
+  letter-spacing: 10px;
+  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.6); /* Shadow effect */
+}
+
+.curvedTextUpper {
+  transform: translateY(-5px); // Adjust the positioning of the upper text
+}
+
+.curvedTextLower {
+  transform: translateY(3px); // Adjust the positioning of the lower text
+}
+
+.curvedTextUpper textPath,
+.curvedTextLower textPath {
+  text-anchor: middle;
+}
