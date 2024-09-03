@@ -1,3 +1,6 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\PlayerPPTOIPerGameChart\PPTOIChart.tsx
+
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import supabase from "web/lib/supabase";
@@ -25,8 +28,8 @@ interface PPTOIChartProps {
 
 const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
   const chartRef = useRef<SVGSVGElement>(null);
-  const yAxisRef = useRef<SVGSVGElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
+  const [viewMode, setViewMode] = useState<"month" | "season">("month");
   const [players, setPlayers] = useState<string[]>([]);
   const [forwards, setForwards] = useState<string[]>([]);
   const [defensemen, setDefensemen] = useState<string[]>([]);
@@ -52,12 +55,16 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
     if (monthData.length > 0) {
       updateChartForCurrentMonth(allData); // Update the chart whenever the month changes
     }
-  }, [currentMonthIndex, selectedPlayers, monthData]);
+  }, [currentMonthIndex, selectedPlayers, monthData, viewMode]);
 
   const sanitizeName = (name: string) => {
     return name
       .replace(/\u001a©/g, "é") // Replace corrupted character sequences with correct characters
       .normalize("NFC"); // Normalize the string to ensure consistent encoding
+  };
+
+  const sanitizeForCss = (name: string) => {
+    return name.replace(/[^a-zA-Z0-9\-_]/g, "-"); // Replace all non-alphanumeric characters with a hyphen
   };
 
   const fetchAllPlayerData = async (abbreviation: string) => {
@@ -88,12 +95,18 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
 
     console.log("Fetched raw data:", fetchedRawData);
 
-    // Convert to PlayerData
-    const sanitizedData: PlayerData[] = fetchedRawData.map((player) => ({
-      ...player,
-      player_name: sanitizeName(player.player_name),
-      date: new Date(player.date), // Convert date string to Date object
-    }));
+    // Convert to player data with adjusted date parsing
+    const sanitizedData: PlayerData[] = fetchedRawData.map((player) => {
+      const dateParts = player.date.split("-");
+      const year = parseInt(dateParts[0], 10);
+      const month = parseInt(dateParts[1], 10) - 1; // Convert 1-indexed month to 0-indexed
+      const day = parseInt(dateParts[2], 10);
+      return {
+        ...player,
+        player_name: sanitizeName(player.player_name),
+        date: new Date(year, month, day), // Use the adjusted month here
+      };
+    });
 
     console.log("Sanitized data:", sanitizedData);
 
@@ -121,48 +134,84 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
     const uniqueMonths = Array.from(
       new Set(
         sanitizedData.map(
-          (d) => `${d.date.getFullYear()}-${d.date.getMonth() + 1}`
+          (d) =>
+            `${d.date.getFullYear()}-${String(d.date.getMonth() + 1).padStart(
+              2,
+              "0"
+            )}`
         )
       )
     ).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
 
-    setMonthData(uniqueMonths.map((dateStr) => new Date(dateStr)));
+    const monthDates = uniqueMonths.map((dateStr) => {
+      const [year, month] = dateStr.split("-").map(Number);
+      return new Date(year, month - 1, 1); // Correct the month back to 0-indexed
+    });
 
-    setCurrentMonthIndex(0);
+    setMonthData(monthDates);
 
-    updateChartForCurrentMonth(sanitizedData);
+    // Ensure setCurrentMonthIndex is called after setMonthData
+    const defaultMonthIndex = monthDates.findIndex(
+      (month) => month.getMonth() === 9 // Set October as default if it exists
+    );
+    setCurrentMonthIndex(defaultMonthIndex !== -1 ? defaultMonthIndex : 0);
+
+    // Defer the chart update until after the state has been updated
+    setTimeout(() => {
+      updateChartForCurrentMonth(sanitizedData);
+    }, 0); // Delay to ensure states are set
+
+    console.log("Unique Months: ", uniqueMonths);
+    console.log("Month Dates: ", monthDates); // Check if December is included here
+    console.log(
+      "Sanitized data dates:",
+      sanitizedData.map((d) => d.date)
+    ); // This should show you the correctly adjusted months
   };
 
   const updateChartForCurrentMonth = (data: PlayerData[]) => {
-    if (monthData.length === 0) return; // Guard against empty monthData
+    if (monthData.length === 0 || currentMonthIndex < 0) return; // Guard against empty monthData or invalid index
+
     const currentMonth = monthData[currentMonthIndex];
+    if (!currentMonth) return; // Ensure currentMonth is defined
+
     console.log("Current Month Index:", currentMonthIndex);
     console.log("Current Month:", currentMonth);
 
-    const filteredData = data.filter(
-      (d) =>
-        d.date.getFullYear() === currentMonth.getFullYear() &&
-        d.date.getMonth() === currentMonth.getMonth()
-    );
+    if (viewMode === "month") {
+      const filteredData = data.filter(
+        (d) =>
+          d.date.getFullYear() === currentMonth.getFullYear() &&
+          d.date.getMonth() === currentMonth.getMonth()
+      );
 
-    console.log("Filtered Data for Current Month:", filteredData);
+      console.log("Filtered Data for Current Month:", filteredData);
 
-    drawChart(filteredData);
+      drawChart(filteredData);
+    } else {
+      // Group by month
+      const filteredData = data.filter((d) =>
+        monthData.some(
+          (m) =>
+            d.date.getFullYear() === m.getFullYear() &&
+            d.date.getMonth() === m.getMonth()
+        )
+      );
+
+      console.log("Filtered Data for Full Season:", filteredData);
+
+      drawChart(filteredData, true);
+    }
   };
 
-  const drawChart = (data: PlayerData[]) => {
+  const drawChart = (data: PlayerData[], groupByMonth = false) => {
     console.log("Drawing chart with data:", data);
 
-    // Select the SVG elements for the chart and y-axis, and the tooltip div
     const svg = d3.select(chartRef.current);
-    const yAxisSvg = d3.select(yAxisRef.current);
     const tooltip = d3.select(tooltipRef.current);
 
-    // Clear any previous content from the chart and y-axis SVGs
     svg.selectAll("*").remove();
-    yAxisSvg.selectAll("*").remove();
 
-    // Filter out invalid data points and any players not selected (if applicable)
     const validData = data.filter(
       (d) =>
         !isNaN(d.pp_toi_pct_per_game) &&
@@ -172,23 +221,104 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
           selectedPlayers.includes(d.player_name))
     );
 
-    // Group the valid data by player name and sort each player's data by date
     const playerDataMap = d3.group(validData, (d) => d.player_name);
     playerDataMap.forEach((values) => {
       values.sort((a, b) => a.date.getTime() - b.date.getTime());
     });
 
-    // Set up the x (time) and y (percentage) scales
-    const x = d3
-      .scaleTime()
-      .domain(d3.extent(validData, (d) => d.date) as [Date, Date])
-      .range([0, width]);
+    let x;
+    const uniqueMonths = Array.from(
+      new Set(
+        data.map((d) => new Date(d.date.getFullYear(), d.date.getMonth(), 1))
+      )
+    );
+    const uniqueDates = Array.from(new Set(validData.map((d) => d.date)));
+
+    if (groupByMonth) {
+      x = d3
+        .scaleTime()
+        .domain(d3.extent(uniqueMonths) as [Date, Date])
+        .range([0, width - marginRight - marginLeft]);
+
+      svg
+        .append("g")
+        .attr("transform", `translate(${marginLeft},${height - marginBottom})`)
+        .call(
+          d3
+            .axisBottom(x)
+            .tickValues(uniqueMonths)
+            .tickFormat((domainValue: Date | d3.NumberValue) => {
+              if (domainValue instanceof Date) {
+                return d3.timeFormat("%B")(domainValue);
+              } else {
+                return d3.timeFormat("%B")(new Date(domainValue.valueOf()));
+              }
+            })
+        )
+        .call((g) => g.selectAll(".tick line").attr("stroke", "#202020"))
+        .call((g) => g.selectAll(".domain").attr("stroke", "white"))
+        .call((g) => g.selectAll(".tick text").attr("fill", "white"));
+
+      // Draw vertical grid lines for each unique month after the axis is drawn
+      svg
+        .append("g")
+        .attr("class", "grid")
+        .attr("transform", `translate(0, ${marginTop})`)
+        .call(
+          d3
+            .axisBottom(x)
+            .tickValues(uniqueMonths)
+            .tickSize(height - marginTop - marginBottom)
+            .tickFormat(() => "")
+        )
+        .call((g) => g.selectAll(".tick line").attr("stroke", "#202020"))
+        .call((g) => g.selectAll(".domain").attr("stroke", "none"));
+    } else {
+      x = d3
+        .scaleTime()
+        .domain(d3.extent(uniqueDates) as [Date, Date])
+        .range([marginLeft, width - marginRight - marginLeft]);
+
+      svg
+        .append("g")
+        .attr("transform", `translate(0,${height - marginBottom})`)
+        .call(
+          d3
+            .axisBottom(x)
+            .tickValues(uniqueDates)
+            .tickFormat((domainValue: Date | d3.NumberValue) => {
+              if (domainValue instanceof Date) {
+                return d3.timeFormat("%d")(domainValue);
+              } else {
+                return d3.timeFormat("%d")(new Date(domainValue.valueOf()));
+              }
+            })
+        )
+        .call((g) => g.selectAll(".tick line").attr("stroke", "#FFFFFF"))
+        .call((g) => g.selectAll(".domain").attr("stroke", "white"))
+        .call((g) => g.selectAll(".tick text").attr("fill", "white"));
+
+      // Draw vertical grid lines for each unique date after the axis is drawn
+      svg
+        .append("g")
+        .attr("class", "grid")
+        .attr("transform", `translate(0,${marginTop})`) // Ensure the grid starts at the top of the chart
+        .call(
+          d3
+            .axisBottom(x)
+            .tickValues(groupByMonth ? uniqueMonths : uniqueDates) // Set the ticks to the unique dates or months
+            .tickSize(height - marginTop - marginBottom) // Extend grid lines vertically across the chart
+            .tickFormat(() => "") // Hide tick labels for grid
+        )
+        .call((g) => g.selectAll(".tick line").attr("stroke", "#202020")) // Set a visible stroke color for the grid lines
+        .call((g) => g.selectAll(".domain").remove()); // Remove the X-axis domain line, so only grid lines are drawn
+    }
 
     const y = d3
       .scaleLinear()
-      .domain([0, 1]) // y-axis always goes from 0 to 100% (1.0)
+      .domain([0, 1])
       .nice()
-      .range([height + marginBottom, marginTop]);
+      .range([height - marginBottom, marginTop]);
 
     // Function to draw line segments for each player's data
     const lineSegment = (
@@ -197,9 +327,11 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
       color: string,
       player: string
     ) => {
+      const sanitizedPlayer = sanitizeForCss(player);
+
       svg
         .append("line")
-        .attr("class", `line-segment ${player.replace(/\s+/g, "-")}`) // Assign a class based on player name for styling and interactivity
+        .attr("class", `line-segment ${sanitizedPlayer}`)
         .attr("x1", x(d1.date))
         .attr("y1", y(d1.pp_toi_pct_per_game))
         .attr("x2", x(d2.date))
@@ -208,40 +340,27 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
         .attr("stroke-width", 1.5)
         .attr("stroke-linejoin", "round")
         .attr("stroke-linecap", "round")
-        .on("mouseover", function (event) {
-          // Display tooltip on hover
-          tooltip
-            .html(
-              `Player: ${d1.player_name}<br/>PP TOI %: ${(
-                d1.pp_toi_pct_per_game * 100
-              ).toFixed(2)}%`
-            )
-            .style("left", `${event.pageX + 5}px`)
-            .style("top", `${event.pageY - 28}px`)
-            .style("opacity", 1);
-
-          // Dim all other elements and keep the hovered player's elements fully visible
-          svg.selectAll(".line-segment").style("opacity", 0.05); // Dim all other lines
-          svg.selectAll(".player-dot").style("opacity", 0.05); // Dim all other dots
-          svg.selectAll(".player-label").style("opacity", 0.05); // Dim all other labels
-          svg
-            .selectAll(`.line-segment.${player.replace(/\s+/g, "-")}`)
-            .style("opacity", 1); // Keep hovered player's line fully visible
-          svg
-            .selectAll(`.player-dot.${player.replace(/\s+/g, "-")}`)
-            .style("opacity", 1); // Keep hovered player's dots fully visible
-          svg
-            .selectAll(`.player-label.${player.replace(/\s+/g, "-")}`)
-            .style("opacity", 1); // Keep hovered player's label fully visible
-        })
-        .on("mouseout", function () {
-          // Reset the styles when the mouse moves away
-          tooltip.style("opacity", 0);
-          svg.selectAll(".line-segment").style("opacity", 1);
-          svg.selectAll(".player-dot").style("opacity", 1);
-          svg.selectAll(".player-label").style("opacity", 1); // Reset label opacity
-        });
+        .on("mouseover", () => onHover(player))
+        .on("mouseout", onLeave);
     };
+
+    svg
+      .append("g")
+      .selectAll("circle")
+      .data(validData)
+      .enter()
+      .append("circle")
+      .attr("class", (d) => `player-dot ${sanitizeForCss(d.player_name)}`)
+      .attr("cx", (d) => x(d.date))
+      .attr("cy", (d) => y(d.pp_toi_pct_per_game))
+      .attr("r", 3)
+      .attr("fill", (d) => {
+        if (d.pp_toi_pct_per_game < 0.5) return "#e207aa";
+        if (d.pp_toi_pct_per_game <= 0.75) return "#07aae2";
+        return "#aae207";
+      })
+      .on("mouseover", (d) => onHover(d.player_name))
+      .on("mouseout", onLeave);
 
     // Set up the SVG element's viewBox and dimensions
     svg
@@ -254,66 +373,34 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
       .attr("width", "100%")
       .attr("height", "100%");
 
-    // Draw the grid lines for the y-axis (vertical grid)
+    // Draw the y-axis directly on the chart SVG
     svg
       .append("g")
-      .attr("class", "grid")
-      .attr("transform", `translate(${marginLeft}, )`)
-      .call(
-        d3
-          .axisLeft(y)
-          .ticks(10)
-          .tickSize(-width)
-          .tickFormat(() => "") // No tick labels, just grid lines
-      )
-      .call((g) => g.selectAll(".tick line").attr("stroke", "#202020")) // Grid line color
-      .call((g) => g.selectAll(".domain").attr("stroke", "none")); // Remove the axis line
-
-    // Draw the x-axis (date axis)
-    svg
-      .append("g")
-      .attr(
-        "transform",
-        `translate(0,${height + marginBottom + marginTop - 10})`
-      )
-      .call(
-        d3
-          .axisBottom(x)
-          .ticks(width / 80)
-          .tickSize(-height - marginTop)
-          .tickSizeOuter(0)
-          .tickFormat((domainValue: Date | d3.NumberValue) => {
-            // Format the tick labels to show the day of the month
-            if (domainValue instanceof Date) {
-              return d3.timeFormat("%d")(domainValue);
-            } else {
-              return d3.timeFormat("%d")(new Date(domainValue.valueOf()));
-            }
-          })
-      )
-      .call((g) => g.selectAll(".tick line").attr("stroke", "#202020")) // Tick line color
-      .call((g) => g.selectAll(".domain").attr("stroke", "white")) // Axis line color
-      .call((g) => g.selectAll(".tick text").attr("fill", "white")); // Tick label color
-
-    // Draw the y-axis (percentage axis)
-    yAxisSvg
-      .attr("viewBox", `0 0 ${marginLeft} ${height + marginBottom + marginTop}`)
-      .attr("width", marginLeft)
-      .attr("height", height - marginBottom - marginTop - 7.5);
-
-    // Draw the y-axis (percentage axis)
-    yAxisSvg
-      .append("g")
-      .attr("transform", `translate(${marginLeft - 1},0)`)
-      .call(d3.axisLeft(y).tickFormat(d3.format(".0%"))) // Format the tick labels as percentages
+      .attr("transform", `translate(${marginLeft},0)`)
+      .call(d3.axisLeft(y).tickFormat(d3.format(".0%")))
       .call((g) =>
         g
           .selectAll(".tick line")
           .attr("stroke", "#202020")
-          .attr("x2", width + marginLeft + marginRight)
+          .attr("x2", width - marginLeft - marginRight)
       )
       .call((g) => g.selectAll(".domain").attr("stroke", "white")) // Axis line color
       .call((g) => g.selectAll(".tick text").attr("fill", "white")); // Tick label color
+
+    // Draw the grid lines for the y-axis (horizontal grid)
+    svg
+      .append("g")
+      .attr("class", "grid")
+      .attr("transform", `translate(${marginLeft},0)`)
+      .call(
+        d3
+          .axisLeft(y)
+          .ticks(15)
+          .tickSize(-width + marginLeft + marginRight)
+          .tickFormat(() => "") // No tick labels, just grid lines
+      )
+      .call((g) => g.selectAll(".tick line").attr("stroke", "#202020")) // Grid line color
+      .call((g) => g.selectAll(".domain").attr("stroke", "none")); // Remove the axis line
 
     // Iterate over each player's data to draw the lines and labels
     playerDataMap.forEach((values, player) => {
@@ -336,33 +423,16 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
       svg
         .append("text")
         .attr("class", `player-label ${player.replace(/\s+/g, "-")}`)
-        .attr("x", x(lastValue.date) + 5) // Position the label slightly to the right of the last point
+        .attr("x", x(lastValue.date) + 5)
         .attr("y", y(lastValue.pp_toi_pct_per_game))
         .attr("fill", "white")
         .style("font-size", "12px")
         .text(lastValue.player_name)
         .on("mouseover", function () {
-          // Highlight the corresponding line and player label on hover
-          svg.selectAll(".line-segment").style("opacity", 0.1); // Dim all other lines
-          svg.selectAll(".player-dot").style("opacity", 0.1); // Dim all other dots
-          svg.selectAll(".player-label").style("opacity", 0.1); // Dim all other labels
-          svg
-            .selectAll(`.line-segment.${player.replace(/\s+/g, "-")}`)
-            .style("opacity", 1); // Highlight the hovered player's line
-          svg
-            .selectAll(`.player-dot.${player.replace(/\s+/g, "-")}`)
-            .style("opacity", 1); // Highlight the hovered player's dots
-          d3.select(this).style("font-weight", "bold").style("fill", "#aae207"); // Highlight the text
-          svg
-            .selectAll(`.player-label.${player.replace(/\s+/g, "-")}`)
-            .style("opacity", 1); // Keep hovered player's label fully visible
+          onHover(player); // Apply hover effect
         })
         .on("mouseout", function () {
-          // Reset the styles when the mouse moves away
-          svg.selectAll(".line-segment").style("opacity", 1);
-          svg.selectAll(".player-dot").style("opacity", 1);
-          svg.selectAll(".player-label").style("opacity", 1); // Reset label opacity
-          d3.select(this).style("font-weight", "normal").style("fill", "white"); // Reset text highlight
+          onLeave(); // Reset the styles when the mouse moves away
         });
     });
 
@@ -376,50 +446,22 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
       .attr("class", (d) => `player-dot ${d.player_name.replace(/\s+/g, "-")}`)
       .attr("cx", (d) => x(d.date))
       .attr("cy", (d) => y(d.pp_toi_pct_per_game))
-      .attr("r", 3) // Radius of the data points
+      .attr("r", 3)
       .attr("fill", (d) => {
-        // Color based on the PP TOI percentage
         if (d.pp_toi_pct_per_game < 0.5) return "#e207aa";
         if (d.pp_toi_pct_per_game <= 0.75) return "#07aae2";
         return "#aae207";
       })
       .on("mouseover", function (event, d) {
-        // Display tooltip on hover
-        tooltip
-          .html(
-            `Player: ${d.player_name}<br/>PP TOI %: ${(
-              d.pp_toi_pct_per_game * 100
-            ).toFixed(2)}%`
-          )
-          .style("left", `${event.pageX + 5}px`)
-          .style("top", `${event.pageY - 28}px`)
-          .style("opacity", 1);
-
-        // Highlight the line and corresponding player label on hover
-        svg.selectAll(".line-segment").style("opacity", 0.2); // Dim all other lines
-        svg.selectAll(".player-dot").style("opacity", 0.2); // Dim all other dots
-        svg.selectAll(".player-label").style("opacity", 0.2); // Dim all other labels
-        svg
-          .selectAll(`.line-segment.${d.player_name.replace(/\s+/g, "-")}`)
-          .style("opacity", 1); // Highlight the hovered player's line
-        svg
-          .selectAll(`.player-dot.${d.player_name.replace(/\s+/g, "-")}`)
-          .style("opacity", 1); // Highlight the hovered player's dots
-        svg
-          .selectAll(`.player-label.${d.player_name.replace(/\s+/g, "-")}`)
-          .style("opacity", 1); // Highlight the hovered player's label
+        onHover(d.player_name); // Apply hover effect
       })
-      .on("mouseout", function () {
-        // Reset the styles when the mouse moves away
-        tooltip.style("opacity", 0);
-        svg.selectAll(".line-segment").style("opacity", 1);
-        svg.selectAll(".player-dot").style("opacity", 1);
-        svg.selectAll(".player-label").style("opacity", 1); // Reset label opacity
-      });
+      .on("mouseout", onLeave); // Reset the styles when mouse out
 
     // Add Month/Year Label
     d3.select(`#${styles.monthYearLabel}`).text(
-      d3.timeFormat("%B %Y")(monthData[currentMonthIndex])
+      viewMode === "month"
+        ? d3.timeFormat("%B %Y")(monthData[currentMonthIndex])
+        : "Full Season"
     );
 
     // Add Legend
@@ -436,7 +478,8 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
       .attr("class", "legend-item")
       .style("display", "flex")
       .style("align-items", "center")
-      .style("margin-right", "20px");
+      .style("margin-left", "10px")
+      .style("margin-right", "10px");
 
     legend
       .append("div")
@@ -457,6 +500,24 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
         ? prevSelectedPlayers.filter((p) => p !== player)
         : [...prevSelectedPlayers, player]
     );
+  };
+
+  const onHover = (player: string) => {
+    const sanitizedPlayer = sanitizeForCss(player);
+
+    d3.selectAll(".line-segment").style("opacity", 0.04);
+    d3.selectAll(".player-dot").style("opacity", 0.04);
+    d3.selectAll(".player-label").style("opacity", 0.04);
+
+    d3.selectAll(`.line-segment.${sanitizedPlayer}`).style("opacity", 1);
+    d3.selectAll(`.player-dot.${sanitizedPlayer}`).style("opacity", 1);
+    d3.selectAll(`.player-label.${sanitizedPlayer}`).style("opacity", 1);
+  };
+
+  const onLeave = () => {
+    d3.selectAll(".line-segment").style("opacity", 1);
+    d3.selectAll(".player-dot").style("opacity", 1);
+    d3.selectAll(".player-label").style("opacity", 1);
   };
 
   const handleSelectAllForwards = () => {
@@ -505,10 +566,18 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
     }
   };
 
+  const handleViewModeToggle = () => {
+    setViewMode((prevMode) => (prevMode === "month" ? "season" : "month"));
+  };
+
   return (
     <div className={styles.chartWrapper}>
       {/* Player Selection Container */}
       <div className={styles.playerSelectContainer}>
+        {/* Toggle Button for View Mode */}
+        <button className={styles.toggleButton} onClick={handleViewModeToggle}>
+          {viewMode === "month" ? "Season View" : "Month View"}
+        </button>
         <button
           className={styles.selectButton}
           onClick={handleSelectAllForwards}
@@ -589,36 +658,34 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
           <button
             className={styles.paginationButton}
             onClick={handlePreviousMonth}
-            disabled={currentMonthIndex === 0}
+            disabled={viewMode === "season" || currentMonthIndex === 0}
           >
             Previous
           </button>
-          <div className={styles.paginationSpacer}></div>
+          <div className={styles.paginationSpacer}>
+            {/* Legend and Month/Year Label Container */}
+            <div className={styles.legendAndLabel}>
+              <span id={styles.monthYearLabel}></span>
+
+              <div id={styles.legendContainer}></div>
+            </div>
+          </div>
           <button
             className={styles.paginationButton}
             onClick={handleNextMonth}
-            disabled={currentMonthIndex >= monthData.length - 1}
+            disabled={
+              viewMode === "season" || currentMonthIndex >= monthData.length - 1
+            }
           >
             Next
           </button>
         </div>
 
         <div className={styles.chartAndYAxis}>
-          {/* Y-Axis Container */}
-          <div className={styles.yAxisContainer}>
-            <svg ref={yAxisRef} className={styles.yAxisSvg} />
-          </div>
-
           {/* Chart Container */}
           <div className={styles.chartContainer}>
             <svg ref={chartRef} className={styles.chartSvg} />
           </div>
-        </div>
-
-        {/* Legend and Month/Year Label Container */}
-        <div className={styles.legendAndLabel}>
-          <span id={styles.monthYearLabel}></span>
-          <div id={styles.legendContainer}></div>
         </div>
       </div>
 
