@@ -226,7 +226,7 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
       values.sort((a, b) => a.date.getTime() - b.date.getTime());
     });
 
-    let x;
+    let x: d3.ScaleTime<number, number>;
     const uniqueMonths = Array.from(
       new Set(
         data.map((d) => new Date(d.date.getFullYear(), d.date.getMonth(), 1))
