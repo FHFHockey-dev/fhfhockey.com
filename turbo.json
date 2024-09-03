@@ -12,17 +12,17 @@
         "^build"
       ],
       "env": [
-        "$CMS_URL",
-        "$NEXT_PUBLIC_SITE_URL",
-        "$NEXT_PUBLIC_SANITY_PROJECT_ID",
-        "$NEXT_PUBLIC_SANITY_DATASET",
-        "$NEXT_PUBLIC_SANITY_GRAPHQL_URI",
-        "$NEXT_PUBLIC_PROXY_SERVER_URL",
-        "$NEXT_PUBLIC_SERVERLESS_API_URL",
-        "$NEXT_PUBLIC_SUPABASE_URL",
-        "$NEXT_PUBLIC_SUPABASE_PUBLIC_KEY",
-        "$NEXT_SUPABASE_SERVICE_ROLE_KEY",
-        "$SANITY_API_TOKEN"
+        "CMS_URL",
+        "NEXT_PUBLIC_SITE_URL",
+        "NEXT_PUBLIC_SANITY_PROJECT_ID",
+        "NEXT_PUBLIC_SANITY_DATASET",
+        "NEXT_PUBLIC_SANITY_GRAPHQL_URI",
+        "NEXT_PUBLIC_PROXY_SERVER_URL",
+        "NEXT_PUBLIC_SERVERLESS_API_URL",
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_PUBLIC_KEY",
+        "NEXT_SUPABASE_SERVICE_ROLE_KEY",
+        "SANITY_API_TOKEN"
       ],
       "outputs": [".next/**"]
     },
@@ -31,8 +31,8 @@
         "^build"
       ],
       "env": [
-        "$SANITY_STUDIO_API_PROJECT_ID",
-        "$SANITY_STUDIO_API_DATASET"
+        "SANITY_STUDIO_API_PROJECT_ID",
+        "SANITY_STUDIO_API_DATASET"
       ],
       "outputs": ["dist/**"]
     },
