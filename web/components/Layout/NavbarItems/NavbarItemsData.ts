@@ -26,7 +26,7 @@ const ITEMS_DATA: NavbarItem[] = [
       { type: "link", label: "STATS", href: "/stats" },
       { type: "link", label: "PLAYER CARDS", href: "/charts" },
       { type: "link", label: "SHIFT CHART", href: "/shiftChart" },
-      //{ type: "link", label: "TEAM STATS", href: "/teamStats" },
+      { type: "link", label: "TEAM STATS", href: "/teamStats" },
 
       // Hidden until finished
       // { type: "link", label: "SHOT MAP", href: "/shotMap" },

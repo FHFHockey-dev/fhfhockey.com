@@ -1,3 +1,6 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\PlayerPPTOIPerGameChart\PlayerPPTOIPerGameChart.tsx
+
 import React, { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
 import { useRouter } from "next/router";
@@ -68,7 +71,7 @@ const PlayerPPTOIPerGameChart: React.FC = () => {
       const { data, error } = await supabase
         .from("sko_pp_stats")
         .select("player_id, player_name, date, pp_toi_pct_per_game")
-        .eq("current_team_abbreviation", abbreviation)
+        .eq("team_abbrev", abbreviation)
         .range(from, from + step - 1);
 
       if (error) {

@@ -1,5 +1,6 @@
 {
   "private": true,
+  "name": "fhfhockey.com",
   "workspaces": [
     "web",
     "cms",

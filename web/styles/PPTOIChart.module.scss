@@ -1,0 +1,248 @@
+.chartWrapper {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  width: 90%;
+  margin: 0 auto;
+  border: 2px solid #e0e0e0;
+  padding: 20px;
+  border-radius: 25px;
+  background-color: #101010;
+  margin-top: 20px;
+}
+
+.playerSelectContainer {
+  display: flex;
+  flex-direction: column;
+  margin-right: 20px;
+}
+
+.contentArea {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.paginationContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 10px;
+  padding-right: 3%;
+}
+
+.paginationButton {
+  background-color: #07aae2;
+  color: #ffffff;
+  border: none;
+  border-radius: 7.5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 0.7em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: background-color 0.3s ease;
+  width: 10%;
+  min-width: fit-content;
+}
+
+.paginationButton:hover {
+  background-color: #1c6d8d;
+  outline: 2px solid #07aae2;
+}
+
+.toggleButton {
+  margin-left: 10px;
+  background-color: #07aae2;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 0.7em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: background-color 0.3s ease;
+}
+
+.toggleButton:hover {
+  background-color: #1c6d8d;
+  outline: 2px solid #07aae2;
+}
+
+.paginationSpacer {
+  flex-grow: 1;
+}
+
+.toggleContainer {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.chartAndYAxis {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  height: 100%;
+}
+
+.chartSvg {
+  width: 100%;
+  height: 100%;
+  flex-grow: 1;
+  margin-left: auto;
+}
+
+.chartContainer {
+  height: auto;
+  flex-grow: 1; /* Allow chartContainer to grow and take up the remaining space */
+  display: flex; /* Flex to allow the SVG to fill the container */
+}
+
+.scrollableMenu {
+  max-height: 400px;
+  width: 190px;
+  overflow-y: auto;
+  background-color: #202020;
+  padding: 10px;
+  text-align: left;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 0.85em;
+  border-radius: 8px;
+  border: 2px solid #7f7f7f;
+  margin-left: 10px;
+}
+
+.scrollableMenu label {
+  display: block;
+  margin-bottom: 5px;
+  color: white;
+}
+
+.scrollableMenu input {
+  margin-right: 10px;
+}
+
+.selectButton {
+  margin-left: 10px;
+  background-color: #07aae2;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  margin-bottom: 10px;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 0.7em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: background-color 0.3s ease;
+}
+
+.selectButton:hover {
+  background-color: #1c6d8d;
+  outline: #07aae2 2px solid;
+}
+
+.resetButton {
+  background-color: #07aae2;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  cursor: pointer;
+  margin-top: 10px;
+  margin-left: 10px;
+  display: block;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: background-color 0.3s ease;
+}
+
+.resetButton:hover {
+  background-color: #1c6d8d;
+  outline: #07aae2 2px solid;
+}
+
+.tooltip {
+  position: absolute;
+  text-align: center;
+  width: auto;
+  height: auto;
+  padding: 5px;
+  font: 12px sans-serif;
+  background: rgb(48, 76, 112);
+  border: 0px;
+  border-radius: 5px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+/* Scrollbar styling */
+
+.scrollableMenu::-webkit-scrollbar {
+  width: 12px;
+}
+
+.scrollableMenu::-webkit-scrollbar-track {
+  background: #202020;
+}
+
+.scrollableMenu::-webkit-scrollbar-thumb {
+  background-color: #07aae2;
+  border-radius: 7.5px;
+  border: 3px solid #202020;
+}
+
+.scrollableMenu::-webkit-scrollbar-thumb:hover {
+  background-color: #07aae2;
+}
+
+.legendAndLabel {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.legendSvg {
+  display: flex;
+  align-items: center;
+}
+
+#legendContainer {
+  display: flex;
+  flex-direction: row;
+  font-family: roboto condensed, sans-serif;
+  justify-content: center;
+  font-size: 0.75em;
+  border: #292929 2px solid;
+  background-color: #303030;
+  border-radius: 10px;
+  padding: 7px;
+}
+
+#monthYearLabel {
+  font-size: 1em;
+  font-family: roboto condensed, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 1.15px;
+  color: white;
+  text-align: left;
+}
+
+.grid .tick line {
+  stroke: #9fb11c;
+  stroke-width: 1px;
+  opacity: 1; /* Ensure grid lines are visible */
+}
