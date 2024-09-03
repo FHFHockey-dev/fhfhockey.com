@@ -38,6 +38,5 @@
     "dev": {
       "cache": false
     }
-  },
-  "baseBranch": "origin/master"
+  }
 }
