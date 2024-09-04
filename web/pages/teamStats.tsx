@@ -19,7 +19,7 @@ const TeamStats = () => {
 
   // Sort teams alphabetically by name
   const sortedTeams = teams
-    .slice()
+    ?.slice()
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
