@@ -21,7 +21,7 @@
   height: 100%;
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 7px;
+  grid-gap: 15px;
   justify-content: center;
   margin: 0 auto;
   max-width: 1200px;
@@ -34,10 +34,10 @@
   justify-content: center;
   text-align: center;
   border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  border-radius: 3px;
   width: 120px;
   height: 80px;
-  background-color: #131313;
+  background-color: var(--primary-color);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   overflow: hidden;
 }
@@ -49,7 +49,7 @@
   left: 0;
   right: 0;
   height: 10px; /* Height of the thick center stripe */
-  background: var(--primary-color);
+  background: var(--secondary-color);
   opacity: 5;
   z-index: 1;
 }
@@ -62,7 +62,7 @@
   right: 0;
   height: 5px; /* Height of the thin stripes */
   background: var(--jersey);
-  opacity: 0.5;
+  opacity: 1;
   z-index: 1;
 }
 
@@ -80,13 +80,13 @@
   height: 50px;
   filter: drop-shadow(0 0 5px var(--secondary-color));
   object-fit: cover;
-  opacity: 0.4;
+  opacity: 1;
 }
 
 .teamAbbrev {
   position: absolute;
   top: 65%;
-  left: 62%;
+  left: 65%;
   transform: translate(-50%, -50%);
   font-size: 1.85rem;
   text-transform: uppercase;
