@@ -1,7 +1,13 @@
+///////////////////////////////////////////////////////////////////////////////////////////
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\BlogPost\BlogPost.module.scss
+
 @import "styles/vars.scss";
 
 .post {
-  border: 3px solid white;
+  outline: 3px solid white;
+  // border: 3px solid white;
+  border-radius: 4px;
+  background-color: #0d0d0d;
   padding: 1rem;
   font-family: "Roboto", sans-serif;
 
@@ -16,13 +22,14 @@
       .title {
         margin: 0;
         text-transform: none;
+        font-family: roboto condensed, sans-serif;
         &:hover {
           text-decoration: underline;
           cursor: pointer;
         }
       }
       .createdAt {
-        color: white;
+        color: rgb(255, 255, 255);
       }
       color: #18a3d9;
       display: flex;
@@ -57,6 +64,7 @@
     grid-column: 4 / 6;
     height: fit-content;
     border: 2px solid #18a3d2;
+    border-radius: 2px;
   }
 
   &:hover {

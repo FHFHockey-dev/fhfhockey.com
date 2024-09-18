@@ -1,3 +1,6 @@
+///////////////////////////////////////////////////////////////////////////////////////////////
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\index.tsx
+
 // @ts-nocheck
 import type { NextPage } from "next";
 import Head from "next/head";
@@ -13,6 +16,7 @@ import ClientOnly from "components/ClientOnly";
 import styles from "../styles/Home.module.scss";
 
 import { teamsInfo } from "lib/NHL/teamsInfo";
+import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 
 // DEV NOTE:
 // Integrate Live Period/Time Clock instead of just displaying "LIVE" for live games
@@ -21,6 +25,7 @@ const Home: NextPage = ({
   initialGames,
   initialInjuries,
   initialStandings,
+  nextGameDate,
 }) => {
   const [currentDate, setCurrentDate] = useState(
     moment().utcOffset(-8).format("YYYY-MM-DD")
@@ -31,49 +36,112 @@ const Home: NextPage = ({
   const [injuryPage, setInjuryPage] = useState(0);
   const injuryRowsPerPage = 32;
 
-  const changeDate = async (days) => {
-    const newDate = moment(currentDate).add(days, "days").format("YYYY-MM-DD");
-    setCurrentDate(newDate);
-  };
+  const [isOffseason, setIsOffseason] = useState(false);
+  const [nextAvailableGames, setNextAvailableGames] = useState([]); // fetching games if none today
+
+  useEffect(() => {
+    const checkSeason = async () => {
+      const currentSeason = await fetchCurrentSeason();
+      const now = new Date();
+
+      const isPlayoffs =
+        now >= new Date(currentSeason.playoffsStartDate) &&
+        now <= new Date(currentSeason.playoffsEndDate);
+      const isRegularSeason =
+        now >= new Date(currentSeason.startDate) &&
+        now <= new Date(currentSeason.endDate);
+
+      setIsOffseason(!isPlayoffs && !isRegularSeason);
+    };
+
+    checkSeason();
+  }, []);
+
+  useEffect(() => {
+    const fetchStandings = async () => {
+      try {
+        const response = await fetch(
+          `https://api-web.nhle.com/v1/standings/2024-10-04`
+        );
+        const data = await response.json();
+        console.log(data); // Debug: Log data to check the response format
+
+        if (!data || !data.standings) {
+          throw new Error("Invalid standings data");
+        }
+
+        setStandings(data.standings);
+      } catch (error) {
+        console.error("Error fetching standings:", error);
+      }
+    };
+
+    fetchStandings();
+  }, []);
 
   useEffect(() => {
     const fetchGames = async () => {
       const res = await fetch(`/api/v1/games?date=${currentDate}`);
       const data = await res.json();
 
-      // Fetch period and time remaining for LIVE games
-      const liveGamePromises = data
-        .filter((game) => game.gameState === "LIVE")
-        .map(async (game) => {
-          const liveDataResponse = await fetch(
-            `https://api-web.nhle.com/v1/gamecenter/${game.id}/landing`
-          );
-          const liveData = await liveDataResponse.json();
+      // If no games are scheduled for today, fetch the next day's games
+      if (data.length === 0 && isOffseason) {
+        let nextDayWithGames = null;
+        let nextDay = moment(currentDate).add(1, "days");
 
-          return {
-            ...game,
-            period: liveData.periodDescriptor.number,
-            periodType: liveData.periodDescriptor.periodType,
-            timeRemaining: liveData.clock.timeRemaining,
-            inIntermission: liveData.clock.inIntermission,
-          };
+        while (!nextDayWithGames) {
+          const res = await fetch(
+            `/api/v1/games?date=${nextDay.format("YYYY-MM-DD")}`
+          );
+          const dayData = await res.json();
+
+          if (dayData.length > 0) {
+            nextDayWithGames = dayData;
+            setNextAvailableGames(dayData);
+          } else {
+            nextDay = nextDay.add(1, "days");
+          }
+        }
+      } else {
+        // Fetch period and time remaining for LIVE games
+        const liveGamePromises = data
+          .filter((game) => game.gameState === "LIVE")
+          .map(async (game) => {
+            const liveDataResponse = await fetch(
+              `https://api-web.nhle.com/v1/gamecenter/${game.id}/landing`
+            );
+            const liveData = await liveDataResponse.json();
+
+            return {
+              ...game,
+              period: liveData.periodDescriptor.number,
+              periodType: liveData.periodDescriptor.periodType,
+              timeRemaining: liveData.clock.timeRemaining,
+              inIntermission: liveData.clock.inIntermission,
+            };
+          });
+
+        const liveGamesData = await Promise.all(liveGamePromises);
+
+        // Combine live games data with other games data
+        const updatedGames = data.map((game) => {
+          const liveGameData = liveGamesData.find(
+            (liveGame) => liveGame.id === game.id
+          );
+          return liveGameData || game;
         });
 
-      const liveGamesData = await Promise.all(liveGamePromises);
-
-      // Combine live games data with other games data
-      const updatedGames = data.map((game) => {
-        const liveGameData = liveGamesData.find(
-          (liveGame) => liveGame.id === game.id
-        );
-        return liveGameData || game;
-      });
-
-      setGames(updatedGames);
+        setGames(updatedGames);
+      }
     };
 
     fetchGames();
-  }, [currentDate]);
+  }, [currentDate, isOffseason]);
+
+  const changeDate = async (days) => {
+    const newDate = moment(currentDate).add(days, "days").format("YYYY-MM-DD");
+    setCurrentDate(newDate);
+  };
 
   const formatPeriodText = (periodNumber, periodDescriptor, inIntermission) => {
     if (inIntermission) {
@@ -193,93 +261,176 @@ const Home: NextPage = ({
 
             <div className={styles.headerAndDate}>
               <h1>
-                Today&apos;s <span>Games</span>
+                {games.length > 0 || !isOffseason ? "Today's" : "Upcoming"}{" "}
+                <span>Games</span>
               </h1>
               <p className={styles.dateDisplay}>
-                {moment(currentDate).format("MM/DD/YYYY")}
+                Scheduled for: {moment(nextGameDate).format("MM/DD/YYYY")}
               </p>
-              {/* Formatted date here */}
             </div>
             <button onClick={() => changeDate(1)}>&gt;</button>
           </div>
 
           <div className={styles.gamesContainer}>
-            {games.map((game) => {
-              // Extracting home and away team data
-              const homeTeam = game.homeTeam;
-              console.log("HOME TEAM: ", homeTeam);
-              const homeTeamInfo = teamsInfo[homeTeam.abbrev] || {};
-              const awayTeam = game.awayTeam;
-              const awayTeamInfo = teamsInfo[awayTeam.abbrev] || {};
+            {games.length > 0
+              ? games.map((game) => {
+                  const homeTeam = game.homeTeam;
+                  const homeTeamInfo = teamsInfo[homeTeam.abbrev] || {};
+                  const awayTeam = game.awayTeam;
+                  const awayTeamInfo = teamsInfo[awayTeam.abbrev] || {};
 
-              // If either team data is missing, skip rendering this game
-              if (!homeTeam || !awayTeam) {
-                return null;
-              }
+                  if (!homeTeam || !awayTeam) {
+                    return null;
+                  }
 
-              return (
-                <Link key={game.id} href={`/game/${game.id}`}>
-                  <a className={styles.gameLink}>
-                    <div
-                      className={styles.combinedGameCard}
-                      style={{
-                        "--home-primary-color": homeTeamInfo.primaryColor,
-                        "--home-secondary-color": homeTeamInfo.secondaryColor,
-                        "--home-jersey-color": homeTeamInfo.jersey,
-                        "--home-accent-color": homeTeamInfo.accent,
-                        "--home-alt-color": homeTeamInfo.alt,
-                        "--away-primary-color": awayTeamInfo.primaryColor,
-                        "--away-secondary-color": awayTeamInfo.secondaryColor,
-                        "--away-jersey-color": awayTeamInfo.jersey,
-                        "--away-accent-color": awayTeamInfo.accent,
-                        "--away-alt-color": awayTeamInfo.alt,
-                      }}
-                    >
-                      <div className={styles.homeTeamLogo}>
-                        <img
-                          src={`https://assets.nhle.com/logos/nhl/svg/${homeTeam.abbrev}_light.svg`}
-                          className={styles.leftImage}
-                          alt={`${homeTeam.abbrev} logo`}
-                        />
-                      </div>
-                      <div className={styles.gameTimeSection}>
-                        <div className={styles.homeScore}>{homeTeam.score}</div>
-                        <div className={styles.gameTimeInfo}>
-                          <span className={styles.gameState}>
-                            {game.gameState === "LIVE"
-                              ? formatPeriodText(
-                                  game.periodDescriptor.number,
-                                  game.periodDescriptor.periodType,
-                                  game.inIntermission
-                                )
-                              : getDisplayGameState(game.gameState)}
-                          </span>
-                          <span className={styles.gameTimeText}>
-                            {game.gameState === "LIVE" &&
-                            !game.inIntermission ? (
-                              game.timeRemaining
-                            ) : (
-                              <ClientOnly placeHolder={<>&nbsp;</>}>
-                                {moment(game.startTimeUTC).format("h:mm A")}
-                              </ClientOnly>
-                            )}
-                          </span>
+                  return (
+                    <Link key={game.id} href={`/game/${game.id}`}>
+                      <a className={styles.gameLink}>
+                        <div
+                          className={styles.combinedGameCard}
+                          style={{
+                            "--home-primary-color": homeTeamInfo.primaryColor,
+                            "--home-secondary-color":
+                              homeTeamInfo.secondaryColor,
+                            "--home-jersey-color": homeTeamInfo.jersey,
+                            "--home-accent-color": homeTeamInfo.accent,
+                            "--home-alt-color": homeTeamInfo.alt,
+                            "--away-primary-color": awayTeamInfo.primaryColor,
+                            "--away-secondary-color":
+                              awayTeamInfo.secondaryColor,
+                            "--away-jersey-color": awayTeamInfo.jersey,
+                            "--away-accent-color": awayTeamInfo.accent,
+                            "--away-alt-color": awayTeamInfo.alt,
+                          }}
+                        >
+                          <div className={styles.homeTeamLogo}>
+                            <img
+                              src={`https://assets.nhle.com/logos/nhl/svg/${homeTeam.abbrev}_light.svg`}
+                              className={styles.leftImage}
+                              alt={`${homeTeam.abbrev} logo`}
+                            />
+                          </div>
+                          <div className={styles.gameTimeSection}>
+                            <div className={styles.homeScore}>
+                              {homeTeam.score}
+                            </div>
+                            <div className={styles.gameTimeInfo}>
+                              <span className={styles.gameState}>
+                                {game.gameState === "LIVE"
+                                  ? formatPeriodText(
+                                      game.periodDescriptor.number,
+                                      game.periodDescriptor.periodType,
+                                      game.inIntermission
+                                    )
+                                  : getDisplayGameState(game.gameState)}
+                              </span>
+                              <span className={styles.gameTimeText}>
+                                {game.gameState === "LIVE" &&
+                                !game.inIntermission ? (
+                                  game.timeRemaining
+                                ) : (
+                                  <ClientOnly placeHolder={<>&nbsp;</>}>
+                                    {moment(game.startTimeUTC).format("h:mm A")}
+                                  </ClientOnly>
+                                )}
+                              </span>
+                            </div>
+                            <div className={styles.awayScore}>
+                              {awayTeam.score}
+                            </div>
+                          </div>
+
+                          <div className={styles.awayTeamLogo}>
+                            <img
+                              src={`https://assets.nhle.com/logos/nhl/svg/${awayTeam.abbrev}_light.svg`}
+                              className={styles.rightImage}
+                              alt={`${awayTeam.abbrev} logo`}
+                            />
+                          </div>
                         </div>
-                        <div className={styles.awayScore}>{awayTeam.score}</div>
-                      </div>
+                      </a>
+                    </Link>
+                  );
+                })
+              : nextAvailableGames.map((game) => {
+                  const homeTeam = game.homeTeam;
+                  const homeTeamInfo = teamsInfo[homeTeam.abbrev] || {};
+                  const awayTeam = game.awayTeam;
+                  const awayTeamInfo = teamsInfo[awayTeam.abbrev] || {};
 
-                      <div className={styles.awayTeamLogo}>
-                        <img
-                          src={`https://assets.nhle.com/logos/nhl/svg/${awayTeam.abbrev}_light.svg`}
-                          className={styles.rightImage}
-                          alt={`${awayTeam.abbrev} logo`}
-                        />
-                      </div>
-                    </div>
-                  </a>
-                </Link>
-              );
-            })}
+                  if (!homeTeam || !awayTeam) {
+                    return null;
+                  }
+
+                  return (
+                    <Link key={game.id} href={`/game/${game.id}`}>
+                      <a className={styles.gameLink}>
+                        <div
+                          className={styles.combinedGameCard}
+                          style={{
+                            "--home-primary-color": homeTeamInfo.primaryColor,
+                            "--home-secondary-color":
+                              homeTeamInfo.secondaryColor,
+                            "--home-jersey-color": homeTeamInfo.jersey,
+                            "--home-accent-color": homeTeamInfo.accent,
+                            "--home-alt-color": homeTeamInfo.alt,
+                            "--away-primary-color": awayTeamInfo.primaryColor,
+                            "--away-secondary-color":
+                              awayTeamInfo.secondaryColor,
+                            "--away-jersey-color": awayTeamInfo.jersey,
+                            "--away-accent-color": awayTeamInfo.accent,
+                            "--away-alt-color": awayTeamInfo.alt,
+                          }}
+                        >
+                          <div className={styles.homeTeamLogo}>
+                            <img
+                              src={`https://assets.nhle.com/logos/nhl/svg/${homeTeam.abbrev}_light.svg`}
+                              className={styles.leftImage}
+                              alt={`${homeTeam.abbrev} logo`}
+                            />
+                          </div>
+                          <div className={styles.gameTimeSection}>
+                            <div className={styles.homeScore}>
+                              {homeTeam.score}
+                            </div>
+                            <div className={styles.gameTimeInfo}>
+                              <span className={styles.gameState}>
+                                {game.gameState === "LIVE"
+                                  ? formatPeriodText(
+                                      game.periodDescriptor.number,
+                                      game.periodDescriptor.periodType,
+                                      game.inIntermission
+                                    )
+                                  : getDisplayGameState(game.gameState)}
+                              </span>
+                              <span className={styles.gameTimeText}>
+                                {game.gameState === "LIVE" &&
+                                !game.inIntermission ? (
+                                  game.timeRemaining
+                                ) : (
+                                  <ClientOnly placeHolder={<>&nbsp;</>}>
+                                    {moment(game.startTimeUTC).format("h:mm A")}
+                                  </ClientOnly>
+                                )}
+                              </span>
+                            </div>
+                            <div className={styles.awayScore}>
+                              {awayTeam.score}
+                            </div>
+                          </div>
+
+                          <div className={styles.awayTeamLogo}>
+                            <img
+                              src={`https://assets.nhle.com/logos/nhl/svg/${awayTeam.abbrev}_light.svg`}
+                              className={styles.rightImage}
+                              alt={`${awayTeam.abbrev} logo`}
+                            />
+                          </div>
+                        </div>
+                      </a>
+                    </Link>
+                  );
+                })}
           </div>
         </div>
         <div className={styles.separator}></div>
@@ -294,19 +445,38 @@ const Home: NextPage = ({
             <table className={styles.standingsTable}>
               <thead className={styles.standingsTableHeader}>
                 <tr>
-                  <th onClick={() => sortDataBy("leagueSequence")}>Rank</th>
-                  <th onClick={() => sortDataBy("teamName")}>Team</th>
+                  <th>Rank</th>
+                  <th>Team</th>
                   <th>Record</th>
-                  <th onClick={() => sortDataBy("points")}>PTS</th>
+                  <th>Points</th>
                 </tr>
               </thead>
               <tbody>
                 {standings.map((teamRecord) => (
-                  <tr key={teamRecord.teamName}>
-                    <td>{teamRecord.leagueSequence}</td>
-                    <td>{teamRecord.teamName}</td>
-                    <td>{teamRecord.record}</td>
-                    <td>{teamRecord.points}</td>
+                  <tr key={teamRecord.teamName.default}>
+                    <td className={styles.standingsRankCell}>
+                      {teamRecord.leagueSequence}
+                    </td>
+                    <td className={styles.standingsTeamNameCell}>
+                      {/* Add team logo */}
+                      <img
+                        className={styles.standingsTeamLogo}
+                        src={teamRecord.teamLogo}
+                        alt={`${teamRecord.teamName.default} logo`}
+                      />{" "}
+                      <span className={styles.standingsTeamNameSpan}>
+                        {teamRecord.teamName.default}
+                      </span>
+                    </td>
+                    <td className={styles.standingsRecordCell}>
+                      {/* Ensure wins, losses, and otLosses are handled correctly */}
+                      {`${teamRecord.wins || 0}-${teamRecord.losses || 0}-${
+                        teamRecord.otLosses || 0
+                      }`}
+                    </td>
+                    <td className={styles.standingsPointsCell}>
+                      {teamRecord.points}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -362,27 +532,24 @@ export async function getServerSideProps({ req, res }) {
     "public, s-maxage=10, stale-while-revalidate=59"
   );
 
-  const fetchGames = async (date) => {
+  const fetchGames = async (date: string) => {
     try {
       const scheduleUrl = `https://api-web.nhle.com/v1/schedule/${date}`;
       const response = await fetch(scheduleUrl).then((res) => res.json());
-      return response.gameWeek[0].games || [];
+
+      // Ensure you check if the structure includes gameWeek and games
+      return response?.gameWeek?.[0]?.games || [];
     } catch (error) {
       console.error("Error fetching games: ", error);
       return [];
     }
   };
 
-  // Fetch games for today's date
-  const today = moment().utcOffset(-8).format("YYYY-MM-DD");
-  const games = await fetchGames(today);
-
   const fetchInjuries = async () => {
     try {
       const response = await fetch(
         `https://stats.sports.bellmedia.ca/sports/hockey/leagues/nhl/playerInjuries?brand=tsn&type=json`
       ).then((res) => res.json());
-      // if (response.status !== 200) throw new Error("Failed to fetch");
 
       let injuriesData = response.flatMap((team) =>
         team.playerInjuries
@@ -401,38 +568,77 @@ export async function getServerSideProps({ req, res }) {
       return injuriesData || [];
     } catch (error) {
       console.error(error);
+      return [];
     }
   };
 
   const fetchStandings = async () => {
     try {
-      const today = moment().utcOffset(-8).format("YYYY-MM-DD");
-      const response = await fetch(
-        `https://api-web.nhle.com/v1/standings/${today}` // Updated API endpoint
-      ).then((res) => res.json());
-      // if (response.status !== 200) throw new Error("Failed to fetch");
+      const currentSeason = await fetchCurrentSeason();
+      const now = new Date();
 
-      const standingsData = response.standings.map((team) => ({
-        leagueSequence: team.leagueSequence, // League sequence as the standing
-        teamName: team.teamName.default, // Team name
-        record: `${team.wins}-${team.losses}-${team.otLosses}`, // Record format: Wins-Losses-OT Losses
-        points: team.points, // Points
+      const isPlayoffs =
+        now >= new Date(currentSeason.playoffsStartDate) &&
+        now <= new Date(currentSeason.playoffsEndDate);
+      const isRegularSeason =
+        now >= new Date(currentSeason.startDate) &&
+        now <= new Date(currentSeason.endDate);
+
+      const isOffseason = !isPlayoffs && !isRegularSeason;
+      const dateForStandings = isOffseason
+        ? moment(currentSeason.regularSeasonStartDate).format("YYYY-MM-DD")
+        : moment().utcOffset(-8).format("YYYY-MM-DD");
+
+      const response = await fetch(
+        `https://api-web.nhle.com/v1/standings/${dateForStandings}`
+      ).then((res) => res.json());
+
+      if (!response || !response.standings) {
+        throw new Error("Standings data not available");
+      }
+
+      const standingsData = response.standings.map((team: any) => ({
+        leagueSequence: team.leagueSequence,
+        teamName: team.teamName.default,
+        wins: team.wins,
+        losses: team.losses,
+        otLosses: team.otLosses,
+        points: team.points,
+        teamLogo: `https://assets.nhle.com/logos/nhl/svg/${team.teamName.default}_light.svg`, // Adjust based on actual data
       }));
-      console.log("STANDINGS: ", standingsData);
+
       return standingsData;
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching standings: ", error);
+      return [];
     }
   };
 
-  const injuries = (await fetchInjuries()) || []; // Ensure it defaults to an empty array
-  const standings = (await fetchStandings()) || [];
+  const today = moment().utcOffset(-8).format("YYYY-MM-DD");
+  const gamesToday = await fetchGames(today);
+  const injuries = await fetchInjuries();
+  const standings = await fetchStandings();
+
+  // Function to find the next available game date after a given date
+  const findNextGameDate = async (startDate: string): Promise<string> => {
+    let nextDay = moment(startDate).add(1, "days").format("YYYY-MM-DD");
+    while (true) {
+      const games = await fetchGames(nextDay);
+      if (games.length > 0) {
+        return nextDay;
+      }
+      nextDay = moment(nextDay).add(1, "days").format("YYYY-MM-DD");
+    }
+  };
+
+  const nextGameDate = await findNextGameDate(today);
 
   return {
     props: {
-      initialGames: games,
+      initialGames: gamesToday,
       initialInjuries: injuries,
       initialStandings: standings,
+      nextGameDate, // Pass the next game date to the component
     },
   };
 }

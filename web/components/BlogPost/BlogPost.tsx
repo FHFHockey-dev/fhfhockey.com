@@ -1,3 +1,6 @@
+///////////////////////////////////////////////////////////////////////////////////////
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\BlogPost\BlogPost.tsx
+
 import React from "react";
 import Image from "next/image";
 

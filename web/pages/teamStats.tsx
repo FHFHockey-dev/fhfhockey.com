@@ -48,11 +48,14 @@ const TeamStats = () => {
                   }
                 >
                   <div className="center-stripe"></div>
-                  <img
-                    src={`/teamLogos/${team.name.replace(/\s+/g, " ")}.png`}
-                    alt={team.name}
-                    className={styles.teamLogo}
-                  />
+                  <div className={styles.teamLogoContainer}>
+                    <img
+                      src={`/teamLogos/${team.name.replace(/\s+/g, " ")}.png`}
+                      alt={team.name}
+                      className={styles.teamLogo}
+                    />
+                  </div>
+
                   <div className={styles.teamAbbrev}>{team.abbreviation}</div>
                 </a>
               </Link>

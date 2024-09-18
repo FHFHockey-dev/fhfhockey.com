@@ -470,9 +470,12 @@
 
 .standingsTable td,
 .standingsTable th {
-  padding: 10px;
   border-bottom: 1px solid #ccc;
+}
+
+.standingsTable th {
   text-align: center;
+  padding: 10px;
 }
 
 .standingsTable td {
@@ -512,20 +515,43 @@
   background-color: #404040; /* or any slightly darker color of your choice */
 }
 
-.standingsTable img {
-  height: 15px;
-}
-
 .standingsTable th {
   background-color: #101010;
 }
 
+.standingsTeamNameCell {
+  text-align: left;
+}
+
+.standingsRecordCell,
+.standingsRankCell,
+.standingsPointsCell {
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
 .standingsTeamLogo {
+  height: 25px;
   justify-content: center;
   align-items: center;
   display: flex;
   float: left;
   padding-right: 1em;
+  padding-left: 1em;
+}
+
+.standingsTeamNameSpan {
+  padding-top: 2%;
+  font-size: 1em;
+  color: #fff;
+  font-family: roboto condensed, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  align-items: center;
+  justify-content: left;
+  display: flex;
 }
 
 .socialMedia {
