@@ -209,7 +209,7 @@ export default function DRMPage() {
     ? getTeamColors(teamId)
     : DEFAULT_COLORS;
   const logo = selectedTeam
-    ? `/teamLogos/${teamsInfo[selectedTeam as TeamAbbreviation]?.name}.png`
+    ? `/teamLogos/${teamsInfo[selectedTeam as TeamAbbreviation].abbrev}.png`
     : `/teamLogos/${DEFAULT_LOGO}`;
 
   return (

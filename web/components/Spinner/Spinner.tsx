@@ -1,3 +1,5 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\Spinner\Spinner.tsx
+
 import classNames from "classnames";
 import styles from "./Spinner.module.scss";
 

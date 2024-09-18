@@ -1,3 +1,5 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\GameGrid\TotalGamesPerDayRow.tsx
+
 import { DAYS, DAY_ABBREVIATION } from "lib/NHL/types";
 import styles from "./GameGrid.module.scss";
 
