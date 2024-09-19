@@ -294,82 +294,19 @@ async function fetchNHLSkaterData() {
           ? (stat.shots / timeOnIceInMinutes) * 60
           : null;
 
-      // **Fetch Career Averages**
-      let careerAverages = null;
-      try {
-        const careerResponse = await Fetch(
-          `https://fhfhockey.com/api/CareerAverages/${stat.playerId}`
-        );
-        if (careerResponse && careerResponse.success) {
-          careerAverages = careerResponse.data;
-          console.log(`Fetched Career Averages for player ID ${stat.playerId}`);
-        }
-      } catch (error) {
-        console.error(
-          `Error fetching career averages for player ID ${stat.playerId}:`,
-          error
-        );
-      }
-
-      // **Fetch Three-Year Averages**
-      let threeYearAverages = null;
-      try {
-        const threeYearResponse = await Fetch(
-          `https://fhfhockey.com/api/ThreeYearAverages/${stat.playerId}`
-        );
-        if (threeYearResponse && threeYearResponse.success) {
-          threeYearAverages = threeYearResponse.data;
-          console.log(
-            `Fetched Three-Year Averages for player ID ${stat.playerId}`
-          );
-        }
-      } catch (error) {
-        console.error(
-          `Error fetching three-year averages for player ID ${stat.playerId}:`,
-          error
-        );
-      }
-
-      // **Extract Last Season Data from Three-Year Averages**
-      let lastSeasonData = null;
-      if (threeYearAverages && threeYearAverages[lastSeasonId]) {
-        lastSeasonData = threeYearAverages[lastSeasonId];
-      } else {
-        console.warn(
-          `No data found for last season ID ${lastSeasonId} in ThreeYearAverages for player ID ${stat.playerId}`
-        );
-      }
-
       // **Prepare playerStats object with calculated fields for future sKO calculation**
       const currentPlayerStats = {
         shooting_percentage: stat.shootingPct,
-        ixs_pct: careerAverages ? careerAverages["xS%"] : null,
+        ixs_pct: null, // Removed as per user request
         ipp: ipp,
         on_ice_shooting_pct: puckPossessionStat
           ? puckPossessionStat.onIceShootingPct
-          : null,
+          : null, // Corrected from pps to puckPossessionStat
         sog_per_60: sogPer60,
-        iscf_per_60:
-          careerAverages && timeOnIceInMinutes
-            ? (careerAverages.iSCF / timeOnIceInMinutes) * 60
-            : null,
-        ihdcf_per_60:
-          careerAverages && timeOnIceInMinutes
-            ? (careerAverages.iHDCF / timeOnIceInMinutes) * 60
-            : null,
-        total_primary_assists: scoringPerGameStat
-          ? scoringPerGameStat.totalPrimaryAssists
-          : null,
-        total_secondary_assists: scoringPerGameStat
-          ? scoringPerGameStat.totalSecondaryAssists
-          : null,
-        pp_toi_pct_per_game: powerPlayStat
-          ? powerPlayStat.ppTimeOnIcePctPerGame
-          : null,
-        zone_start_pct: puckPossessionStat
-          ? puckPossessionStat.zoneStartPct
-          : null,
-        ixg: careerAverages ? careerAverages.ixG : null,
+        // Removed the following properties as per user request:
+        // iscf_per_60: null,
+        // ihdcf_per_60: null,
+        // ixg: null,
       };
 
       // **Upsert data into Supabase without sKO calculations**
@@ -413,10 +350,11 @@ async function fetchNHLSkaterData() {
               : null,
             ipp: ipp,
             sog_per_60: sogPer60,
-            iscf_per_60: currentPlayerStats.iscf_per_60,
-            ihdcf_per_60: currentPlayerStats.ihdcf_per_60,
-            ixg: currentPlayerStats.ixg,
-            ixs_pct: currentPlayerStats.ixs_pct,
+            // Removed the following fields as per user request:
+            // iscf_per_60: currentPlayerStats.iscf_per_60,
+            // ihdcf_per_60: currentPlayerStats.ihdcf_per_60,
+            // ixg: currentPlayerStats.ixg,
+            // ixs_pct: currentPlayerStats.ixs_pct,
           },
           {
             onConflict: "player_id,date",

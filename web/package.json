@@ -36,7 +36,9 @@
     "immer": "^9.0.15",
     "jsdom": "^20.0.0",
     "json2csv": "^6.0.0-alpha.2",
+    "jstat": "^1.9.6",
     "memory-cache": "^0.2.0",
+    "ml-pca": "^4.1.1",
     "moment": "^2.29.4",
     "next": "^12.3.1",
     "next-sanity": "^0.6.0",
@@ -50,6 +52,7 @@
     "react-chartjs-2": "^4.3.1",
     "react-datepicker": "^7.3.0",
     "react-dom": "18.2.0",
+    "resize-observer-polyfill": "^1.5.1",
     "use-immer": "^0.7.0",
     "yup": "^0.32.11"
   },
