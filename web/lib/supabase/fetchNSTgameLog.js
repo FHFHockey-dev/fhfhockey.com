@@ -24,7 +24,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // NST limit is >75 in 4 minutes, so 1 per 4 seconds is safe
 const rateLimiter = new RateLimiterMemory({
   points: 1, // Number of requests
-  duration: 25, // Sleep for n seconds
+  duration: 40, // Sleep for n seconds
 });
 
 // Function to pause execution to respect rate limits

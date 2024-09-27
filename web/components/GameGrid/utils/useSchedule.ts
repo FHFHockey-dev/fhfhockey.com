@@ -1,12 +1,7 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\GameGrid\utils\useSchedule.ts
 
 import { useEffect, useState } from "react";
-// UNCOMMENT WHEN NHL API HAS 20242025 DATA
-// import { useTeams } from "../contexts/GameGridContext";
-
-// COMMENT OUT WHEN NHL API HAS 20242025 DATA
-import { useNextYearsTeams } from "../contexts/GameGridContext";
-
+import { useTeams } from "../contexts/GameGridContext";
 import { getSchedule } from "lib/NHL/client";
 import { format, nextMonday, parseISO } from "date-fns";
 import { WeekData } from "lib/NHL/types";
@@ -20,11 +15,7 @@ export default function useSchedule(
   const [loading, setLoading] = useState(false);
   const [scheduleArray, setScheduleArray] = useState<ScheduleArray>([]);
   const [numGamesPerDay, setNumGamesPerDay] = useState<number[]>([]);
-  // UNCOMMENT WHEN NHL API HAS 20242025 DATA
-  // const allTeams = useTeams();
-
-  // COMMENT OUT WHEN NHL API HAS 20242025 DATA
-  const allTeams = useNextYearsTeams();
+  const allTeams = useTeams();
 
   useEffect(() => {
     let ignore = false;

@@ -28,10 +28,8 @@ import {
 } from "date-fns";
 import { DAYS, DAY_ABBREVIATION, WeekData } from "lib/NHL/types";
 
-// UNCOMMENT WHEN NHL API HAS 20242025 data
-// import { useTeamsMap } from "hooks/useTeams";
+import { useTeamsMap } from "hooks/useTeams";
 
-import { useNextYearsTeamsMap } from "hooks/useTeams";
 import GameGridContext from "./contexts/GameGridContext";
 
 function GameGridInternal({ mode, setMode }: GameGridProps) {
@@ -40,9 +38,8 @@ function GameGridInternal({ mode, setMode }: GameGridProps) {
   const [dates, setDates] = useState<[string, string]>(() =>
     startAndEndOfWeek()
   );
-  //   const teams = useTeamsMap();
+  const teams = useTeamsMap();
 
-  const teams = useNextYearsTeamsMap();
   const [schedule, numGamesPerDay, loading] = useSchedule(
     format(new Date(dates[0]), "yyyy-MM-dd"),
     mode === "10-Day-Forecast"
@@ -109,7 +106,7 @@ function GameGridInternal({ mode, setMode }: GameGridProps) {
       }
 
       // UNCOMMENT WHEN NHL API HAS 20242025 data
-      //       return teams[a.teamId].name.localeCompare(teams[b.teamId].name);
+      // return teams[a.teamId].name.localeCompare(teams[b.teamId].name);
 
       const teamA = teams[a.teamId];
       const teamB = teams[b.teamId];

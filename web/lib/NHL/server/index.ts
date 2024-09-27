@@ -95,63 +95,29 @@ export async function getCurrentSeason(): Promise<Season> {
   const { data } = await supabase
     .from("seasons")
     .select("*")
-    .lte("startDate", new Date().toISOString())
+    //.lte("startDate", new Date().toISOString())
     .order("startDate", { ascending: false })
-    .limit(1)
-    .single();
+    .limit(2);
   if (data === null) throw Error("Cannot find the current season");
 
+  const currentSeason = data[0];
+  const lastSeason = data[1];
+
   return {
-    seasonId: data.id,
-    regularSeasonStartDate: data.startDate,
-    regularSeasonEndDate: data.regularSeasonEndDate,
-    seasonEndDate: data.endDate,
-    numberOfGames: data.numberOfGames,
+    seasonId: currentSeason.id,
+    regularSeasonStartDate: currentSeason.startDate,
+    regularSeasonEndDate: currentSeason.regularSeasonEndDate,
+    seasonEndDate: currentSeason.endDate,
+    numberOfGames: currentSeason.numberOfGames,
+    lastSeasonId: lastSeason.id,
+    lastRegularSeasonStartDate: lastSeason.startDate,
+    lastRegularSeasonEndDate: lastSeason.regularSeasonEndDate,
+    lastSeasonEndDate: lastSeason.endDate,
+    lastNumberOfGames: lastSeason.numberOfGames,
     slice: function (arg0: number, arg1: number): string {
       return "";
     },
   };
-}
-
-// COMMENT OUT WHEN NHL API HAS 20242025 SEASON DATA
-export async function getNextSeason(): Promise<Season> {
-  const { data } = await supabase
-    .from("seasons")
-    .select("*")
-    .gte("startDate", new Date().toISOString())
-    .order("startDate", { ascending: true })
-    .limit(1)
-    .single();
-  if (data === null) throw Error("Cannot find the next season");
-
-  return {
-    seasonId: data.id,
-    regularSeasonStartDate: data.startDate,
-    regularSeasonEndDate: data.regularSeasonEndDate,
-    seasonEndDate: data.endDate,
-    numberOfGames: data.numberOfGames,
-    slice: function (arg0: number, arg1: number): string {
-      return "";
-    },
-  };
-}
-
-// COMMENT OUT WHEN NHL API HAS 20242025 SEASON DATA
-async function getNextSeasonsTeams(seasonId?: number): Promise<Team[]> {
-  if (seasonId === undefined) {
-    seasonId = (await getNextSeason()).seasonId;
-  }
-  return getTeams(seasonId);
-}
-
-// COMMENT OUT WHEN NHL API HAS 20242025 SEASON DATA
-async function getNextSeasonsTeamsMap(): Promise<Record<number, Team>> {
-  const teams = await getNextSeasonsTeams();
-  const map: any = {};
-  teams.forEach((team) => {
-    map[team.id] = team;
-  });
-  return map;
 }
 
 export async function getSeasons(): Promise<Season[]> {
@@ -161,6 +127,12 @@ export async function getSeasons(): Promise<Season[]> {
     regularSeasonEndDate: item.regularSeasonEndDate,
     seasonEndDate: item.endDate,
     numberOfGames: item.numberOfGames,
+    lastSeasonId: item.id,
+    lastRegularSeasonStartDate: item.startDate,
+    lastRegularSeasonEndDate: item.regularSeasonEndDate,
+    lastSeasonEndDate: item.endDate,
+    lastNumberOfGames: item.numberOfGames,
+
     slice: function (arg0: number, arg1: number): string {
       return "";
     },
@@ -192,15 +164,14 @@ export async function getAllPlayers(seasonId?: number): Promise<Player[]> {
   }));
 }
 
-// UNCOMMENT WHEN NHL API HAS 20242025 SEASON DATA
-// async function getTeamsMap(): Promise<Record<number, Team>> {
-//   const teams = await getTeams();
-//   const map: any = {};
-//   teams.forEach((team) => {
-//     map[team.id] = team;
-//   });
-//   return map;
-// }
+async function getTeamsMap(): Promise<Record<number, Team>> {
+  const teams = await getTeams();
+  const map: any = {};
+  teams.forEach((team) => {
+    map[team.id] = team;
+  });
+  return map;
+}
 
 type GameWeek = {
   date: string;
@@ -231,7 +202,7 @@ export async function getSchedule(startDate: string) {
   const { gameWeek } = await get<{ gameWeek: GameWeek }>(
     `/schedule/${startDate}`
   );
-  const teams = await getNextSeasonsTeamsMap();
+  const teams = await getTeamsMap();
   const TEAM_DAY_DATA: ScheduleData["data"] = {};
   const numGamesPerDay: number[] = [];
   const result = {

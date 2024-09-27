@@ -1,7 +1,8 @@
-// teamsInfo.js
-// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-1\web\lib\NHL\teamsInfo.js
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\lib\NHL\teamsInfo.ts
 
-export const teamsInfo = {
+import { TeamInfo } from "lib/NHL/teamPageTypes";
+
+export const teamsInfo: { [key: string]: TeamInfo } = {
   NJD: {
     name: "New Jersey Devils",
     abbrev: "NJD",

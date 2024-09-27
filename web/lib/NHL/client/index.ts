@@ -32,46 +32,8 @@ export async function getCurrentSeason(): Promise<Season> {
   return await get("/season");
 }
 
-// COMMENT OUT WHEN NHL API HAS 20242025 DATA
-// UNCOMMENT
-export async function getNextSeason(): Promise<Season> {
-  const currentSeason = await getCurrentSeason();
-  const nextSeasonId = incrementSeasonId(currentSeason.seasonId);
-  return await get(`/season/${nextSeasonId}`);
-}
-
 export async function getTeams(seasonId?: number): Promise<Team[]> {
   return await get(`/team/${seasonId ?? "current"}`);
-}
-
-// COMMENT OUT WHEN NHL API HAS 20242025 DATA
-// UNCOMMENT
-/**
- * Increment the seasonId by correctly handling the transition from one season to the next.
- * For example, 20232024 becomes 20242025.
- * @param seasonId The current seasonId (e.g., 20232024)
- * @returns The next seasonId (e.g., 20242025)
- */
-function incrementSeasonId(seasonId: number): number {
-  const seasonStr = seasonId.toString();
-
-  if (seasonStr.length !== 8) {
-    throw new Error(`Invalid seasonId format: ${seasonId}`);
-  }
-
-  const startYear = parseInt(seasonStr.slice(0, 4), 10);
-  const endYear = parseInt(seasonStr.slice(4, 8), 10);
-
-  const newStartYear = startYear + 1;
-  const newEndYear = endYear + 1;
-
-  return parseInt(`${newStartYear}${newEndYear}`, 10);
-}
-
-export async function getNextSeasonsTeams(): Promise<Team[]> {
-  const currentSeason = await getCurrentSeason();
-  const nextSeasonId = incrementSeasonId(currentSeason.seasonId);
-  return await get(`/team/${nextSeasonId}`);
 }
 
 /**

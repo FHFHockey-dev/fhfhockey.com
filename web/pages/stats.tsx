@@ -1,3 +1,5 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\stats.tsx
+
 import React, { useMemo, useState, useRef } from "react";
 import { NextSeo } from "next-seo";
 
@@ -9,7 +11,7 @@ import { Team } from "lib/NHL/types";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import ClientOnly from "components/ClientOnly";
 import Fetch from "lib/cors-fetch";
-import GoalieTrends from "./goalieTrends";
+import GoalieTrends from "../components/TeamLandingPage/goalieTrends";
 
 type StatsProps = {
   teams: Team[];

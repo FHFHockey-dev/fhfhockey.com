@@ -38,7 +38,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Define the season IDs you want to process
-const seasonIds = [20212022, 20222023, 20232024];
+const seasonIds = [20192020, 20202021, 20212022, 20222023, 20232024];
 
 /**
  * Fetch all data for a given endpoint and seasonId by paginating through all pages.

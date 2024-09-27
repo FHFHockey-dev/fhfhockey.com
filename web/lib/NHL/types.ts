@@ -58,6 +58,11 @@ export type Season = {
   regularSeasonEndDate: string;
   seasonEndDate: string;
   numberOfGames: number;
+  lastSeasonId: number;
+  lastRegularSeasonStartDate: string;
+  lastRegularSeasonEndDate: string;
+  lastSeasonEndDate: string;
+  lastNumberOfGames: number;
 };
 
 // === Boxscore ===

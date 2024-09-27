@@ -1,3 +1,5 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\utils\fetchCurrentseason.js
+
 import fetch from "node-fetch";
 
 async function fetchCurrentSeason() {

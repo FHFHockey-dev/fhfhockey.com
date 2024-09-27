@@ -16,6 +16,6 @@
     "jsx": "preserve",
     "incremental": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "vitest.config.mts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "vitest.config.mts", "lib/supabase/GoaliePage/calculateAverages.js"],
   "exclude": ["node_modules"]
 }

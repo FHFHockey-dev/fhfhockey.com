@@ -40,27 +40,80 @@
   border-collapse: collapse;
   width: 100%;
   background-color: #292929;
-  border-radius: 12px;
+
+  th,
+  td {
+    border: 1px solid #07aae2;
+    color: #fff;
+    padding: 8px;
+    text-align: center;
+  }
+
+  th {
+    background-color: #202020;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  tr:nth-child(even) {
+    background-color: #404040;
+  }
+
+  tr:hover {
+    background-color: #101010;
+  }
+
+  /* Specific styles for new percentage columns */
+  th:nth-child(16),
+  th:nth-child(17),
+  td:nth-child(16),
+  td:nth-child(17) {
+    background-color: #2c2c2c; // Slightly different background for percentage columns
+    width: 12%; // Adjust as needed
+  }
+
+  /* Responsive Design Enhancements */
+  @media screen and (max-width: 768px) {
+    th,
+    td {
+      padding: 6px;
+      font-size: 14px;
+    }
+
+    th:nth-child(16),
+    th:nth-child(17),
+    td:nth-child(16),
+    td:nth-child(17) {
+      width: 10%; // Adjust widths for smaller screens
+    }
+  }
 }
 
-.goalieTable th,
-.goalieTable td {
-  border: 1px solid #07aae2;
-  color: #fff;
-  padding: 8px;
-  text-align: center;
+/* New Percentage Classes */
+.percentHigh {
+  background-color: rgba(
+    40,
+    167,
+    69,
+    0.7
+  ) !important; // Green for high percentages with 70% opacity
+  color: white;
 }
 
-.goalieTable th {
-  background-color: #202020;
+.percentMedium {
+  background-color: rgb(
+    255,
+    193,
+    7,
+    0.7
+  ) !important; // Yellow for medium percentages
+  color: black;
 }
 
-.goalieTable tr:nth-child(even) {
-  background-color: #404040;
-}
-
-.goalieTable tr:hover {
-  background-color: #101010;
+.percentLow {
+  background-color: rgb(220, 53, 69, 0.7) !important; // Red for low percentages
+  color: white;
 }
 
 .weekLeaderboardButton {
@@ -73,10 +126,10 @@
   font-size: 16px;
   margin-bottom: 15px;
   width: 100%;
-}
 
-.weekLeaderboardButton:hover {
-  background-color: #0984ad;
+  &:hover {
+    background-color: #0984ad;
+  }
 }
 
 .dateRangeDropdowns {
@@ -184,7 +237,7 @@ select.customSelect {
 }
 
 .checkboxItem {
-  flex: 0 1 15%; // Adjust the percentage to fit six items per ro
+  flex: 0 1 15%; // Adjust the percentage to fit six items per row
   padding: 3px;
   padding-left: 3%;
   box-sizing: border-box;
@@ -267,6 +320,10 @@ select.customSelect {
   cursor: pointer;
   font-size: 16px;
   margin: 0 10px;
+
+  &:hover {
+    background-color: #0984ad;
+  }
 }
 
 .toggleButton.active {
