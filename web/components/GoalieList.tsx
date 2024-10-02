@@ -1,7 +1,7 @@
 // web/components/GoalieList.tsx
 
 import React, { useEffect, useState } from "react";
-import { supabase } from "lib/supabase/utils/supabaseClient";
+import supabase from "lib/supabase";
 import GoalieTable from "./GoalieTable";
 import styles from "../styles/Goalies.module.scss";
 import { format } from "date-fns";

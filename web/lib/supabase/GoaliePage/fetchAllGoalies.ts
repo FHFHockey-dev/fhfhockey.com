@@ -1,6 +1,6 @@
 // lib/supabase/GoaliePage/fetchAllGoalies.ts
 
-import { supabase } from "lib/supabase/utils/supabaseClient";
+import supabase from "lib/supabase";
 import { GoalieStatRaw } from "./types";
 
 /**

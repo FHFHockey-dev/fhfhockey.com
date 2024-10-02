@@ -1,6 +1,6 @@
 // utils/dataFetching.ts
 
-import { supabase } from "lib/supabase/utils/supabaseClient";
+import supabase from "lib/supabase";
 import { CombinedGameLog, PlayerGameLog } from "./types";
 
 /**

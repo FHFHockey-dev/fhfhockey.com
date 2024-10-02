@@ -2,7 +2,7 @@
 // web/pages/skoCharts.tsx
 
 import React, { useEffect, useState } from "react";
-import { supabase } from "lib/supabase/utils/supabaseClient";
+import supabase from "lib/supabase";
 import {
   PerGameStatSummaries,
   CharacteristicResult,
