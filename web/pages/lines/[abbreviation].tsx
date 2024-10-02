@@ -1,3 +1,5 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\lines\[abbreviation].tsx
+
 import React, { useRef } from "react";
 import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";

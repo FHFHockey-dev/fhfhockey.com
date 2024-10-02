@@ -105,19 +105,22 @@ async function getAllPlayers(seasonId?: number) {
     teamName: item.teamName,
     teamAbbreviation: item.teamAbbreviation,
     teamLogo: item.teamLogo,
-    firstName: item.firstName.default,
-    lastName: item.lastName.default,
-    fullName: `${item.firstName.default} ${item.lastName.default}`,
+    firstName: item.firstName?.default ?? item.firstName, // Use the default field, but fall back to the original if undefined
+    lastName: item.lastName?.default ?? item.lastName, // Same as above
+    fullName: `${item.firstName?.default ?? item.firstName} ${
+      item.lastName?.default ?? item.lastName
+    }`, // Handle potential undefineds
     positionCode: item.positionCode,
     sweaterNumber: item.sweaterNumber,
     birthDate: item.birthDate,
-    birthCity: item.birthCity.default,
+    birthCity: item.birthCity?.default ?? item.birthCity, // Handle birthCity safely
     birthCountry: item.birthCountry,
     age: differenceInYears(new Date(), new Date(item.birthDate)),
     height: item.heightInCentimeters,
     weight: item.weightInKilograms,
     image: item.headshot,
   }));
+
   // remove duplicate players
   const playersMap: Record<number, Player> = {};
   players.forEach((player) => {

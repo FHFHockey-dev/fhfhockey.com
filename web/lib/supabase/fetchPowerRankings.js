@@ -20,39 +20,6 @@ async function Fetch(url) {
   return response.json();
 }
 
-/**
- * Fetches all data from a Supabase query with pagination.
- * @param {object} query - The Supabase query builder.
- * @param {number} [pageSize=1000] - Number of rows per page.
- * @returns {Promise<Array>} - Concatenated array of all fetched rows.
- */
-async function fetchAllWithPagination(query, pageSize = 1000) {
-  let allData = [];
-  let page = 0;
-  let fetchedData = [];
-
-  do {
-    const { data, error, count } = await query.range(
-      page * pageSize,
-      (page + 1) * pageSize - 1
-    );
-
-    if (error) {
-      throw error;
-    }
-
-    if (data) {
-      fetchedData = data;
-      allData = allData.concat(fetchedData);
-      page++;
-    } else {
-      fetchedData = [];
-    }
-  } while (fetchedData.length === pageSize);
-
-  return allData;
-}
-
 // Team Information
 const teamsInfo = {
   NJD: { name: "New Jersey Devils", franchiseId: 23, id: 1 },
@@ -87,6 +54,7 @@ const teamsInfo = {
   ARI: { name: "Arizona Coyotes", franchiseId: 28, id: 53 },
   VGK: { name: "Vegas Golden Knights", franchiseId: 38, id: 54 },
   SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
+  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 },
 };
 
 // Fetch NHL Seasons
