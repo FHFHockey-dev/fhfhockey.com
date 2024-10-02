@@ -5,7 +5,7 @@ import { NextSeo } from "next-seo";
 
 import Container from "components/Layout/Container";
 import { getTeams } from "lib/NHL/server";
-import StrengthOfSchedule from "web/components/teamLandingPage/StrengthOfSchedule";
+import StrengthOfSchedule from "components/TeamLandingPage/strengthofSchedule";
 import { Team } from "lib/NHL/types";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import ClientOnly from "components/ClientOnly";
