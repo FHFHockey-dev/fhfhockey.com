@@ -15,7 +15,7 @@ import "../styles/vars.scss";
 // TODO: rewrite using css module
 import "../styles/Home.scss";
 import "pages/game/GamePage.scss";
-import "components/TeamLandingPage/teamLandingPage.module.scss";
+import "components/TeamLandingPage/teamLandingPage.css";
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
