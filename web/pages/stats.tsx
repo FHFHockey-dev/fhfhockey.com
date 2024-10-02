@@ -10,7 +10,7 @@ import { Team } from "lib/NHL/types";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import ClientOnly from "components/ClientOnly";
 import { supabase } from "lib/supabase/utils/supabaseClient";
-import GoalieTrends from "components/TeamLandingPage/GoalieTrends";
+import GoalieTrends from "components/TeamLandingPage/goalieTrends";
 
 import { fetchAllRows } from "utils/fetchAllRows";
 
