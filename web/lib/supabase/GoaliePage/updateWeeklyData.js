@@ -5,7 +5,7 @@ require("dotenv").config({ path: "../../../.env.local" });
 
 // Initialize Supabase client with Service Role Key
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY;
 
 console.log("Supabase URL:", supabaseUrl);
 console.log("Supabase anon Role Key:", supabaseKey);
