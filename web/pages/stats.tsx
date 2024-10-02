@@ -12,7 +12,7 @@ import ClientOnly from "components/ClientOnly";
 import { supabase } from "lib/supabase/utils/supabaseClient";
 import GoalieTrends from "components/TeamLandingPage/GoalieTrends";
 
-import { fetchAllRows } from "web/utils/fetchAllRows"; // Import the utility function
+import { fetchAllRows } from "utils/fetchAllRows";
 
 type StatsProps = {
   teams: Team[];

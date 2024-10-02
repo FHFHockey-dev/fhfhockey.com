@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from "react";
 import styles from "../../styles/LinePairGrid.module.scss";
 import supabase from "lib/supabase";
-import { getTeamColors } from "web/components/DateRangeMatrix/utilities";
+import { getTeamColors } from "components/DateRangeMatrix/utilities";
 
 type GoalieCardProps = {
   name: string;

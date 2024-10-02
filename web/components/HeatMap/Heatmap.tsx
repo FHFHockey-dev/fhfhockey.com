@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import supabase from "web/lib/supabase";
+import supabase from "lib/supabase";
 import { teamsInfo } from "lib/teamsInfo";
 import styles from "../../styles/teamStats.module.scss";
 import * as d3 from "d3";

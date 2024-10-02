@@ -1,5 +1,5 @@
 import React from "react";
-import styles from "web/styles/wigoCharts.module.scss";
+import styles from "styles/wigoCharts.module.scss";
 
 const WigoCharts: React.FC = () => {
   // Add your component logic here

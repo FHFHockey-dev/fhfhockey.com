@@ -3,8 +3,8 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
-import supabase from "web/lib/supabase";
-import styles from "web/styles/PPTOIChart.module.scss";
+import supabase from "lib/supabase";
+import styles from "styles/PPTOIChart.module.scss";
 
 interface RawPlayerData {
   player_id: number;

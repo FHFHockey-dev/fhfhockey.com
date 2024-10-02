@@ -3,16 +3,16 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSnackbar } from "notistack";
-import { teamsInfo } from "web/lib/NHL/teamsInfo";
-import styles from "web/styles/ShiftChart.module.scss";
+import { teamsInfo } from "lib/NHL/teamsInfo";
+import styles from "styles/ShiftChart.module.scss";
 import Fetch from "lib/cors-fetch";
 import { GoalIndicators } from "hooks/useGoals";
-import PowerPlayAreaIndicators from "web/components/ShiftChart/PowerPlayAreaIndicators";
+import PowerPlayAreaIndicators from "components/ShiftChart/PowerPlayAreaIndicators";
 import LinemateMatrix, {
   OPTIONS as LINEMATE_MATRIX_MODES,
-} from "web/components/LinemateMatrix/index";
+} from "components/LinemateMatrix/index";
 import { queryTypes, useQueryState } from "next-usequerystate";
-import supabase from "web/lib/supabase";
+import supabase from "lib/supabase";
 
 // TODO
 

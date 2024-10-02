@@ -15,7 +15,7 @@ import { useState, useEffect, useMemo } from "react";
 import DateRangeMatrix, {
   OPTIONS as DATERANGE_MATRIX_MODES,
   Mode,
-} from "web/components/DateRangeMatrix/index";
+} from "components/DateRangeMatrix/index";
 import TeamDropdown from "components/DateRangeMatrix/TeamDropdown";
 import TeamSelect from "components/TeamSelect";
 import LinePairGrid from "components/DateRangeMatrix/LinePairGrid";
@@ -31,8 +31,8 @@ import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import { teamsInfo } from "lib/NHL/teamsInfo";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import { fetchAggregatedData } from "web/components/DateRangeMatrix/fetchAggregatedData";
-import { calculateLinesAndPairs } from "web/components/DateRangeMatrix/lineCombinationHelper";
+import { fetchAggregatedData } from "components/DateRangeMatrix/fetchAggregatedData";
+import { calculateLinesAndPairs } from "components/DateRangeMatrix/lineCombinationHelper";
 
 type TeamAbbreviation = keyof typeof teamsInfo;
 

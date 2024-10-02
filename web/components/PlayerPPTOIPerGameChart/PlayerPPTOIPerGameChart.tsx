@@ -4,8 +4,8 @@
 import React, { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
 import { useRouter } from "next/router";
-import supabase from "web/lib/supabase";
-import styles from "web/styles/teamStats.module.scss";
+import supabase from "lib/supabase";
+import styles from "styles/teamStats.module.scss";
 import {
   Chart as ChartJS,
   CategoryScale,

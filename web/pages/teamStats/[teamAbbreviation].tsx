@@ -6,7 +6,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import supabase from "web/lib/supabase";
+import supabase from "lib/supabase";
 import styles from "../../styles/teamStats.module.scss";
 import { teamsInfo } from "lib/teamsInfo";
 import PPTOIChart from "components/PlayerPPTOIPerGameChart/PPTOIChart";
