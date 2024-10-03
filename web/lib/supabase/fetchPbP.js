@@ -8,7 +8,7 @@ const { fetchCurrentSeason } = require("../../utils/fetchCurrentSeason.js");
 
 const BATCH_SIZE = 10; // Adjust this value for batch processing
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabaseKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY || "";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const ROW_LIMIT = 1000; // Limit for Supabase row fetch
@@ -194,7 +194,7 @@ async function processPlayByPlayData() {
 
       const BATCH_SIZE = 10; // Adjust this value for batch processing
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+      const supabaseKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY || "";
       const supabase = createClient(supabaseUrl, supabaseKey);
 
       const ROW_LIMIT = 1000; // Limit for Supabase row fetch
