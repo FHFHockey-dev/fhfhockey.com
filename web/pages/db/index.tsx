@@ -24,6 +24,7 @@ export default function Page() {
   const [numGames, setNumGames] = useState(0);
   const [games, setGames] = useState<{ id: number; date: string }[]>([]);
   const season = useCurrentSeason();
+  console.log(season);
 
   async function updatePlayers() {
     try {
