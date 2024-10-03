@@ -8,7 +8,7 @@ const ProgressBar = require("progress");
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY; // Use service role key for server-side operations
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY; // Use service role key for server-side operations
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Utility function to fetch and parse JSON

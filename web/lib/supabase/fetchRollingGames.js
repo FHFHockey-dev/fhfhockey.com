@@ -7,7 +7,7 @@ const { parseISO, isBefore } = require("date-fns");
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY; // Corrected environment variable
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY; // Corrected environment variable
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Utility function to fetch and parse JSON with error handling

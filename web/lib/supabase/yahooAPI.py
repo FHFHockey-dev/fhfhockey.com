@@ -10,7 +10,7 @@ load_dotenv('C:/Users/timbr/OneDrive/Desktop/fhfhockey.com-3/web/.env.local')
 
 # Constants from environment variables
 SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
-SUPABASE_KEY = os.getenv('NEXT_SUPABASE_SERVICE_ROLE_KEY')
+SUPABASE_KEY = os.getenv('NEXT_PUBLIC_SUPABASE_PUBLIC_KEY')
 YFPY_CONSUMER_KEY = os.getenv('YFPY_CONSUMER_KEY')
 YFPY_CONSUMER_SECRET = os.getenv('YFPY_CONSUMER_SECRET')
 print(SUPABASE_URL)
