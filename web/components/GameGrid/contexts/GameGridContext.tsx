@@ -1,4 +1,7 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\GameGrid\contexts\GameGridContext.tsx
+
 import { useTeamsMap } from "hooks/useTeams";
+
 import React, { createContext, useContext } from "react";
 
 type ContextValue = {
@@ -13,6 +16,7 @@ export default function GameGridContext({
   children: React.ReactNode;
 }) {
   const teams = useTeamsMap();
+
   return <context.Provider value={{ teams }}>{children}</context.Provider>;
 }
 

@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Fetch from "lib/cors-fetch";
 import { teamsInfo } from "lib/NHL/teamsInfo";
-import PoissonDistributionChart from "web/components/PoissonDistributionChart";
+import PoissonDistributionChart from "components/PoissonDistributionChart";
 
 export default function Page() {
   const router = useRouter();

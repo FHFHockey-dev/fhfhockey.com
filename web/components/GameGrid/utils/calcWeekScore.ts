@@ -1,3 +1,5 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\GameGrid\utils\calcWeekScore.ts
+
 const average = (array: (number | null)[]) => {
   let total = 0;
   array.forEach((num) => {

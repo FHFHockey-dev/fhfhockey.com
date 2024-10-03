@@ -19,7 +19,7 @@ const TeamStats = () => {
 
   // Sort teams alphabetically by name
   const sortedTeams = teams
-    .slice()
+    ?.slice()
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
@@ -48,11 +48,17 @@ const TeamStats = () => {
                   }
                 >
                   <div className="center-stripe"></div>
-                  <img
-                    src={`/teamLogos/${team.name.replace(/\s+/g, " ")}.png`}
-                    alt={team.name}
-                    className={styles.teamLogo}
-                  />
+                  <div className={styles.teamLogoContainer}>
+                    <img
+                      src={`/teamLogos/${team.abbreviation.replace(
+                        /\s+/g,
+                        " "
+                      )}.png`}
+                      alt={team.name}
+                      className={styles.teamLogo}
+                    />
+                  </div>
+
                   <div className={styles.teamAbbrev}>{team.abbreviation}</div>
                 </a>
               </Link>

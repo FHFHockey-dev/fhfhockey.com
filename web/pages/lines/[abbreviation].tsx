@@ -1,3 +1,5 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\lines\[abbreviation].tsx
+
 import React, { useRef } from "react";
 import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
@@ -11,6 +13,7 @@ import TimeAgo from "components/TimeAgo";
 import Select from "components/Select";
 import CategoryTitle from "components/LineCombinations/CategoryTitle";
 import Line from "components/LineCombinations/Line";
+import { mapTeamAbbreviation } from "lib/NHL/utils/utils";
 
 import { LineChange } from "components/LineCombinations/PlayerCard/SkaterCard";
 import Custom404 from "pages/404";
@@ -96,8 +99,11 @@ export default function TeamLC({
 }: Props) {
   const router = useRouter();
   const { abbreviation } = router.query;
+  const mappedAbbreviation = mapTeamAbbreviation(abbreviation as string); // Map abbreviation
+
   const onTeamChange = (newAbbreviation: string) => {
-    router.push(`/lines/${newAbbreviation}`);
+    const mappedNewAbbreviation = mapTeamAbbreviation(newAbbreviation);
+    router.push(`/lines/${mappedNewAbbreviation}`);
   };
 
   // download the line combo
@@ -272,39 +278,45 @@ export default function TeamLC({
 }
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const abbreviation = params!.abbreviation;
-  // for Team Select
-  const teams = await getTeams();
+  const abbreviation = params!.abbreviation as string;
+  const mappedAbbreviation = mapTeamAbbreviation(abbreviation); // Map abbreviation
 
-  const team = teams.find((team) => team.abbreviation === abbreviation);
+  const teams = await getTeams();
+  const team = teams.find((team) => team.abbreviation === mappedAbbreviation);
+
   if (!team) {
+    console.warn(`Team not found for abbreviation: ${mappedAbbreviation}`);
+    return { notFound: true };
+  }
+
+  try {
+    const lineCombinations = await getLineCombinations(team.id);
     return {
       props: {
-        teams: [],
+        teamName: team.name,
+        lastUpdated: lineCombinations.game.startTime,
+        lineCombinations,
+        teams,
       },
-      notFound: true,
+      revalidate: 60, // In seconds
     };
+  } catch (error) {
+    console.error(
+      `Failed to get line combinations for team ${mappedAbbreviation}:`,
+      error
+    );
+    return { notFound: true };
   }
-  const lineCombinations = await getLineCombinations(team.id);
-
-  return {
-    props: {
-      teamName: team?.name,
-      lastUpdated: lineCombinations.game.startTime,
-      lineCombinations,
-      teams,
-    },
-    revalidate: 60, // In seconds
-  };
 };
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const teams = (await getTeams()).map((team) => ({
+  const teams = await getTeams();
+  const paths = teams.map((team) => ({
     params: { abbreviation: team.abbreviation },
   }));
 
   return {
-    paths: teams,
+    paths,
     fallback: false,
   };
 };

@@ -12,6 +12,7 @@ export async function fetchCurrentSeason() {
 
   const currentSeason = data.data[0];
   const previousSeason = data.data[1];
+  const nextSeason = data.data[2];
   const now = new Date();
   const startDate = new Date(currentSeason.startDate);
   const endDate = new Date(currentSeason.regularSeasonEndDate);
@@ -32,6 +33,8 @@ export async function fetchCurrentSeason() {
         new Date(previousSeason.regularSeasonEndDate).getDate() + 1
       ),
       playoffsEndDate: new Date(previousSeason.endDate),
+      previousSeason, // Add this
+      nextSeason, // Add this
     };
   } else {
     return {
@@ -40,6 +43,10 @@ export async function fetchCurrentSeason() {
       endDate: currentSeason.regularSeasonEndDate,
       playoffsStartDate,
       playoffsEndDate,
+      idPrev: previousSeason.id,
+      idTwo: nextSeason.id,
     };
   }
 }
+
+// export async function fetchLastSeason() {

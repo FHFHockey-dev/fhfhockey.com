@@ -1,234 +1,144 @@
+///////////////////////////////////////////////////////////////////////////////////////////
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\lib\supabase\fetchPPTOIdata.js
+
 require("dotenv").config({ path: "../../.env.local" });
 const { createClient } = require("@supabase/supabase-js");
-const fetch = require("node-fetch"); // Ensure you have node-fetch or equivalent installed
-const { format, subDays } = require("date-fns");
-const { de } = require("date-fns/locale");
+const fetch = require("node-fetch");
 
-// Initialize Supabase client
+const BATCH_SIZE = 10; // Adjust this value for the size of each batch
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY || "";
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-async function checkTables() {
-  try {
-    const { data, error } = await supabase
-      .from("pbp_games")
-      .select("*")
-      .limit(1);
-
-    if (error) throw error;
-
-    console.log("Connection to PbP_Games successful, data:", data);
-  } catch (err) {
-    console.error("Error accessing PbP_Games:", err.message);
-  }
+// Helper function for delaying retries
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-checkTables();
+// Step 1: Fetch season data to determine start and end dates for the past 5 years
+async function fetchSeasonData() {
+  const url =
+    "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22DESC%22%7D%5D";
 
-async function fetchMissingGameIDs() {
-  // Fetch all game IDs from 'games' table
-  const { data: allGameIds, error: allGamesError } = await supabase
-    .from("games")
-    .select("id");
-
-  if (allGamesError) {
-    console.error("Error fetching all game IDs:", allGamesError);
-    return [];
-  }
-
-  // Fetch all game IDs from 'pbp_games' table
-  const { data: pbpGameIds, error: pbpGamesError } = await supabase
-    .from("pbp_games")
-    .select("id");
-
-  if (pbpGamesError) {
-    console.error("Error fetching pbp game IDs:", pbpGamesError);
-    return [];
-  }
-
-  const pbpGameIdSet = new Set(pbpGameIds.map((game) => game.id));
-  const missingGameIds = allGameIds.filter(
-    (game) => !pbpGameIdSet.has(game.id)
-  );
-
-  return missingGameIds.map((game) => game.id);
-}
-
-async function getMostRecentGameDate() {
-  const { data, error } = await supabase
-    .from("pbp_games")
-    .select("date")
-    .order("date", { ascending: false })
-    .limit(1);
-
-  if (error) {
-    console.error("Error fetching most recent game date:", error);
-    return null;
-  }
-
-  return data.length > 0 ? new Date(data[0].date) : null;
-}
-
-// Function to fetch game IDs from Supabase
-async function fetchGameIDs(startDate) {
-  const today = new Date();
-  const startFetchDate = startDate
-    ? format(startDate, "yyyy-MM-dd")
-    : format(subDays(today, 180), "yyyy-MM-dd"); // Start from 180 days ago if no games exist
-  const { data, error } = await supabase
-    .from("games")
-    .select("id")
-    .eq("type", 2) // Only regular season games
-    .gte("date", startFetchDate);
-
-  if (error) {
-    console.error("Error fetching game IDs:", error);
-    return [];
-  }
-
-  return data.map((game) => game.id);
-}
-
-// Function to fetch play-by-play data from NHL API using the custom fetch wrapper
-async function fetchPlayByPlayData(gameId) {
-  const url = `https://api-web.nhle.com/v1/gamecenter/${gameId}/play-by-play`;
   try {
     const response = await fetch(url);
-    return await response.json();
+    const data = await response.json();
+
+    // Filter for the last 5 seasons
+    const seasons = data.data.slice(0, 5);
+    return seasons.map((season) => ({
+      seasonId: season.id,
+      startDate: season.startDate.split("T")[0],
+      endDate: season.endDate.split("T")[0],
+      preseasonStart: season.preseasonStartdate
+        ? season.preseasonStartdate.split("T")[0]
+        : null,
+    }));
   } catch (error) {
-    console.error(`Failed to fetch data for game ${gameId}:`, error);
-    return null;
+    console.error("Error fetching season data:", error);
+    return [];
   }
 }
 
-// Function to process data and extract unique points
-async function processGameData() {
-  const missingGameIds = await fetchMissingGameIDs();
+// Step 2: Paginate through the schedule API to get all game IDs for all seasons
+async function fetchGameIDsForSeasons(seasons) {
+  const allGameIds = new Set();
 
-  // Concatenate missing games with the ones fetched from the API
-  const gameIDs = missingGameIds.concat(await fetchGameIDs());
+  for (const season of seasons) {
+    let currentDate = season.startDate;
 
-  for (const gameId of gameIDs) {
-    console.log(`Starting scraping for Game: ${gameId}`);
-    try {
-      const gameData = await fetchPlayByPlayData(gameId);
-      if (gameData) {
-        await upsertGameData(gameId, gameData);
+    while (currentDate <= season.endDate) {
+      const url = `https://api-web.nhle.com/v1/schedule/${currentDate}`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        data.gameWeek.forEach((day) => {
+          day.games.forEach((game) => {
+            allGameIds.add(game.id); // Add each game ID to the Set
+          });
+        });
+
+        currentDate = data.nextStartDate; // Move to the next date from API response
+      } catch (error) {
+        console.error(`Error fetching games for ${currentDate}:`, error);
+        break; // Stop if there's an error
       }
-      console.log(`Finished scraping for Game: ${gameId}`);
-    } catch (error) {
-      console.error(`Failed to process game ${gameId}: Retrying...`, error);
-      await retryUpsert(gameId); // Retry logic
     }
   }
+
+  return Array.from(allGameIds); // Convert Set to Array
 }
 
-async function retryUpsert(gameId, attempts = 3) {
-  for (let attempt = 1; attempt <= attempts; attempt++) {
-    try {
-      const gameData = await fetchPlayByPlayData(gameId);
-      await upsertGameData(gameId, gameData);
-      return; // Exit if successful
-    } catch (error) {
-      console.error(`Attempt ${attempt} failed for game ${gameId}:`, error);
-      if (attempt === attempts)
-        throw new Error(`Failed after ${attempts} attempts.`);
-    }
-  }
-}
-
-async function upsertGameData(gameId, gameData) {
-  // Upsert Game data
-  const gameUpsert = {
-    id: gameId,
-    date: gameData.gameDate,
-    starttime: gameData.startTimeUTC,
-    type: gameData.gameType,
-    season: gameData.season,
-    hometeamid: gameData.homeTeam.id,
-    hometeamname: gameData.homeTeam.name.default,
-    hometeamabbrev: gameData.homeTeam.abbrev,
-    hometeamscore: gameData.homeTeam.score,
-    hometeamshots: gameData.homeTeam.sog,
-    awayteamid: gameData.awayTeam.id,
-    awayteamname: gameData.awayTeam.name.default,
-    awayteamabbrev: gameData.awayTeam.abbrev,
-    awayteamscore: gameData.awayTeam.score,
-    awayteamshots: gameData.awayTeam.sog,
-    venue: gameData.venue.default,
-    location: gameData.venueLocation.default,
-    outcome: gameData.gameOutcome.lastPeriodType,
-  };
+// Step 3: Upsert game data into Supabase
+async function upsertGameData(gameId) {
+  const url = `https://api-web.nhle.com/v1/gamecenter/${gameId}/play-by-play`;
 
   try {
-    const { data, error } = await supabase.from("pbp_games").upsert(gameUpsert);
+    const response = await fetch(url);
+    const gameData = await response.json();
+
+    const gameUpsert = {
+      id: gameId,
+      date: gameData.gameDate,
+      starttime: gameData.startTimeUTC,
+      type: gameData.gameType,
+      season: gameData.season,
+      hometeamid: gameData.homeTeam?.id || null,
+      hometeamname: gameData.homeTeam?.placeName?.default || null,
+      hometeamabbrev: gameData.homeTeam?.abbrev || null,
+      hometeamscore: gameData.homeTeam?.score || null,
+      awayteamid: gameData.awayTeam?.id || null,
+      awayteamname: gameData.awayTeam?.placeName?.default || null,
+      awayteamabbrev: gameData.awayTeam?.abbrev || null,
+      awayteamscore: gameData.awayTeam?.score || null,
+      location: gameData.venue?.default || null,
+      outcome: gameData.gameOutcome?.lastPeriodType || null,
+    };
+
+    const { error } = await supabase.from("pbp_games").upsert(gameUpsert);
     if (error) throw error;
 
-    // Upsert play data
-    if (gameData.plays && gameData.plays.length > 0) {
-      for (const play of gameData.plays) {
-        const details = play.details || {};
-        const playUpsert = {
-          id: play.eventId,
-          gameid: gameId,
-          periodnumber: play.periodDescriptor.number,
-          periodtype: play.periodDescriptor.periodType,
-          timeinperiod: play.timeInPeriod,
-          timeremaining: play.timeRemaining,
-          situationcode: play.situationCode,
-          typedesckey: play.typeDescKey,
-          typecode: play.typeCode,
-          hometeamdefendingside: play.homeTeamDefendingSide,
-          sortorder: play.sortOrder,
-          eventownerteamid: details.eventOwnerTeamId || null,
-          losingplayerid: details.losingPlayerId || null,
-          winningplayerid: details.winningPlayerId || null,
-          shootingplayerid: details.shootingPlayerId || null,
-          goalieinnetid: details.goalieInNetId || null,
-          awaysog: details.awaySOG ?? null,
-          homesog: details.homeSOG ?? null,
-          blockingplayerid: details.blockingPlayerId || null,
-          hittingplayerid: details.hittingPlayerId || null,
-          hitteeplayerid: details.hitteePlayerId || null,
-          durationofpenalty: details.duration || null,
-          committedbyplayerid: details.committedByPlayerId || null,
-          drawnbyplayerid: details.drawnByPlayerId || null,
-          penalizedteam: details.typeCode || null,
-          scoringplayerid: details.scoringPlayerId || null,
-          scoringplayertotal: details.scoringPlayerTotal || null,
-          shottype: details.shotType || null,
-          assist1playerid: details.assist1PlayerId || null,
-          assist1playertotal: details.assist1PlayerTotal || null,
-          assist2playerid: details.assist2PlayerId || null,
-          assist2playertotal: details.assist2PlayerTotal || null,
-          homescore: details.homeScore ?? null,
-          awayscore: details.awayScore ?? null,
-          playerid: details.playerId || null,
-          zonecode: details.zoneCode || null,
-          xcoord: details.xCoord ?? null,
-          ycoord: details.yCoord ?? null,
-          reason: details.reason || null,
-        };
-
-        const { data: playData, error: playError } = await supabase
-          .from("pbp_plays")
-          .upsert(playUpsert);
-
-        if (playError) {
-          console.error(
-            `Error upserting play data for play ${play.eventId}:`,
-            playError
-          );
-          continue; // Optionally skip this play on error
-        }
-      }
-    }
-  } catch (err) {
-    console.error(`Error upserting data for game ${gameId}:`, err.message);
+    console.log(`Game ${gameId} upserted successfully.`);
+  } catch (error) {
+    console.error(`Error upserting game data for ${gameId}:`, error);
   }
 }
 
-processGameData();
+// Step 4: Fetch all game IDs, upsert them, and complete the `pbp_games` table before moving on
+const processGameIDs = async () => {
+  console.log("Fetching season data...");
+  const seasons = await fetchSeasonData();
 
-module.exports = { processGameData }; // Export the function
+  console.log("Fetching game IDs for the last 5 seasons...");
+  const gameIds = await fetchGameIDsForSeasons(seasons);
+
+  console.log(
+    `Collected ${gameIds.length} game IDs. Upserting game data into pbp_games...`
+  );
+
+  await processInBatches(gameIds, BATCH_SIZE, async (gameId) => {
+    await upsertGameData(gameId);
+  });
+
+  console.log("pbp_games table populated.");
+};
+
+module.exports = { processGameIDs };
+
+// Helper function to process batches
+async function processInBatches(items, batchSize, processFunction) {
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    await Promise.all(batch.map((item) => processFunction(item)));
+  }
+}
+
+module.exports = { processGameIDs };
+
+// First fetch and upsert game IDs into pbp_games
+async function main() {
+  await processGameIDs();
+}
+
+main();

@@ -1,3 +1,5 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\lib\NHL\client\index.ts
+
 import type {
   Boxscore,
   Player,
@@ -29,6 +31,7 @@ async function get<T = any>(path: string): Promise<T> {
 export async function getCurrentSeason(): Promise<Season> {
   return await get("/season");
 }
+
 export async function getTeams(seasonId?: number): Promise<Team[]> {
   return await get(`/team/${seasonId ?? "current"}`);
 }

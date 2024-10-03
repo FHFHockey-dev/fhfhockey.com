@@ -3,16 +3,16 @@
 
 import React, { useEffect, useState } from "react";
 import styles from "../../styles/LinePairGrid.module.scss";
-import { fetchAggregatedData } from "web/components/DateRangeMatrix/fetchAggregatedData";
-import { calculateLinesAndPairs } from "web/components/DateRangeMatrix/lineCombinationHelper";
+import { fetchAggregatedData } from "components/DateRangeMatrix/fetchAggregatedData";
+import { calculateLinesAndPairs } from "components/DateRangeMatrix/lineCombinationHelper";
 import {
   PlayerData,
   formatTime,
   parseTime,
   getFranchiseIdByTeamAbbreviation,
-} from "web/components/DateRangeMatrix/utilities";
-import PlayerCard from "web/components/DateRangeMatrix/PlayerCardDRM";
-import GoalieCard from "web/components/DateRangeMatrix/GoalieCardDRM";
+} from "components/DateRangeMatrix/utilities";
+import PlayerCard from "components/DateRangeMatrix/PlayerCardDRM";
+import GoalieCard from "components/DateRangeMatrix/GoalieCardDRM";
 
 type LinePairGridProps = {
   selectedTeam: string;

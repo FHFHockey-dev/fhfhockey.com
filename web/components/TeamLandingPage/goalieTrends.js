@@ -4,7 +4,7 @@
 import React, { useEffect, useState } from "react";
 import { teamsInfo } from "lib/NHL/teamsInfo";
 import Fetch from "lib/cors-fetch";
-import styles from "./GoalieTrends.module.scss";
+import styles from "styles/GoalieTrends.module.scss";
 import fetchWithCache from "lib/fetchWithCache"; // Adjust the path as necessary
 import DoughnutChart from "./DoughnutChart";
 
@@ -106,10 +106,10 @@ const GoalieTrends = () => {
             data: processGoalieData(response.data, totalGames),
           };
         } catch (error) {
-          console.error(
-            `Failed to fetch goalie stats for team ${teamAbbrev}:`,
-            error
-          );
+          // console.error(
+          //   `Failed to fetch goalie stats for team ${teamAbbrev}:`,
+          //   error
+          // );
           return { teamAbbrev, data: { totalGames, goalies: [] } };
         }
       }
@@ -142,7 +142,7 @@ const GoalieTrends = () => {
 
   const processGoalieData = (goalieData, totalGames) => {
     let processedData = {};
-    console.log("Goalie Data:", goalieData); // Log the goalie data for debugging
+    // console.log("Goalie Data:", goalieData); // Log the goalie data for debugging
     for (const goalie of goalieData) {
       const goalieId = goalie.playerId;
       const goalieFullName = goalie.goalieFullName;
@@ -193,9 +193,9 @@ const GoalieTrends = () => {
         (acc, goalie) => acc + goalie.gamesPlayed,
         0
       );
-      console.log(
-        `${teamAbbrev} - Total Team GP: ${totalTeamGames}, Total Goalie Starts: ${totalGoalieStarts}`
-      );
+      // console.log(
+      //   `${teamAbbrev} - Total Team GP: ${totalTeamGames}, Total Goalie Starts: ${totalGoalieStarts}`
+      // );
 
       // Check for discrepancy
       if (totalTeamGames !== totalGoalieStarts) {

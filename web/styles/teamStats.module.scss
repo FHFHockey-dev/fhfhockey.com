@@ -1,5 +1,9 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//  C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\styles\teamStats.module.scss
+
 .teamStatsContainer {
   text-align: center;
+  height: 100%;
 }
 
 .spanColorBlue {
@@ -17,9 +21,10 @@
 
 .teamsGrid {
   width: 80%;
+  height: 100%;
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 7px;
+  grid-gap: 20px;
   justify-content: center;
   margin: 0 auto;
   max-width: 1200px;
@@ -31,11 +36,12 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  outline: 6px solid #343434;
+  border: 1px solid var(--secondary-color);
+  border-radius: 6px;
   width: 120px;
   height: 80px;
-  background-color: #131313;
+  background-color: var(--primary-color);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   overflow: hidden;
 }
@@ -47,7 +53,7 @@
   left: 0;
   right: 0;
   height: 10px; /* Height of the thick center stripe */
-  background: var(--primary-color);
+  background: var(--secondary-color);
   opacity: 5;
   z-index: 1;
 }
@@ -60,31 +66,42 @@
   right: 0;
   height: 5px; /* Height of the thin stripes */
   background: var(--jersey);
-  opacity: 0.5;
+  opacity: 1;
   z-index: 1;
 }
 
 .teamCard:hover {
+  filter: drop-shadow(0 0 5px var(--secondary-color));
   transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.teamLogoContainer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-105%, -70%); /* Centers the container */
+  width: 50px;
+  height: 50px;
 }
 
 .teamLogo {
-  position: absolute;
-  top: 38%;
-  left: 25%;
-  transform: translate(-50%, -50%);
-  width: 50px;
-  height: 50px;
+  width: 100%;
+  height: 100%;
   filter: drop-shadow(0 0 5px var(--secondary-color));
   object-fit: cover;
-  opacity: 0.4;
+  opacity: 1;
+  transition: transform 0.3s ease, filter 0.3s ease; /* Smooth transition for scale and brightness */
+}
+
+.teamLogoContainer:hover .teamLogo {
+  transform: scale(1.05); /* Scale only the image on hover */
+  filter: brightness(110%) drop-shadow(0 0 5px var(--primary-color));
 }
 
 .teamAbbrev {
   position: absolute;
   top: 65%;
-  left: 62%;
+  left: 65%;
   transform: translate(-50%, -50%);
   font-size: 1.85rem;
   text-transform: uppercase;
@@ -133,21 +150,34 @@
 .statsTable th,
 .statsTable td {
   padding: 7px 5px;
-  border: 2px solid #e0e0e0;
+  border: 2px solid #6c6c6c;
   text-align: center;
 }
 
 .statsTable th {
   background-color: #07aae2;
+  border: 2px solid #ffffff;
   color: #f9f9f9;
+}
+
+.statsTable tbody tr:first-child {
+  border-top: 2px solid #6c6c6c;
+}
+
+.statsTable tbody tr:last-child {
+  border-bottom: 2px solid #6c6c6c;
 }
 
 .statsTable tbody tr:nth-child(odd) {
   background-color: #222222;
+  border-left: 2px solid #6c6c6c;
+  border-right: 2px solid #6c6c6c;
 }
 
 .statsTable tbody tr:nth-child(even) {
   background-color: #343434;
+  border-left: 2px solid #6c6c6c;
+  border-right: 2px solid #6c6c6c;
 }
 
 .showMoreButton {
@@ -182,4 +212,52 @@
 
 .statsTableContainer::-webkit-scrollbar-thumb:hover {
   background-color: #07aae2;
+}
+
+/* Shot Map CSS */
+
+.hockeyRinkContainer {
+  position: relative;
+  width: 80%;
+  height: auto;
+  margin: 0 auto;
+}
+
+.hockeyRinkSvg {
+  width: 100%;
+  height: auto;
+  z-index: 1;
+  margin: 0 auto;
+}
+
+.heatmapOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%; // Ensure it's occupying full width
+  height: 100%; // Ensure it's occupying full height
+  z-index: 2; // Ensure it's above the rink
+  pointer-events: none; // Optional: allow interactions with background elements
+}
+
+.tooltip {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.75);
+  color: white;
+  padding: 5px;
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 999;
+}
+
+.seasonDropdown {
+  margin-bottom: 10px;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.seasonDropdown label {
+  cursor: pointer;
+  font-size: 14px;
 }

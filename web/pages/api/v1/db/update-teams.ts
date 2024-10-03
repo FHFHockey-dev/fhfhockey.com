@@ -1,3 +1,5 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\api\v1\db\update-teams.ts
+
 import { restGet } from "lib/NHL/base";
 import { getCurrentSeason } from "lib/NHL/server";
 import adminOnly from "utils/adminOnlyMiddleware";
@@ -37,15 +39,13 @@ export default adminOnly(async function handler(req, res) {
       );
     if (team_seasonError) throw team_seasonError;
 
-    res
-      .status(200)
-      .json({
-        message:
-          "successfully updated the teams table " +
-          "num teams: " +
-          currentSeasonTeamIds.size,
-        success: true,
-      });
+    res.status(200).json({
+      message:
+        "successfully updated the teams table " +
+        "num teams: " +
+        currentSeasonTeamIds.size,
+      success: true,
+    });
   } catch (e: any) {
     res.status(400).json({ message: e.message, success: false });
   }

@@ -1,3 +1,5 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\game-grid\[mode].tsx
+
 import React, { useEffect, useState } from "react";
 import { GetServerSideProps } from "next";
 import Router from "next/router";

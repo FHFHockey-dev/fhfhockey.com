@@ -1,9 +1,17 @@
+//////////////////////////////////////////////////////////////////////////////////////////
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\teamStats\[teamAbbreviation].tsx
+
+// I think pbp_plays and pbp_games are incomplete
+// We will have to redo the fetching of the data and upserting to the supabase table
+
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import supabase from "web/lib/supabase";
+import supabase from "lib/supabase";
 import styles from "../../styles/teamStats.module.scss";
 import { teamsInfo } from "lib/teamsInfo";
 import PPTOIChart from "components/PlayerPPTOIPerGameChart/PPTOIChart";
+import HockeyRinkSvg from "components/HockeyRinkSvg/HockeyRinkSvg";
+import HeatMap from "components/HeatMap/Heatmap";
 
 const curatedFields = [
   { key: "games_played", label: "GP" },
@@ -223,6 +231,20 @@ const TeamDetail = () => {
       <div className={styles.chartSection}>
         <h2>Power Play TOI % Per Game</h2>
         <PPTOIChart teamAbbreviation={teamAbbreviation as string} />
+      </div>
+
+      {/* Render Hockey Rink with Heatmap */}
+      <div className={styles.hockeyRinkContainer}>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="-5 -5 212 97"
+          className={styles.hockeyRinkSvg}
+        >
+          <HockeyRinkSvg />
+          <g className={styles.heatmapOverlay}>
+            <HeatMap teamAbbreviation={teamAbbreviation as string} />
+          </g>
+        </svg>
       </div>
     </div>
   );

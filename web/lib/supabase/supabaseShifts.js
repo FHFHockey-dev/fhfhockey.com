@@ -45,6 +45,7 @@ const teamsInfo = {
   ARI: { name: "Arizona Coyotes", franchiseId: 28, id: 53 },
   VGK: { name: "Vegas Golden Knights", franchiseId: 38, id: 54 },
   SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
+  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 },
 };
 
 // Initialize Supabase client

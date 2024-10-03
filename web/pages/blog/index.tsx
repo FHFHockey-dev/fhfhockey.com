@@ -1,3 +1,6 @@
+////////////////////////////////////////////////////////////////////////////////////////
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\blog\index.tsx
+
 import { GetStaticProps, NextPage } from "next";
 import Head from "next/head";
 import { groq } from "next-sanity";

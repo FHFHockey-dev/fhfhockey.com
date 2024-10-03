@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 
-import supabase from "web/lib/supabase";
+import supabase from "lib/supabase";
 import styles from "styles/BLSH.module.scss";
 import useCareerAveragesStats from "hooks/useCareerAveragesStats";
 

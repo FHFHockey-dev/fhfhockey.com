@@ -5,7 +5,7 @@ import getPowerPlayBlocks, {
   Time,
   parseTime,
 } from "utils/getPowerPlayBlocks";
-import { teamsInfo } from "web/lib/NHL/teamsInfo";
+import { teamsInfo } from "lib/NHL/teamsInfo";
 import {
   PERIOD_IN_SECONDS,
   PERIOD_LENGTH,

@@ -81,8 +81,10 @@ export async function getTeams(seasonId?: number): Promise<Team[]> {
   }));
 }
 
-export function getTeamLogo(teamName: string | undefined) {
-  return teamName ? `/teamLogos/${teamName}.png` : "/pictures/circle.png";
+export function getTeamLogo(teamAbbreviation: string | undefined) {
+  return teamAbbreviation
+    ? `/teamLogos/${teamAbbreviation}.png`
+    : "/pictures/circle.png";
 }
 
 /**
@@ -93,18 +95,25 @@ export async function getCurrentSeason(): Promise<Season> {
   const { data } = await supabase
     .from("seasons")
     .select("*")
-    .lte("startDate", new Date().toISOString())
+    //.lte("startDate", new Date().toISOString())
     .order("startDate", { ascending: false })
-    .limit(1)
-    .single();
+    .limit(2);
   if (data === null) throw Error("Cannot find the current season");
 
+  const currentSeason = data[0];
+  const lastSeason = data[1];
+
   return {
-    seasonId: data.id,
-    regularSeasonStartDate: data.startDate,
-    regularSeasonEndDate: data.regularSeasonEndDate,
-    seasonEndDate: data.endDate,
-    numberOfGames: data.numberOfGames,
+    seasonId: currentSeason.id,
+    regularSeasonStartDate: currentSeason.startDate,
+    regularSeasonEndDate: currentSeason.regularSeasonEndDate,
+    seasonEndDate: currentSeason.endDate,
+    numberOfGames: currentSeason.numberOfGames,
+    lastSeasonId: lastSeason.id,
+    lastRegularSeasonStartDate: lastSeason.startDate,
+    lastRegularSeasonEndDate: lastSeason.regularSeasonEndDate,
+    lastSeasonEndDate: lastSeason.endDate,
+    lastNumberOfGames: lastSeason.numberOfGames,
     slice: function (arg0: number, arg1: number): string {
       return "";
     },
@@ -118,6 +127,12 @@ export async function getSeasons(): Promise<Season[]> {
     regularSeasonEndDate: item.regularSeasonEndDate,
     seasonEndDate: item.endDate,
     numberOfGames: item.numberOfGames,
+    lastSeasonId: item.id,
+    lastRegularSeasonStartDate: item.startDate,
+    lastRegularSeasonEndDate: item.regularSeasonEndDate,
+    lastSeasonEndDate: item.endDate,
+    lastNumberOfGames: item.numberOfGames,
+
     slice: function (arg0: number, arg1: number): string {
       return "";
     },

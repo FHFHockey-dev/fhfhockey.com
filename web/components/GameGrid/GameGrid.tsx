@@ -1,3 +1,5 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\GameGrid\GameGrid.tsx
+
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/router";
 
@@ -25,7 +27,9 @@ import {
   isWithinInterval,
 } from "date-fns";
 import { DAYS, DAY_ABBREVIATION, WeekData } from "lib/NHL/types";
+
 import { useTeamsMap } from "hooks/useTeams";
+
 import GameGridContext from "./contexts/GameGridContext";
 
 function GameGridInternal({ mode, setMode }: GameGridProps) {
@@ -35,6 +39,7 @@ function GameGridInternal({ mode, setMode }: GameGridProps) {
     startAndEndOfWeek()
   );
   const teams = useTeamsMap();
+
   const [schedule, numGamesPerDay, loading] = useSchedule(
     format(new Date(dates[0]), "yyyy-MM-dd"),
     mode === "10-Day-Forecast"
@@ -99,7 +104,22 @@ function GameGridInternal({ mode, setMode }: GameGridProps) {
           return ascending ? a[key] - b[key] : b[key] - a[key];
         }
       }
-      return teams[a.teamId].name.localeCompare(teams[b.teamId].name);
+
+      // UNCOMMENT WHEN NHL API HAS 20242025 data
+      // return teams[a.teamId].name.localeCompare(teams[b.teamId].name);
+
+      const teamA = teams[a.teamId];
+      const teamB = teams[b.teamId];
+
+      if (!teamA && !teamB) {
+        return 0; // Both teams are undefined, consider them equal
+      } else if (!teamA) {
+        return 1; // teamA is undefined, place it after teamB
+      } else if (!teamB) {
+        return -1; // teamB is undefined, place it after teamA
+      }
+
+      return teamA.name.localeCompare(teamB.name);
     });
   }, [filteredColumns, teams, sortKeys]);
 

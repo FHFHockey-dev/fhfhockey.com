@@ -3,8 +3,8 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
-import supabase from "web/lib/supabase";
-import styles from "web/styles/PPTOIChart.module.scss";
+import supabase from "lib/supabase";
+import styles from "styles/PPTOIChart.module.scss";
 
 interface RawPlayerData {
   player_id: number;
@@ -93,7 +93,7 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
       }
     } while (data && data.length === pageSize);
 
-    console.log("Fetched raw data:", fetchedRawData);
+    // console.log("Fetched raw data:", fetchedRawData);
 
     // Convert to player data with adjusted date parsing
     const sanitizedData: PlayerData[] = fetchedRawData.map((player) => {
@@ -108,7 +108,7 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
       };
     });
 
-    console.log("Sanitized data:", sanitizedData);
+    // console.log("Sanitized data:", sanitizedData);
 
     setAllData(sanitizedData);
 
@@ -161,12 +161,12 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
       updateChartForCurrentMonth(sanitizedData);
     }, 0); // Delay to ensure states are set
 
-    console.log("Unique Months: ", uniqueMonths);
-    console.log("Month Dates: ", monthDates); // Check if December is included here
-    console.log(
-      "Sanitized data dates:",
-      sanitizedData.map((d) => d.date)
-    ); // This should show you the correctly adjusted months
+    // console.log("Unique Months: ", uniqueMonths);
+    // console.log("Month Dates: ", monthDates); // Check if December is included here
+    // console.log(
+    //   "Sanitized data dates:",
+    //   sanitizedData.map((d) => d.date)
+    // ); // This should show you the correctly adjusted months
   };
 
   const updateChartForCurrentMonth = (data: PlayerData[]) => {
@@ -175,8 +175,8 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
     const currentMonth = monthData[currentMonthIndex];
     if (!currentMonth) return; // Ensure currentMonth is defined
 
-    console.log("Current Month Index:", currentMonthIndex);
-    console.log("Current Month:", currentMonth);
+    // console.log("Current Month Index:", currentMonthIndex);
+    // console.log("Current Month:", currentMonth);
 
     if (viewMode === "month") {
       const filteredData = data.filter(
@@ -185,7 +185,7 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
           d.date.getMonth() === currentMonth.getMonth()
       );
 
-      console.log("Filtered Data for Current Month:", filteredData);
+      // console.log("Filtered Data for Current Month:", filteredData);
 
       drawChart(filteredData);
     } else {
@@ -205,7 +205,7 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
   };
 
   const drawChart = (data: PlayerData[], groupByMonth = false) => {
-    console.log("Drawing chart with data:", data);
+    // console.log("Drawing chart with data:", data);
 
     const svg = d3.select(chartRef.current);
     const tooltip = d3.select(tooltipRef.current);
@@ -561,7 +561,7 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
 
   const handleNextMonth = () => {
     if (currentMonthIndex < monthData.length - 1) {
-      console.log("Next Month Button Clicked");
+      // console.log("Next Month Button Clicked");
       setCurrentMonthIndex(currentMonthIndex + 1);
     }
   };

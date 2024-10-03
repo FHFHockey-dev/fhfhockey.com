@@ -1,3 +1,5 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\LineCombinations\utilities.ts
+
 import { NUM_PLAYERS_PER_LINE } from "components/LinemateMatrix";
 import { addHours } from "date-fns";
 import { getCurrentSeason } from "lib/NHL/server";
@@ -111,9 +113,10 @@ export async function getLineCombinations(
     teamId
   );
 
-  const goalies = goaliesStats.map((goalie) =>
-    processGoalie(goalie, gameOutcomes)
-  );
+  const goalies = goaliesStats
+    .filter((goalie) => goalie && goalie.length > 0) // Filter out invalid data
+    .map((goalie) => processGoalie(goalie, gameOutcomes))
+    .filter((goalie) => goalie !== null); // Filter out null results
 
   if (!skaters) throw new Error("Cannot find the stats for skaters");
 
@@ -121,14 +124,20 @@ export async function getLineCombinations(
   const playersStats = new Map<number, any>();
   // add sweaterNumber & lineChange
   [...skaters, ...goalies].forEach((item) => {
-    item.sweaterNumber = playerId_Info.get(item.playerId!)?.sweaterNumber ?? 0;
-    item.position = playerId_Info.get(item.playerId!)?.position ?? "L";
+    if (!item || !item.playerId) {
+      console.error("Invalid player data:", item); // Log or handle the case where the item is null/undefined
+      return;
+    }
+
+    item.sweaterNumber = playerId_Info.get(item.playerId)?.sweaterNumber ?? 0;
+    item.position = playerId_Info.get(item.playerId)?.position ?? "L";
     item.lineChange = getLineChangeType(
       promotions.map((p) => p.playerId),
       demotions.map((p) => p.playerId),
-      item.playerId!
+      item.playerId
     );
-    playersStats.set(item.playerId ?? 0, item);
+
+    playersStats.set(item.playerId, item);
   });
 
   const lines = convertToLines(lineCombinations[0]);
@@ -289,7 +298,12 @@ function getLineChangeType(
 function processGoalie(
   goalie: any[],
   gameOutcomes: Map<number, GameOutcome>
-): Partial<GoalieStats> {
+): Partial<GoalieStats> | null {
+  if (!goalie || goalie.length === 0) {
+    console.error("No goalie data found", goalie);
+    return null; // Handle missing goalie data
+  }
+
   const seasonStats = goalie.filter((item) => item.toi !== "00:00");
   const last10GamesStats = seasonStats.slice(0, 10);
 
@@ -304,6 +318,7 @@ function processGoalie(
     let SVPercentage = 0;
     let GAA = 0;
     for (const item of stats) {
+      if (!item || !item.saveShotsAgainst) continue; // Defensive check for valid item data
       SV += Number.parseInt(item.saveShotsAgainst.split("/")[0], 10);
       SVPercentage += item.savePctg;
       record[gameOutcomes.get(item.game.id) ?? "WIN"]++;

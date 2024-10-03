@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Fetch from "lib/cors-fetch";
-import GoalieList from "web/components/GoalieList";
-import GoalieLeaderboard from "web/components/GoalieLeaderboard";
+import GoalieList from "components/GoalieList";
+import GoalieLeaderboard from "components/GoalieLeaderboard";
 import styles from "styles/Goalies.module.scss";
 import {
   parseISO,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styles from "styles/wgoChart.module.scss";
-import supabase from "web/lib/supabase";
+import supabase from "lib/supabase";
 import axios from "axios";
 import { getCurrentSeason } from "lib/NHL/client";
 import { getPlayer } from "lib/NHL/client";
