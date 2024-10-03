@@ -1,5 +1,3 @@
-// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\GameGrid\TeamRow.tsx
-
 import Image from "next/image";
 import { formatWinOdds } from "./utils/calcWinOdds";
 import { formatWeekScore } from "./utils/calcWeekScore";
