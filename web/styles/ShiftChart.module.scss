@@ -306,7 +306,6 @@
 .shiftChartTable th:nth-child(2),
 .shiftChartTable td:nth-child(2) {
   position: sticky;
-  left: 27%;
   background-color: inherit; /* Ensure the background is not transparent */
   z-index: 3; /* Higher than the table's other cells to ensure it stacks on top */
 }

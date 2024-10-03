@@ -123,16 +123,61 @@ function GoalIndicator({
   awayTeam,
   scorer,
   assists,
-}: Goal) {
+  totalGameTimeInSeconds,
+  isOvertime,
+}: Goal & {
+  totalGameTimeInSeconds: number;
+  isOvertime: boolean;
+}) {
   const [showTooltip, setShowTooltip] = useState(false);
 
-  const leftPercentage = `${
-    ((timeInPeriod / PERIOD_IN_SECONDS) * PERIOD_LENGTH +
-      PERIOD_LENGTH * (period.number - 1)) *
-    100
-  }%`;
+  // Constants
+  const REGULAR_PERIOD_LENGTH_SECONDS = 20 * 60;
+  const OVERTIME_LENGTH_SECONDS = 5 * 60;
+  const regularGameLengthInSeconds = REGULAR_PERIOD_LENGTH_SECONDS * 3;
 
-  const isHomeScoring = scoreTeamAbbreviation === homeTeam.abbreviation;
+  // Calculate timeInGame
+  let timeInGame =
+    (period.number - 1) * REGULAR_PERIOD_LENGTH_SECONDS + timeInPeriod;
+
+  // Adjust leftPercentage based on isOvertime
+  let leftPercentage = 0;
+  if (isOvertime) {
+    if (period.number <= 3) {
+      // Regular periods in overtime game
+      const totalRegularPeriodsWidthPercentage = 92.3077; // (12 / 13) * 100
+      leftPercentage =
+        (timeInGame / regularGameLengthInSeconds) *
+        totalRegularPeriodsWidthPercentage;
+    } else if (period.number === 4) {
+      // Overtime period
+      const overtimeStartPercentage = 92.3077; // Start of overtime period
+      const overtimeWidthPercentage = 7.6923; // (1 / 13) * 100
+      leftPercentage =
+        overtimeStartPercentage +
+        (timeInPeriod / OVERTIME_LENGTH_SECONDS) * overtimeWidthPercentage;
+    } else {
+      // Shootout or other periods
+      leftPercentage = 100; // Place at the end
+    }
+  } else {
+    // Non-overtime game
+    leftPercentage = (timeInGame / regularGameLengthInSeconds) * 100;
+  }
+
+  // Ensure leftPercentage is within 0-100%
+  leftPercentage = Math.min(Math.max(leftPercentage, 0), 100);
+
+  // Convert to percentage string
+  const leftPercentageStr = `${leftPercentage}%`;
+
+  const indicatorPositionStyle = {
+    left: leftPercentageStr,
+    zIndex: 2, // Ensure it's on top if needed
+  };
+
+  const handleMouseEnter = () => setShowTooltip(true);
+  const handleMouseLeave = () => setShowTooltip(false);
 
   const teamColors =
     scoreTeamAbbreviation in teamsInfo
@@ -141,14 +186,6 @@ function GoalIndicator({
           primaryColor: "black", // Fallback color if not found
           secondaryColor: "white", // Fallback color if not found
         };
-
-  const indicatorPositionStyle = {
-    left: leftPercentage,
-    zIndex: 2, // Ensure it's on top if needed
-  };
-
-  const handleMouseEnter = () => setShowTooltip(true);
-  const handleMouseLeave = () => setShowTooltip(false);
 
   const tooltipContent = (
     <div
@@ -178,6 +215,8 @@ function GoalIndicator({
       {awayTeam.abbreviation} {awayTeam.score}
     </div>
   );
+
+  const isHomeScoring = scoreTeamAbbreviation === homeTeam.abbreviation;
 
   const backgroundColor = isHomeScoring
     ? teamColors.primaryColor
@@ -210,19 +249,8 @@ function GoalIndicator({
     >
       {tooltipContent}
 
-      {/* Score display */}
-      <div className={styles.scoreContainer}>
-        {/* <span>
-          {homeTeam.abbreviation} {homeTeam.score} - {awayTeam.score}{" "}
-          {awayTeam.abbreviation}
-        </span> */}
-      </div>
-
       {/* Goal Indicator with dynamic color and home plate shape */}
-      <div
-        className={styles.goalIndicator}
-        style={teamColorStyle} // Apply dynamic color styles
-      >
+      <div className={styles.goalIndicator} style={teamColorStyle}>
         {scoreTeamAbbreviation}
       </div>
     </div>
@@ -237,12 +265,25 @@ export const convertTimeToSeconds = (timeString: string) => {
   return minutes * 60 + seconds;
 };
 
-export function GoalIndicators({ id }: { id: number }) {
+export function GoalIndicators({
+  id,
+  totalGameTimeInSeconds,
+  isOvertime,
+}: {
+  id: number;
+  totalGameTimeInSeconds: number;
+  isOvertime: boolean;
+}) {
   const goals = useGoals(id);
   return (
     <>
       {goals.map((goal, i) => (
-        <GoalIndicator key={i} {...goal} />
+        <GoalIndicator
+          key={i}
+          {...goal}
+          totalGameTimeInSeconds={totalGameTimeInSeconds}
+          isOvertime={isOvertime}
+        />
       ))}
     </>
   );

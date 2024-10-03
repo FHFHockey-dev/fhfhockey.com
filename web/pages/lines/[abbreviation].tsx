@@ -168,6 +168,7 @@ export default function TeamLC({
               "&linemate-matrix-mode=line-combination#linemate-matrix"
             }
             teamName={teamName}
+            teamAbbreviation={mappedAbbreviation}
             lastUpdated={lastUpdated || new Date(2022, 10, 1).toString()}
             onTeamLogoClick={downloadImage}
           />
@@ -323,6 +324,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 type HeaderProps = {
   teamName: string;
+  teamAbbreviation: string;
   lastUpdated: string;
   sourceUrl: string;
   onTeamLogoClick: () => void;
@@ -330,11 +332,13 @@ type HeaderProps = {
 
 function Header({
   teamName,
+  teamAbbreviation,
   lastUpdated,
   sourceUrl,
   onTeamLogoClick,
 }: HeaderProps) {
   const names = teamName.split(" ");
+  const abbreviation = teamAbbreviation;
   const color = useTeamColor();
 
   return (
@@ -360,7 +364,7 @@ function Header({
         <div className={styles.large}>
           <img
             alt={teamName}
-            src={getTeamLogo(teamName)}
+            src={getTeamLogo(teamAbbreviation)}
             style={{
               width: 120,
               height: 72,
@@ -372,7 +376,7 @@ function Header({
         <div className={styles.small}>
           <img
             alt={teamName}
-            src={getTeamLogo(teamName)}
+            src={getTeamLogo(teamAbbreviation)}
             style={{
               width: 60,
               height: 35,
