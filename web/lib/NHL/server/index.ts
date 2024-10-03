@@ -77,7 +77,7 @@ export async function getTeams(seasonId?: number): Promise<Team[]> {
   };
   return teams.map((team) => ({
     ...team,
-    logo: getTeamLogo(team.name),
+    logo: getTeamLogo(team.abbreviation),
   }));
 }
 
