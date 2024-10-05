@@ -102,6 +102,8 @@ function ShiftChart() {
   const [awayTeamAbbrev, setAwayTeamAbbrev] = useState("");
   const [gameScores, setGameScores] = useState({ homeScore: 0, awayScore: 0 });
   const [selectedTime, setSelectedTime] = useState(null);
+  const [seasonStartDate, setSeasonStartDate] = useState(""); // New state for season start date
+  const [isLoading, setIsLoading] = useState(false);
 
   // Ref hook for direct DOM access to the game canvas for width calculations
   const gameCanvasRef = useRef(null);
@@ -259,19 +261,90 @@ function ShiftChart() {
     };
   };
 
-  // Fetches season dates for initial component setup
-  const fetchSeasonDates = async () => {
+  // Fetches the start date of the most recent season from the 'seasons' table
+  const fetchSeasonStartDate = async () => {
     try {
-      // console.log("Fetching season dates...");
-      const response = await Fetch(
-        "https://api-web.nhle.com/v1/schedule/now"
-      ).then((res) => res.json());
-      // // console.log('Season dates:', response);
-      // Extract and set the season dates here
+      const { data, error } = await supabase
+        .from("seasons")
+        .select("startDate")
+        .order("startDate", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      const seasonStartDate = data.startDate;
+      setSeasonStartDate(seasonStartDate);
     } catch (error) {
-      console.error("Error fetching season dates:", error);
+      console.error("Error fetching season start date:", error);
+      enqueueSnackbar("Failed to fetch season start date", {
+        variant: "error",
+      });
     }
   };
+
+  // Fetches games for the selected date using the NHL API schedule endpoint
+  const getGamesByDate = async (date) => {
+    try {
+      setIsLoading(true);
+      const response = await Fetch(
+        `https://api-web.nhle.com/v1/schedule/${date}`
+      ).then((res) => res.json());
+
+      const gameWeeks = response.gameWeek;
+
+      let games = [];
+
+      // Iterate over the gameWeek array to find the selected date
+      gameWeeks.forEach((week) => {
+        if (week.date === date) {
+          games = week.games.map((game) => ({
+            id: game.id,
+            homeTeam: {
+              id: game.homeTeam.id,
+              abbreviation: game.homeTeam.abbrev,
+              name: game.homeTeam.placeName.default,
+            },
+            awayTeam: {
+              id: game.awayTeam.id,
+              abbreviation: game.awayTeam.abbrev,
+              name: game.awayTeam.placeName.default,
+            },
+          }));
+        }
+      });
+
+      if (games.length === 0) {
+        setGames([]);
+        enqueueSnackbar("No games found for the selected date", {
+          variant: "warning",
+        });
+        return;
+      }
+
+      setGames(games);
+    } catch (error) {
+      console.error("Error fetching games:", error);
+      enqueueSnackbar("Failed to fetch games", { variant: "error" });
+      setGames([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch the season start date when the component mounts
+  useEffect(() => {
+    fetchSeasonStartDate();
+  }, []);
+
+  // Fetch games whenever the selected date changes
+  useEffect(() => {
+    if (selectedDate) {
+      getGamesByDate(selectedDate);
+    }
+  }, [selectedDate]);
 
   // Calculates the total game time in minutes and seconds, excluding shootout
   const calculateTotalGameTime = (gameDetails) => {
@@ -484,12 +557,6 @@ function ShiftChart() {
         });
       });
     });
-
-    // Function to convert HH:MM time string to seconds
-    function convertTimeToSeconds(timeString) {
-      const [hours, minutes] = timeString.split(":").map(Number);
-      return hours * 3600 + minutes * 60;
-    }
 
     return Object.values(playerShifts).reduce((acc, player) => {
       acc[player.id] = player; // Use player ID as key for easy lookup
@@ -866,7 +933,11 @@ function ShiftChart() {
                     }%`,
                   }}
                 ></div>
-                <GoalIndicators id={gameId} />
+                <GoalIndicators
+                  id={gameId}
+                  totalGameTimeInSeconds={totalGameTimeInSeconds}
+                  isOvertime={isOvertime}
+                />{" "}
                 <div
                   style={{
                     position: "absolute",
@@ -957,12 +1028,6 @@ function ShiftChart() {
               const shiftBlockBackgroundColor =
                 index % 2 === 0 ? "#404040" : "#202020";
 
-              // const shiftBlockBackgroundColor = teamColors.primaryColor
-              //   ? index % 2 === 0
-              //     ? lightenHexColor(teamColors.primaryColor, 60)
-              //     : lightenHexColor(teamColors.primaryColor, 40)
-              //   : "#000000"; // Default color if secondaryColor is undefined
-
               const indexedColors = [
                 "#202020",
                 "#404040",
@@ -1012,13 +1077,14 @@ function ShiftChart() {
                     style={{
                       color: lightenHexColor(textColor, 10),
                       backgroundColor: playerNameBackgroundColor,
-                      fontWeight: isActive ? "900" : "200",
-                      fontStretch: isActive ? "expanded" : "normal",
+                      fontWeight: player.isActive ? "900" : "200",
+                      fontStretch: player.isActive ? "expanded" : "normal",
+                      letterSpacing: player.isActive ? "0.1em" : "normal",
                     }}
                   >
                     <span
                       className={`${styles.playerNameText} ${
-                        !isActive ? styles.inactivePlayerText : ""
+                        !player.isActive ? styles.inactivePlayerText : ""
                       }`}
                     >
                       {player.name}
@@ -1209,11 +1275,18 @@ function ShiftChart() {
                     style={{
                       color: darkenHexColor(textColor, 30),
                       backgroundColor: playerNameBackgroundColor,
-                      fontWeight: isActive ? "bolder" : "normal",
-                      fontStretch: isActive ? "expanded" : "normal",
+                      fontWeight: player.isActive ? "900" : "200",
+                      fontStretch: player.isActive ? "expanded" : "normal",
+                      letterSpacing: player.isActive ? "0.1em" : "normal",
                     }}
                   >
-                    {player.name}
+                    <span
+                      className={`${styles.playerNameText} ${
+                        !player.isActive ? styles.inactivePlayerText : ""
+                      }`}
+                    >
+                      {player.name}
+                    </span>
                   </td>
                   <td
                     className={styles.playerPositionCell}

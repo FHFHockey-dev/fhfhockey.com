@@ -102,6 +102,22 @@ export default function Page() {
     }
   }
 
+  async function updateLineCombinations() {
+    try {
+      const { message, success } = await doPOST(
+        "/api/v1/db/update-line-combinations"
+      );
+      enqueueSnackbar(message, {
+        variant: success ? "success" : "error",
+      });
+    } catch (e: any) {
+      console.error(e.message);
+      enqueueSnackbar(e.message, {
+        variant: "error",
+      });
+    }
+  }
+
   useEffect(() => {
     (async () => {
       const { count: numPlayers } = await supabase
@@ -257,6 +273,30 @@ export default function Page() {
             </CardContent>
             <CardActions>
               <Button size="small" onClick={updateStats}>
+                Update
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+
+        {/* New Card for Line Combinations */}
+        <Grid xs={4}>
+          <Card>
+            <CardMedia
+              sx={{ height: 140 }}
+              image="https://kickly.net/wp-content/uploads/2022/09/Hockey-Starting-Lineup-Editable-Graphic-V.png"
+              title="line combinations"
+            />
+            <CardContent>
+              <Typography gutterBottom variant="h5" component="div">
+                line combinations
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Update the line combinations data for unprocessed games.
+              </Typography>
+            </CardContent>
+            <CardActions>
+              <Button size="small" onClick={updateLineCombinations}>
                 Update
               </Button>
             </CardActions>
