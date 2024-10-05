@@ -97,11 +97,6 @@ function PowerPlayAreaIndicator({
   const areaStyle = {
     width: getWidthPercentage(start, end, totalGameTimeInSeconds),
     left: getLeftPercentage(start),
-    backgroundImage: `
-      repeating-linear-gradient(45deg, ${darkenedColor}, ${darkenedColor} 1px, ${color} 1px, ${color} 3px),
-      repeating-linear-gradient(-45deg, ${darkenedColor}, ${darkenedColor} 1px, ${color} 1px, ${color} 3px)
-    `,
-    backgroundSize: "2px 2px",
   };
   return (
     <div
@@ -109,12 +104,12 @@ function PowerPlayAreaIndicator({
         position: "absolute",
         top: 0,
         height: "125%",
-        // backgroundColor: color,
-        opacity: 0.5,
+        backgroundColor: color,
+        opacity: 0.3,
         ...areaStyle,
       }}
     >
-      {/* {color}, {start.timeInPeriod} {end.timeInPeriod} */}
+      {color}, {start.timeInPeriod} {end.timeInPeriod}
     </div>
   );
 }

@@ -247,39 +247,38 @@ export function sortByLineCombination(
   data: Record<string, TOIData>,
   players: PlayerData[]
 ): PlayerData[] {
-  // TJ: I think that would be the three fwds w most shared toi, then 2nd, 3rd, 4th etc
   if (players.length === 0) return [];
   const groups = groupBy(players, (player) =>
     isForward(player.position) ? "forwards" : "defensemen"
   );
   const result: PlayerData[] = [];
   ["forwards", "defensemen"].forEach((playerType) => {
-    const players = [...groups[playerType]];
+    const playersGroup = [...groups[playerType]];
     const numPlayersPerLine = NUM_PLAYERS_PER_LINE[playerType as PlayerType];
-    const numLines = players.length / numPlayersPerLine;
+    const numLines = Math.ceil(playersGroup.length / numPlayersPerLine); // Use Math.ceil to ensure all players are assigned
+
     for (let line = 0; line < numLines; line++) {
-      const pivotPlayer = players
-        .sort(
-          (a, b) => data[getKey(b.id, b.id)].toi - data[getKey(a.id, a.id)].toi
-        )
-        .shift();
+      // Sort players by their individual TOI, descending
+      playersGroup.sort(
+        (a, b) =>
+          (data[getKey(b.id, b.id)]?.toi || 0) -
+          (data[getKey(a.id, a.id)]?.toi || 0)
+      );
+
+      const pivotPlayer = playersGroup.shift(); // Get the player with highest TOI
       if (!pivotPlayer) break;
       result.push(pivotPlayer);
+
       for (let i = 0; i < numPlayersPerLine - 1; i++) {
-        const p = players
-          .sort(
-            (a, b) =>
-              data[getKey(pivotPlayer!.id, b.id)].toi -
-              data[getKey(pivotPlayer!.id, a.id)].toi
-          )
-          .shift();
-        if (!p) break;
-        result.push(p);
+        const player = playersGroup.shift(); // Assign next player
+        if (!player) break;
+        result.push(player);
       }
     }
   });
   return result;
 }
+
 type Mode = "number" | "total-toi" | "line-combination";
 type LinemateMatrixInternalProps = {
   teamId: number;

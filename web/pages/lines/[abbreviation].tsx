@@ -292,6 +292,12 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
   try {
     const lineCombinations = await getLineCombinations(team.id);
+    console.log("INSIDE getStaticProps");
+
+    console.log("Line Combinations:", lineCombinations);
+    console.log("Forwards:", lineCombinations.forwards);
+    console.log("Defensemen:", lineCombinations.defensemen);
+    console.log("Goalies:", lineCombinations.goalies);
     return {
       props: {
         teamName: team.name,

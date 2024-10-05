@@ -31,134 +31,263 @@ type LineCombinations = {
   };
 };
 
+// Type Guard Function
+function isNonEmptyArray(goalie: any[] | null): goalie is any[] {
+  return goalie !== null && goalie.length > 0;
+}
+
 export async function getLineCombinations(
   teamId: number
 ): Promise<LineCombinations> {
-  const { data: lineCombinations } = await supabase
-    .from("lineCombinations")
-    .select(
-      "gameId, teamId, forwards, defensemen, goalies, ...games (startTime)"
-    )
-    .eq("teamId", teamId)
-    .order("games(startTime)", { ascending: false })
-    .limit(10)
-    .returns<any>() // will be fixed after upgrading supabase-js
-    .throwOnError();
-  if (!lineCombinations || lineCombinations.length < 2) {
-    console.error(lineCombinations);
-    throw new Error(
-      `Cannot find at least 2 games' line combo data for team ${teamId}`
-    );
-  }
-  const season = await getCurrentSeason();
-  const { data: playerId_sweaterNumber } = await supabase
-    .from("rosters")
-    .select("playerId, sweaterNumber, ...players(position)")
-    .eq("teamId", teamId)
-    .eq("seasonId", season.seasonId)
-    .returns<any[]>()
-    .throwOnError();
-  // transform into a table
-  const playerId_Info = new Map<
-    number,
-    { sweaterNumber: number; position: string }
-  >();
-  playerId_sweaterNumber?.forEach((item) =>
-    playerId_Info.set(item.playerId, {
-      sweaterNumber: item.sweaterNumber,
-      position: item.position,
-    })
-  );
+  try {
+    const { data: rawLineCombinations } = await supabase
+      .from("lineCombinations")
+      .select(
+        "gameId, teamId, forwards, defensemen, goalies, ...games (startTime)"
+      )
+      .eq("teamId", teamId)
+      .order("games(startTime)", { ascending: false })
+      .limit(10)
+      .returns<any>() // will be fixed after upgrading supabase-js
+      .throwOnError();
 
-  // get stats
-  const { data: skaters } = await supabase
-    .from("skatersGameStats")
-    .select(
-      `playerId, numGames:playerId.count(), Goals:goals.sum(), Assists:assists.sum(), PTS:points.sum(), PPP:powerPlayPoints.sum(), 
-         Shots:shots.sum(), Hits:hits.sum(), Blocks:blockedShots.sum(), PlusMinus:plusMinus.sum(), 
-         ...players(playerName:fullName)`
-    )
-    .in(
-      "gameId",
-      lineCombinations.map((game: any) => game.gameId)
-    )
-    .in("playerId", [
-      ...lineCombinations[0].forwards,
-      ...lineCombinations[0].defensemen,
-    ])
-    .returns<SkaterStats[]>()
-    .throwOnError();
-
-  const goaliesStats = await Promise.all(
-    lineCombinations[0].goalies.map((id: number) =>
-      supabase
-        .from("goaliesGameStats")
-        .select(
-          `playerId, saveShotsAgainst, savePctg, toi, goalsAgainst,
-           game:games!inner(id, seasonId, startTime),
-           ...players(playerName:fullName)
-         `
-        )
-        .eq("playerId", id)
-        .eq("games.seasonId", season.seasonId)
-        .order("game(startTime)", { ascending: false })
-        .returns<any[]>()
-        .throwOnError()
-        .then((res) => res.data)
-    )
-  );
-
-  const gameOutcomes = await getGameResults(
-    new Set(goaliesStats.flat(1).map((item) => item.game.id)),
-    teamId
-  );
-
-  const goalies = goaliesStats
-    .filter((goalie) => goalie && goalie.length > 0) // Filter out invalid data
-    .map((goalie) => processGoalie(goalie, gameOutcomes))
-    .filter((goalie) => goalie !== null); // Filter out null results
-
-  if (!skaters) throw new Error("Cannot find the stats for skaters");
-
-  const { promotions, demotions } = getLineChanges(lineCombinations);
-  const playersStats = new Map<number, any>();
-  // add sweaterNumber & lineChange
-  [...skaters, ...goalies].forEach((item) => {
-    if (!item || !item.playerId) {
-      console.error("Invalid player data:", item); // Log or handle the case where the item is null/undefined
-      return;
+    if (!rawLineCombinations || rawLineCombinations.length < 2) {
+      console.error("Raw Line Combinations Data:", rawLineCombinations);
+      throw new Error(
+        `Cannot find at least 2 games' line combo data for team ${teamId}`
+      );
     }
 
-    item.sweaterNumber = playerId_Info.get(item.playerId)?.sweaterNumber ?? 0;
-    item.position = playerId_Info.get(item.playerId)?.position ?? "L";
-    item.lineChange = getLineChangeType(
-      promotions.map((p) => p.playerId),
-      demotions.map((p) => p.playerId),
-      item.playerId
+    // Parse the forwards, defensemen, and goalies fields from strings to number arrays
+    const lineCombinations = rawLineCombinations.map((combo: any) => ({
+      ...combo,
+      forwards: Array.isArray(combo.forwards)
+        ? combo.forwards
+            .map((id: string) => {
+              const parsedId = parseInt(id, 10);
+              if (isNaN(parsedId)) {
+                console.error(`Invalid forward ID: ${id}`);
+                return null;
+              }
+              return parsedId;
+            })
+            .filter((id: number | null) => id !== null)
+        : [],
+      defensemen: Array.isArray(combo.defensemen)
+        ? combo.defensemen
+            .map((id: string) => {
+              const parsedId = parseInt(id, 10);
+              if (isNaN(parsedId)) {
+                console.error(`Invalid defenseman ID: ${id}`);
+                return null;
+              }
+              return parsedId;
+            })
+            .filter((id: number | null) => id !== null)
+        : [],
+      goalies: Array.isArray(combo.goalies)
+        ? combo.goalies
+            .map((id: string) => {
+              const parsedId = parseInt(id, 10);
+              if (isNaN(parsedId)) {
+                console.error(`Invalid goalie ID: ${id}`);
+                return null;
+              }
+              return parsedId;
+            })
+            .filter((id: number | null) => id !== null)
+        : [],
+    }));
+
+    // **Console Log: Parsed Line Combinations**
+    console.log("Parsed Line Combinations:", lineCombinations);
+
+    const season = await getCurrentSeason();
+
+    // Fetch player info
+    const { data: playerId_sweaterNumber } = await supabase
+      .from("rosters")
+      .select("playerId, sweaterNumber, ...players(position)")
+      .eq("teamId", teamId)
+      .eq("seasonId", season.seasonId)
+      .returns<any[]>()
+      .throwOnError();
+
+    // Transform into a map
+    const playerId_Info = new Map<
+      number,
+      { sweaterNumber: number; position: string }
+    >();
+    playerId_sweaterNumber?.forEach((item) =>
+      playerId_Info.set(item.playerId, {
+        sweaterNumber: item.sweaterNumber,
+        position: item.position,
+      })
     );
 
-    playersStats.set(item.playerId, item);
-  });
+    // **Console Log: Player ID Info Map**
+    console.log("Player ID Info Map:", Array.from(playerId_Info.entries()));
 
-  const lines = convertToLines(lineCombinations[0]);
+    // Determine promotions and demotions
+    const { promotions, demotions } = getLineChanges([
+      lineCombinations[0],
+      lineCombinations[1],
+    ]);
 
-  const result: LineCombinations = mapToLineCombinations(
-    playersStats,
-    lines
-  ) as any;
+    // **Console Log: Promotions and Demotions**
+    console.log("Promotions:", promotions);
+    console.log("Demotions:", demotions);
 
-  // Order each line by player position L C R
-  orderLinesByPosition(result);
-  // console.log({ skaters, goalies, lineCombo: lineCombinations[0], result });
-  result.game = {
-    id: lineCombinations[0].gameId,
-    startTime: lineCombinations[0].startTime,
-  };
+    // Aggregate all relevant player IDs (current and previous lines)
+    const currentLine = lineCombinations[0];
+    const previousLine = lineCombinations[1];
 
-  result.promotions = promotions;
-  result.demotions = demotions;
+    const allPlayerIds = new Set<number>([
+      ...currentLine.forwards,
+      ...currentLine.defensemen,
+      ...currentLine.goalies,
+      ...previousLine.forwards,
+      ...previousLine.defensemen,
+      ...previousLine.goalies,
+    ]);
 
-  return result;
+    // **Console Log: All Player IDs**
+    console.log("All Player IDs:", Array.from(allPlayerIds));
+
+    // Fetch skater stats for all relevant players
+    const { data: skaters } = await supabase
+      .from("skatersGameStats")
+      .select(
+        `playerId, numGames:playerId.count(), Goals:goals.sum(), Assists:assists.sum(), PTS:points.sum(), PPP:powerPlayPoints.sum(), 
+           Shots:shots.sum(), Hits:hits.sum(), Blocks:blockedShots.sum(), PlusMinus:plusMinus.sum(), 
+           ...players(playerName:fullName)`
+      )
+      .in(
+        "gameId",
+        lineCombinations.map((game: any) => game.gameId)
+      )
+      .in("playerId", Array.from(allPlayerIds))
+      .returns<SkaterStats[]>()
+      .throwOnError();
+
+    // **Console Log: Skaters Data**
+    console.log("Fetched Skater Stats:", skaters);
+
+    // Fetch goalie stats similarly, ensuring all goalies are included
+    const allGoalieIds = new Set<number>([
+      ...currentLine.goalies,
+      ...previousLine.goalies,
+    ]);
+
+    const goaliesStats = await Promise.all(
+      Array.from(allGoalieIds).map((id: number) =>
+        supabase
+          .from("goaliesGameStats")
+          .select(
+            `playerId, saveShotsAgainst, savePctg, toi, goalsAgainst,
+             game:games!inner(id, seasonId, startTime),
+             ...players(playerName:fullName)`
+          )
+          .in(
+            "gameId",
+            lineCombinations.map((game: any) => game.gameId)
+          )
+          .eq("playerId", id)
+          .eq("games.seasonId", season.seasonId)
+          .order("game(startTime)", { ascending: false })
+          .returns<any[]>()
+          .throwOnError()
+          .then((res) => res.data)
+      )
+    );
+
+    // **Console Log: Goalies Stats**
+    console.log("Fetched Goalies Stats:", goaliesStats);
+
+    // Process goalies stats
+    const gameOutcomes = await getGameResults(
+      new Set(goaliesStats.flat(1).map((item) => item.game.id)),
+      teamId
+    );
+
+    // **Console Log: Game Outcomes**
+    console.log("Game Outcomes:", Array.from(gameOutcomes.entries()));
+
+    const goalies = goaliesStats
+      .filter(isNonEmptyArray) // Type guard applied here
+      .map((goalie) => processGoalie(goalie, gameOutcomes))
+      .filter((goalie) => goalie !== null); // Filter out null results
+
+    // **Console Log: Processed Goalies**
+    console.log("Processed Goalies:", goalies);
+
+    if (!skaters) throw new Error("Cannot find the stats for skaters");
+
+    // Map player stats
+    const playersStats = new Map<number, any>();
+    [...skaters, ...goalies].forEach((item) => {
+      if (!item || !item.playerId) {
+        console.error("Invalid player data:", item); // Log or handle the case where the item is null/undefined
+        return;
+      }
+
+      item.sweaterNumber = playerId_Info.get(item.playerId)?.sweaterNumber ?? 0;
+      item.position = playerId_Info.get(item.playerId)?.position ?? "L";
+      item.lineChange = getLineChangeType(
+        promotions.map((p) => p.playerId),
+        demotions.map((d) => d.playerId),
+        item.playerId
+      );
+
+      playersStats.set(item.playerId, item);
+    });
+
+    // **Console Log: Mapped Player Stats**
+    console.log("Mapped Player Stats:", Array.from(playersStats.entries()));
+
+    // Convert to lines using current line combination
+    const lines = convertToLines(currentLine);
+
+    // **Console Log: Converted Lines**
+    console.log("Converted Lines:", lines);
+
+    // Map lines to player stats
+    const result: LineCombinations = mapToLineCombinations(
+      playersStats,
+      lines
+    ) as any;
+
+    // **Console Log: Mapped Line Combinations**
+    console.log("Mapped Line Combinations:", result);
+
+    // Order each line by player position L C R
+    orderLinesByPosition(result);
+
+    // **Console Log: Ordered Lines**
+    console.log("Ordered Lines:", {
+      forwards: result.forwards,
+      defensemen: result.defensemen,
+      goalies: result.goalies,
+    });
+
+    // Assign game info
+    result.game = {
+      id: currentLine.gameId,
+      startTime: currentLine.startTime,
+    };
+
+    // Assign promotions and demotions
+    result.promotions = promotions;
+    result.demotions = demotions;
+
+    // **Console Log: Final Line Combinations Result**
+    console.log("Final Line Combinations Result:", result);
+
+    return result;
+  } catch (error) {
+    console.error(`Failed to get line combinations for team ${teamId}:`, error);
+    throw error;
+  }
 }
 
 function mapToLineCombinations(
