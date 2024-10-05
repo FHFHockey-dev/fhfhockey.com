@@ -1,10 +1,11 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\lib\supabase\fetchPbP.js
 
-require("dotenv").config({ path: "../../.env.local" });
+const path = "../../../.env.local";
+require("dotenv").config({ path: path });
 const { createClient } = require("@supabase/supabase-js");
 const fetch = require("node-fetch");
-const { fetchCurrentSeason } = require("../../utils/fetchCurrentSeason.js");
+const { fetchCurrentSeason } = require("../../../utils/fetchCurrentSeason.js");
 
 const BATCH_SIZE = 10; // Adjust this value for batch processing
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -190,7 +191,7 @@ async function processPlayByPlayData() {
       const fetch = require("node-fetch");
       const {
         fetchCurrentSeason,
-      } = require("../../utils/fetchCurrentSeason.js");
+      } = require("../../../utils/fetchCurrentSeason.js");
 
       const BATCH_SIZE = 10; // Adjust this value for batch processing
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";

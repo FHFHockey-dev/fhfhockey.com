@@ -5,8 +5,8 @@ const { createClient } = require("@supabase/supabase-js"); // Supabase client
 const { RateLimiterMemory } = require("rate-limiter-flexible");
 
 // Load environment variables
-require("dotenv").config({ path: "./../../.env.local" });
-
+const path = "../../../.env.local";
+require("dotenv").config({ path: path });
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY;

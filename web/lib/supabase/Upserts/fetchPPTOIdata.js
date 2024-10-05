@@ -5,7 +5,7 @@
 // For days that fail, those days need to be retried after the script has finished running
 // maybe an array that stores the failed dates and then a loop that runs through the failed dates
 
-const path = "./../../.env.local";
+const path = "../../../.env.local";
 require("dotenv").config({ path: path });
 
 const { createClient } = require("@supabase/supabase-js");

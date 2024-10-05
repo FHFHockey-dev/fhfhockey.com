@@ -1,6 +1,6 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\lib\supabase\fetchSKOyears.js
 
-const path = "./../../.env.local";
+const path = "../../../.env.local";
 require("dotenv").config({ path: path });
 
 const { createClient } = require("@supabase/supabase-js");

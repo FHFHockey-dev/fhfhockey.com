@@ -1,6 +1,7 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\lib\supabase\sosStandings.js
 
-require("dotenv").config({ path: "../../.env.local" });
+const path = "../../../.env.local";
+require("dotenv").config({ path: path });
 const { createClient } = require("@supabase/supabase-js");
 const fetch = require("node-fetch");
 const { parseISO, format, addDays, isBefore, isAfter } = require("date-fns");

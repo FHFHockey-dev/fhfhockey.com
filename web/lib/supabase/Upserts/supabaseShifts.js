@@ -1,8 +1,15 @@
-const path = "./../../.env.local";
+const path = "../../../.env.local";
 require("dotenv").config({ path: path });
 
 const { createClient } = require("@supabase/supabase-js");
 const fetch = require("node-fetch");
+
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY || "";
+const supabase = createClient(supabaseUrl, supabaseKey);
+console.log("supabaseUrl", supabaseUrl);
+console.log("supabaseKey", supabaseKey);
 
 // Simplified Fetch (cors-fetch) function for Node.js that isn't imported
 async function Fetch(url) {
@@ -47,11 +54,6 @@ const teamsInfo = {
   SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
   UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 },
 };
-
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function fetchCurrentSeason() {
   const response = await Fetch(
