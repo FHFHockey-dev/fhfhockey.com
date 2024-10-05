@@ -120,9 +120,10 @@ describe("getPairwiseTOI", () => {
 
 describe("sort by line combination", () => {
   test("Game: 2023020850", () => {
-    expect(
-      arrayEqual(sortByLineCombination(table, players), sortedByLineCombination)
-    ).toBe(true);
+    const actual = sortByLineCombination(table, players);
+    console.log("Actual Sorted Line Combination:", actual);
+    console.log("Expected Sorted Line Combination:", sortedByLineCombination);
+    expect(arrayEqual(actual, sortedByLineCombination)).toBe(true);
   });
 });
 
