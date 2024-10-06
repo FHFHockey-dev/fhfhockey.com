@@ -93,7 +93,7 @@ async function getPlayer(id: number): Promise<Player | null> {
       teamName: data.fullTeamName ? data.fullTeamName.default : "",
     };
   } catch (e: any) {
-    console.error(e);
+    console.error("Failed to get player: " + id, e);
     return null;
   }
 }
