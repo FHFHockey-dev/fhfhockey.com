@@ -9,7 +9,7 @@ const app = express();
 const port = process.env.PORT || 3002;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY || "";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 const supabaseServer = createClient(supabaseUrl, supabaseKey);
 
@@ -24,10 +24,14 @@ function adminOnly(req, res, next) {
     res.json({ error: "Failed to do the operation you are not an admin." });
   }
 }
+app.get("/hello", (req, res) => {
+  res.json({ message: "Hello api" });
+});
 
 app.post("/on-new-line-combo", adminOnly, async (req, res) => {
   const gameId = Number(req.query.gameId);
   const teamId = Number(req.query.teamId);
+  const start = performance.now();
   console.log(`start to handle new line combo for ${gameId} team: ${teamId}`);
   try {
     await retryAsyncOperation(() => saveLinemateMatrixImages(gameId, [teamId]));
@@ -36,8 +40,10 @@ app.post("/on-new-line-combo", adminOnly, async (req, res) => {
       sendLineComboToDiscord(gameId, teamId)
     );
     console.log(resp);
+    const end = performance.now();
     res.json({
       message: "Successfully handled the line combo for " + gameId,
+      executionTime: `${(end - start).toFixed(3)} milliseconds`,
     });
   } catch (e) {
     console.error(e);
