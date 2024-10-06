@@ -11,7 +11,11 @@ export function get<T = any>(path: string, debug: boolean = false): Promise<T> {
   if (debug) {
     console.log({ url });
   }
-  return fetch(url).then((res) => res.json());
+  return fetch(url)
+    .then((res) => res.json())
+    .catch((e) => {
+      throw new Error("Failed to fetch " + url + "\n" + e.message);
+    });
 }
 
 /**
