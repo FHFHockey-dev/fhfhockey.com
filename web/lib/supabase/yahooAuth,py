@@ -1,17 +1,9 @@
 # App ID
 # RBz8hxo8
 
-# Client ID (Consumer Key)
-# dj0yJmk9bVJES2c2N091NjdxJmQ9WVdrOVVrSjZPR2g0YnpnbWNHbzlNQT09JnM9Y29uc3VtZXJzZWNyZXQmc3Y9MCZ4PTQ2
-
-# Client Secret (Consumer Secret)
-# 07933164f7ac924d1105542dfbda5435a777767a
-
 # Callback URL
 # https://www.fhfhockey.com
 
-# Access Token:
-# Access Token: 8tkck1OZoAq8whUZcRIkgwPVYUVMjv3fif65QlgAylcD0pkqQADEvUKBsE5VCLI95BS_Z48nKHOxutKcsIWsHf5PsWBXfkcEvZAVHImKJF34RKUq5rsODr4U2v6crNvwWcOts9iEAEXa86Od5quA0.ou4eBHSZVVNdXSHDzYohhXQ2VpMm3lizSYKRNuBxFaaD2rEK8hjfWSNSQn9Kqog0Inn7ieRLsoay2V6prbPuwJQ63VZB4pV9yZdA9eMTiLbFosD38oDQpfjTr_mXldCAvvm4X4SVJCqV91.ENRWH.uDhtXmtM5V2b1Igs5m0d6zYmsVwaJ5AekYdM58hAakdt94RRt7ixr8JbQtkIVBGXInupbrYApCy8h1hI8yFf5Jb1i5OULD5.WKohLI.u978wUcYwCfRe2gpfftnWpWLl8n.74vRVP16i1ylq9_t4KNxggUoxKOySYapOToBwlvA5PMyVge5qhmrIdAODRkgTAc5WK6WxOE2FDOpa5PB1ESjTOaOwsUvbzvJDF1_2M1vv_n1ccGfFgKDlbf7JG49rZ_.0yeSOSJKagn6WBPRqxgTmZ8F_Iv_T4ivFEFS3LwJbcfuUE3D51UD02M7CfBl9Pn8PlxAdPFa53ETzaHLoRVUuT6k_XBzOaLthqAja7uE70yA59AilKOUvZaFKrffilZktacY1rA3YmxfmeNSJ.WFmCKlq2hrcr1SNt8Pi7vNzY1QHWt596Ckq8O5WOlGGgG5H6haLQ_2RtPWTFtOg2MhT5_WlOEiMtDP_WPHP2IFZs5nGwm9xoP9Xfz7xUQB9cyedUyci0UOuD8.XS0xRV3cZD6gvYEriqEs5DIFIJF.4IasUXERIu6iBpe9jC37OLm_0Isk.cnaioMgJjgnHMFGMSs4TzQpVPteOd7W9MCt.hULcKUtfdnlp8wtRsVNCQ5KBH7To3WM9UxmCrLpkWPsyfiJIn9x3IypnOdgvaKKM8KylJ
 # League Key
 # 117061
 
@@ -20,10 +12,17 @@
 
 import requests
 from urllib.parse import urlencode
+from dotenv import load_dotenv
+import os
+
+load_dotenv('C:/Users/timbr/Desktop/FHFH/fhfhockey.com-3/web/.env.local')
+
 
 # Constants for the OAuth process
-CLIENT_ID = 'dj0yJmk9bVJES2c2N091NjdxJmQ9WVdrOVVrSjZPR2g0YnpnbWNHbzlNQT09JnM9Y29uc3VtZXJzZWNyZXQmc3Y9MCZ4PTQ2'
-CLIENT_SECRET = '07933164f7ac924d1105542dfbda5435a777767a'
+YFPY_CONSUMER_KEY = os.getenv('YFPY_CONSUMER_KEY')
+YFPY_CONSUMER_SECRET = os.getenv('YFPY_CONSUMER_SECRET')
+CLIENT_ID = YFPY_CONSUMER_KEY
+CLIENT_SECRET = YFPY_CONSUMER_SECRET
 REDIRECT_URI = 'https://www.fhfhockey.com'
 AUTHORIZATION_URL = 'https://api.login.yahoo.com/oauth2/request_auth'
 TOKEN_URL = 'https://api.login.yahoo.com/oauth2/get_token'

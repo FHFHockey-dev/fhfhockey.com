@@ -26,9 +26,13 @@ export const calculateLinesAndPairs = (
     return player;
   };
 
+  console.log("Aggregated Data before processing:", aggregatedData);
+
   const sortedRoster = aggregatedData
     .map(calculateComboPoints)
     .sort((a, b) => (b.comboPoints ?? 0) - (a.comboPoints ?? 0));
+
+  console.log("Sorted Roster after calculating combo points:", sortedRoster);
 
   const assignGroups = (
     players: PlayerData[],
@@ -41,6 +45,8 @@ export const calculateLinesAndPairs = (
       (player) => !assignedPlayers.has(player.id)
     );
     if (!pivotPlayer) return [];
+
+    console.log("Pivot Player:", pivotPlayer);
 
     assignedPlayers.add(pivotPlayer.id);
 
@@ -55,12 +61,18 @@ export const calculateLinesAndPairs = (
       return mutualToiB - mutualToiA;
     });
 
+    console.log("Remaining Players after sorting by TOI:", remainingPlayers);
+
     for (let i = 0; i < groupSize - 1; i++) {
       if (remainingPlayers[i]) {
         group.push(remainingPlayers[i]);
         assignedPlayers.add(remainingPlayers[i].id);
       }
     }
+    console.log(
+      "Assigned players after assignment:",
+      Array.from(assignedPlayers)
+    );
 
     return group;
   };
@@ -86,6 +98,7 @@ export const calculateLinesAndPairs = (
       break;
     }
   }
+  console.log("Lines after assignment:", linesArray);
 
   // Assign all defensemen to pairs
   while (defensemen.length > 0) {
@@ -101,12 +114,16 @@ export const calculateLinesAndPairs = (
       break;
     }
   }
+  console.log("Pairs after assignment:", pairsArray);
 
   // Apply limits only in "line-combination" mode
   if (mode === "line-combination") {
     linesArray.splice(4); // Limit to 4 lines (12 forwards)
     pairsArray.splice(3); // Limit to 3 pairs (6 defensemen)
   }
+
+  console.log("Final lines:", linesArray);
+  console.log("Final pairs:", pairsArray);
 
   // Return the calculated lines and pairs
   return { lines: linesArray, pairs: pairsArray };
