@@ -1,6 +1,6 @@
 import adminOnly from "utils/adminOnlyMiddleware";
 import { updateStats } from "../update-stats/[gameId]";
-import { processGameIDs } from "lib/supabase/fetchPbPData";
+import { processGameIDs } from "lib/supabase/Upserts/fetchPbPData";
 
 export default adminOnly(async (req, res) => {
   const { supabase } = req;
