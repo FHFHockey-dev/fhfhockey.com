@@ -25,7 +25,7 @@ const STATS = [
 const PLACEHOLDER: Player = {
   age: 33,
   teamName: "Five Hole",
-  teamAbbreviation: "SKO",
+  teamAbbreviation: "Five Hole",
   weightInKilograms: 99,
   heightInCentimeters: 186,
   position: "G",
@@ -69,7 +69,7 @@ function PlayerStatsCard({
         <div className={styles.teamLogo} title={teamName}>
           <img
             alt={teamName}
-            src={getTeamLogo(teamName)}
+            src={getTeamLogo(teamAbbreviation)}
             width="100%"
             height="100%"
           />
