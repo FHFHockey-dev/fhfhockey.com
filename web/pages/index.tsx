@@ -17,6 +17,7 @@ import styles from "../styles/Home.module.scss";
 
 import { teamsInfo } from "lib/NHL/teamsInfo";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
+import Fetch from "lib/cors-fetch";
 
 // DEV NOTE:
 // Integrate Live Period/Time Clock instead of just displaying "LIVE" for live games
@@ -60,7 +61,7 @@ const Home: NextPage = ({
   useEffect(() => {
     const fetchStandings = async () => {
       try {
-        const response = await fetch(
+        const response = await Fetch(
           `https://api-web.nhle.com/v1/standings/2024-10-04`
         );
         const data = await response.json();
@@ -107,7 +108,7 @@ const Home: NextPage = ({
         const liveGamePromises = data
           .filter((game) => game.gameState === "LIVE")
           .map(async (game) => {
-            const liveDataResponse = await fetch(
+            const liveDataResponse = await Fetch(
               `https://api-web.nhle.com/v1/gamecenter/${game.id}/landing`
             );
             const liveData = await liveDataResponse.json();
@@ -535,7 +536,7 @@ export async function getServerSideProps({ req, res }) {
   const fetchGames = async (date: string) => {
     try {
       const scheduleUrl = `https://api-web.nhle.com/v1/schedule/${date}`;
-      const response = await fetch(scheduleUrl).then((res) => res.json());
+      const response = await Fetch(scheduleUrl).then((res) => res.json());
 
       // Ensure you check if the structure includes gameWeek and games
       return response?.gameWeek?.[0]?.games || [];
@@ -547,7 +548,7 @@ export async function getServerSideProps({ req, res }) {
 
   const fetchInjuries = async () => {
     try {
-      const response = await fetch(
+      const response = await Fetch(
         `https://stats.sports.bellmedia.ca/sports/hockey/leagues/nhl/playerInjuries?brand=tsn&type=json`
       ).then((res) => res.json());
 
@@ -589,7 +590,7 @@ export async function getServerSideProps({ req, res }) {
         ? moment(currentSeason.regularSeasonStartDate).format("YYYY-MM-DD")
         : moment().utcOffset(-8).format("YYYY-MM-DD");
 
-      const response = await fetch(
+      const response = await Fetch(
         `https://api-web.nhle.com/v1/standings/${dateForStandings}`
       ).then((res) => res.json());
 
