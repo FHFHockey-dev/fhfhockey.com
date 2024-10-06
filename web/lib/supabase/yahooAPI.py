@@ -170,7 +170,7 @@ def fetch_and_upsert_free_agents():
                 batch = []
                 # Add a delay between API requests to avoid rate limiting
                 
-            time.sleep(5)  # 1-second delay; adjust if needed based on API rate limits
+            time.sleep(2)  # 1-second delay; adjust if needed based on API rate limits
 
         # Upsert any remaining players in the batch
         if batch:
