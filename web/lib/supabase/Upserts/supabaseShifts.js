@@ -650,7 +650,112 @@ async function fetchAndStoreShiftCharts() {
   }
 }
 
-fetchAndStoreShiftCharts();
+/**
+ * Function to fetch and store shift chart data for a single game.
+ * @param {string} gameId - The ID of the game to process.
+ */
+async function fetchAndStoreSingleShiftChart(gameId) {
+  const seasonId = await fetchCurrentSeason();
+
+  // Fetch game information
+  const gameInfo = await fetchGameInfo(gameId, seasonId);
+  if (!gameInfo) {
+    console.error(`Game info not found for game ID: ${gameId}`);
+    return;
+  }
+
+  const playerPositions = await fetchAllPlayerPositions();
+  const shiftChartData = await fetchShiftChartData(gameId);
+
+  if (!shiftChartData || !shiftChartData.data) {
+    console.error(`No shift chart data found for game ID: ${gameId}`);
+    return;
+  }
+
+  console.log(`Processing game ID: ${gameId}, game info:`, gameInfo);
+  const unmatchedNames = await upsertShiftChartData(
+    shiftChartData,
+    gameInfo,
+    playerPositions
+  );
+
+  console.log("Unmatched Names:", Array.from(new Set(unmatchedNames)));
+
+  const { data: shiftChartNames, error: shiftChartError } = await supabase
+    .from("shift_charts")
+    .select("player_first_name, player_last_name");
+
+  if (shiftChartError) {
+    console.error("Error fetching shift chart names:", shiftChartError);
+  } else {
+    const uniqueShiftChartNames = new Set(
+      shiftChartNames.map(
+        (name) => `${name.player_first_name} ${name.player_last_name}`
+      )
+    );
+
+    const { data: yahooNames, error: yahooError } = await supabase
+      .from("yahoo_positions")
+      .select("full_name");
+
+    if (yahooError) {
+      console.error("Error fetching yahoo names:", yahooError);
+    } else {
+      const uniqueYahooNames = new Set(
+        yahooNames.map((name) => name.full_name)
+      );
+
+      const unmatchedShiftChartNames = [...uniqueShiftChartNames].filter(
+        (name) => !uniqueYahooNames.has(name)
+      );
+      const unmatchedYahooNames = [...uniqueYahooNames].filter(
+        (name) => !uniqueShiftChartNames.has(name)
+      );
+
+      console.log("Unmatched Shift Chart Names:", unmatchedShiftChartNames);
+      console.log("Unmatched Yahoo Names:", unmatchedYahooNames);
+    }
+  }
+}
+
+/**
+ * Helper function to fetch game information for a single game.
+ * @param {string} gameId - The ID of the game.
+ * @param {string} seasonId - The current season ID.
+ * @returns {object|null} - The game information or null if not found.
+ */
+async function fetchGameInfo(gameId, seasonId) {
+  // Since there's no direct API endpoint provided for game info,
+  // we'll iterate through all teams' schedules to find the game.
+  for (const teamAbbreviation of Object.keys(teamsInfo)) {
+    const teamSchedule = await fetchTeamSchedule(teamAbbreviation, seasonId);
+
+    if (!teamSchedule || !teamSchedule.games) {
+      console.error(`No schedule data found for team: ${teamAbbreviation}`);
+      continue;
+    }
+
+    const game = teamSchedule.games.find((g) => g.id === gameId);
+    if (game) {
+      return {
+        gameType: game.gameType,
+        gameDate: game.gameDate,
+        homeTeam: game.homeTeam,
+        awayTeam: game.awayTeam,
+        game_id: game.id,
+        season_id: seasonId,
+      };
+    }
+  }
+  return null;
+}
+
+// Bulk fetching: Fetch and store shift charts for all games in the current season.
+// fetchAndStoreShiftCharts();
+
+// Single game fetching: Fetch and store shift chart for a specific game.
+// Example game ID: 2024020002
+fetchAndStoreSingleShiftChart("2024020002");
 
 function isForward(position) {
   return ["LW", "RW", "C"].includes(position);

@@ -1,3 +1,5 @@
+// C:\Users\timbr\Desktop\FHFH\fhfhockey.com-3\web\pages\api\v1\db\update-games.ts
+
 import { get } from "lib/NHL/base";
 import { getCurrentSeason } from "lib/NHL/server";
 import supabase from "lib/supabase";
