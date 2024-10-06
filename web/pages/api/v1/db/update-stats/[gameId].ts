@@ -1,7 +1,7 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\api\v1\db\update-stats\[gameId].ts
 
 import { SupabaseClient } from "@supabase/supabase-js";
-import { parse } from "node-html-parser";
+import { HTMLElement, parse } from "node-html-parser";
 import { get } from "lib/NHL/base";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { updatePlayer } from "../update-player/[playerId]";
@@ -304,19 +304,17 @@ async function getPPTOI(
   const content = await getReportContent(season, slicedGameId);
 
   const document = parse(content);
-  const table = document.querySelectorAll("#PenaltySummary td");
+  const rows = document.querySelectorAll(
+    "#PenaltySummary tr.oddColor, #PenaltySummary tr.evenColor"
+  );
 
   const PPTOIs: string[] = [];
-  for (const node of table) {
-    if (node.textContent === "Power Plays (Goals-Opp./PPTime)") {
-      // Navigate up to the appropriate row
-      const parentRow = node.parentNode.parentNode.parentNode; // Adjusted to match old logic
-      const cells = parentRow.querySelectorAll("td");
-      if (cells.length >= 2) {
-        // Ensure there are enough cells
-        const value = cells[1].textContent.trim(); // Get the second cell
-        PPTOIs.push(value.split("/")[1]); // Extract PPTOI
-      }
+  for (const row of rows) {
+    // Navigate up to the appropriate row
+    if (row.textContent.includes("Power Plays (Goals-Opp./PPTime)")) {
+      const pptoi =
+        getChildren(row)[1].textContent.split("/").at(-1) ?? "00:00";
+      PPTOIs.push(pptoi); // Extract PPTOI
     }
   }
 
@@ -325,6 +323,16 @@ async function getPPTOI(
   }
 
   return PPTOIs[isHome ? 1 : 0] as string;
+}
+
+function getChildren(node: HTMLElement) {
+  const children = [];
+  for (const childNode of node.childNodes) {
+    if (childNode instanceof HTMLElement) {
+      children.push(childNode);
+    }
+  }
+  return children;
 }
 
 /**
