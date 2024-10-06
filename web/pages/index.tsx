@@ -58,27 +58,27 @@ const Home: NextPage = ({
     checkSeason();
   }, []);
 
-  useEffect(() => {
-    const fetchStandings = async () => {
-      try {
-        const response = await Fetch(
-          `https://api-web.nhle.com/v1/standings/2024-10-04`
-        );
-        const data = await response.json();
-        console.log(data); // Debug: Log data to check the response format
+  // useEffect(() => {
+  //   const fetchStandings = async () => {
+  //     try {
+  //       const response = await Fetch(
+  //         `https://api-web.nhle.com/v1/standings/2024-10-04`
+  //       );
+  //       const data = await response.json();
+  //       console.log({ standings: data }); // Debug: Log data to check the response format
 
-        if (!data || !data.standings) {
-          throw new Error("Invalid standings data");
-        }
+  //       if (!data || !data.standings) {
+  //         throw new Error("Invalid standings data");
+  //       }
 
-        setStandings(data.standings);
-      } catch (error) {
-        console.error("Error fetching standings:", error);
-      }
-    };
+  //       setStandings(data.standings);
+  //     } catch (error) {
+  //       console.error("Error fetching standings:", error);
+  //     }
+  //   };
 
-    fetchStandings();
-  }, []);
+  //   fetchStandings();
+  // }, []);
 
   useEffect(() => {
     const fetchGames = async () => {
@@ -454,7 +454,7 @@ const Home: NextPage = ({
               </thead>
               <tbody>
                 {standings.map((teamRecord) => (
-                  <tr key={teamRecord.teamName.default}>
+                  <tr key={teamRecord.teamName}>
                     <td className={styles.standingsRankCell}>
                       {teamRecord.leagueSequence}
                     </td>
@@ -463,10 +463,10 @@ const Home: NextPage = ({
                       <img
                         className={styles.standingsTeamLogo}
                         src={teamRecord.teamLogo}
-                        alt={`${teamRecord.teamName.default} logo`}
+                        alt={`${teamRecord.teamName} logo`}
                       />{" "}
                       <span className={styles.standingsTeamNameSpan}>
-                        {teamRecord.teamName.default}
+                        {teamRecord.teamName}
                       </span>
                     </td>
                     <td className={styles.standingsRecordCell}>
@@ -605,7 +605,7 @@ export async function getServerSideProps({ req, res }) {
         losses: team.losses,
         otLosses: team.otLosses,
         points: team.points,
-        teamLogo: `https://assets.nhle.com/logos/nhl/svg/${team.teamName.default}_light.svg`, // Adjust based on actual data
+        teamLogo: `https://assets.nhle.com/logos/nhl/svg/${team.teamAbbrev.default}_light.svg`, // Adjust based on actual data
       }));
 
       return standingsData;
