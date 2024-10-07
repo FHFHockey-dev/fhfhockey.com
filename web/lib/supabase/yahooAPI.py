@@ -134,6 +134,7 @@ def fetch_and_upsert_free_agents():
             player_info = {
                 'player_name': name,
                 'player_id': player_key,
+                'uniform_number': player_data.get('uniform_number'), 
                 'draft_analysis': draft_analysis.serialized() if draft_analysis else None,  # Convert draft analysis to JSONB
                 'average_draft_pick': draft_analysis.average_draft_pick if draft_analysis else None,
                 'average_draft_round': draft_analysis.average_draft_round if draft_analysis else None,
@@ -170,7 +171,7 @@ def fetch_and_upsert_free_agents():
                 batch = []
                 # Add a delay between API requests to avoid rate limiting
                 
-            time.sleep(2)  # 1-second delay; adjust if needed based on API rate limits
+            # time.sleep(2)  # 1-second delay; adjust if needed based on API rate limits
 
         # Upsert any remaining players in the batch
         if batch:
