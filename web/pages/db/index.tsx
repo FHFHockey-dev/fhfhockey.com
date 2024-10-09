@@ -6,6 +6,7 @@ import {
   CardContent,
   CardMedia,
   Typography,
+  TextField,
 } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2"; // Grid version 2
 
@@ -23,6 +24,7 @@ export default function Page() {
   const [numTeams, setNumTeams] = useState(0);
   const [numGames, setNumGames] = useState(0);
   const [games, setGames] = useState<{ id: number; date: string }[]>([]);
+  const [powerPlayInput, setPowerPlayInput] = useState<string>("all"); // State for gameId input
   const season = useCurrentSeason();
   console.log(season);
 
@@ -118,6 +120,36 @@ export default function Page() {
     }
   }
 
+  // New function to update power play timeframes
+  async function updatePowerPlayTimeframes() {
+    try {
+      // Validate input
+      const trimmedInput = powerPlayInput.trim().toLowerCase();
+      if (trimmedInput !== "all" && isNaN(Number(trimmedInput))) {
+        enqueueSnackbar("Please enter a valid game ID or 'all'.", {
+          variant: "error",
+        });
+        return;
+      }
+
+      // Construct the endpoint URL
+      const endpoint =
+        trimmedInput === "all"
+          ? "/api/v1/db/powerPlayTimeFrame?gameId=all"
+          : `/api/v1/db/powerPlayTimeFrame?gameId=${trimmedInput}`;
+
+      const { message, success } = await doPOST(endpoint);
+      enqueueSnackbar(message, {
+        variant: success ? "success" : "error",
+      });
+    } catch (e: any) {
+      console.error(e.message);
+      enqueueSnackbar(e.message, {
+        variant: "error",
+      });
+    }
+  }
+
   useEffect(() => {
     (async () => {
       const { count: numPlayers } = await supabase
@@ -184,6 +216,7 @@ export default function Page() {
             </CardActions>
           </Card>
         </Grid>
+
         <Grid xs={4}>
           <Card>
             <CardMedia
@@ -207,6 +240,7 @@ export default function Page() {
             </CardActions>
           </Card>
         </Grid>
+
         <Grid xs={4}>
           <Card>
             <CardMedia
@@ -274,6 +308,42 @@ export default function Page() {
             <CardActions>
               <Button size="small" onClick={updateStats}>
                 Update
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+
+        {/* New Card for Power Play Timeframes */}
+        <Grid xs={4}>
+          <Card>
+            <CardMedia
+              sx={{ height: 140 }}
+              image="https://example.com/powerplay_image.jpg" // Replace with an appropriate image URL
+              title="power play timeframes"
+            />
+            <CardContent>
+              <Typography gutterBottom variant="h5" component="div">
+                Power Play Timeframes
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Update the power play timeframes data for a specific game or all
+                games.
+              </Typography>
+              {/* Optional Input Field for gameId */}
+              <TextField
+                label="Game ID or 'all'"
+                variant="outlined"
+                size="small"
+                fullWidth
+                margin="normal"
+                value={powerPlayInput}
+                onChange={(e) => setPowerPlayInput(e.target.value)}
+                placeholder="Enter game ID or 'all'"
+              />
+            </CardContent>
+            <CardActions>
+              <Button size="small" onClick={updatePowerPlayTimeframes}>
+                Update Power Play Timeframes
               </Button>
             </CardActions>
           </Card>

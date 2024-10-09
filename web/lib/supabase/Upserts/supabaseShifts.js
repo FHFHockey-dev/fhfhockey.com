@@ -1,4 +1,4 @@
-const path = "./../../.env.local";
+const path = "../../../.env.local";
 require("dotenv").config({ path: path });
 
 const { createClient } = require("@supabase/supabase-js");
@@ -112,8 +112,13 @@ function sumDurations(durations) {
   let totalSeconds = 0;
 
   durations.forEach((duration) => {
-    const [minutes, seconds] = duration.split(":").map(Number);
-    totalSeconds += minutes * 60 + seconds;
+    const parts = duration.split(":").map(Number);
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      const [minutes, seconds] = parts;
+      totalSeconds += minutes * 60 + seconds;
+    } else {
+      console.warn(`Invalid duration format: ${duration}`);
+    }
   });
 
   const totalMinutes = Math.floor(totalSeconds / 60);
@@ -176,6 +181,22 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
 
   const gameLength = await fetchGameLength(gameInfo.game_id);
 
+  // **Fetch Power Play Timeframes for the Current Game**
+  const { data: ppData, error: ppError } = await supabase
+    .from("pp_timeframes")
+    .select("pp_timeframes")
+    .eq("game_id", gameInfo.game_id);
+
+  if (ppError) {
+    console.error(
+      `Error fetching power play timeframes for game ID ${gameInfo.game_id}:`,
+      ppError
+    );
+    // Proceed without power play data
+  }
+
+  const powerPlays = ppData && ppData.length > 0 ? ppData[0].pp_timeframes : [];
+
   for (const shift of shiftChartData.data) {
     const playerKey = `${shift.playerId}`;
     const homeOrAway =
@@ -226,6 +247,8 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
         percent_toi_with_mixed: {}, // New field
         game_length: gameLength,
         shifts: [],
+        pp_shifts: [], // New field
+        es_shifts: [], // New field
         game_toi: duration,
         player_type: matchedPosition
           ? getPlayerType(
@@ -247,13 +270,111 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
     consolidatedData[playerKey].end_times.push(shift.endTime);
     consolidatedData[playerKey].durations.push(duration);
 
+    // Combine shift data into the `shifts` array
     consolidatedData[playerKey].shifts.push({
-      startTime: shift.startTime,
-      endTime: shift.endTime,
-      duration: shift.duration,
+      shift_number: shift.shiftNumber,
       period: shift.period,
-      playerId: shift.playerId,
+      start_time: shift.startTime,
+      end_time: shift.endTime,
+      duration: shift.duration || "00:00",
     });
+
+    // **New Functionality:** Split shift into pp_shifts and es_shifts based on power plays
+    const shiftPeriod = shift.period;
+    const shiftStartSeconds = parseTime(shift.startTime);
+    const shiftEndSeconds = parseTime(shift.endTime);
+    const shiftDurationSeconds = parseTime(shift.duration || "00:00"); // Total duration in seconds
+
+    // Initialize variables to track overlapping power play durations
+    let ppOverlapSeconds = 0;
+    let esOverlapSeconds = shiftDurationSeconds;
+
+    // Iterate through all power plays to find overlaps
+    powerPlays.forEach((pp) => {
+      if (pp.powerPlayPeriod !== shiftPeriod) {
+        return; // Different period, no overlap
+      }
+
+      const ppStartSeconds = parseTime(pp.powerPlayStartTime);
+      const ppEndSeconds = parseTime(pp.powerPlayEndTime);
+
+      // Calculate overlap between shift and power play
+      const overlapStart = Math.max(shiftStartSeconds, ppStartSeconds);
+      const overlapEnd = Math.min(shiftEndSeconds, ppEndSeconds);
+
+      if (overlapStart < overlapEnd) {
+        const overlap = overlapEnd - overlapStart;
+        ppOverlapSeconds += overlap;
+        esOverlapSeconds -= overlap;
+      }
+    });
+
+    // If there's an overlap, split the shift
+    if (ppOverlapSeconds > 0) {
+      // Calculate start and end times for pp_shift
+      const ppStartTime = formatTime(
+        shiftStartSeconds +
+          (shiftDurationSeconds - esOverlapSeconds - ppOverlapSeconds)
+      );
+      const ppEndTime = formatTime(
+        shiftStartSeconds + shiftDurationSeconds - esOverlapSeconds
+      );
+
+      // Calculate start and end times for es_shift
+      const esStartTime = formatTime(shiftStartSeconds);
+      const esEndTime = formatTime(
+        shiftStartSeconds + shiftDurationSeconds - esOverlapSeconds
+      );
+
+      // Add pp_shift
+      consolidatedData[playerKey].pp_shifts.push({
+        period: shift.period,
+        duration: formatDuration(ppOverlapSeconds),
+        start_time: formatTime(
+          shiftStartSeconds +
+            shiftDurationSeconds -
+            esOverlapSeconds -
+            ppOverlapSeconds
+        ),
+        end_time: formatTime(
+          shiftStartSeconds + shiftDurationSeconds - esOverlapSeconds
+        ),
+        shift_number: shift.shiftNumber,
+      });
+
+      // Add es_shift
+      consolidatedData[playerKey].es_shifts.push({
+        period: shift.period,
+        duration: formatDuration(esOverlapSeconds),
+        start_time: formatTime(shiftStartSeconds),
+        end_time: formatTime(
+          shiftStartSeconds + shiftDurationSeconds - esOverlapSeconds
+        ),
+        shift_number: shift.shiftNumber,
+      });
+    } else {
+      // No power play overlap, all shift time is in es_shifts
+      consolidatedData[playerKey].es_shifts.push({
+        period: shift.period,
+        duration: duration,
+        start_time: shift.startTime,
+        end_time: shift.endTime,
+        shift_number: shift.shiftNumber,
+      });
+    }
+  }
+
+  // **Calculate total_pp_toi and total_es_toi for each player**
+  for (const playerKey in consolidatedData) {
+    const playerData = consolidatedData[playerKey];
+
+    // Sum durations in pp_shifts
+    const ppDurations = playerData.pp_shifts.map((shift) => shift.duration);
+    playerData.total_pp_toi = sumDurations(ppDurations);
+
+    // Sum durations in es_shifts
+    const esDurations = playerData.es_shifts.map((shift) => shift.duration);
+    playerData.total_es_toi = sumDurations(esDurations);
   }
 
   for (const playerKey in consolidatedData) {
@@ -263,6 +384,7 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
       endTime: playerData.end_times[index],
       duration: playerData.durations[index],
       period: playerData.periods[index],
+      playerId: playerData.player_id,
     }));
 
     for (const otherPlayerKey in consolidatedData) {
@@ -362,10 +484,15 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
   }
 
   const batchData = Object.values(consolidatedData).map((data) => {
-    const { shifts, ...dataWithoutShifts } = data;
+    const { shifts, pp_shifts, es_shifts, ...dataWithoutShifts } = data;
     return {
       ...dataWithoutShifts,
       game_toi: sumDurations(data.durations),
+      shifts: data.shifts, // Include the `shifts` JSONB column
+      pp_shifts: data.pp_shifts, // Include the `pp_shifts` JSONB column
+      es_shifts: data.es_shifts, // Include the `es_shifts` JSONB column
+      total_pp_toi: data.total_pp_toi, // Include `total_pp_toi`
+      total_es_toi: data.total_es_toi, // Include `total_es_toi`
     };
   });
 
@@ -386,6 +513,69 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
   return Array.from(unmatchedNamesSet);
 }
 
+// **New Helper Functions:**
+
+/**
+ * Calculates overlapping time between two sets of shifts.
+ * @param shifts1 Array of shift objects for player 1.
+ * @param shifts2 Array of shift objects for player 2.
+ * @param gameLength Total game length in "MM:SS" format.
+ * @returns Total overlapping time in seconds.
+ */
+function calculateOverlapTime(shifts1, shifts2, gameLength) {
+  let totalOverlap = 0;
+
+  shifts1.forEach((shift1) => {
+    shifts2.forEach((shift2) => {
+      if (shift1.period !== shift2.period) return;
+
+      const shift1Start = parseTime(shift1.start_time);
+      const shift1End = parseTime(shift1.end_time);
+      const shift2Start = parseTime(shift2.start_time);
+      const shift2End = parseTime(shift2.end_time);
+
+      const overlapStart = Math.max(shift1Start, shift2Start);
+      const overlapEnd = Math.min(shift1End, shift2End);
+
+      if (overlapStart < overlapEnd) {
+        totalOverlap += overlapEnd - overlapStart;
+      }
+    });
+  });
+
+  return totalOverlap;
+}
+
+/**
+ * Formats duration from seconds to "MM:SS" format.
+ * @param seconds Total seconds.
+ * @returns Formatted duration string.
+ */
+function formatDuration(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
+}
+
+/**
+ * Formats seconds back to "MM:SS" string.
+ * @param seconds Total seconds.
+ * @returns "MM:SS"
+ */
+function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+    .toString()
+    .padStart(2, "0")}`;
+}
+
+/**
+ * Determines the player type based on position.
+ * @param primaryPosition Primary position code.
+ * @param displayPosition Display position code.
+ * @returns "G", "F", "D", or null.
+ */
 function getPlayerType(primaryPosition, displayPosition) {
   if (primaryPosition === "G" || displayPosition === "G") {
     return "G";
@@ -416,37 +606,47 @@ function convertToTimeArray(data, size = 1200) {
   return timeArray;
 }
 
+/**
+ * Calculates pairwise Time On Ice (TOI) between two players.
+ * @param shifts Array of shift objects for player 1.
+ * @param p1 Player 1 ID.
+ * @param p2 Player 2 ID.
+ * @returns Total TOI in seconds.
+ */
 function getPairwiseTOI(shifts, p1, p2) {
-  const p1Data = shifts.filter((item) => item.playerId === p1);
-  const p2Data = shifts.filter((item) => item.playerId === p2);
+  // This function can be further optimized if needed
+  const p1Shifts = shifts.filter((shift) => shift.playerId === p1);
+  const p2Shifts = shifts.filter((shift) => shift.playerId === p2);
 
-  const p1Groups = groupBy(p1Data, ({ period }) => period.toString());
-  const p2Groups = groupBy(p2Data, ({ period }) => period.toString());
+  let totalOverlap = 0;
 
-  const getTogetherDuration = (a, b) => {
-    const p1TimeArray = convertToTimeArray(a);
-    const p2TimeArray = convertToTimeArray(b);
-    let togetherDuration = 0;
-    for (let i = 0; i < p1TimeArray.length; i++) {
-      if (p1TimeArray[i] && p1TimeArray[i] === p2TimeArray[i]) {
-        togetherDuration++;
+  p1Shifts.forEach((shift1) => {
+    p2Shifts.forEach((shift2) => {
+      if (shift1.period !== shift2.period) return;
+
+      const shift1Start = parseTime(shift1.start_time);
+      const shift1End = parseTime(shift1.end_time);
+      const shift2Start = parseTime(shift2.start_time);
+      const shift2End = parseTime(shift2.end_time);
+
+      const overlapStart = Math.max(shift1Start, shift2Start);
+      const overlapEnd = Math.min(shift1End, shift2End);
+
+      if (overlapStart < overlapEnd) {
+        totalOverlap += overlapEnd - overlapStart;
       }
-    }
-    return togetherDuration;
-  };
-
-  let totalDuration = 0;
-  const periods = Object.keys(p1Groups);
-
-  periods.forEach((period) => {
-    totalDuration += getTogetherDuration(
-      p1Groups[period] || [],
-      p2Groups[period] || []
-    );
+    });
   });
-  return totalDuration;
+
+  return totalOverlap;
 }
 
+/**
+ * Group array items by a key.
+ * @param array Array of items.
+ * @param keyGetter Function to get the key from an item.
+ * @returns Map with keys and grouped items.
+ */
 function groupBy(array, keyGetter) {
   const map = new Map();
   array.forEach((item) => {
@@ -461,6 +661,12 @@ function groupBy(array, keyGetter) {
   return map;
 }
 
+/**
+ * Generates team logs for lines and pairs.
+ * @param consolidatedData Consolidated player data.
+ * @param pairwiseTOI Pairwise TOI data.
+ * @returns Teams object with lines and pairs.
+ */
 function generateTeamLogs(consolidatedData, pairwiseTOI) {
   const teams = {};
 
@@ -560,6 +766,9 @@ function generateTeamLogs(consolidatedData, pairwiseTOI) {
   return teams;
 }
 
+/**
+ * Main function to fetch and store shift charts.
+ */
 async function fetchAndStoreShiftCharts() {
   const seasonId = await fetchCurrentSeason();
   const gameIdSet = new Set();
@@ -598,7 +807,7 @@ async function fetchAndStoreShiftCharts() {
     }
 
     const gameInfo = gameInfoMap.get(gameId);
-    console.log(`Processing game ID: ${gameId}, game info:`, gameInfo);
+    console.log(`Processing game ID: ${gameId}`);
     const unmatched = await upsertShiftChartData(
       shiftChartData,
       gameInfo,
@@ -606,6 +815,7 @@ async function fetchAndStoreShiftCharts() {
     );
     unmatchedNames.push(...unmatched);
 
+    // **Optional:** Delay between requests to avoid rate limiting
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
 
@@ -650,10 +860,16 @@ async function fetchAndStoreShiftCharts() {
 
 fetchAndStoreShiftCharts();
 
+/**
+ * **Helper Functions**
+ */
+
+// Determines if a position is forward
 function isForward(position) {
   return ["LW", "RW", "C"].includes(position);
 }
 
+// Determines if a position is defense
 function isDefense(position) {
   return ["D"].includes(position);
 }

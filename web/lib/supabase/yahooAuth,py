@@ -1,0 +1,61 @@
+# App ID
+# RBz8hxo8
+
+# Callback URL
+# https://www.fhfhockey.com
+
+# League Key
+# 117061
+
+# API Endpoint:
+# https://fantasysports.yahooapis.com/fantasy/v2/league/117061/players;status=FA
+
+import requests
+from urllib.parse import urlencode
+from dotenv import load_dotenv
+import os
+
+load_dotenv('C:/Users/timbr/Desktop/FHFH/fhfhockey.com-3/web/.env.local')
+
+
+# Constants for the OAuth process
+YFPY_CONSUMER_KEY = os.getenv('YFPY_CONSUMER_KEY')
+YFPY_CONSUMER_SECRET = os.getenv('YFPY_CONSUMER_SECRET')
+CLIENT_ID = YFPY_CONSUMER_KEY
+CLIENT_SECRET = YFPY_CONSUMER_SECRET
+REDIRECT_URI = 'https://www.fhfhockey.com'
+AUTHORIZATION_URL = 'https://api.login.yahoo.com/oauth2/request_auth'
+TOKEN_URL = 'https://api.login.yahoo.com/oauth2/get_token'
+
+def get_authorization_url():
+    # Prepare the query parameters
+    params = {
+        'client_id': CLIENT_ID,
+        'redirect_uri': REDIRECT_URI,
+        'response_type': 'code',
+        'language': 'en-us'
+    }
+    # Create the URL for authorization
+    url = f"{AUTHORIZATION_URL}?{urlencode(params)}"
+    return url
+
+def get_access_token(authorization_code):
+    # Prepare the data for the token request
+    data = {
+        'client_id': CLIENT_ID,
+        'client_secret': CLIENT_SECRET,
+        'redirect_uri': REDIRECT_URI,
+        'code': authorization_code,
+        'grant_type': 'authorization_code'
+    }
+    # Make the request to get the token
+    response = requests.post(TOKEN_URL, data=data)
+    response_data = response.json()
+    return response_data['access_token']
+
+# Start the process
+print("Visit this URL to authorize:", get_authorization_url())
+authorization_code = input("Enter the authorization code: ")
+access_token = get_access_token(authorization_code)
+print("Access Token:", access_token)
+
