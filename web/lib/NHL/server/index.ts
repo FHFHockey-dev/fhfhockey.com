@@ -97,7 +97,7 @@ export async function getCurrentSeason(): Promise<Season> {
   const { data } = await supabase
     .from("seasons")
     .select("*")
-    //.lte("startDate", new Date().toISOString())
+    .lte("startDate", new Date().toISOString()) // ensure season has started
     .order("startDate", { ascending: false })
     .limit(2);
   if (data === null) throw Error("Cannot find the current season");
