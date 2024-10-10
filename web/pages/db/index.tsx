@@ -25,6 +25,8 @@ export default function Page() {
   const [numGames, setNumGames] = useState(0);
   const [games, setGames] = useState<{ id: number; date: string }[]>([]);
   const [powerPlayInput, setPowerPlayInput] = useState<string>("all"); // State for gameId input
+  const [shiftChartsInput, setShiftChartsInput] = useState<string>("all"); // State for Shift Charts input
+
   const season = useCurrentSeason();
   console.log(season);
 
@@ -120,7 +122,6 @@ export default function Page() {
     }
   }
 
-  // New function to update power play timeframes
   async function updatePowerPlayTimeframes() {
     try {
       // Validate input
@@ -137,6 +138,35 @@ export default function Page() {
         trimmedInput === "all"
           ? "/api/v1/db/powerPlayTimeFrame?gameId=all"
           : `/api/v1/db/powerPlayTimeFrame?gameId=${trimmedInput}`;
+
+      const { message, success } = await doPOST(endpoint);
+      enqueueSnackbar(message, {
+        variant: success ? "success" : "error",
+      });
+    } catch (e: any) {
+      console.error(e.message);
+      enqueueSnackbar(e.message, {
+        variant: "error",
+      });
+    }
+  }
+
+  async function updateShiftCharts() {
+    try {
+      // Validate input
+      const trimmedInput = shiftChartsInput.trim().toLowerCase();
+      if (trimmedInput !== "all" && isNaN(Number(trimmedInput))) {
+        enqueueSnackbar("Please enter a valid game ID or 'all'.", {
+          variant: "error",
+        });
+        return;
+      }
+
+      // Construct the endpoint URL
+      const endpoint =
+        trimmedInput === "all"
+          ? "/api/v1/db/shift-charts?gameId=all"
+          : `/api/v1/db/shift-charts?gameId=${trimmedInput}`;
 
       const { message, success } = await doPOST(endpoint);
       enqueueSnackbar(message, {
@@ -368,6 +398,41 @@ export default function Page() {
             <CardActions>
               <Button size="small" onClick={updateLineCombinations}>
                 Update
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+
+        {/* New Card for Shift Charts */}
+        <Grid xs={4}>
+          <Card>
+            <CardMedia
+              sx={{ height: 140 }}
+              image="https://www.naturalstattrick.com/shiftcharts/games/20242025/20242025-10058-shiftchart.png" // Replace with an appropriate image URL
+              title="shift charts"
+            />
+            <CardContent>
+              <Typography gutterBottom variant="h5" component="div">
+                Shift Charts
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Update shift charts data for a specific game or all games.
+              </Typography>
+              {/* Input Field for gameId */}
+              <TextField
+                label="Game ID or 'all'"
+                variant="outlined"
+                size="small"
+                fullWidth
+                margin="normal"
+                value={shiftChartsInput}
+                onChange={(e) => setShiftChartsInput(e.target.value)}
+                placeholder="Enter game ID or 'all'"
+              />
+            </CardContent>
+            <CardActions>
+              <Button size="small" onClick={updateShiftCharts}>
+                Update Shift Charts
               </Button>
             </CardActions>
           </Card>
