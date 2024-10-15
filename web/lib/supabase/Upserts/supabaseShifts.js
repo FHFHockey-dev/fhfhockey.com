@@ -3,8 +3,6 @@
 const path = "../../../.env.local";
 require("dotenv").config({ path: path });
 
-const fuse = require("fuse.js");
-
 const { createClient } = require("@supabase/supabase-js");
 const fetch = require("node-fetch");
 

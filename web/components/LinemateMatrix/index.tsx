@@ -12,18 +12,44 @@ import Tooltip from "components/Tooltip";
 import Select from "components/Select";
 import { isGameFinished } from "pages/api/v1/db/update-stats/[gameId]";
 
+// C:\Users\timbr\Desktop\FHFH\fhfhockey.com-3\web\components\LinemateMatrix\index.tsx
+
 async function getRostersMap(gameId: number, _teamId?: number) {
   const rostersMap: Record<number, PlayerData> = {};
 
-  // get skaters only
-  const boxscore = await Fetch(
-    `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
-  ).then((res) => res.json());
+  let boxscore;
+  try {
+    const response = await Fetch(
+      `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
+    );
+
+    // Check if the response is JSON
+    const contentType = response.headers.get("Content-Type");
+    if (!contentType || !contentType.includes("application/json")) {
+      throw new Error(`Unexpected content type: ${contentType}`);
+    }
+
+    boxscore = await response.json();
+  } catch (e: any) {
+    throw new Error(
+      `Failed to fetch or parse boxscore for game ${gameId}: ${e.message}`
+    );
+  }
+
+  // Check gameScheduleState
+  if (boxscore.gameScheduleState !== "OK") {
+    throw new Error(
+      `Skipping game ${gameId} because gameScheduleState is ${boxscore.gameScheduleState}`
+    );
+  }
+
+  // Existing gameState check
   if (!isGameFinished(boxscore.gameState)) {
     throw new Error(
       `The gameState for the game ${gameId} is ` + boxscore.gameState
     );
   }
+
   const playerByGameStats = boxscore.playerByGameStats;
   const transform = (teamId: number) => (item: any) => ({
     id: item.playerId,
@@ -32,6 +58,7 @@ async function getRostersMap(gameId: number, _teamId?: number) {
     position: item.position,
     name: item.name.default,
   });
+
   const players: PlayerData[] = [];
   let teams: { id: number; name: string }[] = [
     boxscore.homeTeam,
@@ -40,6 +67,7 @@ async function getRostersMap(gameId: number, _teamId?: number) {
     id: team.id,
     name: team.name.default,
   }));
+
   if (_teamId) {
     teams = teams.filter((team) => team.id === _teamId);
     if (_teamId === boxscore.homeTeam.id) {
