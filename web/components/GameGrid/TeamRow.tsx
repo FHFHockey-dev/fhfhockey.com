@@ -1,3 +1,5 @@
+// components/GameGrid/TeamRow.tsx
+
 import Image from "next/image";
 import { formatWinOdds } from "./utils/calcWinOdds";
 import { formatWeekScore } from "./utils/calcWeekScore";
@@ -9,6 +11,9 @@ import {
   GameData,
   WeekData,
 } from "lib/NHL/types";
+import Tooltip from "./PDHC/Tooltip";
+import PoissonHeatmap from "./PDHC/PoissonHeatMap";
+import { getTeamAbbreviation } from "lib/teamsInfo"; // Import the helper function
 
 import styles from "./GameGrid.module.scss";
 
@@ -84,7 +89,20 @@ function TeamRow(props: TeamRowProps) {
     <tr className={styles.teamRow}>
       {/* Team Name */}
       <td>
-        <span className={styles.teamName}>{team.abbreviation}</span>
+        <span className={styles.teamName}>
+          {team.abbreviation}
+          {"    "}
+          <Image
+            className={`${styles.mobileLogoSize}`}
+            objectFit="contain"
+            alt={`${team.name} logo`}
+            width={35}
+            height={35}
+            src={team.logo}
+            title={team.name}
+          />
+          {"    "}
+        </span>
         <span className={styles.teamAbbreviation}>{team.abbreviation}</span>
       </td>
       {/* Days */}
@@ -140,45 +158,83 @@ type MatchUpCellProps = {
 function MatchUpCell({ home, homeTeam, awayTeam }: MatchUpCellProps) {
   const us = home ? homeTeam : awayTeam;
   const opponent = home ? awayTeam : homeTeam;
+
+  // Unconditionally call useTeam for both teams
+  const usTeam = useTeam(us.id);
   const opponentTeam = useTeam(opponent.id);
+
+  // Retrieve abbreviations
+  const usAbbreviation = getTeamAbbreviation(us.id);
+  const opponentAbbreviation = getTeamAbbreviation(opponent.id);
+
+  console.log(
+    `MatchUpCell: usAbbreviation=${usAbbreviation}, opponentAbbreviation=${opponentAbbreviation}`
+  );
+
+  // Handle cases where abbreviation might not be found
+  if (!usAbbreviation || !opponentAbbreviation) {
+    console.error(
+      `Abbreviation not found for team IDs: ${us.id}, ${opponent.id}`
+    );
+    return <div>Data unavailable</div>; // Fallback UI
+  }
+
+  // Proceed with rendering since hooks are called unconditionally
   const hasResult = us.score !== undefined && opponent.score !== undefined;
   let text = "";
   let stat = "";
 
-  // game with result
+  // Game with result
   if (hasResult) {
     const win = us.score > opponent.score;
     text = win ? "WIN" : "LOSS";
     stat = `${us.score}-${opponent.score}`;
   }
-  // game without result, display home/away
+  // Game without result, display home/away
   else {
     text = home ? "HOME" : "AWAY";
     stat = formatWinOdds(us.winOdds ?? 0);
   }
 
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between" }}>
-      <div className={styles.scoreAndHomeAway}>
-        <span className={styles.homeAway}>{text}</span>
-        <p className={styles.score}>{stat}</p>
-      </div>
-      <div
-        className={`${styles.hideOnMobile}`}
-        style={{ paddingRight: "3px", margin: "auto", fontSize: "0.75rem" }}
-      >
-        {home ? "vs." : "@"}
-      </div>
-      <Image
-        className={`${styles.mobileLogoSize}`}
-        objectFit="contain"
-        alt={`${opponentTeam.name} logo`}
-        width={35}
-        height={35}
-        src={opponentTeam.logo}
-        title={opponentTeam.name}
+  console.log(`MatchUpCell: text=${text}, stat=${stat}`);
+
+  // Define tooltipContent within MatchUpCell
+  const tooltipContent = (
+    <div>
+      <h4>Poisson Distribution Heatmap</h4>
+      <p>Most likely game outcome based on team statistics.</p>
+      <PoissonHeatmap
+        homeTeamAbbreviation={usAbbreviation}
+        awayTeamAbbreviation={opponentAbbreviation}
+        situation="5v5" // Replace with dynamic situation if available
       />
     </div>
+  );
+
+  return (
+    <Tooltip content={tooltipContent}>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <div className={styles.scoreAndHomeAway}>
+          <span className={styles.homeAway}>{text}</span>
+          <p className={styles.score}>{stat}</p>
+        </div>
+        <div
+          className={`${styles.hideOnMobile}`}
+          style={{ paddingRight: "3px", margin: "auto", fontSize: "0.75rem" }}
+        >
+          {home ? "vs." : "@"}
+        </div>
+        <Image
+          className={`${styles.mobileLogoSize}`}
+          objectFit="contain"
+          alt={`${opponentTeam.name} logo`}
+          width={35}
+          height={35}
+          src={opponentTeam.logo}
+          title={opponentTeam.name}
+        />
+      </div>
+    </Tooltip>
   );
 }
 

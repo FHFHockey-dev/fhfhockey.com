@@ -106,7 +106,6 @@
 .scheduleGrid tr td:first-child {
   height: 12px;
   border-collapse: collapse;
-  width: 50px;
   border-right: 5px solid #07aae2;
   text-align: left;
   padding: 10px;
@@ -325,10 +324,12 @@
 @media only screen and (min-width: $screen-large) {
   .teamRow {
     .teamName {
-      display: block;
+      display: flex; /* Ensure Flexbox is applied on large screens */
+      justify-content: space-between;
+      align-items: center;
     }
     .teamAbbreviation {
-      display: none;
+      display: none; /* Hide the separate abbreviation if it's redundant */
     }
   }
 

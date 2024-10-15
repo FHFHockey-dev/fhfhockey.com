@@ -278,6 +278,8 @@ export type GameData = {
 
 export type WeekData = Record<EXTENDED_DAY_ABBREVIATION, GameData>;
 
+export type GameSituation = "all" | "5v5" | "pp" | "pk";
+
 export type ScheduleData = {
   data: Record<number, WeekData>;
   numGamesPerDay: number[];
