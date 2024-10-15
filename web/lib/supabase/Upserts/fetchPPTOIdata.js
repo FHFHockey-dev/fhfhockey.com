@@ -5,7 +5,7 @@
 // For days that fail, those days need to be retried after the script has finished running
 // maybe an array that stores the failed dates and then a loop that runs through the failed dates
 
-const path = "./../../.env.local";
+const path = "../../../.env.local";
 require("dotenv").config({ path: path });
 
 const { createClient } = require("@supabase/supabase-js");
@@ -20,7 +20,7 @@ async function Fetch(url) {
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   console.error(
@@ -71,11 +71,10 @@ async function fetchAllDataForDate(formattedDate, limit) {
 }
 
 async function fetchNHLSkaterData() {
-  const scheduleResponse = await Fetch(
-    "https://api-web.nhle.com/v1/schedule/now"
-  );
-  let seasonStart = "2023-10-10";
-  // let seasonStart = scheduleResponse.data[0].startDate;
+  const scheduleResponse = await Fetch("https://fhfhockey.com/api/v1/season");
+
+  //let seasonStart = "2023-10-10";
+  let seasonStart = scheduleResponse.regularSeasonStartDate;
   let currentDate = parseISO(seasonStart);
   const today = new Date();
   const limit = 100;

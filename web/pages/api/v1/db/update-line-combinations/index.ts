@@ -30,7 +30,7 @@ export default adminOnly(async (req, res) => {
       (item) => item.status === "rejected"
     ) as PromiseRejectedResult[];
 
-    // log the errors if any
+    // Log the errors if any
     failed.forEach((item) => console.error(item.reason));
 
     res.json({

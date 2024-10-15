@@ -1,4 +1,4 @@
-// File: C:\Users\timbr\Desktop\FHFH\fhfhockey.com-3\web\pages\api\v1\db\shiftCharts.ts
+// C:\Users\timbr\Desktop\FHFH\fhfhockey.com\web\pages\api\v1\db\shift-charts.ts
 
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase";
@@ -24,7 +24,7 @@ interface GameInfo {
 interface TeamDetail {
   id: number;
   abbrev: string;
-  // Add other relevant fields if necessary
+  // other relevant fields if necessary
 }
 
 interface Shift {
@@ -174,6 +174,31 @@ function isGameFinished(game: any): boolean {
 function parseTime(timeStr: string): number {
   const [minutes, seconds] = timeStr.split(":").map(Number);
   return minutes * 60 + seconds;
+}
+
+/**
+ * Retrieves the latest processed game_date from the shift_charts table.
+ * @returns The latest game_date as a string, or null if no data exists.
+ */
+async function getLatestProcessedGameDate(): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("shift_charts")
+    .select("game_date")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      // No rows found
+      console.warn("No existing records found in shift_charts.");
+      return null;
+    }
+    console.error("Error fetching latest game_date from shift_charts:", error);
+    return null;
+  }
+
+  return data.game_date || null;
 }
 
 /**
@@ -1030,20 +1055,35 @@ async function upsertShiftChartData(
 /**
  * Main function to fetch and store shift charts.
  */
+/**
+ * Main function to fetch and store shift charts.
+ */
 async function fetchAndStoreShiftCharts(): Promise<{
   success: boolean;
   message: string;
   unmatchedNames: string[];
 }> {
   try {
+    // Step 1: Get the latest processed game_date from shift_charts
+    const latestGameDate = await getLatestProcessedGameDate();
+    if (latestGameDate) {
+      console.log(`Latest processed game date: ${latestGameDate}`);
+    } else {
+      console.log("No previous shift_chart data found. Processing all games.");
+    }
+
+    // Step 2: Fetch the current season ID
     const seasonId = await fetchCurrentSeason();
     console.log(`Current season ID: ${seasonId}`);
+
     const gameIdSet = new Set<number>();
     const gameInfoMap = new Map<number, GameInfo>();
 
+    // Step 3: Fetch all player positions
     const playerPositions = await fetchAllPlayerPositions();
     const unmatchedNames: string[] = [];
 
+    // Step 4: Iterate through each team to fetch and process games
     for (const teamAbbreviation of Object.keys(teamsInfo)) {
       const teamSchedule = await fetchTeamSchedule(teamAbbreviation, seasonId);
 
@@ -1053,25 +1093,36 @@ async function fetchAndStoreShiftCharts(): Promise<{
       }
 
       for (const game of teamSchedule.games) {
-        // Integrate isGameFinished Check Here
-        if (isGameFinished(game)) {
-          gameIdSet.add(game.id);
-          gameInfoMap.set(game.id, {
-            gameType: game.gameType,
-            gameDate: game.gameDate,
-            homeTeam: game.homeTeam,
-            awayTeam: game.awayTeam,
-            game_id: game.id,
-            season_id: seasonId,
-          });
-        } else {
+        // Check if the game has finished
+        if (!isGameFinished(game)) {
           console.log(
             `Skipping game ID: ${game.id} as it is not finished (gameState: ${game.gameState})`
           );
+          continue;
         }
+
+        // If latestGameDate exists, skip games on or before that date
+        if (latestGameDate && game.gameDate <= latestGameDate) {
+          console.log(
+            `Skipping game ID: ${game.id} as its gameDate (${game.gameDate}) is on or before the latest processed date (${latestGameDate})`
+          );
+          continue;
+        }
+
+        // Add game ID and info for processing
+        gameIdSet.add(game.id);
+        gameInfoMap.set(game.id, {
+          gameType: game.gameType,
+          gameDate: game.gameDate,
+          homeTeam: game.homeTeam,
+          awayTeam: game.awayTeam,
+          game_id: game.id,
+          season_id: seasonId,
+        });
       }
     }
 
+    // Proceed with processing the collected game IDs
     for (const gameId of gameIdSet) {
       try {
         const shiftChartData = await fetchShiftChartData(gameId);

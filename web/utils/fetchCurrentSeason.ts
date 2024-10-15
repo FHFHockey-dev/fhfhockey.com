@@ -33,8 +33,8 @@ export async function fetchCurrentSeason() {
         new Date(previousSeason.regularSeasonEndDate).getDate() + 1
       ),
       playoffsEndDate: new Date(previousSeason.endDate),
-      previousSeason, // Add this
-      nextSeason, // Add this
+      previousSeason,
+      nextSeason,
     };
   } else {
     return {
@@ -48,5 +48,3 @@ export async function fetchCurrentSeason() {
     };
   }
 }
-
-// export async function fetchLastSeason() {
