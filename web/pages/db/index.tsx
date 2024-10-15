@@ -15,6 +15,7 @@ import Container from "components/Layout/Container";
 import supabase, { doPOST } from "lib/supabase";
 import { useSnackbar } from "notistack";
 import useCurrentSeason from "hooks/useCurrentSeason";
+import { color } from "d3";
 
 export default function Page() {
   const { enqueueSnackbar } = useSnackbar();
@@ -263,19 +264,30 @@ export default function Page() {
     <Container>
       <TextBanner text="Supabase Database" />
 
-      <Grid container spacing={2}>
+      <Grid container spacing={2} alignItems="stretch">
+        {/* Players / Rosters Table Card */}
         <Grid xs={4}>
-          <Card>
+          <Card
+            sx={{
+              border: "5px solid #07aae2",
+              borderRadius: "8px",
+              height: "100%", // Ensures the card fills the Grid item's height
+              display: "flex",
+              flexDirection: "column",
+              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
+              color: "#fff",
+            }}
+          >
             <CardMedia
               sx={{ height: 140 }}
-              image="https://www.fhfhockey.com/pictures/playersTable.png"
+              image="/pictures/playersTable.png" // Local image path
               title="players table"
             />
-            <CardContent>
+            <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
-                players
+                PLAYERS / ROSTERS
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2">
                 The table contains the data for {numPlayers} players. The
                 `players` and `rosters` tables will be updated simultaneously.
               </Typography>
@@ -288,18 +300,29 @@ export default function Page() {
           </Card>
         </Grid>
 
+        {/* Seasons Table Card */}
         <Grid xs={4}>
-          <Card>
+          <Card
+            sx={{
+              border: "5px solid #07aae2",
+              borderRadius: "8px",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
+              color: "#fff",
+            }}
+          >
             <CardMedia
               sx={{ height: 140 }}
-              image="https://media.nhl.com/site/asset/public/images/2023/09/Season-Preview_Media-21110824.png"
-              title="players table"
+              image="/pictures/seasonsTable.png" // Local image path
+              title="seasons table"
             />
-            <CardContent>
+            <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
-                seasons
+                SEASONS
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2">
                 The table contains the data for {numSeasons} seasons. This card
                 updates the `seasons` table.
               </Typography>
@@ -312,18 +335,29 @@ export default function Page() {
           </Card>
         </Grid>
 
+        {/* Teams Table Card */}
         <Grid xs={4}>
-          <Card>
+          <Card
+            sx={{
+              border: "5px solid #07aae2",
+              borderRadius: "8px",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
+              color: "#fff",
+            }}
+          >
             <CardMedia
               sx={{ height: 140 }}
-              image="https://media.d3.nhle.com/image/private/t_ratio16_9-size20/prd/e0zxtwtpk50zvxkoovim"
-              title="teams"
+              image="/pictures/teamsTable.png" // Local image path
+              title="teams table"
             />
-            <CardContent>
+            <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
-                teams
+                TEAMS
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2">
                 The table contains the data for {numTeams} teams. This card
                 updates the `teams` & `team_season` tables.
               </Typography>
@@ -336,18 +370,29 @@ export default function Page() {
           </Card>
         </Grid>
 
+        {/* Games Table Card */}
         <Grid xs={4}>
-          <Card>
+          <Card
+            sx={{
+              border: "5px solid #07aae2",
+              borderRadius: "8px",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
+              color: "#fff",
+            }}
+          >
             <CardMedia
               sx={{ height: 140 }}
-              image="https://media.d3.nhle.com/image/private/t_ratio16_9-size20/prd/e0zxtwtpk50zvxkoovim"
-              title="teams"
+              image="/pictures/gamesTable.png" // Local image path
+              title="games table"
             />
-            <CardContent>
+            <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
-                games
+                GAMES
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2">
                 The table contains the data for {numGames} games in{" "}
                 {season?.seasonId} season. This card updates the `games` tables.
               </Typography>
@@ -360,18 +405,29 @@ export default function Page() {
           </Card>
         </Grid>
 
+        {/* Stats Table Card */}
         <Grid xs={4}>
-          <Card>
+          <Card
+            sx={{
+              border: "5px solid #07aae2",
+              borderRadius: "8px",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
+              color: "#fff",
+            }}
+          >
             <CardMedia
               sx={{ height: 140 }}
-              image="https://media.d3.nhle.com/image/private/t_ratio16_9-size20/prd/e0zxtwtpk50zvxkoovim"
-              title="teams"
+              image="/pictures/statsTable.png" // Local image path
+              title="stats table"
             />
-            <CardContent>
+            <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
-                stats
+                STATS
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2">
                 Update stats for {games.length} games between{" "}
                 {games.at(0)?.date} ~ {games.at(-1)?.date}
               </Typography>
@@ -384,19 +440,29 @@ export default function Page() {
           </Card>
         </Grid>
 
-        {/* New Card for Power Play Timeframes */}
+        {/* Power Play Timeframes Card */}
         <Grid xs={4}>
-          <Card>
+          <Card
+            sx={{
+              border: "5px solid #07aae2",
+              borderRadius: "8px",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
+              color: "#fff",
+            }}
+          >
             <CardMedia
               sx={{ height: 140 }}
-              image="https://example.com/powerplay_image.jpg" // Replace with an appropriate image URL
+              image="/pictures/ppTimeframes.png" // Local image path
               title="power play timeframes"
             />
-            <CardContent>
+            <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
-                Power Play Timeframes
+                PP TIMEFRAMES
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2">
                 Update the power play timeframes data for a specific game or all
                 games.
               </Typography>
@@ -410,6 +476,19 @@ export default function Page() {
                 value={powerPlayInput}
                 onChange={(e) => setPowerPlayInput(e.target.value)}
                 placeholder="Enter game ID or 'all'"
+                sx={{
+                  backgroundColor: "#202020",
+                  border: "1px solid #07aae2",
+                  borderRadius: "4px",
+                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
+                    {
+                      color: "#07aae2",
+                      fontWeight: "900",
+                      textTransform: "uppercase",
+                      backgroundColor: "#202020",
+                      margin: "1px",
+                    },
+                }}
               />
             </CardContent>
             <CardActions>
@@ -420,19 +499,29 @@ export default function Page() {
           </Card>
         </Grid>
 
-        {/* New Card for Line Combinations */}
+        {/* Line Combinations Card */}
         <Grid xs={4}>
-          <Card>
+          <Card
+            sx={{
+              border: "5px solid #07aae2",
+              borderRadius: "8px",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
+              color: "#fff",
+            }}
+          >
             <CardMedia
               sx={{ height: 140 }}
-              image="https://kickly.net/wp-content/uploads/2022/09/Hockey-Starting-Lineup-Editable-Graphic-V.png"
+              image="/pictures/linesTable.png" // Local image path
               title="line combinations"
             />
-            <CardContent>
+            <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
-                line combinations
+                LINE COMBOS
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2">
                 Update the line combinations data for unprocessed games.
               </Typography>
             </CardContent>
@@ -444,19 +533,29 @@ export default function Page() {
           </Card>
         </Grid>
 
-        {/* New Card for Shift Charts */}
+        {/* Shift Charts Card */}
         <Grid xs={4}>
-          <Card>
+          <Card
+            sx={{
+              border: "5px solid #07aae2",
+              borderRadius: "8px",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
+              color: "#fff",
+            }}
+          >
             <CardMedia
               sx={{ height: 140 }}
-              image="https://www.naturalstattrick.com/shiftcharts/games/20242025/20242025-10058-shiftchart.png" // Replace with an appropriate image URL
+              image="/pictures/shiftsTable.png" // Local image path
               title="shift charts"
             />
-            <CardContent>
+            <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
-                Shift Charts
+                SHIFT CHARTS
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2">
                 Update shift charts data for a specific game or all games.
               </Typography>
               {/* Input Field for gameId */}
@@ -469,6 +568,19 @@ export default function Page() {
                 value={shiftChartsInput}
                 onChange={(e) => setShiftChartsInput(e.target.value)}
                 placeholder="Enter game ID or 'all'"
+                sx={{
+                  backgroundColor: "#202020",
+                  border: "1px solid #07aae2",
+                  borderRadius: "4px",
+                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
+                    {
+                      color: "#07aae2",
+                      fontWeight: "900",
+                      textTransform: "uppercase",
+                      backgroundColor: "#202020",
+                      margin: "1px",
+                    },
+                }}
               />
             </CardContent>
             <CardActions>
@@ -479,18 +591,29 @@ export default function Page() {
           </Card>
         </Grid>
 
+        {/* NST Team Stats Card */}
         <Grid xs={4}>
-          <Card>
+          <Card
+            sx={{
+              border: "5px solid #07aae2",
+              borderRadius: "8px",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
+              color: "#fff",
+            }}
+          >
             <CardMedia
               sx={{ height: 140 }}
-              image="https://pbs.twimg.com/profile_images/953302415402520577/r3L35Z2D_400x400.jpg" // Replace with an appropriate image URL
+              image="/pictures/nstTables.png" // Local image path
               title="NST Team Stats"
             />
-            <CardContent>
+            <CardContent sx={{ flexGrow: 1 }}>
               <Typography gutterBottom variant="h5" component="div">
                 NST Team Stats
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2">
                 Update NST team statistics based on date parameters. Choose to
                 update all data, current season, last season, or a specific
                 date.
@@ -505,6 +628,19 @@ export default function Page() {
                 value={nstTeamStatsInput}
                 onChange={(e) => setNstTeamStatsInput(e.target.value)}
                 placeholder="'all', 'all_season', 'last_season', or 'YYYY-MM-DD'"
+                sx={{
+                  backgroundColor: "#202020",
+                  border: "1px solid #07aae2",
+                  borderRadius: "4px",
+                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
+                    {
+                      color: "#07aae2",
+                      fontWeight: "900",
+                      textTransform: "uppercase",
+                      backgroundColor: "#202020",
+                      margin: "1px",
+                    },
+                }}
               />
             </CardContent>
             <CardActions>
