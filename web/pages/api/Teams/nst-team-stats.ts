@@ -5,8 +5,9 @@ import { spawn } from "child_process";
 import path from "path";
 import { RateLimiterMemory } from "rate-limiter-flexible";
 import { teamsInfo } from "lib/teamsInfo";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { getCurrentSeason } from "lib/NHL/server"; // Corrected import path
+import adminOnly from "utils/adminOnlyMiddleware"; // Import adminOnly
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; // Use service role for server-side operations
@@ -262,10 +263,16 @@ const responseDataMap = {
   },
 };
 
-export default async function handler(
-  req: NextApiRequest,
+// Extend NextApiRequest to include SupabaseClient
+interface ApiRequest extends NextApiRequest {
+  supabase: SupabaseClient<any, "public", any>;
+}
+
+// Define the handler function
+const handler = async (
+  req: ApiRequest,
   res: NextApiResponse<ResponseData | { success: false; message: string }>
-) {
+) => {
   try {
     const { date } = req.query;
     const fetchDate =
@@ -280,11 +287,12 @@ export default async function handler(
 
     if (fetchDate === "all") {
       // Fetch latest date from Supabase for date-based tables
-      const { data: latestDateData, error: latestDateError } = await supabase
-        .from("nst_team_all")
-        .select("date")
-        .order("date", { ascending: false })
-        .limit(1);
+      const { data: latestDateData, error: latestDateError } =
+        await req.supabase
+          .from("nst_team_all")
+          .select("date")
+          .order("date", { ascending: false })
+          .limit(1);
 
       if (latestDateError) {
         console.error(
@@ -534,7 +542,7 @@ export default async function handler(
       }
 
       try {
-        const { data: existingData, error: existingError } = await supabase
+        const { data: existingData, error: existingError } = await req.supabase
           .from("nst_team_stats_ly")
           .select("season")
           .eq("season", currentSeason.lastSeasonId)
@@ -754,7 +762,7 @@ export default async function handler(
           }
 
           await rateLimitedRequestWithDelays(async () => {
-            const { data: upsertedData, error } = await supabase
+            const { data: upsertedData, error } = await req.supabase
               .from(categoryPrefix)
               .upsert(categoryData, { onConflict: "team_abbreviation, date" })
               .select();
@@ -802,7 +810,7 @@ export default async function handler(
           }
 
           await rateLimitedRequestWithDelays(async () => {
-            const { data: upsertedData, error } = await supabase
+            const { data: upsertedData, error } = await req.supabase
               .from(categoryPrefix)
               .upsert(categoryData, { onConflict: "team_abbreviation, season" })
               .select();
@@ -857,4 +865,7 @@ export default async function handler(
       message: "An error occurred while fetching NST team stats.",
     });
   }
-}
+};
+
+// Export the handler wrapped with adminOnly
+export default adminOnly(handler);

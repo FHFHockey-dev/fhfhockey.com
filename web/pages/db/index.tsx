@@ -26,6 +26,7 @@ export default function Page() {
   const [games, setGames] = useState<{ id: number; date: string }[]>([]);
   const [powerPlayInput, setPowerPlayInput] = useState<string>("all"); // State for gameId input
   const [shiftChartsInput, setShiftChartsInput] = useState<string>("all"); // State for Shift Charts input
+  const [nstTeamStatsInput, setNstTeamStatsInput] = useState<string>("all"); // State for NST tables
 
   const season = useCurrentSeason();
   console.log(season);
@@ -180,6 +181,46 @@ export default function Page() {
     }
   }
 
+  // Add this within your Page component
+  async function updateNstTeamStats() {
+    try {
+      // Validate input
+      const trimmedInput = nstTeamStatsInput.trim().toLowerCase();
+
+      // Define allowed values
+      const allowedValues = ["all", "all_season", "last_season"];
+
+      // Check if input is a valid predefined option or a specific date
+      if (
+        !allowedValues.includes(trimmedInput) &&
+        !/^\d{4}-\d{2}-\d{2}$/.test(trimmedInput)
+      ) {
+        enqueueSnackbar(
+          "Please enter a valid option or date in YYYY-MM-DD format.",
+          {
+            variant: "error",
+          }
+        );
+        return;
+      }
+
+      // Construct the endpoint URL with the date query parameter
+      const endpoint = `/api/Teams/nst-team-stats?date=${encodeURIComponent(
+        trimmedInput
+      )}`;
+
+      const { message, success } = await doPOST(endpoint);
+      enqueueSnackbar(message, {
+        variant: success ? "success" : "error",
+      });
+    } catch (e: any) {
+      console.error(e.message);
+      enqueueSnackbar(e.message, {
+        variant: "error",
+      });
+    }
+  }
+
   useEffect(() => {
     (async () => {
       const { count: numPlayers } = await supabase
@@ -227,7 +268,7 @@ export default function Page() {
           <Card>
             <CardMedia
               sx={{ height: 140 }}
-              image="https://img.bleacherreport.net/img/slides/photos/004/465/001/2073e9622e4d04f0146efc1c69d1f539_crop_exact.jpg?w=2975&h=2048&q=85"
+              image="https://www.fhfhockey.com/pictures/playersTable.png"
               title="players table"
             />
             <CardContent>
@@ -433,6 +474,42 @@ export default function Page() {
             <CardActions>
               <Button size="small" onClick={updateShiftCharts}>
                 Update Shift Charts
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+
+        <Grid xs={4}>
+          <Card>
+            <CardMedia
+              sx={{ height: 140 }}
+              image="https://pbs.twimg.com/profile_images/953302415402520577/r3L35Z2D_400x400.jpg" // Replace with an appropriate image URL
+              title="NST Team Stats"
+            />
+            <CardContent>
+              <Typography gutterBottom variant="h5" component="div">
+                NST Team Stats
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Update NST team statistics based on date parameters. Choose to
+                update all data, current season, last season, or a specific
+                date.
+              </Typography>
+              {/* Input Field for Date Parameter */}
+              <TextField
+                label="Date Parameter"
+                variant="outlined"
+                size="small"
+                fullWidth
+                margin="normal"
+                value={nstTeamStatsInput}
+                onChange={(e) => setNstTeamStatsInput(e.target.value)}
+                placeholder="'all', 'all_season', 'last_season', or 'YYYY-MM-DD'"
+              />
+            </CardContent>
+            <CardActions>
+              <Button size="small" onClick={updateNstTeamStats}>
+                Update NST Team Stats
               </Button>
             </CardActions>
           </Card>
