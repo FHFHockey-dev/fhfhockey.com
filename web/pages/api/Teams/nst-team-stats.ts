@@ -125,6 +125,31 @@ export const safeParseNumber = (value: string): number | null => {
   return isNaN(parsed) ? null : parsed;
 };
 
+/**
+ * Converts a time string in MM:SS or MMMM:SS format to total seconds.
+ * @param toi - The time string in MM:SS or MMMM:SS format.
+ * @returns The total time in seconds as an integer, or null if the format is invalid.
+ */
+export const convertToSeconds = (toi: string): number | null => {
+  if (!toi || toi === "-") {
+    return null; // Handle null or "-" as invalid TOI
+  }
+
+  const parts = toi.split(":");
+  if (parts.length !== 2) {
+    return null; // Invalid format
+  }
+
+  const minutes = parseInt(parts[0], 10);
+  const seconds = parseInt(parts[1], 10);
+
+  if (isNaN(minutes) || isNaN(seconds)) {
+    return null; // Invalid numeric conversion
+  }
+
+  return minutes * 60 + seconds; // Convert MM:SS to total seconds
+};
+
 export default adminOnly(async (req: any, res: NextApiResponse) => {
   const { supabase } = req;
 
@@ -355,11 +380,13 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
                   teamAbbreviation = "UTA";
                 }
 
+                const totalTOI = convertToSeconds(stat.TOI);
+
                 return {
                   team_abbreviation: teamAbbreviation,
                   team_name: teamsInfo[teamAbbreviation]?.name || teamName, // Use mapped name or original
                   gp: safeParseNumber(stat.GP),
-                  toi: stat.TOI === "-" ? null : safeParseNumber(stat.TOI),
+                  toi: totalTOI,
                   w: safeParseNumber(stat.W),
                   l: safeParseNumber(stat.L),
                   otl: safeParseNumber(stat.OTL),
@@ -619,11 +646,13 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
                 teamAbbreviation = "UTA";
               }
 
+              const totalTOI = convertToSeconds(stat.TOI);
+
               return {
                 team_abbreviation: teamAbbreviation,
                 team_name: teamsInfo[teamAbbreviation]?.name || teamName, // Use mapped name or original
                 gp: safeParseNumber(stat.GP),
-                toi: stat.TOI === "-" ? null : safeParseNumber(stat.TOI),
+                toi: totalTOI,
                 w: safeParseNumber(stat.W),
                 l: safeParseNumber(stat.L),
                 otl: safeParseNumber(stat.OTL),
@@ -878,11 +907,13 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
                 teamAbbreviation = "UTA";
               }
 
+              const totalTOI = convertToSeconds(stat.TOI);
+
               return {
                 team_abbreviation: teamAbbreviation,
                 team_name: teamsInfo[teamAbbreviation]?.name || teamName, // Use mapped name or original
                 gp: safeParseNumber(stat.GP),
-                toi: stat.TOI === "-" ? null : safeParseNumber(stat.TOI),
+                toi: totalTOI,
                 w: safeParseNumber(stat.W),
                 l: safeParseNumber(stat.L),
                 otl: safeParseNumber(stat.OTL),
@@ -1103,11 +1134,13 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
                 teamAbbreviation = "UTA";
               }
 
+              const totalTOI = convertToSeconds(stat.TOI);
+
               return {
                 team_abbreviation: teamAbbreviation,
                 team_name: teamsInfo[teamAbbreviation]?.name || teamName, // Use mapped name or original
                 gp: safeParseNumber(stat.GP),
-                toi: stat.TOI === "-" ? null : safeParseNumber(stat.TOI),
+                toi: totalTOI,
                 w: safeParseNumber(stat.W),
                 l: safeParseNumber(stat.L),
                 otl: safeParseNumber(stat.OTL),
