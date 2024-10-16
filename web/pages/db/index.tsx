@@ -593,17 +593,27 @@ export default function Page() {
 
         {/* NST Team Stats Card */}
         <Grid xs={4}>
-          <Card>
+          <Card
+            sx={{
+              border: "5px solid #07aae2",
+              borderRadius: "8px",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
+              color: "#fff",
+            }}
+          >
             <CardMedia
               sx={{ height: 140 }}
-              image="https://pbs.twimg.com/profile_images/953302415402520577/r3L35Z2D_400x400.jpg" // Replace with an appropriate image URL
+              image="/pictures/nstTables.png" // Replace with an appropriate image URL
               title="NST Team Stats"
             />
             <CardContent>
               <Typography gutterBottom variant="h5" component="div">
                 NST Team Stats
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2">
                 Update NST team statistics based on date parameters. Choose to
                 update all data, current season, last season, or a specific
                 date.
@@ -615,9 +625,22 @@ export default function Page() {
                 size="small"
                 fullWidth
                 margin="normal"
-                value={nstTeamStatsInput}
-                onChange={(e) => setNstTeamStatsInput(e.target.value)}
-                placeholder="'all', 'all_season', 'last_season', or 'YYYY-MM-DD'"
+                value={shiftChartsInput}
+                onChange={(e) => setShiftChartsInput(e.target.value)}
+                placeholder="Enter game ID or 'all'"
+                sx={{
+                  backgroundColor: "#202020",
+                  border: "1px solid #07aae2",
+                  borderRadius: "4px",
+                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
+                    {
+                      color: "#07aae2",
+                      fontWeight: "900",
+                      textTransform: "uppercase",
+                      backgroundColor: "#202020",
+                      margin: "1px",
+                    },
+                }}
               />
             </CardContent>
             <CardActions>

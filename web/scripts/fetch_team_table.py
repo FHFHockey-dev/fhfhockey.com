@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import json
 import argparse
 import re
+import sys
 
 def clean_header(header: str) -> str:
     """
@@ -81,7 +82,7 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
         if not table:
             result["debug"]["Error"] = f"No table found for sit={sit}, rate={rate}"
             print(json.dumps(result))
-            return
+            sys.exit(1)  # Exit with non-zero status
 
         # Extract table headers and clean them
         headers = []
@@ -141,9 +142,11 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
     except requests.exceptions.HTTPError as http_err:
         result["debug"]["HTTP error"] = f"HTTP error occurred: {http_err} - Status Code: {response.status_code}"
         print(json.dumps(result))
+        sys.exit(1)  # Exit with non-zero status
     except Exception as err:
         result["debug"]["Exception"] = f"An error occurred: {err}"
         print(json.dumps(result))
+        sys.exit(1)  # Exit with non-zero status
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Fetch team table data.')
