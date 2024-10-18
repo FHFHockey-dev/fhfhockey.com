@@ -2,55 +2,136 @@
 
 .container {
   padding: 20px;
-  font-family: Arial, sans-serif;
 }
 
-.selectionContainer {
-  display: flex;
-  gap: 20px;
-  margin-bottom: 30px;
+.title {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 2rem;
+  color: #333;
 }
 
-.dropdown {
-  display: flex;
-  flex-direction: column;
-}
-
-.dropdown label {
-  margin-bottom: 5px;
-  font-weight: bold;
-}
-
-.dropdown select {
-  padding: 5px;
-  font-size: 1rem;
-}
-
-.pdchContainer {
+.tableWrapper,
+.scoresContainer,
+.differentialsContainer {
   margin-bottom: 40px;
 }
 
-.tableContainer {
-  overflow-x: auto;
-}
-
-.statsTable {
+.table,
+.scoreTable,
+.differentialsTable {
   width: 100%;
   border-collapse: collapse;
 }
 
-.statsTable th,
-.statsTable td {
+.table th,
+.table td,
+.scoreTable th,
+.scoreTable td,
+.differentialsTable th,
+.differentialsTable td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: center;
+  white-space: nowrap;
+  font-size: 0.9rem;
 }
 
-.statsTable th {
-  background-color: #f2f2f2;
+.table th,
+.scoreTable th,
+.differentialsTable th {
+  background-color: #101010;
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.leagueAverageRow {
+  background-color: #3e3e3e;
   font-weight: bold;
 }
 
-.statsTable img {
-  border-radius: 4px;
+.scoresContainer h2,
+.differentialsContainer h2 {
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.scoreTable th,
+.scoreTable td,
+.differentialsTable th,
+.differentialsTable td {
+  border: 1px solid #ccc;
+}
+
+.positive {
+  color: green;
+}
+
+.negative {
+  color: red;
+}
+
+.loading,
+.error {
+  text-align: center;
+  font-size: 1.5rem;
+  color: #666;
+}
+
+@media screen and (max-width: 2000px) {
+  .table,
+  .scoreTable,
+  .differentialsTable {
+    min-width: 2000px; /* Adjust based on the number of columns */
+  }
+}
+
+@media screen and (max-width: 1600px) {
+  .table,
+  .scoreTable,
+  .differentialsTable {
+    min-width: 1800px;
+  }
+}
+
+@media screen and (max-width: 1400px) {
+  .table,
+  .scoreTable,
+  .differentialsTable {
+    min-width: 1600px;
+  }
+}
+
+@media screen and (max-width: 1200px) {
+  .table,
+  .scoreTable,
+  .differentialsTable {
+    min-width: 1400px;
+  }
+}
+
+@media screen and (max-width: 992px) {
+  .table,
+  .scoreTable,
+  .differentialsTable {
+    min-width: 1200px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .table,
+  .scoreTable,
+  .differentialsTable {
+    min-width: 1000px;
+  }
+}
+
+@media screen and (max-width: 576px) {
+  .table,
+  .scoreTable,
+  .differentialsTable {
+    min-width: 800px;
+  }
 }

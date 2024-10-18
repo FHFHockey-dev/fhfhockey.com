@@ -1,16 +1,16 @@
 // lib/teamsInfo.ts
 
-import { useTeamsMap } from "hooks/useTeams";
+// import { useTeamsMap } from "hooks/useTeams";
 
-/**
- * Retrieves the team abbreviation given a team ID.
- * @param teamId - The unique identifier for the team.
- * @returns The team abbreviation if found, otherwise undefined.
- */
-export const getTeamAbbreviation = (teamId: number): string | undefined => {
-  const teamsMap = useTeamsMap();
-  return teamsMap[teamId]?.abbreviation;
-};
+// /**
+//  * Retrieves the team abbreviation given a team ID.
+//  * @param teamId - The unique identifier for the team.
+//  * @returns The team abbreviation if found, otherwise undefined.
+//  */
+// export const getTeamAbbreviation = (teamId: number): string | undefined => {
+//   const teamsMap = useTeamsMap();
+//   return teamsMap[teamId]?.abbreviation;
+// };
 
 export const teamsInfo: {
   [key: string]: {

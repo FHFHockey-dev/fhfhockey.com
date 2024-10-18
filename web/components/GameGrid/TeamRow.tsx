@@ -13,7 +13,8 @@ import {
 } from "lib/NHL/types";
 import Tooltip from "./PDHC/Tooltip";
 import PoissonHeatmap from "./PDHC/PoissonHeatMap";
-import { getTeamAbbreviation } from "lib/teamsInfo"; // Import the helper function
+// import { getTeamAbbreviation } from "lib/teamsInfo"; // Import the helper function
+import { useTeamAbbreviation } from "hooks/useTeamAbbreviation";
 
 import styles from "./GameGrid.module.scss";
 
@@ -164,8 +165,8 @@ function MatchUpCell({ home, homeTeam, awayTeam }: MatchUpCellProps) {
   const opponentTeam = useTeam(opponent.id);
 
   // Retrieve abbreviations
-  const usAbbreviation = getTeamAbbreviation(us.id);
-  const opponentAbbreviation = getTeamAbbreviation(opponent.id);
+  const usAbbreviation = useTeamAbbreviation(us.id);
+  const opponentAbbreviation = useTeamAbbreviation(opponent.id);
 
   console.log(
     `MatchUpCell: usAbbreviation=${usAbbreviation}, opponentAbbreviation=${opponentAbbreviation}`

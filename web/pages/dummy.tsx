@@ -1,134 +1,243 @@
-// pages/dummy.tsx
+import React, { useEffect, useState } from "react";
+import supabase from "lib/supabase"; // Adjust the import path if necessary
+import styles from "styles/DummyPage.module.scss";
+import { StrengthEnum } from "../components/GameGrid/PDHC/types";
 
-import React, { useState } from "react";
-import { useTeamsMap } from "../hooks/useTeams";
-import PoissonHeatmap from "../components/GameGrid/PDHC/PoissonHeatMap"; // Adjust the import path if necessary
-import styles from "../styles/DummyPage.module.scss"; // Create corresponding CSS module
+// Define strengths using StrengthEnum values
+const strengths: readonly StrengthEnum[] = [
+  StrengthEnum.ALL,
+  StrengthEnum.FIVE_V_FIVE,
+  StrengthEnum.PP,
+  StrengthEnum.PK,
+] as const;
+
+// Define the TeamScores type to match the view
+type TeamScores = {
+  team_abbreviation: string;
+  team_name: string;
+  gp: number;
+  w_per_game: number;
+  l_per_game: number;
+  otl_per_game: number;
+  points_per_game: number;
+  att_score_all: number;
+  def_score_all: number;
+  att_score_5v5: number;
+  def_score_5v5: number;
+  att_score_pp: number;
+  def_score_pp: number;
+  att_score_pk: number;
+  def_score_pk: number;
+};
+
+// Update the TeamsState type
+type TeamsState = {
+  [key: string]: {
+    general: {
+      team_abbreviation: string;
+      team_name: string;
+      gp: number;
+      w_per_game: number;
+      l_per_game: number;
+      otl_per_game: number;
+      points_per_game: number;
+    };
+    attScores: Record<StrengthEnum, number>;
+    defScores: Record<StrengthEnum, number>;
+    toi: Record<StrengthEnum, number>;
+  };
+};
 
 const DummyPage: React.FC = () => {
-  const teamsMap = useTeamsMap();
-  const teamIds = Object.keys(teamsMap).map((id) => Number(id));
+  const [teams, setTeams] = useState<TeamsState>({});
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [homeTeamId, setHomeTeamId] = useState<number | null>(null);
-  const [awayTeamId, setAwayTeamId] = useState<number | null>(null);
-  const [situation, setSituation] = useState<string>("5v5"); // Default situation
+  // Fetch data from Supabase
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch team scores with attack and defense scores for all strengths
+        const { data: scoresData, error: scoresError } = await supabase
+          .from("nst_team_scores_all_strengths")
+          .select("*");
 
-  const handleHomeTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setHomeTeamId(Number(e.target.value));
-  };
+        if (scoresError) throw scoresError;
 
-  const handleAwayTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setAwayTeamId(Number(e.target.value));
-  };
+        // Fetch TOI data for each strength
+        const [
+          { data: allTOIData, error: allTOIError },
+          { data: fiveV5TOIData, error: fiveV5TOIError },
+          { data: ppTOIData, error: ppTOIError },
+          { data: pkTOIData, error: pkTOIError },
+        ] = await Promise.all([
+          supabase
+            .from("nst_all_team_per_game")
+            .select("team_abbreviation, toi_per_game"),
+          supabase
+            .from("nst_5v5_team_per_game")
+            .select("team_abbreviation, toi_per_game"),
+          supabase
+            .from("nst_pp_team_per_game")
+            .select("team_abbreviation, toi_per_game"),
+          supabase
+            .from("nst_pk_team_per_game")
+            .select("team_abbreviation, toi_per_game"),
+        ]);
 
-  const handleSituationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSituation(e.target.value);
-  };
+        if (allTOIError) throw allTOIError;
+        if (fiveV5TOIError) throw fiveV5TOIError;
+        if (ppTOIError) throw ppTOIError;
+        if (pkTOIError) throw pkTOIError;
+
+        // Organize fetched data
+        const fetchedTeams = scoresData as TeamScores[];
+
+        // Create a mapping of team abbreviation to TOI data
+        const allTOIMap = new Map(
+          allTOIData.map((item) => [item.team_abbreviation, item.toi_per_game])
+        );
+        const fiveV5TOIMap = new Map(
+          fiveV5TOIData.map((item) => [
+            item.team_abbreviation,
+            item.toi_per_game,
+          ])
+        );
+        const ppTOIMap = new Map(
+          ppTOIData.map((item) => [item.team_abbreviation, item.toi_per_game])
+        );
+        const pkTOIMap = new Map(
+          pkTOIData.map((item) => [item.team_abbreviation, item.toi_per_game])
+        );
+
+        // Process and set the state
+        const processedTeams: TeamsState = {};
+
+        fetchedTeams.forEach((teamData) => {
+          const key = teamData.team_abbreviation;
+          processedTeams[key] = {
+            general: {
+              team_abbreviation: teamData.team_abbreviation,
+              team_name: teamData.team_name,
+              gp: teamData.gp,
+              w_per_game: teamData.w_per_game,
+              l_per_game: teamData.l_per_game,
+              otl_per_game: teamData.otl_per_game,
+              points_per_game: teamData.points_per_game,
+            },
+            attScores: {
+              [StrengthEnum.ALL]: teamData.att_score_all,
+              [StrengthEnum.FIVE_V_FIVE]: teamData.att_score_5v5,
+              [StrengthEnum.PP]: teamData.att_score_pp,
+              [StrengthEnum.PK]: teamData.att_score_pk,
+            },
+            defScores: {
+              [StrengthEnum.ALL]: teamData.def_score_all,
+              [StrengthEnum.FIVE_V_FIVE]: teamData.def_score_5v5,
+              [StrengthEnum.PP]: teamData.def_score_pp,
+              [StrengthEnum.PK]: teamData.def_score_pk,
+            },
+            toi: {
+              [StrengthEnum.ALL]: allTOIMap.get(key) || 0,
+              [StrengthEnum.FIVE_V_FIVE]: fiveV5TOIMap.get(key) || 0,
+              [StrengthEnum.PP]: ppTOIMap.get(key) || 0,
+              [StrengthEnum.PK]: pkTOIMap.get(key) || 0,
+            },
+          };
+        });
+
+        setTeams(processedTeams);
+      } catch (err: any) {
+        console.error("Error fetching data:", err.message);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Display loading or error states
+  if (loading) return <div className={styles.loading}>Loading data...</div>;
+  if (error) return <div className={styles.error}>Error: {error}</div>;
 
   return (
     <div className={styles.container}>
-      <h1>Dummy Page for Data Inspection and PDHC Testing</h1>
-
-      <div className={styles.selectionContainer}>
-        <div className={styles.dropdown}>
-          <label htmlFor="homeTeam">Select Home Team:</label>
-          <select
-            id="homeTeam"
-            onChange={handleHomeTeamChange}
-            value={homeTeamId ?? ""}
-          >
-            <option value="" disabled>
-              --Select Home Team--
-            </option>
-            {teamIds.map((id) => (
-              <option key={id} value={id}>
-                {teamsMap[id]?.name} ({teamsMap[id]?.abbreviation})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className={styles.dropdown}>
-          <label htmlFor="awayTeam">Select Away Team:</label>
-          <select
-            id="awayTeam"
-            onChange={handleAwayTeamChange}
-            value={awayTeamId ?? ""}
-          >
-            <option value="" disabled>
-              --Select Away Team--
-            </option>
-            {teamIds.map((id) => (
-              <option key={id} value={id}>
-                {teamsMap[id]?.name} ({teamsMap[id]?.abbreviation})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className={styles.dropdown}>
-          <label htmlFor="situation">Select Situation:</label>
-          <select
-            id="situation"
-            onChange={handleSituationChange}
-            value={situation}
-          >
-            <option value="5v5">5v5</option>
-            <option value="pp">Power Play (PP)</option>
-            <option value="pk">Penalty Kill (PK)</option>
-            <option value="all">All Situations</option>
-          </select>
-        </div>
-      </div>
-
-      {homeTeamId && awayTeamId ? (
-        <div className={styles.pdchContainer}>
-          <h2>
-            Poisson Distribution Heatmap: {teamsMap[homeTeamId]?.name} (
-            {teamsMap[homeTeamId]?.abbreviation}) vs{" "}
-            {teamsMap[awayTeamId]?.name} ({teamsMap[awayTeamId]?.abbreviation})
-            - {situation.toUpperCase()}
-          </h2>
-          <PoissonHeatmap
-            homeTeamAbbreviation={teamsMap[homeTeamId]?.abbreviation ?? ""}
-            awayTeamAbbreviation={teamsMap[awayTeamId]?.abbreviation ?? ""}
-            situation={situation as any} // Adjust type as necessary
-          />
-        </div>
-      ) : (
-        <p>Please select both Home and Away teams to view the PDHC.</p>
+      <h1 className={styles.title}>
+        Dummy Page - Team Attack & Defense Ratings
+      </h1>
+      {!loading && !error && (
+        <>
+          {/* Attack and Defense Scores */}
+          <div className={styles.scoresContainer}>
+            <h2>Team Attack & Defense Scores</h2>
+            <table className={styles.scoreTable}>
+              <thead>
+                <tr>
+                  <th>Team</th>
+                  {strengths.flatMap((strength) => [
+                    <th key={`${strength}-toi`}>TOI ({strength})</th>,
+                    <th key={`${strength}-att`}>attScore ({strength})</th>,
+                    <th key={`${strength}-def`}>defScore ({strength})</th>,
+                  ])}
+                </tr>
+              </thead>
+              <tbody>
+                {Object.values(teams).map((team) => (
+                  <tr key={`score-${team.general.team_abbreviation}`}>
+                    <td>
+                      {team.general.team_abbreviation} -{" "}
+                      {team.general.team_name}
+                    </td>
+                    {strengths.map((strength) => (
+                      <React.Fragment
+                        key={`${team.general.team_abbreviation}-${strength}`}
+                      >
+                        <td>
+                          {team.toi[strength] !== null &&
+                          team.toi[strength] !== undefined
+                            ? team.toi[strength].toFixed(2)
+                            : "N/A"}
+                        </td>
+                        <td
+                          className={
+                            team.attScores[strength] > 0
+                              ? styles.positive
+                              : team.attScores[strength] < 0
+                              ? styles.negative
+                              : ""
+                          }
+                        >
+                          {team.attScores[strength] !== null &&
+                          team.attScores[strength] !== undefined
+                            ? team.attScores[strength].toFixed(2)
+                            : "N/A"}
+                        </td>
+                        <td
+                          className={
+                            team.defScores[strength] > 0
+                              ? styles.positive
+                              : team.defScores[strength] < 0
+                              ? styles.negative
+                              : ""
+                          }
+                        >
+                          {team.defScores[strength] !== null &&
+                          team.defScores[strength] !== undefined
+                            ? (team.defScores[strength] * -1).toFixed(2)
+                            : "N/A"}
+                        </td>
+                      </React.Fragment>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
-
-      <div className={styles.tableContainer}>
-        <h2>All Teams Statistics</h2>
-        <table className={styles.statsTable}>
-          <thead>
-            <tr>
-              <th>Team ID</th>
-              <th>Name</th>
-              <th>Abbreviation</th>
-              <th>Logo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {teamIds.map((id) => (
-              <tr key={id}>
-                <td>{id}</td>
-                <td>{teamsMap[id]?.name}</td>
-                <td>{teamsMap[id]?.abbreviation}</td>
-                <td>
-                  <img
-                    src={teamsMap[id]?.logo}
-                    alt={`${teamsMap[id]?.name} logo`}
-                    width={50}
-                    height={50}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 };
