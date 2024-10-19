@@ -13,9 +13,6 @@ import {
 } from "lib/NHL/types";
 import Tooltip from "./PDHC/Tooltip";
 import PoissonHeatmap from "./PDHC/PoissonHeatMap";
-// import { getTeamAbbreviation } from "lib/teamsInfo"; // Import the helper function
-import { useTeamAbbreviation } from "hooks/useTeamAbbreviation";
-
 import styles from "./GameGrid.module.scss";
 
 export type MatchUpCellData = {
@@ -86,6 +83,16 @@ function getOffNightsClass(totalOffNights: number): string {
 function TeamRow(props: TeamRowProps) {
   const team = useTeam(props.teamId);
   const days = props.extended ? EXTENDED_DAYS : DAYS;
+
+  // Handle cases where team data might not be loaded yet
+  if (!team) {
+    return (
+      <tr className={styles.teamRow}>
+        <td colSpan={days.length + 4}>Loading team data...</td>
+      </tr>
+    );
+  }
+
   return (
     <tr className={styles.teamRow}>
       {/* Team Name */}
@@ -154,31 +161,37 @@ function TeamRow(props: TeamRowProps) {
 
 type MatchUpCellProps = {
   home: boolean;
-} & Pick<GameData, "homeTeam" | "awayTeam">;
+  homeTeam: GameData["homeTeam"];
+  awayTeam: GameData["awayTeam"];
+  situation?: "home" | "away";
+};
 
-function MatchUpCell({ home, homeTeam, awayTeam }: MatchUpCellProps) {
+function MatchUpCell({
+  home,
+  homeTeam,
+  awayTeam,
+  situation,
+}: MatchUpCellProps) {
   const us = home ? homeTeam : awayTeam;
   const opponent = home ? awayTeam : homeTeam;
 
-  // Unconditionally call useTeam for both teams
+  // Fetch combined team data from context
   const usTeam = useTeam(us.id);
   const opponentTeam = useTeam(opponent.id);
 
-  // Retrieve abbreviations
-  const usAbbreviation = useTeamAbbreviation(us.id);
-  const opponentAbbreviation = useTeamAbbreviation(opponent.id);
-
   console.log(
-    `MatchUpCell: usAbbreviation=${usAbbreviation}, opponentAbbreviation=${opponentAbbreviation}`
+    `MatchUpCell: usTeam=${usTeam?.abbreviation}, opponentTeam=${opponentTeam?.abbreviation}`
   );
 
-  // Handle cases where abbreviation might not be found
-  if (!usAbbreviation || !opponentAbbreviation) {
-    console.error(
-      `Abbreviation not found for team IDs: ${us.id}, ${opponent.id}`
-    );
+  // Handle cases where team data might not be found
+  if (!usTeam || !opponentTeam) {
+    console.error(`Team data not found for team IDs: ${us.id}, ${opponent.id}`);
     return <div>Data unavailable</div>; // Fallback UI
   }
+
+  // Retrieve abbreviations from team data
+  const usAbbreviation = usTeam.abbreviation;
+  const opponentAbbreviation = opponentTeam.abbreviation;
 
   // Proceed with rendering since hooks are called unconditionally
   const hasResult = us.score !== undefined && opponent.score !== undefined;
@@ -202,12 +215,9 @@ function MatchUpCell({ home, homeTeam, awayTeam }: MatchUpCellProps) {
   // Define tooltipContent within MatchUpCell
   const tooltipContent = (
     <div>
-      <h4>Poisson Distribution Heatmap</h4>
-      <p>Most likely game outcome based on team statistics.</p>
       <PoissonHeatmap
-        homeTeamAbbreviation={usAbbreviation}
-        awayTeamAbbreviation={opponentAbbreviation}
-        situation="5v5" // Replace with dynamic situation if available
+        homeTeamId={home ? us.id : opponent.id}
+        awayTeamId={home ? opponent.id : us.id}
       />
     </div>
   );
