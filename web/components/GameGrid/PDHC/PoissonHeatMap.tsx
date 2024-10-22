@@ -1,6 +1,6 @@
 // components/GameGrid/PDHC/PoissonHeatMap.tsx
 
-import React, { useEffect, useState } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 import * as d3 from "d3";
 import { useTeam } from "../contexts/GameGridContext";
 import { TeamScores } from "./types";
@@ -11,154 +11,50 @@ import {
   fetchTeamScores,
 } from "../utils/poissonHelpers";
 import styles from "styles/PoissonHeatmap.module.scss";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 
 type PoissonHeatmapProps = {
   homeTeamId: number;
   awayTeamId: number;
 };
 
+export function probabilityMatrixOptions(
+  homeTeamAbbreviation: string,
+  awayTeamAbbreviation: string
+) {
+  return queryOptions({
+    queryKey: ["probabilityMatrix", homeTeamAbbreviation, awayTeamAbbreviation],
+    queryFn: () =>
+      fetchAndCalculate(homeTeamAbbreviation, awayTeamAbbreviation),
+    enabled: false,
+    staleTime: Infinity,
+  });
+}
+
 const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
   homeTeamId,
   awayTeamId,
 }) => {
-  const [data, setData] = useState<number[][]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  // const [data, setData] = useState<number[][]>([]);
 
   // Access team data from context
   const homeTeam = useTeam(homeTeamId);
   const awayTeam = useTeam(awayTeamId);
 
-  // State to hold league average goals for
-  const [leagueAvgGoalsFor, setLeagueAvgGoalsFor] = useState<number>(0);
+  const { data, isLoading, error, isFetching } = useQuery(
+    probabilityMatrixOptions(homeTeam.abbreviation, awayTeam.abbreviation)
+  );
 
-  useEffect(() => {
-    const fetchAndCalculate = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        if (!homeTeam || !awayTeam) {
-          throw new Error("Team data not found.");
-        }
-
-        // Fetch league average goals for
-        const leagueAvg = await fetchLeagueAvgGoalsFor();
-        setLeagueAvgGoalsFor(leagueAvg);
-        console.log("League Average Goals For:", leagueAvg);
-
-        // Fetch team scores for home and away teams
-        const [homeScores, awayScores] = await Promise.all([
-          fetchTeamScores(homeTeam.abbreviation),
-          fetchTeamScores(awayTeam.abbreviation),
-        ]);
-
-        // Calculate game-specific attack and defense scores
-        const {
-          finalAttScore: homeFinalAttScore,
-          finalDefScore: homeFinalDefScore,
-        } = await calculateFinalScores(homeScores, awayScores);
-
-        const {
-          finalAttScore: awayFinalAttScore,
-          finalDefScore: awayFinalDefScore,
-        } = await calculateFinalScores(awayScores, homeScores);
-
-        // Log the final attack and defense scores
-        console.log("Home Final Attack Score:", homeFinalAttScore);
-        console.log("Home Final Defense Score:", homeFinalDefScore);
-        console.log("Away Final Attack Score:", awayFinalAttScore);
-        console.log("Away Final Defense Score:", awayFinalDefScore);
-
-        // Calculate expected goals (Lambda)
-        const homeLambda =
-          homeFinalAttScore * awayFinalDefScore * leagueAvgGoalsFor;
-        const awayLambda =
-          awayFinalAttScore * homeFinalDefScore * leagueAvgGoalsFor;
-
-        // Log the lambdas
-        console.log("Home Lambda (Expected Goals):", homeLambda);
-        console.log("Away Lambda (Expected Goals):", awayLambda);
-
-        // Generate probability matrix with tie-breaker
-        const probabilityMatrix = generateProbabilityMatrixWithTieBreaker(
-          homeLambda,
-          awayLambda
-        );
-
-        setData(probabilityMatrix);
-      } catch (err: any) {
-        console.error("Error in PoissonHeatmap:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAndCalculate();
-  }, [homeTeamId, awayTeamId, homeTeam, awayTeam, leagueAvgGoalsFor]);
-
-  // Function to generate probability matrix with tie-breaker
-  const generateProbabilityMatrixWithTieBreaker = (
-    homeLambda: number,
-    awayLambda: number,
-    maxGoals: number = 10
-  ): number[][] => {
-    const matrix: number[][] = [];
-    let totalNonDrawProb = 0;
-
-    // First pass: calculate probabilities and sum non-draw probabilities
-    for (let i = 0; i <= maxGoals; i++) {
-      matrix[i] = [];
-      for (let j = 0; j <= maxGoals; j++) {
-        const homeProb = poissonProbability(j, homeLambda); // Home team on X-axis
-        const awayProb = poissonProbability(i, awayLambda); // Away team on Y-axis
-        matrix[i][j] = homeProb * awayProb;
-        if (i !== j) {
-          totalNonDrawProb += matrix[i][j];
-        }
-      }
-    }
-
-    // Second pass: calculate draw probabilities
-    let drawProb = 0;
-    for (let i = 0; i <= maxGoals; i++) {
-      for (let j = 0; j <= maxGoals; j++) {
-        if (i === j) {
-          drawProb += matrix[i][j];
-        }
-      }
-    }
-
-    // Calculate redistribution ratios based on Lambdas
-    const totalLambda = homeLambda + awayLambda;
-    const homeWinRatio = homeLambda / totalLambda;
-    const awayWinRatio = awayLambda / totalLambda;
-
-    // Third pass: redistribute draw probabilities
-    for (let i = 0; i <= maxGoals; i++) {
-      for (let j = 0; j <= maxGoals; j++) {
-        if (i === j) {
-          // Remove ties
-          const originalProb = matrix[i][j];
-          matrix[i][j] = 0;
-
-          // Redistribute
-          matrix[i][j] += homeWinRatio * originalProb;
-          matrix[j][i] += awayWinRatio * originalProb;
-        }
-      }
-    }
-
-    return matrix;
-  };
-
-  if (loading) {
+  if (isLoading || isFetching) {
     return <div>Loading PDHC...</div>;
   }
 
   if (error) {
-    return <div>Error loading PDHC: {error}</div>;
+    return <div>Error loading PDHC: {error.message}</div>;
+  }
+
+  if (!data) {
+    return <div>No data...</div>;
   }
 
   // Render the heatmap
@@ -170,6 +66,118 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
       {renderHeatmap(data, homeTeam, awayTeam)}
     </div>
   );
+};
+
+// Function to generate probability matrix with tie-breaker
+const generateProbabilityMatrixWithTieBreaker = (
+  homeLambda: number,
+  awayLambda: number,
+  maxGoals: number = 10
+): number[][] => {
+  const matrix: number[][] = [];
+  let totalNonDrawProb = 0;
+
+  // First pass: calculate probabilities and sum non-draw probabilities
+  for (let i = 0; i <= maxGoals; i++) {
+    matrix[i] = [];
+    for (let j = 0; j <= maxGoals; j++) {
+      const homeProb = poissonProbability(j, homeLambda); // Home team on X-axis
+      const awayProb = poissonProbability(i, awayLambda); // Away team on Y-axis
+      matrix[i][j] = homeProb * awayProb;
+      if (i !== j) {
+        totalNonDrawProb += matrix[i][j];
+      }
+    }
+  }
+
+  // Second pass: calculate draw probabilities
+  let drawProb = 0;
+  for (let i = 0; i <= maxGoals; i++) {
+    for (let j = 0; j <= maxGoals; j++) {
+      if (i === j) {
+        drawProb += matrix[i][j];
+      }
+    }
+  }
+
+  // Calculate redistribution ratios based on Lambdas
+  const totalLambda = homeLambda + awayLambda;
+  const homeWinRatio = homeLambda / totalLambda;
+  const awayWinRatio = awayLambda / totalLambda;
+
+  // Third pass: redistribute draw probabilities
+  for (let i = 0; i <= maxGoals; i++) {
+    for (let j = 0; j <= maxGoals; j++) {
+      if (i === j) {
+        // Remove ties
+        const originalProb = matrix[i][j];
+        matrix[i][j] = 0;
+
+        // Redistribute
+        matrix[i][j] += homeWinRatio * originalProb;
+        matrix[j][i] += awayWinRatio * originalProb;
+      }
+    }
+  }
+
+  return matrix;
+};
+
+const fetchAndCalculate = async (
+  homeTeamAbbreviation: string,
+  awayTeamAbbreviation: string
+) => {
+  try {
+    if (!homeTeamAbbreviation || !awayTeamAbbreviation) {
+      throw new Error("Team data not found.");
+    }
+
+    // Fetch league average goals for
+    const leagueAvg = await fetchLeagueAvgGoalsFor();
+    console.log("League Average Goals For:", leagueAvg);
+
+    // Fetch team scores for home and away teams
+    const [homeScores, awayScores] = await Promise.all([
+      fetchTeamScores(homeTeamAbbreviation),
+      fetchTeamScores(awayTeamAbbreviation),
+    ]);
+
+    // Calculate game-specific attack and defense scores
+    const {
+      finalAttScore: homeFinalAttScore,
+      finalDefScore: homeFinalDefScore,
+    } = await calculateFinalScores(homeScores, awayScores);
+
+    const {
+      finalAttScore: awayFinalAttScore,
+      finalDefScore: awayFinalDefScore,
+    } = await calculateFinalScores(awayScores, homeScores);
+
+    // Log the final attack and defense scores
+    console.log("Home Final Attack Score:", homeFinalAttScore);
+    console.log("Home Final Defense Score:", homeFinalDefScore);
+    console.log("Away Final Attack Score:", awayFinalAttScore);
+    console.log("Away Final Defense Score:", awayFinalDefScore);
+
+    // Calculate expected goals (Lambda)
+    const homeLambda = homeFinalAttScore * awayFinalDefScore * leagueAvg;
+    const awayLambda = awayFinalAttScore * homeFinalDefScore * leagueAvg;
+
+    // Log the lambdas
+    console.log("Home Lambda (Expected Goals):", homeLambda);
+    console.log("Away Lambda (Expected Goals):", awayLambda);
+
+    // Generate probability matrix with tie-breaker
+    const probabilityMatrix = generateProbabilityMatrixWithTieBreaker(
+      homeLambda,
+      awayLambda
+    );
+
+    return probabilityMatrix;
+  } catch (err: any) {
+    throw new Error("Error in PoissonHeatmap:" + err);
+  } finally {
+  }
 };
 
 // Updated renderHeatmap function
