@@ -222,6 +222,22 @@ export default function Page() {
     }
   }
 
+  async function updateExpectedGoals() {
+    try {
+      const { message, success } = await doPOST(
+        "/api/v1/db/update-expected-goals?date=all"
+      );
+      enqueueSnackbar(message, {
+        variant: success ? "success" : "error",
+      });
+    } catch (e: any) {
+      console.error(e.message);
+      enqueueSnackbar(e.message, {
+        variant: "error",
+      });
+    }
+  }
+
   useEffect(() => {
     (async () => {
       const { count: numPlayers } = await supabase
@@ -646,6 +662,42 @@ export default function Page() {
             <CardActions>
               <Button size="small" onClick={updateNstTeamStats}>
                 Update NST Team Stats
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+
+        {/* Expected Goals Card */}
+        <Grid xs={4}>
+          <Card
+            sx={{
+              border: "5px solid #07aae2",
+              borderRadius: "8px",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
+              color: "#fff",
+            }}
+          >
+            <CardMedia
+              sx={{ height: 140 }}
+              image="/pictures/expectedGoals.png" // Replace with an appropriate image URL or local path
+              title="Expected Goals"
+            />
+            <CardContent sx={{ flexGrow: 1 }}>
+              <Typography gutterBottom variant="h5" component="div">
+                EXPECTED GOALS
+              </Typography>
+              <Typography variant="body2">
+                Update the expected goals calculations for all current games.
+                This will analyze team performance metrics and update the
+                `expected_goals` table in the database.
+              </Typography>
+            </CardContent>
+            <CardActions>
+              <Button size="small" onClick={updateExpectedGoals}>
+                Update Expected Goals
               </Button>
             </CardActions>
           </Card>
