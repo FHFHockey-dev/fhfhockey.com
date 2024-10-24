@@ -27,17 +27,17 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children }) => {
       const targetRect = targetRef.current.getBoundingClientRect();
       const tooltipRect = tooltipRef.current.getBoundingClientRect();
 
-      // Position the tooltip above the target element
-      const top = targetRect.top - tooltipRect.height - 8; // 8px gap
-      const left =
-        targetRect.left + targetRect.width / 2 - tooltipRect.width / 2;
+      // Position the tooltip to the left of the target element
+      const top =
+        targetRect.top + targetRect.height / 2 - tooltipRect.height / 2;
+      const left = targetRect.left - tooltipRect.width - 8; // 8px gap
 
       setPosition({
-        top: top > 0 ? top : targetRect.bottom + 8, // If not enough space above, place below
-        left: Math.max(
+        top: Math.max(
           8,
-          Math.min(left, window.innerWidth - tooltipRect.width - 8)
+          Math.min(top, window.innerHeight - tooltipRect.height - 8)
         ), // Prevent overflow
+        left: left > 0 ? left : targetRect.right + 8, // If not enough space on the left, place to the right
       });
     }
   }, [visible]);

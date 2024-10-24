@@ -1,5 +1,26 @@
 @import "styles/vars.scss";
 
+// breakpoints
+$breakpoint-small: 320px;
+$breakpoint-medium: 480px;
+$breakpoint-large: 768px;
+
+@mixin respond-to($breakpoint) {
+  @if $breakpoint == small {
+    @media (max-width: $breakpoint-small) {
+      @content;
+    }
+  } @else if $breakpoint == medium {
+    @media (max-width: $breakpoint-medium) {
+      @content;
+    }
+  } @else if $breakpoint == large {
+    @media (max-width: $breakpoint-large) {
+      @content;
+    }
+  }
+}
+
 .actions {
   position: relative;
   width: 80%;
@@ -152,7 +173,7 @@
 .scheduleGrid tr td:nth-child(10),
 .scheduleGrid tr td:nth-child(11) {
   background-color: #101010; /* Set the background color */
-  min-width: 60px;
+  min-width: 30px;
   max-width: 100px;
   max-height: 40px;
   min-height: 40px;
@@ -460,7 +481,7 @@
     font-family: roboto condensed, sans-serif;
     position: relative;
     height: 20px;
-    width: 110px;
+    width: 70px;
     background: #07aae2;
     color: #ffffff;
     border: 1px solid white;
@@ -495,7 +516,7 @@
   .scheduleGrid td:nth-child(n + 2) {
     font-family: roboto condensed, sans-serif;
     padding: 2px 2px;
-    min-width: 35px;
+    min-width: 30px;
     max-width: 50px;
     text-align: center;
     font-size: 8px;
@@ -514,12 +535,11 @@
   .scheduleGrid tr th:nth-child(11) {
     font-family: roboto condensed, sans-serif;
     padding: 2px 2px;
-    min-width: 35px;
-    max-width: 50px;
+    min-width: 30px;
+    max-width: 35px;
     text-align: center;
     font-size: 8px;
     padding-bottom: 8px;
-    min-width: 35px;
   }
 
   .blurredImage {
