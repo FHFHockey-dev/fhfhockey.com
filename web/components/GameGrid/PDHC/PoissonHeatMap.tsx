@@ -6,6 +6,7 @@ import { useTeam } from "../contexts/GameGridContext";
 import { generateProbabilityMatrixWithTieBreaker } from "../utils/poissonHelpers";
 import styles from "styles/PoissonHeatmap.module.scss";
 import supabase from "lib/supabase";
+import { calculateBlendedWinOdds, formatWinOdds } from "../utils/calcWinOdds";
 
 type PoissonHeatmapProps = {
   homeTeamId: number;
@@ -19,6 +20,8 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
   gameId,
 }) => {
   const [data, setData] = useState<number[][]>([]);
+  const [homeWinOdds, setHomeWinOdds] = useState<string>("-");
+  const [awayWinOdds, setAwayWinOdds] = useState<string>("-");
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,10 +35,12 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
       setError(null);
 
       try {
-        // Fetch pre-calculated expected goals from 'expected_goals' table
+        // Fetch pre-calculated expected goals and win odds
         const { data, error } = await supabase
           .from("expected_goals")
-          .select("home_expected_goals, away_expected_goals")
+          .select(
+            "home_expected_goals, away_expected_goals, home_win_odds, away_win_odds, home_api_win_odds, away_api_win_odds"
+          )
           .eq("game_id", gameId)
           .single();
 
@@ -44,8 +49,22 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
         const homeLambda = data.home_expected_goals;
         const awayLambda = data.away_expected_goals;
 
-        console.log("Home Expected Goals (Lambda):", homeLambda);
-        console.log("Away Expected Goals (Lambda):", awayLambda);
+        // Calculate blended win odds
+        const blendedHomeWinOdds = calculateBlendedWinOdds(
+          data.home_win_odds,
+          data.home_api_win_odds
+        );
+        const blendedAwayWinOdds = calculateBlendedWinOdds(
+          data.away_win_odds,
+          data.away_api_win_odds
+        );
+
+        setHomeWinOdds(
+          blendedHomeWinOdds !== null ? formatWinOdds(blendedHomeWinOdds) : "-"
+        );
+        setAwayWinOdds(
+          blendedAwayWinOdds !== null ? formatWinOdds(blendedAwayWinOdds) : "-"
+        );
 
         // Generate probability matrix with tie-breaker
         const probabilityMatrix = generateProbabilityMatrixWithTieBreaker(
@@ -73,12 +92,16 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
     return <div>Error loading PDHC: {error}</div>;
   }
 
-  // Render the heatmap (no changes needed here)
   return (
     <div className={styles.chartContainer}>
       <h4 className={styles.pdchTitle}>
         {homeTeam.abbreviation} vs {awayTeam.abbreviation}
       </h4>
+      <p>
+        {homeTeam.abbreviation} Win Odds: {homeWinOdds}
+        <br />
+        {awayTeam.abbreviation} Win Odds: {awayWinOdds}
+      </p>
       {renderHeatmap(data, homeTeam, awayTeam)}
     </div>
   );

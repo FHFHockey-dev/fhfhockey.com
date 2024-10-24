@@ -1,7 +1,7 @@
 // components/GameGrid/TeamRow.tsx
 
 import Image from "next/image";
-import { formatWinOdds } from "./utils/calcWinOdds";
+import { formatWinOdds, calculateBlendedWinOdds } from "./utils/calcWinOdds";
 import { formatWeekScore } from "./utils/calcWeekScore";
 import { useTeam } from "./contexts/GameGridContext";
 import {
@@ -168,12 +168,7 @@ type MatchUpCellProps = {
   situation?: "home" | "away";
 };
 
-function MatchUpCell({
-  home,
-  homeTeam,
-  awayTeam,
-  gameId, // Receive gameId as a prop
-}: MatchUpCellProps) {
+function MatchUpCell({ home, homeTeam, awayTeam, gameId }: MatchUpCellProps) {
   const us = home ? homeTeam : awayTeam;
   const opponent = home ? awayTeam : homeTeam;
 
@@ -184,24 +179,25 @@ function MatchUpCell({
   // Handle cases where team data might not be found
   if (!usTeam || !opponentTeam) {
     console.error(`Team data not found for team IDs: ${us.id}, ${opponent.id}`);
-    return <div>Data unavailable</div>; // Fallback UI
+    return <div>Data unavailable</div>;
   }
 
-  // Proceed with rendering since hooks are called unconditionally
+  // Proceed with rendering
   const hasResult = us.score !== undefined && opponent.score !== undefined;
   let text = "";
   let stat = "";
 
-  // Game with result
   if (hasResult) {
-    const win = us.score > opponent.score;
+    const usScore = us.score!;
+    const opponentScore = opponent.score!;
+    const win = usScore > opponentScore;
     text = win ? "WIN" : "LOSS";
-    stat = `${us.score}-${opponent.score}`;
-  }
-  // Game without result, display home/away
-  else {
+    stat = `${usScore}-${opponentScore}`;
+  } else {
     text = home ? "HOME" : "AWAY";
-    stat = formatWinOdds(us.winOdds ?? 0);
+    // Calculate blended win odds
+    const blendedWinOdds = calculateBlendedWinOdds(us.winOdds, us.apiWinOdds);
+    stat = blendedWinOdds !== null ? formatWinOdds(blendedWinOdds) : "-";
   }
 
   // Define tooltipContent within MatchUpCell

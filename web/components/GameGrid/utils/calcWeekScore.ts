@@ -25,10 +25,21 @@ export default function calcWeekScore(
   totalTeamGames: number
 ) {
   if (totalTeamGames === 0) return -100;
+
+  const totalGamesWeight = 6;
+  const offNightsWeight = 4;
+  const winOddsWeight = 0.15;
+
+  const averageWinOdds = average(winOddsList) || 0;
+  const numberOfTeams = 16; // Adjust to your league's actual number of teams
+  const avgTeamGames = totalGamesPerWeek / numberOfTeams;
+
+  const adjustedTeamGames = totalTeamGames - avgTeamGames;
+
   return (
-    offNights * 0.5 +
-    (totalTeamGames - totalGamesPerWeek / 16) +
-    average(winOddsList)
+    adjustedTeamGames * totalGamesWeight +
+    offNights * offNightsWeight +
+    averageWinOdds * winOddsWeight
   );
 }
 
