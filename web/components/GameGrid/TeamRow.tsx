@@ -129,6 +129,7 @@ function TeamRow(props: TeamRowProps) {
             {hasMatchUp_ ? (
               <MatchUpCell
                 key={day}
+                gameId={matchUp.id} // Pass gameId here
                 home={matchUp.homeTeam.id === props.teamId}
                 homeTeam={matchUp.homeTeam}
                 awayTeam={matchUp.awayTeam}
@@ -160,6 +161,7 @@ function TeamRow(props: TeamRowProps) {
 }
 
 type MatchUpCellProps = {
+  gameId: number; // Add gameId here
   home: boolean;
   homeTeam: GameData["homeTeam"];
   awayTeam: GameData["awayTeam"];
@@ -170,7 +172,7 @@ function MatchUpCell({
   home,
   homeTeam,
   awayTeam,
-  situation,
+  gameId, // Receive gameId as a prop
 }: MatchUpCellProps) {
   const us = home ? homeTeam : awayTeam;
   const opponent = home ? awayTeam : homeTeam;
@@ -179,19 +181,11 @@ function MatchUpCell({
   const usTeam = useTeam(us.id);
   const opponentTeam = useTeam(opponent.id);
 
-  console.log(
-    `MatchUpCell: usTeam=${usTeam?.abbreviation}, opponentTeam=${opponentTeam?.abbreviation}`
-  );
-
   // Handle cases where team data might not be found
   if (!usTeam || !opponentTeam) {
     console.error(`Team data not found for team IDs: ${us.id}, ${opponent.id}`);
     return <div>Data unavailable</div>; // Fallback UI
   }
-
-  // Retrieve abbreviations from team data
-  const usAbbreviation = usTeam.abbreviation;
-  const opponentAbbreviation = opponentTeam.abbreviation;
 
   // Proceed with rendering since hooks are called unconditionally
   const hasResult = us.score !== undefined && opponent.score !== undefined;
@@ -210,14 +204,13 @@ function MatchUpCell({
     stat = formatWinOdds(us.winOdds ?? 0);
   }
 
-  console.log(`MatchUpCell: text=${text}, stat=${stat}`);
-
   // Define tooltipContent within MatchUpCell
   const tooltipContent = (
     <div>
       <PoissonHeatmap
         homeTeamId={home ? us.id : opponent.id}
         awayTeamId={home ? opponent.id : us.id}
+        gameId={gameId} // Pass gameId to PoissonHeatmap
       />
     </div>
   );

@@ -250,7 +250,8 @@ interface TvBroadcast {
   network: string;
 }
 
-// === Boxscore ===
+// === Game Grid ===
+// web\lib\NHL\types.ts
 
 export const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
 export type DAY_ABBREVIATION = typeof DAYS[number];
