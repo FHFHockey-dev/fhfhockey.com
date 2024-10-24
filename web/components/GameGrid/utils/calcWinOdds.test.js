@@ -1,3 +1,5 @@
+// C:\Users\timbr\Desktop\FHFH\fhfhockey.com\web\components\GameGrid\utils\calcWinOdds.test.js
+
 import { describe, expect, test } from "vitest";
 
 import {
@@ -7,8 +9,8 @@ import {
 } from "./calcWinOdds";
 
 test("format winOdds", () => {
-  expect(formatWinOdds(0.75)).toEqual("75%");
-  expect(formatWinOdds(0.25)).toEqual("25%");
+  expect(formatWinOdds(75)).toEqual("75.0%");
+  expect(formatWinOdds(25)).toEqual("25.0%");
 });
 
 describe("Back to back", () => {

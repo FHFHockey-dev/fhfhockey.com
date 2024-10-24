@@ -10,8 +10,8 @@ import { GameGridMode } from "components/GameGrid/GameGrid";
 
 function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
   const MODE_TO_LABEL = {
-    "7-Day-Forecast": "7-Day Forecast",
-    "10-Day-Forecast": "10-Day Forecast",
+    "7-Day-Forecast": "7-Day",
+    "10-Day-Forecast": "10-Day",
   } as const;
 
   const [mode, setMode] = useState<GameGridMode>(

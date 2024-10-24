@@ -53,6 +53,7 @@
     "react-chartjs-2": "^4.3.1",
     "react-datepicker": "^7.3.0",
     "react-dom": "18.2.0",
+    "recharts": "^2.13.0",
     "resize-observer-polyfill": "^1.5.1",
     "retry": "^0.13.1",
     "use-immer": "^0.7.0",

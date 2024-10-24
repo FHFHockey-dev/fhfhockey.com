@@ -250,7 +250,8 @@ interface TvBroadcast {
   network: string;
 }
 
-// === Boxscore ===
+// === Game Grid ===
+// web\lib\NHL\types.ts
 
 export const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
 export type DAY_ABBREVIATION = typeof DAYS[number];
@@ -269,14 +270,23 @@ export const EXTENDED_DAYS = [
 ] as const;
 export type EXTENDED_DAY_ABBREVIATION = typeof EXTENDED_DAYS[number];
 
+export type TeamGameData = {
+  id: number;
+  score?: number;
+  winOdds?: number | null;
+  apiWinOdds?: number | null;
+};
+
 export type GameData = {
   id: number;
   season: number;
-  homeTeam: { id: number; score: number; winOdds: number };
-  awayTeam: { id: number; score: number; winOdds: number };
+  homeTeam: TeamGameData;
+  awayTeam: TeamGameData;
 };
 
-export type WeekData = Record<EXTENDED_DAY_ABBREVIATION, GameData>;
+export type WeekData = Partial<Record<EXTENDED_DAY_ABBREVIATION, GameData>>;
+
+export type GameSituation = "all" | "5v5" | "pp" | "pk";
 
 export type ScheduleData = {
   data: Record<number, WeekData>;

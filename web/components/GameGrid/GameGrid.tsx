@@ -53,6 +53,12 @@ function GameGridInternal({ mode, setMode }: GameGridProps) {
     }[]
   >([]);
 
+  // Define MODE_TO_LABEL mapping
+  const MODE_TO_LABEL = {
+    "7-Day-Forecast": "7-Day",
+    "10-Day-Forecast": "10-Day",
+  } as const;
+
   // calculate new total GP and total off-nights based on excluded days.
   const filteredColumns = useMemo(() => {
     const adjustedSchedule = [...schedule];
@@ -179,7 +185,7 @@ function GameGridInternal({ mode, setMode }: GameGridProps) {
   // toggle days off depending on what day of the week the grid is accessed
   useEffect(() => {
     const [start, end] = dates;
-    // check if today is within start and end
+    // Check if today is within start and end
     const withinInterval = isWithinInterval(new Date(), {
       start: new Date(start),
       end: new Date(end),
@@ -187,6 +193,8 @@ function GameGridInternal({ mode, setMode }: GameGridProps) {
 
     if (withinInterval) {
       setExcludedDays(getDaysBeforeToday());
+    } else {
+      setExcludedDays([]);
     }
   }, [dates]);
 
@@ -205,8 +213,9 @@ function GameGridInternal({ mode, setMode }: GameGridProps) {
               );
             }}
           >
-            {mode}
+            {MODE_TO_LABEL[mode]}
           </button>
+
           <button
             className={styles.dateButtonPrev}
             onClick={handleClick("PREV")}

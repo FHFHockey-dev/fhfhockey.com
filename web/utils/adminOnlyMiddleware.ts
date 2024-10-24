@@ -1,3 +1,5 @@
+// C:\Users\timbr\Desktop\FHFH\fhfhockey.com\web\utils\adminOnlyMiddleware.ts
+
 import { SupabaseClient } from "@supabase/supabase-js";
 import { createClientWithToken } from "lib/supabase";
 import { NextApiRequest, NextApiResponse } from "next";

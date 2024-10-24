@@ -1,6 +1,5 @@
 // C:\Users\timbr\Desktop\FHFH\fhfhockey.com-3\web\lib\NHL\server\index.ts
 
-import calcWinOdds from "components/GameGrid/utils/calcWinOdds";
 import { differenceInYears } from "date-fns";
 import { get, restGet } from "lib/NHL/base";
 import {
@@ -12,6 +11,7 @@ import {
   ScheduleData,
   Season,
   Team,
+  GameData,
 } from "lib/NHL/types";
 import supabase from "lib/supabase";
 import supabaseServer from "lib/supabase/server";
@@ -219,6 +219,32 @@ export async function getSchedule(startDate: string) {
     );
   });
 
+  // Collect all game IDs
+  const gameIds: number[] = [];
+  gameWeek.forEach((day) => {
+    day.games.forEach((game) => {
+      gameIds.push(game.id);
+    });
+  });
+
+  // Fetch win odds from 'expected_goals' table
+  const { data: oddsData, error } = await supabase
+    .from("expected_goals")
+    .select(
+      "game_id, home_win_odds, away_win_odds, home_api_win_odds, away_api_win_odds"
+    )
+    .in("game_id", gameIds);
+
+  if (error) {
+    console.error("Error fetching win odds data:", error);
+  }
+
+  // Map odds data by game_id
+  const oddsByGameId = (oddsData || []).reduce((acc, item) => {
+    acc[item.game_id] = item;
+    return acc;
+  }, {} as Record<number, any>);
+
   const tasksForOneWeek = gameWeek.map((day) => async () => {
     const tasksForOneDay = day.games.map((game) => async () => {
       const { homeTeam, awayTeam } = game;
@@ -229,33 +255,41 @@ export async function getSchedule(startDate: string) {
         console.error("skip for ", homeTeam.id, teams[awayTeam.id]);
         return;
       }
-      const gameData = {
+
+      // Fetch win odds from the oddsByGameId
+      const odds = oddsByGameId[game.id];
+      let homeWinOdds = null;
+      let awayWinOdds = null;
+      let homeApiWinOdds = null;
+      let awayApiWinOdds = null;
+
+      if (odds) {
+        homeWinOdds = odds.home_win_odds;
+        awayWinOdds = odds.away_win_odds;
+        homeApiWinOdds = odds.home_api_win_odds;
+        awayApiWinOdds = odds.away_api_win_odds;
+      }
+
+      const gameData: GameData = {
         id: game.id,
         season: game.season,
         homeTeam: {
           id: homeTeam.id,
           score: homeTeam.score,
-          winOdds: await calcWinOdds(
-            teams[homeTeam.id].name,
-            teams[awayTeam.id].name,
-            game.season
-          ),
+          winOdds: homeWinOdds,
+          apiWinOdds: homeApiWinOdds,
         },
         awayTeam: {
           id: awayTeam.id,
           score: awayTeam.score,
-          winOdds: await calcWinOdds(
-            teams[awayTeam.id].name,
-            teams[homeTeam.id].name,
-            game.season
-          ),
+          winOdds: awayWinOdds,
+          apiWinOdds: awayApiWinOdds,
         },
       };
-      // @ts-expect-error
+
       if (!TEAM_DAY_DATA[homeTeam.id]) TEAM_DAY_DATA[homeTeam.id] = {};
       TEAM_DAY_DATA[homeTeam.id][day.dayAbbrev] = gameData;
 
-      // @ts-expect-error
       if (!TEAM_DAY_DATA[awayTeam.id]) TEAM_DAY_DATA[awayTeam.id] = {};
       TEAM_DAY_DATA[awayTeam.id][day.dayAbbrev] = gameData;
     });

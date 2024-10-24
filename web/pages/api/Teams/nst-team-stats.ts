@@ -1,871 +1,1259 @@
 // pages/api/Teams/nst-team-stats.ts
 
-import type { NextApiRequest, NextApiResponse } from "next";
-import { spawn } from "child_process";
+import { NextApiResponse } from "next";
+import adminOnly from "utils/adminOnlyMiddleware";
+import { getCurrentSeason } from "lib/NHL/server";
+import { exec } from "child_process";
 import path from "path";
-import { RateLimiterMemory } from "rate-limiter-flexible";
-import { teamsInfo } from "lib/teamsInfo";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { getCurrentSeason } from "lib/NHL/server"; // Corrected import path
-import adminOnly from "utils/adminOnlyMiddleware"; // Import adminOnly
+import { promisify } from "util";
+import { teamsInfo, teamNameToAbbreviationMap } from "lib/teamsInfo"; // Import the mapping
+import { addDays, format, parseISO, isAfter } from "date-fns";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!; // Use service role for server-side operations
+// Promisify exec for easier async/await usage
+const execAsync = promisify(exec);
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Define the structure for date-based counts team statistics
-interface CountsTeamStatDate {
-  team_abbreviation: string; // Team abbreviation
-  team_name: string; // Full team name
-  gp: number | null;
-  toi: string | null;
-  w: number | null;
-  l: number | null;
-  otl: number | null;
-  points: number | null;
-  cf: number | null;
-  ca: number | null;
-  cf_pct: number | null;
-  ff: number | null;
-  fa: number | null;
-  ff_pct: number | null;
-  sf: number | null;
-  sa: number | null;
-  sf_pct: number | null;
-  gf: number | null;
-  ga: number | null;
-  gf_pct: number | null;
-  xgf: number | null;
-  xga: number | null;
-  xgf_pct: number | null;
-  scf: number | null;
-  sca: number | null;
-  scf_pct: number | null;
-  hdcf: number | null;
-  hdca: number | null;
-  hdcf_pct: number | null;
-  hdsf: number | null;
-  hdsa: number | null;
-  hdsf_pct: number | null;
-  hdgf: number | null;
-  hdga: number | null;
-  hdgf_pct: number | null;
-  sh_pct: number | null;
-  sv_pct: number | null;
-  pdo: number | null;
-  date: string; // Date field for tracking
-  situation: string; // Situation field
-}
-
-// Define the structure for season-based counts team statistics
-interface CountsTeamStatSeason {
-  team_abbreviation: string; // Team abbreviation
-  team_name: string; // Full team name
-  gp: number | null;
-  toi: string | null;
-  w: number | null;
-  l: number | null;
-  otl: number | null;
-  points: number | null;
-  cf: number | null;
-  ca: number | null;
-  cf_pct: number | null;
-  ff: number | null;
-  fa: number | null;
-  ff_pct: number | null;
-  sf: number | null;
-  sa: number | null;
-  sf_pct: number | null;
-  gf: number | null;
-  ga: number | null;
-  gf_pct: number | null;
-  xgf: number | null;
-  xga: number | null;
-  xgf_pct: number | null;
-  scf: number | null;
-  sca: number | null;
-  scf_pct: number | null;
-  hdcf: number | null;
-  hdca: number | null;
-  hdcf_pct: number | null;
-  hdsf: number | null;
-  hdsa: number | null;
-  hdsf_pct: number | null;
-  hdgf: number | null;
-  hdga: number | null;
-  hdgf_pct: number | null;
-  sh_pct: number | null;
-  sv_pct: number | null;
-  pdo: number | null;
-  season: string; // Season field
-  situation: string; // Situation field
-}
-
-// Define TeamStat as a union type
-type TeamStat = CountsTeamStatDate | CountsTeamStatSeason;
-
-// Define the overall response structure
-interface ResponseData {
-  success: boolean;
-  message: string;
-  processedDates: string[]; // List of dates processed
-  upsertedRecords: {
-    [key: string]: number; // Number of records upserted per category
-  };
-  errors?: {
-    date: string;
-    category: string;
-    message: string;
-  }[];
-}
-
-// Define the situations and rates with hardcoded URLs
-const responseKeys: {
-  [key: string]: { situation: string; rate: string; url: string };
+// Define the responseKeys with necessary parameters for date-based tables
+const dateBasedResponseKeys: {
+  [key: string]: { situation: string; rate: string };
 } = {
-  // Existing Date-Based Tables
   countsAll: {
     situation: "all",
     rate: "n",
-    url: `https://www.naturalstattrick.com/teamtable.php?fromseason=20242025&thruseason=20242025&stype=2&sit=all&score=all&rate=n&team=all&loc=B&gpf=410&fd=`,
   },
   counts5v5: {
     situation: "5v5",
     rate: "n",
-    url: `https://www.naturalstattrick.com/teamtable.php?fromseason=20242025&thruseason=20242025&stype=2&sit=5v5&score=all&rate=n&team=all&loc=B&gpf=410&fd=`,
   },
   countsPP: {
     situation: "pp",
     rate: "n",
-    url: `https://www.naturalstattrick.com/teamtable.php?fromseason=20242025&thruseason=20242025&stype=2&sit=pp&score=all&rate=n&team=all&loc=B&gpf=410&fd=`,
   },
   countsPK: {
     situation: "pk",
     rate: "n",
-    url: `https://www.naturalstattrick.com/teamtable.php?fromseason=20242025&thruseason=20242025&stype=2&sit=pk&score=all&rate=n&team=all&loc=B&gpf=410&fd=`,
   },
+};
 
-  // New Season-Based Tables
+// Define the responseKeys for season-based tables
+const seasonBasedResponseKeys: {
+  [key: string]: { situation: string; rate: string };
+} = {
   seasonStats: {
     situation: "all",
     rate: "n",
-    url: `https://www.naturalstattrick.com/teamtable.php?fromseason={seasonId}&thruseason={seasonId}&stype=2&sit=all&score=all&rate=n&team=all&loc=B&gpf=410&fd=&td=`,
   },
   lastSeasonStats: {
     situation: "all",
     rate: "n",
-    url: `https://www.naturalstattrick.com/teamtable.php?fromseason={lastSeasonId}&thruseason={lastSeasonId}&stype=2&sit=all&score=all&rate=n&team=all&loc=B&gpf=410&fd=&td=`,
   },
 };
 
-// Define the category prefixes for each response key
-const categoryPrefixes: { [key: string]: string } = {
-  // Existing Date-Based Tables
-  countsAll: "nst_team_all",
-  counts5v5: "nst_team_5v5",
-  countsPP: "nst_team_pp",
-  countsPK: "nst_team_pk",
+// Define TypeScript interfaces for clarity
+interface PythonScriptOutput {
+  debug: {
+    [key: string]: any;
+  };
+  data: TeamStat[];
+}
 
-  // New Season-Based Tables
-  seasonStats: "nst_team_stats",
-  lastSeasonStats: "nst_team_stats_ly",
-};
+interface TeamStat {
+  date: string | null; // Changed to allow null for season-based data
+  situation: string;
+  Team: string;
+  GP: string;
+  TOI: string;
+  W: string;
+  L: string;
+  OTL: string;
+  Points: string;
+  CF: string;
+  CA: string;
+  CFPct: number | null;
+  FF: string;
+  FA: string;
+  FFPct: number | null;
+  SF: string;
+  SA: string;
+  SFPct: number | null;
+  GF: string;
+  GA: string;
+  GFPct: number | null;
+  xGF: string;
+  xGA: string;
+  xGFPct: number | null;
+  SCF: string;
+  SCA: string;
+  SCFPct: number | null;
+  HDCF: string;
+  HDCA: string;
+  HDCFPct: number | null;
+  HDSF: string;
+  HDSA: string;
+  HDSFPct: number | null;
+  HDGF: string;
+  HDGA: string;
+  HDGFPct: number | null;
+  SHPct: number | null;
+  SVPct: number | null;
+  PDO: string | null;
+  season?: string; // Added optional season field
+}
 
-// Helper function to normalize team names (remove punctuation and accents)
-function normalizeName(name: string): string {
-  return name
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "") // Remove accents
-    .replace(/[.,']/g, "") // Remove punctuation
+// Helper function to normalize team names by removing punctuation, diacritics, and converting to lowercase
+const normalizeTeamName = (name: string): string =>
+  name
+    .normalize("NFD") // Decompose combined letters into base letters and diacritics
+    .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
+    .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "") // Remove punctuation
     .trim()
     .toLowerCase();
-}
 
-// Create a reverse mapping from normalized team names to their abbreviations
-const normalizedTeamInfo: { [normalizedName: string]: string } = {};
+// Helper function to introduce delays (if not using Bottleneck)
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-for (const [abbr, info] of Object.entries(teamsInfo)) {
-  const normalized = normalizeName(info.name);
-  normalizedTeamInfo[normalized] = abbr;
-}
-
-// Define the rate limiters
-const rateLimiter = new RateLimiterMemory({
-  points: 30, // Allow up to 30 requests per minute
-  duration: 60, // Per 60 seconds
-});
-
-const rateLimiter5Min = new RateLimiterMemory({
-  points: 60, // Allow up to 60 requests per 5 minutes
-  duration: 300, // 5 minutes (300 seconds)
-});
-
-const rateLimiter15Min = new RateLimiterMemory({
-  points: 80, // Allow up to 80 requests per 15 minutes
-  duration: 900, // 15 minutes (900 seconds)
-});
-
-const rateLimiterHour = new RateLimiterMemory({
-  points: 150, // Allow up to 150 requests per hour
-  duration: 3600, // 1 hour (3600 seconds)
-});
-
-// Define the structure for rejection responses
-interface RejectedResponse {
-  msBeforeNext: number;
-}
-
-// Function to handle rate-limited delays and requests
-async function rateLimitedRequestWithDelays(fn: () => Promise<any>) {
-  try {
-    // Apply rate limits for different time windows
-    await rateLimiter.consume(1); // Consume 1 point for the per-minute limiter
-    await rateLimiter5Min.consume(1); // Consume 1 point for the 5-minute limiter
-    await rateLimiter15Min.consume(1); // Consume 1 point for the 15-minute limiter
-    await rateLimiterHour.consume(1); // Consume 1 point for the hourly limiter
-
-    return await fn();
-  } catch (rejRes) {
-    const error = rejRes as RejectedResponse;
-    if (error.msBeforeNext) {
-      console.warn(
-        `Rate limit exceeded, waiting for ${error.msBeforeNext}ms before retrying...`
-      );
-      await new Promise((resolve) => setTimeout(resolve, error.msBeforeNext));
-      return await fn();
-    } else {
-      throw new Error("Rate limiting failed");
-    }
+/**
+ * Safely parses a string to a number.
+ * Returns null if the input is "-", otherwise returns the parsed number.
+ * @param value - The string value to parse.
+ * @returns The parsed number or null.
+ */
+export const safeParseNumber = (value: string): number | null => {
+  if (value.trim() === "-") {
+    return null;
   }
-}
-
-// Helper function to introduce a delay between each batch of scrapes
-async function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-// Initialize responseDataMap with precise types per key
-const responseDataMap = {
-  countsAll: { situation: "all", rate: "n", data: [] as CountsTeamStatDate[] },
-  counts5v5: { situation: "5v5", rate: "n", data: [] as CountsTeamStatDate[] },
-  countsPP: { situation: "pp", rate: "n", data: [] as CountsTeamStatDate[] },
-  countsPK: { situation: "pk", rate: "n", data: [] as CountsTeamStatDate[] },
-  seasonStats: {
-    situation: "all",
-    rate: "n",
-    data: [] as CountsTeamStatSeason[],
-  },
-  lastSeasonStats: {
-    situation: "all",
-    rate: "n",
-    data: [] as CountsTeamStatSeason[],
-  },
+  const parsed = Number(value);
+  return isNaN(parsed) ? null : parsed;
 };
 
-// Extend NextApiRequest to include SupabaseClient
-interface ApiRequest extends NextApiRequest {
-  supabase: SupabaseClient<any, "public", any>;
-}
+/**
+ * Converts a time string in MM:SS or MMMM:SS format to total seconds.
+ * @param toi - The time string in MM:SS or MMMM:SS format.
+ * @returns The total time in seconds as an integer, or null if the format is invalid.
+ */
+export const convertToSeconds = (toi: string): number | null => {
+  if (!toi || toi === "-") {
+    return null; // Handle null or "-" as invalid TOI
+  }
 
-// Define the handler function
-const handler = async (
-  req: ApiRequest,
-  res: NextApiResponse<ResponseData | { success: false; message: string }>
-) => {
+  const parts = toi.split(":");
+  if (parts.length !== 2) {
+    return null; // Invalid format
+  }
+
+  const minutes = parseInt(parts[0], 10);
+  const seconds = parseInt(parts[1], 10);
+
+  if (isNaN(minutes) || isNaN(seconds)) {
+    return null; // Invalid numeric conversion
+  }
+
+  return minutes * 60 + seconds; // Convert MM:SS to total seconds
+};
+
+export default adminOnly(async (req: any, res: NextApiResponse) => {
+  const { supabase } = req;
+
   try {
+    // 1. Extract 'date' query parameter
     const { date } = req.query;
-    const fetchDate =
-      typeof date === "string" ? date : new Date().toISOString().split("T")[0];
 
-    let datesToFetch: string[] = [];
-    const upsertedRecords: { [key: string]: number } = {};
-    const errors: { date: string; category: string; message: string }[] = [];
-
-    // Fetch current season details using getCurrentSeason
-    const currentSeason = await getCurrentSeason();
-
-    if (fetchDate === "all") {
-      // Fetch latest date from Supabase for date-based tables
-      const { data: latestDateData, error: latestDateError } =
-        await req.supabase
-          .from("nst_team_all")
-          .select("date")
-          .order("date", { ascending: false })
-          .limit(1);
-
-      if (latestDateError) {
-        console.error(
-          "Error fetching latest date from Supabase:",
-          latestDateError.message
-        );
-        return res.status(500).json({
-          success: false,
-          message: "Error fetching latest date from Supabase.",
-        });
-      }
-
-      let startDate: string;
-
-      if (currentSeason.seasonId === undefined) {
-        // Fallback in case season data is not available
-        startDate = "2024-10-14";
-      } else {
-        if (
-          latestDateData &&
-          latestDateData.length > 0 &&
-          latestDateData[0].date
-        ) {
-          // Start from the day after the latest date
-          const lastDate = new Date(latestDateData[0].date);
-          lastDate.setDate(lastDate.getDate() + 1);
-          startDate = lastDate.toISOString().split("T")[0];
-        } else {
-          // Use the start date from the current season
-          startDate = currentSeason.regularSeasonStartDate;
-        }
-      }
-
-      const currentDate = new Date().toISOString().split("T")[0];
-
-      // Generate all dates from startDate to currentDate
-      let dateIterator = new Date(startDate);
-      const endDate = new Date(currentDate);
-
-      while (dateIterator <= endDate) {
-        const dateStr = dateIterator.toISOString().split("T")[0];
-        datesToFetch.push(dateStr);
-        dateIterator.setDate(dateIterator.getDate() + 1);
-      }
-
-      if (datesToFetch.length === 0) {
-        return res.status(200).json({
-          success: true,
-          message: "No new dates to fetch.",
-          processedDates: [],
-          upsertedRecords,
-        });
-      }
-
-      // Prepare season-based URLs
-      // For current season
-      responseKeys.seasonStats.url = responseKeys.seasonStats.url.replace(
-        "{seasonId}",
-        `${currentSeason.seasonId}`
-      );
-
-      // For last season
-      responseKeys.lastSeasonStats.url =
-        responseKeys.lastSeasonStats.url.replace(
-          "{lastSeasonId}",
-          `${currentSeason.lastSeasonId}`
-        );
-
-      console.log("Current Season ID: ", currentSeason.seasonId);
-      console.log("Previous Season ID: ", currentSeason.lastSeasonId);
-    } else {
-      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-      if (!dateRegex.test(fetchDate)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid date format. Use YYYY-MM-DD or 'all'.",
-        });
-      }
-      datesToFetch.push(fetchDate);
+    // Validate 'date' parameter
+    if (!date) {
+      return res.status(400).json({
+        message: "Missing 'date' query parameter.",
+        success: false,
+      });
     }
 
-    if (fetchDate === "all") {
-      console.log(
-        `\n=== Scraping Current Season: ${currentSeason.seasonId} ===`
+    // 2. Get current and last season details
+    const currentSeason = await getCurrentSeason();
+    const {
+      seasonId,
+      lastSeasonId,
+      regularSeasonStartDate,
+      regularSeasonEndDate,
+      seasonEndDate,
+      lastRegularSeasonStartDate,
+      lastRegularSeasonEndDate,
+      lastSeasonEndDate,
+    } = currentSeason;
+
+    // 3. Preliminary Check for Date-Based Tables and Data Fetching
+    if (date === "all") {
+      console.log("Performing preliminary checks for date-based tables.");
+
+      // Define date-based tables
+      const dateBasedTables = [
+        "nst_team_all",
+        "nst_team_5v5",
+        "nst_team_pp",
+        "nst_team_pk",
+      ];
+
+      // Function to get the latest date from a table
+      const getLatestDate = async (table: string): Promise<string | null> => {
+        const { data, error } = await supabase
+          .from(table)
+          .select("date")
+          .order("date", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (error) {
+          console.error(
+            `Error fetching latest date from ${table}:`,
+            error.message
+          );
+          return null;
+        }
+
+        return data?.date || null;
+      };
+
+      // Fetch the latest date from each date-based table
+      const latestDatesPromises = dateBasedTables.map((table) =>
+        getLatestDate(table)
       );
-      try {
-        await rateLimitedRequestWithDelays(async () => {
-          const pythonProcess = spawn("python", [
-            path.join(process.cwd(), "scripts", "fetch_team_table.py"),
+      const latestDates = await Promise.all(latestDatesPromises);
+
+      // Filter out nulls and find the maximum date
+      const validDates = latestDates.filter((d) => d !== null) as string[];
+      let fetchStartDate: Date;
+
+      if (validDates.length > 0) {
+        const maxDateStr = validDates.reduce((a, b) => (a > b ? a : b));
+        const maxDate = parseISO(maxDateStr);
+        fetchStartDate = addDays(maxDate, 1); // Start from the next day
+      } else {
+        // If no data exists, start from regularSeasonStartDate
+        fetchStartDate = parseISO(regularSeasonStartDate);
+      }
+
+      const today = new Date();
+      if (isAfter(fetchStartDate, today)) {
+        console.log("All data is up to date. No new data to fetch.");
+        return res.status(200).json({
+          message: "All date-based team statistics are up to date.",
+          success: true,
+        });
+      }
+
+      console.log(
+        `Fetching date-based team statistics starting from ${format(
+          fetchStartDate,
+          "yyyy-MM-dd"
+        )}.`
+      );
+
+      // **Run the full script: iterate through each date starting from fetchStartDate**
+      console.log("Running full script: Iterating through dates.");
+
+      const startDate = fetchStartDate;
+      const endDate = new Date(); // Today's date
+
+      let currentDate = startDate;
+
+      while (!isAfter(currentDate, endDate)) {
+        const formattedDate = format(currentDate, "yyyy-MM-dd");
+        console.log("20s Delay");
+        await delay(20000); // added 20s delay to avoid rate limiting
+        console.log(`Processing date: ${formattedDate}`);
+
+        // Iterate through the four date-based responseKeys
+        for (const key in dateBasedResponseKeys) {
+          const { situation, rate } = dateBasedResponseKeys[key];
+
+          // Construct arguments for the Python script
+          const scriptArgs = [
+            "--sit",
+            situation,
+            "--rate",
+            rate,
+            "--fd",
+            formattedDate,
+            "--td",
+            formattedDate,
             "--from_season",
-            `${currentSeason.seasonId}`,
+            seasonId.toString(),
             "--thru_season",
-            `${currentSeason.seasonId}`,
+            seasonId.toString(),
             "--stype",
             "2",
-            "--sit",
-            "all",
             "--score",
             "all",
-            "--rate",
-            "n",
             "--team",
             "all",
             "--loc",
             "B",
             "--gpf",
             "410",
-            "--fd",
-            "",
-            "--td",
-            "",
-          ]);
+          ];
 
-          let stdout = "";
-          let stderr = "";
+          // Path to the Python script
+          const scriptPath = path.join(
+            process.cwd(),
+            "scripts",
+            "fetch_team_table.py"
+          );
 
-          pythonProcess.stdout.on("data", (data) => {
-            stdout += data.toString();
-          });
-
-          pythonProcess.stderr.on("data", (data) => {
-            stderr += data.toString();
-          });
-
-          const exitCode = await new Promise<number>((resolve, reject) => {
-            pythonProcess.on("close", resolve);
-            pythonProcess.on("error", reject);
-          });
-
-          if (exitCode !== 0) {
-            console.error(
-              `Python script exited with code ${exitCode} for seasonStats on season ${currentSeason.seasonId}`
-            );
-            console.error(`Stderr: ${stderr}`);
-            errors.push({
-              date: `${currentSeason.seasonId}`,
-              category: "seasonStats",
-              message: `Python script exited with code ${exitCode}`,
-            });
-            return;
-          }
-
-          let jsonOutput;
           try {
-            jsonOutput = JSON.parse(stdout);
-          } catch (parseError) {
-            let message = "Unknown error";
-            if (parseError instanceof Error) {
-              message = parseError.message;
+            // Execute the Python script using Bottleneck's limiter
+            const { stdout, stderr } = await execAsync(
+              `python "${scriptPath}" ${scriptArgs
+                .map((arg) => `"${arg}"`)
+                .join(" ")}`
+            );
+
+            if (stderr) {
+              console.error(
+                `Error executing Python script for key ${key} on date ${formattedDate}:`,
+                stderr
+              );
+              throw new Error(`Python script error: ${stderr}`);
             }
-            console.error(
-              `Error parsing JSON output for seasonStats on season ${currentSeason.seasonId}:`,
-              parseError
-            );
-            errors.push({
-              date: `${currentSeason.seasonId}`,
-              category: "seasonStats",
-              message: `Error parsing JSON output: ${message}`,
-            });
-            return;
-          }
 
-          if (jsonOutput.debug?.Error) {
-            console.error(
-              `Error in Python script for seasonStats on season ${currentSeason.seasonId}: ${jsonOutput.debug.Error}`
-            );
-            console.error(`Debug Info: ${JSON.stringify(jsonOutput.debug)}`);
-            errors.push({
-              date: `${currentSeason.seasonId}`,
-              category: "seasonStats",
-              message: jsonOutput.debug.Error,
-            });
-            return;
-          }
+            // Parse the JSON output
+            const scriptOutput: PythonScriptOutput = JSON.parse(stdout);
 
-          // Map JSON data to CountsTeamStatSeason
-          const parsedData: CountsTeamStatSeason[] = jsonOutput.data.map(
-            (item: any) => ({
-              team_abbreviation:
-                normalizedTeamInfo[normalizeName(item["Team"])] || "Unknown",
-              team_name: item["Team"] || "Unknown",
-              gp: item["GP"] ? parseInt(item["GP"]) : null,
-              toi: item["TOI"] || null,
-              w: item["W"] ? parseInt(item["W"]) : null,
-              l: item["L"] ? parseInt(item["L"]) : null,
-              otl: item["OTL"] ? parseInt(item["OTL"]) : null,
-              points: item["Points"] ? parseInt(item["Points"]) : null,
-              cf: item["CF"] ? parseInt(item["CF"]) : null,
-              ca: item["CA"] ? parseInt(item["CA"]) : null,
-              cf_pct: item["CFPct"] ? parseFloat(item["CFPct"]) : null,
-              ff: item["FF"] ? parseInt(item["FF"]) : null,
-              fa: item["FA"] ? parseInt(item["FA"]) : null,
-              ff_pct: item["FFPct"] ? parseFloat(item["FFPct"]) : null,
-              sf: item["SF"] ? parseInt(item["SF"]) : null,
-              sa: item["SA"] ? parseInt(item["SA"]) : null,
-              sf_pct: item["SFPct"] ? parseFloat(item["SFPct"]) : null,
-              gf: item["GF"] ? parseInt(item["GF"]) : null,
-              ga: item["GA"] ? parseInt(item["GA"]) : null,
-              gf_pct: item["GFPct"] ? parseFloat(item["GFPct"]) : null,
-              xgf: item["xGF"] ? parseInt(item["xGF"]) : null,
-              xga: item["xGA"] ? parseInt(item["xGA"]) : null,
-              xgf_pct: item["xGFPct"] ? parseFloat(item["xGFPct"]) : null,
-              scf: item["SCF"] ? parseInt(item["SCF"]) : null,
-              sca: item["SCA"] ? parseInt(item["SCA"]) : null,
-              scf_pct: item["SCFPct"] ? parseFloat(item["SCFPct"]) : null,
-              hdcf: item["HDCF"] ? parseInt(item["HDCF"]) : null,
-              hdca: item["HDCA"] ? parseInt(item["HDCA"]) : null,
-              hdcf_pct: item["HDCFPct"] ? parseFloat(item["HDCFPct"]) : null,
-              hdsf: item["HDSF"] ? parseInt(item["HDSF"]) : null,
-              hdsa: item["HDSA"] ? parseInt(item["HDSA"]) : null,
-              hdsf_pct: item["HDSFPct"] ? parseFloat(item["HDSFPct"]) : null,
-              hdgf: item["HDGF"] ? parseInt(item["HDGF"]) : null,
-              hdga: item["HDGA"] ? parseInt(item["HDGA"]) : null,
-              hdgf_pct: item["HDGFPct"] ? parseFloat(item["HDGFPct"]) : null,
-              sh_pct: item["SCSHPct"] ? parseFloat(item["SCSHPct"]) : null,
-              sv_pct: item["SCSVPct"] ? parseFloat(item["SCSVPct"]) : null,
-              pdo: item["PDO"] ? parseFloat(item["PDO"]) : null,
-              season: currentSeason.seasonId.toString(),
-              situation: responseKeys.seasonStats.situation,
-            })
-          );
+            if (scriptOutput.debug && scriptOutput.debug.Error) {
+              console.error(
+                `Script Error for key ${key} on date ${formattedDate}:`,
+                scriptOutput.debug.Error
+              );
+              throw new Error(`Script Error: ${scriptOutput.debug.Error}`);
+            }
 
-          if (parsedData.length === 0) {
-            console.warn(
-              `No data found for seasonStats on season ${currentSeason.seasonId}.`
-            );
-            return;
-          }
+            const teamStats = scriptOutput.data;
 
-          responseDataMap.seasonStats.data.push(...parsedData);
+            // Determine the target Supabase table based on the key
+            let targetTable = "";
+            switch (key) {
+              case "countsAll":
+                targetTable = "nst_team_all";
+                break;
+              case "counts5v5":
+                targetTable = "nst_team_5v5";
+                break;
+              case "countsPP":
+                targetTable = "nst_team_pp";
+                break;
+              case "countsPK":
+                targetTable = "nst_team_pk";
+                break;
+              default:
+                console.warn(`Unknown date-based key: ${key}. Skipping...`);
+                continue;
+            }
 
-          // Update upsertedRecords count
-          upsertedRecords["seasonStats"] =
-            (upsertedRecords["seasonStats"] || 0) + parsedData.length;
+            // Prepare data for upsert
+            const upsertData = teamStats
+              .map((stat) => {
+                const teamName = stat.Team;
+                let teamAbbreviation = teamNameToAbbreviationMap[teamName];
 
-          console.log(
-            `Parsed ${parsedData.length} records for seasonStats on season ${currentSeason.seasonId}.`
-          );
-        });
-      } catch (error: any) {
-        console.error("API Error during seasonStats scraping:", error.message);
-        errors.push({
-          date: `${currentSeason.seasonId}`,
-          category: "seasonStats",
-          message: error.message,
-        });
-      }
+                // Normalize team name and attempt mapping
+                if (!teamAbbreviation) {
+                  console.warn(
+                    `Unknown team name "${teamName}". Attempting to find a match...`
+                  );
 
-      try {
-        const { data: existingData, error: existingError } = await req.supabase
-          .from("nst_team_stats_ly")
-          .select("season")
-          .eq("season", currentSeason.lastSeasonId)
-          .limit(1);
+                  // Attempt to find a match using normalized team name
+                  const normalizedTeamName = normalizeTeamName(teamName);
+                  const matchedAbbreviation = Object.keys(teamsInfo).find(
+                    (abbr) =>
+                      normalizeTeamName(teamsInfo[abbr].name) ===
+                      normalizedTeamName
+                  );
 
-        if (existingError) {
-          console.error(
-            "Error checking existing data in nst_team_stats_ly:",
-            existingError.message
-          );
-          errors.push({
-            date: `${currentSeason.lastSeasonId}`,
-            category: "lastSeasonStats",
-            message: "Error checking existing data in nst_team_stats_ly.",
-          });
-        }
-
-        if (!existingData || existingData.length === 0) {
-          console.log(
-            `\n=== Scraping Last Season: ${currentSeason.lastSeasonId} ===`
-          );
-          try {
-            await rateLimitedRequestWithDelays(async () => {
-              const pythonProcess = spawn("python", [
-                path.join(process.cwd(), "scripts", "fetch_team_table.py"),
-                "--from_season",
-                `${currentSeason.lastSeasonId}`,
-                "--thru_season",
-                `${currentSeason.lastSeasonId}`,
-                "--stype",
-                "2",
-                "--sit",
-                "all",
-                "--score",
-                "all",
-                "--rate",
-                "n",
-                "--team",
-                "all",
-                "--loc",
-                "B",
-                "--gpf",
-                "410",
-                "--fd",
-                "",
-                "--td",
-                "",
-              ]);
-
-              let stdout = "";
-              let stderr = "";
-
-              pythonProcess.stdout.on("data", (data) => {
-                stdout += data.toString();
-              });
-
-              pythonProcess.stderr.on("data", (data) => {
-                stderr += data.toString();
-              });
-
-              const exitCode = await new Promise<number>((resolve, reject) => {
-                pythonProcess.on("close", resolve);
-                pythonProcess.on("error", reject);
-              });
-
-              if (exitCode !== 0) {
-                console.error(
-                  `Python script exited with code ${exitCode} for lastSeasonStats on season ${currentSeason.lastSeasonId}`
-                );
-                console.error(`Stderr: ${stderr}`);
-                errors.push({
-                  date: `${currentSeason.lastSeasonId}`,
-                  category: "lastSeasonStats",
-                  message: `Python script exited with code ${exitCode}`,
-                });
-                return;
-              }
-
-              let jsonOutput;
-              try {
-                jsonOutput = JSON.parse(stdout);
-              } catch (parseError) {
-                let message = "Unknown error";
-                if (parseError instanceof Error) {
-                  message = parseError.message;
+                  if (matchedAbbreviation) {
+                    teamAbbreviation = matchedAbbreviation;
+                  } else {
+                    console.error(
+                      `Unable to find abbreviation for team name "${teamName}". Skipping this entry.`
+                    );
+                    return null; // Exclude this entry from upsert
+                  }
                 }
-                console.error(
-                  `Error parsing JSON output for lastSeasonStats on season ${currentSeason.lastSeasonId}:`,
-                  parseError
-                );
-                errors.push({
-                  date: `${currentSeason.lastSeasonId}`,
-                  category: "lastSeasonStats",
-                  message: `Error parsing JSON output: ${message}`,
-                });
-                return;
-              }
 
-              if (jsonOutput.debug?.Error) {
-                console.error(
-                  `Error in Python script for lastSeasonStats on season ${currentSeason.lastSeasonId}: ${jsonOutput.debug.Error}`
-                );
-                console.error(
-                  `Debug Info: ${JSON.stringify(jsonOutput.debug)}`
-                );
-                errors.push({
-                  date: `${currentSeason.lastSeasonId}`,
-                  category: "lastSeasonStats",
-                  message: jsonOutput.debug.Error,
-                });
-                return;
-              }
+                // Handle special case for "Utah Utah HC"
+                if (teamName === "Utah Utah HC" && teamAbbreviation !== "UTA") {
+                  teamAbbreviation = "UTA";
+                }
 
-              // Map JSON data to CountsTeamStatSeason
-              const parsedData: CountsTeamStatSeason[] = jsonOutput.data.map(
-                (item: any) => ({
-                  team_abbreviation:
-                    normalizedTeamInfo[normalizeName(item["Team"])] ||
-                    "Unknown",
-                  team_name: item["Team"] || "Unknown",
-                  gp: item["GP"] ? parseInt(item["GP"]) : null,
-                  toi: item["TOI"] || null,
-                  w: item["W"] ? parseInt(item["W"]) : null,
-                  l: item["L"] ? parseInt(item["L"]) : null,
-                  otl: item["OTL"] ? parseInt(item["OTL"]) : null,
-                  points: item["Points"] ? parseInt(item["Points"]) : null,
-                  cf: item["CF"] ? parseInt(item["CF"]) : null,
-                  ca: item["CA"] ? parseInt(item["CA"]) : null,
-                  cf_pct: item["CFPct"] ? parseFloat(item["CFPct"]) : null,
-                  ff: item["FF"] ? parseInt(item["FF"]) : null,
-                  fa: item["FA"] ? parseInt(item["FA"]) : null,
-                  ff_pct: item["FFPct"] ? parseFloat(item["FFPct"]) : null,
-                  sf: item["SF"] ? parseInt(item["SF"]) : null,
-                  sa: item["SA"] ? parseInt(item["SA"]) : null,
-                  sf_pct: item["SFPct"] ? parseFloat(item["SFPct"]) : null,
-                  gf: item["GF"] ? parseInt(item["GF"]) : null,
-                  ga: item["GA"] ? parseInt(item["GA"]) : null,
-                  gf_pct: item["GFPct"] ? parseFloat(item["GFPct"]) : null,
-                  xgf: item["xGF"] ? parseInt(item["xGF"]) : null,
-                  xga: item["xGA"] ? parseInt(item["xGA"]) : null,
-                  xgf_pct: item["xGFPct"] ? parseFloat(item["xGFPct"]) : null,
-                  scf: item["SCF"] ? parseInt(item["SCF"]) : null,
-                  sca: item["SCA"] ? parseInt(item["SCA"]) : null,
-                  scf_pct: item["SCFPct"] ? parseFloat(item["SCFPct"]) : null,
-                  hdcf: item["HDCF"] ? parseInt(item["HDCF"]) : null,
-                  hdca: item["HDCA"] ? parseInt(item["HDCA"]) : null,
-                  hdcf_pct: item["HDCFPct"]
-                    ? parseFloat(item["HDCFPct"])
-                    : null,
-                  hdsf: item["HDSF"] ? parseInt(item["HDSF"]) : null,
-                  hdsa: item["HDSA"] ? parseInt(item["HDSA"]) : null,
-                  hdsf_pct: item["HDSFPct"]
-                    ? parseFloat(item["HDSFPct"])
-                    : null,
-                  hdgf: item["HDGF"] ? parseInt(item["HDGF"]) : null,
-                  hdga: item["HDGA"] ? parseInt(item["HDGA"]) : null,
-                  hdgf_pct: item["HDGFPct"]
-                    ? parseFloat(item["HDGFPct"])
-                    : null,
-                  sh_pct: item["SCSHPct"] ? parseFloat(item["SCSHPct"]) : null,
-                  sv_pct: item["SCSVPct"] ? parseFloat(item["SCSVPct"]) : null,
-                  pdo: item["PDO"] ? parseFloat(item["PDO"]) : null,
-                  season: currentSeason.lastSeasonId.toString(),
-                  situation: responseKeys.lastSeasonStats.situation,
-                })
+                const totalTOI = convertToSeconds(stat.TOI);
+
+                return {
+                  team_abbreviation: teamAbbreviation,
+                  team_name: teamsInfo[teamAbbreviation]?.name || teamName, // Use mapped name or original
+                  gp: safeParseNumber(stat.GP),
+                  toi: totalTOI,
+                  w: safeParseNumber(stat.W),
+                  l: safeParseNumber(stat.L),
+                  otl: safeParseNumber(stat.OTL),
+                  points: safeParseNumber(stat.Points),
+                  cf: safeParseNumber(stat.CF),
+                  ca: safeParseNumber(stat.CA),
+                  cf_pct:
+                    stat.CFPct !== null
+                      ? parseFloat(stat.CFPct.toFixed(2))
+                      : null,
+                  ff: safeParseNumber(stat.FF),
+                  fa: safeParseNumber(stat.FA),
+                  ff_pct:
+                    stat.FFPct !== null
+                      ? parseFloat(stat.FFPct.toFixed(2))
+                      : null,
+                  sf: safeParseNumber(stat.SF),
+                  sa: safeParseNumber(stat.SA),
+                  sf_pct:
+                    stat.SFPct !== null
+                      ? parseFloat(stat.SFPct.toFixed(2))
+                      : null,
+                  gf: safeParseNumber(stat.GF),
+                  ga: safeParseNumber(stat.GA),
+                  gf_pct:
+                    stat.GFPct !== null
+                      ? parseFloat(stat.GFPct.toFixed(2))
+                      : null,
+                  xgf: safeParseNumber(stat.xGF),
+                  xga: safeParseNumber(stat.xGA),
+                  xgf_pct:
+                    stat.xGFPct !== null
+                      ? parseFloat(stat.xGFPct.toFixed(2))
+                      : null,
+                  scf: safeParseNumber(stat.SCF),
+                  sca: safeParseNumber(stat.SCA),
+                  scf_pct:
+                    stat.SCFPct !== null
+                      ? parseFloat(stat.SCFPct.toFixed(2))
+                      : null,
+                  hdcf: safeParseNumber(stat.HDCF),
+                  hdca: safeParseNumber(stat.HDCA),
+                  hdcf_pct:
+                    stat.HDCFPct !== null
+                      ? parseFloat(stat.HDCFPct.toFixed(2))
+                      : null,
+                  hdsf: safeParseNumber(stat.HDSF),
+                  hdsa: safeParseNumber(stat.HDSA),
+                  hdsf_pct:
+                    stat.HDSFPct !== null
+                      ? parseFloat(stat.HDSFPct.toFixed(2))
+                      : null,
+                  hdgf: safeParseNumber(stat.HDGF),
+                  hdga: safeParseNumber(stat.HDGA),
+                  hdgf_pct:
+                    stat.HDGFPct !== null
+                      ? parseFloat(stat.HDGFPct.toFixed(2))
+                      : null,
+                  sh_pct:
+                    stat.SHPct !== null
+                      ? parseFloat(stat.SHPct.toFixed(2))
+                      : null,
+                  sv_pct:
+                    stat.SVPct !== null
+                      ? parseFloat(stat.SVPct.toFixed(2))
+                      : null,
+                  pdo: stat.PDO !== null ? parseFloat(stat.PDO) : null,
+                  date: formattedDate,
+                  situation: stat.situation || "all",
+                  // For date-based tables, season is undefined
+                };
+              })
+              .filter(
+                (entry): entry is NonNullable<typeof entry> => entry !== null
+              ); // Remove null entries
+            await delay(1500); // another delay
+            console.log("1.5 delay");
+            // Upsert data into Supabase
+            const { error } = await supabase
+              .from(targetTable)
+              .upsert(upsertData, {
+                onConflict: ["team_abbreviation", "date"],
+              });
+
+            if (error) {
+              console.error(
+                `Supabase upsert error for table ${targetTable}:`,
+                error.message
               );
+              throw new Error(`Supabase upsert error: ${error.message}`);
+            }
 
-              if (parsedData.length === 0) {
-                console.warn(
-                  `No data found for lastSeasonStats on season ${currentSeason.lastSeasonId}.`
-                );
-                return;
-              }
-
-              responseDataMap.lastSeasonStats.data.push(...parsedData);
-
-              // Update upsertedRecords count
-              upsertedRecords["lastSeasonStats"] =
-                (upsertedRecords["lastSeasonStats"] || 0) + parsedData.length;
-
-              console.log(
-                `Parsed ${parsedData.length} records for lastSeasonStats on season ${currentSeason.lastSeasonId}.`
-              );
-            });
+            console.log(
+              `Successfully upserted ${upsertData.length} records into ${targetTable} for date ${formattedDate}`
+            );
           } catch (error: any) {
             console.error(
-              "API Error during lastSeasonStats scraping:",
+              `Error executing Python script for key ${key} on date ${formattedDate}:`,
               error.message
             );
-            errors.push({
-              date: `${currentSeason.lastSeasonId}`,
-              category: "lastSeasonStats",
-              message: error.message,
-            });
+            throw new Error(`Python script error: ${error.message}`);
           }
         }
 
-        // Perform upserts for date-based tables
-        for (const [key, { rate }] of Object.entries(responseKeys)) {
-          // Skip season-based tables
-          if (key === "seasonStats" || key === "lastSeasonStats") continue;
-
-          const categoryPrefix = categoryPrefixes[key];
-          if (!categoryPrefix) continue;
-
-          const categoryData = responseDataMap[
-            key as keyof typeof responseDataMap
-          ].data as CountsTeamStatDate[];
-
-          if (categoryData.length === 0) {
-            console.warn(
-              `No data to upsert for category: ${categoryPrefix} on date(s): ${datesToFetch.join(
-                ", "
-              )}`
-            );
-            continue;
-          }
-
-          await rateLimitedRequestWithDelays(async () => {
-            const { data: upsertedData, error } = await req.supabase
-              .from(categoryPrefix)
-              .upsert(categoryData, { onConflict: "team_abbreviation, date" })
-              .select();
-
-            if (error) {
-              console.error(
-                `Supabase Upsert Error for ${categoryPrefix}:`,
-                error.message
-              );
-              datesToFetch.forEach((date) => {
-                errors.push({
-                  date,
-                  category: key,
-                  message: error.message,
-                });
-              });
-            } else {
-              console.log(
-                `Supabase Upsert Successful for ${categoryPrefix}:`,
-                upsertedData.length,
-                "records upserted."
-              );
-            }
-          });
-
-          // Clear data for the category to prevent duplicate upserts
-          (
-            responseDataMap[key as keyof typeof responseDataMap] as {
-              data: any[];
-            }
-          ).data = [];
-        }
-
-        // Perform upserts for season-based tables
-        for (const key of ["seasonStats", "lastSeasonStats"] as const) {
-          const categoryPrefix = categoryPrefixes[key];
-          if (!categoryPrefix) continue;
-
-          const categoryData = responseDataMap[key]
-            .data as CountsTeamStatSeason[];
-
-          if (categoryData.length === 0) {
-            console.warn(`No data to upsert for category: ${categoryPrefix}.`);
-            continue;
-          }
-
-          await rateLimitedRequestWithDelays(async () => {
-            const { data: upsertedData, error } = await req.supabase
-              .from(categoryPrefix)
-              .upsert(categoryData, { onConflict: "team_abbreviation, season" })
-              .select();
-
-            if (error) {
-              console.error(
-                `Supabase Upsert Error for ${categoryPrefix}:`,
-                error.message
-              );
-              categoryData.forEach((item) => {
-                const seasonValue = item.season || "unknown";
-                errors.push({
-                  date: seasonValue,
-                  category: key,
-                  message: error.message,
-                });
-              });
-            } else {
-              console.log(
-                `Supabase Upsert Successful for ${categoryPrefix}:`,
-                upsertedData.length,
-                "records upserted."
-              );
-            }
-          });
-
-          // Clear data for the category to prevent duplicate upserts
-          responseDataMap[key].data = [];
-        }
-
-        // Respond to the API request with the processed information
-        return res.status(200).json({
-          success: true,
-          message:
-            "Successfully fetched NST team stats and upserted to Supabase.",
-          processedDates: datesToFetch,
-          upsertedRecords,
-          errors: errors.length > 0 ? errors : undefined,
-        });
-      } catch (error: any) {
-        console.error("API Error:", error.message);
-        return res.status(500).json({
-          success: false,
-          message: "An error occurred while fetching NST team stats.",
-        });
+        // Move to the next day
+        currentDate = addDays(currentDate, 1);
       }
+
+      // **Process season-based response keys**
+      console.log("Processing season-based response keys.");
+
+      for (const key in seasonBasedResponseKeys) {
+        const { situation, rate } = seasonBasedResponseKeys[key];
+
+        // Determine the target Supabase table based on the key
+        let targetTable = "";
+        switch (key) {
+          case "seasonStats":
+            targetTable = "nst_team_stats";
+            break;
+          case "lastSeasonStats":
+            targetTable = "nst_team_stats_ly";
+            break;
+          default:
+            console.warn(`Unknown season-based key: ${key}. Skipping...`);
+            continue;
+        }
+
+        // Determine the season parameters
+        const from_season =
+          key === "seasonStats" ? seasonId.toString() : lastSeasonId.toString();
+        const thru_season =
+          key === "seasonStats" ? seasonId.toString() : lastSeasonId.toString();
+
+        // Special handling for 'lastSeasonStats'
+        let shouldFetchSeason = true;
+        if (key === "lastSeasonStats") {
+          // Check if the latest season in nst_team_stats_ly matches lastSeasonId
+          const { data, error } = await supabase
+            .from(targetTable)
+            .select("season")
+            .eq("season", lastSeasonId.toString())
+            .limit(1)
+            .single();
+
+          if (!error && data) {
+            console.log(
+              `Season-based table ${targetTable} already has data for season ${lastSeasonId}. Skipping fetch.`
+            );
+            shouldFetchSeason = false;
+          }
+        }
+
+        if (!shouldFetchSeason) {
+          continue; // Skip fetching for this season-based key
+        }
+
+        // Construct arguments for the Python script
+        const scriptArgs = [
+          "--sit",
+          situation,
+          "--rate",
+          rate,
+          "--fd",
+          "", // Not applicable for season-based
+          "--td",
+          "", // Not applicable for season-based
+          "--from_season",
+          from_season,
+          "--thru_season",
+          thru_season,
+          "--stype",
+          "2",
+          "--score",
+          "all",
+          "--team",
+          "all",
+          "--loc",
+          "B",
+          "--gpf",
+          "410",
+        ];
+
+        // Path to the Python script
+        const scriptPath = path.join(
+          process.cwd(),
+          "scripts",
+          "fetch_team_table.py"
+        );
+
+        try {
+          // Execute the Python script using Bottleneck's limiter
+          const { stdout, stderr } = await execAsync(
+            `python "${scriptPath}" ${scriptArgs
+              .map((arg) => `"${arg}"`)
+              .join(" ")}`
+          );
+
+          if (stderr) {
+            console.error(
+              `Error executing Python script for key ${key}:`,
+              stderr
+            );
+            throw new Error(`Python script error: ${stderr}`);
+          }
+
+          // Parse the JSON output
+          const scriptOutput: PythonScriptOutput = JSON.parse(stdout);
+
+          if (scriptOutput.debug && scriptOutput.debug.Error) {
+            console.error(
+              `Script Error for key ${key}:`,
+              scriptOutput.debug.Error
+            );
+            throw new Error(`Script Error: ${scriptOutput.debug.Error}`);
+          }
+
+          const teamStats = scriptOutput.data;
+
+          // Prepare data for upsert
+          const upsertData = teamStats
+            .map((stat) => {
+              const teamName = stat.Team;
+              let teamAbbreviation = teamNameToAbbreviationMap[teamName];
+
+              // Normalize team name and attempt mapping
+              if (!teamAbbreviation) {
+                console.warn(
+                  `Unknown team name "${teamName}". Attempting to find a match...`
+                );
+
+                // Attempt to find a match using normalized team name
+                const normalizedTeamName = normalizeTeamName(teamName);
+                const matchedAbbreviation = Object.keys(
+                  teamNameToAbbreviationMap
+                ).find(
+                  (abbr) =>
+                    normalizeTeamName(teamsInfo[abbr].name) ===
+                    normalizedTeamName
+                );
+
+                if (matchedAbbreviation) {
+                  teamAbbreviation =
+                    teamNameToAbbreviationMap[
+                      teamsInfo[matchedAbbreviation].name
+                    ];
+                } else {
+                  console.error(
+                    `Unable to find abbreviation for team name "${teamName}". Skipping this entry.`
+                  );
+                  return null; // Exclude this entry from upsert
+                }
+              }
+
+              // Handle special case for "Utah Utah HC"
+              if (teamName === "Utah Utah HC" && teamAbbreviation !== "UTA") {
+                teamAbbreviation = "UTA";
+              }
+
+              const totalTOI = convertToSeconds(stat.TOI);
+
+              return {
+                team_abbreviation: teamAbbreviation,
+                team_name: teamsInfo[teamAbbreviation]?.name || teamName, // Use mapped name or original
+                gp: safeParseNumber(stat.GP),
+                toi: totalTOI,
+                w: safeParseNumber(stat.W),
+                l: safeParseNumber(stat.L),
+                otl: safeParseNumber(stat.OTL),
+                points: safeParseNumber(stat.Points),
+                cf: safeParseNumber(stat.CF),
+                ca: safeParseNumber(stat.CA),
+                cf_pct:
+                  stat.CFPct !== null
+                    ? parseFloat(stat.CFPct.toFixed(2))
+                    : null,
+                ff: safeParseNumber(stat.FF),
+                fa: safeParseNumber(stat.FA),
+                ff_pct:
+                  stat.FFPct !== null
+                    ? parseFloat(stat.FFPct.toFixed(2))
+                    : null,
+                sf: safeParseNumber(stat.SF),
+                sa: safeParseNumber(stat.SA),
+                sf_pct:
+                  stat.SFPct !== null
+                    ? parseFloat(stat.SFPct.toFixed(2))
+                    : null,
+                gf: safeParseNumber(stat.GF),
+                ga: safeParseNumber(stat.GA),
+                gf_pct:
+                  stat.GFPct !== null
+                    ? parseFloat(stat.GFPct.toFixed(2))
+                    : null,
+                xgf: safeParseNumber(stat.xGF),
+                xga: safeParseNumber(stat.xGA),
+                xgf_pct:
+                  stat.xGFPct !== null
+                    ? parseFloat(stat.xGFPct.toFixed(2))
+                    : null,
+                scf: safeParseNumber(stat.SCF),
+                sca: safeParseNumber(stat.SCA),
+                scf_pct:
+                  stat.SCFPct !== null
+                    ? parseFloat(stat.SCFPct.toFixed(2))
+                    : null,
+                hdcf: safeParseNumber(stat.HDCF),
+                hdca: safeParseNumber(stat.HDCA),
+                hdcf_pct:
+                  stat.HDCFPct !== null
+                    ? parseFloat(stat.HDCFPct.toFixed(2))
+                    : null,
+                hdsf: safeParseNumber(stat.HDSF),
+                hdsa: safeParseNumber(stat.HDSA),
+                hdsf_pct:
+                  stat.HDSFPct !== null
+                    ? parseFloat(stat.HDSFPct.toFixed(2))
+                    : null,
+                hdgf: safeParseNumber(stat.HDGF),
+                hdga: safeParseNumber(stat.HDGA),
+                hdgf_pct:
+                  stat.HDGFPct !== null
+                    ? parseFloat(stat.HDGFPct.toFixed(2))
+                    : null,
+                sh_pct:
+                  stat.SHPct !== null
+                    ? parseFloat(stat.SHPct.toFixed(2))
+                    : null,
+                sv_pct:
+                  stat.SVPct !== null
+                    ? parseFloat(stat.SVPct.toFixed(2))
+                    : null,
+                pdo: stat.PDO !== null ? parseFloat(stat.PDO) : null,
+                situation: stat.situation || "all",
+                season: from_season, // Added season field
+                // For season-based tables, date is undefined or null
+              };
+            })
+            .filter(
+              (entry): entry is NonNullable<typeof entry> => entry !== null
+            ); // Remove null entries
+
+          // Upsert data into Supabase
+          const { error } = await supabase
+            .from(targetTable)
+            .upsert(upsertData, {
+              onConflict: ["team_abbreviation", "season"], // Ensure 'season' is a unique constraint in your table
+            });
+
+          if (error) {
+            console.error(
+              `Supabase upsert error for table ${targetTable}:`,
+              error.message
+            );
+            throw new Error(`Supabase upsert error: ${error.message}`);
+          }
+
+          console.log(
+            `Successfully upserted ${upsertData.length} records into ${targetTable}.`
+          );
+        } catch (error: any) {
+          console.error(
+            `Error executing Python script for key ${key}:`,
+            error.message
+          );
+          throw new Error(`Python script error: ${error.message}`);
+        }
+      }
+
+      // **Process season-based response keys**
+      console.log("Processing season-based response keys.");
+
+      for (const key in seasonBasedResponseKeys) {
+        const { situation, rate } = seasonBasedResponseKeys[key];
+
+        // Determine the target Supabase table based on the key
+        let targetTable = "";
+        switch (key) {
+          case "seasonStats":
+            targetTable = "nst_team_stats";
+            break;
+          case "lastSeasonStats":
+            targetTable = "nst_team_stats_ly";
+            break;
+          default:
+            console.warn(`Unknown season-based key: ${key}. Skipping...`);
+            continue;
+        }
+
+        // Determine the season parameters
+        const from_season =
+          key === "seasonStats" ? seasonId.toString() : lastSeasonId.toString();
+        const thru_season =
+          key === "seasonStats" ? seasonId.toString() : lastSeasonId.toString();
+
+        // Special handling for 'lastSeasonStats'
+        let shouldFetchSeason = true;
+        if (key === "lastSeasonStats") {
+          // Check if the latest season in nst_team_stats_ly matches lastSeasonId
+          const { data, error } = await supabase
+            .from(targetTable)
+            .select("season")
+            .eq("season", lastSeasonId.toString())
+            .limit(1)
+            .single();
+
+          if (!error && data) {
+            console.log(
+              `Season-based table ${targetTable} already has data for season ${lastSeasonId}. Skipping fetch.`
+            );
+            shouldFetchSeason = false;
+          }
+        }
+
+        if (!shouldFetchSeason) {
+          continue; // Skip fetching for this season-based key
+        }
+
+        // Construct arguments for the Python script
+        const scriptArgs = [
+          "--sit",
+          situation,
+          "--rate",
+          rate,
+          "--fd",
+          "", // Not applicable for season-based
+          "--td",
+          "", // Not applicable for season-based
+          "--from_season",
+          from_season,
+          "--thru_season",
+          thru_season,
+          "--stype",
+          "2",
+          "--score",
+          "all",
+          "--team",
+          "all",
+          "--loc",
+          "B",
+          "--gpf",
+          "410",
+        ];
+
+        // Path to the Python script
+        const scriptPath = path.join(
+          process.cwd(),
+          "scripts",
+          "fetch_team_table.py"
+        );
+
+        try {
+          // Execute the Python script using Bottleneck's limiter
+          const { stdout, stderr } = await execAsync(
+            `python "${scriptPath}" ${scriptArgs
+              .map((arg) => `"${arg}"`)
+              .join(" ")}`
+          );
+
+          if (stderr) {
+            console.error(
+              `Error executing Python script for key ${key}:`,
+              stderr
+            );
+            throw new Error(`Python script error: ${stderr}`);
+          }
+
+          // Parse the JSON output
+          const scriptOutput: PythonScriptOutput = JSON.parse(stdout);
+
+          if (scriptOutput.debug && scriptOutput.debug.Error) {
+            console.error(
+              `Script Error for key ${key}:`,
+              scriptOutput.debug.Error
+            );
+            throw new Error(`Script Error: ${scriptOutput.debug.Error}`);
+          }
+
+          const teamStats = scriptOutput.data;
+
+          // Prepare data for upsert
+          const upsertData = teamStats
+            .map((stat) => {
+              const teamName = stat.Team;
+              let teamAbbreviation = teamNameToAbbreviationMap[teamName];
+
+              // Normalize team name and attempt mapping
+              if (!teamAbbreviation) {
+                console.warn(
+                  `Unknown team name "${teamName}". Attempting to find a match...`
+                );
+
+                // Attempt to find a match using normalized team name
+                const normalizedTeamName = normalizeTeamName(teamName);
+                const matchedAbbreviation = Object.keys(
+                  teamNameToAbbreviationMap
+                ).find(
+                  (abbr) =>
+                    normalizeTeamName(teamsInfo[abbr].name) ===
+                    normalizedTeamName
+                );
+
+                if (matchedAbbreviation) {
+                  teamAbbreviation =
+                    teamNameToAbbreviationMap[
+                      teamsInfo[matchedAbbreviation].name
+                    ];
+                } else {
+                  console.error(
+                    `Unable to find abbreviation for team name "${teamName}". Skipping this entry.`
+                  );
+                  return null; // Exclude this entry from upsert
+                }
+              }
+
+              // Handle special case for "Utah Utah HC"
+              if (teamName === "Utah Utah HC" && teamAbbreviation !== "UTA") {
+                teamAbbreviation = "UTA";
+              }
+
+              const totalTOI = convertToSeconds(stat.TOI);
+
+              return {
+                team_abbreviation: teamAbbreviation,
+                team_name: teamsInfo[teamAbbreviation]?.name || teamName, // Use mapped name or original
+                gp: safeParseNumber(stat.GP),
+                toi: totalTOI,
+                w: safeParseNumber(stat.W),
+                l: safeParseNumber(stat.L),
+                otl: safeParseNumber(stat.OTL),
+                points: safeParseNumber(stat.Points),
+                cf: safeParseNumber(stat.CF),
+                ca: safeParseNumber(stat.CA),
+                cf_pct:
+                  stat.CFPct !== null
+                    ? parseFloat(stat.CFPct.toFixed(2))
+                    : null,
+                ff: safeParseNumber(stat.FF),
+                fa: safeParseNumber(stat.FA),
+                ff_pct:
+                  stat.FFPct !== null
+                    ? parseFloat(stat.FFPct.toFixed(2))
+                    : null,
+                sf: safeParseNumber(stat.SF),
+                sa: safeParseNumber(stat.SA),
+                sf_pct:
+                  stat.SFPct !== null
+                    ? parseFloat(stat.SFPct.toFixed(2))
+                    : null,
+                gf: safeParseNumber(stat.GF),
+                ga: safeParseNumber(stat.GA),
+                gf_pct:
+                  stat.GFPct !== null
+                    ? parseFloat(stat.GFPct.toFixed(2))
+                    : null,
+                xgf: safeParseNumber(stat.xGF),
+                xga: safeParseNumber(stat.xGA),
+                xgf_pct:
+                  stat.xGFPct !== null
+                    ? parseFloat(stat.xGFPct.toFixed(2))
+                    : null,
+                scf: safeParseNumber(stat.SCF),
+                sca: safeParseNumber(stat.SCA),
+                scf_pct:
+                  stat.SCFPct !== null
+                    ? parseFloat(stat.SCFPct.toFixed(2))
+                    : null,
+                hdcf: safeParseNumber(stat.HDCF),
+                hdca: safeParseNumber(stat.HDCA),
+                hdcf_pct:
+                  stat.HDCFPct !== null
+                    ? parseFloat(stat.HDCFPct.toFixed(2))
+                    : null,
+                hdsf: safeParseNumber(stat.HDSF),
+                hdsa: safeParseNumber(stat.HDSA),
+                hdsf_pct:
+                  stat.HDSFPct !== null
+                    ? parseFloat(stat.HDSFPct.toFixed(2))
+                    : null,
+                hdgf: safeParseNumber(stat.HDGF),
+                hdga: safeParseNumber(stat.HDGA),
+                hdgf_pct:
+                  stat.HDGFPct !== null
+                    ? parseFloat(stat.HDGFPct.toFixed(2))
+                    : null,
+                sh_pct:
+                  stat.SHPct !== null
+                    ? parseFloat(stat.SHPct.toFixed(2))
+                    : null,
+                sv_pct:
+                  stat.SVPct !== null
+                    ? parseFloat(stat.SVPct.toFixed(2))
+                    : null,
+                pdo: stat.PDO !== null ? parseFloat(stat.PDO) : null,
+                situation: stat.situation || "all",
+                season: from_season, // Added season field
+                // For season-based tables, date is undefined or null
+              };
+            })
+            .filter(
+              (entry): entry is NonNullable<typeof entry> => entry !== null
+            ); // Remove null entries
+
+          // Upsert data into Supabase
+          const { error } = await supabase
+            .from(targetTable)
+            .upsert(upsertData, {
+              onConflict: ["team_abbreviation", "season"], // Ensure 'season' is a unique constraint in your table
+            });
+
+          if (error) {
+            console.error(
+              `Supabase upsert error for table ${targetTable}:`,
+              error.message
+            );
+            throw new Error(`Supabase upsert error: ${error.message}`);
+          }
+
+          console.log(
+            `Successfully upserted ${upsertData.length} records into ${targetTable}.`
+          );
+        } catch (error: any) {
+          console.error(
+            `Error executing Python script for key ${key}:`,
+            error.message
+          );
+          throw new Error(`Python script error: ${error.message}`);
+        }
+      }
+
+      // **Process nst_team_stats (seasonStats)**
+      // No preliminary check needed; update rows based on new data
+      console.log("Processing nst_team_stats.");
+
+      for (const key in seasonBasedResponseKeys) {
+        const { situation, rate } = seasonBasedResponseKeys[key];
+
+        if (key !== "seasonStats") continue; // Skip other keys here
+
+        const targetTable = "nst_team_stats";
+
+        // Determine the season parameters
+        const from_season = seasonId.toString();
+        const thru_season = seasonId.toString();
+
+        // Construct arguments for the Python script
+        const scriptArgs = [
+          "--sit",
+          situation,
+          "--rate",
+          rate,
+          "--fd",
+          "", // Not applicable for season-based
+          "--td",
+          "", // Not applicable for season-based
+          "--from_season",
+          from_season,
+          "--thru_season",
+          thru_season,
+          "--stype",
+          "2",
+          "--score",
+          "all",
+          "--team",
+          "all",
+          "--loc",
+          "B",
+          "--gpf",
+          "410",
+        ];
+
+        // Path to the Python script
+        const scriptPath = path.join(
+          process.cwd(),
+          "scripts",
+          "fetch_team_table.py"
+        );
+
+        try {
+          // Execute the Python script using Bottleneck's limiter
+          const { stdout, stderr } = await execAsync(
+            `python "${scriptPath}" ${scriptArgs
+              .map((arg) => `"${arg}"`)
+              .join(" ")}`
+          );
+
+          if (stderr) {
+            console.error(
+              `Error executing Python script for key ${key}:`,
+              stderr
+            );
+            throw new Error(`Python script error: ${stderr}`);
+          }
+
+          // Parse the JSON output
+          const scriptOutput: PythonScriptOutput = JSON.parse(stdout);
+
+          if (scriptOutput.debug && scriptOutput.debug.Error) {
+            console.error(
+              `Script Error for key ${key}:`,
+              scriptOutput.debug.Error
+            );
+            throw new Error(`Script Error: ${scriptOutput.debug.Error}`);
+          }
+
+          const teamStats = scriptOutput.data;
+
+          // Prepare data for upsert
+          const upsertData = teamStats
+            .map((stat) => {
+              const teamName = stat.Team;
+              let teamAbbreviation = teamNameToAbbreviationMap[teamName];
+
+              // Normalize team name and attempt mapping
+              if (!teamAbbreviation) {
+                console.warn(
+                  `Unknown team name "${teamName}". Attempting to find a match...`
+                );
+
+                // Attempt to find a match using normalized team name
+                const normalizedTeamName = normalizeTeamName(teamName);
+                const matchedAbbreviation = Object.keys(
+                  teamNameToAbbreviationMap
+                ).find(
+                  (abbr) =>
+                    normalizeTeamName(teamsInfo[abbr].name) ===
+                    normalizedTeamName
+                );
+
+                if (matchedAbbreviation) {
+                  teamAbbreviation =
+                    teamNameToAbbreviationMap[
+                      teamsInfo[matchedAbbreviation].name
+                    ];
+                } else {
+                  console.error(
+                    `Unable to find abbreviation for team name "${teamName}". Skipping this entry.`
+                  );
+                  return null; // Exclude this entry from upsert
+                }
+              }
+
+              // Handle special case for "Utah Utah HC"
+              if (teamName === "Utah Utah HC" && teamAbbreviation !== "UTA") {
+                teamAbbreviation = "UTA";
+              }
+
+              const totalTOI = convertToSeconds(stat.TOI);
+
+              return {
+                team_abbreviation: teamAbbreviation,
+                team_name: teamsInfo[teamAbbreviation]?.name || teamName, // Use mapped name or original
+                gp: safeParseNumber(stat.GP),
+                toi: totalTOI,
+                w: safeParseNumber(stat.W),
+                l: safeParseNumber(stat.L),
+                otl: safeParseNumber(stat.OTL),
+                points: safeParseNumber(stat.Points),
+                cf: safeParseNumber(stat.CF),
+                ca: safeParseNumber(stat.CA),
+                cf_pct:
+                  stat.CFPct !== null
+                    ? parseFloat(stat.CFPct.toFixed(2))
+                    : null,
+                ff: safeParseNumber(stat.FF),
+                fa: safeParseNumber(stat.FA),
+                ff_pct:
+                  stat.FFPct !== null
+                    ? parseFloat(stat.FFPct.toFixed(2))
+                    : null,
+                sf: safeParseNumber(stat.SF),
+                sa: safeParseNumber(stat.SA),
+                sf_pct:
+                  stat.SFPct !== null
+                    ? parseFloat(stat.SFPct.toFixed(2))
+                    : null,
+                gf: safeParseNumber(stat.GF),
+                ga: safeParseNumber(stat.GA),
+                gf_pct:
+                  stat.GFPct !== null
+                    ? parseFloat(stat.GFPct.toFixed(2))
+                    : null,
+                xgf: safeParseNumber(stat.xGF),
+                xga: safeParseNumber(stat.xGA),
+                xgf_pct:
+                  stat.xGFPct !== null
+                    ? parseFloat(stat.xGFPct.toFixed(2))
+                    : null,
+                scf: safeParseNumber(stat.SCF),
+                sca: safeParseNumber(stat.SCA),
+                scf_pct:
+                  stat.SCFPct !== null
+                    ? parseFloat(stat.SCFPct.toFixed(2))
+                    : null,
+                hdcf: safeParseNumber(stat.HDCF),
+                hdca: safeParseNumber(stat.HDCA),
+                hdcf_pct:
+                  stat.HDCFPct !== null
+                    ? parseFloat(stat.HDCFPct.toFixed(2))
+                    : null,
+                hdsf: safeParseNumber(stat.HDSF),
+                hdsa: safeParseNumber(stat.HDSA),
+                hdsf_pct:
+                  stat.HDSFPct !== null
+                    ? parseFloat(stat.HDSFPct.toFixed(2))
+                    : null,
+                hdgf: safeParseNumber(stat.HDGF),
+                hdga: safeParseNumber(stat.HDGA),
+                hdgf_pct:
+                  stat.HDGFPct !== null
+                    ? parseFloat(stat.HDGFPct.toFixed(2))
+                    : null,
+                sh_pct:
+                  stat.SHPct !== null
+                    ? parseFloat(stat.SHPct.toFixed(2))
+                    : null,
+                sv_pct:
+                  stat.SVPct !== null
+                    ? parseFloat(stat.SVPct.toFixed(2))
+                    : null,
+                pdo: stat.PDO !== null ? parseFloat(stat.PDO) : null,
+                situation: stat.situation || "all",
+                season: from_season, // Added season field
+                // For season-based tables, date is undefined or null
+              };
+            })
+            .filter(
+              (entry): entry is NonNullable<typeof entry> => entry !== null
+            ); // Remove null entries
+
+          // Upsert data into Supabase
+          const { error } = await supabase
+            .from(targetTable)
+            .upsert(upsertData, {
+              onConflict: ["team_abbreviation", "season"], // Ensure 'season' is a unique constraint in your table
+            });
+
+          if (error) {
+            console.error(
+              `Supabase upsert error for table ${targetTable}:`,
+              error.message
+            );
+            throw new Error(`Supabase upsert error: ${error.message}`);
+          }
+
+          console.log(
+            `Successfully upserted ${upsertData.length} records into ${targetTable}.`
+          );
+          // Delay to Respect Rate Limits
+          await delay(20000); // 20 seconds
+        } catch (error: any) {
+          console.error(`Error executing Python script`, error.message);
+          throw new Error(`Python script error: ${error.message}`);
+        }
+      }
+
+      // Respond after processing the specific date
+      return res.status(200).json({
+        message: `Successfully upserted team statistics.`,
+        success: true,
+      });
     }
   } catch (error: any) {
-    console.error("API Error:", error.message);
+    console.error("Error in nst-team-stats API:", error.message);
     return res.status(500).json({
+      message: "Failed to upsert team statistics: " + error.message,
       success: false,
-      message: "An error occurred while fetching NST team stats.",
     });
   }
-};
-
-// Export the handler wrapped with adminOnly
-export default adminOnly(handler);
+});

@@ -1,4 +1,17 @@
 // lib/teamsInfo.ts
+
+// import { useTeamsMap } from "hooks/useTeams";
+
+// /**
+//  * Retrieves the team abbreviation given a team ID.
+//  * @param teamId - The unique identifier for the team.
+//  * @returns The team abbreviation if found, otherwise undefined.
+//  */
+// export const getTeamAbbreviation = (teamId: number): string | undefined => {
+//   const teamsMap = useTeamsMap();
+//   return teamsMap[teamId]?.abbreviation;
+// };
+
 export const teamsInfo: {
   [key: string]: {
     name: string;
@@ -375,4 +388,44 @@ export const teamsInfo: {
     franchiseId: 40,
     id: 59,
   },
+};
+
+// Create a mapping from team names to abbreviations
+export const teamNameToAbbreviationMap: { [name: string]: string } = {
+  "New Jersey Devils": "NJD",
+  "New York Islanders": "NYI",
+  "New York Rangers": "NYR",
+  "Philadelphia Flyers": "PHI",
+  "Pittsburgh Penguins": "PIT",
+  "Boston Bruins": "BOS",
+  "Buffalo Sabres": "BUF",
+  "Montréal Canadiens": "MTL",
+  "Montreal Canadiens": "MTL", // NST has no accent
+  "Ottawa Senators": "OTT",
+  "Toronto Maple Leafs": "TOR",
+  "Carolina Hurricanes": "CAR",
+  "Florida Panthers": "FLA",
+  "Tampa Bay Lightning": "TBL",
+  "Washington Capitals": "WSH",
+  "Chicago Blackhawks": "CHI",
+  "Detroit Red Wings": "DET",
+  "Nashville Predators": "NSH",
+  "St. Louis Blues": "STL",
+  "St Louis Blues": "STL", // NST has no punctuation
+  "Calgary Flames": "CGY",
+  "Colorado Avalanche": "COL",
+  "Edmonton Oilers": "EDM",
+  "Vancouver Canucks": "VAN",
+  "Anaheim Ducks": "ANA",
+  "Dallas Stars": "DAL",
+  "Los Angeles Kings": "LAK",
+  "San Jose Sharks": "SJS",
+  "Columbus Blue Jackets": "CBJ",
+  "Minnesota Wild": "MIN",
+  "Winnipeg Jets": "WPG",
+  "Arizona Coyotes": "ARI",
+  "Vegas Golden Knights": "VGK",
+  "Seattle Kraken": "SEA",
+  "Utah Hockey Club": "UTA",
+  "Utah Utah HC": "UTA", // Natural Stat Trick uses "Utah Utah HC" for some reason
 };
