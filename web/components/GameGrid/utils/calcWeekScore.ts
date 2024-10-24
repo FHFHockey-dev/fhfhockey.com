@@ -2,10 +2,14 @@
 
 const average = (array: (number | null)[]) => {
   let total = 0;
+  let count = 0;
   array.forEach((num) => {
-    if (num !== null) total += num;
+    if (num !== null) {
+      total += num;
+      count++;
+    }
   });
-  return total / array.length;
+  return count > 0 ? total / count : 0;
 };
 
 /**
