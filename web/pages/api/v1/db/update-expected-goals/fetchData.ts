@@ -139,43 +139,34 @@ export async function fetchAllGamesInRangeIterative(
   startDate: string,
   endDate: string
 ): Promise<Game[]> {
-  const allGames: Game[] = [];
+  const start = Date.now();
+  const dates = [];
   let currentDate = new Date(startDate);
   const finalDate = new Date(endDate);
 
+  // Collect all dates
   while (currentDate <= finalDate) {
-    const dateStr = currentDate.toISOString().split("T")[0];
-    try {
-      const gamesResponse = await fetchGamesByDate(dateStr);
-
-      // Filter out preseason games (gameType != 2)
-      const regularSeasonGames = gamesResponse.games.filter(
-        (game) => game.gameType === 2
-      );
-
-      if (regularSeasonGames.length > 0) {
-        allGames.push(...regularSeasonGames);
-        console.log(
-          `Fetched games for ${dateStr}: ${regularSeasonGames.length} regular-season games.`
-        );
-      } else {
-        console.log(`No regular-season games found for ${dateStr}. Skipping.`);
-      }
-
-      // Use nextDate from response to determine the next date
-      const nextDateStr = gamesResponse.nextDate;
-      if (nextDateStr) {
-        currentDate = new Date(nextDateStr);
-      } else {
-        // If nextDate is not provided, increment by one day
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-    } catch (error: any) {
-      console.error(`Failed to fetch games for ${dateStr}: ${error.message}`);
-      // Move to the next day regardless of error
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
+    dates.push(currentDate.toISOString().split("T")[0]);
+    currentDate.setDate(currentDate.getDate() + 1);
   }
+
+  // Fetch all dates in parallel
+  const fetchPromises = dates.map((date) => fetchGamesByDate(date));
+  const gamesResponses = await Promise.all(fetchPromises);
+
+  const allGames = gamesResponses.flatMap((response) =>
+    response.games.filter((game) => game.gameType === 2)
+  );
+
+  const end = Date.now();
+  const duration = end - start;
+  console.log(
+    "fetchAllGamesInRangeIterative duration:",
+    startDate,
+    endDate,
+    "Duration:",
+    duration
+  );
 
   return allGames;
 }
