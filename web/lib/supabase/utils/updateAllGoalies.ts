@@ -14,14 +14,41 @@ interface UpdateResult {
 export async function updateAllGoaliesStats(): Promise<UpdateResult> {
   try {
     const currentSeason = await getCurrentSeason();
-    const startDate = parseISO(currentSeason.regularSeasonStartDate);
     const endDate = parseISO(currentSeason.regularSeasonEndDate);
     const today = new Date();
 
     // Determine the final end date: today or regularSeasonEndDate, whichever is earlier
     const finalEndDate = isBefore(today, endDate) ? today : endDate;
 
-    let currentDate = startDate;
+    // **Preliminary Check: Get the most recent date from wgo_goalie_stats**
+    const { data: latestData, error: latestError } = await supabase
+      .from("wgo_goalie_stats")
+      .select("date")
+      .order("date", { ascending: false })
+      .limit(1);
+
+    if (latestError) {
+      throw new Error(
+        `Failed to fetch the latest date: ${latestError.message}`
+      );
+    }
+
+    let currentDate: Date;
+
+    if (latestData && latestData.length > 0 && latestData[0].date) {
+      // Start from the day after the latest date in the database
+      currentDate = addDays(parseISO(latestData[0].date), 1);
+    } else {
+      // If no data exists, start from the season's start date
+      currentDate = parseISO(currentSeason.regularSeasonStartDate);
+    }
+
+    console.log(
+      "Starting update from date:",
+      format(currentDate, "yyyy-MM-dd")
+    );
+    console.log("Ending update at date:", format(finalEndDate, "yyyy-MM-dd"));
+
     let totalUpdates = 0; // To track the total number of updates made
 
     // Initialize concurrency limiter (adjust concurrency as needed)
@@ -31,7 +58,7 @@ export async function updateAllGoaliesStats(): Promise<UpdateResult> {
     const goalies = await fetchAllGoalies();
     console.log(`Fetched ${goalies.length} goalies.`);
 
-    // Loop through each day of the season
+    // Loop through each day of the season starting from currentDate
     while (!isAfter(currentDate, finalEndDate)) {
       const formattedDate = format(currentDate, "yyyy-MM-dd");
       console.log(`Processing data for date: ${formattedDate}`);

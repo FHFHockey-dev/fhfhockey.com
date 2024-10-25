@@ -76,11 +76,11 @@
 }
 
 .winOddsLabelsHome {
-  color: var(--home-accent-color, #fff); /* Home team accent color */
+  color: var(--home-secondary-color); /* Home team accent color */
 }
 
 .winOddsLabelsAway {
-  color: var(--away-accent-color, #fff); /* Away team accent color */
+  color: var(--away-primary-color, #fff); /* Away team accent color */
 }
 
 .winOddsLabelsDivider {
@@ -91,7 +91,8 @@
 /* Responsive Styles */
 @media (max-width: 600px) {
   .chartContainer {
-    padding: 10px;
+    outline: #101010 4px solid;
+    border: #fff 2px solid;
   }
 
   .pdchTitle {
@@ -99,10 +100,26 @@
   }
 
   .winOddsLabels {
-    flex-direction: column;
+    width: 70%;
+    margin: 0 auto;
+    flex-direction: row;
+    justify-content: space-between;
+    font-size: 1.75em;
+    font-family: roboto condensed, sans-serif;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    font-variant: small-caps;
+  }
+
+  .winOddsLabelsHome {
+    fill: var(--home-primary-color);
   }
 
   .winOddsLabelsDivider {
-    display: none;
+    color: #07aae2;
+  }
+
+  .poissonSvg {
+    padding: 20px 0 20px 0;
   }
 }

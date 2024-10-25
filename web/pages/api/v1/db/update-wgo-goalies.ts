@@ -9,7 +9,6 @@ import { getCurrentSeason } from "lib/NHL/server";
 import { WGOGoalieStat, WGOAdvancedGoalieStat } from "lib/NHL/types";
 import { fetchAllGoalies } from "lib/supabase/GoaliePage/fetchAllGoalies";
 import { updateAllGoaliesStats } from "lib/supabase/utils/updateAllGoalies";
-import pLimit from "p-limit";
 
 // Define the structure of the NHL API response for goalie stats
 interface NHLApiResponse {

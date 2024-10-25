@@ -140,11 +140,11 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
     const yAxisLabels = Array.from({ length: maxGoals + 1 }, (_, i) => i);
 
     return (
-      <svg width={width} height={height}>
+      <svg width={width} height={height} className={styles.poissonSvg}>
         {/* Away Team Name on X-axis */}
         <text
           x={margin.left + ((maxGoals + 1) * cellSize) / 2}
-          y={margin.top - 20} // Adjusted position
+          y={margin.top - 25} // Adjusted position
           textAnchor="middle"
           fontSize="15"
           fontFamily="Roboto Condensed, sans-serif"
@@ -157,7 +157,7 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
         {/* Home Team Name on Y-axis */}
         <text
           x={margin.left - 20} // Adjusted position
-          y={margin.top + ((maxGoals + 1) * cellSize) / 2}
+          y={margin.top + ((maxGoals + 1) * cellSize) / 2 - 5}
           textAnchor="middle"
           fontSize="15"
           fontFamily="Roboto Condensed, sans-serif"
@@ -177,7 +177,9 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
             x={margin.left + i * cellSize + cellSize / 2}
             y={margin.top - 5}
             textAnchor="middle"
-            fontSize="10"
+            fontSize="15"
+            fontWeight="900"
+            fontFamily="Roboto Condensed, sans-serif"
           >
             {label}
           </text>
@@ -190,7 +192,8 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
             x={margin.left - 5}
             y={margin.top + i * cellSize + cellSize / 2 + 3}
             textAnchor="end"
-            fontSize="10"
+            fontSize="15"
+            fontWeight="900"
           >
             {label}
           </text>
