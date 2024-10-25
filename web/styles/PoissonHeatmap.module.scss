@@ -91,7 +91,8 @@
 /* Responsive Styles */
 @media (max-width: 600px) {
   .chartContainer {
-    padding: 10px;
+    outline: #101010 4px solid;
+    border: #fff 2px solid;
   }
 
   .pdchTitle {
@@ -103,7 +104,11 @@
     margin: 0 auto;
     flex-direction: row;
     justify-content: space-between;
-    font-size: 1.5em;
+    font-size: 1.75em;
+    font-family: roboto condensed, sans-serif;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    font-variant: small-caps;
   }
 
   .winOddsLabelsHome {
@@ -112,5 +117,9 @@
 
   .winOddsLabelsDivider {
     color: #07aae2;
+  }
+
+  .poissonSvg {
+    padding: 20px 0 20px 0;
   }
 }
