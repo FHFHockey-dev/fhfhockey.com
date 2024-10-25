@@ -7,21 +7,29 @@ const BASE_URL = true ? "https://fhfhockey.com" : "http://localhost:3000";
 export default adminOnly(async (req, res) => {
   const gameId = Number(req.query.gameId);
   const teamId = Number(req.query.teamId);
-  const start = performance.now();
   console.log(`start to handle new line combo for ${gameId} team: ${teamId}`);
   try {
+    let start = performance.now();
     await retryAsyncOperation(() => saveLinemateMatrixImages(gameId, [teamId]));
 
-    console.log("Screenshots are saved to supabase storage.");
-
-    const resp = await retryAsyncOperation(() =>
-      sendLineComboToDiscord(gameId, teamId)
+    console.log(
+      `Screenshots are taken and saved to supabase storage. duration: ${
+        performance.now() - start
+      }`
     );
-    console.log(resp);
-    const end = performance.now();
+
+    start = performance.now();
+
+    await retryAsyncOperation(() => sendLineComboToDiscord(gameId, teamId));
+
+    console.log(
+      `Successfully send the messages to discord. duration ${
+        performance.now() - start
+      }`
+    );
+
     res.json({
       message: "Successfully handled the line combo for " + gameId,
-      executionTime: `${(end - start).toFixed(3)} milliseconds`,
     });
   } catch (e: any) {
     console.error(e);
