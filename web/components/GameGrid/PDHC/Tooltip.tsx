@@ -1,116 +1,43 @@
-// Tooltip.tsx
+// components/GameGrid/PDHC/Tooltip.tsx
+
 import React, { ReactNode, useState, useRef, useEffect } from "react";
 import styles from "styles/pdhcTooltip.module.scss";
+import { teamsInfo } from "lib/teamsInfo";
 
 type TooltipProps = {
   content: ReactNode;
   children: ReactNode;
+  teamId?: number; // Optional prop to specify the team
 };
 
-const Tooltip: React.FC<TooltipProps> = ({ content, children }) => {
+const Tooltip: React.FC<TooltipProps> = ({ content, children, teamId }) => {
   const [visible, setVisible] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [position, setPosition] = useState<{ top: number; left: number }>({
-    top: 0,
-    left: 0,
-  });
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const targetRef = useRef<HTMLDivElement | null>(null);
-  const animationDuration = 300; // Must match the CSS transition duration in ms
 
   // Detect if device is mobile based on screen width
   const isMobile = typeof window !== "undefined" && window.innerWidth <= 600;
 
-  // Handle events to toggle tooltip visibility
-  const showTooltip = () => {
-    setVisible(true);
-  };
-  const hideTooltip = () => {
-    setIsAnimating(true);
-    setTimeout(() => {
-      setVisible(false);
-      setIsAnimating(false);
-    }, animationDuration);
+  // Toggle tooltip visibility on click
+  const toggleTooltip = () => {
+    setVisible((prev) => !prev);
   };
 
-  // Calculate tooltip position based on target element
-  useEffect(() => {
-    if (visible && targetRef.current && tooltipRef.current) {
-      if (isMobile) {
-        // Center the tooltip on mobile devices
-        const tooltipRect = tooltipRef.current.getBoundingClientRect();
-        const top = window.innerHeight / 2 - tooltipRect.height / 2;
-        const left = window.innerWidth / 2 - tooltipRect.width / 2;
-        setPosition({
-          top: top > 8 ? top : 8,
-          left: left > 8 ? left : 8,
-        });
-      } else {
-        // Desktop positioning
-        const targetRect = targetRef.current.getBoundingClientRect();
-        const tooltipRect = tooltipRef.current.getBoundingClientRect();
-
-        // Position the tooltip to the left of the target element
-        const top =
-          targetRect.top + targetRect.height / 2 - tooltipRect.height / 2;
-        const left = targetRect.left - tooltipRect.width - 8;
-
-        setPosition({
-          top: Math.max(
-            8,
-            Math.min(top, window.innerHeight - tooltipRect.height - 8)
-          ),
-          left: left > 0 ? left : targetRect.right + 8,
-        });
-      }
-    }
-  }, [visible, isMobile]);
-
-  // Add the useEffect hook to control body scroll
-  useEffect(() => {
-    if (isMobile) {
-      document.body.style.overflow = visible ? "hidden" : "auto";
-    }
-    return () => {
-      document.body.style.overflow = "auto";
-    };
-  }, [visible, isMobile]);
-
-  // Adjust event handlers for mobile devices
-  const eventHandlers = isMobile
-    ? {
-        onClick: () => showTooltip(),
-      }
-    : {
-        onMouseEnter: showTooltip,
-        onMouseLeave: hideTooltip,
-        onFocus: showTooltip,
-        onBlur: hideTooltip,
-      };
-
-  // Click outside handler
+  // Close tooltip when clicking outside
   useEffect(() => {
     if (!visible) return;
 
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       const tooltipElement = tooltipRef.current;
-      const targetElement = targetRef.current;
 
-      if (
-        tooltipElement &&
-        !tooltipElement.contains(event.target as Node) &&
-        targetElement &&
-        !targetElement.contains(event.target as Node)
-      ) {
-        hideTooltip();
+      if (tooltipElement && !tooltipElement.contains(event.target as Node)) {
+        setVisible(false);
       }
     };
 
-    // Attach the event listeners
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("touchstart", handleClickOutside);
 
-    // Cleanup the event listeners on unmount or when tooltip hides
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
@@ -123,7 +50,7 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children }) => {
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        hideTooltip();
+        setVisible(false);
       }
     };
 
@@ -141,24 +68,34 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children }) => {
     }
   }, [visible]);
 
+  // Helper function to get team info by ID
+  const getTeamInfoById = (teamId: number) => {
+    return Object.values(teamsInfo).find((team) => team.id === teamId);
+  };
+
+  // Get team colors
+  const teamInfo = teamId ? getTeamInfoById(teamId) : null;
+
+  // Set CSS variables dynamically based on team colors
+  const tooltipStyles: React.CSSProperties = {
+    ...(teamInfo && {
+      "--primary-color": teamInfo.primaryColor,
+      "--secondary-color": teamInfo.secondaryColor,
+      "--accent-color": teamInfo.accent,
+      "--alt-color": teamInfo.alt,
+    }),
+  } as React.CSSProperties;
+
   return (
-    <div
-      className={styles.tooltipWrapper}
-      {...eventHandlers}
-      ref={targetRef}
-      style={{ position: "relative", display: "inline-block" }}
-      tabIndex={0}
-      aria-describedby="tooltip-content"
-    >
-      {children}
-      {(visible || isAnimating) && (
+    <>
+      {visible && (
         <>
           {/* Backdrop to darken and blur the background */}
           <div
             className={`${styles.backdrop} ${
               visible ? styles.visible : styles.hidden
             }`}
-            onClick={hideTooltip}
+            onClick={() => setVisible(false)} // Close on backdrop click
             aria-hidden="true"
           ></div>
           {/* Tooltip content */}
@@ -170,19 +107,14 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children }) => {
             role="tooltip"
             id="tooltip-content"
             tabIndex={-1} // Make it focusable
-            style={{
-              top: position.top,
-              left: position.left,
-              position: "fixed",
-              zIndex: 10000, // Ensure it's above the backdrop
-            }}
-            onClick={(e) => e.stopPropagation()}
+            style={tooltipStyles}
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
           >
             {/* Close button on mobile */}
             {isMobile && (
               <button
                 className={styles.closeButton}
-                onClick={hideTooltip}
+                onClick={() => setVisible(false)}
                 aria-label="Close"
               >
                 ×
@@ -193,7 +125,17 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children }) => {
           </div>
         </>
       )}
-    </div>
+      <div
+        className={styles.tooltipWrapper}
+        onClick={toggleTooltip} // Toggle on click
+        ref={targetRef}
+        style={{ position: "relative", display: "inline-block" }}
+        tabIndex={0}
+        aria-describedby="tooltip-content"
+      >
+        {children}
+      </div>
+    </>
   );
 };
 
