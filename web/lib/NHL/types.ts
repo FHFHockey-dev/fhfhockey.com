@@ -1151,7 +1151,7 @@ export type WGOSatPercentageSkaterTotal = {
   usatPercentage: number;
   usatPercentageAhead: number;
   usatPercentageBehind: number;
-  usatPrecentageClose: number;
+  usatPercentageClose: number;
   usatPercentageTied: number;
   usatRelative: number;
   zoneStartPct5v5: number;
