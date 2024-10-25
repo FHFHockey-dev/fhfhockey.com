@@ -28,11 +28,11 @@ export const teamsInfo: {
   NJD: {
     name: "New Jersey Devils",
     shortName: "Devils",
-    primaryColor: "#000000",
-    secondaryColor: "#a20620",
-    jersey: "#FFFFFF",
-    accent: "#154734",
-    alt: "#FFFFFF",
+    primaryColor: "#000000", // Black
+    secondaryColor: "#a20620", // Red
+    jersey: "#FFFFFF", // White
+    accent: "#154734", // Green
+    alt: "#FFFFFF", // White
     franchiseId: 23,
     id: 1,
   },
@@ -270,11 +270,11 @@ export const teamsInfo: {
   ANA: {
     name: "Anaheim Ducks",
     shortName: "Ducks",
-    primaryColor: "#010101",
-    secondaryColor: "#B9975B",
-    jersey: "#FC4C02",
-    accent: "#ffffff",
-    alt: "#FFFFFF",
+    primaryColor: "#010101", // Black
+    secondaryColor: "#B9975B", // Gold
+    jersey: "#FC4C02", // Orange
+    accent: "#ffffff", // White
+    alt: "#FFFFFF", // White
     franchiseId: 32,
     id: 24,
   },

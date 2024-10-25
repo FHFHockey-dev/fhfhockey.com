@@ -210,15 +210,9 @@ export async function performCalculations(
 
     // Optional: Log if odds are missing
     if (!Array.isArray(homeTeam.odds) || homeTeam.odds.length === 0) {
-      console.warn(
-        `No odds data found for home team (${home_abbrev}) in game ${game_id}.`
-      );
     }
 
     if (!Array.isArray(awayTeam.odds) || awayTeam.odds.length === 0) {
-      console.warn(
-        `No odds data found for away team (${away_abbrev}) in game ${game_id}.`
-      );
     }
 
     const calculatedGame: CalculatedGameData = {

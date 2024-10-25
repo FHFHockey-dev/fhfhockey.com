@@ -1,34 +1,175 @@
-/* components/GameGrid/PDHC/pdhcTooltip.module.scss */
+/* styles/pdhcTooltip.module.scss */
+
+.tooltipWrapper {
+  display: inline-block;
+  cursor: pointer; /* Indicate that the element is clickable */
+}
+
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw; /* Full viewport width */
+  height: 100vh; /* Full viewport height */
+  background: rgba(0, 0, 0, 0.5); /* Semi-transparent dark background */
+  backdrop-filter: blur(4px); /* Apply blur effect */
+  z-index: 9999; /* Below the tooltip content */
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none; /* Initially not interactive */
+}
+
+.visible {
+  opacity: 1;
+  pointer-events: auto; /* Enable interaction when visible */
+}
+
+.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
 
 .tooltipContent {
-  background-color: rgba(0, 0, 0, 0.85);
-  color: #ffffff;
-  padding: 10px 12px;
-  border-radius: 6px;
-  font-size: 0.875rem;
+  background-color: var(--primary-color, #333);
+  color: var(--text-color, #fff);
+  padding: 16px;
+  border-radius: 8px;
   max-width: 400px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 0;
+  transform: translate(-50%, -50%) translateY(-20px) scale(0.95); /* Initial positioning */
+  position: fixed; /* Fixed to viewport */
+  top: 50%;
+  left: 50%;
+  z-index: 10000; /* Above the backdrop */
+}
+
+.tooltipContent.visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) translateY(0) scale(1); /* Slide in and scale up */
+}
+
+.tooltipContent.hidden {
+  opacity: 0;
+  transform: translate(-50%, -50%) translateY(-20px) scale(0.95); /* Slide out */
+}
+
+.closeButton {
   position: absolute;
-  transition: opacity 0.2s ease-in-out;
+  top: 8px;
+  right: 12px;
+  background: transparent;
+  color: var(--close-button-color, #fff);
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+}
+
+.closeButton:focus {
+  outline: none;
 }
 
 .tooltipArrow {
   width: 0;
   height: 0;
-  border-left: 8px solid transparent;
-  border-right: 8px solid transparent;
-  border-top: 8px solid rgba(0, 0, 0, 0.85);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--primary-color, #333); /* Use CSS variable */
   position: absolute;
-  bottom: -8px;
+  bottom: -6px;
   left: 50%;
   transform: translateX(-50%);
 }
 
-.tooltipWrapper {
-  /* Ensures the tooltip doesn't interfere with the layout */
-  display: inline-block;
+@media (max-width: 600px) {
+  .tooltipContent {
+    width: calc(100% - 40px);
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) translateY(-20px) scale(0.95); /* Initial slide up and scale */
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 20px; /* Increased padding for better touch targets */
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+
+  .tooltipContent.visible {
+    transform: translate(-50%, -50%) translateY(0) scale(1); /* Slide in and scale up */
+    opacity: 1;
+  }
+
+  .tooltipContent.hidden {
+    transform: translate(-50%, -50%) translateY(-20px) scale(0.95);
+    opacity: 0;
+  }
+
+  .tooltipArrow {
+    display: none; /* Hide the arrow on mobile */
+  }
 }
 
-//   .tooltipContent:hover {
-//     /* Optional: Add hover effects if desired */
-//   }
+.chartContainer {
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  padding: 20px;
+  background-color: #404040; /* Light background for contrast */
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pdchTitle {
+  text-align: center;
+  margin-bottom: 10px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--title-color, #fff); /* Use a CSS variable for title color */
+}
+
+.pdchTitleLogo {
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.winOddsLabels {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
+  color: var(--win-odds-color, #fff); /* Use a CSS variable for win odds text */
+}
+
+.winOddsLabelsHome {
+  color: var(--home-accent-color, #fff); /* Home team accent color */
+}
+
+.winOddsLabelsAway {
+  color: var(--away-accent-color, #fff); /* Away team accent color */
+}
+
+.winOddsLabelsDivider {
+  margin: 0 10px;
+  color: var(--divider-color, #fff); /* Divider color */
+}
+
+/* Responsive Styles */
+@media (max-width: 600px) {
+  .chartContainer {
+    padding: 10px;
+  }
+
+  .pdchTitle {
+    font-size: 1rem;
+  }
+
+  .winOddsLabels {
+    flex-direction: column;
+  }
+
+  .winOddsLabelsDivider {
+    display: none;
+  }
+}

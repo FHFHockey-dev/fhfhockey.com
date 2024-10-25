@@ -2,77 +2,140 @@
 
 import React, { ReactNode, useState, useRef, useEffect } from "react";
 import styles from "styles/pdhcTooltip.module.scss";
+import { teamsInfo } from "lib/teamsInfo";
 
 type TooltipProps = {
-  content: ReactNode; // The content to display inside the tooltip
-  children: ReactNode; // The target element that triggers the tooltip
+  content: ReactNode;
+  children: ReactNode;
+  teamId?: number; // Optional prop to specify the team
 };
 
-const Tooltip: React.FC<TooltipProps> = ({ content, children }) => {
+const Tooltip: React.FC<TooltipProps> = ({ content, children, teamId }) => {
   const [visible, setVisible] = useState(false);
-  const [position, setPosition] = useState<{ top: number; left: number }>({
-    top: 0,
-    left: 0,
-  });
   const tooltipRef = useRef<HTMLDivElement | null>(null);
   const targetRef = useRef<HTMLDivElement | null>(null);
 
-  // Handle mouse events to toggle tooltip visibility
-  const showTooltip = () => setVisible(true);
-  const hideTooltip = () => setVisible(false);
+  // Detect if device is mobile based on screen width
+  const isMobile = typeof window !== "undefined" && window.innerWidth <= 600;
 
-  // Calculate tooltip position based on target element
+  // Toggle tooltip visibility on click
+  const toggleTooltip = () => {
+    setVisible((prev) => !prev);
+  };
+
+  // Close tooltip when clicking outside
   useEffect(() => {
-    if (visible && targetRef.current && tooltipRef.current) {
-      const targetRect = targetRef.current.getBoundingClientRect();
-      const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    if (!visible) return;
 
-      // Position the tooltip above the target element
-      const top = targetRect.top - tooltipRect.height - 8; // 8px gap
-      const left =
-        targetRect.left + targetRect.width / 2 - tooltipRect.width / 2;
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      const tooltipElement = tooltipRef.current;
 
-      setPosition({
-        top: top > 0 ? top : targetRect.bottom + 8, // If not enough space above, place below
-        left: Math.max(
-          8,
-          Math.min(left, window.innerWidth - tooltipRect.width - 8)
-        ), // Prevent overflow
-      });
+      if (tooltipElement && !tooltipElement.contains(event.target as Node)) {
+        setVisible(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [visible]);
+
+  // Escape key handler for accessibility
+  useEffect(() => {
+    if (!visible) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setVisible(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [visible]);
+
+  // Focus management for accessibility
+  useEffect(() => {
+    if (visible && tooltipRef.current) {
+      tooltipRef.current.focus();
     }
   }, [visible]);
 
+  // Helper function to get team info by ID
+  const getTeamInfoById = (teamId: number) => {
+    return Object.values(teamsInfo).find((team) => team.id === teamId);
+  };
+
+  // Get team colors
+  const teamInfo = teamId ? getTeamInfoById(teamId) : null;
+
+  // Set CSS variables dynamically based on team colors
+  const tooltipStyles: React.CSSProperties = {
+    ...(teamInfo && {
+      "--primary-color": teamInfo.primaryColor,
+      "--secondary-color": teamInfo.secondaryColor,
+      "--accent-color": teamInfo.accent,
+      "--alt-color": teamInfo.alt,
+    }),
+  } as React.CSSProperties;
+
   return (
-    <div
-      className={styles.tooltipWrapper}
-      onMouseEnter={showTooltip}
-      onMouseLeave={hideTooltip}
-      onFocus={showTooltip} // For keyboard navigation
-      onBlur={hideTooltip} // For keyboard navigation
-      ref={targetRef}
-      style={{ position: "relative", display: "inline-block" }}
-      tabIndex={0} // Make the div focusable
-      aria-describedby="tooltip-content"
-    >
-      {children}
+    <>
       {visible && (
-        <div
-          className={styles.tooltipContent}
-          ref={tooltipRef}
-          role="tooltip"
-          id="tooltip-content"
-          style={{
-            top: position.top,
-            left: position.left,
-            position: "fixed",
-            zIndex: 1000,
-          }}
-        >
-          {content}
-          <div className={styles.tooltipArrow} />
-        </div>
+        <>
+          {/* Backdrop to darken and blur the background */}
+          <div
+            className={`${styles.backdrop} ${
+              visible ? styles.visible : styles.hidden
+            }`}
+            onClick={() => setVisible(false)} // Close on backdrop click
+            aria-hidden="true"
+          ></div>
+          {/* Tooltip content */}
+          <div
+            className={`${styles.tooltipContent} ${
+              visible ? styles.visible : styles.hidden
+            }`}
+            ref={tooltipRef}
+            role="tooltip"
+            id="tooltip-content"
+            tabIndex={-1} // Make it focusable
+            style={tooltipStyles}
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+          >
+            {/* Close button on mobile */}
+            {isMobile && (
+              <button
+                className={styles.closeButton}
+                onClick={() => setVisible(false)}
+                aria-label="Close"
+              >
+                ×
+              </button>
+            )}
+            {content}
+            {!isMobile && <div className={styles.tooltipArrow} />}
+          </div>
+        </>
       )}
-    </div>
+      <div
+        className={styles.tooltipWrapper}
+        onClick={toggleTooltip} // Toggle on click
+        ref={targetRef}
+        style={{ position: "relative", display: "inline-block" }}
+        tabIndex={0}
+        aria-describedby="tooltip-content"
+      >
+        {children}
+      </div>
+    </>
   );
 };
 
