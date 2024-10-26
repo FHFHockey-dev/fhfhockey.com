@@ -38,9 +38,10 @@
   justify-content: space-between;
   align-items: center;
 
-  .selectedPlayer {
+  .selectedPlayerName {
     padding: 8px 12px;
-    color: #707070;
+    color: #07aae2;
+    font-size: 18px;
   }
 }
 
@@ -55,18 +56,30 @@
   border-top: #404040 3px solid;
 }
 
-.headshot {
+.headshotContainer {
   grid-area: 3 / 3 / 12 / 5;
   border-bottom: #404040 3px solid;
   border-left: #404040 3px solid;
   border-right: #404040 3px solid;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  background-color: #303030;
+}
 
-  .headshotImage {
-    max-width: 100%;
-    max-height: 100%;
-    border-radius: 6px;
-    object-fit: cover;
-  }
+.headshot {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 75%; // Set a specific width for the container
+  height: 100%; // Set a specific height for the container
+}
+
+.headshotImage {
+  border-radius: 6px;
+  object-fit: cover; // Ensures the image fills the container proportionally
 }
 
 .doughnut {

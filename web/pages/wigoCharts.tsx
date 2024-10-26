@@ -33,27 +33,31 @@ const WigoCharts: React.FC = () => {
         <div className={styles.wigoChart}>
           <div className={styles.nameContainer}>
             {selectedPlayer ? (
-              <span>{selectedPlayer.fullName}</span>
+              <span className={styles.selectedPlayerName}>
+                {selectedPlayer.fullName}
+              </span>
             ) : (
               <span>No player selected</span>
             )}
           </div>
-          <div className={styles.headshot}>
-            {headshotUrl ? (
-              <Image
-                src={headshotUrl}
-                alt={`${selectedPlayer?.fullName} headshot`}
-                className={styles.headshotImage}
-                layout="fill"
-              />
-            ) : (
-              <Image
-                src={placeholderImage}
-                alt="No headshot available"
-                className={styles.headshotImage}
-                layout="fill"
-              />
-            )}
+          <div className={styles.headshotContainer}>
+            <div className={styles.headshot}>
+              {headshotUrl ? (
+                <Image
+                  src={headshotUrl}
+                  alt={`${selectedPlayer?.fullName} headshot`}
+                  className={styles.headshotImage}
+                  layout="fill"
+                />
+              ) : (
+                <Image
+                  src={placeholderImage}
+                  alt="No headshot available"
+                  className={styles.headshotImage}
+                  layout="fill"
+                />
+              )}
+            </div>
           </div>
           <div className={styles.pptoiChart}> </div>
           <div className={styles.atoiChart}> </div>

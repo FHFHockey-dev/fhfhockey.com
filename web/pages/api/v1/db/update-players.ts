@@ -22,6 +22,9 @@ export default adminOnly(async function handler(req, res) {
         birthCountry: player.birthCountry,
         heightInCentimeters: player.height,
         weightInKilograms: player.weight,
+        team_id: player.teamId,
+        sweater_number: player.sweaterNumber,
+        image_url: player.image,
       }))
     );
     if (players_error) throw players_error;
