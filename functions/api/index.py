@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from fetch_team_table import fetch_team_table
+from api.fetch_team_table import fetch_team_table
 
 app = Flask(__name__)
 
