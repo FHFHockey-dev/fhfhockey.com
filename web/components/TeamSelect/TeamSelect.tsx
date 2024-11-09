@@ -64,7 +64,7 @@ function TeamSelect({
           >
             <Image
               alt={abbreviation}
-              src={getTeamLogo(name)}
+              src={getTeamLogo(abbreviation)}
               width={60}
               height={40}
               layout="fixed"
