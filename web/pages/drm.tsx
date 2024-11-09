@@ -269,6 +269,7 @@ export default function DRMPage() {
               Team
             </label>
             <TeamDropdown
+              selectedTeam={selectedTeam}
               onSelect={(team) => {
                 setSelectedTeam(team as TeamAbbreviation);
               }}
