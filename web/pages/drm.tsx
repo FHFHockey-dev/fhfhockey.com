@@ -36,7 +36,7 @@ import { calculateLinesAndPairs } from "components/DateRangeMatrix/lineCombinati
 
 type TeamAbbreviation = keyof typeof teamsInfo;
 
-const DEFAULT_LOGO = "Five Hole Fantasy Hockey.png";
+const DEFAULT_LOGO = "Five Hole.png";
 const DEFAULT_COLORS = {
   primary: "#07aae2",
   secondary: "#202020",
