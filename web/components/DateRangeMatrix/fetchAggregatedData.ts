@@ -13,37 +13,16 @@ async function fetchAllDataForTeam(
 ) {
   const PAGE_SIZE = 1000;
   let offset = 0;
-  let allData: any[] = [];
+  let allData: { game_id: string; game_type: string; player_id: number }[] = [];
   let fetchMore = true;
 
-  const fieldsToSelect = [
-    "game_id",
-    "player_id",
-    "player_first_name",
-    "player_last_name",
-    "team_id",
-    "team_abbreviation",
-    "game_toi",
-    "home_or_away",
-    "opponent_team_abbreviation",
-    "opponent_team_id",
-    "display_position",
-    "primary_position",
-    "time_spent_with",
-    "percent_toi_with",
-    "time_spent_with_mixed",
-    "percent_toi_with_mixed",
-    "game_length",
-    "line_combination",
-    "pairing_combination",
-    "season_id",
-    "player_type",
-  ];
+  const fieldsToSelect =
+    "game_id,game_type,player_id,player_first_name,player_last_name,team_id,team_abbreviation,game_toi,home_or_away,opponent_team_abbreviation,opponent_team_id,display_position,primary_position,time_spent_with,percent_toi_with,time_spent_with_mixed,percent_toi_with_mixed,game_length,line_combination,pairing_combination,season_id,player_type";
 
   while (fetchMore) {
     const { data, error } = await supabase
       .from("shift_charts")
-      .select(fieldsToSelect.join(","))
+      .select(fieldsToSelect)
       .eq("team_id", teamId)
       .gte("game_date", startDate)
       .lte("game_date", endDate)
@@ -170,32 +149,14 @@ export async function fetchAggregatedData(
   );
 
   // Get unique player IDs from the data
-  const teamRoster = Array.from(
-    new Set(allTeamData.map((row) => row.player_id))
-  );
-
-  const regularSeasonData: any[] = [];
-  const playoffData: any[] = [];
 
   // Fetch data for each player based on season type
-  const playerDataFetches = teamRoster.map(async (playerId) => {
-    const fetchedData = await fetchDataForPlayer(
-      teamId,
-      playerId,
-      seasonType === "regularSeason" ? "2" : "3", // Use the correct gameType
-      calculatedDateRange.startDate,
-      calculatedDateRange.endDate
-    );
+  const regularSeasonData = allTeamData.filter(
+    (item) => item.game_type === "2"
+  );
+  const playoffData = allTeamData.filter((item) => item.game_type === "3");
 
-    if (seasonType === "regularSeason") {
-      regularSeasonData.push(...fetchedData);
-    } else if (seasonType === "playoffs") {
-      playoffData.push(...fetchedData);
-    }
-  });
-
-  await Promise.all(playerDataFetches);
-
+  console.log({ regularSeasonData });
   // Process the fetched data to structure it by player
   const regularSeasonPlayersData = processData(
     regularSeasonData,
