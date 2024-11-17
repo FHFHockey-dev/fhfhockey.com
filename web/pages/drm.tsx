@@ -11,7 +11,7 @@
 // Start Date/End Date not responding to the skaterArray date_range - instead L30GP is showing a 30 day span.
 // cron job all of the databases to run every day at 3am
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import DateRangeMatrix, {
   OPTIONS as DATERANGE_MATRIX_MODES,
   Mode,
@@ -72,12 +72,13 @@ export default function DRMPage() {
   const [timeFrame, setTimeFrame] = useState<"L7" | "L14" | "L30" | "Totals">(
     "Totals"
   );
-  const [dateRangeLog, setDateRangeLog] = useState<string>("");
-
-  const handleDateRangeLog = (log: string) => {
-    console.log("Received Date Range Log:", log); // Confirm it is being received
-    setDateRangeLog(log);
-  };
+  const onLinesAndPairsCalculated = useCallback(
+    (calculatedLines: PlayerData[][], calculatedPairs: PlayerData[][]) => {
+      setLines(calculatedLines);
+      setPairs(calculatedPairs);
+    },
+    []
+  );
 
   useEffect(() => {
     async function fetchSeason() {
@@ -149,7 +150,6 @@ export default function DRMPage() {
             "",
             ""
           );
-
         setRegularSeasonData(regularSeasonPlayersData);
         setPlayoffData(playoffPlayersData);
 
@@ -368,16 +368,15 @@ export default function DRMPage() {
               selectedTeam={selectedTeam}
               startDate={startDate}
               endDate={endDate}
-              onLinesAndPairsCalculated={(calculatedLines, calculatedPairs) => {
-                setLines(calculatedLines);
-                setPairs(calculatedPairs);
-              }}
+              onLinesAndPairsCalculated={onLinesAndPairsCalculated}
               seasonType={seasonType}
               timeFrame={timeFrame} // Pass the selected time frame
               dateRange={{
                 start: startDate || new Date(), // Fallback to current date if undefined
                 end: endDate || new Date(), // Fallback to current date if undefined
               }} // Pass dateRange
+              regularSeasonPlayersData={regularSeasonData}
+              playoffPlayersData={playoffData}
             />
           </div>
           <div className={styles.dateRangeMatrixContainer}>
