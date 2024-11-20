@@ -1,4 +1,5 @@
 // C:\Users\timbr\Desktop\FHFH\fhfhockey.com-3\web\lib\supabase\Upserts\supabaseShifts.js
+// TODO : integrate home_or_away, opponent_team_id and opponent_team_abbreviation
 
 const path = "../../../.env.local";
 require("dotenv").config({ path: path });
@@ -82,10 +83,11 @@ function parseTime(timeStr) {
  * @param {Array} durations - Array of duration strings.
  * @returns {string} - Total duration as "MM:SS".
  */
-function sumDurations(durations) {
+function sumdurations(durations) {
   let totalSeconds = 0;
 
   durations.forEach((duration) => {
+    // Renamed from 'durations' to 'duration'
     const [minutes, seconds] = duration.split(":").map(Number);
     if (!isNaN(minutes) && !isNaN(seconds)) {
       totalSeconds += minutes * 60 + seconds;
@@ -157,11 +159,11 @@ function invertIntervals(intervals, start, end) {
 }
 
 /**
- * Formats duration from seconds to "MM:SS" format.
+ * Formats durations from seconds to "MM:SS" format.
  * @param {number} seconds - Total seconds.
- * @returns {string} - Formatted duration string.
+ * @returns {string} - Formatted durations string.
  */
-function formatDuration(seconds) {
+function formatdurations(seconds) {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
   return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
@@ -250,12 +252,12 @@ function getPairwiseTOI(shifts, p1, p2) {
 
   p1Shifts.forEach((shift1) => {
     p2Shifts.forEach((shift2) => {
-      if (shift1.period !== shift2.period) return;
+      if (shift1.periods !== shift2.periods) return;
 
-      const shift1Start = parseTime(shift1.start_time);
-      const shift1End = parseTime(shift1.end_time);
-      const shift2Start = parseTime(shift2.start_time);
-      const shift2End = parseTime(shift2.end_time);
+      const shift1Start = parseTime(shift1.start_times);
+      const shift1End = parseTime(shift1.end_times);
+      const shift2Start = parseTime(shift2.start_times);
+      const shift2End = parseTime(shift2.end_times);
 
       const overlapStart = Math.max(shift1Start, shift2Start);
       const overlapEnd = Math.min(shift1End, shift2End);
@@ -496,11 +498,15 @@ async function fetchGameLength(gameId) {
     const gameData = await Fetch(
       `https://api-web.nhle.com/v1/gamecenter/${gameId}/boxscore`
     );
+
+    // Verify required properties
     if (
       !gameData ||
       !gameData.periodDescriptor ||
       !gameData.clock ||
-      !gameData.gameOutcome
+      !gameData.gameOutcome ||
+      typeof gameData.periodDescriptor.number === "undefined" ||
+      typeof gameData.gameOutcome.lastPeriodType === "undefined"
     ) {
       throw new Error("Invalid game data structure");
     }
@@ -514,6 +520,9 @@ async function fetchGameLength(gameId) {
       periodDescriptor.number > 3 &&
       gameOutcome.lastPeriodType === "OT"
     ) {
+      if (!clock.timeRemaining) {
+        throw new Error("Clock time remaining is missing");
+      }
       const timeRemainingParts = clock.timeRemaining.split(":");
       const timeRemainingSeconds =
         parseInt(timeRemainingParts[0]) * 60 + parseInt(timeRemainingParts[1]);
@@ -628,27 +637,27 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
       const duration = shift.duration || "00:00";
 
       // Update game_toi
-      consolidatedData[playerKey].game_toi = sumDurations([
+      consolidatedData[playerKey].game_toi = sumdurations([
         consolidatedData[playerKey].game_toi,
         duration,
       ]);
 
       // Add shift details
       consolidatedData[playerKey].shifts.push({
-        shift_number: shift.shiftNumber,
-        period: shift.period,
-        start_time: shift.startTime,
-        end_time: shift.endTime,
-        duration: shift.duration || "00:00",
+        shift_numbers: shift.shiftNumber,
+        periods: shift.period,
+        start_times: shift.startTime,
+        end_times: shift.endTime,
+        durations: shift.duration || "00:00",
         playerId: shift.playerId, // Ensure playerId is present for pairwise TOI
       });
 
       // **Split shift into pp_shifts and es_shifts based on power plays**
 
-      const shiftPeriod = shift.period;
+      const shiftperiods = shift.period;
       const shiftStartSeconds = parseTime(shift.startTime);
       const shiftEndSeconds = parseTime(shift.endTime);
-      const shiftDurationSeconds = parseTime(shift.duration || "00:00"); // Total duration in seconds
+      const shiftdurationseconds = parseTime(shift.duration || "00:00"); // Total durations in seconds
 
       // Identify player's team ID
       const playerTeamId = consolidatedData[playerKey].team_id;
@@ -657,7 +666,7 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
       const overlappingPPs = powerPlays
         .filter(
           (pp) =>
-            pp.powerPlayPeriod === shiftPeriod &&
+            pp.powerPlayperiods === shiftperiods &&
             pp.teamOnPowerPlay === playerTeamId
         )
         .map((pp) => ({
@@ -685,25 +694,19 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
       // Assign pp_shift(s)
       mergedOverlaps.forEach((interval) => {
         consolidatedData[playerKey].pp_shifts.push({
-          period: shift.period,
-          duration: formatDuration(interval.end - interval.start),
-          start_time: formatTime(interval.start),
-          end_time: formatTime(interval.end),
-          shift_number: shift.shiftNumber,
+          periods: shift.period,
+          durations: formatdurations(interval.end - interval.start),
+          start_times: formatTime(interval.start),
+          end_times: formatTime(interval.end),
+          shift_numbers: shift.shiftNumber,
         });
 
-        // console.log(
-        //   `Player ${consolidatedData[playerKey].player_first_name} ${
-        //     consolidatedData[playerKey].player_last_name
-        //   } on PP: Period ${shift.period}, Shift ${
-        //     shift.shiftNumber
-        //   }, Duration ${formatDuration(interval.end - interval.start)}`
-        // );
+        // Optional: Log pp_shifts
       });
 
       // Calculate esOverlapSeconds
       const totalESOverlapSeconds =
-        shiftDurationSeconds - totalPPOverlapSeconds;
+        shiftdurationseconds - totalPPOverlapSeconds;
 
       // Assign es_shift(s) based on inverted intervals
       if (totalESOverlapSeconds > 0) {
@@ -714,49 +717,39 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
         );
 
         esIntervals.forEach((interval) => {
-          const esDurationSeconds = interval.end - interval.start;
-          if (esDurationSeconds > 0) {
+          const esdurationseconds = interval.end - interval.start;
+          if (esdurationseconds > 0) {
             consolidatedData[playerKey].es_shifts.push({
-              period: shift.period,
-              duration: formatDuration(esDurationSeconds),
-              start_time: formatTime(interval.start),
-              end_time: formatTime(interval.end),
-              shift_number: shift.shiftNumber,
+              periods: shift.period,
+              durations: formatdurations(esdurationseconds),
+              start_times: formatTime(interval.start),
+              end_times: formatTime(interval.end),
+              shift_numbers: shift.shiftNumber,
             });
 
-            // console.log(
-            //   `Player ${consolidatedData[playerKey].player_first_name} ${
-            //     consolidatedData[playerKey].player_last_name
-            //   } on ES: Period ${shift.period}, Shift ${
-            //     shift.shiftNumber
-            //   }, Duration ${formatDuration(esDurationSeconds)}`
-            // );
+            // Optional: Log es_shifts
           }
         });
       }
     });
 
     // **Calculate total_pp_toi and total_es_toi for each player**
-    consolidatedData[playerKey].total_pp_toi = sumDurations(
-      consolidatedData[playerKey].pp_shifts.map((shift) => shift.duration)
+    consolidatedData[playerKey].total_pp_toi = sumdurations(
+      consolidatedData[playerKey].pp_shifts.map((shift) => shift.durations)
     );
-    consolidatedData[playerKey].total_es_toi = sumDurations(
-      consolidatedData[playerKey].es_shifts.map((shift) => shift.duration)
+    consolidatedData[playerKey].total_es_toi = sumdurations(
+      consolidatedData[playerKey].es_shifts.map((shift) => shift.durations)
     );
-
-    // console.log(
-    //   `Player ${consolidatedData[playerKey].player_first_name} ${consolidatedData[playerKey].player_last_name} - Total PP TOI: ${consolidatedData[playerKey].total_pp_toi}, Total ES TOI: ${consolidatedData[playerKey].total_es_toi}`
-    // );
   }
 
   // **Calculate Time Spent With Other Players**
   for (const playerKey in consolidatedData) {
     const playerData = consolidatedData[playerKey];
     const shifts = playerData.shifts.map((shift) => ({
-      startTime: shift.start_time,
-      endTime: shift.end_time,
-      duration: shift.duration,
-      period: shift.period,
+      startTime: shift.start_times,
+      endTime: shift.end_times,
+      durations: shift.durations,
+      periods: shift.periods,
       playerId: playerData.player_id,
     }));
 
@@ -773,17 +766,17 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
 
       // Calculate total overlapping time
       const otherShifts = otherPlayer.shifts.map((shift) => ({
-        startTime: shift.start_time,
-        endTime: shift.end_time,
-        duration: shift.duration,
-        period: shift.period,
+        startTime: shift.start_times,
+        endTime: shift.end_times,
+        durations: shift.durations,
+        periods: shift.periods,
       }));
 
       let totalTimeSpent = 0;
 
       shifts.forEach((shift) => {
         otherShifts.forEach((otherShift) => {
-          if (shift.period === otherShift.period) {
+          if (shift.periods === otherShift.periods) {
             const shiftStartSeconds = parseTime(shift.startTime);
             const shiftEndSeconds = parseTime(shift.endTime);
             const otherShiftStartSeconds = parseTime(otherShift.startTime);
@@ -802,7 +795,7 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
         });
       });
 
-      const formattedTimeSpent = formatDuration(totalTimeSpent);
+      const formattedTimeSpent = formatdurations(totalTimeSpent);
       const percentTOI =
         (totalTimeSpent /
           (parseInt(playerData.game_length.split(":")[0]) * 60 +
@@ -812,26 +805,10 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
       if (isSamePositionType) {
         playerData.time_spent_with[otherPlayerKey] = formattedTimeSpent;
         playerData.percent_toi_with[otherPlayerKey] = percentTOI.toFixed(2);
-        // console.log(
-        //   `Player ${playerData.player_first_name} ${
-        //     playerData.player_last_name
-        //   } spent ${formattedTimeSpent} (${percentTOI.toFixed(2)}%) with ${
-        //     otherPlayer.player_first_name
-        //   } ${otherPlayer.player_last_name}.`
-        // );
       } else {
         playerData.time_spent_with_mixed[otherPlayerKey] = formattedTimeSpent;
         playerData.percent_toi_with_mixed[otherPlayerKey] =
           percentTOI.toFixed(2);
-        // console.log(
-        //   `Player ${playerData.player_first_name} ${
-        //     playerData.player_last_name
-        //   } spent ${formattedTimeSpent} (${percentTOI.toFixed(
-        //     2
-        //   )}%) mixed with ${otherPlayer.player_first_name} ${
-        //     otherPlayer.player_last_name
-        //   }.`
-        // );
       }
     }
   }
@@ -862,11 +839,6 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
       lines[line].forEach((player) => {
         if (consolidatedData[player.id]) {
           consolidatedData[player.id].line_combination = line;
-          // console.log(
-          //   `Player ${consolidatedData[player.id].player_first_name} ${
-          //     consolidatedData[player.id].player_last_name
-          //   } assigned to Line ${line}`
-          // );
         }
       });
     }
@@ -875,11 +847,6 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
       pairs[pair].forEach((player) => {
         if (consolidatedData[player.id]) {
           consolidatedData[player.id].pairing_combination = pair;
-          // console.log(
-          //   `Player ${consolidatedData[player.id].player_first_name} ${
-          //     consolidatedData[player.id].player_last_name
-          //   } assigned to Pair ${pair}`
-          // );
         }
       });
     }
@@ -900,9 +867,14 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
     return {
       ...dataWithoutShifts,
       game_toi: data.game_toi, // Already summed during processing
-      shifts: data.shifts, // Include the `shifts` JSONB column
-      pp_shifts: data.pp_shifts, // Include the `pp_shifts` JSONB column
-      es_shifts: data.es_shifts, // Include the `es_shifts` JSONB column
+      shifts: data.shifts, // JSONB
+      pp_shifts: data.pp_shifts, // JSONB
+      es_shifts: data.es_shifts, // JSONB
+      shift_numbers: data.shifts.map((shift) => shift.shift_numbers),
+      periods: data.shifts.map((shift) => shift.periods),
+      start_times: data.shifts.map((shift) => shift.start_times),
+      end_times: data.shifts.map((shift) => shift.end_times),
+      durations: data.shifts.map((shift) => shift.durations),
       total_pp_toi: data.total_pp_toi, // Include `total_pp_toi`
       total_es_toi: data.total_es_toi, // Include `total_es_toi`
       time_spent_with: data.time_spent_with, // Include `time_spent_with`
@@ -924,7 +896,7 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
     if (error) {
       console.error("Error upserting shift chart data:", error);
     } else {
-      // console.log("Successfully upserted shift chart records.");
+      console.log("Successfully upserted shift chart records.");
     }
   }
 

@@ -232,6 +232,8 @@ export type Database = {
           lastName: string;
           position: Database["public"]["Enums"]["NHL Position Code"];
           weightInKilograms: number;
+          image_url?: string;
+          sweater_number?: number;
         };
         Update: {
           birthCity?: string | null;
@@ -244,6 +246,8 @@ export type Database = {
           lastName?: string;
           position?: Database["public"]["Enums"]["NHL Position Code"];
           weightInKilograms?: number;
+          image_url?: string;
+          sweater_number?: number;
         };
         Relationships: [];
       };

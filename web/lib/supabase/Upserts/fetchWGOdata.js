@@ -1,6 +1,6 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-1\web\lib\supabase\fetchWGOdata.js
 
-require("dotenv").config({ path: "../../.env.local" });
+require("dotenv").config({ path: "../../../.env.local" });
 const { createClient } = require("@supabase/supabase-js");
 const fetch = require("node-fetch");
 const { parseISO, format, addDays, isBefore } = require("date-fns");

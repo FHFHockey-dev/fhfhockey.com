@@ -44,6 +44,9 @@ export async function updatePlayer(playerId: number, supabase: SupabaseClient) {
       birthCountry: player.birthCountry,
       heightInCentimeters: player.height,
       weightInKilograms: player.weight,
+      team_id: player.teamId,
+      sweater_number: player.sweaterNumber,
+      image_url: player.image,
     })
     .throwOnError();
 }

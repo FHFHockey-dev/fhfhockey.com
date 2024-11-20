@@ -4,6 +4,8 @@ import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase";
 import adminOnly from "utils/adminOnlyMiddleware";
 
+// TODO : integrate home_or_away, opponent_team_id and opponent_team_abbreviation
+
 // Define Interfaces
 
 interface TeamInfo {
@@ -1007,7 +1009,7 @@ async function upsertShiftChartData(
   }
 
   // Prepare Batch Data for Upsert
-  const batchData: BatchData[] = Object.values(consolidatedData).map((data) => {
+  const batchData = Object.values(consolidatedData).map((data) => {
     const {
       shifts,
       pp_shifts,
@@ -1020,10 +1022,15 @@ async function upsertShiftChartData(
     } = data;
     return {
       ...dataWithoutShifts,
+      shift_numbers: shifts.map((shift) => shift.shift_number),
+      periods: shifts.map((shift) => shift.period),
+      start_times: shifts.map((shift) => shift.start_time),
+      end_times: shifts.map((shift) => shift.end_time),
+      durations: shifts.map((shift) => shift.duration),
+      pp_shifts: data.pp_shifts,
+      es_shifts: data.es_shifts,
       game_toi: data.game_toi, // Already summed during processing
       shifts: data.shifts, // Include the `shifts` JSONB column
-      pp_shifts: data.pp_shifts, // Include the `pp_shifts` JSONB column
-      es_shifts: data.es_shifts, // Include the `es_shifts` JSONB column
       total_pp_toi: data.total_pp_toi, // Include `total_pp_toi`
       total_es_toi: data.total_es_toi, // Include `total_es_toi`
       time_spent_with: data.time_spent_with, // Include `time_spent_with`

@@ -19,7 +19,7 @@ logging.basicConfig(
 )
 
 # Load environment variables from .env.local
-load_dotenv('C:/Users/timbr/Desktop/FHFH/fhfhockey.com-3/web/.env.local')
+load_dotenv('C:/Users/timbr/Desktop/FHFH/fhfhockey.com/web/.env.local')
 
 # Constants from environment variables
 SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
@@ -171,7 +171,7 @@ def fetch_and_upsert_free_agents():
                 batch = []
                 # Add a delay between API requests to avoid rate limiting
                 
-            # time.sleep(2)  # 1-second delay; adjust if needed based on API rate limits
+            time.sleep(2)  # 1-second delay; adjust if needed based on API rate limits
 
         # Upsert any remaining players in the batch
         if batch:

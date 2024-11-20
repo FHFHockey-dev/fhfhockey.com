@@ -429,3 +429,22 @@ export const teamNameToAbbreviationMap: { [name: string]: string } = {
   "Utah Hockey Club": "UTA",
   "Utah Utah HC": "UTA", // Natural Stat Trick uses "Utah Utah HC" for some reason
 };
+
+// Helper function to get team info by team_id
+export const getTeamInfoById = (
+  teamId: number
+):
+  | {
+      name: string;
+      shortName: string;
+      primaryColor: string;
+      secondaryColor: string;
+      jersey: string;
+      accent: string;
+      alt: string;
+      franchiseId: number;
+      id: number;
+    }
+  | undefined => {
+  return Object.values(teamsInfo).find((team) => team.id === teamId);
+};

@@ -1,12 +1,30 @@
-// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\utils\fetchCurrentSeason.ts
+// web/utils/fetchCurrentSeason.ts
 
 import Fetch from "lib/cors-fetch";
 
-export async function fetchCurrentSeason() {
+export interface SeasonInfo {
+  id: number;
+  startDate: string;
+  regularSeasonEndDate: string;
+  endDate: string;
+  playoffsStartDate: number; // Timestamp
+  playoffsEndDate: number; // Timestamp
+  previousSeason?: SeasonInfo;
+  nextSeason?: SeasonInfo;
+  idPrev?: number;
+  idTwo?: number;
+}
+
+export async function fetchCurrentSeason(): Promise<SeasonInfo> {
   console.log("Fetching current season...");
   const response = await Fetch(
     "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22DESC%22%7D%5D"
   );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch season data: ${response.statusText}`);
+  }
+
   const data = await response.json();
   // console.log("Season data:", data);
 
@@ -15,6 +33,8 @@ export async function fetchCurrentSeason() {
   const nextSeason = data.data[2];
   const now = new Date();
   const startDate = new Date(currentSeason.startDate);
+  console.log("fetchCurrentSeason.ts Current season:", currentSeason);
+  console.log("fetchCurrentSeason.ts Current Season Start Date:", startDate);
   const endDate = new Date(currentSeason.regularSeasonEndDate);
   const prevEndDate = new Date(previousSeason.regularSeasonEndDate);
 
@@ -28,11 +48,10 @@ export async function fetchCurrentSeason() {
     return {
       id: previousSeason.id,
       startDate: previousSeason.startDate,
+      regularSeasonEndDate: previousSeason.regularSeasonEndDate, // Added
       endDate: previousSeason.regularSeasonEndDate,
-      playoffsStartDate: new Date(previousSeason.regularSeasonEndDate).setDate(
-        new Date(previousSeason.regularSeasonEndDate).getDate() + 1
-      ),
-      playoffsEndDate: new Date(previousSeason.endDate),
+      playoffsStartDate: playoffsStartDate.getTime(), // Convert to timestamp
+      playoffsEndDate: playoffsEndDate.getTime(), // Convert to timestamp
       previousSeason,
       nextSeason,
     };
@@ -40,9 +59,10 @@ export async function fetchCurrentSeason() {
     return {
       id: currentSeason.id,
       startDate: currentSeason.startDate,
+      regularSeasonEndDate: currentSeason.regularSeasonEndDate, // Added
       endDate: currentSeason.regularSeasonEndDate,
-      playoffsStartDate,
-      playoffsEndDate,
+      playoffsStartDate: playoffsStartDate.getTime(), // Convert to timestamp
+      playoffsEndDate: playoffsEndDate.getTime(), // Convert to timestamp
       idPrev: previousSeason.id,
       idTwo: nextSeason.id,
     };
