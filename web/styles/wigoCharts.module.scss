@@ -1,48 +1,181 @@
-.parent {
-  display: grid;
-  grid-template-columns: repeat(32, 1fr);
-  grid-template-rows: repeat(24, 1fr);
-  grid-column-gap: 0px;
-  grid-row-gap: 0px;
-  height: 80vh;
-  width: 90vw;
-  margin: 0 auto;
-  margin-top: 50px;
+/* styles/wigoCharts.module.scss */
+
+.chartsContainer {
+  display: flex;
+  justify-content: space-between;
+  margin: 25px;
 }
 
-.div1 {
-  grid-area: 1 / 1 / 13 / 9;
-  border: 1px solid #07aae2;
+// WIGO CHART
+
+.wigoChartBorder {
+  background-color: #404040;
+  border-radius: 12px;
+  padding: 15px;
+  height: 85vh;
+  width: 68%;
+  margin: 0 auto;
 }
-.div2 {
-  grid-area: 13 / 1 / 19 / 9;
-  border: 1px solid #07aae2;
+
+.wigoChart {
+  display: grid;
+  grid-template-columns: repeat(22, 1fr);
+  grid-template-rows: repeat(35, 1fr);
+  grid-column-gap: 0px;
+  grid-row-gap: 0px;
+  height: 100%;
+  background-color: #202020;
+  border-radius: 12px;
 }
-.div3 {
-  grid-area: 19 / 1 / 25 / 9;
-  border: 1px solid #07aae2;
+
+.nameContainer {
+  grid-area: 1 / 1 / 3 / 23;
+  border-bottom: #404040 3px solid;
+  background-color: #303030;
+  border-radius: 6px 6px 0px 0px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #707070;
+  padding: 0 12px;
+  font-family: roboto condensed, sans-serif;
+
+  .selectedPlayerName {
+    padding: 8px 12px;
+    color: #07aae2;
+    font-size: 18px;
+  }
 }
-.div4 {
-  grid-area: 1 / 9 / 13 / 17;
-  border: 1px solid #07aae2;
+
+.pptoiChart {
+  grid-area: 30 / 1 / 36 / 12;
+  border-top: #404040 3px solid;
+  border-right: #404040 3px solid;
 }
-.div5 {
-  grid-area: 13 / 9 / 19 / 17;
-  border: 1px solid #07aae2;
+
+.atoiChart {
+  grid-area: 30 / 12 / 36 / 23;
+  border-top: #404040 3px solid;
 }
-.div6 {
-  grid-area: 19 / 9 / 25 / 17;
-  border: 1px solid #07aae2;
+
+.headshotContainer {
+  grid-area: 3 / 10 / 12 / 14;
+  border-bottom: #404040 3px solid;
+  border-left: #404040 3px solid;
+  border-right: #404040 3px solid;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  background-color: var(--primary-color);
 }
-.div7 {
-  grid-area: 1 / 17 / 13 / 25;
-  border: 1px solid #07aae2;
+
+.headshot {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%; // Set a specific width for the container
+  height: 100%; // Set a specific height for the container
 }
-.div8 {
-  grid-area: 13 / 17 / 25 / 25;
-  border: 1px solid #07aae2;
+
+.headshotImage {
+  object-fit: cover; // Ensures the image fills the container proportionally
+  width: 90%;
+  filter: drop-shadow(var(--secondary-color) 0px 0px 70px);
 }
-.div9 {
-  grid-area: 1 / 25 / 25 / 33;
-  border: 1px solid #07aae2;
+
+.doughnut {
+  grid-area: 12 / 10 / 21 / 14;
+  border-bottom: #404040 3px solid;
+  border-left: #404040 3px solid;
+  border-right: #404040 3px solid;
+}
+
+.percentiles {
+  grid-area: 12 / 10 / 21 / 14;
+  border-left: #404040 3px solid;
+  border-right: #404040 3px solid;
+}
+
+.countsTable {
+  grid-area: 3 / 1 / 30 / 10;
+}
+
+.ratesTable {
+  grid-area: 3 / 14 / 30 / 23;
+}
+
+// TRENDS CHART
+
+.trendsChartBorder {
+  background-color: #404040;
+  border-radius: 12px;
+  padding: 15px;
+  height: 85vh;
+  width: 30%;
+  margin: 0 auto;
+}
+
+.trendsChart {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(35, 1fr);
+  grid-column-gap: 0px;
+  grid-row-gap: 0px;
+  height: 100%;
+  background-color: #202020;
+  border-radius: 12px;
+}
+
+.nameSearch {
+  grid-area: 1 / 1 / 3 / 4;
+  background-color: #303030;
+  border-bottom: #404040 3px solid;
+  border-radius: 6px 6px 0px 0px;
+  color: #606060;
+}
+
+.notSureYet {
+  grid-area: 3 / 1 / 36 / 4;
+}
+
+// COUNTS AND RATES TABLES
+
+.countsTable,
+.ratesTable {
+  overflow: auto; /* Allow scrolling if content overflows */
+
+  table {
+    width: 100%;
+    height: 100%;
+    border-collapse: collapse; /* Merge borders for a cleaner look */
+
+    th,
+    td {
+      border: 1px solid #ffffff; /* White borders */
+      padding: 4px 6px;
+      text-align: center;
+      color: #ffffff; /* White text for better contrast */
+      font-family: "Roboto Condensed", sans-serif;
+      font-size: 12px;
+    }
+
+    th {
+      background-color: #303030; /* Dark background for headers */
+    }
+
+    td:first-child {
+      text-align: left; /* Align the first column to the left */
+      width: 20%;
+    }
+
+    tr:nth-child(even) {
+      background-color: #404040; /* Slightly lighter for even rows */
+    }
+
+    tr:nth-child(odd) {
+      background-color: #303030; /* Darker for odd rows */
+    }
+  }
 }

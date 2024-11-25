@@ -1,6 +1,6 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\lib\supabase\fetchSKOyears.js
 
-const path = "./../../.env.local";
+const path = "../../../.env.local";
 require("dotenv").config({ path: path });
 
 const { createClient } = require("@supabase/supabase-js");
@@ -38,7 +38,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Define the season IDs you want to process
-const seasonIds = [20192020, 20202021, 20212022, 20222023, 20232024];
+const seasonIds = [20242025];
 
 /**
  * Fetch all data for a given endpoint and seasonId by paginating through all pages.

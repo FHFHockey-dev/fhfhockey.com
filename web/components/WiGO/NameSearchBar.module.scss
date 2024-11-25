@@ -1,0 +1,61 @@
+/* \web\components\WiGO\NameSearchBar.module.scss */
+
+.searchBarContainer {
+  position: relative;
+  width: 100%;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 12px;
+  border: 2px solid #202020;
+  font-size: 16px;
+  box-sizing: border-box;
+  background-color: #303030;
+  border-radius: 6px 6px 0px 0px;
+  color: #707070;
+  font-family: roboto condensed, sans-serif;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #07aae2;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: #303030;
+  border: 1px solid #202020;
+  border-top: none;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  color: #a9a9a9;
+  font-weight: 900;
+  font-family: roboto condensed, sans-serif;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: #07aae2;
+    border-radius: 10px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background-color: #141414;
+  }
+}
+
+.dropdownItem {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.dropdownItem:hover {
+  background-color: #404040;
+}

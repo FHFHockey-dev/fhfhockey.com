@@ -1,10 +1,11 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\utils\fetchCurrentseason.js
 
 import fetch from "node-fetch";
+import Fetch from "lib/cors-fetch";
 
 async function fetchCurrentSeason() {
   console.log("Fetching current season...");
-  const response = await fetch(
+  const response = await Fetch(
     "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22DESC%22%7D%5D"
   );
   const data = await response.json();
