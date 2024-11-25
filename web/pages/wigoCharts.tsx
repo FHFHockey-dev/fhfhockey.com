@@ -7,7 +7,7 @@ import {
   TeamColors,
   defaultColors,
   TableAggregateData,
-  PlayerStats,
+  PlayerStats
 } from "components/WiGO/types";
 import NameSearchBar from "../components/WiGO/NameSearchBar";
 import Image from "next/image";
@@ -42,7 +42,7 @@ const WigoCharts: React.FC = () => {
           secondaryColor: teamInfo.secondaryColor,
           accentColor: teamInfo.accent,
           altColor: teamInfo.alt,
-          jerseyColor: teamInfo.jersey,
+          jerseyColor: teamInfo.jersey
         });
       } else {
         setTeamColors(defaultColors);
@@ -102,7 +102,7 @@ const WigoCharts: React.FC = () => {
           "--secondary-color": teamColors.secondaryColor,
           "--accent-color": teamColors.accentColor,
           "--alt-color": teamColors.altColor,
-          "--jersey-color": teamColors.jerseyColor,
+          "--jersey-color": teamColors.jerseyColor
         } as React.CSSProperties
       }
     >
@@ -139,8 +139,7 @@ const WigoCharts: React.FC = () => {
                   layout="fill"
                   objectFit="cover"
                   style={{
-                    border: `6px solid ${teamColors.primaryColor}`,
-                    borderRadius: "90px",
+                    border: `6px solid ${teamColors.primaryColor}`
                   }}
                 />
               ) : (
@@ -152,7 +151,7 @@ const WigoCharts: React.FC = () => {
                   objectFit="cover"
                   style={{
                     border: `6px solid #07aae2`,
-                    borderRadius: "90px",
+                    borderRadius: "90px"
                   }}
                 />
               )}
@@ -166,15 +165,15 @@ const WigoCharts: React.FC = () => {
 
           {/* Counts Table */}
           <div className={styles.countsTable}>
-            <h3>Counts</h3>
             <table aria-label="Counts Table">
               <thead>
                 <tr>
                   <th>Stat</th>
+                  <th>CA</th>
+                  <th>3YA</th>
                   <th>LY</th>
                   <th>L5</th>
                   <th>L10</th>
-                  <th>L15</th>
                   <th>L20</th>
                   <th>STD</th>
                 </tr>
@@ -182,16 +181,18 @@ const WigoCharts: React.FC = () => {
               <tbody>
                 {isLoadingData ? (
                   <tr>
-                    <td colSpan={7}>Loading counts data...</td>
+                    <td colSpan={8}>Loading counts data...</td>
                   </tr>
                 ) : dataError ? (
                   <tr>
-                    <td colSpan={7}>{dataError}</td>
+                    <td colSpan={8}>{dataError}</td>
                   </tr>
                 ) : countsTableData.length > 0 ? (
                   countsTableData.map((row, rowIndex) => (
                     <tr key={`counts-row-${rowIndex + 1}`}>
                       <td className={styles.statLabel}>{row.label}</td>
+                      <td>{row.CA}</td>
+                      <td>{row.threeYA}</td>
                       <td>
                         {row.label === "ATOI"
                           ? formatSecondsToMMSS(row.LY)
@@ -209,11 +210,6 @@ const WigoCharts: React.FC = () => {
                       </td>
                       <td>
                         {row.label === "ATOI"
-                          ? formatSecondsToMMSS(row.L15)
-                          : row.L15}
-                      </td>
-                      <td>
-                        {row.label === "ATOI"
                           ? formatSecondsToMMSS(row.L20)
                           : row.L20}
                       </td>
@@ -226,7 +222,7 @@ const WigoCharts: React.FC = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7}>No data available.</td>
+                    <td colSpan={8}>No data available.</td>
                   </tr>
                 )}
               </tbody>
@@ -235,15 +231,15 @@ const WigoCharts: React.FC = () => {
 
           {/* Rates Table */}
           <div className={styles.ratesTable}>
-            <h3>Rates (Per 60 Minutes)</h3>
             <table aria-label="Rates Table">
               <thead>
                 <tr>
                   <th>Stat</th>
+                  <th>CA</th>
+                  <th>3YA</th>
                   <th>LY</th>
                   <th>L5</th>
                   <th>L10</th>
-                  <th>L15</th>
                   <th>L20</th>
                   <th>STD</th>
                 </tr>
@@ -251,27 +247,28 @@ const WigoCharts: React.FC = () => {
               <tbody>
                 {isLoadingData ? (
                   <tr>
-                    <td colSpan={7}>Loading rates data...</td>
+                    <td colSpan={8}>Loading rates data...</td>
                   </tr>
                 ) : dataError ? (
                   <tr>
-                    <td colSpan={7}>{dataError}</td>
+                    <td colSpan={8}>{dataError}</td>
                   </tr>
                 ) : ratesTableData.length > 0 ? (
                   ratesTableData.map((row, rowIndex) => (
                     <tr key={`rates-row-${rowIndex + 1}`}>
                       <td className={styles.statLabel}>{row.label}</td>
+                      <td>{row.CA}</td>
+                      <td>{row.threeYA}</td>
                       <td>{row.LY}</td>
                       <td>{row.L5}</td>
                       <td>{row.L10}</td>
-                      <td>{row.L15}</td>
                       <td>{row.L20}</td>
                       <td>{row.STD}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7}>No data available.</td>
+                    <td colSpan={8}>No data available.</td>
                   </tr>
                 )}
               </tbody>

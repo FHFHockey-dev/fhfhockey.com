@@ -92,7 +92,7 @@ async function fetchAllDataForDate(formattedDate, limit) {
       scoringRatesResponse,
       scoringPerGameResponse,
       shotTypeResponse,
-      timeOnIceResponse,
+      timeOnIceResponse
     ] = await Promise.all([
       Fetch(skaterStatsUrl),
       Fetch(bioStatsUrl),
@@ -109,7 +109,7 @@ async function fetchAllDataForDate(formattedDate, limit) {
       Fetch(scoringRatesUrl),
       Fetch(scoringPerGameUrl),
       Fetch(shotTypeUrl),
-      Fetch(timeOnIceUrl),
+      Fetch(timeOnIceUrl)
     ]);
 
     skaterStats = skaterStats.concat(skaterStatsResponse.data);
@@ -174,7 +174,7 @@ async function fetchAllDataForDate(formattedDate, limit) {
     scoringRatesStats,
     scoringPerGameStats,
     shotTypeStats,
-    timeOnIceStats,
+    timeOnIceStats
   };
 }
 
@@ -237,7 +237,7 @@ async function fetchNHLSkaterData() {
       scoringRatesStats,
       scoringPerGameStats,
       shotTypeStats,
-      timeOnIceStats,
+      timeOnIceStats
     } = await fetchAllDataForDate(formattedDate, limit);
 
     for (const [index, stat] of skaterStats.entries()) {
@@ -646,7 +646,7 @@ async function fetchNHLSkaterData() {
           ot_time_on_ice_per_game: timeOnIceStat?.otTimeOnIcePerOtGame ?? null, // float
           shifts: timeOnIceStat?.shifts ?? null, // int
           shifts_per_game: timeOnIceStat?.shiftsPerGame ?? null, // float
-          time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift ?? null, // float
+          time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift ?? null // float
         });
 
         if (response.error) {

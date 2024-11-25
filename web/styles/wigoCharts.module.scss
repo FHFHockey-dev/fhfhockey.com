@@ -3,8 +3,7 @@
 .chartsContainer {
   display: flex;
   justify-content: space-between;
-  margin-top: 25px;
-  margin-bottom: 25px;
+  margin: 25px;
 }
 
 // WIGO CHART
@@ -14,13 +13,13 @@
   border-radius: 12px;
   padding: 15px;
   height: 85vh;
-  width: 60%;
+  width: 68%;
   margin: 0 auto;
 }
 
 .wigoChart {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(22, 1fr);
   grid-template-rows: repeat(35, 1fr);
   grid-column-gap: 0px;
   grid-row-gap: 0px;
@@ -30,7 +29,7 @@
 }
 
 .nameContainer {
-  grid-area: 1 / 1 / 3 / 9;
+  grid-area: 1 / 1 / 3 / 23;
   border-bottom: #404040 3px solid;
   background-color: #303030;
   border-radius: 6px 6px 0px 0px;
@@ -49,61 +48,25 @@
 }
 
 .pptoiChart {
-  grid-area: 30 / 1 / 36 / 5;
+  grid-area: 30 / 1 / 36 / 12;
   border-top: #404040 3px solid;
   border-right: #404040 3px solid;
 }
 
 .atoiChart {
-  grid-area: 30 / 5 / 36 / 9;
+  grid-area: 30 / 12 / 36 / 23;
   border-top: #404040 3px solid;
 }
 
 .headshotContainer {
-  grid-area: 3 / 4 / 12 / 6;
+  grid-area: 3 / 10 / 12 / 14;
   border-bottom: #404040 3px solid;
   border-left: #404040 3px solid;
   border-right: #404040 3px solid;
   display: flex;
   justify-content: center;
   align-items: flex-end;
-
-  background: linear-gradient(
-    135deg,
-    var(--primary-color) 0%,
-    var(--primary-color) 7%,
-    var(--secondary-color) 7%,
-    var(--secondary-color) 10%,
-    var(--primary-color) 10%,
-    var(--primary-color) 13%,
-    var(--accent-color) 13%,
-    var(--accent-color) 16%,
-
-    #fff 16%,
-    #fff 19%,
-    var(--jersey-color) 19%,
-    var(--jersey-color) 25%,
-    var(--primary-color) 25%,
-    var(--primary-color) 30%,
-    var(--secondary-color) 30%,
-    var(--secondary-color) 70%,
-    var(--primary-color) 70%,
-    var(--primary-color) 75%,
-
-    var(--jersey-color) 75%,
-    var(--jersey-color) 81%,
-    #fff 81%,
-    #fff 84%,
-
-    var(--accent-color) 84%,
-    var(--accent-color) 87%,
-    var(--primary-color) 87%,
-    var(--primary-color) 90%,
-    var(--secondary-color) 90%,
-    var(--secondary-color) 93%,
-    var(--primary-color) 93%,
-    var(--primary-color) 100%
-  );
+  background-color: var(--primary-color);
 }
 
 .headshot {
@@ -112,38 +75,35 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 80%; // Set a specific width for the container
+  width: 100%; // Set a specific width for the container
   height: 100%; // Set a specific height for the container
-  // filter: drop-shadow(0px 0px 10px var(--secondary-color));
 }
 
 .headshotImage {
-  border: var(--accent-color) 6px solid !important;
-  border-radius: 90px;
   object-fit: cover; // Ensures the image fills the container proportionally
-  background-color: var(--primary-color);
   width: 90%;
+  filter: drop-shadow(var(--secondary-color) 0px 0px 70px);
 }
 
 .doughnut {
-  grid-area: 12 / 4 / 21 / 8;
+  grid-area: 12 / 10 / 21 / 14;
   border-bottom: #404040 3px solid;
   border-left: #404040 3px solid;
   border-right: #404040 3px solid;
 }
 
 .percentiles {
-  grid-area: 21 / 4 / 30 / 8;
+  grid-area: 12 / 10 / 21 / 14;
   border-left: #404040 3px solid;
   border-right: #404040 3px solid;
 }
 
 .countsTable {
-  grid-area: 3 / 1 / 30 / 4;
+  grid-area: 3 / 1 / 30 / 10;
 }
 
 .ratesTable {
-  grid-area: 3 / 6 / 30 / 9;
+  grid-area: 3 / 14 / 30 / 23;
 }
 
 // TRENDS CHART

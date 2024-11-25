@@ -3,7 +3,7 @@
 import {
   SkaterStat,
   TableAggregateData,
-  PlayerStats,
+  PlayerStats
 } from "components/WiGO/types";
 import { fetchCurrentSeason, SeasonInfo } from "./fetchCurrentSeason";
 import supabase from "lib/supabase";
@@ -105,7 +105,7 @@ export async function fetchPlayerAggregatedStats(
     "pim",
     "ixf",
     "hdcf",
-    "scf",
+    "scf"
   ];
 
   // Initialize counts and rates data
@@ -114,26 +114,41 @@ export async function fetchPlayerAggregatedStats(
 
   // Compute 'Games Played' counts
   const gamesPlayedCounts: TableAggregateData = {
-    label: "Games Played",
+    label: "GP",
+    CA: 0, // Initialize CA with default value
+    threeYA: 0, // Initialize 3YA with default value
     LY: previousSeasonGames.length,
     L5: Math.min(5, currentSeasonGames.length),
     L10: Math.min(10, currentSeasonGames.length),
-    L15: Math.min(15, currentSeasonGames.length),
     L20: Math.min(20, currentSeasonGames.length),
-    STD: currentSeasonGames.length,
+    STD: currentSeasonGames.length
   };
   countsData.push(gamesPlayedCounts);
+
+  // Compute 'Games Played' rates (even though it's a count, to include in Rates table)
+  const gamesPlayedRates: TableAggregateData = {
+    label: "GP",
+    CA: 0, // You can decide how to handle CA for a count in Rates table
+    threeYA: 0, // Similarly, handle threeYA
+    LY: previousSeasonGames.length,
+    L5: Math.min(5, currentSeasonGames.length),
+    L10: Math.min(10, currentSeasonGames.length),
+    L20: Math.min(20, currentSeasonGames.length),
+    STD: currentSeasonGames.length
+  };
+  ratesData.push(gamesPlayedRates);
 
   // Aggregate counts for each stat
   stats.forEach((stat) => {
     const statAggregate: TableAggregateData = {
       label: capitalizeFirstLetter(stat),
+      CA: 0, // Initialize CA with default value
+      threeYA: 0, // Initialize 3YA with default value
       LY: sumStat(previousSeasonGames, stat),
       L5: sumStat(currentSeasonGames.slice(0, 5), stat),
       L10: sumStat(currentSeasonGames.slice(0, 10), stat),
-      L15: sumStat(currentSeasonGames.slice(0, 15), stat),
       L20: sumStat(currentSeasonGames.slice(0, 20), stat),
-      STD: sumStat(currentSeasonGames, stat),
+      STD: sumStat(currentSeasonGames, stat)
     };
     countsData.push(statAggregate);
   });
@@ -142,12 +157,13 @@ export async function fetchPlayerAggregatedStats(
   stats.forEach((stat) => {
     const rateAggregate: TableAggregateData = {
       label: `${capitalizeFirstLetter(stat)}/60`,
+      CA: 0, // Initialize CA with default value
+      threeYA: 0, // Initialize 3YA with default value
       LY: calculatePer60(previousSeasonGames, stat),
       L5: calculatePer60(currentSeasonGames.slice(0, 5), stat),
       L10: calculatePer60(currentSeasonGames.slice(0, 10), stat),
-      L15: calculatePer60(currentSeasonGames.slice(0, 15), stat),
       L20: calculatePer60(currentSeasonGames.slice(0, 20), stat),
-      STD: calculatePer60(currentSeasonGames, stat),
+      STD: calculatePer60(currentSeasonGames, stat)
     };
     ratesData.push(rateAggregate);
   });
