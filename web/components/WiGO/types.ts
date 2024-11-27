@@ -1,5 +1,6 @@
 // web/components/WiGO/types.ts
 
+// Existing interfaces
 export interface Player {
   id: number;
   firstName: string;
@@ -32,11 +33,11 @@ export const defaultColors: TeamColors = {
   jerseyColor: "#FFFFFF"
 };
 
-// Existing interfaces
+// Existing table aggregate interfaces
 export interface TableAggregateData {
   label: string; // "Games Played", "Goals", "Assists", etc.
-  CA: number; // New Column: CA
-  threeYA: number; // New Column: 3YA (renamed to threeYA for TypeScript compliance)
+  CA: number; // Current Average (placeholder)
+  threeYA: number; // Three-Year Average
   LY: number; // Last Year
   L5: number; // Last 5 Games
   L10: number; // Last 10 Games
@@ -50,17 +51,20 @@ export interface SkaterStat {
   season_id: number;
   goals: number;
   assists: number;
-  sog: number; // Shots on Goal
-  ppa: number; // Power Play Attempts
-  ppg: number; // Power Play Goals
+  shots: number; // Shots on Goal
+  pp_assists: number; // Power Play Assists
+  pp_goals: number; // Power Play Goals
   ppp: number; // Power Play Points
-  hit: number;
-  blk: number; // Blocks
-  pim: number; // Penalty Minutes
-  ixf: number; // Ice Faceoffs
-  hdcf: number; // High-Danger Corsi For
-  scf: number; // Scoring Corsi For
+  hits: number; // Hits
+  blocked_shots: number; // Blocked Shots
+  penalty_minutes: number; // Penalty Minutes
+  ixG: number; // Ice Faceoffs
   toi_per_game: number; // Time on Ice in seconds
+  pp_toi_per_game: number; // Power Play Time on Ice in seconds
+  toi: number; // Total Time on Ice in seconds
+  pp_toi_pct_per_game: number; // Power Play Time on Ice Percentage
+  // hdcf: number;
+  // scf: number;
 }
 
 export interface PlayerStats {
@@ -68,7 +72,9 @@ export interface PlayerStats {
   rates: TableAggregateData[];
 }
 
-// New interfaces based on API response
+// New interfaces based on ThreeYearAverages API response
+
+// Yearly Counts and Rates
 export interface YearlyCount {
   season: number;
   team: string;
@@ -121,56 +127,6 @@ export interface YearlyCount {
   dZS: number;
 }
 
-export interface ThreeYearCountsAverages {
-  toi: number;
-  iHDCF: number;
-  iSCF: number;
-  ixG: number;
-  oiGF: number;
-  goals: number;
-  assists: number;
-  GP: number;
-  A1: number;
-  A2: number;
-  SOG: number;
-  PIM: number;
-  HIT: number;
-  BLK: number;
-  iCF: number;
-  iFF: number;
-  GF: number;
-  GA: number;
-  SCF: number;
-  SCA: number;
-  CF: number;
-  CA: number;
-  FF: number;
-  FA: number;
-  SF: number;
-  SA: number;
-  xGF: number;
-  xGA: number;
-  HDCF: number;
-  HDGF: number;
-  MDCF: number;
-  MDGF: number;
-  LDCF: number;
-  LDGF: number;
-  "CF%": number;
-  "FF%": number;
-  "SF%": number;
-  "GF%": number;
-  "xGF%": number;
-  "SCF%": number;
-  IPP: number;
-  "S%": number;
-  "xS%": number;
-  "SOG/60": number;
-  "oZS%": number;
-  "oiSH%": number;
-  "secA%": number;
-}
-
 export interface YearlyRate {
   season: number;
   team: string;
@@ -211,6 +167,56 @@ export interface YearlyRate {
   "PIM/60": number;
   "HIT/60": number;
   "BLK/60": number;
+}
+
+export interface ThreeYearCountsAverages {
+  toi: number;
+  iHDCF: number;
+  iSCF: number;
+  ixG: number;
+  oiGF: number;
+  goals: number;
+  assists: number;
+  GP?: number; // Made optional
+  A1: number;
+  A2: number;
+  SOG: number;
+  PIM: number;
+  HIT: number;
+  BLK: number;
+  iCF: number;
+  iFF: number;
+  GF: number;
+  GA: number;
+  SCF: number;
+  SCA: number;
+  CF: number;
+  CA: number;
+  FF: number;
+  FA: number;
+  SF: number;
+  SA: number;
+  xGF: number;
+  xGA: number;
+  HDCF: number;
+  HDGF: number;
+  MDCF: number;
+  MDGF: number;
+  LDCF: number;
+  LDGF: number;
+  "CF%": number;
+  "FF%": number;
+  "SF%": number;
+  "GF%": number;
+  "xGF%": number;
+  "SCF%": number;
+  IPP: number;
+  "S%": number;
+  "xS%": number;
+  "SOG/60": number;
+  "oZS%": number;
+  "oiSH%": number;
+  "secA%": number;
 }
 
 export interface ThreeYearRatesAverages {
@@ -260,7 +266,7 @@ export interface CareerAverageCounts {
   oiGF: number;
   goals: number;
   assists: number;
-  GP: number;
+  GP?: number; // Made optional
   A1: number;
   A2: number;
   SOG: number;
@@ -351,6 +357,14 @@ export interface ThreeYearAveragesResponse {
   yearlyRates: {
     rates: YearlyRate[];
   };
+  threeYearRatesAverages: ThreeYearRatesAverages;
+  careerAverageCounts: CareerAverageCounts;
+  careerAverageRates: CareerAverageRates;
+}
+
+// **New Interface**: CombinedPlayerStats
+export interface CombinedPlayerStats extends PlayerStats {
+  threeYearCountsAverages: ThreeYearCountsAverages;
   threeYearRatesAverages: ThreeYearRatesAverages;
   careerAverageCounts: CareerAverageCounts;
   careerAverageRates: CareerAverageRates;

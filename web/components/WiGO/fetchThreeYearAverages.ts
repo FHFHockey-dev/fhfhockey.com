@@ -1,5 +1,6 @@
-// web/utils/fetchThreeYearAverages.ts
+// fetchThreeYearAverages.ts
 
+import Fetch from "lib/cors-fetch"; // Ensure you're using the correct import
 import { ThreeYearAveragesResponse } from "components/WiGO/types";
 
 /**
@@ -11,19 +12,13 @@ import { ThreeYearAveragesResponse } from "components/WiGO/types";
 export async function fetchThreeYearAverages(
   playerId: number
 ): Promise<ThreeYearAveragesResponse> {
-  const response = await fetch(
-    `http://www.fhfhockey.com/api/ThreeYearAverages/${playerId}`
-  );
+  const response = await Fetch(
+    `https://www.fhfhockey.com/api/ThreeYearAverages/${playerId}`
+  ).then((res) => res.json());
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch data: ${response.statusText}`);
+  if (!response.success) {
+    throw new Error(response.message || "API returned unsuccessful response.");
   }
 
-  const data: ThreeYearAveragesResponse = await response.json();
-
-  if (!data.success) {
-    throw new Error(data.message || "API returned unsuccessful response.");
-  }
-
-  return data;
+  return response;
 }
