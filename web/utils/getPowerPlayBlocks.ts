@@ -1,6 +1,6 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\utils\getPowerPlayBlocks.ts
 
-import { PERIOD_IN_SECONDS } from "hooks/useGoals";
+import { NORMAL_PERIOD_IN_SECONDS } from "hooks/useGoals";
 
 export type Time = {
   period: 1 | 2 | 3;
@@ -178,7 +178,7 @@ function getIntervalInSeconds(start: Time, end: Time) {
   if (start.period === end.period) {
     return endTimeInSeconds - startTimeInSeconds;
   } else {
-    return PERIOD_IN_SECONDS - startTimeInSeconds + endTimeInSeconds;
+    return NORMAL_PERIOD_IN_SECONDS - startTimeInSeconds + endTimeInSeconds;
   }
 }
 

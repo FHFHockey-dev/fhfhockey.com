@@ -937,7 +937,7 @@ function ShiftChart() {
                   id={gameId}
                   totalGameTimeInSeconds={totalGameTimeInSeconds}
                   isOvertime={isOvertime}
-                />{" "}
+                />
                 <div
                   style={{
                     position: "absolute",
@@ -952,7 +952,9 @@ function ShiftChart() {
                 >
                   <PowerPlayAreaIndicators
                     id={gameId}
-                    totalGameTimeInSeconds={totalGameTimeInSeconds}
+                    // 65 minutes = OT games total time
+                    // 60 minutes = REG games total time
+                    totalGameTimeInSeconds={isOvertime ? 65 * 60 : 60 * 60}
                   />
                 </div>
               </td>
