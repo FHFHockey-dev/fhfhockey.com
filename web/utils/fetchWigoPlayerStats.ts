@@ -312,39 +312,29 @@ export async function fetchPlayerAggregatedStats(
     console.log("Career Average Counts:", careerAverageCounts);
     console.log("Career Average Rates:", careerAverageRates);
 
-    // Update 'threeYA' in countsData from threeYearCountsAverages
     countsData.forEach((row) => {
       const key = row.label as keyof ThreeYearCountsAverages;
       if (key in threeYearCountsAverages) {
-        row.threeYA =
-          threeYearCountsAverages[key] !== undefined
-            ? threeYearCountsAverages[key]
-            : 0;
+        row.threeYA = threeYearCountsAverages[key] ?? 0;
       } else {
         row.threeYA = 0; // Default value if key doesn't exist
       }
     });
 
-    // Update 'threeYA' in ratesData from threeYearRatesAverages
     ratesData.forEach((row) => {
       // Remove "/60" from label to match key
       const key = row.label.replace("/60", "") as keyof ThreeYearRatesAverages;
       if (key in threeYearRatesAverages) {
-        row.threeYA =
-          threeYearRatesAverages[key] !== undefined
-            ? threeYearRatesAverages[key]
-            : 0;
+        row.threeYA = threeYearRatesAverages[key] ?? 0;
       } else {
         row.threeYA = 0; // Default value if key doesn't exist
       }
     });
 
-    // Update 'CA' in countsData from careerAverageCounts
     countsData.forEach((row) => {
       const key = row.label as keyof CareerAverageCounts;
       if (key in careerAverageCounts) {
-        row.CA =
-          careerAverageCounts[key] !== undefined ? careerAverageCounts[key] : 0;
+        row.CA = careerAverageCounts[key] ?? 0;
       } else {
         row.CA = 0; // Default value if key doesn't exist
       }
