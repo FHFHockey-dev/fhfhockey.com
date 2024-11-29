@@ -10,6 +10,7 @@ import {
   EXTENDED_DAYS,
   GameData,
   WeekData,
+  ExtendedWeekData
 } from "lib/NHL/types";
 import Tooltip from "./PDHC/Tooltip";
 import PoissonHeatmap from "./PDHC/PoissonHeatMap";

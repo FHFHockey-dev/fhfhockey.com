@@ -1,6 +1,11 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\GameGrid\utils\helper.ts
 
-import { DAYS, DAY_ABBREVIATION, WeekData } from "lib/NHL/types";
+import {
+  DAYS,
+  DAY_ABBREVIATION,
+  WeekData,
+  ExtendedWeekData
+} from "lib/NHL/types";
 
 /**
  * Test if the match up exist.
@@ -47,4 +52,33 @@ export function calcTotalOffNights(
     if (hasMatchUp_ && offNight) num++;
   });
   return num;
+}
+
+/**
+ * Constructs an ExtendedWeekData object.
+ *
+ * @param teamId - The unique identifier for the team.
+ * @param weekNumber - The week number (1 through 4).
+ * @param weekData - The schedule data for the week.
+ * @param totalGamesPlayed - Total games played by the team in the week.
+ * @param totalOffNights - Total off-nights for the team in the week.
+ * @param weekScore - The computed week score.
+ * @returns An object conforming to ExtendedWeekData.
+ */
+export function createExtendedWeekData(
+  teamId: number,
+  weekNumber: number,
+  weekData: WeekData,
+  totalGamesPlayed: number,
+  totalOffNights: number,
+  weekScore: number
+): ExtendedWeekData {
+  return {
+    teamId,
+    weekNumber,
+    ...weekData,
+    totalGamesPlayed,
+    totalOffNights,
+    weekScore
+  };
 }

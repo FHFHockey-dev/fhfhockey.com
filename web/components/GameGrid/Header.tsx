@@ -1,4 +1,4 @@
-// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\GameGrid\Header.tsx
+// components/GameGrid/Header.tsx
 
 import { Dispatch, SetStateAction, useState } from "react";
 import styles from "./GameGrid.module.scss";
@@ -16,7 +16,6 @@ type HeaderProps = {
     SetStateAction<
       {
         key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
-
         ascending: boolean;
       }[]
     >
@@ -25,17 +24,39 @@ type HeaderProps = {
   setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>;
 };
 
+type SortKey = {
+  key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
+  ascending: boolean;
+};
+
 function Header({
   start,
   end,
   extended,
   setSortKeys,
   excludedDays,
-  setExcludedDays,
+  setExcludedDays
 }: HeaderProps) {
-  const [totalGamesPlayed, setTotalGamesPlayed] = useState(false);
-  const [totalOffNights, setTotalOffNights] = useState(false);
-  const [weekScore, setWeekScore] = useState(false);
+  const [currentSortKey, setCurrentSortKey] = useState<SortKey | null>(null);
+
+  const handleSortToggle = (
+    key: "totalOffNights" | "totalGamesPlayed" | "weekScore"
+  ) => {
+    setCurrentSortKey((prev) => {
+      if (prev && prev.key === key) {
+        // Toggle the ascending value
+        const newSortKey = { key, ascending: !prev.ascending };
+        setSortKeys([newSortKey]); // Replace sortKeys with the new sort key
+        return newSortKey;
+      } else {
+        // Set to descending by default on first click
+        const newSortKey = { key, ascending: false };
+        setSortKeys([newSortKey]); // Replace sortKeys with the new sort key
+        return newSortKey;
+      }
+    });
+  };
+
   const statsColumns = extended
     ? []
     : [
@@ -44,72 +65,52 @@ function Header({
             <>
               GP
               <Switch
-                checked={totalGamesPlayed}
-                onClick={() => {
-                  setTotalGamesPlayed((prev) => !prev);
-                  setSortKeys((prev) => {
-                    const keys = [...prev];
-                    keys.pop();
-                    return [
-                      { key: "totalGamesPlayed", ascending: totalGamesPlayed },
-                      ...keys,
-                    ];
-                  });
-                }}
+                checked={
+                  currentSortKey?.key === "totalGamesPlayed" &&
+                  currentSortKey.ascending
+                }
+                onClick={() => handleSortToggle("totalGamesPlayed")}
               />
             </>
           ),
-          id: "totalGamesPlayed",
+          id: "totalGamesPlayed"
         },
         {
           label: (
             <>
               Off
               <Switch
-                checked={totalOffNights}
-                onClick={() => {
-                  setTotalOffNights((prev) => !prev);
-                  setSortKeys((prev) => {
-                    const keys = [...prev];
-                    keys.pop();
-                    return [
-                      { key: "totalOffNights", ascending: totalOffNights },
-                      ...keys,
-                    ];
-                  });
-                }}
+                checked={
+                  currentSortKey?.key === "totalOffNights" &&
+                  currentSortKey.ascending
+                }
+                onClick={() => handleSortToggle("totalOffNights")}
               />
             </>
           ),
-          id: "totalOffNights",
+          id: "totalOffNights"
         },
         {
           label: (
             <>
               Score
               <Switch
-                checked={weekScore}
-                onClick={() => {
-                  setWeekScore((prev) => !prev);
-                  setSortKeys((prev) => {
-                    const keys = [...prev];
-                    keys.pop();
-                    return [
-                      { key: "weekScore", ascending: weekScore },
-                      ...keys,
-                    ];
-                  });
-                }}
+                checked={
+                  currentSortKey?.key === "weekScore" &&
+                  currentSortKey.ascending
+                }
+                onClick={() => handleSortToggle("weekScore")}
               />
             </>
           ),
-          id: "weekScore",
-        },
+          id: "weekScore"
+        }
       ];
+
   const columns = [
     { label: "Team", id: "teamName" },
     ...getDayColumns(start, excludedDays, setExcludedDays, extended),
-    ...statsColumns,
+    ...statsColumns
   ];
 
   return (
@@ -162,7 +163,7 @@ function getDayColumns(
               fontFamily: "Tahoma, sans-serif",
               fontSize: "10px",
               marginBottom: "3px",
-              marginTop: "3px",
+              marginTop: "3px"
             }}
           >
             {formatDate(current)}
@@ -172,7 +173,7 @@ function getDayColumns(
           )}
         </>
       ),
-      id: getDayStr(startDate, current),
+      id: getDayStr(startDate, current)
     });
     current = addDays(current, 1);
   }

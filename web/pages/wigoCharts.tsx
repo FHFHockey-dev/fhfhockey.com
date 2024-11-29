@@ -7,12 +7,15 @@ import {
   TeamColors,
   defaultColors,
   TableAggregateData,
-  PlayerStats
-} from "components/WiGO/types";
+  CombinedPlayerStats,
+  ThreeYearCountsAverages,
+  ThreeYearRatesAverages,
+  CareerAverageCounts,
+  CareerAverageRates
+} from "components/WiGO/types"; // CombinedPlayerStats is now exported from types.ts
 import NameSearchBar from "../components/WiGO/NameSearchBar";
 import Image from "next/image";
 import { getTeamInfoById } from "lib/teamsInfo";
-import supabase from "lib/supabase";
 import { fetchPlayerAggregatedStats } from "../utils/fetchWigoPlayerStats"; // Import the utility
 
 const WigoCharts: React.FC = () => {
@@ -52,10 +55,16 @@ const WigoCharts: React.FC = () => {
     }
   };
 
-  // Helper function to format seconds to MM:SS
+  /**
+   * Formats a number of seconds into MM:SS format, rounded to the nearest second.
+   *
+   * @param {number} seconds - The total seconds.
+   * @returns {string} - The formatted time string in MM:SS.
+   */
   const formatSecondsToMMSS = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const totalSeconds = Math.round(seconds); // Round to nearest second
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   };
 
@@ -71,15 +80,17 @@ const WigoCharts: React.FC = () => {
       setIsLoadingData(true);
       setDataError(null);
       try {
-        const aggregatedData: PlayerStats = await fetchPlayerAggregatedStats(
-          selectedPlayer.id
-        );
+        const aggregatedData: CombinedPlayerStats =
+          await fetchPlayerAggregatedStats(selectedPlayer.id);
+
         if (
           aggregatedData.counts.length === 0 &&
           aggregatedData.rates.length === 0
         ) {
           setDataError("No statistics available for the selected player.");
         }
+
+        // Set counts and rates data
         setCountsTableData(aggregatedData.counts);
         setRatesTableData(aggregatedData.rates);
       } catch (error) {
@@ -164,6 +175,7 @@ const WigoCharts: React.FC = () => {
           <div className={styles.percentiles}></div>
 
           {/* Counts Table */}
+          {/* Counts Table */}
           <div className={styles.countsTable}>
             <table aria-label="Counts Table">
               <thead>
@@ -189,32 +201,37 @@ const WigoCharts: React.FC = () => {
                   </tr>
                 ) : countsTableData.length > 0 ? (
                   countsTableData.map((row, rowIndex) => (
-                    <tr key={`counts-row-${rowIndex + 1}`}>
+                    <tr
+                      key={`counts-row-${rowIndex + 1}`}
+                      className={row.label === "GP" ? styles.gpRow : ""}
+                    >
                       <td className={styles.statLabel}>{row.label}</td>
-                      <td>{row.CA}</td>
-                      <td>{row.threeYA}</td>
+                      <td>{row.CA ? row.CA.toFixed(2) : "-"}</td>{" "}
+                      {/* Career Average */}
+                      <td>{row.threeYA ? row.threeYA.toFixed(2) : "-"}</td>{" "}
+                      {/* Three-Year Average */}
                       <td>
-                        {row.label === "ATOI"
+                        {["ATOI", "PPTOI/GM"].includes(row.label)
                           ? formatSecondsToMMSS(row.LY)
                           : row.LY}
                       </td>
                       <td>
-                        {row.label === "ATOI"
+                        {["ATOI", "PPTOI/GM"].includes(row.label)
                           ? formatSecondsToMMSS(row.L5)
                           : row.L5}
                       </td>
                       <td>
-                        {row.label === "ATOI"
+                        {["ATOI", "PPTOI/GM"].includes(row.label)
                           ? formatSecondsToMMSS(row.L10)
                           : row.L10}
                       </td>
                       <td>
-                        {row.label === "ATOI"
+                        {["ATOI", "PPTOI/GM"].includes(row.label)
                           ? formatSecondsToMMSS(row.L20)
                           : row.L20}
                       </td>
                       <td>
-                        {row.label === "ATOI"
+                        {["ATOI", "PPTOI/GM"].includes(row.label)
                           ? formatSecondsToMMSS(row.STD)
                           : row.STD}
                       </td>
@@ -255,15 +272,40 @@ const WigoCharts: React.FC = () => {
                   </tr>
                 ) : ratesTableData.length > 0 ? (
                   ratesTableData.map((row, rowIndex) => (
-                    <tr key={`rates-row-${rowIndex + 1}`}>
+                    <tr
+                      key={`rates-row-${rowIndex + 1}`}
+                      className={row.label === "GP" ? styles.gpRow : ""}
+                    >
                       <td className={styles.statLabel}>{row.label}</td>
-                      <td>{row.CA}</td>
-                      <td>{row.threeYA}</td>
-                      <td>{row.LY}</td>
-                      <td>{row.L5}</td>
-                      <td>{row.L10}</td>
-                      <td>{row.L20}</td>
-                      <td>{row.STD}</td>
+                      <td>{row.CA ? row.CA.toFixed(2) : "-"}</td>{" "}
+                      {/* Career Average */}
+                      <td>{row.threeYA ? row.threeYA.toFixed(2) : "-"}</td>{" "}
+                      {/* Three-Year Average */}
+                      <td>
+                        {["ATOI", "PPTOI/GM"].includes(row.label)
+                          ? formatSecondsToMMSS(row.LY)
+                          : row.LY}
+                      </td>
+                      <td>
+                        {["ATOI", "PPTOI/GM"].includes(row.label)
+                          ? formatSecondsToMMSS(row.L5)
+                          : row.L5}
+                      </td>
+                      <td>
+                        {["ATOI", "PPTOI/GM"].includes(row.label)
+                          ? formatSecondsToMMSS(row.L10)
+                          : row.L10}
+                      </td>
+                      <td>
+                        {["ATOI", "PPTOI/GM"].includes(row.label)
+                          ? formatSecondsToMMSS(row.L20)
+                          : row.L20}
+                      </td>
+                      <td>
+                        {["ATOI", "PPTOI/GM"].includes(row.label)
+                          ? formatSecondsToMMSS(row.STD)
+                          : row.STD}
+                      </td>
                     </tr>
                   ))
                 ) : (
@@ -274,6 +316,13 @@ const WigoCharts: React.FC = () => {
               </tbody>
             </table>
           </div>
+
+          {/* Remove the Three-Year Averages Table */}
+          {/* The data is now integrated into the Counts and Rates tables */}
+
+          {/* Career Averages Table */}
+          {/* If you still need a separate Career Averages table, you can keep it. 
+              Otherwise, it's integrated above in the "CA" column */}
         </div>
       </div>
     </div>

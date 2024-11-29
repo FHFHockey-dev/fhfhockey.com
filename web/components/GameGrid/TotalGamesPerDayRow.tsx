@@ -12,7 +12,7 @@ type TotalGamesPerDayRowProps = {
 function TotalGamesPerDayRow({
   games,
   excludedDays,
-  extended,
+  extended
 }: TotalGamesPerDayRowProps) {
   const excludedDaysIdx = excludedDays.map((dayAbbreviation) =>
     DAYS.findIndex((item) => item === dayAbbreviation)
@@ -39,7 +39,7 @@ function TotalGamesPerDayRow({
                     height: "100%",
                     position: "absolute",
                     left: 0,
-                    top: 0,
+                    top: 0
                   }
                 : {}
             }
