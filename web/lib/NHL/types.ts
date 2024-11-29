@@ -206,7 +206,7 @@ enum Position {
   C = "C",
   D = "D",
   L = "L",
-  R = "R",
+  R = "R"
 }
 
 interface Goalie {
@@ -266,7 +266,7 @@ export const EXTENDED_DAYS = [
   "SUN",
   "nMON",
   "nTUE",
-  "nWED",
+  "nWED"
 ] as const;
 export type EXTENDED_DAY_ABBREVIATION = typeof EXTENDED_DAYS[number];
 
@@ -292,6 +292,72 @@ export type ScheduleData = {
   data: Record<number, WeekData>;
   numGamesPerDay: number[];
 };
+
+export interface ExtendedWeekData extends WeekData {
+  teamId: number;
+  weekNumber: number;
+  totalGamesPlayed: number;
+  totalOffNights: number;
+  weekScore: number;
+}
+
+export type FourWeekTotals = {
+  opponents: { abbreviation: string; teamId: number }[];
+  gamesPlayed: number;
+  offNights: number;
+};
+
+// lib/NHL/types.ts
+
+export interface TeamSummary {
+  faceoffWinPct: number;
+  gamesPlayed: number;
+  goalsAgainst: number;
+  goalsAgainstPerGame: number;
+  goalsFor: number;
+  goalsForPerGame: number;
+  losses: number;
+  otLosses: number;
+  penaltyKillNetPct: number;
+  penaltyKillPct: number;
+  pointPct: number;
+  points: number;
+  powerPlayNetPct: number;
+  powerPlayPct: number;
+  regulationAndOtWins: number;
+  seasonId: number;
+  shotsAgainstPerGame: number;
+  shotsForPerGame: number;
+  teamFullName: string;
+  teamId: number;
+  ties: number | null;
+  wins: number;
+  winsInRegulation: number;
+  winsInShootout: number;
+}
+
+export type TeamDataWithTotals = {
+  teamAbbreviation: string;
+  teamId: number;
+  weeks: {
+    weekNumber: number;
+    opponents: { abbreviation: string; teamId: number }[];
+    gamesPlayed: number;
+    offNights: number;
+  }[];
+  totals: {
+    opponents: { abbreviation: string; teamId: number }[];
+    gamesPlayed: number;
+    offNights: number;
+  };
+  avgOpponentPointPct: number;
+};
+
+export type TeamWithScore = TeamDataWithTotals & {
+  score: number;
+};
+
+///////////////////////////////
 
 export type PercentileRank = {
   goals: number;
@@ -1531,3 +1597,30 @@ export type DRMShift = {
   type: "ES" | "SH" | "PP"; // Added type property
   line: number; // Added line property
 };
+
+export interface TeamSummary {
+  faceoffWinPct: number;
+  gamesPlayed: number;
+  goalsAgainst: number;
+  goalsAgainstPerGame: number;
+  goalsFor: number;
+  goalsForPerGame: number;
+  losses: number;
+  otLosses: number;
+  penaltyKillNetPct: number;
+  penaltyKillPct: number;
+  pointPct: number;
+  points: number;
+  powerPlayNetPct: number;
+  powerPlayPct: number;
+  regulationAndOtWins: number;
+  seasonId: number;
+  shotsAgainstPerGame: number;
+  shotsForPerGame: number;
+  teamFullName: string;
+  teamId: number;
+  ties: number | null;
+  wins: number;
+  winsInRegulation: number;
+  winsInShootout: number;
+}

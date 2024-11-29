@@ -28,7 +28,7 @@ export default function useSchedule(
         if (extended) {
           schedule.numGamesPerDay = [
             ...schedule.numGamesPerDay,
-            ...nextWeekSchedule.numGamesPerDay.slice(0, 3),
+            ...nextWeekSchedule.numGamesPerDay.slice(0, 3)
           ];
           Object.entries(nextWeekSchedule.data).forEach(([id, weekData]) => {
             const playedLastWeek = schedule.data[Number(id)] !== undefined;
@@ -110,7 +110,7 @@ export default function useSchedule(
         const result = Object.entries(paddedTeams).map(
           ([teamId, weekData]) => ({
             teamId: Number(teamId),
-            ...weekData,
+            ...weekData
           })
         );
 

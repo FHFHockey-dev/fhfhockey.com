@@ -21,7 +21,7 @@ export function formatWinOdds(winOdds: number): string {
   return (
     winOdds.toLocaleString(undefined, {
       minimumFractionDigits: 1,
-      maximumFractionDigits: 1,
+      maximumFractionDigits: 1
     }) + "%"
   );
 }
@@ -33,7 +33,7 @@ export function formatWinOdds(winOdds: number): string {
  */
 
 export function convertTeamRowToWinOddsList(
-  row: WeekData & { teamId: number }
+  row: WeekData & { teamId: number; weekNumber: number }
 ) {
   const winOddsList: (number | null)[] = [];
 

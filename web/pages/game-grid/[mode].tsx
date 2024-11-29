@@ -11,7 +11,7 @@ import { GameGridMode } from "components/GameGrid/GameGrid";
 function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
   const MODE_TO_LABEL = {
     "7-Day-Forecast": "7-Day",
-    "10-Day-Forecast": "10-Day",
+    "10-Day-Forecast": "10-Day"
   } as const;
 
   const [mode, setMode] = useState<GameGridMode>(
@@ -21,8 +21,8 @@ function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
     Router.replace({
       query: {
         ...Router.query,
-        mode,
-      },
+        mode
+      }
     });
   }, [mode]);
 
@@ -54,8 +54,8 @@ function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
 export const getServerSideProps: GetServerSideProps = async ({ query }) => {
   return {
     props: {
-      initialMode: query.mode ?? "basic",
-    },
+      initialMode: query.mode ?? "basic"
+    }
   };
 };
 

@@ -11,7 +11,7 @@ type ContextValue = {
 const context = createContext<ContextValue>({ teams: {} });
 
 export default function GameGridContext({
-  children,
+  children
 }: {
   children: React.ReactNode;
 }) {
