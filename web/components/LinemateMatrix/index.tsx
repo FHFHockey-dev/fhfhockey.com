@@ -117,14 +117,14 @@ function processShifts(
   const result: Record<number, { toi: number; p1: number; p2: number }[]> = {};
   teamIds.forEach((teamId) => {
     const teamRosters = [...rosters[teamId]];
-
+    const teamShifts = shifts.filter((shift) => shift.teamId === teamId);
     for (let i = 0; i < teamRosters.length; i++) {
       for (let j = i; j < teamRosters.length; j++) {
         if (result[teamId] === undefined) result[teamId] = [];
         const p1 = teamRosters[i].id;
         const p2 = teamRosters[j].id;
         result[teamId].push({
-          toi: getPairwiseTOI(shifts, p1, p2, ppBlocks),
+          toi: getPairwiseTOI(teamShifts, p1, p2, ppBlocks),
           p1,
           p2,
         });
