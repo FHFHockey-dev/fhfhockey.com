@@ -442,6 +442,7 @@ export function LinemateMatrixInternal({
       return sortByLineCombination(table, roster);
     } else if (mode === "pp-toi") {
       return Object.values(table)
+        .filter((item) => item.toi !== 0)
         .filter((item) => item.p1.id === item.p2.id)
         .sort((a, b) => b.toi - a.toi)
         .map((item) => item.p1);
@@ -464,8 +465,8 @@ export function LinemateMatrixInternal({
       <div
         className={classNames(styles.grid, "content")}
         style={{
-          gridTemplateRows: `var(--player-info-size) repeat( ${roster.length}, 1fr)`,
-          gridTemplateColumns: `var(--player-info-size) repeat(${roster.length}, 1fr)`,
+          gridTemplateRows: `var(--player-info-size) repeat( ${sortedRoster.length}, 1fr)`,
+          gridTemplateColumns: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`,
         }}
       >
         {sortedRoster.length > 0 &&
