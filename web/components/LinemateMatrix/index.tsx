@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import classNames from "classnames";
 import Fetch from "lib/cors-fetch";
 import { Shift, getPairwiseTOI } from "./utilities";
-import { formatTime } from "utils/getPowerPlayBlocks";
+import getPowerPlayBlocks, {
+  Block,
+  formatTime,
+} from "utils/getPowerPlayBlocks";
 import groupBy from "utils/groupBy";
 
 import styles from "./index.module.scss";
@@ -105,7 +108,11 @@ async function getRostersMap(gameId: number, _teamId?: number) {
   };
 }
 
-function processShifts(shifts: Shift[], rosters: Record<number, PlayerData[]>) {
+function processShifts(
+  shifts: Shift[],
+  rosters: Record<number, PlayerData[]>,
+  ppBlocks: Block[] | undefined
+) {
   const teamIds = Object.keys(rosters).map(Number);
   const result: Record<number, { toi: number; p1: number; p2: number }[]> = {};
   teamIds.forEach((teamId) => {
@@ -117,7 +124,7 @@ function processShifts(shifts: Shift[], rosters: Record<number, PlayerData[]>) {
         const p1 = teamRosters[i].id;
         const p2 = teamRosters[j].id;
         result[teamId].push({
-          toi: getPairwiseTOI(shifts, p1, p2),
+          toi: getPairwiseTOI(shifts, p1, p2, ppBlocks),
           p1,
           p2,
         });
@@ -140,23 +147,31 @@ export type TOIData = {
   p1: PlayerData;
   p2: PlayerData;
 };
-export async function getTOIData(id: number, _teamId?: number) {
-  const [{ data: shiftsData }, { rostersMap, teams }] = await Promise.all([
-    Fetch(
-      `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`
-    ).then((res) => res.json()),
-    getRostersMap(id, _teamId),
-  ]);
+export async function getTOIData(id: number, mode: Mode) {
+  const [{ data: shiftsData }, { rostersMap, teams }, { plays }] =
+    await Promise.all([
+      Fetch(
+        `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`
+      ).then((res) => res.json()),
+      getRostersMap(id),
+      Fetch(`https://api-web.nhle.com/v1/gamecenter/${id}/play-by-play`).then(
+        (res) => res.json()
+      ),
+    ]);
 
   let rosters = groupBy(Object.values(rostersMap), (player) => player.teamId);
-  if (_teamId) {
-    rosters = { [_teamId]: rosters[_teamId] };
-  }
+
   const data: Record<number, TOIData[]> = {};
-  const pairwiseTOIForTwoTeams = processShifts(shiftsData, rosters);
-  const teamIds = _teamId
-    ? [_teamId]
-    : Object.keys(pairwiseTOIForTwoTeams).map(Number);
+  let ppBlocks: Block[] = [];
+  if (mode === "pp-toi") {
+    ppBlocks = getPowerPlayBlocks(plays);
+  }
+  const pairwiseTOIForTwoTeams = processShifts(
+    shiftsData,
+    rosters,
+    mode !== "pp-toi" ? undefined : ppBlocks
+  );
+  const teamIds = Object.keys(pairwiseTOIForTwoTeams).map(Number);
   // populate player info
   teamIds.forEach((teamId) => {
     if (data[teamId] === undefined) data[teamId] = [];
@@ -181,7 +196,7 @@ export async function getTOIData(id: number, _teamId?: number) {
 
   return { toi: data, rosters, teams };
 }
-function useTOI(id: number) {
+function useTOI(id: number, mode: Mode) {
   const [toi, setTOI] = useState<Record<number, TOIData[]>>({});
   const [rosters, setRosters] = useState<Record<number, PlayerData[]>>({});
   const [loading, setLoading] = useState(false);
@@ -196,7 +211,7 @@ function useTOI(id: number) {
     (async () => {
       setLoading(true);
       try {
-        const { toi, rosters, teams } = await getTOIData(id);
+        const { toi, rosters, teams } = await getTOIData(id, mode);
         if (mounted) {
           setTOI(toi);
           setRosters(rosters);
@@ -224,6 +239,10 @@ export const OPTIONS = [
     label: "Total TOI",
     value: "total-toi",
   },
+  {
+    label: "Power Play TOI",
+    value: "pp-toi",
+  },
   { label: "Sweater Number", value: "number" },
   { label: "Line Combination", value: "line-combination" },
 ] as const;
@@ -232,7 +251,7 @@ export default function LinemateMatrix({
   mode,
   onModeChanged = () => {},
 }: Props) {
-  const [toiData, rosters, gameInfo, loading] = useTOI(id);
+  const [toiData, rosters, gameInfo, loading] = useTOI(id, mode);
   if (!gameInfo) return <></>;
   const [homeTeam, awayTeam] = gameInfo;
   return (
@@ -308,7 +327,7 @@ export function sortByLineCombination(
   });
   return result;
 }
-type Mode = "number" | "total-toi" | "line-combination";
+type Mode = "number" | "total-toi" | "pp-toi" | "line-combination";
 type LinemateMatrixInternalProps = {
   teamId: number;
   teamName: string;
@@ -349,6 +368,11 @@ export function LinemateMatrixInternal({
         .map((item) => item.p1);
     } else if (mode === "line-combination") {
       return sortByLineCombination(table, roster);
+    } else if (mode === "pp-toi") {
+      return Object.values(table)
+        .filter((item) => item.p1.id === item.p2.id)
+        .sort((a, b) => b.toi - a.toi)
+        .map((item) => item.p1);
     } else {
       console.error("not implemented");
       return [];
