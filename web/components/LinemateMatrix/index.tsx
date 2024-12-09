@@ -649,7 +649,7 @@ function PPTOIComparasion({ AVG_PPTOI1, AVG_PPTOI2 }: PPTOIComparasionProps) {
   const total = AVG_PPTOI1 + AVG_PPTOI2;
   const pp1Percent = (AVG_PPTOI1 / total) * 100;
   const pp2Percent = (AVG_PPTOI2 / total) * 100;
-
+  const CUT_LENGTH = 30;
   return (
     <div style={{ fontWeight: "700" }}>
       {/* average PPTOI comparasion*/}
@@ -679,13 +679,14 @@ function PPTOIComparasion({ AVG_PPTOI1, AVG_PPTOI2 }: PPTOIComparasionProps) {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            flexWrap: "wrap",
             height: "100%",
             backgroundColor: PP1_COLOR,
-            paddingRight: "1.5rem",
+            paddingRight: "1.8rem",
             paddingLeft: "0.5rem",
-            clipPath: "polygon(0 0, 100% 0, calc(100% - 20px) 100%, 0 100%)",
+            clipPath: `polygon(0 0, 100% 0, calc(100% - ${CUT_LENGTH}px) 100%, 0 100%)`,
             // work around for minimizing the large gap
-            width: "103.5%",
+            width: `calc(100% + ${CUT_LENGTH - 8}px)`,
           }}
         >
           <div>PP1</div>
@@ -694,15 +695,15 @@ function PPTOIComparasion({ AVG_PPTOI1, AVG_PPTOI2 }: PPTOIComparasionProps) {
 
         <div
           style={{
-            flex: "1",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            flexWrap: "wrap",
             height: "100%",
             backgroundColor: PP2_COLOR,
-            paddingLeft: "1.5rem",
+            paddingLeft: "1.8rem",
             paddingRight: "0.5rem",
-            clipPath: "polygon(20px 0, 100% 0, 100% 100%, 0 100%)",
+            clipPath: `polygon(${CUT_LENGTH}px 0, 100% 0, 100% 100%, 0 100%)`,
           }}
         >
           <div>PP2</div>
