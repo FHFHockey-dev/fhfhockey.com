@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import classNames from "classnames";
 import Fetch from "lib/cors-fetch";
-import { Shift, getPairwiseTOI } from "./utilities";
+import { Shift, getAvg, getPairwiseTOI } from "./utilities";
 import getPowerPlayBlocks, {
   Block,
   formatTime,
@@ -539,6 +539,16 @@ export function LinemateMatrixInternal({
             }
           })}
       </div>
+
+      {/* PPTOI mode only */}
+      {mode === "pp-toi" && (
+        <div style={{ width: "90%", marginTop: "0.5rem" }}>
+          <PPTOIComparasion
+            AVG_PPTOI1={getAvg(sortedRoster.slice(0, 5), table)}
+            AVG_PPTOI2={getAvg(sortedRoster.slice(6, 10 + 1), table)}
+          />
+        </div>
+      )}
     </section>
   );
 }
@@ -617,6 +627,88 @@ function Cell({
           }}
         ></div>
       </Tooltip>
+    </div>
+  );
+}
+
+type PPTOIComparasionProps = {
+  /**
+   *  Average PPTOI in seconds
+   */
+  AVG_PPTOI1: number;
+  /**
+   * Average PPTOI in seconds
+   */
+  AVG_PPTOI2: number;
+};
+
+const PP1_COLOR = "#0167C1";
+const PP2_COLOR = "#D55008";
+
+function PPTOIComparasion({ AVG_PPTOI1, AVG_PPTOI2 }: PPTOIComparasionProps) {
+  const total = AVG_PPTOI1 + AVG_PPTOI2;
+  const pp1Percent = (AVG_PPTOI1 / total) * 100;
+  const pp2Percent = (AVG_PPTOI2 / total) * 100;
+
+  return (
+    <div style={{ fontWeight: "700" }}>
+      {/* average PPTOI comparasion*/}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+        }}
+      >
+        <div style={{ color: PP1_COLOR }}>{formatTime(AVG_PPTOI1)} PPTOI</div>
+        <div style={{ color: PP2_COLOR }}>{formatTime(AVG_PPTOI2)} PPTOI</div>
+      </div>
+
+      {/* comparasion bar */}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: `${pp1Percent}% ${pp2Percent}%`,
+          height: "2rem",
+          marginTop: "0.5rem",
+        }}
+      >
+        {/* Left Section */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            height: "100%",
+            backgroundColor: PP1_COLOR,
+            paddingRight: "1.5rem",
+            paddingLeft: "0.5rem",
+            clipPath: "polygon(0 0, 100% 0, calc(100% - 20px) 100%, 0 100%)",
+            // work around for minimizing the large gap
+            width: "103.5%",
+          }}
+        >
+          <div>PP1</div>
+          <div>{pp1Percent.toFixed(1)}</div>
+        </div>
+
+        <div
+          style={{
+            flex: "1",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            height: "100%",
+            backgroundColor: PP2_COLOR,
+            paddingLeft: "1.5rem",
+            paddingRight: "0.5rem",
+            clipPath: "polygon(20px 0, 100% 0, 100% 100%, 0 100%)",
+          }}
+        >
+          <div>PP2</div>
+          <div>{pp2Percent.toFixed(1)}</div>
+        </div>
+      </div>
     </div>
   );
 }

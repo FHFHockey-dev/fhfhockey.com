@@ -1,5 +1,4 @@
-// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\LinemateMatrix\utilities.ts
-
+import { getKey, TOIData, PlayerData } from "./index";
 import { Block, parseTime } from "utils/getPowerPlayBlocks";
 import groupBy from "utils/groupBy";
 
@@ -143,4 +142,17 @@ function createTimeArrayForPP(
   }
 
   return result;
+}
+
+export function getAvg(
+  players: PlayerData[],
+  toiData: Record<string, TOIData>
+) {
+  let total = 0;
+  players.forEach((p) => {
+    const key = getKey(p.id, p.id);
+    total += toiData[key].toi;
+  });
+
+  return total / players.length;
 }
