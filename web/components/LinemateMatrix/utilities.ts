@@ -33,12 +33,13 @@ export function getPairwiseTOI(
   ppBlocks?: Block[]
 ): number {
   const ppOnly = ppBlocks !== undefined;
+  const teamId = data[0].teamId;
   const p1Data = data.filter((item) => item.playerId === p1);
   const p2Data = data.filter((item) => item.playerId === p2);
 
   const p1Groups = groupBy(p1Data, ({ period }) => period.toString());
   const p2Groups = groupBy(p2Data, ({ period }) => period.toString());
-  const allPPTimeArray = ppOnly ? createTimeArrayForPP(ppBlocks) : null;
+  const allPPTimeArray = ppOnly ? createTimeArrayForPP(teamId, ppBlocks) : null;
 
   const getTogetherDuration = (
     a: Shift[],
@@ -63,7 +64,8 @@ export function getPairwiseTOI(
   };
 
   let totalDuration = 0;
-  const periods = Object.keys(p1Groups) as ("1" | "2" | "3")[];
+  const periods = Object.keys(p1Groups) as ("1" | "2" | "3" | "4")[];
+
   periods.forEach((period) => {
     totalDuration += getTogetherDuration(
       p1Groups[period] ?? [],
@@ -92,21 +94,25 @@ function convertToTimeArray(data: Shift[], size: number = 1200) {
 }
 
 function createTimeArrayForPP(
+  teamId: number,
   ppBlocks: Block[]
-): Record<"1" | "2" | "3", boolean[]> {
-  const PERIODS = ["1", "2", "3"] as const;
+): Record<"1" | "2" | "3" | "4", boolean[]> {
+  const PERIODS = ["1", "2", "3", "4"] as const;
   const NORMAL_GAME_DURATION_IN_SECONDS = 1200;
-  const result: Record<"1" | "2" | "3", boolean[]> = {
+  const OT_GAME_DURATION_IN_SECONDS = 300;
+  const result: Record<"1" | "2" | "3" | "4", boolean[]> = {
     "1": new Array(NORMAL_GAME_DURATION_IN_SECONDS).fill(false),
     "2": new Array(NORMAL_GAME_DURATION_IN_SECONDS).fill(false),
     "3": new Array(NORMAL_GAME_DURATION_IN_SECONDS).fill(false),
+    "4": new Array(OT_GAME_DURATION_IN_SECONDS).fill(false),
   };
   for (let i = 0; i < PERIODS.length; i++) {
     const period = PERIODS[i];
     const ppTimeArray = result[period];
     const blocksOfPeriod = ppBlocks.filter(
       (block) =>
-        `${block.end.period}` === period || `${block.start.period}` === period
+        block.teamId === teamId &&
+        (`${block.end.period}` === period || `${block.start.period}` === period)
     );
     blocksOfPeriod.forEach((block) => {
       const start = parseTime(block.start.timeInPeriod);
