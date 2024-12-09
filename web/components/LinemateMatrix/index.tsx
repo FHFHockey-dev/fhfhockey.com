@@ -147,7 +147,8 @@ export type TOIData = {
   p1: PlayerData;
   p2: PlayerData;
 };
-export async function getTOIData(id: number, mode: Mode) {
+
+async function fetchTOIRawData(id: number) {
   const [{ data: shiftsData }, { rostersMap, teams }, { plays }] =
     await Promise.all([
       Fetch(
@@ -158,6 +159,29 @@ export async function getTOIData(id: number, mode: Mode) {
         (res) => res.json()
       ),
     ]);
+
+  return [{ data: shiftsData }, { rostersMap, teams }, { plays }] as const;
+}
+
+function getTOIData(
+  rawData: [
+    {
+      data: any;
+    },
+    {
+      rostersMap: Record<number, PlayerData>;
+      teams: {
+        id: number;
+        name: string;
+      }[];
+    },
+    {
+      plays: any;
+    }
+  ],
+  mode: Mode
+) {
+  const [{ data: shiftsData }, { rostersMap, teams }, { plays }] = rawData;
 
   let rosters = groupBy(Object.values(rostersMap), (player) => player.teamId);
 
@@ -201,6 +225,49 @@ function useTOI(id: number, mode: Mode) {
   const [rosters, setRosters] = useState<Record<number, PlayerData[]>>({});
   const [loading, setLoading] = useState(false);
   const [teams, setTeams] = useState<[Team, Team] | null>(null);
+  const [rawData, setRawData] = useState<
+    | [
+        {
+          data: any;
+        },
+        {
+          rostersMap: Record<number, PlayerData>;
+          teams: {
+            id: number;
+            name: string;
+          }[];
+        },
+        {
+          plays: any;
+        }
+      ]
+    | null
+  >(null);
+
+  useEffect(() => {
+    setLoading(false);
+    let mounted = true;
+    if (!id || rawData === null) {
+      mounted = false;
+      return;
+    }
+    (async () => {
+      setLoading(true);
+      try {
+        const { toi, rosters, teams } = getTOIData(rawData, mode);
+        if (mounted) {
+          setTOI(toi);
+          setRosters(rosters);
+          setTeams(teams as any);
+          setLoading(false);
+        }
+      } catch (e: any) {
+        console.error(e);
+        setLoading(false);
+      }
+    })();
+  }, [id, rawData, mode]);
+
   useEffect(() => {
     setLoading(false);
     let mounted = true;
@@ -211,12 +278,11 @@ function useTOI(id: number, mode: Mode) {
     (async () => {
       setLoading(true);
       try {
-        const { toi, rosters, teams } = await getTOIData(id, mode);
+        const rawData = await fetchTOIRawData(id);
+
         if (mounted) {
-          setTOI(toi);
-          setRosters(rosters);
-          setTeams(teams as any);
-          setLoading(false);
+          // @ts-ignore
+          setRawData(rawData);
         }
       } catch (e: any) {
         console.error(e);
