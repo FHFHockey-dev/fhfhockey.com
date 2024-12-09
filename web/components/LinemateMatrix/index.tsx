@@ -163,6 +163,12 @@ async function fetchTOIRawData(id: number) {
   return [{ data: shiftsData }, { rostersMap, teams }, { plays }] as const;
 }
 
+export async function simpleGetTOIData(id: number) {
+  const rawData = await fetchTOIRawData(id);
+  // @ts-ignore
+  return getTOIData(rawData, "line-combination");
+}
+
 function getTOIData(
   rawData: [
     {

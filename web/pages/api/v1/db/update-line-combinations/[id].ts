@@ -4,9 +4,9 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import {
   TOIData,
   getKey,
-  getTOIData,
   isDefense,
   isForward,
+  simpleGetTOIData,
   sortByLineCombination,
 } from "components/LinemateMatrix";
 import adminOnly from "utils/adminOnlyMiddleware";
@@ -64,7 +64,7 @@ export async function updateLineCombos(id: number, supabase: SupabaseClient) {
 }
 
 async function getLineCombos(id: number) {
-  const { toi, rosters, teams } = await getTOIData(id);
+  const { toi, rosters, teams } = await simpleGetTOIData(id);
   const goalies = await getGoalies(id);
 
   const [homeTeam, awayTeam] = teams;
