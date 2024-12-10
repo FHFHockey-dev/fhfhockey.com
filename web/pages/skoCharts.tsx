@@ -7,23 +7,23 @@ import {
   PerGameStatSummaries,
   CharacteristicResult,
   Player,
-  CombinedGameLog,
+  CombinedGameLog
 } from "lib/supabase/utils/types";
 import {
   computeStatSummaries,
-  computeCharacteristicResults,
+  computeCharacteristicResults
 } from "lib/supabase/utils/statistics";
 import { calculateGameScore } from "lib/supabase/utils/calculations";
 import {
   fetchGameLogs,
-  fetchMostRecentSeason,
+  fetchMostRecentSeason
 } from "lib/supabase/utils/dataFetching";
 import {
   TextField,
   Autocomplete,
   CircularProgress,
   Typography,
-  Box,
+  Box
 } from "@mui/material";
 import LineChart from "components/SkoLineChart/LineChart";
 import GameScoreChart from "components/GameScoreChart/GameScoreChart";
@@ -142,7 +142,7 @@ const SkoCharts: React.FC = () => {
           const {
             results: characteristicResults,
             T1,
-            T2,
+            T2
           } = computeCharacteristicResults(fetchedLogs, statSummaries);
           setThresholds({ T1, T2 });
 
@@ -194,7 +194,7 @@ const SkoCharts: React.FC = () => {
               CV,
               rollingCV,
               confidenceMultiplier,
-              predictedGameScore,
+              predictedGameScore
             };
           });
 
@@ -203,7 +203,7 @@ const SkoCharts: React.FC = () => {
           // Prepare data for the chart
           const data = characteristicResults.map((result) => ({
             date: new Date(result.gameDate),
-            sumOfZScores: result.sumOfWeightedSquaredZScores,
+            sumOfZScores: result.sumOfWeightedSquaredZScores
           }));
 
           setChartData(data);
@@ -255,7 +255,7 @@ const SkoCharts: React.FC = () => {
                   ) : null}
                   {params.InputProps.endAdornment}
                 </>
-              ),
+              )
             }}
           />
         )}

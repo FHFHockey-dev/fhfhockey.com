@@ -3,13 +3,13 @@ import Fetch from "lib/cors-fetch";
 import getPowerPlayBlocks, {
   Block,
   Time,
-  parseTime,
+  parseTime
 } from "utils/getPowerPlayBlocks";
 import { teamsInfo } from "lib/NHL/teamsInfo";
 import {
   PERIOD_IN_SECONDS,
   PERIOD_LENGTH,
-  convertTimeToSeconds,
+  convertTimeToSeconds
 } from "hooks/useGoals";
 
 type Props = {
@@ -24,7 +24,7 @@ function getAreaColor(teamId: number) {
 
 export default function PowerPlayAreaIndicators({
   id,
-  totalGameTimeInSeconds,
+  totalGameTimeInSeconds
 }: Props) {
   const [powerPlays, setPowerPlays] = useState<Block[]>([]);
 
@@ -91,12 +91,12 @@ function PowerPlayAreaIndicator({
   color,
   start,
   end,
-  totalGameTimeInSeconds,
+  totalGameTimeInSeconds
 }: PowerPlayAreaIndicatorProps) {
   const darkenedColor = darkenHexColor(color, 50);
   const areaStyle = {
     width: getWidthPercentage(start, end, totalGameTimeInSeconds),
-    left: getLeftPercentage(start),
+    left: getLeftPercentage(start)
   };
   return (
     <div
@@ -105,11 +105,11 @@ function PowerPlayAreaIndicator({
         top: 0,
         height: "125%",
         backgroundColor: color,
-        opacity: 0.3,
-        ...areaStyle,
+        opacity: 0.4,
+        ...areaStyle
       }}
     >
-      {color}, {start.timeInPeriod} {end.timeInPeriod}
+      {/* {color}, {start.timeInPeriod} {end.timeInPeriod} */}
     </div>
   );
 }

@@ -152,7 +152,7 @@ export async function fetchPlayerAggregatedStats(
       L5: Math.min(5, currentSeasonGames.length),
       L10: Math.min(10, currentSeasonGames.length),
       L20: Math.min(20, currentSeasonGames.length),
-      STD: currentSeasonGames.length
+      STD: currentSeasonGames.length // Total games played in the current season
     }
   ];
 
@@ -162,7 +162,8 @@ export async function fetchPlayerAggregatedStats(
   // Helper function to aggregate stats
   const aggregateStats = (
     configs: StatConfig[],
-    gamesData: SkaterStat[],
+    currentSeasonGames: SkaterStat[],
+    previousSeasonGames: SkaterStat[],
     isRate: boolean
   ): TableAggregateData[] => {
     return configs.map((config) => {
@@ -174,48 +175,55 @@ export async function fetchPlayerAggregatedStats(
       // Calculate values for different timeframes
       const LY =
         isDerived && deriveKeys
-          ? deriveKeys.reduce((sum, k) => sum + sumStat(gamesData, k), 0)
-          : sumStat(gamesData, key);
+          ? deriveKeys.reduce(
+              (sum, k) => sum + sumStat(previousSeasonGames, k),
+              0
+            )
+          : sumStat(previousSeasonGames, key);
 
       const L5 =
         isDerived && deriveKeys
           ? deriveKeys.reduce(
-              (sum, k) => sum + sumStat(gamesData.slice(0, 5), k),
+              (sum, k) => sum + sumStat(currentSeasonGames.slice(0, 5), k),
               0
             )
-          : sumStat(gamesData.slice(0, 5), key);
+          : sumStat(currentSeasonGames.slice(0, 5), key);
 
       const L10 =
         isDerived && deriveKeys
           ? deriveKeys.reduce(
-              (sum, k) => sum + sumStat(gamesData.slice(0, 10), k),
+              (sum, k) => sum + sumStat(currentSeasonGames.slice(0, 10), k),
               0
             )
-          : sumStat(gamesData.slice(0, 10), key);
+          : sumStat(currentSeasonGames.slice(0, 10), key);
 
       const L20 =
         isDerived && deriveKeys
           ? deriveKeys.reduce(
-              (sum, k) => sum + sumStat(gamesData.slice(0, 20), k),
+              (sum, k) => sum + sumStat(currentSeasonGames.slice(0, 20), k),
               0
             )
-          : sumStat(gamesData.slice(0, 20), key);
+          : sumStat(currentSeasonGames.slice(0, 20), key);
 
-      const STD =
-        isDerived && deriveKeys
-          ? deriveKeys.reduce((sum, k) => sum + sumStat(gamesData, k), 0)
-          : sumStat(gamesData, key);
+      // STD should aggregate all games in the current season
+      const STD = isRate
+        ? calculatePer60(currentSeasonGames, key) // For rates, per60 over all games
+        : isDerived && deriveKeys
+        ? deriveKeys.reduce((sum, k) => sum + sumStat(currentSeasonGames, k), 0) // Sum of derived keys
+        : sumStat(currentSeasonGames, key); // Total sum
 
       // For rates, calculate per60 values
-      const LY_Rate = isRate ? calculatePer60(gamesData, key) : LY;
-      const L5_Rate = isRate ? calculatePer60(gamesData.slice(0, 5), key) : L5;
+      const LY_Rate = isRate ? calculatePer60(previousSeasonGames, key) : LY;
+      const L5_Rate = isRate
+        ? calculatePer60(currentSeasonGames.slice(0, 5), key)
+        : L5;
       const L10_Rate = isRate
-        ? calculatePer60(gamesData.slice(0, 10), key)
+        ? calculatePer60(currentSeasonGames.slice(0, 10), key)
         : L10;
       const L20_Rate = isRate
-        ? calculatePer60(gamesData.slice(0, 20), key)
+        ? calculatePer60(currentSeasonGames.slice(0, 20), key)
         : L20;
-      const STD_Rate = isRate ? calculatePer60(gamesData, key) : STD;
+      const STD_Rate = isRate ? calculatePer60(currentSeasonGames, key) : STD;
 
       return {
         label: label,
@@ -225,69 +233,44 @@ export async function fetchPlayerAggregatedStats(
         L5: isRate ? L5_Rate : L5,
         L10: isRate ? L10_Rate : L10,
         L20: isRate ? L20_Rate : L20,
-        STD: isRate ? STD_Rate : STD
+        STD: isRate ? STD_Rate : STD // Aggregated over all games
       };
     });
   };
+
+  // Create ATOI and PPTOI/GM rows
+  const aToiCounts = createATOIRow(currentSeasonGames, previousSeasonGames);
+  const aToiRates = createATOIRow(currentSeasonGames, previousSeasonGames);
+  countsData.splice(1, 0, aToiCounts);
+  ratesData.splice(1, 0, aToiRates);
+
+  const ppToiCounts = createPPToiRow(currentSeasonGames, previousSeasonGames);
+  const ppToiRates = createPPToiRow(currentSeasonGames, previousSeasonGames);
+  countsData.splice(6, 0, ppToiCounts);
+  ratesData.splice(6, 0, ppToiRates);
+
+  const ppPctCounts = createPPPctRow(currentSeasonGames, previousSeasonGames);
+  const ppPctRates = createPPPctRow(currentSeasonGames, previousSeasonGames);
+  countsData.splice(7, 0, ppPctCounts);
+  ratesData.splice(7, 0, ppPctRates);
 
   // Aggregate Counts and Rates
   const aggregatedCounts = aggregateStats(
     statConfigs,
     currentSeasonGames,
+    previousSeasonGames,
     false
   );
-  const aggregatedRates = aggregateStats(statConfigs, currentSeasonGames, true);
-
-  // Insert ATOI as the second row
-  const aToiCounts = createATOIRow(currentSeasonGames);
-  const aToiRates = createATOIRow(currentSeasonGames);
-  countsData.splice(1, 0, aToiCounts);
-  ratesData.splice(1, 0, aToiRates);
+  const aggregatedRates = aggregateStats(
+    statConfigs,
+    currentSeasonGames,
+    previousSeasonGames,
+    true
+  );
 
   // Push aggregated stats into countsData and ratesData
   countsData.push(...aggregatedCounts);
   ratesData.push(...aggregatedRates);
-
-  /**
-   * Aggregates average pp_toi_per_game for each timeframe and adds a new row "PPTOI/GM".
-   */
-  const createPPToiRow = (gamesData: SkaterStat[]): TableAggregateData => ({
-    label: "PPTOI/GM",
-    CA: 0, // Career Average
-    threeYA: 0, // Three-Year Average
-    LY: averagePPToiPerGame(gamesData.slice(-1)), // Assuming LY uses the previous season's data
-    L5: averagePPToiPerGame(gamesData.slice(0, 5)),
-    L10: averagePPToiPerGame(gamesData.slice(0, 10)),
-    L20: averagePPToiPerGame(gamesData.slice(0, 20)),
-    STD: averagePPToiPerGame(gamesData)
-  });
-
-  const ppToiCounts = createPPToiRow(currentSeasonGames);
-  const ppToiRates = createPPToiRow(currentSeasonGames);
-
-  // Insert PPTOI/GM as the sixth row and PP% as the seventh row
-  countsData.splice(6, 0, ppToiCounts);
-  ratesData.splice(6, 0, ppToiRates);
-
-  /**
-   * Aggregates average pp_toi_pct_per_game for each timeframe and adds a new row "PP%".
-   */
-  const createPPPctRow = (gamesData: SkaterStat[]): TableAggregateData => ({
-    label: "PP%",
-    CA: 0, // Career Average
-    threeYA: 0, // Three-Year Average
-    LY: averagePpToiPctPerGame(gamesData.slice(-1)), // Assuming LY uses the previous season's data
-    L5: averagePpToiPctPerGame(gamesData.slice(0, 5)),
-    L10: averagePpToiPctPerGame(gamesData.slice(0, 10)),
-    L20: averagePpToiPctPerGame(gamesData.slice(0, 20)),
-    STD: averagePpToiPctPerGame(gamesData)
-  });
-
-  const ppPctCounts = createPPPctRow(currentSeasonGames);
-  const ppPctRates = createPPPctRow(currentSeasonGames);
-
-  countsData.splice(7, 0, ppPctCounts);
-  ratesData.splice(7, 0, ppPctRates);
 
   // Fetch supplemental data from ThreeYearAverages API
   let supplementalData: ThreeYearAveragesResponse | null = null;
@@ -312,6 +295,7 @@ export async function fetchPlayerAggregatedStats(
     console.log("Career Average Counts:", careerAverageCounts);
     console.log("Career Average Rates:", careerAverageRates);
 
+    // Update 'threeYA' in countsData from threeYearCountsAverages
     countsData.forEach((row) => {
       const key = row.label as keyof ThreeYearCountsAverages;
       if (key in threeYearCountsAverages) {
@@ -321,6 +305,7 @@ export async function fetchPlayerAggregatedStats(
       }
     });
 
+    // Update 'threeYA' in ratesData from threeYearRatesAverages
     ratesData.forEach((row) => {
       // Remove "/60" from label to match key
       const key = row.label.replace("/60", "") as keyof ThreeYearRatesAverages;
@@ -331,6 +316,7 @@ export async function fetchPlayerAggregatedStats(
       }
     });
 
+    // Update 'CA' in countsData from careerAverageCounts
     countsData.forEach((row) => {
       const key = row.label as keyof CareerAverageCounts;
       if (key in careerAverageCounts) {
@@ -345,8 +331,7 @@ export async function fetchPlayerAggregatedStats(
       // Remove "/60" from label to match key
       const key = row.label.replace("/60", "") as keyof CareerAverageRates;
       if (key in careerAverageRates) {
-        row.CA =
-          careerAverageRates[key] !== undefined ? careerAverageRates[key] : 0;
+        row.CA = careerAverageRates[key] ?? 0;
       } else {
         row.CA = 0; // Default value if key doesn't exist
       }
@@ -465,17 +450,67 @@ function averageToiPerGame(gamesSubset: SkaterStat[]): number {
  * Creates an ATOI row.
  *
  * @param {SkaterStat[]} gamesData - The subset of games.
+ * @param {SkaterStat[]} previousSeasonGames - Games from the previous season.
  * @returns {TableAggregateData} - The ATOI row.
  */
-function createATOIRow(gamesData: SkaterStat[]): TableAggregateData {
+function createATOIRow(
+  gamesData: SkaterStat[],
+  previousSeasonGames: SkaterStat[]
+): TableAggregateData {
   return {
     label: "ATOI",
     CA: 0, // Career Average
     threeYA: 0, // Three-Year Average
-    LY: averageToiPerGame(gamesData.slice(-1)), // Assuming LY uses the previous season's data
+    LY: averageToiPerGame(previousSeasonGames), // Last year's average
     L5: averageToiPerGame(gamesData.slice(0, 5)),
     L10: averageToiPerGame(gamesData.slice(0, 10)),
     L20: averageToiPerGame(gamesData.slice(0, 20)),
-    STD: averageToiPerGame(gamesData)
+    STD: sumStat(gamesData, "toi_per_game") // Season To Date: total toi
+  };
+}
+
+/**
+ * Creates a PPTOI/GM row.
+ *
+ * @param {SkaterStat[]} gamesData - The subset of games.
+ * @param {SkaterStat[]} previousSeasonGames - Games from the previous season.
+ * @returns {TableAggregateData} - The PPTOI/GM row.
+ */
+function createPPToiRow(
+  gamesData: SkaterStat[],
+  previousSeasonGames: SkaterStat[]
+): TableAggregateData {
+  return {
+    label: "PPTOI/GM",
+    CA: 0, // Career Average
+    threeYA: 0, // Three-Year Average
+    LY: averagePPToiPerGame(previousSeasonGames), // Last year's average
+    L5: averagePPToiPerGame(gamesData.slice(0, 5)),
+    L10: averagePPToiPerGame(gamesData.slice(0, 10)),
+    L20: averagePPToiPerGame(gamesData.slice(0, 20)),
+    STD: averagePPToiPerGame(gamesData) // Season To Date: all games
+  };
+}
+
+/**
+ * Creates a PP% row.
+ *
+ * @param {SkaterStat[]} gamesData - The subset of games.
+ * @param {SkaterStat[]} previousSeasonGames - Games from the previous season.
+ * @returns {TableAggregateData} - The PP% row.
+ */
+function createPPPctRow(
+  gamesData: SkaterStat[],
+  previousSeasonGames: SkaterStat[]
+): TableAggregateData {
+  return {
+    label: "PP%",
+    CA: 0, // Career Average
+    threeYA: 0, // Three-Year Average
+    LY: averagePpToiPctPerGame(previousSeasonGames), // Last year's average
+    L5: averagePpToiPctPerGame(gamesData.slice(0, 5)),
+    L10: averagePpToiPctPerGame(gamesData.slice(0, 10)),
+    L20: averagePpToiPctPerGame(gamesData.slice(0, 20)),
+    STD: averagePpToiPctPerGame(gamesData) // Season To Date: all games
   };
 }

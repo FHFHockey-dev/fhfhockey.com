@@ -9,7 +9,7 @@ import Fetch from "lib/cors-fetch";
 import { GoalIndicators } from "hooks/useGoals";
 import PowerPlayAreaIndicators from "components/ShiftChart/PowerPlayAreaIndicators";
 import LinemateMatrix, {
-  OPTIONS as LINEMATE_MATRIX_MODES,
+  OPTIONS as LINEMATE_MATRIX_MODES
 } from "components/LinemateMatrix/index";
 import { queryTypes, useQueryState } from "next-usequerystate";
 import supabase from "lib/supabase";
@@ -30,8 +30,6 @@ import supabase from "lib/supabase";
 // 6) Create dynamic time animations. Use the game clock to animate the shift blocks to show who is on/off the ice
 // 7) Add a play-by-play timeline to the bottom of the chart
 // 8) Add a legend to the chart
-// 9) Create the line combo matrix
-// 10) Create the PP Combo Matrix/Splits
 // 11) Create more todo list items
 
 // Initializes the timestamps state with keys for each period and an empty array for each
@@ -39,7 +37,7 @@ const initialTimestamps = {
   period1: [],
   period2: [],
   period3: [],
-  overtime: [],
+  overtime: []
 };
 
 /**
@@ -63,7 +61,7 @@ async function getGames({ gameId, date }) {
     .eq("date", finalDate)
     .throwOnError();
   const teamIds = [
-    ...new Set(games.map((game) => [game.awayTeamId, game.homeTeamId]).flat()),
+    ...new Set(games.map((game) => [game.awayTeamId, game.homeTeamId]).flat())
   ];
   const { data: teams } = await supabase
     .from("teams")
@@ -76,8 +74,8 @@ async function getGames({ gameId, date }) {
     games: games.map((game) => ({
       id: game.id,
       homeTeam: teams.find((team) => team.id === game.homeTeamId),
-      awayTeam: teams.find((team) => team.id === game.awayTeamId),
-    })),
+      awayTeam: teams.find((team) => team.id === game.awayTeamId)
+    }))
   };
 }
 
@@ -133,7 +131,7 @@ function ShiftChart() {
         // Set the game scores
         setGameScores({
           homeScore: gameDetailsResponse.homeTeam.score,
-          awayScore: gameDetailsResponse.awayTeam.score,
+          awayScore: gameDetailsResponse.awayTeam.score
         });
 
         // Set the isOvertime state based on whether there was an overtime period
@@ -169,13 +167,161 @@ function ShiftChart() {
         // console.log("homeTeamAbbrev:", homeTeamAbbrev);
         // console.log("awayTeamAbbrev:", awayTeamAbbrev);
 
-        // Merge player data with hex values from shift chart data
+        console.log("Organized Shift Data:", organizedShiftData);
+
+        // Identify all players who started at 00:00 in period1
+        const startingPlayers = Object.values(organizedShiftData).filter(
+          (player) => {
+            // Check if player has any shift in period1 that starts at "00:00"
+            return player.shifts.period1.some(
+              (shift) => shift.startTime === "00:00"
+            );
+          }
+        );
+
+        console.log(
+          "Players starting at 00:00 (before merge):",
+          startingPlayers
+        );
+        console.log("Fetched Player Data:", fetchedPlayerData);
+
+        // Now merge them as you were before
         const updatedPlayerData = mergePlayerData(
           organizedShiftData,
           fetchedPlayerData
         );
 
-        setPlayerData(updatedPlayerData);
+        // Log the merged player data right after merging
+        console.log("Updated Player Data:", updatedPlayerData);
+
+        // Right after console.log("Updated Player Data:", updatedPlayerData);
+
+        // 1. Identify the starting players from updatedPlayerData
+        //    We already have the `startingPlayers` array from organizedShiftData.
+        const startingPlayerIds = startingPlayers.map((p) => p.id);
+
+        // Helper function to sort players by position rank
+        function sortByPosition(a, b) {
+          return getPositionRank(a.position) - getPositionRank(b.position);
+        }
+
+        // 2. Separate starting players from the rest for each team
+        const homeStartingPlayers = updatedPlayerData.home.filter((player) =>
+          startingPlayerIds.includes(player.id)
+        );
+        const homeNonStartingPlayers = updatedPlayerData.home.filter(
+          (player) => !startingPlayerIds.includes(player.id)
+        );
+
+        const awayStartingPlayers = updatedPlayerData.away.filter((player) =>
+          startingPlayerIds.includes(player.id)
+        );
+        const awayNonStartingPlayers = updatedPlayerData.away.filter(
+          (player) => !startingPlayerIds.includes(player.id)
+        );
+
+        // 3. Sort each subset by position so forwards are above defense, and goalies remain at the bottom.
+        //    This will ensure that even within the starting group, players are ordered by position priority.
+        homeStartingPlayers.sort(sortByPosition);
+        homeNonStartingPlayers.sort(sortByPosition);
+
+        awayStartingPlayers.sort(sortByPosition);
+        awayNonStartingPlayers.sort(sortByPosition);
+
+        // After sorting homeStartingPlayers, homeNonStartingPlayers, awayStartingPlayers, awayNonStartingPlayers by position:
+        // Separate goalies from the other players for the home team
+        const homeGoaliesFromStart = homeStartingPlayers.filter(
+          (p) => p.position === "G"
+        );
+        const homeGoaliesFromNonStart = homeNonStartingPlayers.filter(
+          (p) => p.position === "G"
+        );
+        const homeGoalies = [
+          ...homeGoaliesFromStart,
+          ...homeGoaliesFromNonStart
+        ];
+
+        // Filter out goalies from the starting and non-starting arrays
+        const homeStartingPlayersWithoutGoalies = homeStartingPlayers.filter(
+          (p) => p.position !== "G"
+        );
+        const homeNonStartingPlayersWithoutGoalies =
+          homeNonStartingPlayers.filter((p) => p.position !== "G");
+
+        // Do the same for the away team
+        const awayGoaliesFromStart = awayStartingPlayers.filter(
+          (p) => p.position === "G"
+        );
+        const awayGoaliesFromNonStart = awayNonStartingPlayers.filter(
+          (p) => p.position === "G"
+        );
+        const awayGoalies = [
+          ...awayGoaliesFromStart,
+          ...awayGoaliesFromNonStart
+        ];
+
+        const awayStartingPlayersWithoutGoalies = awayStartingPlayers.filter(
+          (p) => p.position !== "G"
+        );
+        const awayNonStartingPlayersWithoutGoalies =
+          awayNonStartingPlayers.filter((p) => p.position !== "G");
+
+        // Helper function to find the earliest shift start time in PERIOD1 ONLY
+        function getEarliestShiftStartTimeInPeriod1(player) {
+          const period1Shifts = player.shifts.period1 || [];
+          if (period1Shifts.length === 0) {
+            // No period1 shifts, so place them at the bottom
+            return Number.MAX_SAFE_INTEGER;
+          }
+
+          let earliestStart = Infinity;
+          for (const shift of period1Shifts) {
+            const shiftStart = convertTimeToSeconds(shift.startTime);
+            if (shiftStart < earliestStart) {
+              earliestStart = shiftStart;
+            }
+          }
+
+          return earliestStart === Infinity
+            ? Number.MAX_SAFE_INTEGER
+            : earliestStart;
+        }
+
+        // After you separate goalies and have arrays like homeStartingPlayersWithoutGoalies and homeNonStartingPlayersWithoutGoalies:
+
+        // Sort non-starting skaters by their earliest start time in period1 in ASCENDING order
+        homeNonStartingPlayersWithoutGoalies.sort((a, b) => {
+          return (
+            getEarliestShiftStartTimeInPeriod1(a) -
+            getEarliestShiftStartTimeInPeriod1(b)
+          );
+        });
+
+        awayNonStartingPlayersWithoutGoalies.sort((a, b) => {
+          return (
+            getEarliestShiftStartTimeInPeriod1(a) -
+            getEarliestShiftStartTimeInPeriod1(b)
+          );
+        });
+
+        // Now rebuild the team arrays with the new sorting
+        const reorderedHome = [
+          ...homeStartingPlayersWithoutGoalies, // Starting players remain in the order set by position
+          ...homeNonStartingPlayersWithoutGoalies, // Non-starting players now sorted in descending order by earliest start time
+          ...homeGoalies // Goalies at the bottom
+        ];
+
+        const reorderedAway = [
+          ...awayStartingPlayersWithoutGoalies,
+          ...awayNonStartingPlayersWithoutGoalies,
+          ...awayGoalies
+        ];
+
+        // Update playerData with the reordered arrays
+        setPlayerData({ home: reorderedHome, away: reorderedAway });
+
+        // Continue
+        // setPlayerData(updatedPlayerData);
       } catch (error) {
         console.error("Error fetching data:", error);
         enqueueSnackbar(
@@ -227,8 +373,8 @@ function ShiftChart() {
           period1: [],
           period2: [],
           period3: [],
-          overtime: [],
-        },
+          overtime: []
+        }
       };
 
       if (teamId === homeTeamId) {
@@ -257,7 +403,7 @@ function ShiftChart() {
 
     return {
       home: homePlayers,
-      away: awayPlayers,
+      away: awayPlayers
     };
   };
 
@@ -280,7 +426,7 @@ function ShiftChart() {
     } catch (error) {
       console.error("Error fetching season start date:", error);
       enqueueSnackbar("Failed to fetch season start date", {
-        variant: "error",
+        variant: "error"
       });
     }
   };
@@ -305,13 +451,13 @@ function ShiftChart() {
             homeTeam: {
               id: game.homeTeam.id,
               abbreviation: game.homeTeam.abbrev,
-              name: game.homeTeam.placeName.default,
+              name: game.homeTeam.placeName.default
             },
             awayTeam: {
               id: game.awayTeam.id,
               abbreviation: game.awayTeam.abbrev,
-              name: game.awayTeam.placeName.default,
-            },
+              name: game.awayTeam.placeName.default
+            }
           }));
         }
       });
@@ -319,7 +465,7 @@ function ShiftChart() {
       if (games.length === 0) {
         setGames([]);
         enqueueSnackbar("No games found for the selected date", {
-          variant: "warning",
+          variant: "warning"
         });
         return;
       }
@@ -391,14 +537,14 @@ function ShiftChart() {
           ...player,
           hexValue: playerShiftData.hexValue || "#000000", // Default color if not found
           shifts: playerShiftData.shifts || [], // Ensure 'shifts' is an array
-          team: playerShiftData.team || "", // Ensure 'team' is a string
+          team: playerShiftData.team || "" // Ensure 'team' is a string
         };
       });
     };
 
     return {
       home: addShiftDataToPlayer(playerData.home),
-      away: addShiftDataToPlayer(playerData.away),
+      away: addShiftDataToPlayer(playerData.away)
     };
   };
 
@@ -436,7 +582,7 @@ function ShiftChart() {
       period1: [],
       period2: [],
       period3: [],
-      overtime: [],
+      overtime: []
     };
 
     const calculatePositionPercent = (timeInSeconds) => {
@@ -467,7 +613,7 @@ function ShiftChart() {
         timestamps[`period${period}`].push({
           label: label,
           seconds: timestampTime,
-          positionPercent: calculatePositionPercent(timestampTime),
+          positionPercent: calculatePositionPercent(timestampTime)
         });
       }
     }
@@ -496,7 +642,7 @@ function ShiftChart() {
         timestamps.overtime.push({
           label: formatOvertimeLabel(gameEndInSeconds - overtimeStart),
           seconds: gameEndInSeconds,
-          positionPercent: calculateOvertimePositionPercent(gameEndInSeconds),
+          positionPercent: calculateOvertimePositionPercent(gameEndInSeconds)
         });
       }
 
@@ -504,7 +650,7 @@ function ShiftChart() {
       timestamps.overtime.push({
         label: "65",
         seconds: overtimeEnd,
-        positionPercent: 100, // 100% for the end of the overtime column
+        positionPercent: 100 // 100% for the end of the overtime column
       });
     }
 
@@ -536,8 +682,8 @@ function ShiftChart() {
               period1: [],
               period2: [],
               period3: [],
-              overtime: [], // Assuming period 4 is overtime
-            },
+              overtime: [] // Assuming period 4 is overtime
+            }
           };
         }
 
@@ -602,13 +748,13 @@ function ShiftChart() {
 
       // Define the inline style for the shift block
       const shiftStyle = {
-        backgroundColor: darkenHexColor(teamPrimaryColor, 15),
+        backgroundColor: lightenHexColor(teamPrimaryColor, 10),
         width: `${widthPercent}%`,
         left: `${leftPercent}%`,
-        border: `1px solid ${lightenHexColor(teamSecondaryColor, 20)}`,
+        border: `1px solid ${lightenHexColor(teamSecondaryColor, 10)}`,
         // border: `1px solid ${lightenHexColor(teamPrimaryColor, 35)}`,
         position: "absolute",
-        borderRadius: "1px",
+        borderRadius: "1px"
       };
 
       const tooltipText = `Start: ${shift.startTime}, \nDuration: ${shift.duration}`;
@@ -730,7 +876,7 @@ function ShiftChart() {
     L: 1, // Left Wing
     R: 1, // Right Wing
     D: 2, // Defense
-    G: 3, // Goalie
+    G: 3 // Goalie
   };
 
   const getPositionRank = (position) => {
@@ -930,7 +1076,7 @@ function ShiftChart() {
                           ? OVERTIME_LENGTH_SECONDS
                           : REGULAR_PERIOD_LENGTH_SECONDS * 3)) *
                       100
-                    }%`,
+                    }%`
                   }}
                 ></div>
                 <GoalIndicators
@@ -947,7 +1093,7 @@ function ShiftChart() {
                     height: `${
                       (playerData.home.length + playerData.away.length) * 100
                     }%`,
-                    zIndex: 1,
+                    zIndex: 1
                   }}
                 >
                   <PowerPlayAreaIndicators
@@ -967,7 +1113,7 @@ function ShiftChart() {
                 "--team-header-text-color":
                   teamsInfo[homeTeamAbbrev]?.secondaryColor || "#FFFFFF",
                 "--team-header-border-color":
-                  teamsInfo[homeTeamAbbrev]?.jersey || "#FFFFFF",
+                  teamsInfo[homeTeamAbbrev]?.jersey || "#FFFFFF"
               }}
             >
               <td
@@ -975,6 +1121,11 @@ function ShiftChart() {
                 colSpan={isOvertime ? "6" : "5"}
                 style={{
                   borderRight: "1px solid #FFFFFF",
+                  backgroundColor:
+                    lightenHexColor(
+                      teamsInfo[homeTeamAbbrev]?.primaryColor,
+                      15
+                    ) || "#000000"
                 }}
               >
                 {homeTeamAbbrev}
@@ -1032,24 +1183,24 @@ function ShiftChart() {
                 "#202020",
                 "#404040",
                 "#808080",
-                "#606060",
+                "#606060"
               ];
 
-              const playerNameBackgroundColor = player.team
-                ? player.team === homeTeamAbbrev
-                  ? index % 2 === 0
-                    ? indexedColors[0]
-                    : indexedColors[1]
-                  : index % 2 === 0
-                  ? indexedColors[2]
-                  : indexedColors[3]
-                : "#000000"; // Default color if secondaryColor is undefined
-
-              // const playerNameBackgroundColor = teamColors.primaryColor
-              //   ? index % 2 === 0
-              //     ? lightenHexColor(teamColors.primaryColor, 20)
-              //     : lightenHexColor(teamColors.primaryColor, 10)
+              // const playerNameBackgroundColor = player.team
+              //   ? player.team === homeTeamAbbrev
+              //     ? index % 2 === 0
+              //       ? indexedColors[0]
+              //       : indexedColors[1]
+              //     : index % 2 === 0
+              //     ? indexedColors[2]
+              //     : indexedColors[3]
               //   : "#000000"; // Default color if secondaryColor is undefined
+
+              const playerNameBackgroundColor = teamColors.primaryColor
+                ? index % 2 === 0
+                  ? lightenHexColor(teamColors.primaryColor, 20)
+                  : lightenHexColor(teamColors.primaryColor, 15)
+                : "#000000"; // Default color if secondaryColor is undefined
 
               const playerPositionBackgroundColor = teamColors.primaryColor
                 ? index % 2 === 0
@@ -1057,14 +1208,24 @@ function ShiftChart() {
                   : lightenHexColor(teamColors.primaryColor, 3)
                 : "#000000"; // Default color if secondaryColor is undefined
 
-              const textColor = player.team
-                ? player.team === homeTeamAbbrev
+              // const textColor = player.team
+              //   ? player.team === homeTeamAbbrev
+              //     ? index % 2 === 0
+              //       ? lightenHexColor(indexedColors[0], 70)
+              //       : lightenHexColor(indexedColors[1], 70)
+              //     : index % 2 === 0
+              //     ? darkenHexColor(indexedColors[2], 70)
+              //     : darkenHexColor(indexedColors[3], 70)
+              //   : "#FFFFFF"; // Default color if secondaryColor is undefined
+
+              const textColor = teamColors.secondaryColor
+                ? lightenHexColor(teamColors.secondaryColor, 50)
                   ? index % 2 === 0
-                    ? lightenHexColor(indexedColors[0], 70)
-                    : lightenHexColor(indexedColors[1], 70)
+                    ? lightenHexColor(teamColors.secondaryColor, 50)
+                    : lightenHexColor(teamColors.secondaryColor, 50)
                   : index % 2 === 0
-                  ? darkenHexColor(indexedColors[2], 70)
-                  : darkenHexColor(indexedColors[3], 70)
+                  ? darkenHexColor(teamColors.secondaryColor, 70)
+                  : darkenHexColor(teamColors.secondaryColor, 70)
                 : "#FFFFFF"; // Default color if secondaryColor is undefined
 
               return (
@@ -1079,7 +1240,7 @@ function ShiftChart() {
                       backgroundColor: playerNameBackgroundColor,
                       fontWeight: player.isActive ? "900" : "200",
                       fontStretch: player.isActive ? "expanded" : "normal",
-                      letterSpacing: player.isActive ? "0.1em" : "normal",
+                      letterSpacing: player.isActive ? "0.1em" : "normal"
                     }}
                   >
                     <span
@@ -1099,9 +1260,15 @@ function ShiftChart() {
                   {/* Render shifts only if the player is not a backup goalie with no shifts */}
                   {!isBackupGoalie && (
                     <>
+                      {/* Period 1 */}
                       <td
                         className={styles.shiftBlocksCell}
-                        style={{ backgroundColor: shiftBlockBackgroundColor }}
+                        style={{
+                          backgroundColor: lightenHexColor(
+                            shiftBlockBackgroundColor,
+                            20
+                          )
+                        }}
                       >
                         {renderShiftBlocks(
                           player.shifts.period1,
@@ -1110,6 +1277,7 @@ function ShiftChart() {
                           player.team === homeTeamAbbrev ? "home" : "away"
                         )}
                       </td>
+                      {/* Period 2 */}
                       <td
                         className={styles.shiftBlocksCell}
                         style={{ backgroundColor: shiftBlockBackgroundColor }}
@@ -1121,9 +1289,15 @@ function ShiftChart() {
                           player.team === homeTeamAbbrev ? "home" : "away"
                         )}
                       </td>
+                      {/* Period 3 */}
                       <td
                         className={styles.shiftBlocksCell}
-                        style={{ backgroundColor: shiftBlockBackgroundColor }}
+                        style={{
+                          backgroundColor: lightenHexColor(
+                            shiftBlockBackgroundColor,
+                            20
+                          )
+                        }}
                       >
                         {renderShiftBlocks(
                           player.shifts.period3,
@@ -1173,7 +1347,7 @@ function ShiftChart() {
                 "--team-header-text-color":
                   teamsInfo[awayTeamAbbrev]?.secondaryColor || "#FFFFFF",
                 "--team-header-border-color":
-                  teamsInfo[awayTeamAbbrev]?.jersey || "#FFFFFF",
+                  teamsInfo[awayTeamAbbrev]?.jersey || "#FFFFFF"
               }}
             >
               <td
@@ -1181,6 +1355,11 @@ function ShiftChart() {
                 colSpan={isOvertime ? "6" : "5"}
                 style={{
                   borderRight: "1px solid #FFFFFF",
+                  backgroundColor:
+                    lightenHexColor(
+                      teamsInfo[awayTeamAbbrev]?.primaryColor,
+                      15
+                    ) || "#000000"
                 }}
               >
                 <span className={styles.teamHeaderText}>{awayTeamAbbrev}</span>
@@ -1236,17 +1415,27 @@ function ShiftChart() {
                 "#202020",
                 "#404040",
                 "#808080",
-                "#606060",
+                "#606060"
               ];
 
-              const playerNameBackgroundColor = player.team
-                ? player.team === homeTeamAbbrev
+              // const playerNameBackgroundColor = player.team
+              //   ? player.team === homeTeamAbbrev
+              //     ? index % 2 === 0
+              //       ? indexedColors[0]
+              //       : indexedColors[1]
+              //     : index % 2 === 0
+              //     ? indexedColors[2]
+              //     : indexedColors[3]
+              //   : "#000000"; // Default color if secondaryColor is undefined
+
+              const playerNameBackgroundColor = teamColors.primaryColor
+                ? player.team === awayTeamAbbrev
                   ? index % 2 === 0
-                    ? indexedColors[0]
-                    : indexedColors[1]
+                    ? lightenHexColor(teamColors.primaryColor, 20)
+                    : lightenHexColor(teamColors.primaryColor, 15)
                   : index % 2 === 0
-                  ? indexedColors[2]
-                  : indexedColors[3]
+                  ? lightenHexColor(teamColors.primaryColor, 15)
+                  : lightenHexColor(teamColors.primaryColor, 30)
                 : "#000000"; // Default color if secondaryColor is undefined
 
               const playerPositionBackgroundColor = teamColors.primaryColor
@@ -1255,14 +1444,24 @@ function ShiftChart() {
                   : lightenHexColor(teamColors.primaryColor, 3)
                 : "#000000"; // Default color if secondaryColor is undefined
 
+              // const textColor = player.team
+              //   ? player.team === homeTeamAbbrev
+              //     ? index % 2 === 0
+              //       ? lightenHexColor(indexedColors[0], 70)
+              //       : lightenHexColor(indexedColors[1], 70)
+              //     : index % 2 === 0
+              //     ? darkenHexColor(indexedColors[2], 70)
+              //     : darkenHexColor(indexedColors[3], 70)
+              //   : "#FFFFFF"; // Default color if secondaryColor is undefined
+
               const textColor = player.team
-                ? player.team === homeTeamAbbrev
+                ? player.team === awayTeamAbbrev
                   ? index % 2 === 0
-                    ? lightenHexColor(indexedColors[0], 70)
-                    : lightenHexColor(indexedColors[1], 70)
+                    ? lightenHexColor(teamColors.secondaryColor, 10)
+                    : lightenHexColor(teamColors.secondaryColor, 10)
                   : index % 2 === 0
-                  ? darkenHexColor(indexedColors[2], 70)
-                  : darkenHexColor(indexedColors[3], 70)
+                  ? darkenHexColor(teamColors.secondaryColor, 10)
+                  : darkenHexColor(teamColors.secondaryColor, 10)
                 : "#FFFFFF"; // Default color if secondaryColor is undefined
 
               return (
@@ -1273,11 +1472,11 @@ function ShiftChart() {
                   <td
                     className={styles.playerNameCell}
                     style={{
-                      color: darkenHexColor(textColor, 30),
+                      color: lightenHexColor(textColor, 30),
                       backgroundColor: playerNameBackgroundColor,
                       fontWeight: player.isActive ? "900" : "200",
                       fontStretch: player.isActive ? "expanded" : "normal",
-                      letterSpacing: player.isActive ? "0.1em" : "normal",
+                      letterSpacing: player.isActive ? "0.1em" : "normal"
                     }}
                   >
                     <span

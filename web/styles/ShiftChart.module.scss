@@ -3,6 +3,52 @@
 /* ShiftChart.module.scss */
 /* /workspaces/fhfhockey.com/web/styles/ShiftChart.module.scss */
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////// Animated Player Row Slider //////////////////////////////////////////////////////////////
+
+/* Fade Transition for Player Names and Positions */
+.fade-enter {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+.fade-enter-active {
+  opacity: 1;
+  transform: translateX(0);
+  transition: opacity 300ms ease-in, transform 300ms ease-in;
+}
+.fade-exit {
+  opacity: 1;
+  transform: translateX(0);
+}
+.fade-exit-active {
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 300ms ease-in, transform 300ms ease-in;
+}
+
+/* Slide Transition for Shift Blocks */
+.slide-enter {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+.slide-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms ease-in, transform 300ms ease-in;
+}
+.slide-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+.slide-exit-active {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 300ms ease-in, transform 300ms ease-in;
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 .shiftBlocksCell {
   position: relative;
   border-right: 1px solid white; // Add a white border to the right of each cell
@@ -109,8 +155,6 @@
   width: 100%;
   overflow-x: auto; // Add horizontal scroll for smaller screens
   overflow-y: hidden;
-  border: #07aae2 3px solid;
-  border-radius: 10px;
 }
 
 .shiftChartTable {
@@ -257,9 +301,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(
-    --team-header-bg-color
-  ); // Or use a specific color if needed
+  // background-color: var(
+  //   --team-header-bg-color
+  // ); // Or use a specific color if needed
   z-index: -1; // High value to stack above
 }
 
@@ -292,7 +336,9 @@
 .shiftChartTable tr:nth-child(n + 3) td:first-child {
   position: sticky;
   left: 0;
-  background-color: inherit; /* Ensure the background is not transparent */
+  // background-color: inherit;
+  background-color: var(--team-header-bg-color);
+  color: var(--team-header-text-color);
   z-index: 3; /* Higher than the table's other cells to ensure it stacks on top */
   box-shadow: 2px 0px 5px rgba(0, 0, 0, 0.2); /* Slight box shadow to the right */
 }

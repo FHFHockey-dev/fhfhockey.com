@@ -7,10 +7,8 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 
-// Load environment variables from .env.local
 dotenv.config({ path: "./../../../.env.local" });
 
-// Initialize Supabase client
 const supabaseUrl: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey: string | undefined =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY;
@@ -22,34 +20,35 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
-// Delay between requests to maintain one request every 21 seconds
+// Strict rate limit: Only 1 URL every 21 seconds
 const REQUEST_INTERVAL_MS = 21000; // 21 seconds
 
-// Base URL for Natural Stat Trick
 const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
 
-// Define a mapping for players with name discrepancies
+// Player name mapping
 const playerNameMapping: Record<string, { fullName: string }> = {
   "Matthew Benning": { fullName: "Matt Benning" },
   "Alex Kerfoot": { fullName: "Alexander Kerfoot" },
   "Zach Aston-Reese": { fullName: "Zachary Aston-Reese" },
-  "Oskar Back": { fullName: "Oskar Bäck" }, // Handles special characters
+  "Oskar Back": { fullName: "Oskar Bäck" },
   "Cameron Atkinson": { fullName: "Cam Atkinson" },
   "Nicholas Paul": { fullName: "Nick Paul" },
-  "Janis Moser": { fullName: "J.J. Moser" }
-  // Players with identical names but different positions will be handled using both name and position
+  "Janis Moser": { fullName: "J.J. Moser" },
+  "Nathan Légaré": { fullName: "Nathan Legare" },
+  "Mat?j Blümel": { fullName: "Matěj Blümel" },
+  "Alex Petrovic": { fullName: "Alexander Petrovic" }
+
+  // Alex Petrovic, Nathan Légaré
 };
 
-// Initialize an array to collect troublesome player names
 const troublesomePlayers: string[] = [];
 
-// Helper function to normalize names
 function normalizeName(name: string): string {
   return name
     .toLowerCase()
-    .replace(/[\s\-']/g, "") // Remove spaces, hyphens, apostrophes
-    .normalize("NFD") // Normalize Unicode characters
-    .replace(/[\u0300-\u036f]/g, ""); // Remove diacritics
+    .replace(/[\s\-']/g, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 function delay(ms: number) {
@@ -61,18 +60,11 @@ interface SeasonInfo {
   startDate: string;
   regularSeasonEndDate: string;
   endDate: string;
-  playoffsStartDate: number; // Timestamp
-  playoffsEndDate: number; // Timestamp
-  previousSeason?: SeasonInfo;
-  nextSeason?: SeasonInfo;
-  idPrev?: number;
-  idTwo?: number;
 }
 
 function getDatesBetween(start: Date, end: Date): string[] {
   const dates: string[] = [];
   const current = new Date(start);
-
   while (current <= end) {
     const yyyy = current.getFullYear();
     const mm = String(current.getMonth() + 1).padStart(2, "0");
@@ -80,12 +72,12 @@ function getDatesBetween(start: Date, end: Date): string[] {
     dates.push(`${yyyy}-${mm}-${dd}`);
     current.setDate(current.getDate() + 1);
   }
-
   return dates;
 }
 
 function mapHeaderToColumn(header: string): string | null {
   const headerMap: Record<string, string> = {
+    // All your mappings here...
     GP: "gp",
     TOI: "toi",
     "TOI/GP": "toi_per_gp",
@@ -109,9 +101,9 @@ function mapHeaderToColumn(header: string): string | null {
     "iCF/60": "icf_per_60",
     iFF: "iff",
     "iFF/60": "iff_per_60",
-    iSCF: "iscfs", // Correct mapping for 'iSCF'
+    iSCF: "iscfs",
     "iSCF/60": "iscfs_per_60",
-    iHDCF: "hdcf", // Correct mapping for 'iHDCF'
+    iHDCF: "hdcf",
     "iHDCF/60": "hdcf_per_60",
     HDCF: "hdcf",
     "HDCF/60": "hdcf_per_60",
@@ -145,17 +137,220 @@ function mapHeaderToColumn(header: string): string | null {
     "Faceoffs Won/60": "faceoffs_won_per_60",
     "Faceoffs Lost": "faceoffs_lost",
     "Faceoffs Lost/60": "faceoffs_lost_per_60",
-    "Faceoffs %": "faceoffs_percentage"
+    "Faceoffs %": "faceoffs_percentage",
+    CF: "cf",
+    "CF%": "cf_pct",
+    CA: "ca",
+    FF: "ff",
+    "FF%": "ff_pct",
+    FA: "fa",
+    SF: "sf",
+    "SF%": "sf_pct",
+    SA: "sa",
+    GF: "gf",
+    "GF%": "gf_pct",
+    GA: "ga",
+    xGF: "xgf",
+    "xGF%": "xgf_pct",
+    xGA: "xga",
+    "xGA%": "xga_pct",
+    SCF: "scf",
+    SCA: "sca",
+    "SCF%": "scf_pct",
+    HDCA: "hdca",
+    "HDCF%": "hdcf_pct",
+    HDGF: "hdgf",
+    HDGA: "hdga",
+    "HDGF%": "hdgf_pct",
+    MDCF: "mdcf",
+    MDCA: "mdca",
+    "MDCF%": "mdcf_pct",
+    MDGF: "mdgf",
+    MDGA: "mdga",
+    "MDGF%": "mdgf_pct",
+    LDCF: "ldcf",
+    LDCA: "ldca",
+    "LDCF%": "ldcf_pct",
+    LDGF: "ldgf",
+    LDGA: "ldga",
+    "LDGF%": "ldgf_pct",
+    "On-Ice SH%": "on_ice_sh_pct",
+    "On-Ice SV%": "on_ice_sv_pct",
+    PDO: "pdo",
+    "Off. Zone Starts": "off_zone_starts",
+    "Neu. Zone Starts": "neu_zone_starts",
+    "Def. Zone Starts": "def_zone_starts",
+    "Off. Zone Start %": "off_zone_start_pct",
+    "Off. Zone Faceoffs": "off_zone_faceoffs",
+    "Neu. Zone Faceoffs": "neu_zone_faceoffs",
+    "Def. Zone Faceoffs": "def_zone_faceoffs",
+    "Off. Zone Faceoff %": "off_zone_faceoff_pct",
+    "CF/60": "cf_per_60",
+    "CA/60": "ca_per_60",
+    "FF/60": "ff_per_60",
+    "FA/60": "fa_per_60",
+    "SF/60": "sf_per_60",
+    "SA/60": "sa_per_60",
+    "GF/60": "gf_per_60",
+    "GA/60": "ga_per_60",
+    "xGF/60": "xgf_per_60",
+    "xGA/60": "xga_per_60",
+    "SCF/60": "scf_per_60",
+    "SCA/60": "sca_per_60",
+    "HDCA/60": "hdca_per_60",
+    "HDGF/60": "hdgf_per_60",
+    "HDGA/60": "hdga_per_60",
+    "MDCF/60": "mdcf_per_60",
+    "MDCA/60": "mdca_per_60",
+    "MDGF/60": "mdgf_per_60",
+    "MDGA/60": "mdga_per_60",
+    "LDCF/60": "ldcf_per_60",
+    "LDCA/60": "ldca_per_60",
+    "LDGF/60": "ldgf_per_60",
+    "LDGA/60": "ldga_per_60",
+    "On-Ice SH%/60": "on_ice_sh_pct_per_60",
+    "On-Ice SV%/60": "on_ice_sv_pct_per_60",
+    "PDO/60": "pdo_per_60",
+    "Off. Zone Starts/60": "off_zone_starts_per_60",
+    "Neu. Zone Starts/60": "neu_zone_starts_per_60",
+    "Def. Zone Starts/60": "def_zone_starts_per_60",
+    "Off. Zone Start %/60": "off_zone_start_pct_per_60",
+    "Off. Zone Faceoffs/60": "off_zone_faceoffs_per_60",
+    "Neu. Zone Faceoffs/60": "neu_zone_faceoffs_per_60",
+    "Def. Zone Faceoffs/60": "def_zone_faceoffs_per_60"
   };
 
-  if (header === "Player") {
-    return null; // Handle 'Player' separately
-  }
+  if (header === "Player") return null;
 
-  return headerMap[header] || null; // Map to column or null
+  return headerMap[header] || null;
 }
 
-let lastRequestTime = 0; // Keep track of last request time
+async function getLatestDateSupabase(): Promise<string | null> {
+  const tableNames = [
+    "nst_gamelog_as_counts",
+    "nst_gamelog_as_rates",
+    "nst_gamelog_pp_counts",
+    "nst_gamelog_pp_rates",
+    "nst_gamelog_as_counts_oi",
+    "nst_gamelog_as_rates_oi",
+    "nst_gamelog_pp_counts_oi",
+    "nst_gamelog_pp_rates_oi"
+  ];
+  let latestDate: string | null = null;
+
+  for (const table of tableNames) {
+    const { data, error } = await supabase
+      .from(table)
+      .select("date_scraped")
+      .order("date_scraped", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      continue;
+    }
+
+    if (data && data.date_scraped) {
+      if (!latestDate || new Date(data.date_scraped) > new Date(latestDate)) {
+        latestDate = data.date_scraped;
+      }
+    }
+  }
+
+  return latestDate;
+}
+
+// Print main info block after each URL processed
+function printInfoBlock(params: {
+  date: string;
+  url: string;
+  datasetType: string;
+  tableName: string;
+  dateUrlCount: { current: number; total: number };
+  totalUrlCount: { current: number; total: number };
+  rowsProcessed: number;
+  rowsPrepared: number;
+  rowsUpserted: number;
+}) {
+  const {
+    date,
+    url,
+    datasetType,
+    tableName,
+    dateUrlCount,
+    totalUrlCount,
+    rowsProcessed,
+    rowsPrepared,
+    rowsUpserted
+  } = params;
+
+  console.log(`
+|==========================|
+Date: ${date}
+
+URL: ${url}
+
+Iteration: ${datasetType}
+Destination: ${tableName}
+
+Date URL Count: ${dateUrlCount.current}/${dateUrlCount.total}
+Total URL Count: ${totalUrlCount.current}/${totalUrlCount.total}
+
+Rows Processed: ${rowsProcessed}
+Rows Prepared: ${rowsPrepared}
+Rows Upserted: ${rowsUpserted}
+
+|==========================|
+`);
+}
+
+// Print delay countdown bar (21s)
+async function printDelayCountdown() {
+  const total = 21;
+  const interval = 1; // 1 second interval
+  for (let elapsed = 0; elapsed < total; elapsed++) {
+    const progress = (elapsed / total) * 100;
+    const filled = Math.floor((elapsed / total) * 20);
+    const bar = "|" + "=".repeat(filled) + "-".repeat(20 - filled) + "|";
+
+    process.stdout.write(`\r${bar}  (${elapsed + 1}s/${total}s) `);
+    await delay(interval * 1000);
+  }
+  process.stdout.write("\n");
+}
+
+// Print total progress bar
+function printTotalProgress(current: number, total: number) {
+  const percentage = (current / total) * 100;
+  const filled = Math.floor((percentage / 100) * 20);
+  const bar = "|" + "=".repeat(filled) + "-".repeat(20 - filled) + "|";
+  console.log(`Total Progress: ${percentage.toFixed(2)}% Complete`);
+  console.log(`${bar}  (${current}/${total} URLs)`);
+}
+
+// Determine table name from datasetType
+function getTableName(datasetType: string): string {
+  switch (datasetType) {
+    case "allStrengthsCounts":
+      return "nst_gamelog_as_counts";
+    case "allStrengthsRates":
+      return "nst_gamelog_as_rates";
+    case "powerPlayCounts":
+      return "nst_gamelog_pp_counts";
+    case "powerPlayRates":
+      return "nst_gamelog_pp_rates";
+    case "allStrengthsCountsOi":
+      return "nst_gamelog_as_counts_oi";
+    case "allStrengthsRatesOi":
+      return "nst_gamelog_as_rates_oi";
+    case "powerPlayCountsOi":
+      return "nst_gamelog_pp_counts_oi";
+    case "powerPlayRatesOi":
+      return "nst_gamelog_pp_rates_oi";
+    default:
+      return "unknown_table";
+  }
+}
 
 async function fetchAndParseData(
   url: string,
@@ -164,65 +359,40 @@ async function fetchAndParseData(
   seasonId: string
 ) {
   try {
-    // Enforce delay between requests
-    const now = Date.now();
-    const timeSinceLastRequest = now - lastRequestTime;
-    if (timeSinceLastRequest < REQUEST_INTERVAL_MS) {
-      const waitTime = REQUEST_INTERVAL_MS - timeSinceLastRequest;
-      console.log(`Waiting for ${waitTime}ms before making the next request`);
-      await delay(waitTime);
-    }
-    lastRequestTime = Date.now();
-
-    console.log(`[${new Date().toISOString()}] Fetching data from ${url}`);
     const response = await axios.get(url);
-
-    if (!response.data) {
-      console.error(`No data received from ${url}`);
-      return [];
-    }
+    if (!response.data) return [];
 
     const $ = cheerio.load(response.data);
     const table = $("table").first();
 
-    // Extract headers
     const headers: string[] = [];
     table.find("thead tr th").each((_, th) => {
       headers.push($(th).text().trim());
     });
-    console.log("Extracted headers:", headers);
 
     const mappedHeaders = headers.map(mapHeaderToColumn);
-    console.log("Mapped headers:", mappedHeaders);
 
-    // Log any unmapped headers except for empty headers
-    headers.forEach((header, index) => {
-      if (mappedHeaders[index] === null && header !== "") {
-        console.warn(`Unmapped header: '${header}'`);
-      }
-    });
-
-    // Extract data rows
     const dataRowsCollected: any[] = [];
-
     table.find("tbody tr").each((_, tr) => {
       const rowData: any = {};
       let playerFullName: string | null = null;
-      let playerPosition: string | null = null; // To store the player's position
+      let playerPosition: string | null = null;
+      let playerTeam: string | null = null;
 
       $(tr)
         .find("td")
         .each((i, td) => {
           const column = mappedHeaders[i];
           if (column === null) {
-            // Handle 'Player' and 'Position' columns
             const originalHeader = headers[i];
             if (originalHeader === "Player") {
               playerFullName = $(td).text().trim();
             } else if (originalHeader === "Position") {
               playerPosition = $(td).text().trim();
+            } else if (originalHeader === "Team") {
+              playerTeam = $(td).text().trim();
             }
-            return; // Skip unmapped columns
+            return;
           }
 
           let cellText: string | null = $(td).text().trim();
@@ -238,39 +408,38 @@ async function fetchAndParseData(
           }
         });
 
-      if (playerFullName && playerPosition && Object.keys(rowData).length > 0) {
+      if (
+        playerFullName &&
+        playerPosition &&
+        playerTeam &&
+        Object.keys(rowData).length > 0
+      ) {
         rowData["player_full_name"] = playerFullName;
         rowData["player_position"] = playerPosition;
+        rowData["player_team"] = playerTeam;
         rowData["date_scraped"] = date;
         rowData["season"] = seasonId;
         dataRowsCollected.push(rowData);
       }
     });
 
-    // Now, process dataRowsCollected asynchronously
+    // Assign player_id
     const dataRowsWithPlayerIds: any[] = [];
-
     for (const row of dataRowsCollected) {
       const playerFullName = row["player_full_name"];
       const playerPosition = row["player_position"];
       const playerId = await getPlayerIdByName(playerFullName, playerPosition);
-
-      if (!playerId) {
-        console.warn(
-          `Player ID not found for ${playerFullName} (${playerPosition}). Skipping.`
-        );
-        continue;
-      }
+      if (!playerId) continue;
 
       row["player_id"] = playerId;
       delete row["player_full_name"];
       delete row["player_position"];
+      delete row["player_team"];
       dataRowsWithPlayerIds.push(row);
     }
 
     return dataRowsWithPlayerIds;
-  } catch (error: any) {
-    console.error(`Error fetching URL: ${url}`, error.message);
+  } catch {
     return [];
   }
 }
@@ -279,32 +448,30 @@ async function getPlayerIdByName(
   fullName: string,
   position: string
 ): Promise<number | null> {
-  // Check if the player needs name mapping
   const mappedName = playerNameMapping[fullName]
     ? playerNameMapping[fullName].fullName
     : fullName;
 
-  // Normalize name and position for consistency
   const normalizedFullName = normalizeName(mappedName);
-  const normalizedPosition = position.toUpperCase(); // Ensure position is uppercase (G, D, L, R, C)
+  const normalizedPosition = position.toUpperCase();
 
-  // Query Supabase for the player's ID using both name and position
-  const { data, error } = await supabase
+  const requiresPositionCheck = ["Elias Pettersson", "Sebastian Aho"].includes(
+    mappedName
+  );
+
+  let query = supabase
     .from("players")
     .select("id")
-    .ilike("fullName", `%${mappedName}%`) // Case-insensitive partial match
-    .eq("position", normalizedPosition) // Exact position match
-    .limit(1)
-    .maybeSingle();
+    .ilike("fullName", `%${mappedName}%`);
 
-  if (error) {
-    console.error(`Error fetching player ID for ${fullName}:`, error.message);
-    return null;
+  if (requiresPositionCheck) {
+    query = query.eq("position", normalizedPosition);
   }
 
+  const { data, error } = await query.limit(1).maybeSingle();
+
+  if (error) return null;
   if (!data) {
-    console.warn(`Player ID not found for ${fullName} (${position}).`);
-    // Add the full name and position to the troublesome players list
     troublesomePlayers.push(`${fullName} (${position})`);
     return null;
   }
@@ -313,31 +480,10 @@ async function getPlayerIdByName(
 }
 
 async function upsertData(datasetType: string, dataRows: any[]) {
-  if (dataRows.length === 0) {
-    console.log(`No data to upsert for ${datasetType}`);
-    return;
-  }
+  if (dataRows.length === 0) return;
 
-  let tableName = "";
-  switch (datasetType) {
-    case "allStrengthsCounts":
-      tableName = "nst_gamelog_as_counts";
-      break;
-    case "allStrengthsRates":
-      tableName = "nst_gamelog_as_rates";
-      break;
-    case "powerPlayCounts":
-      tableName = "nst_gamelog_pp_counts";
-      break;
-    case "powerPlayRates":
-      tableName = "nst_gamelog_pp_rates";
-      break;
-    default:
-      console.error(`Unknown dataset type: ${datasetType}`);
-      return;
-  }
+  const tableName = getTableName(datasetType);
 
-  // Upsert data into Supabase
   const { error } = await supabase
     .from(tableName)
     .upsert(dataRows, { onConflict: "player_id,date_scraped" });
@@ -347,10 +493,6 @@ async function upsertData(datasetType: string, dataRows: any[]) {
       `Error upserting data into ${tableName}:`,
       error.details || error.message
     );
-  } else {
-    console.log(
-      `Successfully upserted ${dataRows.length} records into ${tableName}`
-    );
   }
 }
 
@@ -358,39 +500,16 @@ async function checkDataExists(
   datasetType: string,
   date: string
 ): Promise<boolean> {
-  let tableName = "";
-  switch (datasetType) {
-    case "allStrengthsCounts":
-      tableName = "nst_gamelog_as_counts";
-      break;
-    case "allStrengthsRates":
-      tableName = "nst_gamelog_as_rates";
-      break;
-    case "powerPlayCounts":
-      tableName = "nst_gamelog_pp_counts";
-      break;
-    case "powerPlayRates":
-      tableName = "nst_gamelog_pp_rates";
-      break;
-    default:
-      console.error(`Unknown dataset type: ${datasetType}`);
-      return false;
-  }
+  const tableName = getTableName(datasetType);
+  if (tableName === "unknown_table") return false;
 
   const { data, error } = await supabase
     .from(tableName)
-    .select("id")
+    .select("player_id")
     .eq("date_scraped", date)
     .limit(1);
 
-  if (error) {
-    console.error(
-      `Error checking data existence in ${tableName}:`,
-      error.message
-    );
-    return false;
-  }
-
+  if (error) return false;
   return data && data.length > 0;
 }
 
@@ -402,18 +521,99 @@ function constructUrlsForDate(
   const thruSeason = seasonId;
   const commonParams = `fromseason=${fromSeason}&thruseason=${thruSeason}&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=${date}&td=${date}&lines=single&draftteam=ALL`;
 
-  return {
+  const stdUrls = {
     allStrengthsCounts: `${BASE_URL}?sit=all&score=all&stdoi=std&rate=n&team=ALL&${commonParams}&tgp=10`,
     allStrengthsRates: `${BASE_URL}?sit=all&score=all&stdoi=std&rate=y&team=ALL&${commonParams}&tgp=410`,
     powerPlayCounts: `${BASE_URL}?sit=pp&score=all&stdoi=std&rate=n&team=ALL&${commonParams}&tgp=410`,
     powerPlayRates: `${BASE_URL}?sit=pp&score=all&stdoi=std&rate=y&team=ALL&${commonParams}&tgp=410`
   };
+
+  const oiUrls = {
+    allStrengthsCountsOi: `${BASE_URL}?sit=all&score=all&stdoi=oi&rate=n&team=ALL&${commonParams}&tgp=10`,
+    allStrengthsRatesOi: `${BASE_URL}?sit=all&score=all&stdoi=oi&rate=y&team=ALL&${commonParams}&tgp=410`,
+    powerPlayCountsOi: `${BASE_URL}?sit=pp&score=all&stdoi=oi&rate=n&team=ALL&${commonParams}&tgp=410`,
+    powerPlayRatesOi: `${BASE_URL}?sit=pp&score=all&stdoi=oi&rate=y&team=ALL&${commonParams}&tgp=410`
+  };
+
+  return { ...stdUrls, ...oiUrls };
+}
+
+async function processUrlsSequentially(
+  urlsQueue: {
+    datasetType: string;
+    url: string;
+    date: string;
+    seasonId: string;
+  }[]
+) {
+  let firstRequest = true;
+
+  // Group by date to determine how many URLs per date
+  const dateGroups: Record<string, number> = {};
+  for (const u of urlsQueue) {
+    if (!dateGroups[u.date]) dateGroups[u.date] = 0;
+    dateGroups[u.date]++;
+  }
+
+  let totalProcessed = 0; // total URLs processed
+  const totalUrls = urlsQueue.length;
+
+  const dateProcessedCount: Record<string, number> = {};
+
+  for (let i = 0; i < urlsQueue.length; i++) {
+    const { datasetType, url, date, seasonId } = urlsQueue[i];
+
+    // Wait 21 seconds before each request, except the first
+    if (!firstRequest) {
+      // Print delay countdown
+      await printDelayCountdown();
+    } else {
+      firstRequest = false;
+    }
+
+    const dataExists = await checkDataExists(datasetType, date);
+    let dataRows: any[] = [];
+    if (!dataExists) {
+      dataRows = await fetchAndParseData(url, datasetType, date, seasonId);
+      await upsertData(datasetType, dataRows);
+    }
+
+    totalProcessed++;
+    if (!dateProcessedCount[date]) dateProcessedCount[date] = 0;
+    dateProcessedCount[date]++;
+
+    // Determine rows processed/prepared/upserted = length of dataRows
+    const rowsCount = dataExists ? 0 : dataRows.length;
+    const tableName = getTableName(datasetType);
+
+    // Print info block
+    printInfoBlock({
+      date,
+      url,
+      datasetType,
+      tableName,
+      dateUrlCount: {
+        current: dateProcessedCount[date],
+        total: dateGroups[date]
+      },
+      totalUrlCount: {
+        current: totalProcessed,
+        total: totalUrls
+      },
+      rowsProcessed: rowsCount,
+      rowsPrepared: rowsCount,
+      rowsUpserted: rowsCount
+    });
+
+    // Print total progress bar
+    printTotalProgress(totalProcessed, totalUrls);
+  }
 }
 
 async function main() {
   try {
     const seasonInfo = await fetchCurrentSeason();
-    const seasonId = seasonInfo.id.toString(); // Convert to string
+    const seasonId = seasonInfo.id.toString();
     const seasonStartDate = new Date(seasonInfo.startDate);
     const today = new Date();
     const scrapingEndDate =
@@ -421,38 +621,62 @@ async function main() {
         ? today
         : new Date(seasonInfo.endDate);
 
-    const datesToScrape = getDatesBetween(seasonStartDate, scrapingEndDate);
+    const latestDate = await getLatestDateSupabase();
+    let startDate: Date;
 
-    // Loop through dates
+    if (latestDate) {
+      startDate = new Date(latestDate);
+      startDate.setDate(startDate.getDate() + 1);
+      console.log(
+        `Latest date in Supabase is ${latestDate}. Starting from ${
+          startDate.toISOString().split("T")[0]
+        }.`
+      );
+    } else {
+      startDate = seasonStartDate;
+      console.log(
+        `No existing data in Supabase. Starting from season start date ${
+          startDate.toISOString().split("T")[0]
+        }.`
+      );
+    }
+
+    const datesToScrape = getDatesBetween(startDate, scrapingEndDate);
+
+    if (datesToScrape.length === 0) {
+      console.log("No new dates to scrape.");
+      return;
+    }
+
+    const urlsQueue: {
+      datasetType: string;
+      url: string;
+      date: string;
+      seasonId: string;
+    }[] = [];
+
     for (const date of datesToScrape) {
-      console.log(`Processing date: ${date}`);
-
       const urls = constructUrlsForDate(date, seasonId);
-
       for (const [datasetType, url] of Object.entries(urls)) {
-        // Check if data exists
-        const dataExists = await checkDataExists(datasetType, date);
-        if (dataExists) {
-          console.log(
-            `Data for ${datasetType} on ${date} already exists. Skipping.`
-          );
-          continue;
-        }
-
-        // Fetch and parse data
-        const dataRows = await fetchAndParseData(
-          url,
-          datasetType,
-          date,
-          seasonId
-        );
-
-        // Upsert data
-        await upsertData(datasetType, dataRows);
+        urlsQueue.push({ datasetType, url, date, seasonId });
       }
     }
 
-    console.log("Data fetching and upsertion completed.");
+    // Deduplicate
+    const uniqueUrls = new Set<string>();
+    const uniqueUrlsQueue = urlsQueue.filter(
+      ({ datasetType, url, date, seasonId }) => {
+        const key = `${datasetType}-${url}-${date}-${seasonId}`;
+        if (uniqueUrls.has(key)) {
+          return false;
+        } else {
+          uniqueUrls.add(key);
+          return true;
+        }
+      }
+    );
+
+    await processUrlsSequentially(uniqueUrlsQueue);
 
     if (troublesomePlayers.length > 0) {
       const uniqueTroublesomePlayers = [...new Set(troublesomePlayers)];
@@ -460,7 +684,6 @@ async function main() {
         "Troublesome Players (require manual mapping):",
         uniqueTroublesomePlayers
       );
-      // Optionally, you can handle this list as needed, such as sending it to a monitoring service or saving it to a file/database
     }
   } catch (error: any) {
     console.error("An error occurred:", error.message);
@@ -471,8 +694,6 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // Optionally, you can add authentication here
-
   if (req.method !== "GET") {
     res.status(405).json({ message: "Method Not Allowed" });
     return;

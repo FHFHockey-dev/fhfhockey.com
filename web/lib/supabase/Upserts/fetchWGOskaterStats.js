@@ -16,6 +16,11 @@ async function Fetch(url) {
   return response.json();
 }
 
+// Sleep function to pause execution for a specified number of milliseconds
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY;
@@ -657,7 +662,12 @@ async function fetchNHLSkaterData() {
       }
     }
 
-    currentDate = addDays(currentDate, 1); // Move to the next day
+    // Increment the date to the next day
+    currentDate = addDays(currentDate, 1);
+
+    // Pause for 21 seconds before processing the next date
+    console.log(`Waiting for 21 seconds before the next date...`);
+    await sleep(21000);
   }
 }
 
