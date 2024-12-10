@@ -65,7 +65,7 @@ async function getRostersMap(gameId: number, _teamId?: number) {
     boxscore.awayTeam
   ].map((team) => ({
     id: team.id,
-    name: team.name.default
+    name: team.commonName.default
   }));
 
   if (_teamId) {

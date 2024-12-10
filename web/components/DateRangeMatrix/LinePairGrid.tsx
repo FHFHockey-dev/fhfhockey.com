@@ -25,9 +25,11 @@ type LinePairGridProps = {
   seasonType: "regularSeason" | "playoffs";
   timeFrame: "L7" | "L14" | "L30" | "Totals";
   dateRange: { start: Date; end: Date };
-  onDateRangeChange?: (newDateRange: { start: Date; end: Date }) => void;
+
   homeOrAway?: "home" | "away" | undefined;
   opponentTeamAbbreviation?: string;
+  regularSeasonPlayersData: any[];
+  playoffPlayersData: any[];
 };
 
 const LinePairGrid: React.FC<LinePairGridProps> = ({
@@ -38,52 +40,18 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
   seasonType,
   timeFrame,
   dateRange,
-  onDateRangeChange,
   homeOrAway = "",
   opponentTeamAbbreviation = "",
+  regularSeasonPlayersData,
+  playoffPlayersData,
 }) => {
   const [aggregatedData, setAggregatedData] = useState<PlayerData[]>([]);
   const [lines, setLines] = useState<PlayerData[][]>([]);
   const [pairs, setPairs] = useState<PlayerData[][]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [dateRangeString, setDateRangeString] = useState<string>("");
-
-  useEffect(() => {
-    if (aggregatedData.length > 0) {
-      const result = calculateLinesAndPairs(aggregatedData, "line-combination");
-      setLines(result.lines);
-      setPairs(result.pairs);
-      onLinesAndPairsCalculated(result.lines, result.pairs);
-    }
-  }, [aggregatedData]);
 
   useEffect(() => {
     const fetchData = async () => {
       if (selectedTeam && startDate && endDate) {
-        setLoading(true);
-
-        const { regularSeasonPlayersData, playoffPlayersData } =
-          await fetchAggregatedData(
-            selectedTeam,
-            startDate.toISOString().split("T")[0],
-            endDate.toISOString().split("T")[0],
-            seasonType,
-            timeFrame,
-            homeOrAway,
-            opponentTeamAbbreviation
-          );
-
-        const dateRangeStr =
-          regularSeasonPlayersData?.[0]?.stats?.[timeFrame]?.date_range || "";
-
-        if (dateRangeStr) {
-          setDateRangeString(dateRangeStr); // Store the date range string
-          const [newStartDate, newEndDate] = dateRangeStr
-            .split(" - ")
-            .map((dateStr: string) => new Date(dateStr));
-          onDateRangeChange?.({ start: newStartDate, end: newEndDate });
-        }
-
         const allPlayersData =
           seasonType === "regularSeason"
             ? Object.values(regularSeasonPlayersData)
@@ -211,12 +179,30 @@ const LinePairGrid: React.FC<LinePairGridProps> = ({
         );
 
         setAggregatedData(updatedRoster);
-        setLoading(false);
+
+        if (updatedRoster.length > 0) {
+          const result = calculateLinesAndPairs(
+            updatedRoster,
+            "line-combination"
+          );
+          setLines(result.lines);
+          setPairs(result.pairs);
+          onLinesAndPairsCalculated(result.lines, result.pairs);
+        }
       }
     };
 
     fetchData();
-  }, [selectedTeam, startDate, endDate, seasonType, timeFrame]);
+  }, [
+    selectedTeam,
+    startDate,
+    endDate,
+    seasonType,
+    timeFrame,
+    regularSeasonPlayersData,
+    playoffPlayersData,
+    onLinesAndPairsCalculated,
+  ]);
 
   const reorderLine = (line: PlayerData[]): PlayerData[] => {
     // Initialize positions

@@ -1,16 +1,8 @@
 import { useEffect, useState } from "react";
 import Fetch from "lib/cors-fetch";
-import getPowerPlayBlocks, {
-  Block,
-  Time,
-  parseTime
-} from "utils/getPowerPlayBlocks";
+import getPowerPlayBlocks, { Block, Time } from "utils/getPowerPlayBlocks";
 import { teamsInfo } from "lib/NHL/teamsInfo";
-import {
-  PERIOD_IN_SECONDS,
-  PERIOD_LENGTH,
-  convertTimeToSeconds
-} from "hooks/useGoals";
+import { NORMAL_PERIOD_IN_SECONDS, convertTimeToSeconds } from "hooks/useGoals";
 
 type Props = {
   id: number;
@@ -94,9 +86,13 @@ function PowerPlayAreaIndicator({
   totalGameTimeInSeconds
 }: PowerPlayAreaIndicatorProps) {
   const darkenedColor = darkenHexColor(color, 50);
+  const startPercent =
+    convertTimeToPercent(start, totalGameTimeInSeconds) * 100;
+  const endPercent = convertTimeToPercent(end, totalGameTimeInSeconds) * 100;
+
   const areaStyle = {
-    width: getWidthPercentage(start, end, totalGameTimeInSeconds),
-    left: getLeftPercentage(start)
+    width: `${endPercent - startPercent}%`,
+    left: `${startPercent}%`
   };
   return (
     <div
@@ -114,33 +110,24 @@ function PowerPlayAreaIndicator({
   );
 }
 
-function getLeftPercentage(time: Time) {
-  const leftPercentage = `${
-    ((convertTimeToSeconds(time.timeInPeriod) / PERIOD_IN_SECONDS) *
-      PERIOD_LENGTH +
-      PERIOD_LENGTH * (time.period - 1)) *
-    100
-  }%`;
-
-  return leftPercentage;
-}
-
-function getWidthPercentage(
-  start: Time,
-  end: Time,
-  totalGameTimeInSeconds: number
-) {
-  let duration = 0;
-  if (start.period === end.period) {
-    duration =
-      convertTimeToSeconds(end.timeInPeriod) -
-      convertTimeToSeconds(start.timeInPeriod);
-  } else {
-    // `start` cannot be OT
-    const startTimeInSeconds = parseTime(start.timeInPeriod);
-    duration = PERIOD_IN_SECONDS - startTimeInSeconds;
-    duration += convertTimeToSeconds(end.timeInPeriod);
+/**
+ *  The return value is between 0~1
+ */
+function convertTimeToPercent(time: Time, totalGameTimeInSeconds: number) {
+  let percent: number;
+  if (time.type === "REG") {
+    percent =
+      (convertTimeToSeconds(time.timeInPeriod) +
+        (time.period - 1) * NORMAL_PERIOD_IN_SECONDS) /
+      totalGameTimeInSeconds;
+  }
+  // handle Overtime games
+  // (time.type === "OT")
+  else {
+    percent =
+      (60 * 60 + convertTimeToSeconds(time.timeInPeriod)) /
+      totalGameTimeInSeconds;
   }
 
-  return `${(duration / totalGameTimeInSeconds) * 100}%`;
+  return percent;
 }

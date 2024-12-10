@@ -95,8 +95,7 @@ type Goal = {
 // - vertical line
 // - style
 // - logic for positioning of overtime games: chart stays same width but goes to 4:4:4:1 column width split for P1:P2:P3:OT as it is 20:20:20:5 in minutes
-export const PERIOD_IN_SECONDS = 20 * 60;
-export const PERIOD_LENGTH = 0.3;
+export const NORMAL_PERIOD_IN_SECONDS = 20 * 60;
 
 function brightenColor(hex: string, percent: number): string {
   // Check if hex starts with "#" and remove it for processing
