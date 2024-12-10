@@ -401,71 +401,56 @@ export function sortByLineCombination(
 }
 
 function sortByPPTOI(data: Record<string, TOIData>): PlayerData[] {
+  const getTOI = (playerId1: number, playerId2: number) =>
+    data[getKey(playerId1, playerId2)]?.toi ?? 0;
+
+  const sortPlayerSet = (playerIds: Set<number>) =>
+    [...playerIds].sort((a, b) => getTOI(b, b) - getTOI(a, a));
+
+  // Filter valid players
   const filteredPlayers = Object.values(data)
-    .filter((item) => item.p1.id === item.p2.id)
-    .filter((item) => item.toi !== 0)
+    .filter((item) => item.p1.id === item.p2.id && item.toi > 0)
     .sort((a, b) => b.toi - a.toi)
     .map((item) => item.p1.id);
-  const allPlayers = new Set<number>(filteredPlayers);
-  // find the pivot
-  const pivotPlayerId = filteredPlayers[0];
-  const pp1PlayerIds = new Set<number>();
-  // grab 4 players who had the most shared PPTOI with the pivot player
-  // assign these 4 players to pp1
-  const sortedPlayers = filteredPlayers.toSorted((a, b) => {
-    return (
-      data[getKey(pivotPlayerId, b)].toi - data[getKey(pivotPlayerId, a)].toi
-    );
-  });
 
-  for (let i = 0; i < sortedPlayers.length && pp1PlayerIds.size < 5; i++) {
-    const p = sortedPlayers[i];
-    if (pp1PlayerIds.has(p)) {
-      continue;
-    } else {
-      pp1PlayerIds.add(p);
-    }
-  }
+  const allPlayers = new Set(filteredPlayers);
 
-  // find players for pp2
-  const pp2Players = new Set<number>();
-  const potentialPP2Players = [...allPlayers.difference(pp1PlayerIds)].sort(
-    (a, b) => data[getKey(b, b)].toi - data[getKey(a, a)].toi
-  );
-  const pp2Pivot = potentialPP2Players[0];
-  potentialPP2Players.sort((a, b) => {
-    return data[getKey(pp2Pivot, b)].toi - data[getKey(pp2Pivot, a)].toi;
-  });
-  for (let i = 0; i < potentialPP2Players.length; i++) {
-    const p = potentialPP2Players[i];
-    if (pp2Players.has(p)) {
-      continue;
-    } else {
-      pp2Players.add(p);
-    }
-  }
+  const sortBySharedTOI = (pivotId: number, playerIds: number[]) =>
+    [...playerIds].sort((a, b) => getTOI(pivotId, b) - getTOI(pivotId, a));
 
-  const sortedPP1Players = sortPlayerSet(pp1PlayerIds, data);
-  const sortedPP2Players = sortPlayerSet(pp2Players, data);
+  const selectTopPlayers = (
+    pivotId: number,
+    playerIds: Set<number>,
+    limit: number
+  ): Set<number> => {
+    const sortedPlayers = sortBySharedTOI(pivotId, [...playerIds]);
+    return new Set(sortedPlayers.slice(0, limit));
+  };
 
-  const remainingPlayers = sortPlayerSet(
-    allPlayers.difference(pp1PlayerIds).difference(pp2Players),
-    data
+  // Step 1: Determine PP1 players
+  const pp1Pivot = filteredPlayers[0]; // has been sorted by toi
+  const pp1PlayerIds = selectTopPlayers(pp1Pivot, allPlayers, 5);
+
+  // Step 2: Determine PP2 players
+  const remainingPlayers = allPlayers.difference(pp1PlayerIds);
+  // Find the player with the highest individual TOI as the PP2 pivot
+  const pp2Pivot = sortPlayerSet(remainingPlayers)[0];
+
+  const pp2PlayerIds = selectTopPlayers(pp2Pivot, remainingPlayers, 5);
+
+  // Step 3: Sort the remaining players
+
+  const sortedPP1Players = sortPlayerSet(pp1PlayerIds);
+  const sortedPP2Players = sortPlayerSet(pp2PlayerIds);
+  const sortedRemainingPlayers = sortPlayerSet(
+    remainingPlayers.difference(pp2PlayerIds)
   );
 
-  const result: PlayerData[] = [
+  return [
     ...sortedPP1Players,
     ...sortedPP2Players,
-    ...remainingPlayers,
+    ...sortedRemainingPlayers,
   ].map((playerId) => data[getKey(playerId, playerId)].p1);
-
-  return result;
-}
-
-function sortPlayerSet(playerIds: Set<number>, table: Record<string, TOIData>) {
-  return [...playerIds].sort(
-    (a, b) => table[getKey(b, b)].toi - table[getKey(a, a)].toi
-  );
 }
 
 type Mode = "number" | "total-toi" | "pp-toi" | "line-combination";
