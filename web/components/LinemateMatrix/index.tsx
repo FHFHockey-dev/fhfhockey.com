@@ -56,16 +56,16 @@ async function getRostersMap(gameId: number, _teamId?: number) {
     teamId: teamId,
     sweaterNumber: item.sweaterNumber,
     position: item.position,
-    name: item.name.default,
+    name: item.name.default
   });
 
   const players: PlayerData[] = [];
   let teams: { id: number; name: string }[] = [
     boxscore.homeTeam,
-    boxscore.awayTeam,
+    boxscore.awayTeam
   ].map((team) => ({
     id: team.id,
-    name: team.name.default,
+    name: team.name.default
   }));
 
   if (_teamId) {
@@ -73,24 +73,24 @@ async function getRostersMap(gameId: number, _teamId?: number) {
     if (_teamId === boxscore.homeTeam.id) {
       const homeTeamPlayers = [
         ...playerByGameStats.homeTeam.forwards,
-        ...playerByGameStats.homeTeam.defense,
+        ...playerByGameStats.homeTeam.defense
       ].map(transform(boxscore.homeTeam.id));
       players.push(...homeTeamPlayers);
     } else if (_teamId === boxscore.awayTeam.id) {
       const awayTeamPlayers = [
         ...playerByGameStats.awayTeam.forwards,
-        ...playerByGameStats.awayTeam.defense,
+        ...playerByGameStats.awayTeam.defense
       ].map(transform(boxscore.awayTeam.id));
       players.push(...awayTeamPlayers);
     }
   } else {
     const homeTeamPlayers = [
       ...playerByGameStats.homeTeam.forwards,
-      ...playerByGameStats.homeTeam.defense,
+      ...playerByGameStats.homeTeam.defense
     ].map(transform(boxscore.homeTeam.id));
     const awayTeamPlayers = [
       ...playerByGameStats.awayTeam.forwards,
-      ...playerByGameStats.awayTeam.defense,
+      ...playerByGameStats.awayTeam.defense
     ].map(transform(boxscore.awayTeam.id));
     players.push(...homeTeamPlayers, ...awayTeamPlayers);
   }
@@ -101,7 +101,7 @@ async function getRostersMap(gameId: number, _teamId?: number) {
 
   return {
     rostersMap,
-    teams,
+    teams
   };
 }
 
@@ -119,7 +119,7 @@ function processShifts(shifts: Shift[], rosters: Record<number, PlayerData[]>) {
         result[teamId].push({
           toi: getPairwiseTOI(shifts, p1, p2),
           p1,
-          p2,
+          p2
         });
       }
     }
@@ -145,7 +145,7 @@ export async function getTOIData(id: number, _teamId?: number) {
     Fetch(
       `https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId=${id}`
     ).then((res) => res.json()),
-    getRostersMap(id, _teamId),
+    getRostersMap(id, _teamId)
   ]);
 
   let rosters = groupBy(Object.values(rostersMap), (player) => player.teamId);
@@ -174,7 +174,7 @@ export async function getTOIData(id: number, _teamId?: number) {
       data[teamId].push({
         toi: item.toi,
         p1: rostersMap[item.p1],
-        p2: rostersMap[item.p2],
+        p2: rostersMap[item.p2]
       });
     });
   });
@@ -222,15 +222,15 @@ type Props = {
 export const OPTIONS = [
   {
     label: "Total TOI",
-    value: "total-toi",
+    value: "total-toi"
   },
   { label: "Sweater Number", value: "number" },
-  { label: "Line Combination", value: "line-combination" },
+  { label: "Line Combination", value: "line-combination" }
 ] as const;
 export default function LinemateMatrix({
   id,
   mode,
-  onModeChanged = () => {},
+  onModeChanged = () => {}
 }: Props) {
   const [toiData, rosters, gameInfo, loading] = useTOI(id);
   if (!gameInfo) return <></>;
@@ -269,7 +269,7 @@ export default function LinemateMatrix({
 type PlayerType = "forwards" | "defensemen";
 export const NUM_PLAYERS_PER_LINE = {
   forwards: 3,
-  defensemen: 2,
+  defensemen: 2
 } as const;
 export function sortByLineCombination(
   data: Record<string, TOIData>,
@@ -323,7 +323,7 @@ export function LinemateMatrixInternal({
   teamName,
   roster = [],
   toiData = [],
-  mode,
+  mode
 }: LinemateMatrixInternalProps) {
   const [selectedCell, setSelectedCell] = useState({ row: -1, col: -1 });
   const table = useMemo(() => {
@@ -369,7 +369,7 @@ export function LinemateMatrixInternal({
         className={classNames(styles.grid, "content")}
         style={{
           gridTemplateRows: `var(--player-info-size) repeat( ${roster.length}, 1fr)`,
-          gridTemplateColumns: `var(--player-info-size) repeat(${roster.length}, 1fr)`,
+          gridTemplateColumns: `var(--player-info-size) repeat(${roster.length}, 1fr)`
         }}
       >
         {sortedRoster.length > 0 &&
@@ -382,7 +382,7 @@ export function LinemateMatrixInternal({
                   <div
                     key={player.id}
                     className={classNames(styles.topPlayerName, {
-                      [styles.active]: col === selectedCell.col - 1,
+                      [styles.active]: col === selectedCell.col - 1
                     })}
                   >
                     <div className={styles.inner}>
@@ -391,7 +391,7 @@ export function LinemateMatrixInternal({
                       {player.name}
                     </div>
                   </div>
-                )),
+                ))
               ];
             } else {
               return new Array(sortedRoster.length + 1)
@@ -406,7 +406,7 @@ export function LinemateMatrixInternal({
                       <div
                         key={p2.id}
                         className={classNames(styles.leftPlayerName, {
-                          [styles.active]: selectedCell.row === row,
+                          [styles.active]: selectedCell.row === row
                         })}
                       >
                         {p2.sweaterNumber}
@@ -497,7 +497,7 @@ function Cell({
   p2,
   highlight,
   onPointerEnter = () => {},
-  onPointerLeave = () => {},
+  onPointerLeave = () => {}
 }: CellProps) {
   const opacity = sharedToi / teamAvgToi;
   const color = getColor(p1.position, p2.position);
@@ -516,7 +516,7 @@ function Cell({
           className={styles.content}
           style={{
             opacity: opacity,
-            backgroundColor: color,
+            backgroundColor: color
           }}
         ></div>
       </Tooltip>
