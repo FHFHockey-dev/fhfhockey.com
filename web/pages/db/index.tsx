@@ -1,3 +1,5 @@
+// /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/db/index.tsx
+
 import { useEffect, useState } from "react";
 import {
   Button,
@@ -6,7 +8,7 @@ import {
   CardContent,
   CardMedia,
   Typography,
-  TextField,
+  TextField
 } from "@mui/material";
 import Grid from "@mui/material/Unstable_Grid2"; // Grid version 2
 
@@ -36,12 +38,12 @@ export default function Page() {
     try {
       const { message, success } = await doPOST("/api/v1/db/update-players");
       enqueueSnackbar(message, {
-        variant: success ? "success" : "error",
+        variant: success ? "success" : "error"
       });
     } catch (e: any) {
       console.error(e.message);
       enqueueSnackbar(e.message, {
-        variant: "error",
+        variant: "error"
       });
     }
   }
@@ -50,12 +52,12 @@ export default function Page() {
     try {
       const { message, success } = await doPOST("/api/v1/db/update-seasons");
       enqueueSnackbar(message, {
-        variant: success ? "success" : "error",
+        variant: success ? "success" : "error"
       });
     } catch (e: any) {
       console.error(e.message);
       enqueueSnackbar(e.message, {
-        variant: "error",
+        variant: "error"
       });
     }
   }
@@ -64,12 +66,12 @@ export default function Page() {
     try {
       const { message, success } = await doPOST("/api/v1/db/update-teams");
       enqueueSnackbar(message, {
-        variant: success ? "success" : "error",
+        variant: success ? "success" : "error"
       });
     } catch (e: any) {
       console.error(e.message);
       enqueueSnackbar(e.message, {
-        variant: "error",
+        variant: "error"
       });
     }
   }
@@ -78,12 +80,12 @@ export default function Page() {
     try {
       const { message, success } = await doPOST("/api/v1/db/update-games");
       enqueueSnackbar(message, {
-        variant: success ? "success" : "error",
+        variant: success ? "success" : "error"
       });
     } catch (e: any) {
       console.error(e.message);
       enqueueSnackbar(e.message, {
-        variant: "error",
+        variant: "error"
       });
     }
   }
@@ -96,14 +98,14 @@ export default function Page() {
             `/api/v1/db/update-stats/${game.id}`
           );
           enqueueSnackbar(message, {
-            variant: success ? "success" : "error",
+            variant: success ? "success" : "error"
           });
         }
       }
     } catch (e: any) {
       console.error(e.message);
       enqueueSnackbar(e.message, {
-        variant: "error",
+        variant: "error"
       });
     }
   }
@@ -114,12 +116,12 @@ export default function Page() {
         "/api/v1/db/update-line-combinations"
       );
       enqueueSnackbar(message, {
-        variant: success ? "success" : "error",
+        variant: success ? "success" : "error"
       });
     } catch (e: any) {
       console.error(e.message);
       enqueueSnackbar(e.message, {
-        variant: "error",
+        variant: "error"
       });
     }
   }
@@ -130,7 +132,7 @@ export default function Page() {
       const trimmedInput = powerPlayInput.trim().toLowerCase();
       if (trimmedInput !== "all" && isNaN(Number(trimmedInput))) {
         enqueueSnackbar("Please enter a valid game ID or 'all'.", {
-          variant: "error",
+          variant: "error"
         });
         return;
       }
@@ -143,12 +145,12 @@ export default function Page() {
 
       const { message, success } = await doPOST(endpoint);
       enqueueSnackbar(message, {
-        variant: success ? "success" : "error",
+        variant: success ? "success" : "error"
       });
     } catch (e: any) {
       console.error(e.message);
       enqueueSnackbar(e.message, {
-        variant: "error",
+        variant: "error"
       });
     }
   }
@@ -159,7 +161,7 @@ export default function Page() {
       const trimmedInput = shiftChartsInput.trim().toLowerCase();
       if (trimmedInput !== "all" && isNaN(Number(trimmedInput))) {
         enqueueSnackbar("Please enter a valid game ID or 'all'.", {
-          variant: "error",
+          variant: "error"
         });
         return;
       }
@@ -172,12 +174,12 @@ export default function Page() {
 
       const { message, success } = await doPOST(endpoint);
       enqueueSnackbar(message, {
-        variant: success ? "success" : "error",
+        variant: success ? "success" : "error"
       });
     } catch (e: any) {
       console.error(e.message);
       enqueueSnackbar(e.message, {
-        variant: "error",
+        variant: "error"
       });
     }
   }
@@ -199,7 +201,7 @@ export default function Page() {
         enqueueSnackbar(
           "Please enter a valid option or date in YYYY-MM-DD format.",
           {
-            variant: "error",
+            variant: "error"
           }
         );
         return;
@@ -212,12 +214,12 @@ export default function Page() {
 
       const { message, success } = await doPOST(endpoint);
       enqueueSnackbar(message, {
-        variant: success ? "success" : "error",
+        variant: success ? "success" : "error"
       });
     } catch (e: any) {
       console.error(e.message);
       enqueueSnackbar(e.message, {
-        variant: "error",
+        variant: "error"
       });
     }
   }
@@ -228,12 +230,12 @@ export default function Page() {
         "/api/v1/db/update-expected-goals?date=all"
       );
       enqueueSnackbar(message, {
-        variant: success ? "success" : "error",
+        variant: success ? "success" : "error"
       });
     } catch (e: any) {
       console.error(e.message);
       enqueueSnackbar(e.message, {
-        variant: "error",
+        variant: "error"
       });
     }
   }
@@ -291,7 +293,7 @@ export default function Page() {
               display: "flex",
               flexDirection: "column",
               background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff",
+              color: "#fff"
             }}
           >
             <CardMedia
@@ -326,7 +328,7 @@ export default function Page() {
               display: "flex",
               flexDirection: "column",
               background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff",
+              color: "#fff"
             }}
           >
             <CardMedia
@@ -361,7 +363,7 @@ export default function Page() {
               display: "flex",
               flexDirection: "column",
               background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff",
+              color: "#fff"
             }}
           >
             <CardMedia
@@ -396,7 +398,7 @@ export default function Page() {
               display: "flex",
               flexDirection: "column",
               background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff",
+              color: "#fff"
             }}
           >
             <CardMedia
@@ -431,7 +433,7 @@ export default function Page() {
               display: "flex",
               flexDirection: "column",
               background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff",
+              color: "#fff"
             }}
           >
             <CardMedia
@@ -466,7 +468,7 @@ export default function Page() {
               display: "flex",
               flexDirection: "column",
               background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff",
+              color: "#fff"
             }}
           >
             <CardMedia
@@ -502,8 +504,8 @@ export default function Page() {
                       fontWeight: "900",
                       textTransform: "uppercase",
                       backgroundColor: "#202020",
-                      margin: "1px",
-                    },
+                      margin: "1px"
+                    }
                 }}
               />
             </CardContent>
@@ -525,7 +527,7 @@ export default function Page() {
               display: "flex",
               flexDirection: "column",
               background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff",
+              color: "#fff"
             }}
           >
             <CardMedia
@@ -559,7 +561,7 @@ export default function Page() {
               display: "flex",
               flexDirection: "column",
               background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff",
+              color: "#fff"
             }}
           >
             <CardMedia
@@ -594,8 +596,8 @@ export default function Page() {
                       fontWeight: "900",
                       textTransform: "uppercase",
                       backgroundColor: "#202020",
-                      margin: "1px",
-                    },
+                      margin: "1px"
+                    }
                 }}
               />
             </CardContent>
@@ -617,7 +619,7 @@ export default function Page() {
               display: "flex",
               flexDirection: "column",
               background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff",
+              color: "#fff"
             }}
           >
             <CardMedia
@@ -654,8 +656,8 @@ export default function Page() {
                       fontWeight: "900",
                       textTransform: "uppercase",
                       backgroundColor: "#202020",
-                      margin: "1px",
-                    },
+                      margin: "1px"
+                    }
                 }}
               />
             </CardContent>
@@ -677,7 +679,7 @@ export default function Page() {
               display: "flex",
               flexDirection: "column",
               background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
-              color: "#fff",
+              color: "#fff"
             }}
           >
             <CardMedia

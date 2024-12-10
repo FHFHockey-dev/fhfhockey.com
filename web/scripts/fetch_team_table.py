@@ -1,4 +1,5 @@
 # scripts/fetch_team_table.py
+# /Users/tim/Desktop/FHFH/fhfhockey.com/web/scripts/fetch_team_table.py
 
 import requests
 from bs4 import BeautifulSoup

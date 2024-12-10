@@ -37,7 +37,7 @@ function Header() {
         ref={navbarRef}
         className={classNames(styles.header, {
           // don't hide the nav bar when the menu is open
-          [styles.hidden]: menuOpen ? false : !isNavbarVisible,
+          [styles.hidden]: menuOpen ? false : !isNavbarVisible
         })}
       >
         {/* logo */}

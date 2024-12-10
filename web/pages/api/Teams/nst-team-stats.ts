@@ -18,20 +18,20 @@ const dateBasedResponseKeys: {
 } = {
   countsAll: {
     situation: "all",
-    rate: "n",
+    rate: "n"
   },
   counts5v5: {
     situation: "5v5",
-    rate: "n",
+    rate: "n"
   },
   countsPP: {
     situation: "pp",
-    rate: "n",
+    rate: "n"
   },
   countsPK: {
     situation: "pk",
-    rate: "n",
-  },
+    rate: "n"
+  }
 };
 
 // Define the responseKeys for season-based tables
@@ -40,12 +40,12 @@ const seasonBasedResponseKeys: {
 } = {
   seasonStats: {
     situation: "all",
-    rate: "n",
+    rate: "n"
   },
   lastSeasonStats: {
     situation: "all",
-    rate: "n",
-  },
+    rate: "n"
+  }
 };
 
 // Define TypeScript interfaces for clarity
@@ -161,7 +161,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
     if (!date) {
       return res.status(400).json({
         message: "Missing 'date' query parameter.",
-        success: false,
+        success: false
       });
     }
 
@@ -175,7 +175,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
       seasonEndDate,
       lastRegularSeasonStartDate,
       lastRegularSeasonEndDate,
-      lastSeasonEndDate,
+      lastSeasonEndDate
     } = currentSeason;
 
     // 3. Preliminary Check for Date-Based Tables and Data Fetching
@@ -187,7 +187,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         "nst_team_all",
         "nst_team_5v5",
         "nst_team_pp",
-        "nst_team_pk",
+        "nst_team_pk"
       ];
 
       // Function to get the latest date from a table
@@ -234,7 +234,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         console.log("All data is up to date. No new data to fetch.");
         return res.status(200).json({
           message: "All date-based team statistics are up to date.",
-          success: true,
+          success: true
         });
       }
 
@@ -286,7 +286,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
             "--loc",
             "B",
             "--gpf",
-            "410",
+            "410"
           ];
 
           // Path to the Python script
@@ -299,7 +299,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           try {
             // Execute the Python script using Bottleneck's limiter
             const { stdout, stderr } = await execAsync(
-              `python "${scriptPath}" ${scriptArgs
+              `python3 "${scriptPath}" ${scriptArgs
                 .map((arg) => `"${arg}"`)
                 .join(" ")}`
             );
@@ -455,7 +455,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
                       : null,
                   pdo: stat.PDO !== null ? parseFloat(stat.PDO) : null,
                   date: formattedDate,
-                  situation: stat.situation || "all",
+                  situation: stat.situation || "all"
                   // For date-based tables, season is undefined
                 };
               })
@@ -468,7 +468,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
             const { error } = await supabase
               .from(targetTable)
               .upsert(upsertData, {
-                onConflict: ["team_abbreviation", "date"],
+                onConflict: ["team_abbreviation", "date"]
               });
 
             if (error) {
@@ -567,7 +567,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           "--loc",
           "B",
           "--gpf",
-          "410",
+          "410"
         ];
 
         // Path to the Python script
@@ -721,7 +721,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
                     : null,
                 pdo: stat.PDO !== null ? parseFloat(stat.PDO) : null,
                 situation: stat.situation || "all",
-                season: from_season, // Added season field
+                season: from_season // Added season field
                 // For season-based tables, date is undefined or null
               };
             })
@@ -733,7 +733,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           const { error } = await supabase
             .from(targetTable)
             .upsert(upsertData, {
-              onConflict: ["team_abbreviation", "season"], // Ensure 'season' is a unique constraint in your table
+              onConflict: ["team_abbreviation", "season"] // Ensure 'season' is a unique constraint in your table
             });
 
           if (error) {
@@ -828,7 +828,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           "--loc",
           "B",
           "--gpf",
-          "410",
+          "410"
         ];
 
         // Path to the Python script
@@ -982,7 +982,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
                     : null,
                 pdo: stat.PDO !== null ? parseFloat(stat.PDO) : null,
                 situation: stat.situation || "all",
-                season: from_season, // Added season field
+                season: from_season // Added season field
                 // For season-based tables, date is undefined or null
               };
             })
@@ -994,7 +994,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           const { error } = await supabase
             .from(targetTable)
             .upsert(upsertData, {
-              onConflict: ["team_abbreviation", "season"], // Ensure 'season' is a unique constraint in your table
+              onConflict: ["team_abbreviation", "season"] // Ensure 'season' is a unique constraint in your table
             });
 
           if (error) {
@@ -1055,7 +1055,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           "--loc",
           "B",
           "--gpf",
-          "410",
+          "410"
         ];
 
         // Path to the Python script
@@ -1209,7 +1209,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
                     : null,
                 pdo: stat.PDO !== null ? parseFloat(stat.PDO) : null,
                 situation: stat.situation || "all",
-                season: from_season, // Added season field
+                season: from_season // Added season field
                 // For season-based tables, date is undefined or null
               };
             })
@@ -1221,7 +1221,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           const { error } = await supabase
             .from(targetTable)
             .upsert(upsertData, {
-              onConflict: ["team_abbreviation", "season"], // Ensure 'season' is a unique constraint in your table
+              onConflict: ["team_abbreviation", "season"] // Ensure 'season' is a unique constraint in your table
             });
 
           if (error) {
@@ -1246,14 +1246,14 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
       // Respond after processing the specific date
       return res.status(200).json({
         message: `Successfully upserted team statistics.`,
-        success: true,
+        success: true
       });
     }
   } catch (error: any) {
     console.error("Error in nst-team-stats API:", error.message);
     return res.status(500).json({
       message: "Failed to upsert team statistics: " + error.message,
-      success: false,
+      success: false
     });
   }
 });
