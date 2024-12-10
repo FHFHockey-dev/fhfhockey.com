@@ -31,6 +31,7 @@ export function getPairwiseTOI(
   p2: number,
   ppBlocks?: Block[]
 ): number {
+  if (data.length === 0) return 0;
   const ppOnly = ppBlocks !== undefined;
   const teamId = data[0].teamId;
   const p1Data = data.filter((item) => item.playerId === p1);
