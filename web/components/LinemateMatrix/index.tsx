@@ -14,6 +14,7 @@ import styles from "./index.module.scss";
 import Tooltip from "components/Tooltip";
 import Select from "components/Select";
 import { isGameFinished } from "pages/api/v1/db/update-stats/[gameId]";
+import { setDifference } from "utils/setDifference";
 
 // C:\Users\timbr\Desktop\FHFH\fhfhockey.com-3\web\components\LinemateMatrix\index.tsx
 
@@ -432,7 +433,7 @@ function sortByPPTOI(data: Record<string, TOIData>): PlayerData[] {
   const pp1PlayerIds = selectTopPlayers(pp1Pivot, allPlayers, 5);
 
   // Step 2: Determine PP2 players
-  const remainingPlayers = allPlayers.difference(pp1PlayerIds);
+  const remainingPlayers = setDifference(allPlayers, pp1PlayerIds);
   // Find the player with the highest individual TOI as the PP2 pivot
   const pp2Pivot = sortPlayerSet(remainingPlayers)[0];
 
@@ -443,7 +444,7 @@ function sortByPPTOI(data: Record<string, TOIData>): PlayerData[] {
   const sortedPP1Players = sortPlayerSet(pp1PlayerIds);
   const sortedPP2Players = sortPlayerSet(pp2PlayerIds);
   const sortedRemainingPlayers = sortPlayerSet(
-    remainingPlayers.difference(pp2PlayerIds)
+    setDifference(remainingPlayers, pp2PlayerIds)
   );
 
   return [
