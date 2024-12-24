@@ -1,22 +1,19 @@
-// web/pages/wigoCharts.tsx
+// /pages/wigoCharts.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styles from "styles/wigoCharts.module.scss";
 import {
   Player,
   TeamColors,
   defaultColors,
   TableAggregateData,
-  CombinedPlayerStats,
-  ThreeYearCountsAverages,
-  ThreeYearRatesAverages,
-  CareerAverageCounts,
-  CareerAverageRates
-} from "components/WiGO/types"; // CombinedPlayerStats is now exported from types.ts
+  CombinedPlayerStats
+} from "components/WiGO/types";
 import NameSearchBar from "../components/WiGO/NameSearchBar";
 import Image from "next/image";
 import { getTeamInfoById } from "lib/teamsInfo";
-import { fetchPlayerAggregatedStats } from "../utils/fetchWigoPlayerStats"; // Import the utility
+import { fetchPlayerAggregatedStats } from "../utils/fetchWigoPlayerStats";
+import TeamNameSVG from "../components/WiGO/TeamNameSVG"; // Import the new SVG component
 
 const WigoCharts: React.FC = () => {
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
@@ -30,6 +27,7 @@ const WigoCharts: React.FC = () => {
   );
   const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
   const [dataError, setDataError] = useState<string | null>(null);
+  const [teamName, setTeamName] = useState<string>("");
 
   const placeholderImage = "/pictures/player-placeholder.jpg";
 
@@ -40,6 +38,7 @@ const WigoCharts: React.FC = () => {
     if (player.team_id) {
       const teamInfo = getTeamInfoById(player.team_id);
       if (teamInfo) {
+        setTeamName(teamInfo.name);
         setTeamColors({
           primaryColor: teamInfo.primaryColor,
           secondaryColor: teamInfo.secondaryColor,
@@ -49,23 +48,45 @@ const WigoCharts: React.FC = () => {
         });
       } else {
         setTeamColors(defaultColors);
+        setTeamName("");
       }
     } else {
       setTeamColors(defaultColors);
+      setTeamName("");
     }
   };
 
-  /**
-   * Formats a number of seconds into MM:SS format, rounded to the nearest second.
-   *
-   * @param {number} seconds - The total seconds.
-   * @returns {string} - The formatted time string in MM:SS.
-   */
   const formatSecondsToMMSS = (seconds: number): string => {
-    const totalSeconds = Math.round(seconds); // Round to nearest second
+    const totalSeconds = Math.round(seconds);
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  };
+
+  const formatCell = (
+    label: string,
+    value?: number,
+    column?: string
+  ): string => {
+    if (value == null) return "-";
+
+    // Apply two decimal places for "CA", "3YA", and "PP%"
+    if (column === "CA" || column === "3YA") {
+      return value.toFixed(2);
+    }
+
+    if (label === "PP%") {
+      return `${value.toFixed(2)}%`;
+    }
+
+    // Existing formatting rules
+    switch (label) {
+      case "ATOI":
+      case "PPTOI/GM":
+        return formatSecondsToMMSS(value);
+      default:
+        return value.toFixed(2);
+    }
   };
 
   useEffect(() => {
@@ -90,7 +111,6 @@ const WigoCharts: React.FC = () => {
           setDataError("No statistics available for the selected player.");
         }
 
-        // Set counts and rates data
         setCountsTableData(aggregatedData.counts);
         setRatesTableData(aggregatedData.rates);
       } catch (error) {
@@ -106,7 +126,7 @@ const WigoCharts: React.FC = () => {
 
   return (
     <div
-      className={styles.chartsContainer}
+      className={styles.wigoChart}
       style={
         {
           "--primary-color": teamColors.primaryColor,
@@ -117,213 +137,192 @@ const WigoCharts: React.FC = () => {
         } as React.CSSProperties
       }
     >
-      {/* TRENDS CHART */}
-      <div className={styles.trendsChartBorder}>
-        <div className={styles.trendsChart}>
-          <div className={styles.nameSearch}>
-            <NameSearchBar onSelect={handlePlayerSelect} />
-          </div>
-          <div className={styles.notSureYet}></div>
+      <div className={styles.nameSearchBar}>
+        <NameSearchBar onSelect={handlePlayerSelect} />
+        {selectedPlayer ? (
+          <span className={styles.selectedPlayerName}>
+            {selectedPlayer.fullName}
+          </span>
+        ) : (
+          <span>No player selected</span>
+        )}
+      </div>
+
+      <div className={styles.playerHeadshot}>
+        <div className={styles.headshot}>
+          {teamName && (
+            <TeamNameSVG
+              teamName={teamName}
+              primaryColor={teamColors.primaryColor}
+              secondaryColor={teamColors.secondaryColor}
+            />
+          )}
+
+          {headshotUrl ? (
+            <Image
+              src={headshotUrl}
+              alt={`${selectedPlayer?.fullName} headshot`}
+              className={styles.headshotImage}
+              layout="fill"
+              objectFit="cover"
+              style={{
+                border: `6px solid ${teamColors.primaryColor}`
+              }}
+            />
+          ) : (
+            <Image
+              src={placeholderImage}
+              alt="No headshot available"
+              className={styles.headshotImage}
+              layout="fill"
+              objectFit="cover"
+              style={{
+                border: `6px solid #07aae2`,
+                borderRadius: "90px"
+              }}
+            />
+          )}
         </div>
       </div>
 
-      {/* WIGO CHART */}
-      <div className={styles.wigoChartBorder}>
-        <div className={styles.wigoChart}>
-          <div className={styles.nameContainer}>
-            {selectedPlayer ? (
-              <span className={styles.selectedPlayerName}>
-                {selectedPlayer.fullName}
-              </span>
+      {/* Offense/Defense Ratings */}
+      <div className={styles.offenseDefenseRatings}>
+        {/* Offense/Defense Ratings content here */}
+      </div>
+
+      {/* Consistency Chart */}
+      <div className={styles.consistencyChart}>
+        {/* Consistency Chart content here */}
+      </div>
+
+      {/* Rates Table */}
+      <div className={styles.ratesTable}>
+        <table aria-label="Rates Table">
+          <thead>
+            <tr>
+              <th>Stat</th>
+              <th>CA</th>
+              <th>3YA</th>
+              <th>LY</th>
+              <th>L5</th>
+              <th>L10</th>
+              <th>L20</th>
+              <th>STD</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoadingData ? (
+              <tr>
+                <td colSpan={8}>Loading rates data...</td>
+              </tr>
+            ) : dataError ? (
+              <tr>
+                <td colSpan={8}>{dataError}</td>
+              </tr>
+            ) : ratesTableData.length > 0 ? (
+              ratesTableData.map((row, rowIndex) => (
+                <tr
+                  key={`rates-row-${rowIndex + 1}`}
+                  className={row.label === "GP" ? styles.gpRow : ""}
+                >
+                  <td className={styles.statLabel}>{row.label}</td>
+                  <td>{formatCell(row.label, row.CA)}</td>
+                  <td>{formatCell(row.label, row.threeYA)}</td>
+                  <td>{formatCell(row.label, row.LY)}</td>
+                  <td>{formatCell(row.label, row.L5)}</td>
+                  <td>{formatCell(row.label, row.L10)}</td>
+                  <td>{formatCell(row.label, row.L20)}</td>
+                  <td>{formatCell(row.label, row.STD)}</td>
+                </tr>
+              ))
             ) : (
-              <span>No player selected</span>
+              <tr>
+                <td colSpan={8}>No data available.</td>
+              </tr>
             )}
-          </div>
+          </tbody>
+        </table>
+      </div>
 
-          <div className={styles.headshotContainer}>
-            <div className={styles.headshot}>
-              {headshotUrl ? (
-                <Image
-                  src={headshotUrl}
-                  alt={`${selectedPlayer?.fullName} headshot`}
-                  className={styles.headshotImage}
-                  layout="fill"
-                  objectFit="cover"
-                  style={{
-                    border: `6px solid ${teamColors.primaryColor}`
-                  }}
-                />
-              ) : (
-                <Image
-                  src={placeholderImage}
-                  alt="No headshot available"
-                  className={styles.headshotImage}
-                  layout="fill"
-                  objectFit="cover"
-                  style={{
-                    border: `6px solid #07aae2`,
-                    borderRadius: "90px"
-                  }}
-                />
-              )}
-            </div>
-          </div>
+      {/* Line Chart Rolling Averages */}
+      <div className={styles.lineChartRollingAverages}>
+        {/* Line Chart content here */}
+      </div>
 
-          <div className={styles.pptoiChart}></div>
-          <div className={styles.atoiChart}></div>
-          <div className={styles.doughnut}></div>
-          <div className={styles.percentiles}></div>
-
-          {/* Counts Table */}
-          {/* Counts Table */}
-          <div className={styles.countsTable}>
-            <table aria-label="Counts Table">
-              <thead>
-                <tr>
-                  <th>Stat</th>
-                  <th>CA</th>
-                  <th>3YA</th>
-                  <th>LY</th>
-                  <th>L5</th>
-                  <th>L10</th>
-                  <th>L20</th>
-                  <th>STD</th>
+      {/* Counts Table */}
+      <div className={styles.countsTable}>
+        <table aria-label="Counts Table">
+          <thead>
+            <tr>
+              <th>Stat</th>
+              <th>CA</th>
+              <th>3YA</th>
+              <th>LY</th>
+              <th>L5</th>
+              <th>L10</th>
+              <th>L20</th>
+              <th>STD</th>
+            </tr>
+          </thead>
+          <tbody>
+            {isLoadingData ? (
+              <tr>
+                <td colSpan={8}>Loading counts data...</td>
+              </tr>
+            ) : dataError ? (
+              <tr>
+                <td colSpan={8}>{dataError}</td>
+              </tr>
+            ) : countsTableData.length > 0 ? (
+              countsTableData.map((row, rowIndex) => (
+                <tr
+                  key={`counts-row-${rowIndex + 1}`}
+                  className={row.label === "GP" ? styles.gpRow : ""}
+                >
+                  <td className={styles.statLabel}>{row.label}</td>
+                  <td>{formatCell(row.label, row.CA)}</td>
+                  <td>{formatCell(row.label, row.threeYA)}</td>
+                  <td>{formatCell(row.label, row.LY)}</td>
+                  <td>{formatCell(row.label, row.L5)}</td>
+                  <td>{formatCell(row.label, row.L10)}</td>
+                  <td>{formatCell(row.label, row.L20)}</td>
+                  <td>{formatCell(row.label, row.STD)}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {isLoadingData ? (
-                  <tr>
-                    <td colSpan={8}>Loading counts data...</td>
-                  </tr>
-                ) : dataError ? (
-                  <tr>
-                    <td colSpan={8}>{dataError}</td>
-                  </tr>
-                ) : countsTableData.length > 0 ? (
-                  countsTableData.map((row, rowIndex) => (
-                    <tr
-                      key={`counts-row-${rowIndex + 1}`}
-                      className={row.label === "GP" ? styles.gpRow : ""}
-                    >
-                      <td className={styles.statLabel}>{row.label}</td>
-                      <td>{row.CA ? row.CA.toFixed(2) : "-"}</td>{" "}
-                      {/* Career Average */}
-                      <td>{row.threeYA ? row.threeYA.toFixed(2) : "-"}</td>{" "}
-                      {/* Three-Year Average */}
-                      <td>
-                        {["ATOI", "PPTOI/GM"].includes(row.label)
-                          ? formatSecondsToMMSS(row.LY)
-                          : row.LY}
-                      </td>
-                      <td>
-                        {["ATOI", "PPTOI/GM"].includes(row.label)
-                          ? formatSecondsToMMSS(row.L5)
-                          : row.L5}
-                      </td>
-                      <td>
-                        {["ATOI", "PPTOI/GM"].includes(row.label)
-                          ? formatSecondsToMMSS(row.L10)
-                          : row.L10}
-                      </td>
-                      <td>
-                        {["ATOI", "PPTOI/GM"].includes(row.label)
-                          ? formatSecondsToMMSS(row.L20)
-                          : row.L20}
-                      </td>
-                      <td>
-                        {["ATOI", "PPTOI/GM"].includes(row.label)
-                          ? formatSecondsToMMSS(row.STD)
-                          : row.STD}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={8}>No data available.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={8}>No data available.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-          {/* Rates Table */}
-          <div className={styles.ratesTable}>
-            <table aria-label="Rates Table">
-              <thead>
-                <tr>
-                  <th>Stat</th>
-                  <th>CA</th>
-                  <th>3YA</th>
-                  <th>LY</th>
-                  <th>L5</th>
-                  <th>L10</th>
-                  <th>L20</th>
-                  <th>STD</th>
-                </tr>
-              </thead>
-              <tbody>
-                {isLoadingData ? (
-                  <tr>
-                    <td colSpan={8}>Loading rates data...</td>
-                  </tr>
-                ) : dataError ? (
-                  <tr>
-                    <td colSpan={8}>{dataError}</td>
-                  </tr>
-                ) : ratesTableData.length > 0 ? (
-                  ratesTableData.map((row, rowIndex) => (
-                    <tr
-                      key={`rates-row-${rowIndex + 1}`}
-                      className={row.label === "GP" ? styles.gpRow : ""}
-                    >
-                      <td className={styles.statLabel}>{row.label}</td>
-                      <td>{row.CA ? row.CA.toFixed(2) : "-"}</td>{" "}
-                      {/* Career Average */}
-                      <td>{row.threeYA ? row.threeYA.toFixed(2) : "-"}</td>{" "}
-                      {/* Three-Year Average */}
-                      <td>
-                        {["ATOI", "PPTOI/GM"].includes(row.label)
-                          ? formatSecondsToMMSS(row.LY)
-                          : row.LY}
-                      </td>
-                      <td>
-                        {["ATOI", "PPTOI/GM"].includes(row.label)
-                          ? formatSecondsToMMSS(row.L5)
-                          : row.L5}
-                      </td>
-                      <td>
-                        {["ATOI", "PPTOI/GM"].includes(row.label)
-                          ? formatSecondsToMMSS(row.L10)
-                          : row.L10}
-                      </td>
-                      <td>
-                        {["ATOI", "PPTOI/GM"].includes(row.label)
-                          ? formatSecondsToMMSS(row.L20)
-                          : row.L20}
-                      </td>
-                      <td>
-                        {["ATOI", "PPTOI/GM"].includes(row.label)
-                          ? formatSecondsToMMSS(row.STD)
-                          : row.STD}
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={8}>No data available.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+      {/* Averages Table */}
+      <div className={styles.averagesTable}>
+        {/* Averages Table if needed */}
+      </div>
 
-          {/* Remove the Three-Year Averages Table */}
-          {/* The data is now integrated into the Counts and Rates tables */}
+      {/* Player Bio */}
+      <div className={styles.playerBio}>{/* Player Bio content here */}</div>
 
-          {/* Career Averages Table */}
-          {/* If you still need a separate Career Averages table, you can keep it. 
-              Otherwise, it's integrated above in the "CA" column */}
-        </div>
+      {/* Bar Chart */}
+      <div className={styles.barChart}>{/* Bar Chart content here */}</div>
+
+      {/* On-Ice Label */}
+      <div className={styles.onIceLabel}>On Ice Data</div>
+
+      {/* Percentile Chart */}
+      <div className={styles.percentileChart}>
+        {/* Percentile Chart content here */}
+      </div>
+
+      {/* On-Ice Table */}
+      <div className={styles.onIceTable}>{/* On Ice Table content here */}</div>
+
+      {/* Doughnut Charts */}
+      <div className={styles.doughnutCharts}>
+        {/* Doughnut Charts content here */}
       </div>
     </div>
   );

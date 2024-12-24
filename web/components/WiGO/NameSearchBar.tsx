@@ -21,6 +21,9 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({ onSelect }) => {
   // Ref to track the latest query to handle out-of-order responses
   const latestQueryRef = useRef<string>("");
 
+  // Ref to track if a selection was made to prevent dropdown from reopening
+  const isSelectingRef = useRef<boolean>(false);
+
   // Debounce delay in milliseconds
   const DEBOUNCE_DELAY = 300;
 
@@ -41,6 +44,13 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({ onSelect }) => {
 
     // Set up the debounce
     const handler = setTimeout(async () => {
+      // If a selection was just made, skip the search and reset the flag
+      if (isSelectingRef.current) {
+        isSelectingRef.current = false;
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from("players")
@@ -69,7 +79,7 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({ onSelect }) => {
         }
       } finally {
         // Only update loading state if the query hasn't changed
-        if (searchTerm === latestQueryRef.current) {
+        if (searchTerm === latestQueryRef.current && !isSelectingRef.current) {
           setIsLoading(false);
         }
       }
@@ -114,6 +124,9 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({ onSelect }) => {
    * @throws {Error} - Throws an error if the HTTP response is not ok.
    */
   const handleSelect = async (player: Player) => {
+    // Indicate that a selection is being made
+    isSelectingRef.current = true;
+
     setSearchTerm(player.fullName);
     setIsDropdownVisible(false);
 
@@ -145,7 +158,7 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({ onSelect }) => {
         .update({
           image_url: headshotUrl,
           sweater_number: sweaterNumber,
-          team_id: teamId,
+          team_id: teamId
         })
         .eq("id", player.id);
     } catch (error) {

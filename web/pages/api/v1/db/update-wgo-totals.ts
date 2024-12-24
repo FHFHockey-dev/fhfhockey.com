@@ -18,7 +18,7 @@ import {
   WGOScoringRatesSkaterTotal,
   WGOScoringCountsSkaterTotal,
   WGOShotTypeSkaterTotal,
-  WGOToiSkaterTotal,
+  WGOToiSkaterTotal
 } from "lib/NHL/types";
 
 import pLimit from "p-limit";
@@ -122,7 +122,7 @@ async function fetchAllTotalsForSeason(
       scoringRatesTotalsResponse,
       scoringPerGameTotalsResponse,
       shotTypeTotalsResponse,
-      timeOnIceTotalsResponse,
+      timeOnIceTotalsResponse
     ] = await Promise.all([
       Fetch(skaterTotalStatsUrl).then(
         (res) => res.json() as Promise<NHLApiResponse>
@@ -169,7 +169,7 @@ async function fetchAllTotalsForSeason(
       ),
       Fetch(timeOnIceTotalsUrl).then(
         (res) => res.json() as Promise<NHLApiResponse>
-      ),
+      )
     ]);
 
     // Concatenate the fetched data to the accumulated array
@@ -242,7 +242,7 @@ async function fetchAllTotalsForSeason(
     scoringRatesTotalStats,
     scoringPerGameTotalStats,
     shotTypeTotalStats,
-    timeOnIceTotalStats,
+    timeOnIceTotalStats
   };
 }
 
@@ -267,7 +267,7 @@ async function updateSkaterTotals(
     scoringRatesTotalStats,
     scoringPerGameTotalStats,
     shotTypeTotalStats,
-    timeOnIceTotalStats,
+    timeOnIceTotalStats
   } = await fetchAllTotalsForSeason(season, 100);
 
   // **Create Maps for Fast Lookups**
@@ -610,7 +610,7 @@ async function updateSkaterTotals(
       ot_time_on_ice_per_game: timeOnIceTotals?.otTimeOnIcePerOtGame, // float
       shifts: timeOnIceTotals?.shifts, // int
       shifts_per_game: timeOnIceTotals?.shiftsPerGame, // float
-      time_on_ice_per_shift: timeOnIceTotals?.timeOnIcePerShift, // float
+      time_on_ice_per_shift: timeOnIceTotals?.timeOnIcePerShift // float
     };
     console.log(`Player ${stat.skaterFullName} updated successfully`);
 
@@ -632,7 +632,7 @@ async function updateSkaterTotals(
   }
 
   return {
-    updated: true,
+    updated: true
   };
 }
 
@@ -648,17 +648,19 @@ export default async function handler(
 
     const season = Array.isArray(seasonParam) ? seasonParam[0] : seasonParam;
 
+    // example url = /api/update-skater-totals?season=20202021
+
     const result = await updateSkaterTotals(season);
     res.json({
       message: `Skater stats updated successfully for season ${season}.`,
       success: true,
-      data: result,
+      data: result
     });
   } catch (e: any) {
     console.error("Error in handler:", e.message); // Log the error for debugging
     res.status(400).json({
       message: `Failed to process request in handler. Reason: ${e.message}`,
-      success: false,
+      success: false
     });
   }
 }

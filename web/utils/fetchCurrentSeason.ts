@@ -15,6 +15,8 @@ export interface SeasonInfo {
   idTwo?: number;
 }
 
+console.log("fetchCurrentSeason.ts ///////////////////");
+
 export async function fetchCurrentSeason(): Promise<SeasonInfo> {
   console.log("Fetching current season...");
   const response = await Fetch(
@@ -53,7 +55,7 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
       playoffsStartDate: playoffsStartDate.getTime(), // Convert to timestamp
       playoffsEndDate: playoffsEndDate.getTime(), // Convert to timestamp
       previousSeason,
-      nextSeason,
+      nextSeason
     };
   } else {
     return {
@@ -64,7 +66,7 @@ export async function fetchCurrentSeason(): Promise<SeasonInfo> {
       playoffsStartDate: playoffsStartDate.getTime(), // Convert to timestamp
       playoffsEndDate: playoffsEndDate.getTime(), // Convert to timestamp
       idPrev: previousSeason.id,
-      idTwo: nextSeason.id,
+      idTwo: nextSeason.id
     };
   }
 }

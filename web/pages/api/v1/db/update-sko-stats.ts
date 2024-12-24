@@ -20,7 +20,7 @@ import {
   WGOScoringCountsSkaterStat,
   WGOShotTypeSkaterStat,
   WGOToiSkaterStat,
-  WGOSkaterStat,
+  WGOSkaterStat
 } from "lib/NHL/types";
 
 // Define the structure of the NHL API response for skater stats
@@ -122,7 +122,7 @@ async function fetchAllDataForDate(
       scoringRatesResponse,
       scoringPerGameResponse,
       shotTypeResponse,
-      timeOnIceResponse,
+      timeOnIceResponse
     ] = await Promise.all([
       Fetch(skaterStatsUrl).then(
         (res) => res.json() as Promise<NHLApiResponse>
@@ -159,7 +159,7 @@ async function fetchAllDataForDate(
         (res) => res.json() as Promise<NHLApiResponse>
       ),
       Fetch(shotTypeUrl).then((res) => res.json() as Promise<NHLApiResponse>),
-      Fetch(timeOnIceUrl).then((res) => res.json() as Promise<NHLApiResponse>),
+      Fetch(timeOnIceUrl).then((res) => res.json() as Promise<NHLApiResponse>)
     ]);
 
     // Concatenate the fetched data to the accumulated array
@@ -247,7 +247,7 @@ async function fetchAllDataForDate(
     scoringRatesStats,
     scoringPerGameStats,
     shotTypeStats,
-    timeOnIceStats,
+    timeOnIceStats
   };
 }
 
@@ -288,7 +288,7 @@ async function updateSkaterStats(date: string): Promise<{
     scoringRatesStats,
     scoringPerGameStats,
     shotTypeStats,
-    timeOnIceStats,
+    timeOnIceStats
   } = await fetchAllDataForDate(formattedDate, 100);
 
   for (const stat of skaterStats) {
@@ -605,7 +605,7 @@ async function updateSkaterStats(date: string): Promise<{
       ot_time_on_ice_per_game: timeOnIceStat?.otTimeOnIcePerOtGame, // float
       shifts: timeOnIceStat?.shifts, // int
       shifts_per_game: timeOnIceStat?.shiftsPerGame, // float
-      time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift, // float
+      time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift // float
     };
     await supabase.from("sko_skater_stats").upsert(mergedData);
   }
@@ -626,7 +626,7 @@ async function updateSkaterStats(date: string): Promise<{
     scoringRatesStats,
     scoringPerGameStats,
     shotTypeStats,
-    timeOnIceStats,
+    timeOnIceStats
   };
 }
 
@@ -658,7 +658,7 @@ async function updateSkaterStatsForSeason() {
       scoringRatesStats,
       scoringPerGameStats,
       shotTypeStats,
-      timeOnIceStats,
+      timeOnIceStats
     } = await fetchAllDataForDate(formattedDate, 100);
 
     for (const stat of skaterStats) {
@@ -972,7 +972,7 @@ async function updateSkaterStatsForSeason() {
         ot_time_on_ice_per_game: timeOnIceStat?.otTimeOnIcePerOtGame, // float
         shifts: timeOnIceStat?.shifts, // int
         shifts_per_game: timeOnIceStat?.shiftsPerGame, // float
-        time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift, // float
+        time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift // float
       };
 
       // Update Supabase table if there are new non-null values
@@ -1281,7 +1281,7 @@ async function updateSkaterStatsForSeason() {
           ot_time_on_ice_per_game: timeOnIceStat?.otTimeOnIcePerOtGame, // float
           shifts: timeOnIceStat?.shifts, // int
           shifts_per_game: timeOnIceStat?.shiftsPerGame, // float
-          time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift, // float
+          time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift // float
         });
         totalUpdates++;
       }
@@ -1292,7 +1292,7 @@ async function updateSkaterStatsForSeason() {
     return {
       message: `Skater stats updated for the entire season successfully. Total updates: ${totalUpdates}`,
       success: true,
-      totalUpdates: totalUpdates,
+      totalUpdates: totalUpdates
     };
   }
 }
@@ -1379,7 +1379,7 @@ async function fetchDataForPlayer(
       scoringRatesResponse,
       scoringPerGameResponse,
       shotTypeResponse,
-      timeOnIceResponse,
+      timeOnIceResponse
     ] = await Promise.all([
       Fetch(skaterStatsURL).then(
         (res) => res.json() as Promise<NHLApiResponse>
@@ -1416,7 +1416,7 @@ async function fetchDataForPlayer(
         (res) => res.json() as Promise<NHLApiResponse>
       ),
       Fetch(shotTypesUrl).then((res) => res.json() as Promise<NHLApiResponse>),
-      Fetch(timeOnIceUrl).then((res) => res.json() as Promise<NHLApiResponse>),
+      Fetch(timeOnIceUrl).then((res) => res.json() as Promise<NHLApiResponse>)
     ]);
 
     skaterStats = skaterStats.concat(
@@ -1502,7 +1502,7 @@ async function fetchDataForPlayer(
     scoringRatesStats,
     scoringPerGameStats,
     shotTypeStats,
-    timeOnIceStats,
+    timeOnIceStats
   };
 }
 
@@ -1526,33 +1526,33 @@ export default async function handler(
       res.json({
         message: `Skater stats updated successfully for ${date}.`,
         success: true,
-        data: result,
+        data: result
       });
     } else if (playerId && playerFullName) {
       const result = await fetchDataForPlayer(playerId, playerFullName);
       res.json({
         message: `Data fetched successfully for player ${playerFullName}.`,
         success: true,
-        data: result,
+        data: result
       });
     } else if (playerId) {
       const result = await updateSkaterStatsForSeason();
       res.json({
         message: `Skater stats updated successfully for player ID ${playerId}.`,
         success: true,
-        data: result,
+        data: result
       });
     } else {
       res.status(400).json({
         message:
           "Missing required parameters. Please provide a date or a player ID and player name.",
-        success: false,
+        success: false
       });
     }
   } catch (e: any) {
     res.status(400).json({
       message: "Failed to process request. Reason: " + e.message,
-      success: false,
+      success: false
     });
   }
 }

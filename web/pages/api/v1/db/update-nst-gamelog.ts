@@ -26,6 +26,25 @@ const REQUEST_INTERVAL_MS = 21000; // 21 seconds
 const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
 
 // Player name mapping
+/**
+ * A mapping of player names to their full names.
+ *
+ * This record is used to map abbreviated or alternative player names
+ * to their official full names as recognized in the system.
+ *
+ * @type {Record<string, { fullName: string }>}
+ *
+ * @example
+ * // Accessing the full name of a player
+ * const fullName = playerNameMapping["Matthew Benning"].fullName;
+ * console.log(fullName); // Output: "Matt Benning"
+ * // Format:
+ * // { Natural Stat Trick Name: { fullName: NHL API Full Name } }
+ *
+ * @property {string} key - The abbreviated or alternative name of the player.
+ * @property {Object} value - An object containing the full name of the player.
+ * @property {string} value.fullName - The full name of the player.
+ */
 const playerNameMapping: Record<string, { fullName: string }> = {
   "Matthew Benning": { fullName: "Matt Benning" },
   "Alex Kerfoot": { fullName: "Alexander Kerfoot" },
@@ -37,12 +56,20 @@ const playerNameMapping: Record<string, { fullName: string }> = {
   "Nathan Légaré": { fullName: "Nathan Legare" },
   "Mat?j Blümel": { fullName: "Matěj Blümel" },
   "Alex Petrovic": { fullName: "Alexander Petrovic" }
-
-  // Alex Petrovic, Nathan Légaré
 };
 
 const troublesomePlayers: string[] = [];
 
+/**
+ * Normalizes a given name string by performing the following transformations:
+ * 1. Converts the string to lowercase.
+ * 2. Removes spaces, hyphens, and apostrophes.
+ * 3. Normalizes the string to Unicode Normalization Form D (NFD).
+ * 4. Removes diacritical marks (accents).
+ *
+ * @param name - The name string to be normalized.
+ * @returns The normalized name string.
+ */
 function normalizeName(name: string): string {
   return name
     .toLowerCase()
@@ -55,13 +82,13 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-interface SeasonInfo {
-  id: number;
-  startDate: string;
-  regularSeasonEndDate: string;
-  endDate: string;
-}
-
+/**
+ * Generates an array of date strings in the format 'YYYY-MM-DD' for each date between the given start and end dates, inclusive.
+ *
+ * @param start - The start date.
+ * @param end - The end date.
+ * @returns An array of date strings in the format 'YYYY-MM-DD'.
+ */
 function getDatesBetween(start: Date, end: Date): string[] {
   const dates: string[] = [];
   const current = new Date(start);
@@ -75,6 +102,12 @@ function getDatesBetween(start: Date, end: Date): string[] {
   return dates;
 }
 
+/**
+ * Maps a given header string to its corresponding column name in the database.
+ *
+ * @param header - The header string to be mapped.
+ * @returns The corresponding column name as a string, or null if the header is "Player" or not found in the mapping.
+ */
 function mapHeaderToColumn(header: string): string | null {
   const headerMap: Record<string, string> = {
     // All your mappings here...
@@ -225,6 +258,16 @@ function mapHeaderToColumn(header: string): string | null {
   return headerMap[header] || null;
 }
 
+/**
+ * Retrieves the latest date from multiple tables in Supabase.
+ *
+ * This function queries a list of predefined table names to find the most recent
+ * `date_scraped` value across all tables. It returns the latest date found or `null`
+ * if no dates are found or if there are errors in all queries.
+ *
+ * @returns {Promise<string | null>} A promise that resolves to the latest date as a string,
+ * or `null` if no dates are found.
+ */
 async function getLatestDateSupabase(): Promise<string | null> {
   const tableNames = [
     "nst_gamelog_as_counts",
@@ -234,7 +277,16 @@ async function getLatestDateSupabase(): Promise<string | null> {
     "nst_gamelog_as_counts_oi",
     "nst_gamelog_as_rates_oi",
     "nst_gamelog_pp_counts_oi",
-    "nst_gamelog_pp_rates_oi"
+    "nst_gamelog_pp_rates_oi",
+    // Add new tables for es and pk
+    "nst_gamelog_es_counts",
+    "nst_gamelog_es_rates",
+    "nst_gamelog_pk_counts",
+    "nst_gamelog_pk_rates",
+    "nst_gamelog_es_counts_oi",
+    "nst_gamelog_es_rates_oi",
+    "nst_gamelog_pk_counts_oi",
+    "nst_gamelog_pk_rates_oi"
   ];
   let latestDate: string | null = null;
 
@@ -306,7 +358,7 @@ Rows Upserted: ${rowsUpserted}
 
 // Print delay countdown bar (21s)
 async function printDelayCountdown() {
-  const total = 21;
+  const total = 30;
   const interval = 1; // 1 second interval
   for (let elapsed = 0; elapsed < total; elapsed++) {
     const progress = (elapsed / total) * 100;
@@ -329,119 +381,192 @@ function printTotalProgress(current: number, total: number) {
 }
 
 // Determine table name from datasetType
+/**
+ * Retrieves the corresponding table name for a given dataset type.
+ *
+ * The function uses a predefined mapping to return the appropriate table name
+ * based on the provided dataset type. If the dataset type does not match any
+ * of the predefined keys, the function returns "unknown_table".
+ *
+ * @param datasetType - The type of dataset for which the table name is required.
+ * @returns The corresponding table name as a string.
+ *
+ * @example
+ * ```typescript
+ * const tableName = getTableName("evenStrengthCounts");
+ * console.log(tableName); // Outputs: "nst_gamelog_es_counts"
+ * ```
+ */
 function getTableName(datasetType: string): string {
-  switch (datasetType) {
-    case "allStrengthsCounts":
-      return "nst_gamelog_as_counts";
-    case "allStrengthsRates":
-      return "nst_gamelog_as_rates";
-    case "powerPlayCounts":
-      return "nst_gamelog_pp_counts";
-    case "powerPlayRates":
-      return "nst_gamelog_pp_rates";
-    case "allStrengthsCountsOi":
-      return "nst_gamelog_as_counts_oi";
-    case "allStrengthsRatesOi":
-      return "nst_gamelog_as_rates_oi";
-    case "powerPlayCountsOi":
-      return "nst_gamelog_pp_counts_oi";
-    case "powerPlayRatesOi":
-      return "nst_gamelog_pp_rates_oi";
-    default:
-      return "unknown_table";
+  const mapping: Record<string, string> = {
+    // Existing mappings
+    allStrengthsCounts: "nst_gamelog_as_counts",
+    allStrengthsRates: "nst_gamelog_as_rates",
+    powerPlayCounts: "nst_gamelog_pp_counts",
+    powerPlayRates: "nst_gamelog_pp_rates",
+    allStrengthsCountsOi: "nst_gamelog_as_counts_oi",
+    allStrengthsRatesOi: "nst_gamelog_as_rates_oi",
+    powerPlayCountsOi: "nst_gamelog_pp_counts_oi",
+    powerPlayRatesOi: "nst_gamelog_pp_rates_oi",
+    // New mappings for es and pk
+    evenStrengthCounts: "nst_gamelog_es_counts",
+    evenStrengthRates: "nst_gamelog_es_rates",
+    penaltyKillCounts: "nst_gamelog_pk_counts",
+    penaltyKillRates: "nst_gamelog_pk_rates",
+    evenStrengthCountsOi: "nst_gamelog_es_counts_oi",
+    evenStrengthRatesOi: "nst_gamelog_es_rates_oi",
+    penaltyKillCountsOi: "nst_gamelog_pk_counts_oi",
+    penaltyKillRatesOi: "nst_gamelog_pk_rates_oi"
+  };
+
+  const tableName = mapping[datasetType] || "unknown_table";
+
+  if (tableName === "unknown_table") {
+    console.warn(
+      `Warning: datasetType "${datasetType}" is not mapped to a valid table.`
+    );
   }
+
+  return tableName;
 }
 
 async function fetchAndParseData(
   url: string,
   datasetType: string,
   date: string,
-  seasonId: string
-) {
-  try {
-    const response = await axios.get(url);
-    if (!response.data) return [];
+  seasonId: string,
+  retries: number = 3
+): Promise<any[]> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      console.log(`Fetching data from URL: ${url} (Attempt ${attempt})`);
+      const response = await axios.get(url);
 
-    const $ = cheerio.load(response.data);
-    const table = $("table").first();
-
-    const headers: string[] = [];
-    table.find("thead tr th").each((_, th) => {
-      headers.push($(th).text().trim());
-    });
-
-    const mappedHeaders = headers.map(mapHeaderToColumn);
-
-    const dataRowsCollected: any[] = [];
-    table.find("tbody tr").each((_, tr) => {
-      const rowData: any = {};
-      let playerFullName: string | null = null;
-      let playerPosition: string | null = null;
-      let playerTeam: string | null = null;
-
-      $(tr)
-        .find("td")
-        .each((i, td) => {
-          const column = mappedHeaders[i];
-          if (column === null) {
-            const originalHeader = headers[i];
-            if (originalHeader === "Player") {
-              playerFullName = $(td).text().trim();
-            } else if (originalHeader === "Position") {
-              playerPosition = $(td).text().trim();
-            } else if (originalHeader === "Team") {
-              playerTeam = $(td).text().trim();
-            }
-            return;
-          }
-
-          let cellText: string | null = $(td).text().trim();
-          if (cellText === "-" || cellText === "\\-") {
-            cellText = null;
-          }
-
-          if (cellText !== null) {
-            const num = Number(cellText.replace(/[^0-9.-]+/g, ""));
-            rowData[column] = isNaN(num) ? cellText : num;
-          } else {
-            rowData[column] = null;
-          }
-        });
-
-      if (
-        playerFullName &&
-        playerPosition &&
-        playerTeam &&
-        Object.keys(rowData).length > 0
-      ) {
-        rowData["player_full_name"] = playerFullName;
-        rowData["player_position"] = playerPosition;
-        rowData["player_team"] = playerTeam;
-        rowData["date_scraped"] = date;
-        rowData["season"] = seasonId;
-        dataRowsCollected.push(rowData);
+      if (!response.data) {
+        console.warn(`No data received from URL: ${url}`);
+        return [];
       }
-    });
 
-    // Assign player_id
-    const dataRowsWithPlayerIds: any[] = [];
-    for (const row of dataRowsCollected) {
-      const playerFullName = row["player_full_name"];
-      const playerPosition = row["player_position"];
-      const playerId = await getPlayerIdByName(playerFullName, playerPosition);
-      if (!playerId) continue;
+      const $ = cheerio.load(response.data);
+      const table = $("table").first();
 
-      row["player_id"] = playerId;
-      delete row["player_full_name"];
-      delete row["player_position"];
-      delete row["player_team"];
-      dataRowsWithPlayerIds.push(row);
+      if (table.length === 0) {
+        console.warn(`No table found in the response from URL: ${url}`);
+        return [];
+      }
+
+      const headers: string[] = [];
+      table.find("thead tr th").each((_, th) => {
+        headers.push($(th).text().trim());
+      });
+
+      const mappedHeaders = headers.map(mapHeaderToColumn);
+
+      const dataRowsCollected: any[] = [];
+      table.find("tbody tr").each((_, tr) => {
+        const rowData: any = {};
+        let playerFullName: string | null = null;
+        let playerPosition: string | null = null;
+        let playerTeam: string | null = null;
+
+        $(tr)
+          .find("td")
+          .each((i, td) => {
+            const column = mappedHeaders[i];
+            if (column === null) {
+              const originalHeader = headers[i];
+              if (originalHeader === "Player") {
+                playerFullName = $(td).text().trim();
+              } else if (originalHeader === "Position") {
+                playerPosition = $(td).text().trim();
+              } else if (originalHeader === "Team") {
+                playerTeam = $(td).text().trim();
+              }
+              return;
+            }
+
+            let cellText: string | null = $(td).text().trim();
+            if (cellText === "-" || cellText === "\\-") {
+              cellText = null;
+            }
+
+            if (cellText !== null) {
+              const num = Number(cellText.replace(/[^0-9.-]+/g, ""));
+              rowData[column] = isNaN(num) ? cellText : num;
+            } else {
+              rowData[column] = null;
+            }
+          });
+
+        if (
+          playerFullName &&
+          playerPosition &&
+          playerTeam &&
+          Object.keys(rowData).length > 0
+        ) {
+          rowData["player_full_name"] = playerFullName;
+          rowData["player_position"] = playerPosition;
+          rowData["player_team"] = playerTeam;
+          rowData["date_scraped"] = date;
+          rowData["season"] = parseInt(seasonId, 10); // Ensure season is an integer
+          dataRowsCollected.push(rowData);
+        } else {
+          console.warn(`Incomplete data row skipped for URL: ${url}`);
+        }
+      });
+
+      console.log(
+        `Parsed ${dataRowsCollected.length} raw data rows for datasetType "${datasetType}".`
+      );
+
+      // Assign player_id
+      const dataRowsWithPlayerIds: any[] = [];
+      for (const row of dataRowsCollected) {
+        const playerFullName = row["player_full_name"];
+        const playerPosition = row["player_position"];
+        const playerId = await getPlayerIdByName(
+          playerFullName,
+          playerPosition
+        );
+        if (!playerId) {
+          console.warn(
+            `Player ID not found for ${playerFullName} (${playerPosition})`
+          );
+          continue;
+        }
+
+        row["player_id"] = playerId;
+        delete row["player_full_name"];
+        delete row["player_position"];
+        delete row["player_team"];
+        dataRowsWithPlayerIds.push(row);
+      }
+
+      console.log(
+        `Final data rows with player IDs: ${dataRowsWithPlayerIds.length} for datasetType "${datasetType}".`
+      );
+
+      if (dataRowsWithPlayerIds.length === 0) {
+        console.warn(`No valid data rows found for URL: ${url}`);
+      }
+
+      return dataRowsWithPlayerIds;
+    } catch (error: any) {
+      console.error(
+        `Attempt ${attempt} - Error fetching data from ${url}:`,
+        error.message
+      );
+      if (attempt === retries) {
+        console.error(
+          `Failed to fetch data from ${url} after ${retries} attempts.`
+        );
+        return [];
+      }
+      // Wait before retrying
+      await delay(5000); // Wait 5 seconds before next attempt
     }
-
-    return dataRowsWithPlayerIds;
-  } catch {
-    return [];
   }
+  return [];
 }
 
 async function getPlayerIdByName(
@@ -480,9 +605,21 @@ async function getPlayerIdByName(
 }
 
 async function upsertData(datasetType: string, dataRows: any[]) {
-  if (dataRows.length === 0) return;
+  if (dataRows.length === 0) {
+    console.warn(`No data rows to upsert for datasetType "${datasetType}".`);
+    return;
+  }
 
   const tableName = getTableName(datasetType);
+
+  if (tableName === "unknown_table") {
+    console.warn(
+      `Skipping upsert for unknown table with datasetType "${datasetType}".`
+    );
+    return;
+  }
+
+  console.log(`Upserting ${dataRows.length} rows into table "${tableName}".`);
 
   const { error } = await supabase
     .from(tableName)
@@ -493,6 +630,8 @@ async function upsertData(datasetType: string, dataRows: any[]) {
       `Error upserting data into ${tableName}:`,
       error.details || error.message
     );
+  } else {
+    console.log(`Successfully upserted data into "${tableName}".`);
   }
 }
 
@@ -501,7 +640,12 @@ async function checkDataExists(
   date: string
 ): Promise<boolean> {
   const tableName = getTableName(datasetType);
-  if (tableName === "unknown_table") return false;
+  if (tableName === "unknown_table") {
+    console.warn(
+      `Skipping check for unknown table for datasetType "${datasetType}".`
+    );
+    return false;
+  }
 
   const { data, error } = await supabase
     .from(tableName)
@@ -509,8 +653,19 @@ async function checkDataExists(
     .eq("date_scraped", date)
     .limit(1);
 
-  if (error) return false;
-  return data && data.length > 0;
+  if (error) {
+    console.error(
+      `Error checking data existence in ${tableName}:`,
+      error.message
+    );
+    return false;
+  }
+
+  const exists = data && data.length > 0;
+  console.log(
+    `Data existence check for table "${tableName}" on date "${date}": ${exists}`
+  );
+  return exists;
 }
 
 function constructUrlsForDate(
@@ -521,21 +676,95 @@ function constructUrlsForDate(
   const thruSeason = seasonId;
   const commonParams = `fromseason=${fromSeason}&thruseason=${thruSeason}&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=${date}&td=${date}&lines=single&draftteam=ALL`;
 
-  const stdUrls = {
-    allStrengthsCounts: `${BASE_URL}?sit=all&score=all&stdoi=std&rate=n&team=ALL&${commonParams}&tgp=10`,
-    allStrengthsRates: `${BASE_URL}?sit=all&score=all&stdoi=std&rate=y&team=ALL&${commonParams}&tgp=410`,
-    powerPlayCounts: `${BASE_URL}?sit=pp&score=all&stdoi=std&rate=n&team=ALL&${commonParams}&tgp=410`,
-    powerPlayRates: `${BASE_URL}?sit=pp&score=all&stdoi=std&rate=y&team=ALL&${commonParams}&tgp=410`
-  };
+  // Define the strengths, stdoi, and rates
+  const strengths = [
+    "allStrengths",
+    "evenStrength",
+    "powerPlay",
+    "penaltyKill"
+  ];
+  const stdoiOptions = ["std", "oi"];
+  const rates = ["n", "y"];
 
-  const oiUrls = {
-    allStrengthsCountsOi: `${BASE_URL}?sit=all&score=all&stdoi=oi&rate=n&team=ALL&${commonParams}&tgp=10`,
-    allStrengthsRatesOi: `${BASE_URL}?sit=all&score=all&stdoi=oi&rate=y&team=ALL&${commonParams}&tgp=410`,
-    powerPlayCountsOi: `${BASE_URL}?sit=pp&score=all&stdoi=oi&rate=n&team=ALL&${commonParams}&tgp=410`,
-    powerPlayRatesOi: `${BASE_URL}?sit=pp&score=all&stdoi=oi&rate=y&team=ALL&${commonParams}&tgp=410`
-  };
+  const urls: Record<string, string> = {};
 
-  return { ...stdUrls, ...oiUrls };
+  for (const strength of strengths) {
+    for (const stdoi of stdoiOptions) {
+      for (const rate of rates) {
+        let datasetType: string;
+        let tgp: string;
+
+        // Determine tgp based on existing patterns
+        if (rate === "n") {
+          tgp = "10";
+        } else {
+          tgp = "410";
+        }
+
+        // Determine datasetType based on strength and stdoi
+        if (stdoi === "std") {
+          datasetType =
+            strength === "allStrengths"
+              ? "allStrengthsCounts"
+              : strength === "evenStrength"
+              ? "evenStrengthCounts"
+              : strength === "powerPlay"
+              ? "powerPlayCounts"
+              : "penaltyKillCounts";
+        } else {
+          datasetType =
+            strength === "allStrengths"
+              ? "allStrengthsCountsOi"
+              : strength === "evenStrength"
+              ? "evenStrengthCountsOi"
+              : strength === "powerPlay"
+              ? "powerPlayCountsOi"
+              : "penaltyKillCountsOi";
+        }
+
+        // Append rate information to datasetType only for rate 'y'
+        if (rate === "y") {
+          datasetType =
+            strength === "allStrengths"
+              ? "allStrengthsRates"
+              : strength === "evenStrength"
+              ? "evenStrengthRates"
+              : strength === "powerPlay"
+              ? "powerPlayRates"
+              : "penaltyKillRates";
+
+          if (stdoi === "oi") {
+            datasetType += "Oi"; // e.g., "allStrengthsRatesOi"
+          }
+        }
+
+        // Construct the URL
+        const url = `${BASE_URL}?sit=${getSitParam(
+          strength
+        )}&score=all&stdoi=${stdoi}&rate=${rate}&team=ALL&${commonParams}&tgp=${tgp}`;
+
+        urls[datasetType] = url;
+      }
+    }
+  }
+
+  return urls;
+}
+
+// Helper function to map strength to 'sit' parameter in URL
+function getSitParam(strength: string): string {
+  switch (strength) {
+    case "allStrengths":
+      return "all";
+    case "evenStrength":
+      return "ev";
+    case "powerPlay":
+      return "pp";
+    case "penaltyKill":
+      return "pk";
+    default:
+      return "all";
+  }
 }
 
 async function processUrlsSequentially(
@@ -562,6 +791,9 @@ async function processUrlsSequentially(
 
   for (let i = 0; i < urlsQueue.length; i++) {
     const { datasetType, url, date, seasonId } = urlsQueue[i];
+    console.log(
+      `\nProcessing datasetType "${datasetType}" for date "${date}".`
+    );
 
     // Wait 21 seconds before each request, except the first
     if (!firstRequest) {
@@ -576,6 +808,10 @@ async function processUrlsSequentially(
     if (!dataExists) {
       dataRows = await fetchAndParseData(url, datasetType, date, seasonId);
       await upsertData(datasetType, dataRows);
+    } else {
+      console.log(
+        `Data already exists for datasetType "${datasetType}" on date "${date}". Skipping upsert.`
+      );
     }
 
     totalProcessed++;

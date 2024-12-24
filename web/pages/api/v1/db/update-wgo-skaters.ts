@@ -21,7 +21,7 @@ import {
   WGOScoringCountsSkaterStat,
   WGOShotTypeSkaterStat,
   WGOToiSkaterStat,
-  WGOSkaterStat,
+  WGOSkaterStat
 } from "lib/NHL/types";
 
 interface NHLApiResponse {
@@ -122,7 +122,7 @@ async function fetchAllDataForDate(
       scoringRatesResponse,
       scoringPerGameResponse,
       shotTypeResponse,
-      timeOnIceResponse,
+      timeOnIceResponse
     ] = await Promise.all([
       Fetch(skaterStatsUrl).then(
         (res) => res.json() as Promise<NHLApiResponse>
@@ -159,7 +159,7 @@ async function fetchAllDataForDate(
         (res) => res.json() as Promise<NHLApiResponse>
       ),
       Fetch(shotTypeUrl).then((res) => res.json() as Promise<NHLApiResponse>),
-      Fetch(timeOnIceUrl).then((res) => res.json() as Promise<NHLApiResponse>),
+      Fetch(timeOnIceUrl).then((res) => res.json() as Promise<NHLApiResponse>)
     ]);
 
     // Concatenate the fetched data to the accumulated array
@@ -247,7 +247,7 @@ async function fetchAllDataForDate(
     scoringRatesStats,
     scoringPerGameStats,
     shotTypeStats,
-    timeOnIceStats,
+    timeOnIceStats
   };
 }
 
@@ -331,7 +331,7 @@ async function updateSkaterStatsForSeason() {
       scoringRatesStats,
       scoringPerGameStats,
       shotTypeStats,
-      timeOnIceStats,
+      timeOnIceStats
     } = await fetchAllDataForDate(formattedDate, 100);
 
     // Create maps from playerId to data for faster lookups
@@ -721,7 +721,7 @@ async function updateSkaterStatsForSeason() {
           shifts: timeOnIceStat?.shifts,
           shifts_per_game: timeOnIceStat?.shiftsPerGame,
           time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift,
-          season_id: currentSeason.seasonId,
+          season_id: currentSeason.seasonId
         };
         mergedDataArray.push(mergedData);
       } catch (error) {
@@ -758,7 +758,7 @@ async function updateSkaterStatsForSeason() {
     message: `Skater stats updated for the entire season successfully. Total updates: ${totalUpdates}, Total errors: ${totalErrors}`,
     success: true,
     totalUpdates: totalUpdates,
-    totalErrors: totalErrors,
+    totalErrors: totalErrors
   };
 }
 
@@ -844,7 +844,7 @@ async function fetchDataForPlayer(
       scoringRatesResponse,
       scoringPerGameResponse,
       shotTypeResponse,
-      timeOnIceResponse,
+      timeOnIceResponse
     ] = await Promise.all([
       Fetch(skaterStatsURL).then(
         (res) => res.json() as Promise<NHLApiResponse>
@@ -881,7 +881,7 @@ async function fetchDataForPlayer(
         (res) => res.json() as Promise<NHLApiResponse>
       ),
       Fetch(shotTypesUrl).then((res) => res.json() as Promise<NHLApiResponse>),
-      Fetch(timeOnIceUrl).then((res) => res.json() as Promise<NHLApiResponse>),
+      Fetch(timeOnIceUrl).then((res) => res.json() as Promise<NHLApiResponse>)
     ]);
 
     skaterStats = skaterStats.concat(
@@ -967,7 +967,7 @@ async function fetchDataForPlayer(
     scoringRatesStats,
     scoringPerGameStats,
     shotTypeStats,
-    timeOnIceStats,
+    timeOnIceStats
   };
 }
 
@@ -984,7 +984,7 @@ export default async function handler(
       return res.status(200).json({
         message: `Successfully updated skater stats for the entire season.`,
         success: true,
-        data: result,
+        data: result
       });
     }
 
@@ -1011,7 +1011,7 @@ export default async function handler(
       return res.status(200).json({
         message: `Data fetched successfully for player ${playerFullName}.`,
         success: true,
-        data: result,
+        data: result
       });
     }
 
@@ -1019,13 +1019,13 @@ export default async function handler(
     return res.status(400).json({
       message:
         "Missing required query parameters. Please provide an action, date, or a player ID and player name.",
-      success: false,
+      success: false
     });
   } catch (e: any) {
     console.error(`Handler Error: ${e.message}`);
     return res.status(500).json({
       message: "Failed to process request. Reason: " + e.message,
-      success: false,
+      success: false
     });
   }
 }

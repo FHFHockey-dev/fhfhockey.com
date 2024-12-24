@@ -66,6 +66,7 @@
   },
   "devDependencies": {
     "@testing-library/react": "^14.2.1",
+    "@types/dotenv": "^8.2.3",
     "@types/jsdom": "^20.0.0",
     "@types/node": "18.0.2",
     "@types/react": "^18.3.7",

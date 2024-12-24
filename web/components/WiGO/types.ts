@@ -72,60 +72,73 @@ export interface PlayerStats {
   rates: TableAggregateData[];
 }
 
-// New interfaces based on ThreeYearAverages API response
-
-// Yearly Counts and Rates
 export interface YearlyCount {
   season: number;
   team: string;
-  TOI: number;
-  GF: number;
-  GA: number;
-  "GF%": number;
-  SCF: number;
-  SCA: number;
-  "SCF%": number;
-  "S%": number;
-  "oiSH%": number;
-  "secA%": number;
-  iHDCF: number;
+  SOG: number; // Shots on Goal
+  TOI: number; // Time on Ice in seconds or appropriate unit
+  SF: number; // Shots For
+  SA: number; // Shots Against
+  "SF%": number; // Shots For Percentage
+  GF: number; // Goals For
+  GA: number; // Goals Against
+  "GF%": number; // Goals For Percentage
+  SCF: number; // Shot Counts For
+  SCA: number; // Shot Counts Against
+  "SCF%": number; // Shot Counts For Percentage
+  "S%": number; // Possibly some percentage stat
+  "oiSH%": number; // On-Ice Shot Percentage
+  "secA%": number; // Secondary Assist Percentage
+  iHDCF: number; // Individual High-Damaging Cross Face Checks
   goals: number;
-  SOG: number;
   "SOG/60": number;
-  IPP: number;
-  "oZS%": number;
-  GP: number;
-  oiGF: number;
+  IPP: number; // Ice Penalty Percentage or similar
+  "oZS%": number; // Offensive Zone Starts Percentage
+  GP: number; // Games Played
+  oiGF: number; // On-Ice Goals For
   assists: number;
-  A1: number;
-  A2: number;
-  PIM: number;
-  HIT: number;
-  BLK: number;
-  iCF: number;
-  CF: number;
-  CA: number;
-  FF: number;
-  FA: number;
-  SF: number;
-  SA: number;
-  xGF: number;
-  xGA: number;
-  "CF%": number;
-  "FF%": number;
-  "SF%": number;
-  ixG: number;
-  "xGF%": number;
-  iSCF: number;
-  HDCF: number;
-  HDGF: number;
-  MDCF: number;
-  MDGF: number;
-  LDCF: number;
-  LDGF: number;
-  oZS: number;
-  dZS: number;
+  A1: number; // Primary Assists
+  A2: number; // Secondary Assists
+  PIM: number; // Penalty Minutes
+  HIT: number; // Hits
+  BLK: number; // Blocked Shots
+  iCF: number; // Individual Corsi For
+  CF: number; // Corsi For
+  CA: number; // Corsi Against
+  "CF%": number; // Corsi For Percentage
+  iFF: number; // Individual Fenwick For
+  FF: number; // Fenwick For
+  FA: number; // Fenwick Against
+  "FF%": number; // Fenwick For Percentage
+  ixG: number; // Expected Goals
+  xGF: number; // Expected Goals For
+  xGA: number; // Expected Goals Against
+  "xGF%": number; // Expected Goals For Percentage
+  iSCF: number; // Individual Shot Counts For
+  HDCF: number; // High-Damaging Cross Face Checks
+  HDGF: number; // High-Damaging Goals For
+  MDCF: number; // Medium-Damaging Cross Face Checks
+  MDGF: number; // Medium-Damaging Goals For
+  LDCF: number; // Low-Damaging Cross Face Checks
+  LDGF: number; // Low-Damaging Goals For
+  oZS: number; // Offensive Zone Starts
+  dZS: number; // Defensive Zone Starts
+
+  // Power Play Stats
+  pp_assists?: number;
+  pp_goals?: number;
+  ppp?: number;
+
+  // Additional Stats
+  shots?: number;
+  blocked_shots?: number;
+  penalty_minutes?: number;
+  toi_per_game?: number;
+  pp_toi_per_game?: number;
+  pp_toi_pct_per_game?: number;
 }
+
+// components/WiGO/types.ts
 
 export interface YearlyRate {
   season: number;
@@ -136,17 +149,17 @@ export interface YearlyRate {
   "CF%": number;
   "iSCF/60": number;
   "PTS/60": number;
-  "SOG/60": number;
-  "A/60": number;
   "G/60": number;
   "GF/60": number;
   "GA/60": number;
   "GF%": number;
+  "A/60": number;
+  "A1/60": number;
+  "A2/60": number;
+  "SOG/60": number;
   "SF/60": number;
   "SA/60": number;
   "SF%": number;
-  "A1/60": number;
-  "A2/60": number;
   "SCF/60": number;
   "SCA/60": number;
   "SCF%": number;
@@ -154,6 +167,7 @@ export interface YearlyRate {
   "iFF/60": number;
   "FF/60": number;
   "FA/60": number;
+  "FF%": number;
   "ixG/60": number;
   "xGF/60": number;
   "xGA/60": number;
@@ -167,6 +181,10 @@ export interface YearlyRate {
   "PIM/60": number;
   "HIT/60": number;
   "BLK/60": number;
+  "PPA/60": number;
+  "PPG/60": number;
+  "PPP/60": number;
+  [key: string]: number | string | undefined;
 }
 
 export interface ThreeYearCountsAverages {
@@ -256,6 +274,7 @@ export interface ThreeYearRatesAverages {
   "PIM/60": number;
   "HIT/60": number;
   "BLK/60": number;
+  "PPP/60": number;
 }
 
 export interface CareerAverageCounts {
@@ -345,8 +364,10 @@ export interface CareerAverageRates {
   "PIM/60": number;
   "HIT/60": number;
   "BLK/60": number;
+  "PPP/60": number;
 }
 
+// components/WiGO/types.ts
 export interface ThreeYearAveragesResponse {
   success: boolean;
   message: string;
@@ -362,10 +383,24 @@ export interface ThreeYearAveragesResponse {
   careerAverageRates: CareerAverageRates;
 }
 
-// **New Interface**: CombinedPlayerStats
-export interface CombinedPlayerStats extends PlayerStats {
-  threeYearCountsAverages: ThreeYearCountsAverages;
-  threeYearRatesAverages: ThreeYearRatesAverages;
-  careerAverageCounts: CareerAverageCounts;
-  careerAverageRates: CareerAverageRates;
+// // **New Interface**: CombinedPlayerStats
+// export interface CombinedPlayerStats extends PlayerStats {
+//   threeYearCountsAverages: ThreeYearCountsAverages;
+//   threeYearRatesAverages: ThreeYearRatesAverages;
+//   careerAverageCounts: CareerAverageCounts;
+//   careerAverageRates: CareerAverageRates;
+// }
+
+// components/WiGO/types.ts
+
+export interface CombinedPlayerStats {
+  counts: TableAggregateData[];
+  rates: TableAggregateData[];
+
+  threeYearCountsAverages: Record<string, any>;
+  threeYearRatesAverages: Record<string, any>;
+  careerAverageCounts: Record<string, any>;
+  careerAverageRates: Record<string, any>;
+
+  threeYearApiData?: ThreeYearAveragesResponse; // Add this line
 }
