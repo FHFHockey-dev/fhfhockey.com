@@ -16,7 +16,7 @@ import ClientOnly from "components/ClientOnly";
 import styles from "../styles/Home.module.scss";
 
 import { teamsInfo } from "lib/NHL/teamsInfo";
-import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
+import { fetchCurrentSeason } from "utils/fetchCurrentseason";
 import Fetch from "lib/cors-fetch";
 
 // DEV NOTE:
@@ -26,7 +26,7 @@ const Home: NextPage = ({
   initialGames,
   initialInjuries,
   initialStandings,
-  nextGameDate,
+  nextGameDate
 }) => {
   const [currentDate, setCurrentDate] = useState(
     moment().utcOffset(-8).format("YYYY-MM-DD")
@@ -118,7 +118,7 @@ const Home: NextPage = ({
               period: liveData.periodDescriptor.number,
               periodType: liveData.periodDescriptor.periodType,
               timeRemaining: liveData.clock.timeRemaining,
-              inIntermission: liveData.clock.inIntermission,
+              inIntermission: liveData.clock.inIntermission
             };
           });
 
@@ -154,7 +154,7 @@ const Home: NextPage = ({
         {
           "1": "st",
           "2": "nd",
-          "3": "rd",
+          "3": "rd"
         }[periodNumber] || "th"; // Default to 'th' for any other cases
 
       return `${periodNumber}${periodSuffix} Period`;
@@ -187,7 +187,7 @@ const Home: NextPage = ({
 
   const [sortConfig, setSortConfig] = useState({
     key: "leagueSequence",
-    direction: "ascending",
+    direction: "ascending"
   });
 
   const sortedStandings = useMemo(() => {
@@ -226,7 +226,7 @@ const Home: NextPage = ({
       FINAL: "Final",
       OFF: "Final",
       LIVE: "LIVE",
-      CRIT: "Critical",
+      CRIT: "Critical"
     };
 
     return gameStateMapping[gameState] || gameState;
@@ -241,9 +241,9 @@ const Home: NextPage = ({
           images: [
             {
               url: `${process.env.NEXT_PUBLIC_SITE_URL}/pictures/circle.png`,
-              alt: "logo",
-            },
-          ],
+              alt: "logo"
+            }
+          ]
         }}
       />
       <Head>
@@ -301,7 +301,7 @@ const Home: NextPage = ({
                               awayTeamInfo.secondaryColor,
                             "--away-jersey-color": awayTeamInfo.jersey,
                             "--away-accent-color": awayTeamInfo.accent,
-                            "--away-alt-color": awayTeamInfo.alt,
+                            "--away-alt-color": awayTeamInfo.alt
                           }}
                         >
                           <div className={styles.homeTeamLogo}>
@@ -380,7 +380,7 @@ const Home: NextPage = ({
                               awayTeamInfo.secondaryColor,
                             "--away-jersey-color": awayTeamInfo.jersey,
                             "--away-accent-color": awayTeamInfo.accent,
-                            "--away-alt-color": awayTeamInfo.alt,
+                            "--away-alt-color": awayTeamInfo.alt
                           }}
                         >
                           <div className={styles.homeTeamLogo}>
@@ -556,7 +556,7 @@ export async function getServerSideProps({ req, res }) {
         team.playerInjuries
           ? team.playerInjuries.map((injury) => ({
               ...injury,
-              team: team.competitor.shortName,
+              team: team.competitor.shortName
             }))
           : []
       );
@@ -605,7 +605,7 @@ export async function getServerSideProps({ req, res }) {
         losses: team.losses,
         otLosses: team.otLosses,
         points: team.points,
-        teamLogo: `https://assets.nhle.com/logos/nhl/svg/${team.teamAbbrev.default}_light.svg`, // Adjust based on actual data
+        teamLogo: `https://assets.nhle.com/logos/nhl/svg/${team.teamAbbrev.default}_light.svg` // Adjust based on actual data
       }));
 
       return standingsData;
@@ -639,8 +639,8 @@ export async function getServerSideProps({ req, res }) {
       initialGames: gamesToday,
       initialInjuries: injuries,
       initialStandings: standings,
-      nextGameDate, // Pass the next game date to the component
-    },
+      nextGameDate // Pass the next game date to the component
+    }
   };
 }
 

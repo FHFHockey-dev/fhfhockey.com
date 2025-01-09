@@ -78,7 +78,7 @@ const supabaseLabelMap: Record<string, string> = {
   PPG: "pp_goals_avg",
   PPA: "pp_assists_avg",
   ATOI: "toi_per_game_avg",
-  "PPTOI/GM": "pp_toi_per_game_avg",
+  PPTOI: "pp_toi_per_game_avg",
   "PP%": "pp_toi_pct_per_game_avg"
   // Rates handled separately by rateCA3YAMap
 };
@@ -134,7 +134,7 @@ function applyAverages(
           }, 0);
 
           row.CA = caValue;
-          row.threeYA = threeYAValue;
+          row["3YA"] = threeYAValue;
         } else if (mapping.source === "api") {
           // Assign CA and 3YA from the ThreeYearAverages API
           if (threeYearApi) {
@@ -142,7 +142,7 @@ function applyAverages(
               row.CA =
                 (threeYearApi.careerAverageRates["A1/60"] || 0) +
                 (threeYearApi.careerAverageRates["A2/60"] || 0);
-              row.threeYA =
+              row["3YA"] =
                 (threeYearApi.threeYearRatesAverages["A1/60"] || 0) +
                 (threeYearApi.threeYearRatesAverages["A2/60"] || 0);
             } else {
@@ -150,7 +150,7 @@ function applyAverages(
                 threeYearApi.careerAverageRates[
                   label as keyof typeof threeYearApi.careerAverageRates
                 ] || 0;
-              row.threeYA =
+              row["3YA"] =
                 threeYearApi.threeYearRatesAverages[
                   label as keyof typeof threeYearApi.threeYearRatesAverages
                 ] || 0;
@@ -160,7 +160,7 @@ function applyAverages(
               `API data unavailable for rate statistic: ${label}. Setting CA and 3YA to 0.`
             );
             row.CA = 0;
-            row.threeYA = 0;
+            row["3YA"] = 0;
           }
         }
       }
@@ -171,14 +171,14 @@ function applyAverages(
         if (threeYearApi && careerObj && threeObj) {
           // Assign ixG from the API data
           row.CA = threeYearApi.careerAverageCounts["ixG"] || 0; // careerAverageCounts.ixG
-          row.threeYA = threeYearApi.threeYearCountsAverages["ixG"] || 0; // threeYearCountsAverages.ixG
-          console.log(`Assigned ixG: CA=${row.CA}, 3YA=${row.threeYA}`);
+          row["3YA"] = threeYearApi.threeYearCountsAverages["ixG"] || 0; // threeYearCountsAverages.ixG
+          console.log(`Assigned ixG: CA=${row.CA}, 3YA=${row["3YA"]}`);
         } else {
           console.warn(
             `API data unavailable for ixG in Counts table. Setting CA and 3YA to 0.`
           );
           row.CA = 0;
-          row.threeYA = 0;
+          row["3YA"] = 0;
         }
       } else if (supabaseLabelMap[label]) {
         // Handle other counts statistics via supabaseLabelMap
@@ -187,7 +187,7 @@ function applyAverages(
         const threeYAValue = threeObj ? threeObj[supaField] || 0 : 0;
 
         row.CA = caValue;
-        row.threeYA = threeYAValue;
+        row["3YA"] = threeYAValue;
       }
     }
 
@@ -432,7 +432,7 @@ export async function fetchPlayerAggregatedStats(
     {
       label: "GP",
       CA: 0,
-      threeYA: 0,
+      "3YA": 0,
       LY: previousSeasonGames.length,
       L5: Math.min(5, currentSeasonGames.length),
       L10: Math.min(10, currentSeasonGames.length),
@@ -497,7 +497,7 @@ export async function fetchPlayerAggregatedStats(
     return {
       label: "ATOI",
       CA: 0,
-      threeYA: 0,
+      "3YA": 0,
       LY: averageToiPerGame(prev),
       L5: averageToiPerGame(gs.slice(0, 5)),
       L10: averageToiPerGame(gs.slice(0, 10)),
@@ -508,9 +508,9 @@ export async function fetchPlayerAggregatedStats(
 
   function createPPToiRow(gs: SkaterStat[], prev: SkaterStat[]) {
     return {
-      label: "PPTOI/GM",
+      label: "PPTOI",
       CA: 0,
-      threeYA: 0,
+      "3YA": 0,
       LY: averagePPToiPerGame(prev),
       L5: averagePPToiPerGame(gs.slice(0, 5)),
       L10: averagePPToiPerGame(gs.slice(0, 10)),
@@ -523,7 +523,7 @@ export async function fetchPlayerAggregatedStats(
     return {
       label: "PP%",
       CA: 0,
-      threeYA: 0,
+      "3YA": 0,
       LY: averagePpToiPctPerGame(prev),
       L5: averagePpToiPctPerGame(gs.slice(0, 5)),
       L10: averagePpToiPctPerGame(gs.slice(0, 10)),
@@ -611,7 +611,7 @@ export async function fetchPlayerAggregatedStats(
       return {
         label,
         CA: 0, // to be filled from career table or API
-        threeYA: 0, // to be filled from 3-year table or API
+        "3YA": 0, // to be filled from 3-year table or API
         LY: isRate ? LY_Rate : LYVal,
         L5: isRate ? L5_Rate : L5Val,
         L10: isRate ? L10_Rate : L10Val,

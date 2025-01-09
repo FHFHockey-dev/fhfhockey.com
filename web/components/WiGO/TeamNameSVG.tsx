@@ -61,12 +61,13 @@ const TeamNameSVG: React.FC<TeamNameSVGProps> = ({
         <text
           key={index}
           x="50%" // Center horizontally
-          y={`${7 + (index + 0.5) * (85 / words.length)}%`} // Modified
+          y={`${7 + (index + 0.5) * (90 / words.length)}%`} // Modified
           textAnchor="middle"
           alignmentBaseline="middle"
           fill={secondaryColor}
           fontSize={`${fontSize}px`}
           fontFamily="'Train One', serif"
+          fontWeight={900}
           ref={(el) => (textRefs.current[index] = el)}
         >
           {word}

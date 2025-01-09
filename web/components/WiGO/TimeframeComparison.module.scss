@@ -1,0 +1,33 @@
+// /components/WiGO/TimeframeComparison.module.scss
+
+.timeframeContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 4px;
+  gap: 8px;
+}
+
+.timeframeSelect {
+  background-color: #303030;
+  color: #fff;
+  border: 1px solid #07aae2;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 14px;
+
+  &:focus {
+    outline: none;
+    border-color: #07aae2;
+  }
+}
+
+.vsText {
+  color: #07aae2;
+  font-weight: 900;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 16px;
+  margin: 0 4px;
+}

@@ -36,13 +36,14 @@ export const defaultColors: TeamColors = {
 // Existing table aggregate interfaces
 export interface TableAggregateData {
   label: string; // "Games Played", "Goals", "Assists", etc.
-  CA: number; // Current Average (placeholder)
-  threeYA: number; // Three-Year Average
+  CA: number; // Current Average
+  "3YA": number; // Three-Year Average
   LY: number; // Last Year
   L5: number; // Last 5 Games
   L10: number; // Last 10 Games
   L20: number; // Last 20 Games
   STD: number; // Season To Date
+  DIFF?: number;
 }
 
 export interface SkaterStat {
