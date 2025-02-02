@@ -6,7 +6,15 @@ import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import { Season } from "lib/NHL/types";
 
-export type TimeOption = "L7" | "L14" | "L30" | "SEASON";
+export type TimeOption =
+  | "L7"
+  | "L14"
+  | "L30"
+  | "SEASON"
+  | "L5"
+  | "L10"
+  | "L20"
+  | "3YA";
 
 type TimeOptionsProps = {
   className?: string;

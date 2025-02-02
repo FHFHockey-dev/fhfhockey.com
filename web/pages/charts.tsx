@@ -241,7 +241,11 @@ function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
           <PlayerBioCard playerId={playerId} />
         </div>
         <div className={styles.coverageChart}>
-          <CategoryCoverageChart playerId={playerId} timeOption={timeOption} />
+          <CategoryCoverageChart
+            showTitle
+            playerId={playerId}
+            timeOption={timeOption}
+          />
         </div>
         <div className={styles.timeOptions}>
           <TimeOptions timeOption={timeOption} setTimeOption={setTimeOption} />

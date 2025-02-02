@@ -11,7 +11,7 @@ import {
   TeamColors,
   defaultColors,
   TableAggregateData,
-  CombinedPlayerStats
+  CombinedPlayerStats,
 } from "components/WiGO/types";
 import NameSearchBar from "../components/WiGO/NameSearchBar";
 import Image from "next/image";
@@ -19,6 +19,7 @@ import { getTeamInfoById, teamNameToAbbreviationMap } from "lib/teamsInfo";
 import { fetchPlayerAggregatedStats } from "../utils/fetchWigoPlayerStats";
 import TeamNameSVG from "../components/WiGO/TeamNameSVG";
 import TimeframeComparison from "../components/WiGO/TimeframeComparison";
+import CategoryCoverageChart from "components/CategoryCoverageChart";
 
 /**
  * Helper that takes the tableData for (counts or rates)
@@ -138,7 +139,7 @@ const WigoCharts: React.FC = () => {
           secondaryColor: teamInfo.secondaryColor,
           accentColor: teamInfo.accent,
           altColor: teamInfo.alt,
-          jerseyColor: teamInfo.jersey
+          jerseyColor: teamInfo.jersey,
         });
       } else {
         setTeamName("");
@@ -233,7 +234,7 @@ const WigoCharts: React.FC = () => {
             "--secondary-color": teamColors.secondaryColor,
             "--accent-color": teamColors.accentColor,
             "--alt-color": teamColors.altColor,
-            "--jersey-color": teamColors.jerseyColor
+            "--jersey-color": teamColors.jerseyColor,
           } as React.CSSProperties
         }
       >
@@ -280,7 +281,7 @@ const WigoCharts: React.FC = () => {
                     objectFit="cover"
                     style={{
                       border: `6px solid #07aae2`,
-                      borderRadius: "90px"
+                      borderRadius: "90px",
                     }}
                   />
                 )}
@@ -396,7 +397,7 @@ const WigoCharts: React.FC = () => {
                             ? row.DIFF >= 0
                               ? "limegreen"
                               : "red"
-                            : "#fff"
+                            : "#fff",
                       }}
                     >
                       {row.DIFF !== undefined ? `${row.DIFF.toFixed(1)}%` : "-"}
@@ -462,7 +463,7 @@ const WigoCharts: React.FC = () => {
                             ? row.DIFF >= 0
                               ? "limegreen"
                               : "red"
-                            : "#fff"
+                            : "#fff",
                       }}
                     >
                       {row.DIFF !== undefined ? `${row.DIFF.toFixed(1)}%` : "-"}
@@ -484,7 +485,12 @@ const WigoCharts: React.FC = () => {
         <div className={styles.ppgLineChart}></div>
         <div className={styles.gameScoreLineChart}></div>
         <div className={styles.rateStatBarPercentiles}></div>
-        <div className={styles.percentileChart}></div>
+        <div className={styles.percentileChart}>
+          <CategoryCoverageChart
+            playerId={selectedPlayer?.id}
+            timeOption="L30"
+          />
+        </div>
       </div>
     </div>
   );
