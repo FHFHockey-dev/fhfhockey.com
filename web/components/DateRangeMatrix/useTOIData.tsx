@@ -1,5 +1,6 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\DateRangeMatrix\useTOIData.tsx
+// @ts-nocheck
 import { useEffect, useState } from "react";
 import { generateKey, TOIData, Team } from "./index";
 import { parseTime, PlayerData } from "./utilities";

@@ -50,7 +50,7 @@ export async function getInterval(
       const { data } = await supabase
         .from("seasons")
         .select("startDate, regularSeasonEndDate")
-        .eq("id", Season)
+        .eq("id", Number.parseInt(Season, 10))
         .single()
         .throwOnError();
       if (data === null) throw new Error("Invalid Season");

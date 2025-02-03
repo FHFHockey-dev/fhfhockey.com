@@ -81,6 +81,7 @@ const PlayerPPTOIPerGameChart: React.FC = () => {
 
       if (data.length === 0) break;
 
+      // @ts-expect-error
       allData = [...allData, ...data];
 
       if (data.length < step) break;

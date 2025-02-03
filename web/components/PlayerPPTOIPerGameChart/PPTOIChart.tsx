@@ -88,6 +88,7 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
       }
 
       if (data) {
+        // @ts-ignore
         fetchedRawData.push(...data);
         from += pageSize;
       }

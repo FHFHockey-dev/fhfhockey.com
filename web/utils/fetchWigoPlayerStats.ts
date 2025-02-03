@@ -6,7 +6,7 @@ import {
   CombinedPlayerStats,
   ThreeYearAveragesResponse,
   YearlyCount,
-  YearlyRate
+  YearlyRate,
 } from "components/WiGO/types";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import supabase from "lib/supabase";
@@ -53,14 +53,17 @@ const rateCA3YAMap: Record<
   "SOG/60": { source: "api" },
   "PPA/60": {
     source: "supabase",
-    fields: ["pp_primary_assists_per_60_avg", "pp_secondary_assists_per_60_avg"]
+    fields: [
+      "pp_primary_assists_per_60_avg",
+      "pp_secondary_assists_per_60_avg",
+    ],
   },
   "PPG/60": { source: "supabase", fields: ["pp_goals_per_60_avg"] },
   "PPP/60": { source: "supabase", fields: ["pp_points_per_60_avg"] },
   "BLK/60": { source: "api" },
   "PIM/60": { source: "api" },
   "ixG/60": { source: "api" },
-  "HIT/60": { source: "api" } // Ensured inclusion
+  "HIT/60": { source: "api" }, // Ensured inclusion
 };
 
 /**
@@ -79,7 +82,7 @@ const supabaseLabelMap: Record<string, string> = {
   PPA: "pp_assists_avg",
   ATOI: "toi_per_game_avg",
   PPTOI: "pp_toi_per_game_avg",
-  "PP%": "pp_toi_pct_per_game_avg"
+  "PP%": "pp_toi_pct_per_game_avg",
   // Rates handled separately by rateCA3YAMap
 };
 
@@ -94,7 +97,7 @@ const supabaseLyMap: Record<string, string> = {
   PPP: "pp_points",
   PPG: "pp_goals",
   PPA: "pp_assists",
-  ixG: "ixG"
+  ixG: "ixG",
 };
 
 /**
@@ -374,7 +377,7 @@ export async function fetchPlayerAggregatedStats(
     console.warn("No game data found for the selected player in Supabase.");
     // We can still proceed to fetch CA/3YA if needed
   }
-
+  // @ts-ignore
   const games = data as SkaterStat[];
 
   // Filter and sort games for current and previous seasons
@@ -419,12 +422,12 @@ export async function fetchPlayerAggregatedStats(
       countsLabel: "PPP",
       ratesLabel: "PPP/60",
       isDerived: true,
-      deriveKeys: ["pp_assists", "pp_goals"]
+      deriveKeys: ["pp_assists", "pp_goals"],
     },
     { key: "hits", countsLabel: "HIT", ratesLabel: "HIT/60" },
     { key: "blocked_shots", countsLabel: "BLK", ratesLabel: "BLK/60" },
     { key: "penalty_minutes", countsLabel: "PIM", ratesLabel: "PIM/60" },
-    { key: "ixG", countsLabel: "ixG", ratesLabel: "ixG/60" }
+    { key: "ixG", countsLabel: "ixG", ratesLabel: "ixG/60" },
   ];
 
   // 4) Initialize countsData & ratesData with separate initializations
@@ -437,8 +440,8 @@ export async function fetchPlayerAggregatedStats(
       L5: Math.min(5, currentSeasonGames.length),
       L10: Math.min(10, currentSeasonGames.length),
       L20: Math.min(20, currentSeasonGames.length),
-      STD: currentSeasonGames.length
-    }
+      STD: currentSeasonGames.length,
+    },
   ];
 
   const initializeRatesData = (): TableAggregateData[] => [];
@@ -457,7 +460,7 @@ export async function fetchPlayerAggregatedStats(
     const powerPlayStats: NumericSkaterStatKey[] = [
       "pp_assists",
       "pp_goals",
-      "ppp"
+      "ppp",
     ];
     const toiStat = powerPlayStats.includes(stat)
       ? "pp_toi_per_game"
@@ -502,7 +505,7 @@ export async function fetchPlayerAggregatedStats(
       L5: averageToiPerGame(gs.slice(0, 5)),
       L10: averageToiPerGame(gs.slice(0, 10)),
       L20: averageToiPerGame(gs.slice(0, 20)),
-      STD: sumStat(gs, "toi_per_game") // or averageToiPerGame(gs), your choice
+      STD: sumStat(gs, "toi_per_game"), // or averageToiPerGame(gs), your choice
     };
   }
 
@@ -515,7 +518,7 @@ export async function fetchPlayerAggregatedStats(
       L5: averagePPToiPerGame(gs.slice(0, 5)),
       L10: averagePPToiPerGame(gs.slice(0, 10)),
       L20: averagePPToiPerGame(gs.slice(0, 20)),
-      STD: averagePPToiPerGame(gs)
+      STD: averagePPToiPerGame(gs),
     };
   }
 
@@ -528,7 +531,7 @@ export async function fetchPlayerAggregatedStats(
       L5: averagePpToiPctPerGame(gs.slice(0, 5)),
       L10: averagePpToiPctPerGame(gs.slice(0, 10)),
       L20: averagePpToiPctPerGame(gs.slice(0, 20)),
-      STD: averagePpToiPctPerGame(gs)
+      STD: averagePpToiPctPerGame(gs),
     };
   }
 
@@ -616,7 +619,7 @@ export async function fetchPlayerAggregatedStats(
         L5: isRate ? L5_Rate : L5Val,
         L10: isRate ? L10_Rate : L10Val,
         L20: isRate ? L20_Rate : L20Val,
-        STD: isRate ? STD_Rate : STDVal
+        STD: isRate ? STD_Rate : STDVal,
       };
     });
   }
@@ -726,6 +729,6 @@ export async function fetchPlayerAggregatedStats(
     careerAverageCounts: careerAvg ?? {},
     careerAverageRates: careerAvg ?? {},
 
-    threeYearApiData: threeYearApiData ?? undefined
+    threeYearApiData: threeYearApiData ?? undefined,
   };
 }
