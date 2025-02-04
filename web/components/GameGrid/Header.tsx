@@ -1,6 +1,6 @@
 // components/GameGrid/Header.tsx
 
-import { Dispatch, SetStateAction, useState } from "react";
+import { Dispatch, JSX, SetStateAction, useState } from "react";
 import styles from "./GameGrid.module.scss";
 
 import { addDays, formatDate, getDayStr } from "./utils/date-func";
@@ -35,7 +35,7 @@ function Header({
   extended,
   setSortKeys,
   excludedDays,
-  setExcludedDays
+  setExcludedDays,
 }: HeaderProps) {
   const [currentSortKey, setCurrentSortKey] = useState<SortKey | null>(null);
 
@@ -73,7 +73,7 @@ function Header({
               />
             </>
           ),
-          id: "totalGamesPlayed"
+          id: "totalGamesPlayed",
         },
         {
           label: (
@@ -88,7 +88,7 @@ function Header({
               />
             </>
           ),
-          id: "totalOffNights"
+          id: "totalOffNights",
         },
         {
           label: (
@@ -103,14 +103,14 @@ function Header({
               />
             </>
           ),
-          id: "weekScore"
-        }
+          id: "weekScore",
+        },
       ];
 
   const columns = [
     { label: "Team", id: "teamName" },
     ...getDayColumns(start, excludedDays, setExcludedDays, extended),
-    ...statsColumns
+    ...statsColumns,
   ];
 
   return (
@@ -163,7 +163,7 @@ function getDayColumns(
               fontFamily: "Tahoma, sans-serif",
               fontSize: "10px",
               marginBottom: "3px",
-              marginTop: "3px"
+              marginTop: "3px",
             }}
           >
             {formatDate(current)}
@@ -173,7 +173,7 @@ function getDayColumns(
           )}
         </>
       ),
-      id: getDayStr(startDate, current)
+      id: getDayStr(startDate, current),
     });
     current = addDays(current, 1);
   }

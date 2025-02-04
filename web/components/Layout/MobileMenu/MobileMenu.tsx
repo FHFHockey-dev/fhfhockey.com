@@ -45,6 +45,7 @@ function MobileMenu({ onItemClick, visible }: MobileMenuProps) {
   return transitions(
     (style, show) =>
       show && (
+        // @ts-ignore
         <animated.div className={styles.menu} style={style}>
           <NavbarItems items={ITEMS_DATA} onItemClick={onItemClick} />
 

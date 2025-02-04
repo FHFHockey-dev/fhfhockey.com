@@ -84,8 +84,8 @@ function PlayerAutocomplete({
               src="/pictures/IconSearch.png"
               alt="search button"
               layout="fixed"
-              width="32px"
-              height="32px"
+              width="32"
+              height="32"
             />
           </button>
         )}
