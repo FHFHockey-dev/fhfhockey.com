@@ -140,6 +140,9 @@ function CategoryCoverageChart({
         color: "rgba(255, 255, 255, 0.25)",
       },
     },
+    legend: {
+      display: false, // This hides the legend
+    },
     scales: {
       r: {
         angleLines: {
