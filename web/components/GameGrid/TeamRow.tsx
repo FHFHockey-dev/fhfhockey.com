@@ -1,6 +1,6 @@
 // components/GameGrid/TeamRow.tsx
 
-import Image from "next/image";
+import Image from "next/legacy/image";
 import { formatWinOdds, calculateBlendedWinOdds } from "./utils/calcWinOdds";
 import { formatWeekScore } from "./utils/calcWeekScore";
 import { useTeam } from "./contexts/GameGridContext";

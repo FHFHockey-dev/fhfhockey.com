@@ -262,7 +262,7 @@ const GoalieTrends = () => {
   }
 
   return (
-    <div className={styles.container}>
+    (<div className={styles.container}>
       <div
         className={styles.selectors}
         style={{ flexDirection: isMobile ? "column" : "row" }}
@@ -326,7 +326,6 @@ const GoalieTrends = () => {
           </div>
         </div>
       </div>
-
       {/* Conditional Rendering */}
       <table className={styles.goalieShareTable}>
         <tbody>
@@ -411,13 +410,13 @@ const GoalieTrends = () => {
               })}
               {!isMobile &&
                 [...Array(3 - row.length)].map((_, index) => (
-                  <td key={`empty-${index}`}>&nbsp;</td> // Fill in empty cells if row has less than 3 teams
+                  (<td key={`empty-${index}`}>&nbsp;</td>) // Fill in empty cells if row has less than 3 teams
                 ))}
             </tr>
           ))}
         </tbody>
       </table>
-    </div>
+    </div>)
   );
 };
 

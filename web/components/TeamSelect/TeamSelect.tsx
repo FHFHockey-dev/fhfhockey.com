@@ -1,7 +1,7 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\TeamSelect\TeamSelect.tsx
 
 import React, { useRef } from "react";
-import Image from "next/image";
+import Image from "next/legacy/image";
 import classNames from "classnames";
 
 import ARROW from "public/pictures/arrow.svg";

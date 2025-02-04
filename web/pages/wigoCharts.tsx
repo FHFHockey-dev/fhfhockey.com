@@ -14,7 +14,7 @@ import {
   CombinedPlayerStats,
 } from "components/WiGO/types";
 import NameSearchBar from "../components/WiGO/NameSearchBar";
-import Image from "next/image";
+import Image from "next/legacy/image";
 import { getTeamInfoById, teamNameToAbbreviationMap } from "lib/teamsInfo";
 import { fetchPlayerAggregatedStats } from "../utils/fetchWigoPlayerStats";
 import TeamNameSVG from "../components/WiGO/TeamNameSVG";

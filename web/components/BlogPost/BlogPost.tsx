@@ -2,7 +2,7 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\BlogPost\BlogPost.tsx
 
 import React from "react";
-import Image from "next/image";
+import Image from "next/legacy/image";
 
 import { PostPreviewData } from "pages/blog";
 import styles from "./BlogPost.module.scss";

@@ -1,7 +1,7 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\TeamLandingPage\StrengthOfSchedule.tsx
 
 import React from "react";
-import Image from "next/image";
+import Image from "next/legacy/image";
 import { teamsInfo } from "./utils/teamsInfo";
 
 interface SoSRanking {

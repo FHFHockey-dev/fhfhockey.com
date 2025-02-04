@@ -344,7 +344,7 @@ export default function Page() {
     gameLandingDetails?.gameState === "PRE"
   ) {
     return (
-      <div className="game-page">
+      (<div className="game-page">
         {gameDetails ? (
           <>
             <div className="gameDetailsContainer">
@@ -897,7 +897,7 @@ export default function Page() {
         ) : (
           <p>Loading game details...</p>
         )}
-      </div>
+      </div>)
     );
   } else if (
     gameLandingDetails?.gameState === "OFF" ||

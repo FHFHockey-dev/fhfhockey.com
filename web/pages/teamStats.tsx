@@ -23,7 +23,7 @@ const TeamStats = () => {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div className={styles.teamStatsContainer}>
+    (<div className={styles.teamStatsContainer}>
       <h1 className={styles.pageHeader}>
         <span className={styles.spanColorBlue}>Team</span> Stats
       </h1>
@@ -32,7 +32,7 @@ const TeamStats = () => {
           sortedTeams.map((team) => {
             const teamInfo = teamsInfo[team.abbreviation];
             return (
-              <Link href={`/teamStats/${team.abbreviation}`} key={team.id}>
+              (<Link href={`/teamStats/${team.abbreviation}`} key={team.id}>
                 <a
                   className={styles.teamCard}
                   style={
@@ -61,14 +61,14 @@ const TeamStats = () => {
 
                   <div className={styles.teamAbbrev}>{team.abbreviation}</div>
                 </a>
-              </Link>
+              </Link>)
             );
           })
         ) : (
           <p className={styles.loading}>Loading...</p>
         )}
       </div>
-    </div>
+    </div>)
   );
 };
 
