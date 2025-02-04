@@ -32,35 +32,35 @@ const TeamStats = () => {
           sortedTeams.map((team) => {
             const teamInfo = teamsInfo[team.abbreviation];
             return (
-              (<Link href={`/teamStats/${team.abbreviation}`} key={team.id}>
-                <a
-                  className={styles.teamCard}
-                  style={
-                    {
-                      "--primary-color":
-                        teamInfo?.primaryColor || ("" as string),
-                      "--secondary-color":
-                        teamInfo?.secondaryColor || ("" as string),
-                      "--jersey": teamInfo?.jersey || "black",
-                      "--accent-color": teamInfo?.accent || ("" as string),
-                      "--alt-color": teamInfo?.alt || "black",
-                    } as CustomStyle
-                  }
-                >
-                  <div className="center-stripe"></div>
-                  <div className={styles.teamLogoContainer}>
-                    <img
-                      src={`/teamLogos/${team.abbreviation.replace(
-                        /\s+/g,
-                        " "
-                      )}.png`}
-                      alt={team.name}
-                      className={styles.teamLogo}
-                    />
-                  </div>
+              (<Link
+                href={`/teamStats/${team.abbreviation}`}
+                key={team.id}
+                className={styles.teamCard}
+                style={
+                  {
+                    "--primary-color":
+                      teamInfo?.primaryColor || ("" as string),
+                    "--secondary-color":
+                      teamInfo?.secondaryColor || ("" as string),
+                    "--jersey": teamInfo?.jersey || "black",
+                    "--accent-color": teamInfo?.accent || ("" as string),
+                    "--alt-color": teamInfo?.alt || "black",
+                  } as CustomStyle
+                }>
 
-                  <div className={styles.teamAbbrev}>{team.abbreviation}</div>
-                </a>
+                <div className="center-stripe"></div>
+                <div className={styles.teamLogoContainer}>
+                  <img
+                    src={`/teamLogos/${team.abbreviation.replace(
+                      /\s+/g,
+                      " "
+                    )}.png`}
+                    alt={team.name}
+                    className={styles.teamLogo}
+                  />
+                </div>
+                <div className={styles.teamAbbrev}>{team.abbreviation}</div>
+
               </Link>)
             );
           })

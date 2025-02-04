@@ -76,38 +76,36 @@ type NavBarItemsProps = {
 };
 
 function NavbarItems_({ items, onItemClick }: NavBarItemsProps) {
-  return (
-    <>
-      {/* navbar items */}
-      <ul className={styles.menu_list}>
-        {items.map((item, idx) => {
-          if (item.type === "category") {
-            return (
-              <NavbarItemCategory
-                key={idx}
-                item={item}
-                onItemClick={onItemClick}
-              />
-            );
-          } else if (item.type === "link") {
-            return (
-              <li
-                key={idx}
-                className={classNames(styles.link, {
-                  [styles.active]: isLinkActive(item),
-                })}
-                onClick={() => onItemClick(item)}
-              >
-                <Link href={item.href}>
-                  <a>{item.label}</a>
-                </Link>
-              </li>
-            );
-          }
-        })}
-      </ul>
-    </>
-  );
+  return (<>
+    {/* navbar items */}
+    <ul className={styles.menu_list}>
+      {items.map((item, idx) => {
+        if (item.type === "category") {
+          return (
+            <NavbarItemCategory
+              key={idx}
+              item={item}
+              onItemClick={onItemClick}
+            />
+          );
+        } else if (item.type === "link") {
+          return (
+            (<li
+              key={idx}
+              className={classNames(styles.link, {
+                [styles.active]: isLinkActive(item),
+              })}
+              onClick={() => onItemClick(item)}
+            >
+              <Link href={item.href}>
+                {item.label}
+              </Link>
+            </li>)
+          );
+        }
+      })}
+    </ul>
+  </>);
 }
 
 export default function NavbarItems(props: NavBarItemsProps) {

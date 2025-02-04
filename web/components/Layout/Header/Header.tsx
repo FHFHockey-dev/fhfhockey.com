@@ -31,65 +31,63 @@ function Header() {
     }, 200);
   };
 
-  return (
-    <>
-      <header
-        ref={navbarRef}
-        className={classNames(styles.header, {
-          // don't hide the nav bar when the menu is open
-          [styles.hidden]: menuOpen ? false : !isNavbarVisible
-        })}
-      >
-        {/* logo */}
-        <Link href="/">
-          <a className={styles.logo}>
-            <Image
-              src={LOGO}
-              alt="FHFH logo"
-              placeholder="blur"
-              width={206}
-              height={53}
-              priority
-            />
-          </a>
-        </Link>
+  return (<>
+    <header
+      ref={navbarRef}
+      className={classNames(styles.header, {
+        // don't hide the nav bar when the menu is open
+        [styles.hidden]: menuOpen ? false : !isNavbarVisible
+      })}
+    >
+      {/* logo */}
+      <Link href="/" className={styles.logo}>
 
-        {/* nav bar items */}
-        <ClientOnly className={styles.nav}>
-          <NavbarItems items={ITEMS_DATA} onItemClick={onItemClick} />
-        </ClientOnly>
+        <Image
+          src={LOGO}
+          alt="FHFH logo"
+          placeholder="blur"
+          width={206}
+          height={53}
+          priority
+        />
 
-        {/* social medias */}
-        <div className={styles.socials}>
-          <SocialMedias />
-        </div>
+      </Link>
 
-        {/* join button */}
-        <button className={styles.join}>JOIN COMMUNITY</button>
-
-        {/* burger menu - mobile only */}
-        {!menuOpen ? (
-          <BurgerButton
-            onClick={() => {
-              setMenuOpen(true);
-            }}
-          />
-        ) : (
-          <button onClick={() => setMenuOpen(false)}>
-            <Image
-              src="/pictures/close.svg"
-              alt="close menu"
-              width={22}
-              height={22}
-            />
-          </button>
-        )}
-      </header>
-      <ClientOnly>
-        <MobileMenu visible={menuOpen} onItemClick={onItemClick} />
+      {/* nav bar items */}
+      <ClientOnly className={styles.nav}>
+        <NavbarItems items={ITEMS_DATA} onItemClick={onItemClick} />
       </ClientOnly>
-    </>
-  );
+
+      {/* social medias */}
+      <div className={styles.socials}>
+        <SocialMedias />
+      </div>
+
+      {/* join button */}
+      <button className={styles.join}>JOIN COMMUNITY</button>
+
+      {/* burger menu - mobile only */}
+      {!menuOpen ? (
+        <BurgerButton
+          onClick={() => {
+            setMenuOpen(true);
+          }}
+        />
+      ) : (
+        <button onClick={() => setMenuOpen(false)}>
+          <Image
+            src="/pictures/close.svg"
+            alt="close menu"
+            width={22}
+            height={22}
+          />
+        </button>
+      )}
+    </header>
+    <ClientOnly>
+      <MobileMenu visible={menuOpen} onItemClick={onItemClick} />
+    </ClientOnly>
+  </>);
 }
 
 export default Header;

@@ -16,7 +16,7 @@ function BlogPost({
   imageUrl,
 }: PostPreviewData) {
   return (
-    <Link href={`/blog/${slug}`}>
+    (<Link href={`/blog/${slug}`} legacyBehavior>
       <article className={styles.post}>
         <div className={styles.textArea}>
           <header className={styles.header}>
@@ -39,7 +39,7 @@ function BlogPost({
           />
         </div>
       </article>
-    </Link>
+    </Link>)
   );
 }
 

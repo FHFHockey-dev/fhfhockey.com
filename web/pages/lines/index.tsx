@@ -126,21 +126,21 @@ export const getStaticProps: GetStaticProps = async () => {
 
 function Teams({ teams }: { teams: Team[] }) {
   return (
-    <div className={styles.teams}>
+    (<div className={styles.teams}>
       {teams.map((team) => (
         <Link key={team.name} href={`/lines/${team.abbreviation}`}>
-          <a>
-            <Image
-              src={team.logo}
-              alt={team.name}
-              width={37.35}
-              height={37.35}
-              objectFit="contain"
-            />
-          </a>
+
+          <Image
+            src={team.logo}
+            alt={team.name}
+            width={37.35}
+            height={37.35}
+            objectFit="contain"
+          />
+
         </Link>
       ))}
-    </div>
+    </div>)
   );
 }
 
@@ -250,14 +250,17 @@ function Title({ type }: { type: "promotions" | "demotions" }) {
 
 function Row({ player }: { player: RowData }) {
   return (
-    <div className={styles.row}>
-      <Link href={`/charts?playerId=${player.playerId}`}>
-        <a className={styles.name} title="go to player details">
-          <span className={styles.fullName}>{player.playerName}</span>
-          <span className={styles.formattedName}>
-            {shorten(player.playerName)}
-          </span>
-        </a>
+    (<div className={styles.row}>
+      <Link
+        href={`/charts?playerId=${player.playerId}`}
+        className={styles.name}
+        title="go to player details">
+
+        <span className={styles.fullName}>{player.playerName}</span>
+        <span className={styles.formattedName}>
+          {shorten(player.playerName)}
+        </span>
+
       </Link>
       <div className={styles.twoChanges}>
         {/* {player.previousPowerPlayerUnit !== player.currentPowerPlayerUnit && (
@@ -275,17 +278,20 @@ function Row({ player }: { player: RowData }) {
         />
       </div>
       <div className={styles.abbreviation}>{player.abbreviation}</div>
-      <Link href={`/charts?playerId=${player.playerId}`}>
-        <a className={styles.expand} title="go to player details">
-          <Image
-            src="/pictures/expand-icon.png"
-            alt="go to player details"
-            width={16}
-            height={16}
-          />
-        </a>
+      <Link
+        href={`/charts?playerId=${player.playerId}`}
+        className={styles.expand}
+        title="go to player details">
+
+        <Image
+          src="/pictures/expand-icon.png"
+          alt="go to player details"
+          width={16}
+          height={16}
+        />
+
       </Link>
-    </div>
+    </div>)
   );
 }
 
