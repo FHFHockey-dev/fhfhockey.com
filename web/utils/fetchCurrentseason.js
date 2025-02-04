@@ -1,6 +1,5 @@
 // web/utils/fetchCurrentSeason.js
 
-import fetch from "node-fetch";
 import Fetch from "lib/cors-fetch";
 
 async function fetchCurrentSeason() {
@@ -47,7 +46,7 @@ async function fetchCurrentSeason() {
       playoffsStartDate: playoffsStartDate.getTime(),
       playoffsEndDate: playoffsEndDate.getTime(),
       previousSeason,
-      nextSeason
+      nextSeason,
     };
   } else {
     // Otherwise, use the real current season
@@ -60,7 +59,7 @@ async function fetchCurrentSeason() {
       playoffsEndDate: playoffsEndDate.getTime(),
       // Provide idPrev and idTwo just like your TS version:
       idPrev: previousSeason.id,
-      idTwo: nextSeason.id
+      idTwo: nextSeason.id,
     };
   }
 }
