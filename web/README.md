@@ -1,3 +1,14 @@
+# Website
+
+FHFH website
+
+## How to start the dev server
+
+```bash
+npm install
+npm run dev
+```
+
 ## How to generate types for your API and Supabase libraries
 
 ```bash
