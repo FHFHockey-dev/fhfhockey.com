@@ -1,6 +1,4 @@
-import { useEffect, useState } from "react";
-import Fetch from "lib/cors-fetch";
-import getPowerPlayBlocks, { Block, Time } from "utils/getPowerPlayBlocks";
+import { Time, usePowerPlayBlocks } from "utils/getPowerPlayBlocks";
 import { teamsInfo } from "lib/NHL/teamsInfo";
 import { NORMAL_PERIOD_IN_SECONDS, convertTimeToSeconds } from "hooks/useGoals";
 
@@ -18,25 +16,7 @@ export default function PowerPlayAreaIndicators({
   id,
   totalGameTimeInSeconds
 }: Props) {
-  const [powerPlays, setPowerPlays] = useState<Block[]>([]);
-
-  useEffect(() => {
-    if (!id) return;
-    (async () => {
-      setPowerPlays([]);
-      try {
-        const { plays } = await Fetch(
-          `https://api-web.nhle.com/v1/gamecenter/${id}/play-by-play`
-        ).then((res) => res.json());
-
-        const blocks = getPowerPlayBlocks(plays);
-        setPowerPlays(blocks);
-      } catch (e: any) {
-        console.error("Error when obtain play by play data", e);
-        setPowerPlays([]);
-      }
-    })();
-  }, [id]);
+  const powerPlays = usePowerPlayBlocks(id);
 
   return (
     <>

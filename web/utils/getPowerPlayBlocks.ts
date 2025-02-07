@@ -1,6 +1,8 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\utils\getPowerPlayBlocks.ts
 
 import { NORMAL_PERIOD_IN_SECONDS } from "hooks/useGoals";
+import Fetch from "lib/cors-fetch";
+import { useEffect, useState } from "react";
 
 export type Time = {
   period: 1 | 2 | 3;
@@ -282,4 +284,28 @@ export default function getPowerPlayBlocks(plays: any[]): Block[] {
     result.push(process(penalty));
   });
   return result;
+}
+
+export function usePowerPlayBlocks(id: string | number) {
+  const [powerPlays, setPowerPlays] = useState<Block[]>([]);
+
+  useEffect(() => {
+    if (!id) return;
+    (async () => {
+      setPowerPlays([]);
+      try {
+        const { plays } = await Fetch(
+          `https://api-web.nhle.com/v1/gamecenter/${id}/play-by-play`
+        ).then((res) => res.json());
+
+        const blocks = getPowerPlayBlocks(plays);
+        setPowerPlays(blocks);
+      } catch (e: any) {
+        console.error("Error when obtain play by play data", e);
+        setPowerPlays([]);
+      }
+    })();
+  }, [id]);
+
+  return powerPlays;
 }
