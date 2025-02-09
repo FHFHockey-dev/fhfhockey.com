@@ -1,3 +1,5 @@
+// /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/Layout/Header/Header.tsx
+
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -41,17 +43,15 @@ function Header() {
         })}
       >
         {/* logo */}
-        <Link href="/">
-          <a className={styles.logo}>
-            <Image
-              src={LOGO}
-              alt="FHFH logo"
-              placeholder="blur"
-              width={200}
-              height={30}
-              priority
-            />
-          </a>
+        <Link href="/" className={styles.logo}>
+          <Image
+            src={LOGO}
+            alt="FHFH logo"
+            placeholder="blur"
+            width={200}
+            height={30}
+            priority
+          />
         </Link>
 
         {/* nav bar items */}

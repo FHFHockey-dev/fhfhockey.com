@@ -236,10 +236,7 @@ async function updateStandingsForDate(
   }));
 
   // Upsert the rows into the database with error propagation
-  const { error } = await supabase
-    .from("nhl_standings_details")
-    .upsert(rows)
-    .throwOnError();
+  const { error } = await supabase.from("nhl_standings_details").upsert(rows);
 
   if (error) {
     throw new Error(`Supabase upsert failed: ${error.message}`);

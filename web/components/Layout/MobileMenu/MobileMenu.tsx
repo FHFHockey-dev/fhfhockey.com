@@ -17,16 +17,16 @@ function MobileMenu({ onItemClick, visible }: MobileMenuProps) {
   const transitions = useTransition(visible, {
     from: {
       opacity: 0,
-      transform: "translateY(300px)",
+      transform: "translateY(300px)"
     },
     enter: {
       opacity: 1,
-      transform: "translateY(0px)",
+      transform: "translateY(0px)"
     },
     leave: {
       opacity: 0,
-      transform: "translateY(300px)",
-    },
+      transform: "translateY(300px)"
+    }
   });
 
   // prevent scroll penetration
@@ -42,24 +42,18 @@ function MobileMenu({ onItemClick, visible }: MobileMenuProps) {
     };
   }, [visible]);
 
-  return transitions(
-    (style, show) =>
-      show && (
-        // @ts-ignore
-        <animated.div className={styles.menu} style={style}>
-          <NavbarItems items={ITEMS_DATA} onItemClick={onItemClick} />
-
-          <div>
-            {/* social medias */}
-            <div className={styles.socialMediasWrapper}>
-              <SocialMedias />
-            </div>
-            {/* join button */}
-            <button className={styles.join}>JOIN COMMUNITY</button>
-            <Footer />
-          </div>
-        </animated.div>
-      )
+  return (
+    <>
+      {
+        transitions((style, show) =>
+          show ? (
+            <animated.div className={styles.menu} style={style}>
+              … contents …
+            </animated.div>
+          ) : null
+        ) as React.ReactNode
+      }
+    </>
   );
 }
 
