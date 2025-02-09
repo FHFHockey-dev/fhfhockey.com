@@ -2,7 +2,6 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\BlogPost\BlogPost.tsx
 
 import React from "react";
-import Image from "next/image";
 
 import { PostPreviewData } from "pages/blog";
 import styles from "./BlogPost.module.scss";
@@ -16,7 +15,7 @@ function BlogPost({
   imageUrl,
 }: PostPreviewData) {
   return (
-    <Link href={`/blog/${slug}`}>
+    <Link href={`/blog/${slug}`} legacyBehavior>
       <article className={styles.post}>
         <div className={styles.textArea}>
           <header className={styles.header}>
@@ -29,13 +28,10 @@ function BlogPost({
         </div>
 
         <div className={styles.image}>
-          <Image
+          <img
             alt={title}
             src={imageUrl}
-            width="100%"
-            height="100%"
-            layout="responsive"
-            objectFit="cover"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         </div>
       </article>

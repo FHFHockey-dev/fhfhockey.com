@@ -54,11 +54,13 @@ const DATA = {
 type CategoryCoverageChartProps = {
   playerId: number | undefined;
   timeOption: TimeOption;
+  showTitle?: boolean;
 };
 
 function CategoryCoverageChart({
   playerId,
   timeOption,
+  showTitle = false,
 }: CategoryCoverageChartProps) {
   const chartRef = useRef<ChartJS>(null);
   const size = useScreenSize();
@@ -138,6 +140,9 @@ function CategoryCoverageChart({
         color: "rgba(255, 255, 255, 0.25)",
       },
     },
+    legend: {
+      display: false, // This hides the legend
+    },
     scales: {
       r: {
         angleLines: {
@@ -172,9 +177,11 @@ function CategoryCoverageChart({
       bodyClassName={classNames(styles.content)}
       header={
         <>
-          <ChartTitle className={styles.title}>
-            Percentile <HightText>Ranks</HightText>
-          </ChartTitle>
+          {showTitle && (
+            <ChartTitle className={styles.title}>
+              Percentile <HightText>Ranks</HightText>
+            </ChartTitle>
+          )}
         </>
       }
     >

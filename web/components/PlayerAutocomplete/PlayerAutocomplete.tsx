@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Image from "next/image";
+import Image from "next/legacy/image";
 import { createFilterOptions, useAutocomplete } from "@mui/material";
 import usePlayers from "hooks/usePlayers";
 
@@ -84,8 +84,8 @@ function PlayerAutocomplete({
               src="/pictures/IconSearch.png"
               alt="search button"
               layout="fixed"
-              width="32px"
-              height="32px"
+              width="32"
+              height="32"
             />
           </button>
         )}

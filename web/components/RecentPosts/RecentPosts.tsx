@@ -9,7 +9,7 @@ import styles from "./RecentPosts.module.scss";
 
 function PostCard({ title, slug, summary, createdAt }: PostPreviewData) {
   return (
-    <Link href={`/blog/${slug}`}>
+    (<Link href={`/blog/${slug}`} legacyBehavior>
       <article className={styles.postCard}>
         <header className={styles.header}>
           <h3>{title}</h3>
@@ -17,7 +17,7 @@ function PostCard({ title, slug, summary, createdAt }: PostPreviewData) {
         </header>
         <p className={styles.summary}>{summary}</p>
       </article>
-    </Link>
+    </Link>)
   );
 }
 

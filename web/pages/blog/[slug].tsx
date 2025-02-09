@@ -186,7 +186,7 @@ function Post({ post, recentPosts }: PostPageProps) {
 
   const { slug, title, summary, imageUrl, content, createdAt, author } = post;
   return (
-    <Container>
+    (<Container>
       <NextSeo
         title={`${title} | FHFH Blog`}
         description={summary}
@@ -224,7 +224,7 @@ function Post({ post, recentPosts }: PostPageProps) {
                 types: {
                   image: ({ value }) => (
                     // eslint-disable-next-line
-                    <img alt="" src={urlFor(value).url()} />
+                    (<img alt="" src={urlFor(value).url()} />)
                   ),
                 },
               }}
@@ -261,7 +261,7 @@ function Post({ post, recentPosts }: PostPageProps) {
           <RecentPosts posts={recentPosts} />
         </div>
       </div>
-    </Container>
+    </Container>)
   );
 }
 

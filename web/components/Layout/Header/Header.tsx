@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Image from "next/image";
+import Image from "next/legacy/image";
 import Link from "next/link";
 import classNames from "classnames";
 
@@ -47,8 +47,8 @@ function Header() {
               src={LOGO}
               alt="FHFH logo"
               placeholder="blur"
-              width={200}
-              height={30}
+              width={206}
+              height={53}
               priority
             />
           </a>

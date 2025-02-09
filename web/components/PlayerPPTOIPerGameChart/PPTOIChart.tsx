@@ -88,6 +88,7 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
       }
 
       if (data) {
+        // @ts-ignore
         fetchedRawData.push(...data);
         from += pageSize;
       }
@@ -571,7 +572,7 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
   };
 
   return (
-    <div className={styles.chartWrapper}>
+    (<div className={styles.chartWrapper}>
       {/* Player Selection Container */}
       <div className={styles.playerSelectContainer}>
         {/* Toggle Button for View Mode */}
@@ -650,7 +651,6 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
           Reset
         </button>
       </div>
-
       {/* Content Area */}
       <div className={styles.contentArea}>
         {/* Pagination Container */}
@@ -688,10 +688,9 @@ const PPTOIChart: React.FC<PPTOIChartProps> = ({ teamAbbreviation }) => {
           </div>
         </div>
       </div>
-
       {/* Tooltip */}
       <div ref={tooltipRef} className={styles.tooltip}></div>
-    </div>
+    </div>)
   );
 };
 

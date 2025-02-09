@@ -143,7 +143,7 @@ function SustainabilityVSCareerChart({
     useCareerAveragesStats(playerId);
   const loading = firstLoading || secondLoading;
   return (
-    <Chart
+    (<Chart
       className={styles.container}
       headerClassName={styles.header}
       bodyClassName={styles.body}
@@ -173,7 +173,7 @@ function SustainabilityVSCareerChart({
                 getBgColor(stats[id], careerAveragesStats)
               : BLUE;
           return (
-            <div key={id} title={description} className={styles.row}>
+            (<div key={id} title={description} className={styles.row}>
               <span
                 className={styles.sustainabilityStat}
                 style={{
@@ -187,7 +187,7 @@ function SustainabilityVSCareerChart({
                   />
                 ) : stats ? (
                   // @ts-ignore
-                  format(stats[id])
+                  (format(stats[id]))
                 ) : (
                   <span>&nbsp;</span>
                 )}
@@ -206,17 +206,17 @@ function SustainabilityVSCareerChart({
                   />
                 ) : careerAveragesStats ? (
                   // @ts-ignore
-                  format(careerAveragesStats[id])
+                  (format(careerAveragesStats[id]))
                 ) : (
                   <span>&nbsp;</span>
                 )}
               </span>
-            </div>
+            </div>)
           );
         })}
       </div>
       <Legend />
-    </Chart>
+    </Chart>)
   );
 }
 

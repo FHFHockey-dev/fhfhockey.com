@@ -4,725 +4,15246 @@ export type Json =
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[];
+  | Json[]
 
 export type Database = {
   public: {
     Tables: {
+      expected_goals: {
+        Row: {
+          away_api_win_odds: number | null
+          away_expected_goals: number
+          away_team_abbreviation: string
+          away_team_id: number
+          away_win_odds: number
+          game_date: string
+          game_id: number
+          home_api_win_odds: number | null
+          home_expected_goals: number
+          home_team_abbreviation: string
+          home_team_id: number
+          home_win_odds: number
+          league_average_goals_for: number
+          updated_at: string
+        }
+        Insert: {
+          away_api_win_odds?: number | null
+          away_expected_goals: number
+          away_team_abbreviation: string
+          away_team_id: number
+          away_win_odds: number
+          game_date: string
+          game_id: number
+          home_api_win_odds?: number | null
+          home_expected_goals: number
+          home_team_abbreviation: string
+          home_team_id: number
+          home_win_odds: number
+          league_average_goals_for: number
+          updated_at?: string
+        }
+        Update: {
+          away_api_win_odds?: number | null
+          away_expected_goals?: number
+          away_team_abbreviation?: string
+          away_team_id?: number
+          away_win_odds?: number
+          game_date?: string
+          game_id?: number
+          home_api_win_odds?: number | null
+          home_expected_goals?: number
+          home_team_abbreviation?: string
+          home_team_id?: number
+          home_win_odds?: number
+          league_average_goals_for?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expected_goals_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "expected_goals_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "expected_goals_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expected_goals_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "expected_goals_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "expected_goals_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       games: {
         Row: {
-          awayTeamId: number;
-          created_at: string;
-          date: string;
-          homeTeamId: number;
-          id: number;
-          seasonId: number;
-          startTime: string;
-          type: number | null;
-        };
+          awayTeamId: number
+          created_at: string
+          date: string
+          homeTeamId: number
+          id: number
+          seasonId: number
+          startTime: string
+          type: number | null
+        }
         Insert: {
-          awayTeamId: number;
-          created_at?: string;
-          date: string;
-          homeTeamId: number;
-          id: number;
-          seasonId: number;
-          startTime?: string;
-          type?: number | null;
-        };
+          awayTeamId: number
+          created_at?: string
+          date: string
+          homeTeamId: number
+          id: number
+          seasonId: number
+          startTime?: string
+          type?: number | null
+        }
         Update: {
-          awayTeamId?: number;
-          created_at?: string;
-          date?: string;
-          homeTeamId?: number;
-          id?: number;
-          seasonId?: number;
-          startTime?: string;
-          type?: number | null;
-        };
+          awayTeamId?: number
+          created_at?: string
+          date?: string
+          homeTeamId?: number
+          id?: number
+          seasonId?: number
+          startTime?: string
+          type?: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "games_awayTeamId_fkey";
-            columns: ["awayTeamId"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
+            foreignKeyName: "games_awayTeamId_fkey"
+            columns: ["awayTeamId"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
           },
           {
-            foreignKeyName: "games_homeTeamId_fkey";
-            columns: ["homeTeamId"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
+            foreignKeyName: "games_awayTeamId_fkey"
+            columns: ["awayTeamId"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
           },
           {
-            foreignKeyName: "games_seasonId_fkey";
-            columns: ["seasonId"];
-            isOneToOne: false;
-            referencedRelation: "seasons";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
+            foreignKeyName: "games_awayTeamId_fkey"
+            columns: ["awayTeamId"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_homeTeamId_fkey"
+            columns: ["homeTeamId"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "games_homeTeamId_fkey"
+            columns: ["homeTeamId"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "games_homeTeamId_fkey"
+            columns: ["homeTeamId"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_seasonId_fkey"
+            columns: ["seasonId"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goalie_page_stats: {
+        Row: {
+          games_played: number | null
+          games_started: number | null
+          goalie_full_name: string | null
+          goals_against: number | null
+          goals_against_average: number | null
+          id: number
+          losses: number | null
+          ot_losses: number | null
+          player_id: number
+          save_pct: number | null
+          saves: number | null
+          shots_against: number | null
+          shutouts: number | null
+          team: string | null
+          time_on_ice: number | null
+          week_id: number | null
+          wins: number | null
+        }
+        Insert: {
+          games_played?: number | null
+          games_started?: number | null
+          goalie_full_name?: string | null
+          goals_against?: number | null
+          goals_against_average?: number | null
+          id?: number
+          losses?: number | null
+          ot_losses?: number | null
+          player_id: number
+          save_pct?: number | null
+          saves?: number | null
+          shots_against?: number | null
+          shutouts?: number | null
+          team?: string | null
+          time_on_ice?: number | null
+          week_id?: number | null
+          wins?: number | null
+        }
+        Update: {
+          games_played?: number | null
+          games_started?: number | null
+          goalie_full_name?: string | null
+          goals_against?: number | null
+          goals_against_average?: number | null
+          id?: number
+          losses?: number | null
+          ot_losses?: number | null
+          player_id?: number
+          save_pct?: number | null
+          saves?: number | null
+          shots_against?: number | null
+          shutouts?: number | null
+          team?: string | null
+          time_on_ice?: number | null
+          week_id?: number | null
+          wins?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goalie_page_stats_week_id_fkey"
+            columns: ["week_id"]
+            isOneToOne: false
+            referencedRelation: "goalie_page_weeks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goalie_page_weeks: {
+        Row: {
+          end_date: string
+          id: number
+          start_date: string
+        }
+        Insert: {
+          end_date: string
+          id?: number
+          start_date: string
+        }
+        Update: {
+          end_date?: string
+          id?: number
+          start_date?: string
+        }
+        Relationships: []
+      }
       goaliesGameStats: {
         Row: {
-          created_at: string;
-          evenStrengthGoalsAgainst: number;
-          evenStrengthShotsAgainst: string;
-          gameId: number;
-          goalsAgainst: number;
-          pim: number;
-          playerId: number;
-          position: Database["public"]["Enums"]["NHL Position Code"];
-          powerPlayGoalsAgainst: number;
-          powerPlayShotsAgainst: string;
-          savePctg: number | null;
-          saveShotsAgainst: string;
-          shorthandedGoalsAgainst: number;
-          shorthandedShotsAgainst: string;
-          toi: string | null;
-        };
+          created_at: string
+          evenStrengthGoalsAgainst: number
+          evenStrengthShotsAgainst: string
+          gameId: number
+          goalsAgainst: number
+          pim: number
+          playerId: number
+          position: Database["public"]["Enums"]["NHL_Position_Code"]
+          powerPlayGoalsAgainst: number
+          powerPlayShotsAgainst: string
+          savePctg: number | null
+          saveShotsAgainst: string
+          shorthandedGoalsAgainst: number
+          shorthandedShotsAgainst: string
+          toi: string | null
+        }
         Insert: {
-          created_at?: string;
-          evenStrengthGoalsAgainst?: number;
-          evenStrengthShotsAgainst?: string;
-          gameId: number;
-          goalsAgainst?: number;
-          pim?: number;
-          playerId?: number;
-          position?: Database["public"]["Enums"]["NHL Position Code"];
-          powerPlayGoalsAgainst?: number;
-          powerPlayShotsAgainst?: string;
-          savePctg?: number | null;
-          saveShotsAgainst?: string;
-          shorthandedGoalsAgainst?: number;
-          shorthandedShotsAgainst?: string;
-          toi?: string | null;
-        };
+          created_at?: string
+          evenStrengthGoalsAgainst?: number
+          evenStrengthShotsAgainst?: string
+          gameId: number
+          goalsAgainst?: number
+          pim?: number
+          playerId?: number
+          position?: Database["public"]["Enums"]["NHL_Position_Code"]
+          powerPlayGoalsAgainst?: number
+          powerPlayShotsAgainst?: string
+          savePctg?: number | null
+          saveShotsAgainst?: string
+          shorthandedGoalsAgainst?: number
+          shorthandedShotsAgainst?: string
+          toi?: string | null
+        }
         Update: {
-          created_at?: string;
-          evenStrengthGoalsAgainst?: number;
-          evenStrengthShotsAgainst?: string;
-          gameId?: number;
-          goalsAgainst?: number;
-          pim?: number;
-          playerId?: number;
-          position?: Database["public"]["Enums"]["NHL Position Code"];
-          powerPlayGoalsAgainst?: number;
-          powerPlayShotsAgainst?: string;
-          savePctg?: number | null;
-          saveShotsAgainst?: string;
-          shorthandedGoalsAgainst?: number;
-          shorthandedShotsAgainst?: string;
-          toi?: string | null;
-        };
+          created_at?: string
+          evenStrengthGoalsAgainst?: number
+          evenStrengthShotsAgainst?: string
+          gameId?: number
+          goalsAgainst?: number
+          pim?: number
+          playerId?: number
+          position?: Database["public"]["Enums"]["NHL_Position_Code"]
+          powerPlayGoalsAgainst?: number
+          powerPlayShotsAgainst?: string
+          savePctg?: number | null
+          saveShotsAgainst?: string
+          shorthandedGoalsAgainst?: number
+          shorthandedShotsAgainst?: string
+          toi?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "goaliesGameStats_gameId_fkey";
-            columns: ["gameId"];
-            isOneToOne: false;
-            referencedRelation: "games";
-            referencedColumns: ["id"];
+            foreignKeyName: "goaliesGameStats_gameId_fkey"
+            columns: ["gameId"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "goaliesGameStats_playerId_fkey";
-            columns: ["playerId"];
-            isOneToOne: false;
-            referencedRelation: "players";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
+            foreignKeyName: "goaliesGameStats_playerId_fkey"
+            columns: ["playerId"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      league_averages_goalies: {
+        Row: {
+          games_played: number | null
+          games_started: number | null
+          goals_against: number | null
+          goals_against_average: number | null
+          id: number
+          losses: number | null
+          ot_losses: number | null
+          save_pct: number | null
+          saves: number | null
+          shots_against: number | null
+          shutouts: number | null
+          time_on_ice: number | null
+          week_id: number | null
+          wins: number | null
+        }
+        Insert: {
+          games_played?: number | null
+          games_started?: number | null
+          goals_against?: number | null
+          goals_against_average?: number | null
+          id?: number
+          losses?: number | null
+          ot_losses?: number | null
+          save_pct?: number | null
+          saves?: number | null
+          shots_against?: number | null
+          shutouts?: number | null
+          time_on_ice?: number | null
+          week_id?: number | null
+          wins?: number | null
+        }
+        Update: {
+          games_played?: number | null
+          games_started?: number | null
+          goals_against?: number | null
+          goals_against_average?: number | null
+          id?: number
+          losses?: number | null
+          ot_losses?: number | null
+          save_pct?: number | null
+          saves?: number | null
+          shots_against?: number | null
+          shutouts?: number | null
+          time_on_ice?: number | null
+          week_id?: number | null
+          wins?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "league_averages_week_id_fkey"
+            columns: ["week_id"]
+            isOneToOne: true
+            referencedRelation: "goalie_page_weeks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       line_combinations: {
         Row: {
-          created_at: string;
-          date: string;
-          defensemen: Json;
-          forwards: Json;
-          goalies: Json;
-          id: number;
-          source_url: string;
-          team_abbreviation: string;
-          team_name: string;
-        };
+          created_at: string
+          date: string
+          defensemen: Json
+          forwards: Json
+          goalies: Json
+          id: number
+          source_url: string
+          team_abbreviation: string
+          team_name: string
+        }
         Insert: {
-          created_at?: string;
-          date?: string;
-          defensemen?: Json;
-          forwards?: Json;
-          goalies?: Json;
-          id?: number;
-          source_url?: string;
-          team_abbreviation?: string;
-          team_name?: string;
-        };
+          created_at?: string
+          date?: string
+          defensemen?: Json
+          forwards?: Json
+          goalies?: Json
+          id?: number
+          source_url?: string
+          team_abbreviation?: string
+          team_name?: string
+        }
         Update: {
-          created_at?: string;
-          date?: string;
-          defensemen?: Json;
-          forwards?: Json;
-          goalies?: Json;
-          id?: number;
-          source_url?: string;
-          team_abbreviation?: string;
-          team_name?: string;
-        };
-        Relationships: [];
-      };
+          created_at?: string
+          date?: string
+          defensemen?: Json
+          forwards?: Json
+          goalies?: Json
+          id?: number
+          source_url?: string
+          team_abbreviation?: string
+          team_name?: string
+        }
+        Relationships: []
+      }
       lineCombinations: {
         Row: {
-          defensemen: number[];
-          forwards: number[];
-          gameId: number;
-          goalies: number[];
-          teamId: number;
-        };
+          defensemen: number[]
+          forwards: number[]
+          gameId: number
+          goalies: number[]
+          teamId: number
+        }
         Insert: {
-          defensemen: number[];
-          forwards: number[];
-          gameId: number;
-          goalies: number[];
-          teamId: number;
-        };
+          defensemen: number[]
+          forwards: number[]
+          gameId: number
+          goalies: number[]
+          teamId: number
+        }
         Update: {
-          defensemen?: number[];
-          forwards?: number[];
-          gameId?: number;
-          goalies?: number[];
-          teamId?: number;
-        };
+          defensemen?: number[]
+          forwards?: number[]
+          gameId?: number
+          goalies?: number[]
+          teamId?: number
+        }
         Relationships: [
           {
-            foreignKeyName: "lineCombinations_gameId_fkey";
-            columns: ["gameId"];
-            isOneToOne: false;
-            referencedRelation: "games";
-            referencedColumns: ["id"];
+            foreignKeyName: "lineCombinations_gameId_fkey"
+            columns: ["gameId"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "lineCombinations_teamId_fkey";
-            columns: ["teamId"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
+            foreignKeyName: "lineCombinations_teamId_fkey"
+            columns: ["teamId"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "lineCombinations_teamId_fkey"
+            columns: ["teamId"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "lineCombinations_teamId_fkey"
+            columns: ["teamId"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_gamelog_as_counts: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_faceoffs_per_60: number | null
+          def_zone_starts: number | null
+          def_zone_starts_per_60: number | null
+          fa: number | null
+          fa_per_60: number | null
+          faceoffs_lost: number | null
+          faceoffs_lost_per_60: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won: number | null
+          faceoffs_won_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          first_assists: number | null
+          first_assists_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_taken: number | null
+          hits_taken_per_60: number | null
+          icf: number | null
+          icf_per_60: number | null
+          id: number
+          iff: number | null
+          iff_per_60: number | null
+          ipp: number | null
+          iscfs: number | null
+          iscfs_per_60: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          major_penalties: number | null
+          major_penalties_per_60: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          minor_penalties: number | null
+          minor_penalties_per_60: number | null
+          misconduct_penalties: number | null
+          misconduct_penalties_per_60: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_faceoffs_per_60: number | null
+          neu_zone_starts: number | null
+          neu_zone_starts_per_60: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_faceoffs_per_60: number | null
+          off_zone_start_pct: number | null
+          off_zone_start_pct_per_60: number | null
+          off_zone_starts: number | null
+          off_zone_starts_per_60: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sh_pct_per_60: number | null
+          on_ice_sv_pct: number | null
+          on_ice_sv_pct_per_60: number | null
+          pdo: number | null
+          pdo_per_60: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          pim: number | null
+          pim_per_60: number | null
+          player_id: number
+          rebounds_created: number | null
+          rebounds_created_per_60: number | null
+          rush_attempts: number | null
+          rush_attempts_per_60: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          season: string
+          second_assists: number | null
+          second_assists_per_60: number | null
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_percentage: number | null
+          shots: number | null
+          shots_blocked: number | null
+          shots_blocked_per_60: number | null
+          shots_per_60: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          total_assists: number | null
+          total_assists_per_60: number | null
+          total_penalties: number | null
+          total_penalties_per_60: number | null
+          total_points: number | null
+          total_points_per_60: number | null
+          xga: number | null
+          xga_pct: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season: string
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id?: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season?: string
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nst_gamelog_as_counts_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_gamelog_as_counts_oi: {
+        Row: {
+          ca: number | null
+          cf: number | null
+          cf_pct: number | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_starts: number | null
+          fa: number | null
+          ff: number | null
+          ff_pct: number | null
+          ga: number | null
+          gf: number | null
+          gf_pct: number | null
+          gp: number | null
+          hdca: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdga: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          id: number
+          ldca: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldga: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          mdca: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdga: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_starts: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_start_pct: number | null
+          off_zone_starts: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sv_pct: number | null
+          on_the_fly_starts: number | null
+          pdo: number | null
+          player_id: number
+          position: string | null
+          sa: number | null
+          sca: number | null
+          scf: number | null
+          scf_pct: number | null
+          season: number
+          sf: number | null
+          sf_pct: number | null
+          shots_blocked: number | null
+          toi: number | null
+          xga: number | null
+          xgf: number | null
+          xgf_pct: number | null
+        }
+        Insert: {
+          ca?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_starts?: number | null
+          fa?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ga?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdga?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldga?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          mdca?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdga?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_starts?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_starts?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sv_pct?: number | null
+          on_the_fly_starts?: number | null
+          pdo?: number | null
+          player_id: number
+          position?: string | null
+          sa?: number | null
+          sca?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          season: number
+          sf?: number | null
+          sf_pct?: number | null
+          shots_blocked?: number | null
+          toi?: number | null
+          xga?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+        }
+        Update: {
+          ca?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_starts?: number | null
+          fa?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ga?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdga?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          id?: number
+          ldca?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldga?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          mdca?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdga?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_starts?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_starts?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sv_pct?: number | null
+          on_the_fly_starts?: number | null
+          pdo?: number | null
+          player_id?: number
+          position?: string | null
+          sa?: number | null
+          sca?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          season?: number
+          sf?: number | null
+          sf_pct?: number | null
+          shots_blocked?: number | null
+          toi?: number | null
+          xga?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+        }
+        Relationships: []
+      }
+      nst_gamelog_as_rates: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_faceoffs_per_60: number | null
+          def_zone_starts: number | null
+          def_zone_starts_per_60: number | null
+          fa: number | null
+          fa_per_60: number | null
+          faceoffs_lost: number | null
+          faceoffs_lost_per_60: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won: number | null
+          faceoffs_won_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          first_assists: number | null
+          first_assists_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_taken: number | null
+          hits_taken_per_60: number | null
+          icf: number | null
+          icf_per_60: number | null
+          id: number
+          iff: number | null
+          iff_per_60: number | null
+          ipp: number | null
+          iscfs: number | null
+          iscfs_per_60: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          major_penalties: number | null
+          major_penalties_per_60: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          minor_penalties: number | null
+          minor_penalties_per_60: number | null
+          misconduct_penalties: number | null
+          misconduct_penalties_per_60: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_faceoffs_per_60: number | null
+          neu_zone_starts: number | null
+          neu_zone_starts_per_60: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_faceoffs_per_60: number | null
+          off_zone_start_pct: number | null
+          off_zone_start_pct_per_60: number | null
+          off_zone_starts: number | null
+          off_zone_starts_per_60: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sh_pct_per_60: number | null
+          on_ice_sv_pct: number | null
+          on_ice_sv_pct_per_60: number | null
+          pdo: number | null
+          pdo_per_60: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          pim: number | null
+          pim_per_60: number | null
+          player_id: number
+          rebounds_created: number | null
+          rebounds_created_per_60: number | null
+          rush_attempts: number | null
+          rush_attempts_per_60: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          season: string
+          second_assists: number | null
+          second_assists_per_60: number | null
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_percentage: number | null
+          shots: number | null
+          shots_blocked: number | null
+          shots_blocked_per_60: number | null
+          shots_per_60: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          total_assists: number | null
+          total_assists_per_60: number | null
+          total_penalties: number | null
+          total_penalties_per_60: number | null
+          total_points: number | null
+          total_points_per_60: number | null
+          xga: number | null
+          xga_pct: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season: string
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id?: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season?: string
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nst_gamelog_as_rates_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_gamelog_as_rates_oi: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_faceoffs_per_60: number | null
+          def_zone_starts: number | null
+          def_zone_starts_per_60: number | null
+          fa: number | null
+          fa_per_60: number | null
+          faceoffs_lost: number | null
+          faceoffs_lost_per_60: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won: number | null
+          faceoffs_won_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          first_assists: number | null
+          first_assists_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_taken: number | null
+          hits_taken_per_60: number | null
+          icf: number | null
+          icf_per_60: number | null
+          id: number
+          iff: number | null
+          iff_per_60: number | null
+          ipp: number | null
+          iscfs: number | null
+          iscfs_per_60: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          major_penalties: number | null
+          major_penalties_per_60: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          minor_penalties: number | null
+          minor_penalties_per_60: number | null
+          misconduct_penalties: number | null
+          misconduct_penalties_per_60: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_faceoffs_per_60: number | null
+          neu_zone_starts: number | null
+          neu_zone_starts_per_60: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_faceoffs_per_60: number | null
+          off_zone_start_pct: number | null
+          off_zone_start_pct_per_60: number | null
+          off_zone_starts: number | null
+          off_zone_starts_per_60: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sh_pct_per_60: number | null
+          on_ice_sv_pct: number | null
+          on_ice_sv_pct_per_60: number | null
+          on_the_fly_starts_per_60: number | null
+          pdo: number | null
+          pdo_per_60: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          pim: number | null
+          pim_per_60: number | null
+          player_id: number
+          position: string | null
+          rebounds_created: number | null
+          rebounds_created_per_60: number | null
+          rush_attempts: number | null
+          rush_attempts_per_60: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          season: number
+          second_assists: number | null
+          second_assists_per_60: number | null
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_percentage: number | null
+          shots: number | null
+          shots_blocked: number | null
+          shots_blocked_per_60: number | null
+          shots_per_60: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          total_assists: number | null
+          total_assists_per_60: number | null
+          total_penalties: number | null
+          total_penalties_per_60: number | null
+          total_points: number | null
+          total_points_per_60: number | null
+          xga: number | null
+          xga_pct: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          on_the_fly_starts_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id: number
+          position?: string | null
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          on_the_fly_starts_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id?: number
+          position?: string | null
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season?: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: []
+      }
+      nst_gamelog_es_counts: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_faceoffs_per_60: number | null
+          def_zone_starts: number | null
+          def_zone_starts_per_60: number | null
+          fa: number | null
+          fa_per_60: number | null
+          faceoffs_lost: number | null
+          faceoffs_lost_per_60: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won: number | null
+          faceoffs_won_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          first_assists: number | null
+          first_assists_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_taken: number | null
+          hits_taken_per_60: number | null
+          icf: number | null
+          icf_per_60: number | null
+          id: number
+          iff: number | null
+          iff_per_60: number | null
+          ipp: number | null
+          iscfs: number | null
+          iscfs_per_60: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          major_penalties: number | null
+          major_penalties_per_60: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          minor_penalties: number | null
+          minor_penalties_per_60: number | null
+          misconduct_penalties: number | null
+          misconduct_penalties_per_60: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_faceoffs_per_60: number | null
+          neu_zone_starts: number | null
+          neu_zone_starts_per_60: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_faceoffs_per_60: number | null
+          off_zone_start_pct: number | null
+          off_zone_start_pct_per_60: number | null
+          off_zone_starts: number | null
+          off_zone_starts_per_60: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sh_pct_per_60: number | null
+          on_ice_sv_pct: number | null
+          on_ice_sv_pct_per_60: number | null
+          pdo: number | null
+          pdo_per_60: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          pim: number | null
+          pim_per_60: number | null
+          player_id: number
+          rebounds_created: number | null
+          rebounds_created_per_60: number | null
+          rush_attempts: number | null
+          rush_attempts_per_60: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          season: number
+          second_assists: number | null
+          second_assists_per_60: number | null
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_percentage: number | null
+          shots: number | null
+          shots_blocked: number | null
+          shots_blocked_per_60: number | null
+          shots_per_60: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          total_assists: number | null
+          total_assists_per_60: number | null
+          total_penalties: number | null
+          total_penalties_per_60: number | null
+          total_points: number | null
+          total_points_per_60: number | null
+          xga: number | null
+          xga_pct: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id?: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season?: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nst_gamelog_es_counts_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_gamelog_es_counts_oi: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_faceoffs_per_60: number | null
+          def_zone_starts: number | null
+          def_zone_starts_per_60: number | null
+          fa: number | null
+          fa_per_60: number | null
+          faceoffs_lost_per_60: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          first_assists: number | null
+          first_assists_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_taken: number | null
+          hits_taken_per_60: number | null
+          icf: number | null
+          icf_per_60: number | null
+          id: number
+          iff: number | null
+          iff_per_60: number | null
+          ipp: number | null
+          iscfs: number | null
+          iscfs_per_60: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          major_penalties: number | null
+          major_penalties_per_60: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          minor_penalties: number | null
+          minor_penalties_per_60: number | null
+          misconduct_penalties: number | null
+          misconduct_penalties_per_60: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_faceoffs_per_60: number | null
+          neu_zone_starts: number | null
+          neu_zone_starts_per_60: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_faceoffs_per_60: number | null
+          off_zone_start_pct: number | null
+          off_zone_start_pct_per_60: number | null
+          off_zone_starts: number | null
+          off_zone_starts_per_60: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sh_pct_per_60: number | null
+          on_ice_sv_pct: number | null
+          on_ice_sv_pct_per_60: number | null
+          pdo: number | null
+          pdo_per_60: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          pim: number | null
+          pim_per_60: number | null
+          player_id: number
+          rebounds_created: number | null
+          rebounds_created_per_60: number | null
+          rush_attempts: number | null
+          rush_attempts_per_60: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          season: number
+          second_assists: number | null
+          second_assists_per_60: number | null
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_percentage: number | null
+          shots: number | null
+          shots_blocked_per_60: number | null
+          shots_per_60: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          total_assists: number | null
+          total_assists_per_60: number | null
+          total_penalties: number | null
+          total_penalties_per_60: number | null
+          total_points: number | null
+          total_points_per_60: number | null
+          xga: number | null
+          xga_pct: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id?: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season?: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nst_gamelog_es_counts_oi_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_gamelog_es_rates: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_faceoffs_per_60: number | null
+          def_zone_starts: number | null
+          def_zone_starts_per_60: number | null
+          fa: number | null
+          fa_per_60: number | null
+          faceoffs_lost: number | null
+          faceoffs_lost_per_60: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won: number | null
+          faceoffs_won_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          first_assists: number | null
+          first_assists_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_taken: number | null
+          hits_taken_per_60: number | null
+          icf: number | null
+          icf_per_60: number | null
+          id: number
+          iff: number | null
+          iff_per_60: number | null
+          ipp: number | null
+          iscfs: number | null
+          iscfs_per_60: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          major_penalties: number | null
+          major_penalties_per_60: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          minor_penalties: number | null
+          minor_penalties_per_60: number | null
+          misconduct_penalties: number | null
+          misconduct_penalties_per_60: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_faceoffs_per_60: number | null
+          neu_zone_starts: number | null
+          neu_zone_starts_per_60: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_faceoffs_per_60: number | null
+          off_zone_start_pct: number | null
+          off_zone_start_pct_per_60: number | null
+          off_zone_starts: number | null
+          off_zone_starts_per_60: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sh_pct_per_60: number | null
+          on_ice_sv_pct: number | null
+          on_ice_sv_pct_per_60: number | null
+          pdo: number | null
+          pdo_per_60: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          pim: number | null
+          pim_per_60: number | null
+          player_id: number
+          rebounds_created: number | null
+          rebounds_created_per_60: number | null
+          rush_attempts: number | null
+          rush_attempts_per_60: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          season: number
+          second_assists: number | null
+          second_assists_per_60: number | null
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_percentage: number | null
+          shots: number | null
+          shots_blocked: number | null
+          shots_blocked_per_60: number | null
+          shots_per_60: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          total_assists: number | null
+          total_assists_per_60: number | null
+          total_penalties: number | null
+          total_penalties_per_60: number | null
+          total_points: number | null
+          total_points_per_60: number | null
+          xga: number | null
+          xga_pct: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id?: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season?: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nst_gamelog_es_rates_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_gamelog_es_rates_oi: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_faceoffs_per_60: number | null
+          def_zone_starts: number | null
+          def_zone_starts_per_60: number | null
+          fa: number | null
+          fa_per_60: number | null
+          faceoffs_lost: number | null
+          faceoffs_lost_per_60: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won: number | null
+          faceoffs_won_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          first_assists: number | null
+          first_assists_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_taken: number | null
+          hits_taken_per_60: number | null
+          icf: number | null
+          icf_per_60: number | null
+          id: number
+          iff: number | null
+          iff_per_60: number | null
+          ipp: number | null
+          iscfs: number | null
+          iscfs_per_60: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          major_penalties: number | null
+          major_penalties_per_60: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          minor_penalties: number | null
+          minor_penalties_per_60: number | null
+          misconduct_penalties: number | null
+          misconduct_penalties_per_60: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_faceoffs_per_60: number | null
+          neu_zone_starts: number | null
+          neu_zone_starts_per_60: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_faceoffs_per_60: number | null
+          off_zone_start_pct: number | null
+          off_zone_start_pct_per_60: number | null
+          off_zone_starts: number | null
+          off_zone_starts_per_60: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sh_pct_per_60: number | null
+          on_ice_sv_pct: number | null
+          on_ice_sv_pct_per_60: number | null
+          pdo: number | null
+          pdo_per_60: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          pim: number | null
+          pim_per_60: number | null
+          player_id: number
+          rebounds_created: number | null
+          rebounds_created_per_60: number | null
+          rush_attempts: number | null
+          rush_attempts_per_60: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          season: number
+          second_assists: number | null
+          second_assists_per_60: number | null
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_percentage: number | null
+          shots: number | null
+          shots_blocked: number | null
+          shots_blocked_per_60: number | null
+          shots_per_60: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          total_assists: number | null
+          total_assists_per_60: number | null
+          total_penalties: number | null
+          total_penalties_per_60: number | null
+          total_points: number | null
+          total_points_per_60: number | null
+          xga: number | null
+          xga_pct: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id?: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season?: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nst_gamelog_es_rates_oi_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_gamelog_pk_counts: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_faceoffs_per_60: number | null
+          def_zone_starts: number | null
+          def_zone_starts_per_60: number | null
+          fa: number | null
+          fa_per_60: number | null
+          faceoffs_lost: number | null
+          faceoffs_lost_per_60: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won: number | null
+          faceoffs_won_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          first_assists: number | null
+          first_assists_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_taken: number | null
+          hits_taken_per_60: number | null
+          icf: number | null
+          icf_per_60: number | null
+          id: number
+          iff: number | null
+          iff_per_60: number | null
+          ipp: number | null
+          iscfs: number | null
+          iscfs_per_60: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          major_penalties: number | null
+          major_penalties_per_60: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          minor_penalties: number | null
+          minor_penalties_per_60: number | null
+          misconduct_penalties: number | null
+          misconduct_penalties_per_60: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_faceoffs_per_60: number | null
+          neu_zone_starts: number | null
+          neu_zone_starts_per_60: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_faceoffs_per_60: number | null
+          off_zone_start_pct: number | null
+          off_zone_start_pct_per_60: number | null
+          off_zone_starts: number | null
+          off_zone_starts_per_60: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sh_pct_per_60: number | null
+          on_ice_sv_pct: number | null
+          on_ice_sv_pct_per_60: number | null
+          pdo: number | null
+          pdo_per_60: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          pim: number | null
+          pim_per_60: number | null
+          player_id: number
+          rebounds_created: number | null
+          rebounds_created_per_60: number | null
+          rush_attempts: number | null
+          rush_attempts_per_60: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          season: number
+          second_assists: number | null
+          second_assists_per_60: number | null
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_percentage: number | null
+          shots: number | null
+          shots_blocked: number | null
+          shots_blocked_per_60: number | null
+          shots_per_60: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          total_assists: number | null
+          total_assists_per_60: number | null
+          total_penalties: number | null
+          total_penalties_per_60: number | null
+          total_points: number | null
+          total_points_per_60: number | null
+          xga: number | null
+          xga_pct: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id?: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season?: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nst_gamelog_pk_counts_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_gamelog_pk_counts_oi: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_faceoffs_per_60: number | null
+          def_zone_starts: number | null
+          def_zone_starts_per_60: number | null
+          fa: number | null
+          fa_per_60: number | null
+          faceoffs_lost: number | null
+          faceoffs_lost_per_60: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won: number | null
+          faceoffs_won_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          first_assists: number | null
+          first_assists_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_taken: number | null
+          hits_taken_per_60: number | null
+          icf: number | null
+          icf_per_60: number | null
+          id: number
+          iff: number | null
+          iff_per_60: number | null
+          ipp: number | null
+          iscfs: number | null
+          iscfs_per_60: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          major_penalties: number | null
+          major_penalties_per_60: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          minor_penalties: number | null
+          minor_penalties_per_60: number | null
+          misconduct_penalties: number | null
+          misconduct_penalties_per_60: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_faceoffs_per_60: number | null
+          neu_zone_starts: number | null
+          neu_zone_starts_per_60: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_faceoffs_per_60: number | null
+          off_zone_start_pct: number | null
+          off_zone_start_pct_per_60: number | null
+          off_zone_starts: number | null
+          off_zone_starts_per_60: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sh_pct_per_60: number | null
+          on_ice_sv_pct: number | null
+          on_ice_sv_pct_per_60: number | null
+          pdo: number | null
+          pdo_per_60: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          pim: number | null
+          pim_per_60: number | null
+          player_id: number
+          rebounds_created: number | null
+          rebounds_created_per_60: number | null
+          rush_attempts: number | null
+          rush_attempts_per_60: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          season: number
+          second_assists: number | null
+          second_assists_per_60: number | null
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_percentage: number | null
+          shots: number | null
+          shots_blocked: number | null
+          shots_blocked_per_60: number | null
+          shots_per_60: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          total_assists: number | null
+          total_assists_per_60: number | null
+          total_penalties: number | null
+          total_penalties_per_60: number | null
+          total_points: number | null
+          total_points_per_60: number | null
+          xga: number | null
+          xga_pct: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id?: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season?: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nst_gamelog_pk_counts_oi_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_gamelog_pk_rates: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_faceoffs_per_60: number | null
+          def_zone_starts: number | null
+          def_zone_starts_per_60: number | null
+          fa: number | null
+          fa_per_60: number | null
+          faceoffs_lost: number | null
+          faceoffs_lost_per_60: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won: number | null
+          faceoffs_won_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          first_assists: number | null
+          first_assists_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_taken: number | null
+          hits_taken_per_60: number | null
+          icf: number | null
+          icf_per_60: number | null
+          id: number
+          iff: number | null
+          iff_per_60: number | null
+          ipp: number | null
+          iscfs: number | null
+          iscfs_per_60: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          major_penalties: number | null
+          major_penalties_per_60: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          minor_penalties: number | null
+          minor_penalties_per_60: number | null
+          misconduct_penalties: number | null
+          misconduct_penalties_per_60: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_faceoffs_per_60: number | null
+          neu_zone_starts: number | null
+          neu_zone_starts_per_60: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_faceoffs_per_60: number | null
+          off_zone_start_pct: number | null
+          off_zone_start_pct_per_60: number | null
+          off_zone_starts: number | null
+          off_zone_starts_per_60: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sh_pct_per_60: number | null
+          on_ice_sv_pct: number | null
+          on_ice_sv_pct_per_60: number | null
+          pdo: number | null
+          pdo_per_60: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          pim: number | null
+          pim_per_60: number | null
+          player_id: number
+          rebounds_created: number | null
+          rebounds_created_per_60: number | null
+          rush_attempts: number | null
+          rush_attempts_per_60: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          season: number
+          second_assists: number | null
+          second_assists_per_60: number | null
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_percentage: number | null
+          shots: number | null
+          shots_blocked: number | null
+          shots_blocked_per_60: number | null
+          shots_per_60: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          total_assists: number | null
+          total_assists_per_60: number | null
+          total_penalties: number | null
+          total_penalties_per_60: number | null
+          total_points: number | null
+          total_points_per_60: number | null
+          xga: number | null
+          xga_pct: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id?: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season?: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nst_gamelog_pk_rates_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_gamelog_pk_rates_oi: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          created_at: string | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_faceoffs_per_60: number | null
+          def_zone_starts: number | null
+          def_zone_starts_per_60: number | null
+          fa: number | null
+          fa_per_60: number | null
+          faceoffs_lost: number | null
+          faceoffs_lost_per_60: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won: number | null
+          faceoffs_won_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          first_assists: number | null
+          first_assists_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_taken: number | null
+          hits_taken_per_60: number | null
+          icf: number | null
+          icf_per_60: number | null
+          id: number
+          iff: number | null
+          iff_per_60: number | null
+          ipp: number | null
+          iscfs: number | null
+          iscfs_per_60: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          major_penalties: number | null
+          major_penalties_per_60: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          minor_penalties: number | null
+          minor_penalties_per_60: number | null
+          misconduct_penalties: number | null
+          misconduct_penalties_per_60: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_faceoffs_per_60: number | null
+          neu_zone_starts: number | null
+          neu_zone_starts_per_60: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_faceoffs_per_60: number | null
+          off_zone_start_pct: number | null
+          off_zone_start_pct_per_60: number | null
+          off_zone_starts: number | null
+          off_zone_starts_per_60: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sh_pct_per_60: number | null
+          on_ice_sv_pct: number | null
+          on_ice_sv_pct_per_60: number | null
+          pdo: number | null
+          pdo_per_60: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          pim: number | null
+          pim_per_60: number | null
+          player_id: number
+          rebounds_created: number | null
+          rebounds_created_per_60: number | null
+          rush_attempts: number | null
+          rush_attempts_per_60: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          season: number
+          second_assists: number | null
+          second_assists_per_60: number | null
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_percentage: number | null
+          shots: number | null
+          shots_blocked: number | null
+          shots_blocked_per_60: number | null
+          shots_per_60: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          total_assists: number | null
+          total_assists_per_60: number | null
+          total_penalties: number | null
+          total_penalties_per_60: number | null
+          total_points: number | null
+          total_points_per_60: number | null
+          xga: number | null
+          xga_pct: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          created_at?: string | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id?: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season?: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nst_gamelog_pk_rates_oi_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_gamelog_pp_counts: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_faceoffs_per_60: number | null
+          def_zone_starts: number | null
+          def_zone_starts_per_60: number | null
+          fa: number | null
+          fa_per_60: number | null
+          faceoffs_lost: number | null
+          faceoffs_lost_per_60: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won: number | null
+          faceoffs_won_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          first_assists: number | null
+          first_assists_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_taken: number | null
+          hits_taken_per_60: number | null
+          icf: number | null
+          icf_per_60: number | null
+          id: number
+          iff: number | null
+          iff_per_60: number | null
+          ipp: number | null
+          iscfs: number | null
+          iscfs_per_60: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          major_penalties: number | null
+          major_penalties_per_60: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          minor_penalties: number | null
+          minor_penalties_per_60: number | null
+          misconduct_penalties: number | null
+          misconduct_penalties_per_60: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_faceoffs_per_60: number | null
+          neu_zone_starts: number | null
+          neu_zone_starts_per_60: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_faceoffs_per_60: number | null
+          off_zone_start_pct: number | null
+          off_zone_start_pct_per_60: number | null
+          off_zone_starts: number | null
+          off_zone_starts_per_60: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sh_pct_per_60: number | null
+          on_ice_sv_pct: number | null
+          on_ice_sv_pct_per_60: number | null
+          pdo: number | null
+          pdo_per_60: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          pim: number | null
+          pim_per_60: number | null
+          player_id: number
+          rebounds_created: number | null
+          rebounds_created_per_60: number | null
+          rush_attempts: number | null
+          rush_attempts_per_60: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          season: string
+          second_assists: number | null
+          second_assists_per_60: number | null
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_percentage: number | null
+          shots: number | null
+          shots_blocked: number | null
+          shots_blocked_per_60: number | null
+          shots_per_60: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          total_assists: number | null
+          total_assists_per_60: number | null
+          total_penalties: number | null
+          total_penalties_per_60: number | null
+          total_points: number | null
+          total_points_per_60: number | null
+          xga: number | null
+          xga_pct: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season: string
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id?: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season?: string
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nst_gamelog_pp_counts_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_gamelog_pp_counts_oi: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_faceoffs_per_60: number | null
+          def_zone_starts: number | null
+          def_zone_starts_per_60: number | null
+          fa: number | null
+          fa_per_60: number | null
+          faceoffs_lost: number | null
+          faceoffs_lost_per_60: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won: number | null
+          faceoffs_won_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          first_assists: number | null
+          first_assists_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_taken: number | null
+          hits_taken_per_60: number | null
+          icf: number | null
+          icf_per_60: number | null
+          id: number
+          iff: number | null
+          iff_per_60: number | null
+          ipp: number | null
+          iscfs: number | null
+          iscfs_per_60: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          major_penalties: number | null
+          major_penalties_per_60: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          minor_penalties: number | null
+          minor_penalties_per_60: number | null
+          misconduct_penalties: number | null
+          misconduct_penalties_per_60: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_faceoffs_per_60: number | null
+          neu_zone_starts: number | null
+          neu_zone_starts_per_60: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_faceoffs_per_60: number | null
+          off_zone_start_pct: number | null
+          off_zone_start_pct_per_60: number | null
+          off_zone_starts: number | null
+          off_zone_starts_per_60: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sh_pct_per_60: number | null
+          on_ice_sv_pct: number | null
+          on_ice_sv_pct_per_60: number | null
+          on_the_fly_starts: number | null
+          pdo: number | null
+          pdo_per_60: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          pim: number | null
+          pim_per_60: number | null
+          player_id: number
+          position: string | null
+          rebounds_created: number | null
+          rebounds_created_per_60: number | null
+          rush_attempts: number | null
+          rush_attempts_per_60: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          season: number
+          second_assists: number | null
+          second_assists_per_60: number | null
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_percentage: number | null
+          shots: number | null
+          shots_blocked: number | null
+          shots_blocked_per_60: number | null
+          shots_per_60: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          total_assists: number | null
+          total_assists_per_60: number | null
+          total_penalties: number | null
+          total_penalties_per_60: number | null
+          total_points: number | null
+          total_points_per_60: number | null
+          xga: number | null
+          xga_pct: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          on_the_fly_starts?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id: number
+          position?: string | null
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          on_the_fly_starts?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id?: number
+          position?: string | null
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season?: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: []
+      }
+      nst_gamelog_pp_rates: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_faceoffs_per_60: number | null
+          def_zone_starts: number | null
+          def_zone_starts_per_60: number | null
+          fa: number | null
+          fa_per_60: number | null
+          faceoffs_lost: number | null
+          faceoffs_lost_per_60: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won: number | null
+          faceoffs_won_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          first_assists: number | null
+          first_assists_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_taken: number | null
+          hits_taken_per_60: number | null
+          icf: number | null
+          icf_per_60: number | null
+          id: number
+          iff: number | null
+          iff_per_60: number | null
+          ipp: number | null
+          iscfs: number | null
+          iscfs_per_60: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          major_penalties: number | null
+          major_penalties_per_60: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          minor_penalties: number | null
+          minor_penalties_per_60: number | null
+          misconduct_penalties: number | null
+          misconduct_penalties_per_60: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_faceoffs_per_60: number | null
+          neu_zone_starts: number | null
+          neu_zone_starts_per_60: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_faceoffs_per_60: number | null
+          off_zone_start_pct: number | null
+          off_zone_start_pct_per_60: number | null
+          off_zone_starts: number | null
+          off_zone_starts_per_60: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sh_pct_per_60: number | null
+          on_ice_sv_pct: number | null
+          on_ice_sv_pct_per_60: number | null
+          pdo: number | null
+          pdo_per_60: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          pim: number | null
+          pim_per_60: number | null
+          player_id: number
+          rebounds_created: number | null
+          rebounds_created_per_60: number | null
+          rush_attempts: number | null
+          rush_attempts_per_60: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          season: string
+          second_assists: number | null
+          second_assists_per_60: number | null
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_percentage: number | null
+          shots: number | null
+          shots_blocked: number | null
+          shots_blocked_per_60: number | null
+          shots_per_60: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          total_assists: number | null
+          total_assists_per_60: number | null
+          total_penalties: number | null
+          total_penalties_per_60: number | null
+          total_points: number | null
+          total_points_per_60: number | null
+          xga: number | null
+          xga_pct: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season: string
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id?: number
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season?: string
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nst_gamelog_pp_rates_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_gamelog_pp_rates_oi: {
+        Row: {
+          ca: number | null
+          ca_per_60: number | null
+          cf: number | null
+          cf_pct: number | null
+          cf_per_60: number | null
+          date_scraped: string
+          def_zone_faceoffs: number | null
+          def_zone_faceoffs_per_60: number | null
+          def_zone_starts: number | null
+          def_zone_starts_per_60: number | null
+          fa: number | null
+          fa_per_60: number | null
+          faceoffs_lost: number | null
+          faceoffs_lost_per_60: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won: number | null
+          faceoffs_won_per_60: number | null
+          ff: number | null
+          ff_pct: number | null
+          ff_per_60: number | null
+          first_assists: number | null
+          first_assists_per_60: number | null
+          ga: number | null
+          ga_per_60: number | null
+          gf: number | null
+          gf_pct: number | null
+          gf_per_60: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_per_60: number | null
+          gp: number | null
+          hdca: number | null
+          hdca_per_60: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdcf_per_60: number | null
+          hdga: number | null
+          hdga_per_60: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdgf_per_60: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_taken: number | null
+          hits_taken_per_60: number | null
+          icf: number | null
+          icf_per_60: number | null
+          id: number
+          iff: number | null
+          iff_per_60: number | null
+          ipp: number | null
+          iscfs: number | null
+          iscfs_per_60: number | null
+          ixg: number | null
+          ixg_per_60: number | null
+          ldca: number | null
+          ldca_per_60: number | null
+          ldcf: number | null
+          ldcf_pct: number | null
+          ldcf_per_60: number | null
+          ldga: number | null
+          ldga_per_60: number | null
+          ldgf: number | null
+          ldgf_pct: number | null
+          ldgf_per_60: number | null
+          major_penalties: number | null
+          major_penalties_per_60: number | null
+          mdca: number | null
+          mdca_per_60: number | null
+          mdcf: number | null
+          mdcf_pct: number | null
+          mdcf_per_60: number | null
+          mdga: number | null
+          mdga_per_60: number | null
+          mdgf: number | null
+          mdgf_pct: number | null
+          mdgf_per_60: number | null
+          minor_penalties: number | null
+          minor_penalties_per_60: number | null
+          misconduct_penalties: number | null
+          misconduct_penalties_per_60: number | null
+          neu_zone_faceoffs: number | null
+          neu_zone_faceoffs_per_60: number | null
+          neu_zone_starts: number | null
+          neu_zone_starts_per_60: number | null
+          off_zone_faceoff_pct: number | null
+          off_zone_faceoffs: number | null
+          off_zone_faceoffs_per_60: number | null
+          off_zone_start_pct: number | null
+          off_zone_start_pct_per_60: number | null
+          off_zone_starts: number | null
+          off_zone_starts_per_60: number | null
+          on_ice_sh_pct: number | null
+          on_ice_sh_pct_per_60: number | null
+          on_ice_sv_pct: number | null
+          on_ice_sv_pct_per_60: number | null
+          on_the_fly_starts_per_60: number | null
+          pdo: number | null
+          pdo_per_60: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          pim: number | null
+          pim_per_60: number | null
+          player_id: number
+          position: string | null
+          rebounds_created: number | null
+          rebounds_created_per_60: number | null
+          rush_attempts: number | null
+          rush_attempts_per_60: number | null
+          sa: number | null
+          sa_per_60: number | null
+          sca: number | null
+          sca_per_60: number | null
+          scf: number | null
+          scf_pct: number | null
+          scf_per_60: number | null
+          season: number
+          second_assists: number | null
+          second_assists_per_60: number | null
+          sf: number | null
+          sf_pct: number | null
+          sf_per_60: number | null
+          sh_percentage: number | null
+          shots: number | null
+          shots_blocked: number | null
+          shots_blocked_per_60: number | null
+          shots_per_60: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          toi: number | null
+          toi_per_gp: number | null
+          total_assists: number | null
+          total_assists_per_60: number | null
+          total_penalties: number | null
+          total_penalties_per_60: number | null
+          total_points: number | null
+          total_points_per_60: number | null
+          xga: number | null
+          xga_pct: number | null
+          xga_per_60: number | null
+          xgf: number | null
+          xgf_pct: number | null
+          xgf_per_60: number | null
+        }
+        Insert: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          date_scraped: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          on_the_fly_starts_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id: number
+          position?: string | null
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Update: {
+          ca?: number | null
+          ca_per_60?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          cf_per_60?: number | null
+          date_scraped?: string
+          def_zone_faceoffs?: number | null
+          def_zone_faceoffs_per_60?: number | null
+          def_zone_starts?: number | null
+          def_zone_starts_per_60?: number | null
+          fa?: number | null
+          fa_per_60?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_lost_per_60?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          faceoffs_won_per_60?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ff_per_60?: number | null
+          first_assists?: number | null
+          first_assists_per_60?: number | null
+          ga?: number | null
+          ga_per_60?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gf_per_60?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_per_60?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdca_per_60?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdcf_per_60?: number | null
+          hdga?: number | null
+          hdga_per_60?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdgf_per_60?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_taken?: number | null
+          hits_taken_per_60?: number | null
+          icf?: number | null
+          icf_per_60?: number | null
+          id?: number
+          iff?: number | null
+          iff_per_60?: number | null
+          ipp?: number | null
+          iscfs?: number | null
+          iscfs_per_60?: number | null
+          ixg?: number | null
+          ixg_per_60?: number | null
+          ldca?: number | null
+          ldca_per_60?: number | null
+          ldcf?: number | null
+          ldcf_pct?: number | null
+          ldcf_per_60?: number | null
+          ldga?: number | null
+          ldga_per_60?: number | null
+          ldgf?: number | null
+          ldgf_pct?: number | null
+          ldgf_per_60?: number | null
+          major_penalties?: number | null
+          major_penalties_per_60?: number | null
+          mdca?: number | null
+          mdca_per_60?: number | null
+          mdcf?: number | null
+          mdcf_pct?: number | null
+          mdcf_per_60?: number | null
+          mdga?: number | null
+          mdga_per_60?: number | null
+          mdgf?: number | null
+          mdgf_pct?: number | null
+          mdgf_per_60?: number | null
+          minor_penalties?: number | null
+          minor_penalties_per_60?: number | null
+          misconduct_penalties?: number | null
+          misconduct_penalties_per_60?: number | null
+          neu_zone_faceoffs?: number | null
+          neu_zone_faceoffs_per_60?: number | null
+          neu_zone_starts?: number | null
+          neu_zone_starts_per_60?: number | null
+          off_zone_faceoff_pct?: number | null
+          off_zone_faceoffs?: number | null
+          off_zone_faceoffs_per_60?: number | null
+          off_zone_start_pct?: number | null
+          off_zone_start_pct_per_60?: number | null
+          off_zone_starts?: number | null
+          off_zone_starts_per_60?: number | null
+          on_ice_sh_pct?: number | null
+          on_ice_sh_pct_per_60?: number | null
+          on_ice_sv_pct?: number | null
+          on_ice_sv_pct_per_60?: number | null
+          on_the_fly_starts_per_60?: number | null
+          pdo?: number | null
+          pdo_per_60?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          pim?: number | null
+          pim_per_60?: number | null
+          player_id?: number
+          position?: string | null
+          rebounds_created?: number | null
+          rebounds_created_per_60?: number | null
+          rush_attempts?: number | null
+          rush_attempts_per_60?: number | null
+          sa?: number | null
+          sa_per_60?: number | null
+          sca?: number | null
+          sca_per_60?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          scf_per_60?: number | null
+          season?: number
+          second_assists?: number | null
+          second_assists_per_60?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sf_per_60?: number | null
+          sh_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          shots_blocked_per_60?: number | null
+          shots_per_60?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          toi?: number | null
+          toi_per_gp?: number | null
+          total_assists?: number | null
+          total_assists_per_60?: number | null
+          total_penalties?: number | null
+          total_penalties_per_60?: number | null
+          total_points?: number | null
+          total_points_per_60?: number | null
+          xga?: number | null
+          xga_pct?: number | null
+          xga_per_60?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+          xgf_per_60?: number | null
+        }
+        Relationships: []
+      }
+      nst_sko_stats: {
+        Row: {
+          cf_percentage: number | null
+          date: string
+          first_assists: number | null
+          gf_percentage: number | null
+          goals: number | null
+          hdcf: number | null
+          hdcf_percentage: number | null
+          icf: number | null
+          ihdcf: number | null
+          ipp: number | null
+          iscf: number | null
+          ixg: number | null
+          oish: number | null
+          oisv: number | null
+          ozs: number | null
+          playerid: number
+          s_percentage: number | null
+          scf: number | null
+          scf_percentage: number | null
+          second_assists: number | null
+          sf_percentage: number | null
+          shots: number | null
+          toi: number | null
+          xgf: number | null
+          xgf_percentage: number | null
+        }
+        Insert: {
+          cf_percentage?: number | null
+          date: string
+          first_assists?: number | null
+          gf_percentage?: number | null
+          goals?: number | null
+          hdcf?: number | null
+          hdcf_percentage?: number | null
+          icf?: number | null
+          ihdcf?: number | null
+          ipp?: number | null
+          iscf?: number | null
+          ixg?: number | null
+          oish?: number | null
+          oisv?: number | null
+          ozs?: number | null
+          playerid: number
+          s_percentage?: number | null
+          scf?: number | null
+          scf_percentage?: number | null
+          second_assists?: number | null
+          sf_percentage?: number | null
+          shots?: number | null
+          toi?: number | null
+          xgf?: number | null
+          xgf_percentage?: number | null
+        }
+        Update: {
+          cf_percentage?: number | null
+          date?: string
+          first_assists?: number | null
+          gf_percentage?: number | null
+          goals?: number | null
+          hdcf?: number | null
+          hdcf_percentage?: number | null
+          icf?: number | null
+          ihdcf?: number | null
+          ipp?: number | null
+          iscf?: number | null
+          ixg?: number | null
+          oish?: number | null
+          oisv?: number | null
+          ozs?: number | null
+          playerid?: number
+          s_percentage?: number | null
+          scf?: number | null
+          scf_percentage?: number | null
+          second_assists?: number | null
+          sf_percentage?: number | null
+          shots?: number | null
+          toi?: number | null
+          xgf?: number | null
+          xgf_percentage?: number | null
+        }
+        Relationships: []
+      }
+      nst_team_5v5: {
+        Row: {
+          ca: number | null
+          cf: number | null
+          cf_pct: number | null
+          created_at: string | null
+          date: string
+          fa: number | null
+          ff: number | null
+          ff_pct: number | null
+          ga: number | null
+          gf: number | null
+          gf_pct: number | null
+          gp: number | null
+          hdca: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdga: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdsa: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          l: number | null
+          otl: number | null
+          pdo: number | null
+          points: number | null
+          sa: number | null
+          sca: number | null
+          scf: number | null
+          scf_pct: number | null
+          sf: number | null
+          sf_pct: number | null
+          sh_pct: number | null
+          situation: string
+          sv_pct: number | null
+          team_abbreviation: string
+          team_name: string
+          toi: number | null
+          updated_at: string | null
+          w: number | null
+          xga: number | null
+          xgf: number | null
+          xgf_pct: number | null
+        }
+        Insert: {
+          ca?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          created_at?: string | null
+          date: string
+          fa?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ga?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdga?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdsa?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          l?: number | null
+          otl?: number | null
+          pdo?: number | null
+          points?: number | null
+          sa?: number | null
+          sca?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation: string
+          team_name: string
+          toi?: number | null
+          updated_at?: string | null
+          w?: number | null
+          xga?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+        }
+        Update: {
+          ca?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          created_at?: string | null
+          date?: string
+          fa?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ga?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdga?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdsa?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          l?: number | null
+          otl?: number | null
+          pdo?: number | null
+          points?: number | null
+          sa?: number | null
+          sca?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation?: string
+          team_name?: string
+          toi?: number | null
+          updated_at?: string | null
+          w?: number | null
+          xga?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+        }
+        Relationships: []
+      }
+      nst_team_all: {
+        Row: {
+          ca: number | null
+          cf: number | null
+          cf_pct: number | null
+          created_at: string | null
+          date: string
+          fa: number | null
+          ff: number | null
+          ff_pct: number | null
+          ga: number | null
+          gf: number | null
+          gf_pct: number | null
+          gp: number | null
+          hdca: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdga: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdsa: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          l: number | null
+          otl: number | null
+          pdo: number | null
+          points: number | null
+          sa: number | null
+          sca: number | null
+          scf: number | null
+          scf_pct: number | null
+          sf: number | null
+          sf_pct: number | null
+          sh_pct: number | null
+          situation: string
+          sv_pct: number | null
+          team_abbreviation: string
+          team_name: string
+          toi: number | null
+          updated_at: string | null
+          w: number | null
+          xga: number | null
+          xgf: number | null
+          xgf_pct: number | null
+        }
+        Insert: {
+          ca?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          created_at?: string | null
+          date: string
+          fa?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ga?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdga?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdsa?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          l?: number | null
+          otl?: number | null
+          pdo?: number | null
+          points?: number | null
+          sa?: number | null
+          sca?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation: string
+          team_name: string
+          toi?: number | null
+          updated_at?: string | null
+          w?: number | null
+          xga?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+        }
+        Update: {
+          ca?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          created_at?: string | null
+          date?: string
+          fa?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ga?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdga?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdsa?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          l?: number | null
+          otl?: number | null
+          pdo?: number | null
+          points?: number | null
+          sa?: number | null
+          sca?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation?: string
+          team_name?: string
+          toi?: number | null
+          updated_at?: string | null
+          w?: number | null
+          xga?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+        }
+        Relationships: []
+      }
+      nst_team_pk: {
+        Row: {
+          ca: number | null
+          cf: number | null
+          cf_pct: number | null
+          created_at: string | null
+          date: string
+          fa: number | null
+          ff: number | null
+          ff_pct: number | null
+          ga: number | null
+          gf: number | null
+          gf_pct: number | null
+          gp: number | null
+          hdca: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdga: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdsa: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          l: number | null
+          otl: number | null
+          pdo: number | null
+          points: number | null
+          sa: number | null
+          sca: number | null
+          scf: number | null
+          scf_pct: number | null
+          sf: number | null
+          sf_pct: number | null
+          sh_pct: number | null
+          situation: string
+          sv_pct: number | null
+          team_abbreviation: string
+          team_name: string
+          toi: number | null
+          updated_at: string | null
+          w: number | null
+          xga: number | null
+          xgf: number | null
+          xgf_pct: number | null
+        }
+        Insert: {
+          ca?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          created_at?: string | null
+          date: string
+          fa?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ga?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdga?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdsa?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          l?: number | null
+          otl?: number | null
+          pdo?: number | null
+          points?: number | null
+          sa?: number | null
+          sca?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation: string
+          team_name: string
+          toi?: number | null
+          updated_at?: string | null
+          w?: number | null
+          xga?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+        }
+        Update: {
+          ca?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          created_at?: string | null
+          date?: string
+          fa?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ga?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdga?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdsa?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          l?: number | null
+          otl?: number | null
+          pdo?: number | null
+          points?: number | null
+          sa?: number | null
+          sca?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation?: string
+          team_name?: string
+          toi?: number | null
+          updated_at?: string | null
+          w?: number | null
+          xga?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+        }
+        Relationships: []
+      }
+      nst_team_pp: {
+        Row: {
+          ca: number | null
+          cf: number | null
+          cf_pct: number | null
+          created_at: string | null
+          date: string
+          fa: number | null
+          ff: number | null
+          ff_pct: number | null
+          ga: number | null
+          gf: number | null
+          gf_pct: number | null
+          gp: number | null
+          hdca: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdga: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdsa: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          l: number | null
+          otl: number | null
+          pdo: number | null
+          points: number | null
+          sa: number | null
+          sca: number | null
+          scf: number | null
+          scf_pct: number | null
+          sf: number | null
+          sf_pct: number | null
+          sh_pct: number | null
+          situation: string
+          sv_pct: number | null
+          team_abbreviation: string
+          team_name: string
+          toi: number | null
+          updated_at: string | null
+          w: number | null
+          xga: number | null
+          xgf: number | null
+          xgf_pct: number | null
+        }
+        Insert: {
+          ca?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          created_at?: string | null
+          date: string
+          fa?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ga?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdga?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdsa?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          l?: number | null
+          otl?: number | null
+          pdo?: number | null
+          points?: number | null
+          sa?: number | null
+          sca?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation: string
+          team_name: string
+          toi?: number | null
+          updated_at?: string | null
+          w?: number | null
+          xga?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+        }
+        Update: {
+          ca?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          created_at?: string | null
+          date?: string
+          fa?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ga?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdga?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdsa?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          l?: number | null
+          otl?: number | null
+          pdo?: number | null
+          points?: number | null
+          sa?: number | null
+          sca?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          sf?: number | null
+          sf_pct?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation?: string
+          team_name?: string
+          toi?: number | null
+          updated_at?: string | null
+          w?: number | null
+          xga?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+        }
+        Relationships: []
+      }
+      nst_team_stats: {
+        Row: {
+          ca: number | null
+          cf: number | null
+          cf_pct: number | null
+          created_at: string | null
+          fa: number | null
+          ff: number | null
+          ff_pct: number | null
+          ga: number | null
+          gf: number | null
+          gf_pct: number | null
+          gp: number | null
+          hdca: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdga: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdsa: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          l: number | null
+          otl: number | null
+          pdo: number | null
+          points: number | null
+          sa: number | null
+          sca: number | null
+          scf: number | null
+          scf_pct: number | null
+          season: number
+          sf: number | null
+          sf_pct: number | null
+          sh_pct: number | null
+          situation: string
+          sv_pct: number | null
+          team_abbreviation: string
+          team_name: string
+          toi: number | null
+          updated_at: string | null
+          w: number | null
+          xga: number | null
+          xgf: number | null
+          xgf_pct: number | null
+        }
+        Insert: {
+          ca?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          created_at?: string | null
+          fa?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ga?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdga?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdsa?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          l?: number | null
+          otl?: number | null
+          pdo?: number | null
+          points?: number | null
+          sa?: number | null
+          sca?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          season: number
+          sf?: number | null
+          sf_pct?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation: string
+          team_name: string
+          toi?: number | null
+          updated_at?: string | null
+          w?: number | null
+          xga?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+        }
+        Update: {
+          ca?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          created_at?: string | null
+          fa?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ga?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdga?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdsa?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          l?: number | null
+          otl?: number | null
+          pdo?: number | null
+          points?: number | null
+          sa?: number | null
+          sca?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          season?: number
+          sf?: number | null
+          sf_pct?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation?: string
+          team_name?: string
+          toi?: number | null
+          updated_at?: string | null
+          w?: number | null
+          xga?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+        }
+        Relationships: []
+      }
+      nst_team_stats_ly: {
+        Row: {
+          ca: number | null
+          cf: number | null
+          cf_pct: number | null
+          created_at: string | null
+          fa: number | null
+          ff: number | null
+          ff_pct: number | null
+          ga: number | null
+          gf: number | null
+          gf_pct: number | null
+          gp: number | null
+          hdca: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdga: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdsa: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          l: number | null
+          otl: number | null
+          pdo: number | null
+          points: number | null
+          sa: number | null
+          sca: number | null
+          scf: number | null
+          scf_pct: number | null
+          season: number
+          sf: number | null
+          sf_pct: number | null
+          sh_pct: number | null
+          situation: string
+          sv_pct: number | null
+          team_abbreviation: string
+          team_name: string
+          toi: number | null
+          updated_at: string | null
+          w: number | null
+          xga: number | null
+          xgf: number | null
+          xgf_pct: number | null
+        }
+        Insert: {
+          ca?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          created_at?: string | null
+          fa?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ga?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdga?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdsa?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          l?: number | null
+          otl?: number | null
+          pdo?: number | null
+          points?: number | null
+          sa?: number | null
+          sca?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          season: number
+          sf?: number | null
+          sf_pct?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation: string
+          team_name: string
+          toi?: number | null
+          updated_at?: string | null
+          w?: number | null
+          xga?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+        }
+        Update: {
+          ca?: number | null
+          cf?: number | null
+          cf_pct?: number | null
+          created_at?: string | null
+          fa?: number | null
+          ff?: number | null
+          ff_pct?: number | null
+          ga?: number | null
+          gf?: number | null
+          gf_pct?: number | null
+          gp?: number | null
+          hdca?: number | null
+          hdcf?: number | null
+          hdcf_pct?: number | null
+          hdga?: number | null
+          hdgf?: number | null
+          hdgf_pct?: number | null
+          hdsa?: number | null
+          hdsf?: number | null
+          hdsf_pct?: number | null
+          l?: number | null
+          otl?: number | null
+          pdo?: number | null
+          points?: number | null
+          sa?: number | null
+          sca?: number | null
+          scf?: number | null
+          scf_pct?: number | null
+          season?: number
+          sf?: number | null
+          sf_pct?: number | null
+          sh_pct?: number | null
+          situation?: string
+          sv_pct?: number | null
+          team_abbreviation?: string
+          team_name?: string
+          toi?: number | null
+          updated_at?: string | null
+          w?: number | null
+          xga?: number | null
+          xgf?: number | null
+          xgf_pct?: number | null
+        }
+        Relationships: []
+      }
+      pbp_games: {
+        Row: {
+          awayteamabbrev: string | null
+          awayteamid: number | null
+          awayteamname: string | null
+          awayteamscore: number | null
+          created_at: string | null
+          date: string | null
+          hometeamabbrev: string | null
+          hometeamid: number | null
+          hometeamname: string | null
+          hometeamscore: number | null
+          id: number
+          location: string | null
+          outcome: string | null
+          season: string | null
+          starttime: string | null
+          type: number | null
+        }
+        Insert: {
+          awayteamabbrev?: string | null
+          awayteamid?: number | null
+          awayteamname?: string | null
+          awayteamscore?: number | null
+          created_at?: string | null
+          date?: string | null
+          hometeamabbrev?: string | null
+          hometeamid?: number | null
+          hometeamname?: string | null
+          hometeamscore?: number | null
+          id?: number
+          location?: string | null
+          outcome?: string | null
+          season?: string | null
+          starttime?: string | null
+          type?: number | null
+        }
+        Update: {
+          awayteamabbrev?: string | null
+          awayteamid?: number | null
+          awayteamname?: string | null
+          awayteamscore?: number | null
+          created_at?: string | null
+          date?: string | null
+          hometeamabbrev?: string | null
+          hometeamid?: number | null
+          hometeamname?: string | null
+          hometeamscore?: number | null
+          id?: number
+          location?: string | null
+          outcome?: string | null
+          season?: string | null
+          starttime?: string | null
+          type?: number | null
+        }
+        Relationships: []
+      }
+      pbp_plays: {
+        Row: {
+          assist1playerid: number | null
+          assist1playertotal: number | null
+          assist2playerid: number | null
+          assist2playertotal: number | null
+          awayscore: number | null
+          awaysog: number | null
+          blockingplayerid: number | null
+          committedbyplayerid: number | null
+          drawnbyplayerid: number | null
+          durationofpenalty: string | null
+          eventownerteamid: number | null
+          gameid: number
+          goalieinnetid: number | null
+          hitteeplayerid: number | null
+          hittingplayerid: number | null
+          homescore: number | null
+          homesog: number | null
+          hometeamdefendingside: string | null
+          id: number
+          losingplayerid: number | null
+          penalizedteam: string | null
+          periodnumber: number | null
+          periodtype: string | null
+          playerid: number | null
+          reason: string | null
+          scoringplayerid: number | null
+          scoringplayertotal: number | null
+          shootingplayerid: number | null
+          shottype: string | null
+          situationcode: string | null
+          sortorder: number | null
+          timeinperiod: string | null
+          timeremaining: string | null
+          typecode: number | null
+          typedesckey: string | null
+          winningplayerid: number | null
+          xcoord: number | null
+          ycoord: number | null
+          zonecode: string | null
+        }
+        Insert: {
+          assist1playerid?: number | null
+          assist1playertotal?: number | null
+          assist2playerid?: number | null
+          assist2playertotal?: number | null
+          awayscore?: number | null
+          awaysog?: number | null
+          blockingplayerid?: number | null
+          committedbyplayerid?: number | null
+          drawnbyplayerid?: number | null
+          durationofpenalty?: string | null
+          eventownerteamid?: number | null
+          gameid: number
+          goalieinnetid?: number | null
+          hitteeplayerid?: number | null
+          hittingplayerid?: number | null
+          homescore?: number | null
+          homesog?: number | null
+          hometeamdefendingside?: string | null
+          id: number
+          losingplayerid?: number | null
+          penalizedteam?: string | null
+          periodnumber?: number | null
+          periodtype?: string | null
+          playerid?: number | null
+          reason?: string | null
+          scoringplayerid?: number | null
+          scoringplayertotal?: number | null
+          shootingplayerid?: number | null
+          shottype?: string | null
+          situationcode?: string | null
+          sortorder?: number | null
+          timeinperiod?: string | null
+          timeremaining?: string | null
+          typecode?: number | null
+          typedesckey?: string | null
+          winningplayerid?: number | null
+          xcoord?: number | null
+          ycoord?: number | null
+          zonecode?: string | null
+        }
+        Update: {
+          assist1playerid?: number | null
+          assist1playertotal?: number | null
+          assist2playerid?: number | null
+          assist2playertotal?: number | null
+          awayscore?: number | null
+          awaysog?: number | null
+          blockingplayerid?: number | null
+          committedbyplayerid?: number | null
+          drawnbyplayerid?: number | null
+          durationofpenalty?: string | null
+          eventownerteamid?: number | null
+          gameid?: number
+          goalieinnetid?: number | null
+          hitteeplayerid?: number | null
+          hittingplayerid?: number | null
+          homescore?: number | null
+          homesog?: number | null
+          hometeamdefendingside?: string | null
+          id?: number
+          losingplayerid?: number | null
+          penalizedteam?: string | null
+          periodnumber?: number | null
+          periodtype?: string | null
+          playerid?: number | null
+          reason?: string | null
+          scoringplayerid?: number | null
+          scoringplayertotal?: number | null
+          shootingplayerid?: number | null
+          shottype?: string | null
+          situationcode?: string | null
+          sortorder?: number | null
+          timeinperiod?: string | null
+          timeremaining?: string | null
+          typecode?: number | null
+          typedesckey?: string | null
+          winningplayerid?: number | null
+          xcoord?: number | null
+          ycoord?: number | null
+          zonecode?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pbp_plays_gameid_fkey"
+            columns: ["gameid"]
+            isOneToOne: false
+            referencedRelation: "pbp_games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_stats: {
+        Row: {
+          created_at: string | null
+          faceoffs_lost: number | null
+          faceoffs_percentage: number | null
+          faceoffs_won: number | null
+          first_assists: number | null
+          game_date: string | null
+          game_description: string | null
+          giveaways: number | null
+          goals: number | null
+          hits: number | null
+          hits_taken: number | null
+          icf: number | null
+          id: string
+          iff: number | null
+          ihdcf: number | null
+          ipp: string | null
+          iscf: number | null
+          ixg: number | null
+          major: number | null
+          minor: number | null
+          misconduct: number | null
+          penalties_drawn: number | null
+          pim: number | null
+          player_id: number
+          rebounds_created: number | null
+          second_assists: number | null
+          shooting_percentage: number | null
+          shots: number | null
+          shots_blocked: number | null
+          takeaways: number | null
+          team: string | null
+          toi: string | null
+          total_assists: number | null
+          total_penalties: number | null
+          total_points: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          faceoffs_lost?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          first_assists?: number | null
+          game_date?: string | null
+          game_description?: string | null
+          giveaways?: number | null
+          goals?: number | null
+          hits?: number | null
+          hits_taken?: number | null
+          icf?: number | null
+          id?: string
+          iff?: number | null
+          ihdcf?: number | null
+          ipp?: string | null
+          iscf?: number | null
+          ixg?: number | null
+          major?: number | null
+          minor?: number | null
+          misconduct?: number | null
+          penalties_drawn?: number | null
+          pim?: number | null
+          player_id: number
+          rebounds_created?: number | null
+          second_assists?: number | null
+          shooting_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          takeaways?: number | null
+          team?: string | null
+          toi?: string | null
+          total_assists?: number | null
+          total_penalties?: number | null
+          total_points?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          faceoffs_lost?: number | null
+          faceoffs_percentage?: number | null
+          faceoffs_won?: number | null
+          first_assists?: number | null
+          game_date?: string | null
+          game_description?: string | null
+          giveaways?: number | null
+          goals?: number | null
+          hits?: number | null
+          hits_taken?: number | null
+          icf?: number | null
+          id?: string
+          iff?: number | null
+          ihdcf?: number | null
+          ipp?: string | null
+          iscf?: number | null
+          ixg?: number | null
+          major?: number | null
+          minor?: number | null
+          misconduct?: number | null
+          penalties_drawn?: number | null
+          pim?: number | null
+          player_id?: number
+          rebounds_created?: number | null
+          second_assists?: number | null
+          shooting_percentage?: number | null
+          shots?: number | null
+          shots_blocked?: number | null
+          takeaways?: number | null
+          team?: string | null
+          toi?: string | null
+          total_assists?: number | null
+          total_penalties?: number | null
+          total_points?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_stats_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
-          birthCity: string | null;
-          birthCountry: string | null;
-          birthDate: string;
-          firstName: string;
-          fullName: string;
-          heightInCentimeters: number;
-          id: number;
-          lastName: string;
-          position: Database["public"]["Enums"]["NHL Position Code"];
-          weightInKilograms: number;
-        };
+          birthCity: string | null
+          birthCountry: string | null
+          birthDate: string
+          firstName: string
+          fullName: string
+          heightInCentimeters: number
+          id: number
+          image_url: string | null
+          lastName: string
+          position: Database["public"]["Enums"]["NHL_Position_Code"]
+          sweater_number: number | null
+          team_id: number | null
+          weightInKilograms: number
+        }
         Insert: {
-          birthCity?: string | null;
-          birthCountry?: string | null;
-          birthDate: string;
-          firstName: string;
-          fullName: string;
-          heightInCentimeters: number;
-          id?: number;
-          lastName: string;
-          position: Database["public"]["Enums"]["NHL Position Code"];
-          weightInKilograms: number;
-          image_url?: string;
-          sweater_number?: number;
-        };
+          birthCity?: string | null
+          birthCountry?: string | null
+          birthDate: string
+          firstName: string
+          fullName: string
+          heightInCentimeters: number
+          id?: number
+          image_url?: string | null
+          lastName: string
+          position: Database["public"]["Enums"]["NHL_Position_Code"]
+          sweater_number?: number | null
+          team_id?: number | null
+          weightInKilograms: number
+        }
         Update: {
-          birthCity?: string | null;
-          birthCountry?: string | null;
-          birthDate?: string;
-          firstName?: string;
-          fullName?: string;
-          heightInCentimeters?: number;
-          id?: number;
-          lastName?: string;
-          position?: Database["public"]["Enums"]["NHL Position Code"];
-          weightInKilograms?: number;
-          image_url?: string;
-          sweater_number?: number;
-        };
-        Relationships: [];
-      };
+          birthCity?: string | null
+          birthCountry?: string | null
+          birthDate?: string
+          firstName?: string
+          fullName?: string
+          heightInCentimeters?: number
+          id?: number
+          image_url?: string | null
+          lastName?: string
+          position?: Database["public"]["Enums"]["NHL_Position_Code"]
+          sweater_number?: number | null
+          team_id?: number | null
+          weightInKilograms?: number
+        }
+        Relationships: []
+      }
+      pp_timeframes: {
+        Row: {
+          away_team_abbrev: string
+          away_team_id: number
+          away_team_score: number
+          away_team_sog: number
+          created_at: string
+          game_date: string
+          game_id: number
+          game_state: string
+          game_type: number
+          home_team_abbrev: string
+          home_team_id: number
+          home_team_score: number
+          home_team_sog: number
+          id: number
+          plays: Json
+          pp_timeframes: Json
+          season_id: number
+          updated_at: string
+        }
+        Insert: {
+          away_team_abbrev: string
+          away_team_id: number
+          away_team_score: number
+          away_team_sog: number
+          created_at?: string
+          game_date: string
+          game_id: number
+          game_state: string
+          game_type: number
+          home_team_abbrev: string
+          home_team_id: number
+          home_team_score: number
+          home_team_sog: number
+          id?: number
+          plays: Json
+          pp_timeframes?: Json
+          season_id: number
+          updated_at?: string
+        }
+        Update: {
+          away_team_abbrev?: string
+          away_team_id?: number
+          away_team_score?: number
+          away_team_sog?: number
+          created_at?: string
+          game_date?: string
+          game_id?: number
+          game_state?: string
+          game_type?: number
+          home_team_abbrev?: string
+          home_team_id?: number
+          home_team_score?: number
+          home_team_sog?: number
+          id?: number
+          plays?: Json
+          pp_timeframes?: Json
+          season_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      raw_standings_sos: {
+        Row: {
+          date: string
+          id: number
+          losses: number | null
+          ot_losses: number | null
+          point_pctg: number | null
+          points: number | null
+          season_id: number
+          team_id: number
+          wins: number | null
+        }
+        Insert: {
+          date: string
+          id?: number
+          losses?: number | null
+          ot_losses?: number | null
+          point_pctg?: number | null
+          points?: number | null
+          season_id: number
+          team_id: number
+          wins?: number | null
+        }
+        Update: {
+          date?: string
+          id?: number
+          losses?: number | null
+          ot_losses?: number | null
+          point_pctg?: number | null
+          points?: number | null
+          season_id?: number
+          team_id?: number
+          wins?: number | null
+        }
+        Relationships: []
+      }
+      rolling_games: {
+        Row: {
+          blocked_shots: number | null
+          blocked_shots_per60: number | null
+          empty_net_goals: number | null
+          faceoff_win_pct: number | null
+          game_date: string
+          game_id: number
+          game_number: number | null
+          giveaways: number | null
+          giveaways_per60: number | null
+          goals_against: number | null
+          goals_for: number | null
+          hits: number | null
+          hits_per60: number | null
+          home_road: string | null
+          id: number
+          losses: number | null
+          ltg_blocked_shots: number | null
+          ltg_blocked_shots_per60: number | null
+          ltg_date_range: string | null
+          ltg_empty_net_goals: number | null
+          ltg_faceoff_win_pct: number | null
+          ltg_game_ids: string[] | null
+          ltg_giveaways: number | null
+          ltg_giveaways_per60: number | null
+          ltg_goals_against: number | null
+          ltg_goals_for: number | null
+          ltg_hits: number | null
+          ltg_hits_per60: number | null
+          ltg_home_roads: string[] | null
+          ltg_losses: number | null
+          ltg_missed_shots: number | null
+          ltg_opponent_losses: number | null
+          ltg_opponent_ot_losses: number | null
+          ltg_opponent_team_ids: number[] | null
+          ltg_opponent_wins: number | null
+          ltg_ot_losses: number | null
+          ltg_penalty_kill_pct: number | null
+          ltg_pim: number | null
+          ltg_point_pct: number | null
+          ltg_points: number | null
+          ltg_power_play_goals_for: number | null
+          ltg_power_play_pct: number | null
+          ltg_pp_opportunities: number | null
+          ltg_pp_time_on_ice_per_game: number | null
+          ltg_regulation_and_ot_wins: number | null
+          ltg_sat_pct: number | null
+          ltg_sh_goals_against: number | null
+          ltg_shots_against_per_game: number | null
+          ltg_shots_for_per_game: number | null
+          ltg_takeaways: number | null
+          ltg_time_on_ice_per_game_5v5: number | null
+          ltg_wins: number | null
+          missed_shots: number | null
+          opponent_losses: number | null
+          opponent_ot_losses: number | null
+          opponent_team_id: number
+          opponent_wins: number | null
+          ot_losses: number | null
+          penalty_kill_pct: number | null
+          pim: number | null
+          point_pct: number | null
+          points: number | null
+          power_play_goals_for: number | null
+          power_play_pct: number | null
+          pp_opportunities: number | null
+          pp_time_on_ice_per_game: number | null
+          regulation_and_ot_wins: number | null
+          sat_pct: number | null
+          sh_goals_against: number | null
+          shots_against_per_game: number | null
+          shots_for_per_game: number | null
+          std_blocked_shots: number | null
+          std_blocked_shots_per60: number | null
+          std_date_range: string | null
+          std_empty_net_goals: number | null
+          std_faceoff_win_pct: number | null
+          std_game_ids: string[] | null
+          std_giveaways: number | null
+          std_giveaways_per60: number | null
+          std_goals_against: number | null
+          std_goals_for: number | null
+          std_hits: number | null
+          std_hits_per60: number | null
+          std_home_roads: string[] | null
+          std_losses: number | null
+          std_missed_shots: number | null
+          std_opponent_losses: number | null
+          std_opponent_ot_losses: number | null
+          std_opponent_team_ids: number[] | null
+          std_opponent_wins: number | null
+          std_ot_losses: number | null
+          std_penalty_kill_pct: number | null
+          std_pim: number | null
+          std_point_pct: number | null
+          std_points: number | null
+          std_power_play_goals_for: number | null
+          std_power_play_pct: number | null
+          std_pp_opportunities: number | null
+          std_pp_time_on_ice_per_game: number | null
+          std_regulation_and_ot_wins: number | null
+          std_sat_pct: number | null
+          std_sh_goals_against: number | null
+          std_shots_against_per_game: number | null
+          std_shots_for_per_game: number | null
+          std_takeaways: number | null
+          std_time_on_ice_per_game_5v5: number | null
+          std_wins: number | null
+          takeaways: number | null
+          takeaways_per60: number | null
+          team_full_name: string | null
+          team_id: number
+          time_on_ice_per_game_5v5: number | null
+          wins: number | null
+          wins_in_regulation: number | null
+          wins_in_shootout: number | null
+        }
+        Insert: {
+          blocked_shots?: number | null
+          blocked_shots_per60?: number | null
+          empty_net_goals?: number | null
+          faceoff_win_pct?: number | null
+          game_date: string
+          game_id: number
+          game_number?: number | null
+          giveaways?: number | null
+          giveaways_per60?: number | null
+          goals_against?: number | null
+          goals_for?: number | null
+          hits?: number | null
+          hits_per60?: number | null
+          home_road?: string | null
+          id?: number
+          losses?: number | null
+          ltg_blocked_shots?: number | null
+          ltg_blocked_shots_per60?: number | null
+          ltg_date_range?: string | null
+          ltg_empty_net_goals?: number | null
+          ltg_faceoff_win_pct?: number | null
+          ltg_game_ids?: string[] | null
+          ltg_giveaways?: number | null
+          ltg_giveaways_per60?: number | null
+          ltg_goals_against?: number | null
+          ltg_goals_for?: number | null
+          ltg_hits?: number | null
+          ltg_hits_per60?: number | null
+          ltg_home_roads?: string[] | null
+          ltg_losses?: number | null
+          ltg_missed_shots?: number | null
+          ltg_opponent_losses?: number | null
+          ltg_opponent_ot_losses?: number | null
+          ltg_opponent_team_ids?: number[] | null
+          ltg_opponent_wins?: number | null
+          ltg_ot_losses?: number | null
+          ltg_penalty_kill_pct?: number | null
+          ltg_pim?: number | null
+          ltg_point_pct?: number | null
+          ltg_points?: number | null
+          ltg_power_play_goals_for?: number | null
+          ltg_power_play_pct?: number | null
+          ltg_pp_opportunities?: number | null
+          ltg_pp_time_on_ice_per_game?: number | null
+          ltg_regulation_and_ot_wins?: number | null
+          ltg_sat_pct?: number | null
+          ltg_sh_goals_against?: number | null
+          ltg_shots_against_per_game?: number | null
+          ltg_shots_for_per_game?: number | null
+          ltg_takeaways?: number | null
+          ltg_time_on_ice_per_game_5v5?: number | null
+          ltg_wins?: number | null
+          missed_shots?: number | null
+          opponent_losses?: number | null
+          opponent_ot_losses?: number | null
+          opponent_team_id: number
+          opponent_wins?: number | null
+          ot_losses?: number | null
+          penalty_kill_pct?: number | null
+          pim?: number | null
+          point_pct?: number | null
+          points?: number | null
+          power_play_goals_for?: number | null
+          power_play_pct?: number | null
+          pp_opportunities?: number | null
+          pp_time_on_ice_per_game?: number | null
+          regulation_and_ot_wins?: number | null
+          sat_pct?: number | null
+          sh_goals_against?: number | null
+          shots_against_per_game?: number | null
+          shots_for_per_game?: number | null
+          std_blocked_shots?: number | null
+          std_blocked_shots_per60?: number | null
+          std_date_range?: string | null
+          std_empty_net_goals?: number | null
+          std_faceoff_win_pct?: number | null
+          std_game_ids?: string[] | null
+          std_giveaways?: number | null
+          std_giveaways_per60?: number | null
+          std_goals_against?: number | null
+          std_goals_for?: number | null
+          std_hits?: number | null
+          std_hits_per60?: number | null
+          std_home_roads?: string[] | null
+          std_losses?: number | null
+          std_missed_shots?: number | null
+          std_opponent_losses?: number | null
+          std_opponent_ot_losses?: number | null
+          std_opponent_team_ids?: number[] | null
+          std_opponent_wins?: number | null
+          std_ot_losses?: number | null
+          std_penalty_kill_pct?: number | null
+          std_pim?: number | null
+          std_point_pct?: number | null
+          std_points?: number | null
+          std_power_play_goals_for?: number | null
+          std_power_play_pct?: number | null
+          std_pp_opportunities?: number | null
+          std_pp_time_on_ice_per_game?: number | null
+          std_regulation_and_ot_wins?: number | null
+          std_sat_pct?: number | null
+          std_sh_goals_against?: number | null
+          std_shots_against_per_game?: number | null
+          std_shots_for_per_game?: number | null
+          std_takeaways?: number | null
+          std_time_on_ice_per_game_5v5?: number | null
+          std_wins?: number | null
+          takeaways?: number | null
+          takeaways_per60?: number | null
+          team_full_name?: string | null
+          team_id: number
+          time_on_ice_per_game_5v5?: number | null
+          wins?: number | null
+          wins_in_regulation?: number | null
+          wins_in_shootout?: number | null
+        }
+        Update: {
+          blocked_shots?: number | null
+          blocked_shots_per60?: number | null
+          empty_net_goals?: number | null
+          faceoff_win_pct?: number | null
+          game_date?: string
+          game_id?: number
+          game_number?: number | null
+          giveaways?: number | null
+          giveaways_per60?: number | null
+          goals_against?: number | null
+          goals_for?: number | null
+          hits?: number | null
+          hits_per60?: number | null
+          home_road?: string | null
+          id?: number
+          losses?: number | null
+          ltg_blocked_shots?: number | null
+          ltg_blocked_shots_per60?: number | null
+          ltg_date_range?: string | null
+          ltg_empty_net_goals?: number | null
+          ltg_faceoff_win_pct?: number | null
+          ltg_game_ids?: string[] | null
+          ltg_giveaways?: number | null
+          ltg_giveaways_per60?: number | null
+          ltg_goals_against?: number | null
+          ltg_goals_for?: number | null
+          ltg_hits?: number | null
+          ltg_hits_per60?: number | null
+          ltg_home_roads?: string[] | null
+          ltg_losses?: number | null
+          ltg_missed_shots?: number | null
+          ltg_opponent_losses?: number | null
+          ltg_opponent_ot_losses?: number | null
+          ltg_opponent_team_ids?: number[] | null
+          ltg_opponent_wins?: number | null
+          ltg_ot_losses?: number | null
+          ltg_penalty_kill_pct?: number | null
+          ltg_pim?: number | null
+          ltg_point_pct?: number | null
+          ltg_points?: number | null
+          ltg_power_play_goals_for?: number | null
+          ltg_power_play_pct?: number | null
+          ltg_pp_opportunities?: number | null
+          ltg_pp_time_on_ice_per_game?: number | null
+          ltg_regulation_and_ot_wins?: number | null
+          ltg_sat_pct?: number | null
+          ltg_sh_goals_against?: number | null
+          ltg_shots_against_per_game?: number | null
+          ltg_shots_for_per_game?: number | null
+          ltg_takeaways?: number | null
+          ltg_time_on_ice_per_game_5v5?: number | null
+          ltg_wins?: number | null
+          missed_shots?: number | null
+          opponent_losses?: number | null
+          opponent_ot_losses?: number | null
+          opponent_team_id?: number
+          opponent_wins?: number | null
+          ot_losses?: number | null
+          penalty_kill_pct?: number | null
+          pim?: number | null
+          point_pct?: number | null
+          points?: number | null
+          power_play_goals_for?: number | null
+          power_play_pct?: number | null
+          pp_opportunities?: number | null
+          pp_time_on_ice_per_game?: number | null
+          regulation_and_ot_wins?: number | null
+          sat_pct?: number | null
+          sh_goals_against?: number | null
+          shots_against_per_game?: number | null
+          shots_for_per_game?: number | null
+          std_blocked_shots?: number | null
+          std_blocked_shots_per60?: number | null
+          std_date_range?: string | null
+          std_empty_net_goals?: number | null
+          std_faceoff_win_pct?: number | null
+          std_game_ids?: string[] | null
+          std_giveaways?: number | null
+          std_giveaways_per60?: number | null
+          std_goals_against?: number | null
+          std_goals_for?: number | null
+          std_hits?: number | null
+          std_hits_per60?: number | null
+          std_home_roads?: string[] | null
+          std_losses?: number | null
+          std_missed_shots?: number | null
+          std_opponent_losses?: number | null
+          std_opponent_ot_losses?: number | null
+          std_opponent_team_ids?: number[] | null
+          std_opponent_wins?: number | null
+          std_ot_losses?: number | null
+          std_penalty_kill_pct?: number | null
+          std_pim?: number | null
+          std_point_pct?: number | null
+          std_points?: number | null
+          std_power_play_goals_for?: number | null
+          std_power_play_pct?: number | null
+          std_pp_opportunities?: number | null
+          std_pp_time_on_ice_per_game?: number | null
+          std_regulation_and_ot_wins?: number | null
+          std_sat_pct?: number | null
+          std_sh_goals_against?: number | null
+          std_shots_against_per_game?: number | null
+          std_shots_for_per_game?: number | null
+          std_takeaways?: number | null
+          std_time_on_ice_per_game_5v5?: number | null
+          std_wins?: number | null
+          takeaways?: number | null
+          takeaways_per60?: number | null
+          team_full_name?: string | null
+          team_id?: number
+          time_on_ice_per_game_5v5?: number | null
+          wins?: number | null
+          wins_in_regulation?: number | null
+          wins_in_shootout?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rolling_games_opponent_team_id_fkey"
+            columns: ["opponent_team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "rolling_games_opponent_team_id_fkey"
+            columns: ["opponent_team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "rolling_games_opponent_team_id_fkey"
+            columns: ["opponent_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rolling_games_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "rolling_games_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "rolling_games_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rosters: {
         Row: {
-          created_at: string;
-          playerId: number;
-          seasonId: number;
-          sweaterNumber: number;
-          teamId: number;
-        };
+          created_at: string
+          playerId: number
+          seasonId: number
+          sweaterNumber: number
+          teamId: number
+        }
         Insert: {
-          created_at?: string;
-          playerId: number;
-          seasonId: number;
-          sweaterNumber: number;
-          teamId: number;
-        };
+          created_at?: string
+          playerId: number
+          seasonId: number
+          sweaterNumber: number
+          teamId: number
+        }
         Update: {
-          created_at?: string;
-          playerId?: number;
-          seasonId?: number;
-          sweaterNumber?: number;
-          teamId?: number;
-        };
+          created_at?: string
+          playerId?: number
+          seasonId?: number
+          sweaterNumber?: number
+          teamId?: number
+        }
         Relationships: [
           {
-            foreignKeyName: "rosters_playerId_fkey";
-            columns: ["playerId"];
-            isOneToOne: false;
-            referencedRelation: "players";
-            referencedColumns: ["id"];
+            foreignKeyName: "rosters_playerId_fkey"
+            columns: ["playerId"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "rosters_seasonId_fkey";
-            columns: ["seasonId"];
-            isOneToOne: false;
-            referencedRelation: "seasons";
-            referencedColumns: ["id"];
+            foreignKeyName: "rosters_seasonId_fkey"
+            columns: ["seasonId"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "rosters_teamId_fkey";
-            columns: ["teamId"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
+            foreignKeyName: "rosters_teamId_fkey"
+            columns: ["teamId"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "rosters_teamId_fkey"
+            columns: ["teamId"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "rosters_teamId_fkey"
+            columns: ["teamId"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seasons: {
         Row: {
-          created_at: string;
-          endDate: string;
-          id: number;
-          numberOfGames: number;
-          regularSeasonEndDate: string;
-          startDate: string;
-        };
+          created_at: string
+          endDate: string
+          id: number
+          numberOfGames: number
+          regularSeasonEndDate: string
+          startDate: string
+        }
         Insert: {
-          created_at?: string;
-          endDate: string;
-          id?: number;
-          numberOfGames: number;
-          regularSeasonEndDate: string;
-          startDate: string;
-        };
+          created_at?: string
+          endDate: string
+          id?: number
+          numberOfGames: number
+          regularSeasonEndDate: string
+          startDate: string
+        }
         Update: {
-          created_at?: string;
-          endDate?: string;
-          id?: number;
-          numberOfGames?: number;
-          regularSeasonEndDate?: string;
-          startDate?: string;
-        };
-        Relationships: [];
-      };
+          created_at?: string
+          endDate?: string
+          id?: number
+          numberOfGames?: number
+          regularSeasonEndDate?: string
+          startDate?: string
+        }
+        Relationships: []
+      }
+      shift_charts: {
+        Row: {
+          created_at: string
+          display_position: string | null
+          durations: string[] | null
+          end_times: string[] | null
+          es_shifts: Json | null
+          game_date: string | null
+          game_id: number
+          game_length: string | null
+          game_toi: string | null
+          game_type: string | null
+          home_or_away: string | null
+          id: number
+          line_combination: number | null
+          opponent_team_abbreviation: string | null
+          opponent_team_id: number | null
+          pairing_combination: number | null
+          percent_toi_with: Json | null
+          percent_toi_with_mixed: Json | null
+          periods: number[] | null
+          player_first_name: string | null
+          player_id: number | null
+          player_last_name: string | null
+          player_type: string | null
+          pp_shifts: Json | null
+          primary_position: string | null
+          season_id: number | null
+          shift_numbers: number[] | null
+          shifts: Json | null
+          start_times: string[] | null
+          team_abbreviation: string | null
+          team_id: number | null
+          time_spent_with: Json | null
+          time_spent_with_mixed: Json | null
+          total_es_toi: string | null
+          total_pp_toi: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_position?: string | null
+          durations?: string[] | null
+          end_times?: string[] | null
+          es_shifts?: Json | null
+          game_date?: string | null
+          game_id: number
+          game_length?: string | null
+          game_toi?: string | null
+          game_type?: string | null
+          home_or_away?: string | null
+          id?: number
+          line_combination?: number | null
+          opponent_team_abbreviation?: string | null
+          opponent_team_id?: number | null
+          pairing_combination?: number | null
+          percent_toi_with?: Json | null
+          percent_toi_with_mixed?: Json | null
+          periods?: number[] | null
+          player_first_name?: string | null
+          player_id?: number | null
+          player_last_name?: string | null
+          player_type?: string | null
+          pp_shifts?: Json | null
+          primary_position?: string | null
+          season_id?: number | null
+          shift_numbers?: number[] | null
+          shifts?: Json | null
+          start_times?: string[] | null
+          team_abbreviation?: string | null
+          team_id?: number | null
+          time_spent_with?: Json | null
+          time_spent_with_mixed?: Json | null
+          total_es_toi?: string | null
+          total_pp_toi?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_position?: string | null
+          durations?: string[] | null
+          end_times?: string[] | null
+          es_shifts?: Json | null
+          game_date?: string | null
+          game_id?: number
+          game_length?: string | null
+          game_toi?: string | null
+          game_type?: string | null
+          home_or_away?: string | null
+          id?: number
+          line_combination?: number | null
+          opponent_team_abbreviation?: string | null
+          opponent_team_id?: number | null
+          pairing_combination?: number | null
+          percent_toi_with?: Json | null
+          percent_toi_with_mixed?: Json | null
+          periods?: number[] | null
+          player_first_name?: string | null
+          player_id?: number | null
+          player_last_name?: string | null
+          player_type?: string | null
+          pp_shifts?: Json | null
+          primary_position?: string | null
+          season_id?: number | null
+          shift_numbers?: number[] | null
+          shifts?: Json | null
+          start_times?: string[] | null
+          team_abbreviation?: string | null
+          team_id?: number | null
+          time_spent_with?: Json | null
+          time_spent_with_mixed?: Json | null
+          total_es_toi?: string | null
+          total_pp_toi?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shots_goals_by_coord: {
+        Row: {
+          league_goals: number | null
+          league_shots: number | null
+          team_1_goals: number | null
+          team_1_shots: number | null
+          team_10_goals: number | null
+          team_10_shots: number | null
+          team_12_goals: number | null
+          team_12_shots: number | null
+          team_13_goals: number | null
+          team_13_shots: number | null
+          team_14_goals: number | null
+          team_14_shots: number | null
+          team_15_goals: number | null
+          team_15_shots: number | null
+          team_16_goals: number | null
+          team_16_shots: number | null
+          team_17_goals: number | null
+          team_17_shots: number | null
+          team_18_goals: number | null
+          team_18_shots: number | null
+          team_19_goals: number | null
+          team_19_shots: number | null
+          team_2_goals: number | null
+          team_2_shots: number | null
+          team_20_goals: number | null
+          team_20_shots: number | null
+          team_21_goals: number | null
+          team_21_shots: number | null
+          team_22_goals: number | null
+          team_22_shots: number | null
+          team_23_goals: number | null
+          team_23_shots: number | null
+          team_24_goals: number | null
+          team_24_shots: number | null
+          team_25_goals: number | null
+          team_25_shots: number | null
+          team_26_goals: number | null
+          team_26_shots: number | null
+          team_28_goals: number | null
+          team_28_shots: number | null
+          team_29_goals: number | null
+          team_29_shots: number | null
+          team_3_goals: number | null
+          team_3_shots: number | null
+          team_30_goals: number | null
+          team_30_shots: number | null
+          team_4_goals: number | null
+          team_4_shots: number | null
+          team_5_goals: number | null
+          team_5_shots: number | null
+          team_52_goals: number | null
+          team_52_shots: number | null
+          team_53_goals: number | null
+          team_53_shots: number | null
+          team_54_goals: number | null
+          team_54_shots: number | null
+          team_55_goals: number | null
+          team_55_shots: number | null
+          team_59_goals: number | null
+          team_59_shots: number | null
+          team_6_goals: number | null
+          team_6_shots: number | null
+          team_7_goals: number | null
+          team_7_shots: number | null
+          team_8_goals: number | null
+          team_8_shots: number | null
+          team_9_goals: number | null
+          team_9_shots: number | null
+          xcoord: number
+          ycoord: number
+        }
+        Insert: {
+          league_goals?: number | null
+          league_shots?: number | null
+          team_1_goals?: number | null
+          team_1_shots?: number | null
+          team_10_goals?: number | null
+          team_10_shots?: number | null
+          team_12_goals?: number | null
+          team_12_shots?: number | null
+          team_13_goals?: number | null
+          team_13_shots?: number | null
+          team_14_goals?: number | null
+          team_14_shots?: number | null
+          team_15_goals?: number | null
+          team_15_shots?: number | null
+          team_16_goals?: number | null
+          team_16_shots?: number | null
+          team_17_goals?: number | null
+          team_17_shots?: number | null
+          team_18_goals?: number | null
+          team_18_shots?: number | null
+          team_19_goals?: number | null
+          team_19_shots?: number | null
+          team_2_goals?: number | null
+          team_2_shots?: number | null
+          team_20_goals?: number | null
+          team_20_shots?: number | null
+          team_21_goals?: number | null
+          team_21_shots?: number | null
+          team_22_goals?: number | null
+          team_22_shots?: number | null
+          team_23_goals?: number | null
+          team_23_shots?: number | null
+          team_24_goals?: number | null
+          team_24_shots?: number | null
+          team_25_goals?: number | null
+          team_25_shots?: number | null
+          team_26_goals?: number | null
+          team_26_shots?: number | null
+          team_28_goals?: number | null
+          team_28_shots?: number | null
+          team_29_goals?: number | null
+          team_29_shots?: number | null
+          team_3_goals?: number | null
+          team_3_shots?: number | null
+          team_30_goals?: number | null
+          team_30_shots?: number | null
+          team_4_goals?: number | null
+          team_4_shots?: number | null
+          team_5_goals?: number | null
+          team_5_shots?: number | null
+          team_52_goals?: number | null
+          team_52_shots?: number | null
+          team_53_goals?: number | null
+          team_53_shots?: number | null
+          team_54_goals?: number | null
+          team_54_shots?: number | null
+          team_55_goals?: number | null
+          team_55_shots?: number | null
+          team_59_goals?: number | null
+          team_59_shots?: number | null
+          team_6_goals?: number | null
+          team_6_shots?: number | null
+          team_7_goals?: number | null
+          team_7_shots?: number | null
+          team_8_goals?: number | null
+          team_8_shots?: number | null
+          team_9_goals?: number | null
+          team_9_shots?: number | null
+          xcoord: number
+          ycoord: number
+        }
+        Update: {
+          league_goals?: number | null
+          league_shots?: number | null
+          team_1_goals?: number | null
+          team_1_shots?: number | null
+          team_10_goals?: number | null
+          team_10_shots?: number | null
+          team_12_goals?: number | null
+          team_12_shots?: number | null
+          team_13_goals?: number | null
+          team_13_shots?: number | null
+          team_14_goals?: number | null
+          team_14_shots?: number | null
+          team_15_goals?: number | null
+          team_15_shots?: number | null
+          team_16_goals?: number | null
+          team_16_shots?: number | null
+          team_17_goals?: number | null
+          team_17_shots?: number | null
+          team_18_goals?: number | null
+          team_18_shots?: number | null
+          team_19_goals?: number | null
+          team_19_shots?: number | null
+          team_2_goals?: number | null
+          team_2_shots?: number | null
+          team_20_goals?: number | null
+          team_20_shots?: number | null
+          team_21_goals?: number | null
+          team_21_shots?: number | null
+          team_22_goals?: number | null
+          team_22_shots?: number | null
+          team_23_goals?: number | null
+          team_23_shots?: number | null
+          team_24_goals?: number | null
+          team_24_shots?: number | null
+          team_25_goals?: number | null
+          team_25_shots?: number | null
+          team_26_goals?: number | null
+          team_26_shots?: number | null
+          team_28_goals?: number | null
+          team_28_shots?: number | null
+          team_29_goals?: number | null
+          team_29_shots?: number | null
+          team_3_goals?: number | null
+          team_3_shots?: number | null
+          team_30_goals?: number | null
+          team_30_shots?: number | null
+          team_4_goals?: number | null
+          team_4_shots?: number | null
+          team_5_goals?: number | null
+          team_5_shots?: number | null
+          team_52_goals?: number | null
+          team_52_shots?: number | null
+          team_53_goals?: number | null
+          team_53_shots?: number | null
+          team_54_goals?: number | null
+          team_54_shots?: number | null
+          team_55_goals?: number | null
+          team_55_shots?: number | null
+          team_59_goals?: number | null
+          team_59_shots?: number | null
+          team_6_goals?: number | null
+          team_6_shots?: number | null
+          team_7_goals?: number | null
+          team_7_shots?: number | null
+          team_8_goals?: number | null
+          team_8_shots?: number | null
+          team_9_goals?: number | null
+          team_9_shots?: number | null
+          xcoord?: number
+          ycoord?: number
+        }
+        Relationships: []
+      }
       skatersGameStats: {
         Row: {
-          assists: number;
-          blockedShots: number;
-          created_at: string;
-          faceoffs: string;
-          faceoffWinningPctg: number;
-          gameId: number;
-          goals: number;
-          hits: number;
-          pim: number;
-          playerId: number;
-          plusMinus: number;
-          points: number;
-          position: Database["public"]["Enums"]["NHL Position Code"];
-          powerPlayGoals: number;
-          powerPlayPoints: number;
-          powerPlayToi: string;
-          shorthandedGoals: number;
-          shorthandedToi: string;
-          shots: number;
-          shPoints: number;
-          toi: string;
-        };
+          assists: number
+          blockedShots: number
+          created_at: string
+          faceoffs: string
+          faceoffWinningPctg: number
+          gameId: number
+          goals: number
+          hits: number
+          pim: number
+          playerId: number
+          plusMinus: number
+          points: number
+          position: Database["public"]["Enums"]["NHL_Position_Code"]
+          powerPlayGoals: number
+          powerPlayPoints: number
+          powerPlayToi: string
+          shorthandedGoals: number
+          shorthandedToi: string
+          shots: number
+          shPoints: number
+          toi: string
+        }
         Insert: {
-          assists?: number;
-          blockedShots?: number;
-          created_at?: string;
-          faceoffs?: string;
-          faceoffWinningPctg?: number;
-          gameId: number;
-          goals?: number;
-          hits?: number;
-          pim?: number;
-          playerId: number;
-          plusMinus?: number;
-          points?: number;
-          position?: Database["public"]["Enums"]["NHL Position Code"];
-          powerPlayGoals?: number;
-          powerPlayPoints?: number;
-          powerPlayToi?: string;
-          shorthandedGoals?: number;
-          shorthandedToi?: string;
-          shots?: number;
-          shPoints?: number;
-          toi?: string;
-        };
+          assists?: number
+          blockedShots?: number
+          created_at?: string
+          faceoffs?: string
+          faceoffWinningPctg?: number
+          gameId: number
+          goals?: number
+          hits?: number
+          pim?: number
+          playerId: number
+          plusMinus?: number
+          points?: number
+          position?: Database["public"]["Enums"]["NHL_Position_Code"]
+          powerPlayGoals?: number
+          powerPlayPoints?: number
+          powerPlayToi?: string
+          shorthandedGoals?: number
+          shorthandedToi?: string
+          shots?: number
+          shPoints?: number
+          toi?: string
+        }
         Update: {
-          assists?: number;
-          blockedShots?: number;
-          created_at?: string;
-          faceoffs?: string;
-          faceoffWinningPctg?: number;
-          gameId?: number;
-          goals?: number;
-          hits?: number;
-          pim?: number;
-          playerId?: number;
-          plusMinus?: number;
-          points?: number;
-          position?: Database["public"]["Enums"]["NHL Position Code"];
-          powerPlayGoals?: number;
-          powerPlayPoints?: number;
-          powerPlayToi?: string;
-          shorthandedGoals?: number;
-          shorthandedToi?: string;
-          shots?: number;
-          shPoints?: number;
-          toi?: string;
-        };
+          assists?: number
+          blockedShots?: number
+          created_at?: string
+          faceoffs?: string
+          faceoffWinningPctg?: number
+          gameId?: number
+          goals?: number
+          hits?: number
+          pim?: number
+          playerId?: number
+          plusMinus?: number
+          points?: number
+          position?: Database["public"]["Enums"]["NHL_Position_Code"]
+          powerPlayGoals?: number
+          powerPlayPoints?: number
+          powerPlayToi?: string
+          shorthandedGoals?: number
+          shorthandedToi?: string
+          shots?: number
+          shPoints?: number
+          toi?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "skatersgamestats_gameid_fkey";
-            columns: ["gameId"];
-            isOneToOne: false;
-            referencedRelation: "games";
-            referencedColumns: ["id"];
+            foreignKeyName: "skatersgamestats_gameid_fkey"
+            columns: ["gameId"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "skatersgamestats_playerid_fkey";
-            columns: ["playerId"];
-            isOneToOne: false;
-            referencedRelation: "players";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
+            foreignKeyName: "skatersgamestats_playerid_fkey"
+            columns: ["playerId"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sko_pp_stats: {
+        Row: {
+          current_team_abbreviation: string | null
+          current_team_name: string | null
+          date: string
+          games_played: number | null
+          player_id: number
+          player_name: string | null
+          position_code: string | null
+          pp_toi_pct_per_game: number | null
+          shoots_catches: string | null
+          team_abbrev: string | null
+        }
+        Insert: {
+          current_team_abbreviation?: string | null
+          current_team_name?: string | null
+          date: string
+          games_played?: number | null
+          player_id: number
+          player_name?: string | null
+          position_code?: string | null
+          pp_toi_pct_per_game?: number | null
+          shoots_catches?: string | null
+          team_abbrev?: string | null
+        }
+        Update: {
+          current_team_abbreviation?: string | null
+          current_team_name?: string | null
+          date?: string
+          games_played?: number | null
+          player_id?: number
+          player_name?: string | null
+          position_code?: string | null
+          pp_toi_pct_per_game?: number | null
+          shoots_catches?: string | null
+          team_abbrev?: string | null
+        }
+        Relationships: []
+      }
+      sko_skater_stats: {
+        Row: {
+          assists: number | null
+          date: string
+          es_goals_for: number | null
+          games_played: number | null
+          goals: number | null
+          ipp: number | null
+          on_ice_shooting_pct: number | null
+          player_id: number
+          player_name: string
+          points: number | null
+          position_code: string | null
+          pp_goals_for: number | null
+          pp_toi_pct_per_game: number | null
+          season_id: number
+          sh_goals_for: number | null
+          shooting_percentage: number | null
+          shots: number | null
+          sog_per_60: number | null
+          time_on_ice: number | null
+          total_primary_assists: number | null
+          total_secondary_assists: number | null
+          zone_start_pct: number | null
+        }
+        Insert: {
+          assists?: number | null
+          date: string
+          es_goals_for?: number | null
+          games_played?: number | null
+          goals?: number | null
+          ipp?: number | null
+          on_ice_shooting_pct?: number | null
+          player_id: number
+          player_name: string
+          points?: number | null
+          position_code?: string | null
+          pp_goals_for?: number | null
+          pp_toi_pct_per_game?: number | null
+          season_id: number
+          sh_goals_for?: number | null
+          shooting_percentage?: number | null
+          shots?: number | null
+          sog_per_60?: number | null
+          time_on_ice?: number | null
+          total_primary_assists?: number | null
+          total_secondary_assists?: number | null
+          zone_start_pct?: number | null
+        }
+        Update: {
+          assists?: number | null
+          date?: string
+          es_goals_for?: number | null
+          games_played?: number | null
+          goals?: number | null
+          ipp?: number | null
+          on_ice_shooting_pct?: number | null
+          player_id?: number
+          player_name?: string
+          points?: number | null
+          position_code?: string | null
+          pp_goals_for?: number | null
+          pp_toi_pct_per_game?: number | null
+          season_id?: number
+          sh_goals_for?: number | null
+          shooting_percentage?: number | null
+          shots?: number | null
+          sog_per_60?: number | null
+          time_on_ice?: number | null
+          total_primary_assists?: number | null
+          total_secondary_assists?: number | null
+          zone_start_pct?: number | null
+        }
+        Relationships: []
+      }
+      sko_skater_years: {
+        Row: {
+          assists: number | null
+          es_goals_for: number | null
+          games_played: number | null
+          goals: number | null
+          ipp: number | null
+          on_ice_shooting_pct: number | null
+          player_id: number
+          player_name: string | null
+          points: number | null
+          position_code: string | null
+          pp_goals_for: number | null
+          pp_toi_pct_per_game: number | null
+          season: number
+          sh_goals_for: number | null
+          shooting_percentage: number | null
+          shots: number | null
+          sog_per_60: number | null
+          time_on_ice: number | null
+          total_primary_assists: number | null
+          total_secondary_assists: number | null
+          zone_start_pct: number | null
+        }
+        Insert: {
+          assists?: number | null
+          es_goals_for?: number | null
+          games_played?: number | null
+          goals?: number | null
+          ipp?: number | null
+          on_ice_shooting_pct?: number | null
+          player_id: number
+          player_name?: string | null
+          points?: number | null
+          position_code?: string | null
+          pp_goals_for?: number | null
+          pp_toi_pct_per_game?: number | null
+          season: number
+          sh_goals_for?: number | null
+          shooting_percentage?: number | null
+          shots?: number | null
+          sog_per_60?: number | null
+          time_on_ice?: number | null
+          total_primary_assists?: number | null
+          total_secondary_assists?: number | null
+          zone_start_pct?: number | null
+        }
+        Update: {
+          assists?: number | null
+          es_goals_for?: number | null
+          games_played?: number | null
+          goals?: number | null
+          ipp?: number | null
+          on_ice_shooting_pct?: number | null
+          player_id?: number
+          player_name?: string | null
+          points?: number | null
+          position_code?: string | null
+          pp_goals_for?: number | null
+          pp_toi_pct_per_game?: number | null
+          season?: number
+          sh_goals_for?: number | null
+          shooting_percentage?: number | null
+          shots?: number | null
+          sog_per_60?: number | null
+          time_on_ice?: number | null
+          total_primary_assists?: number | null
+          total_secondary_assists?: number | null
+          zone_start_pct?: number | null
+        }
+        Relationships: []
+      }
+      sko_trends: {
+        Row: {
+          date: string
+          player_id: number
+          player_name: string | null
+          sko_score: number | null
+          sustainability: string | null
+          z_scores: Json | null
+        }
+        Insert: {
+          date: string
+          player_id: number
+          player_name?: string | null
+          sko_score?: number | null
+          sustainability?: string | null
+          z_scores?: Json | null
+        }
+        Update: {
+          date?: string
+          player_id?: number
+          player_name?: string | null
+          sko_score?: number | null
+          sustainability?: string | null
+          z_scores?: Json | null
+        }
+        Relationships: []
+      }
+      sos_games: {
+        Row: {
+          future_opponent_total_losses: number | null
+          future_opponent_total_ot_losses: number | null
+          future_opponent_total_wins: number | null
+          future_opponents: Json | null
+          game_date: string
+          past_opponent_total_losses: number | null
+          past_opponent_total_ot_losses: number | null
+          past_opponent_total_wins: number | null
+          past_opponents: Json | null
+          season_id: number
+          team_abbrev: string | null
+          team_games_played: number | null
+          team_id: number
+          team_losses: number | null
+          team_name: string | null
+          team_ot_losses: number | null
+          team_point_pct: number | null
+          team_points: number | null
+          team_win_pct: number | null
+          team_wins: number | null
+        }
+        Insert: {
+          future_opponent_total_losses?: number | null
+          future_opponent_total_ot_losses?: number | null
+          future_opponent_total_wins?: number | null
+          future_opponents?: Json | null
+          game_date: string
+          past_opponent_total_losses?: number | null
+          past_opponent_total_ot_losses?: number | null
+          past_opponent_total_wins?: number | null
+          past_opponents?: Json | null
+          season_id: number
+          team_abbrev?: string | null
+          team_games_played?: number | null
+          team_id: number
+          team_losses?: number | null
+          team_name?: string | null
+          team_ot_losses?: number | null
+          team_point_pct?: number | null
+          team_points?: number | null
+          team_win_pct?: number | null
+          team_wins?: number | null
+        }
+        Update: {
+          future_opponent_total_losses?: number | null
+          future_opponent_total_ot_losses?: number | null
+          future_opponent_total_wins?: number | null
+          future_opponents?: Json | null
+          game_date?: string
+          past_opponent_total_losses?: number | null
+          past_opponent_total_ot_losses?: number | null
+          past_opponent_total_wins?: number | null
+          past_opponents?: Json | null
+          season_id?: number
+          team_abbrev?: string | null
+          team_games_played?: number | null
+          team_id?: number
+          team_losses?: number | null
+          team_name?: string | null
+          team_ot_losses?: number | null
+          team_point_pct?: number | null
+          team_points?: number | null
+          team_win_pct?: number | null
+          team_wins?: number | null
+        }
+        Relationships: []
+      }
+      sos_standings: {
+        Row: {
+          future_opponent_total_losses: number | null
+          future_opponent_total_ot_losses: number | null
+          future_opponent_total_wins: number | null
+          future_opponents: Json | null
+          game_date: string
+          past_opponent_total_losses: number | null
+          past_opponent_total_ot_losses: number | null
+          past_opponent_total_wins: number | null
+          past_opponents: Json | null
+          season_id: number
+          team_abbrev: string | null
+          team_games_played: number | null
+          team_id: number
+          team_losses: number | null
+          team_name: string | null
+          team_ot_losses: number | null
+          team_point_pct: number | null
+          team_points: number | null
+          team_win_pct: number | null
+          team_wins: number | null
+        }
+        Insert: {
+          future_opponent_total_losses?: number | null
+          future_opponent_total_ot_losses?: number | null
+          future_opponent_total_wins?: number | null
+          future_opponents?: Json | null
+          game_date: string
+          past_opponent_total_losses?: number | null
+          past_opponent_total_ot_losses?: number | null
+          past_opponent_total_wins?: number | null
+          past_opponents?: Json | null
+          season_id: number
+          team_abbrev?: string | null
+          team_games_played?: number | null
+          team_id: number
+          team_losses?: number | null
+          team_name?: string | null
+          team_ot_losses?: number | null
+          team_point_pct?: number | null
+          team_points?: number | null
+          team_win_pct?: number | null
+          team_wins?: number | null
+        }
+        Update: {
+          future_opponent_total_losses?: number | null
+          future_opponent_total_ot_losses?: number | null
+          future_opponent_total_wins?: number | null
+          future_opponents?: Json | null
+          game_date?: string
+          past_opponent_total_losses?: number | null
+          past_opponent_total_ot_losses?: number | null
+          past_opponent_total_wins?: number | null
+          past_opponents?: Json | null
+          season_id?: number
+          team_abbrev?: string | null
+          team_games_played?: number | null
+          team_id?: number
+          team_losses?: number | null
+          team_name?: string | null
+          team_ot_losses?: number | null
+          team_point_pct?: number | null
+          team_points?: number | null
+          team_win_pct?: number | null
+          team_wins?: number | null
+        }
+        Relationships: []
+      }
+      standings: {
+        Row: {
+          date: string
+          game_type_id: number | null
+          games_played: number | null
+          goal_against: number | null
+          goal_differential: number | null
+          goal_differential_pctg: number | null
+          goal_for: number | null
+          goals_for_pctg: number | null
+          home_games_played: number | null
+          home_goals_against: number | null
+          home_goals_for: number | null
+          home_losses: number | null
+          home_ot_losses: number | null
+          home_points: number | null
+          home_regulation_plus_ot_wins: number | null
+          home_regulation_wins: number | null
+          home_wins: number | null
+          id: number
+          l10_games_played: number | null
+          l10_goal_differential: number | null
+          l10_goals_against: number | null
+          l10_goals_for: number | null
+          l10_losses: number | null
+          l10_ot_losses: number | null
+          l10_points: number | null
+          l10_regulation_plus_ot_wins: number | null
+          l10_regulation_wins: number | null
+          l10_wins: number | null
+          league_home_sequence: number | null
+          league_l10_sequence: number | null
+          league_road_sequence: number | null
+          league_sequence: number | null
+          losses: number | null
+          ot_losses: number | null
+          point_pctg: number | null
+          points: number | null
+          regulation_plus_ot_win_pctg: number | null
+          regulation_plus_ot_wins: number | null
+          regulation_win_pctg: number | null
+          regulation_wins: number | null
+          road_games_played: number | null
+          road_goal_differential: number | null
+          road_goals_against: number | null
+          road_goals_for: number | null
+          road_losses: number | null
+          road_ot_losses: number | null
+          road_points: number | null
+          road_regulation_plus_ot_wins: number | null
+          road_regulation_wins: number | null
+          road_wins: number | null
+          season_id: number
+          shootout_losses: number | null
+          shootout_wins: number | null
+          streak_code: string | null
+          streak_count: number | null
+          team_abbrev_default: string | null
+          team_common_name_default: string | null
+          team_id: number
+          team_name_default: string | null
+          ties: number | null
+          win_pctg: number | null
+          wins: number | null
+        }
+        Insert: {
+          date: string
+          game_type_id?: number | null
+          games_played?: number | null
+          goal_against?: number | null
+          goal_differential?: number | null
+          goal_differential_pctg?: number | null
+          goal_for?: number | null
+          goals_for_pctg?: number | null
+          home_games_played?: number | null
+          home_goals_against?: number | null
+          home_goals_for?: number | null
+          home_losses?: number | null
+          home_ot_losses?: number | null
+          home_points?: number | null
+          home_regulation_plus_ot_wins?: number | null
+          home_regulation_wins?: number | null
+          home_wins?: number | null
+          id?: number
+          l10_games_played?: number | null
+          l10_goal_differential?: number | null
+          l10_goals_against?: number | null
+          l10_goals_for?: number | null
+          l10_losses?: number | null
+          l10_ot_losses?: number | null
+          l10_points?: number | null
+          l10_regulation_plus_ot_wins?: number | null
+          l10_regulation_wins?: number | null
+          l10_wins?: number | null
+          league_home_sequence?: number | null
+          league_l10_sequence?: number | null
+          league_road_sequence?: number | null
+          league_sequence?: number | null
+          losses?: number | null
+          ot_losses?: number | null
+          point_pctg?: number | null
+          points?: number | null
+          regulation_plus_ot_win_pctg?: number | null
+          regulation_plus_ot_wins?: number | null
+          regulation_win_pctg?: number | null
+          regulation_wins?: number | null
+          road_games_played?: number | null
+          road_goal_differential?: number | null
+          road_goals_against?: number | null
+          road_goals_for?: number | null
+          road_losses?: number | null
+          road_ot_losses?: number | null
+          road_points?: number | null
+          road_regulation_plus_ot_wins?: number | null
+          road_regulation_wins?: number | null
+          road_wins?: number | null
+          season_id: number
+          shootout_losses?: number | null
+          shootout_wins?: number | null
+          streak_code?: string | null
+          streak_count?: number | null
+          team_abbrev_default?: string | null
+          team_common_name_default?: string | null
+          team_id: number
+          team_name_default?: string | null
+          ties?: number | null
+          win_pctg?: number | null
+          wins?: number | null
+        }
+        Update: {
+          date?: string
+          game_type_id?: number | null
+          games_played?: number | null
+          goal_against?: number | null
+          goal_differential?: number | null
+          goal_differential_pctg?: number | null
+          goal_for?: number | null
+          goals_for_pctg?: number | null
+          home_games_played?: number | null
+          home_goals_against?: number | null
+          home_goals_for?: number | null
+          home_losses?: number | null
+          home_ot_losses?: number | null
+          home_points?: number | null
+          home_regulation_plus_ot_wins?: number | null
+          home_regulation_wins?: number | null
+          home_wins?: number | null
+          id?: number
+          l10_games_played?: number | null
+          l10_goal_differential?: number | null
+          l10_goals_against?: number | null
+          l10_goals_for?: number | null
+          l10_losses?: number | null
+          l10_ot_losses?: number | null
+          l10_points?: number | null
+          l10_regulation_plus_ot_wins?: number | null
+          l10_regulation_wins?: number | null
+          l10_wins?: number | null
+          league_home_sequence?: number | null
+          league_l10_sequence?: number | null
+          league_road_sequence?: number | null
+          league_sequence?: number | null
+          losses?: number | null
+          ot_losses?: number | null
+          point_pctg?: number | null
+          points?: number | null
+          regulation_plus_ot_win_pctg?: number | null
+          regulation_plus_ot_wins?: number | null
+          regulation_win_pctg?: number | null
+          regulation_wins?: number | null
+          road_games_played?: number | null
+          road_goal_differential?: number | null
+          road_goals_against?: number | null
+          road_goals_for?: number | null
+          road_losses?: number | null
+          road_ot_losses?: number | null
+          road_points?: number | null
+          road_regulation_plus_ot_wins?: number | null
+          road_regulation_wins?: number | null
+          road_wins?: number | null
+          season_id?: number
+          shootout_losses?: number | null
+          shootout_wins?: number | null
+          streak_code?: string | null
+          streak_count?: number | null
+          team_abbrev_default?: string | null
+          team_common_name_default?: string | null
+          team_id?: number
+          team_name_default?: string | null
+          ties?: number | null
+          win_pctg?: number | null
+          wins?: number | null
+        }
+        Relationships: []
+      }
       statsUpdateStatus: {
         Row: {
-          gameId: number;
-          updated: boolean;
-        };
+          gameId: number
+          updated: boolean
+        }
         Insert: {
-          gameId?: number;
-          updated?: boolean;
-        };
+          gameId?: number
+          updated?: boolean
+        }
         Update: {
-          gameId?: number;
-          updated?: boolean;
-        };
+          gameId?: number
+          updated?: boolean
+        }
         Relationships: [
           {
-            foreignKeyName: "statsUpdateStatus_gameId_fkey";
-            columns: ["gameId"];
-            isOneToOne: true;
-            referencedRelation: "games";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
+            foreignKeyName: "statsUpdateStatus_gameId_fkey"
+            columns: ["gameId"]
+            isOneToOne: true
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_season: {
         Row: {
-          created_at: string;
-          seasonId: number;
-          teamId: number;
-        };
+          created_at: string
+          seasonId: number
+          teamId: number
+        }
         Insert: {
-          created_at?: string;
-          seasonId: number;
-          teamId?: number;
-        };
+          created_at?: string
+          seasonId: number
+          teamId?: number
+        }
         Update: {
-          created_at?: string;
-          seasonId?: number;
-          teamId?: number;
-        };
+          created_at?: string
+          seasonId?: number
+          teamId?: number
+        }
         Relationships: [
           {
-            foreignKeyName: "team_season_seasonId_fkey";
-            columns: ["seasonId"];
-            isOneToOne: false;
-            referencedRelation: "seasons";
-            referencedColumns: ["id"];
+            foreignKeyName: "team_season_seasonId_fkey"
+            columns: ["seasonId"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "team_season_teamId_fkey";
-            columns: ["teamId"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
+            foreignKeyName: "team_season_teamId_fkey"
+            columns: ["teamId"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "team_season_teamId_fkey"
+            columns: ["teamId"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "team_season_teamId_fkey"
+            columns: ["teamId"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teamGameStats: {
         Row: {
-          blockedShots: number;
-          created_at: string;
-          faceoffPctg: number;
-          gameId: number;
-          giveaways: number;
-          hits: number;
-          pim: number;
-          powerPlay: string;
-          powerPlayConversion: string;
-          powerPlayToi: string;
-          score: number;
-          sog: number;
-          takeaways: number;
-          teamId: number;
-        };
+          blockedShots: number
+          created_at: string
+          faceoffPctg: number
+          gameId: number
+          giveaways: number
+          hits: number
+          pim: number
+          powerPlay: string
+          powerPlayConversion: string
+          powerPlayToi: string
+          score: number
+          sog: number
+          takeaways: number
+          teamId: number
+        }
         Insert: {
-          blockedShots?: number;
-          created_at?: string;
-          faceoffPctg?: number;
-          gameId?: number;
-          giveaways?: number;
-          hits?: number;
-          pim?: number;
-          powerPlay?: string;
-          powerPlayConversion?: string;
-          powerPlayToi?: string;
-          score?: number;
-          sog?: number;
-          takeaways?: number;
-          teamId: number;
-        };
+          blockedShots?: number
+          created_at?: string
+          faceoffPctg?: number
+          gameId?: number
+          giveaways?: number
+          hits?: number
+          pim?: number
+          powerPlay?: string
+          powerPlayConversion?: string
+          powerPlayToi?: string
+          score?: number
+          sog?: number
+          takeaways?: number
+          teamId: number
+        }
         Update: {
-          blockedShots?: number;
-          created_at?: string;
-          faceoffPctg?: number;
-          gameId?: number;
-          giveaways?: number;
-          hits?: number;
-          pim?: number;
-          powerPlay?: string;
-          powerPlayConversion?: string;
-          powerPlayToi?: string;
-          score?: number;
-          sog?: number;
-          takeaways?: number;
-          teamId?: number;
-        };
+          blockedShots?: number
+          created_at?: string
+          faceoffPctg?: number
+          gameId?: number
+          giveaways?: number
+          hits?: number
+          pim?: number
+          powerPlay?: string
+          powerPlayConversion?: string
+          powerPlayToi?: string
+          score?: number
+          sog?: number
+          takeaways?: number
+          teamId?: number
+        }
         Relationships: [
           {
-            foreignKeyName: "teamGameStats_gameId_fkey";
-            columns: ["gameId"];
-            isOneToOne: false;
-            referencedRelation: "games";
-            referencedColumns: ["id"];
+            foreignKeyName: "teamGameStats_gameId_fkey"
+            columns: ["gameId"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "teamGameStats_teamId_fkey";
-            columns: ["teamId"];
-            isOneToOne: false;
-            referencedRelation: "teams";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
+            foreignKeyName: "teamGameStats_teamId_fkey"
+            columns: ["teamId"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "teamGameStats_teamId_fkey"
+            columns: ["teamId"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "teamGameStats_teamId_fkey"
+            columns: ["teamId"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
-          abbreviation: string;
-          created_at: string;
-          id: number;
-          name: string;
-        };
+          abbreviation: string
+          created_at: string
+          id: number
+          name: string
+        }
         Insert: {
-          abbreviation: string;
-          created_at?: string;
-          id: number;
-          name: string;
-        };
+          abbreviation: string
+          created_at?: string
+          id: number
+          name: string
+        }
         Update: {
-          abbreviation?: string;
-          created_at?: string;
-          id?: number;
-          name?: string;
-        };
-        Relationships: [];
-      };
+          abbreviation?: string
+          created_at?: string
+          id?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      teamsinfo: {
+        Row: {
+          abbreviation: string
+          accent_color: string
+          alt_color: string | null
+          franchise_id: number
+          id: number
+          jersey_color: string
+          location: string
+          name: string
+          primary_color: string
+          secondary_color: string
+          short_name: string
+        }
+        Insert: {
+          abbreviation: string
+          accent_color: string
+          alt_color?: string | null
+          franchise_id: number
+          id?: number
+          jersey_color: string
+          location: string
+          name: string
+          primary_color: string
+          secondary_color: string
+          short_name: string
+        }
+        Update: {
+          abbreviation?: string
+          accent_color?: string
+          alt_color?: string | null
+          franchise_id?: number
+          id?: number
+          jersey_color?: string
+          location?: string
+          name?: string
+          primary_color?: string
+          secondary_color?: string
+          short_name?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
-          created_at: string | null;
-          id: number;
-          role: string;
-          user_id: string;
-        };
+          created_at: string | null
+          id: number
+          role: string
+          user_id: string
+        }
         Insert: {
-          created_at?: string | null;
-          id?: number;
-          role?: string;
-          user_id: string;
-        };
+          created_at?: string | null
+          id?: number
+          role?: string
+          user_id: string
+        }
         Update: {
-          created_at?: string | null;
-          id?: number;
-          role?: string;
-          user_id?: string;
-        };
+          created_at?: string | null
+          id?: number
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wgo_career_averages: {
+        Row: {
+          assists_5v5_avg: number | null
+          assists_5v5_per_60_avg: number | null
+          assists_avg: number | null
+          assists_per_60_5v5_avg: number | null
+          birth_city: string | null
+          birth_country: string | null
+          birth_date: string | null
+          blocked_shots_avg: number | null
+          blocks_per_60_avg: number | null
+          current_team_abbreviation: string | null
+          current_team_name: string | null
+          d_zone_faceoffs_avg: number | null
+          d_zone_fo_percentage_avg: number | null
+          d_zone_fol_avg: number | null
+          d_zone_fow_avg: number | null
+          draft_overall: number | null
+          draft_round: number | null
+          draft_year: number | null
+          empty_net_goals_avg: number | null
+          empty_net_points_avg: number | null
+          es_goals_against_avg: number | null
+          es_goals_for_avg: number | null
+          es_goals_for_percentage_avg: number | null
+          es_toi_per_game_avg: number | null
+          ev_faceoff_percentage_avg: number | null
+          ev_faceoffs_avg: number | null
+          ev_fol_avg: number | null
+          ev_fow_avg: number | null
+          ev_time_on_ice_avg: number | null
+          ev_time_on_ice_per_game_avg: number | null
+          faceoff_pct_5v5_avg: number | null
+          first_season_for_game_type: number | null
+          fow_percentage_avg: number | null
+          game_misconduct_penalties_avg: number | null
+          games_played_avg: number | null
+          giveaways_avg: number | null
+          giveaways_per_60_avg: number | null
+          goals_5v5_avg: number | null
+          goals_5v5_per_60_avg: number | null
+          goals_avg: number | null
+          goals_backhand_avg: number | null
+          goals_bat_avg: number | null
+          goals_between_legs_avg: number | null
+          goals_cradle_avg: number | null
+          goals_deflected_avg: number | null
+          goals_pct_avg: number | null
+          goals_per_60_5v5_avg: number | null
+          goals_poke_avg: number | null
+          goals_slap_avg: number | null
+          goals_snap_avg: number | null
+          goals_tip_in_avg: number | null
+          goals_wrap_around_avg: number | null
+          goals_wrist_avg: number | null
+          gw_goals_avg: number | null
+          height: number | null
+          hits_avg: number | null
+          hits_per_60_avg: number | null
+          individual_sat_for_per_60_avg: number | null
+          individual_shots_for_per_60_avg: number | null
+          major_penalties_avg: number | null
+          match_penalties_avg: number | null
+          minor_penalties_avg: number | null
+          misconduct_penalties_avg: number | null
+          missed_shots_avg: number | null
+          n_zone_faceoffs_avg: number | null
+          n_zone_fo_percentage_avg: number | null
+          n_zone_fol_avg: number | null
+          n_zone_fow_avg: number | null
+          nationality_code: string | null
+          number_of_seasons: number | null
+          o_zone_faceoffs_avg: number | null
+          o_zone_fo_percentage_avg: number | null
+          o_zone_fol_avg: number | null
+          o_zone_fow_avg: number | null
+          o_zone_start_pct_5v5_avg: number | null
+          on_ice_shooting_pct_5v5_avg: number | null
+          on_ice_shooting_pct_avg: number | null
+          ot_goals_avg: number | null
+          ot_time_on_ice_avg: number | null
+          ot_time_on_ice_per_game_avg: number | null
+          penalties_avg: number | null
+          penalties_drawn_avg: number | null
+          penalties_drawn_per_60_avg: number | null
+          penalties_taken_per_60_avg: number | null
+          penalty_minutes_avg: number | null
+          penalty_minutes_per_toi_avg: number | null
+          penalty_seconds_per_game_avg: number | null
+          player_id: number
+          player_name: string | null
+          plus_minus_avg: number | null
+          points_5v5_avg: number | null
+          points_5v5_per_60_avg: number | null
+          points_avg: number | null
+          points_per_60_5v5_avg: number | null
+          points_per_game_avg: number | null
+          position_code: string | null
+          pp_assists_avg: number | null
+          pp_faceoff_percentage_avg: number | null
+          pp_faceoffs_avg: number | null
+          pp_fol_avg: number | null
+          pp_fow_avg: number | null
+          pp_goals_against_avg: number | null
+          pp_goals_against_per_60_avg: number | null
+          pp_goals_avg: number | null
+          pp_goals_for_avg: number | null
+          pp_goals_for_per_60_avg: number | null
+          pp_goals_per_60_avg: number | null
+          pp_individual_sat_for_per_60_avg: number | null
+          pp_individual_sat_per_60_avg: number | null
+          pp_points_avg: number | null
+          pp_points_per_60_avg: number | null
+          pp_primary_assists_avg: number | null
+          pp_primary_assists_per_60_avg: number | null
+          pp_secondary_assists_avg: number | null
+          pp_secondary_assists_per_60_avg: number | null
+          pp_shooting_percentage_avg: number | null
+          pp_shots_avg: number | null
+          pp_shots_per_60_avg: number | null
+          pp_toi_avg: number | null
+          pp_toi_pct_per_game_avg: number | null
+          pp_toi_per_game_avg: number | null
+          primary_assists_5v5_avg: number | null
+          primary_assists_5v5_per_60_avg: number | null
+          primary_assists_per_60_5v5_avg: number | null
+          sat_against_avg: number | null
+          sat_ahead_avg: number | null
+          sat_behind_avg: number | null
+          sat_close_avg: number | null
+          sat_for_avg: number | null
+          sat_pct_avg: number | null
+          sat_percentage_ahead_avg: number | null
+          sat_percentage_avg: number | null
+          sat_percentage_behind_avg: number | null
+          sat_percentage_close_avg: number | null
+          sat_percentage_tied_avg: number | null
+          sat_relative_5v5_avg: number | null
+          sat_relative_avg: number | null
+          sat_tied_avg: number | null
+          sat_total_avg: number | null
+          secondary_assists_5v5_avg: number | null
+          secondary_assists_5v5_per_60_avg: number | null
+          secondary_assists_per_60_5v5_avg: number | null
+          sh_assists_avg: number | null
+          sh_faceoff_percentage_avg: number | null
+          sh_faceoffs_avg: number | null
+          sh_fol_avg: number | null
+          sh_fow_avg: number | null
+          sh_goals_against_avg: number | null
+          sh_goals_avg: number | null
+          sh_goals_for_avg: number | null
+          sh_goals_per_60_avg: number | null
+          sh_individual_sat_for_avg: number | null
+          sh_individual_sat_for_per_60_avg: number | null
+          sh_individual_sat_per_60_avg: number | null
+          sh_points_avg: number | null
+          sh_points_per_60_avg: number | null
+          sh_primary_assists_avg: number | null
+          sh_primary_assists_per_60_avg: number | null
+          sh_secondary_assists_avg: number | null
+          sh_secondary_assists_per_60_avg: number | null
+          sh_shooting_percentage_avg: number | null
+          sh_shots_avg: number | null
+          sh_shots_per_60_avg: number | null
+          sh_time_on_ice_avg: number | null
+          sh_time_on_ice_pct_per_game_avg: number | null
+          sh_toi_per_game_avg: number | null
+          shifts_avg: number | null
+          shifts_per_game_avg: number | null
+          shooting_percentage_5v5_avg: number | null
+          shooting_percentage_avg: number | null
+          shoots_catches: string | null
+          shots_avg: number | null
+          shots_on_net_backhand_avg: number | null
+          shots_on_net_bat_avg: number | null
+          shots_on_net_between_legs_avg: number | null
+          shots_on_net_cradle_avg: number | null
+          shots_on_net_deflected_avg: number | null
+          shots_on_net_poke_avg: number | null
+          shots_on_net_slap_avg: number | null
+          shots_on_net_snap_avg: number | null
+          shots_on_net_tip_in_avg: number | null
+          shots_on_net_wrap_around_avg: number | null
+          shots_on_net_wrist_avg: number | null
+          skater_save_pct_5v5_avg: number | null
+          skater_shooting_plus_save_pct_5v5_avg: number | null
+          takeaways_avg: number | null
+          takeaways_per_60_avg: number | null
+          time_on_ice_per_shift_avg: number | null
+          toi_per_game_5v5_avg: number | null
+          toi_per_game_avg: number | null
+          total_faceoffs_avg: number | null
+          total_fol_avg: number | null
+          total_fow_avg: number | null
+          total_primary_assists_avg: number | null
+          total_secondary_assists_avg: number | null
+          usat_against_avg: number | null
+          usat_ahead_avg: number | null
+          usat_behind_avg: number | null
+          usat_close_avg: number | null
+          usat_for_avg: number | null
+          usat_percentage_ahead_avg: number | null
+          usat_percentage_avg: number | null
+          usat_percentage_behind_avg: number | null
+          usat_percentage_close_avg: number | null
+          usat_percentage_tied_avg: number | null
+          usat_relative_avg: number | null
+          usat_tied_avg: number | null
+          usat_total_avg: number | null
+          weight: number | null
+          zone_start_pct_5v5_avg: number | null
+          zone_start_pct_avg: number | null
+        }
+        Insert: {
+          assists_5v5_avg?: number | null
+          assists_5v5_per_60_avg?: number | null
+          assists_avg?: number | null
+          assists_per_60_5v5_avg?: number | null
+          birth_city?: string | null
+          birth_country?: string | null
+          birth_date?: string | null
+          blocked_shots_avg?: number | null
+          blocks_per_60_avg?: number | null
+          current_team_abbreviation?: string | null
+          current_team_name?: string | null
+          d_zone_faceoffs_avg?: number | null
+          d_zone_fo_percentage_avg?: number | null
+          d_zone_fol_avg?: number | null
+          d_zone_fow_avg?: number | null
+          draft_overall?: number | null
+          draft_round?: number | null
+          draft_year?: number | null
+          empty_net_goals_avg?: number | null
+          empty_net_points_avg?: number | null
+          es_goals_against_avg?: number | null
+          es_goals_for_avg?: number | null
+          es_goals_for_percentage_avg?: number | null
+          es_toi_per_game_avg?: number | null
+          ev_faceoff_percentage_avg?: number | null
+          ev_faceoffs_avg?: number | null
+          ev_fol_avg?: number | null
+          ev_fow_avg?: number | null
+          ev_time_on_ice_avg?: number | null
+          ev_time_on_ice_per_game_avg?: number | null
+          faceoff_pct_5v5_avg?: number | null
+          first_season_for_game_type?: number | null
+          fow_percentage_avg?: number | null
+          game_misconduct_penalties_avg?: number | null
+          games_played_avg?: number | null
+          giveaways_avg?: number | null
+          giveaways_per_60_avg?: number | null
+          goals_5v5_avg?: number | null
+          goals_5v5_per_60_avg?: number | null
+          goals_avg?: number | null
+          goals_backhand_avg?: number | null
+          goals_bat_avg?: number | null
+          goals_between_legs_avg?: number | null
+          goals_cradle_avg?: number | null
+          goals_deflected_avg?: number | null
+          goals_pct_avg?: number | null
+          goals_per_60_5v5_avg?: number | null
+          goals_poke_avg?: number | null
+          goals_slap_avg?: number | null
+          goals_snap_avg?: number | null
+          goals_tip_in_avg?: number | null
+          goals_wrap_around_avg?: number | null
+          goals_wrist_avg?: number | null
+          gw_goals_avg?: number | null
+          height?: number | null
+          hits_avg?: number | null
+          hits_per_60_avg?: number | null
+          individual_sat_for_per_60_avg?: number | null
+          individual_shots_for_per_60_avg?: number | null
+          major_penalties_avg?: number | null
+          match_penalties_avg?: number | null
+          minor_penalties_avg?: number | null
+          misconduct_penalties_avg?: number | null
+          missed_shots_avg?: number | null
+          n_zone_faceoffs_avg?: number | null
+          n_zone_fo_percentage_avg?: number | null
+          n_zone_fol_avg?: number | null
+          n_zone_fow_avg?: number | null
+          nationality_code?: string | null
+          number_of_seasons?: number | null
+          o_zone_faceoffs_avg?: number | null
+          o_zone_fo_percentage_avg?: number | null
+          o_zone_fol_avg?: number | null
+          o_zone_fow_avg?: number | null
+          o_zone_start_pct_5v5_avg?: number | null
+          on_ice_shooting_pct_5v5_avg?: number | null
+          on_ice_shooting_pct_avg?: number | null
+          ot_goals_avg?: number | null
+          ot_time_on_ice_avg?: number | null
+          ot_time_on_ice_per_game_avg?: number | null
+          penalties_avg?: number | null
+          penalties_drawn_avg?: number | null
+          penalties_drawn_per_60_avg?: number | null
+          penalties_taken_per_60_avg?: number | null
+          penalty_minutes_avg?: number | null
+          penalty_minutes_per_toi_avg?: number | null
+          penalty_seconds_per_game_avg?: number | null
+          player_id: number
+          player_name?: string | null
+          plus_minus_avg?: number | null
+          points_5v5_avg?: number | null
+          points_5v5_per_60_avg?: number | null
+          points_avg?: number | null
+          points_per_60_5v5_avg?: number | null
+          points_per_game_avg?: number | null
+          position_code?: string | null
+          pp_assists_avg?: number | null
+          pp_faceoff_percentage_avg?: number | null
+          pp_faceoffs_avg?: number | null
+          pp_fol_avg?: number | null
+          pp_fow_avg?: number | null
+          pp_goals_against_avg?: number | null
+          pp_goals_against_per_60_avg?: number | null
+          pp_goals_avg?: number | null
+          pp_goals_for_avg?: number | null
+          pp_goals_for_per_60_avg?: number | null
+          pp_goals_per_60_avg?: number | null
+          pp_individual_sat_for_per_60_avg?: number | null
+          pp_individual_sat_per_60_avg?: number | null
+          pp_points_avg?: number | null
+          pp_points_per_60_avg?: number | null
+          pp_primary_assists_avg?: number | null
+          pp_primary_assists_per_60_avg?: number | null
+          pp_secondary_assists_avg?: number | null
+          pp_secondary_assists_per_60_avg?: number | null
+          pp_shooting_percentage_avg?: number | null
+          pp_shots_avg?: number | null
+          pp_shots_per_60_avg?: number | null
+          pp_toi_avg?: number | null
+          pp_toi_pct_per_game_avg?: number | null
+          pp_toi_per_game_avg?: number | null
+          primary_assists_5v5_avg?: number | null
+          primary_assists_5v5_per_60_avg?: number | null
+          primary_assists_per_60_5v5_avg?: number | null
+          sat_against_avg?: number | null
+          sat_ahead_avg?: number | null
+          sat_behind_avg?: number | null
+          sat_close_avg?: number | null
+          sat_for_avg?: number | null
+          sat_pct_avg?: number | null
+          sat_percentage_ahead_avg?: number | null
+          sat_percentage_avg?: number | null
+          sat_percentage_behind_avg?: number | null
+          sat_percentage_close_avg?: number | null
+          sat_percentage_tied_avg?: number | null
+          sat_relative_5v5_avg?: number | null
+          sat_relative_avg?: number | null
+          sat_tied_avg?: number | null
+          sat_total_avg?: number | null
+          secondary_assists_5v5_avg?: number | null
+          secondary_assists_5v5_per_60_avg?: number | null
+          secondary_assists_per_60_5v5_avg?: number | null
+          sh_assists_avg?: number | null
+          sh_faceoff_percentage_avg?: number | null
+          sh_faceoffs_avg?: number | null
+          sh_fol_avg?: number | null
+          sh_fow_avg?: number | null
+          sh_goals_against_avg?: number | null
+          sh_goals_avg?: number | null
+          sh_goals_for_avg?: number | null
+          sh_goals_per_60_avg?: number | null
+          sh_individual_sat_for_avg?: number | null
+          sh_individual_sat_for_per_60_avg?: number | null
+          sh_individual_sat_per_60_avg?: number | null
+          sh_points_avg?: number | null
+          sh_points_per_60_avg?: number | null
+          sh_primary_assists_avg?: number | null
+          sh_primary_assists_per_60_avg?: number | null
+          sh_secondary_assists_avg?: number | null
+          sh_secondary_assists_per_60_avg?: number | null
+          sh_shooting_percentage_avg?: number | null
+          sh_shots_avg?: number | null
+          sh_shots_per_60_avg?: number | null
+          sh_time_on_ice_avg?: number | null
+          sh_time_on_ice_pct_per_game_avg?: number | null
+          sh_toi_per_game_avg?: number | null
+          shifts_avg?: number | null
+          shifts_per_game_avg?: number | null
+          shooting_percentage_5v5_avg?: number | null
+          shooting_percentage_avg?: number | null
+          shoots_catches?: string | null
+          shots_avg?: number | null
+          shots_on_net_backhand_avg?: number | null
+          shots_on_net_bat_avg?: number | null
+          shots_on_net_between_legs_avg?: number | null
+          shots_on_net_cradle_avg?: number | null
+          shots_on_net_deflected_avg?: number | null
+          shots_on_net_poke_avg?: number | null
+          shots_on_net_slap_avg?: number | null
+          shots_on_net_snap_avg?: number | null
+          shots_on_net_tip_in_avg?: number | null
+          shots_on_net_wrap_around_avg?: number | null
+          shots_on_net_wrist_avg?: number | null
+          skater_save_pct_5v5_avg?: number | null
+          skater_shooting_plus_save_pct_5v5_avg?: number | null
+          takeaways_avg?: number | null
+          takeaways_per_60_avg?: number | null
+          time_on_ice_per_shift_avg?: number | null
+          toi_per_game_5v5_avg?: number | null
+          toi_per_game_avg?: number | null
+          total_faceoffs_avg?: number | null
+          total_fol_avg?: number | null
+          total_fow_avg?: number | null
+          total_primary_assists_avg?: number | null
+          total_secondary_assists_avg?: number | null
+          usat_against_avg?: number | null
+          usat_ahead_avg?: number | null
+          usat_behind_avg?: number | null
+          usat_close_avg?: number | null
+          usat_for_avg?: number | null
+          usat_percentage_ahead_avg?: number | null
+          usat_percentage_avg?: number | null
+          usat_percentage_behind_avg?: number | null
+          usat_percentage_close_avg?: number | null
+          usat_percentage_tied_avg?: number | null
+          usat_relative_avg?: number | null
+          usat_tied_avg?: number | null
+          usat_total_avg?: number | null
+          weight?: number | null
+          zone_start_pct_5v5_avg?: number | null
+          zone_start_pct_avg?: number | null
+        }
+        Update: {
+          assists_5v5_avg?: number | null
+          assists_5v5_per_60_avg?: number | null
+          assists_avg?: number | null
+          assists_per_60_5v5_avg?: number | null
+          birth_city?: string | null
+          birth_country?: string | null
+          birth_date?: string | null
+          blocked_shots_avg?: number | null
+          blocks_per_60_avg?: number | null
+          current_team_abbreviation?: string | null
+          current_team_name?: string | null
+          d_zone_faceoffs_avg?: number | null
+          d_zone_fo_percentage_avg?: number | null
+          d_zone_fol_avg?: number | null
+          d_zone_fow_avg?: number | null
+          draft_overall?: number | null
+          draft_round?: number | null
+          draft_year?: number | null
+          empty_net_goals_avg?: number | null
+          empty_net_points_avg?: number | null
+          es_goals_against_avg?: number | null
+          es_goals_for_avg?: number | null
+          es_goals_for_percentage_avg?: number | null
+          es_toi_per_game_avg?: number | null
+          ev_faceoff_percentage_avg?: number | null
+          ev_faceoffs_avg?: number | null
+          ev_fol_avg?: number | null
+          ev_fow_avg?: number | null
+          ev_time_on_ice_avg?: number | null
+          ev_time_on_ice_per_game_avg?: number | null
+          faceoff_pct_5v5_avg?: number | null
+          first_season_for_game_type?: number | null
+          fow_percentage_avg?: number | null
+          game_misconduct_penalties_avg?: number | null
+          games_played_avg?: number | null
+          giveaways_avg?: number | null
+          giveaways_per_60_avg?: number | null
+          goals_5v5_avg?: number | null
+          goals_5v5_per_60_avg?: number | null
+          goals_avg?: number | null
+          goals_backhand_avg?: number | null
+          goals_bat_avg?: number | null
+          goals_between_legs_avg?: number | null
+          goals_cradle_avg?: number | null
+          goals_deflected_avg?: number | null
+          goals_pct_avg?: number | null
+          goals_per_60_5v5_avg?: number | null
+          goals_poke_avg?: number | null
+          goals_slap_avg?: number | null
+          goals_snap_avg?: number | null
+          goals_tip_in_avg?: number | null
+          goals_wrap_around_avg?: number | null
+          goals_wrist_avg?: number | null
+          gw_goals_avg?: number | null
+          height?: number | null
+          hits_avg?: number | null
+          hits_per_60_avg?: number | null
+          individual_sat_for_per_60_avg?: number | null
+          individual_shots_for_per_60_avg?: number | null
+          major_penalties_avg?: number | null
+          match_penalties_avg?: number | null
+          minor_penalties_avg?: number | null
+          misconduct_penalties_avg?: number | null
+          missed_shots_avg?: number | null
+          n_zone_faceoffs_avg?: number | null
+          n_zone_fo_percentage_avg?: number | null
+          n_zone_fol_avg?: number | null
+          n_zone_fow_avg?: number | null
+          nationality_code?: string | null
+          number_of_seasons?: number | null
+          o_zone_faceoffs_avg?: number | null
+          o_zone_fo_percentage_avg?: number | null
+          o_zone_fol_avg?: number | null
+          o_zone_fow_avg?: number | null
+          o_zone_start_pct_5v5_avg?: number | null
+          on_ice_shooting_pct_5v5_avg?: number | null
+          on_ice_shooting_pct_avg?: number | null
+          ot_goals_avg?: number | null
+          ot_time_on_ice_avg?: number | null
+          ot_time_on_ice_per_game_avg?: number | null
+          penalties_avg?: number | null
+          penalties_drawn_avg?: number | null
+          penalties_drawn_per_60_avg?: number | null
+          penalties_taken_per_60_avg?: number | null
+          penalty_minutes_avg?: number | null
+          penalty_minutes_per_toi_avg?: number | null
+          penalty_seconds_per_game_avg?: number | null
+          player_id?: number
+          player_name?: string | null
+          plus_minus_avg?: number | null
+          points_5v5_avg?: number | null
+          points_5v5_per_60_avg?: number | null
+          points_avg?: number | null
+          points_per_60_5v5_avg?: number | null
+          points_per_game_avg?: number | null
+          position_code?: string | null
+          pp_assists_avg?: number | null
+          pp_faceoff_percentage_avg?: number | null
+          pp_faceoffs_avg?: number | null
+          pp_fol_avg?: number | null
+          pp_fow_avg?: number | null
+          pp_goals_against_avg?: number | null
+          pp_goals_against_per_60_avg?: number | null
+          pp_goals_avg?: number | null
+          pp_goals_for_avg?: number | null
+          pp_goals_for_per_60_avg?: number | null
+          pp_goals_per_60_avg?: number | null
+          pp_individual_sat_for_per_60_avg?: number | null
+          pp_individual_sat_per_60_avg?: number | null
+          pp_points_avg?: number | null
+          pp_points_per_60_avg?: number | null
+          pp_primary_assists_avg?: number | null
+          pp_primary_assists_per_60_avg?: number | null
+          pp_secondary_assists_avg?: number | null
+          pp_secondary_assists_per_60_avg?: number | null
+          pp_shooting_percentage_avg?: number | null
+          pp_shots_avg?: number | null
+          pp_shots_per_60_avg?: number | null
+          pp_toi_avg?: number | null
+          pp_toi_pct_per_game_avg?: number | null
+          pp_toi_per_game_avg?: number | null
+          primary_assists_5v5_avg?: number | null
+          primary_assists_5v5_per_60_avg?: number | null
+          primary_assists_per_60_5v5_avg?: number | null
+          sat_against_avg?: number | null
+          sat_ahead_avg?: number | null
+          sat_behind_avg?: number | null
+          sat_close_avg?: number | null
+          sat_for_avg?: number | null
+          sat_pct_avg?: number | null
+          sat_percentage_ahead_avg?: number | null
+          sat_percentage_avg?: number | null
+          sat_percentage_behind_avg?: number | null
+          sat_percentage_close_avg?: number | null
+          sat_percentage_tied_avg?: number | null
+          sat_relative_5v5_avg?: number | null
+          sat_relative_avg?: number | null
+          sat_tied_avg?: number | null
+          sat_total_avg?: number | null
+          secondary_assists_5v5_avg?: number | null
+          secondary_assists_5v5_per_60_avg?: number | null
+          secondary_assists_per_60_5v5_avg?: number | null
+          sh_assists_avg?: number | null
+          sh_faceoff_percentage_avg?: number | null
+          sh_faceoffs_avg?: number | null
+          sh_fol_avg?: number | null
+          sh_fow_avg?: number | null
+          sh_goals_against_avg?: number | null
+          sh_goals_avg?: number | null
+          sh_goals_for_avg?: number | null
+          sh_goals_per_60_avg?: number | null
+          sh_individual_sat_for_avg?: number | null
+          sh_individual_sat_for_per_60_avg?: number | null
+          sh_individual_sat_per_60_avg?: number | null
+          sh_points_avg?: number | null
+          sh_points_per_60_avg?: number | null
+          sh_primary_assists_avg?: number | null
+          sh_primary_assists_per_60_avg?: number | null
+          sh_secondary_assists_avg?: number | null
+          sh_secondary_assists_per_60_avg?: number | null
+          sh_shooting_percentage_avg?: number | null
+          sh_shots_avg?: number | null
+          sh_shots_per_60_avg?: number | null
+          sh_time_on_ice_avg?: number | null
+          sh_time_on_ice_pct_per_game_avg?: number | null
+          sh_toi_per_game_avg?: number | null
+          shifts_avg?: number | null
+          shifts_per_game_avg?: number | null
+          shooting_percentage_5v5_avg?: number | null
+          shooting_percentage_avg?: number | null
+          shoots_catches?: string | null
+          shots_avg?: number | null
+          shots_on_net_backhand_avg?: number | null
+          shots_on_net_bat_avg?: number | null
+          shots_on_net_between_legs_avg?: number | null
+          shots_on_net_cradle_avg?: number | null
+          shots_on_net_deflected_avg?: number | null
+          shots_on_net_poke_avg?: number | null
+          shots_on_net_slap_avg?: number | null
+          shots_on_net_snap_avg?: number | null
+          shots_on_net_tip_in_avg?: number | null
+          shots_on_net_wrap_around_avg?: number | null
+          shots_on_net_wrist_avg?: number | null
+          skater_save_pct_5v5_avg?: number | null
+          skater_shooting_plus_save_pct_5v5_avg?: number | null
+          takeaways_avg?: number | null
+          takeaways_per_60_avg?: number | null
+          time_on_ice_per_shift_avg?: number | null
+          toi_per_game_5v5_avg?: number | null
+          toi_per_game_avg?: number | null
+          total_faceoffs_avg?: number | null
+          total_fol_avg?: number | null
+          total_fow_avg?: number | null
+          total_primary_assists_avg?: number | null
+          total_secondary_assists_avg?: number | null
+          usat_against_avg?: number | null
+          usat_ahead_avg?: number | null
+          usat_behind_avg?: number | null
+          usat_close_avg?: number | null
+          usat_for_avg?: number | null
+          usat_percentage_ahead_avg?: number | null
+          usat_percentage_avg?: number | null
+          usat_percentage_behind_avg?: number | null
+          usat_percentage_close_avg?: number | null
+          usat_percentage_tied_avg?: number | null
+          usat_relative_avg?: number | null
+          usat_tied_avg?: number | null
+          usat_total_avg?: number | null
+          weight?: number | null
+          zone_start_pct_5v5_avg?: number | null
+          zone_start_pct_avg?: number | null
+        }
+        Relationships: []
+      }
+      wgo_goalie_stats: {
+        Row: {
+          assists: number | null
+          complete_game_pct: number | null
+          complete_games: number | null
+          date: string
+          games_played: number | null
+          games_played_days_rest_0: number | null
+          games_played_days_rest_1: number | null
+          games_played_days_rest_2: number | null
+          games_played_days_rest_3: number | null
+          games_played_days_rest_4_plus: number | null
+          games_started: number | null
+          goalie_id: number
+          goalie_name: string
+          goals: number | null
+          goals_against: number | null
+          goals_against_avg: number | null
+          incomplete_games: number | null
+          losses: number | null
+          ot_losses: number | null
+          position_code: string | null
+          quality_start: number | null
+          quality_starts_pct: number | null
+          regulation_losses: number | null
+          regulation_wins: number | null
+          save_pct: number | null
+          save_pct_days_rest_0: number | null
+          save_pct_days_rest_1: number | null
+          save_pct_days_rest_2: number | null
+          save_pct_days_rest_3: number | null
+          save_pct_days_rest_4_plus: number | null
+          saves: number | null
+          shoots_catches: string | null
+          shots_against: number | null
+          shots_against_per_60: number | null
+          shutouts: number | null
+          time_on_ice: number | null
+          wins: number | null
+        }
+        Insert: {
+          assists?: number | null
+          complete_game_pct?: number | null
+          complete_games?: number | null
+          date: string
+          games_played?: number | null
+          games_played_days_rest_0?: number | null
+          games_played_days_rest_1?: number | null
+          games_played_days_rest_2?: number | null
+          games_played_days_rest_3?: number | null
+          games_played_days_rest_4_plus?: number | null
+          games_started?: number | null
+          goalie_id: number
+          goalie_name: string
+          goals?: number | null
+          goals_against?: number | null
+          goals_against_avg?: number | null
+          incomplete_games?: number | null
+          losses?: number | null
+          ot_losses?: number | null
+          position_code?: string | null
+          quality_start?: number | null
+          quality_starts_pct?: number | null
+          regulation_losses?: number | null
+          regulation_wins?: number | null
+          save_pct?: number | null
+          save_pct_days_rest_0?: number | null
+          save_pct_days_rest_1?: number | null
+          save_pct_days_rest_2?: number | null
+          save_pct_days_rest_3?: number | null
+          save_pct_days_rest_4_plus?: number | null
+          saves?: number | null
+          shoots_catches?: string | null
+          shots_against?: number | null
+          shots_against_per_60?: number | null
+          shutouts?: number | null
+          time_on_ice?: number | null
+          wins?: number | null
+        }
+        Update: {
+          assists?: number | null
+          complete_game_pct?: number | null
+          complete_games?: number | null
+          date?: string
+          games_played?: number | null
+          games_played_days_rest_0?: number | null
+          games_played_days_rest_1?: number | null
+          games_played_days_rest_2?: number | null
+          games_played_days_rest_3?: number | null
+          games_played_days_rest_4_plus?: number | null
+          games_started?: number | null
+          goalie_id?: number
+          goalie_name?: string
+          goals?: number | null
+          goals_against?: number | null
+          goals_against_avg?: number | null
+          incomplete_games?: number | null
+          losses?: number | null
+          ot_losses?: number | null
+          position_code?: string | null
+          quality_start?: number | null
+          quality_starts_pct?: number | null
+          regulation_losses?: number | null
+          regulation_wins?: number | null
+          save_pct?: number | null
+          save_pct_days_rest_0?: number | null
+          save_pct_days_rest_1?: number | null
+          save_pct_days_rest_2?: number | null
+          save_pct_days_rest_3?: number | null
+          save_pct_days_rest_4_plus?: number | null
+          saves?: number | null
+          shoots_catches?: string | null
+          shots_against?: number | null
+          shots_against_per_60?: number | null
+          shutouts?: number | null
+          time_on_ice?: number | null
+          wins?: number | null
+        }
+        Relationships: []
+      }
+      wgo_skater_stats: {
+        Row: {
+          assists: number | null
+          assists_5v5: number | null
+          assists_per_60_5v5: number | null
+          assists_per_game: number | null
+          birth_city: string | null
+          birth_country: string | null
+          birth_date: string | null
+          blocked_shots: number | null
+          blocks_per_60: number | null
+          blocks_per_game: number | null
+          current_team_abbreviation: string | null
+          current_team_name: string | null
+          d_zone_faceoffs: number | null
+          d_zone_fo_percentage: number | null
+          d_zone_fol: number | null
+          d_zone_fow: number | null
+          date: string
+          draft_overall: number | null
+          draft_round: number | null
+          draft_year: number | null
+          empty_net_assists: number | null
+          empty_net_goals: number | null
+          empty_net_points: number | null
+          es_goal_diff: number | null
+          es_goals_against: number | null
+          es_goals_for: number | null
+          es_goals_for_percentage: number | null
+          es_toi_per_game: number | null
+          ev_faceoff_percentage: number | null
+          ev_faceoffs: number | null
+          ev_fol: number | null
+          ev_fow: number | null
+          ev_time_on_ice: number | null
+          ev_time_on_ice_per_game: number | null
+          faceoff_pct_5v5: number | null
+          first_goals: number | null
+          first_season_for_game_type: number | null
+          fow_percentage: number | null
+          game_misconduct_penalties: number | null
+          games_played: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_5v5: number | null
+          goals_backhand: number | null
+          goals_bat: number | null
+          goals_between_legs: number | null
+          goals_cradle: number | null
+          goals_deflected: number | null
+          goals_pct: number | null
+          goals_per_60_5v5: number | null
+          goals_per_game: number | null
+          goals_poke: number | null
+          goals_slap: number | null
+          goals_snap: number | null
+          goals_tip_in: number | null
+          goals_wrap_around: number | null
+          goals_wrist: number | null
+          gw_goals: number | null
+          height: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_per_game: number | null
+          id: number
+          individual_sat_for_per_60: number | null
+          individual_shots_for_per_60: number | null
+          major_penalties: number | null
+          match_penalties: number | null
+          minor_penalties: number | null
+          misconduct_penalties: number | null
+          missed_shot_crossbar: number | null
+          missed_shot_goal_post: number | null
+          missed_shot_over_net: number | null
+          missed_shot_short_side: number | null
+          missed_shot_wide_of_net: number | null
+          missed_shots: number | null
+          n_zone_faceoffs: number | null
+          n_zone_fo_percentage: number | null
+          n_zone_fol: number | null
+          n_zone_fow: number | null
+          nationality_code: string | null
+          net_minor_penalties_per_60: number | null
+          net_penalties: number | null
+          net_penalties_per_60: number | null
+          o_zone_faceoffs: number | null
+          o_zone_fo_percentage: number | null
+          o_zone_fol: number | null
+          o_zone_fow: number | null
+          o_zone_start_pct_5v5: number | null
+          on_ice_shooting_pct: number | null
+          on_ice_shooting_pct_5v5: number | null
+          ot_goals: number | null
+          ot_time_on_ice: number | null
+          ot_time_on_ice_per_game: number | null
+          penalties: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          penalties_taken_per_60: number | null
+          penalty_minutes: number | null
+          penalty_minutes_per_game: number | null
+          penalty_minutes_per_toi: number | null
+          penalty_seconds_per_game: number | null
+          player_id: number
+          player_name: string
+          plus_minus: number | null
+          points: number | null
+          points_5v5: number | null
+          points_per_60_5v5: number | null
+          points_per_game: number | null
+          position_code: string | null
+          pp_assists: number | null
+          pp_faceoff_percentage: number | null
+          pp_faceoffs: number | null
+          pp_fol: number | null
+          pp_fow: number | null
+          pp_goals: number | null
+          pp_goals_against: number | null
+          pp_goals_against_per_60: number | null
+          pp_goals_for: number | null
+          pp_goals_for_per_60: number | null
+          pp_goals_per_60: number | null
+          pp_individual_sat_for: number | null
+          pp_individual_sat_per_60: number | null
+          pp_points: number | null
+          pp_points_per_60: number | null
+          pp_primary_assists: number | null
+          pp_primary_assists_per_60: number | null
+          pp_secondary_assists: number | null
+          pp_secondary_assists_per_60: number | null
+          pp_shooting_percentage: number | null
+          pp_shots: number | null
+          pp_shots_per_60: number | null
+          pp_toi: number | null
+          pp_toi_pct_per_game: number | null
+          pp_toi_per_game: number | null
+          primary_assists_5v5: number | null
+          primary_assists_per_60_5v5: number | null
+          primary_assists_per_game: number | null
+          sat_against: number | null
+          sat_ahead: number | null
+          sat_behind: number | null
+          sat_close: number | null
+          sat_for: number | null
+          sat_pct: number | null
+          sat_percentage: number | null
+          sat_percentage_ahead: number | null
+          sat_percentage_behind: number | null
+          sat_percentage_close: number | null
+          sat_percentage_tied: number | null
+          sat_relative: number | null
+          sat_relative_5v5: number | null
+          sat_tied: number | null
+          sat_total: number | null
+          season_id: number | null
+          secondary_assists_5v5: number | null
+          secondary_assists_per_60_5v5: number | null
+          secondary_assists_per_game: number | null
+          sh_assists: number | null
+          sh_faceoff_percentage: number | null
+          sh_faceoffs: number | null
+          sh_fol: number | null
+          sh_fow: number | null
+          sh_goals: number | null
+          sh_goals_against: number | null
+          sh_goals_for: number | null
+          sh_goals_per_60: number | null
+          sh_individual_sat_for: number | null
+          sh_individual_sat_per_60: number | null
+          sh_points: number | null
+          sh_points_per_60: number | null
+          sh_primary_assists: number | null
+          sh_primary_assists_per_60: number | null
+          sh_secondary_assists: number | null
+          sh_secondary_assists_per_60: number | null
+          sh_shooting_percentage: number | null
+          sh_shots: number | null
+          sh_shots_per_60: number | null
+          sh_time_on_ice: number | null
+          sh_time_on_ice_pct_per_game: number | null
+          sh_toi_per_game: number | null
+          shifts: number | null
+          shifts_per_game: number | null
+          shooting_pct_backhand: number | null
+          shooting_pct_bat: number | null
+          shooting_pct_between_legs: number | null
+          shooting_pct_cradle: number | null
+          shooting_pct_deflected: number | null
+          shooting_pct_poke: number | null
+          shooting_pct_slap: number | null
+          shooting_pct_snap: number | null
+          shooting_pct_tip_in: number | null
+          shooting_pct_wrap_around: number | null
+          shooting_pct_wrist: number | null
+          shooting_percentage: number | null
+          shooting_percentage_5v5: number | null
+          shoots_catches: string | null
+          shots: number | null
+          shots_on_net_backhand: number | null
+          shots_on_net_bat: number | null
+          shots_on_net_between_legs: number | null
+          shots_on_net_cradle: number | null
+          shots_on_net_deflected: number | null
+          shots_on_net_poke: number | null
+          shots_on_net_slap: number | null
+          shots_on_net_snap: number | null
+          shots_on_net_tip_in: number | null
+          shots_on_net_wrap_around: number | null
+          shots_on_net_wrist: number | null
+          shots_per_game: number | null
+          skater_save_pct_5v5: number | null
+          skater_shooting_plus_save_pct_5v5: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          time_on_ice_per_shift: number | null
+          toi_per_game: number | null
+          toi_per_game_5v5: number | null
+          total_faceoffs: number | null
+          total_fol: number | null
+          total_fow: number | null
+          total_primary_assists: number | null
+          total_secondary_assists: number | null
+          usat_against: number | null
+          usat_ahead: number | null
+          usat_behind: number | null
+          usat_close: number | null
+          usat_for: number | null
+          usat_pct: number | null
+          usat_percentage: number | null
+          usat_percentage_ahead: number | null
+          usat_percentage_behind: number | null
+          usat_percentage_close: number | null
+          usat_percentage_tied: number | null
+          usat_relative: number | null
+          usat_tied: number | null
+          usat_total: number | null
+          weight: number | null
+          zone_start_pct: number | null
+          zone_start_pct_5v5: number | null
+        }
+        Insert: {
+          assists?: number | null
+          assists_5v5?: number | null
+          assists_per_60_5v5?: number | null
+          assists_per_game?: number | null
+          birth_city?: string | null
+          birth_country?: string | null
+          birth_date?: string | null
+          blocked_shots?: number | null
+          blocks_per_60?: number | null
+          blocks_per_game?: number | null
+          current_team_abbreviation?: string | null
+          current_team_name?: string | null
+          d_zone_faceoffs?: number | null
+          d_zone_fo_percentage?: number | null
+          d_zone_fol?: number | null
+          d_zone_fow?: number | null
+          date: string
+          draft_overall?: number | null
+          draft_round?: number | null
+          draft_year?: number | null
+          empty_net_assists?: number | null
+          empty_net_goals?: number | null
+          empty_net_points?: number | null
+          es_goal_diff?: number | null
+          es_goals_against?: number | null
+          es_goals_for?: number | null
+          es_goals_for_percentage?: number | null
+          es_toi_per_game?: number | null
+          ev_faceoff_percentage?: number | null
+          ev_faceoffs?: number | null
+          ev_fol?: number | null
+          ev_fow?: number | null
+          ev_time_on_ice?: number | null
+          ev_time_on_ice_per_game?: number | null
+          faceoff_pct_5v5?: number | null
+          first_goals?: number | null
+          first_season_for_game_type?: number | null
+          fow_percentage?: number | null
+          game_misconduct_penalties?: number | null
+          games_played?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_5v5?: number | null
+          goals_backhand?: number | null
+          goals_bat?: number | null
+          goals_between_legs?: number | null
+          goals_cradle?: number | null
+          goals_deflected?: number | null
+          goals_pct?: number | null
+          goals_per_60_5v5?: number | null
+          goals_per_game?: number | null
+          goals_poke?: number | null
+          goals_slap?: number | null
+          goals_snap?: number | null
+          goals_tip_in?: number | null
+          goals_wrap_around?: number | null
+          goals_wrist?: number | null
+          gw_goals?: number | null
+          height?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_per_game?: number | null
+          id?: number
+          individual_sat_for_per_60?: number | null
+          individual_shots_for_per_60?: number | null
+          major_penalties?: number | null
+          match_penalties?: number | null
+          minor_penalties?: number | null
+          misconduct_penalties?: number | null
+          missed_shot_crossbar?: number | null
+          missed_shot_goal_post?: number | null
+          missed_shot_over_net?: number | null
+          missed_shot_short_side?: number | null
+          missed_shot_wide_of_net?: number | null
+          missed_shots?: number | null
+          n_zone_faceoffs?: number | null
+          n_zone_fo_percentage?: number | null
+          n_zone_fol?: number | null
+          n_zone_fow?: number | null
+          nationality_code?: string | null
+          net_minor_penalties_per_60?: number | null
+          net_penalties?: number | null
+          net_penalties_per_60?: number | null
+          o_zone_faceoffs?: number | null
+          o_zone_fo_percentage?: number | null
+          o_zone_fol?: number | null
+          o_zone_fow?: number | null
+          o_zone_start_pct_5v5?: number | null
+          on_ice_shooting_pct?: number | null
+          on_ice_shooting_pct_5v5?: number | null
+          ot_goals?: number | null
+          ot_time_on_ice?: number | null
+          ot_time_on_ice_per_game?: number | null
+          penalties?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          penalties_taken_per_60?: number | null
+          penalty_minutes?: number | null
+          penalty_minutes_per_game?: number | null
+          penalty_minutes_per_toi?: number | null
+          penalty_seconds_per_game?: number | null
+          player_id: number
+          player_name: string
+          plus_minus?: number | null
+          points?: number | null
+          points_5v5?: number | null
+          points_per_60_5v5?: number | null
+          points_per_game?: number | null
+          position_code?: string | null
+          pp_assists?: number | null
+          pp_faceoff_percentage?: number | null
+          pp_faceoffs?: number | null
+          pp_fol?: number | null
+          pp_fow?: number | null
+          pp_goals?: number | null
+          pp_goals_against?: number | null
+          pp_goals_against_per_60?: number | null
+          pp_goals_for?: number | null
+          pp_goals_for_per_60?: number | null
+          pp_goals_per_60?: number | null
+          pp_individual_sat_for?: number | null
+          pp_individual_sat_per_60?: number | null
+          pp_points?: number | null
+          pp_points_per_60?: number | null
+          pp_primary_assists?: number | null
+          pp_primary_assists_per_60?: number | null
+          pp_secondary_assists?: number | null
+          pp_secondary_assists_per_60?: number | null
+          pp_shooting_percentage?: number | null
+          pp_shots?: number | null
+          pp_shots_per_60?: number | null
+          pp_toi?: number | null
+          pp_toi_pct_per_game?: number | null
+          pp_toi_per_game?: number | null
+          primary_assists_5v5?: number | null
+          primary_assists_per_60_5v5?: number | null
+          primary_assists_per_game?: number | null
+          sat_against?: number | null
+          sat_ahead?: number | null
+          sat_behind?: number | null
+          sat_close?: number | null
+          sat_for?: number | null
+          sat_pct?: number | null
+          sat_percentage?: number | null
+          sat_percentage_ahead?: number | null
+          sat_percentage_behind?: number | null
+          sat_percentage_close?: number | null
+          sat_percentage_tied?: number | null
+          sat_relative?: number | null
+          sat_relative_5v5?: number | null
+          sat_tied?: number | null
+          sat_total?: number | null
+          season_id?: number | null
+          secondary_assists_5v5?: number | null
+          secondary_assists_per_60_5v5?: number | null
+          secondary_assists_per_game?: number | null
+          sh_assists?: number | null
+          sh_faceoff_percentage?: number | null
+          sh_faceoffs?: number | null
+          sh_fol?: number | null
+          sh_fow?: number | null
+          sh_goals?: number | null
+          sh_goals_against?: number | null
+          sh_goals_for?: number | null
+          sh_goals_per_60?: number | null
+          sh_individual_sat_for?: number | null
+          sh_individual_sat_per_60?: number | null
+          sh_points?: number | null
+          sh_points_per_60?: number | null
+          sh_primary_assists?: number | null
+          sh_primary_assists_per_60?: number | null
+          sh_secondary_assists?: number | null
+          sh_secondary_assists_per_60?: number | null
+          sh_shooting_percentage?: number | null
+          sh_shots?: number | null
+          sh_shots_per_60?: number | null
+          sh_time_on_ice?: number | null
+          sh_time_on_ice_pct_per_game?: number | null
+          sh_toi_per_game?: number | null
+          shifts?: number | null
+          shifts_per_game?: number | null
+          shooting_pct_backhand?: number | null
+          shooting_pct_bat?: number | null
+          shooting_pct_between_legs?: number | null
+          shooting_pct_cradle?: number | null
+          shooting_pct_deflected?: number | null
+          shooting_pct_poke?: number | null
+          shooting_pct_slap?: number | null
+          shooting_pct_snap?: number | null
+          shooting_pct_tip_in?: number | null
+          shooting_pct_wrap_around?: number | null
+          shooting_pct_wrist?: number | null
+          shooting_percentage?: number | null
+          shooting_percentage_5v5?: number | null
+          shoots_catches?: string | null
+          shots?: number | null
+          shots_on_net_backhand?: number | null
+          shots_on_net_bat?: number | null
+          shots_on_net_between_legs?: number | null
+          shots_on_net_cradle?: number | null
+          shots_on_net_deflected?: number | null
+          shots_on_net_poke?: number | null
+          shots_on_net_slap?: number | null
+          shots_on_net_snap?: number | null
+          shots_on_net_tip_in?: number | null
+          shots_on_net_wrap_around?: number | null
+          shots_on_net_wrist?: number | null
+          shots_per_game?: number | null
+          skater_save_pct_5v5?: number | null
+          skater_shooting_plus_save_pct_5v5?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          time_on_ice_per_shift?: number | null
+          toi_per_game?: number | null
+          toi_per_game_5v5?: number | null
+          total_faceoffs?: number | null
+          total_fol?: number | null
+          total_fow?: number | null
+          total_primary_assists?: number | null
+          total_secondary_assists?: number | null
+          usat_against?: number | null
+          usat_ahead?: number | null
+          usat_behind?: number | null
+          usat_close?: number | null
+          usat_for?: number | null
+          usat_pct?: number | null
+          usat_percentage?: number | null
+          usat_percentage_ahead?: number | null
+          usat_percentage_behind?: number | null
+          usat_percentage_close?: number | null
+          usat_percentage_tied?: number | null
+          usat_relative?: number | null
+          usat_tied?: number | null
+          usat_total?: number | null
+          weight?: number | null
+          zone_start_pct?: number | null
+          zone_start_pct_5v5?: number | null
+        }
+        Update: {
+          assists?: number | null
+          assists_5v5?: number | null
+          assists_per_60_5v5?: number | null
+          assists_per_game?: number | null
+          birth_city?: string | null
+          birth_country?: string | null
+          birth_date?: string | null
+          blocked_shots?: number | null
+          blocks_per_60?: number | null
+          blocks_per_game?: number | null
+          current_team_abbreviation?: string | null
+          current_team_name?: string | null
+          d_zone_faceoffs?: number | null
+          d_zone_fo_percentage?: number | null
+          d_zone_fol?: number | null
+          d_zone_fow?: number | null
+          date?: string
+          draft_overall?: number | null
+          draft_round?: number | null
+          draft_year?: number | null
+          empty_net_assists?: number | null
+          empty_net_goals?: number | null
+          empty_net_points?: number | null
+          es_goal_diff?: number | null
+          es_goals_against?: number | null
+          es_goals_for?: number | null
+          es_goals_for_percentage?: number | null
+          es_toi_per_game?: number | null
+          ev_faceoff_percentage?: number | null
+          ev_faceoffs?: number | null
+          ev_fol?: number | null
+          ev_fow?: number | null
+          ev_time_on_ice?: number | null
+          ev_time_on_ice_per_game?: number | null
+          faceoff_pct_5v5?: number | null
+          first_goals?: number | null
+          first_season_for_game_type?: number | null
+          fow_percentage?: number | null
+          game_misconduct_penalties?: number | null
+          games_played?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_5v5?: number | null
+          goals_backhand?: number | null
+          goals_bat?: number | null
+          goals_between_legs?: number | null
+          goals_cradle?: number | null
+          goals_deflected?: number | null
+          goals_pct?: number | null
+          goals_per_60_5v5?: number | null
+          goals_per_game?: number | null
+          goals_poke?: number | null
+          goals_slap?: number | null
+          goals_snap?: number | null
+          goals_tip_in?: number | null
+          goals_wrap_around?: number | null
+          goals_wrist?: number | null
+          gw_goals?: number | null
+          height?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_per_game?: number | null
+          id?: number
+          individual_sat_for_per_60?: number | null
+          individual_shots_for_per_60?: number | null
+          major_penalties?: number | null
+          match_penalties?: number | null
+          minor_penalties?: number | null
+          misconduct_penalties?: number | null
+          missed_shot_crossbar?: number | null
+          missed_shot_goal_post?: number | null
+          missed_shot_over_net?: number | null
+          missed_shot_short_side?: number | null
+          missed_shot_wide_of_net?: number | null
+          missed_shots?: number | null
+          n_zone_faceoffs?: number | null
+          n_zone_fo_percentage?: number | null
+          n_zone_fol?: number | null
+          n_zone_fow?: number | null
+          nationality_code?: string | null
+          net_minor_penalties_per_60?: number | null
+          net_penalties?: number | null
+          net_penalties_per_60?: number | null
+          o_zone_faceoffs?: number | null
+          o_zone_fo_percentage?: number | null
+          o_zone_fol?: number | null
+          o_zone_fow?: number | null
+          o_zone_start_pct_5v5?: number | null
+          on_ice_shooting_pct?: number | null
+          on_ice_shooting_pct_5v5?: number | null
+          ot_goals?: number | null
+          ot_time_on_ice?: number | null
+          ot_time_on_ice_per_game?: number | null
+          penalties?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          penalties_taken_per_60?: number | null
+          penalty_minutes?: number | null
+          penalty_minutes_per_game?: number | null
+          penalty_minutes_per_toi?: number | null
+          penalty_seconds_per_game?: number | null
+          player_id?: number
+          player_name?: string
+          plus_minus?: number | null
+          points?: number | null
+          points_5v5?: number | null
+          points_per_60_5v5?: number | null
+          points_per_game?: number | null
+          position_code?: string | null
+          pp_assists?: number | null
+          pp_faceoff_percentage?: number | null
+          pp_faceoffs?: number | null
+          pp_fol?: number | null
+          pp_fow?: number | null
+          pp_goals?: number | null
+          pp_goals_against?: number | null
+          pp_goals_against_per_60?: number | null
+          pp_goals_for?: number | null
+          pp_goals_for_per_60?: number | null
+          pp_goals_per_60?: number | null
+          pp_individual_sat_for?: number | null
+          pp_individual_sat_per_60?: number | null
+          pp_points?: number | null
+          pp_points_per_60?: number | null
+          pp_primary_assists?: number | null
+          pp_primary_assists_per_60?: number | null
+          pp_secondary_assists?: number | null
+          pp_secondary_assists_per_60?: number | null
+          pp_shooting_percentage?: number | null
+          pp_shots?: number | null
+          pp_shots_per_60?: number | null
+          pp_toi?: number | null
+          pp_toi_pct_per_game?: number | null
+          pp_toi_per_game?: number | null
+          primary_assists_5v5?: number | null
+          primary_assists_per_60_5v5?: number | null
+          primary_assists_per_game?: number | null
+          sat_against?: number | null
+          sat_ahead?: number | null
+          sat_behind?: number | null
+          sat_close?: number | null
+          sat_for?: number | null
+          sat_pct?: number | null
+          sat_percentage?: number | null
+          sat_percentage_ahead?: number | null
+          sat_percentage_behind?: number | null
+          sat_percentage_close?: number | null
+          sat_percentage_tied?: number | null
+          sat_relative?: number | null
+          sat_relative_5v5?: number | null
+          sat_tied?: number | null
+          sat_total?: number | null
+          season_id?: number | null
+          secondary_assists_5v5?: number | null
+          secondary_assists_per_60_5v5?: number | null
+          secondary_assists_per_game?: number | null
+          sh_assists?: number | null
+          sh_faceoff_percentage?: number | null
+          sh_faceoffs?: number | null
+          sh_fol?: number | null
+          sh_fow?: number | null
+          sh_goals?: number | null
+          sh_goals_against?: number | null
+          sh_goals_for?: number | null
+          sh_goals_per_60?: number | null
+          sh_individual_sat_for?: number | null
+          sh_individual_sat_per_60?: number | null
+          sh_points?: number | null
+          sh_points_per_60?: number | null
+          sh_primary_assists?: number | null
+          sh_primary_assists_per_60?: number | null
+          sh_secondary_assists?: number | null
+          sh_secondary_assists_per_60?: number | null
+          sh_shooting_percentage?: number | null
+          sh_shots?: number | null
+          sh_shots_per_60?: number | null
+          sh_time_on_ice?: number | null
+          sh_time_on_ice_pct_per_game?: number | null
+          sh_toi_per_game?: number | null
+          shifts?: number | null
+          shifts_per_game?: number | null
+          shooting_pct_backhand?: number | null
+          shooting_pct_bat?: number | null
+          shooting_pct_between_legs?: number | null
+          shooting_pct_cradle?: number | null
+          shooting_pct_deflected?: number | null
+          shooting_pct_poke?: number | null
+          shooting_pct_slap?: number | null
+          shooting_pct_snap?: number | null
+          shooting_pct_tip_in?: number | null
+          shooting_pct_wrap_around?: number | null
+          shooting_pct_wrist?: number | null
+          shooting_percentage?: number | null
+          shooting_percentage_5v5?: number | null
+          shoots_catches?: string | null
+          shots?: number | null
+          shots_on_net_backhand?: number | null
+          shots_on_net_bat?: number | null
+          shots_on_net_between_legs?: number | null
+          shots_on_net_cradle?: number | null
+          shots_on_net_deflected?: number | null
+          shots_on_net_poke?: number | null
+          shots_on_net_slap?: number | null
+          shots_on_net_snap?: number | null
+          shots_on_net_tip_in?: number | null
+          shots_on_net_wrap_around?: number | null
+          shots_on_net_wrist?: number | null
+          shots_per_game?: number | null
+          skater_save_pct_5v5?: number | null
+          skater_shooting_plus_save_pct_5v5?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          time_on_ice_per_shift?: number | null
+          toi_per_game?: number | null
+          toi_per_game_5v5?: number | null
+          total_faceoffs?: number | null
+          total_fol?: number | null
+          total_fow?: number | null
+          total_primary_assists?: number | null
+          total_secondary_assists?: number | null
+          usat_against?: number | null
+          usat_ahead?: number | null
+          usat_behind?: number | null
+          usat_close?: number | null
+          usat_for?: number | null
+          usat_pct?: number | null
+          usat_percentage?: number | null
+          usat_percentage_ahead?: number | null
+          usat_percentage_behind?: number | null
+          usat_percentage_close?: number | null
+          usat_percentage_tied?: number | null
+          usat_relative?: number | null
+          usat_tied?: number | null
+          usat_total?: number | null
+          weight?: number | null
+          zone_start_pct?: number | null
+          zone_start_pct_5v5?: number | null
+        }
+        Relationships: []
+      }
+      wgo_skater_stats_totals: {
+        Row: {
+          assists: number | null
+          assists_5v5: number | null
+          assists_per_60_5v5: number | null
+          birth_city: string | null
+          birth_country: string | null
+          birth_date: string | null
+          blocked_shots: number | null
+          blocks_per_60: number | null
+          current_team_abbreviation: string | null
+          current_team_name: string | null
+          d_zone_faceoffs: number | null
+          d_zone_fo_percentage: number | null
+          d_zone_fol: number | null
+          d_zone_fow: number | null
+          draft_overall: number | null
+          draft_round: number | null
+          draft_year: number | null
+          empty_net_goals: number | null
+          empty_net_points: number | null
+          es_goals_against: number | null
+          es_goals_for: number | null
+          es_goals_for_percentage: number | null
+          es_toi_per_game: number | null
+          ev_faceoff_percentage: number | null
+          ev_faceoffs: number | null
+          ev_fol: number | null
+          ev_fow: number | null
+          ev_time_on_ice: number | null
+          ev_time_on_ice_per_game: number | null
+          faceoff_pct_5v5: number | null
+          first_season_for_game_type: number | null
+          fow_percentage: number | null
+          game_misconduct_penalties: number | null
+          games_played: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_5v5: number | null
+          goals_backhand: number | null
+          goals_bat: number | null
+          goals_between_legs: number | null
+          goals_cradle: number | null
+          goals_deflected: number | null
+          goals_pct: number | null
+          goals_per_60_5v5: number | null
+          goals_poke: number | null
+          goals_slap: number | null
+          goals_snap: number | null
+          goals_tip_in: number | null
+          goals_wrap_around: number | null
+          goals_wrist: number | null
+          gw_goals: number | null
+          height: number | null
+          hits: number | null
+          hits_per_60: number | null
+          individual_sat_for_per_60: number | null
+          individual_shots_for_per_60: number | null
+          major_penalties: number | null
+          match_penalties: number | null
+          minor_penalties: number | null
+          misconduct_penalties: number | null
+          missed_shots: number | null
+          n_zone_faceoffs: number | null
+          n_zone_fo_percentage: number | null
+          n_zone_fol: number | null
+          n_zone_fow: number | null
+          nationality_code: string | null
+          o_zone_faceoffs: number | null
+          o_zone_fo_percentage: number | null
+          o_zone_fol: number | null
+          o_zone_fow: number | null
+          o_zone_start_pct_5v5: number | null
+          on_ice_shooting_pct: number | null
+          on_ice_shooting_pct_5v5: number | null
+          ot_goals: number | null
+          ot_time_on_ice: number | null
+          ot_time_on_ice_per_game: number | null
+          penalties: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          penalties_taken_per_60: number | null
+          penalty_minutes: number | null
+          penalty_minutes_per_toi: number | null
+          penalty_seconds_per_game: number | null
+          player_id: number
+          player_name: string | null
+          plus_minus: number | null
+          points: number | null
+          points_5v5: number | null
+          points_per_60_5v5: number | null
+          points_per_game: number | null
+          position_code: string | null
+          pp_assists: number | null
+          pp_faceoff_percentage: number | null
+          pp_faceoffs: number | null
+          pp_fol: number | null
+          pp_fow: number | null
+          pp_goals: number | null
+          pp_goals_against: number | null
+          pp_goals_against_per_60: number | null
+          pp_goals_for: number | null
+          pp_goals_for_per_60: number | null
+          pp_goals_per_60: number | null
+          pp_individual_sat_for: number | null
+          pp_individual_sat_per_60: number | null
+          pp_points: number | null
+          pp_points_per_60: number | null
+          pp_primary_assists: number | null
+          pp_primary_assists_per_60: number | null
+          pp_secondary_assists: number | null
+          pp_secondary_assists_per_60: number | null
+          pp_shooting_percentage: number | null
+          pp_shots: number | null
+          pp_shots_per_60: number | null
+          pp_toi: number | null
+          pp_toi_pct_per_game: number | null
+          pp_toi_per_game: number | null
+          primary_assists_5v5: number | null
+          primary_assists_per_60_5v5: number | null
+          sat_against: number | null
+          sat_ahead: number | null
+          sat_behind: number | null
+          sat_close: number | null
+          sat_for: number | null
+          sat_pct: number | null
+          sat_percentage: number | null
+          sat_percentage_ahead: number | null
+          sat_percentage_behind: number | null
+          sat_percentage_close: number | null
+          sat_percentage_tied: number | null
+          sat_relative: number | null
+          sat_relative_5v5: number | null
+          sat_tied: number | null
+          sat_total: number | null
+          season: string
+          secondary_assists_5v5: number | null
+          secondary_assists_per_60_5v5: number | null
+          sh_assists: number | null
+          sh_faceoff_percentage: number | null
+          sh_faceoffs: number | null
+          sh_fol: number | null
+          sh_fow: number | null
+          sh_goals: number | null
+          sh_goals_against: number | null
+          sh_goals_for: number | null
+          sh_goals_per_60: number | null
+          sh_individual_sat_for: number | null
+          sh_individual_sat_per_60: number | null
+          sh_points: number | null
+          sh_points_per_60: number | null
+          sh_primary_assists: number | null
+          sh_primary_assists_per_60: number | null
+          sh_secondary_assists: number | null
+          sh_secondary_assists_per_60: number | null
+          sh_shooting_percentage: number | null
+          sh_shots: number | null
+          sh_shots_per_60: number | null
+          sh_time_on_ice: number | null
+          sh_time_on_ice_pct_per_game: number | null
+          sh_toi_per_game: number | null
+          shifts: number | null
+          shifts_per_game: number | null
+          shooting_percentage: number | null
+          shooting_percentage_5v5: number | null
+          shoots_catches: string | null
+          shots: number | null
+          shots_on_net_backhand: number | null
+          shots_on_net_bat: number | null
+          shots_on_net_between_legs: number | null
+          shots_on_net_cradle: number | null
+          shots_on_net_deflected: number | null
+          shots_on_net_poke: number | null
+          shots_on_net_slap: number | null
+          shots_on_net_snap: number | null
+          shots_on_net_tip_in: number | null
+          shots_on_net_wrap_around: number | null
+          shots_on_net_wrist: number | null
+          skater_save_pct_5v5: number | null
+          skater_shooting_plus_save_pct_5v5: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          time_on_ice_per_shift: number | null
+          toi_per_game: number | null
+          toi_per_game_5v5: number | null
+          total_faceoffs: number | null
+          total_fol: number | null
+          total_fow: number | null
+          total_primary_assists: number | null
+          total_secondary_assists: number | null
+          usat_against: number | null
+          usat_ahead: number | null
+          usat_behind: number | null
+          usat_close: number | null
+          usat_for: number | null
+          usat_pct: number | null
+          usat_percentage: number | null
+          usat_percentage_ahead: number | null
+          usat_percentage_behind: number | null
+          usat_percentage_close: number | null
+          usat_percentage_tied: number | null
+          usat_relative: number | null
+          usat_tied: number | null
+          usat_total: number | null
+          weight: number | null
+          zone_start_pct: number | null
+          zone_start_pct_5v5: number | null
+        }
+        Insert: {
+          assists?: number | null
+          assists_5v5?: number | null
+          assists_per_60_5v5?: number | null
+          birth_city?: string | null
+          birth_country?: string | null
+          birth_date?: string | null
+          blocked_shots?: number | null
+          blocks_per_60?: number | null
+          current_team_abbreviation?: string | null
+          current_team_name?: string | null
+          d_zone_faceoffs?: number | null
+          d_zone_fo_percentage?: number | null
+          d_zone_fol?: number | null
+          d_zone_fow?: number | null
+          draft_overall?: number | null
+          draft_round?: number | null
+          draft_year?: number | null
+          empty_net_goals?: number | null
+          empty_net_points?: number | null
+          es_goals_against?: number | null
+          es_goals_for?: number | null
+          es_goals_for_percentage?: number | null
+          es_toi_per_game?: number | null
+          ev_faceoff_percentage?: number | null
+          ev_faceoffs?: number | null
+          ev_fol?: number | null
+          ev_fow?: number | null
+          ev_time_on_ice?: number | null
+          ev_time_on_ice_per_game?: number | null
+          faceoff_pct_5v5?: number | null
+          first_season_for_game_type?: number | null
+          fow_percentage?: number | null
+          game_misconduct_penalties?: number | null
+          games_played?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_5v5?: number | null
+          goals_backhand?: number | null
+          goals_bat?: number | null
+          goals_between_legs?: number | null
+          goals_cradle?: number | null
+          goals_deflected?: number | null
+          goals_pct?: number | null
+          goals_per_60_5v5?: number | null
+          goals_poke?: number | null
+          goals_slap?: number | null
+          goals_snap?: number | null
+          goals_tip_in?: number | null
+          goals_wrap_around?: number | null
+          goals_wrist?: number | null
+          gw_goals?: number | null
+          height?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          individual_sat_for_per_60?: number | null
+          individual_shots_for_per_60?: number | null
+          major_penalties?: number | null
+          match_penalties?: number | null
+          minor_penalties?: number | null
+          misconduct_penalties?: number | null
+          missed_shots?: number | null
+          n_zone_faceoffs?: number | null
+          n_zone_fo_percentage?: number | null
+          n_zone_fol?: number | null
+          n_zone_fow?: number | null
+          nationality_code?: string | null
+          o_zone_faceoffs?: number | null
+          o_zone_fo_percentage?: number | null
+          o_zone_fol?: number | null
+          o_zone_fow?: number | null
+          o_zone_start_pct_5v5?: number | null
+          on_ice_shooting_pct?: number | null
+          on_ice_shooting_pct_5v5?: number | null
+          ot_goals?: number | null
+          ot_time_on_ice?: number | null
+          ot_time_on_ice_per_game?: number | null
+          penalties?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          penalties_taken_per_60?: number | null
+          penalty_minutes?: number | null
+          penalty_minutes_per_toi?: number | null
+          penalty_seconds_per_game?: number | null
+          player_id: number
+          player_name?: string | null
+          plus_minus?: number | null
+          points?: number | null
+          points_5v5?: number | null
+          points_per_60_5v5?: number | null
+          points_per_game?: number | null
+          position_code?: string | null
+          pp_assists?: number | null
+          pp_faceoff_percentage?: number | null
+          pp_faceoffs?: number | null
+          pp_fol?: number | null
+          pp_fow?: number | null
+          pp_goals?: number | null
+          pp_goals_against?: number | null
+          pp_goals_against_per_60?: number | null
+          pp_goals_for?: number | null
+          pp_goals_for_per_60?: number | null
+          pp_goals_per_60?: number | null
+          pp_individual_sat_for?: number | null
+          pp_individual_sat_per_60?: number | null
+          pp_points?: number | null
+          pp_points_per_60?: number | null
+          pp_primary_assists?: number | null
+          pp_primary_assists_per_60?: number | null
+          pp_secondary_assists?: number | null
+          pp_secondary_assists_per_60?: number | null
+          pp_shooting_percentage?: number | null
+          pp_shots?: number | null
+          pp_shots_per_60?: number | null
+          pp_toi?: number | null
+          pp_toi_pct_per_game?: number | null
+          pp_toi_per_game?: number | null
+          primary_assists_5v5?: number | null
+          primary_assists_per_60_5v5?: number | null
+          sat_against?: number | null
+          sat_ahead?: number | null
+          sat_behind?: number | null
+          sat_close?: number | null
+          sat_for?: number | null
+          sat_pct?: number | null
+          sat_percentage?: number | null
+          sat_percentage_ahead?: number | null
+          sat_percentage_behind?: number | null
+          sat_percentage_close?: number | null
+          sat_percentage_tied?: number | null
+          sat_relative?: number | null
+          sat_relative_5v5?: number | null
+          sat_tied?: number | null
+          sat_total?: number | null
+          season: string
+          secondary_assists_5v5?: number | null
+          secondary_assists_per_60_5v5?: number | null
+          sh_assists?: number | null
+          sh_faceoff_percentage?: number | null
+          sh_faceoffs?: number | null
+          sh_fol?: number | null
+          sh_fow?: number | null
+          sh_goals?: number | null
+          sh_goals_against?: number | null
+          sh_goals_for?: number | null
+          sh_goals_per_60?: number | null
+          sh_individual_sat_for?: number | null
+          sh_individual_sat_per_60?: number | null
+          sh_points?: number | null
+          sh_points_per_60?: number | null
+          sh_primary_assists?: number | null
+          sh_primary_assists_per_60?: number | null
+          sh_secondary_assists?: number | null
+          sh_secondary_assists_per_60?: number | null
+          sh_shooting_percentage?: number | null
+          sh_shots?: number | null
+          sh_shots_per_60?: number | null
+          sh_time_on_ice?: number | null
+          sh_time_on_ice_pct_per_game?: number | null
+          sh_toi_per_game?: number | null
+          shifts?: number | null
+          shifts_per_game?: number | null
+          shooting_percentage?: number | null
+          shooting_percentage_5v5?: number | null
+          shoots_catches?: string | null
+          shots?: number | null
+          shots_on_net_backhand?: number | null
+          shots_on_net_bat?: number | null
+          shots_on_net_between_legs?: number | null
+          shots_on_net_cradle?: number | null
+          shots_on_net_deflected?: number | null
+          shots_on_net_poke?: number | null
+          shots_on_net_slap?: number | null
+          shots_on_net_snap?: number | null
+          shots_on_net_tip_in?: number | null
+          shots_on_net_wrap_around?: number | null
+          shots_on_net_wrist?: number | null
+          skater_save_pct_5v5?: number | null
+          skater_shooting_plus_save_pct_5v5?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          time_on_ice_per_shift?: number | null
+          toi_per_game?: number | null
+          toi_per_game_5v5?: number | null
+          total_faceoffs?: number | null
+          total_fol?: number | null
+          total_fow?: number | null
+          total_primary_assists?: number | null
+          total_secondary_assists?: number | null
+          usat_against?: number | null
+          usat_ahead?: number | null
+          usat_behind?: number | null
+          usat_close?: number | null
+          usat_for?: number | null
+          usat_pct?: number | null
+          usat_percentage?: number | null
+          usat_percentage_ahead?: number | null
+          usat_percentage_behind?: number | null
+          usat_percentage_close?: number | null
+          usat_percentage_tied?: number | null
+          usat_relative?: number | null
+          usat_tied?: number | null
+          usat_total?: number | null
+          weight?: number | null
+          zone_start_pct?: number | null
+          zone_start_pct_5v5?: number | null
+        }
+        Update: {
+          assists?: number | null
+          assists_5v5?: number | null
+          assists_per_60_5v5?: number | null
+          birth_city?: string | null
+          birth_country?: string | null
+          birth_date?: string | null
+          blocked_shots?: number | null
+          blocks_per_60?: number | null
+          current_team_abbreviation?: string | null
+          current_team_name?: string | null
+          d_zone_faceoffs?: number | null
+          d_zone_fo_percentage?: number | null
+          d_zone_fol?: number | null
+          d_zone_fow?: number | null
+          draft_overall?: number | null
+          draft_round?: number | null
+          draft_year?: number | null
+          empty_net_goals?: number | null
+          empty_net_points?: number | null
+          es_goals_against?: number | null
+          es_goals_for?: number | null
+          es_goals_for_percentage?: number | null
+          es_toi_per_game?: number | null
+          ev_faceoff_percentage?: number | null
+          ev_faceoffs?: number | null
+          ev_fol?: number | null
+          ev_fow?: number | null
+          ev_time_on_ice?: number | null
+          ev_time_on_ice_per_game?: number | null
+          faceoff_pct_5v5?: number | null
+          first_season_for_game_type?: number | null
+          fow_percentage?: number | null
+          game_misconduct_penalties?: number | null
+          games_played?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_5v5?: number | null
+          goals_backhand?: number | null
+          goals_bat?: number | null
+          goals_between_legs?: number | null
+          goals_cradle?: number | null
+          goals_deflected?: number | null
+          goals_pct?: number | null
+          goals_per_60_5v5?: number | null
+          goals_poke?: number | null
+          goals_slap?: number | null
+          goals_snap?: number | null
+          goals_tip_in?: number | null
+          goals_wrap_around?: number | null
+          goals_wrist?: number | null
+          gw_goals?: number | null
+          height?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          individual_sat_for_per_60?: number | null
+          individual_shots_for_per_60?: number | null
+          major_penalties?: number | null
+          match_penalties?: number | null
+          minor_penalties?: number | null
+          misconduct_penalties?: number | null
+          missed_shots?: number | null
+          n_zone_faceoffs?: number | null
+          n_zone_fo_percentage?: number | null
+          n_zone_fol?: number | null
+          n_zone_fow?: number | null
+          nationality_code?: string | null
+          o_zone_faceoffs?: number | null
+          o_zone_fo_percentage?: number | null
+          o_zone_fol?: number | null
+          o_zone_fow?: number | null
+          o_zone_start_pct_5v5?: number | null
+          on_ice_shooting_pct?: number | null
+          on_ice_shooting_pct_5v5?: number | null
+          ot_goals?: number | null
+          ot_time_on_ice?: number | null
+          ot_time_on_ice_per_game?: number | null
+          penalties?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          penalties_taken_per_60?: number | null
+          penalty_minutes?: number | null
+          penalty_minutes_per_toi?: number | null
+          penalty_seconds_per_game?: number | null
+          player_id?: number
+          player_name?: string | null
+          plus_minus?: number | null
+          points?: number | null
+          points_5v5?: number | null
+          points_per_60_5v5?: number | null
+          points_per_game?: number | null
+          position_code?: string | null
+          pp_assists?: number | null
+          pp_faceoff_percentage?: number | null
+          pp_faceoffs?: number | null
+          pp_fol?: number | null
+          pp_fow?: number | null
+          pp_goals?: number | null
+          pp_goals_against?: number | null
+          pp_goals_against_per_60?: number | null
+          pp_goals_for?: number | null
+          pp_goals_for_per_60?: number | null
+          pp_goals_per_60?: number | null
+          pp_individual_sat_for?: number | null
+          pp_individual_sat_per_60?: number | null
+          pp_points?: number | null
+          pp_points_per_60?: number | null
+          pp_primary_assists?: number | null
+          pp_primary_assists_per_60?: number | null
+          pp_secondary_assists?: number | null
+          pp_secondary_assists_per_60?: number | null
+          pp_shooting_percentage?: number | null
+          pp_shots?: number | null
+          pp_shots_per_60?: number | null
+          pp_toi?: number | null
+          pp_toi_pct_per_game?: number | null
+          pp_toi_per_game?: number | null
+          primary_assists_5v5?: number | null
+          primary_assists_per_60_5v5?: number | null
+          sat_against?: number | null
+          sat_ahead?: number | null
+          sat_behind?: number | null
+          sat_close?: number | null
+          sat_for?: number | null
+          sat_pct?: number | null
+          sat_percentage?: number | null
+          sat_percentage_ahead?: number | null
+          sat_percentage_behind?: number | null
+          sat_percentage_close?: number | null
+          sat_percentage_tied?: number | null
+          sat_relative?: number | null
+          sat_relative_5v5?: number | null
+          sat_tied?: number | null
+          sat_total?: number | null
+          season?: string
+          secondary_assists_5v5?: number | null
+          secondary_assists_per_60_5v5?: number | null
+          sh_assists?: number | null
+          sh_faceoff_percentage?: number | null
+          sh_faceoffs?: number | null
+          sh_fol?: number | null
+          sh_fow?: number | null
+          sh_goals?: number | null
+          sh_goals_against?: number | null
+          sh_goals_for?: number | null
+          sh_goals_per_60?: number | null
+          sh_individual_sat_for?: number | null
+          sh_individual_sat_per_60?: number | null
+          sh_points?: number | null
+          sh_points_per_60?: number | null
+          sh_primary_assists?: number | null
+          sh_primary_assists_per_60?: number | null
+          sh_secondary_assists?: number | null
+          sh_secondary_assists_per_60?: number | null
+          sh_shooting_percentage?: number | null
+          sh_shots?: number | null
+          sh_shots_per_60?: number | null
+          sh_time_on_ice?: number | null
+          sh_time_on_ice_pct_per_game?: number | null
+          sh_toi_per_game?: number | null
+          shifts?: number | null
+          shifts_per_game?: number | null
+          shooting_percentage?: number | null
+          shooting_percentage_5v5?: number | null
+          shoots_catches?: string | null
+          shots?: number | null
+          shots_on_net_backhand?: number | null
+          shots_on_net_bat?: number | null
+          shots_on_net_between_legs?: number | null
+          shots_on_net_cradle?: number | null
+          shots_on_net_deflected?: number | null
+          shots_on_net_poke?: number | null
+          shots_on_net_slap?: number | null
+          shots_on_net_snap?: number | null
+          shots_on_net_tip_in?: number | null
+          shots_on_net_wrap_around?: number | null
+          shots_on_net_wrist?: number | null
+          skater_save_pct_5v5?: number | null
+          skater_shooting_plus_save_pct_5v5?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          time_on_ice_per_shift?: number | null
+          toi_per_game?: number | null
+          toi_per_game_5v5?: number | null
+          total_faceoffs?: number | null
+          total_fol?: number | null
+          total_fow?: number | null
+          total_primary_assists?: number | null
+          total_secondary_assists?: number | null
+          usat_against?: number | null
+          usat_ahead?: number | null
+          usat_behind?: number | null
+          usat_close?: number | null
+          usat_for?: number | null
+          usat_pct?: number | null
+          usat_percentage?: number | null
+          usat_percentage_ahead?: number | null
+          usat_percentage_behind?: number | null
+          usat_percentage_close?: number | null
+          usat_percentage_tied?: number | null
+          usat_relative?: number | null
+          usat_tied?: number | null
+          usat_total?: number | null
+          weight?: number | null
+          zone_start_pct?: number | null
+          zone_start_pct_5v5?: number | null
+        }
+        Relationships: []
+      }
+      wgo_skater_stats_totals_ly: {
+        Row: {
+          assists: number | null
+          assists_5v5: number | null
+          assists_per_60_5v5: number | null
+          assists_per_game: number | null
+          blocked_shots: number | null
+          blocks_per_60: number | null
+          blocks_per_game: number | null
+          d_zone_faceoffs: number | null
+          d_zone_fo_percentage: number | null
+          d_zone_fol: number | null
+          d_zone_fow: number | null
+          empty_net_goals: number | null
+          empty_net_points: number | null
+          es_goals_against: number | null
+          es_goals_for: number | null
+          es_goals_for_percentage: number | null
+          es_toi_per_game: number | null
+          ev_faceoff_percentage: number | null
+          ev_faceoffs: number | null
+          ev_fol: number | null
+          ev_fow: number | null
+          ev_time_on_ice: number | null
+          ev_time_on_ice_per_game: number | null
+          faceoff_pct_5v5: number | null
+          fow_percentage: number | null
+          game_misconduct_penalties: number | null
+          games_played: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals: number | null
+          goals_5v5: number | null
+          goals_backhand: number | null
+          goals_bat: number | null
+          goals_between_legs: number | null
+          goals_cradle: number | null
+          goals_deflected: number | null
+          goals_pct: number | null
+          goals_per_60_5v5: number | null
+          goals_per_game: number | null
+          goals_poke: number | null
+          goals_slap: number | null
+          goals_snap: number | null
+          goals_tip_in: number | null
+          goals_wrap_around: number | null
+          goals_wrist: number | null
+          gw_goals: number | null
+          hits: number | null
+          hits_per_60: number | null
+          hits_per_game: number | null
+          individual_sat_for_per_60: number | null
+          individual_shots_for_per_60: number | null
+          major_penalties: number | null
+          match_penalties: number | null
+          minor_penalties: number | null
+          misconduct_penalties: number | null
+          missed_shots: number | null
+          n_zone_faceoffs: number | null
+          n_zone_fo_percentage: number | null
+          n_zone_fol: number | null
+          n_zone_fow: number | null
+          o_zone_faceoffs: number | null
+          o_zone_fo_percentage: number | null
+          o_zone_fol: number | null
+          o_zone_fow: number | null
+          o_zone_start_pct_5v5: number | null
+          on_ice_shooting_pct: number | null
+          on_ice_shooting_pct_5v5: number | null
+          ot_goals: number | null
+          ot_time_on_ice: number | null
+          ot_time_on_ice_per_game: number | null
+          penalties: number | null
+          penalties_drawn: number | null
+          penalties_drawn_per_60: number | null
+          penalties_taken_per_60: number | null
+          penalty_minutes: number | null
+          penalty_minutes_per_game: number | null
+          penalty_minutes_per_toi: number | null
+          penalty_seconds_per_game: number | null
+          player_id: number
+          player_name: string | null
+          plus_minus: number | null
+          points: number | null
+          points_5v5: number | null
+          points_per_60_5v5: number | null
+          points_per_game: number | null
+          position_code: string | null
+          pp_assists: number | null
+          pp_faceoff_percentage: number | null
+          pp_faceoffs: number | null
+          pp_fol: number | null
+          pp_fow: number | null
+          pp_goals: number | null
+          pp_goals_against: number | null
+          pp_goals_against_per_60: number | null
+          pp_goals_for: number | null
+          pp_goals_for_per_60: number | null
+          pp_goals_per_60: number | null
+          pp_individual_sat_for: number | null
+          pp_individual_sat_per_60: number | null
+          pp_points: number | null
+          pp_points_per_60: number | null
+          pp_primary_assists: number | null
+          pp_primary_assists_per_60: number | null
+          pp_secondary_assists: number | null
+          pp_secondary_assists_per_60: number | null
+          pp_shooting_percentage: number | null
+          pp_shots: number | null
+          pp_shots_per_60: number | null
+          pp_toi: number | null
+          pp_toi_pct_per_game: number | null
+          pp_toi_per_game: number | null
+          primary_assists_5v5: number | null
+          primary_assists_per_60_5v5: number | null
+          primary_assists_per_game: number | null
+          sat_against: number | null
+          sat_ahead: number | null
+          sat_behind: number | null
+          sat_close: number | null
+          sat_for: number | null
+          sat_pct: number | null
+          sat_percentage: number | null
+          sat_percentage_ahead: number | null
+          sat_percentage_behind: number | null
+          sat_percentage_close: number | null
+          sat_percentage_tied: number | null
+          sat_relative: number | null
+          sat_relative_5v5: number | null
+          sat_tied: number | null
+          sat_total: number | null
+          season: string | null
+          secondary_assists_5v5: number | null
+          secondary_assists_per_60_5v5: number | null
+          secondary_assists_per_game: number | null
+          sh_assists: number | null
+          sh_faceoff_percentage: number | null
+          sh_faceoffs: number | null
+          sh_fol: number | null
+          sh_fow: number | null
+          sh_goals: number | null
+          sh_goals_against: number | null
+          sh_goals_for: number | null
+          sh_goals_per_60: number | null
+          sh_individual_sat_for: number | null
+          sh_individual_sat_per_60: number | null
+          sh_points: number | null
+          sh_points_per_60: number | null
+          sh_primary_assists: number | null
+          sh_primary_assists_per_60: number | null
+          sh_secondary_assists: number | null
+          sh_secondary_assists_per_60: number | null
+          sh_shooting_percentage: number | null
+          sh_shots: number | null
+          sh_shots_per_60: number | null
+          sh_time_on_ice: number | null
+          sh_time_on_ice_pct_per_game: number | null
+          sh_toi_per_game: number | null
+          shifts: number | null
+          shifts_per_game: number | null
+          shooting_percentage: number | null
+          shooting_percentage_5v5: number | null
+          shoots_catches: string | null
+          shots: number | null
+          shots_on_net_backhand: number | null
+          shots_on_net_bat: number | null
+          shots_on_net_between_legs: number | null
+          shots_on_net_cradle: number | null
+          shots_on_net_deflected: number | null
+          shots_on_net_poke: number | null
+          shots_on_net_slap: number | null
+          shots_on_net_snap: number | null
+          shots_on_net_tip_in: number | null
+          shots_on_net_wrap_around: number | null
+          shots_on_net_wrist: number | null
+          shots_per_game: number | null
+          skater_save_pct_5v5: number | null
+          skater_shooting_plus_save_pct_5v5: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          time_on_ice_per_shift: number | null
+          toi_per_game: number | null
+          toi_per_game_5v5: number | null
+          total_faceoffs: number | null
+          total_fol: number | null
+          total_fow: number | null
+          total_primary_assists: number | null
+          total_secondary_assists: number | null
+          usat_against: number | null
+          usat_ahead: number | null
+          usat_behind: number | null
+          usat_close: number | null
+          usat_for: number | null
+          usat_pct: number | null
+          usat_percentage: number | null
+          usat_percentage_ahead: number | null
+          usat_percentage_behind: number | null
+          usat_percentage_close: number | null
+          usat_percentage_tied: number | null
+          usat_relative: number | null
+          usat_tied: number | null
+          usat_total: number | null
+          zone_start_pct: number | null
+          zone_start_pct_5v5: number | null
+        }
+        Insert: {
+          assists?: number | null
+          assists_5v5?: number | null
+          assists_per_60_5v5?: number | null
+          assists_per_game?: number | null
+          blocked_shots?: number | null
+          blocks_per_60?: number | null
+          blocks_per_game?: number | null
+          d_zone_faceoffs?: number | null
+          d_zone_fo_percentage?: number | null
+          d_zone_fol?: number | null
+          d_zone_fow?: number | null
+          empty_net_goals?: number | null
+          empty_net_points?: number | null
+          es_goals_against?: number | null
+          es_goals_for?: number | null
+          es_goals_for_percentage?: number | null
+          es_toi_per_game?: number | null
+          ev_faceoff_percentage?: number | null
+          ev_faceoffs?: number | null
+          ev_fol?: number | null
+          ev_fow?: number | null
+          ev_time_on_ice?: number | null
+          ev_time_on_ice_per_game?: number | null
+          faceoff_pct_5v5?: number | null
+          fow_percentage?: number | null
+          game_misconduct_penalties?: number | null
+          games_played?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_5v5?: number | null
+          goals_backhand?: number | null
+          goals_bat?: number | null
+          goals_between_legs?: number | null
+          goals_cradle?: number | null
+          goals_deflected?: number | null
+          goals_pct?: number | null
+          goals_per_60_5v5?: number | null
+          goals_per_game?: number | null
+          goals_poke?: number | null
+          goals_slap?: number | null
+          goals_snap?: number | null
+          goals_tip_in?: number | null
+          goals_wrap_around?: number | null
+          goals_wrist?: number | null
+          gw_goals?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_per_game?: number | null
+          individual_sat_for_per_60?: number | null
+          individual_shots_for_per_60?: number | null
+          major_penalties?: number | null
+          match_penalties?: number | null
+          minor_penalties?: number | null
+          misconduct_penalties?: number | null
+          missed_shots?: number | null
+          n_zone_faceoffs?: number | null
+          n_zone_fo_percentage?: number | null
+          n_zone_fol?: number | null
+          n_zone_fow?: number | null
+          o_zone_faceoffs?: number | null
+          o_zone_fo_percentage?: number | null
+          o_zone_fol?: number | null
+          o_zone_fow?: number | null
+          o_zone_start_pct_5v5?: number | null
+          on_ice_shooting_pct?: number | null
+          on_ice_shooting_pct_5v5?: number | null
+          ot_goals?: number | null
+          ot_time_on_ice?: number | null
+          ot_time_on_ice_per_game?: number | null
+          penalties?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          penalties_taken_per_60?: number | null
+          penalty_minutes?: number | null
+          penalty_minutes_per_game?: number | null
+          penalty_minutes_per_toi?: number | null
+          penalty_seconds_per_game?: number | null
+          player_id: number
+          player_name?: string | null
+          plus_minus?: number | null
+          points?: number | null
+          points_5v5?: number | null
+          points_per_60_5v5?: number | null
+          points_per_game?: number | null
+          position_code?: string | null
+          pp_assists?: number | null
+          pp_faceoff_percentage?: number | null
+          pp_faceoffs?: number | null
+          pp_fol?: number | null
+          pp_fow?: number | null
+          pp_goals?: number | null
+          pp_goals_against?: number | null
+          pp_goals_against_per_60?: number | null
+          pp_goals_for?: number | null
+          pp_goals_for_per_60?: number | null
+          pp_goals_per_60?: number | null
+          pp_individual_sat_for?: number | null
+          pp_individual_sat_per_60?: number | null
+          pp_points?: number | null
+          pp_points_per_60?: number | null
+          pp_primary_assists?: number | null
+          pp_primary_assists_per_60?: number | null
+          pp_secondary_assists?: number | null
+          pp_secondary_assists_per_60?: number | null
+          pp_shooting_percentage?: number | null
+          pp_shots?: number | null
+          pp_shots_per_60?: number | null
+          pp_toi?: number | null
+          pp_toi_pct_per_game?: number | null
+          pp_toi_per_game?: number | null
+          primary_assists_5v5?: number | null
+          primary_assists_per_60_5v5?: number | null
+          primary_assists_per_game?: number | null
+          sat_against?: number | null
+          sat_ahead?: number | null
+          sat_behind?: number | null
+          sat_close?: number | null
+          sat_for?: number | null
+          sat_pct?: number | null
+          sat_percentage?: number | null
+          sat_percentage_ahead?: number | null
+          sat_percentage_behind?: number | null
+          sat_percentage_close?: number | null
+          sat_percentage_tied?: number | null
+          sat_relative?: number | null
+          sat_relative_5v5?: number | null
+          sat_tied?: number | null
+          sat_total?: number | null
+          season?: string | null
+          secondary_assists_5v5?: number | null
+          secondary_assists_per_60_5v5?: number | null
+          secondary_assists_per_game?: number | null
+          sh_assists?: number | null
+          sh_faceoff_percentage?: number | null
+          sh_faceoffs?: number | null
+          sh_fol?: number | null
+          sh_fow?: number | null
+          sh_goals?: number | null
+          sh_goals_against?: number | null
+          sh_goals_for?: number | null
+          sh_goals_per_60?: number | null
+          sh_individual_sat_for?: number | null
+          sh_individual_sat_per_60?: number | null
+          sh_points?: number | null
+          sh_points_per_60?: number | null
+          sh_primary_assists?: number | null
+          sh_primary_assists_per_60?: number | null
+          sh_secondary_assists?: number | null
+          sh_secondary_assists_per_60?: number | null
+          sh_shooting_percentage?: number | null
+          sh_shots?: number | null
+          sh_shots_per_60?: number | null
+          sh_time_on_ice?: number | null
+          sh_time_on_ice_pct_per_game?: number | null
+          sh_toi_per_game?: number | null
+          shifts?: number | null
+          shifts_per_game?: number | null
+          shooting_percentage?: number | null
+          shooting_percentage_5v5?: number | null
+          shoots_catches?: string | null
+          shots?: number | null
+          shots_on_net_backhand?: number | null
+          shots_on_net_bat?: number | null
+          shots_on_net_between_legs?: number | null
+          shots_on_net_cradle?: number | null
+          shots_on_net_deflected?: number | null
+          shots_on_net_poke?: number | null
+          shots_on_net_slap?: number | null
+          shots_on_net_snap?: number | null
+          shots_on_net_tip_in?: number | null
+          shots_on_net_wrap_around?: number | null
+          shots_on_net_wrist?: number | null
+          shots_per_game?: number | null
+          skater_save_pct_5v5?: number | null
+          skater_shooting_plus_save_pct_5v5?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          time_on_ice_per_shift?: number | null
+          toi_per_game?: number | null
+          toi_per_game_5v5?: number | null
+          total_faceoffs?: number | null
+          total_fol?: number | null
+          total_fow?: number | null
+          total_primary_assists?: number | null
+          total_secondary_assists?: number | null
+          usat_against?: number | null
+          usat_ahead?: number | null
+          usat_behind?: number | null
+          usat_close?: number | null
+          usat_for?: number | null
+          usat_pct?: number | null
+          usat_percentage?: number | null
+          usat_percentage_ahead?: number | null
+          usat_percentage_behind?: number | null
+          usat_percentage_close?: number | null
+          usat_percentage_tied?: number | null
+          usat_relative?: number | null
+          usat_tied?: number | null
+          usat_total?: number | null
+          zone_start_pct?: number | null
+          zone_start_pct_5v5?: number | null
+        }
+        Update: {
+          assists?: number | null
+          assists_5v5?: number | null
+          assists_per_60_5v5?: number | null
+          assists_per_game?: number | null
+          blocked_shots?: number | null
+          blocks_per_60?: number | null
+          blocks_per_game?: number | null
+          d_zone_faceoffs?: number | null
+          d_zone_fo_percentage?: number | null
+          d_zone_fol?: number | null
+          d_zone_fow?: number | null
+          empty_net_goals?: number | null
+          empty_net_points?: number | null
+          es_goals_against?: number | null
+          es_goals_for?: number | null
+          es_goals_for_percentage?: number | null
+          es_toi_per_game?: number | null
+          ev_faceoff_percentage?: number | null
+          ev_faceoffs?: number | null
+          ev_fol?: number | null
+          ev_fow?: number | null
+          ev_time_on_ice?: number | null
+          ev_time_on_ice_per_game?: number | null
+          faceoff_pct_5v5?: number | null
+          fow_percentage?: number | null
+          game_misconduct_penalties?: number | null
+          games_played?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals?: number | null
+          goals_5v5?: number | null
+          goals_backhand?: number | null
+          goals_bat?: number | null
+          goals_between_legs?: number | null
+          goals_cradle?: number | null
+          goals_deflected?: number | null
+          goals_pct?: number | null
+          goals_per_60_5v5?: number | null
+          goals_per_game?: number | null
+          goals_poke?: number | null
+          goals_slap?: number | null
+          goals_snap?: number | null
+          goals_tip_in?: number | null
+          goals_wrap_around?: number | null
+          goals_wrist?: number | null
+          gw_goals?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          hits_per_game?: number | null
+          individual_sat_for_per_60?: number | null
+          individual_shots_for_per_60?: number | null
+          major_penalties?: number | null
+          match_penalties?: number | null
+          minor_penalties?: number | null
+          misconduct_penalties?: number | null
+          missed_shots?: number | null
+          n_zone_faceoffs?: number | null
+          n_zone_fo_percentage?: number | null
+          n_zone_fol?: number | null
+          n_zone_fow?: number | null
+          o_zone_faceoffs?: number | null
+          o_zone_fo_percentage?: number | null
+          o_zone_fol?: number | null
+          o_zone_fow?: number | null
+          o_zone_start_pct_5v5?: number | null
+          on_ice_shooting_pct?: number | null
+          on_ice_shooting_pct_5v5?: number | null
+          ot_goals?: number | null
+          ot_time_on_ice?: number | null
+          ot_time_on_ice_per_game?: number | null
+          penalties?: number | null
+          penalties_drawn?: number | null
+          penalties_drawn_per_60?: number | null
+          penalties_taken_per_60?: number | null
+          penalty_minutes?: number | null
+          penalty_minutes_per_game?: number | null
+          penalty_minutes_per_toi?: number | null
+          penalty_seconds_per_game?: number | null
+          player_id?: number
+          player_name?: string | null
+          plus_minus?: number | null
+          points?: number | null
+          points_5v5?: number | null
+          points_per_60_5v5?: number | null
+          points_per_game?: number | null
+          position_code?: string | null
+          pp_assists?: number | null
+          pp_faceoff_percentage?: number | null
+          pp_faceoffs?: number | null
+          pp_fol?: number | null
+          pp_fow?: number | null
+          pp_goals?: number | null
+          pp_goals_against?: number | null
+          pp_goals_against_per_60?: number | null
+          pp_goals_for?: number | null
+          pp_goals_for_per_60?: number | null
+          pp_goals_per_60?: number | null
+          pp_individual_sat_for?: number | null
+          pp_individual_sat_per_60?: number | null
+          pp_points?: number | null
+          pp_points_per_60?: number | null
+          pp_primary_assists?: number | null
+          pp_primary_assists_per_60?: number | null
+          pp_secondary_assists?: number | null
+          pp_secondary_assists_per_60?: number | null
+          pp_shooting_percentage?: number | null
+          pp_shots?: number | null
+          pp_shots_per_60?: number | null
+          pp_toi?: number | null
+          pp_toi_pct_per_game?: number | null
+          pp_toi_per_game?: number | null
+          primary_assists_5v5?: number | null
+          primary_assists_per_60_5v5?: number | null
+          primary_assists_per_game?: number | null
+          sat_against?: number | null
+          sat_ahead?: number | null
+          sat_behind?: number | null
+          sat_close?: number | null
+          sat_for?: number | null
+          sat_pct?: number | null
+          sat_percentage?: number | null
+          sat_percentage_ahead?: number | null
+          sat_percentage_behind?: number | null
+          sat_percentage_close?: number | null
+          sat_percentage_tied?: number | null
+          sat_relative?: number | null
+          sat_relative_5v5?: number | null
+          sat_tied?: number | null
+          sat_total?: number | null
+          season?: string | null
+          secondary_assists_5v5?: number | null
+          secondary_assists_per_60_5v5?: number | null
+          secondary_assists_per_game?: number | null
+          sh_assists?: number | null
+          sh_faceoff_percentage?: number | null
+          sh_faceoffs?: number | null
+          sh_fol?: number | null
+          sh_fow?: number | null
+          sh_goals?: number | null
+          sh_goals_against?: number | null
+          sh_goals_for?: number | null
+          sh_goals_per_60?: number | null
+          sh_individual_sat_for?: number | null
+          sh_individual_sat_per_60?: number | null
+          sh_points?: number | null
+          sh_points_per_60?: number | null
+          sh_primary_assists?: number | null
+          sh_primary_assists_per_60?: number | null
+          sh_secondary_assists?: number | null
+          sh_secondary_assists_per_60?: number | null
+          sh_shooting_percentage?: number | null
+          sh_shots?: number | null
+          sh_shots_per_60?: number | null
+          sh_time_on_ice?: number | null
+          sh_time_on_ice_pct_per_game?: number | null
+          sh_toi_per_game?: number | null
+          shifts?: number | null
+          shifts_per_game?: number | null
+          shooting_percentage?: number | null
+          shooting_percentage_5v5?: number | null
+          shoots_catches?: string | null
+          shots?: number | null
+          shots_on_net_backhand?: number | null
+          shots_on_net_bat?: number | null
+          shots_on_net_between_legs?: number | null
+          shots_on_net_cradle?: number | null
+          shots_on_net_deflected?: number | null
+          shots_on_net_poke?: number | null
+          shots_on_net_slap?: number | null
+          shots_on_net_snap?: number | null
+          shots_on_net_tip_in?: number | null
+          shots_on_net_wrap_around?: number | null
+          shots_on_net_wrist?: number | null
+          shots_per_game?: number | null
+          skater_save_pct_5v5?: number | null
+          skater_shooting_plus_save_pct_5v5?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          time_on_ice_per_shift?: number | null
+          toi_per_game?: number | null
+          toi_per_game_5v5?: number | null
+          total_faceoffs?: number | null
+          total_fol?: number | null
+          total_fow?: number | null
+          total_primary_assists?: number | null
+          total_secondary_assists?: number | null
+          usat_against?: number | null
+          usat_ahead?: number | null
+          usat_behind?: number | null
+          usat_close?: number | null
+          usat_for?: number | null
+          usat_pct?: number | null
+          usat_percentage?: number | null
+          usat_percentage_ahead?: number | null
+          usat_percentage_behind?: number | null
+          usat_percentage_close?: number | null
+          usat_percentage_tied?: number | null
+          usat_relative?: number | null
+          usat_tied?: number | null
+          usat_total?: number | null
+          zone_start_pct?: number | null
+          zone_start_pct_5v5?: number | null
+        }
+        Relationships: []
+      }
+      wgo_team_stats: {
+        Row: {
+          bench_minor_penalties: number | null
+          blocked_shots: number | null
+          blocked_shots_per_60: number | null
+          d_zone_faceoff_pct: number | null
+          d_zone_faceoffs: number | null
+          d_zone_fo: number | null
+          d_zone_fol: number | null
+          d_zone_fow: number | null
+          date: string
+          empty_net_goals: number | null
+          ev_faceoff_pct: number | null
+          ev_faceoffs: number | null
+          ev_fo: number | null
+          ev_fol: number | null
+          ev_fow: number | null
+          faceoff_win_pct: number | null
+          faceoffs_lost: number | null
+          faceoffs_won: number | null
+          franchise_name: string
+          game_misconducts: number | null
+          games_played: number | null
+          giveaways: number | null
+          giveaways_per_60: number | null
+          goals_4v3: number | null
+          goals_5v3: number | null
+          goals_5v4: number | null
+          goals_against: number | null
+          goals_against_3v4: number | null
+          goals_against_3v5: number | null
+          goals_against_4v5: number | null
+          goals_against_per_game: number | null
+          goals_for: number | null
+          goals_for_per_game: number | null
+          goals_for_percentage: number | null
+          hits: number | null
+          hits_per_60: number | null
+          id: number
+          losses: number | null
+          major_penalties: number | null
+          match_penalties: number | null
+          minor_penalties: number | null
+          misconduct_penalties: number | null
+          missed_shots: number | null
+          net_penalties: number | null
+          net_penalties_per_60: number | null
+          neutral_zone_faceoff_pct: number | null
+          neutral_zone_faceoffs: number | null
+          neutral_zone_fo: number | null
+          neutral_zone_fol: number | null
+          neutral_zone_fow: number | null
+          o_zone_faceoff_pct: number | null
+          o_zone_faceoffs: number | null
+          o_zone_fo: number | null
+          o_zone_fol: number | null
+          o_zone_fow: number | null
+          opportunities_4v3: number | null
+          opportunities_5v3: number | null
+          opportunities_5v4: number | null
+          ot_losses: number | null
+          overall_penalty_kill_pct: number | null
+          overall_power_play_pct: number | null
+          penalties: number | null
+          penalties_drawn_per_60: number | null
+          penalties_taken_per_60: number | null
+          penalty_kill_net_pct: number | null
+          penalty_kill_pct: number | null
+          penalty_minutes: number | null
+          penalty_seconds_per_game: number | null
+          pk_3v4_pct: number | null
+          pk_3v5_pct: number | null
+          pk_4v5_pct: number | null
+          pk_net_goals: number | null
+          pk_net_goals_per_game: number | null
+          point_pct: number | null
+          points: number | null
+          power_play_goals_for: number | null
+          power_play_net_pct: number | null
+          power_play_pct: number | null
+          pp_faceoff_pct: number | null
+          pp_faceoffs: number | null
+          pp_fol: number | null
+          pp_fow: number | null
+          pp_goals_against: number | null
+          pp_goals_against_per_game: number | null
+          pp_goals_per_game: number | null
+          pp_net_goals: number | null
+          pp_net_goals_per_game: number | null
+          pp_opportunities: number | null
+          pp_opportunities_per_game: number | null
+          pp_pct_4v3: number | null
+          pp_pct_5v3: number | null
+          pp_pct_5v4: number | null
+          pp_time_on_ice_per_game: number | null
+          regulation_and_ot_wins: number | null
+          sat_against: number | null
+          sat_behind: number | null
+          sat_close: number | null
+          sat_for: number | null
+          sat_pct: number | null
+          sat_pct_ahead: number | null
+          sat_pct_behind: number | null
+          sat_pct_close: number | null
+          sat_pct_tied: number | null
+          sat_percentage: number | null
+          sat_tied: number | null
+          sat_total: number | null
+          save_pct_5v5: number | null
+          season_id: number | null
+          sh_faceoff_pct: number | null
+          sh_faceoffs: number | null
+          sh_fol: number | null
+          sh_fow: number | null
+          sh_goals_against: number | null
+          sh_goals_against_per_game: number | null
+          sh_goals_for: number | null
+          sh_goals_for_per_game: number | null
+          shooting_pct_5v5: number | null
+          shooting_plus_save_pct_5v5: number | null
+          shots_5v5: number | null
+          shots_against_per_game: number | null
+          shots_for_per_game: number | null
+          takeaways: number | null
+          takeaways_per_60: number | null
+          team_id: number | null
+          time_on_ice_per_game_5v5: number | null
+          times_shorthanded: number | null
+          times_shorthanded_3v4: number | null
+          times_shorthanded_3v5: number | null
+          times_shorthanded_4v5: number | null
+          times_shorthanded_per_game: number | null
+          toi_3v4: number | null
+          toi_3v5: number | null
+          toi_4v3: number | null
+          toi_4v5: number | null
+          toi_5v3: number | null
+          toi_5v4: number | null
+          toi_pp: number | null
+          toi_shorthanded: number | null
+          total_faceoffs: number | null
+          total_penalties_drawn: number | null
+          usat_against: number | null
+          usat_ahead: number | null
+          usat_behind: number | null
+          usat_close: number | null
+          usat_for: number | null
+          usat_pct: number | null
+          usat_pct_ahead: number | null
+          usat_pct_behind: number | null
+          usat_pct_close: number | null
+          usat_pct_tied: number | null
+          usat_tied: number | null
+          usat_total: number | null
+          wins: number | null
+          wins_in_regulation: number | null
+          wins_in_shootout: number | null
+          zone_start_pct_5v5: number | null
+        }
+        Insert: {
+          bench_minor_penalties?: number | null
+          blocked_shots?: number | null
+          blocked_shots_per_60?: number | null
+          d_zone_faceoff_pct?: number | null
+          d_zone_faceoffs?: number | null
+          d_zone_fo?: number | null
+          d_zone_fol?: number | null
+          d_zone_fow?: number | null
+          date: string
+          empty_net_goals?: number | null
+          ev_faceoff_pct?: number | null
+          ev_faceoffs?: number | null
+          ev_fo?: number | null
+          ev_fol?: number | null
+          ev_fow?: number | null
+          faceoff_win_pct?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_won?: number | null
+          franchise_name: string
+          game_misconducts?: number | null
+          games_played?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals_4v3?: number | null
+          goals_5v3?: number | null
+          goals_5v4?: number | null
+          goals_against?: number | null
+          goals_against_3v4?: number | null
+          goals_against_3v5?: number | null
+          goals_against_4v5?: number | null
+          goals_against_per_game?: number | null
+          goals_for?: number | null
+          goals_for_per_game?: number | null
+          goals_for_percentage?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          id?: number
+          losses?: number | null
+          major_penalties?: number | null
+          match_penalties?: number | null
+          minor_penalties?: number | null
+          misconduct_penalties?: number | null
+          missed_shots?: number | null
+          net_penalties?: number | null
+          net_penalties_per_60?: number | null
+          neutral_zone_faceoff_pct?: number | null
+          neutral_zone_faceoffs?: number | null
+          neutral_zone_fo?: number | null
+          neutral_zone_fol?: number | null
+          neutral_zone_fow?: number | null
+          o_zone_faceoff_pct?: number | null
+          o_zone_faceoffs?: number | null
+          o_zone_fo?: number | null
+          o_zone_fol?: number | null
+          o_zone_fow?: number | null
+          opportunities_4v3?: number | null
+          opportunities_5v3?: number | null
+          opportunities_5v4?: number | null
+          ot_losses?: number | null
+          overall_penalty_kill_pct?: number | null
+          overall_power_play_pct?: number | null
+          penalties?: number | null
+          penalties_drawn_per_60?: number | null
+          penalties_taken_per_60?: number | null
+          penalty_kill_net_pct?: number | null
+          penalty_kill_pct?: number | null
+          penalty_minutes?: number | null
+          penalty_seconds_per_game?: number | null
+          pk_3v4_pct?: number | null
+          pk_3v5_pct?: number | null
+          pk_4v5_pct?: number | null
+          pk_net_goals?: number | null
+          pk_net_goals_per_game?: number | null
+          point_pct?: number | null
+          points?: number | null
+          power_play_goals_for?: number | null
+          power_play_net_pct?: number | null
+          power_play_pct?: number | null
+          pp_faceoff_pct?: number | null
+          pp_faceoffs?: number | null
+          pp_fol?: number | null
+          pp_fow?: number | null
+          pp_goals_against?: number | null
+          pp_goals_against_per_game?: number | null
+          pp_goals_per_game?: number | null
+          pp_net_goals?: number | null
+          pp_net_goals_per_game?: number | null
+          pp_opportunities?: number | null
+          pp_opportunities_per_game?: number | null
+          pp_pct_4v3?: number | null
+          pp_pct_5v3?: number | null
+          pp_pct_5v4?: number | null
+          pp_time_on_ice_per_game?: number | null
+          regulation_and_ot_wins?: number | null
+          sat_against?: number | null
+          sat_behind?: number | null
+          sat_close?: number | null
+          sat_for?: number | null
+          sat_pct?: number | null
+          sat_pct_ahead?: number | null
+          sat_pct_behind?: number | null
+          sat_pct_close?: number | null
+          sat_pct_tied?: number | null
+          sat_percentage?: number | null
+          sat_tied?: number | null
+          sat_total?: number | null
+          save_pct_5v5?: number | null
+          season_id?: number | null
+          sh_faceoff_pct?: number | null
+          sh_faceoffs?: number | null
+          sh_fol?: number | null
+          sh_fow?: number | null
+          sh_goals_against?: number | null
+          sh_goals_against_per_game?: number | null
+          sh_goals_for?: number | null
+          sh_goals_for_per_game?: number | null
+          shooting_pct_5v5?: number | null
+          shooting_plus_save_pct_5v5?: number | null
+          shots_5v5?: number | null
+          shots_against_per_game?: number | null
+          shots_for_per_game?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          team_id?: number | null
+          time_on_ice_per_game_5v5?: number | null
+          times_shorthanded?: number | null
+          times_shorthanded_3v4?: number | null
+          times_shorthanded_3v5?: number | null
+          times_shorthanded_4v5?: number | null
+          times_shorthanded_per_game?: number | null
+          toi_3v4?: number | null
+          toi_3v5?: number | null
+          toi_4v3?: number | null
+          toi_4v5?: number | null
+          toi_5v3?: number | null
+          toi_5v4?: number | null
+          toi_pp?: number | null
+          toi_shorthanded?: number | null
+          total_faceoffs?: number | null
+          total_penalties_drawn?: number | null
+          usat_against?: number | null
+          usat_ahead?: number | null
+          usat_behind?: number | null
+          usat_close?: number | null
+          usat_for?: number | null
+          usat_pct?: number | null
+          usat_pct_ahead?: number | null
+          usat_pct_behind?: number | null
+          usat_pct_close?: number | null
+          usat_pct_tied?: number | null
+          usat_tied?: number | null
+          usat_total?: number | null
+          wins?: number | null
+          wins_in_regulation?: number | null
+          wins_in_shootout?: number | null
+          zone_start_pct_5v5?: number | null
+        }
+        Update: {
+          bench_minor_penalties?: number | null
+          blocked_shots?: number | null
+          blocked_shots_per_60?: number | null
+          d_zone_faceoff_pct?: number | null
+          d_zone_faceoffs?: number | null
+          d_zone_fo?: number | null
+          d_zone_fol?: number | null
+          d_zone_fow?: number | null
+          date?: string
+          empty_net_goals?: number | null
+          ev_faceoff_pct?: number | null
+          ev_faceoffs?: number | null
+          ev_fo?: number | null
+          ev_fol?: number | null
+          ev_fow?: number | null
+          faceoff_win_pct?: number | null
+          faceoffs_lost?: number | null
+          faceoffs_won?: number | null
+          franchise_name?: string
+          game_misconducts?: number | null
+          games_played?: number | null
+          giveaways?: number | null
+          giveaways_per_60?: number | null
+          goals_4v3?: number | null
+          goals_5v3?: number | null
+          goals_5v4?: number | null
+          goals_against?: number | null
+          goals_against_3v4?: number | null
+          goals_against_3v5?: number | null
+          goals_against_4v5?: number | null
+          goals_against_per_game?: number | null
+          goals_for?: number | null
+          goals_for_per_game?: number | null
+          goals_for_percentage?: number | null
+          hits?: number | null
+          hits_per_60?: number | null
+          id?: number
+          losses?: number | null
+          major_penalties?: number | null
+          match_penalties?: number | null
+          minor_penalties?: number | null
+          misconduct_penalties?: number | null
+          missed_shots?: number | null
+          net_penalties?: number | null
+          net_penalties_per_60?: number | null
+          neutral_zone_faceoff_pct?: number | null
+          neutral_zone_faceoffs?: number | null
+          neutral_zone_fo?: number | null
+          neutral_zone_fol?: number | null
+          neutral_zone_fow?: number | null
+          o_zone_faceoff_pct?: number | null
+          o_zone_faceoffs?: number | null
+          o_zone_fo?: number | null
+          o_zone_fol?: number | null
+          o_zone_fow?: number | null
+          opportunities_4v3?: number | null
+          opportunities_5v3?: number | null
+          opportunities_5v4?: number | null
+          ot_losses?: number | null
+          overall_penalty_kill_pct?: number | null
+          overall_power_play_pct?: number | null
+          penalties?: number | null
+          penalties_drawn_per_60?: number | null
+          penalties_taken_per_60?: number | null
+          penalty_kill_net_pct?: number | null
+          penalty_kill_pct?: number | null
+          penalty_minutes?: number | null
+          penalty_seconds_per_game?: number | null
+          pk_3v4_pct?: number | null
+          pk_3v5_pct?: number | null
+          pk_4v5_pct?: number | null
+          pk_net_goals?: number | null
+          pk_net_goals_per_game?: number | null
+          point_pct?: number | null
+          points?: number | null
+          power_play_goals_for?: number | null
+          power_play_net_pct?: number | null
+          power_play_pct?: number | null
+          pp_faceoff_pct?: number | null
+          pp_faceoffs?: number | null
+          pp_fol?: number | null
+          pp_fow?: number | null
+          pp_goals_against?: number | null
+          pp_goals_against_per_game?: number | null
+          pp_goals_per_game?: number | null
+          pp_net_goals?: number | null
+          pp_net_goals_per_game?: number | null
+          pp_opportunities?: number | null
+          pp_opportunities_per_game?: number | null
+          pp_pct_4v3?: number | null
+          pp_pct_5v3?: number | null
+          pp_pct_5v4?: number | null
+          pp_time_on_ice_per_game?: number | null
+          regulation_and_ot_wins?: number | null
+          sat_against?: number | null
+          sat_behind?: number | null
+          sat_close?: number | null
+          sat_for?: number | null
+          sat_pct?: number | null
+          sat_pct_ahead?: number | null
+          sat_pct_behind?: number | null
+          sat_pct_close?: number | null
+          sat_pct_tied?: number | null
+          sat_percentage?: number | null
+          sat_tied?: number | null
+          sat_total?: number | null
+          save_pct_5v5?: number | null
+          season_id?: number | null
+          sh_faceoff_pct?: number | null
+          sh_faceoffs?: number | null
+          sh_fol?: number | null
+          sh_fow?: number | null
+          sh_goals_against?: number | null
+          sh_goals_against_per_game?: number | null
+          sh_goals_for?: number | null
+          sh_goals_for_per_game?: number | null
+          shooting_pct_5v5?: number | null
+          shooting_plus_save_pct_5v5?: number | null
+          shots_5v5?: number | null
+          shots_against_per_game?: number | null
+          shots_for_per_game?: number | null
+          takeaways?: number | null
+          takeaways_per_60?: number | null
+          team_id?: number | null
+          time_on_ice_per_game_5v5?: number | null
+          times_shorthanded?: number | null
+          times_shorthanded_3v4?: number | null
+          times_shorthanded_3v5?: number | null
+          times_shorthanded_4v5?: number | null
+          times_shorthanded_per_game?: number | null
+          toi_3v4?: number | null
+          toi_3v5?: number | null
+          toi_4v3?: number | null
+          toi_4v5?: number | null
+          toi_5v3?: number | null
+          toi_5v4?: number | null
+          toi_pp?: number | null
+          toi_shorthanded?: number | null
+          total_faceoffs?: number | null
+          total_penalties_drawn?: number | null
+          usat_against?: number | null
+          usat_ahead?: number | null
+          usat_behind?: number | null
+          usat_close?: number | null
+          usat_for?: number | null
+          usat_pct?: number | null
+          usat_pct_ahead?: number | null
+          usat_pct_behind?: number | null
+          usat_pct_close?: number | null
+          usat_pct_tied?: number | null
+          usat_tied?: number | null
+          usat_total?: number | null
+          wins?: number | null
+          wins_in_regulation?: number | null
+          wins_in_shootout?: number | null
+          zone_start_pct_5v5?: number | null
+        }
+        Relationships: []
+      }
+      wgo_teams: {
+        Row: {
+          franchise_id: number
+          franchise_name: string
+          id: number
+        }
+        Insert: {
+          franchise_id: number
+          franchise_name: string
+          id?: number
+        }
+        Update: {
+          franchise_id?: number
+          franchise_name?: string
+          id?: number
+        }
+        Relationships: []
+      }
+      wgo_three_year_averages: {
+        Row: {
+          assists_5v5_avg: number | null
+          assists_5v5_per_60_avg: number | null
+          assists_avg: number | null
+          assists_per_60_5v5_avg: number | null
+          birth_city: string | null
+          birth_country: string | null
+          birth_date: string | null
+          blocked_shots_avg: number | null
+          blocks_per_60_avg: number | null
+          current_team_abbreviation: string | null
+          current_team_name: string | null
+          d_zone_faceoffs_avg: number | null
+          d_zone_fo_percentage_avg: number | null
+          d_zone_fol_avg: number | null
+          d_zone_fow_avg: number | null
+          draft_overall: number | null
+          draft_round: number | null
+          draft_year: number | null
+          empty_net_goals_avg: number | null
+          empty_net_points_avg: number | null
+          es_goals_against_avg: number | null
+          es_goals_for_avg: number | null
+          es_goals_for_percentage_avg: number | null
+          es_toi_per_game_avg: number | null
+          ev_faceoff_percentage_avg: number | null
+          ev_faceoffs_avg: number | null
+          ev_fol_avg: number | null
+          ev_fow_avg: number | null
+          ev_time_on_ice_avg: number | null
+          ev_time_on_ice_per_game_avg: number | null
+          faceoff_pct_5v5_avg: number | null
+          first_season_for_game_type: number | null
+          fow_percentage_avg: number | null
+          game_misconduct_penalties_avg: number | null
+          games_played_avg: number | null
+          giveaways_avg: number | null
+          giveaways_per_60_avg: number | null
+          goals_5v5_avg: number | null
+          goals_5v5_per_60_avg: number | null
+          goals_avg: number | null
+          goals_backhand_avg: number | null
+          goals_bat_avg: number | null
+          goals_between_legs_avg: number | null
+          goals_cradle_avg: number | null
+          goals_deflected_avg: number | null
+          goals_pct_avg: number | null
+          goals_per_60_5v5_avg: number | null
+          goals_poke_avg: number | null
+          goals_slap_avg: number | null
+          goals_snap_avg: number | null
+          goals_tip_in_avg: number | null
+          goals_wrap_around_avg: number | null
+          goals_wrist_avg: number | null
+          gw_goals_avg: number | null
+          height: number | null
+          hits_avg: number | null
+          hits_per_60_avg: number | null
+          individual_sat_for_per_60_avg: number | null
+          individual_shots_for_per_60_avg: number | null
+          major_penalties_avg: number | null
+          match_penalties_avg: number | null
+          minor_penalties_avg: number | null
+          misconduct_penalties_avg: number | null
+          missed_shots_avg: number | null
+          n_zone_faceoffs_avg: number | null
+          n_zone_fo_percentage_avg: number | null
+          n_zone_fol_avg: number | null
+          n_zone_fow_avg: number | null
+          nationality_code: string | null
+          number_of_seasons: number | null
+          o_zone_faceoffs_avg: number | null
+          o_zone_fo_percentage_avg: number | null
+          o_zone_fol_avg: number | null
+          o_zone_fow_avg: number | null
+          o_zone_start_pct_5v5_avg: number | null
+          on_ice_shooting_pct_5v5_avg: number | null
+          on_ice_shooting_pct_avg: number | null
+          ot_goals_avg: number | null
+          ot_time_on_ice_avg: number | null
+          ot_time_on_ice_per_game_avg: number | null
+          penalties_avg: number | null
+          penalties_drawn_avg: number | null
+          penalties_drawn_per_60_avg: number | null
+          penalties_taken_per_60_avg: number | null
+          penalty_minutes_avg: number | null
+          penalty_minutes_per_toi_avg: number | null
+          penalty_seconds_per_game_avg: number | null
+          player_id: number
+          player_name: string | null
+          plus_minus_avg: number | null
+          points_5v5_avg: number | null
+          points_5v5_per_60_avg: number | null
+          points_avg: number | null
+          points_per_60_5v5_avg: number | null
+          points_per_game_avg: number | null
+          position_code: string | null
+          pp_assists_avg: number | null
+          pp_faceoff_percentage_avg: number | null
+          pp_faceoffs_avg: number | null
+          pp_fol_avg: number | null
+          pp_fow_avg: number | null
+          pp_goals_against_avg: number | null
+          pp_goals_against_per_60_avg: number | null
+          pp_goals_avg: number | null
+          pp_goals_for_avg: number | null
+          pp_goals_for_per_60_avg: number | null
+          pp_goals_per_60_avg: number | null
+          pp_individual_sat_for_per_60_avg: number | null
+          pp_individual_sat_per_60_avg: number | null
+          pp_points_avg: number | null
+          pp_points_per_60_avg: number | null
+          pp_primary_assists_avg: number | null
+          pp_primary_assists_per_60_avg: number | null
+          pp_secondary_assists_avg: number | null
+          pp_secondary_assists_per_60_avg: number | null
+          pp_shooting_percentage_avg: number | null
+          pp_shots_avg: number | null
+          pp_shots_per_60_avg: number | null
+          pp_toi_avg: number | null
+          pp_toi_pct_per_game_avg: number | null
+          pp_toi_per_game_avg: number | null
+          primary_assists_5v5_avg: number | null
+          primary_assists_5v5_per_60_avg: number | null
+          primary_assists_per_60_5v5_avg: number | null
+          sat_against_avg: number | null
+          sat_ahead_avg: number | null
+          sat_behind_avg: number | null
+          sat_close_avg: number | null
+          sat_for_avg: number | null
+          sat_pct_avg: number | null
+          sat_percentage_ahead_avg: number | null
+          sat_percentage_avg: number | null
+          sat_percentage_behind_avg: number | null
+          sat_percentage_close_avg: number | null
+          sat_percentage_tied_avg: number | null
+          sat_relative_5v5_avg: number | null
+          sat_relative_avg: number | null
+          sat_tied_avg: number | null
+          sat_total_avg: number | null
+          secondary_assists_5v5_avg: number | null
+          secondary_assists_5v5_per_60_avg: number | null
+          secondary_assists_per_60_5v5_avg: number | null
+          sh_assists_avg: number | null
+          sh_faceoff_percentage_avg: number | null
+          sh_faceoffs_avg: number | null
+          sh_fol_avg: number | null
+          sh_fow_avg: number | null
+          sh_goals_against_avg: number | null
+          sh_goals_avg: number | null
+          sh_goals_for_avg: number | null
+          sh_goals_per_60_avg: number | null
+          sh_individual_sat_for_avg: number | null
+          sh_individual_sat_for_per_60_avg: number | null
+          sh_individual_sat_per_60_avg: number | null
+          sh_points_avg: number | null
+          sh_points_per_60_avg: number | null
+          sh_primary_assists_avg: number | null
+          sh_primary_assists_per_60_avg: number | null
+          sh_secondary_assists_avg: number | null
+          sh_secondary_assists_per_60_avg: number | null
+          sh_shooting_percentage_avg: number | null
+          sh_shots_avg: number | null
+          sh_shots_per_60_avg: number | null
+          sh_time_on_ice_avg: number | null
+          sh_time_on_ice_pct_per_game_avg: number | null
+          sh_toi_per_game_avg: number | null
+          shifts_avg: number | null
+          shifts_per_game_avg: number | null
+          shooting_percentage_5v5_avg: number | null
+          shooting_percentage_avg: number | null
+          shoots_catches: string | null
+          shots_avg: number | null
+          shots_on_net_backhand_avg: number | null
+          shots_on_net_bat_avg: number | null
+          shots_on_net_between_legs_avg: number | null
+          shots_on_net_cradle_avg: number | null
+          shots_on_net_deflected_avg: number | null
+          shots_on_net_poke_avg: number | null
+          shots_on_net_slap_avg: number | null
+          shots_on_net_snap_avg: number | null
+          shots_on_net_tip_in_avg: number | null
+          shots_on_net_wrap_around_avg: number | null
+          shots_on_net_wrist_avg: number | null
+          skater_save_pct_5v5_avg: number | null
+          skater_shooting_plus_save_pct_5v5_avg: number | null
+          takeaways_avg: number | null
+          takeaways_per_60_avg: number | null
+          time_on_ice_per_shift_avg: number | null
+          toi_per_game_5v5_avg: number | null
+          toi_per_game_avg: number | null
+          total_faceoffs_avg: number | null
+          total_fol_avg: number | null
+          total_fow_avg: number | null
+          total_primary_assists_avg: number | null
+          total_secondary_assists_avg: number | null
+          usat_against_avg: number | null
+          usat_ahead_avg: number | null
+          usat_behind_avg: number | null
+          usat_close_avg: number | null
+          usat_for_avg: number | null
+          usat_percentage_ahead_avg: number | null
+          usat_percentage_avg: number | null
+          usat_percentage_behind_avg: number | null
+          usat_percentage_close_avg: number | null
+          usat_percentage_tied_avg: number | null
+          usat_relative_avg: number | null
+          usat_tied_avg: number | null
+          usat_total_avg: number | null
+          weight: number | null
+          zone_start_pct_5v5_avg: number | null
+          zone_start_pct_avg: number | null
+        }
+        Insert: {
+          assists_5v5_avg?: number | null
+          assists_5v5_per_60_avg?: number | null
+          assists_avg?: number | null
+          assists_per_60_5v5_avg?: number | null
+          birth_city?: string | null
+          birth_country?: string | null
+          birth_date?: string | null
+          blocked_shots_avg?: number | null
+          blocks_per_60_avg?: number | null
+          current_team_abbreviation?: string | null
+          current_team_name?: string | null
+          d_zone_faceoffs_avg?: number | null
+          d_zone_fo_percentage_avg?: number | null
+          d_zone_fol_avg?: number | null
+          d_zone_fow_avg?: number | null
+          draft_overall?: number | null
+          draft_round?: number | null
+          draft_year?: number | null
+          empty_net_goals_avg?: number | null
+          empty_net_points_avg?: number | null
+          es_goals_against_avg?: number | null
+          es_goals_for_avg?: number | null
+          es_goals_for_percentage_avg?: number | null
+          es_toi_per_game_avg?: number | null
+          ev_faceoff_percentage_avg?: number | null
+          ev_faceoffs_avg?: number | null
+          ev_fol_avg?: number | null
+          ev_fow_avg?: number | null
+          ev_time_on_ice_avg?: number | null
+          ev_time_on_ice_per_game_avg?: number | null
+          faceoff_pct_5v5_avg?: number | null
+          first_season_for_game_type?: number | null
+          fow_percentage_avg?: number | null
+          game_misconduct_penalties_avg?: number | null
+          games_played_avg?: number | null
+          giveaways_avg?: number | null
+          giveaways_per_60_avg?: number | null
+          goals_5v5_avg?: number | null
+          goals_5v5_per_60_avg?: number | null
+          goals_avg?: number | null
+          goals_backhand_avg?: number | null
+          goals_bat_avg?: number | null
+          goals_between_legs_avg?: number | null
+          goals_cradle_avg?: number | null
+          goals_deflected_avg?: number | null
+          goals_pct_avg?: number | null
+          goals_per_60_5v5_avg?: number | null
+          goals_poke_avg?: number | null
+          goals_slap_avg?: number | null
+          goals_snap_avg?: number | null
+          goals_tip_in_avg?: number | null
+          goals_wrap_around_avg?: number | null
+          goals_wrist_avg?: number | null
+          gw_goals_avg?: number | null
+          height?: number | null
+          hits_avg?: number | null
+          hits_per_60_avg?: number | null
+          individual_sat_for_per_60_avg?: number | null
+          individual_shots_for_per_60_avg?: number | null
+          major_penalties_avg?: number | null
+          match_penalties_avg?: number | null
+          minor_penalties_avg?: number | null
+          misconduct_penalties_avg?: number | null
+          missed_shots_avg?: number | null
+          n_zone_faceoffs_avg?: number | null
+          n_zone_fo_percentage_avg?: number | null
+          n_zone_fol_avg?: number | null
+          n_zone_fow_avg?: number | null
+          nationality_code?: string | null
+          number_of_seasons?: number | null
+          o_zone_faceoffs_avg?: number | null
+          o_zone_fo_percentage_avg?: number | null
+          o_zone_fol_avg?: number | null
+          o_zone_fow_avg?: number | null
+          o_zone_start_pct_5v5_avg?: number | null
+          on_ice_shooting_pct_5v5_avg?: number | null
+          on_ice_shooting_pct_avg?: number | null
+          ot_goals_avg?: number | null
+          ot_time_on_ice_avg?: number | null
+          ot_time_on_ice_per_game_avg?: number | null
+          penalties_avg?: number | null
+          penalties_drawn_avg?: number | null
+          penalties_drawn_per_60_avg?: number | null
+          penalties_taken_per_60_avg?: number | null
+          penalty_minutes_avg?: number | null
+          penalty_minutes_per_toi_avg?: number | null
+          penalty_seconds_per_game_avg?: number | null
+          player_id: number
+          player_name?: string | null
+          plus_minus_avg?: number | null
+          points_5v5_avg?: number | null
+          points_5v5_per_60_avg?: number | null
+          points_avg?: number | null
+          points_per_60_5v5_avg?: number | null
+          points_per_game_avg?: number | null
+          position_code?: string | null
+          pp_assists_avg?: number | null
+          pp_faceoff_percentage_avg?: number | null
+          pp_faceoffs_avg?: number | null
+          pp_fol_avg?: number | null
+          pp_fow_avg?: number | null
+          pp_goals_against_avg?: number | null
+          pp_goals_against_per_60_avg?: number | null
+          pp_goals_avg?: number | null
+          pp_goals_for_avg?: number | null
+          pp_goals_for_per_60_avg?: number | null
+          pp_goals_per_60_avg?: number | null
+          pp_individual_sat_for_per_60_avg?: number | null
+          pp_individual_sat_per_60_avg?: number | null
+          pp_points_avg?: number | null
+          pp_points_per_60_avg?: number | null
+          pp_primary_assists_avg?: number | null
+          pp_primary_assists_per_60_avg?: number | null
+          pp_secondary_assists_avg?: number | null
+          pp_secondary_assists_per_60_avg?: number | null
+          pp_shooting_percentage_avg?: number | null
+          pp_shots_avg?: number | null
+          pp_shots_per_60_avg?: number | null
+          pp_toi_avg?: number | null
+          pp_toi_pct_per_game_avg?: number | null
+          pp_toi_per_game_avg?: number | null
+          primary_assists_5v5_avg?: number | null
+          primary_assists_5v5_per_60_avg?: number | null
+          primary_assists_per_60_5v5_avg?: number | null
+          sat_against_avg?: number | null
+          sat_ahead_avg?: number | null
+          sat_behind_avg?: number | null
+          sat_close_avg?: number | null
+          sat_for_avg?: number | null
+          sat_pct_avg?: number | null
+          sat_percentage_ahead_avg?: number | null
+          sat_percentage_avg?: number | null
+          sat_percentage_behind_avg?: number | null
+          sat_percentage_close_avg?: number | null
+          sat_percentage_tied_avg?: number | null
+          sat_relative_5v5_avg?: number | null
+          sat_relative_avg?: number | null
+          sat_tied_avg?: number | null
+          sat_total_avg?: number | null
+          secondary_assists_5v5_avg?: number | null
+          secondary_assists_5v5_per_60_avg?: number | null
+          secondary_assists_per_60_5v5_avg?: number | null
+          sh_assists_avg?: number | null
+          sh_faceoff_percentage_avg?: number | null
+          sh_faceoffs_avg?: number | null
+          sh_fol_avg?: number | null
+          sh_fow_avg?: number | null
+          sh_goals_against_avg?: number | null
+          sh_goals_avg?: number | null
+          sh_goals_for_avg?: number | null
+          sh_goals_per_60_avg?: number | null
+          sh_individual_sat_for_avg?: number | null
+          sh_individual_sat_for_per_60_avg?: number | null
+          sh_individual_sat_per_60_avg?: number | null
+          sh_points_avg?: number | null
+          sh_points_per_60_avg?: number | null
+          sh_primary_assists_avg?: number | null
+          sh_primary_assists_per_60_avg?: number | null
+          sh_secondary_assists_avg?: number | null
+          sh_secondary_assists_per_60_avg?: number | null
+          sh_shooting_percentage_avg?: number | null
+          sh_shots_avg?: number | null
+          sh_shots_per_60_avg?: number | null
+          sh_time_on_ice_avg?: number | null
+          sh_time_on_ice_pct_per_game_avg?: number | null
+          sh_toi_per_game_avg?: number | null
+          shifts_avg?: number | null
+          shifts_per_game_avg?: number | null
+          shooting_percentage_5v5_avg?: number | null
+          shooting_percentage_avg?: number | null
+          shoots_catches?: string | null
+          shots_avg?: number | null
+          shots_on_net_backhand_avg?: number | null
+          shots_on_net_bat_avg?: number | null
+          shots_on_net_between_legs_avg?: number | null
+          shots_on_net_cradle_avg?: number | null
+          shots_on_net_deflected_avg?: number | null
+          shots_on_net_poke_avg?: number | null
+          shots_on_net_slap_avg?: number | null
+          shots_on_net_snap_avg?: number | null
+          shots_on_net_tip_in_avg?: number | null
+          shots_on_net_wrap_around_avg?: number | null
+          shots_on_net_wrist_avg?: number | null
+          skater_save_pct_5v5_avg?: number | null
+          skater_shooting_plus_save_pct_5v5_avg?: number | null
+          takeaways_avg?: number | null
+          takeaways_per_60_avg?: number | null
+          time_on_ice_per_shift_avg?: number | null
+          toi_per_game_5v5_avg?: number | null
+          toi_per_game_avg?: number | null
+          total_faceoffs_avg?: number | null
+          total_fol_avg?: number | null
+          total_fow_avg?: number | null
+          total_primary_assists_avg?: number | null
+          total_secondary_assists_avg?: number | null
+          usat_against_avg?: number | null
+          usat_ahead_avg?: number | null
+          usat_behind_avg?: number | null
+          usat_close_avg?: number | null
+          usat_for_avg?: number | null
+          usat_percentage_ahead_avg?: number | null
+          usat_percentage_avg?: number | null
+          usat_percentage_behind_avg?: number | null
+          usat_percentage_close_avg?: number | null
+          usat_percentage_tied_avg?: number | null
+          usat_relative_avg?: number | null
+          usat_tied_avg?: number | null
+          usat_total_avg?: number | null
+          weight?: number | null
+          zone_start_pct_5v5_avg?: number | null
+          zone_start_pct_avg?: number | null
+        }
+        Update: {
+          assists_5v5_avg?: number | null
+          assists_5v5_per_60_avg?: number | null
+          assists_avg?: number | null
+          assists_per_60_5v5_avg?: number | null
+          birth_city?: string | null
+          birth_country?: string | null
+          birth_date?: string | null
+          blocked_shots_avg?: number | null
+          blocks_per_60_avg?: number | null
+          current_team_abbreviation?: string | null
+          current_team_name?: string | null
+          d_zone_faceoffs_avg?: number | null
+          d_zone_fo_percentage_avg?: number | null
+          d_zone_fol_avg?: number | null
+          d_zone_fow_avg?: number | null
+          draft_overall?: number | null
+          draft_round?: number | null
+          draft_year?: number | null
+          empty_net_goals_avg?: number | null
+          empty_net_points_avg?: number | null
+          es_goals_against_avg?: number | null
+          es_goals_for_avg?: number | null
+          es_goals_for_percentage_avg?: number | null
+          es_toi_per_game_avg?: number | null
+          ev_faceoff_percentage_avg?: number | null
+          ev_faceoffs_avg?: number | null
+          ev_fol_avg?: number | null
+          ev_fow_avg?: number | null
+          ev_time_on_ice_avg?: number | null
+          ev_time_on_ice_per_game_avg?: number | null
+          faceoff_pct_5v5_avg?: number | null
+          first_season_for_game_type?: number | null
+          fow_percentage_avg?: number | null
+          game_misconduct_penalties_avg?: number | null
+          games_played_avg?: number | null
+          giveaways_avg?: number | null
+          giveaways_per_60_avg?: number | null
+          goals_5v5_avg?: number | null
+          goals_5v5_per_60_avg?: number | null
+          goals_avg?: number | null
+          goals_backhand_avg?: number | null
+          goals_bat_avg?: number | null
+          goals_between_legs_avg?: number | null
+          goals_cradle_avg?: number | null
+          goals_deflected_avg?: number | null
+          goals_pct_avg?: number | null
+          goals_per_60_5v5_avg?: number | null
+          goals_poke_avg?: number | null
+          goals_slap_avg?: number | null
+          goals_snap_avg?: number | null
+          goals_tip_in_avg?: number | null
+          goals_wrap_around_avg?: number | null
+          goals_wrist_avg?: number | null
+          gw_goals_avg?: number | null
+          height?: number | null
+          hits_avg?: number | null
+          hits_per_60_avg?: number | null
+          individual_sat_for_per_60_avg?: number | null
+          individual_shots_for_per_60_avg?: number | null
+          major_penalties_avg?: number | null
+          match_penalties_avg?: number | null
+          minor_penalties_avg?: number | null
+          misconduct_penalties_avg?: number | null
+          missed_shots_avg?: number | null
+          n_zone_faceoffs_avg?: number | null
+          n_zone_fo_percentage_avg?: number | null
+          n_zone_fol_avg?: number | null
+          n_zone_fow_avg?: number | null
+          nationality_code?: string | null
+          number_of_seasons?: number | null
+          o_zone_faceoffs_avg?: number | null
+          o_zone_fo_percentage_avg?: number | null
+          o_zone_fol_avg?: number | null
+          o_zone_fow_avg?: number | null
+          o_zone_start_pct_5v5_avg?: number | null
+          on_ice_shooting_pct_5v5_avg?: number | null
+          on_ice_shooting_pct_avg?: number | null
+          ot_goals_avg?: number | null
+          ot_time_on_ice_avg?: number | null
+          ot_time_on_ice_per_game_avg?: number | null
+          penalties_avg?: number | null
+          penalties_drawn_avg?: number | null
+          penalties_drawn_per_60_avg?: number | null
+          penalties_taken_per_60_avg?: number | null
+          penalty_minutes_avg?: number | null
+          penalty_minutes_per_toi_avg?: number | null
+          penalty_seconds_per_game_avg?: number | null
+          player_id?: number
+          player_name?: string | null
+          plus_minus_avg?: number | null
+          points_5v5_avg?: number | null
+          points_5v5_per_60_avg?: number | null
+          points_avg?: number | null
+          points_per_60_5v5_avg?: number | null
+          points_per_game_avg?: number | null
+          position_code?: string | null
+          pp_assists_avg?: number | null
+          pp_faceoff_percentage_avg?: number | null
+          pp_faceoffs_avg?: number | null
+          pp_fol_avg?: number | null
+          pp_fow_avg?: number | null
+          pp_goals_against_avg?: number | null
+          pp_goals_against_per_60_avg?: number | null
+          pp_goals_avg?: number | null
+          pp_goals_for_avg?: number | null
+          pp_goals_for_per_60_avg?: number | null
+          pp_goals_per_60_avg?: number | null
+          pp_individual_sat_for_per_60_avg?: number | null
+          pp_individual_sat_per_60_avg?: number | null
+          pp_points_avg?: number | null
+          pp_points_per_60_avg?: number | null
+          pp_primary_assists_avg?: number | null
+          pp_primary_assists_per_60_avg?: number | null
+          pp_secondary_assists_avg?: number | null
+          pp_secondary_assists_per_60_avg?: number | null
+          pp_shooting_percentage_avg?: number | null
+          pp_shots_avg?: number | null
+          pp_shots_per_60_avg?: number | null
+          pp_toi_avg?: number | null
+          pp_toi_pct_per_game_avg?: number | null
+          pp_toi_per_game_avg?: number | null
+          primary_assists_5v5_avg?: number | null
+          primary_assists_5v5_per_60_avg?: number | null
+          primary_assists_per_60_5v5_avg?: number | null
+          sat_against_avg?: number | null
+          sat_ahead_avg?: number | null
+          sat_behind_avg?: number | null
+          sat_close_avg?: number | null
+          sat_for_avg?: number | null
+          sat_pct_avg?: number | null
+          sat_percentage_ahead_avg?: number | null
+          sat_percentage_avg?: number | null
+          sat_percentage_behind_avg?: number | null
+          sat_percentage_close_avg?: number | null
+          sat_percentage_tied_avg?: number | null
+          sat_relative_5v5_avg?: number | null
+          sat_relative_avg?: number | null
+          sat_tied_avg?: number | null
+          sat_total_avg?: number | null
+          secondary_assists_5v5_avg?: number | null
+          secondary_assists_5v5_per_60_avg?: number | null
+          secondary_assists_per_60_5v5_avg?: number | null
+          sh_assists_avg?: number | null
+          sh_faceoff_percentage_avg?: number | null
+          sh_faceoffs_avg?: number | null
+          sh_fol_avg?: number | null
+          sh_fow_avg?: number | null
+          sh_goals_against_avg?: number | null
+          sh_goals_avg?: number | null
+          sh_goals_for_avg?: number | null
+          sh_goals_per_60_avg?: number | null
+          sh_individual_sat_for_avg?: number | null
+          sh_individual_sat_for_per_60_avg?: number | null
+          sh_individual_sat_per_60_avg?: number | null
+          sh_points_avg?: number | null
+          sh_points_per_60_avg?: number | null
+          sh_primary_assists_avg?: number | null
+          sh_primary_assists_per_60_avg?: number | null
+          sh_secondary_assists_avg?: number | null
+          sh_secondary_assists_per_60_avg?: number | null
+          sh_shooting_percentage_avg?: number | null
+          sh_shots_avg?: number | null
+          sh_shots_per_60_avg?: number | null
+          sh_time_on_ice_avg?: number | null
+          sh_time_on_ice_pct_per_game_avg?: number | null
+          sh_toi_per_game_avg?: number | null
+          shifts_avg?: number | null
+          shifts_per_game_avg?: number | null
+          shooting_percentage_5v5_avg?: number | null
+          shooting_percentage_avg?: number | null
+          shoots_catches?: string | null
+          shots_avg?: number | null
+          shots_on_net_backhand_avg?: number | null
+          shots_on_net_bat_avg?: number | null
+          shots_on_net_between_legs_avg?: number | null
+          shots_on_net_cradle_avg?: number | null
+          shots_on_net_deflected_avg?: number | null
+          shots_on_net_poke_avg?: number | null
+          shots_on_net_slap_avg?: number | null
+          shots_on_net_snap_avg?: number | null
+          shots_on_net_tip_in_avg?: number | null
+          shots_on_net_wrap_around_avg?: number | null
+          shots_on_net_wrist_avg?: number | null
+          skater_save_pct_5v5_avg?: number | null
+          skater_shooting_plus_save_pct_5v5_avg?: number | null
+          takeaways_avg?: number | null
+          takeaways_per_60_avg?: number | null
+          time_on_ice_per_shift_avg?: number | null
+          toi_per_game_5v5_avg?: number | null
+          toi_per_game_avg?: number | null
+          total_faceoffs_avg?: number | null
+          total_fol_avg?: number | null
+          total_fow_avg?: number | null
+          total_primary_assists_avg?: number | null
+          total_secondary_assists_avg?: number | null
+          usat_against_avg?: number | null
+          usat_ahead_avg?: number | null
+          usat_behind_avg?: number | null
+          usat_close_avg?: number | null
+          usat_for_avg?: number | null
+          usat_percentage_ahead_avg?: number | null
+          usat_percentage_avg?: number | null
+          usat_percentage_behind_avg?: number | null
+          usat_percentage_close_avg?: number | null
+          usat_percentage_tied_avg?: number | null
+          usat_relative_avg?: number | null
+          usat_tied_avg?: number | null
+          usat_total_avg?: number | null
+          weight?: number | null
+          zone_start_pct_5v5_avg?: number | null
+          zone_start_pct_avg?: number | null
+        }
+        Relationships: []
+      }
+      yahoo_players: {
+        Row: {
+          average_draft_cost: number | null
+          average_draft_pick: number | null
+          average_draft_round: number | null
+          display_position: string | null
+          draft_analysis: Json | null
+          editorial_player_key: string | null
+          editorial_team_abbreviation: string | null
+          editorial_team_full_name: string | null
+          eligible_positions: Json | null
+          full_name: string | null
+          headshot_url: string | null
+          injury_note: string | null
+          last_updated: string | null
+          percent_drafted: number | null
+          percent_owned_value: number | null
+          percent_ownership: number | null
+          player_id: string | null
+          player_key: string
+          player_name: string | null
+          position_type: string | null
+          primary_position: string | null
+          status: string | null
+          status_full: string | null
+          uniform_number: number | null
+        }
+        Insert: {
+          average_draft_cost?: number | null
+          average_draft_pick?: number | null
+          average_draft_round?: number | null
+          display_position?: string | null
+          draft_analysis?: Json | null
+          editorial_player_key?: string | null
+          editorial_team_abbreviation?: string | null
+          editorial_team_full_name?: string | null
+          eligible_positions?: Json | null
+          full_name?: string | null
+          headshot_url?: string | null
+          injury_note?: string | null
+          last_updated?: string | null
+          percent_drafted?: number | null
+          percent_owned_value?: number | null
+          percent_ownership?: number | null
+          player_id?: string | null
+          player_key: string
+          player_name?: string | null
+          position_type?: string | null
+          primary_position?: string | null
+          status?: string | null
+          status_full?: string | null
+          uniform_number?: number | null
+        }
+        Update: {
+          average_draft_cost?: number | null
+          average_draft_pick?: number | null
+          average_draft_round?: number | null
+          display_position?: string | null
+          draft_analysis?: Json | null
+          editorial_player_key?: string | null
+          editorial_team_abbreviation?: string | null
+          editorial_team_full_name?: string | null
+          eligible_positions?: Json | null
+          full_name?: string | null
+          headshot_url?: string | null
+          injury_note?: string | null
+          last_updated?: string | null
+          percent_drafted?: number | null
+          percent_owned_value?: number | null
+          percent_ownership?: number | null
+          player_id?: string | null
+          player_key?: string
+          player_name?: string | null
+          position_type?: string | null
+          primary_position?: string | null
+          status?: string | null
+          status_full?: string | null
+          uniform_number?: number | null
+        }
+        Relationships: []
+      }
+      yahoo_positions: {
+        Row: {
+          display_position: string | null
+          editorial_team_abbr: string | null
+          full_name: string | null
+          player_id: number | null
+          player_key: string
+          position_type: string | null
+          primary_position: string | null
+          status: string | null
+          team_abbr: string | null
+          team_full_name: string | null
+          uniform_number: string | null
+        }
+        Insert: {
+          display_position?: string | null
+          editorial_team_abbr?: string | null
+          full_name?: string | null
+          player_id?: number | null
+          player_key: string
+          position_type?: string | null
+          primary_position?: string | null
+          status?: string | null
+          team_abbr?: string | null
+          team_full_name?: string | null
+          uniform_number?: string | null
+        }
+        Update: {
+          display_position?: string | null
+          editorial_team_abbr?: string | null
+          full_name?: string | null
+          player_id?: number | null
+          player_key?: string
+          position_type?: string | null
+          primary_position?: string | null
+          status?: string | null
+          team_abbr?: string | null
+          team_full_name?: string | null
+          uniform_number?: string | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      combined_sos: {
+        Row: {
+          abbreviation: string | null
+          future_sos: number | null
+          past_sos: number | null
+          team_id: number | null
+          team_name: string | null
+        }
+        Insert: {
+          abbreviation?: string | null
+          future_sos?: never
+          past_sos?: never
+          team_id?: number | null
+          team_name?: string | null
+        }
+        Update: {
+          abbreviation?: string | null
+          future_sos?: never
+          past_sos?: never
+          team_id?: number | null
+          team_name?: string | null
+        }
+        Relationships: []
+      }
+      game_score_view: {
+        Row: {
+          advanced_game_score_as: number | null
+          blocked_shots: number | null
+          counts_shots: number | null
+          date: string | null
+          faceoffs_lost: number | null
+          faceoffs_won: number | null
+          ga: number | null
+          game_score_as: number | null
+          gf: number | null
+          goals: number | null
+          icf: number | null
+          ixg: number | null
+          penalties: number | null
+          penalties_drawn: number | null
+          player_id: number | null
+          player_name: string | null
+          sat_against: number | null
+          sat_for: number | null
+          shots: number | null
+          total_fol: number | null
+          total_fow: number | null
+          total_primary_assists: number | null
+          total_secondary_assists: number | null
+          xga_as: number | null
+          xgf_as: number | null
+        }
+        Relationships: []
+      }
+      gameOutcomes: {
+        Row: {
+          gameId: number | null
+          outcome: string | null
+          teamId: number | null
+        }
         Relationships: [
           {
-            foreignKeyName: "users_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "users";
-            referencedColumns: ["id"];
-          }
-        ];
-      };
-    };
-    Views: {
-      [_ in never]: never;
-    };
+            foreignKeyName: "teamGameStats_gameId_fkey"
+            columns: ["gameId"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "teamGameStats_teamId_fkey"
+            columns: ["teamId"]
+            isOneToOne: false
+            referencedRelation: "combined_sos"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "teamGameStats_teamId_fkey"
+            columns: ["teamId"]
+            isOneToOne: false
+            referencedRelation: "power_rankings"
+            referencedColumns: ["team_id"]
+          },
+          {
+            foreignKeyName: "teamGameStats_teamId_fkey"
+            columns: ["teamId"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nst_5v5_team_differentials: {
+        Row: {
+          ca_per_game_diff: number | null
+          cf_pct_diff: number | null
+          cf_per_game_diff: number | null
+          fa_per_game_diff: number | null
+          ff_pct_diff: number | null
+          ff_per_game_diff: number | null
+          ga_per_game_diff: number | null
+          gf_pct_diff: number | null
+          gf_per_game_diff: number | null
+          gp: number | null
+          hdca_per_game_diff: number | null
+          hdcf_pct_diff: number | null
+          hdcf_per_game_diff: number | null
+          hdga_per_game_diff: number | null
+          hdgf_pct_diff: number | null
+          hdgf_per_game_diff: number | null
+          hdsa_per_game_diff: number | null
+          hdsf_pct_diff: number | null
+          hdsf_per_game_diff: number | null
+          l_per_game: number | null
+          otl_per_game: number | null
+          pdo_diff: number | null
+          points_per_game: number | null
+          sa_per_game_diff: number | null
+          sca_per_game_diff: number | null
+          scf_pct_diff: number | null
+          scf_per_game_diff: number | null
+          sf_pct_diff: number | null
+          sf_per_game_diff: number | null
+          sh_pct_diff: number | null
+          sv_pct_diff: number | null
+          team_abbreviation: string | null
+          team_name: string | null
+          toi_per_game_diff: number | null
+          w_per_game: number | null
+          xga_per_game_diff: number | null
+          xgf_pct_diff: number | null
+          xgf_per_game_diff: number | null
+        }
+        Relationships: []
+      }
+      nst_5v5_team_per_game: {
+        Row: {
+          ca_per_game: number | null
+          cf_pct: number | null
+          cf_per_game: number | null
+          fa_per_game: number | null
+          ff_pct: number | null
+          ff_per_game: number | null
+          ga_per_game: number | null
+          gf_pct: number | null
+          gf_per_game: number | null
+          gp: number | null
+          hdca_per_game: number | null
+          hdcf_pct: number | null
+          hdcf_per_game: number | null
+          hdga_per_game: number | null
+          hdgf_pct: number | null
+          hdgf_per_game: number | null
+          hdsa_per_game: number | null
+          hdsf_pct: number | null
+          hdsf_per_game: number | null
+          l_per_game: number | null
+          otl_per_game: number | null
+          pdo: number | null
+          points_per_game: number | null
+          sa_per_game: number | null
+          sca_per_game: number | null
+          scf_pct: number | null
+          scf_per_game: number | null
+          sf_pct: number | null
+          sf_per_game: number | null
+          sh_pct: number | null
+          sv_pct: number | null
+          team_abbreviation: string | null
+          team_name: string | null
+          toi_per_game: number | null
+          w_per_game: number | null
+          xga_per_game: number | null
+          xgf_pct: number | null
+          xgf_per_game: number | null
+        }
+        Relationships: []
+      }
+      nst_all_team_differentials: {
+        Row: {
+          ca_per_game_diff: number | null
+          cf_pct_diff: number | null
+          cf_per_game_diff: number | null
+          fa_per_game_diff: number | null
+          ff_pct_diff: number | null
+          ff_per_game_diff: number | null
+          ga_per_game_diff: number | null
+          gf_pct_diff: number | null
+          gf_per_game_diff: number | null
+          gp: number | null
+          hdca_per_game_diff: number | null
+          hdcf_pct_diff: number | null
+          hdcf_per_game_diff: number | null
+          hdga_per_game_diff: number | null
+          hdgf_pct_diff: number | null
+          hdgf_per_game_diff: number | null
+          hdsa_per_game_diff: number | null
+          hdsf_pct_diff: number | null
+          hdsf_per_game_diff: number | null
+          l_per_game: number | null
+          otl_per_game: number | null
+          pdo_diff: number | null
+          points_per_game: number | null
+          sa_per_game_diff: number | null
+          sca_per_game_diff: number | null
+          scf_pct_diff: number | null
+          scf_per_game_diff: number | null
+          sf_pct_diff: number | null
+          sf_per_game_diff: number | null
+          sh_pct_diff: number | null
+          sv_pct_diff: number | null
+          team_abbreviation: string | null
+          team_name: string | null
+          toi_per_game_diff: number | null
+          w_per_game: number | null
+          xga_per_game_diff: number | null
+          xgf_pct_diff: number | null
+          xgf_per_game_diff: number | null
+        }
+        Relationships: []
+      }
+      nst_all_team_per_game: {
+        Row: {
+          ca_per_game: number | null
+          cf_pct: number | null
+          cf_per_game: number | null
+          fa_per_game: number | null
+          ff_pct: number | null
+          ff_per_game: number | null
+          ga_per_game: number | null
+          gf_pct: number | null
+          gf_per_game: number | null
+          gp: number | null
+          hdca_per_game: number | null
+          hdcf_pct: number | null
+          hdcf_per_game: number | null
+          hdga_per_game: number | null
+          hdgf_pct: number | null
+          hdgf_per_game: number | null
+          hdsa_per_game: number | null
+          hdsf_pct: number | null
+          hdsf_per_game: number | null
+          l_per_game: number | null
+          otl_per_game: number | null
+          pdo: number | null
+          points_per_game: number | null
+          sa_per_game: number | null
+          sca_per_game: number | null
+          scf_pct: number | null
+          scf_per_game: number | null
+          sf_pct: number | null
+          sf_per_game: number | null
+          sh_pct: number | null
+          sv_pct: number | null
+          team_abbreviation: string | null
+          team_name: string | null
+          toi_per_game: number | null
+          w_per_game: number | null
+          xga_per_game: number | null
+          xgf_pct: number | null
+          xgf_per_game: number | null
+        }
+        Relationships: []
+      }
+      nst_att_def_scores: {
+        Row: {
+          "5v5_toi_diff": number | null
+          all_toi_diff: number | null
+          att_advantage_5v5: number | null
+          att_advantage_all: number | null
+          att_advantage_pk: number | null
+          att_advantage_pp: number | null
+          att_score_5v5: number | null
+          att_score_all: number | null
+          att_score_pk: number | null
+          att_score_pp: number | null
+          def_advantage_5v5: number | null
+          def_advantage_all: number | null
+          def_advantage_pk: number | null
+          def_advantage_pp: number | null
+          def_score_5v5: number | null
+          def_score_all: number | null
+          def_score_pk: number | null
+          def_score_pp: number | null
+          pk_toi_diff: number | null
+          pp_toi_diff: number | null
+          team_abbreviation: string | null
+          team_name: string | null
+        }
+        Relationships: []
+      }
+      nst_avg_5v5: {
+        Row: {
+          ca: number | null
+          cf: number | null
+          cf_pct: number | null
+          fa: number | null
+          ff: number | null
+          ff_pct: number | null
+          ga: number | null
+          gf: number | null
+          gf_pct: number | null
+          gp: number | null
+          hdca: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdga: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdsa: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          l: number | null
+          otl: number | null
+          pdo: number | null
+          points: number | null
+          sa: number | null
+          sca: number | null
+          scf: number | null
+          scf_pct: number | null
+          sf: number | null
+          sf_pct: number | null
+          sh_pct: number | null
+          sv_pct: number | null
+          team_abbreviation: string | null
+          team_name: string | null
+          toi: number | null
+          w: number | null
+          xga: number | null
+          xgf: number | null
+          xgf_pct: number | null
+        }
+        Relationships: []
+      }
+      nst_avg_all: {
+        Row: {
+          ca: number | null
+          cf: number | null
+          cf_pct: number | null
+          fa: number | null
+          ff: number | null
+          ff_pct: number | null
+          ga: number | null
+          gf: number | null
+          gf_pct: number | null
+          gp: number | null
+          hdca: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdga: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdsa: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          l: number | null
+          otl: number | null
+          pdo: number | null
+          points: number | null
+          sa: number | null
+          sca: number | null
+          scf: number | null
+          scf_pct: number | null
+          sf: number | null
+          sf_pct: number | null
+          sh_pct: number | null
+          sv_pct: number | null
+          team_abbreviation: string | null
+          team_name: string | null
+          toi: number | null
+          w: number | null
+          xga: number | null
+          xgf: number | null
+          xgf_pct: number | null
+        }
+        Relationships: []
+      }
+      nst_avg_pk: {
+        Row: {
+          ca: number | null
+          cf: number | null
+          cf_pct: number | null
+          fa: number | null
+          ff: number | null
+          ff_pct: number | null
+          ga: number | null
+          gf: number | null
+          gf_pct: number | null
+          gp: number | null
+          hdca: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdga: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdsa: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          l: number | null
+          otl: number | null
+          pdo: number | null
+          points: number | null
+          sa: number | null
+          sca: number | null
+          scf: number | null
+          scf_pct: number | null
+          sf: number | null
+          sf_pct: number | null
+          sh_pct: number | null
+          sv_pct: number | null
+          team_abbreviation: string | null
+          team_name: string | null
+          toi: number | null
+          w: number | null
+          xga: number | null
+          xgf: number | null
+          xgf_pct: number | null
+        }
+        Relationships: []
+      }
+      nst_avg_pp: {
+        Row: {
+          ca: number | null
+          cf: number | null
+          cf_pct: number | null
+          fa: number | null
+          ff: number | null
+          ff_pct: number | null
+          ga: number | null
+          gf: number | null
+          gf_pct: number | null
+          gp: number | null
+          hdca: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdga: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdsa: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          l: number | null
+          otl: number | null
+          pdo: number | null
+          points: number | null
+          sa: number | null
+          sca: number | null
+          scf: number | null
+          scf_pct: number | null
+          sf: number | null
+          sf_pct: number | null
+          sh_pct: number | null
+          sv_pct: number | null
+          team_abbreviation: string | null
+          team_name: string | null
+          toi: number | null
+          w: number | null
+          xga: number | null
+          xgf: number | null
+          xgf_pct: number | null
+        }
+        Relationships: []
+      }
+      nst_league_averages: {
+        Row: {
+          ca: number | null
+          cf: number | null
+          cf_pct: number | null
+          fa: number | null
+          ff: number | null
+          ff_pct: number | null
+          ga: number | null
+          gf: number | null
+          gf_pct: number | null
+          gp: number | null
+          hdca: number | null
+          hdcf: number | null
+          hdcf_pct: number | null
+          hdga: number | null
+          hdgf: number | null
+          hdgf_pct: number | null
+          hdsa: number | null
+          hdsf: number | null
+          hdsf_pct: number | null
+          l: number | null
+          otl: number | null
+          pdo: number | null
+          points: number | null
+          sa: number | null
+          sca: number | null
+          scf: number | null
+          scf_pct: number | null
+          sf: number | null
+          sf_pct: number | null
+          sh_pct: number | null
+          strength: string | null
+          sv_pct: number | null
+          toi: number | null
+          w: number | null
+          xga: number | null
+          xgf: number | null
+          xgf_pct: number | null
+        }
+        Relationships: []
+      }
+      nst_pk_team_differentials: {
+        Row: {
+          ca_per_game_diff: number | null
+          cf_pct_diff: number | null
+          cf_per_game_diff: number | null
+          fa_per_game_diff: number | null
+          ff_pct_diff: number | null
+          ff_per_game_diff: number | null
+          ga_per_game_diff: number | null
+          gf_pct_diff: number | null
+          gf_per_game_diff: number | null
+          gp: number | null
+          hdca_per_game_diff: number | null
+          hdcf_pct_diff: number | null
+          hdcf_per_game_diff: number | null
+          hdga_per_game_diff: number | null
+          hdgf_pct_diff: number | null
+          hdgf_per_game_diff: number | null
+          hdsa_per_game_diff: number | null
+          hdsf_pct_diff: number | null
+          hdsf_per_game_diff: number | null
+          l_per_game: number | null
+          otl_per_game: number | null
+          pdo_diff: number | null
+          points_per_game: number | null
+          sa_per_game_diff: number | null
+          sca_per_game_diff: number | null
+          scf_pct_diff: number | null
+          scf_per_game_diff: number | null
+          sf_pct_diff: number | null
+          sf_per_game_diff: number | null
+          sh_pct_diff: number | null
+          sv_pct_diff: number | null
+          team_abbreviation: string | null
+          team_name: string | null
+          toi_per_game_diff: number | null
+          w_per_game: number | null
+          xga_per_game_diff: number | null
+          xgf_pct_diff: number | null
+          xgf_per_game_diff: number | null
+        }
+        Relationships: []
+      }
+      nst_pk_team_per_game: {
+        Row: {
+          ca_per_game: number | null
+          cf_pct: number | null
+          cf_per_game: number | null
+          fa_per_game: number | null
+          ff_pct: number | null
+          ff_per_game: number | null
+          ga_per_game: number | null
+          gf_pct: number | null
+          gf_per_game: number | null
+          gp: number | null
+          hdca_per_game: number | null
+          hdcf_pct: number | null
+          hdcf_per_game: number | null
+          hdga_per_game: number | null
+          hdgf_pct: number | null
+          hdgf_per_game: number | null
+          hdsa_per_game: number | null
+          hdsf_pct: number | null
+          hdsf_per_game: number | null
+          l_per_game: number | null
+          otl_per_game: number | null
+          pdo: number | null
+          points_per_game: number | null
+          sa_per_game: number | null
+          sca_per_game: number | null
+          scf_pct: number | null
+          scf_per_game: number | null
+          sf_pct: number | null
+          sf_per_game: number | null
+          sh_pct: number | null
+          sv_pct: number | null
+          team_abbreviation: string | null
+          team_name: string | null
+          toi_per_game: number | null
+          w_per_game: number | null
+          xga_per_game: number | null
+          xgf_pct: number | null
+          xgf_per_game: number | null
+        }
+        Relationships: []
+      }
+      nst_pp_team_differentials: {
+        Row: {
+          ca_per_game_diff: number | null
+          cf_pct_diff: number | null
+          cf_per_game_diff: number | null
+          fa_per_game_diff: number | null
+          ff_pct_diff: number | null
+          ff_per_game_diff: number | null
+          ga_per_game_diff: number | null
+          gf_pct_diff: number | null
+          gf_per_game_diff: number | null
+          gp: number | null
+          hdca_per_game_diff: number | null
+          hdcf_pct_diff: number | null
+          hdcf_per_game_diff: number | null
+          hdga_per_game_diff: number | null
+          hdgf_pct_diff: number | null
+          hdgf_per_game_diff: number | null
+          hdsa_per_game_diff: number | null
+          hdsf_pct_diff: number | null
+          hdsf_per_game_diff: number | null
+          l_per_game: number | null
+          otl_per_game: number | null
+          pdo_diff: number | null
+          points_per_game: number | null
+          sa_per_game_diff: number | null
+          sca_per_game_diff: number | null
+          scf_pct_diff: number | null
+          scf_per_game_diff: number | null
+          sf_pct_diff: number | null
+          sf_per_game_diff: number | null
+          sh_pct_diff: number | null
+          sv_pct_diff: number | null
+          team_abbreviation: string | null
+          team_name: string | null
+          toi_per_game_diff: number | null
+          w_per_game: number | null
+          xga_per_game_diff: number | null
+          xgf_pct_diff: number | null
+          xgf_per_game_diff: number | null
+        }
+        Relationships: []
+      }
+      nst_pp_team_per_game: {
+        Row: {
+          ca_per_game: number | null
+          cf_pct: number | null
+          cf_per_game: number | null
+          fa_per_game: number | null
+          ff_pct: number | null
+          ff_per_game: number | null
+          ga_per_game: number | null
+          gf_pct: number | null
+          gf_per_game: number | null
+          gp: number | null
+          hdca_per_game: number | null
+          hdcf_pct: number | null
+          hdcf_per_game: number | null
+          hdga_per_game: number | null
+          hdgf_pct: number | null
+          hdgf_per_game: number | null
+          hdsa_per_game: number | null
+          hdsf_pct: number | null
+          hdsf_per_game: number | null
+          l_per_game: number | null
+          otl_per_game: number | null
+          pdo: number | null
+          points_per_game: number | null
+          sa_per_game: number | null
+          sca_per_game: number | null
+          scf_pct: number | null
+          scf_per_game: number | null
+          sf_pct: number | null
+          sf_per_game: number | null
+          sh_pct: number | null
+          sv_pct: number | null
+          team_abbreviation: string | null
+          team_name: string | null
+          toi_per_game: number | null
+          w_per_game: number | null
+          xga_per_game: number | null
+          xgf_pct: number | null
+          xgf_per_game: number | null
+        }
+        Relationships: []
+      }
+      nst_team_scores_all_strengths: {
+        Row: {
+          att_score_5v5: number | null
+          att_score_all: number | null
+          att_score_pk: number | null
+          att_score_pp: number | null
+          def_score_5v5: number | null
+          def_score_all: number | null
+          def_score_pk: number | null
+          def_score_pp: number | null
+          gp: number | null
+          l_per_game: number | null
+          otl_per_game: number | null
+          points_per_game: number | null
+          team_abbreviation: string | null
+          team_name: string | null
+          w_per_game: number | null
+        }
+        Relationships: []
+      }
+      power_rankings: {
+        Row: {
+          abbreviation: string | null
+          power_score: number | null
+          team_id: number | null
+          team_name: string | null
+        }
+        Relationships: []
+      }
+    }
     Functions: {
       delete_duplicate_players_in_rosters: {
         Args: {
-          _seasonid: number;
-        };
-        Returns: undefined;
-      };
+          _seasonid: number
+        }
+        Returns: undefined
+      }
+      get_aggregated_player_stats:
+        | {
+            Args: {
+              player_id_param: number
+              season_start_date: string
+              end_date: string
+            }
+            Returns: {
+              shooting_percentage: number
+              assist_ratio: number
+              total_peripherals: number
+              pdo: number
+              o_zone_start_pct: number
+            }[]
+          }
+        | {
+            Args: {
+              player_id_param: number
+              season_year: number
+            }
+            Returns: {
+              shooting_percentage: number
+              assist_ratio: number
+              total_peripherals: number
+              pdo: number
+              o_zone_start_pct: number
+            }[]
+          }
       get_skaters_avg_stats: {
         Args: {
-          start_date: string;
-          end_date: string;
-        };
+          start_date: string
+          end_date: string
+        }
         Returns: {
-          id: number;
-          avggoals: number;
-          avgassists: number;
-          avgplusminus: number;
-          avgpim: number;
-          avghits: number;
-          avgblockedshots: number;
-          avgpowerplaypoints: number;
-          avgshots: number;
-          numgames: number;
-        }[];
-      };
+          id: number
+          avggoals: number
+          avgassists: number
+          avgplusminus: number
+          avgpim: number
+          avghits: number
+          avgblockedshots: number
+          avgpowerplaypoints: number
+          avgshots: number
+          numgames: number
+        }[]
+      }
       get_skaters_info_by_game_id: {
         Args: {
-          p_game_id: number;
-        };
+          p_game_id: number
+        }
         Returns: {
-          id: number;
-          teamId: number;
-          sweaterNumber: number;
-          position: string;
-          firstName: string;
-          lastName: string;
-        }[];
-      };
+          id: number
+          teamId: number
+          sweaterNumber: number
+          position: string
+          firstName: string
+          lastName: string
+        }[]
+      }
       get_unprocessed_line_combinations: {
-        Args: Record<PropertyKey, never>;
+        Args: Record<PropertyKey, never>
         Returns: {
-          id: number;
-        }[];
-      };
+          id: number
+        }[]
+      }
       get_unupdated_games: {
-        Args: Record<PropertyKey, never>;
+        Args: Record<PropertyKey, never>
         Returns: {
-          gameid: number;
-        }[];
-      };
-    };
+          gameid: number
+        }[]
+      }
+      update_all_wgo_skaters: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+    }
     Enums: {
-      "NHL Position Code": "L" | "R" | "G" | "D" | "C";
-    };
+      NHL_Position_Code: "L" | "R" | "G" | "D" | "C"
+    }
     CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
-};
+      [_ in never]: never
+    }
+  }
+}
+
+type PublicSchema = Database[Extract<keyof Database, "public">]
 
 export type Tables<
   PublicTableNameOrOptions extends
-    | keyof (Database["public"]["Tables"] & Database["public"]["Views"])
+    | keyof (PublicSchema["Tables"] & PublicSchema["Views"])
     | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
         Database[PublicTableNameOrOptions["schema"]]["Views"])
-    : never = never
+    : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? (Database[PublicTableNameOrOptions["schema"]]["Tables"] &
       Database[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R;
+      Row: infer R
     }
     ? R
     : never
-  : PublicTableNameOrOptions extends keyof (Database["public"]["Tables"] &
-      Database["public"]["Views"])
-  ? (Database["public"]["Tables"] &
-      Database["public"]["Views"])[PublicTableNameOrOptions] extends {
-      Row: infer R;
-    }
-    ? R
+  : PublicTableNameOrOptions extends keyof (PublicSchema["Tables"] &
+        PublicSchema["Views"])
+    ? (PublicSchema["Tables"] &
+        PublicSchema["Views"])[PublicTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
     : never
-  : never;
 
 export type TablesInsert<
   PublicTableNameOrOptions extends
-    | keyof Database["public"]["Tables"]
+    | keyof PublicSchema["Tables"]
     | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
-    : never = never
+    : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I;
+      Insert: infer I
     }
     ? I
     : never
-  : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
-  ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
-      Insert: infer I;
-    }
-    ? I
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
     : never
-  : never;
 
 export type TablesUpdate<
   PublicTableNameOrOptions extends
-    | keyof Database["public"]["Tables"]
+    | keyof PublicSchema["Tables"]
     | { schema: keyof Database },
   TableName extends PublicTableNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicTableNameOrOptions["schema"]]["Tables"]
-    : never = never
+    : never = never,
 > = PublicTableNameOrOptions extends { schema: keyof Database }
   ? Database[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U;
+      Update: infer U
     }
     ? U
     : never
-  : PublicTableNameOrOptions extends keyof Database["public"]["Tables"]
-  ? Database["public"]["Tables"][PublicTableNameOrOptions] extends {
-      Update: infer U;
-    }
-    ? U
+  : PublicTableNameOrOptions extends keyof PublicSchema["Tables"]
+    ? PublicSchema["Tables"][PublicTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
     : never
-  : never;
 
 export type Enums<
   PublicEnumNameOrOptions extends
-    | keyof Database["public"]["Enums"]
+    | keyof PublicSchema["Enums"]
     | { schema: keyof Database },
   EnumName extends PublicEnumNameOrOptions extends { schema: keyof Database }
     ? keyof Database[PublicEnumNameOrOptions["schema"]]["Enums"]
-    : never = never
+    : never = never,
 > = PublicEnumNameOrOptions extends { schema: keyof Database }
   ? Database[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : PublicEnumNameOrOptions extends keyof Database["public"]["Enums"]
-  ? Database["public"]["Enums"][PublicEnumNameOrOptions]
-  : never;
+  : PublicEnumNameOrOptions extends keyof PublicSchema["Enums"]
+    ? PublicSchema["Enums"][PublicEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof PublicSchema["CompositeTypes"]
+    | { schema: keyof Database },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof Database
+  }
+    ? keyof Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+  ? Database[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof PublicSchema["CompositeTypes"]
+    ? PublicSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never

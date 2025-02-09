@@ -36,6 +36,7 @@ async function fetchAllDataForTeam(
     if (!data || data.length === 0) {
       fetchMore = false;
     } else {
+      // @ts-expect-error
       allData = allData.concat(data);
       offset += PAGE_SIZE;
     }

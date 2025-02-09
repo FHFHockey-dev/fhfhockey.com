@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import styles from "./FourWeekGrid.module.scss";
-import Image from "next/image";
+import Image from "next/legacy/image";
 import { TeamDataWithTotals } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
 import classNames from "classnames";

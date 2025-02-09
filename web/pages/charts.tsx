@@ -17,7 +17,7 @@ import {
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 import ClientOnly from "components/ClientOnly";
 import SustainabilityVSCareerChart from "components/SustainabilityVSCareerChart";
-import Image from "next/image";
+import Image from "next/legacy/image";
 import { toPng } from "html-to-image";
 import Container from "components/Layout/Container";
 
@@ -241,7 +241,11 @@ function Large({ playerId, setPlayerId, timeOption, setTimeOption }: any) {
           <PlayerBioCard playerId={playerId} />
         </div>
         <div className={styles.coverageChart}>
-          <CategoryCoverageChart playerId={playerId} timeOption={timeOption} />
+          <CategoryCoverageChart
+            showTitle
+            playerId={playerId}
+            timeOption={timeOption}
+          />
         </div>
         <div className={styles.timeOptions}>
           <TimeOptions timeOption={timeOption} setTimeOption={setTimeOption} />

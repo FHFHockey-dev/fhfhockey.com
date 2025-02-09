@@ -7,7 +7,7 @@ import { generateProbabilityMatrixWithTieBreaker } from "../utils/poissonHelpers
 import styles from "styles/PoissonHeatmap.module.scss";
 import supabase from "lib/supabase";
 import { calculateBlendedWinOdds, formatWinOdds } from "../utils/calcWinOdds";
-import Image from "next/image";
+import Image from "next/legacy/image";
 import { teamsInfo } from "lib/teamsInfo";
 
 type PoissonHeatmapProps = {

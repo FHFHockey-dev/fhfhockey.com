@@ -5,8 +5,9 @@
 Install dependencies
 
 ```bash
-# run this at the root directory
-yarn
+# run this at the /web directory
+npm install
+npm run dev
 ```
 
 ## Project Structure

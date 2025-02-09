@@ -23,7 +23,7 @@ const TeamStats = () => {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    <div className={styles.teamStatsContainer}>
+    (<div className={styles.teamStatsContainer}>
       <h1 className={styles.pageHeader}>
         <span className={styles.spanColorBlue}>Team</span> Stats
       </h1>
@@ -32,43 +32,43 @@ const TeamStats = () => {
           sortedTeams.map((team) => {
             const teamInfo = teamsInfo[team.abbreviation];
             return (
-              <Link href={`/teamStats/${team.abbreviation}`} key={team.id}>
-                <a
-                  className={styles.teamCard}
-                  style={
-                    {
-                      "--primary-color":
-                        teamInfo?.primaryColor || ("" as string),
-                      "--secondary-color":
-                        teamInfo?.secondaryColor || ("" as string),
-                      "--jersey": teamInfo?.jersey || "black",
-                      "--accent-color": teamInfo?.accent || ("" as string),
-                      "--alt-color": teamInfo?.alt || "black",
-                    } as CustomStyle
-                  }
-                >
-                  <div className="center-stripe"></div>
-                  <div className={styles.teamLogoContainer}>
-                    <img
-                      src={`/teamLogos/${team.abbreviation.replace(
-                        /\s+/g,
-                        " "
-                      )}.png`}
-                      alt={team.name}
-                      className={styles.teamLogo}
-                    />
-                  </div>
+              (<Link
+                href={`/teamStats/${team.abbreviation}`}
+                key={team.id}
+                className={styles.teamCard}
+                style={
+                  {
+                    "--primary-color":
+                      teamInfo?.primaryColor || ("" as string),
+                    "--secondary-color":
+                      teamInfo?.secondaryColor || ("" as string),
+                    "--jersey": teamInfo?.jersey || "black",
+                    "--accent-color": teamInfo?.accent || ("" as string),
+                    "--alt-color": teamInfo?.alt || "black",
+                  } as CustomStyle
+                }>
 
-                  <div className={styles.teamAbbrev}>{team.abbreviation}</div>
-                </a>
-              </Link>
+                <div className="center-stripe"></div>
+                <div className={styles.teamLogoContainer}>
+                  <img
+                    src={`/teamLogos/${team.abbreviation.replace(
+                      /\s+/g,
+                      " "
+                    )}.png`}
+                    alt={team.name}
+                    className={styles.teamLogo}
+                  />
+                </div>
+                <div className={styles.teamAbbrev}>{team.abbreviation}</div>
+
+              </Link>)
             );
           })
         ) : (
           <p className={styles.loading}>Loading...</p>
         )}
       </div>
-    </div>
+    </div>)
   );
 };
 

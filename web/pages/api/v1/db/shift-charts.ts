@@ -1,5 +1,5 @@
 // C:\Users\timbr\Desktop\FHFH\fhfhockey.com\web\pages\api\v1\db\shift-charts.ts
-
+// @ts-nocheck
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase";
 import adminOnly from "utils/adminOnlyMiddleware";

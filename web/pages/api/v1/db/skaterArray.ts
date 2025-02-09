@@ -1,3 +1,4 @@
+// @ts-nocheck
 import type { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase";
 
@@ -540,7 +541,7 @@ async function fetchSkaterStats(playerId: string): Promise<PlayerStats | null> {
       .range(offset, offset + limit - 1);
 
     if (playerId !== "all") {
-      query = query.eq("player_id", playerId);
+      query = query.eq("player_id", Number.parseInt(playerId));
     }
 
     const { data: skaterStats, error } = await query;

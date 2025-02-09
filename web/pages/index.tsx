@@ -236,7 +236,7 @@ const Home: NextPage = ({
   };
 
   return (
-    <Container className={styles.container}>
+    (<Container className={styles.container}>
       <NextSeo
         title="FHFH | Home"
         description="Five Hole Fantasy Hockey Podcast Home page."
@@ -288,72 +288,72 @@ const Home: NextPage = ({
                   }
 
                   return (
-                    <Link key={game.id} href={`/game/${game.id}`}>
-                      <a className={styles.gameLink}>
-                        <div
-                          className={styles.combinedGameCard}
-                          style={{
-                            "--home-primary-color": homeTeamInfo.primaryColor,
-                            "--home-secondary-color":
-                              homeTeamInfo.secondaryColor,
-                            "--home-jersey-color": homeTeamInfo.jersey,
-                            "--home-accent-color": homeTeamInfo.accent,
-                            "--home-alt-color": homeTeamInfo.alt,
-                            "--away-primary-color": awayTeamInfo.primaryColor,
-                            "--away-secondary-color":
-                              awayTeamInfo.secondaryColor,
-                            "--away-jersey-color": awayTeamInfo.jersey,
-                            "--away-accent-color": awayTeamInfo.accent,
-                            "--away-alt-color": awayTeamInfo.alt
-                          }}
-                        >
-                          <div className={styles.homeTeamLogo}>
-                            <img
-                              src={`https://assets.nhle.com/logos/nhl/svg/${homeTeam.abbrev}_light.svg`}
-                              className={styles.leftImage}
-                              alt={`${homeTeam.abbrev} logo`}
-                            />
-                          </div>
-                          <div className={styles.gameTimeSection}>
-                            <div className={styles.homeScore}>
-                              {homeTeam.score}
-                            </div>
-                            <div className={styles.gameTimeInfo}>
-                              <span className={styles.gameState}>
-                                {game.gameState === "LIVE"
-                                  ? formatPeriodText(
-                                      game.periodDescriptor.number,
-                                      game.periodDescriptor.periodType,
-                                      game.inIntermission
-                                    )
-                                  : getDisplayGameState(game.gameState)}
-                              </span>
-                              <span className={styles.gameTimeText}>
-                                {game.gameState === "LIVE" &&
-                                !game.inIntermission ? (
-                                  game.timeRemaining
-                                ) : (
-                                  <ClientOnly placeHolder={<>&nbsp;</>}>
-                                    {moment(game.startTimeUTC).format("h:mm A")}
-                                  </ClientOnly>
-                                )}
-                              </span>
-                            </div>
-                            <div className={styles.awayScore}>
-                              {awayTeam.score}
-                            </div>
-                          </div>
+                    (<Link key={game.id} href={`/game/${game.id}`} className={styles.gameLink}>
 
-                          <div className={styles.awayTeamLogo}>
-                            <img
-                              src={`https://assets.nhle.com/logos/nhl/svg/${awayTeam.abbrev}_light.svg`}
-                              className={styles.rightImage}
-                              alt={`${awayTeam.abbrev} logo`}
-                            />
+                      <div
+                        className={styles.combinedGameCard}
+                        style={{
+                          "--home-primary-color": homeTeamInfo.primaryColor,
+                          "--home-secondary-color":
+                            homeTeamInfo.secondaryColor,
+                          "--home-jersey-color": homeTeamInfo.jersey,
+                          "--home-accent-color": homeTeamInfo.accent,
+                          "--home-alt-color": homeTeamInfo.alt,
+                          "--away-primary-color": awayTeamInfo.primaryColor,
+                          "--away-secondary-color":
+                            awayTeamInfo.secondaryColor,
+                          "--away-jersey-color": awayTeamInfo.jersey,
+                          "--away-accent-color": awayTeamInfo.accent,
+                          "--away-alt-color": awayTeamInfo.alt
+                        }}
+                      >
+                        <div className={styles.homeTeamLogo}>
+                          <img
+                            src={`https://assets.nhle.com/logos/nhl/svg/${homeTeam.abbrev}_light.svg`}
+                            className={styles.leftImage}
+                            alt={`${homeTeam.abbrev} logo`}
+                          />
+                        </div>
+                        <div className={styles.gameTimeSection}>
+                          <div className={styles.homeScore}>
+                            {homeTeam.score}
+                          </div>
+                          <div className={styles.gameTimeInfo}>
+                            <span className={styles.gameState}>
+                              {game.gameState === "LIVE"
+                                ? formatPeriodText(
+                                    game.periodDescriptor.number,
+                                    game.periodDescriptor.periodType,
+                                    game.inIntermission
+                                  )
+                                : getDisplayGameState(game.gameState)}
+                            </span>
+                            <span className={styles.gameTimeText}>
+                              {game.gameState === "LIVE" &&
+                              !game.inIntermission ? (
+                                game.timeRemaining
+                              ) : (
+                                <ClientOnly placeHolder={<>&nbsp;</>}>
+                                  {moment(game.startTimeUTC).format("h:mm A")}
+                                </ClientOnly>
+                              )}
+                            </span>
+                          </div>
+                          <div className={styles.awayScore}>
+                            {awayTeam.score}
                           </div>
                         </div>
-                      </a>
-                    </Link>
+
+                        <div className={styles.awayTeamLogo}>
+                          <img
+                            src={`https://assets.nhle.com/logos/nhl/svg/${awayTeam.abbrev}_light.svg`}
+                            className={styles.rightImage}
+                            alt={`${awayTeam.abbrev} logo`}
+                          />
+                        </div>
+                      </div>
+
+                    </Link>)
                   );
                 })
               : nextAvailableGames.map((game) => {
@@ -367,72 +367,72 @@ const Home: NextPage = ({
                   }
 
                   return (
-                    <Link key={game.id} href={`/game/${game.id}`}>
-                      <a className={styles.gameLink}>
-                        <div
-                          className={styles.combinedGameCard}
-                          style={{
-                            "--home-primary-color": homeTeamInfo.primaryColor,
-                            "--home-secondary-color":
-                              homeTeamInfo.secondaryColor,
-                            "--home-jersey-color": homeTeamInfo.jersey,
-                            "--home-accent-color": homeTeamInfo.accent,
-                            "--home-alt-color": homeTeamInfo.alt,
-                            "--away-primary-color": awayTeamInfo.primaryColor,
-                            "--away-secondary-color":
-                              awayTeamInfo.secondaryColor,
-                            "--away-jersey-color": awayTeamInfo.jersey,
-                            "--away-accent-color": awayTeamInfo.accent,
-                            "--away-alt-color": awayTeamInfo.alt
-                          }}
-                        >
-                          <div className={styles.homeTeamLogo}>
-                            <img
-                              src={`https://assets.nhle.com/logos/nhl/svg/${homeTeam.abbrev}_light.svg`}
-                              className={styles.leftImage}
-                              alt={`${homeTeam.abbrev} logo`}
-                            />
-                          </div>
-                          <div className={styles.gameTimeSection}>
-                            <div className={styles.homeScore}>
-                              {homeTeam.score}
-                            </div>
-                            <div className={styles.gameTimeInfo}>
-                              <span className={styles.gameState}>
-                                {game.gameState === "LIVE"
-                                  ? formatPeriodText(
-                                      game.periodDescriptor.number,
-                                      game.periodDescriptor.periodType,
-                                      game.inIntermission
-                                    )
-                                  : getDisplayGameState(game.gameState)}
-                              </span>
-                              <span className={styles.gameTimeText}>
-                                {game.gameState === "LIVE" &&
-                                !game.inIntermission ? (
-                                  game.timeRemaining
-                                ) : (
-                                  <ClientOnly placeHolder={<>&nbsp;</>}>
-                                    {moment(game.startTimeUTC).format("h:mm A")}
-                                  </ClientOnly>
-                                )}
-                              </span>
-                            </div>
-                            <div className={styles.awayScore}>
-                              {awayTeam.score}
-                            </div>
-                          </div>
+                    (<Link key={game.id} href={`/game/${game.id}`} className={styles.gameLink}>
 
-                          <div className={styles.awayTeamLogo}>
-                            <img
-                              src={`https://assets.nhle.com/logos/nhl/svg/${awayTeam.abbrev}_light.svg`}
-                              className={styles.rightImage}
-                              alt={`${awayTeam.abbrev} logo`}
-                            />
+                      <div
+                        className={styles.combinedGameCard}
+                        style={{
+                          "--home-primary-color": homeTeamInfo.primaryColor,
+                          "--home-secondary-color":
+                            homeTeamInfo.secondaryColor,
+                          "--home-jersey-color": homeTeamInfo.jersey,
+                          "--home-accent-color": homeTeamInfo.accent,
+                          "--home-alt-color": homeTeamInfo.alt,
+                          "--away-primary-color": awayTeamInfo.primaryColor,
+                          "--away-secondary-color":
+                            awayTeamInfo.secondaryColor,
+                          "--away-jersey-color": awayTeamInfo.jersey,
+                          "--away-accent-color": awayTeamInfo.accent,
+                          "--away-alt-color": awayTeamInfo.alt
+                        }}
+                      >
+                        <div className={styles.homeTeamLogo}>
+                          <img
+                            src={`https://assets.nhle.com/logos/nhl/svg/${homeTeam.abbrev}_light.svg`}
+                            className={styles.leftImage}
+                            alt={`${homeTeam.abbrev} logo`}
+                          />
+                        </div>
+                        <div className={styles.gameTimeSection}>
+                          <div className={styles.homeScore}>
+                            {homeTeam.score}
+                          </div>
+                          <div className={styles.gameTimeInfo}>
+                            <span className={styles.gameState}>
+                              {game.gameState === "LIVE"
+                                ? formatPeriodText(
+                                    game.periodDescriptor.number,
+                                    game.periodDescriptor.periodType,
+                                    game.inIntermission
+                                  )
+                                : getDisplayGameState(game.gameState)}
+                            </span>
+                            <span className={styles.gameTimeText}>
+                              {game.gameState === "LIVE" &&
+                              !game.inIntermission ? (
+                                game.timeRemaining
+                              ) : (
+                                <ClientOnly placeHolder={<>&nbsp;</>}>
+                                  {moment(game.startTimeUTC).format("h:mm A")}
+                                </ClientOnly>
+                              )}
+                            </span>
+                          </div>
+                          <div className={styles.awayScore}>
+                            {awayTeam.score}
                           </div>
                         </div>
-                      </a>
-                    </Link>
+
+                        <div className={styles.awayTeamLogo}>
+                          <img
+                            src={`https://assets.nhle.com/logos/nhl/svg/${awayTeam.abbrev}_light.svg`}
+                            className={styles.rightImage}
+                            alt={`${awayTeam.abbrev} logo`}
+                          />
+                        </div>
+                      </div>
+
+                    </Link>)
                   );
                 })}
           </div>
@@ -529,7 +529,7 @@ const Home: NextPage = ({
           </div>
         </div>
       </div>
-    </Container>
+    </Container>)
   );
 };
 

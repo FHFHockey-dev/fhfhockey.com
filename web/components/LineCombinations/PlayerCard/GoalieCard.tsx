@@ -48,7 +48,7 @@ function GoalieCard({
   const color = useTeamColor();
 
   return (
-    <article
+    (<article
       className={classNames(styles.container, styles.goalie)}
       style={{
         backgroundColor: color.primary,
@@ -67,22 +67,22 @@ function GoalieCard({
               },
             }}
           >
-            <a>
-              <span className={styles.lastName}>
-                {names.slice(1).join(" ")}
-                {lineChange !== "static" && (
-                  <img
-                    src={lineChange === "promotion" ? UP_ARROW : DOWN_ARROW}
-                    alt={lineChange}
-                    style={{
-                      width: 12,
-                      height: 12,
-                      objectFit: "contain",
-                    }}
-                  />
-                )}
-              </span>
-            </a>
+
+            <span className={styles.lastName}>
+              {names.slice(1).join(" ")}
+              {lineChange !== "static" && (
+                <img
+                  src={lineChange === "promotion" ? UP_ARROW : DOWN_ARROW}
+                  alt={lineChange}
+                  style={{
+                    width: 12,
+                    height: 12,
+                    objectFit: "contain",
+                  }}
+                />
+              )}
+            </span>
+
           </Link>
         </h3>
 
@@ -100,7 +100,6 @@ function GoalieCard({
         </div>
       </div>
       <CategoryTitle type="small">LAST 10 GP</CategoryTitle>
-
       <ClientOnly>
         <section className={styles.stats}>
           {LAST10_GP_STATS_CONFIG.map((stat) => (
@@ -115,9 +114,7 @@ function GoalieCard({
           ))}
         </section>
       </ClientOnly>
-
       <CategoryTitle type="small">SEASON</CategoryTitle>
-
       <ClientOnly>
         <section className={styles.stats}>
           {SEASON_STATS_CONFIG.map((stat) => (
@@ -132,7 +129,7 @@ function GoalieCard({
           ))}
         </section>
       </ClientOnly>
-    </article>
+    </article>)
   );
 }
 

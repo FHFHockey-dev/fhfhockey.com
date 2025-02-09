@@ -51,7 +51,7 @@ function SkaterCard({
   const color = useTeamColor();
 
   return (
-    <article
+    (<article
       className={styles.container}
       style={{
         backgroundColor: color.primary,
@@ -70,22 +70,22 @@ function SkaterCard({
               },
             }}
           >
-            <a>
-              <span className={styles.lastName}>
-                {names.slice(1).join(" ")}
-                {lineChange !== "static" && (
-                  <img
-                    src={lineChange === "promotion" ? UP_ARROW : DOWN_ARROW}
-                    alt={lineChange}
-                    style={{
-                      width: 12,
-                      height: 12,
-                      objectFit: "contain",
-                    }}
-                  />
-                )}
-              </span>
-            </a>
+
+            <span className={styles.lastName}>
+              {names.slice(1).join(" ")}
+              {lineChange !== "static" && (
+                <img
+                  src={lineChange === "promotion" ? UP_ARROW : DOWN_ARROW}
+                  alt={lineChange}
+                  style={{
+                    width: 12,
+                    height: 12,
+                    objectFit: "contain",
+                  }}
+                />
+              )}
+            </span>
+
           </Link>
         </h3>
 
@@ -103,7 +103,6 @@ function SkaterCard({
         </div>
       </div>
       <CategoryTitle type="small">LAST 10 GP</CategoryTitle>
-
       <ClientOnly>
         <section className={styles.stats}>
           {CONFIG.map((stat) => (
@@ -116,7 +115,7 @@ function SkaterCard({
           ))}
         </section>
       </ClientOnly>
-    </article>
+    </article>)
   );
 }
 

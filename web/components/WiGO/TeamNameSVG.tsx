@@ -10,7 +10,7 @@ interface TeamNameSVGProps {
 const TeamNameSVG: React.FC<TeamNameSVGProps> = ({
   teamName,
   primaryColor,
-  secondaryColor
+  secondaryColor,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [fontSize, setFontSize] = useState<number>(10);
@@ -68,6 +68,7 @@ const TeamNameSVG: React.FC<TeamNameSVGProps> = ({
           fontSize={`${fontSize}px`}
           fontFamily="'Train One', serif"
           fontWeight={900}
+          // @ts-ignore
           ref={(el) => (textRefs.current[index] = el)}
         >
           {word}

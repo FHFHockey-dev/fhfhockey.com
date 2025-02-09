@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "next/legacy/image";
 import { ButtonHTMLAttributes, DetailedHTMLProps } from "react";
 
 import styles from "./IconButton.module.scss";

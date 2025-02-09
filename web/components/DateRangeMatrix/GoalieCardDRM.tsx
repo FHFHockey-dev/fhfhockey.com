@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 // C:/Users/timbr/OneDrive/Desktop/fhfhockey.com-3/web/components/DateRangeMatrix/GoalieCardDRM.tsx
-
+// @ts-nocheck
 import React, { useEffect, useState } from "react";
 import styles from "../../styles/LinePairGrid.module.scss";
 import supabase from "lib/supabase";

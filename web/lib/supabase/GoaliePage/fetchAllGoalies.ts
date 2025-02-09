@@ -30,6 +30,7 @@ export async function fetchAllGoalies(
     }
 
     if (data && data.length > 0) {
+      // @ts-expect-error
       allGoalies = allGoalies.concat(data);
       from += batchSize;
       to += batchSize;
