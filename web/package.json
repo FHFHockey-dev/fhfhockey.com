@@ -45,6 +45,7 @@
     "next-seo": "^6.6.0",
     "next-sitemap": "^3.1.10",
     "next-usequerystate": "1.7.3",
+    "node-fetch": "^2.7.0",
     "node-html-parser": "^5.4.2",
     "notistack": "^2.0.8",
     "p-limit": "^6.2.0",
