@@ -1,8 +1,7 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/run-fetch-wgo-data.ts
 
 import type { NextApiRequest, NextApiResponse } from "next";
-import { main } from "/Users/tim/Desktop/FHFH/fhfhockey.com/web/lib/supabase/upserts/fetchWGOdata.js";
-
+import { main } from "/Users/tim/Desktop/FHFH/fhfhockey.com/web/lib/supabase/Upserts/fetchWGOdata.js";
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
