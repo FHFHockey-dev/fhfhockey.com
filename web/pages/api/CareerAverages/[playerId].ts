@@ -34,7 +34,7 @@ export default async function handler(
   if (!playerId) {
     return res.json({
       message: "Player Id is required",
-      success: false,
+      success: false
     });
   }
 
@@ -45,12 +45,12 @@ export default async function handler(
       success: true,
       message:
         "Successfully fetch the career averages stats for player: " + playerId,
-      data: stats,
+      data: stats
     });
   } catch (e: any) {
     res.json({
       success: false,
-      message: "Unable to fetch the data. " + e.message,
+      message: "Unable to fetch the data. " + e.message
     });
   }
 }
@@ -238,7 +238,7 @@ async function getStats(playerId: string) {
 
     goals: goals,
 
-    iCFpct: iCFpct,
+    iCFpct: iCFpct
   };
   return data;
 }
