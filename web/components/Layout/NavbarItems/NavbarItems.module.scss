@@ -1,4 +1,4 @@
-@import "styles/vars.scss";
+@use "styles/vars" as *;
 
 nav.items.small {
   margin-top: 32px;
