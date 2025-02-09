@@ -1,4 +1,4 @@
-// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-1\web\lib\supabase\fetchWGOdata.js
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-1\web\lib\supabase\upserts\fetchWGOdata.js
 
 require("dotenv").config({ path: "../../../.env.local" });
 const { createClient } = require("@supabase/supabase-js");
