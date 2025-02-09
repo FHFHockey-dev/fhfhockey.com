@@ -113,6 +113,9 @@ const TeamStandingsChart: React.FC = () => {
   // -------------------------------
   // Fetch Data with Pagination & Include Conference/Division/PK/PP
   // -------------------------------
+  // -------------------------------
+  // Fetch Data with Pagination from Both Tables & Merge Them
+  // -------------------------------
   useEffect(() => {
     if (!season) return;
 
@@ -128,25 +131,24 @@ const TeamStandingsChart: React.FC = () => {
     const fetchData = async () => {
       const limit = 1000;
       let offset = 0;
-      let allRows: any[] = [];
+      let standingsRows: any[] = [];
 
+      // --- Fetch standings data from nhl_standings_details (without PK and PP) ---
       while (true) {
-        const { data: rows, error } = await supabase
+        const { data, error } = await supabase
           .from("nhl_standings_details")
           .select(
             `
-              date,
-              team_name_default,
-              games_played,
-              point_pctg,
-              points,
-              goal_against,
-              goal_for,
-              conference_abbrev,
-              division_abbrev,
-              penalty_kill_pct,
-              power_play_pct
-            `
+            date,
+            team_name_default,
+            games_played,
+            point_pctg,
+            points,
+            goal_against,
+            goal_for,
+            conference_abbrev,
+            division_abbrev
+          `
           )
           .gte("date", seasonStartStr)
           .lte("date", endDateStr)
@@ -155,17 +157,61 @@ const TeamStandingsChart: React.FC = () => {
           .range(offset, offset + limit - 1);
 
         if (error) {
-          console.error("Error fetching from Supabase:", error);
+          console.error("Error fetching standings:", error);
           break;
         }
-        if (!rows || rows.length === 0) break;
-        allRows.push(...rows);
-        if (rows.length < limit) break;
+        if (!data || data.length === 0) break;
+        standingsRows.push(...data);
+        if (data.length < limit) break;
         offset += limit;
       }
 
-      const dailyData = allRows.map((row) => {
+      // --- Fetch team stats data (for PK and PP) from wgo_team_stats ---
+      offset = 0;
+      let teamStatsRows: any[] = [];
+      while (true) {
+        const { data, error } = await supabase
+          .from("wgo_team_stats")
+          .select(
+            `
+            date,
+            franchise_name,
+            games_played,
+            penalty_kill_pct,
+            power_play_pct
+          `
+          )
+          .gte("date", seasonStartStr)
+          .lte("date", endDateStr)
+          .order("date", { ascending: true })
+          .order("franchise_name", { ascending: true })
+          .range(offset, offset + limit - 1);
+
+        if (error) {
+          console.error("Error fetching team stats:", error);
+          break;
+        }
+        if (!data || data.length === 0) break;
+        teamStatsRows.push(...data);
+        if (data.length < limit) break;
+        offset += limit;
+      }
+
+      // --- Create a lookup map from team stats ---
+      // The key is built from date and team name.
+      const teamStatsMap = new Map<string, any>();
+      teamStatsRows.forEach((row) => {
+        // Adjust this key if needed – we assume that the team names match between the two tables.
+        const key = `${row.date}_${row.franchise_name}`;
+        teamStatsMap.set(key, row);
+      });
+
+      // --- Merge the standings data with team stats ---
+      const dailyData = standingsRows.map((row) => {
         const gp = row.games_played || 0;
+        // Build the key using the standings table’s team name.
+        const key = `${row.date}_${row.team_name_default}`;
+        const stats = teamStatsMap.get(key);
         return {
           franchiseName: row.team_name_default,
           gamesPlayed: gp,
@@ -173,8 +219,9 @@ const TeamStandingsChart: React.FC = () => {
           points: row.points || 0,
           goalsAgainstPerGame: gp > 0 ? (row.goal_against ?? 0) / gp : 0,
           goalsForPerGame: gp > 0 ? (row.goal_for ?? 0) / gp : 0,
-          penaltyKillPct: row.penalty_kill_pct || 0, // will be multiplied by 100 in getMetricValue
-          powerPlayPct: row.power_play_pct || 0, // will be multiplied by 100 in getMetricValue
+          // Use penalty kill and power play values from team stats if available
+          penaltyKillPct: stats ? stats.penalty_kill_pct : 0,
+          powerPlayPct: stats ? stats.power_play_pct : 0,
           shotsAgainstPerGame: 0,
           shotsForPerGame: 0,
           conference: row.conference_abbrev || "N/A",
@@ -182,6 +229,7 @@ const TeamStandingsChart: React.FC = () => {
         } as TeamData;
       });
 
+      // Process and accumulate the data as before
       const accumulatedData = processDailyData(new Map(), dailyData);
       setData(accumulatedData);
     };
