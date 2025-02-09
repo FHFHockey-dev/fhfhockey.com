@@ -16,8 +16,11 @@ import ClientOnly from "components/ClientOnly";
 import styles from "../styles/Home.module.scss";
 
 import { teamsInfo } from "lib/NHL/teamsInfo";
-import { fetchCurrentSeason } from "utils/fetchCurrentseason";
+import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import Fetch from "lib/cors-fetch";
+
+// Import our chart component
+import TeamStandingsChart from "components/TeamStandingsChart/TeamStandingsChart";
 
 // DEV NOTE:
 // Integrate Live Period/Time Clock instead of just displaying "LIVE" for live games
@@ -435,6 +438,9 @@ const Home: NextPage = ({
           </div>
         </div>
         <div className={styles.separator}></div>
+
+        {/* Our new chart, spanning 100% width */}
+        <TeamStandingsChart />
 
         <div className={styles.standingsInjuriesContainer}>
           <div className={styles.ccStandings}>

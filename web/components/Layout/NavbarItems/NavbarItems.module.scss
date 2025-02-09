@@ -42,7 +42,7 @@ nav.items.small {
 
     &.active {
       .category_item {
-        color: rgba(255, 255, 255, 1);
+        color: rgba(249, 235, 234, 1);
         background-color: rgba(255, 255, 255, 0.07);
         border-radius: 8px;
       }
@@ -60,7 +60,7 @@ nav.items.small {
     font-family: "Roboto Condensed";
     font-weight: 500;
     font-size: 2rem;
-    color: rgba(255, 255, 255, 0.75);
+    color: rgba(249, 235, 234, 1);
 
     li:not(:first-child) {
       margin-top: 0.7rem;
@@ -86,9 +86,9 @@ nav.items.large {
     list-style-type: none;
     display: flex;
     gap: 24px;
-    color: rgba(255, 255, 255, 0.75);
+    color: rgba(249, 235, 234, 1);
     font-family: "Roboto Condensed";
-    font-weight: 500;
+    font-weight: 900;
     font-size: 1.125rem;
 
     li {
@@ -101,7 +101,7 @@ nav.items.large {
         &.active,
         &:hover {
           .category_item {
-            color: rgba(255, 255, 255, 1);
+            color: rgba(249, 235, 234, 1);
             background-color: rgba(255, 255, 255, 0.07);
             border-radius: 8px;
           }

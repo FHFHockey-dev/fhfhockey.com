@@ -5,12 +5,12 @@ import {
   fetchAllGamesInRangeIterative,
   fetchLeagueAverages,
   fetchTeamScores,
-  Game,
+  Game
 } from "./fetchData";
 import { performCalculations, CalculatedGameData } from "./calculations";
 import supabase from "lib/supabase";
 import adminOnly from "utils/adminOnlyMiddleware";
-import { fetchCurrentSeason } from "utils/fetchCurrentSeason"; // Ensure this path is correct
+import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 
 type ResponseData = {
   success: boolean;
@@ -30,7 +30,7 @@ const handler = async (
     res.setHeader("Allow", "POST");
     return res.status(405).json({
       success: false,
-      message: `Method ${req.method} Not Allowed`,
+      message: `Method ${req.method} Not Allowed`
     });
   }
 
@@ -58,7 +58,7 @@ const handler = async (
     const [games, teamScores, leagueAveragesData] = await Promise.all([
       fetchAllGamesInRangeIterative(startDate, endDate),
       fetchTeamScores(),
-      fetchLeagueAverages(),
+      fetchLeagueAverages()
     ]);
 
     if (!games || games.length === 0) {
@@ -67,7 +67,7 @@ const handler = async (
         message:
           date === "all"
             ? "No games found for the entire season."
-            : "No games found for today.",
+            : "No games found for today."
       });
     }
 
@@ -86,7 +86,7 @@ const handler = async (
         message:
           date === "all"
             ? "No valid games to process for the entire season."
-            : "No valid games to process for today.",
+            : "No valid games to process for today."
       });
     }
 
@@ -105,13 +105,13 @@ const handler = async (
         date === "all"
           ? "Expected goals for the entire season updated successfully."
           : "Expected goals for today updated successfully.",
-      data: data ?? null,
+      data: data ?? null
     });
   } catch (error: any) {
     console.error("Error updating expected goals:", error);
     return res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message
     });
   }
 };

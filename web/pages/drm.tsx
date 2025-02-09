@@ -14,7 +14,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import DateRangeMatrix, {
   OPTIONS as DATERANGE_MATRIX_MODES,
-  Mode,
+  Mode
 } from "components/DateRangeMatrix/index";
 import TeamDropdown from "components/DateRangeMatrix/TeamDropdown";
 import TeamSelect from "components/TeamSelect";
@@ -23,7 +23,7 @@ import Select from "components/Select";
 import {
   PlayerData,
   getTeamColors,
-  getDateRangeForGames,
+  getDateRangeForGames
 } from "components/DateRangeMatrix/utilities";
 import styles from "components/DateRangeMatrix/drm.module.scss";
 import { queryTypes, useQueryState } from "next-usequerystate";
@@ -41,7 +41,7 @@ const DEFAULT_COLORS = {
   primary: "#07aae2",
   secondary: "#202020",
   jersey: "#FFFFFF",
-  accentColor: "#404040",
+  accentColor: "#404040"
 };
 
 export default function DRMPage() {
@@ -92,11 +92,11 @@ export default function DRMPage() {
 
       setRegularSeasonDateRange({
         start: regularSeasonStartDate,
-        end: regularSeasonEndDate,
+        end: regularSeasonEndDate
       });
       setPlayoffDateRange({
         start: playoffsStartDate,
-        end: playoffsEndDate,
+        end: playoffsEndDate
       });
 
       setStartDate(regularSeasonStartDate);
@@ -138,7 +138,7 @@ export default function DRMPage() {
     seasonType,
     selectedTeam,
     regularSeasonDateRange,
-    playoffDateRange,
+    playoffDateRange
   ]);
 
   useEffect(() => {
@@ -223,13 +223,13 @@ export default function DRMPage() {
         ["--accent-color" as any]: accentColor,
         ["--secondary-color" as any]: secondary,
         ["--primary-color" as any]: primary,
-        ["--jersey-color" as any]: jersey,
+        ["--jersey-color" as any]: jersey
       }}
     >
       <TeamSelect
         teams={Object.keys(teamsInfo).map((key) => ({
           abbreviation: key as TeamAbbreviation,
-          name: teamsInfo[key as TeamAbbreviation].name,
+          name: teamsInfo[key as TeamAbbreviation].name
         }))}
         team={selectedTeam}
         onTeamChange={(teamAbbreviation) => {
@@ -377,7 +377,7 @@ export default function DRMPage() {
               timeFrame={timeFrame} // Pass the selected time frame
               dateRange={{
                 start: startDate || new Date(), // Fallback to current date if undefined
-                end: endDate || new Date(), // Fallback to current date if undefined
+                end: endDate || new Date() // Fallback to current date if undefined
               }} // Pass dateRange
               regularSeasonPlayersData={regularSeasonData}
               playoffPlayersData={playoffData}

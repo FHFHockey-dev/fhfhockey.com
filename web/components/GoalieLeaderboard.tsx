@@ -55,11 +55,15 @@ const GoalieLeaderboard: React.FC<Props> = ({ goalieRankings, setView }) => {
               <td>{goalie.weekCounts["Week"] || 0}</td>
               <td>{goalie.weekCounts["Bad Week"] || 0}</td>
               <td>{goalie.weekCounts["Really Bad Week"] || 0}</td>
-              <td className={getPercentageClass(goalie.percentAcceptableWeeks)}>
-                {goalie.percentAcceptableWeeks.toFixed(2)}%
+              <td
+                className={getPercentageClass(
+                  goalie.percentAcceptableWeeks || 0
+                )}
+              >
+                {(goalie.percentAcceptableWeeks ?? 0).toFixed(2)}%
               </td>
-              <td className={getPercentageClass(goalie.percentGoodWeeks)}>
-                {goalie.percentGoodWeeks.toFixed(2)}%
+              <td className={getPercentageClass(goalie.percentGoodWeeks || 0)}>
+                {(goalie.percentGoodWeeks ?? 0).toFixed(2)}%
               </td>
             </tr>
           ))}

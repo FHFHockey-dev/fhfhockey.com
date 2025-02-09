@@ -30,6 +30,8 @@ export default function Page() {
   const [powerPlayInput, setPowerPlayInput] = useState<string>("all"); // State for gameId input
   const [shiftChartsInput, setShiftChartsInput] = useState<string>("all"); // State for Shift Charts input
   const [nstTeamStatsInput, setNstTeamStatsInput] = useState<string>("all"); // State for NST tables
+  const [standingsDetailsInput, setStandingsDetailsInput] =
+    useState<string>("all");
 
   const season = useCurrentSeason();
   console.log(season);
@@ -229,6 +231,40 @@ export default function Page() {
       const { message, success } = await doPOST(
         "/api/v1/db/update-expected-goals?date=all"
       );
+      enqueueSnackbar(message, {
+        variant: success ? "success" : "error"
+      });
+    } catch (e: any) {
+      console.error(e.message);
+      enqueueSnackbar(e.message, {
+        variant: "error"
+      });
+    }
+  }
+
+  async function updateStandingsDetails() {
+    try {
+      // Convert input to lowercase, trim whitespace
+      const trimmedInput = standingsDetailsInput.trim().toLowerCase();
+
+      // Validate: allow 'all' or a YYYY-MM-DD date
+      if (trimmedInput !== "all" && !/^\d{4}-\d{2}-\d{2}$/.test(trimmedInput)) {
+        enqueueSnackbar(
+          "Please enter a valid date in YYYY-MM-DD format or 'all'.",
+          {
+            variant: "error"
+          }
+        );
+        return;
+      }
+
+      // Construct the endpoint URL with the date query parameter
+      const endpoint = `/api/v1/db/update-standings-details?date=${encodeURIComponent(
+        trimmedInput
+      )}`;
+
+      // POST to the endpoint (adminOnly-protected)
+      const { message, success } = await doPOST(endpoint);
       enqueueSnackbar(message, {
         variant: success ? "success" : "error"
       });
@@ -700,6 +736,66 @@ export default function Page() {
             <CardActions>
               <Button size="small" onClick={updateExpectedGoals}>
                 Update Expected Goals
+              </Button>
+            </CardActions>
+          </Card>
+        </Grid>
+
+        {/* Standings Details Card */}
+        <Grid xs={4}>
+          <Card
+            sx={{
+              border: "5px solid #07aae2",
+              borderRadius: "8px",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
+              color: "#fff"
+            }}
+          >
+            {/* (Optional) If you have a relevant image, replace the path below; or omit CardMedia. */}
+            <CardMedia
+              sx={{ height: 140 }}
+              image="/pictures/fhfPlaceholder.png"
+              title="standings details"
+            />
+            <CardContent sx={{ flexGrow: 1 }}>
+              <Typography gutterBottom variant="h5" component="div">
+                STANDINGS DETAILS
+              </Typography>
+              <Typography variant="body2">
+                Update NHL standings data for a single date (YYYY-MM-DD) or all
+                dates (<strong>all</strong>) in the current season.
+              </Typography>
+
+              <TextField
+                label="Date (YYYY-MM-DD) or 'all'"
+                variant="outlined"
+                size="small"
+                fullWidth
+                margin="normal"
+                value={standingsDetailsInput}
+                onChange={(e) => setStandingsDetailsInput(e.target.value)}
+                placeholder="e.g. 2025-02-10 or 'all'"
+                sx={{
+                  backgroundColor: "#202020",
+                  border: "1px solid #07aae2",
+                  borderRadius: "4px",
+                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
+                    {
+                      color: "#07aae2",
+                      fontWeight: "900",
+                      textTransform: "uppercase",
+                      backgroundColor: "#202020",
+                      margin: "1px"
+                    }
+                }}
+              />
+            </CardContent>
+            <CardActions>
+              <Button size="small" onClick={updateStandingsDetails}>
+                Update Standings Details
               </Button>
             </CardActions>
           </Card>
