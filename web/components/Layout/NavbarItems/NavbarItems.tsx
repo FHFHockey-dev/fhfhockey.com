@@ -1,12 +1,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import classNames from "classnames";
-import Image from "next/legacy/image";
+import Image from "next/image";
 
 import type {
   NavbarItem,
   NavbarItemCategory as NavbarItemCategoryType,
-  NavbarItemLink,
+  NavbarItemLink
 } from "./NavbarItemsData";
 import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
 
@@ -42,7 +42,7 @@ function NavbarItemCategory({ item, onItemClick }: NavBarCategoryProps) {
     <li
       className={classNames(styles.category, {
         [styles.active]: isCategoryActive(item),
-        [styles.collapsed]: collapsed,
+        [styles.collapsed]: collapsed
       })}
     >
       <div
@@ -76,36 +76,36 @@ type NavBarItemsProps = {
 };
 
 function NavbarItems_({ items, onItemClick }: NavBarItemsProps) {
-  return (<>
-    {/* navbar items */}
-    <ul className={styles.menu_list}>
-      {items.map((item, idx) => {
-        if (item.type === "category") {
-          return (
-            <NavbarItemCategory
-              key={idx}
-              item={item}
-              onItemClick={onItemClick}
-            />
-          );
-        } else if (item.type === "link") {
-          return (
-            (<li
-              key={idx}
-              className={classNames(styles.link, {
-                [styles.active]: isLinkActive(item),
-              })}
-              onClick={() => onItemClick(item)}
-            >
-              <Link href={item.href}>
-                {item.label}
-              </Link>
-            </li>)
-          );
-        }
-      })}
-    </ul>
-  </>);
+  return (
+    <>
+      {/* navbar items */}
+      <ul className={styles.menu_list}>
+        {items.map((item, idx) => {
+          if (item.type === "category") {
+            return (
+              <NavbarItemCategory
+                key={idx}
+                item={item}
+                onItemClick={onItemClick}
+              />
+            );
+          } else if (item.type === "link") {
+            return (
+              <li
+                key={idx}
+                className={classNames(styles.link, {
+                  [styles.active]: isLinkActive(item)
+                })}
+                onClick={() => onItemClick(item)}
+              >
+                <Link href={item.href}>{item.label}</Link>
+              </li>
+            );
+          }
+        })}
+      </ul>
+    </>
+  );
 }
 
 export default function NavbarItems(props: NavBarItemsProps) {

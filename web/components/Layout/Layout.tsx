@@ -1,5 +1,5 @@
 import React from "react";
-import Image from "next/legacy/image";
+import Image from "next/image";
 
 import Header from "./Header";
 import styles from "./Layout.module.scss";
