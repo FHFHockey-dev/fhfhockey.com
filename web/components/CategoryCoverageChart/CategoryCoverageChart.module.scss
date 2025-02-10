@@ -1,5 +1,5 @@
-@import "styles/vars";
-@import "styles/Charts.module.scss";
+@use "styles/vars";
+@use "styles/Charts.module";
 
 .container {
   height: 100%;
