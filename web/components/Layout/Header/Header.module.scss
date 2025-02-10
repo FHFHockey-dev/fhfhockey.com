@@ -72,7 +72,7 @@ $mobile-header-height: 72px;
   }
 
   // PC
-  @media only screen and (min-width: vars.$screen-large) {
+  @media only screen and (min-width: $screen-large) {
     .logo {
       left: -4px;
     }
