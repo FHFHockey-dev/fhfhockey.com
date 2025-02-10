@@ -1,3 +1,5 @@
+// /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/ChartTitle/ChartTitle.module.scss
+
 @use "styles/vars";
 
 .base {
@@ -8,7 +10,7 @@
   font-family: "Roboto";
 
   &.normal {
-    color: $text-primary-color;
+    color: vars.$text-primary-color;
   }
 
   &.hightlight {
