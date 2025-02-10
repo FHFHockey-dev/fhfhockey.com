@@ -14,7 +14,7 @@
   }
 
   &.hightlight {
-    color: $primary-color;
+    color: vars.$primary-color;
     font-family: "Roboto Condensed";
     margin-left: 0.1rem;
   }

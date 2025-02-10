@@ -109,7 +109,7 @@ $small: 6px;
     // create extra space at the bottom
     margin-bottom: 10vh;
 
-    background-color: $bg-light;
+    background-color: vars.$bg-light;
     grid-column: 1 / 9;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
