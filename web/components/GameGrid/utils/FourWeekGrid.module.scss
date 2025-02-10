@@ -1,6 +1,6 @@
 /* components/GameGrid/FourWeekGrid.module.scss */
 
-@import "styles/vars.scss";
+@use "styles/vars";
 
 // Common styles inherited or inspired by GameGrid.module.scss
 .fourWeekGridContainer {
