@@ -1,3 +1,5 @@
+// /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/_app.tsx
+
 import Head from "next/head";
 import { Analytics } from "@vercel/analytics/react";
 import type { AppProps } from "next/app";
