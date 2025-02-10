@@ -3,7 +3,7 @@
 
 // mobile menu
 .menu {
-  background-color: vars.$bg-dark;
+  background-color: $bg-dark;
   position: fixed;
   top: vars.$mobile-header-height;
   z-index: 10;
