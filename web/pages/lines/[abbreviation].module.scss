@@ -100,7 +100,7 @@
   }
 }
 
-@media only screen and (min-width: $screen-large) {
+@media only screen and (min-width: vars.$screen-large) {
   .teamSelect {
     display: flex;
   }

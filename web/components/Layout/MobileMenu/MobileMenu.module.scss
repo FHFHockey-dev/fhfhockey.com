@@ -5,10 +5,10 @@
 .menu {
   background-color: $bg-dark;
   position: fixed;
-  top: vars.$mobile-header-height;
+  top: $mobile-header-height;
   z-index: 10;
   width: 100%;
-  height: calc(100% - vars.$mobile-header-height);
+  height: calc(100% - $mobile-header-height);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
