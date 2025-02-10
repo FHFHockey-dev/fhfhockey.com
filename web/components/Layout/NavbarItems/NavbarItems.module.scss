@@ -75,7 +75,7 @@ nav.items.small {
     }
     &.active,
     &:hover {
-      color: vars.$primary-color;
+      color: $primary-color;
     }
   }
 }
@@ -141,7 +141,7 @@ nav.items.large {
             display: block;
             position: absolute;
             z-index: 10;
-            background-color: vars.$bg-light;
+            background-color: $bg-light;
             padding: 5px 10px;
             border-radius: 8px;
             min-width: 100%;
@@ -163,7 +163,7 @@ nav.items.large {
 
         &.active,
         &:hover {
-          color: vars.$primary-color;
+          color: $primary-color;
         }
       }
     }
