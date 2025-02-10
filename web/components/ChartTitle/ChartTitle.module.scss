@@ -19,7 +19,7 @@
     margin-left: 0.1rem;
   }
 
-  @media only screen and (max-width: $screen-medium-max) {
+  @media only screen and (max-width: vars.$screen-medium-max) {
     font-size: 10px;
   }
 }

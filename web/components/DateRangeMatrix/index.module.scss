@@ -58,7 +58,7 @@
   --player-info-size: 90px;
   font-size: 0.875rem;
 
-  @media only screen and (max-width: $screen-small-max) {
+  @media only screen and (max-width: vars.$screen-small-max) {
     --player-info-size: 80px;
     font-size: 0.7rem;
   }
@@ -69,7 +69,7 @@
     font-size: 0.55rem; // Smaller font size for the labels
     text-transform: uppercase;
 
-    @media only screen and (max-width: $screen-small-max) {
+    @media only screen and (max-width: vars.$screen-small-max) {
       --player-info-size: 50px;
       font-size: 0.65rem;
     }
