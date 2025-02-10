@@ -4,13 +4,13 @@
   display: grid;
   row-gap: 20px;
   margin-bottom: 25px;
-  @media only screen and (min-width: $screen-medium) {
+  @media only screen and (min-width: vars.$screen-medium) {
     grid-template-columns: repeat(2, 1fr);
     column-gap: 30px;
     row-gap: 35px;
   }
 
-  @media only screen and (min-width: $screen-large) {
+  @media only screen and (min-width: vars.$screen-large) {
     grid-template-columns: repeat(4, 1fr);
     gap: 40px;
   }

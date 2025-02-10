@@ -13,7 +13,7 @@
       opacity: 0.7;
     }
   }
-  @media only screen and (min-width: $screen-large) {
+  @media only screen and (min-width: vars.$screen-large) {
     gap: 14px;
   }
 }
