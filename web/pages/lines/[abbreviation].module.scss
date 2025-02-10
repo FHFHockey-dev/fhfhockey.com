@@ -155,7 +155,7 @@
     }
 
     .mainContent {
-      background-color: $bg-light;
+      background-color: vars.$bg-light;
       border: 2px solid white;
       border-top: none;
       padding-bottom: 40px;
