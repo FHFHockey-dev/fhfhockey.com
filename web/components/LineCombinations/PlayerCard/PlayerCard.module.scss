@@ -23,7 +23,7 @@
         color: white;
         gap: 2px;
         &:hover {
-          color: $primary-color;
+          color: vars.$primary-color;
         }
       }
     }
@@ -63,7 +63,7 @@
 }
 
 .goalie {
-  @media only screen and (max-width: $screen-small-max) {
+  @media only screen and (max-width: vars.$screen-small-max) {
     .stats {
       .stat {
         .value {

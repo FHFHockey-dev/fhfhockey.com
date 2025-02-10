@@ -3,12 +3,12 @@
 
 // mobile menu
 .menu {
-  background-color: $bg-dark;
+  background-color: vars.$bg-dark;
   position: fixed;
-  top: $mobile-header-height;
+  top: vars.$mobile-header-height;
   z-index: 10;
   width: 100%;
-  height: calc(100% - $mobile-header-height);
+  height: calc(100% - vars.$mobile-header-height);
   display: flex;
   flex-direction: column;
   justify-content: space-between;

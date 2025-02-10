@@ -5,7 +5,7 @@
   flex-direction: row;
   justify-content: space-around;
 
-  @media only screen and (max-width: $screen-medium-max) {
+  @media only screen and (max-width: vars.$screen-medium-max) {
     flex-direction: column;
   }
 }
@@ -20,7 +20,7 @@
   --spacing: 6px;
   --player-info-size: 120px;
   font-size: 0.875rem;
-  @media only screen and (max-width: $screen-small-max) {
+  @media only screen and (max-width: vars.$screen-small-max) {
     --player-info-size: 80px;
     font-size: 0.7rem;
   }
