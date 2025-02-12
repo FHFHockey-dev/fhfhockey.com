@@ -152,9 +152,11 @@
     align-items: center;
   }
 
-  width: 100%;
-  overflow-x: auto; // Add horizontal scroll for smaller screens
-  overflow-y: hidden;
+  & {
+    width: 100%;
+    overflow-x: auto; // Add horizontal scroll for smaller screens
+    overflow-y: hidden;
+  }
 }
 
 .shiftChartTable {

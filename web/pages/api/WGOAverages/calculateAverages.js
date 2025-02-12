@@ -14,13 +14,13 @@ dotenv.config({ path: "/Users/tim/Desktop/FHFH/fhfhockey.com/web/.env.local" });
 // Initialize Supabase client
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY
   // CHANGED SUPABASE THING
 );
 
 if (
   !process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  !process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY
+  !process.env.SUPABASE_SERVICE_ROLE_KEY
   // CHANGED SUPABASE THING
 ) {
   console.error("Supabase URL or Key is missing in environment variables.");

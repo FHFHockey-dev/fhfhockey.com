@@ -8,7 +8,7 @@ const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
   "https://fyhftlxokyjtpndbkfse.supabase.co";
 // CHANGED SUPABASE THING
-const supabaseKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY || "";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
 export function createClientWithToken(access_token: string): typeof supabase;

@@ -28,7 +28,7 @@ $border-color: #ccc;
     transition: background-color 0.3s;
 
     &:hover {
-      background-color: lighten($tab-inactive-bg, 5%);
+      background-color: color.adjust($tab-inactive-bg, $lightness: 5%);
     }
 
     &.active {

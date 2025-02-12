@@ -37,7 +37,7 @@
     transition: background-color 0.3s ease;
 
     &:hover {
-      background-color: darken(#07aae2, 10%);
+      background-color: color.adjust(#07aae2, $lightness: -10%);
     }
 
     // This styles the label when the associated radio button is checked
