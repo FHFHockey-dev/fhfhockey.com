@@ -9,7 +9,8 @@ require("dotenv").config({ path: "./../../.env.local" });
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY;
+const supabaseKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY;
+// CHANGED SUPABASE THING
 
 if (!supabaseUrl || !supabaseKey) {
   console.error(
@@ -24,7 +25,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // NST limit is >75 in 4 minutes, so 1 per 4 seconds is safe
 const rateLimiter = new RateLimiterMemory({
   points: 1, // Number of requests
-  duration: 40, // Sleep for n seconds
+  duration: 40 // Sleep for n seconds
 });
 
 // Function to pause execution to respect rate limits
@@ -213,12 +214,12 @@ async function main() {
         // Fetch data from both URLs for the player
         const urls = {
           oi: `https://naturalstattrick.com/playerreport.php?fromseason=20232024&thruseason=20232024&stype=2&sit=5v5&stdoi=oi&rate=n&v=g&playerid=${playerId}`,
-          std: `https://naturalstattrick.com/playerreport.php?fromseason=20232024&thruseason=20232024&stype=2&sit=5v5&stdoi=std&rate=n&v=g&playerid=${playerId}`,
+          std: `https://naturalstattrick.com/playerreport.php?fromseason=20232024&thruseason=20232024&stype=2&sit=5v5&stdoi=std&rate=n&v=g&playerid=${playerId}`
         };
 
         const [oiData, stdData] = await Promise.all([
           fetchAndProcessData(urls.oi, "oi", playerId),
-          fetchAndProcessData(urls.std, "std", playerId),
+          fetchAndProcessData(urls.std, "std", playerId)
         ]);
 
         // Combine the data based on dates
@@ -231,7 +232,7 @@ async function main() {
           }
           combinedData[date] = {
             ...combinedData[date],
-            ...oiData[date],
+            ...oiData[date]
           };
         }
 
@@ -242,7 +243,7 @@ async function main() {
           }
           combinedData[date] = {
             ...combinedData[date],
-            ...stdData[date],
+            ...stdData[date]
           };
         }
 
@@ -278,7 +279,7 @@ async function main() {
             hdcf_percentage: parseFloat(entry.oi?.["HDCF%"]) || null,
             oish: parseFloat(entry.oi?.["On-Ice SH%"]) || null,
             oisv: parseFloat(entry.oi?.["On-Ice SV%"]) || null,
-            ozs: parseFloat(entry.oi?.["Off. Zone Start %"]) || null,
+            ozs: parseFloat(entry.oi?.["Off. Zone Start %"]) || null
           };
 
           upsertData.push(dataToUpsert);

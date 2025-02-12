@@ -19,7 +19,9 @@ async function Fetch(url) {
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY;
+const supabaseKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY;
+// CHANGED SUPABASE THING
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function fetchAllDataForDate(formattedDate, limit) {
@@ -52,7 +54,7 @@ async function fetchAllDataForDate(formattedDate, limit) {
   return {
     goalieStats,
     advancedGoalieStats,
-    daysRestStats,
+    daysRestStats
   };
 }
 
@@ -127,7 +129,7 @@ async function fetchNHLSkaterData() {
         quality_starts_pct: advStats?.qualityStartsPct, // float
         regulation_losses: advStats?.regulationLosses, // int
         regulation_wins: advStats?.regulationWins, // int
-        shots_against_per_60: advStats?.shotsAgainstPer60, // float
+        shots_against_per_60: advStats?.shotsAgainstPer60 // float
       });
 
       if (response.error) {

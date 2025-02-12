@@ -6,7 +6,8 @@ const { createClient } = require("@supabase/supabase-js");
 // Initialize Supabase client with Service Role Key
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY // Use Service Role Key
+  process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY // Use Service Role Key
+  // CHANGED SUPABASE THING
 );
 
 /**
@@ -31,7 +32,7 @@ async function upsertWeekData(weekId, weekData) {
       shutouts: averages.shutouts,
       time_on_ice: averages.timeOnIce, // Already in minutes
       save_pct: averages.savePct,
-      goals_against_average: averages.goalsAgainstAverage,
+      goals_against_average: averages.goalsAgainstAverage
     };
 
     // Log mapped data for debugging
@@ -54,7 +55,7 @@ async function upsertWeekData(weekId, weekData) {
         save_pct: goalie.savePct,
         goals_against_average: goalie.goalsAgainstAverage,
         team: goalie.team,
-        goalie_full_name: goalie.goalieFullName,
+        goalie_full_name: goalie.goalieFullName
       }))
     );
 
@@ -78,7 +79,7 @@ async function upsertWeekData(weekId, weekData) {
           save_pct: goalie.savePct,
           goals_against_average: goalie.goalsAgainstAverage,
           team: goalie.team,
-          goalie_full_name: goalie.goalieFullName,
+          goalie_full_name: goalie.goalieFullName
         })),
         { onConflict: "player_id, week_id" }
       );
@@ -112,5 +113,5 @@ async function upsertWeekData(weekId, weekData) {
 }
 
 module.exports = {
-  upsertWeekData,
+  upsertWeekData
 };

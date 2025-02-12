@@ -7,7 +7,8 @@ const fetch = require("node-fetch");
 
 const BATCH_SIZE = 10; // Adjust this value for the size of each batch
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY || "";
+const supabaseKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY || "";
+// CHANGED SUPABASE THING
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Helper function for delaying retries
@@ -32,7 +33,7 @@ async function fetchSeasonData() {
       endDate: season.endDate.split("T")[0],
       preseasonStart: season.preseasonStartdate
         ? season.preseasonStartdate.split("T")[0]
-        : null,
+        : null
     }));
   } catch (error) {
     console.error("Error fetching season data:", error);
@@ -93,7 +94,7 @@ async function upsertGameData(gameId) {
       awayteamabbrev: gameData.awayTeam?.abbrev || null,
       awayteamscore: gameData.awayTeam?.score || null,
       location: gameData.venue?.default || null,
-      outcome: gameData.gameOutcome?.lastPeriodType || null,
+      outcome: gameData.gameOutcome?.lastPeriodType || null
     };
 
     const { error } = await supabase.from("pbp_games").upsert(gameUpsert);

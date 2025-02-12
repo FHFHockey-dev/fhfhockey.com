@@ -23,7 +23,9 @@ function sleep(ms) {
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY;
+const supabaseKey = process.env.NNEXT_SUPABASE_SERVICE_ROLE_KEY;
+// CHANGED SUPABASE THING
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Function to get the most recent date from the database

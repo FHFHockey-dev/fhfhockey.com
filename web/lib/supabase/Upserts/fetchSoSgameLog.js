@@ -8,7 +8,9 @@ const ProgressBar = require("progress");
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY; // Use service role key for server-side operations
+const supabaseKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY;
+// CHANGED SUPABASE THING
+// Use service role key for server-side operations
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Utility function to fetch and parse JSON
@@ -54,7 +56,7 @@ const teamsInfo = {
   ARI: { name: "Arizona Coyotes", franchiseId: 28, id: 53 },
   VGK: { name: "Vegas Golden Knights", franchiseId: 38, id: 54 },
   SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
-  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 },
+  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 }
 };
 
 // Fetch NHL Seasons
@@ -108,7 +110,7 @@ async function fetchDailyStandings(season, teams) {
   const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
   const bar = new ProgressBar("Fetching Standings [:bar] :percent :etas", {
     total: totalDays,
-    width: 40,
+    width: 40
   });
 
   // Map to store standings per team
@@ -150,7 +152,7 @@ async function fetchDailyStandings(season, teams) {
             team_points: teamStanding.points || null,
             team_point_pct: teamStanding.point_pctg || null,
             team_win_pct: teamStanding.win_pctg || null,
-            team_games_played: teamStanding.games_played || null,
+            team_games_played: teamStanding.games_played || null
           };
 
           // Initialize standingsMap for the team if not present
@@ -162,7 +164,7 @@ async function fetchDailyStandings(season, teams) {
             game_date: row.game_date,
             team_id: row.team_id,
             past_opponents: null,
-            future_opponents: null,
+            future_opponents: null
           });
 
           return row;
@@ -174,7 +176,7 @@ async function fetchDailyStandings(season, teams) {
         const { data: upsertedData, error } = await supabase
           .from("sos_standings")
           .upsert(standingsDataBatch, {
-            onConflict: ["season_id", "game_date", "team_id"],
+            onConflict: ["season_id", "game_date", "team_id"]
           });
 
         if (error) {
@@ -236,7 +238,7 @@ async function fetchAndProcessGameLogs(currentSeason, standingsMap) {
             game_id: game.id,
             game_date: game.gameDate,
             opponent_team_id: opponentTeam.id,
-            opponent_team_name: opponentTeam.placeName.default,
+            opponent_team_name: opponentTeam.placeName.default
           };
         })
         .filter(Boolean); // Remove null entries
@@ -292,7 +294,7 @@ async function updateStandingsWithOpponents(
           game_id: game.game_id,
           game_date: game.game_date,
           opponent_team_id: game.opponent_team_id,
-          opponent_team_name: game.opponent_team_name,
+          opponent_team_name: game.opponent_team_name
         }));
 
       // Find future opponents (games after gameDate)
@@ -305,7 +307,7 @@ async function updateStandingsWithOpponents(
           game_id: game.game_id,
           game_date: game.game_date,
           opponent_team_id: game.opponent_team_id,
-          opponent_team_name: game.opponent_team_name,
+          opponent_team_name: game.opponent_team_name
         }));
 
       updates.push({
@@ -313,7 +315,7 @@ async function updateStandingsWithOpponents(
         game_date: gameDate,
         team_id: row.team_id,
         past_opponents: pastOpponents,
-        future_opponents: futureOpponents,
+        future_opponents: futureOpponents
       });
     }
   }
@@ -327,7 +329,7 @@ async function updateStandingsWithOpponents(
       const { data, error } = await supabase
         .from("sos_standings")
         .upsert(batch, {
-          onConflict: ["season_id", "game_date", "team_id"],
+          onConflict: ["season_id", "game_date", "team_id"]
         });
 
       if (error) {

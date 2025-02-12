@@ -8,7 +8,9 @@ const ProgressBar = require("progress");
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY;
+const supabaseKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY;
+// CHANGED SUPABASE THING
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Helper fetch function

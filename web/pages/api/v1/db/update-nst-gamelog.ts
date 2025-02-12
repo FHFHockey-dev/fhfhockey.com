@@ -11,7 +11,8 @@ dotenv.config({ path: "./../../../.env.local" });
 
 const supabaseUrl: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey: string | undefined =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY;
+  process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY;
+// CHANGED SUPABASE THING
 
 if (!supabaseUrl || !supabaseKey) {
   console.error("Supabase URL or Public Key is missing.");
