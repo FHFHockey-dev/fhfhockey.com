@@ -20,7 +20,8 @@ async function Fetch(url) {
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseKey = process.env.NEXT_SUPABASE_SERVICE_ROLE_KEY;
+// CHANGED SUPABASE THING
 
 if (!supabaseUrl || !supabaseKey) {
   console.error(
@@ -49,7 +50,7 @@ async function fetchAllDataForDate(formattedDate, limit) {
       await Promise.all([
         Fetch(skaterStatsUrl),
         Fetch(skaterBioUrl),
-        Fetch(powerPlayUrl),
+        Fetch(powerPlayUrl)
       ]);
 
     skaterStats = skaterStats.concat(skaterStatsResponse.data);
@@ -66,7 +67,7 @@ async function fetchAllDataForDate(formattedDate, limit) {
   return {
     skaterStats,
     bioSkaterStats,
-    powerPlayStats,
+    powerPlayStats
   };
 }
 
@@ -128,7 +129,7 @@ async function fetchNHLSkaterData() {
         current_team_name: bioStats?.currentTeamName, // text
         // power play stats from powerPlayResponse (powerPlayStat)
         pp_toi_pct_per_game: powerPlayStat?.ppTimeOnIcePctPerGame, // float
-        team_abbrev: powerPlayStat?.teamAbbrev || null, // text
+        team_abbrev: powerPlayStat?.teamAbbrev || null // text
       });
 
       if (response.error) {
