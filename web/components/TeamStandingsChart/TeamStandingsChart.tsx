@@ -126,6 +126,7 @@ const TeamStandingsChart: React.FC = () => {
       // --- Fetch standings data from nhl_standings_details (without PK and PP) ---
       while (true) {
         const { data, error } = await supabase
+          // @ts-ignore
           .from("nhl_standings_details")
           .select(
             `
