@@ -3,18 +3,7 @@ import * as d3 from "d3";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import { format, isAfter } from "date-fns";
 import { teamsInfo, teamNameToAbbreviationMap } from "lib/teamsInfo";
-import { createClient } from "@supabase/supabase-js";
-
-// -------------------------------
-// SET UP SUPABASE CLIENT
-// -------------------------------
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-// TAKE OUT NEXT
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Supabase URL and Anon Key must be provided.");
-}
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import supabase from "lib/supabase/client";
 
 // -------------------------------
 // TYPE DEFINITIONS
@@ -226,7 +215,7 @@ const TeamStandingsChart: React.FC = () => {
           shotsAgainstPerGame: 0,
           shotsForPerGame: 0,
           conference: row.conference_abbrev || "N/A",
-          division: row.division_abbrev || "N/A"
+          division: row.division_abbrev || "N/A",
         } as TeamData;
       });
 
@@ -399,7 +388,7 @@ const TeamStandingsChart: React.FC = () => {
           marginBottom: "1rem",
           display: "flex",
           gap: "1rem",
-          alignItems: "center"
+          alignItems: "center",
         }}
       >
         <label>Conference: </label>
@@ -461,7 +450,7 @@ const TeamStandingsChart: React.FC = () => {
           pointerEvents: "none",
           display: "none",
           fontSize: "14px",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.3)"
+          boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
         }}
       />
     </div>

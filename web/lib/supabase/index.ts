@@ -8,7 +8,7 @@ const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
   "https://fyhftlxokyjtpndbkfse.supabase.co";
 // CHANGED SUPABASE THING
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY || "";
 const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
 export function createClientWithToken(access_token: string): typeof supabase;
@@ -25,13 +25,13 @@ export function createClientWithToken(...args: any) {
   const client = createClient<Database>(supabaseUrl, supabaseKey, {
     auth: {
       persistSession: false,
-      autoRefreshToken: false
+      autoRefreshToken: false,
     },
     global: {
       headers: {
-        Authorization: `Bearer ${access_token}`
-      }
-    }
+        Authorization: `Bearer ${access_token}`,
+      },
+    },
   });
 
   return client;
@@ -52,9 +52,9 @@ export async function doPOST(url: string, body?: any) {
   const result = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${session.access_token}`
+      Authorization: `Bearer ${session.access_token}`,
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   }).then((res) => res.json());
 
   return result;
