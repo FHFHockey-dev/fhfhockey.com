@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\BlogPost\BlogPost.module.scss
 
-@import "styles/vars.scss";
+@use "styles/vars";
 
 .post {
   outline: 3px solid white;
@@ -52,7 +52,7 @@
       line-clamp: $lines;
       -webkit-box-orient: vertical;
 
-      @media only screen and (min-width: $screen-medium) {
+      @media only screen and (min-width: vars.$screen-medium) {
         $lines: 10;
         -webkit-line-clamp: $lines;
         line-clamp: $lines;

@@ -12,6 +12,7 @@ const ROW_LIMIT = 1000; // Limit for Supabase row fetch
 // Supabase Client Initialization
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+// CHANGED SUPABASE THING
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Helper function to delay retries
@@ -161,7 +162,7 @@ async function upsertPlayByPlayData(gameId, gameData) {
         zonecode: details.zoneCode || null,
         xcoord: details.xCoord ?? null,
         ycoord: details.yCoord ?? null,
-        reason: details.reason || null,
+        reason: details.reason || null
       };
 
       try {

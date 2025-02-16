@@ -38,11 +38,12 @@ const teamsInfo = {
   ARI: { name: "Arizona Coyotes", franchiseId: 28, id: 53 },
   VGK: { name: "Vegas Golden Knights", franchiseId: 38, id: 54 },
   SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
-  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 },
+  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 }
 };
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY || "";
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+// CHANGED SUPABASE THING
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const BATCH_SIZE = 1000; // Supabase row limit per query
@@ -83,7 +84,7 @@ async function updateShotsAndGoals() {
         const team = teamsInfo[teamAbbreviation];
         map[team.id] = {
           shotsColumn: `team_${team.id}_shots`,
-          goalsColumn: `team_${team.id}_goals`,
+          goalsColumn: `team_${team.id}_goals`
         };
         return map;
       },
@@ -131,7 +132,7 @@ async function updateShotsAndGoals() {
       // Increment the shot and goal counts
       let shotUpdate = {
         [shotColumn]: currentShots + 1,
-        league_shots: currentLeagueShots + 1,
+        league_shots: currentLeagueShots + 1
       };
 
       // If it's a goal, increment the goal count
@@ -147,10 +148,10 @@ async function updateShotsAndGoals() {
           {
             xcoord,
             ycoord,
-            ...shotUpdate,
+            ...shotUpdate
           },
           {
-            onConflict: ["xcoord", "ycoord"], // Ensure that coordinates are unique
+            onConflict: ["xcoord", "ycoord"] // Ensure that coordinates are unique
           }
         );
 

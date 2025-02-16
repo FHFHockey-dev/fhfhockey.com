@@ -7,7 +7,8 @@ const { parseISO, isBefore } = require("date-fns");
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY; // Corrected environment variable
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// CHANGED SUPABASE THING
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Utility function to fetch and parse JSON with error handling
@@ -52,7 +53,7 @@ const teamsInfo = {
   WPG: { name: "Winnipeg Jets", franchiseId: 35, id: 52 },
   ARI: { name: "Arizona Coyotes", franchiseId: 28, id: 53 },
   VGK: { name: "Vegas Golden Knights", franchiseId: 38, id: 54 },
-  SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
+  SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 }
 };
 
 // Helper function for fetching all rows with pagination
@@ -182,7 +183,7 @@ async function fetchAndUpsertAllGames(
         fetchEndpointData(summaryUrl),
         fetchEndpointData(realtimeUrl),
         fetchEndpointData(powerPlayUrl),
-        fetchEndpointData(penaltyUrl),
+        fetchEndpointData(penaltyUrl)
       ]);
 
     console.log(
@@ -300,7 +301,7 @@ async function fetchAndUpsertAllGames(
           sh_goals_against: powerPlayGame.shGoalsAgainst,
 
           // Fields from penalty endpoint
-          pim: penaltyGame.penaltyMinutes,
+          pim: penaltyGame.penaltyMinutes
         };
       })
       .filter(Boolean); // Remove null entries
@@ -354,7 +355,7 @@ async function calculateAndUpdateCumulativeStats(currentSeason) {
   // Fetch all standings data for the current season with pagination
   const standingsData = await fetchAllRows("standings", {
     filters: { season_id: currentSeason.id },
-    order: { column: "date", ascending: true },
+    order: { column: "date", ascending: true }
   });
 
   if (!standingsData || standingsData.length === 0) {
@@ -376,7 +377,7 @@ async function calculateAndUpdateCumulativeStats(currentSeason) {
       date: date,
       wins: standingsRow.wins,
       losses: standingsRow.losses,
-      ot_losses: standingsRow.ot_losses,
+      ot_losses: standingsRow.ot_losses
     });
   });
 
@@ -466,7 +467,7 @@ async function calculateAndUpdateCumulativeStats(currentSeason) {
         game_number: currentGameNumber,
         opponent_wins: cumulative_opponent_wins,
         opponent_losses: cumulative_opponent_losses,
-        opponent_ot_losses: cumulative_opponent_ot_losses,
+        opponent_ot_losses: cumulative_opponent_ot_losses
       };
 
       // Update the game record in the database
@@ -501,7 +502,7 @@ async function calculateAndUpdateCumulativeStats(currentSeason) {
 async function fetchAllRollingGames() {
   const table = "rolling_games";
   const options = {
-    order: { column: "game_date", ascending: true },
+    order: { column: "game_date", ascending: true }
   };
   const allGames = await fetchAllRows(table, options);
   return allGames;
@@ -557,7 +558,7 @@ async function calculateOpponentAndLtgStats(
       hits_per60: 0,
       sat_pct: 0,
       pp_time_on_ice_per_game: 0,
-      time_on_ice_per_game_5v5: 0,
+      time_on_ice_per_game_5v5: 0
     };
 
     let stdCounts = {
@@ -577,7 +578,7 @@ async function calculateOpponentAndLtgStats(
       pim: 0,
       power_play_goals_for: 0,
       pp_opportunities: 0,
-      sh_goals_against: 0,
+      sh_goals_against: 0
     };
 
     let cumulative_std_opponent_wins = 0;
@@ -620,7 +621,7 @@ async function calculateOpponentAndLtgStats(
       const opponentUpdatePayload = {
         opponent_wins,
         opponent_losses,
-        opponent_ot_losses,
+        opponent_ot_losses
       };
 
       // Update opponent_* columns
@@ -744,7 +745,7 @@ async function calculateOpponentAndLtgStats(
         std_opponent_ot_losses: cumulative_std_opponent_ot_losses,
         std_game_ids, // Added std_game_ids array
         std_opponent_team_ids, // Added std_opponent_team_ids array
-        std_home_roads, // Added std_home_roads array
+        std_home_roads // Added std_home_roads array
       };
 
       // Update the game record in the database with STD stats
@@ -782,7 +783,7 @@ async function calculateOpponentAndLtgStats(
         hits_per60: 0,
         sat_pct: 0,
         pp_time_on_ice_per_game: 0,
-        time_on_ice_per_game_5v5: 0,
+        time_on_ice_per_game_5v5: 0
       };
 
       let ltgCounts = {
@@ -802,7 +803,7 @@ async function calculateOpponentAndLtgStats(
         pim: 0,
         power_play_goals_for: 0,
         pp_opportunities: 0,
-        sh_goals_against: 0,
+        sh_goals_against: 0
       };
 
       let cumulative_opponent_wins = 0;
@@ -932,7 +933,7 @@ async function calculateOpponentAndLtgStats(
         ltg_opponent_ot_losses: cumulative_opponent_ot_losses,
         ltg_game_ids, // Added ltg_game_ids array
         ltg_opponent_team_ids, // Added ltg_opponent_team_ids array
-        ltg_home_roads, // Added ltg_home_roads array
+        ltg_home_roads // Added ltg_home_roads array
       };
 
       // Update the game record in the database

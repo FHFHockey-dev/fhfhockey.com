@@ -10,6 +10,7 @@ const fetch = require("node-fetch");
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+// CHANGED SUPABASE THING
 const supabase = createClient(supabaseUrl, supabaseKey);
 console.log("supabaseUrl", supabaseUrl);
 console.log("supabaseKey", supabaseKey);
@@ -58,7 +59,7 @@ const teamsInfo = {
   ARI: { name: "Arizona Coyotes", franchiseId: 28, id: 53 },
   VGK: { name: "Vegas Golden Knights", franchiseId: 38, id: 54 },
   SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
-  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 },
+  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 }
 };
 
 // Helper Functions
@@ -291,7 +292,7 @@ function generateTeamLogs(consolidatedData, pairwiseTOI) {
       forwards: [],
       defensemen: [],
       lines: {},
-      pairs: {},
+      pairs: {}
     };
 
     players.forEach((player) => {
@@ -301,7 +302,7 @@ function generateTeamLogs(consolidatedData, pairwiseTOI) {
         toi: player.game_toi,
         shared_toi: player.percent_toi_with,
         line_combination: player.line_combination,
-        pairing_combination: player.pairing_combination,
+        pairing_combination: player.pairing_combination
       };
 
       if (isForward(player.primary_position)) {
@@ -629,7 +630,7 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
           )
         : null,
       line_combination: null,
-      pairing_combination: null,
+      pairing_combination: null
     };
 
     // **Process each shift for the player**
@@ -639,7 +640,7 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
       // Update game_toi
       consolidatedData[playerKey].game_toi = sumdurations([
         consolidatedData[playerKey].game_toi,
-        duration,
+        duration
       ]);
 
       // Add shift details
@@ -649,7 +650,7 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
         start_times: shift.startTime,
         end_times: shift.endTime,
         durations: shift.duration || "00:00",
-        playerId: shift.playerId, // Ensure playerId is present for pairwise TOI
+        playerId: shift.playerId // Ensure playerId is present for pairwise TOI
       });
 
       // **Split shift into pp_shifts and es_shifts based on power plays**
@@ -671,14 +672,14 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
         )
         .map((pp) => ({
           start: parseTime(pp.powerPlayStartTime),
-          end: parseTime(pp.powerPlayEndTime),
+          end: parseTime(pp.powerPlayEndTime)
         }));
 
       // Calculate overlapping intervals with shift
       const overlappingIntervals = overlappingPPs
         .map((pp) => ({
           start: Math.max(shiftStartSeconds, pp.start),
-          end: Math.min(shiftEndSeconds, pp.end),
+          end: Math.min(shiftEndSeconds, pp.end)
         }))
         .filter((interval) => interval.start < interval.end); // Keep valid overlaps
 
@@ -698,7 +699,7 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
           durations: formatdurations(interval.end - interval.start),
           start_times: formatTime(interval.start),
           end_times: formatTime(interval.end),
-          shift_numbers: shift.shiftNumber,
+          shift_numbers: shift.shiftNumber
         });
 
         // Optional: Log pp_shifts
@@ -724,7 +725,7 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
               durations: formatdurations(esdurationseconds),
               start_times: formatTime(interval.start),
               end_times: formatTime(interval.end),
-              shift_numbers: shift.shiftNumber,
+              shift_numbers: shift.shiftNumber
             });
 
             // Optional: Log es_shifts
@@ -750,7 +751,7 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
       endTime: shift.end_times,
       durations: shift.durations,
       periods: shift.periods,
-      playerId: playerData.player_id,
+      playerId: playerData.player_id
     }));
 
     for (const otherPlayerKey in consolidatedData) {
@@ -769,7 +770,7 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
         startTime: shift.start_times,
         endTime: shift.end_times,
         durations: shift.durations,
-        periods: shift.periods,
+        periods: shift.periods
       }));
 
       let totalTimeSpent = 0;
@@ -824,7 +825,7 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
           playerData.shifts,
           playerData.player_id,
           otherPlayerData.player_id
-        ),
+        )
       };
     });
   });
@@ -882,7 +883,7 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
       time_spent_with_mixed: data.time_spent_with_mixed, // Include `time_spent_with_mixed`
       percent_toi_with_mixed: data.percent_toi_with_mixed, // Include `percent_toi_with_mixed`
       line_combination: data.line_combination, // Include `line_combination`
-      pairing_combination: data.pairing_combination, // Include `pairing_combination`
+      pairing_combination: data.pairing_combination // Include `pairing_combination`
     };
   });
 
@@ -890,7 +891,7 @@ async function upsertShiftChartData(shiftChartData, gameInfo, playerPositions) {
     const { data: upsertedData, error } = await supabase
       .from("shift_charts")
       .upsert(batchData, {
-        onConflict: ["game_id", "player_id"],
+        onConflict: ["game_id", "player_id"]
       });
 
     if (error) {
@@ -934,7 +935,7 @@ async function fetchAndStoreShiftCharts() {
             homeTeam: game.homeTeam,
             awayTeam: game.awayTeam,
             game_id: game.id,
-            season_id: seasonId, // Include season_id
+            season_id: seasonId // Include season_id
           });
         } else {
           // console.log(

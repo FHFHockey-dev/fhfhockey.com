@@ -1,4 +1,4 @@
-@import "styles/vars.scss";
+@use "styles/vars" as *;
 
 .socialMedias {
   display: flex;
@@ -16,7 +16,6 @@
   @media only screen and (min-width: $screen-large) {
     gap: 14px;
   }
-
 }
 
 @media (max-width: 767px) {

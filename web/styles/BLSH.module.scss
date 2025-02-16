@@ -1,4 +1,5 @@
 // SkaterStats.module.scss
+@use "sass:color";
 
 $tab-inactive-bg: #f0e1d2; // Light beige for inactive tabs
 $tab-active-bg: #ffd564; // Yellowish color for the active tab
@@ -28,7 +29,7 @@ $border-color: #ccc;
     transition: background-color 0.3s;
 
     &:hover {
-      background-color: lighten($tab-inactive-bg, 5%);
+      background-color: color.adjust($tab-inactive-bg, $lightness: 5%);
     }
 
     &.active {

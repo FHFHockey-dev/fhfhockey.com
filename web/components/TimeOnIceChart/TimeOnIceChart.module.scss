@@ -1,5 +1,5 @@
-@import "styles/vars.scss";
-@import "styles/Charts.module.scss";
+@use "styles/vars";
+@use "styles/Charts.module.scss";
 
 .container {
   height: 100%;
@@ -14,7 +14,7 @@
       top: 25%;
       transform: translate(-50%, -25%);
     }
-    @media only screen and (max-width: $screen-medium-max) {
+    @media only screen and (max-width: vars.$screen-medium-max) {
       canvas {
         width: 100% !important;
       }
@@ -27,7 +27,7 @@
     align-items: center;
   }
 
-  @media only screen and (min-width: $screen-large) {
+  @media only screen and (min-width: vars.$screen-large) {
     .chartWrapper {
       flex: 1;
     }

@@ -1,10 +1,10 @@
-@import "./vars.scss";
+@use "styles/vars";
 
 $border-size: 2px;
 
 .lineCombinations {
   .teams {
-    background: $bg-light;
+    background: vars.$bg-light;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     row-gap: 17px;
@@ -22,7 +22,7 @@ $border-size: 2px;
       opacity: 0.4;
       font-size: 0.65rem;
       &:hover {
-        color: $primary-color;
+        color: vars.$primary-color;
         opacity: 1;
       }
     }
@@ -46,7 +46,7 @@ $border-size: 2px;
             letter-spacing: 0.01em;
           }
           .highlight {
-            color: $primary-color;
+            color: vars.$primary-color;
           }
         }
         .row {
@@ -67,7 +67,7 @@ $border-size: 2px;
               display: none;
             }
             &:hover {
-              color: $primary-color;
+              color: vars.$primary-color;
               cursor: pointer;
             }
           }
@@ -123,7 +123,7 @@ $border-size: 2px;
       }
     }
   }
-  @media only screen and (min-width: $screen-large) {
+  @media only screen and (min-width: vars.$screen-large) {
     width: 1080px;
     margin: 0 auto;
 
@@ -132,7 +132,7 @@ $border-size: 2px;
       margin-bottom: unset;
     }
     .players {
-      background: $bg-light;
+      background: vars.$bg-light;
 
       border: $border-size solid white;
       border-top: none;

@@ -1,4 +1,4 @@
-@import "styles/vars.scss";
+@use "styles/vars";
 
 .categoryTitle {
   display: flex;
@@ -41,7 +41,7 @@
   }
 }
 
-@media only screen and (min-width: $screen-large) {
+@media only screen and (min-width: vars.$screen-large) {
   .categoryTitle.large {
     justify-content: center;
     .line {

@@ -1,4 +1,6 @@
-@import "styles/vars.scss";
+// /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/Comments/Comments.module.scss
+
+@use "styles/vars";
 
 .comments {
   .title {
@@ -18,7 +20,7 @@
     .content {
       border: 2px solid white;
       padding: 0.3rem;
-      background-color: $bg-light;
+      background-color: vars.$bg-light;
     }
     .footer {
       display: flex;

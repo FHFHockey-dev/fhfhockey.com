@@ -1,4 +1,4 @@
-@import "styles/vars.scss";
+@use "styles/vars";
 
 .title {
   font-family: "Roboto Condensed";
@@ -8,12 +8,12 @@
   letter-spacing: 0em;
   text-align: left;
 
-  @media only screen and (min-width: $screen-large) {
+  @media only screen and (min-width: vars.$screen-large) {
     margin-top: 2.5rem;
     margin-bottom: 2rem;
   }
 
   .blue {
-    color: $primary-color;
+    color: vars.$primary-color;
   }
 }

@@ -8,7 +8,9 @@ const ProgressBar = require("progress");
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY; // Use service role key for server-side operations
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// CHANGED SUPABASE THING
+// Use service role key for server-side operations
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Utility function to fetch and parse JSON
@@ -53,7 +55,7 @@ const teamsInfo = {
   WPG: { name: "Winnipeg Jets", franchiseId: 35, id: 52 },
   ARI: { name: "Arizona Coyotes", franchiseId: 28, id: 53 },
   VGK: { name: "Vegas Golden Knights", franchiseId: 38, id: 54 },
-  SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
+  SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 }
 };
 
 // Fetch NHL Seasons
@@ -107,7 +109,7 @@ async function fetchDailyStandings(season, teams) {
   const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
   const bar = new ProgressBar("Fetching Standings [:bar] :percent :etas", {
     total: totalDays,
-    width: 40,
+    width: 40
   });
 
   for (let i = 0; i < totalDays; i++) {
@@ -140,7 +142,7 @@ async function fetchDailyStandings(season, teams) {
             ot_losses: teamStanding.otLosses,
             point_pctg: teamStanding.pointPctg,
             points: teamStanding.points,
-            wins: teamStanding.wins,
+            wins: teamStanding.wins
           };
         })
         .filter(Boolean); // Remove null entries
@@ -150,7 +152,7 @@ async function fetchDailyStandings(season, teams) {
         const { data: upsertedData, error } = await supabase
           .from("raw_standings_sos")
           .upsert(standingsDataBatch, {
-            onConflict: ["season_id", "date", "team_id"],
+            onConflict: ["season_id", "date", "team_id"]
           });
 
         if (error) {

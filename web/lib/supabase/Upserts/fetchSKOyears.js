@@ -26,7 +26,8 @@ async function Fetch(url) {
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// CHANGED SUPABASE THING
 
 if (!supabaseUrl || !supabaseKey) {
   console.error(
@@ -98,7 +99,7 @@ async function fetchNHLSkaterData() {
         "https://api.nhle.com/stats/rest/en/skater/goalsForAgainst",
       scoringPerGame:
         "https://api.nhle.com/stats/rest/en/skater/scoringpergame",
-      timeOnIce: "https://api.nhle.com/stats/rest/en/skater/timeonice",
+      timeOnIce: "https://api.nhle.com/stats/rest/en/skater/timeonice"
     };
 
     try {
@@ -109,14 +110,14 @@ async function fetchNHLSkaterData() {
         powerPlayStats,
         goalsForAgainstStats,
         scoringPerGameStats,
-        timeOnIceStats,
+        timeOnIceStats
       ] = await Promise.all([
         fetchAllDataForEndpoint(endpoints.skaterStats, seasonId),
         fetchAllDataForEndpoint(endpoints.puckPossession, seasonId),
         fetchAllDataForEndpoint(endpoints.powerPlay, seasonId),
         fetchAllDataForEndpoint(endpoints.goalsForAgainst, seasonId),
         fetchAllDataForEndpoint(endpoints.scoringPerGame, seasonId),
-        fetchAllDataForEndpoint(endpoints.timeOnIce, seasonId),
+        fetchAllDataForEndpoint(endpoints.timeOnIce, seasonId)
       ]);
 
       console.log(
@@ -200,10 +201,10 @@ async function fetchNHLSkaterData() {
               total_secondary_assists:
                 scoringPerGameStat.totalSecondaryAssists || null,
               ipp: ipp,
-              sog_per_60: sogPer60,
+              sog_per_60: sogPer60
             },
             {
-              onConflict: ["player_id", "season"],
+              onConflict: ["player_id", "season"]
             }
           );
 

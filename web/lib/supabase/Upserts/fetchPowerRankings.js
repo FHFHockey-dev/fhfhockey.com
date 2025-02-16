@@ -8,7 +8,9 @@ const ProgressBar = require("progress");
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY; // Use service role key for server-side operations
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// CHANGED SUPABASE THING
+// Use service role key for server-side operations
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Utility function to fetch and parse JSON
@@ -54,7 +56,7 @@ const teamsInfo = {
   ARI: { name: "Arizona Coyotes", franchiseId: 28, id: 53 },
   VGK: { name: "Vegas Golden Knights", franchiseId: 38, id: 54 },
   SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
-  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 },
+  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 }
 };
 
 // Fetch NHL Seasons
@@ -108,7 +110,7 @@ async function fetchDailyStandings(season, teams) {
   const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
   const bar = new ProgressBar("Fetching Standings [:bar] :percent :etas", {
     total: totalDays,
-    width: 40,
+    width: 40
   });
 
   for (let i = 0; i < totalDays; i++) {
@@ -147,7 +149,7 @@ async function fetchDailyStandings(season, teams) {
             goals_against: teamStanding.goalsAgainst || 0,
             cumulative_wins: teamStanding.wins || 0, // Adjust if cumulative
             cumulative_losses: teamStanding.losses || 0, // Adjust if cumulative
-            cumulative_overtime_losses: teamStanding.otLosses || 0, // Adjust if cumulative
+            cumulative_overtime_losses: teamStanding.otLosses || 0 // Adjust if cumulative
             // Add other relevant cumulative fields as needed
           };
         })
@@ -158,7 +160,7 @@ async function fetchDailyStandings(season, teams) {
         const { error } = await supabase
           .from("standings")
           .upsert(standingsDataBatch, {
-            onConflict: ["season_id", "date", "team_id"],
+            onConflict: ["season_id", "date", "team_id"]
           });
 
         if (error) {
@@ -182,7 +184,7 @@ async function fetchTeamSchedules(season, teams) {
   const totalTeams = teamAbbrevs.length;
   const bar = new ProgressBar("Fetching Schedules [:bar] :percent :etas", {
     total: totalTeams,
-    width: 40,
+    width: 40
   });
 
   for (const abbrev of teamAbbrevs) {
@@ -214,7 +216,7 @@ async function fetchTeamSchedules(season, teams) {
           start_time: gameDate.toISOString(),
           type: 2, // Regular season game
           home_team_id: isHomeGame ? team.id : opponentInfo.id,
-          away_team_id: isHomeGame ? opponentInfo.id : team.id,
+          away_team_id: isHomeGame ? opponentInfo.id : team.id
           // Add other relevant fields as needed
         };
 
@@ -258,7 +260,7 @@ async function fetchTeamSummaries(season, teams) {
   const totalTeams = games.length * 2; // Two teams per game
   const bar = new ProgressBar("Fetching Team Summaries [:bar] :percent :etas", {
     total: totalTeams,
-    width: 40,
+    width: 40
   });
 
   for (const game of games) {
@@ -282,7 +284,7 @@ async function fetchTeamSummaries(season, teams) {
     // Fetch home team stats with pagination (though unlikely to exceed 1000)
     const [homeStats, awayStats] = await Promise.all([
       fetchAllWithPagination(queryHome),
-      fetchAllWithPagination(queryAway),
+      fetchAllWithPagination(queryAway)
     ]);
 
     const allWgoStats = [...homeStats, ...awayStats];
@@ -416,7 +418,7 @@ async function fetchTeamSummaries(season, teams) {
         season_avg_record,
         // Opponent Aggregate Records
         opponent_past_aggregate_record,
-        opponent_future_aggregate_record,
+        opponent_future_aggregate_record
         // Add other relevant fields as needed
       };
 
@@ -424,7 +426,7 @@ async function fetchTeamSummaries(season, teams) {
       const { error } = await supabase
         .from("power_rankings")
         .upsert(powerRankingData, {
-          onConflict: ["team_id", "season_id", "date"],
+          onConflict: ["team_id", "season_id", "date"]
         });
 
       if (error) {
@@ -459,7 +461,7 @@ async function calculateRanks(teamId, seasonId, date) {
     "std_goals_for_pct",
     "std_shots_for",
     "std_power_play_pct",
-    "std_penalty_kill_pct",
+    "std_penalty_kill_pct"
   ];
 
   const ranks = {};
@@ -597,7 +599,7 @@ async function calculateSoSForTeam(teamId, seasonId, currentGameDate) {
 
   return {
     sos_past: avg_past_sos.toFixed(3),
-    sos_future: avg_future_sos.toFixed(3),
+    sos_future: avg_future_sos.toFixed(3)
   };
 }
 
@@ -715,7 +717,7 @@ async function calculateAndUpsertPowerRankings(season, teams) {
     "Calculating Power Rankings [:bar] :percent :etas",
     {
       total: totalTeams,
-      width: 40,
+      width: 40
     }
   );
 
@@ -815,7 +817,7 @@ async function calculateAndUpsertPowerRankings(season, teams) {
         season_avg_pts_pct,
         season_avg_record,
         opponent_past_aggregate_record,
-        opponent_future_aggregate_record,
+        opponent_future_aggregate_record
         // Add other relevant fields as needed
       };
 
@@ -823,7 +825,7 @@ async function calculateAndUpsertPowerRankings(season, teams) {
       const { error } = await supabase
         .from("power_rankings")
         .upsert(powerRankingData, {
-          onConflict: ["team_id", "season_id", "date"],
+          onConflict: ["team_id", "season_id", "date"]
         });
 
       if (error) {

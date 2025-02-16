@@ -99,14 +99,14 @@ export const getTeamColors = (teamId: number) => {
       primary: team.primaryColor,
       secondary: team.secondaryColor,
       jersey: team.jersey,
-      accentColor: team.accent,
+      accentColor: team.accent
     };
   }
   return {
     primary: "#000000", // default to black if not found
     secondary: "#FFFFFF", // default to white if not found
     jersey: "#000000", // default to black if not found
-    accentColor: "#000000", // default to black if not found
+    accentColor: "#000000" // default to black if not found
   };
 };
 

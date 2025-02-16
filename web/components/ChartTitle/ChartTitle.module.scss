@@ -1,4 +1,6 @@
-@import "styles/vars.scss";
+// /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/ChartTitle/ChartTitle.module.scss
+
+@use "styles/vars";
 
 .base {
   font-size: 1.5rem;
@@ -8,16 +10,16 @@
   font-family: "Roboto";
 
   &.normal {
-    color: $text-primary-color;
+    color: vars.$text-primary-color;
   }
 
   &.hightlight {
-    color: $primary-color;
+    color: vars.$primary-color;
     font-family: "Roboto Condensed";
     margin-left: 0.1rem;
   }
 
-  @media only screen and (max-width: $screen-medium-max) {
+  @media only screen and (max-width: vars.$screen-medium-max) {
     font-size: 10px;
   }
 }

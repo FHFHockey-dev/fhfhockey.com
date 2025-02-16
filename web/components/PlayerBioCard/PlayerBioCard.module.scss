@@ -1,5 +1,5 @@
-@import "styles/vars.scss";
-@import "styles/Charts.module.scss";
+@use "styles/vars";
+@use "styles/Charts.module";
 
 .playerCard {
   display: flex;
@@ -23,7 +23,7 @@
         font-weight: 900;
       }
       .lastName {
-        color: $primary-color;
+        color: vars.$primary-color;
         font-size: 24px;
         font-weight: 700;
         font-family: "Roboto Condensed";
@@ -80,7 +80,7 @@
     }
   }
 
-  @media only screen and (min-width: $screen-large) {
+  @media only screen and (min-width: vars.$screen-large) {
     .info {
       padding-top: 20px;
       padding-left: 25px;

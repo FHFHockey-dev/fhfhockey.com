@@ -1,3 +1,5 @@
+// /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/_app.tsx
+
 import Head from "next/head";
 import { Analytics } from "@vercel/analytics/react";
 import type { AppProps } from "next/app";
@@ -42,13 +44,13 @@ function MyApp({ Component, pageProps }: AppProps) {
                 rel="icon"
                 type="image/png"
                 sizes="32x32"
-                href="/favicon-32x32.png"
+                href="/fhfh-favicon-32x32.png"
               />
               <link
                 rel="icon"
                 type="image/png"
                 sizes="16x16"
-                href="/favicon-16x16.png"
+                href="/fhfh-favicon-16x16.png"
               />
 
               {/* theme color */}

@@ -1,5 +1,7 @@
+// /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/Layout/Header/Header.tsx
+
 import React, { useState } from "react";
-import Image from "next/legacy/image";
+import Image from "next/image";
 import Link from "next/link";
 import classNames from "classnames";
 
@@ -11,7 +13,7 @@ import ClientOnly from "components/ClientOnly";
 import SocialMedias from "components/SocialMedias";
 
 import styles from "./Header.module.scss";
-import LOGO from "public/pictures/logo.png";
+import LOGO from "public/pictures/logo3.png";
 
 function BurgerButton({ onClick }: { onClick: () => void }) {
   return (
@@ -31,63 +33,63 @@ function Header() {
     }, 200);
   };
 
-  return (<>
-    <header
-      ref={navbarRef}
-      className={classNames(styles.header, {
-        // don't hide the nav bar when the menu is open
-        [styles.hidden]: menuOpen ? false : !isNavbarVisible
-      })}
-    >
-      {/* logo */}
-      <Link href="/" className={styles.logo}>
-
-        <Image
-          src={LOGO}
-          alt="FHFH logo"
-          placeholder="blur"
-          width={206}
-          height={53}
-          priority
-        />
-
-      </Link>
-
-      {/* nav bar items */}
-      <ClientOnly className={styles.nav}>
-        <NavbarItems items={ITEMS_DATA} onItemClick={onItemClick} />
-      </ClientOnly>
-
-      {/* social medias */}
-      <div className={styles.socials}>
-        <SocialMedias />
-      </div>
-
-      {/* join button */}
-      <button className={styles.join}>JOIN COMMUNITY</button>
-
-      {/* burger menu - mobile only */}
-      {!menuOpen ? (
-        <BurgerButton
-          onClick={() => {
-            setMenuOpen(true);
-          }}
-        />
-      ) : (
-        <button onClick={() => setMenuOpen(false)}>
+  return (
+    <>
+      <header
+        ref={navbarRef}
+        className={classNames(styles.header, {
+          // don't hide the nav bar when the menu is open
+          [styles.hidden]: menuOpen ? false : !isNavbarVisible
+        })}
+      >
+        {/* logo */}
+        <Link href="/" className={styles.logo}>
           <Image
-            src="/pictures/close.svg"
-            alt="close menu"
-            width={22}
-            height={22}
+            src={LOGO}
+            alt="FHFH logo"
+            placeholder="blur"
+            width={200}
+            height={30}
+            priority
           />
-        </button>
-      )}
-    </header>
-    <ClientOnly>
-      <MobileMenu visible={menuOpen} onItemClick={onItemClick} />
-    </ClientOnly>
-  </>);
+        </Link>
+
+        {/* nav bar items */}
+        <ClientOnly className={styles.nav}>
+          <NavbarItems items={ITEMS_DATA} onItemClick={onItemClick} />
+        </ClientOnly>
+
+        {/* social medias */}
+        <div className={styles.socials}>
+          <SocialMedias />
+        </div>
+
+        {/* join button */}
+        <button className={styles.join}>JOIN COMMUNITY</button>
+
+        {/* burger menu - mobile only */}
+        {!menuOpen ? (
+          <BurgerButton
+            onClick={() => {
+              setMenuOpen(true);
+            }}
+          />
+        ) : (
+          <button onClick={() => setMenuOpen(false)}>
+            <Image
+              src="/pictures/close.svg"
+              alt="close menu"
+              width={22}
+              height={22}
+            />
+          </button>
+        )}
+      </header>
+      <ClientOnly>
+        <MobileMenu visible={menuOpen} onItemClick={onItemClick} />
+      </ClientOnly>
+    </>
+  );
 }
 
 export default Header;

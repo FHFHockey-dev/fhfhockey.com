@@ -13,7 +13,7 @@ const logger = winston.createLogger({
   level: "info",
   format: winston.format.combine(
     winston.format.timestamp({
-      format: "YYYY-MM-DD HH:mm:ss",
+      format: "YYYY-MM-DD HH:mm:ss"
     }),
     winston.format.printf(
       (info) =>
@@ -22,13 +22,14 @@ const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console(),
-    new winston.transports.File({ filename: "sosStandings.log" }),
-  ],
+    new winston.transports.File({ filename: "sosStandings.log" })
+  ]
 });
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY; // Use service role key for server-side operations
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role key for server-side operations
+// CHANGED SUPABASE THING
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Team Information
@@ -65,7 +66,7 @@ const teamsInfo = {
   ARI: { name: "Arizona Coyotes", franchiseId: 28, id: 53 },
   VGK: { name: "Vegas Golden Knights", franchiseId: 38, id: 54 },
   SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
-  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 },
+  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 }
 };
 
 // Helper Function: Delay Execution for a Given Number of Milliseconds
@@ -175,7 +176,7 @@ async function fetchDailyStandings(season, teams) {
   const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
   const bar = new ProgressBar("Fetching Standings [:bar] :percent :etas", {
     total: totalDays,
-    width: 40,
+    width: 40
   });
 
   // Map to store standings per team
@@ -218,7 +219,7 @@ async function fetchDailyStandings(season, teams) {
             team_win_pct: teamStanding.winPctg || 0,
             team_games_played: teamStanding.gamesPlayed || 0,
             past_opponents: [], // Initialize as empty array
-            future_opponents: [], // Initialize as empty array
+            future_opponents: [] // Initialize as empty array
           };
 
           // Initialize standingsMap for the team if not present
@@ -230,7 +231,7 @@ async function fetchDailyStandings(season, teams) {
             game_date: rowSosStandings.game_date,
             team_id: rowSosStandings.team_id,
             past_opponents: rowSosStandings.past_opponents,
-            future_opponents: rowSosStandings.future_opponents,
+            future_opponents: rowSosStandings.future_opponents
           });
 
           return rowSosStandings;
@@ -243,7 +244,7 @@ async function fetchDailyStandings(season, teams) {
           try {
             const { error } = await retryOperation(() =>
               supabase.from("sos_standings").upsert([row], {
-                onConflict: ["season_id", "game_date", "team_id"],
+                onConflict: ["season_id", "game_date", "team_id"]
               })
             );
             if (error) {
@@ -365,7 +366,7 @@ async function fetchAndProcessGameLogs(currentSeason, standingsMap) {
             game_type: game.gameType,
             game_date: game.gameDate,
             opponent_team_id: opponentTeam.id,
-            opponent_team_name: opponentTeam.abbrev,
+            opponent_team_name: opponentTeam.abbrev
           };
         })
         .filter(Boolean); // Remove null entries
@@ -403,7 +404,7 @@ async function updateStandingsWithOpponents(
     standingsLookup[key] = {
       wins: standings.wins,
       losses: standings.losses,
-      ot_losses: standings.ot_losses,
+      ot_losses: standings.ot_losses
     };
   });
 
@@ -450,7 +451,7 @@ async function updateStandingsWithOpponents(
               : 0,
             opponent_ot_losses_on_date: opponentStandings
               ? opponentStandings.ot_losses
-              : 0,
+              : 0
           };
         });
 
@@ -481,7 +482,7 @@ async function updateStandingsWithOpponents(
               : 0,
             opponent_ot_losses_on_date: opponentStandings
               ? opponentStandings.ot_losses
-              : 0,
+              : 0
           };
         });
 
@@ -490,7 +491,7 @@ async function updateStandingsWithOpponents(
         game_date: gameDate,
         team_id: row.team_id,
         past_opponents: pastOpponents,
-        future_opponents: futureOpponents,
+        future_opponents: futureOpponents
       });
     }
   }
@@ -521,7 +522,7 @@ async function updateStandingsWithOpponents(
     try {
       const { error } = await retryOperation(() =>
         supabase.from("sos_standings").upsert([update], {
-          onConflict: ["season_id", "game_date", "team_id"],
+          onConflict: ["season_id", "game_date", "team_id"]
         })
       );
 
@@ -675,7 +676,7 @@ async function updateStandingsWithOpponents(
         past_opponent_total_ot_losses: past_total_ot_losses,
         future_opponent_total_wins: future_total_wins,
         future_opponent_total_losses: future_total_losses,
-        future_opponent_total_ot_losses: future_total_ot_losses,
+        future_opponent_total_ot_losses: future_total_ot_losses
       };
 
       // Log if any totals are zero unexpectedly
@@ -696,7 +697,7 @@ async function updateStandingsWithOpponents(
       try {
         const { error } = await retryOperation(() =>
           supabase.from("sos_standings").upsert([totalsUpdate], {
-            onConflict: ["season_id", "game_date", "team_id"],
+            onConflict: ["season_id", "game_date", "team_id"]
           })
         );
 

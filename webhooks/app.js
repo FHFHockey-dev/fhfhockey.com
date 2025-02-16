@@ -10,6 +10,7 @@ const port = process.env.PORT || 3002;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+// CHANGED SUPABASE THING
 
 const supabaseServer = createClient(supabaseUrl, supabaseKey);
 
@@ -43,14 +44,14 @@ app.post("/on-new-line-combo", adminOnly, async (req, res) => {
     const end = performance.now();
     res.json({
       message: "Successfully handled the line combo for " + gameId,
-      executionTime: `${(end - start).toFixed(3)} milliseconds`,
+      executionTime: `${(end - start).toFixed(3)} milliseconds`
     });
   } catch (e) {
     console.error(e);
     res.json({
       error:
         `Failed to handle the line combo ${teamId}-${gameId} error: ` +
-        e.message,
+        e.message
     });
   }
 });
@@ -59,7 +60,7 @@ async function saveLinemateMatrixImages(gameId, teamIds) {
   console.log("Start to save line combo for " + gameId);
   let old = Date.now();
   const browser = await puppeteer.connect({
-    browserWSEndpoint: process.env.PUPPETEER_ENDPOINT,
+    browserWSEndpoint: process.env.PUPPETEER_ENDPOINT
   });
 
   // Create a page
@@ -90,7 +91,7 @@ async function saveLinemateMatrixImages(gameId, teamIds) {
 
       const content = await page.$(`#linemate-matrix-${teamId} > .content`);
       const image = await content.screenshot({
-        type: "png",
+        type: "png"
       });
       console.log(`take one screenshot duration: ${Date.now() - old}`);
 
@@ -101,7 +102,7 @@ async function saveLinemateMatrixImages(gameId, teamIds) {
         .upload(`line-combos/${gameId}-${teamId}.png`, image, {
           cacheControl: "604800",
           contentType: "image/png",
-          upsert: true,
+          upsert: true
         });
 
       console.log(`upload one image duration: ${Date.now() - old}`);
@@ -122,8 +123,8 @@ function sendLineComboToDiscord(gameId, teamId) {
     {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${process.env.CRON_SECRET}`,
-      },
+        Authorization: `Bearer ${process.env.CRON_SECRET}`
+      }
     }
   ).then((res) => res.json());
 }

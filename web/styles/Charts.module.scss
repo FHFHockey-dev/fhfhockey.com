@@ -1,4 +1,4 @@
-@import "styles/vars.scss";
+@use "styles/vars";
 
 $border-bold: 3px;
 
@@ -15,7 +15,7 @@ $small: 6px;
 
   // Dashboard
   .dashboard {
-    background-color: $bg-light;
+    background-color: vars.$bg-light;
     border: 3px solid white;
     margin-bottom: 10vh;
 
@@ -109,7 +109,7 @@ $small: 6px;
     // create extra space at the bottom
     margin-bottom: 10vh;
 
-    background-color: $bg-light;
+    background-color: vars.$bg-light;
     grid-column: 1 / 9;
     display: grid;
     grid-template-columns: repeat(8, 1fr);

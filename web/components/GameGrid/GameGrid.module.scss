@@ -1,4 +1,4 @@
-@import "styles/vars.scss";
+@use "styles/vars";
 
 // breakpoints
 $breakpoint-small: 320px;
@@ -393,7 +393,7 @@ $breakpoint-large: 768px;
   background-color: rgba(255, 0, 0, 0.45);
 } /* Red */
 
-@media only screen and (min-width: $screen-large) {
+@media only screen and (min-width: vars.$screen-large) {
   .teamRow {
     .teamName {
       display: flex; /* Ensure Flexbox is applied on large screens */
@@ -635,7 +635,7 @@ $breakpoint-large: 768px;
   }
 }
 
-@media only screen and (min-width: $screen-medium) and (max-width: $screen-large) {
+@media only screen and (min-width: vars.$screen-medium) and (max-width: vars.$screen-large) {
   .teamRow {
     .teamName {
       display: flex;

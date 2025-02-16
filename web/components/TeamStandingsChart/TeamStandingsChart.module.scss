@@ -1,0 +1,190 @@
+/* TeamStandingsChart.module.scss */
+
+.teamStandingsChart {
+  position: relative;
+  width: 100%;
+  margin: 2rem 0;
+  background-color: #1a1a1a; /* or #202020 if you prefer */
+  border-radius: 12px;
+  padding: 1rem;
+  /* If you want more vertical space: min-height, etc. */
+}
+
+/* Container for chart + toggles */
+.chartAndToggles {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+}
+
+.leftColumn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.filters {
+  margin-bottom: 0.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  color: #dfc16c;
+
+  label {
+    font-size: 1rem;
+    color: #07aae2; /* brand color */
+    font-family: "Roboto Condensed", sans-serif;
+  }
+
+  select {
+    padding: 5px;
+    font-size: 16px;
+    border: 1px solid #07aae2;
+    border-radius: 4px;
+    background-color: #101010;
+    color: #fff;
+    font-family: "Roboto Condensed", sans-serif;
+  }
+
+  .rollingToggles {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+
+    label {
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+
+      /* Style the input checkbox */
+      input[type="checkbox"] {
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #07aae2;
+        border-radius: 2px;
+        background-color: #101010;
+        cursor: pointer;
+
+        &:checked {
+          background-color: #07aae2;
+        }
+      }
+    }
+  }
+}
+
+/* The container we measure with the resize observer. */
+.chartContainer {
+  flex: 1;
+  position: relative;
+  width: 100%;
+  min-height: 600px; /* for example, to ensure enough vertical space */
+}
+
+/* The <svg> will fill the container’s area. */
+.chartSvg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.teamToggles {
+  width: 150px;
+  padding-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  .toggleButtons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+
+    button {
+      font-size: 0.8rem;
+      padding: 0.3rem 0.5rem;
+      background-color: #101010;
+      color: #fff;
+      border: 1px solid #07aae2;
+      border-radius: 4px;
+      cursor: pointer;
+
+      &:hover {
+        background-color: #202020;
+      }
+    }
+  }
+
+  .toggleList {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    flex: 1;
+
+    .toggleColumn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+
+      strong {
+        display: block;
+        margin-bottom: 0.3rem;
+        font-size: 0.9rem;
+        color: #fff;
+      }
+
+      label.teamToggle {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+
+        /* Style the checkbox here as well */
+        input[type="checkbox"] {
+          appearance: none;
+          width: 18px;
+          height: 18px;
+          border: 2px solid #dadedf;
+          border-radius: 2px;
+          background-color: #101010;
+          cursor: pointer;
+
+          &:checked {
+            background-color: #07aae2;
+          }
+        }
+
+        img.toggleLogo {
+          width: 30px;
+          height: 30px;
+          /* Optional hover effect */
+          &:hover {
+            filter: brightness(1.15);
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Tooltip styling */
+.tooltip {
+  position: absolute;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  border: 1px solid #333;
+  border-radius: 4px;
+  pointer-events: none;
+  display: none;
+  font-size: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+/* The main line style */
+.team-line {
+  stroke-linecap: round;
+}

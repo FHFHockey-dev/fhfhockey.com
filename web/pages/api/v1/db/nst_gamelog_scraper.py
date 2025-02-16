@@ -18,7 +18,7 @@ load_dotenv('C:/Users/timbr/Desktop/FHFH/fhfhockey.com/web/.env.local')
 
 # Supabase Configuration
 SUPABASE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-SUPABASE_KEY = os.getenv("NEXT_SUPABASE_SERVICE_ROLE_KEY")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
 if not SUPABASE_URL or not SUPABASE_KEY:
     print("Error: SUPABASE_URL or SUPABASE_KEY is missing in environment variables.")

@@ -1,6 +1,6 @@
 // lib/supabase/fetchSKOskaterData.js
 
-const path = "./../../.env.local";
+const path = "../../../.env.local";
 require("dotenv").config({ path: path });
 
 const { createClient } = require("@supabase/supabase-js");
@@ -26,7 +26,8 @@ async function Fetch(url) {
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// CHANGED SUPABASE THING
 
 if (!supabaseUrl || !supabaseKey) {
   console.error(
@@ -77,14 +78,14 @@ async function fetchAllDataForDate(formattedDate, limit) {
         powerPlayResponse,
         goalsForAgainstResponse,
         scoringPerGameResponse,
-        timeOnIceResponse,
+        timeOnIceResponse
       ] = await Promise.all([
         Fetch(skaterStatsUrl),
         Fetch(puckPossessionUrl),
         Fetch(powerPlayUrl),
         Fetch(goalsForAgainstUrl),
         Fetch(scoringPerGameUrl),
-        Fetch(timeOnIceUrl),
+        Fetch(timeOnIceUrl)
       ]);
 
       skaterStats = skaterStats.concat(skaterStatsResponse.data);
@@ -124,7 +125,7 @@ async function fetchAllDataForDate(formattedDate, limit) {
     powerPlayStats,
     goalsForAgainstStats,
     scoringPerGameStats,
-    timeOnIceStats,
+    timeOnIceStats
   };
 }
 
@@ -238,7 +239,7 @@ async function fetchNHLSkaterDataLast3Seasons() {
         powerPlayStats,
         goalsForAgainstStats,
         scoringPerGameStats,
-        timeOnIceStats,
+        timeOnIceStats
       } = fetchedData;
 
       for (const stat of skaterStats) {
@@ -287,7 +288,7 @@ async function fetchNHLSkaterDataLast3Seasons() {
           on_ice_shooting_pct: puckPossessionStat
             ? puckPossessionStat.onIceShootingPct
             : null,
-          sog_per_60: sogPer60,
+          sog_per_60: sogPer60
         };
 
         // Upsert data into Supabase with season_id
@@ -331,10 +332,10 @@ async function fetchNHLSkaterDataLast3Seasons() {
                 ? scoringPerGameStat.totalSecondaryAssists
                 : null,
               ipp: ipp,
-              sog_per_60: sogPer60,
+              sog_per_60: sogPer60
             },
             {
-              onConflict: "player_id,date,season_id", // Include season_id in conflict
+              onConflict: "player_id,date,season_id" // Include season_id in conflict
             }
           );
 
