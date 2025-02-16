@@ -1,12 +1,118 @@
-.brush .selection {
-  fill: #777;
-  fill-opacity: 0.3;
-  stroke: #fff;
-  shape-rendering: crispEdges;
+.teamStandingsChart {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 2rem 0;
+  background-color: #1a1a1a;
+  border-radius: 12px;
+  padding: 1rem;
 }
 
-.brush .handle {
-  fill: #fff;
-  stroke: #666;
-  stroke-width: 1px;
+/* Container for the left column (filters + chart) and right panel (team toggles) */
+.chartAndToggles {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+}
+
+.leftColumn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.filters {
+  margin-bottom: 0.5rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  color: #dfc16c;
+  label {
+    font-size: 1rem;
+    color: #07aae2;
+    font-family: "Roboto Condensed", sans-serif;
+  }
+  select {
+    padding: 5px;
+    font-size: 16px;
+    border: 1px solid #07aae2;
+    border-radius: 4px;
+    background-color: #101010;
+    color: #fff;
+    font-family: "Roboto Condensed", sans-serif;
+  }
+  .rollingToggles {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    label {
+      font-size: 0.9rem;
+      input {
+        margin-right: 0.3rem;
+      }
+    }
+  }
+}
+
+.chartSvg {
+  flex: 1;
+  height: 800px;
+}
+
+.teamToggles {
+  width: 150px;
+  padding-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; // span full height
+  .toggleButtons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    button {
+      font-size: 0.8rem;
+      padding: 0.3rem 0.5rem;
+      background-color: #101010;
+      color: #fff;
+      border: 1px solid #07aae2;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  }
+  .toggleList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    overflow-y: auto;
+    label.teamToggle {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      input {
+        margin: 0;
+      }
+      img.toggleLogo {
+        width: 20px;
+        height: 20px;
+      }
+    }
+  }
+}
+
+.tooltip {
+  position: absolute;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  border: 1px solid #333;
+  border-radius: 4px;
+  pointer-events: none;
+  display: none;
+  font-size: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.team-line {
+  stroke-linecap: round;
 }

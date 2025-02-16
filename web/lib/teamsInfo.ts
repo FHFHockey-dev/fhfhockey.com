@@ -20,6 +20,8 @@ export const teamsInfo: {
     secondaryColor: string;
     jersey: string;
     accent: string;
+    lightColor?: string;
+    darkColor?: string;
     alt: string;
     franchiseId: number;
     id: number;
@@ -32,6 +34,8 @@ export const teamsInfo: {
     secondaryColor: "#a20620", // Red
     jersey: "#FFFFFF", // White
     accent: "#154734", // Green
+    lightColor: "#f03554", // Lighter Red
+    darkColor: "#670919", // Darker Red
     alt: "#FFFFFF", // White
     franchiseId: 23,
     id: 1
@@ -39,10 +43,12 @@ export const teamsInfo: {
   NYI: {
     name: "New York Islanders",
     shortName: "Islanders",
-    primaryColor: "#003087",
-    secondaryColor: "#FFFFFF",
-    jersey: "#FC4C02",
-    accent: "#000000",
+    primaryColor: "#003087", // Blue
+    secondaryColor: "#FFFFFF", // White
+    jersey: "#FC4C02", // Orange
+    accent: "#000000", // Black
+    lightColor: "#1f5fd5", // Lighter Blue
+    darkColor: "#08265f", // Darker Blue
     alt: "#FFFFFF",
     franchiseId: 22,
     id: 2
@@ -50,10 +56,12 @@ export const teamsInfo: {
   NYR: {
     name: "New York Rangers",
     shortName: "Rangers",
-    primaryColor: "#0038A8",
-    secondaryColor: "#FFFFFF",
-    jersey: "#CE1126",
-    accent: "#A2AAAD",
+    primaryColor: "#0038A8", // Blue
+    secondaryColor: "#FFFFFF", // White
+    jersey: "#CE1126", // Red
+    accent: "#A2AAAD", // Silver
+    lightColor: "#255ed0", // Lighter Blue
+    darkColor: "#001d5c", // Darker Blue
     alt: "#FFFFFF",
     franchiseId: 10,
     id: 3
@@ -65,6 +73,8 @@ export const teamsInfo: {
     secondaryColor: "#FFFFFF",
     jersey: "#000000",
     accent: "#FFFFFF",
+    lightColor: "#ef794b", // Lighter Orange
+    darkColor: "#b7340d", // Darker Orange
     alt: "#FFFFFF",
     franchiseId: 16,
     id: 4
@@ -72,10 +82,12 @@ export const teamsInfo: {
   PIT: {
     name: "Pittsburgh Penguins",
     shortName: "Penguins",
-    primaryColor: "#000000",
-    secondaryColor: "#FFB81C",
-    jersey: "#FFFFFF",
-    accent: "#FFB81C",
+    primaryColor: "#000000", // Black
+    secondaryColor: "#FFB81C", // Gold
+    jersey: "#FFFFFF", // White
+    accent: "#FFB81C", // Gold
+    lightColor: "#ffc852", // Lighter Yellow
+    darkColor: "#ffa200", // Darker
     alt: "#FFFFFF",
     franchiseId: 17,
     id: 5
@@ -87,6 +99,8 @@ export const teamsInfo: {
     secondaryColor: "#ffc64d", // yellow
     jersey: "#FFFFFF", // white
     accent: "#FFB81C", // gold
+    lightColor: "#dfc16c", // Lighter Yellow
+    darkColor: "#e19a01", // Darker Yellow
     alt: "#FFFFFF", // white
     franchiseId: 6,
     id: 6
@@ -98,6 +112,8 @@ export const teamsInfo: {
     secondaryColor: "#FFB81C", // gold
     jersey: "#FFFFFF", // white
     accent: "#ADAFAA", // silver
+    lightColor: "#2762c7", // Lighter Blue
+    darkColor: "#072f6f", // Darker Blue
     alt: "#FFFFFF",
     franchiseId: 19,
     id: 7
@@ -105,21 +121,25 @@ export const teamsInfo: {
   MTL: {
     name: "Montréal Canadiens",
     shortName: "Canadiens",
-    primaryColor: "#001E62",
-    secondaryColor: "#6CACE4",
-    jersey: "#A6192E",
-    accent: "#FFFFFF",
-    alt: "#FFFFFF",
+    primaryColor: "#001E62", // Blue
+    secondaryColor: "#6CACE4", // light blue
+    jersey: "#A6192E", // Red
+    accent: "#FFFFFF", // White
+    lightColor: "#1f5fd5", // Lighter Blue
+    darkColor: "#08265f", // Darker Blue
+    alt: "#FFFFFF", // White
     franchiseId: 1,
     id: 8
   },
   OTT: {
     name: "Ottawa Senators",
     shortName: "Senators",
-    primaryColor: "#000000",
-    secondaryColor: "#a20620",
-    jersey: "#B9975B",
-    accent: "#FFFFFF",
+    primaryColor: "#000000", // Black
+    secondaryColor: "#a20620", // Red
+    jersey: "#B9975B", // Gold
+    accent: "#FFFFFF", // White
+    lightColor: "#ec2b4b", // Red
+    darkColor: "#931523", // Darker Red
     alt: "#B9975B",
     franchiseId: 30,
     id: 9
@@ -127,32 +147,38 @@ export const teamsInfo: {
   TOR: {
     name: "Toronto Maple Leafs",
     shortName: "Maple Leafs",
-    primaryColor: "#00205B",
-    secondaryColor: "#FFFFFF",
-    jersey: "#A2AAAD",
-    accent: "#ffffff",
-    alt: "#FFFFFF",
+    primaryColor: "#00205B", // Blue
+    secondaryColor: "#FFFFFF", // White
+    jersey: "#A2AAAD", // Silver
+    accent: "#ffffff", // White
+    alt: "#FFFFFF", // White
+    lightColor: "#3478f6", // Lighter Blue
+    darkColor: "#080a91", // Darker Blue
     franchiseId: 5,
     id: 10
   },
   CAR: {
     name: "Carolina Hurricanes",
     shortName: "Hurricanes",
-    primaryColor: "#000000",
-    secondaryColor: "#b10018",
-    jersey: "#A4A9AD",
-    accent: "#FFFFFF",
-    alt: "#FFFFFF",
+    primaryColor: "#000000", // Black
+    secondaryColor: "#b10018", // Red
+    jersey: "#A4A9AD", // Silver
+    accent: "#FFFFFF", // White
+    alt: "#FFFFFF", // White
+    lightColor: "#e92549", // Lighter Red
+    darkColor: "#8a0113", // Darker Red
     franchiseId: 26,
     id: 12
   },
   FLA: {
     name: "Florida Panthers",
     shortName: "Panthers",
-    primaryColor: "#041E42",
-    secondaryColor: "#b9975B",
-    jersey: "#c8102e",
-    accent: "#FFFFFF",
+    primaryColor: "#041E42", // Blue
+    secondaryColor: "#b9975B", // Gold
+    jersey: "#c8102e", // Red
+    accent: "#FFFFFF", // White
+    lightColor: "#ea304f", // Lighter red
+    darkColor: "#6a0415", // Darker red
     alt: "#000000",
     franchiseId: 33,
     id: 13
@@ -164,6 +190,8 @@ export const teamsInfo: {
     secondaryColor: "#FFFFFF",
     jersey: "#A2AAAD",
     accent: "#000000",
+    lightColor: "#3478f6", // Lighter Blue
+    darkColor: "#1b1d7e", // Darker Blue
     alt: "#",
     franchiseId: 31,
     id: 14
@@ -171,10 +199,12 @@ export const teamsInfo: {
   WSH: {
     name: "Washington Capitals",
     shortName: "Capitals",
-    primaryColor: "#041E42",
-    secondaryColor: "#C8102E",
-    jersey: "#FFFFFF",
-    accent: "#A2AAAD",
+    primaryColor: "#041E42", // Blue
+    secondaryColor: "#C8102E", // Red
+    jersey: "#FFFFFF", // White
+    accent: "#A2AAAD", // Silver
+    lightColor: "#103a75", // Lighter Blue
+    darkColor: "#011f4a", // Darker Blue
     alt: "#",
     franchiseId: 24,
     id: 15
@@ -182,32 +212,38 @@ export const teamsInfo: {
   CHI: {
     name: "Chicago Blackhawks",
     shortName: "Blackhawks",
-    primaryColor: "#a20620",
-    secondaryColor: "#000000",
-    jersey: "#FFFFFF",
-    accent: "#CC8A00",
-    alt: "#00833E",
+    primaryColor: "#a20620", // Red
+    secondaryColor: "#000000", // Black
+    jersey: "#FFFFFF", // White
+    accent: "#CC8A00", // Yellow
+    alt: "#00833E", // Green
+    lightColor: "#d72d49", // Lighter Red
+    darkColor: "#6c0415", // Darker Red
     franchiseId: 11,
     id: 16
   },
   DET: {
     name: "Detroit Red Wings",
     shortName: "Red Wings",
-    primaryColor: "#a20620",
-    secondaryColor: "#FFFFFF",
-    jersey: "#8D9093",
-    accent: "#DDCBA4",
+    primaryColor: "#a20620", // Red
+    secondaryColor: "#FFFFFF", // White
+    jersey: "#8D9093", // Silver
+    accent: "#DDCBA4", // Tan
     alt: "#",
+    lightColor: "#d72d49", // Lighter Red
+    darkColor: "#6c0415", // Darker Red
     franchiseId: 12,
     id: 17
   },
   NSH: {
     name: "Nashville Predators",
     shortName: "Predators",
-    primaryColor: "#041e42",
-    secondaryColor: "#FFb81c",
-    jersey: "#FFFFFF",
-    accent: "#A2AAAD",
+    primaryColor: "#041e42", // Blue
+    secondaryColor: "#FFb81c", // Gold
+    jersey: "#FFFFFF", // White
+    accent: "#A2AAAD", // Silver
+    lightColor: "#efbe53", // Lighter gold
+    darkColor: "#da9501", // Darker gold
     alt: "#",
     franchiseId: 34,
     id: 18
@@ -215,10 +251,12 @@ export const teamsInfo: {
   STL: {
     name: "St. Louis Blues",
     shortName: "Blues",
-    primaryColor: "#041E42",
-    secondaryColor: "#FCB514",
-    jersey: "#1749a8",
-    accent: "#FFFFFF",
+    primaryColor: "#041E42", // Blue
+    secondaryColor: "#FCB514", // Yellow
+    jersey: "#1749a8", // Blue
+    accent: "#FFFFFF", // White
+    lightColor: "#3478f6", // Lighter Blue
+    darkColor: "#1b1d7e", // Darker Blue
     alt: "#",
     franchiseId: 18,
     id: 19
@@ -226,21 +264,25 @@ export const teamsInfo: {
   CGY: {
     name: "Calgary Flames",
     shortName: "Flames",
-    primaryColor: "#8a0113",
-    secondaryColor: "#FAAF19",
-    jersey: "#FFFFFF",
-    accent: "#000000",
-    alt: "#ffffff",
+    primaryColor: "#8a0113", // Red
+    secondaryColor: "#FAAF19", // Yellow
+    jersey: "#FFFFFF", // White
+    accent: "#000000", // Black
+    alt: "#ffffff", // White
+    lightColor: "#d72d49", // Lighter Red
+    darkColor: "#6c0415", // Darker Red
     franchiseId: 21,
     id: 20
   },
   COL: {
     name: "Colorado Avalanche",
     shortName: "Avalanche",
-    primaryColor: "#041e42",
-    secondaryColor: "#902647",
-    jersey: "#236192",
-    accent: "#FFFFFF",
+    primaryColor: "#041e42", // Blue
+    secondaryColor: "#902647", // Burgundy
+    jersey: "#236192", // Blue
+    accent: "#FFFFFF", // White
+    lightColor: "#3478f6", // Lighter Blue
+    darkColor: "#1b1d7e", // Darker Blue
     alt: "#",
     franchiseId: 27,
     id: 21
@@ -248,22 +290,26 @@ export const teamsInfo: {
   EDM: {
     name: "Edmonton Oilers",
     shortName: "Oilers",
-    primaryColor: "#041E42",
-    secondaryColor: "#FC4C02",
-    jersey: "#FFFFFF",
-    accent: "#A2AAAD",
+    primaryColor: "#041E42", // Blue
+    secondaryColor: "#FC4C02", // Orange
+    jersey: "#FFFFFF", // White
+    accent: "#A2AAAD", // Silver
     alt: "#",
+    lightColor: "#1953bf", // Lighter Blue
+    darkColor: "#1b1d7e", // Darker Blue
     franchiseId: 25,
     id: 22
   },
   VAN: {
     name: "Vancouver Canucks",
     shortName: "Canucks",
-    primaryColor: "#00205B",
-    secondaryColor: "#00843D",
-    jersey: "#ffffff",
-    accent: "#041C2C",
-    alt: "#",
+    primaryColor: "#00205B", // Blue
+    secondaryColor: "#00843D", // Green
+    jersey: "#ffffff", // White
+    accent: "#041C2C", // Navy
+    alt: "#", // White
+    lightColor: "#259358", // Lighter green
+    darkColor: "#024421", // Darker green
     franchiseId: 20,
     id: 23
   },
@@ -275,16 +321,20 @@ export const teamsInfo: {
     jersey: "#CF4520", // Orange
     accent: "#ffffff", // White
     alt: "#FFFFFF", // White
+    lightColor: "#ec623c", // Lighter orange
+    darkColor: "#992809", // Darker orange
     franchiseId: 32,
     id: 24
   },
   DAL: {
     name: "Dallas Stars",
     shortName: "Stars",
-    primaryColor: "#000000",
-    secondaryColor: "#44D62C",
-    jersey: "#006847",
-    accent: "#FFFFFF",
+    primaryColor: "#000000", // Black
+    secondaryColor: "#44D62C", // Green
+    jersey: "#006847", // Green
+    accent: "#FFFFFF", // White
+    lightColor: "#65ed50", // Lighter green
+    darkColor: "#116704", // Darker green
     alt: "#",
     franchiseId: 15,
     id: 25
@@ -292,10 +342,12 @@ export const teamsInfo: {
   LAK: {
     name: "Los Angeles Kings",
     shortName: "Kings",
-    primaryColor: "#000000",
-    secondaryColor: "#A2AAAD",
-    jersey: "#FFFFFF",
-    accent: "#A2AAAD",
+    primaryColor: "#000000", // Black
+    secondaryColor: "#A2AAAD", // Silver
+    jersey: "#FFFFFF", // White
+    accent: "#A2AAAD", // Silver
+    lightColor: "#bac8cd", // Lighter silver
+    darkColor: "#656768", // Darker Black
     alt: "#",
     franchiseId: 14,
     id: 26
@@ -303,10 +355,12 @@ export const teamsInfo: {
   SJS: {
     name: "San Jose Sharks",
     shortName: "Sharks",
-    primaryColor: "#006D75",
-    secondaryColor: "#000000",
-    jersey: "#FFFFFF",
-    accent: "#EA7200",
+    primaryColor: "#006D75", // Teal
+    secondaryColor: "#000000", // Black
+    jersey: "#FFFFFF", // White
+    accent: "#EA7200", // Orange
+    lightColor: "#1a8d96", // Lighter teal
+    darkColor: "#015156", // Darker teal
     alt: "#",
     franchiseId: 29,
     id: 28
@@ -314,10 +368,12 @@ export const teamsInfo: {
   CBJ: {
     name: "Columbus Blue Jackets",
     shortName: "Blue Jackets",
-    primaryColor: "#002654",
-    secondaryColor: "#7DA1C4",
-    jersey: "#ffffff",
-    accent: "#c8102e",
+    primaryColor: "#002654", // Blue
+    secondaryColor: "#7DA1C4", // Light Blue
+    jersey: "#ffffff", // White
+    accent: "#c8102e", // Red
+    lightColor: "#1756a3", // Lighter Blue
+    darkColor: "#001835", // Darker Blue
     alt: "#",
     franchiseId: 36,
     id: 29
@@ -325,21 +381,25 @@ export const teamsInfo: {
   MIN: {
     name: "Minnesota Wild",
     shortName: "Wild",
-    primaryColor: "#154734",
-    secondaryColor: "#DDCBA4",
-    jersey: "#A6192E",
-    accent: "#FFFFFF",
+    primaryColor: "#154734", // Green
+    secondaryColor: "#DDCBA4", // Tan
+    jersey: "#A6192E", // Red
+    accent: "#FFFFFF", // White
     alt: "#",
+    lightColor: "#24694f", // Lighter green
+    darkColor: "#0b2e21", // Darker green
     franchiseId: 37,
     id: 30
   },
   WPG: {
     name: "Winnipeg Jets",
     shortName: "Jets",
-    primaryColor: "#041E42",
-    secondaryColor: "#A2AAAD",
-    jersey: "#004C97",
-    accent: "#55565A",
+    primaryColor: "#041E42", // Blue
+    secondaryColor: "#A2AAAD", // Silver
+    jersey: "#004C97", // Blue
+    accent: "#55565A", // Grey
+    lightColor: "#1953bf", // Lighter Blue
+    darkColor: "#1b1d7e", // Darker Blue
     alt: "#",
     franchiseId: 35,
     id: 52
@@ -347,21 +407,25 @@ export const teamsInfo: {
   ARI: {
     name: "Arizona Coyotes",
     shortName: "Coyotes",
-    primaryColor: "#8C2633",
-    secondaryColor: "#DDCBA4",
-    jersey: "#ffffff",
-    accent: "#A9431E",
-    alt: "#5F259F",
+    primaryColor: "#8C2633", // Red
+    secondaryColor: "#DDCBA4", // Tan
+    jersey: "#ffffff", // White
+    accent: "#A9431E", // Brick Red
+    alt: "#5F259F", // Purple
+    lightColor: "#d72d49", // Lighter Red
+    darkColor: "#6c0415", // Darker Red
     franchiseId: 28,
     id: 53
   },
   VGK: {
     name: "Vegas Golden Knights",
     shortName: "Knights",
-    primaryColor: "#24292c",
-    secondaryColor: "#B4975A",
-    jersey: "#8d0519",
-    accent: "#000000",
+    primaryColor: "#24292c", // Grey
+    secondaryColor: "#B4975A", // Gold
+    jersey: "#8d0519", // Red
+    accent: "#000000", // Black
+    lightColor: "#696e72", // Lighter Grey
+    darkColor: "#0f1112", // Darker Grey
     alt: "#",
     franchiseId: 38,
     id: 54
@@ -369,10 +433,12 @@ export const teamsInfo: {
   SEA: {
     name: "Seattle Kraken",
     shortName: "Kraken",
-    primaryColor: "#001628",
-    secondaryColor: "#68A2B9",
-    jersey: "#99D9D9",
-    accent: "#E9072B",
+    primaryColor: "#001628", // Blue
+    secondaryColor: "#68A2B9", // Light Blue
+    jersey: "#99D9D9", // Light Blue
+    accent: "#E9072B", // Red
+    lightColor: "#6bcdf4", // Lighter Blue
+    darkColor: "#4592b0", // Darker Blue
     alt: "#",
     franchiseId: 39,
     id: 55
@@ -380,10 +446,12 @@ export const teamsInfo: {
   UTA: {
     name: "Utah Hockey Club",
     shortName: "Utah HC",
-    primaryColor: "#010101",
-    secondaryColor: "#69B3E7",
-    jersey: "#FFFFFF",
-    accent: "#69b3e7",
+    primaryColor: "#010101", // Black
+    secondaryColor: "#69B3E7", // Light Blue
+    jersey: "#FFFFFF", // White
+    accent: "#69b3e7", // Light Blue
+    lightColor: "#67bdfb", // Lighter Blue
+    darkColor: "#47a4c9", // Darker Blue
     alt: "#FFFFFF",
     franchiseId: 40,
     id: 59

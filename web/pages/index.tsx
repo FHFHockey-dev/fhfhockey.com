@@ -236,7 +236,7 @@ const Home: NextPage = ({
   };
 
   return (
-    (<Container className={styles.container}>
+    <Container className={styles.container}>
       <NextSeo
         title="FHFH | Home"
         description="Five Hole Fantasy Hockey Podcast Home page."
@@ -288,20 +288,21 @@ const Home: NextPage = ({
                   }
 
                   return (
-                    (<Link key={game.id} href={`/game/${game.id}`} className={styles.gameLink}>
-
+                    <Link
+                      key={game.id}
+                      href={`/game/${game.id}`}
+                      className={styles.gameLink}
+                    >
                       <div
                         className={styles.combinedGameCard}
                         style={{
                           "--home-primary-color": homeTeamInfo.primaryColor,
-                          "--home-secondary-color":
-                            homeTeamInfo.secondaryColor,
+                          "--home-secondary-color": homeTeamInfo.secondaryColor,
                           "--home-jersey-color": homeTeamInfo.jersey,
                           "--home-accent-color": homeTeamInfo.accent,
                           "--home-alt-color": homeTeamInfo.alt,
                           "--away-primary-color": awayTeamInfo.primaryColor,
-                          "--away-secondary-color":
-                            awayTeamInfo.secondaryColor,
+                          "--away-secondary-color": awayTeamInfo.secondaryColor,
                           "--away-jersey-color": awayTeamInfo.jersey,
                           "--away-accent-color": awayTeamInfo.accent,
                           "--away-alt-color": awayTeamInfo.alt
@@ -352,8 +353,7 @@ const Home: NextPage = ({
                           />
                         </div>
                       </div>
-
-                    </Link>)
+                    </Link>
                   );
                 })
               : nextAvailableGames.map((game) => {
@@ -367,20 +367,21 @@ const Home: NextPage = ({
                   }
 
                   return (
-                    (<Link key={game.id} href={`/game/${game.id}`} className={styles.gameLink}>
-
+                    <Link
+                      key={game.id}
+                      href={`/game/${game.id}`}
+                      className={styles.gameLink}
+                    >
                       <div
                         className={styles.combinedGameCard}
                         style={{
                           "--home-primary-color": homeTeamInfo.primaryColor,
-                          "--home-secondary-color":
-                            homeTeamInfo.secondaryColor,
+                          "--home-secondary-color": homeTeamInfo.secondaryColor,
                           "--home-jersey-color": homeTeamInfo.jersey,
                           "--home-accent-color": homeTeamInfo.accent,
                           "--home-alt-color": homeTeamInfo.alt,
                           "--away-primary-color": awayTeamInfo.primaryColor,
-                          "--away-secondary-color":
-                            awayTeamInfo.secondaryColor,
+                          "--away-secondary-color": awayTeamInfo.secondaryColor,
                           "--away-jersey-color": awayTeamInfo.jersey,
                           "--away-accent-color": awayTeamInfo.accent,
                           "--away-alt-color": awayTeamInfo.alt
@@ -431,8 +432,7 @@ const Home: NextPage = ({
                           />
                         </div>
                       </div>
-
-                    </Link>)
+                    </Link>
                   );
                 })}
           </div>
@@ -529,7 +529,7 @@ const Home: NextPage = ({
           </div>
         </div>
       </div>
-    </Container>)
+    </Container>
   );
 };
 

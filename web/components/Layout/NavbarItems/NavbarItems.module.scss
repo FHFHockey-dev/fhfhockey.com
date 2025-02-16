@@ -119,6 +119,9 @@ nav.items.large {
             height: 20px;
             position: relative;
             bottom: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
         }
 
