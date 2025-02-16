@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import * as d3 from "d3";
-import useCurrentSeason from "hooks/useCurrentSeason";
 import { format, isAfter } from "date-fns";
+import useCurrentSeason from "hooks/useCurrentSeason";
+import useResizeObserver from "hooks/useResizeObserver";
 import { teamsInfo, teamNameToAbbreviationMap } from "lib/teamsInfo";
 import supabase from "lib/supabase/client";
 import styles from "./TeamStandingsChart.module.scss";
@@ -9,6 +10,7 @@ import styles from "./TeamStandingsChart.module.scss";
 // -------------------------------
 // TYPE DEFINITIONS
 // -------------------------------
+// Note: we now include raw cumulative totals: goalFor and goalAgainst.
 type NumericMetric =
   | "pointPct"
   | "points"
@@ -32,6 +34,9 @@ interface TeamData {
   shotsForPerGame: number;
   conference: string;
   division: string;
+  // Raw cumulative totals (from the API)
+  goalFor: number;
+  goalAgainst: number;
 }
 
 // -------------------------------
@@ -56,7 +61,7 @@ function getYDomainMax(metric: NumericMetric): number {
 
 function getMetricValue(d: TeamData, metric: NumericMetric): number {
   const raw = d[metric];
-  // For percentage metrics, multiply by 100.
+  // For PK%, PP%, and pointPct, multiply by 100.
   if (
     metric === "pointPct" ||
     metric === "penaltyKillPct" ||
@@ -67,9 +72,7 @@ function getMetricValue(d: TeamData, metric: NumericMetric): number {
   return raw;
 }
 
-/**
- * Process the daily data by accumulating each record for each team.
- */
+/** Accumulate daily data for each team. */
 function processDailyData(
   currentData: Map<string, TeamData[]>,
   dailyData: TeamData[]
@@ -87,8 +90,34 @@ function processDailyData(
 }
 
 /**
- * Compute a rolling average series that excludes data points before the window is full.
- * That is, if windowSize=5, only points from game 5 onward are included.
+ * Compute a rolling average series from the raw cumulative values.
+ * For example, for goals for per game, for a given window size W, the value at index i is:
+ *    (data[i].goalFor - data[i - W].goalFor) / W.
+ * (Only data from game W onward is included.)
+ */
+function computeRollingForGoals(
+  data: TeamData[],
+  windowSize: number,
+  type: "goalsFor" | "goalsAgainst"
+): TeamData[] {
+  if (data.length <= windowSize) return [];
+  return data.slice(windowSize).map((d, i) => {
+    const current = data[windowSize + i];
+    const previous = data[i];
+    const avg =
+      type === "goalsFor"
+        ? (current.goalFor - previous.goalFor) / windowSize
+        : (current.goalAgainst - previous.goalAgainst) / windowSize;
+    // Return a new object with the appropriate per game value replaced.
+    return type === "goalsFor"
+      ? { ...current, goalsForPerGame: avg }
+      : { ...current, goalsAgainstPerGame: avg };
+  });
+}
+
+/**
+ * Compute a rolling average series for metrics that are already computed on a per-game basis.
+ * This is used for PK%, PP%, etc.
  */
 function computeRollingAverageFiltered(
   data: TeamData[],
@@ -99,7 +128,6 @@ function computeRollingAverageFiltered(
   return data.slice(windowSize - 1).map((_, i) => {
     const windowData = data.slice(i, i + windowSize);
     const avg = d3.mean(windowData, (dd) => dd[metric] as number) ?? 0;
-    // Use the last record in the window as the basis (for gamesPlayed and other fields)
     return { ...data[i + windowSize - 1], [metric]: avg };
   });
 }
@@ -113,19 +141,22 @@ const TeamStandingsChart: React.FC = () => {
   const [metric, setMetric] = useState<NumericMetric>("pointPct");
 
   // Filter states.
-  const [selectedConference, setSelectedConference] = useState<string>("All");
-  const [selectedDivision, setSelectedDivision] = useState<string>("All");
+  const [selectedConference, setSelectedConference] = useState("All");
+  const [selectedDivision, setSelectedDivision] = useState("All");
 
-  // Rolling average toggles (only relevant for PK% and PP%).
-  // For these metrics, default to 5GM rolling avg (daily data hidden).
-  const [rolling5, setRolling5] = useState<boolean>(false);
-  const [rolling10, setRolling10] = useState<boolean>(false);
+  // Rolling toggles (for PK/PP as well as GF/GA).
+  // For these metrics, default to 5GM rolling average.
+  const [rolling5, setRolling5] = useState(false);
+  const [rolling10, setRolling10] = useState(false);
 
-  // Team toggle state: array of team abbreviations selected for display.
+  // Team toggles: array of team abbreviations selected for display.
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
 
-  const chartRef = useRef<SVGSVGElement | null>(null);
+  // Refs for SVG container, tooltip, and measuring container.
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const { width, height } = useResizeObserver(containerRef);
 
   // -------------------------------
   // FETCH & MERGE DATA
@@ -205,12 +236,14 @@ const TeamStandingsChart: React.FC = () => {
         offset += limit;
       }
 
+      // Build a lookup from team stats.
       const teamStatsMap = new Map<string, any>();
       teamStatsRows.forEach((row) => {
         const key = `${row.date}_${row.franchise_name}`;
         teamStatsMap.set(key, row);
       });
 
+      // Merge data; note we now include raw cumulative totals (goal_for and goal_against).
       const dailyData = standingsRows.map((row) => {
         const gp = row.games_played || 0;
         const key = `${row.date}_${row.team_name_default}`;
@@ -218,7 +251,6 @@ const TeamStandingsChart: React.FC = () => {
         return {
           franchiseName: row.team_name_default,
           gamesPlayed: gp,
-          // For PK%/PP%, if no games then default to 0.5 (i.e. 50%)
           pointPct: gp > 0 ? row.point_pctg || 0 : 0.5,
           points: row.points || 0,
           goalsAgainstPerGame: gp > 0 ? (row.goal_against ?? 0) / gp : 0,
@@ -228,7 +260,10 @@ const TeamStandingsChart: React.FC = () => {
           shotsAgainstPerGame: 0,
           shotsForPerGame: 0,
           conference: row.conference_abbrev || "N/A",
-          division: row.division_name || "N/A"
+          division: row.division_name || "N/A",
+          // Include the raw cumulative values:
+          goalFor: row.goal_for || 0,
+          goalAgainst: row.goal_against || 0
         } as TeamData;
       });
 
@@ -240,7 +275,7 @@ const TeamStandingsChart: React.FC = () => {
   }, [season]);
 
   // -------------------------------
-  // RESET TEAM TOGGLES & ROLLING OPTIONS WHEN FILTERS CHANGE
+  // Reset Team Toggles & Rolling Options on Filter Changes
   // -------------------------------
   useEffect(() => {
     const teams: string[] = [];
@@ -271,22 +306,19 @@ const TeamStandingsChart: React.FC = () => {
   }, [data, selectedConference, selectedDivision, metric]);
 
   // -------------------------------
-  // DRAW CHART WITH D3 (Grouped Hover Effects with 1‑sec Delay)
+  // Draw Chart with D3 (Responsive, Dynamic Y Axis, 1‑sec Hover Delay)
   // -------------------------------
   useEffect(() => {
-    if (data.size === 0) return;
-    const svg = d3.select(chartRef.current);
-    const tooltip = d3.select(tooltipRef.current);
+    if (data.size === 0 || !width || !height) return;
+    const svgEl = svgRef.current;
+    if (!svgEl) return;
+
+    const svg = d3.select(svgEl);
     svg.selectAll("*").remove();
 
-    // Adjust inner width to leave space on the right for team toggles.
-    const fullWidth = chartRef.current?.clientWidth || 800;
-    const togglePanelWidth = 150;
-    const width = fullWidth - togglePanelWidth;
-    const height = chartRef.current?.clientHeight || 800;
     const margin = { top: 20, right: 30, bottom: 50, left: 60 };
-    const innerWidth = width - margin.left - margin.right;
-    const innerHeight = height - margin.top - margin.bottom;
+    const innerWidth = Math.max(0, width - margin.left - margin.right);
+    const innerHeight = Math.max(0, height - margin.top - margin.bottom);
 
     let maxGames = 0;
     data.forEach((teamData) => {
@@ -311,17 +343,49 @@ const TeamStandingsChart: React.FC = () => {
       .range([0, innerWidth]);
 
     let yScale: d3.ScaleLinear<number, number>;
-    let yAxis: d3.Axis<number | { valueOf(): number }>;
-    if (metric === "pointPct") {
+    if (metric === "penaltyKillPct" || metric === "powerPlayPct") {
+      const allValues: number[] = [];
+      const useRolling = rolling5 || rolling10;
+      data.forEach((teamData, teamName) => {
+        const abbr = teamNameToAbbreviationMap[teamName];
+        if (!selectedTeams.includes(abbr)) return;
+        if (
+          (selectedConference !== "All" &&
+            teamData[0].conference !== selectedConference) ||
+          (selectedDivision !== "All" &&
+            teamData[0].division !== selectedDivision)
+        ) {
+          return;
+        }
+        const sortedData = [...teamData].sort(
+          (a, b) => a.gamesPlayed - b.gamesPlayed
+        );
+        if (useRolling) {
+          if (rolling5) {
+            const s = computeRollingAverageFiltered(sortedData, 5, metric);
+            s.forEach((d) => allValues.push(getMetricValue(d, metric)));
+          }
+          if (rolling10) {
+            const s = computeRollingAverageFiltered(sortedData, 10, metric);
+            s.forEach((d) => allValues.push(getMetricValue(d, metric)));
+          }
+        } else {
+          sortedData.forEach((d) => allValues.push(getMetricValue(d, metric)));
+        }
+      });
+      const minVal = d3.min(allValues) ?? 0;
+      const maxVal = d3.max(allValues) ?? 100;
+      yScale = d3
+        .scaleLinear()
+        .domain([minVal, maxVal])
+        .range([innerHeight, 0])
+        .nice();
+    } else if (metric === "pointPct") {
       yScale = d3
         .scaleLinear()
         .domain([-50, 50])
         .range([innerHeight, 0])
         .nice();
-      yAxis = d3
-        .axisLeft(yScale)
-        .ticks(5)
-        .tickFormat((d: any) => (d > 0 ? `+${d}` : d.toString()));
     } else if (metric === "points") {
       const diffValues: number[] = [];
       data.forEach((teamData) => {
@@ -344,18 +408,64 @@ const TeamStandingsChart: React.FC = () => {
         .domain([minDiff, maxDiff])
         .range([innerHeight, 0])
         .nice();
-      yAxis = d3
-        .axisLeft(yScale)
-        .ticks(5)
-        .tickFormat((d: any) => (d > 0 ? `+${d}` : d.toString()));
+    } else if (
+      metric === "goalsForPerGame" ||
+      metric === "goalsAgainstPerGame"
+    ) {
+      // For GF/GA, if rolling toggles are on, we compute the rolling averages from the raw cumulative totals.
+      const allValues: number[] = [];
+      const useRolling = rolling5 || rolling10;
+      data.forEach((teamData, teamName) => {
+        const abbr = teamNameToAbbreviationMap[teamName];
+        if (!selectedTeams.includes(abbr)) return;
+        if (
+          (selectedConference !== "All" &&
+            teamData[0].conference !== selectedConference) ||
+          (selectedDivision !== "All" &&
+            teamData[0].division !== selectedDivision)
+        ) {
+          return;
+        }
+        const sortedData = [...teamData].sort(
+          (a, b) => a.gamesPlayed - b.gamesPlayed
+        );
+        if (useRolling) {
+          if (rolling5) {
+            const s = computeRollingForGoals(
+              sortedData,
+              5,
+              metric === "goalsForPerGame" ? "goalsFor" : "goalsAgainst"
+            );
+            s.forEach((d) => allValues.push(getMetricValue(d, metric)));
+          }
+          if (rolling10) {
+            const s = computeRollingForGoals(
+              sortedData,
+              10,
+              metric === "goalsForPerGame" ? "goalsFor" : "goalsAgainst"
+            );
+            s.forEach((d) => allValues.push(getMetricValue(d, metric)));
+          }
+        } else {
+          sortedData.forEach((d) => allValues.push(getMetricValue(d, metric)));
+        }
+      });
+      const minVal = d3.min(allValues) ?? 0;
+      const maxVal = d3.max(allValues) ?? 10;
+      yScale = d3
+        .scaleLinear()
+        .domain([minVal, maxVal])
+        .range([innerHeight, 0])
+        .nice();
     } else {
       yScale = d3
         .scaleLinear()
         .domain([0, getYDomainMax(metric)])
         .range([innerHeight, 0])
         .nice();
-      yAxis = d3.axisLeft(yScale).ticks(6);
     }
+
+    const yAxis = d3.axisLeft(yScale).ticks(5);
 
     const lineGenerator = d3
       .line<TeamData>()
@@ -375,15 +485,11 @@ const TeamStandingsChart: React.FC = () => {
       .append("g")
       .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Determine if we should use rolling averages (for PK% or PP%)
-    const useRolling =
-      (metric === "penaltyKillPct" || metric === "powerPlayPct") &&
-      (rolling5 || rolling10);
-
-    // For each team (only those toggled on)
+    // Draw data for each team
     data.forEach((teamData, teamName) => {
       const abbr = teamNameToAbbreviationMap[teamName];
-      if (teamData.length === 0 || !selectedTeams.includes(abbr)) return;
+      if (!selectedTeams.includes(abbr)) return;
+      if (teamData.length === 0) return;
       if (
         (selectedConference !== "All" &&
           teamData[0].conference !== selectedConference) ||
@@ -392,44 +498,68 @@ const TeamStandingsChart: React.FC = () => {
       ) {
         return;
       }
-      // Sort by gamesPlayed.
       const sortedData = [...teamData].sort(
         (a, b) => a.gamesPlayed - b.gamesPlayed
       );
       const color = teamsInfo[abbr]?.lightColor || "#999";
-
-      // Create a group for this team and set up properties for delayed hover.
       const teamG = mainG
         .append("g")
         .attr("class", `team-group team-${abbr}`)
-        .attr("data-team", abbr)
         .property("hoverTimer", null)
         .property("hoverActive", false);
 
+      // For PK%, PP%, GF/GA – if rolling toggle(s) are on, compute and draw only the rolling series.
+      let useRolling = false;
+      if (metric === "penaltyKillPct" || metric === "powerPlayPct") {
+        useRolling = rolling5 || rolling10;
+      }
+      if (metric === "goalsForPerGame" || metric === "goalsAgainstPerGame") {
+        useRolling = rolling5 || rolling10;
+      }
+
       if (useRolling) {
-        // Build rolling series – note: we filter out data before the window is complete.
-        const seriesList: {
-          data: TeamData[];
-          label: string;
-          strokeDash?: string;
-        }[] = [];
+        const seriesList: { data: TeamData[]; strokeDash?: string }[] = [];
         if (rolling5) {
-          seriesList.push({
-            data: computeRollingAverageFiltered(sortedData, 5, metric),
-            label: "5GM Rolling",
-            strokeDash: "4,2"
-          });
+          if (metric === "penaltyKillPct" || metric === "powerPlayPct") {
+            seriesList.push({
+              data: computeRollingAverageFiltered(sortedData, 5, metric),
+              strokeDash: "4,2"
+            });
+          } else if (
+            metric === "goalsForPerGame" ||
+            metric === "goalsAgainstPerGame"
+          ) {
+            seriesList.push({
+              data: computeRollingForGoals(
+                sortedData,
+                5,
+                metric === "goalsForPerGame" ? "goalsFor" : "goalsAgainst"
+              ),
+              strokeDash: "4,2"
+            });
+          }
         }
         if (rolling10) {
-          seriesList.push({
-            data: computeRollingAverageFiltered(sortedData, 10, metric),
-            label: "10GM Rolling",
-            strokeDash: "2,2"
-          });
+          if (metric === "penaltyKillPct" || metric === "powerPlayPct") {
+            seriesList.push({
+              data: computeRollingAverageFiltered(sortedData, 10, metric),
+              strokeDash: "2,2"
+            });
+          } else if (
+            metric === "goalsForPerGame" ||
+            metric === "goalsAgainstPerGame"
+          ) {
+            seriesList.push({
+              data: computeRollingForGoals(
+                sortedData,
+                10,
+                metric === "goalsForPerGame" ? "goalsFor" : "goalsAgainst"
+              ),
+              strokeDash: "2,2"
+            });
+          }
         }
-        // For each rolling series, draw a path and place a logo at its final point.
         seriesList.forEach((s) => {
-          // Only draw if there is data in the series.
           if (s.data.length > 0) {
             teamG
               .append("path")
@@ -441,27 +571,18 @@ const TeamStandingsChart: React.FC = () => {
               .attr("stroke-dasharray", s.strokeDash || null)
               .attr("class", "team-line")
               .attr("d", lineGenerator);
-            // (Optional) You could add circles here if desired.
-            // Place the team logo at the last point of this rolling series.
             const lastPoint = s.data[s.data.length - 1];
             teamG
               .append("svg:image")
               .attr("xlink:href", `/teamLogos/${abbr}.png`)
               .attr("x", xScale(lastPoint.gamesPlayed) + 5)
-              .attr("y", () => {
-                const m = metric as NumericMetric;
-                return m === "pointPct"
-                  ? yScale(getMetricValue(lastPoint, m) - 50) - 10
-                  : m === "points"
-                  ? yScale(lastPoint.points - lastPoint.gamesPlayed) - 10
-                  : yScale(getMetricValue(lastPoint, m)) - 10;
-              })
+              .attr("y", yScale(getMetricValue(lastPoint, metric)) - 10)
               .attr("width", 20)
               .attr("height", 20);
           }
         });
       } else {
-        // Draw daily series.
+        // Draw the daily series normally.
         teamG
           .append("path")
           .datum(sortedData)
@@ -471,7 +592,6 @@ const TeamStandingsChart: React.FC = () => {
           .attr("opacity", 0.8)
           .attr("class", "team-line")
           .attr("d", lineGenerator);
-        // Draw circles for daily data.
         teamG
           .selectAll(`circle.dot-${abbr}`)
           .data(sortedData)
@@ -491,7 +611,7 @@ const TeamStandingsChart: React.FC = () => {
           .attr("opacity", 0.8)
           .on("mouseover", function (event, d) {
             d3.select(this).transition().duration(200).attr("r", 5);
-            tooltip.style("display", "block").html(`
+            d3.select(tooltipRef.current).style("display", "block").html(`
                 ${abbr}<br/>
                 GP: ${d.gamesPlayed}<br/>
                 Value: ${
@@ -503,20 +623,18 @@ const TeamStandingsChart: React.FC = () => {
                 }
               `);
           })
-          .on("mousemove", function (event) {
-            const containerRect = chartRef.current?.getBoundingClientRect();
-            if (!containerRect) return;
+          .on("mousemove", (event) => {
+            const containerRect = svgEl.getBoundingClientRect();
             const xPos = event.clientX - containerRect.left;
             const yPos = event.clientY - containerRect.top;
-            tooltip
+            d3.select(tooltipRef.current)
               .style("left", `${xPos + 15}px`)
               .style("top", `${yPos - 28}px`);
           })
           .on("mouseout", function () {
             d3.select(this).transition().duration(200).attr("r", 3);
-            tooltip.style("display", "none");
+            d3.select(tooltipRef.current).style("display", "none");
           });
-        // Append team logo at the last daily data point.
         const lastPoint = sortedData[sortedData.length - 1];
         teamG
           .append("svg:image")
@@ -533,9 +651,9 @@ const TeamStandingsChart: React.FC = () => {
           .attr("height", 20);
       }
 
-      // Attach hover handlers on the entire team group with a 1‑second delay.
+      // Group hover (with a 1‑sec delay)
       teamG
-        .on("mouseover", function (event) {
+        .on("mouseover", function () {
           const teamGroup = d3.select(this);
           const timer = setTimeout(() => {
             teamGroup
@@ -556,7 +674,6 @@ const TeamStandingsChart: React.FC = () => {
               .duration(200)
               .attr("width", 40)
               .attr("height", 40);
-            // Fade all other teams.
             mainG
               .selectAll("g.team-group")
               .filter(function () {
@@ -564,7 +681,7 @@ const TeamStandingsChart: React.FC = () => {
               })
               .transition()
               .duration(200)
-              .attr("opacity", 0.5);
+              .attr("opacity", 0.2);
             teamGroup.property("hoverActive", true);
           }, 1000);
           teamGroup.property("hoverTimer", timer);
@@ -605,15 +722,16 @@ const TeamStandingsChart: React.FC = () => {
         });
     });
 
-    // Draw X axis.
+    // Draw X axis
     const xAxis = d3.axisBottom(xScale).ticks(10);
     mainG
       .append("g")
       .attr("transform", `translate(0, ${innerHeight})`)
       .call(xAxis);
-    // Draw Y axis.
+    // Draw Y axis
     mainG.append("g").call(yAxis);
-    // Draw horizontal dotted baseline at y=0 if applicable.
+
+    // Baseline at 0 for pointPct or points
     if (metric === "pointPct" || metric === "points") {
       mainG
         .append("line")
@@ -624,6 +742,7 @@ const TeamStandingsChart: React.FC = () => {
         .attr("stroke", "#fff")
         .attr("stroke-dasharray", "6,2")
         .attr("opacity", 0.5);
+
       mainG
         .append("text")
         .attr("transform", "rotate(-90)")
@@ -633,6 +752,18 @@ const TeamStandingsChart: React.FC = () => {
         .attr("text-anchor", "middle")
         .text(metric === "pointPct" ? "% above .500" : "Points Above .500");
     }
+
+    // Append drop shadow filter
+    svg
+      .append("defs")
+      .append("filter")
+      .attr("id", "whiteDropShadow")
+      .append("feDropShadow")
+      .attr("dx", 0)
+      .attr("dy", 0)
+      .attr("stdDeviation", 2)
+      .attr("flood-color", "white")
+      .attr("flood-opacity", 0.5);
   }, [
     data,
     metric,
@@ -640,61 +771,53 @@ const TeamStandingsChart: React.FC = () => {
     selectedDivision,
     rolling5,
     rolling10,
-    selectedTeams
+    selectedTeams,
+    width,
+    height
   ]);
 
   // -------------------------------
-  // TEAM TOGGLE PANEL (Right Side)
+  // TEAM TOGGLE PANEL – Sorted by Division in 2 Columns
   // -------------------------------
-  const visibleTeams = useMemo(() => {
-    const teams: string[] = [];
+  const teamsByDivision = useMemo(() => {
+    const divisions: { [key: string]: string[] } = {};
     data.forEach((teamData, teamName) => {
-      if (teamData.length > 0) {
-        const firstRecord = teamData[0];
-        if (
-          (selectedConference === "All" ||
-            firstRecord.conference === selectedConference) &&
-          (selectedDivision === "All" ||
-            firstRecord.division === selectedDivision)
-        ) {
-          const abbr = teamNameToAbbreviationMap[teamName];
-          teams.push(abbr);
+      if (teamData.length === 0) return;
+      const firstRecord = teamData[0];
+      if (
+        (selectedConference === "All" ||
+          firstRecord.conference === selectedConference) &&
+        (selectedDivision === "All" ||
+          firstRecord.division === selectedDivision)
+      ) {
+        const abbr = teamNameToAbbreviationMap[teamName];
+        if (!divisions[firstRecord.division]) {
+          divisions[firstRecord.division] = [];
         }
+        divisions[firstRecord.division].push(abbr);
       }
     });
-    return teams.sort();
+    Object.keys(divisions).forEach((div) => divisions[div].sort());
+    return divisions;
   }, [data, selectedConference, selectedDivision]);
 
-  const uniqueConferences = useMemo(() => {
-    const conferences = new Set<string>();
-    data.forEach((teamData) => {
-      if (teamData.length > 0) {
-        conferences.add(teamData[0].conference);
-      }
-    });
-    return Array.from(conferences).sort();
-  }, [data]);
+  // Define the two columns for team toggles.
+  const leftDivisions = ["Atlantic", "Central"];
+  const rightDivisions = ["Metropolitan", "Pacific"];
 
-  const uniqueDivisions = useMemo(() => {
-    const divisions = new Set<string>();
-    data.forEach((teamData) => {
-      if (teamData.length > 0) {
-        divisions.add(teamData[0].division);
-      }
-    });
-    return Array.from(divisions).sort();
-  }, [data]);
+  const selectAllTeams = () => {
+    const allTeams: string[] = [];
+    Object.values(teamsByDivision).forEach((arr) => allTeams.push(...arr));
+    setSelectedTeams(allTeams);
+  };
 
-  const selectAllTeams = () => setSelectedTeams(visibleTeams);
   const clearAllTeams = () => setSelectedTeams([]);
 
-  // -------------------------------
-  // RENDER UI: Filters, Chart & Team Toggle Panel
-  // -------------------------------
   return (
     <div className={styles.teamStandingsChart}>
       <div className={styles.chartAndToggles}>
         <div className={styles.leftColumn}>
+          {/* Filters */}
           <div className={styles.filters}>
             <label>Conference: </label>
             <select
@@ -702,11 +825,7 @@ const TeamStandingsChart: React.FC = () => {
               onChange={(e) => setSelectedConference(e.target.value)}
             >
               <option value="All">All</option>
-              {uniqueConferences.map((conf) => (
-                <option key={conf} value={conf}>
-                  {conf}
-                </option>
-              ))}
+              {/* You can populate dynamic options here */}
             </select>
             <label>Division: </label>
             <select
@@ -714,11 +833,7 @@ const TeamStandingsChart: React.FC = () => {
               onChange={(e) => setSelectedDivision(e.target.value)}
             >
               <option value="All">All</option>
-              {uniqueDivisions.map((div) => (
-                <option key={div} value={div}>
-                  {div}
-                </option>
-              ))}
+              {/* You can populate dynamic options here */}
             </select>
             <label>Metric: </label>
             <select
@@ -727,7 +842,9 @@ const TeamStandingsChart: React.FC = () => {
                 setMetric(e.target.value as NumericMetric);
                 if (
                   e.target.value === "penaltyKillPct" ||
-                  e.target.value === "powerPlayPct"
+                  e.target.value === "powerPlayPct" ||
+                  e.target.value === "goalsForPerGame" ||
+                  e.target.value === "goalsAgainstPerGame"
                 ) {
                   setRolling5(true);
                   setRolling10(false);
@@ -735,7 +852,12 @@ const TeamStandingsChart: React.FC = () => {
                   setRolling5(false);
                   setRolling10(false);
                 }
-                setSelectedTeams(visibleTeams);
+                // Reset team selection to all visible teams.
+                const allTeams: string[] = [];
+                Object.values(teamsByDivision).forEach((arr) => {
+                  allTeams.push(...arr);
+                });
+                setSelectedTeams(allTeams);
               }}
             >
               <option value="pointPct">Point Percentage</option>
@@ -744,10 +866,13 @@ const TeamStandingsChart: React.FC = () => {
               <option value="goalsForPerGame">Goals For/Game</option>
               <option value="penaltyKillPct">PK%</option>
               <option value="powerPlayPct">PP%</option>
-              <option value="shotsAgainstPerGame">Shots Against/Game</option>
-              <option value="shotsForPerGame">Shots For/Game</option>
+              {/* <option value="shotsAgainstPerGame">Shots Against/Game</option>
+              <option value="shotsForPerGame">Shots For/Game</option> */}
             </select>
-            {(metric === "penaltyKillPct" || metric === "powerPlayPct") && (
+            {(metric === "penaltyKillPct" ||
+              metric === "powerPlayPct" ||
+              metric === "goalsAgainstPerGame" ||
+              metric === "goalsForPerGame") && (
               <div className={styles.rollingToggles}>
                 <label>
                   <input
@@ -768,39 +893,83 @@ const TeamStandingsChart: React.FC = () => {
               </div>
             )}
           </div>
-          <svg ref={chartRef} className={styles.chartSvg} />
+
+          {/* Chart container (responsive via useResizeObserver) */}
+          <div ref={containerRef} className={styles.chartContainer}>
+            <svg ref={svgRef} className={styles.chartSvg} />
+          </div>
         </div>
+
+        {/* Team Toggle Panel */}
         <div className={styles.teamToggles}>
           <div className={styles.toggleButtons}>
             <button onClick={selectAllTeams}>Select All</button>
             <button onClick={clearAllTeams}>Clear All</button>
           </div>
           <div className={styles.toggleList}>
-            {visibleTeams.map((abbr) => (
-              <label key={abbr} className={styles.teamToggle}>
-                <input
-                  type="checkbox"
-                  checked={selectedTeams.includes(abbr)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedTeams((prev) => [...prev, abbr]);
-                    } else {
-                      setSelectedTeams((prev) =>
-                        prev.filter((t) => t !== abbr)
-                      );
-                    }
-                  }}
-                />
-                <img
-                  src={`/teamLogos/${abbr}.png`}
-                  alt={abbr}
-                  className={styles.toggleLogo}
-                />
-              </label>
-            ))}
+            <div className={styles.toggleColumn}>
+              {leftDivisions.map((div) => (
+                <div key={div}>
+                  <strong>{div}</strong>
+                  {teamsByDivision[div]?.map((abbr) => (
+                    <label key={abbr} className={styles.teamToggle}>
+                      <input
+                        type="checkbox"
+                        checked={selectedTeams.includes(abbr)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedTeams((prev) => [...prev, abbr]);
+                          } else {
+                            setSelectedTeams((prev) =>
+                              prev.filter((t) => t !== abbr)
+                            );
+                          }
+                        }}
+                      />
+                      <img
+                        src={`/teamLogos/${abbr}.png`}
+                        alt={abbr}
+                        className={styles.toggleLogo}
+                      />
+                    </label>
+                  ))}
+                </div>
+              ))}
+            </div>
+            <div className={styles.toggleColumn}>
+              {rightDivisions.map((div) => (
+                <div key={div}>
+                  <strong>{div === "Metropolitan" ? "Metro" : div}</strong>
+                  {teamsByDivision[div]?.map((abbr) => (
+                    <label key={abbr} className={styles.teamToggle}>
+                      <input
+                        type="checkbox"
+                        checked={selectedTeams.includes(abbr)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedTeams((prev) => [...prev, abbr]);
+                          } else {
+                            setSelectedTeams((prev) =>
+                              prev.filter((t) => t !== abbr)
+                            );
+                          }
+                        }}
+                      />
+                      <img
+                        src={`/teamLogos/${abbr}.png`}
+                        alt={abbr}
+                        className={styles.toggleLogo}
+                      />
+                    </label>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Tooltip */}
       <div ref={tooltipRef} className={styles.tooltip} />
     </div>
   );
