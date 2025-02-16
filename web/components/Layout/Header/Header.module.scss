@@ -111,4 +111,11 @@ $mobile-header-height: 72px;
       align-items: center;
     }
   }
+
+  @media (max-width: 767px) {
+    .logo {
+      margin: 0; // Remove the auto centering on mobile
+      left: 1%;
+    }
+  }
 }
