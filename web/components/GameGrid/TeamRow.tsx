@@ -96,7 +96,7 @@ function TeamRow(props: TeamRowProps) {
   return (
     <tr className={`${styles.teamRow} ${props.rowHighlightClass || ""}`}>
       {/* First column: show abbreviation on desktop, logo on mobile */}
-      <td>
+      <td className={styles.firstColumnContent}>
         <span className={styles.desktopTeamAbbreviation}>
           {team.abbreviation}
         </span>

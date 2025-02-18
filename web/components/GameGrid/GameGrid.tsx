@@ -519,8 +519,8 @@ function GameGridInternal({
             </div>
           </div>
         </div>
-        <div className={styles.fourWeekLabel}>
-          <h2 className={styles.fourWeekTitle}>
+        <div className={styles.fourWeekLabelVertical}>
+          <h2 className={styles.fourWeekTitleVertical}>
             Four Week <span className={styles.spanColorBlue}>Forecast</span>
           </h2>
         </div>
@@ -583,7 +583,15 @@ function GameGridInternal({
             start={dates[0]}
             mode={mode === "7-Day-Forecast" ? "7-Day" : "10-Day-Forecast"}
           />
-          <FourWeekGrid teamDataArray={teamDataWithAverages} />
+          <div className={styles.fourWeekGridContainerAll}>
+            <div className={styles.fourWeekLabel}>
+              <h2 className={styles.fourWeekTitle}>
+                Four Week <span className={styles.spanColorBlue}>Forecast</span>
+              </h2>
+            </div>
+
+            <FourWeekGrid teamDataArray={teamDataWithAverages} />
+          </div>
         </div>
       )}
 

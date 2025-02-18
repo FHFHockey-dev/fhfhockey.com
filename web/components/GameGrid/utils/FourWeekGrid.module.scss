@@ -4,21 +4,23 @@
 
 // Common styles inherited or inspired by GameGrid.module.scss
 .fourWeekGridContainer {
-  flex: 0 0 25%;
   max-width: 25%;
   overflow-x: auto; // Ensure table is scrollable horizontally on smaller screens
+  outline: 10px solid #101010;
+  border-radius: 12px;
 }
 
 .fourWeekGridTable {
   margin: 0 auto;
   color: white;
-  border: 5px solid #ffffff;
+  overflow: hidden;
+  border: 4px solid #404040;
+  border-radius: 12px;
   border-spacing: 0px;
   font-size: 14px;
   text-align: left;
   width: 100%;
   max-width: 1000px;
-  border-collapse: collapse;
 
   thead {
     position: sticky;
@@ -63,8 +65,8 @@
   th:nth-child(n + 2),
   td:nth-child(n + 2) {
     padding: 3px 5px;
-    border: 0.5px solid white;
-    min-width: 40px;
+    border: 0.5px solid #505050;
+    min-width: 60px;
     max-width: 100px;
     max-height: 40px;
     min-height: 40px;
@@ -94,24 +96,28 @@
     background-color: #505050;
   }
 
+  .teamLogo {
+    filter: drop-shadow(0 0 2px #ffffff);
+  }
+
   /* Color-Coding Classes */
   .red {
-    background-color: rgba(255, 0, 0, 0.3); // Light red
+    background-color: rgba(255, 0, 0, 0.2); // Light red
     color: white;
   }
 
   .orange {
-    background-color: rgba(255, 165, 0, 0.3); // Light orange
+    background-color: rgba(255, 165, 0, 0.2); // Light orange
     color: white;
   }
 
   .yellow {
-    background-color: rgba(255, 255, 0, 0.3); // Light yellow
+    background-color: rgba(255, 255, 0, 0.2); // Light yellow
     color: white;
   }
 
   .green {
-    background-color: rgba(0, 255, 0, 0.3); // Light green
+    background-color: rgba(0, 255, 0, 0.2); // Light green
     color: white;
   }
 
