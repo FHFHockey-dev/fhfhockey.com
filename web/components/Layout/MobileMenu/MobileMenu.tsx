@@ -44,15 +44,15 @@ function MobileMenu({ onItemClick, visible }: MobileMenuProps) {
 
   return (
     <>
-      {
-        transitions((style, show) =>
-          show ? (
-            <animated.div className={styles.menu} style={style}>
-              … contents …
-            </animated.div>
-          ) : null
-        ) as React.ReactNode
-      }
+      {transitions((style, show) =>
+        show ? (
+          <animated.div className={styles.menu} style={style}>
+            <NavbarItems items={ITEMS_DATA} onItemClick={onItemClick} />
+            <SocialMedias />
+            <Footer />
+          </animated.div>
+        ) : null
+      )}
     </>
   );
 }

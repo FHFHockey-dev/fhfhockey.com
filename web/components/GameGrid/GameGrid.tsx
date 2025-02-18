@@ -20,6 +20,8 @@ import {
   convertTeamRowToWinOddsList
 } from "./utils/calcWinOdds";
 
+import TransposedGrid from "./TransposedGrid";
+
 import styles from "./GameGrid.module.scss";
 import Spinner from "components/Spinner";
 import {
@@ -45,13 +47,25 @@ import useTeamSummary from "hooks/useTeamSummary";
 
 import GameGridContext from "./contexts/GameGridContext";
 
-function GameGridInternal({ mode, setMode }: GameGridProps) {
+type SortKey = {
+  key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
+  ascending: boolean;
+};
+
+function GameGridInternal({
+  mode,
+  setMode,
+  orientation,
+  setOrientation
+}: GameGridProps) {
   const router = useRouter();
 
   // [startDate, endDate]
   const [dates, setDates] = useState<[string, string]>(() =>
     startAndEndOfWeek()
   );
+
+  const [currentSortKey, setCurrentSortKey] = useState<SortKey | null>(null);
 
   const teams = useTeamsMap(); // Use the useTeamsMap hook
 
@@ -181,6 +195,42 @@ function GameGridInternal({ mode, setMode }: GameGridProps) {
     }
     return sorted;
   }, [filteredColumns, teams, sortKeys]);
+
+  const sortedByScoreDesc = useMemo(() => {
+    return [...filteredColumns].sort((a, b) => b.weekScore - a.weekScore);
+  }, [filteredColumns]);
+
+  // Build sets of top 10 & bottom 10
+  const top10TeamIds = useMemo(() => {
+    return new Set(sortedByScoreDesc.slice(0, 10).map((t) => t.teamId));
+  }, [sortedByScoreDesc]);
+
+  const bottom10TeamIds = useMemo(() => {
+    // If fewer than 10 teams, slice won't break anything, but handle gracefully
+    return new Set(sortedByScoreDesc.slice(-10).map((t) => t.teamId));
+  }, [sortedByScoreDesc]);
+
+  const handleOrientationToggle = () => {
+    setOrientation(orientation === "horizontal" ? "vertical" : "horizontal");
+  };
+
+  const handleSortToggle = (
+    key: "totalOffNights" | "totalGamesPlayed" | "weekScore"
+  ) => {
+    setCurrentSortKey((prev) => {
+      if (prev && prev.key === key) {
+        // Toggle the ascending value
+        const newSortKey = { key, ascending: !prev.ascending };
+        setSortKeys([newSortKey]); // Replace sortKeys with the new sort key
+        return newSortKey;
+      } else {
+        // Set to descending by default on first click
+        const newSortKey = { key, ascending: false };
+        setSortKeys([newSortKey]); // Replace sortKeys with the new sort key
+        return newSortKey;
+      }
+    });
+  };
 
   // PREV, NEXT button click
   const handleClick = (action: string) => () => {
@@ -442,6 +492,15 @@ function GameGridInternal({ mode, setMode }: GameGridProps) {
               </button>
 
               <button
+                className={styles.orientationToggleButton}
+                onClick={handleOrientationToggle}
+              >
+                {orientation === "horizontal"
+                  ? "Vertical View"
+                  : "Horizontal View"}
+              </button>
+
+              <button
                 className={styles.dateButtonPrev}
                 onClick={handleClick("PREV")}
               >
@@ -467,44 +526,68 @@ function GameGridInternal({ mode, setMode }: GameGridProps) {
         </div>
       </div>
 
-      {/* FourWeekGrid Component */}
-      <div className={styles.mainGridContainer}>
-        <div className={styles.gridWrapper}>
-          <table className={styles.scheduleGrid}>
-            <Header
-              start={dates[0]}
-              end={dates[1]}
-              extended={mode === "10-Day-Forecast"}
-              setSortKeys={setSortKeys}
-              excludedDays={excludedDays}
-              setExcludedDays={setExcludedDays}
-            />
-            <tbody>
-              {/* Total Games Per Day */}
-              <TotalGamesPerDayRow
-                games={currentNumGamesPerDay}
+      {orientation === "horizontal" ? (
+        // Horizontal layout: FourWeekGrid stays next to the main grid
+        <div className={styles.mainGridContainer}>
+          <div className={styles.gridWrapper}>
+            <table className={styles.scheduleGrid}>
+              <Header
+                start={dates[0]}
+                end={dates[1]}
+                extended={mode === "10-Day-Forecast" ? true : false}
+                setSortKeys={setSortKeys}
                 excludedDays={excludedDays}
-                extended={mode === "10-Day-Forecast"}
+                setExcludedDays={setExcludedDays}
               />
-              {/* Teams */}
-              {sortedTeams.map(({ teamId, ...rest }) => {
-                return (
-                  <TeamRow
-                    key={teamId}
-                    teamId={teamId}
-                    extended={mode === "10-Day-Forecast"}
-                    excludedDays={excludedDays}
-                    {...rest}
-                  />
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        <FourWeekGrid teamDataArray={teamDataWithAverages} />
-      </div>
+              <tbody>
+                <TotalGamesPerDayRow
+                  games={currentNumGamesPerDay}
+                  excludedDays={excludedDays}
+                  extended={mode === "10-Day-Forecast" ? true : false}
+                />
+                {sortedTeams.map(({ teamId, ...rest }) => {
+                  // Decide if this team is in top 10 or bottom 10 by weekScore
+                  let highlightClass = "";
+                  if (top10TeamIds.has(teamId)) {
+                    // we can define a new CSS class: .teamRowGreen
+                    highlightClass = styles.teamRowGreen;
+                  } else if (bottom10TeamIds.has(teamId)) {
+                    // another new CSS class: .teamRowRed
+                    highlightClass = styles.teamRowRed;
+                  }
 
-      {/* Conditional Rendering for Loading and Error States */}
+                  return (
+                    <TeamRow
+                      key={teamId}
+                      teamId={teamId}
+                      extended={mode === "10-Day-Forecast" ? true : false}
+                      excludedDays={excludedDays}
+                      rowHighlightClass={highlightClass} // <--- new prop
+                      {...rest}
+                    />
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <FourWeekGrid teamDataArray={teamDataWithAverages} />
+        </div>
+      ) : (
+        <div className={styles.verticalContainer}>
+          <TransposedGrid
+            sortedTeams={sortedTeams}
+            games={currentNumGamesPerDay}
+            excludedDays={excludedDays}
+            setExcludedDays={setExcludedDays}
+            extended={mode === "10-Day-Forecast"}
+            start={dates[0]}
+            mode={mode === "7-Day-Forecast" ? "7-Day" : "10-Day-Forecast"}
+          />
+          <FourWeekGrid teamDataArray={teamDataWithAverages} />
+        </div>
+      )}
+
+      {/* Loading and error states */}
       {(summaryLoading || fourWeekLoading) && (
         <div className={styles.overlaySpinner}>
           <Spinner />
@@ -532,12 +615,23 @@ export type GameGridMode = "7-Day-Forecast" | "10-Day-Forecast";
 type GameGridProps = {
   mode: GameGridMode;
   setMode: (newMode: GameGridMode) => void;
+  orientation: "horizontal" | "vertical";
+  setOrientation: (newOrientation: "horizontal" | "vertical") => void;
 };
 
 export default function GameGrid({ mode, setMode }: GameGridProps) {
+  const [orientation, setOrientation] = useState<"horizontal" | "vertical">(
+    "horizontal"
+  );
+
   return (
     <GameGridContext>
-      <GameGridInternal mode={mode} setMode={setMode} />
+      <GameGridInternal
+        mode={mode}
+        setMode={setMode}
+        orientation={orientation}
+        setOrientation={setOrientation}
+      />
     </GameGridContext>
   );
 }

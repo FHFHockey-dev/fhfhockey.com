@@ -72,7 +72,7 @@ async function fetchNHLSeasons() {
 async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
   let currentDate = parseISO(startDate);
 
-  while (format(currentDate, "yyyy-MM-dd") < effectiveEndDate) {
+  while (format(currentDate, "yyyy-MM-dd") <= effectiveEndDate) {
     const formattedDate = format(currentDate, "yyyy-MM-dd");
 
     // Check if this date has already been processed for the given season.

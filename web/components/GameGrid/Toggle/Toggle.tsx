@@ -1,10 +1,13 @@
-import styles from "./Toggle.module.css";
+// components/GameGrid/Toggle.tsx
+import React from "react";
+import styles from "./Toggle.module.css"; // Ensure you have a CSS file for the toggle
 
 type ToggleProps = {
-  checked?: boolean;
-  onChange?: React.ChangeEventHandler<HTMLInputElement> | undefined;
+  checked: boolean;
+  onChange: () => void;
 };
-function Toggle({ checked, onChange }: ToggleProps) {
+
+export default function Toggle({ checked, onChange }: ToggleProps) {
   return (
     <label className={styles.switch}>
       <input type="checkbox" checked={checked} onChange={onChange} />
@@ -12,5 +15,3 @@ function Toggle({ checked, onChange }: ToggleProps) {
     </label>
   );
 }
-
-export default Toggle;

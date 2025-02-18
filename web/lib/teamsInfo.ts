@@ -516,3 +516,10 @@ export const getTeamInfoById = (
   | undefined => {
   return Object.values(teamsInfo).find((team) => team.id === teamId);
 };
+
+export const getTeamAbbreviationById = (teamId: number): string | undefined => {
+  const entry = Object.entries(teamsInfo).find(
+    ([, team]) => team.id === teamId
+  );
+  return entry ? entry[0] : undefined;
+};
