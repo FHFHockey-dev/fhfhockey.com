@@ -43,16 +43,24 @@ export default function TransposedGrid({
   );
   const teamsMap = useTeamsMap();
 
-  // Use a state key to sort columns.
   const [teamSortKey, setTeamSortKey] = useState<
-    "totalGamesPlayed" | "totalOffNights" | "weekScore"
-  >("totalGamesPlayed");
+    "alphabetical" | "totalGamesPlayed" | "totalOffNights" | "weekScore"
+  >("alphabetical");
+
   const [hoveredColumn, setHoveredColumn] = useState<number | null>(null);
 
-  // We sort team columns by the selected key.
+  // Sort teams based on the selected sort key.
   const sortedTeamColumns = React.useMemo(() => {
-    return [...sortedTeams].sort((a, b) => b[teamSortKey] - a[teamSortKey]);
-  }, [sortedTeams, teamSortKey]);
+    if (teamSortKey === "alphabetical") {
+      return [...sortedTeams].sort((a, b) => {
+        const nameA = teamsMap[a.teamId]?.name || "";
+        const nameB = teamsMap[b.teamId]?.name || "";
+        return nameA.localeCompare(nameB);
+      });
+    } else {
+      return [...sortedTeams].sort((a, b) => b[teamSortKey] - a[teamSortKey]);
+    }
+  }, [sortedTeams, teamSortKey, teamsMap]);
 
   const sortedDays = daysToRender;
 
@@ -234,6 +242,7 @@ export default function TransposedGrid({
           })}
           <tr className="totalsRow">
             <th
+              className={styles.dayHeader}
               onClick={() => setTeamSortKey("totalGamesPlayed")}
               style={{ cursor: "pointer" }}
             >
@@ -259,6 +268,7 @@ export default function TransposedGrid({
           </tr>
           <tr className="totalsRow">
             <th
+              className={styles.dayHeader} // sticky for Off
               onClick={() => setTeamSortKey("totalOffNights")}
               style={{ cursor: "pointer" }}
             >
@@ -280,9 +290,10 @@ export default function TransposedGrid({
               </td>
             ))}
           </tr>
-          {/* Score row – uses original rank-color classes without hover/alternating effects */}
+
           <tr className="totalsRow">
             <th
+              className={styles.dayHeader} // sticky for Score
               onClick={() => setTeamSortKey("weekScore")}
               style={{ cursor: "pointer" }}
             >

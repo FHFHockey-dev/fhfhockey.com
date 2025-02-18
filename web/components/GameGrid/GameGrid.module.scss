@@ -40,9 +40,32 @@ $mobile-fixed-width: 35px;
   }
 }
 
-.fourWeekLabel {
-  flex: 0 0 25%;
-  max-width: 25%;
+.fourWeekLabelVertical {
+  font-family: roboto condensed, sans-serif;
+  width: 100%;
+  font-size: 1.2em;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-end;
+}
+
+.fourWeekTitleVertical {
+  font-family: roboto condensed, sans-serif;
+  font-size: 1.5em;
+  font-weight: 100;
+  text-transform: uppercase;
+  letter-spacing: -0.015em;
+  margin-bottom: 25px;
+}
+
+.fourWeekGridContainerAll {
+  display: flex;
+  justify-content: space-around;
+  flex-direction: column;
+
+  .fourWeekLabelVertical {
+    display: none;
+  }
 
   .fourWeekTitle {
     font-family: roboto condensed, sans-serif;
@@ -50,7 +73,7 @@ $mobile-fixed-width: 35px;
     font-weight: 100;
     text-transform: uppercase;
     letter-spacing: -0.015em;
-    position: absolute;
+    margin-bottom: 25px;
   }
 }
 
@@ -93,7 +116,7 @@ $mobile-fixed-width: 35px;
   position: relative;
   height: 35px;
   width: 115px;
-  background: #2086a8;
+  background: #40bee8;
   color: #ffffff;
   border: 2px solid white;
   padding-left: 20px;
@@ -166,7 +189,10 @@ $mobile-fixed-width: 35px;
 
 .scheduleGrid {
   color: white;
-  border: 5px solid #606060;
+  overflow: hidden;
+  border: 4px solid #404040;
+  border-radius: 12px;
+  outline: 10px solid #101010;
   border-spacing: 0px;
   font-size: 14px;
   text-align: left;
@@ -240,7 +266,7 @@ $mobile-fixed-width: 35px;
 }
 
 .scheduleGrid tr:hover {
-  background-color: #505050;
+  background-color: mix(white, #303030, 5%);
 }
 
 .scheduleGrid > tbody > tr:nth-of-type(odd) {
@@ -248,7 +274,24 @@ $mobile-fixed-width: 35px;
 }
 
 .scheduleGrid tr:hover:nth-of-type(odd) {
-  background-color: #505050;
+  background-color: mix(white, #101010, 10%);
+}
+
+.teamRow {
+  .teamName {
+    display: none;
+  }
+
+  .desktopTeamAbbreviation {
+    display: none;
+  }
+
+  & span {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    filter: drop-shadow(0 0 4px rgba(201, 199, 199, 0.5));
+  }
 }
 
 .scoreAndHomeAway {
@@ -300,17 +343,22 @@ $mobile-fixed-width: 35px;
   content: "GP/Day";
 }
 
-.teamRow {
-  .teamName {
-    display: none;
-  }
-}
-
 .teamRowGreen {
-  background-color: rgba(0, 255, 0, 0.07) !important;
+  background-color: rgba(0, 255, 0, 0.1) !important;
 }
 .teamRowRed {
-  background-color: rgba(255, 0, 0, 0.07) !important;
+  background-color: rgba(255, 0, 0, 0.1) !important;
+}
+
+.teamRowGreen:hover {
+  background-color: mix(white, rgba(0, 255, 0, 0.15), 8%) !important;
+
+  filter: brightness(120%) !important;
+}
+
+.teamRowRed:hover {
+  filter: brightness(110%) !important;
+  background-color: mix(white, rgba(255, 0, 0, 0.15), 8%) !important;
 }
 
 /* Green to Yellow (Ranks 32 to 17) 
@@ -699,9 +747,9 @@ $mobile-fixed-width: 35px;
 
   .scheduleGrid {
     width: 100%;
-    border-left: 2px solid #505050;
-    border-right: 2px solid #868686;
-    border-bottom: 2px solid #505050;
+    border-left: 2px solid #50505074;
+    border-right: 2px solid #86868674;
+    border-bottom: 2px solid #50505074;
     border-top: none;
     border-spacing: 0px;
 
@@ -782,7 +830,7 @@ $mobile-fixed-width: 35px;
         width: 10%;
         text-indent: -9999px; // hide original text
         position: relative;
-        background-color: #1883a7;
+        background-color: #07abe2d7;
         border-radius: 6px 0 0 0;
         border-left: 2px solid #fff;
         border-top: 2px solid #fff;
@@ -795,7 +843,7 @@ $mobile-fixed-width: 35px;
         order: 2;
         width: 40%;
         margin: 0;
-        background-color: #1883a7;
+        background-color: #07abe2d7;
         border-radius: 0;
         border-top: 2px solid #fff;
         border-right: 1px solid #fff;
@@ -808,7 +856,7 @@ $mobile-fixed-width: 35px;
         width: 40%;
         margin: 0;
         border-radius: 0;
-        background-color: #1883a7;
+        background-color: #07abe2d7;
         border-top: 2px solid #fff;
         border-right: none;
         border-left: 1px solid #fff;
@@ -821,7 +869,7 @@ $mobile-fixed-width: 35px;
         text-indent: -9999px;
         position: relative;
         border-radius: 0 6px 0 0;
-        background-color: #1883a7;
+        background-color: #07abe2d7;
         border-left: 2px solid #fff;
         border-top: 2px solid #fff;
         border-right: 2px solid #fff;
@@ -893,21 +941,22 @@ $mobile-fixed-width: 35px;
     text-align: center;
     font-size: 12px;
     padding: 2px 0 2px 0;
+    border: 1px solid #3f3f3f90;
   }
 
   .scheduleGrid tr th:nth-child(9),
   .scheduleGrid tr th:nth-child(10),
   .scheduleGrid tr td:nth-child(9),
   .scheduleGrid tr td:nth-child(10) {
-    border: 0.5px solid #868686;
+    border: 0.5px solid #86868690;
     font-size: 12px;
   }
 
   .scheduleGrid tr th:nth-child(11),
   .scheduleGrid tr td:nth-child(11) {
-    border-left: 0.5px solid #868686;
-    border-bottom: 0.5px solid #868686;
-    border-top: 0.5px solid #868686;
+    border-left: 0.5px solid #86868690;
+    border-bottom: 0.5px solid #86868690;
+    border-top: 0.5px solid #86868690;
     border-right: none;
   }
 
@@ -920,7 +969,7 @@ $mobile-fixed-width: 35px;
     text-align: center;
     font-size: 8px;
     padding-bottom: 8px;
-    border: 0.5px solid #868686;
+    border: 0.5px solid #86868690;
     border-top: none;
   }
 
@@ -932,8 +981,8 @@ $mobile-fixed-width: 35px;
     text-align: center;
     font-size: 8px;
     padding-bottom: 8px;
-    border-left: 0.5px solid #868686;
-    border-bottom: 0.5px solid #868686;
+    border-left: 0.5px solid #86868690;
+    border-bottom: 0.5px solid #86868690;
     border-top: none;
     border-right: none;
   }
@@ -996,6 +1045,7 @@ $mobile-fixed-width: 35px;
       display: flex;
       justify-content: center;
       align-items: center;
+      filter: drop-shadow(0 0 2px rgba(201, 199, 199, 0.3));
     }
   }
 }
