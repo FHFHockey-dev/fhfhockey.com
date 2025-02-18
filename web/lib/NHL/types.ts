@@ -254,7 +254,7 @@ interface TvBroadcast {
 // web\lib\NHL\types.ts
 
 export const DAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
-export type DAY_ABBREVIATION = typeof DAYS[number];
+export type DAY_ABBREVIATION = (typeof DAYS)[number];
 
 export const EXTENDED_DAYS = [
   "MON",
@@ -268,7 +268,7 @@ export const EXTENDED_DAYS = [
   "nTUE",
   "nWED"
 ] as const;
-export type EXTENDED_DAY_ABBREVIATION = typeof EXTENDED_DAYS[number];
+export type EXTENDED_DAY_ABBREVIATION = (typeof EXTENDED_DAYS)[number];
 
 export type TeamGameData = {
   id: number;

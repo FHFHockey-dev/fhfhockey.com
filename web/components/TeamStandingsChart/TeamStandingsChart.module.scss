@@ -4,10 +4,14 @@
   position: relative;
   width: 100%;
   margin: 2rem 0;
-  background-color: #1a1a1a; /* or #202020 if you prefer */
+  background-color: #1a1a1a;
   border-radius: 12px;
   padding: 1rem;
-  /* If you want more vertical space: min-height, etc. */
+
+  /* Add this media query for mobile devices */
+  @media (max-width: 768px) {
+    display: none;
+  }
 }
 
 /* Container for chart + toggles */

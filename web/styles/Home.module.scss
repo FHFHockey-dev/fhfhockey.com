@@ -566,6 +566,11 @@
 }
 
 @media (max-width: 767px) {
+  .homepage {
+    width: 90%;
+    margin: auto;
+  }
+
   .gameCard {
     flex: 1 0 48%;
     min-height: 4em;

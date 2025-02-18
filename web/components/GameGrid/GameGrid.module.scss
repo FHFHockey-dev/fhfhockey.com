@@ -4,6 +4,7 @@
 $breakpoint-small: 320px;
 $breakpoint-medium: 480px;
 $breakpoint-large: 768px;
+$mobile-fixed-width: 35px;
 
 @mixin respond-to($breakpoint) {
   @if $breakpoint == small {
@@ -92,9 +93,9 @@ $breakpoint-large: 768px;
   position: relative;
   height: 35px;
   width: 115px;
-  background: #07aae2;
+  background: #2086a8;
   color: #ffffff;
-  border: 1px solid white;
+  border: 2px solid white;
   padding-left: 20px;
   padding-right: 20px;
   border-radius: 8px;
@@ -102,17 +103,17 @@ $breakpoint-large: 768px;
 
 .dateButtonPrev:hover {
   height: 35px;
-  background: #057fa9;
-  border: 2px solid white;
+  background: #065975;
+  border: 3px solid white;
 }
 
 .dateButtonNext {
   position: relative;
   height: 35px;
   width: 115px;
-  background: #07aae2;
+  background: #2086a8;
   color: #ffffff;
-  border: 1px solid white;
+  border: 2px solid white;
   padding-left: 20px;
   padding-right: 20px;
   border-radius: 8px;
@@ -120,8 +121,8 @@ $breakpoint-large: 768px;
 
 .dateButtonNext:hover {
   height: 35px;
-  background: #057fa9;
-  border: 2px solid white;
+  background: #065975;
+  border: 3px solid white;
 }
 
 .dateButtonMode {
@@ -129,9 +130,22 @@ $breakpoint-large: 768px;
   position: relative;
   height: 35px;
   width: 115px;
-  background: #07aae2;
+  background: #2086a8;
   color: #ffffff;
-  border: 1px solid white;
+  border: 2px solid white;
+  padding-left: 20px;
+  padding-right: 20px;
+  border-radius: 8px;
+}
+
+.orientationToggleButton {
+  font-family: roboto condensed, sans-serif;
+  position: relative;
+  height: 35px;
+  width: 115px;
+  background: #2086a8;
+  color: #ffffff;
+  border: 2px solid white;
   padding-left: 20px;
   padding-right: 20px;
   border-radius: 8px;
@@ -152,7 +166,7 @@ $breakpoint-large: 768px;
 
 .scheduleGrid {
   color: white;
-  border: 5px solid #ffffff;
+  border: 5px solid #606060;
   border-spacing: 0px;
   font-size: 14px;
   text-align: left;
@@ -162,7 +176,7 @@ $breakpoint-large: 768px;
 .scheduleGrid th {
   flex: content;
   align-content: center;
-  border-collapse: collapse;
+  border-spacing: 0px;
   background-color: #101010;
   color: white;
   font-weight: 900;
@@ -175,7 +189,7 @@ $breakpoint-large: 768px;
 .scheduleGrid tr td:first-child {
   height: 12px;
   border-collapse: collapse;
-  border-right: 5px solid #07aae2;
+  border-right: 5px solid #1d88ac;
   text-align: left;
   padding: 10px;
   font-size: 16px;
@@ -194,7 +208,7 @@ $breakpoint-large: 768px;
 .scheduleGrid th:nth-child(n + 2),
 .scheduleGrid td:nth-child(n + 2) {
   padding: 3px 5px;
-  border: 0.5px solid white;
+  border: 0.5px solid #505050;
   min-width: 60px;
   max-width: 100px;
   max-height: 40px;
@@ -290,6 +304,13 @@ $breakpoint-large: 768px;
   .teamName {
     display: none;
   }
+}
+
+.teamRowGreen {
+  background-color: rgba(0, 255, 0, 0.07) !important;
+}
+.teamRowRed {
+  background-color: rgba(255, 0, 0, 0.07) !important;
 }
 
 /* Green to Yellow (Ranks 32 to 17) 
@@ -393,6 +414,8 @@ $breakpoint-large: 768px;
   background-color: rgba(255, 0, 0, 0.45);
 } /* Red */
 
+/* MAGGIE <3 */
+
 @media only screen and (min-width: vars.$screen-large) {
   .teamRow {
     .teamName {
@@ -434,8 +457,7 @@ $breakpoint-large: 768px;
   .dateButtonPrev:hover {
     font-family: roboto condensed, sans-serif;
     position: relative;
-    height: 20px;
-    width: 60px;
+
     background: #07aae2;
     color: #ffffff;
     border: 1px solid white;
@@ -459,7 +481,6 @@ $breakpoint-large: 768px;
   .dateButtonNext:hover {
     font-family: roboto condensed, sans-serif;
     position: relative;
-    height: 20px;
     width: 60px;
     background: #07aae2;
     color: #ffffff;
@@ -472,7 +493,7 @@ $breakpoint-large: 768px;
 
   .scheduleGrid {
     width: 100%;
-    border: 2px solid white;
+    border: 2px solid #505050;
     border-radius: 0;
     overflow-x: scroll;
   }
@@ -491,6 +512,17 @@ $breakpoint-large: 768px;
   }
 
   .dateButtonMode {
+    font-family: roboto condensed, sans-serif;
+    position: relative;
+    background: #07aae2;
+    color: #ffffff;
+    border: 1px solid white;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-radius: 6px;
+  }
+
+  .orientationToggleButton {
     font-family: roboto condensed, sans-serif;
     position: relative;
     background: #07aae2;
@@ -657,72 +689,37 @@ $breakpoint-large: 768px;
 
   .mainGridContainer {
     width: 100%;
-    margin: 20px auto;
+    margin: 0 auto;
     display: flex;
     justify-content: space-between;
     gap: 20px;
     flex-direction: column;
-  }
-
-  .dateButtonPrev {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-    height: 20px;
-    width: 60px;
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 20px;
-    padding-right: 20px;
-    border-radius: 6px;
-  }
-
-  .dateButtonPrev:hover {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-    height: 20px;
-    width: 60px;
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 20px;
-    padding-right: 20px;
-    border-radius: 6px;
-    filter: brightness(120%);
-  }
-
-  .dateButtonNext {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-    height: 20px;
-    width: 60px;
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 20px;
-    padding-right: 40px;
-    border-radius: 6px;
-  }
-
-  .dateButtonNext:hover {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-    height: 20px;
-    width: 60px;
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 20px;
-    padding-right: 40px;
-    border-radius: 6px;
-    filter: brightness(120%);
+    border-spacing: 0px;
   }
 
   .scheduleGrid {
     width: 100%;
-    border: 2px solid white;
-    border-radius: 0;
+    border-left: 2px solid #505050;
+    border-right: 2px solid #868686;
+    border-bottom: 2px solid #505050;
+    border-top: none;
+    border-spacing: 0px;
+
+    border-radius: 0 0 4px 4px;
     overflow-x: scroll;
+    border-collapse: separate;
+    overflow: visible; // Ensure vertical overflow is visible
+
+    & thead th {
+      font-size: 8px !important;
+      font-family: roboto condensed, sans-serif;
+      position: relative;
+      padding: 0;
+      position: sticky;
+      top: 0;
+      z-index: 2; // Ensure they appear above other cells
+      background-color: #101010; // Match your header background
+    }
   }
 
   .scheduleGrid tr {
@@ -736,19 +733,9 @@ $breakpoint-large: 768px;
 
   .actions {
     width: 100%;
-  }
-
-  .dateButtonMode {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-    height: 20px;
-    width: 70px;
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 10px;
-    padding-right: 10px;
-    border-radius: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
   .gridWrapper {
@@ -760,13 +747,19 @@ $breakpoint-large: 768px;
     display: none;
   }
 
+  .gameGridHeaderContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
   .gameGridHeader {
     flex: 0 0 100%;
     max-width: 100%;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    flex-direction: row;
+    flex-direction: column;
 
     .gameGridTitle {
       font-size: 2em;
@@ -774,59 +767,175 @@ $breakpoint-large: 768px;
     }
 
     .prevNextButtons {
+      flex: 0 0 100%;
       width: 100%;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      gap: 0.75rem;
+      margin: 20px 0px 0px 0px;
+      gap: 0rem;
+      border-bottom: 3px solid #f6fdff;
+
+      // Reorder the buttons only on mobile with specific widths
+      .dateButtonPrev {
+        order: 1;
+        width: 10%;
+        text-indent: -9999px; // hide original text
+        position: relative;
+        background-color: #1883a7;
+        border-radius: 6px 0 0 0;
+        border-left: 2px solid #fff;
+        border-top: 2px solid #fff;
+        border-right: 2px solid #fff;
+        border-bottom: none;
+        padding: 0;
+      }
+
+      .dateButtonMode {
+        order: 2;
+        width: 40%;
+        margin: 0;
+        background-color: #1883a7;
+        border-radius: 0;
+        border-top: 2px solid #fff;
+        border-right: 1px solid #fff;
+        border-left: none;
+        border-bottom: none;
+      }
+
+      .orientationToggleButton {
+        order: 3;
+        width: 40%;
+        margin: 0;
+        border-radius: 0;
+        background-color: #1883a7;
+        border-top: 2px solid #fff;
+        border-right: none;
+        border-left: 1px solid #fff;
+        border-bottom: none;
+      }
+
+      .dateButtonNext {
+        order: 4;
+        width: 10%;
+        text-indent: -9999px;
+        position: relative;
+        border-radius: 0 6px 0 0;
+        background-color: #1883a7;
+        border-left: 2px solid #fff;
+        border-top: 2px solid #fff;
+        border-right: 2px solid #fff;
+        border-bottom: none;
+      }
+      // Replace the text for Prev and Next buttons via pseudo-elements
+      .dateButtonPrev::after {
+        content: "<";
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        text-indent: 0;
+        color: white;
+        font-size: 1.2em;
+      }
+      .dateButtonNext::after {
+        content: ">";
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        text-indent: 0;
+        color: white;
+        font-size: 1.2em;
+      }
+
+      .dateButtonPrev:hover {
+        order: 1;
+        width: 10%;
+        text-indent: -9999px; // hide original text
+        position: relative;
+        background-color: #1883a7;
+
+        padding: 0;
+
+        filter: brightness(110%);
+      }
+
+      .dateButtonNext:hover {
+        order: 4;
+        width: 10%;
+        text-indent: -9999px; // hide original text
+        position: relative;
+        background-color: #1883a7;
+        border-bottom: none;
+        padding: 0;
+        filter: brightness(110%);
+      }
     }
-  }
-
-  .totalGamesPerDayRow {
-    border-bottom: 0.5px solid white;
-  }
-
-  .scheduleGrid th {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
   }
 
   .scheduleGrid tr th:first-child,
   .scheduleGrid tr td:first-child {
-    max-width: 50px !important;
-    min-width: 45px;
+    min-width: $mobile-fixed-width;
+    max-width: $mobile-fixed-width;
     font-size: 10px;
-    border-right: 3px solid #07aae2;
+    font-weight: 900;
+    font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+    text-transform: uppercase;
+    border-right: 2px solid #07aae2;
+    padding: 0;
+    text-align: center;
   }
 
   .scheduleGrid tr th:nth-child(n + 2),
   .scheduleGrid td:nth-child(n + 2) {
     font-family: roboto condensed, sans-serif;
-    padding: 2px 2px;
-    min-width: 30px;
-    max-width: 50px;
+    min-width: $mobile-fixed-width;
+    max-width: $mobile-fixed-width;
     text-align: center;
-    font-size: 8px;
+    font-size: 12px;
+    padding: 2px 0 2px 0;
   }
 
   .scheduleGrid tr th:nth-child(9),
   .scheduleGrid tr th:nth-child(10),
   .scheduleGrid tr td:nth-child(9),
   .scheduleGrid tr td:nth-child(10) {
-    border-right: 1px solid white;
-    border-bottom: 1px solid white;
+    border: 0.5px solid #868686;
+    font-size: 12px;
+  }
+
+  .scheduleGrid tr th:nth-child(11),
+  .scheduleGrid tr td:nth-child(11) {
+    border-left: 0.5px solid #868686;
+    border-bottom: 0.5px solid #868686;
+    border-top: 0.5px solid #868686;
+    border-right: none;
   }
 
   .scheduleGrid tr th:nth-child(9),
-  .scheduleGrid tr th:nth-child(10),
-  .scheduleGrid tr th:nth-child(11) {
+  .scheduleGrid tr th:nth-child(10) {
     font-family: roboto condensed, sans-serif;
     padding: 2px 2px;
-    min-width: 30px;
-    max-width: 35px;
+    min-width: $mobile-fixed-width;
+    max-width: $mobile-fixed-width;
     text-align: center;
     font-size: 8px;
     padding-bottom: 8px;
+    border: 0.5px solid #868686;
+    border-top: none;
+  }
+
+  .scheduleGrid tr th:nth-child(11) {
+    font-family: roboto condensed, sans-serif;
+    padding: 2px 2px;
+    min-width: $mobile-fixed-width;
+    max-width: $mobile-fixed-width;
+    text-align: center;
+    font-size: 8px;
+    padding-bottom: 8px;
+    border-left: 0.5px solid #868686;
+    border-bottom: 0.5px solid #868686;
+    border-top: none;
+    border-right: none;
   }
 
   .blurredImage {
@@ -848,7 +957,11 @@ $breakpoint-large: 768px;
   /* MAGGIE <3 */
 
   .mobileLogoSize {
-    padding: 1.5px !important;
+    padding: 1px !important;
+  }
+
+  .mobileTeamLogo {
+    padding: 0px !important;
   }
 
   .mobileFontStyle {
@@ -867,12 +980,22 @@ $breakpoint-large: 768px;
   }
 
   .totalGamesPerDayRow > .title::before {
-    content: "GP/Day";
+    content: "GP";
   }
 
   .teamRow {
     .teamName {
       display: none;
+    }
+
+    .desktopTeamAbbreviation {
+      display: none;
+    }
+
+    & span {
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
   }
 }
@@ -974,11 +1097,6 @@ $breakpoint-large: 768px;
 
   .totalGamesPerDayRow {
     border-bottom: 0.5px solid white;
-  }
-
-  .scheduleGrid th {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
   }
 
   .scheduleGrid tr th:first-child,

@@ -1,0 +1,317 @@
+@use "styles/vars";
+
+// breakpoints
+$breakpoint-small: 320px;
+$breakpoint-medium: 480px;
+$breakpoint-large: 768px;
+$mobile-fixed-width: 35px;
+
+@mixin respond-to($breakpoint) {
+  @if $breakpoint == small {
+    @media (max-width: $breakpoint-small) {
+      @content;
+    }
+  } @else if $breakpoint == medium {
+    @media (max-width: $breakpoint-medium) {
+      @content;
+    }
+  } @else if $breakpoint == large {
+    @media (max-width: $breakpoint-large) {
+      @content;
+    }
+  }
+}
+
+// GENERAL TRANPOSED GRID STYLING
+.transposedGrid {
+  width: 100%;
+  margin: 0 auto;
+  background-color: #101010;
+  border: 5px solid #606060;
+  border-radius: 4px;
+  border-spacing: 0px;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 25px;
+
+  th,
+  td {
+    padding: 6px;
+    border: 0.5px solid #505050;
+    min-width: 40px;
+    max-width: 60px;
+    height: 40px;
+  }
+
+  // Center cell contents
+  .cellContent {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  // Day header cells (first column)
+  th.dayHeader {
+    background-color: #101010;
+    font-weight: 900;
+    font-size: 14px;
+    min-height: 40px;
+    max-height: 60px;
+    min-width: 60px;
+    max-width: 80px;
+    padding: 0 6px;
+    .cellContent {
+      flex-direction: column;
+    }
+  }
+
+  // Totals row styling
+  tr.totalsRow {
+    background-color: #000;
+    font-weight: bold;
+  }
+}
+
+// Remove any alternating row background so our cell colors show as intended.
+.transposedGrid > tbody > tr {
+  background-color: transparent !important;
+}
+
+// CLASS TO DIM A ROW WHEN A DAY IS TOGGLED OFF
+.disabledRow {
+  opacity: 0.3;
+}
+
+/* Sample color coding classes */
+.red {
+  background-color: rgba(255, 0, 0, 0.45);
+  color: white;
+}
+.orange {
+  background-color: rgba(255, 165, 0, 0.45);
+  color: white;
+}
+.yellow {
+  background-color: rgba(255, 255, 0, 0.45);
+  color: white;
+}
+.green {
+  background-color: rgba(0, 255, 0, 0.45);
+  color: white;
+}
+
+.redBorder {
+  @extend .red;
+}
+.orangeBorder {
+  @extend .orange;
+}
+.yellowBorder {
+  @extend .yellow;
+}
+.greenBorder {
+  @extend .green;
+}
+
+.greenBorder {
+  background-color: rgb(0, 255, 0, 0.15) !important;
+  color: white;
+}
+.orangeBorder {
+  background-color: rgb(255, 165, 0, 0.25) !important;
+}
+.yellowBorder {
+  background-color: rgb(255, 255, 0, 0.25) !important;
+}
+.redBorder {
+  background-color: rgb(255, 0, 0, 0.15) !important;
+}
+
+.totalGamesPerDayRow > .title::before {
+  content: "GP/Day";
+}
+
+.teamRow {
+  .teamName {
+    display: none;
+  }
+}
+
+/* Rank Colors – used in the Score row */
+.rank-color-1 {
+  background-color: rgba(0, 255, 0, 0.15);
+}
+.rank-color-2 {
+  background-color: rgba(16, 255, 0, 0.15);
+}
+.rank-color-3 {
+  background-color: rgba(32, 255, 0, 0.15);
+}
+.rank-color-4 {
+  background-color: rgba(48, 255, 0, 0.15);
+}
+.rank-color-5 {
+  background-color: rgba(64, 255, 0, 0.15);
+}
+.rank-color-6 {
+  background-color: rgba(80, 255, 0, 0.15);
+}
+.rank-color-7 {
+  background-color: rgba(96, 255, 0, 0.15);
+}
+.rank-color-8 {
+  background-color: rgba(112, 255, 0, 0.15);
+}
+.rank-color-9 {
+  background-color: rgba(128, 255, 0, 0.15);
+}
+.rank-color-10 {
+  background-color: rgba(144, 255, 0, 0.15);
+}
+.rank-color-11 {
+  background-color: rgba(160, 255, 0, 0.15);
+}
+.rank-color-12 {
+  background-color: rgba(176, 255, 0, 0.15);
+}
+.rank-color-13 {
+  background-color: rgba(192, 255, 0, 0.15);
+}
+.rank-color-14 {
+  background-color: rgba(208, 255, 0, 0.15);
+}
+.rank-color-15 {
+  background-color: rgba(224, 255, 0, 0.15);
+}
+.rank-color-16 {
+  background-color: rgba(240, 255, 0, 0.15);
+}
+.rank-color-17 {
+  background-color: rgba(255, 240, 0, 0.15);
+}
+.rank-color-18 {
+  background-color: rgba(255, 224, 0, 0.15);
+}
+.rank-color-19 {
+  background-color: rgba(255, 208, 0, 0.15);
+}
+.rank-color-20 {
+  background-color: rgba(255, 192, 0, 0.15);
+}
+.rank-color-21 {
+  background-color: rgba(255, 176, 0, 0.15);
+}
+.rank-color-22 {
+  background-color: rgba(255, 160, 0, 0.15);
+}
+.rank-color-23 {
+  background-color: rgba(255, 144, 0, 0.15);
+}
+.rank-color-24 {
+  background-color: rgba(255, 128, 0, 0.15);
+}
+.rank-color-25 {
+  background-color: rgba(255, 112, 0, 0.15);
+}
+.rank-color-26 {
+  background-color: rgba(255, 96, 0, 0.15);
+}
+.rank-color-27 {
+  background-color: rgba(255, 80, 0, 0.15);
+}
+.rank-color-28 {
+  background-color: rgba(255, 64, 0, 0.15);
+}
+.rank-color-29 {
+  background-color: rgba(255, 48, 0, 0.15);
+}
+.rank-color-30 {
+  background-color: rgba(255, 32, 0, 0.15);
+}
+.rank-color-31 {
+  background-color: rgba(255, 16, 0, 0.15);
+}
+.rank-color-32 {
+  background-color: rgba(255, 0, 0, 0.15);
+}
+
+/* Sort button & toggle styling */
+.sortButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 14px;
+  color: white;
+  display: flex;
+  align-items: center;
+}
+
+.toggle {
+  margin-left: 4px;
+}
+
+/* Highlight classes for top (green) and bottom (red) teams (if applied separately) */
+.teamColumnGreen {
+  background-color: rgba(0, 255, 0, 0.07) !important;
+}
+.teamColumnRed {
+  background-color: rgba(255, 0, 0, 0.07) !important;
+}
+
+/* New helper class to force entire column hover effect */
+.columnHovered {
+  background-color: #505050 !important;
+}
+
+/* Standard alternating columns */
+.altColumn {
+  background-color: #101010;
+  transition: background-color 0.2s ease;
+}
+.altColumnHover {
+  background-color: #202020;
+  transition: background-color 0.2s ease;
+}
+
+/* Top team alternating backgrounds (blend base with green tint) */
+.altColumnGreenEven {
+  background-color: mix(#101010, rgba(0, 255, 0, 0.4), 50%) !important;
+  transition: background-color 0.2s ease;
+}
+.altColumnGreenOdd {
+  background-color: mix(#202020, rgba(0, 255, 0, 0.45), 50%) !important;
+  transition: background-color 0.2s ease;
+}
+
+/* Bottom team alternating backgrounds (blend base with red tint) */
+.altColumnRedEven {
+  background-color: mix(#101010, rgba(255, 0, 0, 0.4), 50%) !important;
+  transition: background-color 0.2s ease;
+}
+.altColumnRedOdd {
+  background-color: mix(#202020, rgba(255, 0, 0, 0.45), 50%) !important;
+  transition: background-color 0.2s ease;
+}
+
+/* Responsive adjustments */
+@include respond-to(medium) {
+  .transposedGrid {
+    th,
+    td {
+      font-size: 12px;
+      padding: 4px;
+    }
+    th.dayHeader {
+      font-size: 12px;
+    }
+  }
+}
+
+.gridWrapper {
+  width: 100%;
+  margin: 0 auto;
+}

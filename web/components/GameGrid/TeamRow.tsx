@@ -65,6 +65,7 @@ type TeamRowProps = {
   weekScore: number;
   extended: boolean;
   excludedDays: DAY_ABBREVIATION[];
+  rowHighlightClass?: string; // new
 } & WeekData;
 
 function getGamesPlayedClass(totalGamesPlayed: number): string {
@@ -88,31 +89,27 @@ function TeamRow(props: TeamRowProps) {
   // Handle cases where team data might not be loaded yet
   if (!team) {
     return (
-      <tr className={styles.teamRow}>
-        <td colSpan={days.length + 4}>Loading team data...</td>
-      </tr>
+      <tr className={`${styles.teamRow} ${props.rowHighlightClass || ""}`}></tr>
     );
   }
 
   return (
-    <tr className={styles.teamRow}>
-      {/* Team Name */}
+    <tr className={`${styles.teamRow} ${props.rowHighlightClass || ""}`}>
+      {/* First column: show abbreviation on desktop, logo on mobile */}
       <td>
-        <span className={styles.teamName}>
+        <span className={styles.desktopTeamAbbreviation}>
           {team.abbreviation}
-          {"    "}
+        </span>
+        <span className={styles.mobileTeamLogo}>
           <Image
-            className={`${styles.mobileLogoSize}`}
             objectFit="contain"
             alt={`${team.name} logo`}
-            width={35}
-            height={35}
+            width={30}
+            height={30}
             src={team.logo}
             title={team.name}
           />
-          {"    "}
         </span>
-        <span className={styles.teamAbbreviation}>{team.abbreviation}</span>
       </td>
       {/* Days */}
       {days.map((day) => {
@@ -124,7 +121,9 @@ function TeamRow(props: TeamRowProps) {
           <td
             key={day}
             style={
-              !props.extended && excluded ? { backgroundColor: "#505050" } : {}
+              !props.extended && excluded
+                ? { backgroundColor: "rgb(80, 80, 80, 0.55)" }
+                : {}
             }
           >
             {hasMatchUp_ ? (
@@ -229,8 +228,8 @@ function MatchUpCell({ home, homeTeam, awayTeam, gameId }: MatchUpCellProps) {
           className={`${styles.mobileLogoSize}`}
           objectFit="contain"
           alt={`${opponentTeam.name} logo`}
-          width={35}
-          height={35}
+          width={30}
+          height={30}
           src={opponentTeam.logo}
           title={opponentTeam.name}
         />
