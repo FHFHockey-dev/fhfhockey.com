@@ -414,6 +414,8 @@ $mobile-fixed-width: 35px;
   background-color: rgba(255, 0, 0, 0.45);
 } /* Red */
 
+/* MAGGIE <3 */
+
 @media only screen and (min-width: vars.$screen-large) {
   .teamRow {
     .teamName {
@@ -772,7 +774,7 @@ $mobile-fixed-width: 35px;
       align-items: center;
       margin: 20px 0px 0px 0px;
       gap: 0rem;
-      border-bottom: 2px solid #f6fdff;
+      border-bottom: 3px solid #f6fdff;
 
       // Reorder the buttons only on mobile with specific widths
       .dateButtonPrev {
@@ -781,7 +783,7 @@ $mobile-fixed-width: 35px;
         text-indent: -9999px; // hide original text
         position: relative;
         background-color: #1883a7;
-        border-radius: 3px 0 0 0;
+        border-radius: 6px 0 0 0;
         border-left: 2px solid #fff;
         border-top: 2px solid #fff;
         border-right: 2px solid #fff;
@@ -818,7 +820,7 @@ $mobile-fixed-width: 35px;
         width: 10%;
         text-indent: -9999px;
         position: relative;
-        border-radius: 0 3px 0 0;
+        border-radius: 0 6px 0 0;
         background-color: #1883a7;
         border-left: 2px solid #fff;
         border-top: 2px solid #fff;
@@ -878,7 +880,7 @@ $mobile-fixed-width: 35px;
     font-weight: 900;
     font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
     text-transform: uppercase;
-    border-right: 1px solid #07aae2;
+    border-right: 2px solid #07aae2;
     padding: 0;
     text-align: center;
   }
@@ -890,22 +892,22 @@ $mobile-fixed-width: 35px;
     max-width: $mobile-fixed-width;
     text-align: center;
     font-size: 12px;
-    padding: 4px 0 4px 0;
+    padding: 2px 0 2px 0;
   }
 
   .scheduleGrid tr th:nth-child(9),
   .scheduleGrid tr th:nth-child(10),
   .scheduleGrid tr td:nth-child(9),
   .scheduleGrid tr td:nth-child(10) {
-    border: 1px solid #868686;
+    border: 0.5px solid #868686;
     font-size: 12px;
   }
 
   .scheduleGrid tr th:nth-child(11),
   .scheduleGrid tr td:nth-child(11) {
-    border-left: 1px solid #868686;
-    border-bottom: 1px solid #868686;
-    border-top: 1px solid #868686;
+    border-left: 0.5px solid #868686;
+    border-bottom: 0.5px solid #868686;
+    border-top: 0.5px solid #868686;
     border-right: none;
   }
 
@@ -918,7 +920,7 @@ $mobile-fixed-width: 35px;
     text-align: center;
     font-size: 8px;
     padding-bottom: 8px;
-    border: 1px solid #868686;
+    border: 0.5px solid #868686;
     border-top: none;
   }
 
@@ -930,8 +932,8 @@ $mobile-fixed-width: 35px;
     text-align: center;
     font-size: 8px;
     padding-bottom: 8px;
-    border-left: 1px solid #868686;
-    border-bottom: 1px solid #868686;
+    border-left: 0.5px solid #868686;
+    border-bottom: 0.5px solid #868686;
     border-top: none;
     border-right: none;
   }

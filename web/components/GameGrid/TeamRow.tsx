@@ -121,7 +121,9 @@ function TeamRow(props: TeamRowProps) {
           <td
             key={day}
             style={
-              !props.extended && excluded ? { backgroundColor: "#505050" } : {}
+              !props.extended && excluded
+                ? { backgroundColor: "rgb(80, 80, 80, 0.55)" }
+                : {}
             }
           >
             {hasMatchUp_ ? (

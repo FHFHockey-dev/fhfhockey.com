@@ -34,7 +34,7 @@ function TotalGamesPerDayRow({
             style={
               !extended && excludedDaysIdx.includes(i)
                 ? {
-                    backgroundColor: "rgb(80, 80, 80, 0.85)",
+                    backgroundColor: "rgb(80, 80, 80, 0.65)",
                     width: "100%",
                     height: "100%",
                     position: "absolute",
