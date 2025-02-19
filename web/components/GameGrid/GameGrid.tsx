@@ -519,11 +519,6 @@ function GameGridInternal({
             </div>
           </div>
         </div>
-        <div className={styles.fourWeekLabelVertical}>
-          <h2 className={styles.fourWeekTitleVertical}>
-            Four Week <span className={styles.spanColorBlue}>Forecast</span>
-          </h2>
-        </div>
       </div>
 
       {orientation === "horizontal" ? (

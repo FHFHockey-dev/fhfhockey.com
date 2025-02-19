@@ -1048,6 +1048,14 @@ $mobile-fixed-width: 35px;
       filter: drop-shadow(0 0 2px rgba(201, 199, 199, 0.3));
     }
   }
+
+  .fourWeekLabelVertical {
+    display: none;
+  }
+
+  .fourWeekTitleVertical {
+    display: none;
+  }
 }
 
 @media (max-width: 360px) {
