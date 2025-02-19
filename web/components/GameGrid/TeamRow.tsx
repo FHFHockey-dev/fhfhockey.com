@@ -65,7 +65,8 @@ type TeamRowProps = {
   weekScore: number;
   extended: boolean;
   excludedDays: DAY_ABBREVIATION[];
-  rowHighlightClass?: string; // new
+  rowHighlightClass?: string; // existing prop
+  games: number[]; // ✅ Add this new prop
 } & WeekData;
 
 function getGamesPlayedClass(totalGamesPlayed: number): string {
@@ -112,24 +113,36 @@ function TeamRow(props: TeamRowProps) {
         </span>
       </td>
       {/* Days */}
-      {days.map((day) => {
+      {days.map((day, index) => {
+        if (!DAYS.includes(day as DAY_ABBREVIATION)) return null; // ✅ Ensure valid days only
+
         const matchUp = props[day];
-        const hasMatchUp_ = matchUp !== undefined;
-        // @ts-ignore
-        const excluded = props.excludedDays.includes(day);
+        const hasMatchUp = matchUp !== undefined;
+        const excluded = props.excludedDays.includes(day as DAY_ABBREVIATION);
+
+        // Determine if the day is a heavy game day (≥9) or off-night (≤8)
+        const numGamesThatDay = props.games[index] || 0; // ✅ Avoid undefined errors
+        const gameDayClass =
+          numGamesThatDay >= 9
+            ? styles.redInnerBorder
+            : numGamesThatDay <= 8
+            ? styles.greenInnerBorder
+            : "";
+
         return (
           <td
             key={day}
+            className={`${gameDayClass}`}
             style={
               !props.extended && excluded
                 ? { backgroundColor: "rgb(80, 80, 80, 0.55)" }
                 : {}
             }
           >
-            {hasMatchUp_ ? (
+            {hasMatchUp ? (
               <MatchUpCell
                 key={day}
-                gameId={matchUp.id} // Pass gameId here
+                gameId={matchUp.id}
                 home={matchUp.homeTeam.id === props.teamId}
                 homeTeam={matchUp.homeTeam}
                 awayTeam={matchUp.awayTeam}

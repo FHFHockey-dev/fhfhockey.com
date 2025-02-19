@@ -40,6 +40,22 @@ $mobile-fixed-width: 35px;
   }
 }
 
+.redInnerBorder {
+  border-top: 1px solid #505050 !important;
+  border-bottom: 1px solid #505050 !important;
+
+  box-shadow: inset 10px 0 7px -5px rgba(255, 0, 0, 0.3),
+    inset -8px 0 7px -5px rgba(255, 0, 0, 0.3);
+}
+
+.greenInnerBorder {
+  border-top: 1px solid #505050 !important;
+  border-bottom: 1px solid #505050 !important;
+
+  box-shadow: inset 10px 0 7px -5px rgba(0, 255, 0, 0.2),
+    inset -8px 0 7px -5px rgba(0, 255, 0, 0.2);
+}
+
 .fourWeekLabelVertical {
   font-family: roboto condensed, sans-serif;
   width: 100%;
@@ -337,6 +353,22 @@ $mobile-fixed-width: 35px;
 
 .redBorder {
   background-color: rgb(255, 0, 0, 0.15) !important;
+}
+
+.greenBorderTGPDR {
+  background-color: rgb(0, 255, 0, 0.15) !important;
+  border: 10px solid rgba(0, 255, 0, 0.1) !important;
+  border-top: 1px solid #505050 !important; /* Ensures consistency */
+  border-bottom: 1px solid #505050 !important;
+  border-right: 1px solid #505050 !important;
+}
+
+.redBorderTGPDR {
+  background-color: rgb(255, 0, 0, 0.15) !important;
+  border: 10px solid rgba(255, 0, 0, 0.1) !important;
+  border-top: 1px solid #505050 !important; /* Ensures consistency */
+  border-bottom: 1px solid #505050 !important;
+  border-right: 1px solid #505050 !important;
 }
 
 .totalGamesPerDayRow > .title::before {
@@ -1004,6 +1036,32 @@ $mobile-fixed-width: 35px;
   }
 
   /* MAGGIE <3 */
+
+  .redInnerBorder {
+    border: 3px solid rgba(255, 0, 0, 0.2) !important;
+    border-top: 1px solid #505050 !important; /* Ensures consistency */
+    border-bottom: 1px solid #505050 !important;
+  }
+
+  .greenInnerBorder {
+    border: 3px solid rgba(0, 255, 0, 0.2) !important;
+    border-top: 1px solid #505050 !important;
+    border-bottom: 1px solid #505050 !important;
+  }
+
+  .greenBorderTGPDR {
+    background-color: rgb(0, 255, 0, 0.15) !important;
+    border: 3px solid rgba(0, 255, 0, 0.1) !important;
+    border-top: 1px solid #505050 !important; /* Ensures consistency */
+    border-bottom: 1px solid #505050 !important;
+  }
+
+  .redBorderTGPDR {
+    background-color: rgb(255, 0, 0, 0.15) !important;
+    border: 3px solid rgba(255, 0, 0, 0.1) !important;
+    border-top: 1px solid #505050 !important; /* Ensures consistency */
+    border-bottom: 1px solid #505050 !important;
+  }
 
   .mobileLogoSize {
     padding: 1px !important;

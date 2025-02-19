@@ -229,12 +229,12 @@ export async function performCalculations(
       away_win_odds: parseFloat(awayWinOdds.toFixed(2)),
       // Conditionally include odds fields only if they exist
       ...(home_api_win_odds !== undefined && {
-        home_api_win_odds: parseFloat(home_api_win_odds.toFixed(2)),
+        home_api_win_odds: parseFloat(home_api_win_odds.toFixed(2))
       }),
       ...(away_api_win_odds !== undefined && {
-        away_api_win_odds: parseFloat(away_api_win_odds.toFixed(2)),
+        away_api_win_odds: parseFloat(away_api_win_odds.toFixed(2))
       }),
-      updated_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     };
 
     calculatedData.push(calculatedGame);

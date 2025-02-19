@@ -557,7 +557,8 @@ function GameGridInternal({
                       teamId={teamId}
                       extended={mode === "10-Day-Forecast" ? true : false}
                       excludedDays={excludedDays}
-                      rowHighlightClass={highlightClass} // <--- new prop
+                      rowHighlightClass={highlightClass} // Existing prop
+                      games={currentNumGamesPerDay} //
                       {...rest}
                     />
                   );
