@@ -8,7 +8,7 @@ import { SnackbarProvider } from "notistack";
 import AuthProvider from "contexts/AuthProviderContext/index";
 import { DefaultSeo } from "next-seo";
 import SEO from "next-seo.config";
-
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import client from "../lib/apollo-client";
 import Layout from "../components/Layout";
 import "../styles/globals.css";
@@ -18,6 +18,7 @@ import "../styles/vars.scss";
 import "../styles/Home.scss";
 import "pages/game/GamePage.scss";
 import "components/TeamLandingPage/teamLandingPage.scss";
+const queryClient = new QueryClient();
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
@@ -66,8 +67,10 @@ function MyApp({ Component, pageProps }: AppProps) {
               <link rel="manifest" href="/site.webmanifest" />
             </Head>
             <DefaultSeo {...SEO} />
-            {/* https://nextjs.org/docs/api-reference/next/router#resetting-state-after-navigation */}
-            <Component {...pageProps} />
+            <QueryClientProvider client={queryClient}>
+              {/* https://nextjs.org/docs/api-reference/next/router#resetting-state-after-navigation */}
+              <Component {...pageProps} />
+            </QueryClientProvider>
           </Layout>
           <Analytics />
         </AuthProvider>
