@@ -579,12 +579,6 @@ function GameGridInternal({
             mode={mode === "7-Day-Forecast" ? "7-Day" : "10-Day-Forecast"}
           />
           <div className={styles.fourWeekGridContainerAll}>
-            <div className={styles.fourWeekLabel}>
-              <h2 className={styles.fourWeekTitle}>
-                Four Week <span className={styles.spanColorBlue}>Forecast</span>
-              </h2>
-            </div>
-
             <FourWeekGrid teamDataArray={teamDataWithAverages} />
           </div>
         </div>
