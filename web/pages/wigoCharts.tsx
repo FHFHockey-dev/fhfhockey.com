@@ -521,7 +521,7 @@ function GameScore({ playerId }: { playerId: number | undefined }) {
       >
         <h3 style={{ margin: 0, fontSize: 12, fontWeight: 700 }}>Game Score</h3>
       </div>
-      <div style={{ gridRow: "2/7" }}>
+      <div style={{ gridRow: "2/7", maxWidth: "100%" }}>
         <GameScoreLineChart playerId={playerId} />
       </div>
     </div>
