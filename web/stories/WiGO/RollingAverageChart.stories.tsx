@@ -14,6 +14,10 @@ export const Primary: Story = {
       100, 120, 130, 110, 150, 140, 160, 170, 180, 200, 220, 210, 240, 230, 250,
     ],
     windowSizes: [5, 10],
+    getLabel(_, index) {
+      return `G${index}`;
+    },
+    getValue: (item: any) => item,
   },
 };
 
@@ -23,5 +27,9 @@ export const CustomWindowSizes: Story = {
       100, 120, 130, 110, 150, 140, 160, 170, 180, 200, 220, 210, 240, 230, 250,
     ],
     windowSizes: [3, 7],
+    getLabel(_, index) {
+      return `G${index}`;
+    },
+    getValue: (item: any) => item,
   },
 };

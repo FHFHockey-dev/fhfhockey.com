@@ -25,23 +25,14 @@ ChartJS.register(
 );
 
 // Define props types for the component
-interface RollingAverageChartProps {
-  data: number[]; // The main dataset to calculate rolling averages
+interface RollingAverageChartProps<T> {
+  data: T[]; // The main dataset to calculate rolling averages
   windowSizes: number[]; // Array of window sizes for rolling averages (e.g. [5, 10, 15])
+  getLabel: (item: T, index: number) => string;
+  getValue: (item: T) => number;
+  loading?: boolean;
 }
 
-// Function to calculate rolling averages for a given window size
-const calculateRollingAverage = (
-  data: number[],
-  windowSize: number
-): (number | null)[] => {
-  return data.map((_, index) => {
-    if (index < windowSize - 1) return null; // Not enough data points for the window
-    const window = data.slice(index - windowSize + 1, index + 1);
-    const sum = window.reduce((acc, val) => acc + val, 0);
-    return sum / windowSize;
-  });
-};
 const COLOR_PALLET = [
   {
     borderColor: "rgb(75, 192, 192)",
@@ -65,10 +56,26 @@ const COLOR_PALLET = [
   }, // Yellow
 ];
 
-const RollingAverageChart: React.FC<RollingAverageChartProps> = ({
+function RollingAverageChart<T>({
   data,
   windowSizes,
-}) => {
+  getValue,
+  getLabel,
+  loading = false,
+}: RollingAverageChartProps<T>) {
+  // Function to calculate rolling averages for a given window size
+  function calculateRollingAverage(
+    data: T[],
+    windowSize: number
+  ): (number | null)[] {
+    return data.map((_, index) => {
+      if (index < windowSize - 1) return null; // Not enough data points for the window
+      const window = data.slice(index - windowSize + 1, index + 1);
+      const sum = window.reduce((acc, val) => acc + getValue(val), 0);
+      return sum / windowSize;
+    });
+  }
+
   // Prepare the datasets for each rolling average based on the window sizes
   const datasets = windowSizes.map((windowSize, index) => {
     const rollingAverage = calculateRollingAverage(data, windowSize);
@@ -86,11 +93,11 @@ const RollingAverageChart: React.FC<RollingAverageChartProps> = ({
 
   // Chart data configuration
   const chartData = {
-    labels: data.map((_, index) => `G${index + 1}`),
+    labels: data.map(getLabel),
     datasets: [
       {
         label: "Game Score",
-        data: data,
+        data: data.map(getValue),
         borderColor: "rgb(54, 162, 235)",
         backgroundColor: "rgba(54, 162, 235, 0.2)",
         fill: true,
@@ -106,20 +113,18 @@ const RollingAverageChart: React.FC<RollingAverageChartProps> = ({
       type="line"
       data={chartData}
       options={{
+        responsive: true,
+        maintainAspectRatio: false,
+
         plugins: {
           legend: {
             position: "bottom",
-            labels: {
-              filter: function (legendItem, chartData) {
-                // hide the original data legend
-                return legendItem.text !== "Game Score";
-              },
-            },
+            display: false,
           },
         },
       }}
     />
   );
-};
+}
 
 export default RollingAverageChart;
