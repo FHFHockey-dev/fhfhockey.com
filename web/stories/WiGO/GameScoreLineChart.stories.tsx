@@ -7,7 +7,9 @@ const queryClient = new QueryClient();
 const meta: Meta<typeof GameScoreLineChart> = {
   component: GameScoreLineChart,
   decorators: (Story) => (
-    <QueryClientProvider client={queryClient}>{Story()}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <div style={{ backgroundColor: "#202020" }}>{Story()}</div>
+    </QueryClientProvider>
   ),
 };
 

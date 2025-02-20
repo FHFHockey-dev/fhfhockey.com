@@ -489,6 +489,243 @@ export type Database = {
           },
         ]
       }
+      nhl_standings_details: {
+        Row: {
+          conference_abbrev: string | null
+          conference_home_sequence: number | null
+          conference_l10_sequence: number | null
+          conference_name: string | null
+          conference_road_sequence: number | null
+          conference_sequence: number | null
+          date: string
+          division_abbrev: string | null
+          division_home_sequence: number | null
+          division_l10_sequence: number | null
+          division_name: string | null
+          division_road_sequence: number | null
+          division_sequence: number | null
+          game_type_id: number | null
+          games_played: number | null
+          goal_against: number | null
+          goal_differential: number | null
+          goal_differential_pctg: number | null
+          goal_for: number | null
+          goals_for_pctg: number | null
+          home_games_played: number | null
+          home_goal_differential: number | null
+          home_goals_against: number | null
+          home_goals_for: number | null
+          home_losses: number | null
+          home_ot_losses: number | null
+          home_points: number | null
+          home_regulation_plus_ot_wins: number | null
+          home_regulation_wins: number | null
+          home_wins: number | null
+          l10_games_played: number | null
+          l10_goal_differential: number | null
+          l10_goals_against: number | null
+          l10_goals_for: number | null
+          l10_losses: number | null
+          l10_ot_losses: number | null
+          l10_points: number | null
+          l10_regulation_plus_ot_wins: number | null
+          l10_regulation_wins: number | null
+          l10_wins: number | null
+          league_home_sequence: number | null
+          league_l10_sequence: number | null
+          league_road_sequence: number | null
+          league_sequence: number | null
+          losses: number | null
+          ot_losses: number | null
+          place_name: string | null
+          point_pctg: number | null
+          points: number | null
+          regulation_plus_ot_win_pctg: number | null
+          regulation_plus_ot_wins: number | null
+          regulation_win_pctg: number | null
+          regulation_wins: number | null
+          road_games_played: number | null
+          road_goal_differential: number | null
+          road_goals_against: number | null
+          road_goals_for: number | null
+          road_losses: number | null
+          road_ot_losses: number | null
+          road_points: number | null
+          road_regulation_plus_ot_wins: number | null
+          road_regulation_wins: number | null
+          road_wins: number | null
+          season_id: number
+          shootout_losses: number | null
+          shootout_wins: number | null
+          streak_code: string | null
+          streak_count: number | null
+          team_abbrev: string
+          team_common_name: string | null
+          team_name_default: string | null
+          team_name_fr: string | null
+          waivers_sequence: number | null
+          wildcard_sequence: number | null
+          win_pctg: number | null
+          wins: number | null
+        }
+        Insert: {
+          conference_abbrev?: string | null
+          conference_home_sequence?: number | null
+          conference_l10_sequence?: number | null
+          conference_name?: string | null
+          conference_road_sequence?: number | null
+          conference_sequence?: number | null
+          date: string
+          division_abbrev?: string | null
+          division_home_sequence?: number | null
+          division_l10_sequence?: number | null
+          division_name?: string | null
+          division_road_sequence?: number | null
+          division_sequence?: number | null
+          game_type_id?: number | null
+          games_played?: number | null
+          goal_against?: number | null
+          goal_differential?: number | null
+          goal_differential_pctg?: number | null
+          goal_for?: number | null
+          goals_for_pctg?: number | null
+          home_games_played?: number | null
+          home_goal_differential?: number | null
+          home_goals_against?: number | null
+          home_goals_for?: number | null
+          home_losses?: number | null
+          home_ot_losses?: number | null
+          home_points?: number | null
+          home_regulation_plus_ot_wins?: number | null
+          home_regulation_wins?: number | null
+          home_wins?: number | null
+          l10_games_played?: number | null
+          l10_goal_differential?: number | null
+          l10_goals_against?: number | null
+          l10_goals_for?: number | null
+          l10_losses?: number | null
+          l10_ot_losses?: number | null
+          l10_points?: number | null
+          l10_regulation_plus_ot_wins?: number | null
+          l10_regulation_wins?: number | null
+          l10_wins?: number | null
+          league_home_sequence?: number | null
+          league_l10_sequence?: number | null
+          league_road_sequence?: number | null
+          league_sequence?: number | null
+          losses?: number | null
+          ot_losses?: number | null
+          place_name?: string | null
+          point_pctg?: number | null
+          points?: number | null
+          regulation_plus_ot_win_pctg?: number | null
+          regulation_plus_ot_wins?: number | null
+          regulation_win_pctg?: number | null
+          regulation_wins?: number | null
+          road_games_played?: number | null
+          road_goal_differential?: number | null
+          road_goals_against?: number | null
+          road_goals_for?: number | null
+          road_losses?: number | null
+          road_ot_losses?: number | null
+          road_points?: number | null
+          road_regulation_plus_ot_wins?: number | null
+          road_regulation_wins?: number | null
+          road_wins?: number | null
+          season_id: number
+          shootout_losses?: number | null
+          shootout_wins?: number | null
+          streak_code?: string | null
+          streak_count?: number | null
+          team_abbrev: string
+          team_common_name?: string | null
+          team_name_default?: string | null
+          team_name_fr?: string | null
+          waivers_sequence?: number | null
+          wildcard_sequence?: number | null
+          win_pctg?: number | null
+          wins?: number | null
+        }
+        Update: {
+          conference_abbrev?: string | null
+          conference_home_sequence?: number | null
+          conference_l10_sequence?: number | null
+          conference_name?: string | null
+          conference_road_sequence?: number | null
+          conference_sequence?: number | null
+          date?: string
+          division_abbrev?: string | null
+          division_home_sequence?: number | null
+          division_l10_sequence?: number | null
+          division_name?: string | null
+          division_road_sequence?: number | null
+          division_sequence?: number | null
+          game_type_id?: number | null
+          games_played?: number | null
+          goal_against?: number | null
+          goal_differential?: number | null
+          goal_differential_pctg?: number | null
+          goal_for?: number | null
+          goals_for_pctg?: number | null
+          home_games_played?: number | null
+          home_goal_differential?: number | null
+          home_goals_against?: number | null
+          home_goals_for?: number | null
+          home_losses?: number | null
+          home_ot_losses?: number | null
+          home_points?: number | null
+          home_regulation_plus_ot_wins?: number | null
+          home_regulation_wins?: number | null
+          home_wins?: number | null
+          l10_games_played?: number | null
+          l10_goal_differential?: number | null
+          l10_goals_against?: number | null
+          l10_goals_for?: number | null
+          l10_losses?: number | null
+          l10_ot_losses?: number | null
+          l10_points?: number | null
+          l10_regulation_plus_ot_wins?: number | null
+          l10_regulation_wins?: number | null
+          l10_wins?: number | null
+          league_home_sequence?: number | null
+          league_l10_sequence?: number | null
+          league_road_sequence?: number | null
+          league_sequence?: number | null
+          losses?: number | null
+          ot_losses?: number | null
+          place_name?: string | null
+          point_pctg?: number | null
+          points?: number | null
+          regulation_plus_ot_win_pctg?: number | null
+          regulation_plus_ot_wins?: number | null
+          regulation_win_pctg?: number | null
+          regulation_wins?: number | null
+          road_games_played?: number | null
+          road_goal_differential?: number | null
+          road_goals_against?: number | null
+          road_goals_for?: number | null
+          road_losses?: number | null
+          road_ot_losses?: number | null
+          road_points?: number | null
+          road_regulation_plus_ot_wins?: number | null
+          road_regulation_wins?: number | null
+          road_wins?: number | null
+          season_id?: number
+          shootout_losses?: number | null
+          shootout_wins?: number | null
+          streak_code?: string | null
+          streak_count?: number | null
+          team_abbrev?: string
+          team_common_name?: string | null
+          team_name_default?: string | null
+          team_name_fr?: string | null
+          waivers_sequence?: number | null
+          wildcard_sequence?: number | null
+          win_pctg?: number | null
+          wins?: number | null
+        }
+        Relationships: []
+      }
       nst_gamelog_as_counts: {
         Row: {
           ca: number | null
@@ -15094,6 +15331,16 @@ export type Database = {
               o_zone_start_pct: number
             }[]
           }
+      get_skater_game_score_by_limit: {
+        Args: {
+          player_id: number
+          num_games: number
+        }
+        Returns: {
+          game_date: string
+          game_score: number
+        }[]
+      }
       get_skaters_avg_stats: {
         Args: {
           start_date: string
