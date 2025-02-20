@@ -26,7 +26,7 @@ type GameScoreLineChart = {
 };
 
 export default function GameScoreLineChart({ playerId }: GameScoreLineChart) {
-  const { data, isLoading } = useQuery({
+  const { data } = useQuery({
     queryKey: [playerId],
     queryFn: async ({ queryKey }) => {
       if (queryKey[0] === undefined) return [];
@@ -47,7 +47,6 @@ export default function GameScoreLineChart({ playerId }: GameScoreLineChart) {
       windowSizes={[5, 10]}
       getValue={(item) => item.game_score}
       getLabel={(item) => item.game_date.split("-").slice(1).join("-")}
-      loading={isLoading}
     />
   );
 }
