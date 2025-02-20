@@ -1,5 +1,5 @@
 import React from "react";
-import { Chart, Line } from "react-chartjs-2";
+import { Chart } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -8,8 +8,9 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend,
   BarElement,
+  LineController,
+  BarController,
 } from "chart.js";
 
 // Register Chart.js components
@@ -21,7 +22,8 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend
+  LineController,
+  BarController
 );
 
 // Define props types for the component
@@ -30,7 +32,6 @@ interface RollingAverageChartProps<T> {
   windowSizes: number[]; // Array of window sizes for rolling averages (e.g. [5, 10, 15])
   getLabel: (item: T, index: number) => string;
   getValue: (item: T) => number;
-  loading?: boolean;
 }
 
 const COLOR_PALLET = [
@@ -61,7 +62,6 @@ function RollingAverageChart<T>({
   windowSizes,
   getValue,
   getLabel,
-  loading = false,
 }: RollingAverageChartProps<T>) {
   // Function to calculate rolling averages for a given window size
   function calculateRollingAverage(
@@ -115,10 +115,8 @@ function RollingAverageChart<T>({
       options={{
         responsive: true,
         maintainAspectRatio: false,
-
         plugins: {
           legend: {
-            position: "bottom",
             display: false,
           },
         },
