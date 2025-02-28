@@ -83,7 +83,7 @@ const Home: NextPage = ({
   //   fetchStandings();
   // }, []);
 
-  useEffect(() => {
+  () => {
     const fetchGames = async () => {
       const res = await fetch(`/api/v1/games?date=${currentDate}`);
       const data = await res.json();
@@ -140,7 +140,8 @@ const Home: NextPage = ({
     };
 
     fetchGames();
-  }, [currentDate, isOffseason]);
+  },
+    [currentDate, isOffseason];
 
   const changeDate = async (days) => {
     const newDate = moment(currentDate).add(days, "days").format("YYYY-MM-DD");

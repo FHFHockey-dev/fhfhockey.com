@@ -462,8 +462,8 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
               .filter(
                 (entry): entry is NonNullable<typeof entry> => entry !== null
               ); // Remove null entries
-            await delay(1500); // another delay
-            console.log("1.5 delay");
+            await delay(21000); // another delay
+            console.log("21s delay");
             // Upsert data into Supabase
             const { error } = await supabase
               .from(targetTable)

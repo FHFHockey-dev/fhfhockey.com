@@ -1,20 +1,18 @@
-# nst_gamelog_scraper.py
+# nst_gamelog_scraper.py - Refactored for improved rate limiting
 
 import os
 import time
-import threading
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 
 import requests
-from requests_ip_rotator import ApiGateway
 from bs4 import BeautifulSoup
 from supabase import create_client, Client
 from dotenv import load_dotenv
+import asyncio
 
 # Load environment variables from .env file
 load_dotenv('C:/Users/timbr/Desktop/FHFH/fhfhockey.com/web/.env.local')
-
 
 # Supabase Configuration
 SUPABASE_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
@@ -26,11 +24,7 @@ if not SUPABASE_URL or not SUPABASE_KEY:
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-# AWS Configuration for IP Rotator
-TARGET_SITE = "https://www.naturalstattrick.com/playerteams.php"
-API_GATEWAY_REGIONS = ["us-east-1", "us-west-2"]  # Adjust regions as needed
-
-# Rate Limiting Configuration
+# Rate Limiting Configuration (strict enforcement)
 REQUEST_INTERVAL_MS = 21000  # 21 seconds
 DELAY_SECONDS = REQUEST_INTERVAL_MS / 1000
 
@@ -49,6 +43,8 @@ player_name_mapping: Dict[str, Dict[str, str]] = {
     "Nathan Légaré": {"fullName": "Nathan Legare"},
     "Mat?j Blümel": {"fullName": "Matěj Blümel"},
     "Alex Petrovic": {"fullName": "Alexander Petrovic"},
+    "Olli Maatta": {"fullName": "Olli Määttä"},
+    "Pierre-Olivier Joseph": {"fullName": "P.O. Joseph"},
 }
 
 # Troublesome Players
@@ -74,7 +70,7 @@ def get_dates_between(start_date: datetime, end_date: datetime) -> List[str]:
 def map_header_to_column(header: str) -> Optional[str]:
     """Maps table headers to database column names."""
     header_map: Dict[str, str] = {
-        # Define all necessary header mappings here
+        # Define all necessary header mappings here...
         "GP": "gp",
         "TOI": "toi",
         "TOI/GP": "toi_per_gp",
@@ -135,6 +131,7 @@ def map_header_to_column(header: str) -> Optional[str]:
         "Faceoffs Lost": "faceoffs_lost",
         "Faceoffs Lost/60": "faceoffs_lost_per_60",
         "Faceoffs %": "faceoffs_percentage",
+        # Continue with remaining mappings...
         "CF": "cf",
         "CF%": "cf_pct",
         "CA": "ca",
@@ -394,6 +391,16 @@ def print_total_progress(current: int, total: int):
     print(f"Total Progress: {percentage:.2f}% Complete")
     print(f"{bar}  ({current}/{total} URLs)\n")
 
+def print_delay_countdown():
+    """Prints a countdown for the delay between requests."""
+    delay_seconds = DELAY_SECONDS
+    for i in range(int(delay_seconds), 0, -1):
+        filled = int(((delay_seconds - i) / delay_seconds) * 20)
+        bar = "|" + "=" * filled + "-" * (20 - filled) + "|"
+        print(f"\rWaiting: {bar} {i}s remaining", end="")
+        time.sleep(1)
+    print("\rRequest delay completed" + " " * 30)
+
 def parse_html(html_content: str, dataset_type: str, date: str, season_id: str) -> List[Dict]:
     """Parses the HTML content and extracts data into a list of dictionaries."""
     soup = BeautifulSoup(html_content, "html.parser")
@@ -453,7 +460,7 @@ def parse_html(html_content: str, dataset_type: str, date: str, season_id: str) 
 
     return data_rows_collected
 
-def get_player_id_by_name(full_name: str, position: str) -> Optional[int]:
+async def get_player_id_by_name(full_name: str, position: str) -> Optional[int]:
     """Retrieves the player ID from Supabase based on full name and position."""
     mapped_name = player_name_mapping.get(full_name, {"fullName": full_name})["fullName"]
     normalized_full_name = normalize_name(mapped_name)
@@ -476,52 +483,70 @@ def get_player_id_by_name(full_name: str, position: str) -> Optional[int]:
         troublesome_players.append(f"{full_name} ({position})")
         return None
 
-def upsert_data(dataset_type: str, data_rows: List[Dict]):
+async def upsert_data(dataset_type: str, data_rows: List[Dict]):
     """Upserts data rows into the corresponding Supabase table."""
     if not data_rows:
-        return
+        return 0
 
     table_name = get_table_name(dataset_type)
     if table_name == "unknown_table":
         print(f"Unknown table for datasetType: {dataset_type}. Skipping upsert.")
-        return
+        return 0
 
     try:
-        supabase.table(table_name).upsert(data_rows, on_conflict=["player_id", "date_scraped"]).execute()
+        response = supabase.table(table_name).upsert(data_rows, on_conflict=["player_id", "date_scraped"]).execute()
+        return len(data_rows)
     except Exception as e:
         print(f"Error upserting data into {table_name}: {e}")
+        return 0
 
-def worker(url_info: Dict):
-    """Worker function to process a single URL."""
+async def check_data_exists(dataset_type: str, date: str) -> bool:
+    """Checks if data already exists for the specific dataset type and date."""
+    table_name = get_table_name(dataset_type)
+    if table_name == "unknown_table":
+        return False
+    
+    try:
+        response = supabase.table(table_name).select("player_id").eq("date_scraped", date).limit(1).execute()
+        return len(response.data) > 0
+    except Exception as e:
+        print(f"Error checking data existence: {e}")
+        return False
+
+async def process_url(url_info: Dict, current_url_num: int, total_urls: int, date_counts: Dict[str, Dict[str, int]]):
+    """Process a single URL with proper rate limiting."""
     dataset_type = url_info['datasetType']
     url = url_info['url']
     date = url_info['date']
     season_id = url_info['seasonId']
-
+    
+    # Update counters for date
+    if date not in date_counts:
+        date_counts[date] = {"current": 0, "total": 0, "processed": 0}
+    date_counts[date]["current"] += 1
+    
+    print(f"\nProcessing URL {current_url_num}/{total_urls}: {dataset_type} for date {date}")
+    
     # Check if data already exists
-    try:
-        response = supabase.table(get_table_name(dataset_type)).select("player_id").eq("date_scraped", date).limit(1).execute()
-        data_exists = bool(response.data)
-    except Exception as e:
-        print(f"Error checking data existence for {url}: {e}")
-        data_exists = False
-
-    if data_exists:
-        rows_processed = 0
-        rows_prepared = 0
-        rows_upserted = 0
-    else:
-        # Fetch and parse data
+    data_exists = await check_data_exists(dataset_type, date)
+    
+    rows_processed = 0
+    rows_prepared = 0
+    rows_upserted = 0
+    
+    if not data_exists:
         try:
+            # Make the request to fetch data
             response = requests.get(url)
             if response.status_code == 200:
+                # Parse HTML and extract data
                 data_rows = parse_html(response.text, dataset_type, date, season_id)
-                # Assign player_id
+                rows_processed = len(data_rows)
+                
+                # Process player IDs
                 data_rows_with_ids = []
                 for row in data_rows:
-                    player_full_name = row.get("player_full_name")
-                    player_position = row.get("player_position")
-                    player_id = get_player_id_by_name(player_full_name, player_position)
+                    player_id = await get_player_id_by_name(row["player_full_name"], row["player_position"])
                     if player_id:
                         row["player_id"] = player_id
                         # Remove temporary fields
@@ -529,48 +554,53 @@ def worker(url_info: Dict):
                         del row["player_position"]
                         del row["player_team"]
                         data_rows_with_ids.append(row)
-
-                # Upsert to Supabase
-                upsert_data(dataset_type, data_rows_with_ids)
-
-                rows_processed = len(data_rows_with_ids)
+                
                 rows_prepared = len(data_rows_with_ids)
-                rows_upserted = len(data_rows_with_ids)
+                
+                # Upsert to database
+                rows_upserted = await upsert_data(dataset_type, data_rows_with_ids)
             else:
                 print(f"Failed to fetch {url}: Status Code {response.status_code}")
-                rows_processed = 0
-                rows_prepared = 0
-                rows_upserted = 0
         except Exception as e:
             print(f"Error processing URL {url}: {e}")
-            rows_processed = 0
-            rows_prepared = 0
-            rows_upserted = 0
-
-    # Log info
+    else:
+        print(f"Data already exists for {dataset_type} on date {date}. Skipping.")
+    
+    date_counts[date]["processed"] += 1
+    
+    # Print information block
     print_info_block({
         'date': date,
         'url': url,
         'datasetType': dataset_type,
         'tableName': get_table_name(dataset_type),
-        'dateUrlCount': {'current': 1, 'total': 1},  # Adjust if needed
-        'totalUrlCount': {'current': 1, 'total': 1},  # Adjust if needed
+        'dateUrlCount': {
+            'current': date_counts[date]["current"],
+            'total': date_counts[date]["total"]
+        },
+        'totalUrlCount': {
+            'current': current_url_num,
+            'total': total_urls
+        },
         'rowsProcessed': rows_processed,
         'rowsPrepared': rows_prepared,
         'rowsUpserted': rows_upserted,
     })
+    
+    # Print total progress
+    print_total_progress(current_url_num, total_urls)
+    
+    return {
+        "dataset_type": dataset_type,
+        "rows_upserted": rows_upserted
+    }
 
-    # Update total progress
-    print_total_progress(1, 1)  # Adjust based on actual progress tracking
-
-def main():
+async def main():
     """Main function to orchestrate scraping and upserting."""
-    # Initialize IP Rotator
-    with ApiGateway(TARGET_SITE, regions=API_GATEWAY_REGIONS) as gateway:
-        gateway.start()
-
+    start_time = time.time()
+    
+    try:
         # Fetch current season info
-        # You need to implement fetch_current_season or adjust accordingly
         # For illustration, let's assume:
         season_id = "20242025"
         season_start_date = datetime.strptime("2024-10-01", "%Y-%m-%d")
@@ -580,7 +610,7 @@ def main():
         scraping_end_date = today if today < season_end_date else season_end_date
 
         # Determine start date
-        latest_date_str = asyncio.run(get_latest_date_supabase())
+        latest_date_str = await get_latest_date_supabase()
         if latest_date_str:
             latest_date = datetime.strptime(latest_date_str, "%Y-%m-%d")
             start_date = latest_date + timedelta(days=1)
@@ -594,12 +624,26 @@ def main():
             print("No new dates to scrape.")
             return
 
-        urls_queue: List[Dict] = []
+        # Prepare the URLs queue
+        urls_queue = []
+        date_counts = {}
 
         for date in dates_to_scrape:
             urls = construct_urls_for_date(date, season_id)
+            
+            # Initialize date counts
+            if date not in date_counts:
+                date_counts[date] = {"current": 0, "total": len(urls), "processed": 0}
+            else:
+                date_counts[date]["total"] = len(urls)
+            
             for dataset_type, url in urls.items():
-                urls_queue.append({'datasetType': dataset_type, 'url': url, 'date': date, 'seasonId': season_id})
+                urls_queue.append({
+                    'datasetType': dataset_type,
+                    'url': url,
+                    'date': date,
+                    'seasonId': season_id
+                })
 
         # Deduplicate URLs
         unique_urls = set()
@@ -613,33 +657,26 @@ def main():
         total_urls = len(unique_urls_queue)
         print(f"Total URLs to process: {total_urls}")
 
-        # Define number of threads (adjust based on your requirements and AWS limits)
-        num_threads = 5
-
-        # Create a thread pool
-        threads = []
-        for url_info in unique_urls_queue:
-            t = threading.Thread(target=worker, args=(url_info,))
-            threads.append(t)
-            t.start()
-
-            # Limit the number of concurrent threads
-            while len([t for t in threads if t.is_alive()]) >= num_threads:
-                time.sleep(1)
-
-        # Wait for all threads to complete
-        for t in threads:
-            t.join()
-
+        # Process URLs sequentially with proper rate limiting
+        for i, url_info in enumerate(unique_urls_queue):
+            # Apply wait time between requests (except for the first one)
+            if i > 0:
+                print(f"\nWaiting {DELAY_SECONDS} seconds before next request...")
+                print_delay_countdown()
+            
+            # Process the URL
+            await process_url(url_info, i + 1, total_urls, date_counts)
+            
+        end_time = time.time()
+        total_duration = end_time - start_time
+        print(f"Total processing time: {total_duration:.2f} seconds")
+        
         # Final logging for troublesome players
         if troublesome_players:
             unique_troublesome_players = list(set(troublesome_players))
             print("Troublesome Players (require manual mapping):")
             for player in unique_troublesome_players:
                 print(f"- {player}")
-
-        # Shutdown the gateway
-        gateway.shutdown()
-
-if __name__ == "__main__":
-    main()
+    
+    except Exception as e:
+        print(f"An error occurred in main(): {e}")

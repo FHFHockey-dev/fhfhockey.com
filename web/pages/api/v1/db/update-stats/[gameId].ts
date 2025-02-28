@@ -111,7 +111,7 @@ export default adminOnly(async (req, res) => {
   if (isNaN(gameId)) {
     return res.status(400).json({
       message: "gameId is required and must be a number",
-      success: false,
+      success: false
     });
   }
 
@@ -120,13 +120,13 @@ export default adminOnly(async (req, res) => {
     return res.json({
       gameId,
       message: "Successfully updated the stats for game with id " + gameId,
-      success: true,
+      success: true
     });
   } catch (e: any) {
     console.error(e);
     return res.status(400).json({
       message: `Failed to update stats for game ${gameId}. ${e.message}`,
-      success: false,
+      success: false
     });
   }
 });
@@ -209,7 +209,7 @@ export async function updateStats(gameId: number, supabase: SupabaseClient) {
   // Update player stats in Supabase
   await Promise.all([
     updateGameStats({ playerType: "skaters", players: skaters, supabase }),
-    updateGameStats({ playerType: "goalies", players: goalies, supabase }),
+    updateGameStats({ playerType: "goalies", players: goalies, supabase })
   ]);
 
   console.log("Successfully updated player stats for gameId:", gameId);
@@ -283,7 +283,7 @@ async function processTeamGameStats(
     takeaways,
     powerPlay,
     powerPlayConversion,
-    powerPlayToi,
+    powerPlayToi
   };
 }
 
@@ -368,7 +368,7 @@ function getPlayersGameStats(boxscore: any): {
     ...homeTeam.forwards,
     ...awayTeam.forwards,
     ...homeTeam.defense,
-    ...awayTeam.defense,
+    ...awayTeam.defense
   ].map((player) => ({
     playerId: player.playerId,
     gameId: gameId,
@@ -389,7 +389,7 @@ function getPlayersGameStats(boxscore: any): {
     faceoffWinningPctg: player.faceoffWinningPctg,
     toi: player.toi,
     powerPlayToi: player.powerPlayToi,
-    shorthandedToi: player.shorthandedToi,
+    shorthandedToi: player.shorthandedToi
   }));
 
   const goalies: Goalie[] = [...homeTeam.goalies, ...awayTeam.goalies].map(
@@ -407,13 +407,13 @@ function getPlayersGameStats(boxscore: any): {
       pim: player.pim,
       goalsAgainst: player.goalsAgainst,
       toi: player.toi,
-      savePctg: player.savePctg === undefined ? 0 : Number(player.savePctg),
+      savePctg: player.savePctg === undefined ? 0 : Number(player.savePctg)
     })
   );
 
   return {
     skaters,
-    goalies,
+    goalies
   };
 }
 
@@ -421,7 +421,7 @@ function getPlayersGameStats(boxscore: any): {
 async function updateGameStats({
   playerType,
   players,
-  supabase,
+  supabase
 }: UpdateGameStatsParams) {
   const promises = players.map(async (player) => {
     if (!player) return;
