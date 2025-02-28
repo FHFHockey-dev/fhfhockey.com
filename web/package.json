@@ -10,7 +10,8 @@
     "start": "next start",
     "lint": "next lint",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "test": "vitest"
   },
   "dependencies": {
     "@apollo/client": "^3.6.9",
@@ -89,6 +90,7 @@
     "sass": "^1.53.0",
     "storybook": "^8.5.3",
     "typescript": "5.7",
-    "vite-tsconfig-paths": "^4.3.1"
+    "vite-tsconfig-paths": "^4.3.1",
+    "vitest": "^3.0.5"
   }
 }

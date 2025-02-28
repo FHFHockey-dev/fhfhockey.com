@@ -20,6 +20,7 @@ import { fetchPlayerAggregatedStats } from "../utils/fetchWigoPlayerStats";
 import TeamNameSVG from "../components/WiGO/TeamNameSVG";
 import TimeframeComparison from "../components/WiGO/TimeframeComparison";
 import CategoryCoverageChart from "components/CategoryCoverageChart";
+import GameScoreLineChart from "components/WiGO/GameScoreLineChart";
 
 /**
  * Helper that takes the tableData for (counts or rates)
@@ -483,7 +484,9 @@ const WigoCharts: React.FC = () => {
         <div className={styles.paceTable}></div>
         <div className={styles.toiLineChart}></div>
         <div className={styles.ppgLineChart}></div>
-        <div className={styles.gameScoreLineChart}></div>
+        <div className={styles.gameScoreLineChart}>
+          <GameScore playerId={selectedPlayer?.id} />
+        </div>
         <div className={styles.rateStatBarPercentiles}></div>
         <div className={styles.percentileChart}>
           <CategoryCoverageChart
@@ -495,5 +498,34 @@ const WigoCharts: React.FC = () => {
     </div>
   );
 };
+
+function GameScore({ playerId }: { playerId: number | undefined }) {
+  return (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateRows: "repeat(6,1fr)",
+        height: "100%",
+      }}
+    >
+      {/* Title */}
+      <div
+        className={styles.ratesLabel}
+        style={{
+          backgroundColor: "#1d3239",
+          gridRow: "1/2",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <h3 style={{ margin: 0, fontSize: 12, fontWeight: 700 }}>Game Score</h3>
+      </div>
+      <div style={{ gridRow: "2/7", maxWidth: "100%" }}>
+        <GameScoreLineChart playerId={playerId} />
+      </div>
+    </div>
+  );
+}
 
 export default WigoCharts;
