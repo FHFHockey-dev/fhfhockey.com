@@ -77,6 +77,7 @@ async function updateGoalieTotals(
     const advStats = advancedGoalieStats.find(
       (aStat) => aStat.playerId === stat.playerId
     );
+    //what hapopened to vercel chacks
 
     // Upsert a combined record into the wgo_goalie_stats_totals table
     await supabase.from("wgo_goalie_stats_totals").upsert({
