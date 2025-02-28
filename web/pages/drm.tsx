@@ -33,6 +33,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { fetchAggregatedData } from "components/DateRangeMatrix/fetchAggregatedData";
 import { calculateLinesAndPairs } from "components/DateRangeMatrix/lineCombinationHelper";
+import Image from "next/image";
 
 type TeamAbbreviation = keyof typeof teamsInfo;
 
@@ -238,7 +239,7 @@ export default function DRMPage() {
       />
 
       <h4 className={styles.pageTitle}>
-        <img
+        <Image
           src={logo}
           alt={
             selectedTeam
@@ -246,6 +247,8 @@ export default function DRMPage() {
               : "Five Hole Fantasy Hockey Logo"
           }
           className={styles.teamLogo}
+          width={50} // Adjust the width as needed
+          height={50} // Adjust the height as needed
         />
         <span className={styles.teamName}>
           <span className={styles.teamLocation}>

@@ -1,3 +1,5 @@
+// /Users/tim/Desktop/FHFH/fhfhockey.com/web/lib/supabase/database-generated.types.ts
+
 export type Json =
   | string
   | number

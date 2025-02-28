@@ -230,6 +230,16 @@ def print_delay_countdown():
         time.sleep(1)
     print("\nDelay complete.")
 
+def check_data_exists(dataset_type: str, date: str) -> bool:
+    """Check if data already exists in the database for the given dataset type and date."""
+    table_name = get_table_name(dataset_type)
+    try:
+        response = supabase.table(table_name).select("id").eq("date_scraped", date).limit(1).execute()
+        return len(response.data) > 0
+    except Exception as e:
+        print(f"Error checking if data exists: {e}")
+        return False
+
 def process_url(url_info: Dict, current_url_num: int, total_urls: int, date_counts: Dict[str, Dict[str, int]]):
     dataset_type = url_info["datasetType"]
     url = url_info["url"]
