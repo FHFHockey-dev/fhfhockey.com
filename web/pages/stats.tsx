@@ -146,14 +146,14 @@ function LeaderboardCategory({
               />
               <Segment
                 flexValue={primaryFlex}
-                color="#38cdff"
+                color="#64caed"
                 label="A1"
                 isFirst={false}
                 isLast={false}
               />
               <Segment
                 flexValue={secondaryFlex}
-                color="#81ddfc"
+                color="#a2dff4"
                 label="A2"
                 isFirst={false}
                 isLast={true}
@@ -184,14 +184,14 @@ function LeaderboardCategory({
                 />
                 <Segment
                   flexValue={ppg}
-                  color="#38cdff"
+                  color="#64caed"
                   label="PPG"
                   isFirst={false}
                   isLast={false}
                 />
                 <Segment
                   flexValue={shg}
-                  color="#81ddfc"
+                  color="#a2dff4"
                   label="SHG"
                   isFirst={false}
                   isLast={true}

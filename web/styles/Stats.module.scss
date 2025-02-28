@@ -83,10 +83,10 @@
 }
 
 .leaderValue {
-  font-size: 1.1rem;
+  font-size: 1.4rem;
   font-weight: bold;
   color: #07aae2;
-  padding-left: 1em;
+  padding-left: 0.75rem;
 }
 
 /* Player Headshot & Details */
@@ -102,7 +102,8 @@
   font-size: 0.85rem;
   font-weight: 900;
   color: #909090;
-  margin-top: 0.25rem;
+  margin-top: 0.1rem;
+  margin-bottom: 0.25rem;
 }
 
 /* For the smaller bar in non-top rows */
@@ -114,12 +115,12 @@
 .angledBarContainer {
   display: flex;
   width: 100%;
-  margin-top: 0.5rem;
-  height: 12px;
+  height: 1rem;
   background: #fff; /* behind shapes for contrast */
   align-items: flex-end; /* so trapezoids line up along the bottom */
   overflow: hidden;
   border-radius: 6px;
+  margin-top: 0.15rem;
 }
 
 /* 
@@ -129,14 +130,14 @@
 .segmentContainer {
   flex: 0; /* set inline with style={{ flex: flexValue }} */
   position: relative;
-  height: 12px;
+  height: 1rem;
   display: flex; /* to hold the core? or no, the core is absolutely sized? */
 }
 
 /* The main rectangle in the center */
 .segmentCore {
   flex: 1;
-  height: 12px;
+  height: 1rem;
   position: relative;
 }
 
@@ -150,7 +151,7 @@
   left: -8px;
   width: 0;
   height: 0;
-  border-bottom: 12px solid #ccc; /* replaced inline with style */
+  border-bottom: 16px solid #ccc; /* replaced inline with style */
   border-left: 8px solid transparent;
 }
 
@@ -164,18 +165,19 @@
   right: -8px;
   width: 0;
   height: 0;
-  border-top: 12px solid #ccc;
+  border-top: 16px solid #ccc;
   border-right: 8px solid transparent;
 }
 
 /* Label above the shape */
 .segmentLabel {
   position: absolute;
-  top: 0px;
+  top: -1px;
   left: 50%;
   transform: translateX(-50%);
   color: #fff;
-  font-size: 0.7rem;
+  font-size: 1rem;
+  font-weight: 900;
   pointer-events: none;
   white-space: nowrap;
 }
