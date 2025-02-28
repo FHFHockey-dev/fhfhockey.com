@@ -255,11 +255,9 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
 
       while (!isAfter(currentDate, endDate)) {
         const formattedDate = format(currentDate, "yyyy-MM-dd");
-        console.log("20s Delay");
-        await delay(20000); // added 20s delay to avoid rate limiting
         console.log(`Processing date: ${formattedDate}`);
 
-        // Iterate through the four date-based responseKeys
+        // Iterate through the four date-based responseKeys sequentially
         for (const key in dateBasedResponseKeys) {
           const { situation, rate } = dateBasedResponseKeys[key];
 
@@ -289,7 +287,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
             "410"
           ];
 
-          // Path to the Python script
+          // Path to the Python script remains unchanged
           const scriptPath = path.join(
             process.cwd(),
             "scripts",
@@ -297,7 +295,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           );
 
           try {
-            // Execute the Python script using Bottleneck's limiter
+            // Execute the Python script
             const { stdout, stderr } = await execAsync(
               `python3 "${scriptPath}" ${scriptArgs
                 .map((arg) => `"${arg}"`)
@@ -312,9 +310,8 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
               throw new Error(`Python script error: ${stderr}`);
             }
 
-            // Parse the JSON output
+            // Parse and process the output...
             const scriptOutput: PythonScriptOutput = JSON.parse(stdout);
-
             if (scriptOutput.debug && scriptOutput.debug.Error) {
               console.error(
                 `Script Error for key ${key} on date ${formattedDate}:`,
@@ -482,6 +479,9 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
             console.log(
               `Successfully upserted ${upsertData.length} records into ${targetTable} for date ${formattedDate}`
             );
+            // Wait 30 seconds after this URL fetch before proceeding
+            console.log("Waiting 30 seconds before next fetch...");
+            await delay(30000);
           } catch (error: any) {
             console.error(
               `Error executing Python script for key ${key} on date ${formattedDate}:`,
@@ -491,7 +491,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           }
         }
 
-        // Move to the next day
+        // Move to the next day without an additional delay (each inner call already enforced a 30s wait)
         currentDate = addDays(currentDate, 1);
       }
 
