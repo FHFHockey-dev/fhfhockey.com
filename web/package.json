@@ -91,6 +91,6 @@
     "storybook": "^8.5.3",
     "typescript": "5.7",
     "vite-tsconfig-paths": "^4.3.1",
-    "vitest": "^3.0.5"
+    "vitest": "^3.0.7"
   }
 }
