@@ -139,21 +139,21 @@ function LeaderboardCategory({
             <div className={styles.angledBarContainer}>
               <Segment
                 flexValue={goalsFlex}
-                color="#07aae2"
+                color="#0583AD"
                 label="G"
                 isFirst={true}
                 isLast={false}
               />
               <Segment
                 flexValue={primaryFlex}
-                color="#64caed"
+                color="#07aae2"
                 label="A1"
                 isFirst={false}
                 isLast={false}
               />
               <Segment
                 flexValue={secondaryFlex}
-                color="#a2dff4"
+                color="#64caed"
                 label="A2"
                 isFirst={false}
                 isLast={true}
@@ -177,21 +177,21 @@ function LeaderboardCategory({
               <div className={styles.angledBarContainer}>
                 <Segment
                   flexValue={esg}
-                  color="#07aae2"
+                  color="#0583AD"
                   label="ESG"
                   isFirst={true}
                   isLast={false}
                 />
                 <Segment
                   flexValue={ppg}
-                  color="#64caed"
+                  color="#07aae2"
                   label="PPG"
                   isFirst={false}
                   isLast={false}
                 />
                 <Segment
                   flexValue={shg}
-                  color="#a2dff4"
+                  color="#64caed"
                   label="SHG"
                   isFirst={false}
                   isLast={true}

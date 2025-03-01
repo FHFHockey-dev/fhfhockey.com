@@ -786,15 +786,26 @@ async function processUrlsSequentially(
     dateGroups[u.date]++;
   }
 
-  // Process each URL with delay between requests
+  const uniqueDates = Object.keys(dateGroups);
+  const singleDayScrape = uniqueDates.length === 1; // Check if only one day's worth of data
+
+  console.log(
+    `Processing ${totalUrls} URLs across ${uniqueDates.length} date(s).`
+  );
+  if (singleDayScrape) {
+    console.log(
+      "Skipping 30-second delay since there is only one day's worth of data."
+    );
+  }
+
   for (let i = 0; i < urlsQueue.length; i++) {
     const { datasetType, url, date, seasonId } = urlsQueue[i];
     console.log(
       `\nProcessing URL ${i + 1}/${totalUrls}: ${datasetType} for date ${date}`
     );
 
-    // Wait for the specified interval (skip delay for first request)
-    if (i > 0) {
+    // Apply delay only if processing multiple days
+    if (i > 0 && !singleDayScrape) {
       console.log(
         `Waiting ${REQUEST_INTERVAL_MS / 1000} seconds before next request...`
       );
@@ -813,7 +824,6 @@ async function processUrlsSequentially(
       try {
         // Fetch and parse the data
         dataRows = await fetchAndParseData(url, datasetType, date, seasonId);
-        // If there are valid rows, upsert them into the corresponding table
         if (dataRows.length > 0) {
           await upsertData(datasetType, dataRows);
           rowsUpserted = dataRows.length;
@@ -831,7 +841,7 @@ async function processUrlsSequentially(
     processedCount++;
     dateProcessedCount[date]++;
 
-    // Print info block after processing each URL
+    // Print info block
     printInfoBlock({
       date,
       url,
