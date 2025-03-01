@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Fetch from "lib/cors-fetch";
 import { teamsInfo } from "lib/NHL/teamsInfo";
 import PoissonDistributionChart from "components/PoissonDistributionChart";
+import Image from "next/image";
 
 export default function Page() {
   const router = useRouter();
@@ -130,7 +131,7 @@ export default function Page() {
           color: teamColors.secondaryColor,
           borderLeft: `2px solid ${teamColors.secondaryColor}`,
           borderRight: `2px solid ${teamColors.secondaryColor}`,
-          borderBottom: `2px solid white`,
+          borderBottom: `2px solid white`
         }}
       >
         {label}:
@@ -168,7 +169,7 @@ export default function Page() {
         style={{
           display: "flex",
           width: "100%",
-          backgroundImage: gradientBackground,
+          backgroundImage: gradientBackground
         }}
       />
     );
@@ -180,7 +181,7 @@ export default function Page() {
     awayStat,
     isLowerBetter = false,
     homeTeamColors,
-    awayTeamColors,
+    awayTeamColors
   }) => {
     // Determine the team with the advantage
 
@@ -219,7 +220,7 @@ export default function Page() {
           "--away-secondary-color": awayTeamColors.secondaryColor,
           "--away-jersey-color": awayTeamColors.jersey,
           "--away-accent-color": awayTeamColors.accent,
-          "--away-alt-color": awayTeamColors.alt,
+          "--away-alt-color": awayTeamColors.alt
         }}
       >
         <div className="statRowHeader">
@@ -243,7 +244,7 @@ export default function Page() {
             height: "20px",
             width: "100%",
             display: "flex",
-            borderBottom: "3px double #FFF",
+            borderBottom: "3px double #FFF"
           }}
         >
           {" "}
@@ -308,7 +309,7 @@ export default function Page() {
       shGoalsAgainstPerGame: homeTeamPowerPlayStats?.shGoalsAgainstPerGame || 0,
       l10ptsPct: l10pointsPct("home"),
       seasonSeriesWins:
-        gameLandingDetails?.matchup?.seasonSeriesWins?.homeTeamWins || 0,
+        gameLandingDetails?.matchup?.seasonSeriesWins?.homeTeamWins || 0
     },
     {
       team: gameDetails?.awayTeam?.abbrev || "",
@@ -326,8 +327,8 @@ export default function Page() {
       shGoalsAgainstPerGame: awayTeamPowerPlayStats?.shGoalsAgainstPerGame || 0,
       l10ptsPct: l10pointsPct("away"),
       seasonSeriesWins:
-        gameLandingDetails?.matchup?.seasonSeriesWins?.awayTeamWins || 0,
-    },
+        gameLandingDetails?.matchup?.seasonSeriesWins?.awayTeamWins || 0
+    }
   ];
 
   console.log("chartData:", chartData);
@@ -344,7 +345,7 @@ export default function Page() {
     gameLandingDetails?.gameState === "PRE"
   ) {
     return (
-      (<div className="game-page">
+      <div className="game-page">
         {gameDetails ? (
           <>
             <div className="gameDetailsContainer">
@@ -360,14 +361,16 @@ export default function Page() {
                   "--away-secondary-color": awayTeamColors.secondaryColor,
                   "--away-jersey-color": awayTeamColors.jersey,
                   "--away-accent-color": awayTeamColors.accent,
-                  "--away-alt-color": awayTeamColors.alt,
+                  "--away-alt-color": awayTeamColors.alt
                 }}
               >
                 <div className="gamePageCardLeft">
-                  <img
+                  <Image
                     className="teamLogoHome"
                     src={gameDetails.homeTeam.logo}
                     alt={`${gameDetails.homeTeam.name.default} logo`}
+                    width={75} // Adjust the width as needed
+                    height={75} // Adjust the height as needed
                   />
                   <span className="team-nameGPvs home-team">
                     {gameDetails.homeTeam.name.default} <br />
@@ -384,10 +387,12 @@ export default function Page() {
                       <span className="team-record">{awayTeamRecord}</span>
                     ) : null}
                   </span>
-                  <img
+                  <Image
                     className="teamLogoAway"
                     src={gameDetails.awayTeam.logo}
                     alt={`${gameDetails.awayTeam.name.default} logo`}
+                    width={75} // Adjust the width as needed
+                    height={75} // Adjust the height as needed
                   />
                 </div>
               </div>
@@ -413,25 +418,27 @@ export default function Page() {
                       "--away-secondary-color": awayTeamColors.secondaryColor,
                       "--away-jersey-color": awayTeamColors.jersey,
                       "--away-accent-color": awayTeamColors.accent,
-                      "--away-alt-color": awayTeamColors.alt,
+                      "--away-alt-color": awayTeamColors.alt
                     }}
                   >
                     <div className="statTableLeft">
-                      <img
+                      <Image
                         className="teamLogoHomeStatTable"
                         src={gameDetails.homeTeam.logo}
                         alt={`${gameDetails.homeTeam.name.default} logo`}
-                        style={{ width: "40px" }}
+                        width={40}
+                        height={40}
                       />
                     </div>
                     <span className="advantageHeaderText">VS</span>
 
                     <div className="statTableRight">
-                      <img
+                      <Image
                         className="teamLogoAwayStatTable"
                         src={gameDetails.awayTeam.logo}
                         alt={`${gameDetails.awayTeam.name.default} logo`}
-                        style={{ width: "40px" }}
+                        width={40}
+                        height={40}
                       />
                     </div>
                   </div>
@@ -624,7 +631,7 @@ export default function Page() {
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  width: "100%",
+                  width: "100%"
                 }}
               >
                 <h1 className="tableHeader">
@@ -642,26 +649,28 @@ export default function Page() {
                     "--away-secondary-color": awayTeamColors.secondaryColor,
                     "--away-jersey-color": awayTeamColors.jersey,
                     "--away-accent-color": awayTeamColors.accent,
-                    "--away-alt-color": awayTeamColors.alt,
+                    "--away-alt-color": awayTeamColors.alt
                   }}
                 >
                   <div className="playerCompHeader">
                     <div className="playerCompHeaderLeft">
-                      <img
+                      <Image
                         className="teamLogoHomePC"
                         src={gameDetails.homeTeam.logo}
                         alt={`${gameDetails.homeTeam.name.default} logo`}
-                        style={{ width: "75px" }}
+                        width={75}
+                        height={75}
                       />
                     </div>
 
                     <p>Leaders</p>
                     <div className="playerCompHeaderRight">
-                      <img
+                      <Image
                         className="teamLogoAwayPC"
                         src={gameDetails.awayTeam.logo}
                         alt={`${gameDetails.awayTeam.name.default} logo`}
-                        style={{ width: "75px" }}
+                        width={75}
+                        height={75}
                       />
                     </div>
                   </div>
@@ -743,7 +752,7 @@ export default function Page() {
                     "--away-secondary-color": awayTeamColors.secondaryColor,
                     "--away-jersey-color": awayTeamColors.jersey,
                     "--away-accent-color": awayTeamColors.accent,
-                    "--away-alt-color": awayTeamColors.alt,
+                    "--away-alt-color": awayTeamColors.alt
                   }}
                 >
                   {" "}
@@ -897,7 +906,7 @@ export default function Page() {
         ) : (
           <p>Loading game details...</p>
         )}
-      </div>)
+      </div>
     );
   } else if (
     gameLandingDetails?.gameState === "OFF" ||
@@ -920,7 +929,7 @@ export default function Page() {
                 "--away-secondary-color": awayTeamColors.secondaryColor,
                 "--away-jersey-color": awayTeamColors.jersey,
                 "--away-accent-color": awayTeamColors.accent,
-                "--away-alt-color": awayTeamColors.alt,
+                "--away-alt-color": awayTeamColors.alt
               }}
             >
               <div className="gameOverCard">
@@ -966,7 +975,7 @@ export default function Page() {
                 "--away-secondary-color": awayTeamColors.secondaryColor,
                 "--away-jersey-color": awayTeamColors.jersey,
                 "--away-accent-color": awayTeamColors.accent,
-                "--away-alt-color": awayTeamColors.alt,
+                "--away-alt-color": awayTeamColors.alt
               }}
             >
               <div className="gameOverFlexContainer">
@@ -1184,7 +1193,7 @@ const getAdvantage = (
         className="gamePageAdvantageDecider"
         style={{
           backgroundColor: homeTeamColors.primaryColor,
-          color: homeTeamColors.secondaryColor,
+          color: homeTeamColors.secondaryColor
         }}
       >
         <div className="gamePageAdvantageDecider__wrapper">
@@ -1202,7 +1211,7 @@ const getAdvantage = (
         className="gamePageAdvantageDecider"
         style={{
           backgroundColor: awayTeamColors.primaryColor,
-          color: awayTeamColors.secondaryColor,
+          color: awayTeamColors.secondaryColor
         }}
       >
         <div className="statName">{statName}</div>

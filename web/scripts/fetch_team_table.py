@@ -67,9 +67,6 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
     session.headers.update(headers)
 
     try:
-        # Initial request to establish session cookies
-        response = session.get("https://www.naturalstattrick.com/", timeout=10)
-        response.raise_for_status()
 
         # Fetch the team table page
         response = session.get(url, timeout=10)

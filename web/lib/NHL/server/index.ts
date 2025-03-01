@@ -11,7 +11,7 @@ import {
   ScheduleData,
   Season,
   Team,
-  GameData,
+  GameData
 } from "lib/NHL/types";
 import supabase from "lib/supabase";
 import supabaseServer from "lib/supabase/server";
@@ -58,7 +58,7 @@ export async function getPlayer(id: number): Promise<Player> {
     teamName: data.teams?.name,
     teamAbbreviation: data.teams?.abbreviation,
     age: differenceInYears(new Date(), new Date(data.players?.birthDate ?? "")),
-    ...data.players,
+    ...data.players
   } as Player;
 }
 
@@ -79,7 +79,7 @@ export async function getTeams(seasonId?: number): Promise<Team[]> {
   };
   return teams.map((team) => ({
     ...team,
-    logo: getTeamLogo(team.abbreviation),
+    logo: getTeamLogo(team.abbreviation)
   }));
 }
 
@@ -118,7 +118,7 @@ export async function getCurrentSeason(): Promise<Season> {
     lastNumberOfGames: lastSeason.numberOfGames,
     slice: function (arg0: number, arg1: number): string {
       return "";
-    },
+    }
   };
 }
 
@@ -137,7 +137,7 @@ export async function getSeasons(): Promise<Season[]> {
 
     slice: function (arg0: number, arg1: number): string {
       return "";
-    },
+    }
   }));
   return data;
 }
@@ -162,7 +162,7 @@ export async function getAllPlayers(seasonId?: number): Promise<Player[]> {
     sweaterNumber: player.sweaterNumber,
     teamId: player.teams?.id,
     teamAbbreviation: player.teams?.abbreviation,
-    teamName: player.teams?.name,
+    teamName: player.teams?.name
   }));
 }
 
@@ -209,7 +209,7 @@ export async function getSchedule(startDate: string) {
   const numGamesPerDay: number[] = [];
   const result = {
     data: TEAM_DAY_DATA,
-    numGamesPerDay,
+    numGamesPerDay
   };
 
   // Get number of games per day
@@ -277,14 +277,14 @@ export async function getSchedule(startDate: string) {
           id: homeTeam.id,
           score: homeTeam.score,
           winOdds: homeWinOdds,
-          apiWinOdds: homeApiWinOdds,
+          apiWinOdds: homeApiWinOdds
         },
         awayTeam: {
           id: awayTeam.id,
           score: awayTeam.score,
           winOdds: awayWinOdds,
-          apiWinOdds: awayApiWinOdds,
-        },
+          apiWinOdds: awayApiWinOdds
+        }
       };
 
       if (!TEAM_DAY_DATA[homeTeam.id]) TEAM_DAY_DATA[homeTeam.id] = {};

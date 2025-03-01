@@ -1,4 +1,5 @@
 @use "styles/vars";
+@use "sass:color";
 
 // breakpoints
 $breakpoint-small: 320px;
@@ -286,21 +287,21 @@ $mobile-fixed-width: 35px;
 
 /* Top team alternating backgrounds (blend base with green tint) */
 .altColumnGreenEven {
-  background-color: mix(#101010, rgba(0, 255, 0, 0.4), 50%) !important;
+  background-color: color.mix(#101010, rgba(0, 255, 0, 0.4), 50%) !important;
   transition: background-color 0.2s ease;
 }
 .altColumnGreenOdd {
-  background-color: mix(#202020, rgba(0, 255, 0, 0.45), 50%) !important;
+  background-color: color.mix(#202020, rgba(0, 255, 0, 0.45), 50%) !important;
   transition: background-color 0.2s ease;
 }
 
 /* Bottom team alternating backgrounds (blend base with red tint) */
 .altColumnRedEven {
-  background-color: mix(#101010, rgba(255, 0, 0, 0.4), 50%) !important;
+  background-color: color.mix(#101010, rgba(255, 0, 0, 0.4), 50%) !important;
   transition: background-color 0.2s ease;
 }
 .altColumnRedOdd {
-  background-color: mix(#202020, rgba(255, 0, 0, 0.45), 50%) !important;
+  background-color: color.mix(#202020, rgba(255, 0, 0, 0.45), 50%) !important;
   transition: background-color 0.2s ease;
 }
 

@@ -24,7 +24,7 @@ function TotalGamesPerDayRow({
       {games.map((numGames, i) => (
         <td
           className={`${styles.totalGamesPerDayCell} ${
-            numGames > 8 ? styles.redBorder : styles.greenBorder
+            numGames > 8 ? styles.redBorderTGPDR : styles.greenBorderTGPDR
           }`}
           key={i}
           style={{ position: "relative" }}
@@ -34,7 +34,7 @@ function TotalGamesPerDayRow({
             style={
               !extended && excludedDaysIdx.includes(i)
                 ? {
-                    backgroundColor: "rgb(80, 80, 80, 0.65)",
+                    backgroundColor: "rgb(80, 80, 80, 0.55)",
                     width: "100%",
                     height: "100%",
                     position: "absolute",

@@ -1,483 +1,437 @@
-// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\stats.tsx
-
-import React, { useMemo, useState, useRef } from "react";
-import { NextSeo } from "next-seo";
-
-import Container from "components/Layout/Container";
-import { getTeams } from "lib/NHL/server";
-import StrengthOfSchedule from "components/TeamLandingPage/StrengthOfSchedule";
-import { Team } from "lib/NHL/types";
-import useScreenSize, { BreakPoint } from "hooks/useScreenSize";
-import ClientOnly from "components/ClientOnly";
+import React from "react";
 import supabase from "lib/supabase";
-import GoalieTrends from "components/TeamLandingPage/goalieTrends";
+import { getCurrentSeason } from "lib/NHL/server";
+import styles from "styles/Stats.module.scss";
 
-import { fetchAllRows } from "utils/fetchAllRows";
+/* Database row types. Now includes pp_goals, sh_goals. */
+interface WgoSkaterStatsTotalsRow {
+  player_id: number;
+  player_name: string;
+  season: string;
+  current_team_abbreviation: string;
+  points: number;
+  goals: number;
+  pp_points: number;
+  blocked_shots: number;
+  shots: number;
+  hits: number;
+  total_primary_assists: number;
+  total_secondary_assists: number;
+
+  /* Additional columns for goals: */
+  pp_goals: number;
+  sh_goals: number;
+}
+
+interface PlayerRow {
+  id: number;
+  sweater_number: number | null;
+  position: string;
+  image_url: string | null;
+}
+
+/* Merged UI type */
+export type SkaterStat = {
+  player_id: number;
+  fullName: string;
+  current_team_abbreviation: string;
+
+  points: number;
+  goals: number;
+  pp_points: number;
+  blocked_shots: number;
+  shots: number;
+  hits: number;
+
+  /* For "Points" bar. */
+  total_primary_assists: number;
+  total_secondary_assists: number;
+
+  /* For "Goals" bar. */
+  pp_goals: number;
+  sh_goals: number;
+
+  /* BSH, etc. */
+  bsh: number;
+
+  /* Player info. */
+  image_url: string;
+  sweater_number?: number | null;
+  position?: string | null;
+};
 
 type StatsProps = {
-  teams: Team[];
-  pastSoSRankings: SoS[];
-  futureSoSRankings: SoS[];
-  teamPowerRankings: PowerRanking[];
+  pointsLeaders: SkaterStat[];
+  goalsLeaders: SkaterStat[];
+  pppLeaders: SkaterStat[];
+  bshLeaders: SkaterStat[];
 };
 
-type SoS = {
-  team: string;
-  sos: number;
-};
-
-type PowerRanking = {
-  team_id: number;
-  team_name: string;
-  power_score: number;
-};
-
-type Direction = "ascending" | "descending";
-
-function Stats({
-  teams,
-  pastSoSRankings,
-  futureSoSRankings,
-  teamPowerRankings,
+export default function StatsPage({
+  pointsLeaders,
+  goalsLeaders,
+  pppLeaders,
+  bshLeaders
 }: StatsProps) {
-  const size = useScreenSize();
-  const isMobileView = size.screen === BreakPoint.s;
-  const [sortConfig, setSortConfig] = useState<{
-    key: string;
-    direction: Direction;
-  }>({
-    key: "",
-    direction: "ascending",
-  });
-  const [sortedTeamPowerRankings, setSortedTeamPowerRankings] =
-    useState(teamPowerRankings);
-
-  const fantasyPowerRankings = useMemo(() => {
-    if (sortedTeamPowerRankings.length > 0) {
-      // Sort teams by powerScore in descending order
-      const sorted = [...sortedTeamPowerRankings].sort(
-        (a, b) => b.power_score - a.power_score
-      );
-
-      // Assign ranks
-      return sorted.map((team, index) => ({
-        ...team,
-        rank: index + 1,
-      }));
-    } else {
-      return [];
-    }
-  }, [sortedTeamPowerRankings]);
-
-  const sortDataBy = (key: string, direction: Direction) => {
-    const sortedData = [...sortedTeamPowerRankings].sort((a, b) => {
-      const aValue = a[key as keyof PowerRanking];
-      const bValue = b[key as keyof PowerRanking];
-
-      if (aValue === undefined) return direction === "ascending" ? 1 : -1;
-      if (bValue === undefined) return direction === "ascending" ? -1 : 1;
-
-      if (typeof aValue === "number" && typeof bValue === "number") {
-        return direction === "ascending" ? aValue - bValue : bValue - aValue;
-      }
-
-      return 0;
-    });
-    setSortedTeamPowerRankings(sortedData);
-  };
-
-  const requestSort = (key: string) => {
-    let direction: Direction = "ascending";
-    if (key === "power_score") {
-      direction = "descending";
-    }
-    if (sortConfig.key === key && sortConfig.direction === direction) {
-      direction = direction === "ascending" ? "descending" : "ascending";
-    }
-    setSortConfig({ key, direction });
-    sortDataBy(key, direction);
-  };
-
-  const logosRef = useRef<HTMLDivElement>(null);
-
-  const scrollLogos = (direction: "left" | "right") => {
-    const container = logosRef.current;
-    if (container) {
-      const scrollAmount = 250; // Adjust as needed
-      if (direction === "left") {
-        container.scrollLeft -= scrollAmount;
-      } else {
-        container.scrollLeft += scrollAmount;
-      }
-    }
-  };
-
   return (
-    <Container>
-      <NextSeo
-        title="FHFH | Team Stat Catalogue"
-        description="Five Hole Fantasy Hockey Podcast Stats for all teams in NHL."
-      />
+    <div className={styles.container}>
+      <h1 className={styles.title}>Skater Leaderboards</h1>
+      <div className={styles.grid}>
+        {/* "Points" card */}
+        <LeaderboardCategory
+          title="Points"
+          leaders={pointsLeaders}
+          statKey="points"
+        />
 
-      <div className="team-logos-container">
-        <div className="scroll-button left" onClick={() => scrollLogos("left")}>
-          &lt;
-        </div>
-        <div className="team-logos-grid" ref={logosRef}>
-          {teams.map((team) => (
-            <img
-              key={team.id}
-              src={`https://assets.nhle.com/logos/nhl/svg/${team.abbreviation}_light.svg`}
-              alt={`${team.name} Logo`}
-            />
-          ))}
-        </div>
-        <div
-          className="scroll-button right"
-          onClick={() => scrollLogos("right")}
-        >
-          &gt;
-        </div>
+        {/* "Goals" card */}
+        <LeaderboardCategory
+          title="Goals"
+          leaders={goalsLeaders}
+          statKey="goals"
+        />
+
+        {/* "PPP" card */}
+        <LeaderboardCategory
+          title="PPP"
+          leaders={pppLeaders}
+          statKey="pp_points"
+        />
+
+        {/* "BSH" card */}
+        <LeaderboardCategoryBSH title="BSH" leaders={bshLeaders} />
       </div>
-
-      <div className="team-landing-page">
-        <div
-          className="stats-and-trends-grid"
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            flexDirection: isMobileView ? "column" : "row",
-          }}
-        >
-          {isMobileView && (
-            <>
-              <div className="goalie-trends-container">
-                <GoalieTrends />
-              </div>
-              <div className="sos-tables-container">
-                <div className="sos-container">
-                  <h2>
-                    Strength of Schedule -{" "}
-                    <span className="spanColorBlue">Past</span>
-                  </h2>
-                  <StrengthOfSchedule type="past" rankings={pastSoSRankings} />
-                </div>
-
-                <div className="sos-container">
-                  <h2>
-                    Strength of Schedule -{" "}
-                    <span className="spanColorBlue">Future</span>
-                  </h2>
-                  <StrengthOfSchedule
-                    type="future"
-                    rankings={futureSoSRankings}
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          {!isMobileView && (
-            <>
-              <div className="sos-container">
-                <h2>
-                  Strength of Schedule -{" "}
-                  <span className="spanColorBlue">Past</span>
-                </h2>
-                <StrengthOfSchedule type="past" rankings={pastSoSRankings} />
-              </div>
-
-              <div className="goalie-trends-container">
-                <GoalieTrends />
-              </div>
-
-              <div className="sos-container">
-                <h2>
-                  Strength of Schedule -{" "}
-                  <span className="spanColorBlue">Future</span>
-                </h2>
-                <StrengthOfSchedule
-                  type="future"
-                  rankings={futureSoSRankings}
-                />
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="tables-container">
-          <div className="team-ranks-table-container">
-            <h1>
-              Team Power Rankings -{" "}
-              <span className="spanColorBlue">Last 10 Games</span>
-            </h1>
-            <table className="team-ranks-table">
-              <thead className="team-ranks-table-header">
-                <tr>
-                  <th>Rank</th>
-                  <th>Team</th>
-                  <th onClick={() => requestSort("power_score")}>
-                    Power Score
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {fantasyPowerRankings.map((team) => (
-                  <tr key={team.team_id} className="team-ranks-row">
-                    <td>{team.rank}</td>
-                    <td>
-                      <img
-                        className="tableImg"
-                        src={`https://assets.nhle.com/logos/nhl/svg/${
-                          teams.find((t) => t.id === team.team_id)?.abbreviation
-                        }_light.svg`}
-                        alt={`${team.team_name} Logo`}
-                        style={{
-                          width: "22px",
-                          height: "22px",
-                          marginRight: "10px",
-                        }}
-                      />
-                      {team.team_name}
-                    </td>
-                    <td>{team.power_score.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="table-separator"></div>
-          <div className="fantasy-power-ranks-table-container">
-            <h1>
-              Fantasy Power Rankings -{" "}
-              <span className="spanColorBlue">Last 10 Games</span>
-            </h1>
-            <table className="fantasy-power-ranks-table">
-              <thead className="fantasy-power-ranks-table-header">
-                <tr>
-                  <th>Rank</th>
-                  <th>Team</th>
-                  <th>Power Score</th>
-                </tr>
-              </thead>
-              <tbody>
-                {fantasyPowerRankings.map((team, index) => (
-                  <tr key={team.team_id} className="fantasy-power-ranks-row">
-                    <td>{index + 1}</td>
-                    <td>
-                      <div className="team-logo-container">
-                        <img
-                          src={`https://assets.nhle.com/logos/nhl/svg/${
-                            teams.find((t) => t.id === team.team_id)
-                              ?.abbreviation
-                          }_dark.svg`}
-                          alt={`${team.team_name} Logo`}
-                        />
-                      </div>
-                      <ClientOnly>
-                        {!isMobileView && (
-                          <div className="team-label-container">
-                            {team.team_name}
-                          </div>
-                        )}
-                      </ClientOnly>
-                    </td>
-                    <td>{team.power_score.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </Container>
+    </div>
   );
 }
 
-export async function getStaticProps() {
-  console.log("getStaticProps started"); // Server-side log
+/**
+ * A generic leaderboard category.
+ *  - For "Points": show G/A1/A2 bar.
+ *  - For "Goals": show ESG/PPG/SHG bar.
+ */
+function LeaderboardCategory({
+  title,
+  leaders,
+  statKey
+}: {
+  title: string;
+  leaders: SkaterStat[];
+  statKey: keyof SkaterStat;
+}) {
+  return (
+    <div className={styles.card}>
+      <h2 className={styles.cardTitle}>{title}</h2>
 
-  // 1. Fetch current season's teams
-  const teams: Team[] = await getTeams();
-  console.log("Fetched teams:", teams.length);
+      {leaders.map((player, index) => {
+        let bar = null;
 
-  // 2. Fetch sos_standings data with necessary fields, including game_date
-  const sosStandingsData = await fetchAllRows<any>(
-    supabase,
-    "sos_standings",
-    `
-      team_id,
-      team_name,
-      game_date,
-      past_opponent_total_wins,
-      past_opponent_total_losses,
-      past_opponent_total_ot_losses,
-      future_opponent_total_wins,
-      future_opponent_total_losses,
-      future_opponent_total_ot_losses
-    `
+        if (title === "Points" && player.points > 0) {
+          // POINTS bar: G / A1 / A2
+          const goalsFlex = player.goals;
+          const assistTotal = player.points - player.goals;
+          const primaryFlex =
+            assistTotal > 0 ? player.total_primary_assists : 0;
+          const secondaryFlex =
+            assistTotal > 0 ? player.total_secondary_assists : 0;
+
+          bar = (
+            <div className={styles.angledBarContainer}>
+              <Segment
+                flexValue={goalsFlex}
+                color="#0583AD"
+                label="G"
+                isFirst={true}
+                isLast={false}
+              />
+              <Segment
+                flexValue={primaryFlex}
+                color="#07aae2"
+                label="A1"
+                isFirst={false}
+                isLast={false}
+              />
+              <Segment
+                flexValue={secondaryFlex}
+                color="#64caed"
+                label="A2"
+                isFirst={false}
+                isLast={true}
+              />
+            </div>
+          );
+        } else if (title === "Goals" && player.goals > 0) {
+          // GOALS bar: ESG / PPG / SHG
+          // total = player.goals
+          // ppg = player.pp_goals
+          // shg = player.sh_goals
+          // esg = total - ppg - shg
+          const total = player.goals;
+          const ppg = player.pp_goals;
+          const shg = player.sh_goals;
+          const esg = total - ppg - shg;
+
+          // only show bar if total > 0
+          if (total > 0) {
+            bar = (
+              <div className={styles.angledBarContainer}>
+                <Segment
+                  flexValue={esg}
+                  color="#0583AD"
+                  label="ESG"
+                  isFirst={true}
+                  isLast={false}
+                />
+                <Segment
+                  flexValue={ppg}
+                  color="#07aae2"
+                  label="PPG"
+                  isFirst={false}
+                  isLast={false}
+                />
+                <Segment
+                  flexValue={shg}
+                  color="#64caed"
+                  label="SHG"
+                  isFirst={false}
+                  isLast={true}
+                />
+              </div>
+            );
+          }
+        }
+
+        // The top row includes player's headshot
+        return index === 0 ? (
+          <div key={player.player_id} className={styles.topLeaderRow}>
+            <img
+              src={
+                player.image_url ||
+                `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${player.player_id}@2x.jpg`
+              }
+              alt={player.fullName}
+              className={styles.playerHeadshot}
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+            <div className={styles.topLeaderDetails}>
+              <div className={styles.leaderName}>{player.fullName}</div>
+              <div className={styles.playerDetails}>
+                {player.current_team_abbreviation} &middot; #
+                {player.sweater_number} &middot; {player.position}
+              </div>
+              {bar}
+            </div>
+            <div className={styles.leaderValue}>{player[statKey]}</div>
+          </div>
+        ) : (
+          <div key={player.player_id} className={styles.leaderRow}>
+            <div className={styles.leaderName}>
+              {player.fullName}
+              {bar && <div className={styles.leaderBarSmall}>{bar}</div>}
+            </div>
+            <div className={styles.leaderValue}>{player[statKey]}</div>
+          </div>
+        );
+      })}
+    </div>
   );
+}
 
-  if (!sosStandingsData || sosStandingsData.length === 0) {
-    console.error("No sos_standings data found.");
+/**
+ * A single trapezoid-based segment, same as your existing approach.
+ */
+function Segment({
+  flexValue,
+  color,
+  label,
+  isFirst,
+  isLast
+}: {
+  flexValue: number;
+  color: string;
+  label: string;
+  isFirst: boolean;
+  isLast: boolean;
+}) {
+  if (flexValue <= 0) return null;
+
+  return (
+    <div className={styles.segmentContainer} style={{ flex: flexValue }}>
+      {/* The rectangular core */}
+      <div className={styles.segmentCore} style={{ backgroundColor: color }}>
+        <span className={styles.segmentLabel}>{label}</span>
+      </div>
+
+      {/* Left angled shape if not first */}
+      {!isFirst && (
+        <div
+          className={styles.leftTriangle}
+          style={{ borderBottomColor: color }}
+        />
+      )}
+
+      {/* Right angled shape if not last */}
+      {!isLast && (
+        <div
+          className={styles.rightTriangle}
+          style={{ borderTopColor: color }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* 
+  BSH category: simpler, no bar
+*/
+function LeaderboardCategoryBSH({
+  title,
+  leaders
+}: {
+  title: string;
+  leaders: SkaterStat[];
+}) {
+  return (
+    <div className={styles.card}>
+      <h2 className={styles.cardTitle}>{title}</h2>
+      {leaders.map((player, index) =>
+        index === 0 ? (
+          <div key={player.player_id} className={styles.topLeaderRow}>
+            <img
+              src={
+                player.image_url ||
+                `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${player.player_id}@2x.jpg`
+              }
+              alt={player.fullName}
+              className={styles.playerHeadshot}
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+            <div className={styles.topLeaderDetails}>
+              <div className={styles.leaderName}>{player.fullName}</div>
+              <div className={styles.playerDetails}>
+                {player.current_team_abbreviation} &middot; #
+                {player.sweater_number} &middot; {player.position}
+              </div>
+            </div>
+            <div className={styles.leaderValue}>{player.bsh}</div>
+          </div>
+        ) : (
+          <div key={player.player_id} className={styles.leaderRow}>
+            <div className={styles.leaderName}>{player.fullName}</div>
+            <div className={styles.leaderValue}>{player.bsh}</div>
+          </div>
+        )
+      )}
+    </div>
+  );
+}
+
+/* Server-side data fetching */
+export async function getServerSideProps() {
+  const currentSeason = await getCurrentSeason();
+
+  // Make sure you select pp_goals, sh_goals for the "Goals" bar
+  const { data, error } = await supabase
+    .from("wgo_skater_stats_totals")
+    .select(
+      `
+      player_id,
+      player_name,
+      current_team_abbreviation,
+      points,
+      goals,
+      pp_points,
+      blocked_shots,
+      shots,
+      hits,
+      total_primary_assists,
+      total_secondary_assists,
+      pp_goals,
+      sh_goals
+      `
+    )
+    .eq("season", String(currentSeason.seasonId));
+
+  if (error || !data || !Array.isArray(data)) {
+    console.error("Error fetching skater stats:", error);
     return {
       props: {
-        teams,
-        pastSoSRankings: [],
-        futureSoSRankings: [],
-        teamPowerRankings: [],
-      },
-      revalidate: 3600, // Revalidate every hour
-    };
-  }
-
-  console.log("Fetched sos_standings data:", sosStandingsData.length);
-
-  // 3. Group data by team_id
-  const sosStandingsPerTeam = new Map<number, any[]>();
-
-  sosStandingsData.forEach((standing: any) => {
-    const teamId = standing.team_id;
-    let teamStandings = sosStandingsPerTeam.get(teamId);
-    if (!teamStandings) {
-      teamStandings = [];
-      sosStandingsPerTeam.set(teamId, teamStandings);
-    }
-    teamStandings.push(standing);
-  });
-
-  // 4. Prepare SoS Rankings using the latest valid data per team
-  const pastSoSRankings: SoS[] = [];
-  const futureSoSRankings: SoS[] = [];
-
-  sosStandingsPerTeam.forEach((standingsList: any[], teamId: number) => {
-    // Sort standingsList by game_date descending
-    standingsList.sort(
-      (a, b) =>
-        new Date(b.game_date).getTime() - new Date(a.game_date).getTime()
-    );
-
-    let validStanding = null;
-
-    for (const standing of standingsList) {
-      const {
-        past_opponent_total_wins,
-        past_opponent_total_losses,
-        past_opponent_total_ot_losses,
-        future_opponent_total_wins,
-        future_opponent_total_losses,
-        future_opponent_total_ot_losses,
-      } = standing;
-
-      const pastTotalsSum =
-        past_opponent_total_wins +
-        past_opponent_total_losses +
-        past_opponent_total_ot_losses;
-      const futureTotalsSum =
-        future_opponent_total_wins +
-        future_opponent_total_losses +
-        future_opponent_total_ot_losses;
-
-      if (pastTotalsSum !== 0 || futureTotalsSum !== 0) {
-        validStanding = standing;
-        break; // Exit the loop as we've found the latest valid standing
+        pointsLeaders: [],
+        goalsLeaders: [],
+        pppLeaders: [],
+        bshLeaders: []
       }
-    }
-
-    if (validStanding) {
-      const {
-        team_name,
-        past_opponent_total_wins,
-        past_opponent_total_losses,
-        past_opponent_total_ot_losses,
-        future_opponent_total_wins,
-        future_opponent_total_losses,
-        future_opponent_total_ot_losses,
-      } = validStanding;
-
-      // Calculate past SoS (Opponent Winning Percentage)
-      const pastTotalGames =
-        past_opponent_total_wins +
-        past_opponent_total_losses +
-        past_opponent_total_ot_losses;
-      const pastOWP =
-        pastTotalGames > 0 ? past_opponent_total_wins / pastTotalGames : 0;
-
-      pastSoSRankings.push({
-        team: team_name,
-        sos: parseFloat(pastOWP.toFixed(3)),
-      });
-
-      // Calculate future SoS
-      const futureTotalGames =
-        future_opponent_total_wins +
-        future_opponent_total_losses +
-        future_opponent_total_ot_losses;
-      const futureOWP =
-        futureTotalGames > 0
-          ? future_opponent_total_wins / futureTotalGames
-          : 0;
-
-      futureSoSRankings.push({
-        team: team_name,
-        sos: parseFloat(futureOWP.toFixed(3)),
-      });
-    } else {
-      // If no valid standing found, log a warning
-      console.warn(
-        `No valid standings with non-zero opponent totals found for team_id ${teamId}`
-      );
-    }
-  });
-
-  // 5. Sort the SoS rankings
-  pastSoSRankings.sort((a, b) => b.sos - a.sos);
-  futureSoSRankings.sort((a, b) => b.sos - a.sos);
-
-  // 6. Fetch Power Rankings from Supabase
-  const powerRankingsData = await fetchAllRows<any>(
-    supabase,
-    "power_rankings",
-    `
-      team_id,
-      team_name,
-      power_score
-    `
-  );
-
-  if (!powerRankingsData || powerRankingsData.length === 0) {
-    console.error("No power_rankings data found.");
-    return {
-      props: {
-        teams,
-        pastSoSRankings,
-        futureSoSRankings,
-        teamPowerRankings: [],
-      },
-      revalidate: 3600, // Revalidate every hour
     };
   }
 
-  console.log("Fetched power_rankings data:", powerRankingsData.length);
+  // fetch player info
+  const playerIds = Array.from(new Set(data.map((row) => row.player_id)));
+  const { data: playersData, error: playersError } = await supabase
+    .from("players")
+    .select("id, sweater_number, position, image_url")
+    .in("id", playerIds);
 
-  // 7. Process Power Rankings
-  const teamPowerRankings = powerRankingsData.map((team: any) => ({
-    team_id: team.team_id,
-    team_name: team.team_name,
-    power_score: team.power_score,
-  }));
+  if (playersError || !playersData) {
+    console.error("Error fetching player info:", playersError);
+  }
 
-  console.log("getStaticProps completed"); // Server-side log
+  const playersMap = new Map<number, PlayerRow>();
+  playersData?.forEach((p) => playersMap.set(p.id, p));
+
+  // build our SkaterStat array
+  const skaters: SkaterStat[] = data.map((row) => {
+    const playerInfo = playersMap.get(row.player_id);
+    // BSH is blocked_shots + shots + hits
+    const bsh = (row.blocked_shots || 0) + (row.shots || 0) + (row.hits || 0);
+
+    return {
+      player_id: row.player_id,
+      fullName: row.player_name ?? "Unknown",
+      current_team_abbreviation: row.current_team_abbreviation ?? "",
+
+      points: row.points ?? 0,
+      goals: row.goals ?? 0,
+      pp_points: row.pp_points ?? 0,
+      blocked_shots: row.blocked_shots ?? 0,
+      shots: row.shots ?? 0,
+      hits: row.hits ?? 0,
+      bsh,
+
+      total_primary_assists: row.total_primary_assists ?? 0,
+      total_secondary_assists: row.total_secondary_assists ?? 0,
+
+      /* new columns for the "Goals" bar */
+      pp_goals: row.pp_goals ?? 0,
+      sh_goals: row.sh_goals ?? 0,
+
+      image_url: playerInfo?.image_url || "",
+      sweater_number: playerInfo?.sweater_number,
+      position: playerInfo?.position
+    };
+  });
+
+  // sort & slice top 5 for each category
+  const pointsLeaders = [...skaters]
+    .sort((a, b) => b.points - a.points)
+    .slice(0, 5);
+  const goalsLeaders = [...skaters]
+    .sort((a, b) => b.goals - a.goals)
+    .slice(0, 5);
+  const pppLeaders = [...skaters]
+    .sort((a, b) => b.pp_points - a.pp_points)
+    .slice(0, 5);
+  const bshLeaders = [...skaters].sort((a, b) => b.bsh - a.bsh).slice(0, 5);
 
   return {
     props: {
-      teams,
-      pastSoSRankings,
-      futureSoSRankings,
-      teamPowerRankings,
-    },
-    revalidate: 3600, // 1 hour in seconds
+      pointsLeaders,
+      goalsLeaders,
+      pppLeaders,
+      bshLeaders
+    }
   };
 }
-
-export default Stats;

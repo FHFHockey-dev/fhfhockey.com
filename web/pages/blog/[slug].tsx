@@ -26,6 +26,8 @@ import client from "lib/apollo-client";
 import scrollTop from "utils/scrollTop";
 import Container from "components/Layout/Container";
 
+import Image from "next/image";
+
 type UserData = {
   name: string;
   image: string;
@@ -60,7 +62,7 @@ export const getStaticPaths: GetStaticPaths = async () => {
   const paths = slugs.map((slug: string) => ({ params: { slug } }));
   return {
     paths,
-    fallback: true,
+    fallback: true
   };
 };
 
@@ -106,27 +108,27 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     return {
       redirect: {
         destination: "/blog",
-        permanent: false,
-      },
+        permanent: false
+      }
     };
   }
 
   const slug = params.slug as string;
   const [data, { data: recentPostsData }] = await Promise.all([
     getClient().fetch(postQuery, {
-      slug,
+      slug
     }),
     client.query({
       query: RECENT_POSTS_QUERY,
       variables: {
-        slug,
-      },
-    }),
+        slug
+      }
+    })
   ]);
 
   if (!data) {
     return {
-      notFound: true,
+      notFound: true
     };
   }
 
@@ -143,8 +145,8 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     author: {
       name: author.name,
       bio: author.bio,
-      image: urlFor(author.image).url(),
-    },
+      image: urlFor(author.image).url()
+    }
   };
 
   const recentPosts: PostPreviewData[] = recentPostsData.recentPosts.map(
@@ -156,7 +158,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     // Next.js will attempt to re-generate the page:
     // - When a request comes in
     // - At most once every 10 seconds
-    revalidate: 10, // In seconds
+    revalidate: 10 // In seconds
   };
 };
 
@@ -186,7 +188,7 @@ function Post({ post, recentPosts }: PostPageProps) {
 
   const { slug, title, summary, imageUrl, content, createdAt, author } = post;
   return (
-    (<Container>
+    <Container>
       <NextSeo
         title={`${title} | FHFH Blog`}
         description={summary}
@@ -196,8 +198,8 @@ function Post({ post, recentPosts }: PostPageProps) {
           url: `${process.env.NEXT_PUBLIC_SITE_URL}/blog/${slug}`,
           images: [{ url: imageUrl, alt: title }],
           article: {
-            publishedTime: new Date(createdAt).toISOString(),
-          },
+            publishedTime: new Date(createdAt).toISOString()
+          }
         }}
       />
       <div className={styles.postPage}>
@@ -211,7 +213,7 @@ function Post({ post, recentPosts }: PostPageProps) {
                   color: "white",
                   display: "flex",
                   flexDirection: "column",
-                  alignItems: "flex-end",
+                  alignItems: "flex-end"
                 }}
               >
                 <User user={author} />
@@ -223,10 +225,15 @@ function Post({ post, recentPosts }: PostPageProps) {
               components={{
                 types: {
                   image: ({ value }) => (
-                    // eslint-disable-next-line
-                    (<img alt="" src={urlFor(value).url()} />)
-                  ),
-                },
+                    <Image
+                      alt=""
+                      src={urlFor(value).url()}
+                      layout="responsive"
+                      width={700}
+                      height={475}
+                    />
+                  )
+                }
               }}
             />
 
@@ -261,7 +268,7 @@ function Post({ post, recentPosts }: PostPageProps) {
           <RecentPosts posts={recentPosts} />
         </div>
       </div>
-    </Container>)
+    </Container>
   );
 }
 
@@ -276,7 +283,7 @@ function User({ user }: { user: UserData }) {
             overflow: "hidden",
             width: "32px",
             height: "32px",
-            flexShrink: 0,
+            flexShrink: 0
           }}
         >
           <img src={image} width={32} height={32} alt={name} />

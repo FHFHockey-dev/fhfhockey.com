@@ -20,8 +20,8 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
-// Strict rate limit: Only 1 URL every 21 seconds
-const REQUEST_INTERVAL_MS = 21000; // 21 seconds
+// Delay interval between requests in milliseconds
+const REQUEST_INTERVAL_MS = 30000; // 30 seconds
 
 const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
 
@@ -775,74 +775,93 @@ async function processUrlsSequentially(
     seasonId: string;
   }[]
 ) {
-  let firstRequest = true;
-
-  // Group by date to determine how many URLs per date
+  const totalUrls = urlsQueue.length;
+  let processedCount = 0;
+  const dateProcessedCount: Record<string, number> = {};
   const dateGroups: Record<string, number> = {};
+
+  // Count URLs per date
   for (const u of urlsQueue) {
     if (!dateGroups[u.date]) dateGroups[u.date] = 0;
     dateGroups[u.date]++;
   }
 
-  let totalProcessed = 0; // total URLs processed
-  const totalUrls = urlsQueue.length;
+  const uniqueDates = Object.keys(dateGroups);
+  const singleDayScrape = uniqueDates.length === 1; // Check if only one day's worth of data
 
-  const dateProcessedCount: Record<string, number> = {};
+  console.log(
+    `Processing ${totalUrls} URLs across ${uniqueDates.length} date(s).`
+  );
+  if (singleDayScrape) {
+    console.log(
+      "Skipping 30-second delay since there is only one day's worth of data."
+    );
+  }
 
   for (let i = 0; i < urlsQueue.length; i++) {
     const { datasetType, url, date, seasonId } = urlsQueue[i];
     console.log(
-      `\nProcessing datasetType "${datasetType}" for date "${date}".`
+      `\nProcessing URL ${i + 1}/${totalUrls}: ${datasetType} for date ${date}`
     );
 
-    // Wait 21 seconds before each request, except the first
-    if (!firstRequest) {
-      // Print delay countdown
-      await printDelayCountdown();
-    } else {
-      firstRequest = false;
+    // Apply delay only if processing multiple days
+    if (i > 0 && !singleDayScrape) {
+      console.log(
+        `Waiting ${REQUEST_INTERVAL_MS / 1000} seconds before next request...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, REQUEST_INTERVAL_MS));
     }
 
+    // Initialize counter for this date if it does not exist
+    if (!dateProcessedCount[date]) dateProcessedCount[date] = 0;
+
+    // Check if data already exists
     const dataExists = await checkDataExists(datasetType, date);
     let dataRows: any[] = [];
+    let rowsUpserted = 0;
+
     if (!dataExists) {
-      dataRows = await fetchAndParseData(url, datasetType, date, seasonId);
-      await upsertData(datasetType, dataRows);
+      try {
+        // Fetch and parse the data
+        dataRows = await fetchAndParseData(url, datasetType, date, seasonId);
+        if (dataRows.length > 0) {
+          await upsertData(datasetType, dataRows);
+          rowsUpserted = dataRows.length;
+        }
+      } catch (error) {
+        console.error(`Error processing URL ${url}:`, error);
+      }
     } else {
       console.log(
-        `Data already exists for datasetType "${datasetType}" on date "${date}". Skipping upsert.`
+        `Data already exists for ${datasetType} on date ${date}. Skipping.`
       );
     }
 
-    totalProcessed++;
-    if (!dateProcessedCount[date]) dateProcessedCount[date] = 0;
+    // Update counters
+    processedCount++;
     dateProcessedCount[date]++;
-
-    // Determine rows processed/prepared/upserted = length of dataRows
-    const rowsCount = dataExists ? 0 : dataRows.length;
-    const tableName = getTableName(datasetType);
 
     // Print info block
     printInfoBlock({
       date,
       url,
       datasetType,
-      tableName,
+      tableName: getTableName(datasetType),
       dateUrlCount: {
         current: dateProcessedCount[date],
         total: dateGroups[date]
       },
       totalUrlCount: {
-        current: totalProcessed,
+        current: processedCount,
         total: totalUrls
       },
-      rowsProcessed: rowsCount,
-      rowsPrepared: rowsCount,
-      rowsUpserted: rowsCount
+      rowsProcessed: dataExists ? 0 : dataRows.length,
+      rowsPrepared: dataExists ? 0 : dataRows.length,
+      rowsUpserted: dataExists ? 0 : rowsUpserted
     });
 
-    // Print total progress bar
-    printTotalProgress(totalProcessed, totalUrls);
+    // Print total progress
+    printTotalProgress(processedCount, totalUrls);
   }
 }
 

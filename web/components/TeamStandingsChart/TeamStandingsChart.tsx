@@ -138,7 +138,7 @@ function computeRollingAverageFiltered(
 const TeamStandingsChart: React.FC = () => {
   const season = useCurrentSeason();
   const [data, setData] = useState<Map<string, TeamData[]>>(new Map());
-  const [metric, setMetric] = useState<NumericMetric>("pointPct");
+  const [metric, setMetric] = useState<NumericMetric>("points");
 
   // Filter states.
   const [selectedConference, setSelectedConference] = useState("All");
@@ -860,8 +860,8 @@ const TeamStandingsChart: React.FC = () => {
                 setSelectedTeams(allTeams);
               }}
             >
-              <option value="pointPct">Point Percentage</option>
               <option value="points">Points</option>
+              <option value="pointPct">Point Percentage</option>
               <option value="goalsAgainstPerGame">Goals Against/Game</option>
               <option value="goalsForPerGame">Goals For/Game</option>
               <option value="penaltyKillPct">PK%</option>
