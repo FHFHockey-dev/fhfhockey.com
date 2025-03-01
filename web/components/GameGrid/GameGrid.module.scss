@@ -1,4 +1,5 @@
 @use "styles/vars";
+@use "sass:color";
 
 // breakpoints
 $breakpoint-small: 320px;
@@ -282,7 +283,7 @@ $mobile-fixed-width: 35px;
 }
 
 .scheduleGrid tr:hover {
-  background-color: mix(white, #303030, 5%);
+  background-color: color.mix(white, #303030, 5%);
 }
 
 .scheduleGrid > tbody > tr:nth-of-type(odd) {
@@ -290,7 +291,7 @@ $mobile-fixed-width: 35px;
 }
 
 .scheduleGrid tr:hover:nth-of-type(odd) {
-  background-color: mix(white, #101010, 10%);
+  background-color: color.mix(white, #101010, 10%);
 }
 
 .teamRow {
@@ -383,14 +384,14 @@ $mobile-fixed-width: 35px;
 }
 
 .teamRowGreen:hover {
-  background-color: mix(white, rgba(0, 255, 0, 0.15), 8%) !important;
+  background-color: color.mix(white, rgba(0, 255, 0, 0.15), 8%) !important;
 
   filter: brightness(120%) !important;
 }
 
 .teamRowRed:hover {
   filter: brightness(110%) !important;
-  background-color: mix(white, rgba(255, 0, 0, 0.15), 8%) !important;
+  background-color: color.mix(white, rgba(255, 0, 0, 0.15), 8%) !important;
 }
 
 /* Green to Yellow (Ranks 32 to 17) 
