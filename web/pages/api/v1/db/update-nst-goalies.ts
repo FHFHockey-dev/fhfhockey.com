@@ -18,7 +18,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // Delay interval between requests in milliseconds
-const REQUEST_INTERVAL_MS = 30000; // 30 seconds
+const REQUEST_INTERVAL_MS = 22000; // 30 seconds
 
 const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
 

@@ -11393,6 +11393,7 @@ export type Database = {
           regulation_losses: number | null;
           regulation_wins: number | null;
           shots_against_per_60: number | null;
+          team_abbrevs: string | null;
         };
         Insert: {
           goalie_id: number;
@@ -11421,6 +11422,7 @@ export type Database = {
           regulation_losses?: number | null;
           regulation_wins?: number | null;
           shots_against_per_60?: number | null;
+          team_abbrevs?: string | null;
         };
         Update: {
           goalie_id?: number;
@@ -11449,6 +11451,7 @@ export type Database = {
           regulation_losses?: number | null;
           regulation_wins?: number | null;
           shots_against_per_60?: number | null;
+          team_abbrevs?: string | null;
         };
         Relationships: []; // Add relationships if applicable.
       };
