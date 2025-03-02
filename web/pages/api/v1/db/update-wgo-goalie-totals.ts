@@ -99,6 +99,8 @@ async function updateGoalieTotals(
       shutouts: stat.shutouts,
       goals: stat.goals,
       assists: stat.assists,
+      team_abbrevs: stat.teamAbbrevs,
+
       // Map advanced stats if available
       complete_game_pct: advStats?.completeGamePct,
       complete_games: advStats?.completeGames,

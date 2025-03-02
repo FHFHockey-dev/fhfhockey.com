@@ -1,5 +1,3 @@
-/* pages/stats.module.scss */
-
 /* Container & Layout */
 .container {
   padding: 1rem;
@@ -46,56 +44,44 @@
   text-transform: uppercase;
 }
 
-/* Leader Rows */
-.topLeaderRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #808080;
+/* The top row (index===0) also has this class, so it's always expanded. */
+.leaderRowExpanded {
+  align-items: flex-start; /* shift content to top alignment */
 }
 
-.topLeaderDetails {
+/* The main content area to the right of the headshot */
+.leaderMain {
   flex: 1;
-  margin-left: 0.75rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
 }
 
-.leaderRow {
+/* Row with name/details on the left, the stat value on the right */
+.nameValueRow {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #808080;
-  width: 100%;
+  align-items: flex-start;
 }
 
-.leaderName {
-  font-size: 1rem;
-  font-weight: 500;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-}
-
-.leaderValue {
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: #07aae2;
-  padding-left: 0.75rem;
-}
-
-/* Player Headshot & Details */
+/* Headshot styling */
 .playerHeadshot {
-  width: 80px;
-  height: 80px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   object-fit: cover;
   background-color: #202020;
+}
+
+/* Make the top row's headshot bigger, or any row that becomes expanded on hover */
+.leaderRowExpanded .playerHeadshot {
+  width: 80px;
+  height: 80px;
+}
+
+/* Name & value & details */
+.leaderName {
+  font-size: 1rem;
+  font-weight: 500;
 }
 
 .playerDetails {
@@ -106,59 +92,73 @@
   margin-bottom: 0.25rem;
 }
 
-/* For the smaller bar in non-top rows */
-.leaderBarSmall {
+.leaderValue {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #07aae2;
+}
+
+/* Make each leader row a column so the bar is a full-width sibling */
+.leaderRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #808080;
+}
+
+/* The container for the headshot + name/value row side by side */
+.topRow {
+  display: flex;
+  gap: 1rem;
+  align-items: center; /* or flex-start, if you prefer */
+  justify-content: space-between;
+  width: 100%;
+}
+
+/* The bar should automatically stretch full width as a block element in a column layout */
+.leaderBar {
+  width: 100%;
   margin-top: 0.25rem;
 }
 
-/* The container for the multi-segment bar */
+/* angledBarContainer + segments = same as before */
 .angledBarContainer {
   display: flex;
   width: 100%;
   height: 1rem;
-  background: #fff; /* behind shapes for contrast */
-  align-items: flex-end; /* so trapezoids line up along the bottom */
+  background: #fff;
+  align-items: flex-end;
   overflow: hidden;
   border-radius: 6px;
   margin-top: 0.15rem;
+  outline: #fefefe 1px solid;
 }
 
-/* 
-   Each segment is a rectangular core + optional left and right triangles
-   absolutely positioned. 
-*/
 .segmentContainer {
-  flex: 0; /* set inline with style={{ flex: flexValue }} */
+  flex: 0;
   position: relative;
   height: 1rem;
-  display: flex; /* to hold the core? or no, the core is absolutely sized? */
+  display: flex;
 }
 
-/* The main rectangle in the center */
 .segmentCore {
   flex: 1;
   height: 1rem;
   position: relative;
 }
 
-/* The angled left shape if not first: angled from bottom up 
-   border-bottom: 12px solid color; border-left: 8px solid transparent
-   placed to the left, so top=0, left=-8px
-*/
 .leftTriangle {
   position: absolute;
   bottom: 0;
   left: -8px;
   width: 0;
   height: 0;
-  border-bottom: 16px solid #ccc; /* replaced inline with style */
+  border-bottom: 16px solid #ccc;
   border-left: 8px solid transparent;
 }
 
-/* The angled right shape if not last: angled from bottom up 
-   border-top: 12px solid color; border-right: 8px solid transparent
-   placed to the right, so top=0, right=-8px
-*/
 .rightTriangle {
   position: absolute;
   top: 0;
@@ -169,19 +169,19 @@
   border-right: 8px solid transparent;
 }
 
-/* Label above the shape */
 .segmentLabel {
   position: absolute;
-  top: -1px;
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
   color: #fefefe;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 900;
   pointer-events: none;
   white-space: nowrap;
 }
 
+/* Responsive tweak */
 @media (max-width: 768px) {
   .grid {
     grid-template-columns: repeat(2, 1fr);

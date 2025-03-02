@@ -18,7 +18,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // Delay interval between requests in milliseconds
-const REQUEST_INTERVAL_MS = 30000; // 30 seconds
+const REQUEST_INTERVAL_MS = 22000; // 22 seconds
 
 const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
 
@@ -142,14 +142,11 @@ function getDatesBetween(start: Date, end: Date): string[] {
 }
 
 // --- Name Mapping for Goalies ---
-// The key is the NaturalStatTrick (NST) name as scraped,
-// and the value is the official NHL API name.
 const goalieNameMapping: Record<string, { fullName: string }> = {
   "Jacob Markstrom": { fullName: "Jacob Markstrom" }
   // Add additional goalie mappings here if needed.
 };
 
-// Normalizes a given name: lowercases, removes spaces/hyphens/apostrophes, and strips diacritics.
 function normalizeName(name: string): string {
   return name
     .toLowerCase()
@@ -158,12 +155,8 @@ function normalizeName(name: string): string {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-// Array to track problematic players for manual mapping.
 const troublesomePlayers: string[] = [];
 
-// --- Get Goalie ID by Name ---
-// This function looks up the player's ID in your Supabase "players" table.
-// It uses the goalieNameMapping to convert the scraped (NST) name to the official NHL API name.
 async function getGoalieIdByName(
   fullName: string,
   position: string
@@ -190,12 +183,10 @@ async function getGoalieIdByName(
   return data.id;
 }
 
-// --- Construct Goalie URLs for a Given Date ---
 function constructGoalieUrlsForDate(
   date: string,
   seasonId: string
 ): Record<string, string> {
-  // Parameters: stdoi is fixed as "g" for goalies.
   const fromSeason = seasonId;
   const thruSeason = seasonId;
   const commonParams = `fromseason=${fromSeason}&thruseason=${thruSeason}&stype=2&score=all&stdoi=g&team=ALL&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=${date}&td=${date}&tgp=410&lines=single&draftteam=ALL`;
@@ -224,7 +215,6 @@ function constructGoalieUrlsForDate(
   return urls;
 }
 
-// --- Data Fetching and Parsing ---
 async function fetchAndParseData(
   url: string,
   datasetType: string,
@@ -246,18 +236,15 @@ async function fetchAndParseData(
         console.warn(`No table found in response from URL: ${url}`);
         return [];
       }
-      // Extract headers
       const headers: string[] = [];
       table.find("thead tr th").each((_, th) => {
         headers.push($(th).text().trim());
       });
 
-      // Map headers using goalie mapping
       const mappedHeaders = headers.map((header) =>
         mapGoalieHeaderToColumn(header, datasetType)
       );
 
-      // Parse rows into an array called dataRowsCollected
       const dataRowsCollected: any[] = [];
       table.find("tbody tr").each((_, tr) => {
         const rowData: any = {};
@@ -289,7 +276,6 @@ async function fetchAndParseData(
           });
 
         if (playerName && team && Object.keys(rowData).length > 0) {
-          // Store temporary fields to later lookup player ID
           rowData["player_name"] = playerName;
           rowData["team"] = team;
           rowData["date_scraped"] = date;
@@ -334,7 +320,6 @@ async function upsertData(datasetType: string, dataRows: any[]) {
     return;
   }
 
-  // Process each row to assign player_id from the players table
   const dataRowsWithPlayerIds: any[] = [];
   for (const row of dataRows) {
     const goalieId = await getGoalieIdByName(row["player_name"], row["team"]);
@@ -345,7 +330,6 @@ async function upsertData(datasetType: string, dataRows: any[]) {
       continue;
     }
     row["player_id"] = goalieId;
-    // Now the row includes player_id, date_scraped, season, and all numeric columns.
     dataRowsWithPlayerIds.push(row);
   }
 
@@ -390,6 +374,31 @@ async function checkDataExists(
   return exists;
 }
 
+// New helper to process a single URL (used for concurrent fetching)
+async function processSingleUrl({
+  datasetType,
+  url,
+  date,
+  seasonId
+}: {
+  datasetType: string;
+  url: string;
+  date: string;
+  seasonId: string;
+}) {
+  console.log(`Processing URL for ${datasetType} on ${date}`);
+  const dataExists = await checkDataExists(datasetType, date);
+  if (!dataExists) {
+    const dataRows = await fetchAndParseData(url, datasetType, date, seasonId);
+    if (dataRows.length > 0) {
+      await upsertData(datasetType, dataRows);
+    }
+  } else {
+    console.log(`Data already exists for ${datasetType} on ${date}. Skipping.`);
+  }
+}
+
+// Existing sequential processing function (kept for cases with more than 2 days of data)
 async function processUrlsSequentially(
   urlsQueue: {
     datasetType: string;
@@ -400,8 +409,6 @@ async function processUrlsSequentially(
 ) {
   const totalUrls = urlsQueue.length;
   let processedCount = 0;
-  const dateCounts: Record<string, number> = {};
-
   for (let i = 0; i < urlsQueue.length; i++) {
     const { datasetType, url, date, seasonId } = urlsQueue[i];
     console.log(
@@ -413,11 +420,14 @@ async function processUrlsSequentially(
       );
       await delay(REQUEST_INTERVAL_MS);
     }
-    if (!dateCounts[date]) dateCounts[date] = 0;
     const dataExists = await checkDataExists(datasetType, date);
-    let dataRows: any[] = [];
     if (!dataExists) {
-      dataRows = await fetchAndParseData(url, datasetType, date, seasonId);
+      const dataRows = await fetchAndParseData(
+        url,
+        datasetType,
+        date,
+        seasonId
+      );
       if (dataRows.length > 0) {
         await upsertData(datasetType, dataRows);
       }
@@ -442,7 +452,6 @@ async function main() {
         ? today
         : new Date(seasonInfo.endDate);
 
-    // Determine start date based on existing data in Supabase.
     let startDate = seasonStartDate;
     const latestDateStr = await getLatestDateSupabase();
     if (latestDateStr) {
@@ -480,7 +489,15 @@ async function main() {
       }
     });
 
-    await processUrlsSequentially(urlsQueue);
+    // CONDITIONAL: Process URLs concurrently if scraping only 1 or 2 days
+    if (datesToScrape.length <= 2) {
+      console.log(
+        "Only one or two days of data to scrape; fetching URLs concurrently without delay."
+      );
+      await Promise.all(urlsQueue.map((item) => processSingleUrl(item)));
+    } else {
+      await processUrlsSequentially(urlsQueue);
+    }
 
     if (troublesomePlayers.length > 0) {
       const uniqueTroublesomePlayers = [...new Set(troublesomePlayers)];
@@ -513,7 +530,6 @@ export default async function handler(
   }
 }
 
-// Helper: Get the latest date from multiple tables (optional, similar to skaters script)
 async function getLatestDateSupabase(): Promise<string | null> {
   const tableNames = [
     "nst_gamelog_goalie_5v5_counts",
