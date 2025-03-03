@@ -77,9 +77,9 @@ async function updateGoalieTotals(
     const advStats = advancedGoalieStats.find(
       (aStat) => aStat.playerId === stat.playerId
     );
-    //what hapopened to vercel chacks
 
-    // Upsert a combined record into the wgo_goalie_stats_totals table
+    // Upsert a combined record into the wgo_goalie_stats_totals table.
+    // With upsert, if a record already exists (based on the table's unique or primary key), it will be updated.
     await supabase.from("wgo_goalie_stats_totals").upsert({
       goalie_id: stat.playerId,
       goalie_name: stat.goalieFullName,
@@ -109,7 +109,10 @@ async function updateGoalieTotals(
       quality_starts_pct: advStats?.qualityStartsPct,
       regulation_losses: advStats?.regulationLosses,
       regulation_wins: advStats?.regulationWins,
-      shots_against_per_60: advStats?.shotsAgainstPer60
+      shots_against_per_60: advStats?.shotsAgainstPer60,
+
+      // Update Timestamp Column
+      updated_at: new Date().toISOString()
     });
     totalUpdates++;
   }
@@ -134,66 +137,59 @@ async function fetchAllSeasons(): Promise<any[]> {
  *
  * If no data exists in the totals table, the script will loop through all historical seasons (up to the current season)
  * and populate the table with data. If data already exists, the script finds the most recent season_id,
- * deletes all rows with that season_id, and then refreshes that season's data.
+ * and then refreshes that season's data using upsert.
  */
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const startTime = Date.now();
+
   try {
-    // Check if there is existing data in the totals table
-    const { data: existingData } = await supabase
-      .from("wgo_goalie_stats_totals")
-      .select("season_id");
+    const seasonParam = req.query.seasonId;
 
-    // If data already exists, refresh only the most recent season's data
-    if (existingData && existingData.length > 0) {
-      // Find the most recent season_id (assuming numeric values)
-      const seasonIds = existingData.map((d) => Number(d.season_id));
-      const mostRecentSeasonId = Math.max(...seasonIds);
-
-      // Delete all rows matching that season_id to allow a fresh update
-      await supabase
-        .from("wgo_goalie_stats_totals")
-        .delete()
-        .match({ season_id: mostRecentSeasonId.toString() });
-
-      const result = await updateGoalieTotals(mostRecentSeasonId.toString());
-      return res.status(200).json({
-        message: `Successfully refreshed goalie season totals for season ${mostRecentSeasonId}.`,
-        success: true,
-        data: result
-      });
-    } else {
-      // No existing data found: fetch all historical seasons
+    // If seasonId is "all", update all seasons
+    if (seasonParam === "all") {
+      // Update all historical seasons up to (and including) the current season
       const seasons = await fetchAllSeasons();
       const currentSeason = await getCurrentSeason();
-
-      // Filter seasons to process only those up to (and including) the current season
       const seasonsToProcess = seasons.filter(
         (season) => Number(season.id) <= Number(currentSeason.seasonId)
       );
 
       let totalUpdatesOverall = 0;
-      // Loop through each season and update totals
       for (const season of seasonsToProcess) {
         const seasonIdStr = season.id.toString();
-        // Ensure any stale data for the season is removed
-        await supabase
-          .from("wgo_goalie_stats_totals")
-          .delete()
-          .match({ season_id: seasonIdStr });
-
+        // Directly upsert without deleting existing records
         const result = await updateGoalieTotals(seasonIdStr);
         totalUpdatesOverall += result.totalUpdates;
       }
-
+      const durationMs = Date.now() - startTime;
       return res.status(200).json({
-        message: `Successfully updated goalie season totals for all historical seasons up to season ${currentSeason.seasonId}.`,
+        message: `Successfully upserted goalie season totals for all historical seasons up to season ${currentSeason.seasonId}.`,
         success: true,
-        data: { totalUpdates: totalUpdatesOverall }
+        data: { totalUpdates: totalUpdatesOverall },
+        duration: `${durationMs} ms`
       });
     }
+
+    // Otherwise, update only the most recent season using upsert
+    const { data: existingData } = await supabase
+      .from("wgo_goalie_stats_totals")
+      .select("season_id");
+
+    if (existingData && existingData.length > 0) {
+      const seasonIds = existingData.map((d) => Number(d.season_id));
+      const mostRecentSeasonId = Math.max(...seasonIds);
+      // Directly upsert without deleting existing records
+      const result = await updateGoalieTotals(mostRecentSeasonId.toString());
+      return res.status(200).json({
+        message: `Successfully refreshed (upserted) goalie season totals for season ${mostRecentSeasonId}.`,
+        success: true,
+        data: result
+      });
+    }
+    // Optional: handle the case where no data exists yet (e.g. first run)
   } catch (e: any) {
     console.error("Update Totals Error:", e.message);
     return res.status(500).json({
