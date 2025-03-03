@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase";
 import Fetch from "lib/cors-fetch";
 import { getCurrentSeason } from "lib/NHL/server";
+import pLimit from "p-limit";
 import {
   WGOSummarySkaterTotal,
   WGOSkatersBio,
@@ -21,42 +22,45 @@ import {
   WGOToiSkaterTotal
 } from "lib/NHL/types";
 
-import pLimit from "p-limit";
+// --------------------------
+// Helper: Concurrently fetch all pages for one endpoint.
+// The urlBuilder function receives a start value and returns the URL.
+async function fetchAllDataForEndpoint<T>(
+  urlBuilder: (start: number) => string,
+  concurrency: number = 4
+): Promise<T[]> {
+  const limit = 100;
+  let page = 0;
+  let allData: T[] = [];
 
-// Define the structure of the NHL API response for skater stats
-interface NHLApiResponse {
-  data:
-    | WGOSummarySkaterTotal[]
-    | WGOSkatersBio[]
-    | WGORealtimeSkaterTotal[]
-    | WGOFaceoffSkaterTotal[]
-    | WGOFaceOffWinLossSkaterTotal[]
-    | WGOGoalsForAgainstSkaterTotal[]
-    | WGOPenaltySkaterTotal[]
-    | WGOPenaltyKillSkaterTotal[]
-    | WGOPowerPlaySkaterTotal[]
-    | WGOPuckPossessionSkaterTotal[]
-    | WGOSatCountSkaterTotal[]
-    | WGOSatPercentageSkaterTotal[]
-    | WGOScoringRatesSkaterTotal[]
-    | WGOScoringCountsSkaterTotal[]
-    | WGOShotTypeSkaterTotal[]
-    | WGOToiSkaterTotal[];
-}
-
-// Interface for Season from getCurrentSeason
-interface Season {
-  seasonId: string;
-  regularSeasonStartDate: string;
-  regularSeasonEndDate: string;
-  seasonEndDate: string;
-  numberOfGames: number;
-  lastSeasonId: string;
-  lastRegularSeasonStartDate: string;
-  lastRegularSeasonEndDate: string;
-  lastSeasonEndDate: string;
-  lastNumberOfGames: number;
-  slice(arg0: number, arg1: number): string;
+  // We'll use a concurrency limiter for the "count" phase.
+  const limiter = pLimit(concurrency);
+  let done = false;
+  while (!done) {
+    // Fire off a batch of requests concurrently.
+    const batchPromises = [];
+    for (let i = 0; i < concurrency; i++) {
+      batchPromises.push(
+        limiter(
+          () =>
+            Fetch(urlBuilder((page + i) * limit)).then((res) =>
+              res.json()
+            ) as Promise<{ data: T[] }>
+        )
+      );
+    }
+    const batchResults = await Promise.all(batchPromises);
+    for (const result of batchResults) {
+      allData.push(...result.data);
+      // If this page returned fewer than limit items, we have reached the end.
+      if (result.data.length < limit) {
+        done = true;
+        break;
+      }
+    }
+    page += concurrency;
+  }
+  return allData;
 }
 
 // ==============================
@@ -69,150 +73,9 @@ async function getEarliestSeasonID(): Promise<string> {
   return response.data[0].id.toString();
 }
 
-// ==============================
-// Helper function "fetchPage" to concurrently fetch one page of data.
-// This function builds all URLs using the given "start" value and returns an object
-// with all fetched arrays.
-async function fetchPage(
-  season: string,
-  start: number,
-  limit: number
-): Promise<{
-  skaterTotalStats: WGOSummarySkaterTotal[];
-  skatersBio: WGOSkatersBio[];
-  miscTotalSkaterStats: WGORealtimeSkaterTotal[];
-  faceOffTotalStats: WGOFaceoffSkaterTotal[];
-  faceoffWinLossTotalStats: WGOFaceOffWinLossSkaterTotal[];
-  goalsForAgainstTotalStats: WGOGoalsForAgainstSkaterTotal[];
-  penaltiesTotalStats: WGOPenaltySkaterTotal[];
-  penaltyKillTotalStats: WGOPenaltyKillSkaterTotal[];
-  powerPlayTotalStats: WGOPowerPlaySkaterTotal[];
-  puckPossessionTotalStats: WGOPuckPossessionSkaterTotal[];
-  satCountsTotalStats: WGOSatCountSkaterTotal[];
-  satPercentagesTotalStats: WGOSatPercentageSkaterTotal[];
-  scoringRatesTotalStats: WGOScoringRatesSkaterTotal[];
-  scoringPerGameTotalStats: WGOScoringCountsSkaterTotal[];
-  shotTypeTotalStats: WGOShotTypeSkaterTotal[];
-  timeOnIceTotalStats: WGOToiSkaterTotal[];
-}> {
-  const skaterTotalStatsUrl = `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goals%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22assists%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
-  const skatersBioUrl = `https://api.nhle.com/stats/rest/en/skater/bios?isAggregate=false&isGame=false&sort=%5B%7B%22property%22:%22lastName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22skaterFullName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
-  const miscSkaterTotalsUrl = `https://api.nhle.com/stats/rest/en/skater/realtime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22hits%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
-  const faceOffTotalsUrl = `https://api.nhle.com/stats/rest/en/skater/faceoffpercentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22totalFaceoffs%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
-  const faceoffWinLossTotalsUrl = `https://api.nhle.com/stats/rest/en/skater/faceoffwins?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22totalFaceoffWins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
-  const goalsForAgainstTotalsUrl = `https://api.nhle.com/stats/rest/en/skater/goalsForAgainst?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22evenStrengthGoalDifference%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
-  const penaltiesTotalsUrl = `https://api.nhle.com/stats/rest/en/skater/penalties?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22penaltyMinutes%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
-  const penaltyKillTotalsUrl = `https://api.nhle.com/stats/rest/en/skater/penaltykill?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22shTimeOnIce%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
-  const powerPlayTotalsUrl = `https://api.nhle.com/stats/rest/en/skater/powerplay?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22ppTimeOnIce%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
-  const puckPossessionTotalsUrl = `https://api.nhle.com/stats/rest/en/skater/puckPossessions?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
-  const satCountsTotalsUrl = `https://api.nhle.com/stats/rest/en/skater/summaryshooting?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satTotal%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22usatTotal%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
-  const satPercentagesTotalsUrl = `https://api.nhle.com/stats/rest/en/skater/percentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satPercentage%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
-  const scoringRatesTotalsUrl = `https://api.nhle.com/stats/rest/en/skater/scoringRates?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22pointsPer605v5%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsPer605v5%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
-  const scoringPerGameTotalsUrl = `https://api.nhle.com/stats/rest/en/skater/scoringpergame?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22pointsPerGame%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsPerGame%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
-  const shotTypeTotalsUrl = `https://api.nhle.com/stats/rest/en/skater/shottype?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22shootingPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22shootingPctBat%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
-  const timeOnIceTotalsUrl = `https://api.nhle.com/stats/rest/en/skater/timeonice?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIce%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
-  const [
-    skaterTotalStatsResponse,
-    bioStatsResponse,
-    miscSkaterTotalsResponse,
-    faceOffTotalsResponse,
-    faceoffWinLossTotalsResponse,
-    goalsForAgainstTotalsResponse,
-    penaltiesTotalsResponse,
-    penaltyKillTotalsResponse,
-    powerPlayTotalsResponse,
-    puckPossessionTotalsResponse,
-    satCountsTotalsResponse,
-    satPercentagesTotalsResponse,
-    scoringRatesTotalsResponse,
-    scoringPerGameTotalsResponse,
-    shotTypeTotalsResponse,
-    timeOnIceTotalsResponse
-  ] = await Promise.all([
-    Fetch(skaterTotalStatsUrl).then((res) => {
-      // Capture headers from the first request to get total count if available.
-      return res.json() as Promise<NHLApiResponse>;
-    }),
-    Fetch(skatersBioUrl).then((res) => res.json() as Promise<NHLApiResponse>),
-    Fetch(miscSkaterTotalsUrl).then(
-      (res) => res.json() as Promise<NHLApiResponse>
-    ),
-    Fetch(faceOffTotalsUrl).then(
-      (res) => res.json() as Promise<NHLApiResponse>
-    ),
-    Fetch(faceoffWinLossTotalsUrl).then(
-      (res) => res.json() as Promise<NHLApiResponse>
-    ),
-    Fetch(goalsForAgainstTotalsUrl).then(
-      (res) => res.json() as Promise<NHLApiResponse>
-    ),
-    Fetch(penaltiesTotalsUrl).then(
-      (res) => res.json() as Promise<NHLApiResponse>
-    ),
-    Fetch(penaltyKillTotalsUrl).then(
-      (res) => res.json() as Promise<NHLApiResponse>
-    ),
-    Fetch(powerPlayTotalsUrl).then(
-      (res) => res.json() as Promise<NHLApiResponse>
-    ),
-    Fetch(puckPossessionTotalsUrl).then(
-      (res) => res.json() as Promise<NHLApiResponse>
-    ),
-    Fetch(satCountsTotalsUrl).then(
-      (res) => res.json() as Promise<NHLApiResponse>
-    ),
-    Fetch(satPercentagesTotalsUrl).then(
-      (res) => res.json() as Promise<NHLApiResponse>
-    ),
-    Fetch(scoringRatesTotalsUrl).then(
-      (res) => res.json() as Promise<NHLApiResponse>
-    ),
-    Fetch(scoringPerGameTotalsUrl).then(
-      (res) => res.json() as Promise<NHLApiResponse>
-    ),
-    Fetch(shotTypeTotalsUrl).then(
-      (res) => res.json() as Promise<NHLApiResponse>
-    ),
-    Fetch(timeOnIceTotalsUrl).then(
-      (res) => res.json() as Promise<NHLApiResponse>
-    )
-  ]);
-  // Return concatenated results as before
-  return {
-    skaterTotalStats: skaterTotalStatsResponse.data as WGOSummarySkaterTotal[],
-    skatersBio: bioStatsResponse.data as WGOSkatersBio[],
-    miscTotalSkaterStats:
-      miscSkaterTotalsResponse.data as WGORealtimeSkaterTotal[],
-    faceOffTotalStats: faceOffTotalsResponse.data as WGOFaceoffSkaterTotal[],
-    faceoffWinLossTotalStats:
-      faceoffWinLossTotalsResponse.data as WGOFaceOffWinLossSkaterTotal[],
-    goalsForAgainstTotalStats:
-      goalsForAgainstTotalsResponse.data as WGOGoalsForAgainstSkaterTotal[],
-    penaltiesTotalStats:
-      penaltiesTotalsResponse.data as WGOPenaltySkaterTotal[],
-    penaltyKillTotalStats:
-      penaltyKillTotalsResponse.data as WGOPenaltyKillSkaterTotal[],
-    powerPlayTotalStats:
-      powerPlayTotalsResponse.data as WGOPowerPlaySkaterTotal[],
-    puckPossessionTotalStats:
-      puckPossessionTotalsResponse.data as WGOPuckPossessionSkaterTotal[],
-    satCountsTotalStats:
-      satCountsTotalsResponse.data as WGOSatCountSkaterTotal[],
-    satPercentagesTotalStats:
-      satPercentagesTotalsResponse.data as WGOSatPercentageSkaterTotal[],
-    scoringRatesTotalStats:
-      scoringRatesTotalsResponse.data as WGOScoringRatesSkaterTotal[],
-    scoringPerGameTotalStats:
-      scoringPerGameTotalsResponse.data as WGOScoringCountsSkaterTotal[],
-    shotTypeTotalStats: shotTypeTotalsResponse.data as WGOShotTypeSkaterTotal[],
-    timeOnIceTotalStats: timeOnIceTotalsResponse.data as WGOToiSkaterTotal[]
-  };
-}
-
-async function fetchAllTotalsForSeason(
-  season: string,
-  limit: number
-): Promise<{
+// --------------------------
+// Full fetchAllTotalsForSeason() function with concurrent endpoint fetching.
+async function fetchAllTotalsForSeason(season: string): Promise<{
   skaterTotalStats: WGOSummarySkaterTotal[];
   skatersBio: WGOSkatersBio[];
   miscTotalSkaterStats: WGORealtimeSkaterTotal[];
@@ -231,68 +94,148 @@ async function fetchAllTotalsForSeason(
   timeOnIceTotalStats: WGOToiSkaterTotal[];
 }> {
   console.log(`Fetching data for season ${season}...`);
-  let start = 0;
-  let moreData = true;
 
-  // Initialize empty arrays to hold all data
-  const combined = {
-    skaterTotalStats: [] as WGOSummarySkaterTotal[],
-    skatersBio: [] as WGOSkatersBio[],
-    miscTotalSkaterStats: [] as WGORealtimeSkaterTotal[],
-    faceOffTotalStats: [] as WGOFaceoffSkaterTotal[],
-    faceoffWinLossTotalStats: [] as WGOFaceOffWinLossSkaterTotal[],
-    goalsForAgainstTotalStats: [] as WGOGoalsForAgainstSkaterTotal[],
-    penaltiesTotalStats: [] as WGOPenaltySkaterTotal[],
-    penaltyKillTotalStats: [] as WGOPenaltyKillSkaterTotal[],
-    powerPlayTotalStats: [] as WGOPowerPlaySkaterTotal[],
-    puckPossessionTotalStats: [] as WGOPuckPossessionSkaterTotal[],
-    satCountsTotalStats: [] as WGOSatCountSkaterTotal[],
-    satPercentagesTotalStats: [] as WGOSatPercentageSkaterTotal[],
-    scoringRatesTotalStats: [] as WGOScoringRatesSkaterTotal[],
-    scoringPerGameTotalStats: [] as WGOScoringCountsSkaterTotal[],
-    shotTypeTotalStats: [] as WGOShotTypeSkaterTotal[],
-    timeOnIceTotalStats: [] as WGOToiSkaterTotal[]
+  // Define URL builders for each endpoint.
+  const buildSkaterTotalStatsUrl = (start: number) =>
+    `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goals%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22assists%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+
+  const buildSkatersBioUrl = (start: number) =>
+    `https://api.nhle.com/stats/rest/en/skater/bios?isAggregate=false&isGame=false&sort=%5B%7B%22property%22:%22lastName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22skaterFullName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+
+  const buildMiscSkaterTotalsUrl = (start: number) =>
+    `https://api.nhle.com/stats/rest/en/skater/realtime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22hits%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+
+  const buildFaceOffTotalsUrl = (start: number) =>
+    `https://api.nhle.com/stats/rest/en/skater/faceoffpercentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22totalFaceoffs%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+
+  const buildFaceoffWinLossTotalsUrl = (start: number) =>
+    `https://api.nhle.com/stats/rest/en/skater/faceoffwins?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22totalFaceoffWins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+
+  const buildGoalsForAgainstTotalsUrl = (start: number) =>
+    `https://api.nhle.com/stats/rest/en/skater/goalsForAgainst?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22evenStrengthGoalDifference%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+
+  const buildPenaltiesTotalsUrl = (start: number) =>
+    `https://api.nhle.com/stats/rest/en/skater/penalties?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22penaltyMinutes%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+
+  const buildPenaltyKillTotalsUrl = (start: number) =>
+    `https://api.nhle.com/stats/rest/en/skater/penaltykill?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22shTimeOnIce%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+
+  const buildPowerPlayTotalsUrl = (start: number) =>
+    `https://api.nhle.com/stats/rest/en/skater/powerplay?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22ppTimeOnIce%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+
+  const buildPuckPossessionTotalsUrl = (start: number) =>
+    `https://api.nhle.com/stats/rest/en/skater/puckPossessions?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+
+  const buildSatCountsTotalsUrl = (start: number) =>
+    `https://api.nhle.com/stats/rest/en/skater/summaryshooting?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satTotal%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22usatTotal%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+
+  const buildSatPercentagesTotalsUrl = (start: number) =>
+    `https://api.nhle.com/stats/rest/en/skater/percentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satPercentage%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+
+  const buildScoringRatesTotalsUrl = (start: number) =>
+    `https://api.nhle.com/stats/rest/en/skater/scoringRates?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22pointsPer605v5%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsPer605v5%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+
+  const buildScoringPerGameTotalsUrl = (start: number) =>
+    `https://api.nhle.com/stats/rest/en/skater/scoringpergame?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22pointsPerGame%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsPerGame%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+
+  const buildShotTypeTotalsUrl = (start: number) =>
+    `https://api.nhle.com/stats/rest/en/skater/shottype?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22shootingPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22shootingPctBat%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+
+  const buildTimeOnIceTotalsUrl = (start: number) =>
+    `https://api.nhle.com/stats/rest/en/skater/timeonice?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIce%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+
+  // Fire off concurrent requests for each endpoint.
+  const [
+    skaterTotalStats,
+    skatersBio,
+    miscTotalSkaterStats,
+    faceOffTotalStats,
+    faceoffWinLossTotalStats,
+    goalsForAgainstTotalStats,
+    penaltiesTotalStats,
+    penaltyKillTotalStats,
+    powerPlayTotalStats,
+    puckPossessionTotalStats,
+    satCountsTotalStats,
+    satPercentagesTotalStats,
+    scoringRatesTotalStats,
+    scoringPerGameTotalStats,
+    shotTypeTotalStats,
+    timeOnIceTotalStats
+  ] = await Promise.all([
+    fetchAllDataForEndpoint<WGOSummarySkaterTotal>(buildSkaterTotalStatsUrl),
+    fetchAllDataForEndpoint<WGOSkatersBio>(buildSkatersBioUrl),
+    fetchAllDataForEndpoint<WGORealtimeSkaterTotal>(buildMiscSkaterTotalsUrl),
+    fetchAllDataForEndpoint<WGOFaceoffSkaterTotal>(buildFaceOffTotalsUrl),
+    fetchAllDataForEndpoint<WGOFaceOffWinLossSkaterTotal>(
+      buildFaceoffWinLossTotalsUrl
+    ),
+    fetchAllDataForEndpoint<WGOGoalsForAgainstSkaterTotal>(
+      buildGoalsForAgainstTotalsUrl
+    ),
+    fetchAllDataForEndpoint<WGOPenaltySkaterTotal>(buildPenaltiesTotalsUrl),
+    fetchAllDataForEndpoint<WGOPenaltyKillSkaterTotal>(
+      buildPenaltyKillTotalsUrl
+    ),
+    fetchAllDataForEndpoint<WGOPowerPlaySkaterTotal>(buildPowerPlayTotalsUrl),
+    fetchAllDataForEndpoint<WGOPuckPossessionSkaterTotal>(
+      buildPuckPossessionTotalsUrl
+    ),
+    fetchAllDataForEndpoint<WGOSatCountSkaterTotal>(buildSatCountsTotalsUrl),
+    fetchAllDataForEndpoint<WGOSatPercentageSkaterTotal>(
+      buildSatPercentagesTotalsUrl
+    ),
+    fetchAllDataForEndpoint<WGOScoringRatesSkaterTotal>(
+      buildScoringRatesTotalsUrl
+    ),
+    fetchAllDataForEndpoint<WGOScoringCountsSkaterTotal>(
+      buildScoringPerGameTotalsUrl
+    ),
+    fetchAllDataForEndpoint<WGOShotTypeSkaterTotal>(buildShotTypeTotalsUrl),
+    fetchAllDataForEndpoint<WGOToiSkaterTotal>(buildTimeOnIceTotalsUrl)
+  ]);
+
+  return {
+    skaterTotalStats,
+    skatersBio,
+    miscTotalSkaterStats,
+    faceOffTotalStats,
+    faceoffWinLossTotalStats,
+    goalsForAgainstTotalStats,
+    penaltiesTotalStats,
+    penaltyKillTotalStats,
+    powerPlayTotalStats,
+    puckPossessionTotalStats,
+    satCountsTotalStats,
+    satPercentagesTotalStats,
+    scoringRatesTotalStats,
+    scoringPerGameTotalStats,
+    shotTypeTotalStats,
+    timeOnIceTotalStats
   };
+}
 
-  // Continue paginating until a page returns fewer than the limit.
-  while (moreData) {
-    const pageData = await fetchPage(season, start, limit);
-    combined.skaterTotalStats.push(...pageData.skaterTotalStats);
-    combined.skatersBio.push(...pageData.skatersBio);
-    combined.miscTotalSkaterStats.push(...pageData.miscTotalSkaterStats);
-    combined.faceOffTotalStats.push(...pageData.faceOffTotalStats);
-    combined.faceoffWinLossTotalStats.push(
-      ...pageData.faceoffWinLossTotalStats
-    );
-    combined.goalsForAgainstTotalStats.push(
-      ...pageData.goalsForAgainstTotalStats
-    );
-    combined.penaltiesTotalStats.push(...pageData.penaltiesTotalStats);
-    combined.penaltyKillTotalStats.push(...pageData.penaltyKillTotalStats);
-    combined.powerPlayTotalStats.push(...pageData.powerPlayTotalStats);
-    combined.puckPossessionTotalStats.push(
-      ...pageData.puckPossessionTotalStats
-    );
-    combined.satCountsTotalStats.push(...pageData.satCountsTotalStats);
-    combined.satPercentagesTotalStats.push(
-      ...pageData.satPercentagesTotalStats
-    );
-    combined.scoringRatesTotalStats.push(...pageData.scoringRatesTotalStats);
-    combined.scoringPerGameTotalStats.push(
-      ...pageData.scoringPerGameTotalStats
-    );
-    combined.shotTypeTotalStats.push(...pageData.shotTypeTotalStats);
-    combined.timeOnIceTotalStats.push(...pageData.timeOnIceTotalStats);
-
-    // If the current page returned less than "limit" items, we're done.
-    if (pageData.skaterTotalStats.length < limit) {
-      moreData = false;
-    } else {
-      start += limit;
-    }
+// --------------------------
+// Batch upsert helper: split records into smaller chunks and upsert concurrently.
+async function batchUpsert(
+  dataArray: any[],
+  batchSize: number = 500,
+  concurrency: number = 4
+) {
+  const chunks = [];
+  for (let i = 0; i < dataArray.length; i += batchSize) {
+    chunks.push(dataArray.slice(i, i + batchSize));
   }
-
-  return combined;
+  const limit = pLimit(concurrency);
+  await Promise.all(
+    chunks.map((chunk) =>
+      limit(() =>
+        supabase
+          .from("wgo_skater_stats_totals")
+          .upsert(chunk, { onConflict: "player_id,season" })
+      )
+    )
+  );
 }
 
 // ==============================
@@ -366,25 +309,15 @@ function getNextSeason(currentSeason: string): string {
   return `${startYear + 1}${endYear + 1}`;
 }
 
-// Function to update skater stats for a season in the Supabase database
+// --------------------------
+// updateSkaterTotals: process fetched data, then perform a batch upsert.
 async function updateSkaterTotals(
   season: string
 ): Promise<{ updated: boolean; playersUpdated: number }> {
   console.log(`Starting to update skater totals for season ${season}`);
   const startTime = Date.now();
 
-  // Delete any existing records for this season to ensure an overwrite
-  const { error: deleteError } = await supabase
-    .from("wgo_skater_stats_totals")
-    .delete()
-    .eq("season", season);
-  if (deleteError) {
-    console.error(`Error deleting records for season ${season}:`, deleteError);
-    throw new Error(`Deletion error for season ${season}`);
-  }
-  console.log(`Existing records for season ${season} deleted successfully.`);
-
-  // Fetch all totals for the season
+  // Fetch all totals for the season using our concurrent method.
   const {
     skaterTotalStats,
     skatersBio,
@@ -402,7 +335,7 @@ async function updateSkaterTotals(
     scoringPerGameTotalStats,
     shotTypeTotalStats,
     timeOnIceTotalStats
-  } = await fetchAllTotalsForSeason(season, 100);
+  } = await fetchAllTotalsForSeason(season);
 
   console.log(
     `Data fetched for ${skaterTotalStats.length} players, beginning processing`
@@ -741,17 +674,8 @@ async function updateSkaterTotals(
     dataArray.push(skatersData);
   }
 
-  // Insert the new data into Supabase
-  const { error: insertError } = await supabase
-    .from("wgo_skater_stats_totals")
-    .insert(dataArray);
-  if (insertError) {
-    console.error(
-      `Error inserting updated records for season ${season}:`,
-      insertError
-    );
-    throw new Error(`Insertion error for season ${season}`);
-  }
+  // Instead of a single large upsert, split the data into smaller batches.
+  await batchUpsert(dataArray, 500, 4);
 
   const endTime = Date.now();
   const duration = (endTime - startTime) / 1000;
