@@ -1045,8 +1045,9 @@ $mobile-fixed-width: 35px;
   }
 
   .greenInnerBorder {
-    border: 3px solid rgba(0, 255, 0, 0.2) !important;
-    border-top: 1px solid #505050 !important;
+    background-color: rgb(0, 255, 0, 0.15) !important;
+    border: 3px solid rgba(0, 255, 0, 0.1) !important;
+    border-top: 1px solid #505050 !important; /* Ensures consistency */
     border-bottom: 1px solid #505050 !important;
   }
 
