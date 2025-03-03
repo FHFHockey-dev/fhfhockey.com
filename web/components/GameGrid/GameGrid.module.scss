@@ -355,6 +355,7 @@ $mobile-fixed-width: 35px;
 }
 
 .greenBorderTGPDR {
+  background-color: rgb(0, 255, 0, 0.15) !important;
   border: 10px solid rgba(0, 255, 0, 0.1) !important;
   border-top: 1px solid #505050 !important; /* Ensures consistency */
   border-bottom: 1px solid #505050 !important;
@@ -362,6 +363,7 @@ $mobile-fixed-width: 35px;
 }
 
 .redBorderTGPDR {
+  background-color: rgb(255, 0, 0, 0.15) !important;
   border: 10px solid rgba(255, 0, 0, 0.1) !important;
   border-top: 1px solid #505050 !important; /* Ensures consistency */
   border-bottom: 1px solid #505050 !important;
