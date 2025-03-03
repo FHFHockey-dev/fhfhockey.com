@@ -387,7 +387,7 @@ $mobile-fixed-width: 35px;
 
 .teamRowRed:hover {
   filter: brightness(110%) !important;
-  background-color: mix(white, rgba(255, 0, 0, 0.15), 8%) !important;
+  background-color: color.mix(white, rgba(255, 0, 0, 0.15), 8%) !important;
 }
 
 /* Green to Yellow (Ranks 32 to 17) 
