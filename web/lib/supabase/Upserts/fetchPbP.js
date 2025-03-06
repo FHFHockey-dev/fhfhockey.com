@@ -1,18 +1,13 @@
-//////////////////////////////////////////////////////////////////////////////////////////////
-// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\lib\supabase\fetchPbP.js
-
 require("dotenv").config({ path: "../../../.env.local" });
 const { createClient } = require("@supabase/supabase-js");
 const { parseISO, isBefore, isAfter } = require("date-fns");
 
 // Constants
-const BATCH_SIZE = 10; // Adjust this value for batch processing
 const ROW_LIMIT = 1000; // Limit for Supabase row fetch
 
 // Supabase Client Initialization
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-// CHANGED SUPABASE THING
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Helper function to delay retries
@@ -46,14 +41,11 @@ async function fetchNHLSeasons() {
 async function determineCurrentSeason(seasons) {
   const today = new Date();
   let currentSeason = null;
-
   for (let i = 0; i < seasons.length; i++) {
     const season = seasons[i];
     const seasonStartDate = parseISO(season.startDate);
     const regularSeasonEndDate = parseISO(season.regularSeasonEndDate);
-
     if (isBefore(today, seasonStartDate)) {
-      // If today is before the start of this season, use the previous season
       if (i + 1 < seasons.length) {
         currentSeason = seasons[i + 1];
         break;
@@ -63,17 +55,13 @@ async function determineCurrentSeason(seasons) {
       (isBefore(today, regularSeasonEndDate) ||
         +today === +regularSeasonEndDate)
     ) {
-      // Today is within this season
       currentSeason = season;
       break;
     }
   }
-
-  // If no current season found, default to the latest season
   if (!currentSeason && seasons.length > 0) {
     currentSeason = seasons[0];
   }
-
   return currentSeason;
 }
 
@@ -87,7 +75,6 @@ async function fetchCurrentSeason() {
 // Fetch play-by-play data from NHL API with retry logic
 async function fetchPlayByPlayData(gameId, retries = 3) {
   const url = `https://api-web.nhle.com/v1/gamecenter/${gameId}/play-by-play`;
-
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const gameData = await Fetch(url);
@@ -103,10 +90,9 @@ async function fetchPlayByPlayData(gameId, retries = 3) {
           error.message
         );
       }
-
       if (attempt < retries) {
         console.warn(`Retrying fetch for game ${gameId}...`);
-        await delay(2000); // Wait 2 seconds before retrying
+        await delay(2000);
       } else {
         console.error(
           `Max retries reached for game ${gameId}. Skipping this game.`
@@ -117,15 +103,15 @@ async function fetchPlayByPlayData(gameId, retries = 3) {
   }
 }
 
-// Upsert play-by-play data into Supabase
+// Bulk upsert play-by-play data into Supabase for one game
 async function upsertPlayByPlayData(gameId, gameData) {
   if (gameData.plays && gameData.plays.length > 0) {
-    for (const play of gameData.plays) {
-      const details = play.details || {}; // Default to empty object if details are missing
-
-      const playUpsert = {
+    // Build a list of play objects
+    const plays = gameData.plays.map((play) => {
+      const details = play.details || {};
+      return {
         id: play.eventId, // Use eventId directly as id
-        gameid: gameId, // Use gameId to keep track of the game
+        gameid: gameId,
         periodnumber: play.periodDescriptor?.number || null,
         periodtype: play.periodDescriptor?.periodType || null,
         timeinperiod: play.timeInPeriod || null,
@@ -164,136 +150,100 @@ async function upsertPlayByPlayData(gameId, gameData) {
         ycoord: details.yCoord ?? null,
         reason: details.reason || null
       };
+    });
 
-      try {
-        const { error } = await supabase.from("pbp_plays").upsert(playUpsert);
-        if (error) {
-          console.error(
-            `Error upserting play data for play ${play.eventId}:`,
-            error.message
-          );
-        }
-      } catch (upsertError) {
-        console.error(
-          `Error during upsert for play ${play.eventId}:`,
-          upsertError.message
-        );
-      }
+    // Perform a single bulk upsert for all plays in this game
+    const { error } = await supabase.from("pbp_plays").upsert(plays);
+    if (error) {
+      console.error(`Error upserting plays for game ${gameId}:`, error.message);
     }
   } else {
     console.warn(`No plays found for game ${gameId}.`);
   }
 }
 
-// Fetch game IDs from pbp_games table with pagination for the selected seasons
-async function fetchGameIdsFromSupabase(seasons, offset = 0) {
-  const today = new Date().toISOString().split("T")[0];
-  const { data: gameIds, error } = await supabase
-    .from("games")
-    .select("id")
-    .in("seasonId", seasons)
-    .lte("date", today) // This line filters out future games
-    .order("date", { ascending: false })
-    .range(offset, offset + ROW_LIMIT - 1);
-
-  if (error) {
-    console.error("Error fetching game IDs from games:", error.message);
-    return [];
-  }
-
-  return gameIds;
-}
-
 // Process all game IDs grouped by day for the selected seasons
 async function processPlayByPlayData() {
   try {
-    // Determine the current and previous season(s)
+    // Determine current season(s)
     const currentSeason = await fetchCurrentSeason();
     const selectedSeasons = [currentSeason.id];
     if (currentSeason.previousSeasonId) {
       selectedSeasons.push(currentSeason.previousSeasonId);
     }
 
-    // Get today's date (adjust based on how your date column is stored)
+    // For a nightly cron job, we process only today's date.
     const today = new Date().toISOString().split("T")[0];
 
-    // First, fetch all game dates for the selected seasons (only past or today's games)
-    const { data: gamesData, error: gamesError } = await supabase
+    console.log(`\n--- Starting processing for date: ${today} ---`);
+    const dayStartTime = Date.now();
+
+    // Fetch all game IDs for today
+    const { data: gamesForDay, error: errorForDay } = await supabase
       .from("games")
-      .select("date")
+      .select("id")
       .in("seasonId", selectedSeasons)
-      .lte("date", today)
+      .eq("date", today)
       .order("date", { ascending: false });
 
-    if (gamesError) {
-      console.error("Error fetching game dates:", gamesError.message);
+    if (errorForDay) {
+      console.error(
+        `Error fetching games for date ${today}:`,
+        errorForDay.message
+      );
       return;
     }
 
-    // Deduplicate the dates (if the table returns duplicate dates)
-    const distinctDates = [...new Set(gamesData.map((game) => game.date))];
-    console.log("Dates to process:", distinctDates);
+    // Skip games that have already been processed by checking pbp_plays for this day's games.
+    const gameIdsForDay = gamesForDay.map((game) => game.id);
+    const { data: processedGames, error: processedError } = await supabase
+      .from("pbp_plays")
+      .select("gameid")
+      .in("gameid", gameIdsForDay);
 
-    const dayDurations = []; // Array to track each day's processing time (in ms)
-
-    // Process each day sequentially
-    for (const date of distinctDates) {
-      console.log(`\n--- Starting processing for date: ${date} ---`);
-      const startTime = Date.now();
-
-      // Fetch all game IDs for the current day
-      const { data: gamesForDay, error: errorForDay } = await supabase
-        .from("games")
-        .select("id")
-        .in("seasonId", selectedSeasons)
-        .eq("date", date)
-        .order("date", { ascending: false });
-
-      if (errorForDay) {
-        console.error(
-          `Error fetching games for date ${date}:`,
-          errorForDay.message
-        );
-        continue;
-      }
-
-      // Process each game concurrently
-      await Promise.all(
-        gamesForDay.map(async (game) => {
-          console.log(`Processing game ${game.id} on ${date}...`);
-          const gameData = await fetchPlayByPlayData(game.id);
-          if (gameData) {
-            await upsertPlayByPlayData(game.id, gameData);
-          } else {
-            console.warn(
-              `No play-by-play data found for game ${game.id} on ${date}.`
-            );
-          }
-        })
-      );
-
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-      dayDurations.push({ date, duration });
-      console.log(
-        `Finished processing for date ${date}. Time taken: ${(
-          duration / 1000
-        ).toFixed(2)} seconds.`
-      );
+    let processedGameIds = new Set();
+    if (!processedError && processedGames) {
+      processedGames.forEach((row) => processedGameIds.add(row.gameid));
+    } else if (processedError) {
+      console.error("Error fetching processed games:", processedError.message);
     }
 
-    // Calculate statistics over all processed days
-    const durationsInSec = dayDurations.map((day) => day.duration / 1000);
-    const total = durationsInSec.reduce((acc, val) => acc + val, 0);
-    const average = total / durationsInSec.length;
-    const min = Math.min(...durationsInSec);
-    const max = Math.max(...durationsInSec);
+    // Filter out games already processed
+    const gamesToProcess = gamesForDay.filter(
+      (game) => !processedGameIds.has(game.id)
+    );
 
-    console.log("\n=== Processing Summary ===");
-    console.log(`Average time per day: ${average.toFixed(2)} seconds.`);
-    console.log(`Shortest day: ${min.toFixed(2)} seconds.`);
-    console.log(`Longest day: ${max.toFixed(2)} seconds.`);
-    console.log("Play-by-play data processing complete.");
+    console.log(
+      `Found ${gamesForDay.length} games for ${today}. Skipping ${
+        gamesForDay.length - gamesToProcess.length
+      } already processed games.`
+    );
+
+    // Process each game concurrently (optionally add concurrency limiting if needed)
+    await Promise.all(
+      gamesToProcess.map(async (game) => {
+        console.log(`Processing game ${game.id} on ${today}...`);
+        const gameData = await fetchPlayByPlayData(game.id);
+        if (gameData) {
+          await upsertPlayByPlayData(game.id, gameData);
+          console.log(
+            `Game ${gameId} returned ${gameData.plays.length} plays.`
+          );
+        } else {
+          console.warn(
+            `No play-by-play data found for game ${game.id} on ${today}.`
+          );
+        }
+      })
+    );
+
+    const dayEndTime = Date.now();
+    const dayDuration = dayEndTime - dayStartTime;
+    console.log(
+      `Finished processing for date ${today}. Time taken: ${(
+        dayDuration / 1000
+      ).toFixed(2)} seconds.`
+    );
   } catch (error) {
     console.error(
       "An unexpected error occurred during processing:",
