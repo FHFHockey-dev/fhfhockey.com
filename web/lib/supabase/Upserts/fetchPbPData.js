@@ -25,8 +25,8 @@ async function fetchSeasonData() {
     const response = await fetch(url);
     const data = await response.json();
 
-    // Filter for the last 5 seasons
-    const seasons = data.data.slice(0, 5);
+    // Filter for the last 10 seasons
+    const seasons = data.data.slice(0, 10);
     return seasons.map((season) => ({
       seasonId: season.id,
       startDate: season.startDate.split("T")[0],
@@ -111,7 +111,7 @@ const processGameIDs = async () => {
   console.log("Fetching season data...");
   const seasons = await fetchSeasonData();
 
-  console.log("Fetching game IDs for the last 5 seasons...");
+  console.log("Fetching game IDs for the last 10 seasons...");
   const gameIds = await fetchGameIDsForSeasons(seasons);
 
   console.log(
