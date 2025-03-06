@@ -187,12 +187,14 @@ async function upsertPlayByPlayData(gameId, gameData) {
 
 // Fetch game IDs from pbp_games table with pagination for the selected seasons
 async function fetchGameIdsFromSupabase(seasons, offset = 0) {
+  const today = new Date().toISOString().split("T")[0];
   const { data: gameIds, error } = await supabase
-    .from("games") // Updated table name to 'pbp_games'
+    .from("games")
     .select("id")
-    .in("seasonId", seasons) // Filter for the selected seasons
-    .order("date", { ascending: false }) // Order by date to get the most recent games
-    .range(offset, offset + ROW_LIMIT - 1); // Fetch in batches of ROW_LIMIT
+    .in("seasonId", seasons)
+    .lte("date", today) // This line filters out future games
+    .order("date", { ascending: false })
+    .range(offset, offset + ROW_LIMIT - 1);
 
   if (error) {
     console.error("Error fetching game IDs from games:", error.message);
@@ -202,63 +204,95 @@ async function fetchGameIdsFromSupabase(seasons, offset = 0) {
   return gameIds;
 }
 
-// Process all game IDs for the selected seasons
+// Process all game IDs grouped by day for the selected seasons
 async function processPlayByPlayData() {
   try {
-    const currentSeason = await fetchCurrentSeason(); // Fetch the current or most recent season based on today's date
+    // Determine the current and previous season(s)
+    const currentSeason = await fetchCurrentSeason();
     const selectedSeasons = [currentSeason.id];
     if (currentSeason.previousSeasonId) {
       selectedSeasons.push(currentSeason.previousSeasonId);
     }
 
-    let offset = 0;
-    let hasMoreData = true;
+    // Get today's date (adjust based on how your date column is stored)
+    const today = new Date().toISOString().split("T")[0];
 
-    while (hasMoreData) {
-      console.log(
-        `Fetching game IDs from pbp_games for seasons ${selectedSeasons.join(
-          ", "
-        )}, starting at offset ${offset}...`
-      );
+    // First, fetch all game dates for the selected seasons (only past or today's games)
+    const { data: gamesData, error: gamesError } = await supabase
+      .from("games")
+      .select("date")
+      .in("seasonId", selectedSeasons)
+      .lte("date", today)
+      .order("date", { ascending: false });
 
-      // Fetch a batch of game IDs
-      const gameIds = await fetchGameIdsFromSupabase(selectedSeasons, offset);
-
-      if (gameIds.length === 0) {
-        hasMoreData = false; // No more data to process
-        console.log("No more game IDs to process.");
-        break;
-      }
-
-      // Process each game one by one in the current batch
-      for (const game of gameIds) {
-        const gameId = game.id;
-
-        // Log the start of processing for each game
-        console.log(
-          `Fetching and processing play-by-play data for game ${gameId}...`
-        );
-
-        // Fetch the play-by-play data for this game
-        const gameData = await fetchPlayByPlayData(gameId);
-
-        if (gameData) {
-          // Upsert the play-by-play data into the pbp_plays table
-          await upsertPlayByPlayData(gameId, gameData);
-        } else {
-          console.warn(`No play-by-play data found for game ${gameId}.`);
-        }
-
-        // Log the completion of processing for this game
-        console.log(
-          `Finished processing play-by-play data for game ${gameId}.`
-        );
-      }
-
-      // Move to the next batch
-      offset += ROW_LIMIT;
+    if (gamesError) {
+      console.error("Error fetching game dates:", gamesError.message);
+      return;
     }
 
+    // Deduplicate the dates (if the table returns duplicate dates)
+    const distinctDates = [...new Set(gamesData.map((game) => game.date))];
+    console.log("Dates to process:", distinctDates);
+
+    const dayDurations = []; // Array to track each day's processing time (in ms)
+
+    // Process each day sequentially
+    for (const date of distinctDates) {
+      console.log(`\n--- Starting processing for date: ${date} ---`);
+      const startTime = Date.now();
+
+      // Fetch all game IDs for the current day
+      const { data: gamesForDay, error: errorForDay } = await supabase
+        .from("games")
+        .select("id")
+        .in("seasonId", selectedSeasons)
+        .eq("date", date)
+        .order("date", { ascending: false });
+
+      if (errorForDay) {
+        console.error(
+          `Error fetching games for date ${date}:`,
+          errorForDay.message
+        );
+        continue;
+      }
+
+      // Process each game concurrently
+      await Promise.all(
+        gamesForDay.map(async (game) => {
+          console.log(`Processing game ${game.id} on ${date}...`);
+          const gameData = await fetchPlayByPlayData(game.id);
+          if (gameData) {
+            await upsertPlayByPlayData(game.id, gameData);
+          } else {
+            console.warn(
+              `No play-by-play data found for game ${game.id} on ${date}.`
+            );
+          }
+        })
+      );
+
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      dayDurations.push({ date, duration });
+      console.log(
+        `Finished processing for date ${date}. Time taken: ${(
+          duration / 1000
+        ).toFixed(2)} seconds.`
+      );
+    }
+
+    // Calculate statistics over all processed days
+    const durationsInSec = dayDurations.map((day) => day.duration / 1000);
+    const total = durationsInSec.reduce((acc, val) => acc + val, 0);
+    const average = total / durationsInSec.length;
+    const min = Math.min(...durationsInSec);
+    const max = Math.max(...durationsInSec);
+
+    console.log("\n=== Processing Summary ===");
+    console.log(`Average time per day: ${average.toFixed(2)} seconds.`);
+    console.log(`Shortest day: ${min.toFixed(2)} seconds.`);
+    console.log(`Longest day: ${max.toFixed(2)} seconds.`);
     console.log("Play-by-play data processing complete.");
   } catch (error) {
     console.error(
@@ -273,4 +307,8 @@ async function main() {
   await processPlayByPlayData();
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+module.exports = { main };
