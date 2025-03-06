@@ -1,4 +1,4 @@
-// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\stats.tsx
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\statsPlaceholder.tsx
 
 import React, { useMemo, useState, useRef } from "react";
 import { NextSeo } from "next-seo";

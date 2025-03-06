@@ -20,47 +20,49 @@ export default function StatsPage({
 }: StatsProps) {
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>Skater Leaderboards</h1>
-      <div className={styles.grid}>
-        <LeaderboardCategory
-          title="Points"
-          leaders={pointsLeaders}
-          statKey="points"
-        />
-        <LeaderboardCategory
-          title="Goals"
-          leaders={goalsLeaders}
-          statKey="goals"
-        />
-        <LeaderboardCategory
-          title="PPP"
-          leaders={pppLeaders}
-          statKey="pp_points"
-        />
-        <LeaderboardCategoryBSH title="BSH" leaders={bshLeaders} />
-      </div>
-      <h1 className={styles.title}>Goalie Leaderboards</h1>
-      <div className={styles.grid}>
-        <LeaderboardCategoryGoalie
-          title="Wins"
-          leaders={goalieLeadersWins}
-          statKey="wins"
-        />
-        <LeaderboardCategoryGoalie
-          title="Save %"
-          leaders={goalieLeadersSavePct}
-          statKey="save_pct"
-        />
-        <LeaderboardCategoryGoalie
-          title="GAA"
-          leaders={goalieLeadersGAA}
-          statKey="goals_against_avg"
-        />
-        <LeaderboardCategoryGoalie
-          title="QS %"
-          leaders={goalieLeadersQS}
-          statKey="quality_starts_pct"
-        />
+      <div className={styles.leaderboardsContainer}>
+        <h1 className={styles.title}>Skater Leaderboards</h1>
+        <div className={styles.grid}>
+          <LeaderboardCategory
+            title="Points"
+            leaders={pointsLeaders}
+            statKey="points"
+          />
+          <LeaderboardCategory
+            title="Goals"
+            leaders={goalsLeaders}
+            statKey="goals"
+          />
+          <LeaderboardCategory
+            title="PPP"
+            leaders={pppLeaders}
+            statKey="pp_points"
+          />
+          <LeaderboardCategoryBSH title="BSH" leaders={bshLeaders} />
+        </div>
+        <h1 className={styles.title}>Goalie Leaderboards</h1>
+        <div className={styles.grid}>
+          <LeaderboardCategoryGoalie
+            title="Wins"
+            leaders={goalieLeadersWins}
+            statKey="wins"
+          />
+          <LeaderboardCategoryGoalie
+            title="Save %"
+            leaders={goalieLeadersSavePct}
+            statKey="save_pct"
+          />
+          <LeaderboardCategoryGoalie
+            title="GAA"
+            leaders={goalieLeadersGAA}
+            statKey="goals_against_avg"
+          />
+          <LeaderboardCategoryGoalie
+            title="QS %"
+            leaders={goalieLeadersQS}
+            statKey="quality_starts_pct"
+          />
+        </div>
       </div>
     </div>
   );

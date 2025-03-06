@@ -19,7 +19,7 @@ export default adminOnly(async function handler(req, res) {
       teams.map((team) => ({
         id: team.id,
         name: team.fullName,
-        abbreviation: team.triCode,
+        abbreviation: team.triCode
       }))
     );
     if (error) throw error;
@@ -44,7 +44,7 @@ export default adminOnly(async function handler(req, res) {
         "successfully updated the teams table " +
         "num teams: " +
         currentSeasonTeamIds.size,
-      success: true,
+      success: true
     });
   } catch (e: any) {
     res.status(400).json({ message: e.message, success: false });

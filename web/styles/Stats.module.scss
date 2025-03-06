@@ -6,6 +6,12 @@
   margin: 0 auto;
 }
 
+.leaderboardsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .title {
   text-align: center;
   font-family: "Roboto Condensed", sans-serif;
