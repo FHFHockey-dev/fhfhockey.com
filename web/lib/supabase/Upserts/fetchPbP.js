@@ -168,6 +168,7 @@ async function processPlayByPlayData() {
     // Determine current season(s)
     const currentSeason = await fetchCurrentSeason();
     const selectedSeasons = [currentSeason.id];
+    // const selectedSeasons = [ "20242025", "20232024", "20222023", "20212022", "20202021", "20192020"] // For multiple seasons
     if (currentSeason.previousSeasonId) {
       selectedSeasons.push(currentSeason.previousSeasonId);
     }
