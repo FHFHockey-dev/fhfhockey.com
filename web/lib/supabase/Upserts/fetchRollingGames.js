@@ -1,6 +1,6 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\lib\supabase\fetchRollingGames.js
 
-require("dotenv").config({ path: "../../.env.local" });
+require("dotenv").config({ path: "../../../.env.local" });
 const { createClient } = require("@supabase/supabase-js");
 const fetch = require("node-fetch");
 const { parseISO, isBefore } = require("date-fns");
@@ -53,7 +53,8 @@ const teamsInfo = {
   WPG: { name: "Winnipeg Jets", franchiseId: 35, id: 52 },
   ARI: { name: "Arizona Coyotes", franchiseId: 28, id: 53 },
   VGK: { name: "Vegas Golden Knights", franchiseId: 38, id: 54 },
-  SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 }
+  SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
+  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 }
 };
 
 // Helper function for fetching all rows with pagination
@@ -991,7 +992,8 @@ function findLatestStandings(standingsMap, teamId, gameDate) {
 }
 
 // Main function to execute fetching and upserting for each team, then calculating stats
-(async () => {
+async function main() {
+  const startTime = new Date();
   try {
     const seasons = await fetchNHLSeasons();
     const currentSeason = await determineCurrentSeason(seasons);
@@ -1035,5 +1037,11 @@ function findLatestStandings(standingsMap, teamId, gameDate) {
     console.log("Cumulative statistics calculated and updated successfully.");
   } catch (error) {
     console.error("An error occurred during the fetching process:", error);
+  } finally {
+    const endTime = new Date();
+    const elapsedTime = (endTime - startTime) / 1000;
+    console.log(`\nTotal time taken: ${elapsedTime} seconds`);
   }
-})();
+}
+
+module.exports = { main };
