@@ -16,7 +16,7 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// Step 1: Fetch season data to determine start and end dates for the past 5 years
+// Step 1: Fetch season data to determine start and end dates for the past 10 years
 async function fetchSeasonData() {
   const url =
     "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22DESC%22%7D%5D";
@@ -25,8 +25,8 @@ async function fetchSeasonData() {
     const response = await fetch(url);
     const data = await response.json();
 
-    // Filter for the last 5 seasons
-    const seasons = data.data.slice(0, 5);
+    // Filter for the last 10 seasons
+    const seasons = data.data.slice(0, 10);
     return seasons.map((season) => ({
       seasonId: season.id,
       startDate: season.startDate.split("T")[0],
@@ -111,7 +111,7 @@ const processGameIDs = async () => {
   console.log("Fetching season data...");
   const seasons = await fetchSeasonData();
 
-  console.log("Fetching game IDs for the last 5 seasons...");
+  console.log("Fetching game IDs for the last 10 seasons...");
   const gameIds = await fetchGameIDsForSeasons(seasons);
 
   console.log(

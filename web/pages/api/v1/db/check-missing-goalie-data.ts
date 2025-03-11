@@ -1,4 +1,4 @@
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/update-nst-goalies.ts
+// /pages/api/v1/db/check-missing-goalie-data.ts
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import axios from "axios";
@@ -11,7 +11,6 @@ dotenv.config({ path: "./../../../.env.local" });
 
 const supabaseUrl: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey: string | undefined = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
 if (!supabaseUrl || !supabaseKey) {
   console.error("Supabase URL or Service Role Key is missing.");
   process.exit(1);
@@ -21,7 +20,6 @@ const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // Delay interval between requests in milliseconds
 const REQUEST_INTERVAL_MS = 22000; // 22 seconds
-
 const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
 
 // --- Header Mappings for Goalie Data ---
@@ -91,7 +89,6 @@ function mapGoalieHeaderToColumn(
   header: string,
   datasetType: string
 ): string | null {
-  // 'Player' and 'Team' are handled separately.
   if (header === "Player" || header === "Team") return null;
   if (datasetType.endsWith("Counts")) {
     return goalieCountsHeaderMap[header] || null;
@@ -146,7 +143,7 @@ function getDatesBetween(start: Date, end: Date): string[] {
 // --- Name Mapping for Goalies ---
 const goalieNameMapping: Record<string, { fullName: string }> = {
   "Jacob Markstrom": { fullName: "Jacob Markstrom" }
-  // Add additional goalie mappings here if needed.
+  // Additional goalie mappings if needed.
 };
 
 function normalizeName(name: string): string {
@@ -166,9 +163,7 @@ async function getGoalieIdByName(
   const mappedName = goalieNameMapping[fullName]
     ? goalieNameMapping[fullName].fullName
     : fullName;
-  const normalizedFullName = normalizeName(mappedName);
   const goaliePosition = "G"; // Force goalie position
-
   const { data, error } = await supabase
     .from("players")
     .select("id")
@@ -176,7 +171,6 @@ async function getGoalieIdByName(
     .eq("position", goaliePosition)
     .limit(1)
     .maybeSingle();
-
   if (error) return null;
   if (!data) {
     troublesomePlayers.push(`${fullName} (${position})`);
@@ -202,18 +196,14 @@ function constructGoalieUrlsForDate(
   ];
 
   const urls: Record<string, string> = {};
-
   situations.forEach(({ sit, label }) => {
     // Counts
     const datasetTypeCounts = `${label}Counts`;
-    const urlCounts = `${BASE_URL}?${commonParams}&sit=${sit}&rate=n`;
-    urls[datasetTypeCounts] = urlCounts;
+    urls[datasetTypeCounts] = `${BASE_URL}?${commonParams}&sit=${sit}&rate=n`;
     // Rates
     const datasetTypeRates = `${label}Rates`;
-    const urlRates = `${BASE_URL}?${commonParams}&sit=${sit}&rate=y`;
-    urls[datasetTypeRates] = urlRates;
+    urls[datasetTypeRates] = `${BASE_URL}?${commonParams}&sit=${sit}&rate=y`;
   });
-
   return urls;
 }
 
@@ -227,7 +217,12 @@ async function fetchAndParseData(
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       console.log(`Fetching data from URL: ${url} (Attempt ${attempt})`);
-      const response = await axios.get(url);
+      const response = await axios.get(url, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36"
+        }
+      });
       if (!response.data) {
         console.warn(`No data received from URL: ${url}`);
         return [];
@@ -242,11 +237,9 @@ async function fetchAndParseData(
       table.find("thead tr th").each((_, th) => {
         headers.push($(th).text().trim());
       });
-
       const mappedHeaders = headers.map((header) =>
         mapGoalieHeaderToColumn(header, datasetType)
       );
-
       const dataRowsCollected: any[] = [];
       table.find("tbody tr").each((_, tr) => {
         const rowData: any = {};
@@ -276,7 +269,6 @@ async function fetchAndParseData(
               rowData[column] = null;
             }
           });
-
         if (playerName && team && Object.keys(rowData).length > 0) {
           rowData["player_name"] = playerName;
           rowData["team"] = team;
@@ -287,7 +279,6 @@ async function fetchAndParseData(
           console.warn(`Incomplete data row skipped for URL: ${url}`);
         }
       });
-
       console.log(
         `Parsed ${dataRowsCollected.length} rows for datasetType "${datasetType}".`
       );
@@ -321,7 +312,6 @@ async function upsertData(datasetType: string, dataRows: any[]) {
     );
     return;
   }
-
   const dataRowsWithPlayerIds: any[] = [];
   for (const row of dataRows) {
     const goalieId = await getGoalieIdByName(row["player_name"], row["team"]);
@@ -334,7 +324,6 @@ async function upsertData(datasetType: string, dataRows: any[]) {
     row["player_id"] = goalieId;
     dataRowsWithPlayerIds.push(row);
   }
-
   console.log(
     `Upserting ${dataRowsWithPlayerIds.length} rows into table "${tableName}".`
   );
@@ -376,7 +365,7 @@ async function checkDataExists(
   return exists;
 }
 
-// New helper to process a single URL (used for concurrent fetching)
+// Reusable helper to process a single URL
 async function processSingleUrl({
   datasetType,
   url,
@@ -400,116 +389,74 @@ async function processSingleUrl({
   }
 }
 
-// Existing sequential processing function (kept for cases with more than 2 days of data)
-async function processUrlsSequentially(
-  urlsQueue: {
+/**
+ * Checks each goalie table for missing dates by comparing against the expected dates
+ * for the season. For each missing date/datasetType, it logs the missing date and then
+ * fetches the URL with a delay between each request.
+ */
+async function checkMissingDatesAndFetch() {
+  const seasonInfo = await fetchCurrentSeason();
+  const seasonId = seasonInfo.id.toString();
+  const seasonStartDate = new Date(seasonInfo.startDate);
+  const today = new Date();
+  const scrapingEndDate =
+    today < new Date(seasonInfo.endDate) ? today : new Date(seasonInfo.endDate);
+  const expectedDates = getDatesBetween(seasonStartDate, scrapingEndDate);
+
+  // Prepare a queue for missing fetches
+  const missingUrlsQueue: {
     datasetType: string;
     url: string;
     date: string;
     seasonId: string;
-  }[]
-) {
-  const totalUrls = urlsQueue.length;
-  let processedCount = 0;
-  for (let i = 0; i < urlsQueue.length; i++) {
-    const { datasetType, url, date, seasonId } = urlsQueue[i];
-    console.log(
-      `\nProcessing URL ${i + 1}/${totalUrls}: ${datasetType} for ${date}`
+  }[] = [];
+
+  // Iterate over each dataset type (each goalie table)
+  const datasetTypes = Object.keys(goalieTableMapping);
+  for (const datasetType of datasetTypes) {
+    const tableName = getGoalieTableName(datasetType);
+    const { data, error } = await supabase
+      .from(tableName)
+      .select("date_scraped");
+    if (error) {
+      console.error(`Error fetching dates from ${tableName}:`, error.message);
+      continue;
+    }
+    // Build a set of dates that already exist
+    const scrapedDates = new Set(data.map((row: any) => row.date_scraped));
+    // Find missing dates by filtering the expected list
+    const missingDates = expectedDates.filter(
+      (date) => !scrapedDates.has(date)
     );
-    if (i > 0) {
+    if (missingDates.length > 0) {
+      console.log(
+        `Missing dates for ${tableName} (${datasetType}):`,
+        missingDates
+      );
+      missingDates.forEach((date) => {
+        const urls = constructGoalieUrlsForDate(date, seasonId);
+        const url = urls[datasetType];
+        missingUrlsQueue.push({ datasetType, url, date, seasonId });
+      });
+    } else {
+      console.log(`No missing dates for ${tableName} (${datasetType}).`);
+    }
+  }
+
+  // Process each missing URL sequentially with a delay
+  for (let i = 0; i < missingUrlsQueue.length; i++) {
+    const { datasetType, url, date, seasonId } = missingUrlsQueue[i];
+    console.log(`\nFetching missing data for ${datasetType} on ${date}`);
+    await processSingleUrl({ datasetType, url, date, seasonId });
+    if (i < missingUrlsQueue.length - 1) {
       console.log(
         `Waiting ${REQUEST_INTERVAL_MS / 1000} seconds before next request...`
       );
+      console.log(
+        "------------------------------------------------------------"
+      );
       await delay(REQUEST_INTERVAL_MS);
     }
-    const dataExists = await checkDataExists(datasetType, date);
-    if (!dataExists) {
-      const dataRows = await fetchAndParseData(
-        url,
-        datasetType,
-        date,
-        seasonId
-      );
-      if (dataRows.length > 0) {
-        await upsertData(datasetType, dataRows);
-      }
-    } else {
-      console.log(
-        `Data already exists for ${datasetType} on ${date}. Skipping.`
-      );
-    }
-    processedCount++;
-    console.log(`Processed ${processedCount} out of ${totalUrls} URLs.`);
-  }
-}
-
-async function main() {
-  try {
-    const seasonInfo = await fetchCurrentSeason();
-    const seasonId = seasonInfo.id.toString();
-    const seasonStartDate = new Date(seasonInfo.startDate);
-    const today = new Date();
-    const scrapingEndDate =
-      today < new Date(seasonInfo.endDate)
-        ? today
-        : new Date(seasonInfo.endDate);
-
-    let startDate = seasonStartDate;
-    const latestDateStr = await getLatestDateSupabase();
-    if (latestDateStr) {
-      startDate = new Date(latestDateStr);
-      startDate.setDate(startDate.getDate() + 1);
-      console.log(
-        `Latest date in Supabase is ${latestDateStr}. Starting from ${
-          startDate.toISOString().split("T")[0]
-        }.`
-      );
-    } else {
-      console.log(
-        `No existing data in Supabase. Starting from season start date ${
-          startDate.toISOString().split("T")[0]
-        }.`
-      );
-    }
-
-    const datesToScrape = getDatesBetween(startDate, scrapingEndDate);
-    if (datesToScrape.length === 0) {
-      console.log("No new dates to scrape.");
-      return;
-    }
-
-    const urlsQueue: {
-      datasetType: string;
-      url: string;
-      date: string;
-      seasonId: string;
-    }[] = [];
-    datesToScrape.forEach((date) => {
-      const urls = constructGoalieUrlsForDate(date, seasonId);
-      for (const [datasetType, url] of Object.entries(urls)) {
-        urlsQueue.push({ datasetType, url, date, seasonId });
-      }
-    });
-
-    // CONDITIONAL: Process URLs concurrently if scraping only 1 or 2 days
-    if (datesToScrape.length <= 2) {
-      console.log(
-        "Only one or two days of data to scrape; fetching URLs concurrently without delay."
-      );
-      await Promise.all(urlsQueue.map((item) => processSingleUrl(item)));
-    } else {
-      await processUrlsSequentially(urlsQueue);
-    }
-
-    if (troublesomePlayers.length > 0) {
-      const uniqueTroublesomePlayers = [...new Set(troublesomePlayers)];
-      console.log(
-        "Troublesome Players (require manual mapping):",
-        uniqueTroublesomePlayers
-      );
-    }
-  } catch (error: any) {
-    console.error("An error occurred:", error.message);
   }
 }
 
@@ -522,43 +469,12 @@ export default async function handler(
     return;
   }
   try {
-    await main();
+    await checkMissingDatesAndFetch();
     res
       .status(200)
-      .json({ message: "Goalie data fetching and upsertion initiated." });
+      .json({ message: "Missing dates check complete and fetches initiated." });
   } catch (error: any) {
-    console.error("Error in API handler:", error.message);
+    console.error("Error in missing dates API handler:", error.message);
     res.status(500).json({ message: "Internal Server Error" });
   }
-}
-
-async function getLatestDateSupabase(): Promise<string | null> {
-  const tableNames = [
-    "nst_gamelog_goalie_5v5_counts",
-    "nst_gamelog_goalie_5v5_rates",
-    "nst_gamelog_goalie_ev_counts",
-    "nst_gamelog_goalie_ev_rates",
-    "nst_gamelog_goalie_all_counts",
-    "nst_gamelog_goalie_all_rates",
-    "nst_gamelog_goalie_pp_counts",
-    "nst_gamelog_goalie_pp_rates",
-    "nst_gamelog_goalie_pk_counts",
-    "nst_gamelog_goalie_pk_rates"
-  ];
-  let latestDate: string | null = null;
-  for (const table of tableNames) {
-    const { data, error } = await supabase
-      .from(table)
-      .select("date_scraped")
-      .order("date_scraped", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (error) continue;
-    if (data && data.date_scraped) {
-      if (!latestDate || new Date(data.date_scraped) > new Date(latestDate)) {
-        latestDate = data.date_scraped;
-      }
-    }
-  }
-  return latestDate;
 }
