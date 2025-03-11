@@ -580,7 +580,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         try {
           // Execute the Python script using Bottleneck's limiter
           const { stdout, stderr } = await execAsync(
-            `python "${scriptPath}" ${scriptArgs
+            `python3 "${scriptPath}" ${scriptArgs
               .map((arg) => `"${arg}"`)
               .join(" ")}`
           );
@@ -841,7 +841,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         try {
           // Execute the Python script using Bottleneck's limiter
           const { stdout, stderr } = await execAsync(
-            `python "${scriptPath}" ${scriptArgs
+            `python3 "${scriptPath}" ${scriptArgs
               .map((arg) => `"${arg}"`)
               .join(" ")}`
           );
@@ -1068,7 +1068,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         try {
           // Execute the Python script using Bottleneck's limiter
           const { stdout, stderr } = await execAsync(
-            `python "${scriptPath}" ${scriptArgs
+            `python3 "${scriptPath}" ${scriptArgs
               .map((arg) => `"${arg}"`)
               .join(" ")}`
           );

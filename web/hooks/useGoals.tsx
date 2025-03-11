@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react";
 import { teamsInfo } from "lib/NHL/teamsInfo";
 import Fetch from "lib/cors-fetch";
-import styles from "/styles/useGoals.module.scss";
+import styles from "../styles/useGoals.module.scss";
 import { formatTime } from "utils/getPowerPlayBlocks";
 
 export default function useGoals(id: number) {
@@ -28,28 +28,28 @@ export default function useGoals(id: number) {
           result.push({
             period: {
               number: periodInfo.periodDescriptor.number,
-              type: periodInfo.periodDescriptor.periodType,
+              type: periodInfo.periodDescriptor.periodType
             },
             scoreTeamAbbreviation: goal.teamAbbrev.default,
             homeTeam: {
               score: goal.homeScore,
-              abbreviation: homeTeamAbbrev,
+              abbreviation: homeTeamAbbrev
             },
             awayTeam: {
               score: goal.awayScore,
-              abbreviation: awayTeamAbbrev,
+              abbreviation: awayTeamAbbrev
             },
             scorer: {
               id: goal.playerId,
               firstName: goal.firstName.default,
-              lastName: goal.lastName.default,
+              lastName: goal.lastName.default
             },
             assists: goal.assists.map((assist: any) => ({
               id: assist.playerId,
               firstName: assist.firstName.default,
-              lastName: assist.lastName.default,
+              lastName: assist.lastName.default
             })),
-            timeInPeriod: convertTimeToSeconds(goal.timeInPeriod),
+            timeInPeriod: convertTimeToSeconds(goal.timeInPeriod)
           });
         });
       });
@@ -123,7 +123,7 @@ function GoalIndicator({
   scorer,
   assists,
   totalGameTimeInSeconds,
-  isOvertime,
+  isOvertime
 }: Goal & {
   totalGameTimeInSeconds: number;
   isOvertime: boolean;
@@ -172,7 +172,7 @@ function GoalIndicator({
 
   const indicatorPositionStyle = {
     left: leftPercentageStr,
-    zIndex: 2, // Ensure it's on top if needed
+    zIndex: 2 // Ensure it's on top if needed
   };
 
   const handleMouseEnter = () => setShowTooltip(true);
@@ -183,7 +183,7 @@ function GoalIndicator({
       ? teamsInfo[scoreTeamAbbreviation as keyof typeof teamsInfo]
       : {
           primaryColor: "black", // Fallback color if not found
-          secondaryColor: "white", // Fallback color if not found
+          secondaryColor: "white" // Fallback color if not found
         };
 
   const tooltipContent = (
@@ -195,7 +195,7 @@ function GoalIndicator({
         color: teamColors.secondaryColor,
         border: `1px solid ${teamColors.secondaryColor}`,
         borderRadius: "5px",
-        textAlign: "left",
+        textAlign: "left"
       }}
     >
       <strong>{scoreTeamAbbreviation} Goal:</strong> {scorer.firstName}{" "}
@@ -231,7 +231,7 @@ function GoalIndicator({
   const teamColorStyle = {
     "--backgroundColor": backgroundColor,
     "--borderColor": borderColor,
-    "--textColor": textColor,
+    "--textColor": textColor
   } as React.CSSProperties;
 
   return (
@@ -241,7 +241,7 @@ function GoalIndicator({
         top: 0,
         ...indicatorPositionStyle,
         transform: "translateY(-100%) translateX(-50%)",
-        zIndex: 3,
+        zIndex: 3
       }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -267,7 +267,7 @@ export const convertTimeToSeconds = (timeString: string) => {
 export function GoalIndicators({
   id,
   totalGameTimeInSeconds,
-  isOvertime,
+  isOvertime
 }: {
   id: number;
   totalGameTimeInSeconds: number;
