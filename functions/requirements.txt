@@ -3,3 +3,7 @@ numpy
 requests
 Flask==3.0.3
 beautifulsoup4
+python-dotenv
+tqdm
+supabase
+yfpy

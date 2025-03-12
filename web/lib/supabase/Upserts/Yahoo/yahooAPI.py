@@ -135,6 +135,7 @@ def build_rows_from_batch(players_batch):
     """
     rows = []
     for player in players_batch:
+        # print(player)
         pdata = player.__dict__
 
         # Name fields
@@ -156,9 +157,9 @@ def build_rows_from_batch(players_batch):
 
 
         # Percent ownership (subresource "percent_owned")
-        percent_owned = da._extracted_data.get("percent_owned")
-        if percent_owned and isinstance(percent_owned, dict):
-            percent_owned_value = float(percent_owned.get("value", 0) or 0)
+        percent_owned_obj = pdata.get("percent_owned")
+        if percent_owned_obj and isinstance(percent_owned_obj, dict):
+            percent_owned_value = float(percent_owned_obj.get("value", 0) or 0)
         else:
             percent_owned_value = 0.0
         percent_ownership = percent_owned_value
