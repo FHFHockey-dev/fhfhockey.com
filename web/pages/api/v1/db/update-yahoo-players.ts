@@ -1,98 +1,280 @@
 // /web/pages/api/v1/db/update-yahoo-players.ts
 
 import type { NextApiRequest, NextApiResponse } from "next";
-import { spawn } from "child_process";
-import path from "path";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import YahooFantasy from "yahoo-fantasy";
 
-// Define the absolute path to your Python script
-const PY_SCRIPT_PATH = path.join(
-  process.cwd(),
-  "lib",
-  "supabase",
-  "Upserts",
-  "Yahoo",
-  "yahooAPI.py"
-);
+interface YahooCredentials {
+  id: number;
+  consumer_key: string;
+  consumer_secret: string;
+  access_token: string;
+  refresh_token: string;
+}
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  // Allow only POST and GET requests
-  if (req.method !== "GET" && req.method !== "POST") {
-    return res.status(405).json({
-      success: false,
-      message: "Method Not Allowed"
-    });
+async function getYahooAPICredentials(
+  supabase: SupabaseClient
+): Promise<YahooCredentials> {
+  const { data, error } = await supabase
+    .from("yahoo_api_credentials")
+    .select("id, consumer_key, consumer_secret, access_token, refresh_token")
+    .single();
+
+  if (error || !data) {
+    throw new Error(
+      `Failed to fetch Yahoo API credentials: ${error?.message || "No data"}`
+    );
   }
 
-  // Start timer
-  const startTime = Date.now();
+  return data;
+}
 
-  // Spawn the Python process
-  const child = spawn("python3", [PY_SCRIPT_PATH]);
+async function getPlayerKeys(supabase: SupabaseClient): Promise<string[]> {
+  const allPlayerKeys: string[] = [];
+  const pageSize = 1000;
+  let start = 0;
+  let fetching = true;
 
-  let stdoutData = "";
-  let stderrData = "";
-  let responded = false; // Track whether a response has been sent
+  while (fetching) {
+    console.log(
+      `Fetching player keys from ${start} to ${start + pageSize - 1}`
+    );
 
-  // Collect standard output
-  child.stdout.on("data", (data) => {
-    stdoutData += data.toString();
-  });
+    const { data, error } = await supabase
+      .from("yahoo_player_keys")
+      .select("player_key")
+      .range(start, start + pageSize - 1);
 
-  // Collect error output
-  child.stderr.on("data", (data) => {
-    stderrData += data.toString();
-  });
+    if (error) {
+      throw new Error(`Error fetching player keys: ${error.message}`);
+    }
 
-  // If the script closes, send a response
-  child.on("close", (code) => {
-    const endTime = Date.now();
-    const elapsedMs = endTime - startTime;
-    const elapsedSec = (elapsedMs / 1000).toFixed(2);
-
-    if (!responded) {
-      responded = true;
-      if (code === 0) {
-        return res.status(200).json({
-          success: true,
-          message: "yahooAPI.py ran successfully!",
-          stdout: stdoutData,
-          elapsedTime: `${elapsedSec} seconds`
-        });
+    if (data && data.length > 0) {
+      allPlayerKeys.push(...data.map((row) => row.player_key));
+      if (data.length < pageSize) {
+        // Last page reached (less than 1000 results)
+        fetching = false;
       } else {
-        return res.status(500).json({
-          success: false,
-          message: "yahooAPI.py failed!",
-          stderr: stderrData,
-          exitCode: code,
-          elapsedTime: `${elapsedSec} seconds`
-        });
+        // Move to the next page
+        start += pageSize;
       }
+    } else {
+      // No data means end of data
+      fetching = false;
     }
-  });
+  }
 
-  // Add a timeout to ensure the request does not hang forever
-  const timeoutMs = 5 * 60 * 1000; // 5 minutes timeout (adjust as needed)
-  setTimeout(() => {
-    if (!responded) {
-      responded = true;
-      child.kill(); // Kill the process if it takes too long
-      return res.status(500).json({
-        success: false,
-        message: "Process timeout: yahooAPI.py took too long to respond.",
-        elapsedTime: `${(timeoutMs / 1000).toFixed(2)} seconds`
+  console.log(`✅ Total player keys fetched: ${allPlayerKeys.length}`);
+  return allPlayerKeys;
+}
+
+function transformPlayerData(player: any) {
+  return {
+    player_key: player.player_key,
+    player_id: player.player_id,
+    player_name: player.name?.full || null,
+    draft_analysis: player.draft_analysis || {},
+    average_draft_pick: parseFloat(player.draft_analysis?.average_pick || "0"),
+    average_draft_round: parseFloat(
+      player.draft_analysis?.average_round || "0"
+    ),
+    average_draft_cost: parseFloat(player.draft_analysis?.average_cost || "0"),
+    percent_drafted: parseFloat(player.draft_analysis?.percent_drafted || "0"),
+    editorial_player_key: player.editorial_player_key || null,
+    editorial_team_abbreviation: player.editorial_team_abbr || null,
+    editorial_team_full_name: player.editorial_team_full_name || null,
+    eligible_positions: player.eligible_positions || [],
+    display_position: player.display_position || null,
+    headshot_url: player.headshot?.url || null,
+    injury_note: player.injury_note || null,
+    full_name: player.name?.full || null,
+    percent_ownership: parseFloat(player.percent_owned?.value || "0"),
+    percent_owned_value: parseFloat(player.percent_owned?.value || "0"),
+    position_type: player.position_type || null,
+    status: player.status || null,
+    status_full: player.status_full || null,
+    last_updated: new Date().toISOString(),
+    uniform_number: player.uniform_number
+      ? parseInt(player.uniform_number)
+      : null
+  };
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (!["GET", "POST"].includes(req.method || "")) {
+    return res
+      .status(405)
+      .json({ success: false, message: "Method Not Allowed" });
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  console.log("🟢 Starting update-yahoo-players handler.");
+
+  try {
+    const creds = await getYahooAPICredentials(supabase);
+
+    const yf = new YahooFantasy(
+      creds.consumer_key,
+      creds.consumer_secret,
+      async ({
+        access_token,
+        refresh_token
+      }: {
+        access_token: string;
+        refresh_token: string;
+      }) => {
+        console.log("🔄 Refreshing tokens...");
+        const { error } = await supabase
+          .from("yahoo_api_credentials")
+          .update({
+            access_token,
+            refresh_token,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", creds.id);
+
+        if (error) {
+          console.error("❌ Failed to persist refreshed tokens:", error);
+          throw error;
+        } else {
+          console.log("✅ Tokens refreshed and stored.");
+        }
+      }
+    );
+
+    yf.setUserToken(creds.access_token);
+    yf.setRefreshToken(creds.refresh_token);
+
+    const playerKeys = await getPlayerKeys(supabase);
+    console.log(`🗂️ Fetched ${playerKeys.length} player keys.`);
+
+    if (!playerKeys.length) {
+      return res
+        .status(200)
+        .json({ success: true, message: "No player keys found." });
+    }
+
+    const subresources = ["draft_analysis", "percent_owned"];
+    const allRows: ReturnType<typeof transformPlayerData>[] = [];
+
+    const BATCH_SIZE = 25;
+
+    for (let i = 0; i < playerKeys.length; i += BATCH_SIZE) {
+      const batchKeys = playerKeys.slice(i, i + BATCH_SIZE);
+      console.log(
+        `🔍 Fetching players ${i + 1}-${Math.min(
+          i + BATCH_SIZE,
+          playerKeys.length
+        )}/${playerKeys.length}`
+      );
+
+      try {
+        let players;
+
+        try {
+          players = await yf.players.fetch(batchKeys, subresources);
+        } catch (fetchErr: any) {
+          const tokenExpired =
+            fetchErr.description?.includes("Invalid cookie") ||
+            fetchErr.message.includes("Request denied") ||
+            fetchErr.message.includes("Unexpected token");
+
+          if (tokenExpired) {
+            console.warn("⚠️ Token expired. Refreshing explicitly.");
+
+            await new Promise<void>((resolve, reject) => {
+              yf.refreshToken((err: any) => {
+                if (err) {
+                  console.error("❌ Failed to refresh token explicitly:", err);
+                  reject(err);
+                } else {
+                  console.log("🔄 Token refreshed explicitly.");
+                  resolve();
+                }
+              });
+            });
+
+            players = await yf.players.fetch(batchKeys, subresources);
+          } else {
+            throw fetchErr;
+          }
+        }
+
+        if (players && players.length) {
+          players.forEach((playerData: any) => {
+            allRows.push(transformPlayerData(playerData));
+            console.log(
+              `✅ Player data queued: ${
+                playerData.name?.full || playerData.player_key
+              }`
+            );
+          });
+        } else {
+          console.warn(
+            `⚠️ No data returned for batch starting with: ${batchKeys[0]}`
+          );
+        }
+      } catch (err: any) {
+        console.error(
+          `🚨 Failed fetching batch starting with ${batchKeys[0]}:`,
+          err.message || err
+        );
+        continue; // continue with next batch
+      }
+
+      await new Promise((r) => setTimeout(r, 500)); // Slightly increased delay for batch requests
+    }
+
+    const UPSERT_BATCH_SIZE = 500; // You can try 250 or 500 for balance
+
+    if (allRows.length) {
+      console.log(
+        `📡 Upserting ${allRows.length} players to Supabase in batches.`
+      );
+
+      for (let i = 0; i < allRows.length; i += UPSERT_BATCH_SIZE) {
+        const batch = allRows.slice(i, i + UPSERT_BATCH_SIZE);
+        console.log(
+          `↪️ Upserting batch ${i + 1}-${Math.min(
+            i + UPSERT_BATCH_SIZE,
+            allRows.length
+          )}`
+        );
+
+        const { error } = await supabase
+          .from("yahoo_players")
+          .upsert(batch, { onConflict: "player_key" });
+
+        if (error) {
+          console.error(
+            `❌ Batch upsert failed for batch starting at record ${i + 1}:`,
+            error
+          );
+          throw error;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 500)); // Short delay to ensure API stability
+      }
+
+      console.log(`✅ Successfully upserted all ${allRows.length} players.`);
+      return res.status(200).json({
+        success: true,
+        message: `Upserted ${allRows.length} players.`
       });
     }
-  }, timeoutMs);
 
-  // Catch unexpected errors
-  child.on("error", (error) => {
-    if (!responded) {
-      responded = true;
-      return res.status(500).json({
-        success: false,
-        message: "Failed to start yahooAPI.py process.",
-        error: error.message
-      });
-    }
-  });
+    res
+      .status(200)
+      .json({ success: true, message: "No player data retrieved." });
+  } catch (err: any) {
+    console.error("🚨 API error encountered:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
 }
