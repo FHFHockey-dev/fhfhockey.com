@@ -1,4 +1,4 @@
-// components/GameGrid/GameGridInternal.tsx
+// components/GameGrid/GameGrid.tsx
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
@@ -522,14 +522,14 @@ function GameGridInternal({
       </div>
 
       {orientation === "horizontal" ? (
-        // Horizontal layout: FourWeekGrid stays next to the main grid
+        // Horizontal layout now stacks FourWeekGrid underneath the schedule grid
         <div className={styles.mainGridContainer}>
           <div className={styles.gridWrapper}>
             <table className={styles.scheduleGrid}>
               <Header
                 start={dates[0]}
                 end={dates[1]}
-                extended={mode === "10-Day-Forecast" ? true : false}
+                extended={mode === "10-Day-Forecast"}
                 setSortKeys={setSortKeys}
                 excludedDays={excludedDays}
                 setExcludedDays={setExcludedDays}
@@ -538,27 +538,23 @@ function GameGridInternal({
                 <TotalGamesPerDayRow
                   games={currentNumGamesPerDay}
                   excludedDays={excludedDays}
-                  extended={mode === "10-Day-Forecast" ? true : false}
+                  extended={mode === "10-Day-Forecast"}
                 />
                 {sortedTeams.map(({ teamId, ...rest }) => {
-                  // Decide if this team is in top 10 or bottom 10 by weekScore
                   let highlightClass = "";
                   if (top10TeamIds.has(teamId)) {
-                    // we can define a new CSS class: .teamRowGreen
                     highlightClass = styles.teamRowGreen;
                   } else if (bottom10TeamIds.has(teamId)) {
-                    // another new CSS class: .teamRowRed
                     highlightClass = styles.teamRowRed;
                   }
-
                   return (
                     <TeamRow
                       key={teamId}
                       teamId={teamId}
-                      extended={mode === "10-Day-Forecast" ? true : false}
+                      extended={mode === "10-Day-Forecast"}
                       excludedDays={excludedDays}
-                      rowHighlightClass={highlightClass} // Existing prop
-                      games={currentNumGamesPerDay} //
+                      rowHighlightClass={highlightClass}
+                      games={currentNumGamesPerDay}
                       {...rest}
                     />
                   );
@@ -566,9 +562,12 @@ function GameGridInternal({
               </tbody>
             </table>
           </div>
-          <FourWeekGrid teamDataArray={teamDataWithAverages} />
+          <div className={styles.fourWeekGridContainerAll}>
+            <FourWeekGrid teamDataArray={teamDataWithAverages} />
+          </div>
         </div>
       ) : (
+        // Vertical layout remains unchanged
         <div className={styles.verticalContainer}>
           <TransposedGrid
             sortedTeams={sortedTeams}

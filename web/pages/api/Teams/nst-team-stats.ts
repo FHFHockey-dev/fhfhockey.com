@@ -7,7 +7,13 @@ import { exec } from "child_process";
 import path from "path";
 import { promisify } from "util";
 import { teamsInfo, teamNameToAbbreviationMap } from "lib/teamsInfo"; // Import the mapping
-import { addDays, format, parseISO, isAfter } from "date-fns";
+import {
+  addDays,
+  format,
+  parseISO,
+  isAfter,
+  differenceInCalendarDays
+} from "date-fns";
 
 // Promisify exec for easier async/await usage
 const execAsync = promisify(exec);
@@ -151,6 +157,8 @@ export const convertToSeconds = (toi: string): number | null => {
 };
 
 export default adminOnly(async (req: any, res: NextApiResponse) => {
+  const scriptStartTime = Date.now();
+
   const { supabase } = req;
 
   try {
@@ -232,8 +240,12 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
       const today = new Date();
       if (isAfter(fetchStartDate, today)) {
         console.log("All data is up to date. No new data to fetch.");
+        // End timer if nothing to do
+        const scriptEndTime = Date.now();
+        const totalTimeSeconds = (scriptEndTime - scriptStartTime) / 1000;
+        console.log(`Script execution time: ${totalTimeSeconds} seconds`);
         return res.status(200).json({
-          message: "All date-based team statistics are up to date.",
+          message: `All date-based team statistics are up to date. Execution time: ${totalTimeSeconds} seconds.`,
           success: true
         });
       }
@@ -248,20 +260,27 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
       // **Run the full script: iterate through each date starting from fetchStartDate**
       console.log("Running full script: Iterating through dates.");
 
+      // Calculate how many days to process and set the delay flag
       const startDate = fetchStartDate;
       const endDate = new Date(); // Today's date
+      const daysToProcess = differenceInCalendarDays(endDate, startDate) + 1;
+      const useDelays = daysToProcess > 2;
+      console.log(
+        `Days to process: ${daysToProcess}. Using delays: ${useDelays}`
+      );
 
+      // **Run the full script: iterate through each date starting from fetchStartDate**
+      console.log("Running full script: Iterating through dates.");
       let currentDate = startDate;
-
       while (!isAfter(currentDate, endDate)) {
         const formattedDate = format(currentDate, "yyyy-MM-dd");
         console.log(`Processing date: ${formattedDate}`);
 
-        // Iterate through the four date-based responseKeys sequentially
+        // Iterate through the date-based responseKeys
         for (const key in dateBasedResponseKeys) {
           const { situation, rate } = dateBasedResponseKeys[key];
 
-          // Construct arguments for the Python script
+          // Construct the arguments for the Python script (unchanged)
           const scriptArgs = [
             "--sit",
             situation,
@@ -286,8 +305,6 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
             "--gpf",
             "410"
           ];
-
-          // Path to the Python script remains unchanged
           const scriptPath = path.join(
             process.cwd(),
             "scripts",
@@ -310,7 +327,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
               throw new Error(`Python script error: ${stderr}`);
             }
 
-            // Parse and process the output...
+            // Process output (unchanged)
             const scriptOutput: PythonScriptOutput = JSON.parse(stdout);
             if (scriptOutput.debug && scriptOutput.debug.Error) {
               console.error(
@@ -319,7 +336,6 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
               );
               throw new Error(`Script Error: ${scriptOutput.debug.Error}`);
             }
-
             const teamStats = scriptOutput.data;
 
             // Determine the target Supabase table based on the key
@@ -459,8 +475,13 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
               .filter(
                 (entry): entry is NonNullable<typeof entry> => entry !== null
               ); // Remove null entries
-            await delay(21000); // another delay
-            console.log("21s delay");
+
+            // Conditionally delay before upserting if needed
+            if (useDelays) {
+              await delay(21000);
+              console.log("21s delay");
+            }
+
             // Upsert data into Supabase
             const { error } = await supabase
               .from(targetTable)
@@ -479,9 +500,12 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
             console.log(
               `Successfully upserted ${upsertData.length} records into ${targetTable} for date ${formattedDate}`
             );
-            // Wait 30 seconds after this URL fetch before proceeding
-            console.log("Waiting 30 seconds before next fetch...");
-            await delay(30000);
+
+            // Conditionally delay after upsert if needed
+            if (useDelays) {
+              console.log("Waiting 30 seconds before next fetch...");
+              await delay(30000);
+            }
           } catch (error: any) {
             console.error(
               `Error executing Python script for key ${key} on date ${formattedDate}:`,
@@ -1235,17 +1259,22 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           console.log(
             `Successfully upserted ${upsertData.length} records into ${targetTable}.`
           );
-          // Delay to Respect Rate Limits
-          await delay(20000); // 20 seconds
+          if (useDelays) {
+            await delay(20000); // 20 seconds delay if needed
+          }
         } catch (error: any) {
           console.error(`Error executing Python script`, error.message);
           throw new Error(`Python script error: ${error.message}`);
         }
       }
+      // At the end of processing, compute the elapsed time
+      const scriptEndTime = Date.now();
+      const totalTimeSeconds = (scriptEndTime - scriptStartTime) / 1000;
+      console.log(`Script execution time: ${totalTimeSeconds} seconds`);
 
-      // Respond after processing the specific date
+      // Respond with execution time included
       return res.status(200).json({
-        message: `Successfully upserted team statistics.`,
+        message: `Successfully upserted team statistics in ${totalTimeSeconds} seconds.`,
         success: true
       });
     }
