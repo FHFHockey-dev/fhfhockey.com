@@ -100,8 +100,8 @@ $mobile-fixed-width: 35px;
 }
 
 .gameGridHeader {
-  flex: 0 0 75%;
-  max-width: 75%;
+  flex: 0 0 95%;
+  max-width: 95%;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -131,7 +131,7 @@ $mobile-fixed-width: 35px;
   position: relative;
   height: 35px;
   width: 115px;
-  background: #2086a8;
+  background: #14a2d2;
   color: #ffffff;
   border: 1px solid rgb(204, 204, 204);
   padding-left: 20px;
@@ -141,7 +141,7 @@ $mobile-fixed-width: 35px;
 
 .dateButtonPrev:hover {
   height: 35px;
-  background: #065975;
+  background: #14a2d2;
   border: 3px solid white;
 }
 
@@ -149,7 +149,7 @@ $mobile-fixed-width: 35px;
   position: relative;
   height: 35px;
   width: 115px;
-  background: #2086a8;
+  background: #14a2d2;
   color: #ffffff;
   border: 1px solid white;
   padding-left: 20px;
@@ -159,7 +159,7 @@ $mobile-fixed-width: 35px;
 
 .dateButtonNext:hover {
   height: 35px;
-  background: #065975;
+  background: #14a2d2;
   border: 3px solid white;
 }
 
@@ -168,12 +168,18 @@ $mobile-fixed-width: 35px;
   position: relative;
   height: 35px;
   width: 115px;
-  background: #2086a8;
+  background: #14a2d2;
   color: #ffffff;
   border: 1px solid white;
   padding-left: 20px;
   padding-right: 20px;
   border-radius: 8px;
+}
+
+.dateButtonMode:hover {
+  height: 35px;
+  background: #14a2d2;
+  border: 3px solid white;
 }
 
 .orientationToggleButton {
@@ -181,7 +187,7 @@ $mobile-fixed-width: 35px;
   position: relative;
   height: 35px;
   width: 115px;
-  background: #2086a8;
+  background: #14a2d2;
   color: #ffffff;
   border: 1px solid white;
   padding-left: 20px;
@@ -189,17 +195,24 @@ $mobile-fixed-width: 35px;
   border-radius: 8px;
 }
 
+.orientationToggleButton:hover {
+  height: 35px;
+  background: #14a2d2;
+  border: 3px solid white;
+}
+
 .mainGridContainer {
   width: 85%;
   margin: 20px auto;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column; // Stack items vertically
+  gap: 20px; // Optional: adds spacing between the grid and FourWeekGrid
 }
 
 .gridWrapper {
   display: flex;
-  flex: 0 0 75%;
-  max-width: 75%;
+  flex: 0 0 95%;
+  max-width: 95%;
 }
 
 .scheduleGrid {
@@ -249,7 +262,7 @@ $mobile-fixed-width: 35px;
 .scheduleGrid th:nth-child(n + 2),
 .scheduleGrid td:nth-child(n + 2) {
   padding: 3px 5px;
-  border: 0.5px solid #505050;
+  border: 0.5px solid #909090;
   min-width: 60px;
   max-width: 100px;
   max-height: 40px;
@@ -265,6 +278,11 @@ $mobile-fixed-width: 35px;
   max-width: 100px;
   max-height: 40px;
   min-height: 40px;
+}
+
+.scheduleGrid tr td:nth-child(9),
+.scheduleGrid th:nth-child(9) {
+  border-left: 3px solid #fff;
 }
 
 .scheduleGrid tr th:nth-child(9),
