@@ -23,20 +23,24 @@ class MyYahooQuery(YahooFantasySportsQuery):
     """
     def get_multiple_players(self, player_keys, subresources=None):
         """
-        GET multiple players at once:
-        players;player_keys=453.p.XXXX,453.p.YYYY;out=draft_analysis,percent_owned, etc.
-        Returns a list of Player objects or raw JSON parsed by YFPY.
+        GET player data from Yahoo.
+        
+        For debugging, we construct the URL using only the first player key.
+        (The original approach joined all keys with commas.)
         """
-        player_key_str = ",".join(player_keys)
-        resource_path = f"players;player_keys={player_key_str}"
+        # For debugging, use a single key (remove this line to revert to multi-key requests)
+        single_key = player_keys[0]
+        resource_path = f"players;player_keys={single_key}"
         if subresources:
             resource_path += f";out={','.join(subresources)}"
         url = f"https://fantasysports.yahooapis.com/fantasy/v2/{resource_path}"
-
-        # YFPY parsing using the query method
+        print("Constructed URL (single key):", url)  # Debug print
+        
+        # Execute the query and print the raw returned data
         data = self.query(url, ["players"])
-
-        # Wrap single item in a list if needed
+        print("Raw data returned for key", single_key, ":", data)  # Debug print
+        
+        # Wrap the data in a list if it isn't already
         if isinstance(data, list):
             return data
         else:
@@ -82,7 +86,7 @@ yahoo_query = MyYahooQuery(
     env_file_location=ENV_FILE_LOCATION
 )
 
-# Save token data
+# Save token data (if applicable)
 yahoo_query.save_access_token_data_to_env_file(
     env_file_location=ENV_FILE_LOCATION,
     env_file_name='.env.local'
@@ -135,14 +139,13 @@ def build_rows_from_batch(players_batch):
     """
     rows = []
     for player in players_batch:
-        # print(player)
         pdata = player.__dict__
 
-        # Name fields
+        # Extract name fields
         name_obj = pdata.get("name")
         full_name = getattr(name_obj, "full", None) if name_obj else None
 
-        # Draft analysis: if present, it should be a DraftAnalysis object.
+        # Extract draft analysis data
         da = pdata.get("draft_analysis")
         if da and isinstance(da, DraftAnalysis):
             average_draft_pick = float(da.average_pick)
@@ -155,8 +158,7 @@ def build_rows_from_batch(players_batch):
             average_draft_cost = 0.0
             percent_drafted = 0.0
 
-
-        # Percent ownership (subresource "percent_owned")
+        # Extract percent ownership
         percent_owned_obj = pdata.get("percent_owned")
         if percent_owned_obj and isinstance(percent_owned_obj, dict):
             percent_owned_value = float(percent_owned_obj.get("value", 0) or 0)
@@ -164,27 +166,24 @@ def build_rows_from_batch(players_batch):
             percent_owned_value = 0.0
         percent_ownership = percent_owned_value
 
-        # Eligible positions: ensure it's a list
+        # Process eligible positions
         eligible_positions = pdata.get("eligible_positions")
         if eligible_positions is None:
             eligible_positions = []
         if isinstance(eligible_positions, dict):
             eligible_positions = [eligible_positions.get("position")]
 
-        # Headshot URL
+        # Extract headshot URL
         headshot_obj = pdata.get("headshot")
         headshot_url = headshot_obj.url if headshot_obj and hasattr(headshot_obj, "url") else None
 
-        # Uniform number: try converting to int
+        # Convert uniform number
         uniform_num = pdata.get("uniform_number")
         try:
             uniform_number = int(uniform_num) if uniform_num is not None else None
         except (ValueError, TypeError):
             uniform_number = None
 
-        primary_position = pdata.get("primary_position")
-
-        # Build the row dictionary
         row = {
             "player_key": pdata.get("player_key"),
             "player_id": str(pdata.get("player_id", "")),
@@ -228,23 +227,17 @@ def main():
     # 2) Define the subresources to request from Yahoo
     subresources = ["draft_analysis", "percent_owned"]
 
-    # 3) Fetch players in chunks of a configurable size (maximum allowed is 25)
-    chunk_size = 25  # Yahoo API limit per call
+    # 3) Fetch players (for debugging, we use a single key per request)
     all_rows = []   # Accumulate all rows for upsert later
+    logging.info("Fetching players (one key at a time) from Yahoo...")
 
-    logging.info(f"Fetching players from Yahoo in chunks of {chunk_size}...")
-    with tqdm(total=len(all_player_keys), desc="Fetching Player Data") as pbar:
-        for i in range(0, len(all_player_keys), chunk_size):
-            chunk_keys = all_player_keys[i:i + chunk_size]
-            # Fetch multiple players in one API call
-            players_batch = yahoo_query.get_multiple_players(chunk_keys, subresources=subresources)
-            # Build rows from this batch
-            batch_rows = build_rows_from_batch(players_batch)
-            all_rows.extend(batch_rows)
-
-            pbar.update(len(chunk_keys))
-            # Sleep to respect potential rate limits
-            time.sleep(0.5)
+    for key in all_player_keys:
+        logging.info(f"Processing player key: {key}")
+        players_batch = yahoo_query.get_multiple_players([key], subresources=subresources)
+        logging.info(f"Data returned for {key}: {players_batch}")
+        batch_rows = build_rows_from_batch(players_batch)
+        all_rows.extend(batch_rows)
+        time.sleep(0.5)  # Respect rate limits
 
     # 4) Perform a single upsert with all records
     if all_rows:
