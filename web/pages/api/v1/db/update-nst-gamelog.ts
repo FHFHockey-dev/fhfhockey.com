@@ -24,6 +24,8 @@ if (!supabaseUrl || !supabaseKey) {
   process.exit(1);
 }
 
+//
+
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // When more than 2 unique dates are being processed, we want a delay (30 seconds) between each URL.
