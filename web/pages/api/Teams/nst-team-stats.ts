@@ -9,8 +9,7 @@ import { toZonedTime, format as tzFormat } from "date-fns-tz";
 
 const timeZone = "America/New_York";
 
-// ---
-// For date‑based tables we use these keys.
+// For date‑based tables.
 const dateBasedResponseKeys: {
   [key: string]: { situation: string; rate: string };
 } = {
@@ -20,7 +19,7 @@ const dateBasedResponseKeys: {
   countsPK: { situation: "pk", rate: "n" }
 };
 
-// For season‑based tables, we use these keys (omit date parameters).
+// For season‑based tables (omit date parameters).
 const seasonBasedResponseKeys: {
   [key: string]: { situation: string; rate: string };
 } = {
@@ -76,7 +75,7 @@ interface TeamStat {
   season?: string;
 }
 
-// Helper to normalize team names.
+// Helper: normalize team names.
 const normalizeTeamName = (name: string): string =>
   name
     .normalize("NFD")
@@ -115,7 +114,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
   const { supabase } = req;
 
   try {
-    // Extract 'date' query parameter.
+    // Extract the 'date' query parameter.
     const { date } = req.query;
     if (!date) {
       return res.status(400).json({
@@ -128,7 +127,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
     const currentSeason = await getCurrentSeason();
     const { seasonId, lastSeasonId, regularSeasonStartDate } = currentSeason;
 
-    // Convert "today" to EST.
+    // Get "today" in EST.
     const todayEST = toZonedTime(new Date(), timeZone);
 
     // --- Date-based processing ---
@@ -160,6 +159,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
 
       const latestDates = await Promise.all(dateBasedTables.map(getLatestDate));
       const validDates = latestDates.filter((d) => d !== null) as string[];
+
       let fetchStartDate: Date;
       if (validDates.length > 0) {
         const maxDateStr = validDates.reduce((a, b) => (a > b ? a : b));
@@ -169,8 +169,9 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         fetchStartDate = parseISO(regularSeasonStartDate);
       }
 
-      // Compare against today in EST.
-      if (isAfter(fetchStartDate, todayEST)) {
+      // Convert fetchStartDate to EST.
+      const fetchStartDateEST = toZonedTime(fetchStartDate, timeZone);
+      if (isAfter(fetchStartDateEST, todayEST)) {
         console.log("All data is up to date. No new data to fetch.");
         const scriptEndTime = Date.now();
         const totalTimeSeconds = (scriptEndTime - scriptStartTime) / 1000;
@@ -180,13 +181,13 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         });
       }
 
-      // Format dates in EST.
-      const formattedFetchStart = tzFormat(fetchStartDate, "yyyy-MM-dd", {
+      const formattedFetchStart = tzFormat(fetchStartDateEST, "yyyy-MM-dd", {
         timeZone
       });
       console.log(
         `Fetching date-based team statistics starting from ${formattedFetchStart}.`
       );
+
       const startDate = fetchStartDate;
       const endDate = new Date();
       const daysToProcess = differenceInCalendarDays(endDate, startDate) + 1;
@@ -551,6 +552,12 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
             .filter(
               (entry): entry is NonNullable<typeof entry> => entry !== null
             );
+          if (upsertData.length === 0) {
+            console.log(
+              `No season-based upsert data for key ${key}. Skipping upsert.`
+            );
+            continue;
+          }
           const { error } = await supabase
             .from(targetTable)
             .upsert(upsertData, {
