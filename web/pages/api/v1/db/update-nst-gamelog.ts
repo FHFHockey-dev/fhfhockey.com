@@ -26,7 +26,7 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
-// When more than 2 unique dates are being processed, we want a delay (30 seconds) between date groups.
+// When more than 2 unique dates are being processed, we want a delay (30 seconds) between each URL.
 const REQUEST_INTERVAL_MS = 30000; // 30 seconds
 
 const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
@@ -194,36 +194,7 @@ function mapHeaderToColumn(header: string): string | null {
     "Off. Zone Faceoffs": "off_zone_faceoffs",
     "Neu. Zone Faceoffs": "neu_zone_faceoffs",
     "Def. Zone Faceoffs": "def_zone_faceoffs",
-    "Off. Zone Faceoff %": "off_zone_faceoff_pct",
-    "CF/60": "cf_per_60",
-    "CA/60": "ca_per_60",
-    "FF/60": "ff_per_60",
-    "FA/60": "fa_per_60",
-    "SF/60": "sf_per_60",
-    "SA/60": "sa_per_60",
-    "GF/60": "gf_per_60",
-    "GA/60": "ga_per_60",
-    "xGF/60": "xgf_per_60",
-    "xGA/60": "xga_per_60",
-    "SCF/60": "scf_per_60",
-    "SCA/60": "sca_per_60",
-    "HDCA/60": "hdca_per_60",
-    "HDGF/60": "hdgf_per_60",
-    "HDGA/60": "hdga_per_60",
-    "MDCF/60": "mdcf_per_60",
-    "MDCA/60": "mdca_per_60",
-    "MDGF/60": "mdgf_per_60",
-    "MDGA/60": "mdga_per_60",
-    "LDCF/60": "ldcf_per_60",
-    "LDCA/60": "ldca_per_60",
-    "LDGF/60": "ldgf_per_60",
-    "LDGA/60": "ldga_per_60",
-    "On-Ice SH%/60": "on_ice_sh_pct_per_60",
-    "On-Ice SV%/60": "on_ice_sv_pct_per_60",
-    "PDO/60": "pdo_per_60",
-    "Off. Zone Starts/60": "off_zone_starts_per_60",
-    "Neu. Zone Starts/60": "neu_zone_starts_per_60",
-    "Def. Zone Starts/60": "def_zone_starts_per_60"
+    "Off. Zone Faceoff %": "off_zone_faceoff_pct"
   };
   if (header === "Player") return null;
   return headerMap[header] || null;
@@ -641,11 +612,12 @@ function getSitParam(strength: string): string {
 }
 
 /**
- * Processes URLs sequentially.
- * URLs are grouped by date. If there are more than 2 unique dates, a delay is applied between date groups.
- * Otherwise, all URLs for a given date are processed immediately.
+ * Processes URLs grouped by date.
+ *
+ * - If there are 1 or 2 unique dates, then for each date group we run all URLs concurrently (via Promise.all) with no delay between dates.
+ * - If there are 3 or more dates, then we process each URL sequentially (with a delay between each URL and between date groups).
  */
-async function processUrlsSequentially(
+async function processUrls(
   urlsQueue: {
     datasetType: string;
     url: string;
@@ -669,70 +641,126 @@ async function processUrlsSequentially(
     });
   }
   const uniqueDates = Object.keys(urlsByDate);
-  // Apply delay between date groups only if there are more than 2 unique dates.
-  const shouldDelay = uniqueDates.length > 2;
-  console.log(
-    `Processing ${urlsQueue.length} URLs across ${uniqueDates.length} date(s).`
-  );
-  if (!shouldDelay) {
-    console.log("Skipping delay since there is one or two days worth of data.");
-  }
-  let totalProcessed = 0;
-  for (const date of uniqueDates) {
-    console.log(`\n--- Processing URLs for date: ${date} ---`);
-    const urlsForDate = urlsByDate[date];
-    for (let i = 0; i < urlsForDate.length; i++) {
-      const { datasetType, url, seasonId } = urlsForDate[i];
-      console.log(
-        `Processing URL ${totalProcessed + 1}: ${datasetType} for date ${date}`
-      );
-      // Apply delay between URLs only if shouldDelay is true.
-      if (i > 0 && shouldDelay) {
+
+  // If there are 1 or 2 dates, process each date concurrently using Promise.all.
+  if (uniqueDates.length <= 2) {
+    console.log(`Processing concurrently for ${uniqueDates.length} date(s).`);
+    await Promise.all(
+      uniqueDates.map(async (date) => {
+        console.log(`\n--- Processing URLs for date: ${date} ---`);
+        await Promise.all(
+          urlsByDate[date].map(async (item, index) => {
+            console.log(`Processing [${date}] URL: ${item.datasetType}`);
+            const dataExists = await checkDataExists(item.datasetType, date);
+            let dataRows: any[] = [];
+            let rowsUpserted = 0;
+            if (!dataExists) {
+              try {
+                dataRows = await fetchAndParseData(
+                  item.url,
+                  item.datasetType,
+                  date,
+                  item.seasonId
+                );
+                if (dataRows.length > 0) {
+                  await upsertData(item.datasetType, dataRows);
+                  rowsUpserted = dataRows.length;
+                }
+              } catch (error) {
+                console.error(`Error processing URL ${item.url}:`, error);
+              }
+            } else {
+              console.log(
+                `Data already exists for ${item.datasetType} on date ${date}. Skipping.`
+              );
+            }
+            printInfoBlock({
+              date,
+              url: item.url,
+              datasetType: item.datasetType,
+              tableName: getTableName(item.datasetType),
+              dateUrlCount: {
+                current: index + 1,
+                total: urlsByDate[date].length
+              },
+              totalUrlCount: { current: 0, total: urlsQueue.length },
+              rowsProcessed: dataExists ? 0 : dataRows.length,
+              rowsPrepared: dataExists ? 0 : dataRows.length,
+              rowsUpserted: dataExists ? 0 : rowsUpserted
+            });
+          })
+        );
+      })
+    );
+  } else {
+    // Otherwise, process each URL sequentially with delay.
+    console.log(
+      `Processing sequentially with delay for ${uniqueDates.length} unique dates.`
+    );
+    let totalProcessed = 0;
+    for (const date of uniqueDates) {
+      console.log(`\n--- Processing URLs for date: ${date} ---`);
+      const urlsForDate = urlsByDate[date];
+      for (let i = 0; i < urlsForDate.length; i++) {
+        const { datasetType, url, seasonId } = urlsForDate[i];
         console.log(
-          `Waiting ${REQUEST_INTERVAL_MS / 1000} seconds before next request...`
+          `Processing URL ${
+            totalProcessed + 1
+          }: ${datasetType} for date ${date}`
+        );
+        if (i > 0) {
+          console.log(
+            `Waiting ${
+              REQUEST_INTERVAL_MS / 1000
+            } seconds before next request...`
+          );
+          await delay(REQUEST_INTERVAL_MS);
+        }
+        const dataExists = await checkDataExists(datasetType, date);
+        let dataRows: any[] = [];
+        let rowsUpserted = 0;
+        if (!dataExists) {
+          try {
+            dataRows = await fetchAndParseData(
+              url,
+              datasetType,
+              date,
+              seasonId
+            );
+            if (dataRows.length > 0) {
+              await upsertData(datasetType, dataRows);
+              rowsUpserted = dataRows.length;
+            }
+          } catch (error) {
+            console.error(`Error processing URL ${url}:`, error);
+          }
+        } else {
+          console.log(
+            `Data already exists for ${datasetType} on date ${date}. Skipping.`
+          );
+        }
+        totalProcessed++;
+        printInfoBlock({
+          date,
+          url,
+          datasetType,
+          tableName: getTableName(datasetType),
+          dateUrlCount: { current: i + 1, total: urlsForDate.length },
+          totalUrlCount: { current: totalProcessed, total: urlsQueue.length },
+          rowsProcessed: dataExists ? 0 : dataRows.length,
+          rowsPrepared: dataExists ? 0 : dataRows.length,
+          rowsUpserted: dataExists ? 0 : rowsUpserted
+        });
+        printTotalProgress(totalProcessed, urlsQueue.length);
+      }
+      if (date !== uniqueDates[uniqueDates.length - 1]) {
+        console.log(
+          `Waiting ${
+            REQUEST_INTERVAL_MS / 1000
+          } seconds before processing next date group...`
         );
         await delay(REQUEST_INTERVAL_MS);
       }
-      const dataExists = await checkDataExists(datasetType, date);
-      let dataRows: any[] = [];
-      let rowsUpserted = 0;
-      if (!dataExists) {
-        try {
-          dataRows = await fetchAndParseData(url, datasetType, date, seasonId);
-          if (dataRows.length > 0) {
-            await upsertData(datasetType, dataRows);
-            rowsUpserted = dataRows.length;
-          }
-        } catch (error) {
-          console.error(`Error processing URL ${url}:`, error);
-        }
-      } else {
-        console.log(
-          `Data already exists for ${datasetType} on date ${date}. Skipping.`
-        );
-      }
-      totalProcessed++;
-      printInfoBlock({
-        date,
-        url,
-        datasetType,
-        tableName: getTableName(datasetType),
-        dateUrlCount: { current: i + 1, total: urlsForDate.length },
-        totalUrlCount: { current: totalProcessed, total: urlsQueue.length },
-        rowsProcessed: dataExists ? 0 : dataRows.length,
-        rowsPrepared: dataExists ? 0 : dataRows.length,
-        rowsUpserted: dataExists ? 0 : rowsUpserted
-      });
-      printTotalProgress(totalProcessed, urlsQueue.length);
-    }
-    // Apply delay between date groups if needed and if not processing the last date.
-    if (shouldDelay) {
-      console.log(
-        `Waiting ${
-          REQUEST_INTERVAL_MS / 1000
-        } seconds before processing next date group...`
-      );
-      await delay(REQUEST_INTERVAL_MS);
     }
   }
 }
@@ -811,7 +839,7 @@ async function main() {
       }
     );
 
-    await processUrlsSequentially(uniqueUrlsQueue);
+    await processUrls(uniqueUrlsQueue);
 
     if (troublesomePlayers.length > 0) {
       const uniqueTroublesomePlayers = [...new Set(troublesomePlayers)];
