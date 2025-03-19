@@ -75,7 +75,7 @@ interface TeamStat {
   season?: string;
 }
 
-// Helper: normalize team names.
+// Helper to normalize team names.
 const normalizeTeamName = (name: string): string =>
   name
     .normalize("NFD")
@@ -127,8 +127,10 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
     const currentSeason = await getCurrentSeason();
     const { seasonId, lastSeasonId, regularSeasonStartDate } = currentSeason;
 
-    // Get "today" in EST.
-    const todayEST = toZonedTime(new Date(), timeZone);
+    // Use a hardcoded offset of -5 hours.
+    const now = new Date();
+    const adjustedNow = new Date(now.getTime() - 5 * 60 * 60 * 1000);
+    const todayAdjusted = toZonedTime(adjustedNow, timeZone);
 
     // --- Date-based processing ---
     if (date === "all") {
@@ -169,9 +171,9 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         fetchStartDate = parseISO(regularSeasonStartDate);
       }
 
-      // Convert fetchStartDate to EST.
-      const fetchStartDateEST = toZonedTime(fetchStartDate, timeZone);
-      if (isAfter(fetchStartDateEST, todayEST)) {
+      // Convert fetchStartDate to EST using our hardcoded offset.
+      const fetchStartDateAdjusted = toZonedTime(fetchStartDate, timeZone);
+      if (isAfter(fetchStartDateAdjusted, todayAdjusted)) {
         console.log("All data is up to date. No new data to fetch.");
         const scriptEndTime = Date.now();
         const totalTimeSeconds = (scriptEndTime - scriptStartTime) / 1000;
@@ -181,9 +183,11 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         });
       }
 
-      const formattedFetchStart = tzFormat(fetchStartDateEST, "yyyy-MM-dd", {
-        timeZone
-      });
+      const formattedFetchStart = tzFormat(
+        fetchStartDateAdjusted,
+        "yyyy-MM-dd",
+        { timeZone }
+      );
       console.log(
         `Fetching date-based team statistics starting from ${formattedFetchStart}.`
       );
