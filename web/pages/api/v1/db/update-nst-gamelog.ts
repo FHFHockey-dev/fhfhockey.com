@@ -41,9 +41,8 @@ const playerNameMapping: Record<string, { fullName: string }> = {
 
 const troublesomePlayers: string[] = [];
 
-/**
- * Normalize a name: lowercase, remove spaces/hyphens/apostrophes, and remove diacritics.
- */
+// --- Helper Functions ---
+
 function normalizeName(name: string): string {
   return name
     .toLowerCase()
@@ -52,17 +51,10 @@ function normalizeName(name: string): string {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-/**
- * Simple delay helper.
- */
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Returns an array of dates (formatted as "YYYY-MM-DD") between start and end, inclusive.
- * Dates are converted to EST.
- */
 function getDatesBetween(start: Date, end: Date): string[] {
   const dates: string[] = [];
   let current = toZonedTime(start, "America/New_York");
@@ -264,9 +256,6 @@ async function getLatestDateSupabase(): Promise<string | null> {
   return latestDate;
 }
 
-/**
- * Print an info block after each URL is processed.
- */
 function printInfoBlock(params: {
   date: string;
   url: string;
@@ -289,6 +278,7 @@ function printInfoBlock(params: {
     rowsPrepared,
     rowsUpserted
   } = params;
+
   console.log(`
 |==========================|
 Date: ${date}
@@ -309,9 +299,6 @@ Rows Upserted: ${rowsUpserted}
 `);
 }
 
-/**
- * Print a total progress bar.
- */
 function printTotalProgress(current: number, total: number) {
   const percentage = (current / total) * 100;
   const filled = Math.floor((percentage / 100) * 20);
@@ -320,9 +307,6 @@ function printTotalProgress(current: number, total: number) {
   console.log(`${bar}  (${current}/${total} URLs)`);
 }
 
-/**
- * Determines the table name from a dataset type.
- */
 function getTableName(datasetType: string): string {
   const mapping: Record<string, string> = {
     allStrengthsCounts: "nst_gamelog_as_counts",
@@ -342,6 +326,7 @@ function getTableName(datasetType: string): string {
     penaltyKillCountsOi: "nst_gamelog_pk_counts_oi",
     penaltyKillRatesOi: "nst_gamelog_pk_rates_oi"
   };
+
   const tableName = mapping[datasetType] || "unknown_table";
   if (tableName === "unknown_table") {
     console.warn(
@@ -742,47 +727,60 @@ async function processUrlsSequentially(
   }
 }
 
+// --- Main function ---
 async function main() {
   try {
     const seasonInfo = await fetchCurrentSeason();
     const seasonId = seasonInfo.id.toString();
     const timeZone = "America/New_York";
+
     // Convert season start to EST.
     const seasonStartDate = toZonedTime(
       new Date(seasonInfo.startDate),
       timeZone
     );
-    // Adjust "today" to EST using a fixed offset of 5 hours behind UTC.
+
+    // Adjust "today" to EST (using a fixed offset of 5 hours behind UTC).
     const now = new Date();
     const adjustedNow = new Date(now.getTime() - 5 * 60 * 60 * 1000);
     const todayAdjusted = toZonedTime(adjustedNow, timeZone);
+
     const seasonEnd = new Date(seasonInfo.endDate);
     const scrapingEndDate =
       todayAdjusted < seasonEnd ? todayAdjusted : seasonEnd;
+
+    // Convert the latest date from Supabase to EST before adding one day.
     const latestDate = await getLatestDateSupabase();
     let startDate: Date;
     if (latestDate) {
-      startDate = new Date(latestDate);
-      startDate.setDate(startDate.getDate() + 1);
+      // Convert the latest UTC date to EST.
+      const latestDateEST = toZonedTime(new Date(latestDate), timeZone);
+      startDate = addDays(latestDateEST, 1);
       console.log(
-        `Latest date in Supabase is ${latestDate}. Starting from ${
-          startDate.toISOString().split("T")[0]
-        }.`
+        `Latest date in Supabase is ${latestDate}. Starting from ${tzFormat(
+          startDate,
+          "yyyy-MM-dd",
+          { timeZone }
+        )}.`
       );
     } else {
       startDate = seasonStartDate;
       console.log(
-        `No existing data in Supabase. Starting from season start date ${
-          startDate.toISOString().split("T")[0]
-        }.`
+        `No existing data in Supabase. Starting from season start date ${tzFormat(
+          startDate,
+          "yyyy-MM-dd",
+          { timeZone }
+        )}.`
       );
     }
+
     // Get the list of dates to scrape (in EST).
     const datesToScrape = getDatesBetween(startDate, scrapingEndDate);
     if (datesToScrape.length === 0) {
       console.log("No new dates to scrape.");
       return;
     }
+
     const urlsQueue: {
       datasetType: string;
       url: string;
@@ -795,6 +793,7 @@ async function main() {
         urlsQueue.push({ datasetType, url, date, seasonId });
       }
     }
+
     // Deduplicate URLs.
     const uniqueUrls = new Set<string>();
     const uniqueUrlsQueue = urlsQueue.filter(
@@ -805,7 +804,9 @@ async function main() {
         return true;
       }
     );
+
     await processUrlsSequentially(uniqueUrlsQueue);
+
     if (troublesomePlayers.length > 0) {
       const uniqueTroublesomePlayers = [...new Set(troublesomePlayers)];
       console.log(
