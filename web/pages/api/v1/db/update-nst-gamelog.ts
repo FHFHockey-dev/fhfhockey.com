@@ -11,20 +11,21 @@ import { toZonedTime, format as tzFormat } from "date-fns-tz";
 
 dotenv.config({ path: "./../../../.env.local" });
 
-const supabaseUrl: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey: string | undefined = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 if (!supabaseUrl || !supabaseKey) {
-  console.error("Supabase URL or Public Key is missing.");
+  console.error("Supabase URL or Service Role Key is missing.");
   process.exit(1);
 }
+
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
-// We'll use a hardcoded delay (30 seconds) if more than 2 days of data are to be processed.
+// When more than 2 unique dates are being processed, we want a delay (30 seconds) between date groups.
 const REQUEST_INTERVAL_MS = 30000; // 30 seconds
 
 const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
 
-// Player name mapping (your mapping remains unchanged)
+// Player name mapping
 const playerNameMapping: Record<string, { fullName: string }> = {
   "Matthew Benning": { fullName: "Matt Benning" },
   "Alex Kerfoot": { fullName: "Alexander Kerfoot" },
@@ -41,7 +42,8 @@ const playerNameMapping: Record<string, { fullName: string }> = {
 const troublesomePlayers: string[] = [];
 
 /**
- * Normalizes a name (lowercase, remove spaces/hyphens/apostrophes, remove diacritics)
+ * Normalize a name by lowercasing, removing spaces, hyphens, apostrophes,
+ * and diacritics.
  */
 function normalizeName(name: string): string {
   return name
@@ -52,18 +54,18 @@ function normalizeName(name: string): string {
 }
 
 /**
- * Delay helper.
+ * Simple delay helper.
  */
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
- * Returns an array of dates (YYYY-MM-DD) between start and end (inclusive) in EST.
+ * Returns an array of dates (formatted as "YYYY-MM-DD") between start and end, inclusive.
+ * Dates are converted to EST.
  */
 function getDatesBetween(start: Date, end: Date): string[] {
   const dates: string[] = [];
-  // Convert both dates to EST
   let current = toZonedTime(start, "America/New_York");
   const endZoned = toZonedTime(end, "America/New_York");
   while (current <= endZoned) {
@@ -77,7 +79,7 @@ function getDatesBetween(start: Date, end: Date): string[] {
 }
 
 /**
- * Map a header to its corresponding DB column.
+ * Maps a given header string to its corresponding column name in the database.
  */
 function mapHeaderToColumn(header: string): string | null {
   const headerMap: Record<string, string> = {
@@ -216,15 +218,10 @@ function mapHeaderToColumn(header: string): string | null {
     "PDO/60": "pdo_per_60",
     "Off. Zone Starts/60": "off_zone_starts_per_60",
     "Neu. Zone Starts/60": "neu_zone_starts_per_60",
-    "Def. Zone Starts/60": "def_zone_starts_per_60",
-    "Off. Zone Start %/60": "off_zone_start_pct_per_60",
-    "Off. Zone Faceoffs/60": "off_zone_faceoffs_per_60",
-    "Neu. Zone Faceoffs/60": "neu_zone_faceoffs_per_60",
-    "Def. Zone Faceoffs/60": "def_zone_faceoffs_per_60"
+    "Def. Zone Starts/60": "def_zone_starts_per_60"
   };
 
   if (header === "Player") return null;
-
   return headerMap[header] || null;
 }
 
@@ -251,7 +248,6 @@ async function getLatestDateSupabase(): Promise<string | null> {
     "nst_gamelog_pk_rates_oi"
   ];
   let latestDate: string | null = null;
-
   for (const table of tableNames) {
     const { data, error } = await supabase
       .from(table)
@@ -259,16 +255,13 @@ async function getLatestDateSupabase(): Promise<string | null> {
       .order("date_scraped", { ascending: false })
       .limit(1)
       .maybeSingle();
-
     if (error) continue;
-
     if (data && data.date_scraped) {
       if (!latestDate || new Date(data.date_scraped) > new Date(latestDate)) {
         latestDate = data.date_scraped;
       }
     }
   }
-
   return latestDate;
 }
 
@@ -295,7 +288,6 @@ function printInfoBlock(params: {
     rowsPrepared,
     rowsUpserted
   } = params;
-
   console.log(`
 |==========================|
 Date: ${date}
@@ -345,15 +337,12 @@ function getTableName(datasetType: string): string {
     penaltyKillCountsOi: "nst_gamelog_pk_counts_oi",
     penaltyKillRatesOi: "nst_gamelog_pk_rates_oi"
   };
-
   const tableName = mapping[datasetType] || "unknown_table";
-
   if (tableName === "unknown_table") {
     console.warn(
       `Warning: datasetType "${datasetType}" is not mapped to a valid table.`
     );
   }
-
   return tableName;
 }
 
@@ -368,34 +357,27 @@ async function fetchAndParseData(
     try {
       console.log(`Fetching data from URL: ${url} (Attempt ${attempt})`);
       const response = await axios.get(url);
-
       if (!response.data) {
         console.warn(`No data received from URL: ${url}`);
         return [];
       }
-
       const $ = cheerio.load(response.data);
       const table = $("table").first();
-
       if (table.length === 0) {
         console.warn(`No table found in the response from URL: ${url}`);
         return [];
       }
-
       const headers: string[] = [];
       table.find("thead tr th").each((_, th) => {
         headers.push($(th).text().trim());
       });
-
       const mappedHeaders = headers.map(mapHeaderToColumn);
-
       const dataRowsCollected: any[] = [];
       table.find("tbody tr").each((_, tr) => {
         const rowData: any = {};
         let playerFullName: string | null = null;
         let playerPosition: string | null = null;
         let playerTeam: string | null = null;
-
         $(tr)
           .find("td")
           .each((i, td) => {
@@ -411,12 +393,10 @@ async function fetchAndParseData(
               }
               return;
             }
-
             let cellText: string | null = $(td).text().trim();
             if (cellText === "-" || cellText === "\\-") {
               cellText = null;
             }
-
             if (cellText !== null) {
               const num = Number(cellText.replace(/[^0-9.-]+/g, ""));
               rowData[column] = isNaN(num) ? cellText : num;
@@ -424,7 +404,6 @@ async function fetchAndParseData(
               rowData[column] = null;
             }
           });
-
         if (
           playerFullName &&
           playerPosition &&
@@ -441,11 +420,9 @@ async function fetchAndParseData(
           console.warn(`Incomplete data row skipped for URL: ${url}`);
         }
       });
-
       console.log(
         `Parsed ${dataRowsCollected.length} raw data rows for datasetType "${datasetType}".`
       );
-
       const dataRowsWithPlayerIds: any[] = [];
       for (const row of dataRowsCollected) {
         const playerFullName = row["player_full_name"];
@@ -466,15 +443,12 @@ async function fetchAndParseData(
         delete row["player_team"];
         dataRowsWithPlayerIds.push(row);
       }
-
       console.log(
         `Final data rows with player IDs: ${dataRowsWithPlayerIds.length} for datasetType "${datasetType}".`
       );
-
       if (dataRowsWithPlayerIds.length === 0) {
         console.warn(`No valid data rows found for URL: ${url}`);
       }
-
       return dataRowsWithPlayerIds;
     } catch (error: any) {
       console.error(
@@ -597,7 +571,7 @@ function constructUrlsForDate(
     for (const stdoi of stdoiOptions) {
       for (const rate of rates) {
         let datasetType: string;
-        let tgp: string = rate === "n" ? "10" : "410";
+        let tgp = rate === "n" ? "10" : "410";
         if (stdoi === "std") {
           datasetType =
             strength === "allStrengths"
@@ -655,6 +629,10 @@ function getSitParam(strength: string): string {
   }
 }
 
+/**
+ * Process URLs sequentially.
+ * Instead of applying a delay after every URL, we now group URLs by date and apply a delay only between date groups.
+ */
 async function processUrlsSequentially(
   urlsQueue: {
     datasetType: string;
@@ -663,71 +641,82 @@ async function processUrlsSequentially(
     seasonId: string;
   }[]
 ) {
-  const totalUrls = urlsQueue.length;
-  let processedCount = 0;
-  const dateProcessedCount: Record<string, number> = {};
-  const dateGroups: Record<string, number> = {};
-  // Count URLs per date.
-  for (const u of urlsQueue) {
-    if (!dateGroups[u.date]) dateGroups[u.date] = 0;
-    dateGroups[u.date]++;
+  // Group the URLs by date.
+  const urlsByDate: Record<
+    string,
+    { datasetType: string; url: string; seasonId: string }[]
+  > = {};
+  for (const item of urlsQueue) {
+    if (!urlsByDate[item.date]) {
+      urlsByDate[item.date] = [];
+    }
+    urlsByDate[item.date].push({
+      datasetType: item.datasetType,
+      url: item.url,
+      seasonId: item.seasonId
+    });
   }
-  const uniqueDates = Object.keys(dateGroups);
-  // If there is one or two unique dates, skip delays.
-  const skipDelays = uniqueDates.length <= 2;
+
+  const uniqueDates = Object.keys(urlsByDate);
+  // If there are more than 2 unique dates, enable delays between dates.
+  const applyDelayBetweenDates = uniqueDates.length > 2;
   console.log(
-    `Processing ${totalUrls} URLs across ${uniqueDates.length} date(s).`
+    `Processing ${urlsQueue.length} URLs across ${uniqueDates.length} date(s).`
   );
-  if (skipDelays) {
+  if (!applyDelayBetweenDates) {
     console.log("Skipping delay since there is one or two days worth of data.");
   }
-  for (let i = 0; i < urlsQueue.length; i++) {
-    const { datasetType, url, date, seasonId } = urlsQueue[i];
-    console.log(
-      `\nProcessing URL ${i + 1}/${totalUrls}: ${datasetType} for date ${date}`
-    );
-    if (i > 0 && !skipDelays) {
+
+  let totalProcessed = 0;
+  for (const date of uniqueDates) {
+    console.log(`\n--- Processing URLs for date: ${date} ---`);
+    const urlsForDate = urlsByDate[date];
+    for (let i = 0; i < urlsForDate.length; i++) {
+      const { datasetType, url, seasonId } = urlsForDate[i];
       console.log(
-        `Waiting ${REQUEST_INTERVAL_MS / 1000} seconds before next request...`
+        `Processing URL ${totalProcessed + 1}: ${datasetType} for date ${date}`
+      );
+      const dataExists = await checkDataExists(datasetType, date);
+      let dataRows: any[] = [];
+      let rowsUpserted = 0;
+      if (!dataExists) {
+        try {
+          dataRows = await fetchAndParseData(url, datasetType, date, seasonId);
+          if (dataRows.length > 0) {
+            await upsertData(datasetType, dataRows);
+            rowsUpserted = dataRows.length;
+          }
+        } catch (error) {
+          console.error(`Error processing URL ${url}:`, error);
+        }
+      } else {
+        console.log(
+          `Data already exists for ${datasetType} on date ${date}. Skipping.`
+        );
+      }
+      totalProcessed++;
+      printInfoBlock({
+        date,
+        url,
+        datasetType,
+        tableName: getTableName(datasetType),
+        dateUrlCount: { current: i + 1, total: urlsForDate.length },
+        totalUrlCount: { current: totalProcessed, total: urlsQueue.length },
+        rowsProcessed: dataExists ? 0 : dataRows.length,
+        rowsPrepared: dataExists ? 0 : dataRows.length,
+        rowsUpserted: dataExists ? 0 : rowsUpserted
+      });
+      printTotalProgress(totalProcessed, urlsQueue.length);
+    }
+    // Apply delay between date groups if needed.
+    if (applyDelayBetweenDates) {
+      console.log(
+        `Waiting ${
+          REQUEST_INTERVAL_MS / 1000
+        } seconds before processing next date group...`
       );
       await delay(REQUEST_INTERVAL_MS);
     }
-    if (!dateProcessedCount[date]) dateProcessedCount[date] = 0;
-    const dataExists = await checkDataExists(datasetType, date);
-    let dataRows: any[] = [];
-    let rowsUpserted = 0;
-    if (!dataExists) {
-      try {
-        dataRows = await fetchAndParseData(url, datasetType, date, seasonId);
-        if (dataRows.length > 0) {
-          await upsertData(datasetType, dataRows);
-          rowsUpserted = dataRows.length;
-        }
-      } catch (error) {
-        console.error(`Error processing URL ${url}:`, error);
-      }
-    } else {
-      console.log(
-        `Data already exists for ${datasetType} on date ${date}. Skipping.`
-      );
-    }
-    processedCount++;
-    dateProcessedCount[date]++;
-    printInfoBlock({
-      date,
-      url,
-      datasetType,
-      tableName: getTableName(datasetType),
-      dateUrlCount: {
-        current: dateProcessedCount[date],
-        total: dateGroups[date]
-      },
-      totalUrlCount: { current: processedCount, total: totalUrls },
-      rowsProcessed: dataExists ? 0 : dataRows.length,
-      rowsPrepared: dataExists ? 0 : dataRows.length,
-      rowsUpserted: dataExists ? 0 : rowsUpserted
-    });
-    printTotalProgress(processedCount, totalUrls);
   }
 }
 
@@ -736,12 +725,12 @@ async function main() {
     const seasonInfo = await fetchCurrentSeason();
     const seasonId = seasonInfo.id.toString();
     const timeZone = "America/New_York";
-    // Convert season start and end to Date objects.
+    // Convert season start to EST.
     const seasonStartDate = toZonedTime(
       new Date(seasonInfo.startDate),
       timeZone
     );
-    // Adjust "today" to EST.
+    // Adjust "today" to EST using a fixed -5 hour offset.
     const now = new Date();
     const adjustedNow = new Date(now.getTime() - 5 * 60 * 60 * 1000);
     const todayAdjusted = toZonedTime(adjustedNow, timeZone);
@@ -766,7 +755,7 @@ async function main() {
         }.`
       );
     }
-    // Get the list of dates to scrape (in EST)
+    // Get the list of dates to scrape in EST.
     const datesToScrape = getDatesBetween(startDate, scrapingEndDate);
     if (datesToScrape.length === 0) {
       console.log("No new dates to scrape.");
@@ -784,7 +773,7 @@ async function main() {
         urlsQueue.push({ datasetType, url, date, seasonId });
       }
     }
-    // Deduplicate the queue.
+    // Deduplicate URLs.
     const uniqueUrls = new Set<string>();
     const uniqueUrlsQueue = urlsQueue.filter(
       ({ datasetType, url, date, seasonId }) => {
