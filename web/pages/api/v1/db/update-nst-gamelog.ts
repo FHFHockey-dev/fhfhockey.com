@@ -20,7 +20,7 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
-// When more than 2 unique dates are being processed, we want a delay (30 seconds) between date groups.
+// When more than 2 unique dates are being processed, we want a delay (30 seconds) between requests.
 const REQUEST_INTERVAL_MS = 30000; // 30 seconds
 
 const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
@@ -42,8 +42,7 @@ const playerNameMapping: Record<string, { fullName: string }> = {
 const troublesomePlayers: string[] = [];
 
 /**
- * Normalize a name by lowercasing, removing spaces, hyphens, apostrophes,
- * and diacritics.
+ * Normalize a name: lowercase, remove spaces/hyphens/apostrophes, and remove diacritics.
  */
 function normalizeName(name: string): string {
   return name
@@ -79,7 +78,7 @@ function getDatesBetween(start: Date, end: Date): string[] {
 }
 
 /**
- * Maps a given header string to its corresponding column name in the database.
+ * Map a header string to its corresponding column name in the database.
  */
 function mapHeaderToColumn(header: string): string | null {
   const headerMap: Record<string, string> = {
@@ -265,7 +264,9 @@ async function getLatestDateSupabase(): Promise<string | null> {
   return latestDate;
 }
 
-// Print an info block after each URL is processed.
+/**
+ * Print an info block after each URL is processed.
+ */
 function printInfoBlock(params: {
   date: string;
   url: string;
@@ -308,7 +309,9 @@ Rows Upserted: ${rowsUpserted}
 `);
 }
 
-// Print total progress.
+/**
+ * Print a total progress bar.
+ */
 function printTotalProgress(current: number, total: number) {
   const percentage = (current / total) * 100;
   const filled = Math.floor((percentage / 100) * 20);
@@ -317,7 +320,9 @@ function printTotalProgress(current: number, total: number) {
   console.log(`${bar}  (${current}/${total} URLs)`);
 }
 
-// Determine table name from datasetType.
+/**
+ * Determines the table name from a dataset type.
+ */
 function getTableName(datasetType: string): string {
   const mapping: Record<string, string> = {
     allStrengthsCounts: "nst_gamelog_as_counts",
@@ -346,6 +351,9 @@ function getTableName(datasetType: string): string {
   return tableName;
 }
 
+/**
+ * Fetch and parse data from the provided URL.
+ */
 async function fetchAndParseData(
   url: string,
   datasetType: string,
@@ -551,6 +559,9 @@ async function checkDataExists(
   return exists;
 }
 
+/**
+ * Constructs URLs for a given date and seasonId.
+ */
 function constructUrlsForDate(
   date: string,
   seasonId: string
@@ -614,6 +625,9 @@ function constructUrlsForDate(
   return urls;
 }
 
+/**
+ * Helper function to map strength to the "sit" parameter.
+ */
 function getSitParam(strength: string): string {
   switch (strength) {
     case "allStrengths":
@@ -630,8 +644,9 @@ function getSitParam(strength: string): string {
 }
 
 /**
- * Process URLs sequentially.
- * Instead of applying a delay after every URL, we now group URLs by date and apply a delay only between date groups.
+ * Processes URLs sequentially.
+ * URLs are grouped by date. If there are more than 2 unique dates, a delay is applied
+ * between each date group. Otherwise, all URLs for a given date are processed immediately.
  */
 async function processUrlsSequentially(
   urlsQueue: {
@@ -658,12 +673,12 @@ async function processUrlsSequentially(
   }
 
   const uniqueDates = Object.keys(urlsByDate);
-  // If there are more than 2 unique dates, enable delays between dates.
-  const applyDelayBetweenDates = uniqueDates.length > 2;
+  // If there are more than 2 unique dates, we will add delays between URL requests and between date groups.
+  const shouldDelay = uniqueDates.length > 2;
   console.log(
     `Processing ${urlsQueue.length} URLs across ${uniqueDates.length} date(s).`
   );
-  if (!applyDelayBetweenDates) {
+  if (!shouldDelay) {
     console.log("Skipping delay since there is one or two days worth of data.");
   }
 
@@ -676,6 +691,13 @@ async function processUrlsSequentially(
       console.log(
         `Processing URL ${totalProcessed + 1}: ${datasetType} for date ${date}`
       );
+      // Apply delay between URLs only if shouldDelay is true.
+      if (i > 0 && shouldDelay) {
+        console.log(
+          `Waiting ${REQUEST_INTERVAL_MS / 1000} seconds before next request...`
+        );
+        await delay(REQUEST_INTERVAL_MS);
+      }
       const dataExists = await checkDataExists(datasetType, date);
       let dataRows: any[] = [];
       let rowsUpserted = 0;
@@ -708,8 +730,8 @@ async function processUrlsSequentially(
       });
       printTotalProgress(totalProcessed, urlsQueue.length);
     }
-    // Apply delay between date groups if needed.
-    if (applyDelayBetweenDates) {
+    // Apply delay between date groups only if shouldDelay is true and not the last group.
+    if (shouldDelay) {
       console.log(
         `Waiting ${
           REQUEST_INTERVAL_MS / 1000
@@ -730,7 +752,7 @@ async function main() {
       new Date(seasonInfo.startDate),
       timeZone
     );
-    // Adjust "today" to EST using a fixed -5 hour offset.
+    // Adjust "today" to EST using a fixed offset of 5 hours behind UTC.
     const now = new Date();
     const adjustedNow = new Date(now.getTime() - 5 * 60 * 60 * 1000);
     const todayAdjusted = toZonedTime(adjustedNow, timeZone);
@@ -755,7 +777,7 @@ async function main() {
         }.`
       );
     }
-    // Get the list of dates to scrape in EST.
+    // Get the list of dates to scrape (in EST).
     const datesToScrape = getDatesBetween(startDate, scrapingEndDate);
     if (datesToScrape.length === 0) {
       console.log("No new dates to scrape.");
