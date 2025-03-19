@@ -127,9 +127,10 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
     const currentSeason = await getCurrentSeason();
     const { seasonId, lastSeasonId, regularSeasonStartDate } = currentSeason;
 
-    // Use a hardcoded offset of -5 hours.
+    // Create an adjusted "now" by subtracting 5 hours (hardcoded offset).
     const now = new Date();
     const adjustedNow = new Date(now.getTime() - 5 * 60 * 60 * 1000);
+    // Use this adjusted date as "today" in EST.
     const todayAdjusted = toZonedTime(adjustedNow, timeZone);
 
     // --- Date-based processing ---
@@ -171,7 +172,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         fetchStartDate = parseISO(regularSeasonStartDate);
       }
 
-      // Convert fetchStartDate to EST using our hardcoded offset.
+      // Adjust fetchStartDate to EST.
       const fetchStartDateAdjusted = toZonedTime(fetchStartDate, timeZone);
       if (isAfter(fetchStartDateAdjusted, todayAdjusted)) {
         console.log("All data is up to date. No new data to fetch.");
@@ -192,15 +193,16 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         `Fetching date-based team statistics starting from ${formattedFetchStart}.`
       );
 
-      const startDate = fetchStartDate;
-      const endDate = new Date();
-      const daysToProcess = differenceInCalendarDays(endDate, startDate) + 1;
+      // Instead of using new Date() here, we use our adjusted "today".
+      const endDate = todayAdjusted;
+      const daysToProcess =
+        differenceInCalendarDays(endDate, fetchStartDate) + 1;
       const useDelays = daysToProcess > 2;
       console.log(
         `Days to process: ${daysToProcess}. Using delays: ${useDelays}`
       );
 
-      let currentDate = startDate;
+      let currentDate = fetchStartDate;
       while (!isAfter(currentDate, endDate)) {
         const formattedDate = tzFormat(currentDate, "yyyy-MM-dd", { timeZone });
         console.log(`Processing date: ${formattedDate}`);
