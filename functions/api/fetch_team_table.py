@@ -1,4 +1,5 @@
 # scripts/fetch_team_table.py
+# /Users/tim/Desktop/FHFH/fhfhockey.com/web/scripts/fetch_team_table.py
 
 import requests
 from bs4 import BeautifulSoup
@@ -36,7 +37,7 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
 
     # Construct the URL with query parameters
     url = (
-        f"https://www.naturalstattrick.com/teamtable.php?"
+        f"https://www.naturalstattrick.com/teamtable.php?" 
         f"fromseason={from_season}&thruseason={thru_season}&"
         f"stype={stype}&sit={sit}&score={score}&rate={rate}&"
         f"team={team}&loc={loc}&gpf={gpf}&fd={fd}&td={td}"
@@ -66,9 +67,6 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
     session.headers.update(headers)
 
     try:
-        # Initial request to establish session cookies
-        response = session.get("https://www.naturalstattrick.com/", timeout=10)
-        response.raise_for_status()
 
         # Fetch the team table page
         response = session.get(url, timeout=10)
@@ -136,17 +134,17 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
         # Assign the data
         result["data"] = rows
 
+        # Output the data as JSON
+        print(json.dumps(result))
 
     except requests.exceptions.HTTPError as http_err:
         result["debug"]["HTTP error"] = f"HTTP error occurred: {http_err} - Status Code: {response.status_code}"
+        print(json.dumps(result))
+        sys.exit(1)  # Exit with non-zero status
     except Exception as err:
         result["debug"]["Exception"] = f"An error occurred: {err}"
-
-    # Output the data as JSON
-    # print(json.dumps(result))
-    
-    return json.dumps(result)
-
+        print(json.dumps(result))
+        sys.exit(1)  # Exit with non-zero status
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Fetch team table data.')

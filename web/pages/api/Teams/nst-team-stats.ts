@@ -13,7 +13,7 @@ import {
 } from "date-fns";
 
 // ---
-// For date‐based tables we set these keys as before.
+// For date‑based tables we use these keys.
 const dateBasedResponseKeys: {
   [key: string]: { situation: string; rate: string };
 } = {
@@ -23,7 +23,8 @@ const dateBasedResponseKeys: {
   countsPK: { situation: "pk", rate: "n" }
 };
 
-// For season‐based tables, update the parameters to match your expected URL (sit=pk).
+// For season‑based tables, build the URL without date parameters.
+// (Adjust the "sit" value here if needed.)
 const seasonBasedResponseKeys: {
   [key: string]: { situation: string; rate: string };
 } = {
@@ -79,7 +80,7 @@ interface TeamStat {
   season?: string;
 }
 
-// Helper to normalize team names
+// Helper to normalize team names.
 const normalizeTeamName = (name: string): string =>
   name
     .normalize("NFD")
@@ -88,7 +89,7 @@ const normalizeTeamName = (name: string): string =>
     .trim()
     .toLowerCase();
 
-// Delay helper
+// Delay helper.
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
@@ -134,14 +135,12 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
     // --- Date-based processing ---
     if (date === "all") {
       console.log("Performing preliminary checks for date-based tables.");
-
       const dateBasedTables = [
         "nst_team_all",
         "nst_team_5v5",
         "nst_team_pp",
         "nst_team_pk"
       ];
-
       const getLatestDate = async (table: string): Promise<string | null> => {
         const { data, error } = await supabase
           .from(table)
@@ -158,13 +157,8 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         }
         return data?.date || null;
       };
-
-      const latestDatesPromises = dateBasedTables.map((table) =>
-        getLatestDate(table)
-      );
-      const latestDates = await Promise.all(latestDatesPromises);
+      const latestDates = await Promise.all(dateBasedTables.map(getLatestDate));
       const validDates = latestDates.filter((d) => d !== null) as string[];
-
       let fetchStartDate: Date;
       if (validDates.length > 0) {
         const maxDateStr = validDates.reduce((a, b) => (a > b ? a : b));
@@ -173,19 +167,16 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
       } else {
         fetchStartDate = parseISO(regularSeasonStartDate);
       }
-
       const today = new Date();
       if (isAfter(fetchStartDate, today)) {
         console.log("All data is up to date. No new data to fetch.");
         const scriptEndTime = Date.now();
         const totalTimeSeconds = (scriptEndTime - scriptStartTime) / 1000;
-        console.log(`Script execution time: ${totalTimeSeconds} seconds`);
         return res.status(200).json({
           message: `All date-based team statistics are up to date. Execution time: ${totalTimeSeconds} seconds.`,
           success: true
         });
       }
-
       console.log(
         `Fetching date-based team statistics starting from ${format(
           fetchStartDate,
@@ -204,8 +195,6 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
       while (!isAfter(currentDate, endDate)) {
         const formattedDate = format(currentDate, "yyyy-MM-dd");
         console.log(`Processing date: ${formattedDate}`);
-
-        // For each date-based key, build the URL and fetch data.
         for (const key in dateBasedResponseKeys) {
           const { situation, rate } = dateBasedResponseKeys[key];
           const baseUrl =
@@ -225,20 +214,16 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           });
           const fullUrl = `${baseUrl}?${queryParams.toString()}`;
           console.log(`Fetching URL: ${fullUrl}`);
-
           try {
             const response = await fetch(fullUrl);
-            if (!response.ok) {
-              throw new Error(`HTTP error: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
             const responseText = await response.text();
             let scriptOutput: PythonScriptOutput = JSON.parse(responseText);
             if (typeof scriptOutput === "string") {
               scriptOutput = JSON.parse(scriptOutput);
             }
-            if (!scriptOutput.data) {
+            if (!scriptOutput.data)
               throw new Error("No data returned from endpoint");
-            }
             const teamStats = scriptOutput.data;
             let targetTable = "";
             switch (key) {
@@ -398,7 +383,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         currentDate = addDays(currentDate, 1);
       }
 
-      // --- Season-based processing ---
+      // --- Season-based processing using fetch ---
       console.log("Processing season-based response keys.");
       for (const key in seasonBasedResponseKeys) {
         const { situation, rate } = seasonBasedResponseKeys[key];
@@ -414,12 +399,11 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
             console.warn(`Unknown season-based key: ${key}. Skipping...`);
             continue;
         }
-        // For season-based queries, use seasonId or lastSeasonId.
+        // For season-based queries, omit fd and td.
         const from_season =
           key === "seasonStats" ? seasonId.toString() : lastSeasonId.toString();
         const thru_season =
           key === "seasonStats" ? seasonId.toString() : lastSeasonId.toString();
-        // Build URL for season-based fetch (omit fd and td).
         const baseUrl =
           "https://functions-fhfhockey.vercel.app/fetch_team_table";
         const queryParams = new URLSearchParams({
@@ -437,17 +421,14 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         console.log(`Fetching season URL for key ${key}: ${fullUrl}`);
         try {
           const response = await fetch(fullUrl);
-          if (!response.ok) {
-            throw new Error(`HTTP error: ${response.status}`);
-          }
+          if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
           const responseText = await response.text();
           let scriptOutput: PythonScriptOutput = JSON.parse(responseText);
           if (typeof scriptOutput === "string") {
             scriptOutput = JSON.parse(scriptOutput);
           }
-          if (!scriptOutput.data) {
+          if (!scriptOutput.data)
             throw new Error("No data returned from endpoint");
-          }
           const teamStats = scriptOutput.data;
           const upsertData = teamStats
             .map((stat) => {
@@ -570,7 +551,6 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           console.log(
             `Successfully upserted ${upsertData.length} records into ${targetTable}.`
           );
-          // Optionally delay if needed
           if (useDelays) {
             await delay(20000);
           }
