@@ -6,7 +6,13 @@ import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
-import { addDays, parseISO, isAfter, differenceInCalendarDays } from "date-fns";
+import {
+  addDays,
+  parseISO,
+  isAfter,
+  differenceInCalendarDays,
+  parse
+} from "date-fns";
 import { toZonedTime, format as tzFormat } from "date-fns-tz";
 
 dotenv.config({ path: "./../../../.env.local" });
@@ -17,10 +23,9 @@ if (!supabaseUrl || !supabaseKey) {
   console.error("Supabase URL or Service Role Key is missing.");
   process.exit(1);
 }
-
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
-// When more than 2 unique dates are being processed, we want a delay (30 seconds) between requests.
+// When more than 2 unique dates are being processed, we want a delay (30 seconds) between date groups.
 const REQUEST_INTERVAL_MS = 30000; // 30 seconds
 
 const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
@@ -43,6 +48,9 @@ const troublesomePlayers: string[] = [];
 
 // --- Helper Functions ---
 
+/**
+ * Normalize a name by lowercasing, removing spaces, hyphens, apostrophes, and diacritics.
+ */
 function normalizeName(name: string): string {
   return name
     .toLowerCase()
@@ -51,10 +59,17 @@ function normalizeName(name: string): string {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+/**
+ * Simple delay helper.
+ */
 function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Returns an array of dates (formatted as "yyyy-MM-dd") between start and end (inclusive),
+ * using the America/New_York timezone.
+ */
 function getDatesBetween(start: Date, end: Date): string[] {
   const dates: string[] = [];
   let current = toZonedTime(start, "America/New_York");
@@ -70,7 +85,7 @@ function getDatesBetween(start: Date, end: Date): string[] {
 }
 
 /**
- * Map a header string to its corresponding column name in the database.
+ * Maps a header string to its corresponding column name in the database.
  */
 function mapHeaderToColumn(header: string): string | null {
   const headerMap: Record<string, string> = {
@@ -211,7 +226,6 @@ function mapHeaderToColumn(header: string): string | null {
     "Neu. Zone Starts/60": "neu_zone_starts_per_60",
     "Def. Zone Starts/60": "def_zone_starts_per_60"
   };
-
   if (header === "Player") return null;
   return headerMap[header] || null;
 }
@@ -278,7 +292,6 @@ function printInfoBlock(params: {
     rowsPrepared,
     rowsUpserted
   } = params;
-
   console.log(`
 |==========================|
 Date: ${date}
@@ -326,7 +339,6 @@ function getTableName(datasetType: string): string {
     penaltyKillCountsOi: "nst_gamelog_pk_counts_oi",
     penaltyKillRatesOi: "nst_gamelog_pk_rates_oi"
   };
-
   const tableName = mapping[datasetType] || "unknown_table";
   if (tableName === "unknown_table") {
     console.warn(
@@ -337,7 +349,7 @@ function getTableName(datasetType: string): string {
 }
 
 /**
- * Fetch and parse data from the provided URL.
+ * Fetches and parses data from the provided URL.
  */
 async function fetchAndParseData(
   url: string,
@@ -630,8 +642,8 @@ function getSitParam(strength: string): string {
 
 /**
  * Processes URLs sequentially.
- * URLs are grouped by date. If there are more than 2 unique dates, a delay is applied
- * between each date group. Otherwise, all URLs for a given date are processed immediately.
+ * URLs are grouped by date. If there are more than 2 unique dates, a delay is applied between date groups.
+ * Otherwise, all URLs for a given date are processed immediately.
  */
 async function processUrlsSequentially(
   urlsQueue: {
@@ -656,9 +668,8 @@ async function processUrlsSequentially(
       seasonId: item.seasonId
     });
   }
-
   const uniqueDates = Object.keys(urlsByDate);
-  // If there are more than 2 unique dates, we will add delays between URL requests and between date groups.
+  // If there are more than 2 unique dates, we apply delays between date groups.
   const shouldDelay = uniqueDates.length > 2;
   console.log(
     `Processing ${urlsQueue.length} URLs across ${uniqueDates.length} date(s).`
@@ -666,7 +677,6 @@ async function processUrlsSequentially(
   if (!shouldDelay) {
     console.log("Skipping delay since there is one or two days worth of data.");
   }
-
   let totalProcessed = 0;
   for (const date of uniqueDates) {
     console.log(`\n--- Processing URLs for date: ${date} ---`);
@@ -715,7 +725,7 @@ async function processUrlsSequentially(
       });
       printTotalProgress(totalProcessed, urlsQueue.length);
     }
-    // Apply delay between date groups only if shouldDelay is true and not the last group.
+    // Apply delay between date groups if needed and if not processing the last date.
     if (shouldDelay) {
       console.log(
         `Waiting ${
@@ -740,22 +750,18 @@ async function main() {
       timeZone
     );
 
-    // Adjust "today" to EST (using a fixed offset of 5 hours behind UTC).
-    const now = new Date();
-    const adjustedNow = new Date(now.getTime() - 5 * 60 * 60 * 1000);
-    const todayAdjusted = toZonedTime(adjustedNow, timeZone);
-
+    // Get "today" in EST.
+    const todayEST = toZonedTime(new Date(), timeZone);
     const seasonEnd = new Date(seasonInfo.endDate);
-    const scrapingEndDate =
-      todayAdjusted < seasonEnd ? todayAdjusted : seasonEnd;
+    const scrapingEndDate = isAfter(todayEST, seasonEnd) ? seasonEnd : todayEST;
 
-    // Convert the latest date from Supabase to EST before adding one day.
+    // --- Determine the start date ---
     const latestDate = await getLatestDateSupabase();
     let startDate: Date;
     if (latestDate) {
-      // Convert the latest UTC date to EST.
-      const latestDateEST = toZonedTime(new Date(latestDate), timeZone);
-      startDate = addDays(latestDateEST, 1);
+      // Parse the latest date string as a local date (assumed "yyyy-MM-dd").
+      const latestDateLocal = parse(latestDate, "yyyy-MM-dd", new Date());
+      startDate = addDays(latestDateLocal, 1);
       console.log(
         `Latest date in Supabase is ${latestDate}. Starting from ${tzFormat(
           startDate,
@@ -774,7 +780,7 @@ async function main() {
       );
     }
 
-    // Get the list of dates to scrape (in EST).
+    // --- Get the list of dates to scrape (in EST) ---
     const datesToScrape = getDatesBetween(startDate, scrapingEndDate);
     if (datesToScrape.length === 0) {
       console.log("No new dates to scrape.");
