@@ -4,13 +4,10 @@ import { NextApiResponse } from "next";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { getCurrentSeason } from "lib/NHL/server";
 import { teamsInfo, teamNameToAbbreviationMap } from "lib/teamsInfo";
-import {
-  addDays,
-  format,
-  parseISO,
-  isAfter,
-  differenceInCalendarDays
-} from "date-fns";
+import { addDays, parseISO, isAfter, differenceInCalendarDays } from "date-fns";
+import { toZonedTime, format as tzFormat } from "date-fns-tz";
+
+const timeZone = "America/New_York";
 
 // ---
 // For date‑based tables we use these keys.
@@ -23,8 +20,7 @@ const dateBasedResponseKeys: {
   countsPK: { situation: "pk", rate: "n" }
 };
 
-// For season‑based tables, build the URL without date parameters.
-// (Adjust the "sit" value here if needed.)
+// For season‑based tables, we use these keys (omit date parameters).
 const seasonBasedResponseKeys: {
   [key: string]: { situation: string; rate: string };
 } = {
@@ -132,9 +128,13 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
     const currentSeason = await getCurrentSeason();
     const { seasonId, lastSeasonId, regularSeasonStartDate } = currentSeason;
 
+    // Convert "today" to EST.
+    const todayEST = toZonedTime(new Date(), timeZone);
+
     // --- Date-based processing ---
     if (date === "all") {
       console.log("Performing preliminary checks for date-based tables.");
+
       const dateBasedTables = [
         "nst_team_all",
         "nst_team_5v5",
@@ -157,6 +157,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         }
         return data?.date || null;
       };
+
       const latestDates = await Promise.all(dateBasedTables.map(getLatestDate));
       const validDates = latestDates.filter((d) => d !== null) as string[];
       let fetchStartDate: Date;
@@ -167,8 +168,9 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
       } else {
         fetchStartDate = parseISO(regularSeasonStartDate);
       }
-      const today = new Date();
-      if (isAfter(fetchStartDate, today)) {
+
+      // Compare against today in EST.
+      if (isAfter(fetchStartDate, todayEST)) {
         console.log("All data is up to date. No new data to fetch.");
         const scriptEndTime = Date.now();
         const totalTimeSeconds = (scriptEndTime - scriptStartTime) / 1000;
@@ -177,11 +179,13 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           success: true
         });
       }
+
+      // Format dates in EST.
+      const formattedFetchStart = tzFormat(fetchStartDate, "yyyy-MM-dd", {
+        timeZone
+      });
       console.log(
-        `Fetching date-based team statistics starting from ${format(
-          fetchStartDate,
-          "yyyy-MM-dd"
-        )}.`
+        `Fetching date-based team statistics starting from ${formattedFetchStart}.`
       );
       const startDate = fetchStartDate;
       const endDate = new Date();
@@ -193,8 +197,10 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
 
       let currentDate = startDate;
       while (!isAfter(currentDate, endDate)) {
-        const formattedDate = format(currentDate, "yyyy-MM-dd");
+        const formattedDate = tzFormat(currentDate, "yyyy-MM-dd", { timeZone });
         console.log(`Processing date: ${formattedDate}`);
+
+        // For each date-based key, build the URL and fetch data.
         for (const key in dateBasedResponseKeys) {
           const { situation, rate } = dateBasedResponseKeys[key];
           const baseUrl =
@@ -214,6 +220,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           });
           const fullUrl = `${baseUrl}?${queryParams.toString()}`;
           console.log(`Fetching URL: ${fullUrl}`);
+
           try {
             const response = await fetch(fullUrl);
             if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
@@ -222,8 +229,12 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
             if (typeof scriptOutput === "string") {
               scriptOutput = JSON.parse(scriptOutput);
             }
-            if (!scriptOutput.data)
-              throw new Error("No data returned from endpoint");
+            if (!scriptOutput.data || scriptOutput.data.length === 0) {
+              console.log(
+                `No data returned for ${formattedDate} (key: ${key}). Skipping upsert.`
+              );
+              continue;
+            }
             const teamStats = scriptOutput.data;
             let targetTable = "";
             switch (key) {
@@ -427,8 +438,12 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           if (typeof scriptOutput === "string") {
             scriptOutput = JSON.parse(scriptOutput);
           }
-          if (!scriptOutput.data)
-            throw new Error("No data returned from endpoint");
+          if (!scriptOutput.data || scriptOutput.data.length === 0) {
+            console.log(
+              `No season-based data returned for key ${key}. Skipping upsert.`
+            );
+            continue;
+          }
           const teamStats = scriptOutput.data;
           const upsertData = teamStats
             .map((stat) => {
