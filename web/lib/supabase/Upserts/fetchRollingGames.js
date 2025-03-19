@@ -1,7 +1,7 @@
 require("dotenv").config({ path: "../../../.env.local" });
 const { createClient } = require("@supabase/supabase-js");
 const fetch = require("node-fetch");
-const { parseISO, isBefore } = require("date-fns");
+import { parseISO, isBefore } from "date-fns";
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -926,7 +926,7 @@ async function fetchAllRollingGames() {
 
 // Main function to execute fetching and upserting, then cumulative stats update.
 // NEW: We also build a baseline mapping per team when mode==="recent".
-async function main(mode = "all") {
+export async function main(mode = "all") {
   const startTime = new Date();
   try {
     const seasons = await fetchNHLSeasons();

@@ -3,14 +3,14 @@
 require("dotenv").config({ path: "../../.env.local" });
 const { createClient } = require("@supabase/supabase-js");
 const fetch = require("node-fetch");
-const {
+import {
   parseISO,
   format,
   addDays,
   isBefore,
   isAfter,
   formatDistance
-} = require("date-fns");
+} from "date-fns";
 const ProgressBar = require("progress");
 const { parse } = require("path");
 
@@ -1219,7 +1219,7 @@ async function calculateAndUpsertPowerRankings(season, teams) {
 }
 
 // Main Execution Function
-async function main() {
+export async function main() {
   const startTime = new Date(); // Start timer
   try {
     // Step 1: Fetch Seasons
@@ -1277,9 +1277,4 @@ async function main() {
   }
 }
 
-module.exports = { main };
-
-module.exports = { main };
-
-// Execute the script
 module.exports = { main };

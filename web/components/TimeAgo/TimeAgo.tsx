@@ -1,6 +1,6 @@
 import React from "react";
 
-import locale from "date-fns/locale/en-US";
+import { enUS as locale } from "date-fns/locale";
 import { formatDistanceToNowStrict } from "date-fns";
 
 // https://github.com/date-fns/date-fns/issues/1706#issuecomment-836601089
@@ -20,7 +20,7 @@ const formatDistanceLocale: any = {
   aboutXYears: "{{count}}y",
   xYears: "{{count}}y",
   overXYears: "{{count}}y",
-  almostXYears: "{{count}}y",
+  almostXYears: "{{count}}y"
 };
 
 function formatDistance(token: string, count: number, options: any) {
@@ -50,8 +50,8 @@ function TimeAgo({ date }: TimeAgoProps) {
         addSuffix: true,
         locale: {
           ...locale,
-          formatDistance,
-        },
+          formatDistance
+        }
       })}
     </span>
   );

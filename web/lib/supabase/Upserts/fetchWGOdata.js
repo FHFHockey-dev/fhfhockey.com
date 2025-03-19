@@ -3,7 +3,7 @@
 require("dotenv").config({ path: "../../../.env.local" });
 const { createClient } = require("@supabase/supabase-js");
 const fetch = require("node-fetch");
-const { parseISO, format, addDays, isBefore } = require("date-fns");
+import { parseISO, format, addDays, isBefore } from "date-fns";
 const ProgressBar = require("progress");
 
 // Initialize Supabase client
