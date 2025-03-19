@@ -3,9 +3,6 @@
 import { NextApiResponse } from "next";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { getCurrentSeason } from "lib/NHL/server";
-import { exec } from "child_process";
-import path from "path";
-import { promisify } from "util";
 import { teamsInfo, teamNameToAbbreviationMap } from "lib/teamsInfo";
 import {
   addDays,
@@ -15,10 +12,8 @@ import {
   differenceInCalendarDays
 } from "date-fns";
 
-// Promisify exec for easier async/await usage (used for season-based fetches)
-const execAsync = promisify(exec);
-
-// Define the responseKeys with necessary parameters for date-based tables
+// ---
+// For date‐based tables we set these keys as before.
 const dateBasedResponseKeys: {
   [key: string]: { situation: string; rate: string };
 } = {
@@ -28,7 +23,7 @@ const dateBasedResponseKeys: {
   countsPK: { situation: "pk", rate: "n" }
 };
 
-// Define the responseKeys for season-based tables
+// For season‐based tables, update the parameters to match your expected URL (sit=pk).
 const seasonBasedResponseKeys: {
   [key: string]: { situation: string; rate: string };
 } = {
@@ -84,7 +79,7 @@ interface TeamStat {
   season?: string;
 }
 
-// Helper: normalize team names
+// Helper to normalize team names
 const normalizeTeamName = (name: string): string =>
   name
     .normalize("NFD")
@@ -93,7 +88,7 @@ const normalizeTeamName = (name: string): string =>
     .trim()
     .toLowerCase();
 
-// Helper: delay function
+// Delay helper
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
@@ -123,7 +118,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
   const { supabase } = req;
 
   try {
-    // 1. Extract 'date' query parameter
+    // Extract 'date' query parameter.
     const { date } = req.query;
     if (!date) {
       return res.status(400).json({
@@ -132,11 +127,11 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
       });
     }
 
-    // 2. Get current season details
+    // Get current season details.
     const currentSeason = await getCurrentSeason();
     const { seasonId, lastSeasonId, regularSeasonStartDate } = currentSeason;
 
-    // 3. If date === "all", process date-based tables
+    // --- Date-based processing ---
     if (date === "all") {
       console.log("Performing preliminary checks for date-based tables.");
 
@@ -210,6 +205,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         const formattedDate = format(currentDate, "yyyy-MM-dd");
         console.log(`Processing date: ${formattedDate}`);
 
+        // For each date-based key, build the URL and fetch data.
         for (const key in dateBasedResponseKeys) {
           const { situation, rate } = dateBasedResponseKeys[key];
           const baseUrl =
@@ -236,7 +232,6 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
               throw new Error(`HTTP error: ${response.status}`);
             }
             const responseText = await response.text();
-            // Parse responseText. If it's still a string after parsing, parse again.
             let scriptOutput: PythonScriptOutput = JSON.parse(responseText);
             if (typeof scriptOutput === "string") {
               scriptOutput = JSON.parse(scriptOutput);
@@ -403,7 +398,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
         currentDate = addDays(currentDate, 1);
       }
 
-      // Process season-based response keys (using execAsync)
+      // --- Season-based processing ---
       console.log("Processing season-based response keys.");
       for (const key in seasonBasedResponseKeys) {
         const { situation, rate } = seasonBasedResponseKeys[key];
@@ -419,76 +414,39 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
             console.warn(`Unknown season-based key: ${key}. Skipping...`);
             continue;
         }
+        // For season-based queries, use seasonId or lastSeasonId.
         const from_season =
           key === "seasonStats" ? seasonId.toString() : lastSeasonId.toString();
         const thru_season =
           key === "seasonStats" ? seasonId.toString() : lastSeasonId.toString();
-        let shouldFetchSeason = true;
-        if (key === "lastSeasonStats") {
-          const { data, error } = await supabase
-            .from(targetTable)
-            .select("season")
-            .eq("season", lastSeasonId.toString())
-            .limit(1)
-            .single();
-          if (!error && data) {
-            console.log(
-              `Season-based table ${targetTable} already has data for season ${lastSeasonId}. Skipping fetch.`
-            );
-            shouldFetchSeason = false;
-          }
-        }
-        if (!shouldFetchSeason) continue;
-        // Season-based fetch using execAsync
-        const scriptArgs = [
-          "--sit",
-          situation,
-          "--rate",
-          rate,
-          "--fd",
-          "",
-          "--td",
-          "",
-          "--from_season",
-          from_season,
-          "--thru_season",
-          thru_season,
-          "--stype",
-          "2",
-          "--score",
-          "all",
-          "--team",
-          "all",
-          "--loc",
-          "B",
-          "--gpf",
-          "410"
-        ];
-        const scriptPath = path.join(
-          process.cwd(),
-          "scripts",
-          "fetch_team_table.py"
-        );
+        // Build URL for season-based fetch (omit fd and td).
+        const baseUrl =
+          "https://functions-fhfhockey.vercel.app/fetch_team_table";
+        const queryParams = new URLSearchParams({
+          sit: situation,
+          rate: rate,
+          from_season: from_season,
+          thru_season: thru_season,
+          stype: "2",
+          score: "all",
+          team: "all",
+          loc: "B",
+          gpf: "410"
+        });
+        const fullUrl = `${baseUrl}?${queryParams.toString()}`;
+        console.log(`Fetching season URL for key ${key}: ${fullUrl}`);
         try {
-          const { stdout, stderr } = await execAsync(
-            `python3 "${scriptPath}" ${scriptArgs
-              .map((arg) => `"${arg}"`)
-              .join(" ")}`
-          );
-          if (stderr) {
-            console.error(
-              `Error executing Python script for key ${key}:`,
-              stderr
-            );
-            throw new Error(`Python script error: ${stderr}`);
+          const response = await fetch(fullUrl);
+          if (!response.ok) {
+            throw new Error(`HTTP error: ${response.status}`);
           }
-          const scriptOutput: PythonScriptOutput = JSON.parse(stdout);
-          if (scriptOutput.debug && scriptOutput.debug.Error) {
-            console.error(
-              `Script Error for key ${key}:`,
-              scriptOutput.debug.Error
-            );
-            throw new Error(`Script Error: ${scriptOutput.debug.Error}`);
+          const responseText = await response.text();
+          let scriptOutput: PythonScriptOutput = JSON.parse(responseText);
+          if (typeof scriptOutput === "string") {
+            scriptOutput = JSON.parse(scriptOutput);
+          }
+          if (!scriptOutput.data) {
+            throw new Error("No data returned from endpoint");
           }
           const teamStats = scriptOutput.data;
           const upsertData = teamStats
@@ -500,9 +458,7 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
                   `Unknown team name "${teamName}". Attempting to find a match...`
                 );
                 const normalizedTeamName = normalizeTeamName(teamName);
-                const matchedAbbreviation = Object.keys(
-                  teamNameToAbbreviationMap
-                ).find(
+                const matchedAbbreviation = Object.keys(teamsInfo).find(
                   (abbr) =>
                     normalizeTeamName(teamsInfo[abbr].name) ===
                     normalizedTeamName
@@ -614,15 +570,16 @@ export default adminOnly(async (req: any, res: NextApiResponse) => {
           console.log(
             `Successfully upserted ${upsertData.length} records into ${targetTable}.`
           );
+          // Optionally delay if needed
           if (useDelays) {
             await delay(20000);
           }
         } catch (error: any) {
           console.error(
-            `Error executing Python script for key ${key}:`,
+            `Error fetching season-based data for key ${key}:`,
             error.message
           );
-          throw new Error(`Python script error: ${error.message}`);
+          throw new Error(`Season fetch error: ${error.message}`);
         }
       }
       const scriptEndTime = Date.now();
