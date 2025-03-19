@@ -37,7 +37,7 @@ def fetch_team_table(from_season='20242025', thru_season='20242025',
 
     # Construct the URL with query parameters
     url = (
-        f"https://www.naturalstattrick.com/teamtable.php?"
+        f"https://www.naturalstattrick.com/teamtable.php?" 
         f"fromseason={from_season}&thruseason={thru_season}&"
         f"stype={stype}&sit={sit}&score={score}&rate={rate}&"
         f"team={team}&loc={loc}&gpf={gpf}&fd={fd}&td={td}"
