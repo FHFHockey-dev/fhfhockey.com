@@ -16,11 +16,9 @@ export default async function handler(
     // Invoke the main function with the parameter
     await main(fullProcess);
 
-    res
-      .status(200)
-      .json({
-        message: `Play-by-play data processed successfully. (Full process: ${fullProcess})`
-      });
+    res.status(200).json({
+      message: `Play-by-play data processed successfully. (Full process: ${fullProcess})`
+    });
   } catch (error: any) {
     console.error("Error processing play-by-play data:", error);
     res.status(500).json({ message: `Error: ${error.message}` });

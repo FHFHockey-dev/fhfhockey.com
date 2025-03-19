@@ -1,6 +1,6 @@
 require("dotenv").config({ path: "../../../.env.local" });
 const { createClient } = require("@supabase/supabase-js");
-const { parseISO, isBefore, isAfter } = require("date-fns");
+import { parseISO, isBefore, isAfter } from "date-fns";
 
 // Constants
 const ROW_LIMIT = 1000; // Limit for Supabase row fetch
@@ -404,7 +404,7 @@ async function processPlayByPlayData(fullProcess = false) {
 }
 
 // Main function now accepts a parameter to choose processing mode.
-async function main(fullProcess = false) {
+export async function main(fullProcess = false) {
   await processPlayByPlayData(fullProcess);
 }
 
