@@ -23,6 +23,7 @@ if (!supabaseUrl || !supabaseKey) {
   console.error("Supabase URL or Service Role Key is missing.");
   process.exit(1);
 }
+
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // When more than 2 unique dates are being processed, we want a delay (30 seconds) between date groups.
@@ -45,8 +46,6 @@ const playerNameMapping: Record<string, { fullName: string }> = {
 };
 
 const troublesomePlayers: string[] = [];
-
-// --- Helper Functions ---
 
 /**
  * Normalize a name by lowercasing, removing spaces, hyphens, apostrophes, and diacritics.
@@ -350,6 +349,7 @@ function getTableName(datasetType: string): string {
 
 /**
  * Fetches and parses data from the provided URL.
+ * An axios timeout of 20 seconds is applied to each request.
  */
 async function fetchAndParseData(
   url: string,
@@ -361,7 +361,7 @@ async function fetchAndParseData(
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       console.log(`Fetching data from URL: ${url} (Attempt ${attempt})`);
-      const response = await axios.get(url);
+      const response = await axios.get(url, { timeout: 20000 });
       if (!response.data) {
         console.warn(`No data received from URL: ${url}`);
         return [];
@@ -653,7 +653,7 @@ async function processUrlsSequentially(
     seasonId: string;
   }[]
 ) {
-  // Group the URLs by date.
+  // Group URLs by date.
   const urlsByDate: Record<
     string,
     { datasetType: string; url: string; seasonId: string }[]
@@ -669,7 +669,7 @@ async function processUrlsSequentially(
     });
   }
   const uniqueDates = Object.keys(urlsByDate);
-  // If there are more than 2 unique dates, we apply delays between date groups.
+  // Apply delay between date groups only if there are more than 2 unique dates.
   const shouldDelay = uniqueDates.length > 2;
   console.log(
     `Processing ${urlsQueue.length} URLs across ${uniqueDates.length} date(s).`
@@ -759,7 +759,7 @@ async function main() {
     const latestDate = await getLatestDateSupabase();
     let startDate: Date;
     if (latestDate) {
-      // Parse the latest date string as a local date (assumed "yyyy-MM-dd").
+      // Parse the latest date string as a local date (assumed "yyyy-MM-dd") and convert to EST.
       const latestDateLocal = parse(latestDate, "yyyy-MM-dd", new Date());
       startDate = addDays(latestDateLocal, 1);
       console.log(
