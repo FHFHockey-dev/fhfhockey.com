@@ -515,6 +515,18 @@ $mobile-fixed-width: 35px;
 
 /* MAGGIE <3 */
 
+.lowerGridHorizontal {
+  display: flex;
+}
+
+.fourWeekGridContainerAll {
+  width: 20%;
+}
+
+.playerPickupContainer {
+  width: 80%;
+}
+
 @media only screen and (min-width: vars.$screen-large) {
   .teamRow {
     .teamName {
