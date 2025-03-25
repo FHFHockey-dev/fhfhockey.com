@@ -29,6 +29,71 @@
   margin-left: 10px;
 }
 
+.nameAndInjuryWrapper {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+}
+
+/* LEFT 50%: The name */
+.leftNamePart {
+  width: 50%;
+  display: flex;
+  align-items: center; /* vertical centering */
+  justify-content: center; /* or 'flex-start' if you want it left-aligned */
+}
+
+/* RIGHT 50%: The image + status + injury note */
+.rightInjuryPart {
+  width: 50%;
+  /* If you want the right half only 75% high, you can do:
+       height: 75%;
+       margin: auto 0; 
+       But that can be tricky in table cells. 
+       Often you'll want height: 100% to fill the cell. 
+    */
+  display: flex;
+  flex-direction: row; /* side-by-side for image + text */
+  align-items: center; /* vertical centering in the half */
+  justify-content: center; /* horizontal centering, or 'flex-start' */
+}
+
+/* 35% for the image container */
+.imageContainer {
+  width: 35%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 65% for the text container */
+.statusContainer {
+  width: 65%;
+  display: flex;
+  flex-direction: column; /* stack status text above injury note */
+  justify-content: center;
+  align-items: flex-start; /* left-align text */
+  margin-left: 4px; /* small gap from the image */
+}
+
+/* Adjust these as desired */
+.playerName {
+  font-weight: bold;
+}
+
+.statusText {
+  color: red;
+  font-size: 0.8em;
+  margin-bottom: 2px;
+}
+
+.injuryNote {
+  color: white;
+  font-size: 0.8em;
+  margin-top: 2px;
+}
+
 .positions {
   margin-bottom: 10px;
 }

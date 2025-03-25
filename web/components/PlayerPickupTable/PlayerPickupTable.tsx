@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
 import styles from "./PlayerPickupTable.module.scss";
+import Image from "next/image";
 
 // ---------------------------
 // Supabase Setup
@@ -48,6 +49,9 @@ export type UnifiedPlayerData = {
   player_type: "skater" | "goalie";
   // Current team abbreviation from wgo_skater_stats_totals
   current_team_abbreviation: string | null;
+  percent_games: number | null;
+  status: string | null;
+  injury_note: string | null;
 };
 
 export interface PlayerWithPercentiles extends UnifiedPlayerData {
@@ -72,7 +76,8 @@ export type MetricKey =
   | "shutouts"
   | "quality_start"
   | "goals_against_avg"
-  | "save_pct";
+  | "save_pct"
+  | "percent_games";
 
 export interface MetricDefinition {
   key: MetricKey;
@@ -89,7 +94,8 @@ const skaterMetrics: MetricDefinition[] = [
   { key: "hits", label: "HIT" },
   { key: "total_fow", label: "FOW" },
   { key: "penalty_minutes", label: "PIM" },
-  { key: "sh_points", label: "SHP" }
+  { key: "sh_points", label: "SHP" },
+  { key: "percent_games", label: "GP%" }
 ];
 
 const goalieMetrics: MetricDefinition[] = [
@@ -99,7 +105,8 @@ const goalieMetrics: MetricDefinition[] = [
   { key: "shutouts", label: "SO" },
   { key: "quality_start", label: "QS" },
   { key: "goals_against_avg", label: "GAA" },
-  { key: "save_pct", label: "SV%" }
+  { key: "save_pct", label: "SV%" },
+  { key: "percent_games", label: "GP%" }
 ];
 
 // ---------------------------
@@ -126,51 +133,67 @@ export type PlayerPickupTableProps = {
   teamWeekData?: TeamWeekData[];
 };
 
-// Define a type for sort keys (including our computed "composite")
-type SortKey = keyof (UnifiedPlayerData & { composite: number });
-
-/**
- * Returns an inline style with a dynamic background color
- * based on the percentile.
- * The color interpolates from red (worst: 0%) to green (best: 100%).
- */
-function getRankColorStyle(percentile: number): React.CSSProperties {
-  // Simple linear interpolation:
-  // At 0%, weight = 0 → red = 255, green = 0 (red)
-  // At 100%, weight = 1 → red = 0, green = 255 (green)
-  const weight = percentile / 100;
-  const r = Math.round(255 * (1 - weight));
-  const g = Math.round(255 * weight);
-  return { backgroundColor: `rgba(${r}, ${g}, 0, 0.45)` };
-}
-
-const normalizeTeamAbbreviation = (team: string | null): string | null => {
-  if (!team) return null;
-  const mapping: Record<string, string> = {
-    TB: "TBL",
-    SJ: "SJS",
-    NJ: "NJD",
-    LA: "LAK"
-  };
-  return mapping[team] || team;
-};
-
-// At the top of your file (after your imports)
-const playerNameMapping: Record<string, string> = {
-  "Alex Wennberg": "Alexander Wennberg"
-};
-
-const normalizePlayerName = (name: string | null): string | null => {
-  if (!name) return null;
-  return playerNameMapping[name] || name;
-};
-
 // ---------------------------
 // Main Component
 // ---------------------------
 const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   teamWeekData
 }) => {
+  // Utility: Normalize team abbreviation.
+  const normalizeTeamAbbreviation = (team: string | null): string | null => {
+    if (!team) return null;
+    const mapping: Record<string, string> = {
+      TB: "TBL",
+      SJ: "SJS",
+      NJ: "NJD",
+      LA: "LAK"
+    };
+    return mapping[team] || team;
+  };
+
+  // Place getOffNightsForPlayer here so it is defined before it's used.
+  const getOffNightsForPlayer = (
+    player: UnifiedPlayerData
+  ): number | string => {
+    if (!teamWeekData || teamWeekData.length === 0) {
+      return player.off_nights !== null ? player.off_nights : "N/A";
+    }
+    const teamAbbr = normalizeTeamAbbreviation(
+      player.current_team_abbreviation || player.yahoo_team
+    );
+    const teamData = teamWeekData.find(
+      (team) => team.teamAbbreviation === teamAbbr
+    );
+    return teamData
+      ? teamData.offNights
+      : player.off_nights !== null
+      ? player.off_nights
+      : "N/A";
+  };
+
+  const normalizePlayerName = (name: string | null): string | null =>
+    name ? playerNameMapping[name] || name : null;
+
+  /**
+   * Returns an inline style with a dynamic background color
+   * based on the percentile.
+   * The color interpolates from red (worst: 0%) to green (best: 100%).
+   */
+  function getRankColorStyle(percentile: number): React.CSSProperties {
+    // Simple linear interpolation:
+    // At 0%, weight = 0 → red = 255, green = 0 (red)
+    // At 100%, weight = 1 → red = 0, green = 255 (green)
+    const weight = percentile / 100;
+    const r = Math.round(255 * (1 - weight));
+    const g = Math.round(255 * weight);
+    return { backgroundColor: `rgba(${r}, ${g}, 0, 0.45)` };
+  }
+
+  // At the top of your file (after your imports)
+  const playerNameMapping: Record<string, string> = {
+    "Alex Wennberg": "Alexander Wennberg"
+  };
+
   // Filter states
   const [ownershipThreshold, setOwnershipThreshold] = useState<number>(
     defaultOwnershipThreshold
@@ -232,35 +255,62 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   // ---------------------------
   const filteredPlayers = useMemo(() => {
     return playersData.filter((player) => {
-      // Ownership filter
+      const ownershipValue = player.percent_ownership;
+      const positionsValue = player.eligible_positions;
+      const offNightsValue = getOffNightsForPlayer(player);
+
+      console.log("DEBUG:", {
+        name: player.nhl_player_name,
+        ownershipValue,
+        positionsValue,
+        offNightsValue
+      });
+
+      const ownershipMissing = ownershipValue === null || ownershipValue === 0;
+      const positionsMissing = !positionsValue || positionsValue.length === 0;
+      const offNightsEmpty =
+        offNightsValue === undefined ||
+        offNightsValue === "N/A" ||
+        offNightsValue === "";
+
+      if (ownershipMissing && positionsMissing && offNightsEmpty) {
+        console.log(
+          "Hiding player due to missing data:",
+          player.nhl_player_name
+        );
+        return false;
+      }
+
+      // Existing filters:
       if (
         player.percent_ownership !== null &&
         player.percent_ownership >= ownershipThreshold
       ) {
         return false;
       }
-      // Team filter: compare against the official NHL team abbreviation (if available) else Yahoo's
       const teamAbbr = normalizeTeamAbbreviation(
         player.current_team_abbreviation || player.yahoo_team
       );
       if (teamFilter !== "ALL" && teamFilter !== teamAbbr) {
         return false;
       }
-      // Position filter
       if (player.eligible_positions && player.eligible_positions.length > 0) {
         const matches = player.eligible_positions.some(
           (pos) => selectedPositions[pos]
         );
         if (!matches) return false;
-      } else {
-        // For goalies (or if eligible_positions missing), require that "G" is selected.
-        if (player.player_type === "goalie" && !selectedPositions["G"]) {
-          return false;
-        }
+      } else if (player.player_type === "goalie" && !selectedPositions["G"]) {
+        return false;
       }
       return true;
     });
-  }, [playersData, ownershipThreshold, teamFilter, selectedPositions]);
+  }, [
+    playersData,
+    ownershipThreshold,
+    teamFilter,
+    selectedPositions,
+    teamWeekData
+  ]);
 
   // ---------------------------
   // 4) Compute Percentiles & Composite
@@ -386,29 +436,6 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   };
 
   // ---------------------------
-  // 8) Helper to Get Off-Nights from Team Data
-  // ---------------------------
-  const getOffNightsForPlayer = (
-    player: UnifiedPlayerData
-  ): number | string => {
-    if (!teamWeekData || teamWeekData.length === 0) {
-      return player.off_nights !== null ? player.off_nights : "N/A";
-    }
-    // Use the official NHL team abbreviation if available.
-    const teamAbbr = normalizeTeamAbbreviation(
-      player.current_team_abbreviation || player.yahoo_team
-    );
-    const teamData = teamWeekData.find(
-      (team) => team.teamAbbreviation === teamAbbr
-    );
-    return teamData
-      ? teamData.offNights
-      : player.off_nights !== null
-      ? player.off_nights
-      : "N/A";
-  };
-
-  // ---------------------------
   // 9) Pagination: Calculate current page of players
   // ---------------------------
   const totalPages = Math.ceil(sortedPlayers.length / pageSize);
@@ -517,6 +544,10 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
                         : "▲"
                       : ""}
                   </th>
+                  <th onClick={() => handleSort("percent_games")}>
+                    Percent Games
+                  </th>
+
                   <th>Percentile Ranks</th>
                   <th onClick={() => handleSort("composite")}>
                     Composite{" "}
@@ -537,9 +568,64 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
                   return (
                     <tr key={player.nhl_player_id}>
                       <td>
-                        {normalizePlayerName(player.yahoo_player_name) ||
-                          player.nhl_player_name}
-                      </td>{" "}
+                        <div className={styles.nameAndInjuryWrapper}>
+                          {/* LEFT HALF: Name */}
+                          <div className={styles.leftNamePart}>
+                            <span className={styles.playerName}>
+                              {normalizePlayerName(player.yahoo_player_name) ||
+                                player.nhl_player_name}
+                            </span>
+                          </div>
+
+                          {/* RIGHT HALF: Injury/Status Info */}
+                          {player.status &&
+                          ["IR-LT", "IR", "O", "DTD", "IR-NR"].includes(
+                            player.status
+                          ) ? (
+                            <div className={styles.rightInjuryPart}>
+                              {/* IMAGE 35% */}
+                              <div className={styles.imageContainer}>
+                                <Image
+                                  src="/pictures/injured.png"
+                                  alt="Injured"
+                                  width={20}
+                                  height={20}
+                                />
+                              </div>
+
+                              {/* TEXT 65% */}
+                              <div className={styles.statusContainer}>
+                                <span className={styles.statusText}>
+                                  {player.status}
+                                </span>
+                                {player.injury_note && (
+                                  <div className={styles.injuryNote}>
+                                    {player.injury_note}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ) : player.injury_note ? (
+                            // If no "status" but there's an "injury_note", you can still display it if desired:
+                            <div className={styles.rightInjuryPart}>
+                              {/* Could omit the image if you prefer */}
+                              <div className={styles.imageContainer}>
+                                <Image
+                                  src="/pictures/injured.png"
+                                  alt="Injured"
+                                  width={15}
+                                  height={15}
+                                />
+                              </div>
+                              <div className={styles.statusContainer}>
+                                <div className={styles.injuryNote}>
+                                  {player.injury_note}
+                                </div>
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                      </td>
                       <td>
                         {player.nhl_team_abbreviation ||
                           player.yahoo_team ||
@@ -559,6 +645,27 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
                           : "N/A"}
                       </td>
                       <td>{getOffNightsForPlayer(player)}</td>
+                      <td>
+                        {player.percent_games !== null ? (
+                          <div className={styles.percentileContainer}>
+                            <div className={styles.percentileLabel}>PG</div>
+                            <div
+                              className={styles.percentileBox}
+                              style={getRankColorStyle(
+                                player.percentiles.percent_games !== undefined
+                                  ? player.percentiles.percent_games
+                                  : 0
+                              )}
+                            >
+                              {(
+                                Math.min(player.percent_games, 1) * 100
+                              ).toFixed(0) + "%"}
+                            </div>
+                          </div>
+                        ) : (
+                          "N/A"
+                        )}
+                      </td>
                       <td>
                         {relevantMetrics.map(({ key, label }) => {
                           const pctVal = player.percentiles[key];
