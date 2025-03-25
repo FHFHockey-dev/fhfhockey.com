@@ -1,12 +1,15 @@
-// TO DO:
-// Why are we checking for all skater player ids on every date?
-// are we paginating through the supabase to get player ids? - starts off with "Found 1000 non skater players"
-// Needs a timer, needs to be sped up.
+// /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/update-wgo-skaters.ts
 
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase";
 import Fetch from "lib/cors-fetch";
-import { format, parseISO, addDays, isBefore } from "date-fns";
+import {
+  format,
+  parseISO,
+  addDays,
+  isBefore,
+  differenceInCalendarDays
+} from "date-fns";
 import { fetchNonGoaliePlayerIds } from "lib/supabase/utils/fetchAllSkaters";
 import { getCurrentSeason } from "lib/NHL/server";
 import {
@@ -256,8 +259,57 @@ async function fetchAllDataForDate(
   };
 }
 
-// Function to update skater stats for the entire season
+// helper function to format milliseconds to HH:MM:SS
+function formatDuration(ms: number): string {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${hours.toString().padStart(2, "0")}:${minutes
+    .toString()
+    .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+}
+
+// Helper function to retry failed dates
+async function upsertData(
+  date: string,
+  data: any[],
+  retries = 3
+): Promise<void> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const { error } = await supabase
+        .from("wgo_skater_stats")
+        .upsert(data, { onConflict: "player_id,date,season_id" });
+      if (error) {
+        throw error;
+      }
+      console.log(
+        `Successfully upserted data for date ${date} on attempt ${attempt}.`
+      );
+      return; // Exit the function since the upsert was successful.
+    } catch (err: any) {
+      console.error(
+        `Attempt ${attempt} upserting data for date ${date} failed:`,
+        err
+      );
+      if (attempt === retries) {
+        throw err;
+      }
+      // Wait a short period before retrying
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
+}
+
+// // Function to update skater stats for the entire season
+
+// ------------------------------
+// OLD IMPLEMENTATION: DYNAMIC CURRENT Season
+// ------------------------------
 async function updateSkaterStatsForSeason() {
+  const startTime = Date.now();
+
   const currentSeason = await getCurrentSeason();
 
   // Fetch the most recent date from the wgo_skater_stats table
@@ -301,6 +353,9 @@ async function updateSkaterStatsForSeason() {
   const today = new Date();
   const endDate = isBefore(today, seasonEndDate) ? today : seasonEndDate;
 
+  // Compute total number of dates to process (inclusive)
+  const totalDates = differenceInCalendarDays(endDate, currentDate) + 1;
+  const startDate = currentDate;
   // Alternatively, if you want to stop at yesterday's date to avoid processing today
   // const endDate = isBefore(today, seasonEndDate) ? addDays(today, -1) : seasonEndDate;
 
@@ -317,7 +372,13 @@ async function updateSkaterStatsForSeason() {
     format(currentDate, "yyyy-MM-dd") === format(endDate, "yyyy-MM-dd")
   ) {
     const formattedDate = format(currentDate, "yyyy-MM-dd");
+    // Calculate current progress index (1-based)
+    const currentIndex = differenceInCalendarDays(currentDate, startDate) + 1;
+
+    console.log("\n[==================================]");
     console.log(`Processing date: ${formattedDate}`);
+    console.log(`Dates to process: ${totalDates}`);
+    console.log(`Progress: ${currentIndex}/${totalDates}`);
 
     // Fetch all relevant data for the current date
     const {
@@ -422,7 +483,10 @@ async function updateSkaterStatsForSeason() {
 
     const mergedDataArray = [];
 
-    for (const playerId of playerIds) {
+    const playersProcessed = skaterStatsMap.size;
+
+    // Iterate only over the player IDs present in the NHL API data
+    for (const playerId of skaterStatsMap.keys()) {
       try {
         const stat = skaterStatsMap.get(playerId);
         if (!stat) {
@@ -449,22 +513,20 @@ async function updateSkaterStatsForSeason() {
         const shotTypeStat = shotTypeStatsMap.get(playerId);
         const timeOnIceStat = timeOnIceStatsMap.get(playerId);
 
-        // Fetch existing record from Supabase
+        // Optionally, fetch an existing record from Supabase if you want to merge with previous data
         const { data: existingRecord, error: fetchError } = await supabase
           .from("wgo_skater_stats")
           .select("*")
           .eq("player_id", Number.parseInt(playerId, 10))
-          .eq("date", formattedDate) // Ensure you're updating the correct date
+          .eq("date", formattedDate)
           .single();
 
         if (fetchError && fetchError.code !== "PGRST116") {
-          // PGRST116: No rows found
           console.error(
             `Error fetching existing record for player ID ${playerId} on ${formattedDate}:`,
             fetchError
           );
-          totalErrors++;
-          continue; // Skip to the next player
+          continue;
         }
 
         // Merge existing data with new stats
@@ -738,34 +800,551 @@ async function updateSkaterStatsForSeason() {
       }
     }
 
-    // Perform bulk upsert
-    if (mergedDataArray.length > 0) {
-      const { error: upsertError } = await supabase
-        .from("wgo_skater_stats")
-        .upsert(mergedDataArray, { onConflict: "player_id,date" });
-
-      if (upsertError) {
-        console.error(
-          `Error upserting data for date ${formattedDate}:`,
-          upsertError
-        );
-        totalErrors += mergedDataArray.length;
-      } else {
-        totalUpdates += mergedDataArray.length;
-      }
+    try {
+      await upsertData(formattedDate, mergedDataArray);
+      totalUpdates += mergedDataArray.length;
+    } catch (upsertError) {
+      console.error(
+        `Error upserting data for date ${formattedDate}:`,
+        upsertError
+      );
+      totalErrors += mergedDataArray.length;
     }
+
+    // Log players processed and rows upserted for the current date
+    console.log(`Players processed: ${playersProcessed}`);
+    console.log(`Rows upserted: ${mergedDataArray.length}`);
+    console.log("[==================================]\n");
 
     // Move to the next date
     currentDate = addDays(currentDate, 1);
   }
 
+  // Calculate and log the total elapsed time
+  const elapsedMs = Date.now() - startTime;
+  const elapsedTime = formatDuration(elapsedMs);
+  console.log(`Processing completed in ${elapsedTime}`);
+
   return {
-    message: `Skater stats updated for the entire season successfully. Total updates: ${totalUpdates}, Total errors: ${totalErrors}`,
+    message: `Skater stats updated for the entire season successfully. Total updates: ${totalUpdates}, Total errors: ${totalErrors}. Processing time: ${elapsedTime}`,
     success: true,
     totalUpdates: totalUpdates,
-    totalErrors: totalErrors
+    totalErrors: totalErrors,
+    processingTime: elapsedTime
   };
 }
+
+// ------------------------------
+// NEW IMPLEMENTATION: Hard-Coded Season
+// ------------------------------
+// async function updateSkaterStatsForHardCodedSeason() {
+//   // Hard-code your season parameters here:
+
+//   // DONE
+//   // const seasonId = "20232024";
+//   // const seasonStartDate = "2023-10-10"; // 20232024
+//   // const seasonEndDate = "2024-04-18"; // 20232024
+
+//   const seasonId = "20222023";
+//   const seasonStartDate = "2022-10-07"; // 20222023
+//   const seasonEndDate = "2023-04-14"; // 20222023
+
+//   // const seasonId = "20212022";
+//   // const seasonStartDate = "2021-10-12"; // 20212022
+//   // const seasonEndDate = "2022-05-01"; // 20212022
+
+//   // const seasonId = "20202021";
+//   // const seasonStartDate = "2021-01-13"; // 20202021
+//   // const seasonEndDate = "2021-05-19"; // 20202021
+
+//   const startTime = Date.now();
+
+//   console.log(
+//     `Processing hard-coded season ${seasonId} from ${seasonStartDate} to ${seasonEndDate}.`
+//   );
+
+//   let currentDate = parseISO(seasonStartDate);
+//   const endDate = parseISO(seasonEndDate);
+//   const totalDates = differenceInCalendarDays(endDate, currentDate) + 1;
+//   const startDate = currentDate;
+
+//   let totalUpdates = 0;
+//   let totalErrors = 0;
+
+//   // We still fetch the non-goalie player IDs (if needed)
+//   const playerIds = await fetchNonGoaliePlayerIds();
+//   console.log(`Fetched ${playerIds.length} non-goalie players.`);
+
+//   while (
+//     isBefore(currentDate, endDate) ||
+//     format(currentDate, "yyyy-MM-dd") === format(endDate, "yyyy-MM-dd")
+//   ) {
+//     const formattedDate = format(currentDate, "yyyy-MM-dd");
+//     const currentIndex = differenceInCalendarDays(currentDate, startDate) + 1;
+
+//     console.log("\n[==================================]");
+//     console.log(`Processing date: ${formattedDate}`);
+//     console.log(`Dates to process: ${totalDates}`);
+//     console.log(`Progress: ${currentIndex}/${totalDates}`);
+
+//     // Fetch data for the current date
+//     const {
+//       skaterStats,
+//       skatersBio,
+//       miscSkaterStats,
+//       faceOffStats,
+//       faceoffWinLossStats,
+//       goalsForAgainstStats,
+//       penaltiesStats,
+//       penaltyKillStats,
+//       powerPlayStats,
+//       puckPossessionStats,
+//       satCountsStats,
+//       satPercentagesStats,
+//       scoringRatesStats,
+//       scoringPerGameStats,
+//       shotTypeStats,
+//       timeOnIceStats
+//     } = await fetchAllDataForDate(formattedDate, 100);
+
+//     // Create maps from playerId to data for faster lookups
+//     const skaterStatsMap = new Map<string, WGOSummarySkaterStat>();
+//     skaterStats.forEach((s) => {
+//       skaterStatsMap.set(s.playerId.toString(), s);
+//     });
+//     const skatersBioMap = new Map<string, WGOSkatersBio>();
+//     skatersBio.forEach((s) => {
+//       skatersBioMap.set(s.playerId.toString(), s);
+//     });
+//     const miscSkaterStatsMap = new Map<string, WGORealtimeSkaterStat>();
+//     miscSkaterStats.forEach((s) => {
+//       miscSkaterStatsMap.set(s.playerId.toString(), s);
+//     });
+//     const faceOffStatsMap = new Map<string, WGOFaceoffSkaterStat>();
+//     faceOffStats.forEach((s) => {
+//       faceOffStatsMap.set(s.playerId.toString(), s);
+//     });
+//     const faceoffWinLossStatsMap = new Map<
+//       string,
+//       WGOFaceOffWinLossSkaterStat
+//     >();
+//     faceoffWinLossStats.forEach((s) => {
+//       faceoffWinLossStatsMap.set(s.playerId.toString(), s);
+//     });
+//     const goalsForAgainstStatsMap = new Map<
+//       string,
+//       WGOGoalsForAgainstSkaterStat
+//     >();
+//     goalsForAgainstStats.forEach((s) => {
+//       goalsForAgainstStatsMap.set(s.playerId.toString(), s);
+//     });
+//     const penaltiesStatsMap = new Map<string, WGOPenaltySkaterStat>();
+//     penaltiesStats.forEach((s) => {
+//       penaltiesStatsMap.set(s.playerId.toString(), s);
+//     });
+//     const penaltyKillStatsMap = new Map<string, WGOPenaltyKillSkaterStat>();
+//     penaltyKillStats.forEach((s) => {
+//       penaltyKillStatsMap.set(s.playerId.toString(), s);
+//     });
+//     const powerPlayStatsMap = new Map<string, WGOPowerPlaySkaterStat>();
+//     powerPlayStats.forEach((s) => {
+//       powerPlayStatsMap.set(s.playerId.toString(), s);
+//     });
+//     const puckPossessionStatsMap = new Map<
+//       string,
+//       WGOPuckPossessionSkaterStat
+//     >();
+//     puckPossessionStats.forEach((s) => {
+//       puckPossessionStatsMap.set(s.playerId.toString(), s);
+//     });
+//     const satCountsStatsMap = new Map<string, WGOSatCountSkaterStat>();
+//     satCountsStats.forEach((s) => {
+//       satCountsStatsMap.set(s.playerId.toString(), s);
+//     });
+//     const satPercentagesStatsMap = new Map<
+//       string,
+//       WGOSatPercentageSkaterStat
+//     >();
+//     satPercentagesStats.forEach((s) => {
+//       satPercentagesStatsMap.set(s.playerId.toString(), s);
+//     });
+//     const scoringRatesStatsMap = new Map<string, WGOScoringRatesSkaterStat>();
+//     scoringRatesStats.forEach((s) => {
+//       scoringRatesStatsMap.set(s.playerId.toString(), s);
+//     });
+//     const scoringPerGameStatsMap = new Map<
+//       string,
+//       WGOScoringCountsSkaterStat
+//     >();
+//     scoringPerGameStats.forEach((s) => {
+//       scoringPerGameStatsMap.set(s.playerId.toString(), s);
+//     });
+//     const shotTypeStatsMap = new Map<string, WGOShotTypeSkaterStat>();
+//     shotTypeStats.forEach((s) => {
+//       shotTypeStatsMap.set(s.playerId.toString(), s);
+//     });
+//     const timeOnIceStatsMap = new Map<string, WGOToiSkaterStat>();
+//     timeOnIceStats.forEach((s) => {
+//       timeOnIceStatsMap.set(s.playerId.toString(), s);
+//     });
+
+//     // (Construct maps and merge data as in your original logic...)
+//     const mergedDataArray = [];
+
+//     const playersProcessed = skaterStatsMap.size;
+
+//     // Iterate only over the player IDs present in the NHL API data
+//     for (const playerId of skaterStatsMap.keys()) {
+//       try {
+//         const stat = skaterStatsMap.get(playerId);
+//         if (!stat) {
+//           console.warn(
+//             `No skater stats found for player ID ${playerId} on ${formattedDate}`
+//           );
+//           continue;
+//         }
+
+//         // Retrieve data from maps
+//         const bioStats = skatersBioMap.get(playerId);
+//         const miscStats = miscSkaterStatsMap.get(playerId);
+//         const faceOffStat = faceOffStatsMap.get(playerId);
+//         const faceoffWinLossStat = faceoffWinLossStatsMap.get(playerId);
+//         const goalsForAgainstStat = goalsForAgainstStatsMap.get(playerId);
+//         const penaltiesStat = penaltiesStatsMap.get(playerId);
+//         const penaltyKillStat = penaltyKillStatsMap.get(playerId);
+//         const powerPlayStat = powerPlayStatsMap.get(playerId);
+//         const puckPossessionStat = puckPossessionStatsMap.get(playerId);
+//         const satCountsStat = satCountsStatsMap.get(playerId);
+//         const satPercentagesStat = satPercentagesStatsMap.get(playerId);
+//         const scoringRatesStat = scoringRatesStatsMap.get(playerId);
+//         const scoringPerGameStat = scoringPerGameStatsMap.get(playerId);
+//         const shotTypeStat = shotTypeStatsMap.get(playerId);
+//         const timeOnIceStat = timeOnIceStatsMap.get(playerId);
+
+//         // Optionally, fetch an existing record from Supabase if you want to merge with previous data
+//         const { data: existingRecord, error: fetchError } = await supabase
+//           .from("wgo_skater_stats")
+//           .select("*")
+//           .eq("player_id", Number.parseInt(playerId, 10))
+//           .eq("date", formattedDate)
+//           .single();
+
+//         if (fetchError && fetchError.code !== "PGRST116") {
+//           console.error(
+//             `Error fetching existing record for player ID ${playerId} on ${formattedDate}:`,
+//             fetchError
+//           );
+//           continue;
+//         }
+
+//         // Merge existing data with new stats
+//         const mergedData = {
+//           ...(existingRecord || {}), // Existing data or empty object if no record
+//           player_id: stat.playerId,
+//           player_name: stat.skaterFullName,
+//           date: formattedDate,
+//           shoots_catches: stat.shootsCatches,
+//           position_code: stat.positionCode,
+//           games_played: stat.gamesPlayed,
+//           points: stat.points,
+//           points_per_game: stat.pointsPerGame,
+//           goals: stat.goals,
+//           assists: stat.assists,
+//           shots: stat.shots,
+//           shooting_percentage: stat.shootingPct,
+//           plus_minus: stat.plusMinus,
+//           ot_goals: stat.otGoals,
+//           gw_goals: stat.gameWinningGoals,
+//           pp_points: stat.ppPoints,
+//           fow_percentage: stat.faceoffWinPct,
+//           toi_per_game: stat.timeOnIcePerGame,
+//           // Bio stats
+//           birth_date: bioStats?.birthDate,
+//           current_team_abbreviation: bioStats?.currentTeamAbbrev,
+//           current_team_name: bioStats?.currentTeamName,
+//           birth_city: bioStats?.birthCity,
+//           birth_country: bioStats?.birthCountryCode,
+//           nationality_code: bioStats?.nationalityCode, // Corrected from birthCountryCode
+//           height: bioStats?.height,
+//           weight: bioStats?.weight,
+//           draft_year: bioStats?.draftYear,
+//           draft_round: bioStats?.draftRound,
+//           draft_overall: bioStats?.draftOverall,
+//           first_season_for_game_type: bioStats?.firstSeasonForGameType,
+
+//           // Realtime stats
+//           blocked_shots: miscStats?.blockedShots,
+//           blocks_per_60: miscStats?.blockedShotsPer60,
+//           empty_net_assists: miscStats?.emptyNetAssists,
+//           empty_net_goals: miscStats?.emptyNetGoals,
+//           empty_net_points: miscStats?.emptyNetPoints,
+//           first_goals: miscStats?.firstGoals,
+//           giveaways: miscStats?.giveaways,
+//           giveaways_per_60: miscStats?.giveawaysPer60,
+//           hits: miscStats?.hits,
+//           hits_per_60: miscStats?.hitsPer60,
+//           missed_shot_crossbar: miscStats?.missedShotCrossbar,
+//           missed_shot_goal_post: miscStats?.missedShotGoalpost,
+//           missed_shot_over_net: miscStats?.missedShotOverNet,
+//           missed_shot_short_side: miscStats?.missedShotShort,
+//           missed_shot_wide_of_net: miscStats?.missedShotWideOfNet,
+//           missed_shots: miscStats?.missedShots,
+//           takeaways: miscStats?.takeaways,
+//           takeaways_per_60: miscStats?.takeawaysPer60,
+//           // Faceoff stats
+//           d_zone_fo_percentage: faceOffStat?.defensiveZoneFaceoffPct,
+//           d_zone_faceoffs: faceOffStat?.defensiveZoneFaceoffs,
+//           ev_faceoff_percentage: faceOffStat?.evFaceoffPct,
+//           ev_faceoffs: faceOffStat?.evFaceoffs,
+//           n_zone_fo_percentage: faceOffStat?.neutralZoneFaceoffPct,
+//           n_zone_faceoffs: faceOffStat?.neutralZoneFaceoffs,
+//           o_zone_fo_percentage: faceOffStat?.offensiveZoneFaceoffPct,
+//           o_zone_faceoffs: faceOffStat?.offensiveZoneFaceoffs,
+//           pp_faceoff_percentage: faceOffStat?.ppFaceoffPct,
+//           pp_faceoffs: faceOffStat?.ppFaceoffs,
+//           sh_faceoff_percentage: faceOffStat?.shFaceoffPct,
+//           sh_faceoffs: faceOffStat?.shFaceoffs,
+//           total_faceoffs: faceOffStat?.totalFaceoffs,
+//           // Faceoff Win/Loss stats
+//           d_zone_fol: faceoffWinLossStat?.defensiveZoneFaceoffLosses,
+//           d_zone_fow: faceoffWinLossStat?.defensiveZoneFaceoffWins,
+//           ev_fol: faceoffWinLossStat?.evFaceoffsLost,
+//           ev_fow: faceoffWinLossStat?.evFaceoffsWon,
+//           n_zone_fol: faceoffWinLossStat?.neutralZoneFaceoffLosses,
+//           n_zone_fow: faceoffWinLossStat?.neutralZoneFaceoffWins,
+//           o_zone_fol: faceoffWinLossStat?.offensiveZoneFaceoffLosses,
+//           o_zone_fow: faceoffWinLossStat?.offensiveZoneFaceoffWins,
+//           pp_fol: faceoffWinLossStat?.ppFaceoffsLost,
+//           pp_fow: faceoffWinLossStat?.ppFaceoffsWon,
+//           sh_fol: faceoffWinLossStat?.shFaceoffsLost,
+//           sh_fow: faceoffWinLossStat?.shFaceoffsWon,
+//           total_fol: faceoffWinLossStat?.totalFaceoffLosses,
+//           total_fow: faceoffWinLossStat?.totalFaceoffWins,
+//           // Goals For/Against stats
+//           es_goal_diff: goalsForAgainstStat?.evenStrengthGoalDifference,
+//           es_goals_against: goalsForAgainstStat?.evenStrengthGoalsAgainst,
+//           es_goals_for: goalsForAgainstStat?.evenStrengthGoalsFor,
+//           es_goals_for_percentage: goalsForAgainstStat?.evenStrengthGoalsForPct,
+//           es_toi_per_game: goalsForAgainstStat?.evenStrengthTimeOnIcePerGame,
+//           pp_goals_against: goalsForAgainstStat?.powerPlayGoalsAgainst,
+//           pp_goals_for: goalsForAgainstStat?.powerPlayGoalFor,
+//           pp_toi_per_game: goalsForAgainstStat?.powerPlayTimeOnIcePerGame,
+//           sh_goals_against: goalsForAgainstStat?.shortHandedGoalsAgainst,
+//           sh_goals_for: goalsForAgainstStat?.shortHandedGoalsFor,
+//           sh_toi_per_game: goalsForAgainstStat?.shortHandedTimeOnIcePerGame,
+//           // Penalties stats
+//           game_misconduct_penalties: penaltiesStat?.gameMisconductPenalties,
+//           major_penalties: penaltiesStat?.majorPenalties,
+//           match_penalties: penaltiesStat?.matchPenalties,
+//           minor_penalties: penaltiesStat?.minorPenalties,
+//           misconduct_penalties: penaltiesStat?.misconductPenalties,
+//           net_penalties: penaltiesStat?.netPenalties,
+//           net_penalties_per_60: penaltiesStat?.netPenaltiesPer60,
+//           penalties: penaltiesStat?.penalties,
+//           penalties_drawn: penaltiesStat?.penaltiesDrawn,
+//           penalties_drawn_per_60: penaltiesStat?.penaltiesDrawnPer60,
+//           penalties_taken_per_60: penaltiesStat?.penaltiesTakenPer60,
+//           penalty_minutes: penaltiesStat?.penaltyMinutes,
+//           penalty_minutes_per_toi: penaltiesStat?.penaltyMinutesPerTimeOnIce,
+//           penalty_seconds_per_game: penaltiesStat?.penaltySecondsPerGame,
+//           // Penalty Kill stats
+//           pp_goals_against_per_60: penaltyKillStat?.ppGoalsAgainstPer60,
+//           sh_assists: penaltyKillStat?.shAssists,
+//           sh_goals: penaltyKillStat?.shGoals,
+//           sh_points: penaltyKillStat?.shPoints,
+//           sh_goals_per_60: penaltyKillStat?.shGoalsPer60,
+//           sh_individual_sat_for: penaltyKillStat?.shIndividualSatFor,
+//           sh_individual_sat_per_60: penaltyKillStat?.shIndividualSatForPer60,
+//           sh_points_per_60: penaltyKillStat?.shPointsPer60,
+//           sh_primary_assists: penaltyKillStat?.shPrimaryAssists,
+//           sh_primary_assists_per_60: penaltyKillStat?.shPrimaryAssistsPer60,
+//           sh_secondary_assists: penaltyKillStat?.shSecondaryAssists,
+//           sh_secondary_assists_per_60: penaltyKillStat?.shSecondaryAssistsPer60,
+//           sh_shooting_percentage: penaltyKillStat?.shShootingPct,
+//           sh_shots: penaltyKillStat?.shShots,
+//           sh_shots_per_60: penaltyKillStat?.shShotsPer60,
+//           sh_time_on_ice: penaltyKillStat?.shTimeOnIce,
+//           sh_time_on_ice_pct_per_game: penaltyKillStat?.shTimeOnIcePctPerGame,
+//           // Power Play stats
+//           pp_assists: powerPlayStat?.ppAssists,
+//           pp_goals: powerPlayStat?.ppGoals,
+//           pp_goals_for_per_60: powerPlayStat?.ppGoalsForPer60,
+//           pp_goals_per_60: powerPlayStat?.ppGoalsPer60,
+//           pp_individual_sat_for: powerPlayStat?.ppIndividualSatFor,
+//           pp_individual_sat_per_60: powerPlayStat?.ppIndividualSatPer60,
+//           pp_points_per_60: powerPlayStat?.ppPointsPer60,
+//           pp_primary_assists: powerPlayStat?.ppPrimaryAssists,
+//           pp_primary_assists_per_60: powerPlayStat?.ppPrimaryAssistsPer60,
+//           pp_secondary_assists: powerPlayStat?.ppSecondaryAssists,
+//           pp_secondary_assists_per_60: powerPlayStat?.ppSecondaryAssistsPer60,
+//           pp_shooting_percentage: powerPlayStat?.ppShootingPct,
+//           pp_shots: powerPlayStat?.ppShots,
+//           pp_shots_per_60: powerPlayStat?.ppShotsPer60,
+//           pp_toi: powerPlayStat?.ppTimeOnIce,
+//           pp_toi_pct_per_game: powerPlayStat?.ppTimeOnIcePctPerGame,
+//           // Puck Possession stats
+//           goals_pct: puckPossessionStat?.goalsPct,
+//           faceoff_pct_5v5: puckPossessionStat?.faceoffPct5v5,
+//           individual_sat_for_per_60: puckPossessionStat?.individualSatForPer60,
+//           individual_shots_for_per_60:
+//             puckPossessionStat?.individualShotsForPer60,
+//           on_ice_shooting_pct: puckPossessionStat?.onIceShootingPct,
+//           sat_pct: puckPossessionStat?.satPct,
+//           toi_per_game_5v5: puckPossessionStat?.timeOnIcePerGame5v5,
+//           usat_pct: puckPossessionStat?.usatPct,
+//           zone_start_pct: puckPossessionStat?.zoneStartPct,
+//           // Shooting stats
+//           sat_against: satCountsStat?.satAgainst,
+//           sat_ahead: satCountsStat?.satAhead,
+//           sat_behind: satCountsStat?.satBehind,
+//           sat_close: satCountsStat?.satClose,
+//           sat_for: satCountsStat?.satFor,
+//           sat_tied: satCountsStat?.satTied,
+//           sat_total: satCountsStat?.satTotal,
+//           usat_against: satCountsStat?.usatAgainst,
+//           usat_ahead: satCountsStat?.usatAhead,
+//           usat_behind: satCountsStat?.usatBehind,
+//           usat_close: satCountsStat?.usatClose,
+//           usat_for: satCountsStat?.usatFor,
+//           usat_tied: satCountsStat?.usatTied,
+//           usat_total: satCountsStat?.usatTotal,
+//           // Shooting Percentages
+//           sat_percentage: satPercentagesStat?.satPercentage,
+//           sat_percentage_ahead: satPercentagesStat?.satPercentageAhead,
+//           sat_percentage_behind: satPercentagesStat?.satPercentageBehind,
+//           sat_percentage_close: satPercentagesStat?.satPercentageClose,
+//           sat_percentage_tied: satPercentagesStat?.satPercentageTied,
+//           sat_relative: satPercentagesStat?.satRelative,
+//           shooting_percentage_5v5: satPercentagesStat?.shootingPct5v5,
+//           skater_save_pct_5v5: satPercentagesStat?.skaterSavePct5v5,
+//           skater_shooting_plus_save_pct_5v5:
+//             satPercentagesStat?.skaterShootingPlusSavePct5v5,
+//           usat_percentage: satPercentagesStat?.usatPercentage,
+//           usat_percentage_ahead: satPercentagesStat?.usatPercentageAhead,
+//           usat_percentage_behind: satPercentagesStat?.usatPercentageBehind,
+//           usat_percentage_close: satPercentagesStat?.usatPrecentageClose, // Typo? Should be 'usatPercentageClose'
+//           usat_percentage_tied: satPercentagesStat?.usatPercentageTied,
+//           usat_relative: satPercentagesStat?.usatRelative,
+//           zone_start_pct_5v5: satPercentagesStat?.zoneStartPct5v5,
+//           // Scoring Rates
+//           assists_5v5: scoringRatesStat?.assists5v5,
+//           assists_per_60_5v5: scoringRatesStat?.assistsPer605v5,
+//           goals_5v5: scoringRatesStat?.goals5v5,
+//           goals_per_60_5v5: scoringRatesStat?.goalsPer605v5,
+//           net_minor_penalties_per_60: scoringRatesStat?.netMinorPenaltiesPer60,
+//           o_zone_start_pct_5v5: scoringRatesStat?.offensiveZoneStartPct5v5,
+//           on_ice_shooting_pct_5v5: scoringRatesStat?.onIceShootingPct5v5,
+//           points_5v5: scoringRatesStat?.points5v5,
+//           points_per_60_5v5: scoringRatesStat?.pointsPer605v5,
+//           primary_assists_5v5: scoringRatesStat?.primaryAssists5v5,
+//           primary_assists_per_60_5v5: scoringRatesStat?.primaryAssistsPer605v5,
+//           sat_relative_5v5: scoringRatesStat?.satRelative5v5,
+//           secondary_assists_5v5: scoringRatesStat?.secondaryAssists5v5,
+//           secondary_assists_per_60_5v5:
+//             scoringRatesStat?.secondaryAssistsPer605v5,
+//           // Scoring Per Game
+//           assists_per_game: scoringPerGameStat?.assistsPerGame,
+//           blocks_per_game: scoringPerGameStat?.blocksPerGame,
+//           goals_per_game: scoringPerGameStat?.goalsPerGame,
+//           hits_per_game: scoringPerGameStat?.hitsPerGame,
+//           penalty_minutes_per_game: scoringPerGameStat?.penaltyMinutesPerGame,
+//           primary_assists_per_game: scoringPerGameStat?.primaryAssistsPerGame,
+//           secondary_assists_per_game:
+//             scoringPerGameStat?.secondaryAssistsPerGame,
+//           shots_per_game: scoringPerGameStat?.shotsPerGame,
+//           total_primary_assists: scoringPerGameStat?.totalPrimaryAssists,
+//           total_secondary_assists: scoringPerGameStat?.totalSecondaryAssists,
+//           // Shot Type Stats
+//           goals_backhand: shotTypeStat?.goalsBackhand,
+//           goals_bat: shotTypeStat?.goalsBat,
+//           goals_between_legs: shotTypeStat?.goalsBetweenLegs,
+//           goals_cradle: shotTypeStat?.goalsCradle,
+//           goals_deflected: shotTypeStat?.goalsDeflected,
+//           goals_poke: shotTypeStat?.goalsPoke,
+//           goals_slap: shotTypeStat?.goalsSlap,
+//           goals_snap: shotTypeStat?.goalsSnap,
+//           goals_tip_in: shotTypeStat?.goalsTipIn,
+//           goals_wrap_around: shotTypeStat?.goalsWrapAround,
+//           goals_wrist: shotTypeStat?.goalsWrist,
+//           shooting_pct_backhand: shotTypeStat?.shootingPctBackhand,
+//           shooting_pct_bat: shotTypeStat?.shootingPctBat,
+//           shooting_pct_between_legs: shotTypeStat?.shootingPctBetweenLegs,
+//           shooting_pct_cradle: shotTypeStat?.shootingPctCradle,
+//           shooting_pct_deflected: shotTypeStat?.shootingPctDeflected,
+//           shooting_pct_poke: shotTypeStat?.shootingPctPoke,
+//           shooting_pct_slap: shotTypeStat?.shootingPctSlap,
+//           shooting_pct_snap: shotTypeStat?.shootingPctSnap,
+//           shooting_pct_tip_in: shotTypeStat?.shootingPctTipIn,
+//           shooting_pct_wrap_around: shotTypeStat?.shootingPctWrapAround,
+//           shooting_pct_wrist: shotTypeStat?.shootingPctWrist,
+//           shots_on_net_backhand: shotTypeStat?.shotsOnNetBackhand,
+//           shots_on_net_bat: shotTypeStat?.shotsOnNetBat,
+//           shots_on_net_between_legs: shotTypeStat?.shotsOnNetBetweenLegs,
+//           shots_on_net_cradle: shotTypeStat?.shotsOnNetCradle,
+//           shots_on_net_deflected: shotTypeStat?.shotsOnNetDeflected,
+//           shots_on_net_poke: shotTypeStat?.shotsOnNetPoke,
+//           shots_on_net_slap: shotTypeStat?.shotsOnNetSlap,
+//           shots_on_net_snap: shotTypeStat?.shotsOnNetSnap,
+//           shots_on_net_tip_in: shotTypeStat?.shotsOnNetTipIn,
+//           shots_on_net_wrap_around: shotTypeStat?.shotsOnNetWrapAround,
+//           shots_on_net_wrist: shotTypeStat?.shotsOnNetWrist,
+//           // Time On Ice Stats
+//           ev_time_on_ice: timeOnIceStat?.evTimeOnIce,
+//           ev_time_on_ice_per_game: timeOnIceStat?.evTimeOnIcePerGame,
+//           ot_time_on_ice: timeOnIceStat?.otTimeOnIce,
+//           ot_time_on_ice_per_game: timeOnIceStat?.otTimeOnIcePerOtGame,
+//           shifts: timeOnIceStat?.shifts,
+//           shifts_per_game: timeOnIceStat?.shiftsPerGame,
+//           time_on_ice_per_shift: timeOnIceStat?.timeOnIcePerShift,
+//           season_id: seasonId
+//         };
+
+//         // If "id" is null or undefined, remove it so that PostgreSQL generates a new one.
+//         if (mergedData.id == null) {
+//           delete mergedData.id;
+//         }
+
+//         mergedDataArray.push(mergedData);
+//       } catch (error) {
+//         console.error(
+//           `Error processing player ID ${playerId} on ${formattedDate}:`,
+//           error
+//         );
+//         totalErrors++;
+//       }
+//     }
+
+//     // Upsert the merged data with a retry mechanism
+//     try {
+//       await upsertData(formattedDate, mergedDataArray);
+//       totalUpdates += mergedDataArray.length;
+//     } catch (upsertError) {
+//       console.error(
+//         `Error upserting data for date ${formattedDate}:`,
+//         upsertError
+//       );
+//       totalErrors += mergedDataArray.length;
+//     }
+
+//     console.log(`Players processed: ${mergedDataArray.length}`);
+//     console.log(`Rows upserted: ${mergedDataArray.length}`);
+//     console.log("[==================================]\n");
+
+//     currentDate = addDays(currentDate, 1);
+//   }
+
+//   const elapsedMs = Date.now() - startTime;
+//   const elapsedTime = formatDuration(elapsedMs);
+//   console.log(`Processing completed in ${elapsedTime}`);
+
+//   return {
+//     message: `Skater stats updated for season ${seasonId} successfully. Total updates: ${totalUpdates}, Total errors: ${totalErrors}. Processing time: ${elapsedTime}`,
+//     success: true,
+//     totalUpdates,
+//     totalErrors,
+//     processingTime: elapsedTime
+//   };
+// }
 
 // Function to fetch data for a specific skater across multiple dates
 async function fetchDataForPlayer(
@@ -983,7 +1562,7 @@ export default async function handler(
   try {
     const { date, playerId, playerFullName, action } = req.query;
 
-    // **Action: Bulk Update for All Non-Goalie Players**
+    // // **Action: Bulk Update for All Non-Goalie Players**
     if (action === "all") {
       const result = await updateSkaterStatsForSeason();
       return res.status(200).json({
@@ -992,6 +1571,17 @@ export default async function handler(
         data: result
       });
     }
+
+    // // Toggle between implementations here.
+    // // For the hard-coded season run, use the line below:
+    // if (action === "hard") {
+    //   const result = await updateSkaterStatsForHardCodedSeason();
+    //   return res.status(200).json({
+    //     message: `Successfully updated skater stats for the hard-coded season.`,
+    //     success: true,
+    //     data: result
+    //   });
+    // }
 
     // // **Update Skater Stats for a Specific Date**
     // if (date) {

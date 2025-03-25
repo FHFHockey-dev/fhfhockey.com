@@ -88,8 +88,8 @@ function transformPlayerData(player: any) {
     headshot_url: player.headshot?.url || null,
     injury_note: player.injury_note || null,
     full_name: player.name?.full || null,
-    percent_ownership: parseFloat(player.percent_owned?.value || "0"),
-    percent_owned_value: parseFloat(player.percent_owned?.value || "0"),
+    // For an array approach, see "percent_owned" fix:
+    percent_ownership: parseFloat(player.percent_owned?.[1]?.value || "0"),
     position_type: player.position_type || null,
     status: player.status || null,
     status_full: player.status_full || null,
@@ -229,10 +229,10 @@ export default async function handler(
         continue; // continue with next batch
       }
 
-      await new Promise((r) => setTimeout(r, 500)); // Slightly increased delay for batch requests
+      await new Promise((r) => setTimeout(r, 500)); // Slightly increased delay
     }
 
-    const UPSERT_BATCH_SIZE = 500; // You can try 250 or 500 for balance
+    const UPSERT_BATCH_SIZE = 500;
 
     if (allRows.length) {
       console.log(
@@ -260,21 +260,25 @@ export default async function handler(
           throw error;
         }
 
-        await new Promise((resolve) => setTimeout(resolve, 500)); // Short delay to ensure API stability
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
 
       console.log(`✅ Successfully upserted all ${allRows.length} players.`);
+
+      // Then send back your final response
       return res.status(200).json({
         success: true,
         message: `Upserted ${allRows.length} players.`
       });
+      // ============ END SINGLE-PLAYER FETCH ===========
     }
 
-    res
+    // If we reach here, no players were found
+    return res
       .status(200)
       .json({ success: true, message: "No player data retrieved." });
   } catch (err: any) {
     console.error("🚨 API error encountered:", err);
-    res.status(500).json({ success: false, message: err.message });
+    return res.status(500).json({ success: false, message: err.message });
   }
-}
+} // end of handler

@@ -405,6 +405,7 @@ export type WGOAdvancedGoalieStat = {
   regulationLosses: number;
   regulationWins: number;
   shotsAgainstPer60: number;
+  currentTeamAbbrev: string;
 };
 
 export type WGOSummarySkaterStat = {
