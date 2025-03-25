@@ -1,5 +1,13 @@
 // components/PlayerPickupTable/PlayerPickupTable.tsx
 
+// TO-DO:
+// ADD ATOI and PPTOI/PP% to Percentile Ranks
+// Refine Composite Score algorithm
+// Should we sort by Stat?
+// Channge Team ABBREV to logo
+// Add Legend tooltip
+// Add Line / PP data to name column
+
 import React, { useState, useEffect, useMemo } from "react";
 import supabase from "lib/supabase";
 import styles from "./PlayerPickupTable.module.scss";
@@ -660,31 +668,33 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
                         )}
                       </td>
                       <td>
-                        {relevantMetrics.map(({ key, label }) => {
-                          const pctVal = player.percentiles[key];
-                          const displayVal =
-                            pctVal !== undefined
-                              ? pctVal.toFixed(0) + "%"
-                              : "0%";
-                          return (
-                            <div
-                              key={key}
-                              className={styles.percentileContainer}
-                            >
-                              <div className={styles.percentileLabel}>
-                                {label}
-                              </div>
+                        {relevantMetrics
+                          .filter(({ key }) => key !== "percent_games")
+                          .map(({ key, label }) => {
+                            const pctVal = player.percentiles[key];
+                            const displayVal =
+                              pctVal !== undefined
+                                ? pctVal.toFixed(0) + "%"
+                                : "0%";
+                            return (
                               <div
-                                className={styles.percentileBox}
-                                style={getRankColorStyle(
-                                  pctVal !== undefined ? pctVal : 0
-                                )}
+                                key={key}
+                                className={styles.percentileContainer}
                               >
-                                {displayVal}
+                                <div className={styles.percentileLabel}>
+                                  {label}
+                                </div>
+                                <div
+                                  className={styles.percentileBox}
+                                  style={getRankColorStyle(
+                                    pctVal !== undefined ? pctVal : 0
+                                  )}
+                                >
+                                  {displayVal}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
                       </td>
                       <td>{player.composite.toFixed(1)}</td>
                     </tr>
