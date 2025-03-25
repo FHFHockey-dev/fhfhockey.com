@@ -1,16 +1,18 @@
 // components/PlayerPickupTable/PlayerPickupTable.tsx
 
 import React, { useState, useEffect, useMemo } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import styles from "./PlayerPickupTable.module.scss";
 import Image from "next/image";
 
 // ---------------------------
 // Supabase Setup
 // ---------------------------
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Initialize Supabase client
+const supabase: SupabaseClient = createClient(
+  process.env.SUPABASE_URL as string,
+  process.env.SUPABASE_ANON_KEY as string
+);
 
 // ---------------------------
 // Type Definitions
