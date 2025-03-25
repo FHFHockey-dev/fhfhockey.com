@@ -9,10 +9,14 @@ import Image from "next/image";
 // Supabase Setup
 // ---------------------------
 // Initialize Supabase client
-const supabase: SupabaseClient = createClient(
-  process.env.SUPABASE_URL as string,
-  process.env.SUPABASE_ANON_KEY as string
-);
+const supabaseUrl: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey: string | undefined = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!supabaseUrl || !supabaseKey) {
+  console.error("Supabase URL or Service Role Key is missing.");
+  process.exit(1);
+}
+
+const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // ---------------------------
 // Type Definitions
