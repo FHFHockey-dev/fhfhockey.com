@@ -6234,6 +6234,85 @@ export type Database = {
           }
         ];
       };
+      // Add this inside the public.Tables object in your database-generated.types.ts file:
+      team_summary_years: {
+        Row: {
+          id: number;
+          season_id: number;
+          team_id: number;
+          team_full_name: string;
+          games_played: number | null;
+          wins: number | null;
+          losses: number | null;
+          ot_losses: number | null;
+          points: number | null;
+          goals_for: number | null;
+          goals_against: number | null;
+          goals_for_per_game: number | null;
+          goals_against_per_game: number | null;
+          shots_for_per_game: number | null;
+          shots_against_per_game: number | null;
+          faceoff_win_pct: number | null;
+          penalty_kill_pct: number | null;
+          penalty_kill_net_pct: number | null;
+          power_play_pct: number | null;
+          power_play_net_pct: number | null;
+          regulation_and_ot_wins: number | null;
+          point_pct: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: number;
+          season_id: number;
+          team_id: number;
+          team_full_name: string;
+          games_played?: number | null;
+          wins?: number | null;
+          losses?: number | null;
+          ot_losses?: number | null;
+          points?: number | null;
+          goals_for?: number | null;
+          goals_against?: number | null;
+          goals_for_per_game?: number | null;
+          goals_against_per_game?: number | null;
+          shots_for_per_game?: number | null;
+          shots_against_per_game?: number | null;
+          faceoff_win_pct?: number | null;
+          penalty_kill_pct?: number | null;
+          penalty_kill_net_pct?: number | null;
+          power_play_pct?: number | null;
+          power_play_net_pct?: number | null;
+          regulation_and_ot_wins?: number | null;
+          point_pct?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          id?: number;
+          season_id?: number;
+          team_id?: number;
+          team_full_name?: string;
+          games_played?: number | null;
+          wins?: number | null;
+          losses?: number | null;
+          ot_losses?: number | null;
+          points?: number | null;
+          goals_for?: number | null;
+          goals_against?: number | null;
+          goals_for_per_game?: number | null;
+          goals_against_per_game?: number | null;
+          shots_for_per_game?: number | null;
+          shots_against_per_game?: number | null;
+          faceoff_win_pct?: number | null;
+          penalty_kill_pct?: number | null;
+          penalty_kill_net_pct?: number | null;
+          power_play_pct?: number | null;
+          power_play_net_pct?: number | null;
+          regulation_and_ot_wins?: number | null;
+          point_pct?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       nst_gamelog_pp_counts_oi: {
         Row: {
           ca: number | null;
@@ -11394,6 +11473,7 @@ export type Database = {
           regulation_wins: number | null;
           shots_against_per_60: number | null;
           team_abbrevs: string | null;
+          current_team_abbreviation: string | null;
         };
         Insert: {
           goalie_id: number;
@@ -11423,6 +11503,7 @@ export type Database = {
           regulation_wins?: number | null;
           shots_against_per_60?: number | null;
           team_abbrevs?: string | null;
+          current_team_abbreviation?: string | null;
         };
         Update: {
           goalie_id?: number;
@@ -11452,6 +11533,7 @@ export type Database = {
           regulation_wins?: number | null;
           shots_against_per_60?: number | null;
           team_abbrevs?: string | null;
+          current_team_abbreviation?: string | null;
         };
         Relationships: []; // Add relationships if applicable.
       };

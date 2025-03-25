@@ -20,9 +20,11 @@ async function fetchTotalsDataForSeason(
 ): Promise<{
   goalieStats: WGOGoalieStat[];
   advancedGoalieStats: WGOAdvancedGoalieStat[];
+  bioGoalieStats: WGOAdvancedGoalieStat[];
 }> {
   let allGoalieStats: WGOGoalieStat[] = [];
   let allAdvancedGoalieStats: WGOAdvancedGoalieStat[] = [];
+  let allBioGoalieStats: WGOAdvancedGoalieStat[] = [];
   let start = 0;
   const batchSize = 5; // Number of pages to fetch concurrently
   let keepFetching = true;
@@ -34,6 +36,7 @@ async function fetchTotalsDataForSeason(
   while (keepFetching) {
     const batchSummaryPromises = [];
     const batchAdvancedPromises = [];
+    const batchBioPromises = [];
 
     console.log(`Fetching batch starting at index ${start}`);
 
@@ -42,19 +45,23 @@ async function fetchTotalsDataForSeason(
       const pageStart = start + i * limit;
       const summaryUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=false&isGame=false&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${pageStart}&limit=${limit}&cayenneExp=gameTypeId=2%20and%20seasonId%3C%3D${seasonId}%20and%20seasonId%3E%3D${seasonId}`;
       const advancedUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=false&isGame=false&sort=%5B%7B%22property%22:%22qualityStart%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsAgainstAverage%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${pageStart}&limit=${limit}&cayenneExp=gameTypeId=2%20and%20seasonId%3C%3D${seasonId}%20and%20seasonId%3E%3D${seasonId}`;
+      const bioUrl = `https://api.nhle.com/stats/rest/en/goalie/bios?isAggregate=false&isGame=false&sort=%5B%7B%22property%22:%22lastName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22goalieFullName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${pageStart}&limit=${limit}&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${seasonId}%20and%20seasonId%3E=${seasonId}`;
       batchSummaryPromises.push(Fetch(summaryUrl).then((res) => res.json()));
       batchAdvancedPromises.push(Fetch(advancedUrl).then((res) => res.json()));
+      batchBioPromises.push(Fetch(bioUrl).then((res) => res.json()));
     }
 
     // Await the entire batch concurrently
     const batchSummaryResults = await Promise.all(batchSummaryPromises);
     const batchAdvancedResults = await Promise.all(batchAdvancedPromises);
+    const batchBioResults = await Promise.all(batchBioPromises);
 
     let batchHasData = false;
     for (let i = 0; i < batchSize; i++) {
       const summaryData = batchSummaryResults[i].data as WGOGoalieStat[];
       const advancedData = batchAdvancedResults[i]
         .data as WGOAdvancedGoalieStat[];
+      const bioData = batchBioResults[i].data as WGOAdvancedGoalieStat[];
 
       console.log(
         `Page ${start + i * limit}: Summary returned ${
@@ -62,15 +69,24 @@ async function fetchTotalsDataForSeason(
         } records; Advanced returned ${advancedData.length} records.`
       );
 
-      if (summaryData.length > 0 || advancedData.length > 0) {
+      if (
+        summaryData.length > 0 ||
+        advancedData.length > 0 ||
+        bioData.length > 0
+      ) {
         batchHasData = true;
       }
 
       allGoalieStats = allGoalieStats.concat(summaryData);
       allAdvancedGoalieStats = allAdvancedGoalieStats.concat(advancedData);
+      allBioGoalieStats = allBioGoalieStats.concat(bioData);
 
       // If both endpoints return fewer than 'limit' records on any page, assume it's the last page.
-      if (summaryData.length < limit && advancedData.length < limit) {
+      if (
+        summaryData.length < limit &&
+        advancedData.length < limit &&
+        bioData.length < limit
+      ) {
         keepFetching = false;
       }
     }
@@ -88,7 +104,8 @@ async function fetchTotalsDataForSeason(
 
   return {
     goalieStats: allGoalieStats,
-    advancedGoalieStats: allAdvancedGoalieStats
+    advancedGoalieStats: allAdvancedGoalieStats,
+    bioGoalieStats: allBioGoalieStats
   };
 }
 
@@ -102,10 +119,8 @@ async function updateGoalieTotals(
   seasonId: string
 ): Promise<{ totalUpdates: number }> {
   const limit = 100;
-  const { goalieStats, advancedGoalieStats } = await fetchTotalsDataForSeason(
-    seasonId,
-    limit
-  );
+  const { goalieStats, advancedGoalieStats, bioGoalieStats } =
+    await fetchTotalsDataForSeason(seasonId, limit);
 
   console.log(
     `Starting bulk upsert for season ${seasonId} with ${goalieStats.length} summary records.`
@@ -116,6 +131,10 @@ async function updateGoalieTotals(
     const advStats = advancedGoalieStats.find(
       (aStat) => aStat.playerId === stat.playerId
     );
+    const bioStats = bioGoalieStats.find(
+      (bStat) => bStat.playerId === stat.playerId
+    );
+
     return {
       goalie_id: stat.playerId,
       goalie_name: stat.goalieFullName,
@@ -144,6 +163,7 @@ async function updateGoalieTotals(
       regulation_losses: advStats?.regulationLosses,
       regulation_wins: advStats?.regulationWins,
       shots_against_per_60: advStats?.shotsAgainstPer60,
+      current_team_abbreviation: bioStats?.currentTeamAbbrev,
       updated_at: new Date().toISOString()
     };
   });
@@ -189,36 +209,13 @@ export default async function handler(
   const startTime = Date.now();
 
   try {
-    // Fetch the most recent season from the table by ordering descending and limiting to 1
-    const { data: existingData } = await supabase
-      .from("wgo_goalie_stats_totals")
-      .select("season_id")
-      .order("season_id", { ascending: false })
-      .limit(1);
-    console.log("Existing season data in table:", existingData);
+    // Check for the "season=all" query parameter
+    const updateAll = req.query.season?.toString().toLowerCase() === "all";
 
-    if (existingData && existingData.length > 0) {
-      const mostRecentSeasonId = Number(existingData[0].season_id);
+    if (updateAll) {
       console.log(
-        "Most recent season determined from table:",
-        mostRecentSeasonId
+        "Query parameter 'season=all' detected. Updating all seasons."
       );
-
-      // Update only the most recent season.
-      const result = await updateGoalieTotals(mostRecentSeasonId.toString());
-      const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
-      console.log(
-        `Completed update for season ${mostRecentSeasonId} in ${durationSec} s.`
-      );
-      return res.status(200).json({
-        message: `Successfully refreshed (upserted) goalie season totals for season ${mostRecentSeasonId}.`,
-        success: true,
-        data: result,
-        duration: `${durationSec} s`
-      });
-    } else {
-      // If no data exists, update all seasons up to the current season.
-      console.log("No existing season data found. Updating all seasons.");
       const currentSeason = await getCurrentSeason();
       const allSeasons = await fetchAllSeasons();
       const validSeasons = allSeasons.filter(
@@ -241,6 +238,60 @@ export default async function handler(
         data: { totalUpdates: totalUpdatesOverall },
         duration: `${durationSec} s`
       });
+    } else {
+      // Original behavior: Update only the most recent season if data exists,
+      // or update all seasons if there is no existing season data.
+      const { data: existingData } = await supabase
+        .from("wgo_goalie_stats_totals")
+        .select("season_id")
+        .order("season_id", { ascending: false })
+        .limit(1);
+      console.log("Existing season data in table:", existingData);
+
+      if (existingData && existingData.length > 0) {
+        const mostRecentSeasonId = Number(existingData[0].season_id);
+        console.log(
+          "Most recent season determined from table:",
+          mostRecentSeasonId
+        );
+
+        // Update only the most recent season.
+        const result = await updateGoalieTotals(mostRecentSeasonId.toString());
+        const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
+        console.log(
+          `Completed update for season ${mostRecentSeasonId} in ${durationSec} s.`
+        );
+        return res.status(200).json({
+          message: `Successfully refreshed (upserted) goalie season totals for season ${mostRecentSeasonId}.`,
+          success: true,
+          data: result,
+          duration: `${durationSec} s`
+        });
+      } else {
+        console.log("No existing season data found. Updating all seasons.");
+        const currentSeason = await getCurrentSeason();
+        const allSeasons = await fetchAllSeasons();
+        const validSeasons = allSeasons.filter(
+          (season) => Number(season.id) <= Number(currentSeason.seasonId)
+        );
+        let totalUpdatesOverall = 0;
+        for (const season of validSeasons) {
+          console.log(`Updating season ${season.id}...`);
+          const seasonIdStr = season.id.toString();
+          const result = await updateGoalieTotals(seasonIdStr);
+          totalUpdatesOverall += result.totalUpdates;
+        }
+        const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
+        console.log(`Completed update for all seasons in ${durationSec} s.`);
+        return res.status(200).json({
+          message: `Successfully upserted goalie season totals for seasons: ${validSeasons
+            .map((s) => s.id)
+            .join(", ")}`,
+          success: true,
+          data: { totalUpdates: totalUpdatesOverall },
+          duration: `${durationSec} s`
+        });
+      }
     }
   } catch (e: any) {
     console.error("Update Totals Error:", e.message);

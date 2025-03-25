@@ -7,6 +7,7 @@ import Header from "./Header";
 import TeamRow from "./TeamRow";
 import TotalGamesPerDayRow, { calcTotalGP } from "./TotalGamesPerDayRow";
 import FourWeekGrid from "./utils/FourWeekGrid";
+import PlayerPickupTable from "components/PlayerPickupTable/PlayerPickupTable";
 
 import { parseDateStr, startAndEndOfWeek } from "./utils/date-func";
 import { calcTotalOffNights, getTotalGamePlayed } from "./utils/helper";
@@ -50,6 +51,17 @@ import GameGridContext from "./contexts/GameGridContext";
 type SortKey = {
   key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
   ascending: boolean;
+};
+
+type TeamWeekData = {
+  teamAbbreviation: string;
+  gamesPlayed: number;
+  offNights: number;
+  avgOpponentPointPct: number;
+};
+
+type PlayerPickupTableProps = {
+  teamWeekData?: TeamWeekData[];
 };
 
 function GameGridInternal({
@@ -522,7 +534,7 @@ function GameGridInternal({
       </div>
 
       {orientation === "horizontal" ? (
-        // Horizontal layout now stacks FourWeekGrid underneath the schedule grid
+        // Horizontal layout: schedule grid on top; lower section with FourWeekGrid and PlayerPickupTable side by side
         <div className={styles.mainGridContainer}>
           <div className={styles.gridWrapper}>
             <table className={styles.scheduleGrid}>
@@ -562,12 +574,31 @@ function GameGridInternal({
               </tbody>
             </table>
           </div>
-          <div className={styles.fourWeekGridContainerAll}>
-            <FourWeekGrid teamDataArray={teamDataWithAverages} />
+          {/* New lower grid container for FourWeekGrid and PlayerPickupTable */}
+          <div className={styles.lowerGridHorizontal}>
+            <div className={styles.fourWeekGridContainerAll}>
+              <FourWeekGrid teamDataArray={teamDataWithAverages} />
+            </div>
+            <div className={styles.playerPickupContainer}>
+              <PlayerPickupTable
+                teamWeekData={teamDataWithAverages.map((team) => {
+                  // Only take week1 data
+                  const week1 = team.weeks.find((w) => w.weekNumber === 1);
+                  return {
+                    teamAbbreviation: team.teamAbbreviation,
+                    gamesPlayed: week1
+                      ? week1.gamesPlayed
+                      : team.totals.gamesPlayed,
+                    offNights: week1 ? week1.offNights : team.totals.offNights,
+                    avgOpponentPointPct: team.avgOpponentPointPct
+                  };
+                })}
+              />
+            </div>
           </div>
         </div>
       ) : (
-        // Vertical layout remains unchanged
+        // Vertical layout: TransposedGrid on top; lower section with FourWeekGrid stacked above PlayerPickupTable
         <div className={styles.verticalContainer}>
           <TransposedGrid
             sortedTeams={sortedTeams}
@@ -578,8 +609,26 @@ function GameGridInternal({
             start={dates[0]}
             mode={mode === "7-Day-Forecast" ? "7-Day" : "10-Day-Forecast"}
           />
-          <div className={styles.fourWeekGridContainerAll}>
-            <FourWeekGrid teamDataArray={teamDataWithAverages} />
+          <div className={styles.lowerGridVertical}>
+            <div className={styles.fourWeekGridContainerAll}>
+              <FourWeekGrid teamDataArray={teamDataWithAverages} />
+            </div>
+            <div className={styles.playerPickupContainer}>
+              <PlayerPickupTable
+                teamWeekData={teamDataWithAverages.map((team) => {
+                  // Only take week1 data
+                  const week1 = team.weeks.find((w) => w.weekNumber === 1);
+                  return {
+                    teamAbbreviation: team.teamAbbreviation,
+                    gamesPlayed: week1
+                      ? week1.gamesPlayed
+                      : team.totals.gamesPlayed,
+                    offNights: week1 ? week1.offNights : team.totals.offNights,
+                    avgOpponentPointPct: team.avgOpponentPointPct
+                  };
+                })}
+              />
+            </div>
           </div>
         </div>
       )}
