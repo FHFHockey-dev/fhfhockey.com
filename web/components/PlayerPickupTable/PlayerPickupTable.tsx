@@ -1,22 +1,9 @@
 // components/PlayerPickupTable/PlayerPickupTable.tsx
 
 import React, { useState, useEffect, useMemo } from "react";
-import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import supabase from "lib/supabase";
 import styles from "./PlayerPickupTable.module.scss";
 import Image from "next/image";
-
-// ---------------------------
-// Supabase Setup
-// ---------------------------
-// Initialize Supabase client
-const supabaseUrl: string | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey: string | undefined = process.env.SUPABASE_SERVICE_ROLE_KEY;
-if (!supabaseUrl || !supabaseKey) {
-  console.error("Supabase URL or Service Role Key is missing.");
-  process.exit(1);
-}
-
-const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // ---------------------------
 // Type Definitions
@@ -227,7 +214,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     const supabasePageSize = 1000; // for fetching from Supabase
     while (true) {
       const { data, error } = await supabase
-        .from("yahoo_nhl_player_map_mat") // Use the materialized view!
+        .from("yahoo_nhl_player_map_mat")
         .select("*")
         .range(from, from + supabasePageSize - 1);
       if (error) {
