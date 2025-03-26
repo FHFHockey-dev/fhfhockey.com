@@ -1,5 +1,8 @@
 // components/GameGrid/GameGrid.tsx
 
+// TO-DO:
+// Change Home/Away to use Home/Away Icons
+
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 
@@ -22,6 +25,7 @@ import {
 } from "./utils/calcWinOdds";
 
 import TransposedGrid from "./TransposedGrid";
+import OpponentMetricsTable from "./OpponentMetricsTable";
 
 import styles from "./GameGrid.module.scss";
 import Spinner from "components/Spinner";
@@ -545,20 +549,22 @@ function GameGridInternal({
                 setSortKeys={setSortKeys}
                 excludedDays={excludedDays}
                 setExcludedDays={setExcludedDays}
+                weekData={teamDataWithAverages}
               />
               <tbody>
                 <TotalGamesPerDayRow
                   games={currentNumGamesPerDay}
                   excludedDays={excludedDays}
                   extended={mode === "10-Day-Forecast"}
+                  weekData={teamDataWithAverages}
                 />
                 {sortedTeams.map(({ teamId, ...rest }) => {
-                  let highlightClass = "";
-                  if (top10TeamIds.has(teamId)) {
-                    highlightClass = styles.teamRowGreen;
-                  } else if (bottom10TeamIds.has(teamId)) {
-                    highlightClass = styles.teamRowRed;
-                  }
+                  const highlightClass = top10TeamIds.has(teamId)
+                    ? styles.teamRowGreen
+                    : bottom10TeamIds.has(teamId)
+                    ? styles.teamRowRed
+                    : "";
+
                   return (
                     <TeamRow
                       key={teamId}
@@ -599,6 +605,9 @@ function GameGridInternal({
                 />
               </div>
             </div>
+          </div>
+          <div className={styles.opponentStatsContainer}>
+            <OpponentMetricsTable teamData={teamDataWithAverages} />
           </div>
         </div>
       ) : (

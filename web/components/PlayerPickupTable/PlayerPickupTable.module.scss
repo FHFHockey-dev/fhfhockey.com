@@ -1,23 +1,64 @@
 // PlayerPickupTable.module.scss
 
 @use "sass:color";
+@use "styles/vars";
 
 .container {
   width: 85%;
-  margin: 10px auto;
+  margin: 0px auto;
   color: white;
   font-family: "Roboto Condensed", sans-serif;
 }
 
 .filters {
-  background-color: #101010; // match dark theme header
-  border: 1px solid #505050;
+  margin: 0 auto;
+  color: white;
+  overflow: hidden;
+  border: 4px solid #404040;
+  outline: 10px solid #101010;
+  background-color: #101010;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 900;
+  text-align: left;
+  width: 100%;
   padding: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
+
+  // New Flex properties:
+  display: flex;
+  flex-direction: column; // Lay out children side by side
+  gap: 10px; // Add space between children
 }
 
-.filterRow {
-  margin-bottom: 10px;
+/* New style for the title div */
+.filtersTitle {
+  width: 100%;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 900;
+  color: white;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-style: italic;
+  letter-spacing: 2px;
+}
+
+.divider {
+  width: 100%;
+  border-bottom: 1px solid #07aae2; // Adjust the color to match your theme
+  margin: 0 auto; // Space above and below the divider
+}
+
+.filterContainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Style for the acronym letters */
+.acronym {
+  color: #07aae2;
 }
 
 .label {
@@ -31,37 +72,32 @@
 
 .nameAndInjuryWrapper {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   width: 100%;
   height: 100%;
+  gap: 5px;
 }
 
 /* LEFT 50%: The name */
 .leftNamePart {
-  width: 50%;
+  width: 100%;
+  margin: 0 auto;
   display: flex;
-  align-items: center; /* vertical centering */
-  justify-content: center; /* or 'flex-start' if you want it left-aligned */
+  align-items: center;
+  text-align: left;
 }
 
 /* RIGHT 50%: The image + status + injury note */
 .rightInjuryPart {
-  width: 50%;
-  /* If you want the right half only 75% high, you can do:
-       height: 75%;
-       margin: auto 0; 
-       But that can be tricky in table cells. 
-       Often you'll want height: 100% to fill the cell. 
-    */
+  width: 100%;
   display: flex;
-  flex-direction: row; /* side-by-side for image + text */
-  align-items: center; /* vertical centering in the half */
-  justify-content: center; /* horizontal centering, or 'flex-start' */
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
 }
 
 /* 35% for the image container */
 .imageContainer {
-  width: 35%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -69,15 +105,13 @@
 
 /* 65% for the text container */
 .statusContainer {
-  width: 65%;
+  width: 100%;
   display: flex;
-  flex-direction: column; /* stack status text above injury note */
-  justify-content: center;
-  align-items: flex-start; /* left-align text */
-  margin-left: 4px; /* small gap from the image */
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
 }
 
-/* Adjust these as desired */
 .playerName {
   font-weight: bold;
 }
@@ -85,13 +119,12 @@
 .statusText {
   color: red;
   font-size: 0.8em;
-  margin-bottom: 2px;
+  margin-left: 10%;
 }
 
 .injuryNote {
   color: white;
   font-size: 0.8em;
-  margin-top: 2px;
 }
 
 .positions {
@@ -113,46 +146,87 @@
   border: 3px solid white;
 }
 
+/* Table Container updated to mimic FourWeekGrid styling */
 .tableContainer {
   overflow-x: auto;
+  outline: 10px solid #101010;
+  border-radius: 12px;
 }
 
-.table thead {
-  background-color: #101010;
-}
-
+/* Table styling updated for sticky headers, adjusted padding, and borders */
 .table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-  background-color: #101010;
+  margin: 0 auto;
+  color: white;
+  overflow: hidden;
   border: 4px solid #404040;
   border-radius: 12px;
-  outline: 10px solid #101010;
+  border-spacing: 0;
   font-size: 14px;
-  text-align: center;
-  transition: background-color 0.2s ease;
-}
+  text-align: left;
+  width: 100%;
 
-.table th,
-.table td {
-  border: 0.5px solid #909090;
-  padding: 8px;
-  font-size: 14px;
-  text-align: center;
-}
+  thead {
+    position: sticky;
+    top: 0;
+    background-color: #101010;
+    z-index: 2;
+  }
 
-.table th {
-  font-weight: 900;
-  cursor: pointer;
-}
+  th {
+    flex: content;
+    align-content: center;
+    border-collapse: collapse;
+    background-color: #101010;
+    color: white;
+    font-weight: 900;
+    font-family: "Roboto Condensed", sans-serif;
+    font-size: 14px;
+    height: 15px;
+    padding: 10px;
+    cursor: pointer;
+  }
 
-.table tbody tr:nth-of-type(odd) {
-  background-color: #101010;
-}
+  /* Special styling for the first column */
+  tr th:first-child,
+  tr td:first-child {
+    border-right: 5px solid #07aae2;
+    text-align: center;
+    padding: 10px;
+    font-size: 16px;
+    font-family: "Roboto Condensed", sans-serif;
+  }
 
-.table tbody tr:hover {
-  background-color: color.mix(white, #303030, 5%);
+  /* Styling for remaining cells */
+  th:nth-child(n + 2),
+  td:nth-child(n + 2) {
+    padding: 3px 5px;
+    border: 0.5px solid #505050;
+
+    text-align: center;
+  }
+
+  tr {
+    font-family: "Roboto Condensed", sans-serif;
+    height: 55px;
+    text-align: center;
+    border-radius: 4px;
+  }
+
+  tr:nth-child(even) {
+    background-color: #202020;
+  }
+
+  tr:hover {
+    background-color: #505050;
+  }
+
+  > tbody > tr:nth-of-type(odd) {
+    background-color: #101010;
+  }
+
+  tr:hover:nth-of-type(odd) {
+    background-color: #505050;
+  }
 }
 
 .percentileContainer {
@@ -175,4 +249,39 @@
   font-weight: bold;
   text-align: center;
   min-width: 40px; // Adjust as needed so the value fills the box
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  margin: 20px 0; // Space above and below the controls
+  gap: 20px;
+}
+
+.pagination button {
+  background-color: #14a2d2; // Accent color
+  color: white;
+  border: 1px solid white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border 0.2s ease;
+}
+
+.pagination button:hover {
+  border: 3px solid white;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination span {
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 16px;
+  color: white;
 }

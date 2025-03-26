@@ -343,6 +343,80 @@ export type Database = {
           }
         ];
       };
+      nhl_team_data: {
+        Row: {
+          season_id: number | null;
+          date: string | null; // dates are typically represented as strings in JSON
+          team_abbrev: string | null;
+          games_played: number | null;
+          win_pctg: number | null;
+          goal_for: number | null;
+          goal_against: number | null;
+          goal_for_per_game: number | null;
+          goal_against_per_game: number | null;
+          cf_pct: number | null;
+          sf_pct: number | null;
+          xgf: number | null;
+          xga: number | null;
+          sf: number | null;
+          sa: number | null;
+          xgf_per_game: number | null;
+          xga_per_game: number | null;
+          sf_per_game: number | null;
+          sa_per_game: number | null;
+        };
+        Insert: {
+          season_id?: number | null;
+          date?: string | null;
+          team_abbrev?: string | null;
+          games_played?: number | null;
+          win_pctg?: number | null;
+          goal_for?: number | null;
+          goal_against?: number | null;
+          goal_for_per_game?: number | null;
+          goal_against_per_game?: number | null;
+          cf_pct?: number | null;
+          sf_pct?: number | null;
+          xgf?: number | null;
+          xga?: number | null;
+          sf?: number | null;
+          sa?: number | null;
+          xgf_per_game?: number | null;
+          xga_per_game?: number | null;
+          sf_per_game?: number | null;
+          sa_per_game?: number | null;
+        };
+        Update: {
+          season_id?: number | null;
+          date?: string | null;
+          team_abbrev?: string | null;
+          games_played?: number | null;
+          win_pctg?: number | null;
+          goal_for?: number | null;
+          goal_against?: number | null;
+          goal_for_per_game?: number | null;
+          goal_against_per_game?: number | null;
+          cf_pct?: number | null;
+          sf_pct?: number | null;
+          xgf?: number | null;
+          xga?: number | null;
+          sf?: number | null;
+          sa?: number | null;
+          xgf_per_game?: number | null;
+          xga_per_game?: number | null;
+          sf_per_game?: number | null;
+          sa_per_game?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "nhl_team_stats_season_id_fkey";
+            columns: ["season_id"];
+            isOneToOne: false;
+            referencedRelation: "seasons";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       league_averages_goalies: {
         Row: {
           games_played: number | null;
