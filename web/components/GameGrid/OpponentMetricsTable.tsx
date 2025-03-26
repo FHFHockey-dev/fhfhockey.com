@@ -73,7 +73,7 @@ export default function OpponentMetricsTable({
       <thead>
         <tr>
           <th colSpan={7} className={styles.metricsHeader}>
-            Opponent's Averaged Metrics
+            Opponent&apos;s Averaged Metrics
           </th>
         </tr>
         <tr>
