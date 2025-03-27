@@ -211,7 +211,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   // Pagination states
   // ---------------------------
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const pageSize = 20; // Show 20 players per page
+  const pageSize = 25; // Show 20 players per page
 
   // ---------------------------
   // 1) Fetch All Data (from materialized view)

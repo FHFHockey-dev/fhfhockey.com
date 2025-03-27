@@ -72,8 +72,15 @@ export default function OpponentMetricsTable({
     averages: computeAverages(team)
   }));
 
-  // Define the metrics to display as rows
-  const metricRows = [
+  // After computing teamsAverages, add:
+  const sortedTeamsAverages = React.useMemo(() => {
+    return [...teamsAverages].sort((a, b) =>
+      a.team.teamAbbreviation.localeCompare(b.team.teamAbbreviation)
+    );
+  }, [teamsAverages]);
+
+  // Define the metrics for the header (order matters)
+  const metricColumns = [
     { label: "xGF", key: "avgXgf" },
     { label: "xGA", key: "avgXga" },
     { label: "SF", key: "avgSf" },
@@ -87,37 +94,38 @@ export default function OpponentMetricsTable({
     <div className={styles.container}>
       <table className={styles.table}>
         <thead>
+          {/* Top header row spanning all columns */}
           <tr>
             <th
-              colSpan={teamsAverages.length + 1}
-              className={`${styles.headerLabelRow} ${styles.fullWidthHeader}`}
+              colSpan={metricColumns.length + 1}
+              className={styles.headerLabelRow}
             >
-              AVERAGE STATS OF OPPONENTS FACED THIS WEEK
+              AVG OPPONENT <span className={styles.spanColorBlue}>STATS</span>
             </th>
           </tr>
+          {/* Second header row: first cell for "Team", then metric labels */}
           <tr>
-            {/* Empty top-left cell */}
-            <th></th>
-            {teamsAverages.map(({ team }) => (
-              <th key={team.teamId}>
-                <Image
-                  src={`/teamLogos/${team.teamAbbreviation}.png`}
-                  alt={team.teamAbbreviation || "Team Logo"}
-                  width={25}
-                  height={25}
-                />
-              </th>
+            <th>Team</th>
+            {metricColumns.map((metric) => (
+              <th key={metric.key}>{metric.label}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {metricRows.map((metric) => (
-            <tr key={metric.key}>
-              <td>{metric.label}</td>
-              {teamsAverages.map(({ averages, team }) => {
+          {sortedTeamsAverages.map(({ team, averages }) => (
+            <tr key={team.teamId}>
+              <td>
+                <Image
+                  src={`/teamLogos/${team.teamAbbreviation}.png`}
+                  alt={team.teamAbbreviation || "Team Logo"}
+                  width={30}
+                  height={30}
+                />
+              </td>
+              {metricColumns.map((metric) => {
                 const value = averages[metric.key as keyof Averages];
                 return (
-                  <td key={team.teamId}>
+                  <td key={metric.key}>
                     {value != null ? value.toFixed(1) : "-"}
                   </td>
                 );

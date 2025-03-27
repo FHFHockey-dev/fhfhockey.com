@@ -579,6 +579,9 @@ function GameGridInternal({
                 })}
               </tbody>
             </table>
+            <div className={styles.opponentStatsContainer}>
+              <OpponentMetricsTable teamData={teamDataWithAverages} />
+            </div>
           </div>
           {/* New lower grid container for FourWeekGrid and PlayerPickupTable */}
           <div className={styles.fourWeekAndBPAtableContainer}>
@@ -587,9 +590,6 @@ function GameGridInternal({
                 <FourWeekGrid teamDataArray={teamDataWithAverages} />
               </div>
               <div className={styles.bpaAndOppContainer}>
-                <div className={styles.opponentStatsContainer}>
-                  <OpponentMetricsTable teamData={teamDataWithAverages} />
-                </div>
                 <div className={styles.playerPickupContainer}>
                   <PlayerPickupTable
                     teamWeekData={teamDataWithAverages.map((team) => {
