@@ -1,5 +1,13 @@
 // components/PlayerPickupTable/PlayerPickupTable.tsx
 
+// TO-DO:
+// ADD ATOI and PPTOI/PP% to Percentile Ranks
+// Refine Composite Score algorithm
+// Should we sort by Stat?
+// Channge Team ABBREV to logo
+// Add Legend tooltip
+// Add Line / PP data to name column
+
 import React, { useState, useEffect, useMemo } from "react";
 import supabase from "lib/supabase";
 import styles from "./PlayerPickupTable.module.scss";
@@ -252,12 +260,12 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       const positionsValue = player.eligible_positions;
       const offNightsValue = getOffNightsForPlayer(player);
 
-      console.log("DEBUG:", {
-        name: player.nhl_player_name,
-        ownershipValue,
-        positionsValue,
-        offNightsValue
-      });
+      // console.log("DEBUG:", {
+      //   name: player.nhl_player_name,
+      //   ownershipValue,
+      //   positionsValue,
+      //   offNightsValue
+      // });
 
       const ownershipMissing = ownershipValue === null || ownershipValue === 0;
       const positionsMissing = !positionsValue || positionsValue.length === 0;
@@ -266,13 +274,13 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         offNightsValue === "N/A" ||
         offNightsValue === "";
 
-      if (ownershipMissing && positionsMissing && offNightsEmpty) {
-        console.log(
-          "Hiding player due to missing data:",
-          player.nhl_player_name
-        );
-        return false;
-      }
+      // if (ownershipMissing && positionsMissing && offNightsEmpty) {
+      //   console.log(
+      //     "Hiding player due to missing data:",
+      //     player.nhl_player_name
+      //   );
+      //   return false;
+      // }
 
       // Existing filters:
       if (
@@ -444,50 +452,60 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     <div className={styles.container}>
       {/* Filter Controls */}
       <div className={styles.filters}>
-        <div className={styles.filterRow}>
-          <label className={styles.label}>
-            Ownership Threshold: {ownershipThreshold}%
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={ownershipThreshold}
-            onChange={(e) => setOwnershipThreshold(Number(e.target.value))}
-            className={styles.slider}
-          />
+        <div className={styles.filtersTitle}>
+          <span className={styles.acronym}>BPA</span> -{" "}
+          <span className={styles.acronym}>B</span>est{" "}
+          <span className={styles.acronym}>P</span>layer{" "}
+          <span className={styles.acronym}>A</span>vailable
         </div>
-        <div className={styles.filterRow}>
-          <label className={styles.label}>Team Filter:</label>
-          <select
-            value={teamFilter}
-            onChange={(e) => setTeamFilter(e.target.value)}
-            className={styles.select}
-          >
-            {teamOptions.map((team) => (
-              <option key={team} value={team}>
-                {team}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className={styles.filterRow}>
-          <span className={styles.label}>Positions:</span>
-          {Object.keys(defaultPositions).map((pos) => (
-            <label key={pos} style={{ marginRight: "10px" }}>
-              <input
-                type="checkbox"
-                checked={selectedPositions[pos]}
-                onChange={() =>
-                  setSelectedPositions((prev) => ({
-                    ...prev,
-                    [pos]: !prev[pos]
-                  }))
-                }
-              />
-              {pos}
+        <div className={styles.divider} />
+
+        <div className={styles.filterContainer}>
+          <div className={styles.filterRow}>
+            <label className={styles.label}>
+              Ownership Threshold: {ownershipThreshold}%
             </label>
-          ))}
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={ownershipThreshold}
+              onChange={(e) => setOwnershipThreshold(Number(e.target.value))}
+              className={styles.slider}
+            />
+          </div>
+          <div className={styles.filterRow}>
+            <label className={styles.label}>Team Filter:</label>
+            <select
+              value={teamFilter}
+              onChange={(e) => setTeamFilter(e.target.value)}
+              className={styles.select}
+            >
+              {teamOptions.map((team) => (
+                <option key={team} value={team}>
+                  {team}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.filterRow}>
+            <span className={styles.label}>Positions:</span>
+            {Object.keys(defaultPositions).map((pos) => (
+              <label key={pos} style={{ marginRight: "10px" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedPositions[pos]}
+                  onChange={() =>
+                    setSelectedPositions((prev) => ({
+                      ...prev,
+                      [pos]: !prev[pos]
+                    }))
+                  }
+                />
+                {pos}
+              </label>
+            ))}
+          </div>
         </div>
         <button className={styles.buttonReset} onClick={resetFilters}>
           Reset Filters
@@ -620,9 +638,22 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
                         </div>
                       </td>
                       <td>
-                        {player.nhl_team_abbreviation ||
-                          player.yahoo_team ||
-                          "N/A"}
+                        {(() => {
+                          const teamAbbr = normalizeTeamAbbreviation(
+                            player.current_team_abbreviation ||
+                              player.yahoo_team
+                          );
+                          return teamAbbr ? (
+                            <Image
+                              src={`/teamLogos/${teamAbbr}.png`}
+                              alt={teamAbbr} // Guaranteed to be a string because we checked
+                              width={30}
+                              height={30}
+                            />
+                          ) : (
+                            "N/A"
+                          );
+                        })()}
                       </td>
                       <td>
                         {player.percent_ownership !== null
@@ -660,31 +691,33 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
                         )}
                       </td>
                       <td>
-                        {relevantMetrics.map(({ key, label }) => {
-                          const pctVal = player.percentiles[key];
-                          const displayVal =
-                            pctVal !== undefined
-                              ? pctVal.toFixed(0) + "%"
-                              : "0%";
-                          return (
-                            <div
-                              key={key}
-                              className={styles.percentileContainer}
-                            >
-                              <div className={styles.percentileLabel}>
-                                {label}
-                              </div>
+                        {relevantMetrics
+                          .filter(({ key }) => key !== "percent_games")
+                          .map(({ key, label }) => {
+                            const pctVal = player.percentiles[key];
+                            const displayVal =
+                              pctVal !== undefined
+                                ? pctVal.toFixed(0) + "%"
+                                : "0%";
+                            return (
                               <div
-                                className={styles.percentileBox}
-                                style={getRankColorStyle(
-                                  pctVal !== undefined ? pctVal : 0
-                                )}
+                                key={key}
+                                className={styles.percentileContainer}
                               >
-                                {displayVal}
+                                <div className={styles.percentileLabel}>
+                                  {label}
+                                </div>
+                                <div
+                                  className={styles.percentileBox}
+                                  style={getRankColorStyle(
+                                    pctVal !== undefined ? pctVal : 0
+                                  )}
+                                >
+                                  {displayVal}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
                       </td>
                       <td>{player.composite.toFixed(1)}</td>
                     </tr>

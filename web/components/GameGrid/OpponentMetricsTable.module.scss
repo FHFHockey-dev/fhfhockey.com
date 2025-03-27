@@ -1,0 +1,75 @@
+@use "sass:color";
+@use "styles/vars";
+
+.container {
+  width: 100%;
+  margin: 0 auto;
+  overflow-x: auto;
+  outline: 10px solid #101010;
+  border-radius: 12px;
+}
+
+.table {
+  margin: 0 auto;
+  color: white;
+  overflow: hidden;
+  border: 4px solid #404040;
+  border-radius: 12px;
+  border-spacing: 0;
+  font-size: 14px;
+  text-align: left;
+  width: 100%;
+}
+
+.table thead {
+  position: sticky;
+  top: 0;
+  background-color: #101010;
+  z-index: 2;
+}
+
+.headerLabelRow {
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 16px;
+  font-weight: 900;
+  text-align: center;
+  background-color: #101010;
+  color: white;
+  padding: 10px;
+  border-bottom: 4px solid #07aae2 !important;
+}
+
+// Override for the header cell that spans all columns.
+.fullWidthHeader {
+  border-right: none !important;
+}
+
+.table th,
+.table td {
+  border: 0.5px solid #505050;
+  text-align: center;
+  font-family: "Roboto Condensed", sans-serif;
+  padding: 10px 5px;
+}
+
+.table th:first-child,
+.table td:first-child {
+  border-right: 5px solid #07aae2;
+  font-size: 16px;
+}
+
+.table tr {
+  border-radius: 4px;
+}
+
+.table tr:nth-of-type(even) {
+  background-color: #202020;
+}
+
+.table tr:nth-of-type(odd) {
+  background-color: #101010;
+}
+
+.table tr:hover {
+  background-color: #505050;
+}

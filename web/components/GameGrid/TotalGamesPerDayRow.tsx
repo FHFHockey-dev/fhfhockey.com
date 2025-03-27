@@ -1,22 +1,41 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\GameGrid\TotalGamesPerDayRow.tsx
 
-import { DAYS, DAY_ABBREVIATION } from "lib/NHL/types";
+import { DAYS, DAY_ABBREVIATION, TeamDataWithTotals } from "lib/NHL/types";
 import styles from "./GameGrid.module.scss";
 
 type TotalGamesPerDayRowProps = {
   games: number[];
   excludedDays: DAY_ABBREVIATION[];
   extended: boolean;
+  weekData: TeamDataWithTotals[];
 };
 
 function TotalGamesPerDayRow({
   games,
   excludedDays,
-  extended
+  extended,
+  weekData
 }: TotalGamesPerDayRowProps) {
   const excludedDaysIdx = excludedDays.map((dayAbbreviation) =>
     DAYS.findIndex((item) => item === dayAbbreviation)
   );
+
+  const opponentsSummary = weekData.map((team: TeamDataWithTotals) => {
+    const week1Opponents = team.weeks.find(
+      (w: {
+        weekNumber: number;
+        opponents: { abbreviation: string; teamId: number }[];
+        gamesPlayed: number;
+        offNights: number;
+      }) => w.weekNumber === 1
+    )?.opponents;
+    return week1Opponents
+      ? week1Opponents
+          .map((o: { abbreviation: string; teamId: number }) => o.abbreviation)
+          .join(", ")
+      : "";
+  });
+
   return (
     <tr className={styles.totalGamesPerDayRow}>
       {/* show GP on mobile */}

@@ -6,7 +6,8 @@ import styles from "./GameGrid.module.scss";
 import { addDays, formatDate, getDayStr } from "./utils/date-func";
 import Switch from "./Switch";
 import Toggle from "./Toggle";
-import { DAY_ABBREVIATION } from "lib/NHL/types";
+import { DAY_ABBREVIATION, TeamDataWithTotals } from "lib/NHL/types";
+import { id } from "date-fns/locale";
 
 type HeaderProps = {
   start: string;
@@ -22,6 +23,7 @@ type HeaderProps = {
   >;
   excludedDays: DAY_ABBREVIATION[];
   setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>;
+  weekData: TeamDataWithTotals[];
 };
 
 type SortKey = {
@@ -35,7 +37,8 @@ function Header({
   extended,
   setSortKeys,
   excludedDays,
-  setExcludedDays
+  setExcludedDays,
+  weekData
 }: HeaderProps) {
   const [currentSortKey, setCurrentSortKey] = useState<SortKey | null>(null);
 
@@ -107,17 +110,25 @@ function Header({
         }
       ];
 
-  const columns = [
-    { label: "Team", id: "teamName" },
-    ...getDayColumns(start, excludedDays, setExcludedDays, extended),
-    ...statsColumns
-  ];
+  const dayColumns = getDayColumns(
+    start,
+    excludedDays,
+    setExcludedDays,
+    extended
+  );
 
   return (
     <thead>
       <tr>
-        {columns.map((column) => (
-          <th key={column.id}>{column.label}</th>
+        {/* Render the team column */}
+        <th>Team</th>
+        {/* Render day columns */}
+        {dayColumns.map((col) => (
+          <th key={col.id}>{col.label}</th>
+        ))}
+        {/* Render stat columns */}
+        {statsColumns.map((col) => (
+          <th key={col.id}>{col.label}</th>
         ))}
       </tr>
     </thead>

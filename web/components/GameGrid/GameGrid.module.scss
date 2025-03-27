@@ -226,7 +226,7 @@ $mobile-fixed-width: 35px;
   border-spacing: 0px;
   font-size: 14px;
   text-align: left;
-  width: 95%;
+  width: 100%;
 }
 
 .scheduleGrid th {
@@ -514,6 +514,26 @@ $mobile-fixed-width: 35px;
 } /* Red */
 
 /* MAGGIE <3 */
+
+.lowerGridHorizontal {
+  display: flex;
+  margin-top: 25px;
+  gap: 50px;
+  width: 95%;
+}
+
+.playerPickupContainer {
+  width: 100%;
+}
+
+.opponentStatsContainer {
+  width: 100%;
+  margin-bottom: 50px;
+}
+
+.bpaAndOppContainer {
+  width: 100%;
+}
 
 @media only screen and (min-width: vars.$screen-large) {
   .teamRow {

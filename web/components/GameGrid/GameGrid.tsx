@@ -1,5 +1,8 @@
 // components/GameGrid/GameGrid.tsx
 
+// TO-DO:
+// Change Home/Away to use Home/Away Icons
+
 import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 
@@ -22,6 +25,7 @@ import {
 } from "./utils/calcWinOdds";
 
 import TransposedGrid from "./TransposedGrid";
+import OpponentMetricsTable from "./OpponentMetricsTable";
 
 import styles from "./GameGrid.module.scss";
 import Spinner from "components/Spinner";
@@ -545,20 +549,22 @@ function GameGridInternal({
                 setSortKeys={setSortKeys}
                 excludedDays={excludedDays}
                 setExcludedDays={setExcludedDays}
+                weekData={teamDataWithAverages}
               />
               <tbody>
                 <TotalGamesPerDayRow
                   games={currentNumGamesPerDay}
                   excludedDays={excludedDays}
                   extended={mode === "10-Day-Forecast"}
+                  weekData={teamDataWithAverages}
                 />
                 {sortedTeams.map(({ teamId, ...rest }) => {
-                  let highlightClass = "";
-                  if (top10TeamIds.has(teamId)) {
-                    highlightClass = styles.teamRowGreen;
-                  } else if (bottom10TeamIds.has(teamId)) {
-                    highlightClass = styles.teamRowRed;
-                  }
+                  const highlightClass = top10TeamIds.has(teamId)
+                    ? styles.teamRowGreen
+                    : bottom10TeamIds.has(teamId)
+                    ? styles.teamRowRed
+                    : "";
+
                   return (
                     <TeamRow
                       key={teamId}
@@ -575,25 +581,34 @@ function GameGridInternal({
             </table>
           </div>
           {/* New lower grid container for FourWeekGrid and PlayerPickupTable */}
-          <div className={styles.lowerGridHorizontal}>
-            <div className={styles.fourWeekGridContainerAll}>
-              <FourWeekGrid teamDataArray={teamDataWithAverages} />
-            </div>
-            <div className={styles.playerPickupContainer}>
-              <PlayerPickupTable
-                teamWeekData={teamDataWithAverages.map((team) => {
-                  // Only take week1 data
-                  const week1 = team.weeks.find((w) => w.weekNumber === 1);
-                  return {
-                    teamAbbreviation: team.teamAbbreviation,
-                    gamesPlayed: week1
-                      ? week1.gamesPlayed
-                      : team.totals.gamesPlayed,
-                    offNights: week1 ? week1.offNights : team.totals.offNights,
-                    avgOpponentPointPct: team.avgOpponentPointPct
-                  };
-                })}
-              />
+          <div className={styles.fourWeekAndBPAtableContainer}>
+            <div className={styles.lowerGridHorizontal}>
+              <div className={styles.fourWeekGridContainerAll}>
+                <FourWeekGrid teamDataArray={teamDataWithAverages} />
+              </div>
+              <div className={styles.bpaAndOppContainer}>
+                <div className={styles.opponentStatsContainer}>
+                  <OpponentMetricsTable teamData={teamDataWithAverages} />
+                </div>
+                <div className={styles.playerPickupContainer}>
+                  <PlayerPickupTable
+                    teamWeekData={teamDataWithAverages.map((team) => {
+                      // Only take week1 data
+                      const week1 = team.weeks.find((w) => w.weekNumber === 1);
+                      return {
+                        teamAbbreviation: team.teamAbbreviation,
+                        gamesPlayed: week1
+                          ? week1.gamesPlayed
+                          : team.totals.gamesPlayed,
+                        offNights: week1
+                          ? week1.offNights
+                          : team.totals.offNights,
+                        avgOpponentPointPct: team.avgOpponentPointPct
+                      };
+                    })}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -609,25 +624,29 @@ function GameGridInternal({
             start={dates[0]}
             mode={mode === "7-Day-Forecast" ? "7-Day" : "10-Day-Forecast"}
           />
-          <div className={styles.lowerGridVertical}>
-            <div className={styles.fourWeekGridContainerAll}>
-              <FourWeekGrid teamDataArray={teamDataWithAverages} />
-            </div>
-            <div className={styles.playerPickupContainer}>
-              <PlayerPickupTable
-                teamWeekData={teamDataWithAverages.map((team) => {
-                  // Only take week1 data
-                  const week1 = team.weeks.find((w) => w.weekNumber === 1);
-                  return {
-                    teamAbbreviation: team.teamAbbreviation,
-                    gamesPlayed: week1
-                      ? week1.gamesPlayed
-                      : team.totals.gamesPlayed,
-                    offNights: week1 ? week1.offNights : team.totals.offNights,
-                    avgOpponentPointPct: team.avgOpponentPointPct
-                  };
-                })}
-              />
+          <div className={styles.fourWeekAndBPAtableContainer}>
+            <div className={styles.lowerGridVertical}>
+              <div className={styles.fourWeekGridContainerAll}>
+                <FourWeekGrid teamDataArray={teamDataWithAverages} />
+              </div>
+              <div className={styles.playerPickupContainer}>
+                <PlayerPickupTable
+                  teamWeekData={teamDataWithAverages.map((team) => {
+                    // Only take week1 data
+                    const week1 = team.weeks.find((w) => w.weekNumber === 1);
+                    return {
+                      teamAbbreviation: team.teamAbbreviation,
+                      gamesPlayed: week1
+                        ? week1.gamesPlayed
+                        : team.totals.gamesPlayed,
+                      offNights: week1
+                        ? week1.offNights
+                        : team.totals.offNights,
+                      avgOpponentPointPct: team.avgOpponentPointPct
+                    };
+                  })}
+                />
+              </div>
             </div>
           </div>
         </div>
