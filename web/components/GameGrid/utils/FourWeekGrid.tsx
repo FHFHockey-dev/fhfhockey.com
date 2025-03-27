@@ -203,6 +203,13 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
     <div className={styles.fourWeekGridContainer}>
       <table className={styles.fourWeekGridTable}>
         <thead>
+          {/* New top header row */}
+          <tr>
+            <th colSpan={5} className={styles.topHeader}>
+              <span className={styles.topHeaderWhite}>FOUR WEEK </span>
+              <span className={styles.topHeaderBlue}>FORECAST</span>
+            </th>
+          </tr>
           <tr>
             <th>Team</th>
             <th>

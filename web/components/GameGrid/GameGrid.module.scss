@@ -98,7 +98,7 @@ $mobile-fixed-width: 35px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 95%;
+  width: 100%;
 }
 
 .gameGridHeader {
@@ -213,8 +213,16 @@ $mobile-fixed-width: 35px;
 
 .gridWrapper {
   display: flex;
-  flex: 0 0 95%;
-  max-width: 95%;
+  gap: 40px;
+  width: 95%;
+
+  .scheduleGrid {
+    width: 75%;
+  }
+
+  .opponentStatsContainer {
+    width: 25%;
+  }
 }
 
 .scheduleGrid {
@@ -226,7 +234,6 @@ $mobile-fixed-width: 35px;
   border-spacing: 0px;
   font-size: 14px;
   text-align: left;
-  width: 100%;
 }
 
 .scheduleGrid th {
@@ -325,7 +332,6 @@ $mobile-fixed-width: 35px;
     display: flex;
     justify-content: center;
     align-items: center;
-    filter: drop-shadow(0 0 4px rgba(201, 199, 199, 0.5));
   }
 }
 
@@ -356,6 +362,10 @@ $mobile-fixed-width: 35px;
 .totalGamesPerDayCell {
   background-color: #000;
   color: white;
+}
+
+.mobileLogoSize {
+  margin-left: 0px !important;
 }
 
 .greenBorder {
@@ -528,7 +538,6 @@ $mobile-fixed-width: 35px;
 
 .opponentStatsContainer {
   width: 100%;
-  margin-bottom: 50px;
 }
 
 .bpaAndOppContainer {
@@ -749,7 +758,7 @@ $mobile-fixed-width: 35px;
   /* MAGGIE <3 */
 
   .mobileLogoSize {
-    padding: 1.5px !important;
+    padding: 0px 2.5px !important;
   }
 
   .mobileFontStyle {
@@ -1457,7 +1466,7 @@ $mobile-fixed-width: 35px;
   /* MAGGIE <3 */
 
   .mobileLogoSize {
-    padding: 1px !important;
+    padding: 0px 2.5px !important;
     width: 20px;
     height: 20px !important;
   }

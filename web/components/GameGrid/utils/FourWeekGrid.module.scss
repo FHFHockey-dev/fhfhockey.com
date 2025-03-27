@@ -158,6 +158,27 @@
   }
 }
 
+.topHeader {
+  font-family: "Roboto Condensed", sans-serif;
+  font-size: 20px;
+  text-align: center;
+  padding: 10px;
+  background-color: #101010;
+  border-bottom: 4px solid #07aae2;
+  border-right: none !important;
+}
+
+.topHeaderWhite {
+  color: white;
+  font-size: 24px;
+  font-weight: 100;
+}
+
+.topHeaderBlue {
+  color: #07aae2;
+  font-size: 24px;
+}
+
 /* Responsive Styles */
 @media (max-width: 1024px) {
   .fourWeekGridContainer {

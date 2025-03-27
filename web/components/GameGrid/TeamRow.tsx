@@ -207,7 +207,6 @@ function MatchUpCell({ home, homeTeam, awayTeam, gameId }: MatchUpCellProps) {
     text = win ? "WIN" : "LOSS";
     stat = `${usScore}-${opponentScore}`;
   } else {
-    text = home ? "HOME" : "AWAY";
     // Calculate blended win odds
     const blendedWinOdds = calculateBlendedWinOdds(us.winOdds, us.apiWinOdds);
     stat = blendedWinOdds !== null ? formatWinOdds(blendedWinOdds) : "-";
@@ -227,25 +226,46 @@ function MatchUpCell({ home, homeTeam, awayTeam, gameId }: MatchUpCellProps) {
   return (
     <Tooltip content={tooltipContent}>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <div className={styles.scoreAndHomeAway}>
+        {/* <div className={styles.scoreAndHomeAway}>
           <span className={styles.homeAway}>{text}</span>
           <p className={styles.score}>{stat}</p>
-        </div>
-        <div
-          className={`${styles.hideOnMobile}`}
-          style={{ paddingRight: "3px", margin: "auto", fontSize: "0.75rem" }}
-        >
-          {home ? "vs." : "@"}
-        </div>
+        </div> */}
         <Image
           className={`${styles.mobileLogoSize}`}
           objectFit="contain"
           alt={`${opponentTeam.name} logo`}
-          width={30}
-          height={30}
+          width={35}
+          height={35}
           src={opponentTeam.logo}
           title={opponentTeam.name}
         />
+        <div
+          className={styles.hideOnMobile}
+          style={{
+            paddingLeft: "15px",
+            paddingRight: "10px",
+            margin: "auto",
+            fontSize: "0.75rem",
+            opacity: 0.7,
+            zIndex: 0
+          }}
+        >
+          {home ? (
+            <Image
+              src="/pictures/homeIcon.png"
+              alt="Home"
+              width={20}
+              height={20}
+            />
+          ) : (
+            <Image
+              src="/pictures/awayIcon.png"
+              alt="Away"
+              width={20}
+              height={20}
+            />
+          )}
+        </div>
       </div>
     </Tooltip>
   );
