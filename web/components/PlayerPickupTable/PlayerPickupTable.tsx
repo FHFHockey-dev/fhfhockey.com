@@ -925,6 +925,12 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
                             player.status
                           ) && (
                             <div className={styles.rightInjuryPart}>
+                              <div className={styles.statusRightInjuryPart}>
+                                {player.status}
+                              </div>
+                              <div className={styles.injuryNoteRightInjuryPart}>
+                                {player.injury_note}
+                              </div>
                               <div className={styles.imageContainer}>
                                 <Image
                                   src="/pictures/injured.png"
