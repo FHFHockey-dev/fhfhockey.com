@@ -87,7 +87,7 @@ export default function OpponentMetricsTable({
     { label: "SA", key: "avgSa" },
     { label: "GF", key: "avgGoalFor" },
     { label: "GA", key: "avgGoalAgainst" },
-    { label: "Win%", key: "avgWinPct" }
+    { label: "W%", key: "avgWinPct" }
   ];
 
   return (
@@ -126,7 +126,11 @@ export default function OpponentMetricsTable({
                 const value = averages[metric.key as keyof Averages];
                 return (
                   <td key={metric.key}>
-                    {value != null ? value.toFixed(1) : "-"}
+                    {value != null
+                      ? metric.key === "avgWinPct"
+                        ? (value * 100).toFixed(1)
+                        : value.toFixed(1)
+                      : "-"}
                   </td>
                 );
               })}

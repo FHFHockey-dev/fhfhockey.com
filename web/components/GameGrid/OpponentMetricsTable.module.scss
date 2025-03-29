@@ -58,6 +58,12 @@
   border-right: 5px solid #07aae2;
   border-collapse: collapse;
   padding: 10px;
+  width: 19.5%;
+}
+
+.table th:not(:first-child),
+.table td:not(:first-child) {
+  width: 11.5%;
 }
 
 .table tr {
