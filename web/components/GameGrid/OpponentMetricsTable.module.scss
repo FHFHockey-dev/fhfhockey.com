@@ -1,86 +1,224 @@
-@use "sass:color";
-@use "styles/vars";
+// OpponentMetricsTable.module.scss
 
+@use "sass:color";
+@use "styles/vars" as v;
+@use "sass:math";
+
+/* --- Main Container --- */
 .container {
   width: 100%;
   margin: 0 auto;
-  overflow-x: auto;
-  outline: 10px solid #101010;
-  border-radius: 12px;
-  height: 100%;
+  transition: margin-bottom v.$transition-duration v.$transition-easing;
+  // Apply the visual framing here
+  outline: 8px solid v.$background-dark;
+  background-color: v.$background-dark; // Background for the whole component
+  border: 3px solid v.$background-light;
+  border-radius: v.$border-radius; // Radius on the main container
+  overflow: hidden; // Hide overflow from children (like table border collapse)
+
+  &.minimized {
+    margin-bottom: 10px; // Reduce space below when minimized
+    // Keep outline/border when minimized, just hide content
+  }
 }
 
-.table {
-  margin: 0 auto;
-  color: white;
-  overflow: hidden;
-  border: 4px solid #404040;
-  border-radius: 12px;
-  border-spacing: 0;
-  font-size: 14px;
-  text-align: center;
+/* --- Title Header Styling --- */
+.titleHeader {
+  background-color: v.$background-dark; // Match container background
+  padding: 12px 15px; // Slightly adjusted padding
+  // border-bottom: 2px solid v.$secondary-color; // REMOVED - integrated with table header visually
+  position: relative; // For icon positioning
   width: 100%;
-  height: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid v.$border-color-primary;
+  transition: border-bottom v.$transition-duration v.$transition-easing;
+
+  // Make clickable only on mobile
+  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
+    cursor: pointer;
+    user-select: none;
+  }
 }
 
-.table thead {
-  position: sticky;
-  top: 0;
-  background-color: #101010;
-  z-index: 2;
+.container.minimized .titleHeader {
+  border-bottom-color: transparent; // Change color to transparent (or use border-bottom: none;)
+  // Optionally reduce padding further when minimized if desired
+  // padding-top: 10px;
+  // padding-bottom: 10px;
 }
 
-.headerLabelRow {
-  font-family: "Roboto Condensed", sans-serif;
-  font-size: 20px;
+.titleText {
+  font-family: v.$font-family-primary;
+  font-size: clamp(1.5rem, 3.5vw, 1.6rem); // Slightly smaller responsive title
   font-weight: 100;
-  text-align: center;
-  background-color: #101010;
-  color: white;
-  padding: 10px;
-  border-bottom: 4px solid #07aae2 !important;
-  border-right: none !important;
+  color: v.$text-color-primary;
+  letter-spacing: 1px;
+  flex-grow: 1;
+  text-align: left;
 }
 
 .spanColorBlue {
-  color: #07aae2;
+  color: v.$secondary-color;
+  font-weight: 300;
 }
 
-.table th,
-.table td {
-  border: 0.5px solid #505050;
-  padding: 10px 5px;
-  font-family: "Roboto Condensed", sans-serif;
+.minimizeToggleIcon {
+  font-size: 1.2rem;
+  position: absolute;
+  right: 27px; // Position to the far right of the title
+  top: 25%;
+  color: v.$secondary-color;
+  transition: transform 0.3s v.$transition-easing;
+  transform: rotate(0deg);
+  flex-shrink: 0;
+  margin-left: 5px;
+  &.minimized {
+    transform: rotate(-180deg);
+  }
 }
 
-.table th:first-child,
-.table td:first-child {
-  border-right: 5px solid #07aae2;
+/* --- Table Wrapper (Handles Minimize Collapse) --- */
+.tableWrapper {
+  width: 100%;
+  overflow: hidden; // Needed for max-height transition
+  transition: max-height 0.4s v.$transition-easing,
+    opacity 0.3s v.$transition-easing, visibility 0.3s v.$transition-easing;
+  max-height: 5000px; // Large enough for content
+  opacity: 1;
+  visibility: visible;
+  background-color: v.$background-dark; // Ensure background matches
+
+  // When container is minimized, collapse this wrapper
+  .container.minimized & {
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* --- REMOVED Scroll Container --- */
+// .scrollContainer { ... }
+
+/* --- Base Table Styling --- */
+.table {
+  margin: 0 auto;
+  color: v.$text-color-primary;
+  border-spacing: 0;
   border-collapse: collapse;
-  padding: 10px;
-}
-
-.table tr {
-  border-radius: 4px;
-  height: 45px;
-}
-
-.table tr th:first-child {
-  border-collapse: collapse;
-  background: #000;
+  font-size: v.$font-size-small;
   text-align: center;
-  font-family: "Roboto Condensed", sans-serif;
-  height: 60px;
+  width: 100%; // Force table to take full width
+  table-layout: fixed; // CRUCIAL for controlling column widths exactly
+  // border-top: 1px solid v.$border-color-secondary; // Add subtle top border to visually connect
 }
 
-.table tr:nth-of-type(even) {
-  background-color: #202020;
+/* --- Table Header Styling --- */
+.table thead {
+  // No position sticky needed if not scrolling horizontally
+  // background-color: v.$background-dark; // Defined in th
 }
 
-.table tr:nth-of-type(odd) {
-  background-color: #101010;
+.table th {
+  background-color: v.$background-dark; // Ensure header background
+  color: v.$text-color-secondary;
+  font-weight: 600; // Slightly lighter than before
+  padding: 8px 4px; // Reduced padding, especially horizontal
+  font-family: v.$font-family-primary;
+  font-size: 11px; // Smaller font size
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border: 0.5px solid v.$border-color-secondary;
+  border-top: none; // Remove top border
+  white-space: normal; // Allow header text wrapping
+  vertical-align: middle; // Vertically center wrapped text
+
+  // Assign percentage widths - MUST add up to 100% with first-child
+  // Example: 7 metrics * 12.5% + Team 12.5% = 100%
+  // Adjust these percentages based on visual testing!
+  width: 12.57%; // (100 - 12) / 7 = ~12.57%
+
+  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
+    padding: 6px 3px; // Even smaller padding
+    font-size: 10px; // Even smaller font
+  }
 }
 
-.table tr:hover {
-  background-color: #505050;
+// Special styling for the first header cell (Team)
+.table th:first-child {
+  text-align: left;
+  padding-left: 10px; // Adjust padding
+  border-left: none;
+  border-right: 2px solid v.$secondary-color; // Keep separator
+  width: 12%; // Reduced width significantly
+  white-space: nowrap; // Prevent "Team" from wrapping
+
+  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
+    padding-left: 8px;
+    font-size: 10px; // Match other mobile headers
+  }
+}
+
+// No border on last header cell
+.table th:last-child {
+  border-right: none;
+}
+
+/* --- Table Body Styling --- */
+.table tbody tr {
+  transition: background-color v.$transition-duration v.$transition-easing;
+  &:nth-child(even) {
+    background-color: v.$background-light;
+  }
+  &:nth-child(odd) {
+    background-color: v.$background-dark;
+  }
+  &:hover {
+    background-color: color.scale(v.$primary-color, $lightness: -30%);
+  }
+}
+
+.table td {
+  border: 0.5px solid v.$border-color-secondary;
+  padding: 6px 4px; // Reduced padding
+  font-family: v.$font-family-primary;
+  vertical-align: middle;
+  font-size: 12px; // Slightly smaller font
+  word-break: break-word; // Help break long numbers if needed (less ideal)
+
+  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
+    padding: 6px 3px;
+    font-size: 11px;
+  }
+}
+
+// Special styling for the first data cell (Team logo)
+.table td:first-child {
+  border-left: none;
+  border-right: 2px solid v.$secondary-color;
+  text-align: center;
+  padding: 5px; // Keep minimal padding
+  width: 12%; // Match header width
+
+  img {
+    display: block;
+    margin: 0 auto;
+    max-width: 25px; // Limit logo size further if needed
+    height: auto;
+  }
+}
+
+// No border on last data cell
+.table td:last-child {
+  border-right: none;
+}
+
+// Style for the loading/no results message
+.message {
+  padding: 30px 15px;
+  text-align: center;
+  color: v.$text-color-secondary;
+  background-color: v.$background-dark;
+  // No radius needed as it's inside the main container now
 }

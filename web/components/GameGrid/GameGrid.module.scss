@@ -534,6 +534,7 @@ $mobile-fixed-width: 35px;
 
 .playerPickupContainer {
   width: 100%;
+  height: 100%;
 }
 
 .opponentStatsContainer {
@@ -542,6 +543,7 @@ $mobile-fixed-width: 35px;
 
 .bpaAndOppContainer {
   width: 100%;
+  height: 100%;
 }
 
 @media only screen and (min-width: vars.$screen-large) {
@@ -1186,6 +1188,14 @@ $mobile-fixed-width: 35px;
     font-size: 1em !important;
     width: 100%;
   }
+}
+
+.mobileContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 @media screen and (orientation: landscape) /* LANDSCAPE */ and (min-device-width: 479px) and (max-device-width: 932px) {
