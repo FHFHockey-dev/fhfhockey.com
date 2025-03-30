@@ -1,16 +1,10 @@
 // components/PlayerPickupTable/PlayerPickupTable.tsx
 
-// TO-DO:
-// ADD ATOI and PPTOI/PP% to Percentile Ranks
-// Refine Composite Score algorithm
-// Change Team ABBREV to logo
-// Add Legend tooltip
-// Add Line / PP data to name column
-
 import React, { useState, useEffect, useMemo } from "react";
-import supabase from "lib/supabase";
+import supabase from "lib/supabase"; // Assuming lib/supabase is configured
 import styles from "./PlayerPickupTable.module.scss";
 import Image from "next/image";
+import clsx from "clsx"; // <--- Make sure to install and import clsx
 
 // ---------------------------
 // Type Definitions
@@ -18,7 +12,6 @@ import Image from "next/image";
 export type UnifiedPlayerData = {
   nhl_player_id: string;
   nhl_player_name: string;
-  // Official NHL team abbreviation from wgo_skater_stats_totals
   nhl_team_abbreviation: string | null;
   yahoo_player_id: string | null;
   yahoo_player_name: string | null;
@@ -26,7 +19,6 @@ export type UnifiedPlayerData = {
   percent_ownership: number | null;
   eligible_positions: string[] | null;
   off_nights: number | null;
-  // Skater metrics
   points: number | null;
   goals: number | null;
   assists: number | null;
@@ -37,7 +29,6 @@ export type UnifiedPlayerData = {
   total_fow: number | null;
   penalty_minutes: number | null;
   sh_points: number | null;
-  // Goalie metrics
   wins: number | null;
   saves: number | null;
   shots_against: number | null;
@@ -45,9 +36,7 @@ export type UnifiedPlayerData = {
   quality_start: number | null;
   goals_against_avg: number | null;
   save_pct: number | null;
-  // Player type: "skater" or "goalie"
   player_type: "skater" | "goalie";
-  // Current team abbreviation from wgo_skater_stats_totals
   current_team_abbreviation: string | null;
   percent_games: number | null;
   status: string | null;
@@ -95,7 +84,6 @@ const skaterMetrics: MetricDefinition[] = [
   { key: "total_fow", label: "FOW" },
   { key: "penalty_minutes", label: "PIM" },
   { key: "sh_points", label: "SHP" },
-  // Note: GP% will be shown in expanded details on mobile
   { key: "percent_games", label: "GP%" }
 ];
 
@@ -111,7 +99,7 @@ const goalieMetrics: MetricDefinition[] = [
 ];
 
 // ---------------------------
-// Default Filter Settings
+// Default Filter Settings & Props
 // ---------------------------
 const defaultOwnershipThreshold = 50;
 const defaultTeamFilter = "ALL";
@@ -122,26 +110,24 @@ const defaultPositions: Record<string, boolean> = {
   D: true,
   G: true
 };
-
 export type TeamWeekData = {
   teamAbbreviation: string;
   gamesPlayed: number;
   offNights: number;
   avgOpponentPointPct: number;
 };
-
-export type PlayerPickupTableProps = {
-  teamWeekData?: TeamWeekData[];
-};
+export type PlayerPickupTableProps = { teamWeekData?: TeamWeekData[] };
 
 // ---------------------------
-// Mobile Detection Hook
+// Helper Functions & Hooks
 // ---------------------------
+
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
+    if (typeof window === "undefined") return;
     function handleResize() {
-      setIsMobile(window.innerWidth < 480);
+      setIsMobile(window.innerWidth < 768);
     }
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -150,15 +136,714 @@ function useIsMobile() {
   return isMobile;
 }
 
-// ---------------------------
-// Helper: Shorten Name
-// ---------------------------
-// Converts "Josh Norris" to "J. Norris"
 function shortenName(fullName: string): string {
+  if (!fullName) return "N/A";
   const parts = fullName.split(" ");
-  if (parts.length === 1) return fullName;
+  if (parts.length <= 1) return fullName;
   return `${parts[0].charAt(0)}. ${parts[parts.length - 1]}`;
 }
+
+const playerNameMapping: Record<string, string> = {
+  "Alex Wennberg": "Alexander Wennberg"
+};
+const normalizePlayerName = (name: string | null): string => {
+  if (!name) return "N/A";
+  const mappedName = playerNameMapping[name] || name;
+  return shortenName(mappedName);
+};
+
+const normalizeTeamAbbreviation = (
+  team: string | null,
+  expectedTeam?: string | null
+): string | null => {
+  if (!team) return null;
+  const mapping: Record<string, string> = {
+    TB: "TBL",
+    SJ: "SJS",
+    NJ: "NJD",
+    LA: "LAK"
+  };
+  const teamsArray = team.split(",").map((t) => t.trim());
+  const mappedTeams = teamsArray.map((t) => mapping[t] || t);
+  if (expectedTeam) {
+    const expected = mapping[expectedTeam] || expectedTeam;
+    const match = mappedTeams.find((t) => t === expected);
+    if (match) return match;
+  }
+  return mappedTeams[0] || null;
+};
+
+function getRankColorStyle(percentile: number): React.CSSProperties {
+  if (percentile === undefined || percentile === null) {
+    return { backgroundColor: `rgba(128, 128, 128, 0.45)` };
+  }
+  const weight = Math.max(0, Math.min(100, percentile)) / 100;
+  const r = Math.round(255 * (1 - weight));
+  const g = Math.round(255 * weight);
+  return { backgroundColor: `rgba(${r}, ${g}, 0, 0.45)` };
+}
+
+// ---------------------------
+// Child Components
+// ---------------------------
+
+// ---------------------------
+// Child Components
+// ---------------------------
+
+// Filters Component
+interface FiltersProps {
+  ownershipThreshold: number;
+  setOwnershipThreshold: (value: number) => void;
+  teamFilter: string;
+  setTeamFilter: (value: string) => void;
+  selectedPositions: Record<string, boolean>;
+  setSelectedPositions: React.Dispatch<
+    React.SetStateAction<Record<string, boolean>>
+  >;
+  resetFilters: () => void;
+  teamOptions: string[];
+  isMobile: boolean;
+  isMobileMinimized: boolean; // Prop to indicate minimized state
+  toggleMobileMinimize: () => void; // Prop to toggle minimize state
+}
+
+const Filters: React.FC<FiltersProps> = ({
+  ownershipThreshold,
+  setOwnershipThreshold,
+  teamFilter,
+  setTeamFilter,
+  selectedPositions,
+  setSelectedPositions,
+  resetFilters,
+  teamOptions,
+  isMobile,
+  isMobileMinimized, // Destructure new props
+  toggleMobileMinimize // Destructure new props
+}) => {
+  const handlePositionChange = (pos: string) => {
+    setSelectedPositions((prev: Record<string, boolean>) => ({
+      ...prev,
+      [pos]: !prev[pos]
+    }));
+  };
+
+  // Handler for title click, only works on mobile
+  const handleTitleClick = isMobile ? toggleMobileMinimize : undefined;
+
+  return (
+    // Apply minimized class conditionally
+    <div
+      className={clsx(
+        styles.filters,
+        isMobile && isMobileMinimized && styles.minimized
+      )}
+    >
+      <div
+        className={styles.filtersTitle}
+        onClick={handleTitleClick} // Add onClick for mobile toggle
+        role={isMobile ? "button" : undefined} // Accessibility
+        tabIndex={isMobile ? 0 : undefined} // Accessibility
+        aria-expanded={isMobile ? !isMobileMinimized : undefined} // Accessibility
+        aria-controls={isMobile ? "player-table-content" : undefined} // Accessibility (points to content ID)
+      >
+        <span className={styles.acronym}>BPA</span> -{" "}
+        <span className={styles.acronym}>B</span>est{" "}
+        <span className={styles.acronym}>P</span>layer{" "}
+        <span className={styles.acronym}>A</span>vailable
+        {/* Minimize/Maximize Icon (only on mobile) */}
+        {isMobile && (
+          <span
+            className={clsx(
+              styles.minimizeToggleIcon,
+              isMobileMinimized && styles.minimized
+            )}
+            aria-hidden="true"
+          >
+            ▼
+          </span>
+        )}
+      </div>
+
+      {/* Conditionally render filter controls based on mobile minimize state */}
+      {(!isMobile || !isMobileMinimized) && (
+        <>
+          {isMobile ? (
+            // --- Mobile Filter Controls ---
+            <div className={styles.filterContainerMobile}>
+              <div className={styles.ownershipTeamContainer}>
+                <div className={styles.filterRowMobileOwnership}>
+                  <label className={styles.labelMobile}>
+                    Own %: {ownershipThreshold}%
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={ownershipThreshold}
+                    onChange={(e) =>
+                      setOwnershipThreshold(Number(e.target.value))
+                    }
+                    className={styles.sliderMobile}
+                  />
+                </div>
+                <div className={styles.filterRowMobileTeam}>
+                  <label className={styles.labelMobile}>Team:</label>
+                  <select
+                    value={teamFilter}
+                    onChange={(e) => setTeamFilter(e.target.value)}
+                    className={styles.selectMobile}
+                  >
+                    {teamOptions.map((team) => (
+                      <option key={team} value={team}>
+                        {team}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className={styles.filterRowMobile}>
+                <span className={styles.labelMobile}>Positions:</span>
+                <div className={styles.positionCheckboxGroup}>
+                  {Object.keys(defaultPositions).map((pos) => (
+                    <label key={pos} className={styles.positionCheckbox}>
+                      <input
+                        type="checkbox"
+                        checked={selectedPositions[pos] ?? false}
+                        onChange={() => handlePositionChange(pos)}
+                      />{" "}
+                      {pos}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            // --- Desktop Filter Controls ---
+            <div className={styles.filterContainer}>
+              <div className={styles.filterRow}>
+                <label className={styles.label}>
+                  Ownership %: {ownershipThreshold}%
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={ownershipThreshold}
+                  onChange={(e) =>
+                    setOwnershipThreshold(Number(e.target.value))
+                  }
+                  className={styles.slider}
+                />
+              </div>
+              <div className={styles.filterRow}>
+                <label className={styles.label}>Team:</label>
+                <select
+                  value={teamFilter}
+                  onChange={(e) => setTeamFilter(e.target.value)}
+                  className={styles.select}
+                >
+                  {teamOptions.map((team) => (
+                    <option key={team} value={team}>
+                      {team}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className={styles.filterRow}>
+                <span className={styles.label}>Positions:</span>
+                <div className={styles.positionCheckboxGroup}>
+                  {Object.keys(defaultPositions).map((pos) => (
+                    <label key={pos} className={styles.positionCheckbox}>
+                      <input
+                        type="checkbox"
+                        checked={selectedPositions[pos] ?? false}
+                        onChange={() => handlePositionChange(pos)}
+                      />{" "}
+                      {pos}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Reset button is also part of the collapsible content */}
+          <button className={styles.buttonReset} onClick={resetFilters}>
+            Reset Filters
+          </button>
+        </>
+      )}
+    </div>
+  );
+};
+
+// Table Components (Desktop & Mobile)
+type SortKey = keyof PlayerWithPercentiles;
+interface PlayerTableCommonProps {
+  players: PlayerWithPercentiles[];
+  sortKey: SortKey;
+  sortOrder: "asc" | "desc";
+  handleSort: (column: SortKey) => void;
+  getOffNightsForPlayer: (player: UnifiedPlayerData) => number | string;
+}
+interface DesktopTableProps extends PlayerTableCommonProps {}
+const DesktopTable: React.FC<DesktopTableProps> = ({
+  players,
+  sortKey,
+  sortOrder,
+  handleSort,
+  getOffNightsForPlayer
+}) => {
+  return (
+    <div className={styles.tableContainer}>
+      <table className={styles.table}>
+        <colgroup>
+          {" "}
+          <col style={{ width: "18%" }} /> <col style={{ width: "6%" }} />{" "}
+          <col style={{ width: "6%" }} /> <col style={{ width: "6%" }} />{" "}
+          <col style={{ width: "6%" }} /> <col style={{ width: "6%" }} />{" "}
+          <col style={{ width: "45%" }} /> <col style={{ width: "7%" }} />{" "}
+        </colgroup>
+        <thead>
+          {" "}
+          <tr>
+            {" "}
+            <th onClick={() => handleSort("nhl_player_name")}>
+              {" "}
+              Name{" "}
+              {sortKey === "nhl_player_name"
+                ? sortOrder === "desc"
+                  ? "▼"
+                  : "▲"
+                : ""}{" "}
+            </th>{" "}
+            <th onClick={() => handleSort("nhl_team_abbreviation")}>
+              {" "}
+              Team{" "}
+              {sortKey === "nhl_team_abbreviation"
+                ? sortOrder === "desc"
+                  ? "▼"
+                  : "▲"
+                : ""}{" "}
+            </th>{" "}
+            <th onClick={() => handleSort("percent_ownership")}>
+              {" "}
+              Own %{" "}
+              {sortKey === "percent_ownership"
+                ? sortOrder === "desc"
+                  ? "▼"
+                  : "▲"
+                : ""}{" "}
+            </th>{" "}
+            <th>Pos.</th>{" "}
+            <th onClick={() => handleSort("off_nights")}>
+              {" "}
+              Off-Nights{" "}
+              {sortKey === "off_nights"
+                ? sortOrder === "desc"
+                  ? "▼"
+                  : "▲"
+                : ""}{" "}
+            </th>{" "}
+            <th onClick={() => handleSort("percent_games")}>GP%</th>{" "}
+            <th>Percentile Ranks</th>{" "}
+            <th onClick={() => handleSort("composite")}>
+              {" "}
+              Score{" "}
+              {sortKey === "composite"
+                ? sortOrder === "desc"
+                  ? "▼"
+                  : "▲"
+                : ""}{" "}
+            </th>{" "}
+          </tr>{" "}
+        </thead>
+        <tbody>
+          {players.map((player) => {
+            const relevantMetrics =
+              player.player_type === "skater" ? skaterMetrics : goalieMetrics;
+            const teamAbbr = normalizeTeamAbbreviation(
+              player.current_team_abbreviation || player.yahoo_team,
+              player.yahoo_team
+            );
+            return (
+              <tr key={player.nhl_player_id}>
+                <td>
+                  {" "}
+                  <div className={styles.nameAndInjuryWrapper}>
+                    <div className={styles.leftNamePart}>
+                      <span className={styles.playerName}>
+                        {normalizePlayerName(
+                          player.yahoo_player_name || player.nhl_player_name
+                        )}
+                      </span>
+                    </div>
+                    {player.status &&
+                      ["IR-LT", "IR", "O", "DTD", "IR-NR"].includes(
+                        player.status
+                      ) && (
+                        <div className={styles.rightInjuryPart}>
+                          <div className={styles.statusRightInjuryPart}>
+                            {player.status}
+                          </div>
+                          <div className={styles.injuryNoteRightInjuryPart}>
+                            {player.injury_note}
+                          </div>
+                          <div className={styles.imageContainer}>
+                            <Image
+                              src="/pictures/injured.png"
+                              alt="Injured"
+                              width={20}
+                              height={20}
+                            />
+                          </div>
+                        </div>
+                      )}
+                  </div>{" "}
+                </td>
+                <td>
+                  {" "}
+                  {teamAbbr ? (
+                    <Image
+                      src={`/teamLogos/${teamAbbr}.png`}
+                      alt={teamAbbr}
+                      width={30}
+                      height={30}
+                    />
+                  ) : (
+                    "N/A"
+                  )}{" "}
+                </td>
+                <td>
+                  {" "}
+                  {player.percent_ownership !== null
+                    ? `${player.percent_ownership}%`
+                    : "N/A"}{" "}
+                </td>
+                <td>
+                  {" "}
+                  {player.eligible_positions?.join(", ") ||
+                    (player.player_type === "goalie" ? "G" : "N/A")}{" "}
+                </td>
+                <td>{getOffNightsForPlayer(player)}</td>
+                <td>
+                  {" "}
+                  {player.percent_games !== null ? (
+                    <div className={styles.percentileContainer}>
+                      <div
+                        className={styles.percentileBox}
+                        style={getRankColorStyle(
+                          player.percentiles.percent_games
+                        )}
+                      >
+                        {(Math.min(player.percent_games, 1) * 100).toFixed(0)}%
+                      </div>
+                    </div>
+                  ) : (
+                    "N/A"
+                  )}{" "}
+                </td>
+                <td>
+                  {" "}
+                  <div className={styles.percentileFlexContainer}>
+                    {relevantMetrics
+                      .filter(({ key }) => key !== "percent_games")
+                      .map(({ key, label }) => {
+                        const pctVal = player.percentiles[key];
+                        return (
+                          <div key={key} className={styles.percentileContainer}>
+                            <div className={styles.percentileLabel}>
+                              {label}
+                            </div>
+                            <div
+                              className={styles.percentileBox}
+                              style={getRankColorStyle(pctVal)}
+                            >
+                              {pctVal !== undefined
+                                ? `${pctVal.toFixed(0)}%`
+                                : "0%"}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>{" "}
+                </td>
+                <td>{player.composite.toFixed(1)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+interface MobileTableProps extends PlayerTableCommonProps {
+  expanded: Record<string, boolean>;
+  toggleExpand: (playerId: string) => void;
+}
+const MobileTable: React.FC<MobileTableProps> = ({
+  players,
+  sortKey,
+  sortOrder,
+  handleSort,
+  expanded,
+  toggleExpand,
+  getOffNightsForPlayer
+}) => {
+  const totalColumns = 7;
+  return (
+    <div className={styles.containerMobile}>
+      <table className={styles.tableMobile}>
+        <colgroup>
+          {" "}
+          <col style={{ width: "5%" }} /> <col style={{ width: "35%" }} />{" "}
+          <col style={{ width: "10%" }} /> <col style={{ width: "10%" }} />{" "}
+          <col style={{ width: "15%" }} /> <col style={{ width: "10%" }} />{" "}
+          <col style={{ width: "15%" }} />{" "}
+        </colgroup>
+        <thead>
+          {" "}
+          <tr>
+            {" "}
+            <th></th>{" "}
+            <th onClick={() => handleSort("nhl_player_name")}>
+              Name{" "}
+              {sortKey === "nhl_player_name"
+                ? sortOrder === "desc"
+                  ? "▼"
+                  : "▲"
+                : ""}
+            </th>{" "}
+            <th onClick={() => handleSort("nhl_team_abbreviation")}>
+              Team{" "}
+              {sortKey === "nhl_team_abbreviation"
+                ? sortOrder === "desc"
+                  ? "▼"
+                  : "▲"
+                : ""}
+            </th>{" "}
+            <th onClick={() => handleSort("percent_ownership")}>
+              Own{" "}
+              {sortKey === "percent_ownership"
+                ? sortOrder === "desc"
+                  ? "▼"
+                  : "▲"
+                : ""}
+            </th>{" "}
+            <th>Pos.</th>{" "}
+            <th onClick={() => handleSort("off_nights")}>
+              Offs{" "}
+              {sortKey === "off_nights"
+                ? sortOrder === "desc"
+                  ? "▼"
+                  : "▲"
+                : ""}
+            </th>{" "}
+            <th onClick={() => handleSort("composite")}>
+              Score{" "}
+              {sortKey === "composite"
+                ? sortOrder === "desc"
+                  ? "▼"
+                  : "▲"
+                : ""}
+            </th>{" "}
+          </tr>{" "}
+        </thead>
+        <tbody>
+          {players.map((player) => {
+            const relevantMetrics =
+              player.player_type === "skater" ? skaterMetrics : goalieMetrics;
+            const teamAbbr = normalizeTeamAbbreviation(
+              player.current_team_abbreviation || player.yahoo_team,
+              player.yahoo_team
+            );
+            const isExpanded = expanded[player.nhl_player_id];
+            const allDetailItems = [
+              {
+                key: "percent_games",
+                label: "GP%",
+                value: player.percentiles.percent_games,
+                displayValue:
+                  player.percent_games !== null
+                    ? `${(Math.min(player.percent_games, 1) * 100).toFixed(0)}%`
+                    : "N/A"
+              },
+              ...relevantMetrics
+                .filter(({ key }) => key !== "percent_games")
+                .map(({ key, label }) => ({
+                  key: key,
+                  label: label,
+                  value: player.percentiles[key],
+                  displayValue:
+                    player.percentiles[key] !== undefined
+                      ? `${player.percentiles[key].toFixed(0)}%`
+                      : "0%"
+                }))
+            ];
+            const midpoint = Math.ceil(allDetailItems.length / 2);
+            const row1Items = allDetailItems.slice(0, midpoint);
+            const row2Items = allDetailItems.slice(midpoint);
+            return (
+              <React.Fragment key={player.nhl_player_id}>
+                <tr>
+                  <td>
+                    {" "}
+                    <button
+                      onClick={() => toggleExpand(player.nhl_player_id)}
+                      className={styles.expandButton}
+                      aria-expanded={isExpanded}
+                      aria-controls={`details-${player.nhl_player_id}`}
+                    >
+                      {" "}
+                      {isExpanded ? "−" : "+"}{" "}
+                    </button>{" "}
+                  </td>
+                  <td>
+                    {" "}
+                    <div className={styles.nameAndInjuryWrapperMobile}>
+                      <div className={styles.leftNamePartMobile}>
+                        <span className={styles.playerName}>
+                          {normalizePlayerName(
+                            player.yahoo_player_name || player.nhl_player_name
+                          )}
+                        </span>
+                      </div>
+                      {player.status &&
+                        ["IR-LT", "IR", "O", "DTD", "IR-NR"].includes(
+                          player.status
+                        ) && (
+                          <div className={styles.rightInjuryPartMobile}>
+                            <div className={styles.imageContainer}>
+                              <Image
+                                src="/pictures/injured.png"
+                                alt="Injured"
+                                width={18}
+                                height={18}
+                              />
+                            </div>
+                          </div>
+                        )}
+                    </div>
+                  </td>
+                  <td>
+                    {" "}
+                    {teamAbbr ? (
+                      <Image
+                        src={`/teamLogos/${teamAbbr}.png`}
+                        alt={teamAbbr}
+                        width={25}
+                        height={25}
+                      />
+                    ) : (
+                      "N/A"
+                    )}{" "}
+                  </td>
+                  <td>
+                    {" "}
+                    {player.percent_ownership !== null
+                      ? `${player.percent_ownership}%`
+                      : "N/A"}{" "}
+                  </td>
+                  <td>
+                    {" "}
+                    {player.eligible_positions?.join(", ") ||
+                      (player.player_type === "goalie" ? "G" : "N/A")}{" "}
+                  </td>
+                  <td> {getOffNightsForPlayer(player)} </td>
+                  <td> {player.composite.toFixed(1)} </td>
+                </tr>
+                {isExpanded && (
+                  <tr className={styles.expandedRow}>
+                    <td
+                      colSpan={totalColumns}
+                      id={`details-${player.nhl_player_id}`}
+                    >
+                      <div className={styles.expandedDetails}>
+                        <div className={styles.detailRow}>
+                          {" "}
+                          {row1Items.map((item) => (
+                            <div key={item.key} className={styles.detailItem}>
+                              <span className={styles.detailLabel}>
+                                {item.label}:
+                              </span>
+                              <span
+                                className={styles.detailValue}
+                                style={getRankColorStyle(item.value)}
+                              >
+                                {item.displayValue}
+                              </span>
+                            </div>
+                          ))}{" "}
+                        </div>
+                        {row2Items.length > 0 && (
+                          <div className={styles.detailRow}>
+                            {" "}
+                            {row2Items.map((item) => (
+                              <div key={item.key} className={styles.detailItem}>
+                                <span className={styles.detailLabel}>
+                                  {item.label}:
+                                </span>
+                                <span
+                                  className={styles.detailValue}
+                                  style={getRankColorStyle(item.value)}
+                                >
+                                  {item.displayValue}
+                                </span>
+                              </div>
+                            ))}{" "}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+// Pagination Component
+interface PaginationControlsProps {
+  currentPage: number;
+  totalPages: number;
+  setCurrentPage: (page: number) => void;
+}
+const PaginationControls: React.FC<PaginationControlsProps> = ({
+  currentPage,
+  totalPages,
+  setCurrentPage
+}) => {
+  if (totalPages <= 1) return null;
+  return (
+    <div className={styles.pagination}>
+      {" "}
+      <button
+        onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+        disabled={currentPage === 1}
+      >
+        {" "}
+        Previous{" "}
+      </button>{" "}
+      <span>
+        {" "}
+        Page {currentPage} of {totalPages}{" "}
+      </span>{" "}
+      <button
+        onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+        disabled={currentPage === totalPages}
+      >
+        {" "}
+        Next{" "}
+      </button>{" "}
+    </div>
+  );
+};
 
 // ---------------------------
 // Main Component
@@ -166,27 +851,58 @@ function shortenName(fullName: string): string {
 const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   teamWeekData
 }) => {
-  // Utility: Normalize team abbreviation.
-  const normalizeTeamAbbreviation = (
-    team: string | null,
-    expectedTeam?: string | null
-  ): string | null => {
-    if (!team) return null;
-    const mapping: Record<string, string> = {
-      TB: "TBL",
-      SJ: "SJS",
-      NJ: "NJD",
-      LA: "LAK"
+  const isMobile = useIsMobile();
+
+  // --- States ---
+  const [ownershipThreshold, setOwnershipThreshold] = useState<number>(
+    defaultOwnershipThreshold
+  );
+  const [teamFilter, setTeamFilter] = useState<string>(defaultTeamFilter);
+  const [selectedPositions, setSelectedPositions] =
+    useState<Record<string, boolean>>(defaultPositions);
+  const [playersData, setPlayersData] = useState<UnifiedPlayerData[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [sortKey, setSortKey] = useState<SortKey>("composite");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const pageSize = 25;
+  const [isMobileMinimized, setIsMobileMinimized] = useState(false); // State for mobile minimize
+
+  // --- Data Fetching (useEffect) ---
+  useEffect(() => {
+    const fetchAllData = async () => {
+      setLoading(true);
+      let allData: UnifiedPlayerData[] = [];
+      let from = 0;
+      const supabasePageSize = 1000;
+      try {
+        while (true) {
+          const { data, error, count } = await supabase
+            .from("yahoo_nhl_player_map_mat")
+            .select("*", { count: "exact" })
+            .range(from, from + supabasePageSize - 1);
+          if (error) throw error;
+          if (!data) break;
+          allData = allData.concat(data);
+          if (count !== null && allData.length >= count) break;
+          if (data.length < supabasePageSize) break;
+          from += supabasePageSize;
+        }
+        console.log(`Fetched ${allData.length} players.`);
+        setPlayersData(allData);
+      } catch (error) {
+        console.error("Failed to load player data:", error);
+      } finally {
+        setLoading(false);
+      }
     };
-    const teamsArray = team.split(",").map((t) => t.trim());
-    const mappedTeams = teamsArray.map((t) => mapping[t] || t);
-    if (expectedTeam) {
-      const expected = mapping[expectedTeam] || expectedTeam;
-      const match = mappedTeams.find((t) => t === expected);
-      if (match) return match;
-    }
-    return mappedTeams[0];
-  };
+    fetchAllData();
+  }, []);
+
+  // ---------------------------
+  // Memoized Calculations
+  // ---------------------------
 
   // Return off-nights for a given player, using teamWeekData if available.
   const getOffNightsForPlayer = (
@@ -209,153 +925,85 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       : "N/A";
   };
 
-  // Use shortened names
-  const normalizePlayerName = (name: string | null): string | null =>
-    name ? shortenName(playerNameMapping[name] || name) : null;
-
-  /**
-   * Returns an inline style with a dynamic background color
-   * based on the percentile.
-   */
-  function getRankColorStyle(percentile: number): React.CSSProperties {
-    const weight = percentile / 100;
-    const r = Math.round(255 * (1 - weight));
-    const g = Math.round(255 * weight);
-    return { backgroundColor: `rgba(${r}, ${g}, 0, 0.45)` };
-  }
-
-  const playerNameMapping: Record<string, string> = {
-    "Alex Wennberg": "Alexander Wennberg"
-  };
-
-  // ---------------------------
-  // Filter States
-  // ---------------------------
-  const [ownershipThreshold, setOwnershipThreshold] = useState<number>(
-    defaultOwnershipThreshold
-  );
-  const [teamFilter, setTeamFilter] = useState<string>(defaultTeamFilter);
-  const [selectedPositions, setSelectedPositions] =
-    useState<Record<string, boolean>>(defaultPositions);
-
-  // ---------------------------
-  // Data States
-  // ---------------------------
-  const [playersData, setPlayersData] = useState<UnifiedPlayerData[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-
-  // ---------------------------
-  // Pagination States
-  // ---------------------------
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const pageSize = 25; // Players per page
-
-  // ---------------------------
-  // 1) Fetch All Data
-  // ---------------------------
-  const fetchAllData = async (): Promise<UnifiedPlayerData[]> => {
-    let allData: UnifiedPlayerData[] = [];
-    let from = 0;
-    const supabasePageSize = 1000;
-    while (true) {
-      const { data, error } = await supabase
-        .from("yahoo_nhl_player_map_mat")
-        .select("*")
-        .range(from, from + supabasePageSize - 1);
-      if (error) {
-        console.error("Error fetching unified player map:", error);
-        break;
-      }
-      if (!data) break;
-      allData = allData.concat(data);
-      if (data.length < supabasePageSize) break;
-      from += supabasePageSize;
-    }
-    return allData;
-  };
-
-  // ---------------------------
-  // 2) Load Data on Mount
-  // ---------------------------
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      const allData = await fetchAllData();
-      console.log("Fetched unified player map:", allData);
-      setPlayersData(allData);
-      setLoading(false);
-    };
-    loadData();
-  }, []);
-
-  // ---------------------------
-  // 3) Filter the Data
-  // ---------------------------
+  // Filtered Players
   const filteredPlayers = useMemo(() => {
     return playersData.filter((player) => {
-      const ownershipValue = player.percent_ownership;
-      const positionsValue = player.eligible_positions;
-      const offNightsValue = getOffNightsForPlayer(player);
-      const teamAbbr = normalizeTeamAbbreviation(
-        player.current_team_abbreviation || player.yahoo_team
-      );
+      // Basic checks for required data
+      if (player.percent_ownership === null || player.percent_ownership === 0)
+        return false;
       if (
-        !teamAbbr ||
-        ownershipValue === null ||
-        ownershipValue === 0 ||
-        !positionsValue ||
-        positionsValue.length === 0 ||
-        offNightsValue === undefined ||
+        !player.eligible_positions ||
+        player.eligible_positions.length === 0
+      ) {
+        // If no eligible positions, check if it's a Goalie and G is selected
+        if (player.player_type !== "goalie" || !selectedPositions["G"]) {
+          return false;
+        }
+      }
+
+      // Ownership Threshold Filter
+      if (player.percent_ownership > ownershipThreshold) return false;
+
+      // Team Filter
+      const playerTeamAbbr = normalizeTeamAbbreviation(
+        player.current_team_abbreviation || player.yahoo_team, // Prioritize current NHL team
+        player.yahoo_team // Use Yahoo team as fallback/secondary check
+      );
+      if (teamFilter !== "ALL" && teamFilter !== playerTeamAbbr) return false;
+
+      // Position Filter
+      const playerPositions =
+        player.eligible_positions ||
+        (player.player_type === "goalie" ? ["G"] : []);
+      const positionMatch = playerPositions.some(
+        (pos) => selectedPositions[pos]
+      );
+      if (!positionMatch) return false;
+
+      // Off-Nights check (ensure it's calculable) - Optional filter depending on requirements
+      const offNightsValue = getOffNightsForPlayer(player);
+      if (
         offNightsValue === "N/A" ||
+        offNightsValue === undefined ||
         offNightsValue === ""
       ) {
-        return false;
+        // Decide if players without off-night data should be excluded
+        // return false; // Uncomment to exclude players without off-night data
       }
-      if (
-        player.percent_ownership !== null &&
-        player.percent_ownership > ownershipThreshold
-      ) {
-        return false;
-      }
-      if (teamFilter !== "ALL" && teamFilter !== teamAbbr) {
-        return false;
-      }
-      if (player.eligible_positions && player.eligible_positions.length > 0) {
-        const matches = player.eligible_positions.some(
-          (pos) => selectedPositions[pos]
-        );
-        if (!matches) return false;
-      } else if (player.player_type === "goalie" && !selectedPositions["G"]) {
-        return false;
-      }
-      return true;
+
+      return true; // Player passes all filters
     });
   }, [
     playersData,
     ownershipThreshold,
     teamFilter,
     selectedPositions,
-    teamWeekData
-  ]);
+    getOffNightsForPlayer
+  ]); // Include getOffNightsForPlayer dependency
 
-  // ---------------------------
-  // 4) Compute Percentiles & Composite
-  // ---------------------------
+  // Compute Percentiles & Composite Score
   const playersWithPercentiles: PlayerWithPercentiles[] = useMemo(() => {
-    if (filteredPlayers.length === 0) {
-      return filteredPlayers.map((p) => ({
-        ...p,
-        percentiles: {} as Record<MetricKey, number>,
-        composite: 0
-      }));
-    }
+    if (filteredPlayers.length === 0) return [];
+
     const skaters = filteredPlayers.filter((p) => p.player_type === "skater");
     const goalies = filteredPlayers.filter((p) => p.player_type === "goalie");
 
-    function computePercentile(values: number[], value: number): number {
-      const count = values.length;
-      const numBelow = values.filter((v) => v < value).length;
-      const numEqual = values.filter((v) => v === value).length;
+    function computePercentile(
+      values: (number | null)[],
+      value: number | null
+    ): number {
+      if (value === null) return 0;
+      const validValues = values.filter((v) => v !== null) as number[];
+      if (validValues.length === 0) return 0;
+      validValues.sort((a, b) => a - b);
+      const count = validValues.length;
+      let numBelow = 0;
+      let numEqual = 0;
+      for (const v of validValues) {
+        if (v < value) numBelow++;
+        else if (v === value) numEqual++;
+        else break;
+      }
       return ((numBelow + 0.5 * numEqual) / count) * 100;
     }
 
@@ -363,38 +1011,58 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       group: UnifiedPlayerData[],
       metrics: MetricDefinition[]
     ): PlayerWithPercentiles[] {
-      const metricValues: Record<MetricKey, number[]> = {} as Record<
-        MetricKey,
-        number[]
-      >;
+      if (group.length === 0) return [];
+      const metricValuesMap: Map<MetricKey, (number | null)[]> = new Map();
       for (const { key } of metrics) {
-        metricValues[key] = group.map(
-          (p) => (p[key as keyof UnifiedPlayerData] as number) || 0
+        metricValuesMap.set(
+          key,
+          group.map((p) => p[key as keyof UnifiedPlayerData] as number | null)
         );
-        metricValues[key].sort((a, b) => a - b);
       }
       return group.map((player) => {
-        const percentiles: Record<MetricKey, number> = {} as Record<
-          MetricKey,
-          number
-        >;
+        const percentiles: Partial<Record<MetricKey, number>> = {};
         let sum = 0;
         let count = 0;
         for (const { key } of metrics) {
           const rawVal = player[key as keyof UnifiedPlayerData] as
             | number
             | null;
+          const allValues = metricValuesMap.get(key) || [];
+          let pct = 0;
+          if (key === "goals_against_avg") {
+            // Inverted logic for GAA
+            const validValues = allValues.filter((v) => v !== null) as number[];
+            if (validValues.length > 0 && rawVal !== null) {
+              validValues.sort((a, b) => a - b);
+              const totalCount = validValues.length;
+              let numAbove = 0;
+              let numEqual = 0;
+              for (const v of validValues) {
+                if (v > rawVal) numAbove++;
+                else if (v === rawVal) numEqual++;
+              }
+              pct = ((numAbove + 0.5 * numEqual) / totalCount) * 100;
+            }
+          } else {
+            // Standard logic
+            pct = computePercentile(allValues, rawVal);
+          }
+          percentiles[key] = pct;
           if (rawVal !== null) {
-            const pct = computePercentile(metricValues[key], rawVal);
-            percentiles[key] = pct;
+            // Only add valid percentiles to composite
             sum += pct;
             count++;
-          } else {
-            percentiles[key] = 0;
           }
         }
         const composite = count > 0 ? sum / count : 0;
-        return { ...player, percentiles, composite };
+        return {
+          ...player,
+          percentiles: metrics.reduce((acc, { key }) => {
+            acc[key] = percentiles[key] ?? 0;
+            return acc;
+          }, {} as Record<MetricKey, number>),
+          composite
+        };
       });
     }
 
@@ -403,44 +1071,49 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     return [...skatersWithPct, ...goaliesWithPct];
   }, [filteredPlayers]);
 
-  // ---------------------------
-  // 5) Sorting Setup
-  // ---------------------------
-  type SortKey = keyof (UnifiedPlayerData & { composite: number });
-  const [sortKey, setSortKey] = useState<SortKey>("composite");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-
-  const handleSort = (column: SortKey) => {
-    if (sortKey === column) {
-      setSortOrder(sortOrder === "desc" ? "asc" : "desc");
-    } else {
-      setSortKey(column);
-      setSortOrder("desc");
-    }
-  };
-
+  // Sorted Players
   const sortedPlayers = useMemo(() => {
-    const sorted = [...playersWithPercentiles];
-    sorted.sort((a, b) => {
-      const aValue = a[sortKey];
-      const bValue = b[sortKey];
-      if (aValue === null) return 1;
-      if (bValue === null) return -1;
-      if (typeof aValue === "number" && typeof bValue === "number") {
-        return sortOrder === "desc" ? bValue - aValue : aValue - bValue;
+    const sortablePlayers = [...playersWithPercentiles];
+    sortablePlayers.sort((a, b) => {
+      let aValue: any =
+        sortKey === "off_nights" ? getOffNightsForPlayer(a) : a[sortKey];
+      let bValue: any =
+        sortKey === "off_nights" ? getOffNightsForPlayer(b) : b[sortKey];
+      if (aValue === "N/A")
+        aValue = sortOrder === "desc" ? -Infinity : Infinity;
+      if (bValue === "N/A")
+        bValue = sortOrder === "desc" ? -Infinity : Infinity;
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
+      if (sortKey === "nhl_team_abbreviation") {
+        aValue =
+          normalizeTeamAbbreviation(
+            a.current_team_abbreviation || a.yahoo_team,
+            a.yahoo_team
+          ) || "";
+        bValue =
+          normalizeTeamAbbreviation(
+            b.current_team_abbreviation || b.yahoo_team,
+            b.yahoo_team
+          ) || "";
       }
-      const aStr = String(aValue).toLowerCase();
-      const bStr = String(bValue).toLowerCase();
-      if (aStr < bStr) return sortOrder === "desc" ? 1 : -1;
-      if (aStr > bStr) return sortOrder === "desc" ? -1 : 1;
+      if (sortKey === "nhl_player_name") {
+        aValue = (a.yahoo_player_name || a.nhl_player_name || "").toLowerCase();
+        bValue = (b.yahoo_player_name || b.nhl_player_name || "").toLowerCase();
+      }
+      if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
       return 0;
     });
-    return sorted;
-  }, [playersWithPercentiles, sortKey, sortOrder]);
+    return sortablePlayers;
+  }, [playersWithPercentiles, sortKey, sortOrder, getOffNightsForPlayer]);
 
-  // ---------------------------
-  // 6) Build Team Options
-  // ---------------------------
+  const totalPages = Math.ceil(sortedPlayers.length / pageSize);
+  const paginatedPlayers = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return sortedPlayers.slice(startIndex, startIndex + pageSize);
+  }, [sortedPlayers, currentPage, pageSize]);
+
   const teamOptions = useMemo(() => {
     const teamsSet = new Set<string>();
     playersData.forEach((p) => {
@@ -452,608 +1125,114 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     return ["ALL", ...Array.from(teamsSet).sort()];
   }, [playersData]);
 
-  // ---------------------------
-  // 7) Reset Filters
-  // ---------------------------
+  // --- Event Handlers ---
+  const handleSort = (column: SortKey) => {
+    setCurrentPage(1);
+    if (sortKey === column) {
+      setSortOrder(sortOrder === "desc" ? "asc" : "desc");
+    } else {
+      setSortKey(column);
+      setSortOrder("desc");
+    }
+  };
   const resetFilters = () => {
     setOwnershipThreshold(defaultOwnershipThreshold);
     setTeamFilter(defaultTeamFilter);
     setSelectedPositions(defaultPositions);
+    setCurrentPage(1);
+    setSortKey("composite");
+    setSortOrder("desc");
+    setIsMobileMinimized(false); // Expand on reset
   };
-
-  // ---------------------------
-  // 8) Pagination: Calculate current page of players
-  // ---------------------------
-  const totalPages = Math.ceil(sortedPlayers.length / pageSize);
-  const paginatedPlayers = useMemo(() => {
-    const startIndex = (currentPage - 1) * pageSize;
-    return sortedPlayers.slice(startIndex, startIndex + pageSize);
-  }, [sortedPlayers, currentPage, pageSize]);
-
-  // ---------------------------
-  // 9) Mobile Expand/Collapse State
-  // ---------------------------
-  const isMobile = useIsMobile();
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const toggleExpand = (playerId: string) => {
     setExpanded((prev) => ({ ...prev, [playerId]: !prev[playerId] }));
   };
+  const toggleMobileMinimize = () => {
+    if (isMobile) {
+      setIsMobileMinimized((prev) => !prev);
+    }
+  };
 
-  // For mobile view, totalColumns is 8 original columns + 1 for expand button.
-  const totalColumns = 8 + (isMobile ? 1 : 0);
+  // --- Effects ---
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [ownershipThreshold, teamFilter, selectedPositions]);
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    } else if (currentPage < 1 && totalPages > 0) {
+      setCurrentPage(1);
+    } else if (totalPages === 0) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages]);
 
-  // ---------------------------
-  // 10) Render Component
-  // ---------------------------
-  if (isMobile) {
-    return (
-      <div className={styles.containerMobile}>
-        {/* Filter Controls */}
-        <div className={styles.filtersMobile}>
-          <div className={styles.filtersTitle}>
-            <span className={styles.acronym}>BPA</span> -{" "}
-            <span className={styles.acronym}>B</span>est{" "}
-            <span className={styles.acronym}>P</span>layer{" "}
-            <span className={styles.acronym}>A</span>vailable
-          </div>
-          <div className={styles.divider} />
-          <div className={styles.filterContainerMobile}>
-            <div className={styles.ownershipTeamContainer}>
-              <div className={styles.filterRowMobileOwnership}>
-                <label className={styles.labelMobile}>
-                  Own %: {ownershipThreshold}%
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={ownershipThreshold}
-                  onChange={(e) =>
-                    setOwnershipThreshold(Number(e.target.value))
-                  }
-                  className={styles.sliderMobile}
-                />
-              </div>
-              <div className={styles.filterRowMobileTeam}>
-                <label className={styles.labelMobile}>Team:</label>
-                <select
-                  value={teamFilter}
-                  onChange={(e) => setTeamFilter(e.target.value)}
-                  className={styles.selectMobile}
-                >
-                  {teamOptions.map((team) => (
-                    <option key={team} value={team}>
-                      {team}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className={styles.filterRowMobile}>
-              <span className={styles.labelMobile}>Position:</span>
-              {Object.keys(defaultPositions).map((pos) => (
-                <label key={pos} style={{ marginRight: "10px" }}>
-                  <input
-                    style={{ marginRight: "10px" }}
-                    type="checkbox"
-                    checked={selectedPositions[pos]}
-                    onChange={() =>
-                      setSelectedPositions((prev) => ({
-                        ...prev,
-                        [pos]: !prev[pos]
-                      }))
-                    }
-                  />
-                  {pos}
-                </label>
-              ))}
-            </div>
-          </div>
-          <button className={styles.buttonReset} onClick={resetFilters}>
-            Reset Filters
-          </button>
-        </div>
+  // --- Render Logic ---
+  return (
+    // Add class to container when minimized on mobile
+    <div
+      className={clsx(
+        styles.container,
+        isMobile && isMobileMinimized && styles.containerMinimized
+      )}
+    >
+      <Filters
+        ownershipThreshold={ownershipThreshold}
+        setOwnershipThreshold={setOwnershipThreshold}
+        teamFilter={teamFilter}
+        setTeamFilter={setTeamFilter}
+        selectedPositions={selectedPositions}
+        setSelectedPositions={setSelectedPositions}
+        resetFilters={resetFilters}
+        teamOptions={teamOptions}
+        isMobile={isMobile}
+        // Pass minimize state and handler
+        isMobileMinimized={isMobileMinimized}
+        toggleMobileMinimize={toggleMobileMinimize}
+      />
 
-        {/* Mobile Table */}
+      {/* Content that gets hidden */}
+      <div id="player-table-content" className={styles.collapsibleContent}>
         {loading ? (
-          <div>Loading...</div>
-        ) : (
-          <div className={styles.tableContainerMobile}>
-            <table className={styles.tableMobile}>
-              <colgroup>
-                {isMobile && <col style={{ width: "5%" }} />}
-                <col style={{ width: "18%" }} />
-                <col style={{ width: "6%" }} />
-                <col style={{ width: "6%" }} />
-                <col style={{ width: "6%" }} />
-                <col style={{ width: "6%" }} />
-                {/* Omit GP% column from main table; it will appear in expanded details */}
-                <col style={{ width: "7%" }} />
-              </colgroup>
-              <thead>
-                <tr>
-                  {isMobile && <th></th>}
-                  <th onClick={() => handleSort("nhl_player_name")}>
-                    Name{" "}
-                    {sortKey === "nhl_player_name"
-                      ? sortOrder === "desc"
-                        ? "▼"
-                        : "▲"
-                      : ""}
-                  </th>
-                  <th onClick={() => handleSort("nhl_team_abbreviation")}>
-                    Team{" "}
-                    {sortKey === "nhl_team_abbreviation"
-                      ? sortOrder === "desc"
-                        ? "▼"
-                        : "▲"
-                      : ""}
-                  </th>
-                  <th onClick={() => handleSort("percent_ownership")}>
-                    Own{" "}
-                    {sortKey === "percent_ownership"
-                      ? sortOrder === "desc"
-                        ? "▼"
-                        : "▲"
-                      : ""}
-                  </th>
-                  <th>Pos.</th>
-                  <th onClick={() => handleSort("off_nights")}>
-                    Offs{" "}
-                    {sortKey === "off_nights"
-                      ? sortOrder === "desc"
-                        ? "▼"
-                        : "▲"
-                      : ""}
-                  </th>
-                  <th onClick={() => handleSort("composite")}>
-                    Score{" "}
-                    {sortKey === "composite"
-                      ? sortOrder === "desc"
-                        ? "▼"
-                        : "▲"
-                      : ""}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedPlayers.map((player) => {
-                  const relevantMetrics =
-                    player.player_type === "skater"
-                      ? skaterMetrics
-                      : goalieMetrics;
-                  return (
-                    <React.Fragment key={player.nhl_player_id}>
-                      <tr>
-                        {isMobile && (
-                          <td>
-                            <button
-                              onClick={() => toggleExpand(player.nhl_player_id)}
-                              className={styles.expandButton}
-                            >
-                              {expanded[player.nhl_player_id] ? "−" : "+"}
-                            </button>
-                          </td>
-                        )}
-                        <td>
-                          <div className={styles.nameAndInjuryWrapperMobile}>
-                            <div className={styles.leftNamePartMobile}>
-                              <span className={styles.playerName}>
-                                {normalizePlayerName(
-                                  player.yahoo_player_name
-                                ) || shortenName(player.nhl_player_name)}
-                              </span>
-                            </div>
-                            {/* Only display injured icon if status exists */}
-                            {player.status &&
-                              ["IR-LT", "IR", "O", "DTD", "IR-NR"].includes(
-                                player.status
-                              ) && (
-                                <div className={styles.rightInjuryPartMobile}>
-                                  <div className={styles.imageContainer}>
-                                    <Image
-                                      src="/pictures/injured.png"
-                                      alt="Injured"
-                                      width={20}
-                                      height={20}
-                                    />
-                                  </div>
-                                </div>
-                              )}
-                          </div>
-                        </td>
-                        <td>
-                          {(() => {
-                            const teamAbbr = normalizeTeamAbbreviation(
-                              player.current_team_abbreviation ||
-                                player.yahoo_team,
-                              player.yahoo_team
-                            );
-                            return teamAbbr ? (
-                              <Image
-                                src={`/teamLogos/${teamAbbr}.png`}
-                                alt={teamAbbr}
-                                width={30}
-                                height={30}
-                              />
-                            ) : (
-                              "N/A"
-                            );
-                          })()}
-                        </td>
-                        <td>
-                          {player.percent_ownership !== null
-                            ? player.percent_ownership + "%"
-                            : "N/A"}
-                        </td>
-                        <td>
-                          {player.eligible_positions &&
-                          player.eligible_positions.length > 0
-                            ? player.eligible_positions.join(", ")
-                            : player.player_type === "goalie"
-                            ? "G"
-                            : "N/A"}
-                        </td>
-                        <td>{getOffNightsForPlayer(player)}</td>
-                        <td>{player.composite.toFixed(1)}</td>
-                      </tr>
-                      {isMobile && expanded[player.nhl_player_id] && (
-                        <tr className={styles.expandedRow}>
-                          <td colSpan={totalColumns}>
-                            <div className={styles.expandedDetails}>
-                              {/* Include GP% here as part of details */}
-                              <div className={styles.detailItem}>
-                                <span className={styles.detailLabel}>GP%:</span>
-                                <span
-                                  className={styles.detailValue}
-                                  style={getRankColorStyle(
-                                    player.percentiles.percent_games || 0
-                                  )}
-                                >
-                                  {player.percent_games !== null
-                                    ? (
-                                        Math.min(player.percent_games, 1) * 100
-                                      ).toFixed(0) + "%"
-                                    : "N/A"}
-                                </span>
-                              </div>
-                              {relevantMetrics
-                                .filter(({ key }) => key !== "percent_games")
-                                .map(({ key, label }) => {
-                                  const pctVal = player.percentiles[key];
-                                  const displayVal =
-                                    pctVal !== undefined
-                                      ? pctVal.toFixed(0) + "%"
-                                      : "0%";
-                                  return (
-                                    <div
-                                      key={key}
-                                      className={styles.detailItem}
-                                    >
-                                      <span className={styles.detailLabel}>
-                                        {label}:
-                                      </span>
-                                      <span
-                                        className={styles.detailValue}
-                                        style={getRankColorStyle(pctVal || 0)}
-                                      >
-                                        {displayVal}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-            {/* Pagination Controls */}
-            <div className={styles.pagination}>
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                Previous
-              </button>
-              <span>
-                Page {currentPage} of {totalPages}
-              </span>
-              <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-                }
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </button>
-            </div>
+          <div className={styles.message}>Loading players...</div>
+        ) : paginatedPlayers.length === 0 ? (
+          <div className={styles.message}>
+            No players match the current filters.
           </div>
+        ) : (
+          // Render table/pagination only if NOT (mobile AND minimized)
+          <>
+            {(!isMobile || !isMobileMinimized) && (
+              <>
+                {isMobile ? (
+                  <MobileTable
+                    players={paginatedPlayers}
+                    sortKey={sortKey}
+                    sortOrder={sortOrder}
+                    handleSort={handleSort}
+                    expanded={expanded}
+                    toggleExpand={toggleExpand}
+                    getOffNightsForPlayer={getOffNightsForPlayer}
+                  />
+                ) : (
+                  <DesktopTable
+                    players={paginatedPlayers}
+                    sortKey={sortKey}
+                    sortOrder={sortOrder}
+                    handleSort={handleSort}
+                    getOffNightsForPlayer={getOffNightsForPlayer}
+                  />
+                )}
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  setCurrentPage={setCurrentPage}
+                />
+              </>
+            )}
+          </>
         )}
       </div>
-    );
-  }
-
-  // ---------------------------
-  // Non-mobile (Desktop) View: Original Table
-  // ---------------------------
-  return (
-    <div className={styles.container}>
-      {/* Filter Controls */}
-      <div className={styles.filters}>
-        <div className={styles.filtersTitle}>
-          <span className={styles.acronym}>BPA</span> -{" "}
-          <span className={styles.acronym}>B</span>est{" "}
-          <span className={styles.acronym}>P</span>layer{" "}
-          <span className={styles.acronym}>A</span>vailable
-        </div>
-        <div className={styles.divider} />
-        <div className={styles.filterContainer}>
-          <div className={styles.filterRow}>
-            <label className={styles.label}>Own %: {ownershipThreshold}%</label>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={ownershipThreshold}
-              onChange={(e) => setOwnershipThreshold(Number(e.target.value))}
-              className={styles.slider}
-            />
-          </div>
-          <div className={styles.filterRow}>
-            <label className={styles.label}>Team:</label>
-            <select
-              value={teamFilter}
-              onChange={(e) => setTeamFilter(e.target.value)}
-              className={styles.select}
-            >
-              {teamOptions.map((team) => (
-                <option key={team} value={team}>
-                  {team}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className={styles.filterRow}>
-            <span className={styles.label}>Pos.:</span>
-            {Object.keys(defaultPositions).map((pos) => (
-              <label key={pos} style={{ marginRight: "10px" }}>
-                <input
-                  type="checkbox"
-                  checked={selectedPositions[pos]}
-                  onChange={() =>
-                    setSelectedPositions((prev) => ({
-                      ...prev,
-                      [pos]: !prev[pos]
-                    }))
-                  }
-                />
-                {pos}
-              </label>
-            ))}
-          </div>
-        </div>
-        <button className={styles.buttonReset} onClick={resetFilters}>
-          Reset Filters
-        </button>
-      </div>
-
-      {/* Main Table */}
-      {loading ? (
-        <div>Loading...</div>
-      ) : (
-        <div className={styles.tableContainer}>
-          <table className={styles.table}>
-            <colgroup>
-              <col style={{ width: "18%" }} />
-              <col style={{ width: "6%" }} />
-              <col style={{ width: "6%" }} />
-              <col style={{ width: "6%" }} />
-              <col style={{ width: "6%" }} />
-              <col style={{ width: "6%" }} />
-              <col style={{ width: "45%" }} />
-              <col style={{ width: "7%" }} />
-            </colgroup>
-            <thead>
-              <tr>
-                <th onClick={() => handleSort("nhl_player_name")}>
-                  Name{" "}
-                  {sortKey === "nhl_player_name"
-                    ? sortOrder === "desc"
-                      ? "▼"
-                      : "▲"
-                    : ""}
-                </th>
-                <th onClick={() => handleSort("nhl_team_abbreviation")}>
-                  Team{" "}
-                  {sortKey === "nhl_team_abbreviation"
-                    ? sortOrder === "desc"
-                      ? "▼"
-                      : "▲"
-                    : ""}
-                </th>
-                <th onClick={() => handleSort("percent_ownership")}>
-                  Own %{" "}
-                  {sortKey === "percent_ownership"
-                    ? sortOrder === "desc"
-                      ? "▼"
-                      : "▲"
-                    : ""}
-                </th>
-                <th>Pos.</th>
-                <th onClick={() => handleSort("off_nights")}>
-                  Off-Nights{" "}
-                  {sortKey === "off_nights"
-                    ? sortOrder === "desc"
-                      ? "▼"
-                      : "▲"
-                    : ""}
-                </th>
-                <th onClick={() => handleSort("percent_games")}>GP%</th>
-                <th>Percentile Ranks</th>
-                <th onClick={() => handleSort("composite")}>
-                  Score{" "}
-                  {sortKey === "composite"
-                    ? sortOrder === "desc"
-                      ? "▼"
-                      : "▲"
-                    : ""}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginatedPlayers.map((player) => {
-                const relevantMetrics =
-                  player.player_type === "skater"
-                    ? skaterMetrics
-                    : goalieMetrics;
-                return (
-                  <tr key={player.nhl_player_id}>
-                    <td>
-                      <div className={styles.nameAndInjuryWrapper}>
-                        <div className={styles.leftNamePart}>
-                          <span className={styles.playerName}>
-                            {normalizePlayerName(player.yahoo_player_name) ||
-                              shortenName(player.nhl_player_name)}
-                          </span>
-                        </div>
-                        {player.status &&
-                          ["IR-LT", "IR", "O", "DTD", "IR-NR"].includes(
-                            player.status
-                          ) && (
-                            <div className={styles.rightInjuryPart}>
-                              <div className={styles.statusRightInjuryPart}>
-                                {player.status}
-                              </div>
-                              <div className={styles.injuryNoteRightInjuryPart}>
-                                {player.injury_note}
-                              </div>
-                              <div className={styles.imageContainer}>
-                                <Image
-                                  src="/pictures/injured.png"
-                                  alt="Injured"
-                                  width={20}
-                                  height={20}
-                                />
-                              </div>
-                            </div>
-                          )}
-                      </div>
-                    </td>
-                    <td>
-                      {(() => {
-                        const teamAbbr = normalizeTeamAbbreviation(
-                          player.current_team_abbreviation || player.yahoo_team,
-                          player.yahoo_team
-                        );
-                        return teamAbbr ? (
-                          <Image
-                            src={`/teamLogos/${teamAbbr}.png`}
-                            alt={teamAbbr}
-                            width={30}
-                            height={30}
-                          />
-                        ) : (
-                          "N/A"
-                        );
-                      })()}
-                    </td>
-                    <td>
-                      {player.percent_ownership !== null
-                        ? player.percent_ownership + "%"
-                        : "N/A"}
-                    </td>
-                    <td>
-                      {player.eligible_positions &&
-                      player.eligible_positions.length > 0
-                        ? player.eligible_positions.join(", ")
-                        : player.player_type === "goalie"
-                        ? "G"
-                        : "N/A"}
-                    </td>
-                    <td>{getOffNightsForPlayer(player)}</td>
-                    <td>
-                      {player.percent_games !== null ? (
-                        <div className={styles.percentileContainer}>
-                          <div
-                            className={styles.percentileBox}
-                            style={getRankColorStyle(
-                              player.percentiles.percent_games !== undefined
-                                ? player.percentiles.percent_games
-                                : 0
-                            )}
-                          >
-                            {(Math.min(player.percent_games, 1) * 100).toFixed(
-                              0
-                            ) + "%"}
-                          </div>
-                        </div>
-                      ) : (
-                        "N/A"
-                      )}
-                    </td>
-                    <td>
-                      <div className={styles.percentileFlexContainer}>
-                        {relevantMetrics
-                          .filter(({ key }) => key !== "percent_games")
-                          .map(({ key, label }) => {
-                            const pctVal = player.percentiles[key];
-                            const displayVal =
-                              pctVal !== undefined
-                                ? pctVal.toFixed(0) + "%"
-                                : "0%";
-                            return (
-                              <div
-                                key={key}
-                                className={styles.percentileContainer}
-                              >
-                                <div className={styles.percentileLabel}>
-                                  {label}
-                                </div>
-                                <div
-                                  className={styles.percentileBox}
-                                  style={getRankColorStyle(
-                                    pctVal !== undefined ? pctVal : 0
-                                  )}
-                                >
-                                  {displayVal}
-                                </div>
-                              </div>
-                            );
-                          })}
-                      </div>
-                    </td>
-                    <td>{player.composite.toFixed(1)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {/* Pagination Controls */}
-          <div className={styles.pagination}>
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </button>
-            <span>
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

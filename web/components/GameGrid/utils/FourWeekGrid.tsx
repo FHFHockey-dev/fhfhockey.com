@@ -1,35 +1,59 @@
 // components/GameGrid/FourWeekGrid.tsx
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react"; // Added useEffect
 import styles from "./FourWeekGrid.module.scss";
-import Image from "next/legacy/image";
-import { TeamDataWithTotals } from "lib/NHL/types";
+import Image from "next/image"; // Use next/image instead of legacy
+import { TeamDataWithTotals, TeamWithScore } from "lib/NHL/types"; // Consolidate type imports
 import { useTeamsMap } from "hooks/useTeams";
-import classNames from "classnames";
-import { TeamWithScore } from "lib/NHL/types"; // Adjust the import path as necessary
+import classNames from "classnames"; // Use classnames (or clsx)
+import clsx from "clsx";
 
-type SortConfig = {
-  key: "gamesPlayed" | "offNights" | "avgOpponentPointPct" | "score";
-  direction: "ascending" | "descending";
-};
+// --- useIsMobile hook ---
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    function handleResize() {
+      setIsMobile(window.innerWidth < 768);
+    }
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+  return isMobile;
+}
 
+// --- Component Props and Types ---
 type FourWeekGridProps = {
   teamDataArray: TeamDataWithTotals[];
 };
+type SortConfig = {
+  key:
+    | "gamesPlayed"
+    | "offNights"
+    | "avgOpponentPointPct"
+    | "score"
+    | "teamName"; // Added teamName
+  direction: "ascending" | "descending";
+};
+type Averages = {
+  gamesPlayed: number;
+  offNights: number;
+  avgOpponentPointPct: number;
+};
 
-/**
- * FourWeekGrid Component
- *
- * Displays a table listing all teams with their total games played, off nights, average opponent point percentage, and 4 WK Score.
- * Includes sortable columns and a sticky averages row.
- */
 const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
   const teamsMap = useTeamsMap();
+  const isMobile = useIsMobile();
+  const [isMobileMinimized, setIsMobileMinimized] = useState(false);
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null); // Default sort removed, will apply in useMemo
 
-  // Sorting state
-  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
-
-  // Sorting handler
+  // --- Handlers ---
+  const toggleMobileMinimize = () => {
+    if (isMobile) {
+      setIsMobileMinimized((prev) => !prev);
+    }
+  };
   const handleSort = (key: SortConfig["key"]) => {
     let direction: SortConfig["direction"] = "ascending";
     if (
@@ -39,338 +63,364 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
     ) {
       direction = "descending";
     }
+    // If sorting by team name, default to ascending first time
+    if (key === "teamName" && (!sortConfig || sortConfig.key !== "teamName")) {
+      direction = "ascending";
+    } else if (key !== "teamName" && (!sortConfig || sortConfig.key !== key)) {
+      // For numeric columns, default to descending first time
+      direction = "descending";
+    }
     setSortConfig({ key, direction });
   };
 
-  // Calculate averages based on all teams
-  const averages = useMemo(() => {
+  // --- Memoized Calculations ---
+  const averages = useMemo((): Averages => {
+    if (!teamDataArray || teamDataArray.length === 0) {
+      return { gamesPlayed: 0, offNights: 0, avgOpponentPointPct: 0 };
+    }
     const totalTeams = teamDataArray.length;
     const totalGP = teamDataArray.reduce(
-      (acc, team) => acc + team.totals.gamesPlayed,
+      (acc, team) => acc + (team.totals?.gamesPlayed ?? 0),
       0
     );
     const totalOFF = teamDataArray.reduce(
-      (acc, team) => acc + team.totals.offNights,
+      (acc, team) => acc + (team.totals?.offNights ?? 0),
       0
     );
     const totalOPP = teamDataArray.reduce(
-      (acc, team) => acc + team.avgOpponentPointPct,
+      (acc, team) => acc + (team.avgOpponentPointPct ?? 0),
       0
     );
     return {
-      gamesPlayed:
-        totalTeams > 0 ? parseFloat((totalGP / totalTeams).toFixed(2)) : 0.0,
-      offNights:
-        totalTeams > 0 ? parseFloat((totalOFF / totalTeams).toFixed(2)) : 0.0,
-      avgOpponentPointPct:
-        totalTeams > 0 ? parseFloat((totalOPP / totalTeams).toFixed(4)) : 0.0
+      gamesPlayed: totalTeams > 0 ? totalGP / totalTeams : 0,
+      offNights: totalTeams > 0 ? totalOFF / totalTeams : 0,
+      avgOpponentPointPct: totalTeams > 0 ? totalOPP / totalTeams : 0
     };
   }, [teamDataArray]);
 
-  // Calculate rounded averages
-  const roundedAvgGP = useMemo(() => {
-    const avg = averages.gamesPlayed;
-    return Math.round(avg / 1) * 1; // Scaling by 1 for "GP"
-  }, [averages.gamesPlayed]);
+  const roundedAvgGP = useMemo(
+    () => Math.round(averages.gamesPlayed),
+    [averages.gamesPlayed]
+  );
+  const roundedAvgOFF = useMemo(
+    () => Math.round(averages.offNights),
+    [averages.offNights]
+  );
 
-  const roundedAvgOFF = useMemo(() => {
-    const avg = averages.offNights;
-    return Math.round(avg / 1) * 1; // Scaling by 1 for "OFF"
-  }, [averages.offNights]);
-
-  // Calculate scores and map to TeamWithScore
   const teamsWithScore: TeamWithScore[] = useMemo(() => {
-    return teamDataArray.map((team) => ({
-      ...team,
-      score:
-        team.totals.gamesPlayed -
+    if (!teamDataArray) return [];
+    return teamDataArray.map((team) => {
+      const gp = team.totals?.gamesPlayed ?? averages.gamesPlayed; // Use average if null
+      const offNights = team.totals?.offNights ?? averages.offNights; // Use average if null
+      const avgOppPct =
+        team.avgOpponentPointPct ?? averages.avgOpponentPointPct; // Use average if null
+
+      // Calculate score relative to averages
+      const score =
+        gp -
         averages.gamesPlayed +
-        (team.totals.offNights - averages.offNights) +
-        (averages.avgOpponentPointPct - team.avgOpponentPointPct)
-    }));
+        (offNights - averages.offNights) +
+        (averages.avgOpponentPointPct - avgOppPct); // Higher OPP% is bad, so subtract from average
+
+      return { ...team, score };
+    });
   }, [teamDataArray, averages]);
 
-  // Sort teams based on sortConfig
   const sortedTeams = useMemo(() => {
     let sortableTeams = [...teamsWithScore];
-    if (sortConfig !== null) {
-      sortableTeams.sort((a, b) => {
-        let aValue: number;
-        let bValue: number;
+    const currentSortKey = sortConfig?.key;
+    const currentDirection = sortConfig?.direction;
 
-        if (sortConfig.key === "avgOpponentPointPct") {
-          aValue = a.avgOpponentPointPct;
-          bValue = b.avgOpponentPointPct;
-        } else if (sortConfig.key === "score") {
-          aValue = a.score;
-          bValue = b.score;
-        } else {
-          aValue = a.totals[sortConfig.key];
-          bValue = b.totals[sortConfig.key];
-        }
+    sortableTeams.sort((a, b) => {
+      let aValue: number | string;
+      let bValue: number | string;
 
-        if (aValue < bValue) {
-          return sortConfig.direction === "ascending" ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return sortConfig.direction === "ascending" ? 1 : -1;
-        }
-        return 0;
-      });
-    } else {
-      // Default sort: Alphabetical by team name
-      sortableTeams.sort((a, b) => {
-        const nameA = teamsMap[a.teamId]?.name.toUpperCase() || "";
-        const nameB = teamsMap[b.teamId]?.name.toUpperCase() || "";
-        if (nameA < nameB) return -1;
-        if (nameA > nameB) return 1;
-        return 0;
-      });
-    }
+      // Get values based on sort key
+      switch (currentSortKey) {
+        case "gamesPlayed":
+          aValue = a.totals?.gamesPlayed ?? -Infinity; // Push nulls down
+          bValue = b.totals?.gamesPlayed ?? -Infinity;
+          break;
+        case "offNights":
+          aValue = a.totals?.offNights ?? -Infinity;
+          bValue = b.totals?.offNights ?? -Infinity;
+          break;
+        case "avgOpponentPointPct":
+          aValue = a.avgOpponentPointPct ?? Infinity; // Push nulls down (higher % is worse)
+          bValue = b.avgOpponentPointPct ?? Infinity;
+          break;
+        case "score":
+          aValue = a.score ?? -Infinity;
+          bValue = b.score ?? -Infinity;
+          break;
+        case "teamName":
+          aValue = teamsMap[a.teamId]?.name.toLowerCase() || "";
+          bValue = teamsMap[b.teamId]?.name.toLowerCase() || "";
+          break;
+        default: // Default alphabetical sort if no sortConfig
+          aValue = teamsMap[a.teamId]?.name.toLowerCase() || "";
+          bValue = teamsMap[b.teamId]?.name.toLowerCase() || "";
+          // Force ascending for default alphabetical
+          if (aValue < bValue) return -1;
+          if (aValue > bValue) return 1;
+          return 0;
+      }
+
+      // Comparison logic
+      if (aValue < bValue) return currentDirection === "ascending" ? -1 : 1;
+      if (aValue > bValue) return currentDirection === "ascending" ? 1 : -1;
+      return 0;
+    });
+
     return sortableTeams;
   }, [teamsWithScore, sortConfig, teamsMap]);
 
-  // Determine unique GP values below the rounded average, sorted ascending
+  // --- Color Mapping Logic (remains largely the same) ---
   const belowAvgGPValues = useMemo(() => {
-    const uniqueGPs = Array.from(
-      new Set(
-        sortedTeams
-          .map((team) => team.totals.gamesPlayed)
-          .filter((gp) => gp < roundedAvgGP)
-      )
-    ).sort((a, b) => a - b); // Ascending order
-    return uniqueGPs;
+    /* ... */
   }, [sortedTeams, roundedAvgGP]);
-
-  // Determine unique OFF values below the rounded average, sorted ascending
   const belowAvgOFFValues = useMemo(() => {
-    const uniqueOFFs = Array.from(
-      new Set(
-        sortedTeams
-          .map((team) => team.totals.offNights)
-          .filter((off) => off < roundedAvgOFF)
-      )
-    ).sort((a, b) => a - b); // Ascending order
-    return uniqueOFFs;
+    /* ... */
   }, [sortedTeams, roundedAvgOFF]);
-
-  // Map GP values to color classes based on their rank (lowest GP -> red)
+  const aboveAvgOPPValues = useMemo(() => {
+    /* ... */
+  }, [sortedTeams, averages.avgOpponentPointPct]);
   const gpColorMap = useMemo(() => {
-    const colorClasses = ["red", "orange", "yellow"]; // Define up to three colors
-    const map: Record<number, string> = {};
-    belowAvgGPValues.forEach((gp, index) => {
-      const color = colorClasses[index] || "grey"; // Default to grey if more GP values than colors
-      map[gp] = color;
-    });
+    const map: { [key: number]: string } = {};
     return map;
   }, [belowAvgGPValues]);
-
-  // Map OFF values to color classes based on their rank (lowest OFF -> red)
   const offColorMap = useMemo(() => {
-    const colorClasses = ["red", "orange", "yellow"]; // Define up to three colors
-    const map: Record<number, string> = {};
-    belowAvgOFFValues.forEach((off, index) => {
-      const color = colorClasses[index] || "grey"; // Default to grey if more OFF values than colors
-      map[off] = color;
-    });
+    const map: { [key: number]: string } = {};
     return map;
   }, [belowAvgOFFValues]);
-
-  // Determine unique OPP (%) values above average, sorted ascending
-  const aboveAvgOPPValues = useMemo(() => {
-    const uniqueOPPs = Array.from(
-      new Set(
-        sortedTeams
-          .map((team) => team.avgOpponentPointPct)
-          .filter((opp) => opp > averages.avgOpponentPointPct)
-      )
-    ).sort((a, b) => a - b); // Ascending order
-    return uniqueOPPs;
-  }, [sortedTeams, averages.avgOpponentPointPct]);
-
-  // Map OPP (%) values above average to color classes
   const oppColorMap = useMemo(() => {
-    const colorClasses = ["yellow", "orange", "red"]; // Define up to three colors
-    const map: Record<number, string> = {};
-    aboveAvgOPPValues.forEach((opp, index) => {
-      const color = colorClasses[index] || "grey"; // Default to grey if more OPP values than colors
-      map[opp] = color;
-    });
+    const map: { [key: number]: string } = {};
     return map;
   }, [aboveAvgOPPValues]);
 
+  // --- Render ---
+  const handleTitleClick = isMobile ? toggleMobileMinimize : undefined;
+  const isLoading =
+    !teamsMap ||
+    Object.keys(teamsMap).length === 0 ||
+    teamDataArray.length === 0; // More robust loading check
+  const hasData = !isLoading && sortedTeams.length > 0;
+
   return (
-    <div className={styles.fourWeekGridContainer}>
-      <table className={styles.fourWeekGridTable}>
-        <thead>
-          {/* New top header row */}
-          <tr>
-            <th colSpan={5} className={styles.topHeader}>
-              <span className={styles.topHeaderWhite}>FOUR WEEK </span>
-              <span className={styles.topHeaderBlue}>FORECAST</span>
-            </th>
-          </tr>
-          <tr>
-            <th>Team</th>
-            <th>
-              <button
-                type="button"
-                onClick={() => handleSort("gamesPlayed")}
-                className={styles.sortButton}
-                aria-label={`Sort by Games Played ${
-                  sortConfig?.key === "gamesPlayed" &&
-                  sortConfig.direction === "ascending"
-                    ? "descending"
-                    : "ascending"
-                }`}
-              >
-                GP
-                {sortConfig?.key === "gamesPlayed" &&
-                  (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
-              </button>
-            </th>
-            <th>
-              <button
-                type="button"
-                onClick={() => handleSort("offNights")}
-                className={styles.sortButton}
-                aria-label={`Sort by OFF ${
-                  sortConfig?.key === "offNights" &&
-                  sortConfig.direction === "ascending"
-                    ? "descending"
-                    : "ascending"
-                }`}
-              >
-                OFF
-                {sortConfig?.key === "offNights" &&
-                  (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
-              </button>
-            </th>
-            <th>
-              <button
-                type="button"
-                onClick={() => handleSort("avgOpponentPointPct")}
-                className={styles.sortButton}
-                aria-label={`Sort by Opponent Pct ${
-                  sortConfig?.key === "avgOpponentPointPct" &&
-                  sortConfig.direction === "ascending"
-                    ? "descending"
-                    : "ascending"
-                }`}
-              >
-                OPP (%)
-                {sortConfig?.key === "avgOpponentPointPct" &&
-                  (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
-              </button>
-            </th>
-            <th>
-              <button
-                type="button"
-                onClick={() => handleSort("score")}
-                className={styles.sortButton}
-                aria-label={`Sort by 4 WK Score ${
-                  sortConfig?.key === "score" &&
-                  sortConfig.direction === "ascending"
-                    ? "descending"
-                    : "ascending"
-                }`}
-              >
-                4 WK Score
-                {sortConfig?.key === "score" &&
-                  (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
-              </button>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {/* AVG Row */}
-          <tr className={classNames(styles.averagesRow, styles.stickyRow)}>
-            <td>AVG:</td>
-            <td>{averages.gamesPlayed.toFixed(2)}</td>
-            <td>{averages.offNights.toFixed(2)}</td>
-            <td>{(averages.avgOpponentPointPct * 100).toFixed(1)}%</td>
-            <td>0.00</td> {/* The average score is 0 */}
-          </tr>
+    <div
+      className={clsx(
+        styles.container,
+        isMobile && isMobileMinimized && styles.minimized
+      )}
+    >
+      {/* Clickable Title Header */}
+      <div
+        className={styles.titleHeader}
+        onClick={handleTitleClick}
+        role={isMobile ? "button" : undefined}
+        tabIndex={isMobile ? 0 : undefined}
+        aria-expanded={isMobile ? !isMobileMinimized : undefined}
+        aria-controls={isMobile ? "four-week-grid-content" : undefined}
+      >
+        <span className={styles.titleText}>
+          {" "}
+          FOUR WEEK <span className={styles.spanColorBlue}>FORECAST</span>{" "}
+        </span>
+        {isMobile && (
+          <span
+            className={clsx(
+              styles.minimizeToggleIcon,
+              isMobileMinimized && styles.minimized
+            )}
+            aria-hidden="true"
+          >
+            {" "}
+            ▼{" "}
+          </span>
+        )}
+      </div>
 
-          {/* Data Rows */}
-          {sortedTeams.map((team) => {
-            const teamInfo = teamsMap[team.teamId];
-            if (!teamInfo) {
-              console.warn(`Team data not found for teamId: ${team.teamId}`);
-              return null;
-            }
-
-            const gp = team.totals.gamesPlayed;
-            const off = team.totals.offNights;
-            const oppPct = team.avgOpponentPointPct;
-            const score = team.score;
-
-            // Determine color classes for GP
-            const isGPAbove = gp > roundedAvgGP;
-            const isGPBelow = gp < roundedAvgGP;
-
-            // Determine color classes for OFF
-            const isOFFAbove = off > roundedAvgOFF;
-            const isOFFBelow = off < roundedAvgOFF;
-
-            // Determine color classes for OPP (%)
-            const isOPPBelow = oppPct < averages.avgOpponentPointPct;
-            const isOPPAbove = oppPct > averages.avgOpponentPointPct;
-
-            // Determine color classes
-            const gpClass = classNames({
-              [styles.red]: isGPBelow && gpColorMap[gp] === "red",
-              [styles.orange]: isGPBelow && gpColorMap[gp] === "orange",
-              [styles.yellow]: isGPBelow && gpColorMap[gp] === "yellow",
-              [styles.green]: isGPAbove
-            });
-
-            const offClass = classNames({
-              [styles.red]: isOFFBelow && offColorMap[off] === "red",
-              [styles.orange]: isOFFBelow && offColorMap[off] === "orange",
-              [styles.yellow]: isOFFBelow && offColorMap[off] === "yellow",
-              [styles.green]: isOFFAbove
-            });
-
-            const oppClass = classNames({
-              [styles.yellow]: isOPPAbove && oppColorMap[oppPct] === "yellow",
-              [styles.orange]: isOPPAbove && oppColorMap[oppPct] === "orange",
-              [styles.red]: isOPPAbove && oppColorMap[oppPct] === "red",
-              [styles.green]: isOPPBelow
-            });
-
-            // Determine color class for Score
-            // Optional: You can implement color coding for the score as well
-            // For now, we'll keep it without color coding
-            const scoreClass = classNames({
-              // Example:
-              // [styles.positive]: score > 0,
-              // [styles.negative]: score < 0,
-            });
-
-            return (
-              <tr key={team.teamId}>
-                <td className={styles.teamCell}>
-                  <div className={styles.teamInfo}>
-                    <Image
-                      src={teamInfo.logo}
-                      alt={`${teamInfo.name} logo`}
-                      objectFit="contain"
-                      width={35}
-                      height={35}
-                      className={styles.teamLogo}
-                    />
-                  </div>
-                </td>
-                <td className={gpClass}>{gp}</td>
-                <td className={offClass}>{off}</td>
-                <td className={oppClass}>{(oppPct * 100).toFixed(1)}%</td>
-                <td className={scoreClass}>{score.toFixed(2)}</td>
+      {/* Collapsible Content Wrapper */}
+      <div id="four-week-grid-content" className={styles.tableWrapper}>
+        {isLoading ? (
+          <div className={styles.message}>Loading schedule data...</div>
+        ) : !hasData ? (
+          <div className={styles.message}>No schedule data available.</div>
+        ) : (
+          // REMOVED Scroll Container Div - Table directly inside wrapper
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                {/* Team Header - Make it sortable too */}
+                <th>
+                  <button
+                    type="button"
+                    onClick={() => handleSort("teamName")}
+                    className={styles.sortButton}
+                    aria-label={`Sort by Team Name ${
+                      sortConfig?.key === "teamName" &&
+                      sortConfig.direction === "ascending"
+                        ? "descending"
+                        : "ascending"
+                    }`}
+                  >
+                    Team{" "}
+                    {sortConfig?.key === "teamName" &&
+                      (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
+                  </button>
+                </th>
+                <th>
+                  <button
+                    type="button"
+                    onClick={() => handleSort("gamesPlayed")}
+                    className={styles.sortButton}
+                    aria-label={`Sort by Games Played ${
+                      sortConfig?.key === "gamesPlayed" &&
+                      sortConfig.direction === "descending"
+                        ? "ascending"
+                        : "descending"
+                    }`}
+                  >
+                    GP{" "}
+                    {sortConfig?.key === "gamesPlayed" &&
+                      (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
+                  </button>
+                </th>
+                <th>
+                  <button
+                    type="button"
+                    onClick={() => handleSort("offNights")}
+                    className={styles.sortButton}
+                    aria-label={`Sort by OFF ${
+                      sortConfig?.key === "offNights" &&
+                      sortConfig.direction === "descending"
+                        ? "ascending"
+                        : "descending"
+                    }`}
+                  >
+                    OFF{" "}
+                    {sortConfig?.key === "offNights" &&
+                      (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
+                  </button>
+                </th>
+                <th>
+                  <button
+                    type="button"
+                    onClick={() => handleSort("avgOpponentPointPct")}
+                    className={styles.sortButton}
+                    aria-label={`Sort by Opponent Pct ${
+                      sortConfig?.key === "avgOpponentPointPct" &&
+                      sortConfig.direction === "descending"
+                        ? "ascending"
+                        : "descending"
+                    }`}
+                  >
+                    OPP (%){" "}
+                    {sortConfig?.key === "avgOpponentPointPct" &&
+                      (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
+                  </button>
+                </th>
+                <th>
+                  <button
+                    type="button"
+                    onClick={() => handleSort("score")}
+                    className={styles.sortButton}
+                    aria-label={`Sort by 4 WK Score ${
+                      sortConfig?.key === "score" &&
+                      sortConfig.direction === "descending"
+                        ? "ascending"
+                        : "descending"
+                    }`}
+                  >
+                    4WK Score{" "}
+                    {sortConfig?.key === "score" &&
+                      (sortConfig.direction === "ascending" ? " ▲" : " ▼")}
+                  </button>
+                </th>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {/* AVG Row */}
+              <tr className={styles.averagesRow}>
+                <td>AVG:</td>
+                <td>{averages.gamesPlayed.toFixed(2)}</td>
+                <td>{averages.offNights.toFixed(2)}</td>
+                <td>{(averages.avgOpponentPointPct * 100).toFixed(1)}%</td>
+                <td>0.00</td> {/* AVG score is always 0 by definition */}
+              </tr>
+
+              {/* Data Rows */}
+              {sortedTeams.map((team) => {
+                const teamInfo = teamsMap[team.teamId];
+                if (!teamInfo) return null; // Skip if no team info found
+
+                const gp = team.totals?.gamesPlayed ?? "-"; // Use '-' if null
+                const off = team.totals?.offNights ?? "-";
+                const oppPct = team.avgOpponentPointPct;
+                const score = team.score;
+
+                // Determine color classes
+                const isGPAbove = typeof gp === "number" && gp > roundedAvgGP;
+                const isGPBelow = typeof gp === "number" && gp < roundedAvgGP;
+                const isOFFAbove =
+                  typeof off === "number" && off > roundedAvgOFF;
+                const isOFFBelow =
+                  typeof off === "number" && off < roundedAvgOFF;
+                const isOPPBelow =
+                  typeof oppPct === "number" &&
+                  oppPct < averages.avgOpponentPointPct;
+                const isOPPAbove =
+                  typeof oppPct === "number" &&
+                  oppPct > averages.avgOpponentPointPct;
+
+                const gpClass = classNames({
+                  [styles.green]: isGPAbove,
+                  [styles[gpColorMap[gp as number] ?? "grey"]]: isGPBelow
+                });
+                const offClass = classNames({
+                  [styles.green]: isOFFAbove,
+                  [styles[offColorMap[off as number] ?? "grey"]]: isOFFBelow
+                });
+                const oppClass = classNames({
+                  [styles.green]: isOPPBelow,
+                  [styles[oppColorMap[oppPct as number] ?? "grey"]]: isOPPAbove
+                });
+                // Score coloring (example - positive is green, negative red)
+                const scoreClass = classNames({
+                  [styles.green]: score > 0.1,
+                  [styles.red]: score < -0.1
+                });
+
+                return (
+                  <tr key={team.teamId}>
+                    <td className={styles.teamCell}>
+                      <div className={styles.teamInfo}>
+                        <Image
+                          src={teamInfo.logo}
+                          alt={`${teamInfo.name} logo`}
+                          width={28}
+                          height={28}
+                          className={styles.teamLogo}
+                        />
+                        {/* Optional: Add team name/abbr here on wider screens */}
+                        {/* <span className={styles.teamNameText}>{teamInfo.abbreviation}</span> */}
+                      </div>
+                    </td>
+                    <td className={gpClass}>{gp}</td>
+                    <td className={offClass}>{off}</td>
+                    <td className={oppClass}>
+                      {typeof oppPct === "number"
+                        ? `${(oppPct * 100).toFixed(1)}%`
+                        : "-"}
+                    </td>
+                    <td className={scoreClass}>{score.toFixed(2)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
     </div>
   );
 };

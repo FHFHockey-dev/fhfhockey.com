@@ -1,75 +1,360 @@
 // PlayerPickupTable.module.scss
 
 @use "sass:color";
-@use "styles/vars";
+@use "styles/vars" as v; // Use an alias for brevity
+@use "sass:math"; // Import math module if needed for calculations
 
 .container {
+  padding-top: 30px;
   width: 100%;
   margin: 0px auto;
-  color: white;
-  font-family: "Roboto Condensed", sans-serif;
+  color: v.$text-color-primary;
+  font-family: v.$font-family-primary;
+  transition: margin-bottom v.$transition-duration v.$transition-easing; // Smooth margin change if needed
 }
 
+/* --- Filters Styling --- */
 .filters {
-  margin: 0 auto;
-  color: white;
-  overflow: hidden;
-  border: 4px solid #404040;
-  outline: 10px solid #101010;
-  background-color: #101010;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 900;
-  text-align: left;
+  margin: 0 auto; // Add bottom margin
+  color: v.$text-color-primary;
+  overflow: hidden; // Keep overflow hidden
+  outline: 8px solid v.$background-dark; // Keep the thick outer frame
+  background-color: v.$background-dark; // Main background
+  border: 3px solid v.$background-light; // Inner border
+  border-radius: v.$border-radius; // Apply radius to the outline container
   width: 100%;
-  padding: 10px;
-  margin-bottom: 30px;
+  padding: 15px; // Consistent padding
+  position: relative; // Needed for absolute positioning of icon
 
-  // New Flex properties:
   display: flex;
-  flex-direction: column; // Lay out children side by side
-  gap: 10px; // Add space between children
+  flex-direction: column;
+  gap: 10px; // gap between title, filter sections, and button
+
+  // Transition for the filter content height/visibility
+  .filterContainer,
+  .filterContainerMobile,
+  .buttonReset {
+    transition: max-height 0.4s v.$transition-easing,
+      opacity 0.3s v.$transition-easing, visibility 0.3s v.$transition-easing,
+      margin 0.4s v.$transition-easing, padding 0.4s v.$transition-easing;
+    max-height: 1000px; // Set a large max-height initially
+    opacity: 1;
+    visibility: visible;
+    overflow: hidden; // Hide content that overflows during transition
+  }
+
+  // --- Styles when minimized on mobile ---
+  &.minimized {
+    margin-bottom: 10px; // Reduce margin when minimized
+    padding-bottom: 15px; // Keep top/side padding, remove bottom effectively
+    gap: 0; // Remove gap when content is hidden
+
+    // Hide the filter controls and button
+    .filterContainer, // Hide desktop controls too just in case
+      .filterContainerMobile,
+      .buttonReset {
+      max-height: 0;
+      opacity: 0;
+      visibility: hidden;
+      margin: 0; // Remove margins
+      padding: 0; // Remove padding
+      border: none; // Remove potential borders on hidden elements
+    }
+
+    // Adjust title appearance when minimized
+    .filtersTitle {
+      padding-bottom: 0; // Remove padding below title
+      border-bottom: none; // Remove border below title
+      margin-bottom: 0; // Remove margin below title
+    }
+  }
 }
 
-/* New style for the title div */
 .filtersTitle {
   width: 100%;
-  text-align: center;
-  font-size: 24px;
-  font-weight: 100;
-  color: white;
-  font-family: "Roboto Condensed", sans-serif;
-  letter-spacing: 2px;
+  text-align: left;
+  font-size: clamp(1.5rem, 4vw, 1.9rem); // Responsive font size
+  font-weight: 100; // Lighter weight for title
+  color: v.$text-color-primary;
+  font-family: v.$font-family-primary;
+  letter-spacing: 1.5px; // Slightly less spacing
+  padding-bottom: 10px; // Space before the divider
+  border-bottom: 2px solid v.$secondary-color; // Use thicker border like table header
+  margin-bottom: 5px; // Space after the divider/title area
+  position: relative; // For icon positioning
+  padding-right: 30px; // Make space for the icon
+  transition: padding-bottom v.$transition-duration v.$transition-easing,
+    border-bottom v.$transition-duration v.$transition-easing,
+    margin-bottom v.$transition-duration v.$transition-easing;
+
+  // Make clickable only on mobile
+  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
+    // Adjust breakpoint as needed (using var from vars.scss)
+    cursor: pointer;
+    user-select: none; // Prevent text selection on click
+  }
 }
 
-.divider {
-  width: 100%;
-  border-bottom: 1px solid #07aae2; // Adjust the color to match your theme
-  margin: 0 auto; // Space above and below the divider
+// Minimize/Maximize Icon Styling
+.minimizeToggleIcon {
+  position: absolute;
+  right: 10px; // Position to the far right of the title
+  top: 40%;
+  transform: translateY(-50%) rotate(0deg); // Initial state (down arrow)
+  font-size: 1.2rem;
+  color: v.$secondary-color;
+  transition: transform 0.3s v.$transition-easing;
+  pointer-events: none; // Icon itself shouldn't capture clicks
+
+  &.minimized {
+    transform: translateY(-50%) rotate(-180deg); // Rotated state (up arrow)
+  }
 }
 
+.acronym {
+  color: v.$secondary-color;
+  font-weight: 100; // Slightly less bold than 900 maybe
+}
+
+/* --- Desktop Filter Layout --- */
 .filterContainer {
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
+  flex-wrap: wrap; // Allow wrapping on slightly smaller screens
+  justify-content: space-around; // Distribute space
+  align-items: flex-start; // Align items to the top
+  gap: 20px; // Space between filter groups
 }
 
-/* Style for the acronym letters */
-.acronym {
-  color: #07aae2;
-  font-weight: 900;
+.filterRow {
+  // Individual filter group (Own%, Team, Pos) on Desktop
+  display: flex;
+  flex-direction: column; // Stack label and input vertically
+  align-items: center; // Center items within the group
+  gap: 8px; // Space between label and input
+  padding: 10px;
+  background-color: v.$background-medium; // Subtle background for grouping
+  border-radius: 8px;
+  min-width: 200px; // Give groups some minimum width
 }
 
 .label {
-  margin-right: 10px;
+  font-size: 0.9em;
+  font-weight: 600;
+  color: v.$text-color-secondary;
 }
 
+/* --- Mobile Filter Layout --- */
+.filterContainerMobile {
+  display: flex;
+  flex-direction: column;
+  gap: 20px; // Space between filter sections
+  width: 100%;
+}
+
+.ownershipTeamContainer {
+  // Group Own% and Team together on mobile
+  display: flex;
+  flex-direction: row; // Stack them by default
+  gap: 20px; // Space between Own% and Team
+  align-items: center; // Center the groups
+  width: 100%;
+
+  @media (min-width: 480px) {
+    // Side-by-side above this breakpoint
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: flex-start;
+  }
+}
+
+.filterRowMobileOwnership {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 280px; // Max width for these controls
+  padding: 17px;
+  background-color: v.$background-medium; // Use grouping background
+  border-radius: 8px;
+  gap: 8px; // Space between label and input
+}
+
+.filterRowMobileTeam {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 50%; // Let it take width within flex container
+  max-width: 280px; // Max width for these controls
+  padding: 10px;
+  background-color: v.$background-medium; // Use grouping background
+  border-radius: 8px;
+  gap: 8px; // Space between label and input
+}
+
+.filterRowMobile {
+  // Position filter group on Mobile
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+  padding: 10px;
+  background-color: v.$background-medium; // Use grouping background
+  border-radius: 8px;
+
+  > span {
+    // The "Pos:" label
+    font-size: 0.9em;
+    font-weight: 600;
+    color: v.$text-color-secondary;
+    margin-bottom: 5px;
+  }
+}
+
+.positionCheckboxGroup {
+  // Wrapper for the checkboxes
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 15px; // Row and column gap
+}
+
+.labelMobile {
+  // General mobile label style (applied within specific rows)
+  font-size: 0.9em;
+  font-weight: 600;
+  color: v.$text-color-secondary;
+  text-align: center;
+}
+
+/* --- Input Styling (Common & Specific) --- */
+@mixin range-track {
+  width: 100%;
+  height: 8px;
+  cursor: pointer;
+  background: v.$background-light;
+  border-radius: 4px;
+  border: 1px solid v.$border-color-secondary;
+}
+@mixin range-thumb {
+  height: 18px;
+  width: 18px;
+  border-radius: 50%;
+  background: v.$primary-color;
+  cursor: pointer;
+  border: 2px solid v.$text-color-primary;
+  margin-top: -6px;
+}
 .slider,
-.select {
-  margin-left: 10px;
+.sliderMobile {
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  background: transparent;
+  cursor: pointer;
+  &:focus {
+    outline: none;
+  }
+  &::-webkit-slider-runnable-track {
+    @include range-track;
+  }
+  &::-moz-range-track {
+    @include range-track;
+  }
+  &::-webkit-slider-thumb {
+    appearance: none;
+    @include range-thumb;
+  }
+  &::-moz-range-thumb {
+    @include range-thumb;
+    border: 0;
+  }
+  &:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.5);
+  }
+  &:focus::-moz-range-thumb {
+    box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.5);
+  }
+}
+.select,
+.selectMobile {
+  appearance: none;
+  background-color: v.$background-light;
+  border: 1px solid v.$border-color-secondary;
+  border-radius: 6px;
+  padding: 8px 30px 8px 10px;
+  font-size: 0.9em;
+  color: v.$text-color-primary;
+  cursor: pointer;
+  width: 100%;
+  background-image: linear-gradient(
+      45deg,
+      transparent 50%,
+      v.$text-color-secondary 50%
+    ),
+    linear-gradient(135deg, v.$text-color-secondary 50%, transparent 50%);
+  background-position: calc(100% - 15px) center, calc(100% - 10px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.3);
+  }
+}
+.positionCheckbox {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.9em;
+  gap: 6px;
+  input[type="checkbox"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid v.$border-color-secondary;
+    border-radius: 4px;
+    background-color: v.$background-medium;
+    cursor: pointer;
+    position: relative;
+    transition: background-color v.$transition-duration v.$transition-easing,
+      border-color v.$transition-duration v.$transition-easing;
+    &:checked {
+      background-color: v.$primary-color;
+      border-color: v.$primary-color;
+      &::after {
+        content: "";
+        position: absolute;
+        left: 5px;
+        top: 1px;
+        width: 4px;
+        height: 9px;
+        border: solid v.$text-color-primary;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+    }
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.3);
+    }
+  }
 }
 
+/* Reset Button Styling & Placement */
+.buttonReset {
+  @include v.button-style; // Inherit base button styles
+  align-self: center; // Center the button horizontally within the filters flex container
+  margin-top: 10px; // Add some space above the button (visible when not minimized)
+  width: calc(
+    100% - 30px
+  ); // Adjust width considering padding? Or keep 100%? Test this.
+  max-width: 300px; // Max width for the button
+}
+
+/* --- Name/Injury/Table/Pagination/Expanded Details Styling --- */
+/* These sections remain unchanged from the previous version */
 .nameAndInjuryWrapper {
   display: flex;
   flex-direction: column;
@@ -77,8 +362,6 @@
   height: 100%;
   gap: 5px;
 }
-
-/* LEFT 50%: The name */
 .leftNamePart {
   width: 100%;
   margin: 0 auto;
@@ -86,8 +369,6 @@
   align-items: center;
   text-align: left;
 }
-
-/* RIGHT 50%: The image + status + injury note */
 .rightInjuryPart {
   width: 100%;
   display: flex;
@@ -95,29 +376,23 @@
   align-items: center;
   justify-content: space-between;
 }
-
 .statusRightInjuryPart {
   width: 10%;
   display: flex;
   align-items: center;
   justify-content: flex-start;
 }
-
 .injuryNoteRightInjuryPart {
   width: 75%;
   display: flex;
   align-items: center;
   justify-content: flex-start;
 }
-
-/* 35% for the image container */
 .imageContainer {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
-/* 65% for the text container */
 .statusContainer {
   width: 100%;
   display: flex;
@@ -125,122 +400,85 @@
   justify-content: space-between;
   align-items: center;
 }
-
 .playerName {
   font-weight: bold;
 }
-
 .statusText {
   color: red;
   font-size: 0.8em;
   margin-left: 10%;
 }
-
 .injuryNote {
-  color: white;
+  color: v.$text-color-primary;
   font-size: 0.8em;
 }
 
-.positions {
-  margin-bottom: 10px;
-}
-
-.buttonReset {
-  background: #14a2d2;
-  color: white;
-  border: 1px solid white;
-  padding: 6px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-family: "Roboto Condensed", sans-serif;
-  transition: border 0.2s ease;
-}
-
-.buttonReset:hover {
-  border: 3px solid white;
-}
-
-/* Table Container updated to mimic FourWeekGrid styling */
 .tableContainer {
   overflow-x: auto;
-  outline: 10px solid #101010;
-  border-radius: 12px;
+  background-color: v.$background-medium;
+  border-radius: v.$border-radius;
+  box-shadow: v.$box-shadow;
+  outline: 10px solid v.$background-dark;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
-
-/* Table styling updated for sticky headers, adjusted padding, and borders */
 .table {
-  margin: 0 auto;
-  color: white;
-  overflow: hidden;
-  border: 4px solid #404040;
-  border-radius: 12px;
-  border-spacing: 0;
-  font-size: 14px;
-  text-align: left;
-  width: 100%;
-
+  @include v.table-base;
   thead {
     position: sticky;
     top: 0;
-    background-color: #101010;
+    background-color: v.$background-dark;
+    color: v.$text-color-secondary;
     z-index: 2;
+    th {
+      border-collapse: collapse;
+      background-color: v.$background-dark;
+      color: v.$text-color-primary;
+      font-weight: 900;
+      font-family: v.$font-family-primary;
+      font-size: 14px;
+      height: v.$table-header-height;
+      padding: v.$table-cell-padding;
+      cursor: pointer;
+      text-align: center;
+      border-bottom: 2px solid v.$secondary-color;
+    }
   }
-
-  th {
-    flex: content;
-    align-content: center;
-    border-collapse: collapse;
-    background-color: #101010;
-    color: white;
-    font-weight: 900;
-    font-family: "Roboto Condensed", sans-serif;
-    font-size: 14px;
-    height: 15px;
-    padding: 10px;
-    cursor: pointer;
+  tbody {
+    tr {
+      font-family: v.$font-family-primary;
+      height: 55px;
+      text-align: center;
+      transition: background-color v.$transition-duration v.$transition-easing;
+      &:nth-child(even) {
+        background-color: v.$background-light;
+      }
+      &:nth-child(odd) {
+        background-color: v.$background-dark;
+      }
+      &:hover {
+        background-color: color.scale(v.$primary-color, $lightness: -30%);
+      }
+      td {
+        padding: 3px 5px;
+        border: 0.5px solid v.$border-color-secondary;
+        vertical-align: middle;
+      }
+    }
   }
-
-  /* Special styling for the first column */
-  tr th:first-child,
-  tr td:first-child {
-    border-right: 5px solid #07aae2;
-    text-align: center;
-    padding: 10px;
+  thead th:first-child,
+  tbody tr td:first-child {
+    border-right: 5px solid v.$secondary-color;
+    text-align: left;
+    padding: v.$table-cell-padding;
     font-size: 16px;
-    font-family: "Roboto Condensed", sans-serif;
-    border-bottom: #505050 1px solid;
+    border-bottom: none;
   }
-
-  /* Styling for remaining cells */
-  th:nth-child(n + 2),
-  td:nth-child(n + 2) {
-    padding: 3px 5px;
-    border: 0.5px solid #505050;
-
-    text-align: center;
-  }
-
-  tr {
-    font-family: "Roboto Condensed", sans-serif;
-    height: 55px;
-    text-align: center;
-    border-radius: 4px;
-  }
-
-  tr:nth-child(even) {
-    background-color: #202020;
-  }
-
-  tr:hover {
-    background-color: #505050;
-  }
-
-  > tbody > tr:nth-of-type(odd) {
-    background-color: #101010;
-  }
-
-  tr:hover:nth-of-type(odd) {
-    background-color: #505050;
+  tbody tr td:first-child {
+    border-bottom: 0.5px solid v.$border-color-secondary;
   }
 }
 
@@ -251,384 +489,236 @@
   margin-right: 6px;
   margin-bottom: 4px;
 }
-
 .percentileLabel {
   font-size: 0.8em;
   margin-bottom: 4px;
 }
-
 .percentileFlexContainer {
   display: flex;
-  justify-content: space-evenly;
-  flex-wrap: wrap; // Optional: allows wrapping on smaller screens
-  gap: 5px; // Optional: additional spacing between boxes
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 5px;
 }
-
 .percentileBox {
   padding: 8px 6px;
   border-radius: 4px;
-  font-size: 1.2em; // Larger font for the percentage value
+  font-size: 1.2em;
   font-weight: bold;
   text-align: center;
-  min-width: 40px; // Adjust as needed so the value fills the box
+  min-width: 40px;
 }
 
 .pagination {
   display: flex;
   justify-content: space-evenly;
   align-items: center;
-  margin-top: 30px; // Space above and below the controls
+  margin-top: v.$filter-vertical-spacing;
   gap: 20px;
+  button {
+    @include v.button-style;
+  }
+  span {
+    font-family: v.$font-family-primary;
+    font-size: 16px;
+    color: v.$text-color-primary;
+  }
 }
 
-.pagination button {
-  background-color: #14a2d2; // Accent color
-  color: white;
-  border: 1px solid white;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-family: "Roboto Condensed", sans-serif;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.2s ease, border 0.2s ease;
-}
-
-.pagination button:hover {
-  border: 3px solid white;
-}
-
-.pagination button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.pagination span {
-  font-family: "Roboto Condensed", sans-serif;
-  font-size: 16px;
-  color: white;
-}
-
-/* Mobile card container to wrap all player cards */
-.mobileCardContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 10px;
-  width: 100%;
-}
-
-/* Individual player card styling */
-.playerCard {
-  background-color: #101010;
-  border: 4px solid #404040;
-  border-radius: 12px;
-  padding: 10px;
-  color: white;
-  font-family: "Roboto Condensed", sans-serif;
-}
-
-/* Header: player name and team logo */
-.cardHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.playerInfo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.playerName {
-  font-weight: bold;
-  font-size: 1.2em;
-}
-
-.teamLogo {
-  width: 30px;
-  height: 30px;
-}
-
-/* Body: essential stats */
-.cardBody {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  font-size: 0.9em;
-}
-
-/* Footer: button and additional details */
-.cardFooter {
-  margin-top: 10px;
-}
-
-.cardFooter button {
-  background-color: #14a2d2;
-  color: white;
-  border: 1px solid white;
-  padding: 6px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-family: "Roboto Condensed", sans-serif;
-  transition: border 0.2s ease;
-}
-
-.cardFooter button:hover {
-  border: 3px solid white;
-}
-
-/* Additional details (collapsible section) */
-/* Style for the expand/collapse button in mobile view */
 .expandButton {
   background: transparent;
   border: none;
-  color: #14a2d2;
-  font-size: 1.5em;
+  color: v.$primary-color;
+  font-size: 1.5rem;
   cursor: pointer;
-}
-
-/* Style for the expanded row that shows detailed percentile breakdown */
-.expandedRow {
-  background-color: #202020;
+  padding: 0 5px;
+  transition: transform v.$transition-duration v.$transition-easing;
+  line-height: 1;
+  &:hover {
+    transform: scale(1.1);
+    color: v.$secondary-color;
+  }
 }
 
 .containerMobile {
   overflow-x: auto;
-  outline: 10px solid #101010;
-  border-radius: 12px;
-  margin-top: 30px;
+  outline: 8px solid v.$background-dark;
+  background-color: v.$background-dark;
+  border: 3px solid v.$background-light;
+  border-radius: v.$border-radius;
+  margin-top: v.$filter-vertical-spacing;
 }
-
-.filtersMobile {
-  margin: 0 auto;
-  color: white;
-  overflow: hidden;
-
-  border-left: 4px solid #404040;
-  border-right: 4px solid #404040;
-  border-top: 4px solid #404040;
-  border-bottom: 4px solid #07aae2;
-  border-radius: 12px 12px 0 0;
-
-  outline: 10px solid #101010;
-  background-color: #101010;
-  font-size: 16px;
-  font-weight: 900;
-  text-align: left;
-  width: 100%;
-  padding: 10px;
-
-  // New Flex properties:
-  display: flex;
-  flex-direction: column; // Lay out children side by side
-}
-
-.expandedDetails {
-  display: grid;
-  /* Create as many 60px-wide columns as will fit. 
-     This will naturally wrap items into rows. */
-  grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
-  gap: 5px;
-  padding: 10px;
-  justify-items: center;
-  align-items: center;
-}
-
 .tableMobile {
-  margin: 0 auto;
-  color: white;
-  overflow: hidden;
-  border: 4px solid #404040;
-  border-radius: 12px;
-  border-spacing: 0;
-  font-size: 14px;
-  text-align: left;
-  width: 100%;
-
+  @include v.table-base;
+  border: none;
+  border-radius: 0;
+  border-collapse: collapse;
   thead {
     position: sticky;
     top: 0;
-    background-color: #101010;
     z-index: 2;
+    background-color: v.$background-dark;
+    tr {
+      border-bottom: 3px solid v.$secondary-color;
+    }
+    th {
+      padding: 8px 5px;
+      font-size: 12px;
+      font-weight: 700;
+      color: v.$text-color-secondary;
+      background-color: v.$background-dark;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: center;
+      border-right: 1px solid v.$border-color-primary;
+      &:first-child {
+        text-align: center;
+        border-right: none;
+      }
+      &:last-child {
+        border-right: none;
+      }
+    }
   }
-
-  th {
-    flex: content;
-    align-content: center;
-    border-collapse: collapse;
-    background-color: #101010;
-    color: white;
-    font-weight: 900;
-    font-family: "Roboto Condensed", sans-serif;
-    font-size: 14px;
-    height: 15px;
-    padding: 10px;
-    cursor: pointer;
+  tbody {
+    tr {
+      border-bottom: 1px solid v.$border-color-secondary;
+      transition: background-color v.$transition-duration v.$transition-easing;
+      &:last-child {
+        border-bottom: none;
+      }
+      &:nth-child(even) {
+        background-color: v.$background-light;
+      }
+      &:nth-child(odd) {
+        background-color: v.$background-dark;
+      }
+      &:hover:not(.expandedRow) {
+        background-color: color.scale(v.$primary-color, $lightness: -30%);
+      }
+    }
+    td {
+      padding: 8px 5px;
+      font-size: 13px;
+      text-align: center;
+      vertical-align: middle;
+      border-right: 1px solid v.$border-color-secondary;
+      &:first-child {
+        padding: 0 5px;
+        border-right: none;
+      }
+      &:nth-child(2) {
+        text-align: left;
+      }
+      &:last-child {
+        border-right: none;
+      }
+    }
   }
-
-  /* Special styling for the first column */
-  tr th:first-child,
-  tr td:first-child {
-    border-right: 5px solid #07aae2;
-    text-align: center;
-    padding: 10px;
-    font-size: 16px;
-    font-family: "Roboto Condensed", sans-serif;
-    border-bottom: #505050 1px solid;
-  }
-
-  /* Styling for remaining cells */
-  th:nth-child(n + 2),
-  td:nth-child(n + 2) {
-    padding: 3px 5px;
-    border: 0.5px solid #505050;
-
-    text-align: center;
-  }
-
-  tr {
-    font-family: "Roboto Condensed", sans-serif;
-    height: 55px;
-    text-align: center;
-    border-radius: 4px;
-  }
-
-  tr:nth-child(even) {
-    background-color: #202020;
-  }
-
-  tr:hover {
-    background-color: #505050;
-  }
-
-  > tbody > tr:nth-of-type(odd) {
-    background-color: #101010;
-  }
-
-  tr:hover:nth-of-type(odd) {
-    background-color: #505050;
+  .expandedRow {
+    background-color: color.scale(
+      v.$background-light,
+      $lightness: 5%
+    ) !important;
+    border-bottom: 2px solid v.$secondary-color;
+    td {
+      padding: 15px 10px;
+      border: none;
+    }
   }
 }
 
-.filtersMobile {
-  margin: 0 auto;
-  color: white;
-  overflow: hidden;
-
-  border-left: 4px solid #404040;
-  border-right: 4px solid #404040;
-  border-top: 4px solid #404040;
-  border-bottom: 4px solid #07aae2;
-  border-radius: 12px 12px 0 0;
-
-  outline: 10px solid #101010;
-  background-color: #101010;
-  font-size: 16px;
-  font-weight: 900;
-  text-align: left;
-  width: 100%;
-  padding: 10px;
-
-  // New Flex properties:
-  display: flex;
-  flex-direction: column; // Lay out children side by side
-  gap: 10px; // Add space between children
-}
-
-.ownershipTeamContainer {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  margin-bottom: 10px; /* Space between filter rows */
-}
-
-.filterRowMobileOwnership {
+.expandedDetails {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   align-items: center;
+  gap: 10px;
   width: 100%;
 }
-
-.filterRowMobileTeam {
+.detailRow {
   display: flex;
-  flex-direction: row;
-  justify-content: space-around;
-  align-items: center;
-  width: 65%;
-}
-
-.selectMobile {
-  width: 60%; /* Full width for mobile */
-}
-
-.labelMobile {
-  font-size: 0.8em; /* Smaller font for mobile */
-}
-
-.sliderMobile {
-  margin-left: 10px;
-  width: 90%; /* Full width for mobile */
-}
-
-.filterRowMobile {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+  gap: 8px;
   width: 100%;
 }
-
 .detailItem {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  background-color: v.$background-dark;
+  border-radius: 6px;
+  padding: 5px;
+  min-width: 55px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
-
-/* Optionally, if you want the label above the box: */
 .detailLabel {
-  font-size: 0.8em;
-  margin-bottom: 4px;
+  font-size: 0.7em;
+  margin-bottom: 3px;
+  color: v.$text-color-secondary;
   text-align: center;
+  white-space: nowrap;
 }
-
-/* For the value inside the box, ensure centered text and bold appearance */
 .detailValue {
   font-weight: bold;
   text-align: center;
-  font-size: 1.2em;
-  padding: 5px;
+  font-size: 1.1em;
+  padding: 4px;
   border-radius: 4px;
-  /* No extra padding needed if the parent already has fixed dimensions */
+  color: v.$text-color-primary;
+  width: 100%;
 }
 
 .nameAndInjuryWrapperMobile {
   display: flex;
   flex-direction: row;
+  align-items: center;
   width: 100%;
-  height: 100%;
   gap: 5px;
 }
-
-/* LEFT 50%: The name */
 .leftNamePartMobile {
-  width: 100%;
-  margin: 0 auto;
+  flex-grow: 1;
   display: flex;
   align-items: center;
   text-align: left;
 }
-
-/* RIGHT 50%: The image + status + injury note */
 .rightInjuryPartMobile {
-  width: 50%;
+  flex-shrink: 0;
   display: flex;
-  flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+}
+
+/* --- Styles for the Collapsible Table/Pagination Content --- */
+.collapsibleContent {
+  transition: max-height 0.4s v.$transition-easing,
+    opacity 0.3s v.$transition-easing, visibility 0.3s v.$transition-easing,
+    margin-top 0.4s v.$transition-easing;
+  max-height: 5000px; // Arbitrarily large height (adjust if content ever exceeds this)
+  opacity: 1;
+  visibility: visible;
+}
+
+// When the main container is minimized on mobile, hide the table content
+.containerMinimized {
+  .collapsibleContent {
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    margin-top: 0; // Remove any top margin it might have
+    // We might need to hide the table containers explicitly too if they have outlines/borders
+    .tableContainer,
+    .containerMobile {
+      display: none; // Or visibility: hidden; depending on desired effect
+    }
+  }
+}
+
+// Optional: Style for loading/no results message positioning
+.message {
+  padding: 20px;
+  text-align: center;
+  color: v.$text-color-secondary;
 }

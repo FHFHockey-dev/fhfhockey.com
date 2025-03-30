@@ -11,8 +11,92 @@ $screen-medium-max: 1007px;
 $screen-large: 1024px;
 $screen-large-min: 1024px; /* PC*/
 
-$primary-color: #07aae2;
+// $primary-color: #07aae2;
 $text-primary-color: #ffffff;
 $border-color: #ffffff;
 $bg-light: #272727;
 $bg-dark: #202020;
+
+// Colors
+$primary-color: #14a2d2; // Main accent color
+$secondary-color: #07aae2; // Secondary accent color
+$background-dark: #101010; // Darkest background color
+$background-medium: #1f1f1f; // Medium dark background color
+$background-light: #202020; // Lightest background color (for even rows)
+$text-color-primary: white; // Primary text color
+$text-color-secondary: #f0f0f0; // Secondary text color (e.g., table headers)
+$border-color-primary: #404040; // Main border color
+$border-color-secondary: #505050; // Secondary border color
+$focus-color: #ffc107; // Color for focus states (accessibility)
+
+// Typography
+$font-family-primary: "Roboto Condensed", sans-serif; // Main font family
+$font-size-base: 16px; // Base font size
+$font-size-small: 14px; // Smaller font size (e.g., table cells)
+
+// Spacing
+$border-radius: 12px; // Standard border radius
+$box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); // Box shadow for depth
+$table-header-height: 15px; // Height for the table headers
+$table-cell-padding: 10px; // General padding for table cells
+$filter-vertical-spacing: 30px; // Spacing above and below filters
+
+// Transitions
+$transition-duration: 0.2s; // Standard transition duration
+$transition-easing: ease; // Standard transition easing function
+
+// Media Query Breakpoints (optional, but good practice)
+$breakpoint-tablet: 768px; // Example tablet breakpoint
+$breakpoint-desktop: 1024px; // Example desktop breakpoint
+
+// Mixins - Reusable style patterns
+
+// Base border style
+@mixin border-base {
+  border: 4px solid $border-color-primary;
+  border-radius: $border-radius;
+}
+
+// Dark container style (for backgrounds and text)
+@mixin dark-container {
+  background-color: $background-dark;
+  color: $text-color-primary;
+}
+
+// Button style
+@mixin button-style {
+  background-color: $primary-color;
+  color: $text-color-primary;
+  border: 1px solid $text-color-primary;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: $font-family-primary;
+  transition: border $transition-duration $transition-easing;
+
+  &:hover {
+    border: 3px solid $text-color-primary;
+  }
+
+  &:focus {
+    outline: 3px solid $focus-color;
+    outline-offset: 2px; // Adjust as needed
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Table base style
+@mixin table-base {
+  margin: 0 auto;
+  color: $text-color-primary;
+  overflow: hidden;
+  @include border-base;
+  border-spacing: 0;
+  font-size: $font-size-small;
+  text-align: left;
+  width: 100%;
+}
