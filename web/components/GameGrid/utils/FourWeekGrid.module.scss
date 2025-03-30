@@ -23,7 +23,6 @@
     }
   }
 }
-
 /* --- Title Header Styling --- */
 .titleHeader {
   background-color: v.$background-dark;
@@ -118,8 +117,8 @@
   font-size: v.$font-size-small;
   text-align: center;
   width: 100%;
+  height: 100%;
   table-layout: fixed; // Fixed layout for width control
-  // height: 100%; // Table itself doesn't need 100% height, wrapper controls scroll
 }
 
 /* --- Table Header Styling --- */

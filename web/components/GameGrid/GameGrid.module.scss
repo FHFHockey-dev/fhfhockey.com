@@ -101,18 +101,6 @@ $mobile-fixed-width: 35px;
   width: 100%;
 }
 
-.fourWeekAndBPAtableContainer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-
-  .fourWeekGridContainerAll {
-    width: 30%;
-    height: 100%;
-  }
-}
-
 .gameGridHeader {
   flex: 0 0 95%;
   max-width: 75%;
@@ -583,6 +571,18 @@ $mobile-fixed-width: 35px;
     flex-direction: row;
     gap: 25px;
     align-items: stretch; // ** Make children stretch to tallest height **
+  }
+}
+
+.fourWeekAndBPAtableContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+
+  .fourWeekGridContainerAll {
+    width: 30%;
   }
 }
 
