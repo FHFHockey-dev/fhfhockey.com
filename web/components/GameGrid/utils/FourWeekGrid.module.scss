@@ -1,7 +1,7 @@
 // components/GameGrid/FourWeekGrid.module.scss
 
 @use "sass:color";
-@use "styles/vars" as v; // Use an alias for brevity
+@use "styles/vars" as v; // Use the aliased import
 @use "sass:math";
 
 /* --- Main Container --- */
@@ -9,15 +9,18 @@
   width: 100%;
   margin: 0 auto;
   transition: margin-bottom v.$transition-duration v.$transition-easing;
-  // Apply the visual framing here
-  outline: 8px solid v.$background-dark;
-  background-color: v.$background-dark; // Background for the whole component
-  border: 3px solid v.$background-light;
-  border-radius: v.$border-radius; // Radius on the main container
-  overflow: hidden; // Hide overflow from children
+  // Framing is now applied by the parent (.fourWeekGridContainerAll)
+  background-color: v.$background-dark; // Set background for content area
+  display: flex; // Use flex to manage internal height
+  flex-direction: column; // Stack title and wrapper
+  height: 100%; // ** Allow filling parent height **
 
   &.minimized {
-    margin-bottom: 10px; // Reduce space below when minimized
+    margin-bottom: 10px;
+    // When minimized, container itself doesn't need height: 100%
+    @media (min-width: v.$breakpoint-desktop) {
+      height: auto; // Reset height on desktop when minimized
+    }
   }
 }
 
@@ -30,25 +33,28 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  // Border appears only when expanded (acts as separator)
-  border-bottom: 2px solid transparent; // Start transparent
-  transition: border-bottom-color v.$transition-duration v.$transition-easing; // Transition border
+  border-bottom: 2px solid transparent;
+  transition: border-bottom-color v.$transition-duration v.$transition-easing;
+  flex-shrink: 0; // Don't shrink title header
 
   // Add border when not minimized
   .container:not(.minimized) & {
     border-bottom-color: v.$secondary-color;
   }
 
-  // Make clickable only on mobile
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
     cursor: pointer;
     user-select: none;
+    // Remove border when minimized on mobile
+    .container.minimized & {
+      border-bottom-color: transparent;
+    }
   }
 }
 
 .titleText {
   font-family: v.$font-family-primary;
-  font-size: clamp(1.5rem, 3.5vw, 1.6rem);
+  font-size: clamp(1.2rem, 3.5vw, 1.6rem);
   font-weight: 100;
   color: v.$text-color-primary;
   letter-spacing: 1px;
@@ -61,11 +67,10 @@
   font-weight: 300;
 }
 
-// Minimize/Maximize Icon Styling
 .minimizeToggleIcon {
   font-size: 1.2rem;
   position: absolute;
-  right: 30px;
+  right: 15px;
   top: 50%;
   transform: translateY(-50%) rotate(0deg);
   color: v.$secondary-color;
@@ -76,23 +81,31 @@
   }
 }
 
-/* --- Table Wrapper (Handles Minimize Collapse) --- */
+/* --- Table Wrapper (Handles Minimize Collapse AND Vertical Scroll) --- */
 .tableWrapper {
   width: 100%;
-  overflow: hidden; // Needed for max-height transition
+  overflow: hidden; // Horizontal hidden, vertical managed below
   transition: max-height 0.4s v.$transition-easing,
     opacity 0.3s v.$transition-easing, visibility 0.3s v.$transition-easing;
-  max-height: 5000px; // Large enough for content
+  max-height: 5000px;
   opacity: 1;
   visibility: visible;
-  background-color: v.$background-dark; // Ensure background matches
+  background-color: v.$background-dark;
+  flex-grow: 1; // ** Take remaining vertical space in .container **
+  overflow-y: auto; // ** Allow VERTICAL scrolling **
+  // Hide scrollbar visually
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 
-  // When container is minimized, collapse this wrapper
+  // Collapse when minimized
   .container.minimized & {
     max-height: 0;
     opacity: 0;
     visibility: hidden;
-    // No border/outline needed here as it's inside container
+    overflow-y: hidden; // Prevent scrollbar flash during collapse
   }
 }
 
@@ -105,83 +118,80 @@
   font-size: v.$font-size-small;
   text-align: center;
   width: 100%;
-  table-layout: fixed; // Use fixed layout for predictable widths
+  table-layout: fixed; // Fixed layout for width control
+  // height: 100%; // Table itself doesn't need 100% height, wrapper controls scroll
 }
 
 /* --- Table Header Styling --- */
 .table thead {
-  background-color: v.$background-dark; // Inherited from th
-  height: 47px;
+  position: sticky; // ** Sticky header **
+  top: 0; // ** Stick to top of .tableWrapper **
+  z-index: 2;
+  background-color: v.$background-dark; // Needed for sticky header background
 }
 
 .table th {
-  background-color: v.$background-dark;
+  background-color: v.$background-dark; // Redundant due to thead bg, but safe
   color: v.$text-color-secondary;
   font-weight: 600;
-  padding: 8px 5px; // Adjusted padding for tighter fit
+  padding: 8px 4px; // Reduced padding
   font-family: v.$font-family-primary;
-  font-size: 16px;
+  font-size: 11px; // Small header font
   text-transform: uppercase;
   letter-spacing: 0.3px;
   border: 0.5px solid v.$border-color-secondary;
-  border-top: none; // Connects visually to title bar border
+  border-top: none;
   white-space: normal; // Allow wrapping
   vertical-align: middle;
-  // Explicit widths summing to 100%
-  // Adjust as needed: Team (20%) + 4 metrics (20% each) = 100%
-  width: 20%; // Default width for metric columns
+  height: 35px; // Give header a bit of fixed height
+
+  // Column Widths: Team (20%) + 4 Metrics (20% each) = 100%
+  width: 20%;
 
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    padding: 6px 3px;
+    padding: 6px 2px;
     font-size: 10px;
+    height: 30px;
   }
 }
 
-// Special styling for the first header cell (Team)
 .table th:first-child {
+  // Team Header
   text-align: left;
   padding-left: 10px;
   border-left: none;
   border-right: 2px solid v.$secondary-color;
-  width: 20%; // Adjust width for team column
-  white-space: nowrap; // Keep "Team" on one line
-
+  width: 20%; // Team column width
+  white-space: nowrap;
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
     padding-left: 8px;
   }
 }
 
-// Last header cell border
 .table th:last-child {
   border-right: none;
 }
 
-/* --- Sort Button Styling (Integrated into header) --- */
+/* --- Sort Button Styling --- */
 .sortButton {
   background: none;
   border: none;
-  color: inherit; // Inherit color from th
-  font-family: inherit;
-  font-size: 14px; // Inherit size from th
-  font-weight: inherit; // Inherit weight from th
-  text-transform: inherit; // Inherit case from th
-  letter-spacing: inherit; // Inherit spacing from th
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
   cursor: pointer;
-  padding: 0; // Remove padding from button itself
-  display: inline-flex; // Align text and arrow
+  padding: 0;
+  display: inline-flex;
   align-items: center;
-  width: 100%; // Make button fill the header cell for easier clicking
-  justify-content: center; // Center content within button
-
+  width: 100%;
+  justify-content: center;
   &:focus {
-    outline: 1px dotted v.$primary-color; // Simple focus outline
+    outline: 1px dotted v.$primary-color;
     outline-offset: 2px;
   }
-
-  // Adjust alignment for the first column's button
   th:first-child & {
-    justify-content: flex-start; // Align left in team column
-  }
+    justify-content: flex-start;
+  } // Align team sort left
 }
 
 /* --- Table Body Styling --- */
@@ -200,70 +210,66 @@
 
 .table td {
   border: 0.5px solid v.$border-color-secondary;
-  padding: 6px 5px; // Adjusted padding
+  padding: 6px 4px; // Reduced padding
   font-family: v.$font-family-primary;
   vertical-align: middle;
-  font-size: 12px; // Slightly smaller font size
+  font-size: 12px;
+  height: 36px; // Slightly shorter body rows
 
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    padding: 6px 3px;
-    font-size: 16px;
+    padding: 5px 3px;
+    font-size: 11px;
+    height: 34px;
   }
 }
 
-// Special styling for the first data cell (Team logo)
 .table td:first-child {
+  // Team Data Cell
   border-left: none;
   border-right: 2px solid v.$secondary-color;
   text-align: center;
-  padding: 5px;
+  padding: 4px; // Less padding around logo
   width: 20%; // Match header width
 
-  // Team Info Container (Optional, for better logo alignment if needed)
   .teamInfo {
     display: flex;
     align-items: center;
-    justify-content: center; // Center logo within the cell space
-    min-height: 30px; // Ensure consistent row height even if logo is small
+    justify-content: center;
+    min-height: 28px;
   }
-
   .teamLogo {
-    // Target the image class specifically
     display: block;
-    max-width: 28px; // Slightly smaller logo max width
+    max-width: 24px;
     height: auto;
-    filter: drop-shadow(0 0 1px v.$text-color-primary); // Subtle glow
+    filter: drop-shadow(0 0 1px v.$text-color-primary);
   }
 }
 
-// Last data cell border
 .table td:last-child {
   border-right: none;
 }
 
 /* --- Averages Row Styling --- */
 .averagesRow td {
-  background-color: darken(
-    v.$background-dark,
-    5%
-  ); // Slightly darker than odd rows
-  color: v.$text-color-secondary; // Slightly dimmer text
+  background-color: darken(v.$background-dark, 5%);
+  color: v.$text-color-secondary;
   font-weight: bold;
-  font-size: 14px; // Smaller font for average row
-  border-top: 2px solid v.$border-color-secondary; // Stronger top border
+  font-size: 11px; // Smaller avg font
+  border-top: 2px solid v.$border-color-secondary;
+  padding: 5px 4px; // Less padding for avg row
+  height: 30px; // Shorter avg row
 
-  // Ensure first AVG cell aligns with team column style
   &:first-child {
-    text-align: left; // Align "AVG:" left
-    padding-left: 10px; // Match team header padding
-    border-right: 2px solid v.$secondary-color; // Match separator
+    text-align: left;
+    padding-left: 10px;
+    border-right: 2px solid v.$secondary-color;
     @media (max-width: #{v.$breakpoint-tablet - 1px}) {
       padding-left: 8px;
     }
   }
 }
 
-/* --- Color-Coding Classes (Keep as before, ensure rgba) --- */
+/* --- Color-Coding & Message --- */
 .red {
   background-color: rgba(255, 0, 0, 0.2);
 }
@@ -275,12 +281,10 @@
 }
 .green {
   background-color: rgba(0, 128, 0, 0.25);
-} // Darker green for better contrast
+}
 .grey {
   background-color: rgba(128, 128, 128, 0.2);
 }
-
-/* --- Message Styling --- */
 .message {
   padding: 30px 15px;
   text-align: center;
