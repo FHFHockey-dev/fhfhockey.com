@@ -101,9 +101,21 @@ $mobile-fixed-width: 35px;
   width: 100%;
 }
 
+.fourWeekAndBPAtableContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+
+  .fourWeekGridContainerAll {
+    width: 30%;
+    height: 100%;
+  }
+}
+
 .gameGridHeader {
   flex: 0 0 95%;
-  max-width: 95%;
+  max-width: 75%;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -211,21 +223,55 @@ $mobile-fixed-width: 35px;
   gap: 20px; // Optional: adds spacing between the grid and FourWeekGrid
 }
 
+/* Universal Component Wrapper Mixin */
+@mixin component-wrapper {
+  width: 100%;
+  background-color: vars.$background-dark;
+  outline: 8px solid vars.$background-dark;
+  border: 3px solid vars.$background-light;
+  border-radius: vars.$border-radius;
+  overflow: hidden;
+}
+
+/* --- Layout Sections Styling --- */
 .gridWrapper {
+  // Top: Schedule + Opponent (Desktop)
   display: flex;
-  gap: 40px;
-  width: 95%;
-
-  .scheduleGrid {
-    width: 75%;
+  flex-direction: column;
+  gap: 30px;
+  width: 100%;
+  @media (min-width: vars.$breakpoint-desktop) {
+    flex-direction: row;
+    gap: 25px;
+    // Ensure items stretch vertically by default (align-items: stretch;)
+    // This makes both children as tall as the tallest one (schedule grid)
   }
+}
 
-  .opponentStatsContainer {
-    width: 25%;
+.scheduleGridContainer {
+  @include component-wrapper;
+  width: 100%; // Takes full width when stacked
+  @media (min-width: vars.$breakpoint-desktop) {
+    width: 70%; // Desktop width split
+  }
+  // Schedule grid height will be determined by its content
+}
+
+.opponentStatsContainer {
+  @include component-wrapper;
+  width: 100%; // Takes full width when stacked
+  @media (min-width: vars.$breakpoint-desktop) {
+    width: 30%; // Desktop width split
+    display: flex; // **NEW: Make this container a flex column**
+    flex-direction: column; // **NEW: Stack title and table vertically**
+    // Flexbox with align-items: stretch on parent (.gridWrapper)
+    // will make this container match the height of scheduleGridContainer.
+    // Now we need to make the content *inside* this container use that height.
   }
 }
 
 .scheduleGrid {
+  width: 100%;
   color: white;
   overflow: hidden;
   border: 4px solid #404040;
@@ -526,19 +572,35 @@ $mobile-fixed-width: 35px;
 /* MAGGIE <3 */
 
 .lowerGridHorizontal {
+  // Bottom: FourWeek + BPA (Desktop Horizontal)
   display: flex;
-  margin-top: 25px;
-  gap: 50px;
-  width: 95%;
+  flex-direction: column; // Stack vertically on mobile first
+  gap: 30px;
+  width: 100%;
+  padding-top: 30px;
+
+  @media (min-width: vars.$breakpoint-desktop) {
+    flex-direction: row;
+    gap: 25px;
+    align-items: stretch; // ** Make children stretch to tallest height **
+  }
+}
+
+.fourWeekGridContainerAll {
+  @include component-wrapper; // Apply framing
+  width: 100%;
+  @media (min-width: vars.$breakpoint-desktop) {
+    width: 50%; // Desktop width split
+    display: flex; // ** NEW: Allow child (.container in FourWeekGrid) to fill height **
+  }
 }
 
 .playerPickupContainer {
   width: 100%;
-  height: 100%;
-}
-
-.opponentStatsContainer {
-  width: 100%;
+  @media (min-width: vars.$breakpoint-desktop) {
+    width: 100%; // Desktop width split
+    // PlayerPickupTable might need similar flex setup if it also needs to fill height
+  }
 }
 
 .bpaAndOppContainer {

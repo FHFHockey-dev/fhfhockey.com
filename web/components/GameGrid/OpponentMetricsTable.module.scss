@@ -7,18 +7,25 @@
 /* --- Main Container --- */
 .container {
   width: 100%;
+  // Removed height: 100% from base style
   margin: 0 auto;
   transition: margin-bottom v.$transition-duration v.$transition-easing;
-  // Apply the visual framing here
-  outline: 8px solid v.$background-dark;
-  background-color: v.$background-dark; // Background for the whole component
-  border: 3px solid v.$background-light;
-  border-radius: v.$border-radius; // Radius on the main container
-  overflow: hidden; // Hide overflow from children (like table border collapse)
+  // Apply the visual framing here (Now applied by parent in GameGrid)
+  // outline: 8px solid v.$background-dark;
+  background-color: v.$background-dark; // Keep background
+  // border: 3px solid v.$background-light;
+  // border-radius: v.$border-radius; // Use parent's radius
+  overflow: hidden;
 
   &.minimized {
-    margin-bottom: 10px; // Reduce space below when minimized
-    // Keep outline/border when minimized, just hide content
+    margin-bottom: 10px;
+  }
+
+  // --- Desktop Height Filling ---
+  @media (min-width: v.$breakpoint-desktop) {
+    height: 100%; // ** Fill parent (.opponentStatsContainer) height **
+    display: flex; // ** Use flexbox **
+    flex-direction: column; // ** Stack title and wrapper vertically **
   }
 }
 
@@ -34,6 +41,7 @@
   align-items: center;
   border-bottom: 2px solid v.$border-color-primary;
   transition: border-bottom v.$transition-duration v.$transition-easing;
+  flex-shrink: 0; // Prevent shrinking in flexbox
 
   // Make clickable only on mobile
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
@@ -44,9 +52,6 @@
 
 .container.minimized .titleHeader {
   border-bottom-color: transparent; // Change color to transparent (or use border-bottom: none;)
-  // Optionally reduce padding further when minimized if desired
-  // padding-top: 10px;
-  // padding-bottom: 10px;
 }
 
 .titleText {
@@ -96,6 +101,18 @@
     opacity: 0;
     visibility: hidden;
   }
+
+  // --- Desktop Height Filling & Scrolling ---
+  @media (min-width: v.$breakpoint-desktop) {
+    flex-grow: 1; // ** Take remaining vertical space in the .container **
+    overflow-y: auto; // ** Allow VERTICAL scrolling for table content **
+    // Hide scrollbar visually
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
 
 /* --- REMOVED Scroll Container --- */
@@ -110,6 +127,7 @@
   font-size: v.$font-size-small;
   text-align: center;
   width: 100%; // Force table to take full width
+  height: 100%;
   table-layout: fixed; // CRUCIAL for controlling column widths exactly
   // border-top: 1px solid v.$border-color-secondary; // Add subtle top border to visually connect
 }
