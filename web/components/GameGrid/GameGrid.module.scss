@@ -7,7 +7,7 @@
 $breakpoint-small: 320px;
 $breakpoint-medium: 480px;
 $breakpoint-large: 768px;
-$mobile-fixed-width: 35px;
+$mobile-fixed-width: 37px;
 
 @mixin respond-to($breakpoint) {
   @if $breakpoint == small {
@@ -25,17 +25,25 @@ $mobile-fixed-width: 35px;
   }
 }
 
+@mixin component-wrapper {
+  // No changes to mixin definition
+  width: 100%;
+  background-color: vars.$background-dark;
+  outline: 8px solid vars.$background-dark;
+  border: 3px solid vars.$background-light;
+  border-radius: vars.$border-radius;
+  overflow: hidden;
+}
+
 .actions {
   position: relative;
   width: 85%;
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
-
   & button:hover {
     cursor: pointer;
   }
-
   .spinner {
     position: absolute;
     right: -80%;
@@ -45,7 +53,7 @@ $mobile-fixed-width: 35px;
 
 .redInnerBorder {
   border: 10px solid rgba(255, 0, 0, 0.1) !important;
-  border-top: 1px solid #505050 !important; /* Ensures consistency */
+  border-top: 1px solid #505050 !important;
   border-bottom: 1px solid #505050 !important;
   border-right: 1px solid #505050 !important;
 }
@@ -76,21 +84,23 @@ $mobile-fixed-width: 35px;
 }
 
 .fourWeekGridContainerAll {
-  display: flex;
-  justify-content: space-around;
-  flex-direction: column;
+  // Apply wrapper framing on mobile for consistency
+  width: 100%; // Already set for mobile stacking
 
-  .fourWeekLabelVertical {
-    display: none;
+  // Apply standard framing ONLY on mobile
+  @media (max-width: #{vars.$breakpoint-tablet - 1px}) {
+    // Use tablet breakpoint
+    @include component-wrapper;
   }
 
-  .fourWeekTitle {
-    font-family: roboto condensed, sans-serif;
-    font-size: 1.5em;
-    font-weight: 100;
-    text-transform: uppercase;
-    letter-spacing: -0.015em;
-    margin-bottom: 25px;
+  // Desktop styles remain separate
+  @media (min-width: vars.$breakpoint-desktop) {
+    width: 50%;
+    display: flex;
+    // Reset mobile framing if needed (though unlikely necessary if applied in media query)
+    // outline: none;
+    // border: none;
+    // border-radius: 0;
   }
 }
 
@@ -129,78 +139,31 @@ $mobile-fixed-width: 35px;
   color: #07aae2;
 }
 
-.dateButtonPrev {
-  position: relative;
-  height: 35px;
-  width: 115px;
-  background: #14a2d2;
-  color: #ffffff;
-  border: 1px solid rgb(204, 204, 204);
-  padding-left: 20px;
-  padding-right: 20px;
-  border-radius: 8px;
-}
-
-.dateButtonPrev:hover {
-  height: 35px;
-  background: #14a2d2;
-  border: 3px solid white;
-}
-
-.dateButtonNext {
-  position: relative;
-  height: 35px;
-  width: 115px;
-  background: #14a2d2;
-  color: #ffffff;
-  border: 1px solid white;
-  padding-left: 20px;
-  padding-right: 20px;
-  border-radius: 8px;
-}
-
-.dateButtonNext:hover {
-  height: 35px;
-  background: #14a2d2;
-  border: 3px solid white;
-}
-
-.dateButtonMode {
-  font-family: roboto condensed, sans-serif;
-  position: relative;
-  height: 35px;
-  width: 115px;
-  background: #14a2d2;
-  color: #ffffff;
-  border: 1px solid white;
-  padding-left: 20px;
-  padding-right: 20px;
-  border-radius: 8px;
-}
-
-.dateButtonMode:hover {
-  height: 35px;
-  background: #14a2d2;
-  border: 3px solid white;
-}
-
+.dateButtonPrev,
+.dateButtonNext,
+.dateButtonMode,
 .orientationToggleButton {
-  font-family: roboto condensed, sans-serif;
+  font-family: vars.$font-family-primary; // Use var
   position: relative;
   height: 35px;
   width: 115px;
-  background: #14a2d2;
-  color: #ffffff;
-  border: 1px solid white;
-  padding-left: 20px;
-  padding-right: 20px;
-  border-radius: 8px;
-}
+  background: vars.$primary-color; // Use var
+  color: vars.$text-color-button; // Use var
+  border: 1px solid vars.$border-color; // Use var
+  padding: 0 20px;
+  border-radius: 8px; // Consider vars.$border-radius-small if exists
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease,
+    filter 0.2s ease; // Add transitions
 
-.orientationToggleButton:hover {
-  height: 35px;
-  background: #14a2d2;
-  border: 3px solid white;
+  &:hover {
+    background: color.scale(
+      vars.$primary-color,
+      $lightness: -10%
+    ); // Darken on hover
+    border-color: vars.$text-color-primary; // Example hover border
+    border-width: 2px; // Example hover border width
+  }
 }
 
 .mainGridContainer {
@@ -209,16 +172,6 @@ $mobile-fixed-width: 35px;
   display: flex;
   flex-direction: column; // Stack items vertically
   gap: 20px; // Optional: adds spacing between the grid and FourWeekGrid
-}
-
-/* Universal Component Wrapper Mixin */
-@mixin component-wrapper {
-  width: 100%;
-  background-color: vars.$background-dark;
-  outline: 8px solid vars.$background-dark;
-  border: 3px solid vars.$background-light;
-  border-radius: vars.$border-radius;
-  overflow: hidden;
 }
 
 /* --- Layout Sections Styling --- */
@@ -242,7 +195,6 @@ $mobile-fixed-width: 35px;
   @media (min-width: vars.$breakpoint-desktop) {
     width: 70%; // Desktop width split
   }
-  // Schedule grid height will be determined by its content
 }
 
 .opponentStatsContainer {
@@ -252,9 +204,6 @@ $mobile-fixed-width: 35px;
     width: 30%; // Desktop width split
     display: flex; // **NEW: Make this container a flex column**
     flex-direction: column; // **NEW: Stack title and table vertically**
-    // Flexbox with align-items: stretch on parent (.gridWrapper)
-    // will make this container match the height of scheduleGridContainer.
-    // Now we need to make the content *inside* this container use that height.
   }
 }
 
@@ -284,7 +233,6 @@ $mobile-fixed-width: 35px;
 
 .scheduleGrid tr th:first-child,
 .scheduleGrid tr td:first-child {
-  height: 12px;
   border-collapse: collapse;
   border-right: 5px solid #1d88ac;
   text-align: left;
@@ -305,52 +253,52 @@ $mobile-fixed-width: 35px;
 .scheduleGrid th:nth-child(n + 2),
 .scheduleGrid td:nth-child(n + 2) {
   padding: 3px 5px;
-  border: 0.5px solid #909090;
+  border: 0.5px solid vars.$border-color-secondary;
   min-width: 60px;
   max-width: 100px;
   max-height: 40px;
   min-height: 40px;
   text-align: center;
+  vertical-align: middle;
 }
 
 .scheduleGrid tr td:nth-child(9),
 .scheduleGrid tr td:nth-child(10),
 .scheduleGrid tr td:nth-child(11) {
-  background-color: #101010; /* Set the background color */
+  background-color: vars.$background-dark;
   min-width: 30px;
   max-width: 100px;
   max-height: 40px;
   min-height: 40px;
 }
-
 .scheduleGrid tr td:nth-child(9),
 .scheduleGrid th:nth-child(9) {
-  border-left: 3px solid #fff;
+  border-left: 3px solid vars.$text-color-primary;
 }
-
 .scheduleGrid tr th:nth-child(9),
 .scheduleGrid tr th:nth-child(10),
 .scheduleGrid tr th:nth-child(11) {
-  padding-bottom: 14px;
+  padding-bottom: 14px; // Keep desktop padding
 }
 
 .scheduleGrid tr {
-  font-family: roboto condensed, sans-serif;
+  font-family: vars.$font-family-primary;
   height: 45px;
   text-align: center;
   border-radius: 4px;
+  transition: background-color vars.$transition-duration vars.$transition-easing;
 }
 
 .scheduleGrid tr:hover {
-  background-color: color.mix(white, #303030, 5%);
+  background-color: color.scale(vars.$primary-color, $lightness: -30%);
 }
 
 .scheduleGrid > tbody > tr:nth-of-type(odd) {
-  background-color: #101010;
+  background-color: vars.$background-dark;
 }
 
-.scheduleGrid tr:hover:nth-of-type(odd) {
-  background-color: color.mix(white, #101010, 10%);
+.scheduleGrid > tbody > tr:nth-of-type(even) {
+  background-color: vars.$background-light;
 }
 
 .teamRow {
@@ -559,30 +507,33 @@ $mobile-fixed-width: 35px;
 
 /* MAGGIE <3 */
 
+// --- Lower Grid Layout (Desktop/Base) --- NO CHANGES ---
 .lowerGridHorizontal {
-  // Bottom: FourWeek + BPA (Desktop Horizontal)
   display: flex;
-  flex-direction: column; // Stack vertically on mobile first
+  flex-direction: column;
   gap: 30px;
   width: 100%;
   padding-top: 30px;
-
   @media (min-width: vars.$breakpoint-desktop) {
+    // Keep desktop layout
     flex-direction: row;
     gap: 25px;
-    align-items: stretch; // ** Make children stretch to tallest height **
+    align-items: stretch;
   }
 }
-
 .fourWeekAndBPAtableContainer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   width: 100%;
   height: 100%;
-
   .fourWeekGridContainerAll {
+    @include component-wrapper; // Apply framing
     width: 30%;
+    @media (min-width: vars.$breakpoint-desktop) {
+      width: 30%; // Desktop width split
+      display: flex; // ** NEW: Allow child (.container in FourWeekGrid) to fill height **
+    }
   }
 }
 
@@ -594,269 +545,192 @@ $mobile-fixed-width: 35px;
     display: flex; // ** NEW: Allow child (.container in FourWeekGrid) to fill height **
   }
 }
-
+// .fourWeekGridContainerAll defined earlier
 .playerPickupContainer {
+  // NO CHANGES to base style (mobile handled in MQ)
   width: 100%;
   @media (min-width: vars.$breakpoint-desktop) {
-    width: 100%; // Desktop width split
-    // PlayerPickupTable might need similar flex setup if it also needs to fill height
+    // Keep desktop styles
+    width: 100%;
+    // Remove framing if applied globally
+    // outline: none; border: none; border-radius: 0; background-color: transparent;
   }
 }
-
 .bpaAndOppContainer {
+  // NO CHANGES to base style (layout helper)
   width: 100%;
   height: 100%;
 }
 
-@media only screen and (min-width: vars.$screen-large) {
-  .teamRow {
-    .teamName {
-      display: flex; /* Ensure Flexbox is applied on large screens */
-      justify-content: space-between;
-      align-items: center;
-    }
-    .teamAbbreviation {
-      display: none; /* Hide the separate abbreviation if it's redundant */
-    }
-  }
+/* =============================================== */
+/* ========== MOBILE STYLES START HERE ========== */
+/* =============================================== */
 
-  .totalGamesPerDayRow > .title::before {
-    content: "GP/Day";
-  }
-}
+/* --- Styles for Tablet and Below (<= 1023px) --- */
+@media (max-width: #{vars.$breakpoint-desktop - 1px}) {
+  // Targeting <= 1023px
 
-@media only screen and (max-width: 1024px) {
   .mainGridContainer {
-    width: 100%;
+    width: 95%; // Adjust width slightly
     margin: 20px auto;
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
-    flex-direction: column;
+    gap: 25px; // Adjust gap
+    flex-direction: column; // Ensure vertical stacking
   }
 
-  .dateButtonPrev {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 20px;
-    padding-right: 20px;
-    border-radius: 6px;
+  // Apply framing to containers
+  .scheduleGridContainer,
+  .opponentStatsContainer,
+  .fourWeekGridContainerAll {
+    // PlayerPickup container framing is handled by its own component
+    @include component-wrapper;
+    width: 100% !important; // Ensure full width when stacked
+    // Override potential desktop flex settings if necessary
+    display: block; // Or flex with column direction if internal content needs it
   }
 
-  .dateButtonPrev:hover {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 20px;
-    padding-right: 20px;
-    border-radius: 6px;
-    filter: brightness(120%);
-  }
-
-  .dateButtonNext {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 20px;
-    padding-right: 20px;
-    border-radius: 6px;
-  }
-
-  .dateButtonNext:hover {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-    width: 60px;
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 20px;
-    padding-right: 40px;
-    border-radius: 6px;
-    filter: brightness(120%);
-  }
-
-  .scheduleGrid {
-    width: 100%;
-    border: 2px solid #505050;
-    border-radius: 0;
-    overflow-x: scroll;
-  }
-
-  .scheduleGrid tr {
-    height: 35px;
-  }
-
-  .gameGridTitle {
-    font-size: 1.5em;
-    width: 100%;
-  }
-
-  .actions {
-    width: 100%;
-  }
-
-  .dateButtonMode {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 10px;
-    padding-right: 10px;
-    border-radius: 6px;
-  }
-
-  .orientationToggleButton {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 10px;
-    padding-right: 10px;
-    border-radius: 6px;
-  }
-
-  .gridWrapper {
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .fourWeekLabel {
-    display: none;
-  }
-
+  // Adjust main header for slightly smaller screens
   .gameGridHeader {
-    flex: 0 0 100%;
-    max-width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-direction: row;
+    max-width: 100%; // Allow full width
+    flex-wrap: wrap; // Allow wrapping
+    justify-content: center; // Center when wrapping
+    gap: 15px; // Space when wrapping
 
     .gameGridTitle {
-      font-size: 2em;
-      width: 100%;
+      // Adjust title size
+      font-size: clamp(2rem, 6vw, 2.8rem); // Responsive size
+      width: 100%; // Full width when wrapped
+      text-align: center; // Center align
+      margin-bottom: 10px; // Space below title when wrapped
     }
-
     .prevNextButtons {
-      width: 50%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.75rem;
+      // Center buttons below title
+      width: auto; // Let buttons dictate width
+      justify-content: center;
+      gap: 10px; // Adjust gap
     }
   }
 
-  .totalGamesPerDayRow {
-    border-bottom: 0.5px solid white;
+  // Make schedule grid scrollable
+  .scheduleGrid {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: none;
+    outline: none;
+    border-radius: 0;
+    background-color: transparent;
+    border-spacing: 0;
+    border-collapse: separate; // Keep for sticky + borders
+
+    // **** KEY CHANGE for Uniform Width ****
+    table-layout: fixed; // Force fixed layout ON MOBILE ONLY
+    width: auto; // Let the sum of fixed column widths determine table width
+
+    // Add subtle internal borders for clarity when scrolling
+    th,
+    td {
+      border: 0.5px solid vars.$border-color-secondary; // Thin internal borders
+      // Remove fixed heights/widths for flexibility
+      min-width: auto;
+      max-width: none;
+      min-height: auto;
+      max-height: none;
+    }
+    // Remove outer borders from cells
+    th:first-child,
+    td:first-child {
+      border-left: none;
+    }
+    th:last-child,
+    td:last-child {
+      border-right: none;
+    }
+    tr:first-child th {
+      border-top: none;
+    }
+    // tr:last-child td { border-bottom: none; } // May need to keep bottom border
+
+    // Sticky Headers
+    thead th {
+      position: sticky;
+      top: 0;
+      background-color: vars.$background-dark; // Match container bg
+      z-index: 2;
+      // Tablet header style adjustments
+      font-size: 12px;
+      padding: 6px 8px;
+      height: auto; // Let content determine height
+
+      width: $mobile-fixed-width;
+      min-width: $mobile-fixed-width;
+      max-width: $mobile-fixed-width;
+      overflow: hidden;
+      text-overflow: ellipsis; // Add ellipsis if text is too long
+      white-space: nowrap; // Prevent header text wrapping initially
+
+      font-weight: 600; // Standard weight
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid vars.$secondary-color; // Consistent border
+      border-top: none; // Remove top border
+      border-left: 0.5px solid vars.$border-color-secondary;
+      border-right: 0.5px solid vars.$border-color-secondary;
+      &:first-child {
+        border-left: none;
+      }
+      &:last-child {
+        border-right: none;
+      }
+    }
+
+    // Sticky First Column
+    tbody tr th:first-child, // If using TH in body for row headers
+    tbody tr td:first-child {
+      position: sticky;
+      left: 0;
+      background-color: vars.$background-dark; // Match row bg? Or standard dark?
+      z-index: 1;
+      // Tablet first column style adjustments
+      border-right: 3px solid vars.$secondary-color; // Keep separator
+      font-size: 14px;
+      padding: 4px 5px;
+      min-width: 40px; // Set a min-width for team column
+      text-align: left;
+    }
+    // Ensure sticky column background matches row background
+    tbody tr:nth-of-type(odd) td:first-child {
+      background-color: vars.$background-dark;
+    }
+    tbody tr:nth-of-type(even) td:first-child {
+      background-color: vars.$background-light;
+    }
+
+    // Tablet Cell Styles
+    tbody td {
+      padding: 6px 5px;
+      font-size: 13px;
+      height: auto; // Let content determine height
+    }
+
+    // Adjust specific column styles if needed
+    td:nth-child(9),
+    th:nth-child(9) {
+      border-left: 2px solid vars.$border-color-primary; // Adjust separator
+    }
   }
 
-  .scheduleGrid th {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-  }
-
-  .scheduleGrid tr th:first-child,
-  .scheduleGrid tr td:first-child {
-    max-width: 50px !important;
-    min-width: 45px;
-    font-size: 1em;
-    border-right: 3px solid #07aae2;
-  }
-
-  .scheduleGrid tr th:nth-child(n + 2),
-  .scheduleGrid td:nth-child(n + 2) {
-    font-family: roboto condensed, sans-serif;
-    padding: 6px 6px;
-    min-width: 30px;
-    max-width: 50px;
-    text-align: center;
-    font-size: 1em;
-  }
-
-  .scheduleGrid tr th:nth-child(9),
-  .scheduleGrid tr th:nth-child(10),
-  .scheduleGrid tr td:nth-child(9),
-  .scheduleGrid tr td:nth-child(10) {
-    border-right: 1px solid white;
-    border-bottom: 1px solid white;
-  }
-
-  .scheduleGrid tr th:nth-child(9),
-  .scheduleGrid tr th:nth-child(10),
-  .scheduleGrid tr th:nth-child(11) {
-    font-family: roboto condensed, sans-serif;
-    padding: 2px 2px;
-    min-width: 30px;
-    max-width: 35px;
-    text-align: center;
-    font-size: 1em;
-    padding-bottom: 8px;
-  }
-
-  .blurredImage {
-    filter: blur(4px); // Adjust the blur amount as needed
-  }
-
-  .scoreAndHomeAway {
+  // Hide desktop-only elements if necessary (though handled by display:none in base for mobile elements)
+  .teamRow .desktopTeamAbbreviation {
     display: none;
   }
 
-  .homeAway {
-    display: none;
-  }
-
-  .hideOnMobile {
-    display: none;
-  }
-
-  /* MAGGIE <3 */
-
+  // Show mobile-only elements
+  .teamRow .mobileTeamLogo {
+    display: inline-flex;
+  } // Or flex if needed
   .mobileLogoSize {
-    padding: 0px 2.5px !important;
-  }
-
-  .mobileFontStyle {
-    font-family: "Roboto Condensed", sans-serif !important;
-    font-size: 1em !important;
-    margin-bottom: 7px !important;
-  }
-
-  .score {
-    display: none;
-  }
-
-  .totalGamesPerDayCell {
-    background-color: #000;
-    color: white;
-  }
-
-  .totalGamesPerDayRow > .title::before {
-    content: "GP/Day";
-  }
-
-  .teamRow {
-    .teamName {
-      display: none;
-    }
-  }
-
-  .fourWeekLabel {
-    display: none;
-  }
-
-  .fourWeekTitle {
-    display: none;
-  }
+    display: inline-block;
+  } // Show this class container
 }
 
 @media only screen and (min-width: vars.$screen-medium) and (max-width: vars.$screen-large) {
