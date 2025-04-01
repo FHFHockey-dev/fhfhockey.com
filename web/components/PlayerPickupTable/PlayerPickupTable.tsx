@@ -187,10 +187,6 @@ function getRankColorStyle(percentile: number): React.CSSProperties {
 // Child Components
 // ---------------------------
 
-// ---------------------------
-// Child Components
-// ---------------------------
-
 // Filters Component
 interface FiltersProps {
   ownershipThreshold: number;
@@ -400,10 +396,10 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
       <table className={styles.table}>
         <colgroup>
           {" "}
-          <col style={{ width: "18%" }} /> <col style={{ width: "6%" }} />{" "}
+          <col style={{ width: "17%" }} /> <col style={{ width: "6%" }} />{" "}
           <col style={{ width: "6%" }} /> <col style={{ width: "6%" }} />{" "}
           <col style={{ width: "6%" }} /> <col style={{ width: "6%" }} />{" "}
-          <col style={{ width: "45%" }} /> <col style={{ width: "7%" }} />{" "}
+          <col style={{ width: "47%" }} /> <col style={{ width: "6%" }} />{" "}
         </colgroup>
         <thead>
           {" "}

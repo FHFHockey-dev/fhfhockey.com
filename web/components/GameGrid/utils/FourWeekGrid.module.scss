@@ -9,90 +9,109 @@
   width: 100%;
   margin: 0 auto;
   transition: margin-bottom v.$transition-duration v.$transition-easing;
-  // Framing is now applied by the parent (.fourWeekGridContainerAll)
-  background-color: v.$background-dark; // Set background for content area
-  display: flex; // Use flex to manage internal height
-  flex-direction: column; // Stack title and wrapper
-  height: 100%; // ** Allow filling parent height **
+  background-color: v.$background-dark;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden; // Add overflow hidden for radius clipping
 
-  &.minimized {
-    margin-bottom: 10px;
-    // When minimized, container itself doesn't need height: 100%
-    @media (min-width: v.$breakpoint-desktop) {
-      height: auto; // Reset height on desktop when minimized
+  // --- Mobile Specific Framing & Styling ---
+  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
+    outline: 8px solid v.$background-dark; // Mobile Frame Outline
+    border: 3px solid v.$background-light; // Mobile Frame Border
+    border-radius: v.$border-radius; // Mobile Frame Radius
+    height: auto; // Reset height on mobile unless explicitly needed
+
+    // Mobile Minimized State
+    &.minimized {
+      margin-bottom: 10px;
+      // Ensure title border is hidden when minimized on mobile
+      .titleHeader {
+        border-bottom-color: transparent !important;
+      }
+    }
+  }
+
+  // On desktop, allow filling parent height when NOT minimized
+  @media (min-width: v.$breakpoint-desktop) {
+    &:not(.minimized) {
+      height: 100%;
+    }
+    &.minimized {
+      height: auto; // Reset height when minimized on desktop too
     }
   }
 }
+
 /* --- Title Header Styling --- */
 .titleHeader {
   background-color: v.$background-dark;
-  padding: 12px 15px;
+  padding: 15px;
   position: relative;
   width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid transparent;
-  transition: border-bottom-color v.$transition-duration v.$transition-easing;
-  flex-shrink: 0; // Don't shrink title header
+  flex-shrink: 0;
+  border-bottom: 2px solid transparent; // *** Default border transparent ***
+  transition: border-bottom-color v.$transition-duration v.$transition-easing; // Transition color
 
-  // Add border when not minimized
+  // *** Show border only when container is NOT minimized ***
   .container:not(.minimized) & {
     border-bottom-color: v.$secondary-color;
   }
 
+  // Make clickable only on mobile
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
     cursor: pointer;
     user-select: none;
-    // Remove border when minimized on mobile
-    .container.minimized & {
-      border-bottom-color: transparent;
-    }
   }
 }
 
 .titleText {
   font-family: v.$font-family-primary;
-  font-size: clamp(1.2rem, 3.5vw, 1.6rem);
-  font-weight: 100;
+  font-size: clamp(1.5rem, 4vw, 1.8rem);
+  font-weight: 100; // Lighter weight
   color: v.$text-color-primary;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px; // Match letter spacing
   flex-grow: 1;
   text-align: left;
+  padding-right: 30px; // Make space for the icon
 }
 
 .spanColorBlue {
   color: v.$secondary-color;
-  font-weight: 300;
+  font-weight: 100; // Adjusted weight
 }
 
 .minimizeToggleIcon {
-  font-size: 1.2rem;
+  font-size: 1.2rem; // Match size
   position: absolute;
-  right: 15px;
+  right: 15px; // *** ALIGNED Positioning ***
   top: 50%;
-  transform: translateY(-50%) rotate(0deg);
+  transform: translateY(-50%) rotate(0deg); // Center + initial rotation
   color: v.$secondary-color;
   transition: transform 0.3s v.$transition-easing;
   flex-shrink: 0;
+  pointer-events: none;
+
   &.minimized {
-    transform: translateY(-50%) rotate(-180deg);
+    transform: translateY(-50%) rotate(-180deg); // Rotated state
   }
 }
 
 /* --- Table Wrapper (Handles Minimize Collapse AND Vertical Scroll) --- */
 .tableWrapper {
   width: 100%;
-  overflow: hidden; // Horizontal hidden, vertical managed below
+  overflow: hidden;
   transition: max-height 0.4s v.$transition-easing,
     opacity 0.3s v.$transition-easing, visibility 0.3s v.$transition-easing;
   max-height: 5000px;
   opacity: 1;
   visibility: visible;
   background-color: v.$background-dark;
-  flex-grow: 1; // ** Take remaining vertical space in .container **
-  overflow-y: auto; // ** Allow VERTICAL scrolling **
-  // Hide scrollbar visually
+  flex-grow: 1;
+  overflow-y: auto;
   &::-webkit-scrollbar {
     display: none;
   }
@@ -104,7 +123,7 @@
     max-height: 0;
     opacity: 0;
     visibility: hidden;
-    overflow-y: hidden; // Prevent scrollbar flash during collapse
+    overflow-y: hidden;
   }
 }
 

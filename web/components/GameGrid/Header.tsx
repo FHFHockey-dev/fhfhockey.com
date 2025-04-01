@@ -7,7 +7,7 @@ import { addDays, formatDate, getDayStr } from "./utils/date-func";
 import Switch from "./Switch";
 import Toggle from "./Toggle";
 import { DAY_ABBREVIATION, TeamDataWithTotals } from "lib/NHL/types";
-import { id } from "date-fns/locale";
+import clsx from "clsx";
 
 type HeaderProps = {
   start: string;
@@ -24,11 +24,19 @@ type HeaderProps = {
   excludedDays: DAY_ABBREVIATION[];
   setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>;
   weekData: TeamDataWithTotals[];
+  gamesPerDay: number[];
 };
 
 type SortKey = {
   key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
   ascending: boolean;
+};
+
+const getIntensity = (numGames: number): string => {
+  if (numGames <= 3) return "high";
+  if (numGames <= 6) return "medium-high";
+  if (numGames <= 9) return "medium-low";
+  return "low";
 };
 
 function Header({
@@ -38,7 +46,8 @@ function Header({
   setSortKeys,
   excludedDays,
   setExcludedDays,
-  weekData
+  weekData,
+  gamesPerDay
 }: HeaderProps) {
   const [currentSortKey, setCurrentSortKey] = useState<SortKey | null>(null);
 
@@ -114,19 +123,23 @@ function Header({
     start,
     excludedDays,
     setExcludedDays,
-    extended
+    extended,
+    gamesPerDay
   );
 
   return (
     <thead>
       <tr>
-        {/* Render the team column */}
+        {/* Team column */}
         <th>Team</th>
-        {/* Render day columns */}
+        {/* Day columns */}
         {dayColumns.map((col) => (
-          <th key={col.id}>{col.label}</th>
+          // *** Pass data-intensity to the th ***
+          <th key={col.id} data-intensity={col.intensity}>
+            {col.label}
+          </th>
         ))}
-        {/* Render stat columns */}
+        {/* Stat columns */}
         {statsColumns.map((col) => (
           <th key={col.id}>{col.label}</th>
         ))}
@@ -139,17 +152,25 @@ function getDayColumns(
   start: string,
   excludedDays: DAY_ABBREVIATION[],
   setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>,
-  extended: boolean
-) {
+  extended: boolean,
+  gamesPerDay: number[]
+): { label: JSX.Element | string; id: string; intensity?: string }[] {
   const startDate = new Date(start);
 
   // const days = dateDiffInDays(startDate, endDate);
   const numDays = extended ? 7 + 3 : 7;
-  const columns = [] as { label: JSX.Element | string; id: string }[];
+  const columns = [] as {
+    label: JSX.Element | string;
+    id: string;
+    intensity: string;
+  }[];
   let current = startDate;
+
   for (let i = 0; i < numDays; i++) {
     const day = getDayStr(startDate, current) as DAY_ABBREVIATION;
-    // Only need this handler in basic mode
+    const numGames = gamesPerDay[i] ?? 0;
+    const intensity = getIntensity(numGames);
+
     const onChange = () => {
       setExcludedDays((prev) => {
         const set = new Set(prev);
@@ -164,27 +185,27 @@ function getDayColumns(
 
     columns.push({
       label: (
-        <>
-          {day}
+        <div>
+          {" "}
+          {/* Wrap label content */}
+          <span className={styles.dayAbbreviation}>{day}</span>{" "}
+          {/* Use spans for better control */}
           <br />
-          <p
-            className={styles.mobileFontStyle}
-            style={{
-              whiteSpace: "nowrap",
-              fontFamily: "Tahoma, sans-serif",
-              fontSize: "10px",
-              marginBottom: "3px",
-              marginTop: "3px"
-            }}
-          >
-            {formatDate(current)}
-          </p>
+          <span className={styles.dayDate}>{formatDate(current)}</span>
           {!extended && (
-            <Toggle checked={excludedDays.includes(day)} onChange={onChange} />
+            <div className={styles.dayToggle}>
+              {" "}
+              {/* Wrap toggle */}
+              <Toggle
+                checked={excludedDays.includes(day)}
+                onChange={onChange}
+              />
+            </div>
           )}
-        </>
+        </div>
       ),
-      id: getDayStr(startDate, current)
+      id: day, // Use day abbreviation as ID
+      intensity: intensity // Include intensity
     });
     current = addDays(current, 1);
   }

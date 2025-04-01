@@ -7,41 +7,54 @@
 /* --- Main Container --- */
 .container {
   width: 100%;
-  // Removed height: 100% from base style
   margin: 0 auto;
   transition: margin-bottom v.$transition-duration v.$transition-easing;
-  // Apply the visual framing here (Now applied by parent in GameGrid)
-  // outline: 8px solid v.$background-dark;
   background-color: v.$background-dark; // Keep background
-  // border: 3px solid v.$background-light;
-  // border-radius: v.$border-radius; // Use parent's radius
-  overflow: hidden;
+  overflow: hidden; // Keep overflow hidden
 
-  &.minimized {
-    margin-bottom: 10px;
+  // --- Mobile Specific Framing & Styling ---
+  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
+    outline: 8px solid v.$background-dark; // Mobile Frame Outline
+    border: 3px solid v.$background-light; // Mobile Frame Border
+    border-radius: v.$border-radius; // Mobile Frame Radius
+    // Padding is handled by titleHeader now
+
+    // Mobile Minimized State
+    &.minimized {
+      margin-bottom: 10px; // Keep margin reduction
+      // Ensure title border is hidden when minimized on mobile
+      .titleHeader {
+        border-bottom-color: transparent !important; // Override general rule if needed
+      }
+    }
   }
 
   // --- Desktop Height Filling ---
   @media (min-width: v.$breakpoint-desktop) {
-    height: 100%; // ** Fill parent (.opponentStatsContainer) height **
-    display: flex; // ** Use flexbox **
-    flex-direction: column; // ** Stack title and wrapper vertically **
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    // No outline/border needed on desktop if parent provides structure
   }
 }
 
 /* --- Title Header Styling --- */
 .titleHeader {
-  background-color: v.$background-dark; // Match container background
-  padding: 12px 15px; // Slightly adjusted padding
-  // border-bottom: 2px solid v.$secondary-color; // REMOVED - integrated with table header visually
-  position: relative; // For icon positioning
+  background-color: v.$background-dark;
+  padding: 15px; // *** ALIGNED Padding with .filters ***
+  position: relative;
   width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2px solid v.$border-color-primary;
-  transition: border-bottom v.$transition-duration v.$transition-easing;
-  flex-shrink: 0; // Prevent shrinking in flexbox
+  flex-shrink: 0; // Prevent shrinking
+  border-bottom: 2px solid transparent; // *** Default border transparent ***
+  transition: border-bottom-color v.$transition-duration v.$transition-easing; // Transition color
+
+  // *** Show border only when container is NOT minimized (Applies to Desk & Mob initially) ***
+  .container:not(.minimized) & {
+    border-bottom-color: v.$secondary-color;
+  }
 
   // Make clickable only on mobile
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
@@ -50,47 +63,45 @@
   }
 }
 
-.container.minimized .titleHeader {
-  border-bottom-color: transparent; // Change color to transparent (or use border-bottom: none;)
-}
-
 .titleText {
   font-family: v.$font-family-primary;
-  font-size: clamp(1.5rem, 3.5vw, 1.6rem); // Slightly smaller responsive title
-  font-weight: 100;
+  font-size: clamp(1.5rem, 4vw, 1.8rem);
+  font-weight: 100; // Lighter weight
   color: v.$text-color-primary;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px; // Match letter spacing
   flex-grow: 1;
   text-align: left;
+  padding-right: 30px; // Make space for the icon like in PlayerPickupTable
 }
 
 .spanColorBlue {
   color: v.$secondary-color;
-  font-weight: 300;
+  font-weight: 100; // Adjusted to match base title weight
 }
 
 .minimizeToggleIcon {
-  font-size: 1.2rem;
+  font-size: 1.2rem; // Match size
   position: absolute;
-  right: 27px; // Position to the far right of the title
-  top: 25%;
+  right: 15px; // *** ALIGNED Positioning with .filters *** (adjust if needed based on padding)
+  top: 50%; // Center vertically
+  transform: translateY(-50%) rotate(0deg); // Center + initial rotation
   color: v.$secondary-color;
   transition: transform 0.3s v.$transition-easing;
-  transform: rotate(0deg);
   flex-shrink: 0;
-  margin-left: 5px;
+  pointer-events: none; // Icon itself shouldn't capture clicks
+
   &.minimized {
-    transform: rotate(-180deg);
+    transform: translateY(-50%) rotate(-180deg); // Rotate when minimized
   }
 }
 
 /* --- Table Wrapper (Handles Minimize Collapse) --- */
 .tableWrapper {
   width: 100%;
-  overflow: hidden; // Needed for max-height transition
+  overflow: hidden;
   transition: max-height 0.4s v.$transition-easing,
     opacity 0.3s v.$transition-easing, visibility 0.3s v.$transition-easing;
-  max-height: 5000px; // Large enough for content
+  max-height: 5000px;
   opacity: 1;
   visibility: visible;
   background-color: v.$background-dark; // Ensure background matches
@@ -104,9 +115,8 @@
 
   // --- Desktop Height Filling & Scrolling ---
   @media (min-width: v.$breakpoint-desktop) {
-    flex-grow: 1; // ** Take remaining vertical space in the .container **
-    overflow-y: auto; // ** Allow VERTICAL scrolling for table content **
-    // Hide scrollbar visually
+    flex-grow: 1;
+    overflow-y: auto;
     &::-webkit-scrollbar {
       display: none;
     }
@@ -114,9 +124,6 @@
     scrollbar-width: none;
   }
 }
-
-/* --- REMOVED Scroll Container --- */
-// .scrollContainer { ... }
 
 /* --- Base Table Styling --- */
 .table {
@@ -129,14 +136,9 @@
   width: 100%; // Force table to take full width
   height: 100%;
   table-layout: fixed; // CRUCIAL for controlling column widths exactly
-  // border-top: 1px solid v.$border-color-secondary; // Add subtle top border to visually connect
 }
 
 /* --- Table Header Styling --- */
-.table thead {
-  // No position sticky needed if not scrolling horizontally
-  // background-color: v.$background-dark; // Defined in th
-}
 
 .table th {
   background-color: v.$background-dark; // Ensure header background

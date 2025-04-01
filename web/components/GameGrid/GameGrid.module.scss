@@ -1,14 +1,17 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/GameGrid/GameGrid.module.scss
 
-@use "styles/vars";
+@use "styles/vars" as v;
 @use "sass:color";
+@use "sass:math";
 
 // breakpoints
 $breakpoint-small: 320px;
 $breakpoint-medium: 480px;
 $breakpoint-large: 768px;
-$mobile-fixed-width: 35px;
+$mobile-fixed-width: 40px;
+$mobile-column-short: 30px;
 
+// mixin
 @mixin respond-to($breakpoint) {
   @if $breakpoint == small {
     @media (max-width: $breakpoint-small) {
@@ -25,36 +28,706 @@ $mobile-fixed-width: 35px;
   }
 }
 
-.actions {
-  position: relative;
+// --- Base Layout & Containers ---
+
+.mainGridContainer {
   width: 85%;
-  margin: 0 auto;
+  max-width: 1600px;
+  margin: v.$space-xl auto;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xl;
+
+  @media (max-width: #{v.$breakpoint-desktop - 1px}) {
+    width: 95%;
+    margin: v.$space-lg auto;
+    gap: v.$space-lg;
+  }
+  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
+    width: 100%;
+    margin: v.$space-md 0;
+    gap: v.$space-md;
+  }
+}
+
+.gridWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xl;
+  width: 100%;
+
+  @media (min-width: v.$breakpoint-desktop) {
+    flex-direction: row;
+    gap: v.$space-xxl;
+    align-items: stretch;
+  }
+}
+
+// --- Component Containers ---
+
+.scheduleGridContainer {
+  @include v.component-wrapper; // Apply standard component wrapper mixin
+  flex-grow: 1;
+
+  @media (min-width: v.$breakpoint-desktop) {
+    // *** CONFIRMED: Desktop width ***
+    width: 70%;
+    flex-grow: 0; // Prevent growth when fixed width is set
+  }
+}
+
+.opponentStatsContainer {
+  @include v.component-wrapper; // Apply standard component wrapper
+  flex-shrink: 0;
+
+  @media (min-width: v.$breakpoint-desktop) {
+    flex-basis: 30%;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.fourWeekGridContainerAll {
+  width: 100%;
+  // Apply standard framing ONLY on mobile (as FourWeekGrid component likely handles its own)
+  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
+    @include v.component-wrapper;
+  }
+  @media (min-width: v.$breakpoint-desktop) {
+    width: 50%; // Or 30% depending on layout
+    display: flex;
+  }
+}
+
+.playerPickupContainer {
+  // PlayerPickupTable handles its own wrapper
+  width: 100%;
+}
+
+.bpaAndOppContainer {
+  width: 100%;
+  height: 100%;
+  @media (min-width: v.$breakpoint-desktop) {
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-lg; // Space between PlayerPickup and OpponentMetrics if stacked here
+  }
+}
+
+.lowerGridHorizontal {
+  // Container for FourWeek + BPA/Opponent on Desktop
+  display: flex;
+  flex-direction: column; // Stack on mobile by default
+  gap: v.$space-xl;
+  width: 100%;
+  padding-top: v.$space-xl;
+
+  @media (min-width: v.$breakpoint-desktop) {
+    flex-direction: row;
+    gap: v.$space-lg;
+    align-items: stretch;
+  }
+}
+
+// --- Header Actions ---
+
+.actions {
+  // Desktop Header Actions Bar
+  position: relative;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto v.$space-lg auto;
   display: flex;
   justify-content: space-between;
-
-  & button:hover {
-    cursor: pointer;
-  }
+  align-items: center;
+  padding: 0 v.$space-md;
 
   .spinner {
     position: absolute;
-    right: -80%;
-    bottom: 2px;
+    right: v.$space-md;
+    bottom: 50%;
+    transform: translateY(50%);
+  }
+
+  @media (max-width: 480px) {
+    display: none; // Hide on small mobile
   }
 }
 
-.redInnerBorder {
-  border: 10px solid rgba(255, 0, 0, 0.1) !important;
-  border-top: 1px solid #505050 !important; /* Ensures consistency */
-  border-bottom: 1px solid #505050 !important;
-  border-right: 1px solid #505050 !important;
+.desktopTeamAbbreviation {
+  display: none; // Hide by default
+  font-family: v.$font-family-primary;
+  padding-right: 10px;
+  @media (min-width: v.$breakpoint-tablet) {
+    display: inline-block;
+    font-weight: 600;
+  }
 }
 
-.greenInnerBorder {
-  border: 10px solid rgba(0, 255, 0, 0.1) !important;
-  border-top: 1px solid #505050 !important; /* Ensures consistency */
-  border-bottom: 1px solid #505050 !important;
-  border-right: 1px solid #505050 !important;
+.gameGridHeader {
+  // Container within .actions
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: v.$space-lg;
+
+  .gameGridTitle {
+    font-family: v.$font-family-primary;
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    font-weight: 200;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0;
+    white-space: nowrap;
+    color: v.$text-color-primary; // Ensure text color is set
+  }
+
+  .prevNextButtons {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: v.$space-md;
+    flex-shrink: 0;
+  }
+}
+
+.spanColorBlue {
+  color: v.$secondary-color; // Use variable
+  font-weight: 600;
+}
+
+// Standard Button Styling (Desktop Header / Mobile Header Rows)
+.dateButtonPrev,
+.dateButtonNext,
+.dateButtonMode,
+.orientationToggleButton {
+  @include v.button-style; // Apply base button style
+  height: 40px;
+  width: auto;
+  min-width: 100px;
+  padding: v.$space-sm v.$space-lg;
+  font-size: v.$font-size-small;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: color.scale(v.$primary-color, $lightness: -15%);
+    border-color: v.$text-color-primary;
+    border-width: 1px; // Keep consistent
+    filter: brightness(1.1);
+  }
+
+  &:focus-visible {
+    outline: 3px solid v.$focus-color;
+    outline-offset: 2px;
+  }
+}
+
+// --- Mobile Specific Header Actions ---
+.mobileHeaderActions {
+  display: none; // Hide by default
+
+  @media (max-width: 480px) {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 0px;
+    position: relative;
+    z-index: 1;
+
+    .titleRow {
+      text-align: left;
+      margin-bottom: 0;
+      padding: v.$space-md v.$space-md; // Add padding back
+
+      .gameGridTitle {
+        font-family: v.$font-family-primary;
+        font-size: 1.6rem;
+        font-weight: 200;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 0;
+        color: v.$text-color-primary;
+        .spanColorBlue {
+          color: v.$secondary-color;
+          font-weight: 600;
+        }
+      }
+    }
+
+    .mobileGameGridAll {
+      display: flex;
+      flex-direction: column;
+      gap: v.$space-md;
+      width: 100%;
+      padding: 0 v.$space-md; // Add padding back
+    }
+
+    .navButtonRow {
+      display: flex;
+      width: 100%;
+      border: 1px solid v.$border-color;
+      border-top-right-radius: 8px;
+      border-top-left-radius: 8px;
+
+      button {
+        // Applies to all buttons within these rows
+        @include v.button-style;
+        flex: 1 1 auto;
+        height: 40px;
+        font-size: v.$font-size-small * 0.8;
+        border-radius: 0; // Explicitly set to 0
+        border-top: 1px solid v.$border-color;
+        border-left: none; // Remove left border
+        border-right: 1px solid v.$border-color; // Subtle separator
+        margin: 0; // Remove any default margins
+        white-space: nowrap; // Prevent text wrapping
+        min-width: none;
+        padding: v.$space-sm;
+        text-align: center;
+        text-transform: uppercase;
+
+        &:hover {
+          filter: brightness(1.15); // Slightly brighter hover
+          border: none; // Keep no border on hover
+          border-right: 1px solid v.$border-color-secondary; // Keep separator
+        }
+        &:focus-visible {
+          outline-offset: -3px; // Adjust focus outline position
+          z-index: 2;
+        }
+      }
+
+      button:first-child {
+        // Apply to first button (.dateButtonPrev)
+        border-top-left-radius: v.$border-radius-sm;
+        border-left: 1px solid v.$border-color;
+        flex-grow: 0; // Don't let arrows grow as much
+        flex-basis: 15%; // Make arrows smaller
+        padding: v.$space-sm v.$space-xs; // Adjust padding for arrows
+        font-size: 0.6rem; // Larger arrow icon size
+        text-transform: uppercase;
+      }
+      button:last-child {
+        // Apply to last button (.dateButtonNext)
+        // border-top-right-radius: v.$border-radius-sm; // Only if grid container has radius
+        border-top-right-radius: v.$border-radius-sm;
+        flex-grow: 0;
+        flex-basis: 15%;
+        padding: v.$space-sm v.$space-xs;
+        font-size: 0.6rem;
+        text-transform: uppercase;
+      }
+    }
+    // Position spinner relative to actions container
+    .spinner {
+      position: absolute;
+      right: v.$space-md;
+      top: v.$space-sm; // Adjust position within the header area
+      transform: none;
+      bottom: auto;
+    }
+  }
+}
+
+// --- Schedule Grid Table Styling ---
+.scheduleGrid {
+  width: 100%;
+  border-spacing: 0;
+  font-size: v.$font-size-small;
+  text-align: center;
+  color: v.$text-color-primary;
+
+  // --- Desktop Specific (Inside Wrapper) ---
+  @media (min-width: v.$breakpoint-desktop) {
+    border: none;
+    outline: none;
+    border-radius: 0;
+    table-layout: auto;
+  }
+
+  // --- Mobile/Tablet Scrollable Behavior (Inside Wrapper) ---
+  @media (max-width: #{v.$breakpoint-desktop - 1px}) {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    width: 100%; // Fit wrapper
+    min-width: 100%;
+    border: none; // Rely on wrapper
+    outline: none;
+    border-radius: 0;
+    table-layout: fixed;
+  }
+
+  // --- Table Header (thead) ---
+  thead {
+    // Nested under .scheduleGrid
+    font-family: v.$font-family-primary;
+    font-size: 11px;
+    font-weight: 600;
+    color: v.$text-color-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    background-color: v.$background-medium;
+    position: sticky;
+    top: 0;
+
+    th {
+      // Nested under thead
+      padding: v.$space-sm v.$space-md;
+      vertical-align: middle;
+      border-bottom: v.$border-separator; // 2px secondary
+      border-right: v.$border-subtle; // 1px secondary
+      white-space: normal;
+      cursor: default;
+      min-width: 55px;
+
+      &:last-child {
+        border-right: none;
+      }
+
+      // Apply data-intensity background directly to th
+      &[data-intensity="low"] {
+        background-color: rgba(255, 0, 0, 0.2);
+      }
+      &[data-intensity="medium-low"] {
+        background-color: rgba(255, 165, 0, 0.2);
+      }
+      &[data-intensity="medium-high"] {
+        background-color: rgba(255, 255, 0, 0.2);
+      }
+      &[data-intensity="high"] {
+        background-color: rgba(0, 128, 0, 0.2);
+      }
+
+      // Sortable Header Styling
+      &.sortable {
+        cursor: pointer;
+        &:hover {
+          background-color: color.scale(v.$background-medium, $lightness: -10%);
+          color: v.$text-color-primary;
+        }
+      }
+      .sortIcon {
+        display: inline-block;
+        margin-left: v.$space-xs;
+        font-size: 0.8em;
+        opacity: 0.7;
+        width: 1em;
+      }
+      .sortIcon.asc::before {
+        content: "▲";
+      }
+      .sortIcon.desc::before {
+        content: "▼";
+      }
+
+      // Day Toggle Styles
+      .dayToggle {
+        display: block;
+        margin: v.$space-xs auto 0 auto; // Center toggle below text
+        transform: scale(0.8);
+      }
+      .dayAbbreviation {
+        font-weight: 700;
+      }
+      .dayDate {
+        display: block;
+        font-size: 10px;
+        color: v.$text-color-secondary;
+        margin-top: v.$space-xs / 2;
+        white-space: nowrap;
+      }
+    }
+
+    // Sticky First Header Cell (Team)
+    th:first-child {
+      // Nested under thead
+      font-family: v.$font-family-primary;
+      font-size: 16px;
+      color: v.$primary-color;
+      text-align: left;
+      padding-left: v.$space-sm;
+      border-right: v.$border-separator; // 2px secondary
+      position: sticky;
+      left: 0;
+      z-index: 4;
+      background-color: v.$background-medium !important; // Override intensity if needed
+      min-width: 65px;
+      width: 10%;
+    }
+  } // End thead
+
+  // --- Table Body (tbody) ---
+  tbody {
+    // Nested under .scheduleGrid
+    tr {
+      // Nested under tbody
+      border-bottom: v.$border-subtle;
+      transition: background-color v.$transition-duration v.$transition-easing;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      // Alternating row colors
+      &:nth-child(even) {
+        background-color: v.$background-light;
+      }
+      &:nth-child(odd) {
+        background-color: v.$background-dark;
+      }
+      // last row
+      &:last-child {
+        background-color: v.$background-light;
+      }
+
+      // Consistent hover effect
+      &:hover {
+        background-color: color.scale(
+          v.$primary-color,
+          $lightness: -30%,
+          $alpha: -70%
+        );
+      }
+
+      // Row Highlights (targeting first td)
+      &.teamRowGreen td:first-child {
+        border-left: 3px solid rgba(0, 255, 0, 0.6);
+        border-bottom: 3px solid rgba(0, 255, 0, 0.6);
+      }
+      &.teamRowRed td:first-child {
+        border-left: 3px solid rgba(255, 0, 0, 0.5);
+        border-bottom: 3px solid rgba(255, 0, 0, 0.5);
+      }
+    } // End tr
+
+    // --- General TD Styling ---
+    td {
+      // Nested under tbody (implicitly under tr)
+      padding: v.$space-sm v.$space-md;
+      vertical-align: middle;
+      border-right: v.$border-subtle;
+      min-height: 40px;
+      min-width: 40px;
+
+      &:last-child {
+        border-right: none;
+      }
+
+      // Apply data-intensity background directly to td
+      &[data-intensity="low"] {
+        background-color: rgba(255, 0, 0, 0.2);
+      }
+      &[data-intensity="medium-low"] {
+        background-color: rgba(255, 165, 0, 0.2);
+      }
+      &[data-intensity="medium-high"] {
+        background-color: rgba(255, 255, 0, 0.2);
+      }
+      &[data-intensity="high"] {
+        background-color: rgba(0, 128, 0, 0.2);
+      }
+
+      // RANK COLOR STYLES
+      &.weekScoreCell {
+        @for $i from 1 through 32 {
+          &.rank-color-#{$i} {
+            background-color: v.get-rank-color($i);
+          }
+        }
+        transition: background-color v.$transition-duration v.$transition-easing;
+      }
+
+      // DAILY CELL BORDER
+      &.cellInnerBorder {
+        position: relative;
+        padding: v.$space-xs;
+        &:before {
+          content: "";
+          position: absolute;
+          inset: 1px;
+          border: 1.5px solid transparent;
+          border-radius: v.$border-radius-sm;
+          pointer-events: none;
+        }
+        &.heavy-day:before {
+          border-color: rgba(255, 0, 0, 0.3);
+        }
+        &.off-night-day:before {
+          border-color: rgba(0, 255, 0, 0.2);
+        }
+      }
+
+      // DAILY CELL EXCLUDED OVERLAY (nested is fine)
+      .excludedOverlay {
+        background-color: rgba(80, 80, 80, 0.65);
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+      }
+    } // End td
+
+    // --- Sticky First Column TD ---
+    td:first-child {
+      // Nested under tbody (implicitly under tr)
+      text-align: left;
+      padding-left: v.$space-lg;
+      border-right: v.$border-separator; // 2px secondary
+      position: sticky;
+      left: 0;
+      z-index: 5;
+      height: 43px;
+      background-color: inherit; // Inherits from TR for alternating colors/hover
+      min-width: 65px;
+      border-left: 4px solid transparent; // Placeholder for highlight border
+    }
+  } // End tbody
+
+  // --- Total Games Row Styling ---
+  // Target the row directly by class, nested under .scheduleGrid
+  // Assuming TotalGamesPerDayRow component adds this class to its `<tr>`
+  .totalGamesPerDayRow {
+    // Nested under .scheduleGrid
+    background-color: v.$background-medium;
+    font-weight: 600;
+    color: v.$text-color-secondary;
+    position: sticky; // Keep sticky if desired
+    bottom: 0;
+    z-index: 9;
+
+    td {
+      // Nested under .totalGamesPerDayRow
+      padding: v.$space-sm;
+      border-right: v.$border-subtle;
+      border-top: v.$border-separator; // 2px separator from body
+      position: relative;
+      vertical-align: middle;
+
+      &:last-child {
+        border-right: none;
+      }
+
+      // Apply intensity via data-attribute
+      &[data-intensity="low"] {
+        background-color: rgba(255, 0, 0, 0.2);
+      }
+      &[data-intensity="medium-low"] {
+        background-color: rgba(255, 165, 0, 0.2);
+      }
+      &[data-intensity="medium-high"] {
+        background-color: rgba(255, 255, 0, 0.2);
+      }
+      &[data-intensity="high"] {
+        background-color: rgba(0, 128, 0, 0.2);
+      }
+
+      // Overlay (nested is fine)
+      .excludedOverlay {
+        background-color: rgba(80, 80, 80, 0.65);
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+      }
+    }
+
+    // Title cell styling (target by class)
+    td.title {
+      // Nested under .totalGamesPerDayRow
+      text-align: left;
+      padding-left: v.$space-lg;
+      border-right: v.$border-separator; // 2px separator
+      position: sticky;
+      left: 0;
+      z-index: 6;
+      background-color: v.$background-medium !important; // Override intensity
+
+      // Text spans (nested are fine)
+      .desktopText {
+        display: none;
+      }
+      .mobileText {
+        display: inline;
+        font-size: 0.7em;
+      }
+      @media (min-width: v.$breakpoint-desktop) {
+        .desktopText {
+          display: inline;
+        }
+        .mobileText {
+          display: none;
+        }
+      }
+    }
+  } // End .totalGamesPerDayRow
+} // End .scheduleGrid
+
+// --- First Column Content (Team Abbr/Logo) ---
+// These are classes used *inside* cells, so they are fine as is.
+.firstColumnContent {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid v.$border-color-primary;
+
+  .desktopTeamAbbreviation {
+    display: none;
+  }
+  .mobileTeamLogo {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  @media (min-width: v.$breakpoint-desktop) {
+    .desktopTeamAbbreviation {
+      display: inline-block;
+      font-weight: 600;
+    }
+    .mobileTeamLogo {
+      padding: 2px 6px;
+    }
+  }
+  @media (max-width: 480px) {
+    .desktopTeamAbbreviation {
+      display: none;
+    }
+    .mobileTeamLogo img {
+      width: 24px;
+      height: 24px;
+    }
+  }
+}
+
+// --- Matchup Cell Styling ---
+// These are classes used *inside* cells, so they are fine as is.
+.matchupCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  position: relative;
+  cursor: pointer;
+}
+.matchupOpponentLogo {
+  display: block;
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.2));
+  width: 28px;
+  height: 28px;
+}
+.matchupHomeAwayIcon {
+  display: none; // Hide by default
+  @media (min-width: v.$breakpoint-tablet) {
+    // Show on tablet+
+    display: inline-flex;
+    align-items: center;
+    opacity: 0.8;
+    img {
+      width: 16px;
+      height: 16px;
+    }
+  }
 }
 
 .fourWeekLabelVertical {
@@ -76,21 +749,23 @@ $mobile-fixed-width: 35px;
 }
 
 .fourWeekGridContainerAll {
-  display: flex;
-  justify-content: space-around;
-  flex-direction: column;
+  // Apply wrapper framing on mobile for consistency
+  width: 100%; // Already set for mobile stacking
 
-  .fourWeekLabelVertical {
-    display: none;
+  // Apply standard framing ONLY on mobile
+  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
+    // Use tablet breakpoint
+    @include v.component-wrapper;
   }
 
-  .fourWeekTitle {
-    font-family: roboto condensed, sans-serif;
-    font-size: 1.5em;
-    font-weight: 100;
-    text-transform: uppercase;
-    letter-spacing: -0.015em;
-    margin-bottom: 25px;
+  // Desktop styles remain separate
+  @media (min-width: v.$breakpoint-desktop) {
+    width: 50%;
+    display: flex;
+    // Reset mobile framing if needed (though unlikely necessary if applied in media query)
+    // outline: none;
+    // border: none;
+    // border-radius: 0;
   }
 }
 
@@ -101,765 +776,260 @@ $mobile-fixed-width: 35px;
   width: 100%;
 }
 
-.gameGridHeader {
-  flex: 0 0 95%;
-  max-width: 75%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  .gameGridTitle {
-    font-family: roboto condensed, sans-serif;
-    font-size: 3em;
-    font-weight: 200;
-    text-transform: uppercase;
-    letter-spacing: -0.015em;
-    margin: 0;
-  }
-
-  .prevNextButtons {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 1rem;
-    width: 50%;
-  }
-}
-.spanColorBlue {
-  color: #07aae2;
-}
-
-.dateButtonPrev {
-  position: relative;
-  height: 35px;
-  width: 115px;
-  background: #14a2d2;
-  color: #ffffff;
-  border: 1px solid rgb(204, 204, 204);
-  padding-left: 20px;
-  padding-right: 20px;
-  border-radius: 8px;
-}
-
-.dateButtonPrev:hover {
-  height: 35px;
-  background: #14a2d2;
-  border: 3px solid white;
-}
-
-.dateButtonNext {
-  position: relative;
-  height: 35px;
-  width: 115px;
-  background: #14a2d2;
-  color: #ffffff;
-  border: 1px solid white;
-  padding-left: 20px;
-  padding-right: 20px;
-  border-radius: 8px;
-}
-
-.dateButtonNext:hover {
-  height: 35px;
-  background: #14a2d2;
-  border: 3px solid white;
-}
-
-.dateButtonMode {
-  font-family: roboto condensed, sans-serif;
-  position: relative;
-  height: 35px;
-  width: 115px;
-  background: #14a2d2;
-  color: #ffffff;
-  border: 1px solid white;
-  padding-left: 20px;
-  padding-right: 20px;
-  border-radius: 8px;
-}
-
-.dateButtonMode:hover {
-  height: 35px;
-  background: #14a2d2;
-  border: 3px solid white;
-}
-
-.orientationToggleButton {
-  font-family: roboto condensed, sans-serif;
-  position: relative;
-  height: 35px;
-  width: 115px;
-  background: #14a2d2;
-  color: #ffffff;
-  border: 1px solid white;
-  padding-left: 20px;
-  padding-right: 20px;
-  border-radius: 8px;
-}
-
-.orientationToggleButton:hover {
-  height: 35px;
-  background: #14a2d2;
-  border: 3px solid white;
-}
-
-.mainGridContainer {
-  width: 85%;
-  margin: 20px auto;
-  display: flex;
-  flex-direction: column; // Stack items vertically
-  gap: 20px; // Optional: adds spacing between the grid and FourWeekGrid
-}
-
-/* Universal Component Wrapper Mixin */
-@mixin component-wrapper {
-  width: 100%;
-  background-color: vars.$background-dark;
-  outline: 8px solid vars.$background-dark;
-  border: 3px solid vars.$background-light;
-  border-radius: vars.$border-radius;
-  overflow: hidden;
-}
-
-/* --- Layout Sections Styling --- */
-.gridWrapper {
-  // Top: Schedule + Opponent (Desktop)
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-  width: 100%;
-  @media (min-width: vars.$breakpoint-desktop) {
-    flex-direction: row;
-    gap: 25px;
-    // Ensure items stretch vertically by default (align-items: stretch;)
-    // This makes both children as tall as the tallest one (schedule grid)
-  }
-}
-
-.scheduleGridContainer {
-  @include component-wrapper;
-  width: 100%; // Takes full width when stacked
-  @media (min-width: vars.$breakpoint-desktop) {
-    width: 70%; // Desktop width split
-  }
-  // Schedule grid height will be determined by its content
-}
-
-.opponentStatsContainer {
-  @include component-wrapper;
-  width: 100%; // Takes full width when stacked
-  @media (min-width: vars.$breakpoint-desktop) {
-    width: 30%; // Desktop width split
-    display: flex; // **NEW: Make this container a flex column**
-    flex-direction: column; // **NEW: Stack title and table vertically**
-    // Flexbox with align-items: stretch on parent (.gridWrapper)
-    // will make this container match the height of scheduleGridContainer.
-    // Now we need to make the content *inside* this container use that height.
-  }
-}
-
-.scheduleGrid {
-  width: 100%;
-  color: white;
-  overflow: hidden;
-  border: 4px solid #404040;
-  border-radius: 12px;
-  outline: 10px solid #101010;
-  border-spacing: 0px;
-  font-size: 14px;
-  text-align: left;
-}
-
-.scheduleGrid th {
-  flex: content;
-  align-content: center;
-  border-spacing: 0px;
-  background-color: #101010;
-  color: white;
-  font-weight: 900;
-  font-family: roboto condensed, sans-serif;
-  font-size: 14px;
-  height: 15px;
-}
-
-.scheduleGrid tr th:first-child,
-.scheduleGrid tr td:first-child {
-  height: 12px;
-  border-collapse: collapse;
-  border-right: 5px solid #1d88ac;
-  text-align: left;
-  padding: 10px;
-  font-size: 16px;
-  font-family: roboto condensed, sans-serif;
-}
-
-.scheduleGrid tr th:first-child {
-  border-collapse: collapse;
-  background: #000;
-  text-align: left;
-  font-family: roboto condensed, sans-serif;
-  font-size: 14px;
-  height: 60px;
-}
-
-.scheduleGrid th:nth-child(n + 2),
-.scheduleGrid td:nth-child(n + 2) {
-  padding: 3px 5px;
-  border: 0.5px solid #909090;
-  min-width: 60px;
-  max-width: 100px;
-  max-height: 40px;
-  min-height: 40px;
-  text-align: center;
-}
-
-.scheduleGrid tr td:nth-child(9),
-.scheduleGrid tr td:nth-child(10),
-.scheduleGrid tr td:nth-child(11) {
-  background-color: #101010; /* Set the background color */
-  min-width: 30px;
-  max-width: 100px;
-  max-height: 40px;
-  min-height: 40px;
-}
-
-.scheduleGrid tr td:nth-child(9),
-.scheduleGrid th:nth-child(9) {
-  border-left: 3px solid #fff;
-}
-
-.scheduleGrid tr th:nth-child(9),
-.scheduleGrid tr th:nth-child(10),
-.scheduleGrid tr th:nth-child(11) {
-  padding-bottom: 14px;
-}
-
-.scheduleGrid tr {
-  font-family: roboto condensed, sans-serif;
-  height: 45px;
-  text-align: center;
-  border-radius: 4px;
-}
-
-.scheduleGrid tr:hover {
-  background-color: color.mix(white, #303030, 5%);
-}
-
-.scheduleGrid > tbody > tr:nth-of-type(odd) {
-  background-color: #101010;
-}
-
-.scheduleGrid tr:hover:nth-of-type(odd) {
-  background-color: color.mix(white, #101010, 10%);
-}
-
-.teamRow {
-  .teamName {
-    display: none;
-  }
-
-  .desktopTeamAbbreviation {
-    display: none;
-  }
-
-  & span {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-}
-
-.scoreAndHomeAway {
-  display: flex;
-  flex-direction: column;
-  margin-right: 4px;
-  margin: 0 auto;
-  justify-content: center;
-}
-
-.homeAway {
-  font-family: roboto condensed, sans-serif;
-  font-size: 10px;
-  font-weight: bold;
-  float: left;
-  display: flex;
-  align-content: center;
-  vertical-align: middle;
-}
-
-.score {
-  color: lightblue;
-  font-size: 12px;
-  margin: 0;
-}
-
-.totalGamesPerDayCell {
-  background-color: #000;
-  color: white;
-}
-
-.mobileLogoSize {
-  margin-left: 0px !important;
-}
-
-.greenBorder {
-  background-color: rgb(0, 255, 0, 0.15) !important;
-}
-
-.orangeBorder {
-  background-color: rgb(255, 165, 0, 0.25) !important;
-}
-
-.yellowBorder {
-  background-color: rgb(255, 255, 0, 0.25) !important;
-}
-
-.redBorder {
-  background-color: rgb(255, 0, 0, 0.15) !important;
-}
-
-.greenBorderTGPDR {
-  background-color: rgb(0, 255, 0, 0.15) !important;
-  border: 10px solid rgba(0, 255, 0, 0.1) !important;
-  border-top: 1px solid #505050 !important; /* Ensures consistency */
-  border-bottom: 1px solid #505050 !important;
-  border-right: 1px solid #505050 !important;
-}
-
-.redBorderTGPDR {
-  background-color: rgb(255, 0, 0, 0.15) !important;
-  border: 10px solid rgba(255, 0, 0, 0.1) !important;
-  border-top: 1px solid #505050 !important; /* Ensures consistency */
-  border-bottom: 1px solid #505050 !important;
-  border-right: 1px solid #505050 !important;
-}
-
-.totalGamesPerDayRow > .title::before {
-  content: "GP/Day";
-}
-
-.teamRowGreen {
-  background-color: rgba(0, 255, 0, 0.1) !important;
-}
-.teamRowRed {
-  background-color: rgba(255, 0, 0, 0.1) !important;
-}
-
-.teamRowGreen:hover {
-  background-color: color.mix(white, rgba(0, 255, 0, 0.15), 8%) !important;
-
-  filter: brightness(120%) !important;
-}
-
-.teamRowRed:hover {
-  filter: brightness(110%) !important;
-  background-color: color.mix(white, rgba(255, 0, 0, 0.15), 8%) !important;
-}
-
-/* Green to Yellow (Ranks 32 to 17) 
-   Trying to Rank the weekScore 1-32 and color code */
-.rank-color-1 {
-  background-color: rgba(0, 255, 0, 0.45);
-} /* Green */
-.rank-color-2 {
-  background-color: rgba(16, 255, 0, 0.45);
-}
-.rank-color-3 {
-  background-color: rgba(32, 255, 0, 0.45);
-}
-.rank-color-4 {
-  background-color: rgba(48, 255, 0, 0.45);
-}
-.rank-color-5 {
-  background-color: rgba(64, 255, 0, 0.45);
-}
-.rank-color-6 {
-  background-color: rgba(80, 255, 0, 0.45);
-}
-.rank-color-7 {
-  background-color: rgba(96, 255, 0, 0.45);
-}
-.rank-color-8 {
-  background-color: rgba(112, 255, 0, 0.45);
-}
-.rank-color-9 {
-  background-color: rgba(128, 255, 0, 0.45);
-}
-.rank-color-10 {
-  background-color: rgba(144, 255, 0, 0.45);
-}
-.rank-color-11 {
-  background-color: rgba(160, 255, 0, 0.45);
-}
-.rank-color-12 {
-  background-color: rgba(176, 255, 0, 0.45);
-}
-.rank-color-13 {
-  background-color: rgba(192, 255, 0, 0.45);
-}
-.rank-color-14 {
-  background-color: rgba(208, 255, 0, 0.45);
-}
-.rank-color-15 {
-  background-color: rgba(224, 255, 0, 0.45);
-}
-.rank-color-16 {
-  background-color: rgba(240, 255, 0, 0.45);
-} /* Yellow */
-
-/* Yellow to Red (Ranks 17 to 32) */
-.rank-color-17 {
-  background-color: rgba(255, 240, 0, 0.45);
-}
-.rank-color-18 {
-  background-color: rgba(255, 224, 0, 0.45);
-}
-.rank-color-19 {
-  background-color: rgba(255, 208, 0, 0.45);
-}
-.rank-color-20 {
-  background-color: rgba(255, 192, 0, 0.45);
-}
-.rank-color-21 {
-  background-color: rgba(255, 176, 0, 0.45);
-}
-.rank-color-22 {
-  background-color: rgba(255, 160, 0, 0.45);
-}
-.rank-color-23 {
-  background-color: rgba(255, 144, 0, 0.45);
-}
-.rank-color-24 {
-  background-color: rgba(255, 128, 0, 0.45);
-}
-.rank-color-25 {
-  background-color: rgba(255, 112, 0, 0.45);
-}
-.rank-color-26 {
-  background-color: rgba(255, 96, 0, 0.45);
-}
-.rank-color-27 {
-  background-color: rgba(255, 80, 0, 0.45);
-}
-.rank-color-28 {
-  background-color: rgba(255, 64, 0, 0.45);
-}
-.rank-color-29 {
-  background-color: rgba(255, 48, 0, 0.45);
-}
-.rank-color-30 {
-  background-color: rgba(255, 32, 0, 0.45);
-}
-.rank-color-31 {
-  background-color: rgba(255, 16, 0, 0.45);
-}
-.rank-color-32 {
-  background-color: rgba(255, 0, 0, 0.45);
-} /* Red */
+// Removed duplicate .gameGridHeader rules here
 
 /* MAGGIE <3 */
 
+// --- Lower Grid Layout (Desktop/Base) --- NO CHANGES ---
 .lowerGridHorizontal {
-  // Bottom: FourWeek + BPA (Desktop Horizontal)
   display: flex;
-  flex-direction: column; // Stack vertically on mobile first
+  flex-direction: column;
   gap: 30px;
   width: 100%;
   padding-top: 30px;
-
-  @media (min-width: vars.$breakpoint-desktop) {
+  @media (min-width: v.$breakpoint-desktop) {
+    // Keep desktop layout
     flex-direction: row;
     gap: 25px;
-    align-items: stretch; // ** Make children stretch to tallest height **
+    align-items: stretch;
   }
 }
-
 .fourWeekAndBPAtableContainer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   width: 100%;
   height: 100%;
-
   .fourWeekGridContainerAll {
+    @include v.component-wrapper; // Apply framing
     width: 30%;
+    @media (min-width: v.$breakpoint-desktop) {
+      width: 30%; // Desktop width split
+      display: flex; // ** NEW: Allow child (.container in FourWeekGrid) to fill height **
+    }
   }
 }
 
-.fourWeekGridContainerAll {
-  @include component-wrapper; // Apply framing
-  width: 100%;
-  @media (min-width: vars.$breakpoint-desktop) {
-    width: 50%; // Desktop width split
-    display: flex; // ** NEW: Allow child (.container in FourWeekGrid) to fill height **
-  }
-}
-
-.playerPickupContainer {
-  width: 100%;
-  @media (min-width: vars.$breakpoint-desktop) {
-    width: 100%; // Desktop width split
-    // PlayerPickupTable might need similar flex setup if it also needs to fill height
-  }
-}
+// Removed duplicate .fourWeekGridContainerAll rules here
 
 .bpaAndOppContainer {
+  // NO CHANGES to base style (layout helper)
   width: 100%;
   height: 100%;
 }
 
-@media only screen and (min-width: vars.$screen-large) {
-  .teamRow {
-    .teamName {
-      display: flex; /* Ensure Flexbox is applied on large screens */
-      justify-content: space-between;
-      align-items: center;
-    }
-    .teamAbbreviation {
-      display: none; /* Hide the separate abbreviation if it's redundant */
-    }
-  }
+/* =============================================== */
+/* ========== MOBILE STYLES START HERE ========== */
+/* =============================================== */
 
-  .totalGamesPerDayRow > .title::before {
-    content: "GP/Day";
-  }
-}
+/* --- Styles for Tablet and Below (<= 1023px) --- */
+@media (max-width: #{v.$breakpoint-desktop - 1px}) {
+  // Targeting <= 1023px
 
-@media only screen and (max-width: 1024px) {
   .mainGridContainer {
-    width: 100%;
+    width: 95%; // Adjust width slightly
     margin: 20px auto;
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
-    flex-direction: column;
+    gap: 25px; // Adjust gap
+    flex-direction: column; // Ensure vertical stacking
   }
 
-  .dateButtonPrev {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 20px;
-    padding-right: 20px;
-    border-radius: 6px;
+  // Apply framing to containers
+  .scheduleGridContainer,
+  .opponentStatsContainer,
+  .fourWeekGridContainerAll {
+    outline: none !important; // Remove outline
+    border: none !important; // Remove border
+    border-top-left-radius: 0 !important; // Remove radius
+    border-top-right-radius: 0 !important; // Remove radius
+    width: 100% !important; // Ensure full width when stacked
+    display: block; // Or flex with column direction if internal content needs it
   }
 
-  .dateButtonPrev:hover {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 20px;
-    padding-right: 20px;
-    border-radius: 6px;
-    filter: brightness(120%);
-  }
-
-  .dateButtonNext {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 20px;
-    padding-right: 20px;
-    border-radius: 6px;
-  }
-
-  .dateButtonNext:hover {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-    width: 60px;
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 20px;
-    padding-right: 40px;
-    border-radius: 6px;
-    filter: brightness(120%);
-  }
-
+  // --- Schedule Grid Mobile Adjustments ---
   .scheduleGrid {
-    width: 100%;
-    border: 2px solid #505050;
-    border-radius: 0;
-    overflow-x: scroll;
-  }
+    table-layout: fixed; // Keep fixed layout for mobile consistency
+    width: auto;
+    min-width: 100%;
+    background-color: transparent; // Ensure table itself isn't colored on mobile
+    border-spacing: 0;
+    border-right: 3px solid v.$border-color-secondary;
+    border-left: 3px solid v.$border-color-secondary;
+    border-bottom: 3px solid v.$border-color-secondary;
+    border-radius: 0 0 18px 18px; // Rounded bottom corners
 
-  .scheduleGrid tr {
-    height: 35px;
-  }
-
-  .gameGridTitle {
-    font-size: 1.5em;
-    width: 100%;
-  }
-
-  .actions {
-    width: 100%;
-  }
-
-  .dateButtonMode {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 10px;
-    padding-right: 10px;
-    border-radius: 6px;
-  }
-
-  .orientationToggleButton {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-    background: #07aae2;
-    color: #ffffff;
-    border: 1px solid white;
-    padding-left: 10px;
-    padding-right: 10px;
-    border-radius: 6px;
-  }
-
-  .gridWrapper {
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .fourWeekLabel {
-    display: none;
-  }
-
-  .gameGridHeader {
-    flex: 0 0 100%;
-    max-width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-direction: row;
-
-    .gameGridTitle {
-      font-size: 2em;
-      width: 100%;
+    // *** Nest all th, td, thead, tbody rules for mobile inside here ***
+    th,
+    td {
+      // General thin borders for mobile scroll context
+      border: 0.5px solid v.$border-color-secondary;
+      min-width: auto; // Reset potentially conflicting base styles
+      max-width: none;
+      min-height: auto;
+      max-height: none;
     }
-
-    .prevNextButtons {
-      width: 50%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.75rem;
+    th:first-child,
+    td:first-child {
+      border-left: none;
     }
-  }
+    th:last-child,
+    td:last-child {
+      border-right: none;
+    }
+    thead th {
+      border-top: none;
+    } // Use thead th instead of tr:first-child th
 
-  .totalGamesPerDayRow {
-    border-bottom: 0.5px solid white;
-  }
+    thead {
+      // Ensure thead styles are nested
+      th {
+        // Styles for all mobile header cells
+        position: sticky; // Keep sticky
+        top: 0;
+        background-color: v.$background-medium; // Consistent sticky bg (Overwrites specific intensity colors for simplicity on mobile)
+        z-index: 2;
+        font-size: 12px;
+        padding: 6px 8px;
+        height: auto;
+        width: $mobile-fixed-width; // Keep fixed width logic if needed
+        min-width: $mobile-fixed-width;
+        max-width: $mobile-fixed-width;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid v.$secondary-color; // Consistent border
+        color: v.$text-color-secondary; // Ensure text color is right
 
-  .scheduleGrid th {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-  }
+        &:first-child {
+          // Mobile Sticky First Header specific overrides (keep width, padding etc)
+          background-color: v.$background-medium !important; // Ensure background overrides intensity
+          border-right: 2px solid v.$secondary-color; // Thicker separator
+          text-align: left; // Align left
+          min-width: $mobile-fixed-width;
+          width: $mobile-fixed-width;
+          max-width: $mobile-fixed-width;
+          // Keep other existing mobile :first-child styles
+        }
+      }
+    } // End mobile thead
 
-  .scheduleGrid tr th:first-child,
-  .scheduleGrid tr td:first-child {
-    max-width: 50px !important;
-    min-width: 45px;
-    font-size: 1em;
-    border-right: 3px solid #07aae2;
-  }
+    tbody {
+      // Ensure tbody styles are nested
 
-  .scheduleGrid tr th:nth-child(n + 2),
-  .scheduleGrid td:nth-child(n + 2) {
-    font-family: roboto condensed, sans-serif;
-    padding: 6px 6px;
-    min-width: 30px;
-    max-width: 50px;
-    text-align: center;
-    font-size: 1em;
-  }
+      tr {
+        // Keep alternating backgrounds (already inherited)
+        border-bottom: v.$border-subtle; // Thin row separator
+        &:last-child {
+          border-bottom: none;
+        }
+        &:hover {
+          // Mobile hover effect (can be simpler)
+          background-color: rgba(v.$primary-color, 0.1);
+        }
+      }
 
-  .scheduleGrid tr th:nth-child(9),
-  .scheduleGrid tr th:nth-child(10),
-  .scheduleGrid tr td:nth-child(9),
-  .scheduleGrid tr td:nth-child(10) {
-    border-right: 1px solid white;
-    border-bottom: 1px solid white;
-  }
+      td {
+        // Styles for all mobile body cells
+        padding: 6px 5px;
+        font-size: 13px;
+        height: auto;
+        vertical-align: middle; // Ensure alignment
+        // Inherits thin border-right from th,td rule above
+        // Inherits alternating background from tr
+      }
 
-  .scheduleGrid tr th:nth-child(9),
-  .scheduleGrid tr th:nth-child(10),
-  .scheduleGrid tr th:nth-child(11) {
-    font-family: roboto condensed, sans-serif;
-    padding: 2px 2px;
-    min-width: 30px;
-    max-width: 35px;
-    text-align: center;
-    font-size: 1em;
-    padding-bottom: 8px;
-  }
+      // Sticky First Column Mobile
+      td:first-child {
+        // Nest under tbody
+        position: sticky; // Keep sticky
+        left: 0;
+        background-color: inherit; // Inherit from tr
+        z-index: 1;
+        border-right: 2px solid v.$secondary-color; // Thicker separator
+        font-size: 14px;
+        padding: 0px 5px;
+        min-width: $mobile-fixed-width;
+        width: $mobile-fixed-width;
+        max-width: $mobile-fixed-width;
 
-  .blurredImage {
-    filter: blur(4px); // Adjust the blur amount as needed
-  }
+        text-align: center; // Center align mobile team logo/abbr
+        border-left: 4px solid transparent; // Keep highlight placeholder
+      }
 
-  .scoreAndHomeAway {
+      // Keep specific mobile column overrides (like :nth-child(9))
+      td:nth-child(9),
+      th:nth-child(9) {
+        // Nest under .scheduleGrid
+        border-left: 2px solid v.$border-color-primary; // Adjust separator
+      }
+
+      th:nth-child(9),
+      td:nth-child(9),
+      th:nth-child(10),
+      td:nth-child(10),
+      th:nth-child(11),
+      td:nth-child(11) {
+        width: $mobile-column-short; // Keep fixed width logic if needed
+        min-width: $mobile-column-short; // Keep fixed width logic if needed
+        max-width: $mobile-column-short; // Keep fixed width logic if needed
+        border: 0.5px solid #86868690;
+      }
+    } // End mobile tbody
+
+    // Total Row mobile adjustments
+    .totalGamesPerDayRow {
+      // Nest under .scheduleGrid
+      background-color: v.$background-medium; // Consistent background
+      position: static; // Don't make totals row sticky on mobile scroll? Optional.
+      bottom: auto;
+      z-index: auto;
+
+      td {
+        // Nest under .totalGamesPerDayRow
+        padding: 6px 5px; // Match mobile cell padding
+        vertical-align: middle;
+        border-top: v.$border-separator;
+        // Apply intensity colors
+        &[data-intensity="low"] {
+          background-color: rgba(255, 0, 0, 0.2);
+        }
+        &[data-intensity="medium-low"] {
+          background-color: rgba(255, 165, 0, 0.2);
+        }
+        &[data-intensity="medium-high"] {
+          background-color: rgba(255, 255, 0, 0.2);
+        }
+        &[data-intensity="high"] {
+          background-color: rgba(0, 128, 0, 0.2);
+        }
+      }
+      td.title {
+        // Nest under .totalGamesPerDayRow
+        position: sticky; // Make title cell sticky
+        left: 0;
+        z-index: 1; // Above other total cells
+        background-color: v.$background-medium !important; // Override intensity
+        padding-left: 0; // Adjust padding
+      }
+    }
+  } // End mobile .scheduleGrid adjustments
+
+  // Hide desktop-only elements if necessary (though handled by display:none in base for mobile elements)
+  .teamRow .desktopTeamAbbreviation {
     display: none;
   }
 
-  .homeAway {
-    display: none;
-  }
-
-  .hideOnMobile {
-    display: none;
-  }
-
-  /* MAGGIE <3 */
-
+  // Show mobile-only elements
+  .teamRow .mobileTeamLogo {
+    display: inline-flex;
+  } // Or flex if needed
   .mobileLogoSize {
-    padding: 0px 2.5px !important;
-  }
+    display: inline-block;
+  } // Show this class container
+} // End @media (max-width: #{v.$breakpoint-desktop - 1px})
 
-  .mobileFontStyle {
-    font-family: "Roboto Condensed", sans-serif !important;
-    font-size: 1em !important;
-    margin-bottom: 7px !important;
-  }
-
-  .score {
-    display: none;
-  }
-
-  .totalGamesPerDayCell {
-    background-color: #000;
-    color: white;
-  }
-
-  .totalGamesPerDayRow > .title::before {
-    content: "GP/Day";
-  }
-
-  .teamRow {
-    .teamName {
-      display: none;
-    }
-  }
-
-  .fourWeekLabel {
-    display: none;
-  }
-
-  .fourWeekTitle {
-    display: none;
-  }
-}
-
-@media only screen and (min-width: vars.$screen-medium) and (max-width: vars.$screen-large) {
+@media only screen and (min-width: v.$screen-medium) and (max-width: v.$screen-large) {
   .teamRow {
     .teamName {
       display: flex;
@@ -869,10 +1039,6 @@ $mobile-fixed-width: 35px;
     .teamAbbreviation {
       display: none;
     }
-  }
-
-  .totalGamesPerDayRow > .title::before {
-    content: "GP/Day";
   }
 }
 
@@ -886,41 +1052,192 @@ $mobile-fixed-width: 35px;
     justify-content: space-between;
     gap: 20px;
     flex-direction: column;
-    border-spacing: 0px;
+    border-spacing: 0;
   }
+
+  .navAndGrid {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 30px;
+    border-radius: 12px;
+    outline: 10px solid v.$background-dark;
+  }
+
+  // Optional: Container for scrolling
 
   .scheduleGrid {
+    // Nest 480px overrides
     width: 100%;
-    border-left: 2px solid #50505074;
-    border-right: 2px solid #86868674;
-    border-bottom: 2px solid #50505074;
     border-top: none;
-    border-spacing: 0px;
+    border-spacing: 0;
+    // Keep other 480px specific styles
+    table-layout: fixed;
 
-    border-radius: 0 0 4px 4px;
-    overflow-x: scroll;
-    border-collapse: separate;
-    overflow: visible; // Ensure vertical overflow is visible
-
-    & thead th {
-      font-size: 8px !important;
-      font-family: roboto condensed, sans-serif;
-      position: relative;
-      padding: 0;
-      position: sticky;
-      top: 0;
-      z-index: 2; // Ensure they appear above other cells
-      background-color: #101010; // Match your header background
+    tbody {
+      // Target the last row within the tbody
+      tr:last-child {
+        // KEEP the radius on the TD elements as requested
+        td:first-child {
+          border-bottom-left-radius: 12px;
+        }
+        td:last-child {
+          border-bottom-right-radius: 12px;
+        }
+        td {
+          background-color: v.$background-light; // Reinforce the background
+        }
+      }
     }
-  }
 
-  .scheduleGrid tr {
-    height: 35px;
-  }
+    th,
+    td {
+      padding: 2px; // Example general padding
+      border: 1px solid #3f3f3f90; // Example general border
+      font-family: v.$font-family-primary;
+      text-align: center;
+      font-size: 12px;
+    }
 
+    thead {
+      // Nest 480px thead overrides
+      th {
+        // Nest 480px th overrides
+        font-size: 8px !important;
+        font-family: roboto condensed, sans-serif;
+        position: sticky;
+        top: 0;
+        padding: 0;
+        z-index: 2;
+        background-color: v.$background-medium; // Consistent background
+        color: v.$text-color-secondary; // Consistent color
+        border-bottom: v.$border-separator; // Consistent border
+        border-right: v.$border-subtle;
+        &:last-child {
+          border-right: none;
+        }
+      }
+      th:first-child {
+        // 480px sticky first header
+        background-color: v.$background-medium !important; // Override intensity
+        border-right: 2px solid v.$secondary-color; // Use variable if possible, fallback blue
+      }
+    } // End 480px thead
+
+    tr {
+      height: 40px;
+    } // Nest 480px tr override
+
+    // Nest 480px specific td/th overrides
+    th:first-child,
+    td:first-child {
+      min-width: $mobile-fixed-width;
+      max-width: $mobile-fixed-width;
+      font-size: 10px;
+      font-weight: 900;
+      font-family: v.$font-family-primary;
+      text-transform: uppercase;
+      border-right: 2px solid #07aae2; // Keep specific 480px border color if desired
+      padding: 0;
+      text-align: center;
+      background-color: inherit; // Ensure sticky inherits background
+    }
+
+    th:nth-child(n + 2),
+    td:nth-child(n + 2) {
+      font-family: v.$font-family-primary;
+      min-width: $mobile-fixed-width;
+      max-width: $mobile-fixed-width;
+      text-align: center;
+      font-size: 12px;
+      padding: 2px 0 2px 0;
+      border: 1px solid #3f3f3f90; // Keep specific 480px border color if desired
+    }
+
+    // Keep very specific 480px nth-child border rules nested
+    th:nth-child(9),
+    th:nth-child(10),
+    td:nth-child(9),
+    td:nth-child(10) {
+      border: 0.5px solid #86868690;
+      font-size: 12px;
+    }
+    th:nth-child(11),
+    td:nth-child(11) {
+      border-left: 0.5px solid #86868690;
+      border-bottom: 0.5px solid #86868690;
+      border-top: 0.5px solid #86868690;
+      border-right: none;
+      width: $mobile-column-short;
+      min-width: $mobile-column-short;
+      max-width: $mobile-column-short;
+    }
+    th:nth-child(9),
+    th:nth-child(10) {
+      font-family: v.$font-family-primary;
+      padding: 2px 2px;
+      min-width: $mobile-column-short;
+      max-width: $mobile-column-short;
+      text-align: center;
+      font-size: 8px;
+      padding-bottom: 8px;
+      border: 0.5px solid #86868690;
+      border-top: none;
+    }
+    th:nth-child(11) {
+      font-family: v.$font-family-primary;
+      padding: 2px 2px;
+      min-width: $mobile-column-short;
+      max-width: $mobile-column-short;
+      text-align: center;
+      font-size: 8px;
+      padding-bottom: 8px;
+      border-left: 0.5px solid #86868690;
+      border-bottom: 0.5px solid #86868690;
+      border-top: none;
+      border-right: none;
+    }
+    // Total Row 480px adjustments
+    .totalGamesPerDayRow {
+      // Nest under .scheduleGrid
+      td {
+        // Nest under .totalGamesPerDayRow
+        // Apply intensity colors
+        &[data-intensity="low"] {
+          background-color: rgba(255, 0, 0, 0.2);
+        }
+        &[data-intensity="medium-low"] {
+          background-color: rgba(255, 165, 0, 0.2);
+        }
+        &[data-intensity="medium-high"] {
+          background-color: rgba(255, 255, 0, 0.2);
+        }
+        &[data-intensity="high"] {
+          background-color: rgba(0, 128, 0, 0.2);
+        }
+      }
+      td.title {
+        // Nest under .totalGamesPerDayRow
+        background-color: v.$background-medium !important; // Override intensity
+      }
+      // Specific title content override is fine
+    }
+  } // End .scheduleGrid 480px overrides
+
+  // Keep other 480px class-based overrides
   .gameGridTitle {
-    font-size: 1.5em;
+    font-size: 1.8em;
+    font-family: v.$font-family-primary;
+    font-weight: 100;
     width: 100%;
+    text-transform: uppercase;
+    padding: 0;
+    margin-bottom: 15px;
+
+    .spanColorBlue {
+      font-family: v.$font-family-primary;
+      font-weight: 100;
+    }
   }
 
   .actions {
@@ -929,328 +1246,101 @@ $mobile-fixed-width: 35px;
     justify-content: space-between;
     align-items: center;
   }
-
   .gridWrapper {
     width: 100%;
     max-width: 100%;
   }
-
   .fourWeekLabel {
     display: none;
   }
-
   .gameGridHeaderContent {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
   }
-
-  .gameGridHeader {
-    flex: 0 0 100%;
-    max-width: 100%;
-    display: flex;
-    align-items: center;
-    flex-direction: column;
-
-    .gameGridTitle {
-      font-size: 2em;
-      width: 100%;
-    }
-
-    .prevNextButtons {
-      flex: 0 0 100%;
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 20px 0px 0px 0px;
-      gap: 0rem;
-      border-bottom: 3px solid #f6fdff;
-
-      // Reorder the buttons only on mobile with specific widths
-      .dateButtonPrev {
-        order: 1;
-        width: 10%;
-        text-indent: -9999px; // hide original text
-        position: relative;
-        background-color: #07abe2d7;
-        border-radius: 6px 0 0 0;
-        border-left: 2px solid #fff;
-        border-top: 2px solid #fff;
-        border-right: 2px solid #fff;
-        border-bottom: none;
-        padding: 0;
-      }
-
-      .dateButtonMode {
-        order: 2;
-        width: 40%;
-        margin: 0;
-        background-color: #07abe2d7;
-        border-radius: 0;
-        border-top: 2px solid #fff;
-        border-right: 1px solid #fff;
-        border-left: none;
-        border-bottom: none;
-      }
-
-      .orientationToggleButton {
-        order: 3;
-        width: 40%;
-        margin: 0;
-        border-radius: 0;
-        background-color: #07abe2d7;
-        border-top: 2px solid #fff;
-        border-right: none;
-        border-left: 1px solid #fff;
-        border-bottom: none;
-      }
-
-      .dateButtonNext {
-        order: 4;
-        width: 10%;
-        text-indent: -9999px;
-        position: relative;
-        border-radius: 0 6px 0 0;
-        background-color: #07abe2d7;
-        border-left: 2px solid #fff;
-        border-top: 2px solid #fff;
-        border-right: 2px solid #fff;
-        border-bottom: none;
-      }
-      // Replace the text for Prev and Next buttons via pseudo-elements
-      .dateButtonPrev::after {
-        content: "<";
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        text-indent: 0;
-        color: white;
-        font-size: 1.2em;
-      }
-      .dateButtonNext::after {
-        content: ">";
-        position: absolute;
-        left: 50%;
-        transform: translateX(-50%);
-        text-indent: 0;
-        color: white;
-        font-size: 1.2em;
-      }
-
-      .dateButtonPrev:hover {
-        order: 1;
-        width: 10%;
-        text-indent: -9999px; // hide original text
-        position: relative;
-        background-color: #1883a7;
-
-        padding: 0;
-
-        filter: brightness(110%);
-      }
-
-      .dateButtonNext:hover {
-        order: 4;
-        width: 10%;
-        text-indent: -9999px; // hide original text
-        position: relative;
-        background-color: #1883a7;
-        border-bottom: none;
-        padding: 0;
-        filter: brightness(110%);
-      }
-    }
-  }
-
-  .scheduleGrid tr th:first-child,
-  .scheduleGrid tr td:first-child {
-    min-width: $mobile-fixed-width;
-    max-width: $mobile-fixed-width;
-    font-size: 10px;
-    font-weight: 900;
-    font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
-    text-transform: uppercase;
-    border-right: 2px solid #07aae2;
-    padding: 0;
-    text-align: center;
-  }
-
-  .scheduleGrid tr th:nth-child(n + 2),
-  .scheduleGrid td:nth-child(n + 2) {
-    font-family: roboto condensed, sans-serif;
-    min-width: $mobile-fixed-width;
-    max-width: $mobile-fixed-width;
-    text-align: center;
-    font-size: 12px;
-    padding: 2px 0 2px 0;
-    border: 1px solid #3f3f3f90;
-  }
-
-  .scheduleGrid tr th:nth-child(9),
-  .scheduleGrid tr th:nth-child(10),
-  .scheduleGrid tr td:nth-child(9),
-  .scheduleGrid tr td:nth-child(10) {
-    border: 0.5px solid #86868690;
-    font-size: 12px;
-  }
-
-  .scheduleGrid tr th:nth-child(11),
-  .scheduleGrid tr td:nth-child(11) {
-    border-left: 0.5px solid #86868690;
-    border-bottom: 0.5px solid #86868690;
-    border-top: 0.5px solid #86868690;
-    border-right: none;
-  }
-
-  .scheduleGrid tr th:nth-child(9),
-  .scheduleGrid tr th:nth-child(10) {
-    font-family: roboto condensed, sans-serif;
-    padding: 2px 2px;
-    min-width: $mobile-fixed-width;
-    max-width: $mobile-fixed-width;
-    text-align: center;
-    font-size: 8px;
-    padding-bottom: 8px;
-    border: 0.5px solid #86868690;
-    border-top: none;
-  }
-
-  .scheduleGrid tr th:nth-child(11) {
-    font-family: roboto condensed, sans-serif;
-    padding: 2px 2px;
-    min-width: $mobile-fixed-width;
-    max-width: $mobile-fixed-width;
-    text-align: center;
-    font-size: 8px;
-    padding-bottom: 8px;
-    border-left: 0.5px solid #86868690;
-    border-bottom: 0.5px solid #86868690;
-    border-top: none;
-    border-right: none;
-  }
-
+  // Removed duplicate .gameGridHeader rules here
   .blurredImage {
-    filter: blur(4px); // Adjust the blur amount as needed
+    filter: blur(4px);
   }
-
   .scoreAndHomeAway {
     display: none;
   }
-
   .homeAway {
     display: none;
   }
-
   .hideOnMobile {
     display: none;
   }
-
-  /* MAGGIE <3 */
-
-  .redInnerBorder {
-    border: 3px solid rgba(255, 0, 0, 0.2) !important;
-    border-top: 1px solid #505050 !important; /* Ensures consistency */
-    border-bottom: 1px solid #505050 !important;
-  }
-
-  .greenInnerBorder {
-    border: 3px solid rgba(0, 255, 0, 0.2) !important;
-    border-top: 1px solid #505050 !important;
-    border-bottom: 1px solid #505050 !important;
-  }
-
-  .greenBorderTGPDR {
-    background-color: rgb(0, 255, 0, 0.15) !important;
-    border: 3px solid rgba(0, 255, 0, 0.1) !important;
-    border-top: 1px solid #505050 !important; /* Ensures consistency */
-    border-bottom: 1px solid #505050 !important;
-  }
-
-  .redBorderTGPDR {
-    background-color: rgb(255, 0, 0, 0.15) !important;
-    border: 3px solid rgba(255, 0, 0, 0.1) !important;
-    border-top: 1px solid #505050 !important; /* Ensures consistency */
-    border-bottom: 1px solid #505050 !important;
-  }
-
   .mobileLogoSize {
     padding: 1px !important;
   }
-
   .mobileTeamLogo {
     padding: 0px !important;
   }
-
   .mobileFontStyle {
-    font-family: "Roboto Condensed", sans-serif !important;
+    font-family: v.$font-family-primary;
     font-size: 8px !important;
     margin-bottom: 7px !important;
   }
-
   .score {
     display: none;
   }
-
   .totalGamesPerDayCell {
     background-color: #000;
     color: white;
-  }
-
-  .totalGamesPerDayRow > .title::before {
-    content: "GP";
-  }
-
+  } // Keep specific 480px cell override
   .teamRow {
-    .teamName {
-      display: none;
-    }
-
-    .desktopTeamAbbreviation {
-      display: none;
-    }
-
-    & span {
+    /* Keep nested span rules */
+    span {
       display: flex;
       justify-content: center;
       align-items: center;
-      filter: drop-shadow(0 0 2px rgba(201, 199, 199, 0.3));
+    }
+    .teamName,
+    .desktopTeamAbbreviation {
+      display: none;
     }
   }
-
   .fourWeekLabelVertical {
     display: none;
   }
-
   .fourWeekTitleVertical {
     display: none;
   }
-}
+} // End @media (max-width: 480px)
 
 @media (max-width: 360px) {
-  .scheduleGrid tr th:nth-child(n + 2),
-  .scheduleGrid td :nth-child(n + 2) {
-    font-size: 8px;
-    min-width: 25px;
-    max-width: 25 px;
-  }
+  .scheduleGrid {
+    // Nest 360px overrides
+    tr {
+      // Nest 360px tr overrides
+      th:nth-child(n + 2),
+      td:nth-child(n + 2) {
+        // Nest 360px nth-child overrides
+        font-size: 8px;
+        min-width: 25px;
+        max-width: 25px; // Corrected typo
+      }
 
-  .scheduleGrid tr th:first-child,
-  .scheduleGrid tr td:first-child {
-    max-width: 40px !important;
-    min-width: 30px;
-    font-size: 10px;
-    border-right: 3px solid #07aae2;
-    padding: 4px;
-    font-size: 0.5em;
-  }
+      th:first-child,
+      td:first-child {
+        // Nest 360px first-child overrides
+        max-width: 40px !important;
+        min-width: 30px;
+        font-size: 10px; // Initial size
+        border-right: 3px solid #07aae2; // Keep specific border
+        padding: 4px;
+        font-size: 0.5em; // Override size
+      }
+    } // End 360px tr overrides
+  } // End .scheduleGrid 360px overrides
 
   .gameGridTitle {
     font-size: 1em !important;
     width: 100%;
-  }
-}
+  } // Class override is fine
+} // End @media (max-width: 360px)
 
 .mobileContainer {
   display: flex;
@@ -1260,9 +1350,11 @@ $mobile-fixed-width: 35px;
   margin: 0 auto;
 }
 
-@media screen and (orientation: landscape) /* LANDSCAPE */ and (min-device-width: 479px) and (max-device-width: 932px) {
+@media screen and (orientation: landscape) and (min-device-width: 479px) and (max-device-width: 932px) {
+  // Keep button styles
   .dateButtonPrev {
-    font-family: roboto condensed, sans-serif;
+    content: "PREV";
+    font-family: v.$font-family-primary;
     position: relative;
     height: 30px;
     width: 90px;
@@ -1273,9 +1365,9 @@ $mobile-fixed-width: 35px;
     padding-right: 20px;
     border-radius: 6px;
   }
-
   .dateButtonPrev:hover {
-    font-family: roboto condensed, sans-serif;
+    content: "PREV";
+    font-family: v.$font-family-primary;
     position: relative;
     height: 30px;
     width: 90px;
@@ -1287,9 +1379,9 @@ $mobile-fixed-width: 35px;
     border-radius: 6px;
     filter: brightness(120%);
   }
-
   .dateButtonNext {
-    font-family: roboto condensed, sans-serif;
+    content: "NEXT";
+    font-family: v.$font-family-primary;
     position: relative;
     height: 30px;
     width: 90px;
@@ -1300,9 +1392,9 @@ $mobile-fixed-width: 35px;
     padding-right: 20px;
     border-radius: 6px;
   }
-
   .dateButtonNext:hover {
-    font-family: roboto condensed, sans-serif;
+    content: "NEXT";
+    font-family: v.$font-family-primary;
     position: relative;
     height: 30px;
     width: 90px;
@@ -1316,103 +1408,120 @@ $mobile-fixed-width: 35px;
   }
 
   .scheduleGrid {
+    // Nest landscape overrides
     width: 100% !important;
-    border: 2px solid white;
+    // Keep specific landscape border override if desired
+    // border: 2px solid white;
     border-radius: 0;
-    overflow-x: scroll;
-  }
 
-  .scheduleGrid tr {
-    height: 50px;
-  }
+    tr {
+      height: 40px;
+    } // Nest tr override
 
+    th:first-child,
+    td:first-child {
+      // Nest :first-child override
+      max-width: 90px;
+      min-width: 40px;
+      font-size: 14px;
+      margin: auto;
+      border-right: 3px solid #07aae2; // Keep specific border
+    }
+
+    th:nth-child(n + 2),
+    td:nth-child(n + 2) {
+      // Nest :nth-child override
+      font-family: v.$font-family-primary;
+      padding: 2px 2px;
+      min-width: 30px;
+      max-width: 100px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 100;
+    }
+
+    th:nth-child(9),
+    th:nth-child(10),
+    td:nth-child(9),
+    td:nth-child(10) {
+      // Nest :nth-child override
+      border-right: 1px solid white;
+      border-bottom: 1px solid white;
+      min-width: $mobile-fixed-width;
+      max-width: $mobile-fixed-width;
+      width: $mobile-fixed-width;
+    }
+    // Total Row landscape adjustments
+    .totalGamesPerDayRow {
+      // Nest under .scheduleGrid
+      border-bottom: 0.5px solid white; // Fine targeting class
+      td {
+        // Nest under .totalGamesPerDayRow
+        // Apply intensity colors if needed for landscape
+        &[data-intensity="low"] {
+          background-color: rgba(255, 0, 0, 0.2);
+        }
+        &[data-intensity="medium-low"] {
+          background-color: rgba(255, 165, 0, 0.2);
+        }
+        &[data-intensity="medium-high"] {
+          background-color: rgba(255, 255, 0, 0.2);
+        }
+        &[data-intensity="high"] {
+          background-color: rgba(0, 128, 0, 0.2);
+        }
+      }
+      td.title {
+        // Nest under .totalGamesPerDayRow
+        background-color: v.$background-medium !important; // Override intensity
+      }
+    }
+  } // End .scheduleGrid landscape overrides
+
+  // Keep class-based overrides
   .gridWrapper {
     width: 100%;
     margin-top: 20px;
   }
-
-  .totalGamesPerDayRow {
-    border-bottom: 0.5px solid white;
-  }
-
-  .scheduleGrid tr th:first-child,
-  .scheduleGrid tr td:first-child {
-    max-width: 90px;
-    min-width: 40px;
-    font-size: 14px;
-    margin: auto;
-    border-right: 3px solid #07aae2;
-  }
-
-  .scheduleGrid tr th:nth-child(n + 2),
-  .scheduleGrid td:nth-child(n + 2) {
-    font-family: roboto condensed, sans-serif;
-    padding: 2px 2px;
-    min-width: 30px;
-    max-width: 100px;
-    text-align: center;
-    font-size: 14px;
-    font-weight: 100;
-  }
-
-  .scheduleGrid tr th:nth-child(9),
-  .scheduleGrid tr th:nth-child(10),
-  .scheduleGrid tr td:nth-child(9),
-  .scheduleGrid tr td:nth-child(10) {
-    border-right: 1px solid white;
-    border-bottom: 1px solid white;
-  }
-
   .scoreAndHomeAway {
     display: block;
     margin: auto;
     padding: 1px !important;
   }
-
   .homeAway {
     display: block;
     font-size: 10px;
   }
-
   .hideOnMobile {
     display: block;
   }
-
-  /* MAGGIE <3 */
-
   .mobileLogoSize {
     padding: 1px !important;
   }
-
   .mobileFontStyle {
-    font-family: "Roboto Condensed", sans-serif !important;
+    font-family: v.$font-family-primary;
     font-size: 12px !important;
   }
-
   .score {
     display: block;
     font-size: 10px;
   }
-
   .totalGamesPerDayCell {
     background-color: #000;
     color: white;
-  }
-
-  .totalGamesPerDayRow > .title::before {
-    content: "GP/Day";
-  }
-
+  } // Keep specific landscape cell override
   .teamRow {
     .teamName {
       display: block;
     }
   }
-}
+} // End landscape query
 
 @media (max-width: 320px) {
+  // Keep button styles
   .dateButtonPrev {
-    font-family: roboto condensed, sans-serif;
+    content: "PREV";
+    font-family: v.$font-family-primary;
     position: relative;
     height: 20px;
     width: 60px;
@@ -1423,9 +1532,9 @@ $mobile-fixed-width: 35px;
     padding-right: 20px;
     border-radius: 6px;
   }
-
   .dateButtonPrev:hover {
-    font-family: roboto condensed, sans-serif;
+    content: "PREV";
+    font-family: v.$font-family-primary;
     position: relative;
     height: 20px;
     width: 60px;
@@ -1437,9 +1546,9 @@ $mobile-fixed-width: 35px;
     border-radius: 6px;
     filter: brightness(120%);
   }
-
   .dateButtonNext {
-    font-family: roboto condensed, sans-serif;
+    content: "NEXT";
+    font-family: v.$font-family-primary;
     position: relative;
     height: 20px;
     width: 60px;
@@ -1450,9 +1559,9 @@ $mobile-fixed-width: 35px;
     padding-right: 20px;
     border-radius: 6px;
   }
-
   .dateButtonNext:hover {
-    font-family: roboto condensed, sans-serif;
+    content: "NEXT";
+    font-family: v.$font-family-primary;
     position: relative;
     height: 20px;
     width: 60px;
@@ -1466,104 +1575,116 @@ $mobile-fixed-width: 35px;
   }
 
   .scheduleGrid {
+    // Nest 320px overrides
     width: 100%;
-    border: 2px solid white;
+    // Keep specific 320px border override if desired
+    // border: 2px solid white;
     border-radius: 0;
-    overflow-x: scroll;
-  }
 
-  .scheduleGrid tr {
-    height: 35px;
-  }
+    tr {
+      height: 40px;
+    } // Nest tr override
 
+    th {
+      // Nest th override
+      font-family: v.$font-family-primary;
+      position: relative;
+    }
+
+    th:first-child,
+    td:first-child {
+      // Nest :first-child override
+      text-align: center;
+      max-width: 40px;
+      min-width: 30px;
+      font-size: 10px;
+      border-right: 5px solid #07aae2; // Keep specific border
+      padding-left: 4px !important;
+    }
+
+    th:nth-child(n + 2),
+    td:nth-child(n + 2) {
+      // Nest :nth-child override
+      font-family: v.$font-family-primary;
+      padding: 2px 2px;
+      min-width: 25px;
+      max-width: 40px;
+      text-align: center;
+      font-size: 8px;
+    }
+
+    // Keep specific 320px nth-child border overrides, nested
+    th:nth-child(9),
+    td:nth-child(9) {
+      border-left: 5px solid #07aae2;
+    }
+    th:nth-child(9),
+    th:nth-child(10),
+    td:nth-child(9),
+    td:nth-child(10) {
+      border-right: 1px solid white;
+      border-bottom: 1px solid white;
+    }
+    // Total Row 320px adjustments
+    .totalGamesPerDayRow {
+      // Nest under .scheduleGrid
+      border-bottom: 0.5px solid white; // Fine targeting class
+      td {
+        // Nest under .totalGamesPerDayRow
+        // Apply intensity colors if needed for 320px
+        &[data-intensity="low"] {
+          background-color: rgba(255, 0, 0, 0.2);
+        }
+        &[data-intensity="medium-low"] {
+          background-color: rgba(255, 165, 0, 0.2);
+        }
+        &[data-intensity="medium-high"] {
+          background-color: rgba(255, 255, 0, 0.2);
+        }
+        &[data-intensity="high"] {
+          background-color: rgba(0, 128, 0, 0.2);
+        }
+      }
+      td.title {
+        // Nest under .totalGamesPerDayRow
+        background-color: v.$background-medium !important; // Override intensity
+      }
+    }
+  } // End .scheduleGrid 320px overrides
+
+  // Keep class-based overrides
   .gridWrapper {
     width: 100%;
     margin-top: 20px;
   }
-
-  .totalGamesPerDayRow {
-    border-bottom: 0.5px solid white;
-  }
-
-  .scheduleGrid th {
-    font-family: roboto condensed, sans-serif;
-    position: relative;
-  }
-
-  .scheduleGrid tr th:first-child,
-  .scheduleGrid tr td:first-child {
-    text-align: center;
-    max-width: 40px;
-    min-width: 30px;
-    font-size: 10px;
-    border-right: 5px solid #07aae2;
-    padding-left: 4px !important;
-  }
-
-  .scheduleGrid tr th:nth-child(n + 2),
-  .scheduleGrid td:nth-child(n + 2) {
-    font-family: roboto condensed, sans-serif;
-    padding: 2px 2px;
-    min-width: 25px;
-    max-width: 40px;
-    text-align: center;
-    font-size: 8px;
-  }
-
-  .scheduleGrid tr th:nth-child(9),
-  .scheduleGrid tr td:nth-child(9) {
-    border-left: 5px solid #07aae2;
-  }
-
-  .scheduleGrid tr th:nth-child(9),
-  .scheduleGrid tr th:nth-child(10),
-  .scheduleGrid tr td:nth-child(9),
-  .scheduleGrid tr td:nth-child(10) {
-    border-right: 1px solid white;
-    border-bottom: 1px solid white;
-  }
-
   .scoreAndHomeAway {
     display: none;
   }
-
   .homeAway {
     display: none;
   }
-
   .hideOnMobile {
     display: none;
   }
-
-  /* MAGGIE <3 */
-
   .mobileLogoSize {
     padding: 0px 2.5px !important;
     width: 20px;
     height: 20px !important;
   }
-
   .mobileFontStyle {
-    font-family: "Roboto Condensed", sans-serif !important;
+    font-family: v.$font-family-primary;
     font-size: 7px !important;
   }
-
   .score {
     display: none;
   }
-
   .totalGamesPerDayCell {
     background-color: #000;
     color: white;
-  }
-
-  .totalGamesPerDayRow > .title::before {
-    content: "GP/Day";
-  }
-
+  } // Keep specific 320px cell override
   .teamRow {
     .teamName {
       display: none;
     }
   }
-}
+} // End @media (max-width: 320px)

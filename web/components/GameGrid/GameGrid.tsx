@@ -51,10 +51,23 @@ import useCurrentSeason from "hooks/useCurrentSeason";
 import useTeamSummary from "hooks/useTeamSummary";
 
 import GameGridContext from "./contexts/GameGridContext";
+import { rank } from "d3";
 
 type SortKey = {
   key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
   ascending: boolean;
+};
+
+type TeamRowProps = {
+  teamId: number;
+  totalGamesPlayed: number;
+  totalOffNights: number;
+  weekScore: number;
+  extended: boolean;
+  excludedDays: DAY_ABBREVIATION[];
+  rowHighlightClass?: string;
+  games: number[];
+  rank: number; // Add rank property here
 };
 
 type TeamWeekData = {
@@ -227,9 +240,26 @@ function GameGridInternal({
     return sorted;
   }, [filteredColumns, teams, sortKeys]);
 
+  // Modify this memoization
   const sortedByScoreDesc = useMemo(() => {
-    return [...filteredColumns].sort((a, b) => b.weekScore - a.weekScore);
+    return (
+      [...filteredColumns]
+        .sort((a, b) => b.weekScore - a.weekScore)
+        // Add rank after sorting by score
+        .map((team, index) => ({
+          ...team,
+          rank: index + 1 // Rank 1 is the best score
+        }))
+    );
   }, [filteredColumns]);
+
+  const scoreRankMap = useMemo(() => {
+    const map = new Map<number, number>(); // Map teamId to rank
+    sortedByScoreDesc.forEach((team, index) => {
+      map.set(team.teamId, index + 1);
+    });
+    return map;
+  }, [sortedByScoreDesc]);
 
   // Build sets of top 10 & bottom 10
   const top10TeamIds = useMemo(() => {
@@ -503,16 +533,29 @@ function GameGridInternal({
   const isMobile = useIsMobile();
 
   if (isMobile) {
+    // *** MOBILE VIEW ***
     return (
       <>
-        {/* Header with buttons */}
-        <div className={styles.actions}>
-          <div className={styles.gameGridHeader}>
-            <div className={styles.gameGridHeaderContent}>
-              <h1 className={styles.gameGridTitle}>
-                Game <span className={styles.spanColorBlue}>Grid</span>
-              </h1>
-              <div className={styles.prevNextButtons}>
+        {/* Outer container for the entire mobile game grid section */}
+        <div className={styles.mobileGameGridAll}>
+          {/* Title remains at the top */}
+          <div className={styles.titleRow}>
+            <h1 className={styles.gameGridTitle}>
+              Game <span className={styles.spanColorBlue}>Grid</span>
+            </h1>
+          </div>
+          {/* NEW: This div now ONLY wraps the Nav Buttons and the Schedule Grid */}
+          <div className={styles.navAndGrid}>
+            {/* Mobile Header Actions (Buttons) */}
+            <div className={styles.mobileHeaderActions}>
+              <div className={styles.navButtonRow}>
+                <button
+                  className={styles.dateButtonPrev}
+                  onClick={handleClick("PREV")}
+                  aria-label="Previous Week"
+                >
+                  Previous Week
+                </button>
                 <button
                   className={styles.dateButtonMode}
                   onClick={() =>
@@ -525,109 +568,105 @@ function GameGridInternal({
                 >
                   {MODE_TO_LABEL[mode]}
                 </button>
-
                 <button
                   className={styles.orientationToggleButton}
                   onClick={handleOrientationToggle}
                 >
-                  {orientation === "horizontal"
-                    ? "Vertical View"
-                    : "Horizontal View"}
+                  {orientation === "horizontal" ? "Vertical" : "Horizontal"}
                 </button>
-
-                <button
-                  className={styles.dateButtonPrev}
-                  onClick={handleClick("PREV")}
-                >
-                  Prev
-                </button>
-
                 <button
                   className={styles.dateButtonNext}
                   onClick={handleClick("NEXT")}
+                  aria-label="Next Week"
                 >
-                  Next
-                  {(currentLoading || fourWeekLoading) && (
-                    <Spinner className={styles.spinner} center />
-                  )}
+                  Next Week
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile-specific content container */}
-        <div className={styles.mobileContainer}>
-          {/* GameGrid (schedule grid) section */}
-          <div className={styles.gameGridSection}>
-            <table className={styles.scheduleGrid}>
-              <Header
-                start={dates[0]}
-                end={dates[1]}
-                extended={mode === "10-Day-Forecast"}
-                setSortKeys={setSortKeys}
-                excludedDays={excludedDays}
-                setExcludedDays={setExcludedDays}
-                weekData={teamDataWithAverages}
-              />
-              <tbody>
-                <TotalGamesPerDayRow
-                  games={currentNumGamesPerDay}
-                  excludedDays={excludedDays}
+              {(currentLoading || fourWeekLoading) && (
+                <Spinner className={styles.spinner} center />
+              )}
+            </div>{" "}
+            {/* End mobileHeaderActions */}
+            {/* Schedule Grid section MOVED directly inside navAndGrid */}
+            {/* Note: Removed the wrapping gameGridSection div as it might be redundant here */}
+            <div className={styles.scheduleGridContainer}>
+              <table className={styles.scheduleGrid}>
+                <Header
+                  start={dates[0]}
+                  end={dates[1]}
                   extended={mode === "10-Day-Forecast"}
+                  setSortKeys={setSortKeys}
+                  excludedDays={excludedDays}
+                  setExcludedDays={setExcludedDays}
                   weekData={teamDataWithAverages}
+                  gamesPerDay={currentNumGamesPerDay}
                 />
-                {sortedTeams.map(({ teamId, ...rest }) => {
-                  const highlightClass = top10TeamIds.has(teamId)
-                    ? styles.teamRowGreen
-                    : bottom10TeamIds.has(teamId)
-                    ? styles.teamRowRed
-                    : "";
-                  return (
-                    <TeamRow
-                      key={teamId}
-                      teamId={teamId}
-                      extended={mode === "10-Day-Forecast"}
-                      excludedDays={excludedDays}
-                      rowHighlightClass={highlightClass}
-                      games={currentNumGamesPerDay}
-                      {...rest}
-                    />
-                  );
+                <tbody>
+                  <TotalGamesPerDayRow
+                    games={currentNumGamesPerDay}
+                    excludedDays={excludedDays}
+                    extended={mode === "10-Day-Forecast"}
+                    weekData={teamDataWithAverages}
+                  />
+                  {sortedTeams.map(({ teamId, ...rest }) => {
+                    const highlightClass = top10TeamIds.has(teamId)
+                      ? styles.teamRowGreen
+                      : bottom10TeamIds.has(teamId)
+                      ? styles.teamRowRed
+                      : "";
+                    const rank = scoreRankMap.get(teamId) ?? 16;
+                    return (
+                      <TeamRow
+                        key={teamId}
+                        teamId={teamId}
+                        rank={rank}
+                        extended={mode === "10-Day-Forecast"}
+                        excludedDays={excludedDays}
+                        rowHighlightClass={highlightClass}
+                        games={currentNumGamesPerDay}
+                        {...rest}
+                      />
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>{" "}
+            {/* End scheduleGridContainer */}
+          </div>{" "}
+          {/* End navAndGrid */}
+          {/* Container for the REST of the mobile content, now OUTSIDE navAndGrid */}
+          <div className={styles.mobileContainer}>
+            {/* PlayerPickupTable section */}
+            <div className={styles.playerPickupSection}>
+              <PlayerPickupTable
+                teamWeekData={teamDataWithAverages.map((team) => {
+                  const week1 = team.weeks.find((w) => w.weekNumber === 1);
+                  return {
+                    teamAbbreviation: team.teamAbbreviation,
+                    gamesPlayed: week1
+                      ? week1.gamesPlayed
+                      : team.totals.gamesPlayed,
+                    offNights: week1 ? week1.offNights : team.totals.offNights,
+                    avgOpponentPointPct: team.avgOpponentPointPct
+                  };
                 })}
-              </tbody>
-            </table>
-          </div>
+              />
+            </div>
 
-          {/* PlayerPickupTable section */}
-          <div className={styles.playerPickupSection}>
-            <PlayerPickupTable
-              teamWeekData={teamDataWithAverages.map((team) => {
-                const week1 = team.weeks.find((w) => w.weekNumber === 1);
-                return {
-                  teamAbbreviation: team.teamAbbreviation,
-                  gamesPlayed: week1
-                    ? week1.gamesPlayed
-                    : team.totals.gamesPlayed,
-                  offNights: week1 ? week1.offNights : team.totals.offNights,
-                  avgOpponentPointPct: team.avgOpponentPointPct
-                };
-              })}
-            />
-          </div>
+            {/* OpponentMetricsTable section */}
+            <div className={styles.opponentMetricsSection}>
+              <OpponentMetricsTable teamData={teamDataWithAverages} />
+            </div>
 
-          {/* OpponentMetricsTable section */}
-          <div className={styles.opponentMetricsSection}>
-            <OpponentMetricsTable teamData={teamDataWithAverages} />
-          </div>
-
-          {/* FourWeekGrid section */}
-          <div className={styles.fourWeekSection}>
-            <FourWeekGrid teamDataArray={teamDataWithAverages} />
-          </div>
-        </div>
-
-        {/* Loading and error overlays */}
+            {/* FourWeekGrid section */}
+            <div className={styles.fourWeekSection}>
+              <FourWeekGrid teamDataArray={teamDataWithAverages} />
+            </div>
+          </div>{" "}
+          {/* End mobileContainer */}
+        </div>{" "}
+        {/* End mobileGameGridAll */}
+        {/* Loading and error overlays remain outside */}
         {(summaryLoading || fourWeekLoading) && (
           <div className={styles.overlaySpinner}>
             <Spinner />
@@ -698,44 +737,49 @@ function GameGridInternal({
         // Horizontal layout: schedule grid on top; lower section with FourWeekGrid and PlayerPickupTable side by side
         <div className={styles.mainGridContainer}>
           <div className={styles.gridWrapper}>
-            <table className={styles.scheduleGrid}>
-              <Header
-                start={dates[0]}
-                end={dates[1]}
-                extended={mode === "10-Day-Forecast"}
-                setSortKeys={setSortKeys}
-                excludedDays={excludedDays}
-                setExcludedDays={setExcludedDays}
-                weekData={teamDataWithAverages}
-              />
-              <tbody>
-                <TotalGamesPerDayRow
-                  games={currentNumGamesPerDay}
-                  excludedDays={excludedDays}
+            <div className={styles.scheduleGridContainer}>
+              <table className={styles.scheduleGrid}>
+                <Header
+                  start={dates[0]}
+                  end={dates[1]}
                   extended={mode === "10-Day-Forecast"}
+                  setSortKeys={setSortKeys}
+                  excludedDays={excludedDays}
+                  setExcludedDays={setExcludedDays}
                   weekData={teamDataWithAverages}
+                  gamesPerDay={currentNumGamesPerDay}
                 />
-                {sortedTeams.map(({ teamId, ...rest }) => {
-                  const highlightClass = top10TeamIds.has(teamId)
-                    ? styles.teamRowGreen
-                    : bottom10TeamIds.has(teamId)
-                    ? styles.teamRowRed
-                    : "";
+                <tbody>
+                  <TotalGamesPerDayRow
+                    games={currentNumGamesPerDay}
+                    excludedDays={excludedDays}
+                    extended={mode === "10-Day-Forecast"}
+                    weekData={teamDataWithAverages}
+                  />
+                  {sortedTeams.map(({ teamId, ...rest }) => {
+                    const highlightClass = top10TeamIds.has(teamId)
+                      ? styles.teamRowGreen // Keep these general highlight classes for now
+                      : bottom10TeamIds.has(teamId)
+                      ? styles.teamRowRed
+                      : "";
+                    const rank = scoreRankMap.get(teamId) ?? 16;
 
-                  return (
-                    <TeamRow
-                      key={teamId}
-                      teamId={teamId}
-                      extended={mode === "10-Day-Forecast"}
-                      excludedDays={excludedDays}
-                      rowHighlightClass={highlightClass}
-                      games={currentNumGamesPerDay}
-                      {...rest}
-                    />
-                  );
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <TeamRow
+                        key={teamId}
+                        teamId={teamId}
+                        extended={mode === "10-Day-Forecast"}
+                        excludedDays={excludedDays}
+                        rowHighlightClass={highlightClass}
+                        games={currentNumGamesPerDay}
+                        rank={rank}
+                        {...rest}
+                      />
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
             <div className={styles.opponentStatsContainer}>
               <OpponentMetricsTable teamData={teamDataWithAverages} />
             </div>
