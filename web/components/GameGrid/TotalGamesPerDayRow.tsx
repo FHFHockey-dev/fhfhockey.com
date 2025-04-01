@@ -2,12 +2,21 @@
 
 import { DAYS, DAY_ABBREVIATION, TeamDataWithTotals } from "lib/NHL/types";
 import styles from "./GameGrid.module.scss";
+import clsx from "clsx";
 
 type TotalGamesPerDayRowProps = {
   games: number[];
   excludedDays: DAY_ABBREVIATION[];
   extended: boolean;
   weekData: TeamDataWithTotals[];
+};
+
+// Function to determine intensity based on game count
+const getIntensity = (numGames: number): string => {
+  if (numGames <= 3) return "high"; // Green (Fewest games = highest intensity day for streaming)
+  if (numGames <= 6) return "medium-high"; // Yellow
+  if (numGames <= 9) return "medium-low"; // Orange
+  return "low"; // Red (Most games = lowest intensity day for streaming)
 };
 
 function TotalGamesPerDayRow({
@@ -38,40 +47,38 @@ function TotalGamesPerDayRow({
 
   return (
     <tr className={styles.totalGamesPerDayRow}>
-      {/* show GP on mobile */}
-      <td className={styles.title}>{/* Total Games Per Day */}</td>
-      {games.map((numGames, i) => (
-        <td
-          className={`${styles.totalGamesPerDayCell} ${
-            numGames > 8 ? styles.redBorderTGPDR : styles.greenBorderTGPDR
-          }`}
-          key={i}
-          style={{ position: "relative" }}
-        >
-          {/* gray block */}
-          <div
-            style={
-              !extended && excludedDaysIdx.includes(i)
-                ? {
-                    backgroundColor: "rgb(80, 80, 80, 0.55)",
-                    width: "100%",
-                    height: "100%",
-                    position: "absolute",
-                    left: 0,
-                    top: 0
-                  }
-                : {}
-            }
-          />
-          {numGames}
-        </td>
-      ))}
+      {/* First cell: Title */}
+      <td className={styles.title}>
+        <span className={styles.desktopText}>GP/Day</span>
+        <span className={styles.mobileText}>GP/Day</span>
+      </td>
+
+      {/* Day cells */}
+      {games.map((numGames, i) => {
+        const intensity = getIntensity(numGames);
+        const isExcluded = !extended && excludedDaysIdx.includes(i);
+        return (
+          <td
+            key={i}
+            // *** ADDED: data-intensity attribute ***
+            data-intensity={intensity}
+            // Removed old className logic, relying on data-attribute + SCSS
+          >
+            {/* gray overlay for excluded days */}
+            {isExcluded && <div className={styles.excludedOverlay} />}
+            {numGames}
+          </td>
+        );
+      })}
+
+      {/* Summary columns (only if not extended) */}
       {!extended && (
         <>
           {/* Total GP */}
           <td>{calcTotalGP(games, excludedDays)}</td>
           {/* Total Off-Nights */}
           <td>{calcTotalOffNights(games, excludedDays)}</td>
+          {/* Week Score Placeholder */}
           <td>-</td>
         </>
       )}

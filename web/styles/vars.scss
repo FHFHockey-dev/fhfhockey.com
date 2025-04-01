@@ -2,6 +2,9 @@
 
 /* https://docs.microsoft.com/en-us/windows/apps/design/layout/screen-sizes-and-breakpoints-for-responsive-design */
 
+@use "sass:color";
+@use "sass:math";
+
 $screen-small-max: 640px; /* handset */
 /* Small devices (portrait tablets and large phones, 641px and up) */
 $screen-medium: 641px;
@@ -50,6 +53,19 @@ $transition-easing: ease; // Standard transition easing function
 // Media Query Breakpoints (optional, but good practice)
 $breakpoint-tablet: 768px; // Example tablet breakpoint
 $breakpoint-desktop: 1024px; // Example desktop breakpoint
+
+// Spacing Scale Example (Implement this pattern)
+$space-xs: 4px;
+$space-sm: 8px;
+$space-md: 12px; // Adjusted for potentially tighter grids
+$space-lg: 16px;
+$space-xl: 24px;
+$space-xxl: 32px;
+
+// Border Variables Example
+$border-subtle: 1px solid $border-color-secondary;
+$border-separator: 2px solid $secondary-color; // More prominent separator
+$border-radius-sm: 6px; // Smaller radius for inputs/buttons maybe
 
 // Mixins - Reusable style patterns
 
@@ -101,4 +117,22 @@ $breakpoint-desktop: 1024px; // Example desktop breakpoint
   font-size: $font-size-small;
   text-align: left;
   width: 100%;
+}
+
+@mixin component-wrapper {
+  width: 100%;
+  // Access variables directly as they are defined in this file
+  background-color: $background-dark;
+  outline: 8px solid $background-dark;
+  border: 3px solid $background-light;
+  border-radius: $border-radius;
+  overflow: hidden;
+}
+// Function to get color between green and red based on rank (1=green, 32=red)
+@function get-rank-color($rank, $max-rank: 32, $opacity: 0.45) {
+  // Ensure rank is within bounds for calculation
+  $clamped-rank: math.max(1, math.min($rank, $max-rank));
+  $percentage: ($clamped-rank - 1) / ($max-rank - 1); // 0 for rank 1, 1 for rank 32
+  $hue: (1 - $percentage) * 120; // 120 (green) down to 0 (red)
+  @return rgba(hsl($hue, 100%, 50%), $opacity);
 }

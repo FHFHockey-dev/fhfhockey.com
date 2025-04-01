@@ -15,6 +15,7 @@ import {
 import Tooltip from "./PDHC/Tooltip";
 import PoissonHeatmap from "./PDHC/PoissonHeatMap";
 import styles from "./GameGrid.module.scss";
+import clsx from "clsx";
 
 export type MatchUpCellData = {
   home: boolean;
@@ -65,22 +66,23 @@ type TeamRowProps = {
   weekScore: number;
   extended: boolean;
   excludedDays: DAY_ABBREVIATION[];
-  rowHighlightClass?: string; // existing prop
-  games: number[]; // ✅ Add this new prop
+  rowHighlightClass?: string;
+  games: number[];
+  rank: number;
 } & WeekData;
 
-function getGamesPlayedClass(totalGamesPlayed: number): string {
-  if (totalGamesPlayed <= 1) return styles.redBorder;
-  if (totalGamesPlayed === 2) return styles.orangeBorder;
-  if (totalGamesPlayed === 3) return styles.yellowBorder;
-  return styles.greenBorder;
+function getGamesPlayedIntensity(totalGamesPlayed: number): string {
+  if (totalGamesPlayed <= 1) return "low";
+  if (totalGamesPlayed === 2) return "medium-low";
+  if (totalGamesPlayed === 3) return "medium-high";
+  return "high";
 }
 
-function getOffNightsClass(totalOffNights: number): string {
-  if (totalOffNights === 0) return styles.redBorder;
-  if (totalOffNights === 1) return styles.orangeBorder;
-  if (totalOffNights === 2) return styles.yellowBorder;
-  return styles.greenBorder;
+function getOffNightsIntensity(totalOffNights: number): string {
+  if (totalOffNights === 0) return "low";
+  if (totalOffNights === 1) return "medium-low";
+  if (totalOffNights === 2) return "medium-high";
+  return "high";
 }
 
 function TeamRow(props: TeamRowProps) {
@@ -95,7 +97,7 @@ function TeamRow(props: TeamRowProps) {
   }
 
   return (
-    <tr className={`${styles.teamRow} ${props.rowHighlightClass || ""}`}>
+    <tr className={clsx(styles.teamRow, props.rowHighlightClass)}>
       {/* First column: show abbreviation on desktop, logo on mobile */}
       <td className={styles.firstColumnContent}>
         <span className={styles.desktopTeamAbbreviation}>
@@ -105,8 +107,8 @@ function TeamRow(props: TeamRowProps) {
           <Image
             objectFit="contain"
             alt={`${team.name} logo`}
-            width={30}
-            height={30}
+            width={25}
+            height={25}
             src={team.logo}
             title={team.name}
           />
@@ -114,31 +116,32 @@ function TeamRow(props: TeamRowProps) {
       </td>
       {/* Days */}
       {days.map((day, index) => {
-        if (!DAYS.includes(day as DAY_ABBREVIATION)) return null; // ✅ Ensure valid days only
+        if (!DAYS.includes(day as DAY_ABBREVIATION)) return null;
 
         const matchUp = props[day];
         const hasMatchUp = matchUp !== undefined;
         const excluded = props.excludedDays.includes(day as DAY_ABBREVIATION);
+        const numGamesThatDay = props.games[index] || 0;
+        // Determine cell classes for inner border styling
+        let dayIntensityClass = "";
+        if (hasMatchUp) {
+          if (numGamesThatDay >= 9) {
+            dayIntensityClass = styles["heavy-day"]; // Red border for heavy day matchup
+          } else if (numGamesThatDay <= 8) {
+            dayIntensityClass = styles["off-night-day"]; // Green border for off-night matchup
+          }
+        }
 
-        // Determine if the day is a heavy game day (≥9) or off-night (≤8)
-        const numGamesThatDay = props.games[index] || 0; // ✅ Avoid undefined errors
-        const gameDayClass =
-          numGamesThatDay >= 9
-            ? styles.redInnerBorder
-            : numGamesThatDay <= 8
-            ? styles.greenInnerBorder
-            : "";
+        // Always apply the base class for padding/positioning the pseudo-element
+        const cellClasses = clsx(styles.cellInnerBorder, dayIntensityClass);
 
         return (
-          <td
-            key={day}
-            className={`${gameDayClass}`}
-            style={
-              !props.extended && excluded
-                ? { backgroundColor: "rgb(80, 80, 80, 0.55)" }
-                : {}
-            }
-          >
+          <td key={day} className={cellClasses}>
+            {/* Excluded Day Overlay */}
+            {!props.extended && excluded && (
+              <div className={styles.excludedOverlay}></div>
+            )}
+
             {hasMatchUp ? (
               <MatchUpCell
                 key={day}
@@ -153,18 +156,24 @@ function TeamRow(props: TeamRowProps) {
           </td>
         );
       })}
+
       {!props.extended && (
         <>
-          {/* Total Games Played */}
-          <td className={getGamesPlayedClass(props.totalGamesPlayed)}>
+          {/* Total Games Played - Use data-attribute for styling */}
+          <td data-intensity={getGamesPlayedIntensity(props.totalGamesPlayed)}>
             {props.totalGamesPlayed}
           </td>
-          {/* Total Off-Nights */}
-          <td className={getOffNightsClass(props.totalOffNights)}>
+          {/* Total Off-Nights - Use data-attribute for styling */}
+          <td data-intensity={getOffNightsIntensity(props.totalOffNights)}>
             {props.totalOffNights}
           </td>
-          {/* Week Score */}
-          <td>
+          {/* Week Score - Apply rank color class */}
+          <td
+            className={clsx(
+              styles.weekScoreCell,
+              styles[`rank-color-${props.rank}`]
+            )}
+          >
             {props.weekScore === -100 ? "-" : formatWeekScore(props.weekScore)}
           </td>
         </>
