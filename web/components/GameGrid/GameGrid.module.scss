@@ -337,6 +337,7 @@ $mobile-column-short: 30px;
   font-size: v.$font-size-small;
   text-align: center;
   color: v.$text-color-primary;
+  border-collapse: collapse;
 
   // --- Desktop Specific (Inside Wrapper) ---
   @media (min-width: v.$breakpoint-desktop) {
@@ -369,7 +370,7 @@ $mobile-column-short: 30px;
     color: v.$text-color-secondary;
     text-transform: uppercase;
     letter-spacing: 0.3px;
-    background-color: v.$background-medium;
+    background-color: v.$background-dark;
     position: sticky;
     top: 0;
 
@@ -377,7 +378,7 @@ $mobile-column-short: 30px;
       // Nested under thead
       padding: v.$space-sm v.$space-md;
       vertical-align: middle;
-      border-bottom: v.$border-separator; // 2px secondary
+      border-bottom: 4px solid #c5c2c2; // 2px secondary
       border-right: v.$border-subtle; // 1px secondary
       white-space: normal;
       cursor: default;
@@ -453,7 +454,6 @@ $mobile-column-short: 30px;
       position: sticky;
       left: 0;
       z-index: 4;
-      background-color: v.$background-medium !important; // Override intensity if needed
       min-width: 65px;
       width: 10%;
     }
@@ -464,8 +464,8 @@ $mobile-column-short: 30px;
     // Nested under .scheduleGrid
     tr {
       // Nested under tbody
-      border-bottom: v.$border-subtle;
       transition: background-color v.$transition-duration v.$transition-easing;
+      border-bottom: 1px solid #ffffff23; // 1px separator
 
       &:last-child {
         border-bottom: none;
@@ -492,14 +492,49 @@ $mobile-column-short: 30px;
         );
       }
 
+      &.teamRow td {
+        background-color: inherit; // Reset to allow other styles to show
+        height: 100%;
+      }
+
+      &.teamRowGreen td {
+        background-color: rgba(0, 255, 0, 0.075);
+        height: 100%;
+      }
+
+      &.teamRowRed td {
+        background-color: rgba(255, 0, 0, 0.065);
+        height: 100%;
+      }
+
       // Row Highlights (targeting first td)
       &.teamRowGreen td:first-child {
+        background-color: inherit;
         border-left: 3px solid rgba(0, 255, 0, 0.6);
         border-bottom: 3px solid rgba(0, 255, 0, 0.6);
+        border-bottom-left-radius: 12px;
       }
+
+      &:nth-child(9),
+      &:nth-child(10),
+      &:nth-child(11) {
+        background-color: inherit;
+      }
+
       &.teamRowRed td:first-child {
+        background-color: inherit;
         border-left: 3px solid rgba(255, 0, 0, 0.5);
         border-bottom: 3px solid rgba(255, 0, 0, 0.5);
+        border-bottom-left-radius: 12px;
+      }
+
+      // 9th, 10th, 11th columns
+      &:nth-child(9),
+      &:nth-child(10),
+      &:nth-child(11) {
+        // Reset background to allow other styles (intensity, rank, alternating) to show
+        background-color: inherit;
+        // See comment in .teamRowGreen regarding specificity if needed
       }
     } // End tr
 
@@ -582,7 +617,6 @@ $mobile-column-short: 30px;
       height: 43px;
       background-color: inherit; // Inherits from TR for alternating colors/hover
       min-width: 65px;
-      border-left: 4px solid transparent; // Placeholder for highlight border
     }
   } // End tbody
 
@@ -605,6 +639,7 @@ $mobile-column-short: 30px;
       border-top: v.$border-separator; // 2px separator from body
       position: relative;
       vertical-align: middle;
+      border-bottom: 2px solid v.$primary-color;
 
       &:last-child {
         border-right: none;
@@ -643,7 +678,7 @@ $mobile-column-short: 30px;
       position: sticky;
       left: 0;
       z-index: 6;
-      background-color: v.$background-medium !important; // Override intensity
+      background-color: v.$background-dark !important; // Override intensity
 
       // Text spans (nested are fine)
       .desktopText {
@@ -670,7 +705,7 @@ $mobile-column-short: 30px;
 .firstColumnContent {
   display: flex;
   align-items: center;
-  border-top: 1px solid v.$border-color-primary;
+  justify-content: center;
 
   .desktopTeamAbbreviation {
     display: none;
@@ -681,12 +716,18 @@ $mobile-column-short: 30px;
   }
 
   @media (min-width: v.$breakpoint-desktop) {
+    .firstColumnContent {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     .desktopTeamAbbreviation {
       display: inline-block;
       font-weight: 600;
     }
     .mobileTeamLogo {
-      padding: 2px 6px;
+      height: 100%;
     }
   }
   @media (max-width: 480px) {
@@ -954,7 +995,6 @@ $mobile-column-short: 30px;
         max-width: $mobile-fixed-width;
 
         text-align: center; // Center align mobile team logo/abbr
-        border-left: 4px solid transparent; // Keep highlight placeholder
       }
 
       // Keep specific mobile column overrides (like :nth-child(9))
