@@ -670,6 +670,7 @@ $mobile-column-short: 30px;
 .firstColumnContent {
   display: flex;
   align-items: center;
+  border-top: 1px solid v.$border-color-primary;
 
   .desktopTeamAbbreviation {
     display: none;
