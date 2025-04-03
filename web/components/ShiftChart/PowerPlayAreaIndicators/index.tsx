@@ -81,8 +81,10 @@ function PowerPlayAreaIndicator({
         top: 0,
         height: "125%",
         backgroundColor: color,
-        opacity: 0.4,
-        ...areaStyle
+        opacity: 0.3,
+        ...areaStyle,
+        borderLeft: `3px solid ${darkenedColor}`,
+        borderRight: `3px solid ${darkenedColor}`
       }}
     >
       {/* {color}, {start.timeInPeriod} {end.timeInPeriod} */}

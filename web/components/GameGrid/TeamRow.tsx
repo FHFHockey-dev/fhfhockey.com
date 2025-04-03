@@ -107,8 +107,8 @@ function TeamRow(props: TeamRowProps) {
           <Image
             objectFit="contain"
             alt={`${team.name} logo`}
-            width={25}
-            height={25}
+            width={30}
+            height={30}
             src={team.logo}
             title={team.name}
           />
@@ -234,7 +234,13 @@ function MatchUpCell({ home, homeTeam, awayTeam, gameId }: MatchUpCellProps) {
 
   return (
     <Tooltip content={tooltipContent}>
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
+      <div
+        style={{
+          display: "flex",
+          padding: "4px",
+          justifyContent: "space-between"
+        }}
+      >
         {/* <div className={styles.scoreAndHomeAway}>
           <span className={styles.homeAway}>{text}</span>
           <p className={styles.score}>{stat}</p>

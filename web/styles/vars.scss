@@ -30,7 +30,7 @@ $text-color-primary: white; // Primary text color
 $text-color-secondary: #f0f0f0; // Secondary text color (e.g., table headers)
 $border-color-primary: #404040; // Main border color
 $border-color-secondary: #505050; // Secondary border color
-$focus-color: #ffc107; // Color for focus states (accessibility)
+$focus-color: rgb(255, 193, 8); // Color for focus states (accessibility)
 
 // Typography
 $font-family-primary: "Roboto Condensed", sans-serif; // Main font family
@@ -61,6 +61,7 @@ $space-md: 12px; // Adjusted for potentially tighter grids
 $space-lg: 16px;
 $space-xl: 24px;
 $space-xxl: 32px;
+$space-xxxl: 64px;
 
 // Border Variables Example
 $border-subtle: 1px solid $border-color-secondary;

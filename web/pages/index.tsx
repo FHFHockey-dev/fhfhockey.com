@@ -1,6 +1,4 @@
-///////////////////////////////////////////////////////////////////////////////////////////////
-// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\pages\index.tsx
-
+// /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/index.tsx
 // @ts-nocheck
 import type { NextPage } from "next";
 import Head from "next/head";
@@ -41,7 +39,7 @@ const Home: NextPage = ({
   const injuryRowsPerPage = 32;
 
   const [isOffseason, setIsOffseason] = useState(false);
-  const [nextAvailableGames, setNextAvailableGames] = useState([]); // fetching games if none today
+  const [nextAvailableGames, setNextAvailableGames] = useState([]);
 
   useEffect(() => {
     const checkSeason = async () => {
@@ -166,50 +164,118 @@ const Home: NextPage = ({
   };
 
   const currentPageInjuries = useMemo(() => {
-    // Check if 'injuries' is defined and is an array
-    if (Array.isArray(injuries)) {
-      return injuries.slice(
-        injuryPage * injuryRowsPerPage,
-        (injuryPage + 1) * injuryRowsPerPage
-      );
-    }
-    return []; // Return an empty array if 'injuries' is not defined
-  }, [injuries, injuryPage]);
+    if (!Array.isArray(initialInjuries)) return []; // Use initialInjuries for safety
+    return initialInjuries.slice(
+      injuryPage * injuryRowsPerPage,
+      (injuryPage + 1) * injuryRowsPerPage
+    );
+  }, [initialInjuries, injuryPage]); // Depend on initialInjuries
 
-  const displayRows = currentPageInjuries.map((injury, idx) => (
-    <tr
-      key={injury.player.id}
-      className={idx % 2 === 0 ? styles.rowEven : styles.rowOdd}
-    >
-      <td className={styles.dateColumn}>{injury.date}</td>
-      <td className={styles.teamColumn}>{injury.team}</td>
-      <td className={styles.nameColumn}>{injury.player.displayName}</td>
-      <td className={styles.statusColumn}>{injury.status}</td>
-      <td className={styles.descriptionColumn}>{injury.description}</td>
-    </tr>
-  ));
+  // const displayRows = currentPageInjuries.map((injury, idx) => (
+  //   <tr
+  //     key={injury.player.id}
+  //     className={idx % 2 === 0 ? styles.rowEven : styles.rowOdd}
+  //   >
+  //     <td className={styles.dateColumn}>{injury.date}</td>
+  //     <td className={styles.teamColumn}>{injury.team}</td>
+  //     <td className={styles.nameColumn}>{injury.player.displayName}</td>
+  //     <td className={styles.statusColumn}>{injury.status}</td>
+  //     <td className={styles.descriptionColumn}>{injury.description}</td>
+  //   </tr>
+  // ));
+
+  const displayInjuryRows = currentPageInjuries.map((injury, idx) => {
+    // Construct logo URL based on team abbreviation (similar to standings)
+    // Ensure injury.team holds the abbreviation (e.g., 'TOR', 'BOS')
+    const teamAbbrev = injury.team?.toUpperCase() ?? "NHL"; // Default to NHL if missing
+    const injuryTeamLogoUrl = `https://assets.nhle.com/logos/nhl/svg/${teamAbbrev}_light.svg`;
+
+    return (
+      <tr key={`${injury.player?.id ?? idx}-${idx}`}>
+        {" "}
+        {/* More robust key */}
+        <td className={styles.dateColumn}>{injury.date ?? "N/A"}</td>
+        {/* Team Column now includes Logo */}
+        <td className={styles.teamColumn}>
+          <img
+            className={styles.injuryTeamLogo} // Use new class for styling
+            src={injuryTeamLogoUrl}
+            alt={`${injury.team ?? ""} logo`}
+            width={25} // Set explicit width/height
+            height={25}
+            loading="lazy"
+            onError={(e) => {
+              e.currentTarget.src =
+                "https://assets.nhle.com/logos/nhl/svg/NHL_light.svg";
+            }} // Fallback logo
+          />
+          {/* Optional: Add span for abbreviation if desired */}
+          {/* <span className={styles.injuryTeamNameSpan}>{injury.team}</span> */}
+        </td>
+        <td className={styles.nameColumn}>
+          {injury.player?.displayName ?? "N/A"}
+        </td>
+        <td className={styles.statusColumn}>{injury.status ?? "N/A"}</td>
+        <td className={styles.descriptionColumn}>
+          {injury.description ?? "N/A"}
+        </td>
+      </tr>
+    );
+  });
+
+  // const [sortConfig, setSortConfig] = useState({
+  //   key: "leagueSequence",
+  //   direction: "ascending"
+  // });
+
+  // const sortedStandings = useMemo(() => {
+  //   return [...standings].sort((a, b) => {
+  //     let aValue = a[sortConfig.key];
+  //     let bValue = b[sortConfig.key];
+
+  //     if (sortConfig.key === "leagueSequence") {
+  //       aValue = parseInt(aValue, 10);
+  //       bValue = parseInt(bValue, 10);
+  //     }
+
+  //     if (aValue < bValue) {
+  //       return sortConfig.direction === "ascending" ? -1 : 1;
+  //     }
+  //     if (aValue > bValue) {
+  //       return sortConfig.direction === "ascending" ? 1 : -1;
+  //     }
+  //     return 0;
+  //   });
+  // }, [standings, sortConfig]);
 
   const [sortConfig, setSortConfig] = useState({
     key: "leagueSequence",
     direction: "ascending"
   });
-
   const sortedStandings = useMemo(() => {
+    if (!Array.isArray(standings)) return []; // Guard against undefined standings
     return [...standings].sort((a, b) => {
       let aValue = a[sortConfig.key];
       let bValue = b[sortConfig.key];
 
-      if (sortConfig.key === "leagueSequence") {
-        aValue = parseInt(aValue, 10);
-        bValue = parseInt(bValue, 10);
+      // Special handling for numeric sorting if needed
+      if (
+        sortConfig.key === "leagueSequence" ||
+        sortConfig.key === "points" ||
+        sortConfig.key === "wins" ||
+        sortConfig.key === "losses" ||
+        sortConfig.key === "otLosses"
+      ) {
+        aValue = parseInt(aValue, 10) || 0;
+        bValue = parseInt(bValue, 10) || 0;
+      } else if (typeof aValue === "string") {
+        // Basic string comparison
+        aValue = aValue.toUpperCase();
+        bValue = bValue.toUpperCase();
       }
 
-      if (aValue < bValue) {
-        return sortConfig.direction === "ascending" ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortConfig.direction === "ascending" ? 1 : -1;
-      }
+      if (aValue < bValue) return sortConfig.direction === "ascending" ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === "ascending" ? 1 : -1;
       return 0;
     });
   }, [standings, sortConfig]);
@@ -232,12 +298,14 @@ const Home: NextPage = ({
       LIVE: "LIVE",
       CRIT: "Critical"
     };
-
     return gameStateMapping[gameState] || gameState;
   };
 
+  const gamesToDisplay = games.length > 0 ? games : nextAvailableGames;
+  const displayDate = games.length > 0 ? currentDate : nextGameDate;
+
   return (
-    <Container className={styles.container}>
+    <Container>
       <NextSeo
         title="FHFH | Home"
         description="Five Hole Fantasy Hockey Podcast Home page."
@@ -259,258 +327,230 @@ const Home: NextPage = ({
       <Banner className={styles.socialMedia}>
         <SocialMedias />
       </Banner>
-      <div className={styles.homepage}>
-        <div className={styles.clGames}>
-          <div className={styles.gamesHeader}>
-            <button onClick={() => changeDate(-1)}>&lt;</button>
 
+      <div className={styles.homepage}>
+        {/* --- Games Section --- */}
+        <div className={styles.gameCardsContainer}>
+          <div className={styles.gamesHeader}>
+            <button
+              onClick={() => changeDate(-1)}
+              aria-label="Previous Day"
+            ></button>
             <div className={styles.headerAndDate}>
               <h1>
-                {games.length > 0 || !isOffseason ? "Today's" : "Upcoming"}{" "}
+                {gamesToDisplay.length > 0
+                  ? games.length > 0
+                    ? "Today's"
+                    : "Upcoming"
+                  : isOffseason
+                  ? "Upcoming"
+                  : "Today's"}{" "}
                 <span>Games</span>
               </h1>
               <p className={styles.dateDisplay}>
-                Scheduled for: {moment(nextGameDate).format("MM/DD/YYYY")}
+                Scheduled for: {moment(displayDate).format("MM/DD/YYYY")}
               </p>
             </div>
-            <button onClick={() => changeDate(1)}>&gt;</button>
+            <button
+              onClick={() => changeDate(1)}
+              aria-label="Next Day"
+            ></button>
           </div>
-
           <div className={styles.gamesContainer}>
-            {games.length > 0
-              ? games.map((game) => {
-                  const homeTeam = game.homeTeam;
-                  const homeTeamInfo = teamsInfo[homeTeam.abbrev] || {};
-                  const awayTeam = game.awayTeam;
-                  const awayTeamInfo = teamsInfo[awayTeam.abbrev] || {};
+            {gamesToDisplay.length > 0 ? (
+              gamesToDisplay.map((game) => {
+                const homeTeam = game.homeTeam;
+                const homeTeamInfo = teamsInfo[homeTeam.abbrev] || {};
+                const awayTeam = game.awayTeam;
+                const awayTeamInfo = teamsInfo[awayTeam.abbrev] || {};
 
-                  if (!homeTeam || !awayTeam) {
-                    return null;
-                  }
+                if (!homeTeam?.abbrev || !awayTeam?.abbrev) return null;
 
-                  return (
-                    <Link
-                      key={game.id}
-                      href={`/game/${game.id}`}
-                      className={styles.gameLink}
+                return (
+                  <Link
+                    key={game.id}
+                    href={`/game/${game.id}`}
+                    className={styles.gameLink}
+                    passHref
+                  >
+                    <div
+                      className={styles.combinedGameCard}
+                      style={
+                        {
+                          "--home-primary-color":
+                            homeTeamInfo.primaryColor || "#888888",
+                          "--home-secondary-color":
+                            homeTeamInfo.secondaryColor || "#555555",
+                          // *** ADD JERSEY COLOR VARIABLES BACK ***
+                          "--home-jersey-color":
+                            homeTeamInfo.jersey || "#cccccc", // Default light grey
+                          "--away-primary-color":
+                            awayTeamInfo.primaryColor || "#888888",
+                          "--away-secondary-color":
+                            awayTeamInfo.secondaryColor || "#555555",
+                          // *** ADD JERSEY COLOR VARIABLES BACK ***
+                          "--away-jersey-color":
+                            awayTeamInfo.jersey || "#cccccc" // Default light grey
+                        } as React.CSSProperties
+                      }
                     >
-                      <div
-                        className={styles.combinedGameCard}
-                        style={{
-                          "--home-primary-color": homeTeamInfo.primaryColor,
-                          "--home-secondary-color": homeTeamInfo.secondaryColor,
-                          "--home-jersey-color": homeTeamInfo.jersey,
-                          "--home-accent-color": homeTeamInfo.accent,
-                          "--home-alt-color": homeTeamInfo.alt,
-                          "--away-primary-color": awayTeamInfo.primaryColor,
-                          "--away-secondary-color": awayTeamInfo.secondaryColor,
-                          "--away-jersey-color": awayTeamInfo.jersey,
-                          "--away-accent-color": awayTeamInfo.accent,
-                          "--away-alt-color": awayTeamInfo.alt
-                        }}
-                      >
-                        <div className={styles.homeTeamLogo}>
-                          <img
-                            src={`https://assets.nhle.com/logos/nhl/svg/${homeTeam.abbrev}_light.svg`}
-                            className={styles.leftImage}
-                            alt={`${homeTeam.abbrev} logo`}
-                          />
+                      <div className={styles.homeTeamLogo}>
+                        <img
+                          src={`https://assets.nhle.com/logos/nhl/svg/${homeTeam.abbrev}_light.svg`}
+                          className={styles.leftImage}
+                          alt={`${homeTeam.abbrev} logo`}
+                          width={70}
+                          height={70}
+                        />
+                      </div>
+                      <div className={styles.gameTimeSection}>
+                        <div className={styles.homeScore}>
+                          {homeTeam.score ?? "-"}
                         </div>
-                        <div className={styles.gameTimeSection}>
-                          <div className={styles.homeScore}>
-                            {homeTeam.score}
-                          </div>
-                          <div className={styles.gameTimeInfo}>
-                            <span className={styles.gameState}>
-                              {game.gameState === "LIVE"
-                                ? formatPeriodText(
-                                    game.periodDescriptor.number,
-                                    game.periodDescriptor.periodType,
-                                    game.inIntermission
-                                  )
-                                : getDisplayGameState(game.gameState)}
-                            </span>
-                            <span className={styles.gameTimeText}>
-                              {game.gameState === "LIVE" &&
-                              !game.inIntermission ? (
-                                game.timeRemaining
-                              ) : (
-                                <ClientOnly placeHolder={<>&nbsp;</>}>
-                                  {moment(game.startTimeUTC).format("h:mm A")}
-                                </ClientOnly>
-                              )}
-                            </span>
-                          </div>
-                          <div className={styles.awayScore}>
-                            {awayTeam.score}
-                          </div>
+                        <div className={styles.gameTimeInfo}>
+                          <span className={styles.gameState}>
+                            {game.gameState === "LIVE"
+                              ? formatPeriodText(
+                                  game.periodDescriptor?.number,
+                                  game.periodDescriptor?.periodType,
+                                  game.clock?.inIntermission
+                                )
+                              : getDisplayGameState(game.gameState)}
+                          </span>
+                          <span className={styles.gameTimeText}>
+                            {game.gameState === "LIVE" &&
+                            !game.clock?.inIntermission ? (
+                              game.clock?.timeRemaining ?? "--:--"
+                            ) : (
+                              <ClientOnly placeHolder={<> </>}>
+                                {moment(game.startTimeUTC).format("h:mm A")}
+                              </ClientOnly>
+                            )}
+                          </span>
                         </div>
-
-                        <div className={styles.awayTeamLogo}>
-                          <img
-                            src={`https://assets.nhle.com/logos/nhl/svg/${awayTeam.abbrev}_light.svg`}
-                            className={styles.rightImage}
-                            alt={`${awayTeam.abbrev} logo`}
-                          />
+                        <div className={styles.awayScore}>
+                          {awayTeam.score ?? "-"}
                         </div>
                       </div>
-                    </Link>
-                  );
-                })
-              : nextAvailableGames.map((game) => {
-                  const homeTeam = game.homeTeam;
-                  const homeTeamInfo = teamsInfo[homeTeam.abbrev] || {};
-                  const awayTeam = game.awayTeam;
-                  const awayTeamInfo = teamsInfo[awayTeam.abbrev] || {};
-
-                  if (!homeTeam || !awayTeam) {
-                    return null;
-                  }
-
-                  return (
-                    <Link
-                      key={game.id}
-                      href={`/game/${game.id}`}
-                      className={styles.gameLink}
-                    >
-                      <div
-                        className={styles.combinedGameCard}
-                        style={{
-                          "--home-primary-color": homeTeamInfo.primaryColor,
-                          "--home-secondary-color": homeTeamInfo.secondaryColor,
-                          "--home-jersey-color": homeTeamInfo.jersey,
-                          "--home-accent-color": homeTeamInfo.accent,
-                          "--home-alt-color": homeTeamInfo.alt,
-                          "--away-primary-color": awayTeamInfo.primaryColor,
-                          "--away-secondary-color": awayTeamInfo.secondaryColor,
-                          "--away-jersey-color": awayTeamInfo.jersey,
-                          "--away-accent-color": awayTeamInfo.accent,
-                          "--away-alt-color": awayTeamInfo.alt
-                        }}
-                      >
-                        <div className={styles.homeTeamLogo}>
-                          <img
-                            src={`https://assets.nhle.com/logos/nhl/svg/${homeTeam.abbrev}_light.svg`}
-                            className={styles.leftImage}
-                            alt={`${homeTeam.abbrev} logo`}
-                          />
-                        </div>
-                        <div className={styles.gameTimeSection}>
-                          <div className={styles.homeScore}>
-                            {homeTeam.score}
-                          </div>
-                          <div className={styles.gameTimeInfo}>
-                            <span className={styles.gameState}>
-                              {game.gameState === "LIVE"
-                                ? formatPeriodText(
-                                    game.periodDescriptor.number,
-                                    game.periodDescriptor.periodType,
-                                    game.inIntermission
-                                  )
-                                : getDisplayGameState(game.gameState)}
-                            </span>
-                            <span className={styles.gameTimeText}>
-                              {game.gameState === "LIVE" &&
-                              !game.inIntermission ? (
-                                game.timeRemaining
-                              ) : (
-                                <ClientOnly placeHolder={<>&nbsp;</>}>
-                                  {moment(game.startTimeUTC).format("h:mm A")}
-                                </ClientOnly>
-                              )}
-                            </span>
-                          </div>
-                          <div className={styles.awayScore}>
-                            {awayTeam.score}
-                          </div>
-                        </div>
-
-                        <div className={styles.awayTeamLogo}>
-                          <img
-                            src={`https://assets.nhle.com/logos/nhl/svg/${awayTeam.abbrev}_light.svg`}
-                            className={styles.rightImage}
-                            alt={`${awayTeam.abbrev} logo`}
-                          />
-                        </div>
+                      <div className={styles.awayTeamLogo}>
+                        <img
+                          src={`https://assets.nhle.com/logos/nhl/svg/${awayTeam.abbrev}_light.svg`}
+                          className={styles.rightImage}
+                          alt={`${awayTeam.abbrev} logo`}
+                          width={70}
+                          height={70}
+                        />
                       </div>
-                    </Link>
-                  );
-                })}
+                    </div>
+                  </Link>
+                );
+              })
+            ) : (
+              <p
+                style={{
+                  gridColumn: "1 / -1",
+                  textAlign: "center",
+                  padding: "20px"
+                }}
+              >
+                No games scheduled for{" "}
+                {moment(displayDate).format("MM/DD/YYYY")}.
+              </p>
+            )}
           </div>
         </div>
-        <div className={styles.separator}></div>
 
-        {/* Our new chart, spanning 100% width */}
-        <TeamStandingsChart />
+        {/* --- Chart Section --- */}
+        <div className={styles.chartContainer}>
+          <TeamStandingsChart />
+        </div>
 
+        {/* --- Standings & Injuries Section --- */}
         <div className={styles.standingsInjuriesContainer}>
-          <div className={styles.ccStandings}>
+          {/* Standings */}
+          <div className={styles.standingsContainer}>
             <div className={styles.standingsHeader}>
               <h1>
                 Current <span>Standings</span>
               </h1>
             </div>
-            <table className={styles.standingsTable}>
-              <thead className={styles.standingsTableHeader}>
-                <tr>
-                  <th>Rank</th>
-                  <th>Team</th>
-                  <th>Record</th>
-                  <th>Points</th>
-                </tr>
-              </thead>
-              <tbody>
-                {standings.map((teamRecord) => (
-                  <tr key={teamRecord.teamName}>
-                    <td className={styles.standingsRankCell}>
-                      {teamRecord.leagueSequence}
-                    </td>
-                    <td className={styles.standingsTeamNameCell}>
-                      {/* Add team logo */}
-                      <img
-                        className={styles.standingsTeamLogo}
-                        src={teamRecord.teamLogo}
-                        alt={`${teamRecord.teamName} logo`}
-                      />{" "}
-                      <span className={styles.standingsTeamNameSpan}>
-                        {teamRecord.teamName}
-                      </span>
-                    </td>
-                    <td className={styles.standingsRecordCell}>
-                      {/* Ensure wins, losses, and otLosses are handled correctly */}
-                      {`${teamRecord.wins || 0}-${teamRecord.losses || 0}-${
-                        teamRecord.otLosses || 0
-                      }`}
-                    </td>
-                    <td className={styles.standingsPointsCell}>
-                      {teamRecord.points}
-                    </td>
+            <div className={styles.tableWrapper}>
+              <table className={styles.standingsTable}>
+                <thead>
+                  <tr>
+                    <th>Rank</th>
+                    <th>Team</th>
+                    <th>Record</th>
+                    <th>Points</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {sortedStandings.map((teamRecord) => (
+                    <tr key={teamRecord.teamName}>
+                      {/* Rank Cell */}
+                      <td>{teamRecord.leagueSequence}</td>
+                      {/* Team Cell */}
+                      <td>
+                        <img
+                          className={styles.standingsTeamLogo}
+                          src={teamRecord.teamLogo}
+                          alt={`${teamRecord.teamName} logo`}
+                          width={25}
+                          height={25}
+                        />
+                        <span className={styles.standingsTeamNameSpan}>
+                          {teamRecord.teamName}
+                        </span>
+                      </td>
+                      {/* Record Cell */}
+                      <td>{`${teamRecord.wins || 0}-${teamRecord.losses || 0}-${
+                        teamRecord.otLosses || 0
+                      }`}</td>
+                      {/* Points Cell */}
+                      <td>{teamRecord.points}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <div className={styles.crInjuries}>
+          {/* Injuries */}
+          <div className={styles.injuriesContainer}>
             <div className={styles.injuriesHeader}>
               <h1>
                 Injury <span>Updates</span>
               </h1>
             </div>
-
-            <table className={styles.injuryTable}>
-              <thead className={styles.injuryTableHeader}>
-                <tr>
-                  <th className={styles.dateColumn}>Date</th>
-                  <th>Team</th>
-                  <th className={styles.nameColumn}>Player</th>
-                  <th>Status</th>
-                  <th>Description</th>
-                </tr>
-              </thead>
-              <tbody>{displayRows}</tbody>
-            </table>
-
+            <div className={styles.tableWrapper}>
+              <table className={styles.injuryTable}>
+                <thead>
+                  <tr>
+                    <th className={styles.dateColumn}>Date</th>
+                    <th className={styles.teamColumn}>Team</th>{" "}
+                    {/* Header for team column */}
+                    <th className={styles.nameColumn}>Player</th>
+                    <th className={styles.statusColumn}>Status</th>
+                    <th className={styles.descriptionColumn}>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Use the updated displayInjuryRows */}
+                  {displayInjuryRows.length > 0 ? (
+                    displayInjuryRows
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        style={{ textAlign: "center", padding: "20px" }}
+                      >
+                        No recent injury updates found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
             <div className={styles.pagination}>
               <button
                 onClick={() => setInjuryPage((prev) => Math.max(prev - 1, 0))}
@@ -521,6 +561,7 @@ const Home: NextPage = ({
               <button
                 onClick={() => setInjuryPage((prev) => prev + 1)}
                 disabled={
+                  !Array.isArray(injuries) ||
                   injuries.length <= (injuryPage + 1) * injuryRowsPerPage
                 }
               >
@@ -537,18 +578,16 @@ const Home: NextPage = ({
 export async function getServerSideProps({ req, res }) {
   res.setHeader(
     "Cache-Control",
-    "public, s-maxage=10, stale-while-revalidate=59"
+    "public, s-maxage=60, stale-while-revalidate=120" // Cache for 60s, allow stale for 2 min
   );
 
   const fetchGames = async (date: string) => {
     try {
       const scheduleUrl = `https://api-web.nhle.com/v1/schedule/${date}`;
       const response = await Fetch(scheduleUrl).then((res) => res.json());
-
-      // Ensure you check if the structure includes gameWeek and games
       return response?.gameWeek?.[0]?.games || [];
     } catch (error) {
-      console.error("Error fetching games: ", error);
+      console.error(`Error fetching games for ${date}: `, error.message);
       return [];
     }
   };
@@ -559,11 +598,19 @@ export async function getServerSideProps({ req, res }) {
         `https://stats.sports.bellmedia.ca/sports/hockey/leagues/nhl/playerInjuries?brand=tsn&type=json`
       ).then((res) => res.json());
 
+      if (!Array.isArray(response)) {
+        console.error("Unexpected injuries API response format:", response);
+        return [];
+      }
+
       let injuriesData = response.flatMap((team) =>
-        team.playerInjuries
+        team.playerInjuries && Array.isArray(team.playerInjuries)
           ? team.playerInjuries.map((injury) => ({
               ...injury,
-              team: team.competitor.shortName
+              team: team.competitor?.shortName ?? "N/A", // Added null check
+              date: injury.date
+                ? moment(injury.date).format("YYYY-MM-DD")
+                : "N/A" // Format date
             }))
           : []
       );
@@ -573,80 +620,113 @@ export async function getServerSideProps({ req, res }) {
         moment(b.date).diff(moment(a.date))
       );
 
-      return injuriesData || [];
+      return injuriesData;
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching injuries: ", error.message);
       return [];
     }
   };
 
   const fetchStandings = async () => {
     try {
-      const currentSeason = await fetchCurrentSeason();
+      const currentSeason = await fetchCurrentSeason(); // Assuming this returns valid start/end dates
       const now = new Date();
+      let dateForStandings = moment().utcOffset(-8).format("YYYY-MM-DD"); // Default to today PST
 
-      const isPlayoffs =
-        now >= new Date(currentSeason.playoffsStartDate) &&
-        now <= new Date(currentSeason.playoffsEndDate);
-      const isRegularSeason =
-        now >= new Date(currentSeason.startDate) &&
-        now <= new Date(currentSeason.endDate);
+      if (currentSeason && currentSeason.startDate && currentSeason.endDate) {
+        const seasonStart = new Date(currentSeason.startDate);
+        const seasonEnd = new Date(currentSeason.endDate);
 
-      const isOffseason = !isPlayoffs && !isRegularSeason;
-      const dateForStandings = isOffseason
-        ? moment(currentSeason.regularSeasonStartDate).format("YYYY-MM-DD")
-        : moment().utcOffset(-8).format("YYYY-MM-DD");
+        // Check if current date is outside the regular season range
+        if (now < seasonStart || now > seasonEnd) {
+          // Attempt to get the end date of the season if outside
+          dateForStandings = moment(seasonEnd).format("YYYY-MM-DD");
+          console.log(
+            `Outside regular season. Fetching standings for season end date: ${dateForStandings}`
+          );
+        }
+      } else {
+        console.warn(
+          "Could not determine current season dates accurately. Defaulting to today for standings."
+        );
+      }
 
       const response = await Fetch(
         `https://api-web.nhle.com/v1/standings/${dateForStandings}`
       ).then((res) => res.json());
 
-      if (!response || !response.standings) {
-        throw new Error("Standings data not available");
+      if (!response || !Array.isArray(response.standings)) {
+        console.error(
+          "Standings data not available or in unexpected format for date:",
+          dateForStandings,
+          response
+        );
+        return []; // Return empty array if no standings found
       }
 
+      // Map directly if the structure is already flat
       const standingsData = response.standings.map((team: any) => ({
-        leagueSequence: team.leagueSequence,
-        teamName: team.teamName.default,
-        wins: team.wins,
-        losses: team.losses,
-        otLosses: team.otLosses,
-        points: team.points,
-        teamLogo: `https://assets.nhle.com/logos/nhl/svg/${team.teamAbbrev.default}_light.svg` // Adjust based on actual data
+        leagueSequence: team.leagueSequence ?? 99, // Provide default
+        teamName: team.teamName?.default ?? "Unknown Team", // Provide default
+        wins: team.wins ?? 0,
+        losses: team.losses ?? 0,
+        otLosses: team.otLosses ?? 0,
+        points: team.points ?? 0,
+        teamLogo:
+          team.teamLogo ??
+          `https://assets.nhle.com/logos/nhl/svg/${
+            team.teamAbbrev?.default ?? "NHL"
+          }_light.svg` // Default logo
       }));
+
+      // Sort by leagueSequence ascending after mapping
+      standingsData.sort((a, b) => a.leagueSequence - b.leagueSequence);
 
       return standingsData;
     } catch (error) {
-      console.error("Error fetching standings: ", error);
+      console.error("Error fetching standings: ", error.message);
       return [];
     }
   };
 
   const today = moment().utcOffset(-8).format("YYYY-MM-DD");
-  const gamesToday = await fetchGames(today);
+  let gamesToday = await fetchGames(today);
+  let nextGameDateFound = today;
+
+  if (gamesToday.length === 0) {
+    console.log(
+      `No games found for today (${today}), searching for next available date...`
+    );
+    let nextDay = moment(today).add(1, "days");
+    let attempts = 0;
+    const maxAttempts = 30; // Limit search to 30 days to prevent infinite loop
+
+    while (gamesToday.length === 0 && attempts < maxAttempts) {
+      const dateStr = nextDay.format("YYYY-MM-DD");
+      console.log(`Checking for games on ${dateStr}...`);
+      gamesToday = await fetchGames(dateStr);
+      if (gamesToday.length > 0) {
+        nextGameDateFound = dateStr;
+        console.log(`Found next games on ${nextGameDateFound}`);
+        break;
+      }
+      nextDay.add(1, "days");
+      attempts++;
+    }
+    if (gamesToday.length === 0) {
+      console.warn(`Could not find games within the next ${maxAttempts} days.`);
+    }
+  }
+
   const injuries = await fetchInjuries();
   const standings = await fetchStandings();
-
-  // Function to find the next available game date after a given date
-  const findNextGameDate = async (startDate: string): Promise<string> => {
-    let nextDay = moment(startDate).add(1, "days").format("YYYY-MM-DD");
-    while (true) {
-      const games = await fetchGames(nextDay);
-      if (games.length > 0) {
-        return nextDay;
-      }
-      nextDay = moment(nextDay).add(1, "days").format("YYYY-MM-DD");
-    }
-  };
-
-  const nextGameDate = await findNextGameDate(today);
 
   return {
     props: {
       initialGames: gamesToday,
       initialInjuries: injuries,
       initialStandings: standings,
-      nextGameDate // Pass the next game date to the component
+      nextGameDate: nextGameDateFound // Pass the date for which games were actually found
     }
   };
 }

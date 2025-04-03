@@ -13,9 +13,9 @@ type TotalGamesPerDayRowProps = {
 
 // Function to determine intensity based on game count
 const getIntensity = (numGames: number): string => {
-  if (numGames <= 3) return "high"; // Green (Fewest games = highest intensity day for streaming)
-  if (numGames <= 6) return "medium-high"; // Yellow
-  if (numGames <= 9) return "medium-low"; // Orange
+  if (numGames <= 7) return "high"; // Green (Fewest games = highest intensity day for streaming)
+  if (numGames <= 8) return "medium-high"; // Yellow
+  if (numGames <= 9) return "low"; // red
   return "low"; // Red (Most games = lowest intensity day for streaming)
 };
 
