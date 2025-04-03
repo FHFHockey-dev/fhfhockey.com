@@ -1,11 +1,12 @@
 // useGoals.tsx
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-1\web\hooks\useGoals.tsx
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { teamsInfo } from "lib/NHL/teamsInfo";
 import Fetch from "lib/cors-fetch";
 import styles from "../styles/useGoals.module.scss";
 import { formatTime } from "utils/getPowerPlayBlocks";
+import Image from "next/image";
 
 export default function useGoals(id: number) {
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -24,8 +25,10 @@ export default function useGoals(id: number) {
 
       const result: Goal[] = [];
       scoring.forEach((periodInfo: any) => {
-        periodInfo.goals.forEach((goal: any) => {
+        periodInfo.goals.forEach((goal: any, index: number) => {
+          // Added index for key later
           result.push({
+            key: `${periodInfo.periodDescriptor.number}-${goal.timeInPeriod}-${goal.playerId}-${index}`,
             period: {
               number: periodInfo.periodDescriptor.number,
               type: periodInfo.periodDescriptor.periodType
@@ -67,18 +70,17 @@ type Player = {
 };
 
 type Goal = {
+  key: string;
   period: {
     number: 1 | 2 | 3 | 4;
     type: "REG" | "OT";
   };
   scoreTeamAbbreviation: string;
   homeTeam: {
-    // current score
     score: number;
     abbreviation: string;
   };
   awayTeam: {
-    // current score
     score: number;
     abbreviation: string;
   };
@@ -123,10 +125,12 @@ function GoalIndicator({
   scorer,
   assists,
   totalGameTimeInSeconds,
-  isOvertime
+  isOvertime,
+  totalPlayerRows
 }: Goal & {
   totalGameTimeInSeconds: number;
   isOvertime: boolean;
+  totalPlayerRows: number;
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -171,8 +175,7 @@ function GoalIndicator({
   const leftPercentageStr = `${leftPercentage}%`;
 
   const indicatorPositionStyle = {
-    left: leftPercentageStr,
-    zIndex: 2 // Ensure it's on top if needed
+    left: leftPercentageStr
   };
 
   const handleMouseEnter = () => setShowTooltip(true);
@@ -198,20 +201,32 @@ function GoalIndicator({
         textAlign: "left"
       }}
     >
-      <strong>{scoreTeamAbbreviation} Goal:</strong> {scorer.firstName}{" "}
-      {scorer.lastName}
+      <strong>{scoreTeamAbbreviation} Goal:</strong>
+      {scorer.firstName} {scorer.lastName}
+      <br />
       <br />
       {assists.length > 0 && (
         <>
           <strong>Assists:</strong>{" "}
           {assists.map((assist) => `${assist.lastName}`).join(", ")}
           <br />
+          <br />
         </>
       )}
-      <strong>Time:</strong> P{period.number} - {formatTime(timeInPeriod)}
+      <strong>
+        {" "}
+        Period: {""}
+        {period.number}
+      </strong>
       <br />
-      <strong>Score:</strong> {homeTeam.abbreviation} {homeTeam.score} -{" "}
-      {awayTeam.abbreviation} {awayTeam.score}
+      <strong>Time: {formatTime(timeInPeriod)}</strong>
+      <br />
+      <strong>
+        Score:
+        <br />
+        {homeTeam.abbreviation}: {homeTeam.score} - {awayTeam.abbreviation}:{" "}
+        {awayTeam.score}
+      </strong>
     </div>
   );
 
@@ -223,36 +238,63 @@ function GoalIndicator({
   const borderColor = isHomeScoring
     ? teamColors.secondaryColor
     : teamColors.primaryColor;
-  const textColor = brightenColor(
-    isHomeScoring ? teamColors.secondaryColor : teamColors.primaryColor,
-    25
-  );
 
   const teamColorStyle = {
     "--backgroundColor": backgroundColor,
-    "--borderColor": borderColor,
-    "--textColor": textColor
+    "--borderColor": borderColor
   } as React.CSSProperties;
 
-  return (
-    <div
-      style={{
-        position: "absolute",
-        top: 0,
-        ...indicatorPositionStyle,
-        transform: "translateY(-100%) translateX(-50%)",
-        zIndex: 3
-      }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      {tooltipContent}
+  const logoPath = `/teamLogos/${scoreTeamAbbreviation}.png`;
 
-      {/* Goal Indicator with dynamic color and home plate shape */}
-      <div className={styles.goalIndicator} style={teamColorStyle}>
-        {scoreTeamAbbreviation}
+  // --- Calculate dynamic height for the line ---
+  const playerRowHeight = 24; // From shiftChartTable td height: 24px;
+  const teamHeaderRowHeight = 36; // Estimate based on font-size/padding in .teamHeaderCellHome/Away
+  const totalBodyHeight =
+    totalPlayerRows * playerRowHeight + 2 * teamHeaderRowHeight;
+
+  return (
+    <>
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          ...indicatorPositionStyle,
+          transform: "translateY(-100%) translateX(-50%)",
+          zIndex: 3
+        }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {tooltipContent}
+
+        {/* Goal Indicator with dynamic color and home plate shape */}
+        <div className={styles.goalIndicator} style={teamColorStyle}>
+          <Image
+            src={logoPath}
+            alt={`${scoreTeamAbbreviation} logo`}
+            width={26} // Set desired width
+            height={26} // Set desired height
+            // Add unoptimized if you have issues with external hosts or specific build configs
+            // unoptimized={true}
+          />{" "}
+        </div>
       </div>
-    </div>
+      {/* 2. The Vertical Line Element */}
+      <div
+        className={styles.goalIndicatorLine}
+        style={{
+          position: "absolute",
+          top: "100%", // Start line at the bottom edge of the timestampsBar
+          left: leftPercentageStr, // Align horizontally with the indicator
+          transform: "translateX(-50%)", // Center the 1px line
+          width: "2px", // Line width
+          height: `${totalBodyHeight}px`, // Dynamic height calculated above
+          backgroundColor: teamColors.primaryColor, // Use indicator's border color for the line
+          outline: `1px solid ${teamColors.secondaryColor}`, // Use indicator's background color for the line
+          zIndex: 2 // Below indicator visual(5), below yellow line(3), but above PP areas(1)
+        }}
+      />
+    </>
   );
 }
 
@@ -267,23 +309,33 @@ export const convertTimeToSeconds = (timeString: string) => {
 export function GoalIndicators({
   id,
   totalGameTimeInSeconds,
-  isOvertime
+  isOvertime,
+  totalPlayerRows
 }: {
   id: number;
   totalGameTimeInSeconds: number;
   isOvertime: boolean;
+  totalPlayerRows: number;
 }) {
   const goals = useGoals(id);
   return (
     <>
-      {goals.map((goal, i) => (
-        <GoalIndicator
-          key={i}
-          {...goal}
-          totalGameTimeInSeconds={totalGameTimeInSeconds}
-          isOvertime={isOvertime}
-        />
-      ))}
+      {goals.map((goal) => {
+        // 1. Destructure the 'key' property out of the goal object
+        const { key, ...goalProps } = goal;
+
+        // 2. Use the destructured 'key' for React's key prop
+        // 3. Spread the remaining properties (...goalProps)
+        return (
+          <GoalIndicator
+            key={key} // Use the separated key here
+            {...goalProps} // Spread the rest of the properties (which no longer includes 'key')
+            totalGameTimeInSeconds={totalGameTimeInSeconds}
+            isOvertime={isOvertime}
+            totalPlayerRows={totalPlayerRows}
+          />
+        );
+      })}
     </>
   );
 }

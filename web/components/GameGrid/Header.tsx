@@ -32,13 +32,13 @@ type SortKey = {
   ascending: boolean;
 };
 
+// Function to determine intensity based on game count
 const getIntensity = (numGames: number): string => {
-  if (numGames <= 3) return "high";
-  if (numGames <= 6) return "medium-high";
-  if (numGames <= 9) return "medium-low";
-  return "low";
+  if (numGames <= 6) return "high"; // Green (Fewest games = highest intensity day for streaming)
+  if (numGames <= 8) return "medium-high"; // Yellow
+  if (numGames <= 12) return "low"; // red
+  return "low"; // Red (Most games = lowest intensity day for streaming)
 };
-
 function Header({
   start,
   end,

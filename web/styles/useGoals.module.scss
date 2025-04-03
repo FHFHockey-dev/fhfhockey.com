@@ -2,34 +2,39 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-1\web\styles\useGoals.module.scss
 
 .goalIndicator {
-  position: relative; // Anchor for the absolute tooltip
-  cursor: pointer; // Optional, shows a pointer on hover    display: inline-block;
-  padding: 3px;
+  // --- Adjustments for larger 26x26 image ---
+  position: relative;
+  cursor: pointer;
+  display: flex; // Center image easily
+  align-items: center;
+  justify-content: center;
+  padding: 3px; // Keep padding
   border-left: 2px solid var(--borderColor);
   border-right: 2px solid var(--borderColor);
   border-top: 2px solid var(--borderColor);
-  border-radius: 2px;
-  font-weight: 900;
-  text-align: center;
+  border-radius: 2px 2px 0 0; // Top corners rounded
   background-color: var(--backgroundColor);
-  color: var(--textColor);
-  writing-mode: vertical-rl;
-  text-orientation: upright;
   user-select: none;
-  font-size: 8px;
+  bottom: -10px; // Keep push down
 
+  // Adjust ::after for the larger size
   &::after {
     content: "";
     position: absolute;
-    bottom: -10px; // Adjust to ensure the elongated shape
+    bottom: -16px; // Move further down to connect below the larger indicator
     left: 50%;
     width: 0;
     height: 0;
-    border-left: 10px solid transparent;
-    border-right: 10px solid transparent;
-    border-top: 10px solid var(--backgroundColor);
+    // Make triangle larger to match indicator width (approx 26px + padding + border)
+    border-left: 16px solid transparent; // (26 + 3*2 + 2*2)/2 = ~18, use slightly less for pointy look
+    border-right: 16px solid transparent;
+    border-top: 16px solid var(--backgroundColor); // Match height
     transform: translateX(-50%);
-    z-index: 4; // Ensure it's above the tooltip
+    z-index: 3; // Keep below image/indicator content but above line?
+  }
+
+  img {
+    display: block;
   }
 }
 
@@ -56,5 +61,17 @@
   padding: 5px;
   display: none; // Start hidden
   white-space: nowrap;
-  z-index: 4; // Ensure it's above the goal indicator
+  z-index: 9999; // Ensure it's above the goal indicator
+  // Tooltip triangle
+  &::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: var(--backgroundColor) transparent transparent transparent; // Match tooltip
+    border-top-color: #101010; // Fallback, ideally sync with dynamic bg
+  }
 }

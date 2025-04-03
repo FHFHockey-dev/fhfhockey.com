@@ -66,18 +66,17 @@ $mobile-column-short: 30px;
 // --- Component Containers ---
 
 .scheduleGridContainer {
-  @include v.component-wrapper; // Apply standard component wrapper mixin
+  @include v.component-wrapper;
   flex-grow: 1;
 
   @media (min-width: v.$breakpoint-desktop) {
-    // *** CONFIRMED: Desktop width ***
     width: 70%;
     flex-grow: 0; // Prevent growth when fixed width is set
   }
 }
 
 .opponentStatsContainer {
-  @include v.component-wrapper; // Apply standard component wrapper
+  @include v.component-wrapper;
   flex-shrink: 0;
 
   @media (min-width: v.$breakpoint-desktop) {
@@ -89,7 +88,6 @@ $mobile-column-short: 30px;
 
 .fourWeekGridContainerAll {
   width: 100%;
-  // Apply standard framing ONLY on mobile (as FourWeekGrid component likely handles its own)
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
     @include v.component-wrapper;
   }
@@ -218,8 +216,8 @@ $mobile-column-short: 30px;
   }
 
   &:focus-visible {
-    outline: 3px solid v.$focus-color;
-    outline-offset: 2px;
+    outline: 1px solid v.$focus-color;
+    outline-offset: 1px;
   }
 }
 
@@ -238,7 +236,7 @@ $mobile-column-short: 30px;
     .titleRow {
       text-align: left;
       margin-bottom: 0;
-      padding: v.$space-md v.$space-md; // Add padding back
+      padding: v.$space-md v.$space-md;
 
       .gameGridTitle {
         font-family: v.$font-family-primary;
@@ -260,7 +258,7 @@ $mobile-column-short: 30px;
       flex-direction: column;
       gap: v.$space-md;
       width: 100%;
-      padding: 0 v.$space-md; // Add padding back
+      padding: 0 v.$space-md;
     }
 
     .navButtonRow {
@@ -271,17 +269,16 @@ $mobile-column-short: 30px;
       border-top-left-radius: 8px;
 
       button {
-        // Applies to all buttons within these rows
         @include v.button-style;
         flex: 1 1 auto;
         height: 40px;
         font-size: v.$font-size-small * 0.8;
-        border-radius: 0; // Explicitly set to 0
+        border-radius: 0;
         border-top: 1px solid v.$border-color;
-        border-left: none; // Remove left border
+        border-left: none;
         border-right: 1px solid v.$border-color; // Subtle separator
-        margin: 0; // Remove any default margins
-        white-space: nowrap; // Prevent text wrapping
+        margin: 0;
+        white-space: nowrap;
         min-width: none;
         padding: v.$space-sm;
         text-align: center;
@@ -293,7 +290,7 @@ $mobile-column-short: 30px;
           border-right: 1px solid v.$border-color-secondary; // Keep separator
         }
         &:focus-visible {
-          outline-offset: -3px; // Adjust focus outline position
+          outline-offset: -2px; // Adjust focus outline position
           z-index: 2;
         }
       }
@@ -302,15 +299,14 @@ $mobile-column-short: 30px;
         // Apply to first button (.dateButtonPrev)
         border-top-left-radius: v.$border-radius-sm;
         border-left: 1px solid v.$border-color;
-        flex-grow: 0; // Don't let arrows grow as much
-        flex-basis: 15%; // Make arrows smaller
-        padding: v.$space-sm v.$space-xs; // Adjust padding for arrows
+        flex-grow: 0;
+        flex-basis: 15%;
+        padding: v.$space-sm v.$space-xs;
         font-size: 0.6rem; // Larger arrow icon size
         text-transform: uppercase;
       }
       button:last-child {
         // Apply to last button (.dateButtonNext)
-        // border-top-right-radius: v.$border-radius-sm; // Only if grid container has radius
         border-top-right-radius: v.$border-radius-sm;
         flex-grow: 0;
         flex-basis: 15%;
@@ -319,11 +315,11 @@ $mobile-column-short: 30px;
         text-transform: uppercase;
       }
     }
-    // Position spinner relative to actions container
+
     .spinner {
       position: absolute;
       right: v.$space-md;
-      top: v.$space-sm; // Adjust position within the header area
+      top: v.$space-sm;
       transform: none;
       bottom: auto;
     }
@@ -353,7 +349,7 @@ $mobile-column-short: 30px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     white-space: nowrap;
-    width: 100%; // Fit wrapper
+    width: 100%;
     min-width: 100%;
     border: none; // Rely on wrapper
     outline: none;
@@ -378,8 +374,8 @@ $mobile-column-short: 30px;
       // Nested under thead
       padding: v.$space-sm v.$space-md;
       vertical-align: middle;
-      border-bottom: 4px solid #c5c2c2; // 2px secondary
-      border-right: v.$border-subtle; // 1px secondary
+      border-bottom: 4px solid #c5c2c2;
+      border-right: v.$border-subtle;
       white-space: normal;
       cursor: default;
       min-width: 55px;
@@ -390,16 +386,16 @@ $mobile-column-short: 30px;
 
       // Apply data-intensity background directly to th
       &[data-intensity="low"] {
-        background-color: rgba(255, 0, 0, 0.2);
+        background-color: rgba(226, 43, 7, 0.25); // Red
       }
       &[data-intensity="medium-low"] {
-        background-color: rgba(255, 165, 0, 0.2);
+        background-color: rgba(226, 63, 7, 0.25); // Orange
       }
       &[data-intensity="medium-high"] {
-        background-color: rgba(255, 255, 0, 0.2);
+        background-color: rgba(255, 193, 8, 0.4); // Yellow
       }
       &[data-intensity="high"] {
-        background-color: rgba(0, 128, 0, 0.2);
+        background-color: rgba(107, 191, 58, 0.25); // Green
       }
 
       // Sortable Header Styling
@@ -450,7 +446,7 @@ $mobile-column-short: 30px;
       color: v.$primary-color;
       text-align: left;
       padding-left: v.$space-sm;
-      border-right: v.$border-separator; // 2px secondary
+      border-right: v.$border-separator;
       position: sticky;
       left: 0;
       z-index: 4;
@@ -534,9 +530,8 @@ $mobile-column-short: 30px;
       &:nth-child(11) {
         // Reset background to allow other styles (intensity, rank, alternating) to show
         background-color: inherit;
-        // See comment in .teamRowGreen regarding specificity if needed
       }
-    } // End tr
+    }
 
     // --- General TD Styling ---
     td {
@@ -553,7 +548,7 @@ $mobile-column-short: 30px;
 
       // Apply data-intensity background directly to td
       &[data-intensity="low"] {
-        background-color: rgba(255, 0, 0, 0.2);
+        background-color: rgba(226, 43, 7, 0.25);
       }
       &[data-intensity="medium-low"] {
         background-color: rgba(255, 165, 0, 0.2);
@@ -618,17 +613,16 @@ $mobile-column-short: 30px;
       background-color: inherit; // Inherits from TR for alternating colors/hover
       min-width: 65px;
     }
-  } // End tbody
+  }
 
   // --- Total Games Row Styling ---
   // Target the row directly by class, nested under .scheduleGrid
-  // Assuming TotalGamesPerDayRow component adds this class to its `<tr>`
   .totalGamesPerDayRow {
     // Nested under .scheduleGrid
     background-color: v.$background-medium;
     font-weight: 600;
     color: v.$text-color-secondary;
-    position: sticky; // Keep sticky if desired
+    position: sticky;
     bottom: 0;
     z-index: 9;
 
@@ -636,7 +630,7 @@ $mobile-column-short: 30px;
       // Nested under .totalGamesPerDayRow
       padding: v.$space-sm;
       border-right: v.$border-subtle;
-      border-top: v.$border-separator; // 2px separator from body
+      border-top: v.$border-separator;
       position: relative;
       vertical-align: middle;
       border-bottom: 2px solid v.$primary-color;
@@ -645,18 +639,18 @@ $mobile-column-short: 30px;
         border-right: none;
       }
 
-      // Apply intensity via data-attribute
+      // Apply data-intensity background directly to th
       &[data-intensity="low"] {
-        background-color: rgba(255, 0, 0, 0.2);
+        background-color: rgba(226, 43, 7, 0.25); // Red
       }
       &[data-intensity="medium-low"] {
-        background-color: rgba(255, 165, 0, 0.2);
+        background-color: rgba(226, 63, 7, 0.25); // Orange
       }
       &[data-intensity="medium-high"] {
-        background-color: rgba(255, 255, 0, 0.2);
+        background-color: rgba(255, 193, 8, 0.4); // Yellow
       }
       &[data-intensity="high"] {
-        background-color: rgba(0, 128, 0, 0.2);
+        background-color: rgba(107, 191, 58, 0.25); // Green
       }
 
       // Overlay (nested is fine)
@@ -697,11 +691,10 @@ $mobile-column-short: 30px;
         }
       }
     }
-  } // End .totalGamesPerDayRow
-} // End .scheduleGrid
+  }
+}
 
 // --- First Column Content (Team Abbr/Logo) ---
-// These are classes used *inside* cells, so they are fine as is.
 .firstColumnContent {
   display: flex;
   align-items: center;
@@ -742,7 +735,6 @@ $mobile-column-short: 30px;
 }
 
 // --- Matchup Cell Styling ---
-// These are classes used *inside* cells, so they are fine as is.
 .matchupCell {
   display: flex;
   align-items: center;
@@ -803,7 +795,7 @@ $mobile-column-short: 30px;
   @media (min-width: v.$breakpoint-desktop) {
     width: 50%;
     display: flex;
-    // Reset mobile framing if needed (though unlikely necessary if applied in media query)
+    // Reset mobile framing if needed
     // outline: none;
     // border: none;
     // border-radius: 0;
@@ -816,8 +808,6 @@ $mobile-column-short: 30px;
   align-items: center;
   width: 100%;
 }
-
-// Removed duplicate .gameGridHeader rules here
 
 /* MAGGIE <3 */
 
@@ -835,6 +825,7 @@ $mobile-column-short: 30px;
     align-items: stretch;
   }
 }
+
 .fourWeekAndBPAtableContainer {
   display: flex;
   justify-content: space-between;
@@ -846,15 +837,12 @@ $mobile-column-short: 30px;
     width: 30%;
     @media (min-width: v.$breakpoint-desktop) {
       width: 30%; // Desktop width split
-      display: flex; // ** NEW: Allow child (.container in FourWeekGrid) to fill height **
+      display: flex;
     }
   }
 }
 
-// Removed duplicate .fourWeekGridContainerAll rules here
-
 .bpaAndOppContainer {
-  // NO CHANGES to base style (layout helper)
   width: 100%;
   height: 100%;
 }
@@ -868,9 +856,9 @@ $mobile-column-short: 30px;
   // Targeting <= 1023px
 
   .mainGridContainer {
-    width: 95%; // Adjust width slightly
+    width: 95%;
     margin: 20px auto;
-    gap: 25px; // Adjust gap
+    gap: 25px;
     flex-direction: column; // Ensure vertical stacking
   }
 
@@ -878,12 +866,12 @@ $mobile-column-short: 30px;
   .scheduleGridContainer,
   .opponentStatsContainer,
   .fourWeekGridContainerAll {
-    outline: none !important; // Remove outline
-    border: none !important; // Remove border
-    border-top-left-radius: 0 !important; // Remove radius
-    border-top-right-radius: 0 !important; // Remove radius
+    outline: none !important;
+    border: none !important;
+    border-top-left-radius: 0 !important;
+    border-top-right-radius: 0 !important;
     width: 100% !important; // Ensure full width when stacked
-    display: block; // Or flex with column direction if internal content needs it
+    display: block;
   }
 
   // --- Schedule Grid Mobile Adjustments ---
@@ -898,12 +886,11 @@ $mobile-column-short: 30px;
     border-bottom: 3px solid v.$border-color-secondary;
     border-radius: 0 0 18px 18px; // Rounded bottom corners
 
-    // *** Nest all th, td, thead, tbody rules for mobile inside here ***
     th,
     td {
       // General thin borders for mobile scroll context
       border: 0.5px solid v.$border-color-secondary;
-      min-width: auto; // Reset potentially conflicting base styles
+      min-width: auto;
       max-width: none;
       min-height: auto;
       max-height: none;
@@ -918,20 +905,18 @@ $mobile-column-short: 30px;
     }
     thead th {
       border-top: none;
-    } // Use thead th instead of tr:first-child th
+    }
 
     thead {
-      // Ensure thead styles are nested
       th {
-        // Styles for all mobile header cells
-        position: sticky; // Keep sticky
+        position: sticky;
         top: 0;
-        background-color: v.$background-medium; // Consistent sticky bg (Overwrites specific intensity colors for simplicity on mobile)
+        background-color: v.$background-medium;
         z-index: 2;
         font-size: 12px;
         padding: 6px 8px;
         height: auto;
-        width: $mobile-fixed-width; // Keep fixed width logic if needed
+        width: $mobile-fixed-width;
         min-width: $mobile-fixed-width;
         max-width: $mobile-fixed-width;
         text-overflow: ellipsis;
@@ -939,25 +924,21 @@ $mobile-column-short: 30px;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        border-bottom: 2px solid v.$secondary-color; // Consistent border
-        color: v.$text-color-secondary; // Ensure text color is right
+        border-bottom: 2px solid v.$secondary-color;
+        color: v.$text-color-secondary;
 
         &:first-child {
-          // Mobile Sticky First Header specific overrides (keep width, padding etc)
-          background-color: v.$background-medium !important; // Ensure background overrides intensity
-          border-right: 2px solid v.$secondary-color; // Thicker separator
-          text-align: left; // Align left
+          background-color: v.$background-medium !important;
+          border-right: 2px solid v.$secondary-color;
+          text-align: left;
           min-width: $mobile-fixed-width;
           width: $mobile-fixed-width;
           max-width: $mobile-fixed-width;
-          // Keep other existing mobile :first-child styles
         }
       }
-    } // End mobile thead
+    }
 
     tbody {
-      // Ensure tbody styles are nested
-
       tr {
         // Keep alternating backgrounds (already inherited)
         border-bottom: v.$border-subtle; // Thin row separator
@@ -975,19 +956,18 @@ $mobile-column-short: 30px;
         padding: 6px 5px;
         font-size: 13px;
         height: auto;
-        vertical-align: middle; // Ensure alignment
+        vertical-align: middle;
         // Inherits thin border-right from th,td rule above
         // Inherits alternating background from tr
       }
 
       // Sticky First Column Mobile
       td:first-child {
-        // Nest under tbody
-        position: sticky; // Keep sticky
+        position: sticky;
         left: 0;
         background-color: inherit; // Inherit from tr
         z-index: 1;
-        border-right: 2px solid v.$secondary-color; // Thicker separator
+        border-right: 2px solid v.$secondary-color;
         font-size: 14px;
         padding: 0px 5px;
         min-width: $mobile-fixed-width;
@@ -997,11 +977,10 @@ $mobile-column-short: 30px;
         text-align: center; // Center align mobile team logo/abbr
       }
 
-      // Keep specific mobile column overrides (like :nth-child(9))
       td:nth-child(9),
       th:nth-child(9) {
         // Nest under .scheduleGrid
-        border-left: 2px solid v.$border-color-primary; // Adjust separator
+        border-left: 2px solid v.$border-color-primary;
       }
 
       th:nth-child(9),
@@ -1010,18 +989,18 @@ $mobile-column-short: 30px;
       td:nth-child(10),
       th:nth-child(11),
       td:nth-child(11) {
-        width: $mobile-column-short; // Keep fixed width logic if needed
-        min-width: $mobile-column-short; // Keep fixed width logic if needed
-        max-width: $mobile-column-short; // Keep fixed width logic if needed
+        width: $mobile-column-short;
+        min-width: $mobile-column-short;
+        max-width: $mobile-column-short;
         border: 0.5px solid #86868690;
       }
-    } // End mobile tbody
+    }
 
     // Total Row mobile adjustments
     .totalGamesPerDayRow {
       // Nest under .scheduleGrid
-      background-color: v.$background-medium; // Consistent background
-      position: static; // Don't make totals row sticky on mobile scroll? Optional.
+      background-color: v.$background-medium;
+      position: static;
       bottom: auto;
       z-index: auto;
 
@@ -1030,30 +1009,30 @@ $mobile-column-short: 30px;
         padding: 6px 5px; // Match mobile cell padding
         vertical-align: middle;
         border-top: v.$border-separator;
-        // Apply intensity colors
+        // Apply data-intensity background directly to th
         &[data-intensity="low"] {
-          background-color: rgba(255, 0, 0, 0.2);
+          background-color: rgba(226, 43, 7, 0.25); // Red
         }
         &[data-intensity="medium-low"] {
-          background-color: rgba(255, 165, 0, 0.2);
+          background-color: rgba(226, 63, 7, 0.25); // Orange
         }
         &[data-intensity="medium-high"] {
-          background-color: rgba(255, 255, 0, 0.2);
+          background-color: rgba(255, 193, 8, 0.4); // Yellow
         }
         &[data-intensity="high"] {
-          background-color: rgba(0, 128, 0, 0.2);
+          background-color: rgba(107, 191, 58, 0.25); // Green
         }
       }
       td.title {
         // Nest under .totalGamesPerDayRow
-        position: sticky; // Make title cell sticky
+        position: sticky;
         left: 0;
-        z-index: 1; // Above other total cells
-        background-color: v.$background-medium !important; // Override intensity
-        padding-left: 0; // Adjust padding
+        z-index: 1;
+        background-color: v.$background-medium !important; // override intensity
+        padding-left: 0;
       }
     }
-  } // End mobile .scheduleGrid adjustments
+  }
 
   // Hide desktop-only elements if necessary (though handled by display:none in base for mobile elements)
   .teamRow .desktopTeamAbbreviation {
@@ -1063,11 +1042,11 @@ $mobile-column-short: 30px;
   // Show mobile-only elements
   .teamRow .mobileTeamLogo {
     display: inline-flex;
-  } // Or flex if needed
+  }
   .mobileLogoSize {
     display: inline-block;
-  } // Show this class container
-} // End @media (max-width: #{v.$breakpoint-desktop - 1px})
+  }
+}
 
 @media only screen and (min-width: v.$screen-medium) and (max-width: v.$screen-large) {
   .teamRow {
@@ -1084,7 +1063,6 @@ $mobile-column-short: 30px;
 
 @media (max-width: 480px) {
   /* portrait */
-
   .mainGridContainer {
     width: 100%;
     margin: 0 auto;
@@ -1104,20 +1082,16 @@ $mobile-column-short: 30px;
     outline: 10px solid v.$background-dark;
   }
 
-  // Optional: Container for scrolling
-
   .scheduleGrid {
     // Nest 480px overrides
     width: 100%;
     border-top: none;
     border-spacing: 0;
-    // Keep other 480px specific styles
     table-layout: fixed;
 
     tbody {
       // Target the last row within the tbody
       tr:last-child {
-        // KEEP the radius on the TD elements as requested
         td:first-child {
           border-bottom-left-radius: 12px;
         }
@@ -1125,15 +1099,15 @@ $mobile-column-short: 30px;
           border-bottom-right-radius: 12px;
         }
         td {
-          background-color: v.$background-light; // Reinforce the background
+          background-color: v.$background-light;
         }
       }
     }
 
     th,
     td {
-      padding: 2px; // Example general padding
-      border: 1px solid #3f3f3f90; // Example general border
+      padding: 2px;
+      border: 1px solid #3f3f3f90;
       font-family: v.$font-family-primary;
       text-align: center;
       font-size: 12px;
@@ -1149,24 +1123,23 @@ $mobile-column-short: 30px;
         top: 0;
         padding: 0;
         z-index: 2;
-        background-color: v.$background-medium; // Consistent background
-        color: v.$text-color-secondary; // Consistent color
-        border-bottom: v.$border-separator; // Consistent border
+        background-color: v.$background-medium;
+        color: v.$text-color-secondary;
+        border-bottom: v.$border-separator;
         border-right: v.$border-subtle;
         &:last-child {
           border-right: none;
         }
       }
       th:first-child {
-        // 480px sticky first header
         background-color: v.$background-medium !important; // Override intensity
-        border-right: 2px solid v.$secondary-color; // Use variable if possible, fallback blue
+        border-right: 2px solid v.$secondary-color;
       }
-    } // End 480px thead
+    }
 
     tr {
       height: 40px;
-    } // Nest 480px tr override
+    }
 
     // Nest 480px specific td/th overrides
     th:first-child,
@@ -1177,10 +1150,10 @@ $mobile-column-short: 30px;
       font-weight: 900;
       font-family: v.$font-family-primary;
       text-transform: uppercase;
-      border-right: 2px solid #07aae2; // Keep specific 480px border color if desired
+      border-right: 2px solid #07aae2;
       padding: 0;
       text-align: center;
-      background-color: inherit; // Ensure sticky inherits background
+      background-color: inherit;
     }
 
     th:nth-child(n + 2),
@@ -1191,7 +1164,7 @@ $mobile-column-short: 30px;
       text-align: center;
       font-size: 12px;
       padding: 2px 0 2px 0;
-      border: 1px solid #3f3f3f90; // Keep specific 480px border color if desired
+      border: 1px solid #3f3f3f90;
     }
 
     // Keep very specific 480px nth-child border rules nested
@@ -1242,27 +1215,26 @@ $mobile-column-short: 30px;
       // Nest under .scheduleGrid
       td {
         // Nest under .totalGamesPerDayRow
-        // Apply intensity colors
+        // Apply data-intensity background directly to th
         &[data-intensity="low"] {
-          background-color: rgba(255, 0, 0, 0.2);
+          background-color: rgba(226, 43, 7, 0.25); // Red
         }
         &[data-intensity="medium-low"] {
-          background-color: rgba(255, 165, 0, 0.2);
+          background-color: rgba(226, 63, 7, 0.25); // Orange
         }
         &[data-intensity="medium-high"] {
-          background-color: rgba(255, 255, 0, 0.2);
+          background-color: rgba(255, 193, 8, 0.4); // Yellow
         }
         &[data-intensity="high"] {
-          background-color: rgba(0, 128, 0, 0.2);
+          background-color: rgba(107, 191, 58, 0.25); // Green
         }
       }
       td.title {
         // Nest under .totalGamesPerDayRow
         background-color: v.$background-medium !important; // Override intensity
       }
-      // Specific title content override is fine
     }
-  } // End .scheduleGrid 480px overrides
+  }
 
   // Keep other 480px class-based overrides
   .gameGridTitle {
@@ -1286,50 +1258,62 @@ $mobile-column-short: 30px;
     justify-content: space-between;
     align-items: center;
   }
+
   .gridWrapper {
     width: 100%;
     max-width: 100%;
   }
+
   .fourWeekLabel {
     display: none;
   }
+
   .gameGridHeaderContent {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
   }
-  // Removed duplicate .gameGridHeader rules here
+
   .blurredImage {
     filter: blur(4px);
   }
+
   .scoreAndHomeAway {
     display: none;
   }
+
   .homeAway {
     display: none;
   }
+
   .hideOnMobile {
     display: none;
   }
+
   .mobileLogoSize {
     padding: 1px !important;
   }
+
   .mobileTeamLogo {
     padding: 0px !important;
   }
+
   .mobileFontStyle {
     font-family: v.$font-family-primary;
     font-size: 8px !important;
     margin-bottom: 7px !important;
   }
+
   .score {
     display: none;
   }
+
   .totalGamesPerDayCell {
     background-color: #000;
     color: white;
-  } // Keep specific 480px cell override
+  }
+
   .teamRow {
     /* Keep nested span rules */
     span {
@@ -1348,7 +1332,7 @@ $mobile-column-short: 30px;
   .fourWeekTitleVertical {
     display: none;
   }
-} // End @media (max-width: 480px)
+}
 
 @media (max-width: 360px) {
   .scheduleGrid {
@@ -1360,7 +1344,7 @@ $mobile-column-short: 30px;
         // Nest 360px nth-child overrides
         font-size: 8px;
         min-width: 25px;
-        max-width: 25px; // Corrected typo
+        max-width: 25px;
       }
 
       th:first-child,
@@ -1368,19 +1352,19 @@ $mobile-column-short: 30px;
         // Nest 360px first-child overrides
         max-width: 40px !important;
         min-width: 30px;
-        font-size: 10px; // Initial size
-        border-right: 3px solid #07aae2; // Keep specific border
+        font-size: 10px;
+        border-right: 3px solid #07aae2;
         padding: 4px;
         font-size: 0.5em; // Override size
       }
-    } // End 360px tr overrides
-  } // End .scheduleGrid 360px overrides
+    }
+  }
 
   .gameGridTitle {
     font-size: 1em !important;
     width: 100%;
-  } // Class override is fine
-} // End @media (max-width: 360px)
+  }
+}
 
 .mobileContainer {
   display: flex;
@@ -1450,7 +1434,6 @@ $mobile-column-short: 30px;
   .scheduleGrid {
     // Nest landscape overrides
     width: 100% !important;
-    // Keep specific landscape border override if desired
     // border: 2px solid white;
     border-radius: 0;
 
@@ -1465,7 +1448,7 @@ $mobile-column-short: 30px;
       min-width: 40px;
       font-size: 14px;
       margin: auto;
-      border-right: 3px solid #07aae2; // Keep specific border
+      border-right: 3px solid #07aae2;
     }
 
     th:nth-child(n + 2),
@@ -1494,21 +1477,22 @@ $mobile-column-short: 30px;
     // Total Row landscape adjustments
     .totalGamesPerDayRow {
       // Nest under .scheduleGrid
-      border-bottom: 0.5px solid white; // Fine targeting class
+      border-bottom: 0.5px solid white;
       td {
         // Nest under .totalGamesPerDayRow
-        // Apply intensity colors if needed for landscape
+        // Apply intensity colors
+        // Apply data-intensity background directly to th
         &[data-intensity="low"] {
-          background-color: rgba(255, 0, 0, 0.2);
+          background-color: rgba(226, 43, 7, 0.25); // Red
         }
         &[data-intensity="medium-low"] {
-          background-color: rgba(255, 165, 0, 0.2);
+          background-color: rgba(226, 63, 7, 0.25); // Orange
         }
         &[data-intensity="medium-high"] {
-          background-color: rgba(255, 255, 0, 0.2);
+          background-color: rgba(255, 193, 8, 0.4); // Yellow
         }
         &[data-intensity="high"] {
-          background-color: rgba(0, 128, 0, 0.2);
+          background-color: rgba(107, 191, 58, 0.25); // Green
         }
       }
       td.title {
@@ -1516,7 +1500,7 @@ $mobile-column-short: 30px;
         background-color: v.$background-medium !important; // Override intensity
       }
     }
-  } // End .scheduleGrid landscape overrides
+  }
 
   // Keep class-based overrides
   .gridWrapper {
@@ -1617,7 +1601,6 @@ $mobile-column-short: 30px;
   .scheduleGrid {
     // Nest 320px overrides
     width: 100%;
-    // Keep specific 320px border override if desired
     // border: 2px solid white;
     border-radius: 0;
 
@@ -1638,7 +1621,7 @@ $mobile-column-short: 30px;
       max-width: 40px;
       min-width: 30px;
       font-size: 10px;
-      border-right: 5px solid #07aae2; // Keep specific border
+      border-right: 5px solid #07aae2;
       padding-left: 4px !important;
     }
 
@@ -1653,7 +1636,6 @@ $mobile-column-short: 30px;
       font-size: 8px;
     }
 
-    // Keep specific 320px nth-child border overrides, nested
     th:nth-child(9),
     td:nth-child(9) {
       border-left: 5px solid #07aae2;
@@ -1668,21 +1650,22 @@ $mobile-column-short: 30px;
     // Total Row 320px adjustments
     .totalGamesPerDayRow {
       // Nest under .scheduleGrid
-      border-bottom: 0.5px solid white; // Fine targeting class
+      border-bottom: 0.5px solid white;
       td {
         // Nest under .totalGamesPerDayRow
-        // Apply intensity colors if needed for 320px
+        // Apply intensity colors
+        // Apply data-intensity background directly to th
         &[data-intensity="low"] {
-          background-color: rgba(255, 0, 0, 0.2);
+          background-color: rgba(226, 43, 7, 0.25); // Red
         }
         &[data-intensity="medium-low"] {
-          background-color: rgba(255, 165, 0, 0.2);
+          background-color: rgba(226, 63, 7, 0.25); // Orange
         }
         &[data-intensity="medium-high"] {
-          background-color: rgba(255, 255, 0, 0.2);
+          background-color: rgba(255, 193, 8, 0.4); // Yellow
         }
         &[data-intensity="high"] {
-          background-color: rgba(0, 128, 0, 0.2);
+          background-color: rgba(107, 191, 58, 0.25); // Green
         }
       }
       td.title {
@@ -1690,7 +1673,7 @@ $mobile-column-short: 30px;
         background-color: v.$background-medium !important; // Override intensity
       }
     }
-  } // End .scheduleGrid 320px overrides
+  }
 
   // Keep class-based overrides
   .gridWrapper {
@@ -1727,4 +1710,4 @@ $mobile-column-short: 30px;
       display: none;
     }
   }
-} // End @media (max-width: 320px)
+}
