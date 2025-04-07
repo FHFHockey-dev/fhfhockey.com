@@ -847,6 +847,11 @@ $mobile-column-short: 30px;
   height: 100%;
 }
 
+.mobileLogoSize img {
+  filter: drop-shadow(1px 1px 0 #fff) drop-shadow(-1px -1px 0 #fff)
+    drop-shadow(1px -1px 0 #fff) drop-shadow(-1px 1px 0 #fff);
+}
+
 /* =============================================== */
 /* ========== MOBILE STYLES START HERE ========== */
 /* =============================================== */
@@ -1045,6 +1050,8 @@ $mobile-column-short: 30px;
   }
   .mobileLogoSize {
     display: inline-block;
+    filter: drop-shadow(1px 1px 0 #fff) drop-shadow(-1px -1px 0 #fff)
+      drop-shadow(1px -1px 0 #fff) drop-shadow(-1px 1px 0 #fff);
   }
 }
 

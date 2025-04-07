@@ -1,69 +1,70 @@
-// PlayerPickupTable.module.scss
-
 @use "sass:color";
 @use "styles/vars" as v; // Use an alias for brevity
-@use "sass:math"; // Import math module if needed for calculations
+@use "sass:math";
 
 .container {
   width: 100%;
   margin: 0px auto;
   color: v.$text-color-primary;
   font-family: v.$font-family-primary;
-  transition: margin-bottom v.$transition-duration v.$transition-easing; // Smooth margin change if needed
+  transition: margin-bottom v.$transition-duration v.$transition-easing;
 }
 
 /* --- Filters Styling --- */
 .filters {
-  margin: 0 auto; // Add bottom margin
+  margin: 0 auto 20px auto; // Add consistent bottom margin
   color: v.$text-color-primary;
-  overflow: hidden; // Keep overflow hidden
-  outline: 8px solid v.$background-dark; // Keep the thick outer frame
-  background-color: v.$background-dark; // Main background
-  border: 3px solid v.$background-light; // Inner border
-  border-radius: v.$border-radius; // Apply radius to the outline container
+  overflow: hidden;
+  outline: 8px solid v.$background-dark;
+  background-color: v.$background-dark;
+  border: 3px solid v.$background-light;
+  border-radius: v.$border-radius;
   width: 100%;
-  padding: 15px; // Consistent padding
-  position: relative; // Needed for absolute positioning of icon
+  padding: 15px;
+  position: relative; // For icon
 
   display: flex;
   flex-direction: column;
-  gap: 10px; // gap between title, filter sections, and button
+  gap: 15px; // Consistent gap between sections (title, basic filters, metric filters, reset)
 
-  // Transition for the filter content height/visibility
-  .filterContainer,
-  .filterContainerMobile,
+  // Transition for filter content height/visibility
+  .filterContainer, // Basic filter rows (desktop)
+  .filterContainerMobile, // Basic filter rows (mobile)
+  .metricFilterContainer, // Container for metric header + groups
   .buttonReset {
+    // Reset button
     transition: max-height 0.4s v.$transition-easing,
       opacity 0.3s v.$transition-easing, visibility 0.3s v.$transition-easing,
       margin 0.4s v.$transition-easing, padding 0.4s v.$transition-easing;
-    max-height: 1000px; // Set a large max-height initially
+    max-height: 1000px; // Arbitrary large height when visible
     opacity: 1;
     visibility: visible;
-    overflow: hidden; // Hide content that overflows during transition
+    overflow: hidden;
   }
 
   // --- Styles when minimized on mobile ---
   &.minimized {
-    margin-bottom: 10px; // Reduce margin when minimized
-    padding-bottom: 15px; // Keep top/side padding, remove bottom effectively
-    gap: 0; // Remove gap when content is hidden
+    margin-bottom: 10px;
+    padding-bottom: 15px; // Keep padding consistent with visible state?
+    gap: 0; // Collapse gap when minimized
 
-    // Hide the filter controls and button
-    .filterContainer, // Hide desktop controls too just in case
-      .filterContainerMobile,
-      .buttonReset {
+    // Hide filter controls, metric filters, and button
+    .filterContainer,
+    .filterContainerMobile,
+    .metricFilterContainer,
+    .buttonReset {
       max-height: 0;
       opacity: 0;
       visibility: hidden;
       margin: 0; // Remove margins
       padding: 0; // Remove padding
-      border: none; // Remove potential borders on hidden elements
+      border: none; // Remove borders if any
     }
 
     // Adjust title appearance when minimized
     .filtersTitle {
-      padding-bottom: 0; // Remove padding below title
-      border-bottom: none; // Remove border below title
+      padding-bottom: 0;
+      border-bottom: none;
       margin-bottom: 0; // Remove margin below title
     }
   }
@@ -72,69 +73,67 @@
 .filtersTitle {
   width: 100%;
   text-align: left;
-  font-size: clamp(1.5rem, 4vw, 1.8rem); // Responsive font size
-  font-weight: 100; // Lighter weight for title
+  font-size: clamp(1.5rem, 4vw, 1.8rem);
+  font-weight: 100;
   color: v.$text-color-primary;
   font-family: v.$font-family-primary;
-  letter-spacing: 1.5px; // Slightly less spacing
-  padding-bottom: 10px; // Space before the divider
-  border-bottom: 2px solid v.$secondary-color; // Use thicker border like table header
-  margin-bottom: 5px; // Space after the divider/title area
-  position: relative; // For icon positioning
-  padding-right: 30px; // Make space for the icon
+  letter-spacing: 1.5px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid v.$secondary-color;
+  // margin-bottom: 5px; // Spacing handled by parent gap
+  position: relative;
+  padding-right: 30px; // Space for icon
   transition: padding-bottom v.$transition-duration v.$transition-easing,
     border-bottom v.$transition-duration v.$transition-easing,
     margin-bottom v.$transition-duration v.$transition-easing;
 
-  // Make clickable only on mobile
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    // Adjust breakpoint as needed (using var from vars.scss)
-    cursor: pointer;
-    user-select: none; // Prevent text selection on click
+    cursor: pointer; // Make clickable on mobile
+    user-select: none;
   }
 }
 
-// Minimize/Maximize Icon Styling
 .minimizeToggleIcon {
   position: absolute;
-  right: 10px; // Position to the far right of the title
-  top: 40%;
-  transform: translateY(-50%) rotate(0deg); // Initial state (down arrow)
+  right: 10px;
+  top: 40%; // Adjust vertical position as needed
+  transform: translateY(-50%) rotate(0deg);
   font-size: 1.2rem;
   color: v.$secondary-color;
   transition: transform 0.3s v.$transition-easing;
-  pointer-events: none; // Icon itself shouldn't capture clicks
+  pointer-events: none; // Icon itself isn't clickable
 
   &.minimized {
-    transform: translateY(-50%) rotate(-180deg); // Rotated state (up arrow)
+    transform: translateY(-50%) rotate(-180deg); // Point up when minimized
   }
 }
 
 .acronym {
   color: v.$secondary-color;
-  font-weight: 100; // Slightly less bold than 900 maybe
+  font-weight: 100;
 }
 
 /* --- Desktop Filter Layout --- */
 .filterContainer {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap; // Allow wrapping on slightly smaller screens
-  justify-content: space-around; // Distribute space
-  align-items: flex-start; // Align items to the top
-  gap: 20px; // Space between filter groups
+  flex-wrap: wrap;
+  justify-content: space-around;
+  align-items: flex-start;
+  gap: 20px; // Gap between filter rows (Own%, Team, Pos)
 }
 
 .filterRow {
-  // Individual filter group (Own%, Team, Pos) on Desktop
   display: flex;
-  flex-direction: column; // Stack label and input vertically
-  align-items: center; // Center items within the group
-  gap: 8px; // Space between label and input
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
   padding: 10px;
-  background-color: v.$background-medium; // Subtle background for grouping
+  background-color: v.$background-medium;
   border-radius: 8px;
-  min-width: 200px; // Give groups some minimum width
+  min-width: 200px;
+  flex: 1; // Allow rows to grow a bit
+  max-width: 30%; // Prevent excessive stretching
 }
 
 .label {
@@ -147,63 +146,54 @@
 .filterContainerMobile {
   display: flex;
   flex-direction: column;
-  gap: 20px; // Space between filter sections
+  gap: 15px; // Slightly smaller gap on mobile
   width: 100%;
 }
 
 .ownershipTeamContainer {
-  // Group Own% and Team together on mobile
   display: flex;
-  flex-direction: row; // Stack them by default
-  gap: 20px; // Space between Own% and Team
-  align-items: center; // Center the groups
+  flex-direction: column; // Stack Own/Team vertically on smallest screens
+  gap: 15px;
   width: 100%;
 
   @media (min-width: 480px) {
-    // Side-by-side above this breakpoint
+    // Side-by-side on slightly larger mobile screens
     flex-direction: row;
     justify-content: space-around;
-    align-items: flex-start;
+    align-items: flex-start; // Align tops
+    gap: 20px;
   }
 }
 
-.filterRowMobileOwnership {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  max-width: 280px; // Max width for these controls
-  padding: 17px;
-  background-color: v.$background-medium; // Use grouping background
-  border-radius: 8px;
-  gap: 8px; // Space between label and input
-}
-
+.filterRowMobileOwnership,
 .filterRowMobileTeam {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 50%; // Let it take width within flex container
-  max-width: 280px; // Max width for these controls
-  padding: 10px;
-  background-color: v.$background-medium; // Use grouping background
+  width: 100%; // Take full width when stacked
+  padding: 10px 15px; // Adjust padding
+  background-color: v.$background-medium;
   border-radius: 8px;
-  gap: 8px; // Space between label and input
+  gap: 8px;
+
+  @media (min-width: 480px) {
+    width: 48%; // Roughly half width when side-by-side
+  }
 }
 
 .filterRowMobile {
-  // Position filter group on Mobile
+  // Container for Positions on mobile
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
   gap: 10px;
-  padding: 10px;
-  background-color: v.$background-medium; // Use grouping background
+  padding: 10px 15px;
+  background-color: v.$background-medium;
   border-radius: 8px;
 
   > span {
-    // The "Pos:" label
+    // The label ("Positions:", etc.)
     font-size: 0.9em;
     font-weight: 600;
     color: v.$text-color-secondary;
@@ -212,7 +202,6 @@
 }
 
 .positionCheckboxGroup {
-  // Wrapper for the checkboxes
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
@@ -220,7 +209,6 @@
 }
 
 .labelMobile {
-  // General mobile label style (applied within specific rows)
   font-size: 0.9em;
   font-weight: 600;
   color: v.$text-color-secondary;
@@ -243,14 +231,16 @@
   background: v.$primary-color;
   cursor: pointer;
   border: 2px solid v.$text-color-primary;
-  margin-top: -6px;
+  margin-top: -6px; // Adjust thumb position vertically relative to track
 }
+
 .slider,
 .sliderMobile {
   appearance: none;
   width: 100%;
-  height: 18px;
-  background: transparent;
+  max-width: 250px; // Limit slider width
+  height: 18px; // Ensure consistent height for focus styles
+  background: transparent; // Track styled separately
   cursor: pointer;
   &:focus {
     outline: none;
@@ -267,7 +257,7 @@
   }
   &::-moz-range-thumb {
     @include range-thumb;
-    border: 0;
+    border: 0; // FF needs border 0 on thumb
   }
   &:focus::-webkit-slider-thumb {
     box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.5);
@@ -276,17 +266,20 @@
     box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.5);
   }
 }
+
 .select,
 .selectMobile {
   appearance: none;
   background-color: v.$background-light;
   border: 1px solid v.$border-color-secondary;
   border-radius: 6px;
-  padding: 8px 30px 8px 10px;
+  padding: 8px 30px 8px 10px; // Space for arrow
   font-size: 0.9em;
   color: v.$text-color-primary;
   cursor: pointer;
   width: 100%;
+  max-width: 150px; // Limit select width
+  // Custom arrow
   background-image: linear-gradient(
       45deg,
       transparent 50%,
@@ -302,34 +295,187 @@
     box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.3);
   }
 }
+
 .positionCheckbox {
+  // Style for position checkboxes LABEL
   display: inline-flex;
   align-items: center;
   cursor: pointer;
   font-size: 0.9em;
   gap: 6px;
+
   input[type="checkbox"] {
+    // Style for position INPUT checkbox
     appearance: none;
     width: 18px;
     height: 18px;
     border: 2px solid v.$border-color-secondary;
     border-radius: 4px;
-    background-color: v.$background-medium;
+    background-color: v.$background-light; // Use light background for checkbox itself
     cursor: pointer;
     position: relative;
     transition: background-color v.$transition-duration v.$transition-easing,
       border-color v.$transition-duration v.$transition-easing;
+
     &:checked {
       background-color: v.$primary-color;
       border-color: v.$primary-color;
       &::after {
+        // Checkmark
         content: "";
         position: absolute;
         left: 5px;
         top: 1px;
         width: 4px;
         height: 9px;
-        border: solid v.$text-color-primary;
+        border: solid v.$text-color-primary; // White/light checkmark
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+      }
+    }
+    &:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.3);
+    }
+  }
+}
+
+/* --- UPDATED: Metric Filter Styles --- */
+.metricFilterContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px; // Gap between header and the groups wrapper
+  padding: 15px;
+  background-color: v.$background-medium; // Match other filter sections
+  border-radius: 8px;
+}
+
+.metricFilterHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap; // Allow wrapping on small screens
+  gap: 10px;
+  // No bottom margin needed, gap on parent container handles spacing
+
+  .label {
+    // Reuse existing label style, maybe adjust size
+    font-size: 1em; // Slightly larger label for this section header
+    font-weight: 600;
+    color: v.$text-color-secondary;
+    margin-right: auto; // Push buttons to the right
+  }
+}
+
+.metricPresetButtons {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0; // Prevent buttons shrinking too much
+  button {
+    // Style preset buttons
+    padding: 4px 8px;
+    font-size: 0.8em;
+    background-color: v.$background-light;
+    border: 1px solid v.$border-color-secondary;
+    color: v.$text-color-secondary;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+    &:hover:not(:disabled) {
+      background-color: color.scale(v.$background-light, $lightness: -10%);
+      border-color: v.$primary-color;
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+/* --- NEW: Styles for Metric Groups --- */
+.metricGroupsWrapper {
+  display: flex;
+  flex-direction: column; // Stack groups vertically
+  gap: 15px; // Space between individual groups (Points, Peripherals, etc.)
+  margin-top: 5px; // Small space below the header
+}
+
+.metricGroup {
+  // Container for a single group (title + checkboxes)
+  // Optional: Add visual separation if desired
+  // border: 1px solid darken(v.$background-medium, 10%);
+  // background-color: rgba(v.$background-light, 0.2);
+  // padding: 10px;
+  // border-radius: 6px;
+}
+
+.metricGroupTitle {
+  display: block; // Ensure it takes its own line above checkboxes
+  font-weight: 600;
+  font-size: 0.9em;
+  color: v.$text-color-secondary; // Use secondary color for group titles
+  margin-bottom: 8px; // Space between title and checkboxes
+  padding-left: 2px; // Slight indent
+  // Optional: Add a subtle underline
+  // border-bottom: 1px solid v.$border-color-secondary;
+  // padding-bottom: 4px;
+}
+
+.metricGroupCheckboxes {
+  // Container for the checkboxes within ONE group
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 15px; // Row and column gap for checkboxes
+  justify-content: flex-start; // Align checkboxes to the start (left)
+  padding-left: 5px; // Indent checkboxes slightly more than title
+}
+
+/* REMOVED: Original .metricCheckboxGroup style block as it's replaced by .metricGroupCheckboxes */
+/*
+.metricCheckboxGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 15px; // Row and column gap
+  justify-content: flex-start; // Align checkboxes left
+}
+*/
+
+.metricCheckbox {
+  // Style for metric checkboxes LABEL
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  font-size: 0.85em;
+  gap: 5px;
+  color: v.$text-color-primary; // Ensure label text is visible
+  white-space: nowrap; // Prevent label wrapping
+
+  input[type="checkbox"] {
+    // Style for metric INPUT checkbox
+    appearance: none;
+    width: 16px; // Slightly smaller than position checkboxes
+    height: 16px;
+    border: 2px solid v.$border-color-secondary;
+    border-radius: 4px;
+    background-color: v.$background-light; // Match checkbox background elsewhere
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0; // Prevent checkbox shrinking if label is long
+    transition: background-color v.$transition-duration v.$transition-easing,
+      border-color v.$transition-duration v.$transition-easing;
+
+    &:checked {
+      background-color: v.$primary-color;
+      border-color: v.$primary-color;
+      &::after {
+        // Checkmark
+        content: "";
+        position: absolute;
+        left: 4px;
+        top: 1px;
+        width: 4px;
+        height: 8px;
+        border: solid v.$text-color-primary; // White/light checkmark
         border-width: 0 2px 2px 0;
         transform: rotate(45deg);
       }
@@ -343,27 +489,38 @@
 
 /* Reset Button Styling & Placement */
 .buttonReset {
-  @include v.button-style; // Inherit base button styles
-  align-self: center; // Center the button horizontally within the filters flex container
-  margin-top: 10px; // Add some space above the button (visible when not minimized)
-  width: calc(
-    100% - 30px
-  ); // Adjust width considering padding? Or keep 100%? Test this.
-  max-width: 300px; // Max width for the button
+  padding: 10px 20px;
+  font-size: 1em;
+  background-color: v.$secondary-color;
+  color: v.$background-dark; // Dark text on light button
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-weight: bold;
+  &:hover {
+    background-color: color.scale(v.$secondary-color, $lightness: -10%);
+  }
+  align-self: center; // Center the button horizontally within the filters container
+  margin-top: 10px; // Add some space above the button (gap also contributes)
+  width: 100%;
+  max-width: 300px; // Limit width of reset button
 }
 
 /* --- Name/Injury/Table/Pagination/Expanded Details Styling --- */
-/* These sections remain unchanged from the previous version */
+// --- (No changes below this line) ---
+
 .nameAndInjuryWrapper {
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
-  gap: 5px;
+  gap: 3px; // Reduced gap
+  justify-content: center; // Center vertically
+  padding: 2px 0; // Small vertical padding
 }
 .leftNamePart {
   width: 100%;
-  margin: 0 auto;
   display: flex;
   align-items: center;
   text-align: left;
@@ -373,66 +530,57 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start; // Align left
+  gap: 5px;
+  font-size: 0.8em; // Smaller injury text
+  color: v.$text-color-secondary; // Subdued color
+  .statusRightInjuryPart {
+    font-weight: bold;
+    color: darken(red, 10%); // Darker red for status
+    flex-shrink: 0;
+  }
+  .injuryNoteRightInjuryPart {
+    // Allow wrapping but hide overflow
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .imageContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: auto; // Push image to the right if needed
+  }
 }
-.statusRightInjuryPart {
-  width: 10%;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-}
-.injuryNoteRightInjuryPart {
-  width: 75%;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-}
-.imageContainer {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.statusContainer {
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-}
+
 .playerName {
   font-weight: bold;
 }
-.statusText {
-  color: red;
-  font-size: 0.8em;
-  margin-left: 10%;
-}
-.injuryNote {
-  color: v.$text-color-primary;
-  font-size: 0.8em;
-}
 
 .tableContainer {
-  margin-top: 30px;
+  margin-top: 20px; // Consistent spacing
   overflow-x: auto;
   background-color: v.$background-medium;
   border-radius: v.$border-radius;
   box-shadow: v.$box-shadow;
   outline: 10px solid v.$background-dark;
   &::-webkit-scrollbar {
+    // Hide scrollbar for webkit
     display: none;
   }
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  -ms-overflow-style: none; // Hide scrollbar for IE/Edge
+  scrollbar-width: none; // Hide scrollbar for Firefox
 }
 .table {
-  @include v.table-base;
+  width: 100%;
+  border-collapse: collapse;
   thead {
     position: sticky;
     top: 0;
     background-color: v.$background-dark;
     color: v.$text-color-secondary;
-    z-index: 2;
+    z-index: 2; // Ensure header stays above body content
     th {
       border-collapse: collapse;
       background-color: v.$background-dark;
@@ -440,17 +588,18 @@
       font-weight: 900;
       font-family: v.$font-family-primary;
       font-size: 14px;
-      height: v.$table-header-height;
-      padding: v.$table-cell-padding;
+      height: v.$table-header-height; // Use variable if defined
+      padding: v.$table-cell-padding; // Use variable if defined
       cursor: pointer;
       text-align: center;
       border-bottom: 2px solid v.$secondary-color;
+      white-space: nowrap; // Prevent header text wrapping
     }
   }
   tbody {
     tr {
       font-family: v.$font-family-primary;
-      height: 55px;
+      height: 55px; // Adjust row height as needed
       text-align: center;
       transition: background-color v.$transition-duration v.$transition-easing;
       &:nth-child(even) {
@@ -463,60 +612,118 @@
         background-color: color.scale(v.$primary-color, $lightness: -30%);
       }
       td {
-        padding: 3px 5px;
-        border: 0.5px solid v.$border-color-secondary;
+        padding: 3px 5px; // Adjust cell padding
+        border: 0.5px solid v.$border-color-secondary; // Subtle cell borders
         vertical-align: middle;
+        font-size: 14px; // Base font size for cells
       }
     }
   }
+  // Special styling for first column (Name)
   thead th:first-child,
   tbody tr td:first-child {
-    border-right: 5px solid v.$secondary-color;
+    border-right: 5px solid v.$secondary-color; // Prominent right border for name column
     text-align: left;
-    padding: v.$table-cell-padding;
-    font-size: 16px;
-    border-bottom: none;
+    padding: v.$table-cell-padding; // Use variable
+    font-size: 16px; // Slightly larger for name
+  }
+  // Override borders specifically for the Name column header/cells if needed
+  thead th:first-child {
+    border-bottom: 2px solid v.$secondary-color; // Keep header bottom border consistent
   }
   tbody tr td:first-child {
-    border-bottom: 0.5px solid v.$border-color-secondary;
+    border-bottom: 0.5px solid v.$border-color-secondary; // Match other body cells' bottom border
   }
 }
 
+.percentileFlexContainer {
+  // Container within the 'Percentile Ranks' cell
+  display: flex;
+  justify-content: center; // Center items horizontally
+  align-items: flex-start; // Align items to the top
+  flex-wrap: wrap;
+  gap: 4px 6px; // Row and column gap
+  padding: 4px 0; // Small padding within the cell
+}
+
 .percentileContainer {
-  display: inline-flex;
+  // Individual metric box + label (Desktop & GP%)
+  display: inline-flex; // Allows side-by-side layout within flex container
   flex-direction: column;
   align-items: center;
-  margin-right: 6px;
-  margin-bottom: 4px;
+  transition: opacity v.$transition-duration v.$transition-easing; // For dimming
+
+  // --- Styling for selected/dimmed states ---
+  &.selected {
+    // Applied when this metric is part of the active filter
+    .percentileLabel {
+      // font-weight: bold; // Optional: make label bolder
+      color: v.$secondary-color; // Highlight label color
+    }
+    .percentileBox {
+      outline: 2px solid v.$secondary-color; // Highlight border
+      outline-offset: 1px;
+    }
+  }
+  &.dimmed {
+    // Applied when filters are active, but this metric is NOT selected
+    opacity: 0.6; // Dim non-selected metrics
+  }
 }
 .percentileLabel {
-  font-size: 0.8em;
-  margin-bottom: 4px;
-}
-.percentileFlexContainer {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  gap: 5px;
+  font-size: 0.75em; // Smaller label
+  margin-bottom: 3px;
+  color: v.$text-color-secondary; // Default subdued color
+  white-space: nowrap;
+  transition: color v.$transition-duration v.$transition-easing; // Smooth color change
+
+  // --- NEW: Style for selected label ---
+  &.selectedLabel {
+    color: v.$secondary-color;
+    // font-weight: bold; // Optional
+  }
 }
 .percentileBox {
-  padding: 8px 6px;
+  padding: 5px 4px; // Adjust padding
   border-radius: 4px;
-  font-size: 1.2em;
+  font-size: 1em; // Adjust font size
   font-weight: bold;
   text-align: center;
-  min-width: 40px;
+  min-width: 38px; // Minimum width
+  color: v.$text-color-primary; // Ensure text is visible on gradient bg
+  box-sizing: border-box;
+  transition: outline v.$transition-duration v.$transition-easing; // Smooth outline transition
+
+  // --- NEW: Style for selected box ---
+  &.selectedBox {
+    outline: 2px solid v.$secondary-color;
+    outline-offset: 1px;
+  }
 }
 
 .pagination {
   display: flex;
   justify-content: space-evenly;
   align-items: center;
-  margin-top: v.$filter-vertical-spacing;
+  margin-top: 20px; // Use consistent spacing
+  padding: 10px 0;
   gap: 20px;
   button {
-    @include v.button-style;
+    padding: 8px 15px;
+    font-size: 0.9em;
+    background-color: v.$primary-color;
+    color: v.$text-color-primary;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    &:hover:not(:disabled) {
+      background-color: color.scale(v.$primary-color, $lightness: -10%);
+    }
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   }
   span {
     font-family: v.$font-family-primary;
@@ -525,6 +732,7 @@
   }
 }
 
+/* --- Mobile Table Specific Styles --- */
 .expandButton {
   background: transparent;
   border: none;
@@ -532,8 +740,12 @@
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0 5px;
-  transition: transform v.$transition-duration v.$transition-easing;
-  line-height: 1;
+  transition: transform v.$transition-duration v.$transition-easing,
+    color v.$transition-duration v.$transition-easing;
+  line-height: 1; // Prevent extra spacing
+  display: inline-flex; // Ensure proper alignment
+  align-items: center;
+  justify-content: center;
   &:hover {
     transform: scale(1.1);
     color: v.$secondary-color;
@@ -541,18 +753,20 @@
 }
 
 .containerMobile {
-  overflow-x: auto;
+  // Wrapper for mobile table
+  overflow-x: auto; // Allow horizontal scroll if needed, though less likely now
   outline: 8px solid v.$background-dark;
   background-color: v.$background-dark;
   border: 3px solid v.$background-light;
   border-radius: v.$border-radius;
-  margin-top: v.$filter-vertical-spacing;
+  margin-top: 20px; // Consistent spacing
 }
 .tableMobile {
-  @include v.table-base;
-  border: none;
-  border-radius: 0;
+  width: 100%;
   border-collapse: collapse;
+  border: none; // Remove outer border, handled by container
+  border-radius: 0; // No radius inside container
+
   thead {
     position: sticky;
     top: 0;
@@ -563,17 +777,22 @@
     }
     th {
       padding: 8px 5px;
-      font-size: 12px;
+      font-size: 11px; // Smaller header font on mobile
       font-weight: 700;
       color: v.$text-color-secondary;
       background-color: v.$background-dark;
       text-transform: uppercase;
       letter-spacing: 0.5px;
       text-align: center;
-      border-right: 1px solid v.$border-color-primary;
+      border-right: 1px solid v.$border-color-primary; // Vertical separator lines
+      white-space: nowrap;
+      cursor: pointer;
       &:first-child {
+        // Expand button column
         text-align: center;
         border-right: none;
+        width: 5%; // Ensure width consistency with colgroup
+        cursor: default; // Not sortable
       }
       &:last-child {
         border-right: none;
@@ -584,7 +803,8 @@
     tr {
       border-bottom: 1px solid v.$border-color-secondary;
       transition: background-color v.$transition-duration v.$transition-easing;
-      &:last-child {
+      &:last-child:not(.expandedRow) {
+        // Avoid double border with expanded row
         border-bottom: none;
       }
       &:nth-child(even) {
@@ -594,6 +814,7 @@
         background-color: v.$background-dark;
       }
       &:hover:not(.expandedRow) {
+        // Don't highlight expanded row itself on hover
         background-color: color.scale(v.$primary-color, $lightness: -30%);
       }
     }
@@ -604,10 +825,13 @@
       vertical-align: middle;
       border-right: 1px solid v.$border-color-secondary;
       &:first-child {
-        padding: 0 5px;
+        // Expand button cell
+        padding: 0; // Remove padding for button
         border-right: none;
+        vertical-align: middle;
       }
       &:nth-child(2) {
+        // Name column
         text-align: left;
       }
       &:last-child {
@@ -617,78 +841,118 @@
   }
   .expandedRow {
     background-color: color.scale(
-      v.$background-light,
-      $lightness: 5%
-    ) !important;
-    border-bottom: 2px solid v.$secondary-color;
+      v.$background-medium,
+      $lightness: -5%
+    ) !important; // Slightly darker than even rows
+    border-bottom: 2px solid v.$secondary-color; // Clear separation
     td {
-      padding: 15px 10px;
-      border: none;
+      padding: 15px 10px; // More padding for expanded content
+      border: none; // No internal borders for expanded cell
     }
   }
 }
 
 .expandedDetails {
+  // Container within the expanded cell
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 10px;
+  align-items: center; // Center rows horizontally
+  gap: 10px; // Space between rows of stats
   width: 100%;
 }
 .detailRow {
+  // A row of stats within the expanded view
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  align-items: stretch;
-  gap: 8px;
+  justify-content: center; // Center stats horizontally
+  align-items: stretch; // Make items equal height if needed
+  gap: 8px; // Gap between individual stats
   width: 100%;
 }
 .detailItem {
+  // Individual stat box in expanded view
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  background-color: v.$background-dark;
+  justify-content: flex-start; // Align content (label, value) to top
+  background-color: v.$background-dark; // Dark background for contrast
   border-radius: 6px;
   padding: 5px;
-  min-width: 55px;
+  min-width: 55px; // Ensure minimum width for readability
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  flex-grow: 1; // Allow items to grow slightly to fill space
+  flex-basis: 0; // Allow flex-grow to work properly
+  transition: opacity v.$transition-duration v.$transition-easing; // For dimming
+
+  // --- Styling for selected/dimmed states in mobile ---
+  &.selected {
+    // .detailLabel { font-weight: bold; } // Optional
+    // .detailValue { outline: 1px solid v.$secondary-color; } // Handled by selectedBox class now
+  }
+  &.dimmed {
+    opacity: 0.6; // Dim non-selected metrics
+  }
 }
 .detailLabel {
+  // Label (e.g., "PTS:") in expanded stat item
   font-size: 0.7em;
   margin-bottom: 3px;
   color: v.$text-color-secondary;
   text-align: center;
   white-space: nowrap;
+  transition: color v.$transition-duration v.$transition-easing; // Smooth color change
+
+  // Apply selected style via class
+  &.selectedLabel {
+    color: v.$secondary-color;
+    // font-weight: bold; // Optional
+  }
 }
 .detailValue {
+  // Value (e.g., "85%") in expanded stat item
   font-weight: bold;
   text-align: center;
   font-size: 1.1em;
   padding: 4px;
   border-radius: 4px;
   color: v.$text-color-primary;
-  width: 100%;
+  width: 100%; // Fill the item width
+  box-sizing: border-box; // Include padding in width
+  transition: outline v.$transition-duration v.$transition-easing; // Smooth outline transition
+
+  // Apply selected style via class
+  &.selectedBox {
+    outline: 1px solid v.$secondary-color; // Slightly thinner outline for mobile?
+    outline-offset: 1px;
+  }
 }
 
 .nameAndInjuryWrapperMobile {
+  // Container for Name + Injury Icon on mobile rows
   display: flex;
   flex-direction: row;
   align-items: center;
   width: 100%;
-  gap: 5px;
+  gap: 5px; // Space between name and icon
 }
 .leftNamePartMobile {
-  flex-grow: 1;
+  flex-grow: 1; // Allow name to take available space
   display: flex;
   align-items: center;
   text-align: left;
+  overflow: hidden; // Prevent long names breaking layout
+  .playerName {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 .rightInjuryPartMobile {
-  flex-shrink: 0;
+  // Injury icon container
+  flex-shrink: 0; // Prevent injury icon shrinking
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-end; // Align icon to the right
 }
 
 /* --- Styles for the Collapsible Table/Pagination Content --- */
@@ -696,29 +960,33 @@
   transition: max-height 0.4s v.$transition-easing,
     opacity 0.3s v.$transition-easing, visibility 0.3s v.$transition-easing,
     margin-top 0.4s v.$transition-easing;
-  max-height: 5000px; // Arbitrarily large height (adjust if content ever exceeds this)
+  max-height: 5000px; // Arbitrarily large height when visible
   opacity: 1;
   visibility: visible;
-}
+  overflow: visible; // Allow potential box shadows etc to show from table container
 
-// When the main container is minimized on mobile, hide the table content
-.containerMinimized {
-  .collapsibleContent {
+  // Styles when filters are minimized (applied via parent .containerMinimized)
+  .containerMinimized & {
+    // Target .collapsibleContent when parent has .containerMinimized
     max-height: 0;
     opacity: 0;
     visibility: hidden;
-    margin-top: 0; // Remove any top margin it might have
-    // We might need to hide the table containers explicitly too if they have outlines/borders
-    .tableContainer,
-    .containerMobile {
-      display: none; // Or visibility: hidden; depending on desired effect
-    }
+    margin-top: 0;
+    overflow: hidden; // Hide content completely
   }
 }
 
-// Optional: Style for loading/no results message positioning
+/* Redundant style block removed as logic moved inside .collapsibleContent */
+/*
+.containerMinimized {
+  .collapsibleContent { ... }
+}
+*/
+
 .message {
-  padding: 20px;
+  // Loading/No results message
+  padding: 30px 20px;
   text-align: center;
   color: v.$text-color-secondary;
+  font-size: 1.1em;
 }
