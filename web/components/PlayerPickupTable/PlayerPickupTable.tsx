@@ -1,10 +1,12 @@
-// components/PlayerPickupTable/PlayerPickupTable.tsx
-
 import React, { useState, useEffect, useMemo } from "react";
 import supabase from "lib/supabase"; // Assuming lib/supabase is configured
 import styles from "./PlayerPickupTable.module.scss";
 import Image from "next/image";
-import clsx from "clsx"; // <--- Make sure to install and import clsx
+import clsx from "clsx";
+
+// TO DO
+// integrate week score, dynamic. if toggle turns off a day, update score
+// add Line/PP "extension" look from lines
 
 // ---------------------------
 // Type Definitions
@@ -45,7 +47,14 @@ export type UnifiedPlayerData = {
 
 export interface PlayerWithPercentiles extends UnifiedPlayerData {
   percentiles: Record<MetricKey, number>;
-  composite: number;
+  composite: number; // Original overall score based on all relevant metrics
+}
+
+export interface PlayerWithScores extends PlayerWithPercentiles {
+  displayScore: number; // The score shown in the table (can be composite, selected avg, or other avg)
+  sortByValue: number; // The value used when sorting by the 'Score' column
+  filterMode: "all" | "single" | "multiple" | "none"; // What kind of filtering is active for this player
+  activeSelectedMetrics: MetricKey[]; // Which metrics were actually used for the score calculation
 }
 
 export type MetricKey =
@@ -73,6 +82,17 @@ export interface MetricDefinition {
   label: string;
 }
 
+// --- NEW: Interface for Mobile Detail Items ---
+interface DetailItemData {
+  key: MetricKey;
+  label: string;
+  value: number | undefined | null;
+  displayValue: string;
+}
+
+// --- Base Metric Definitions (Used for Percentile Calculation, Presets etc.) ---
+// NOTE: GP% is included here because it's needed for percentile calculations for both types.
+// We will explicitly exclude it in the preset button logic later.
 const skaterMetrics: MetricDefinition[] = [
   { key: "points", label: "PTS" },
   { key: "goals", label: "G" },
@@ -84,7 +104,7 @@ const skaterMetrics: MetricDefinition[] = [
   { key: "total_fow", label: "FOW" },
   { key: "penalty_minutes", label: "PIM" },
   { key: "sh_points", label: "SHP" },
-  { key: "percent_games", label: "GP%" }
+  { key: "percent_games", label: "GP%" } // GP% included for skaters calc
 ];
 
 const goalieMetrics: MetricDefinition[] = [
@@ -95,8 +115,38 @@ const goalieMetrics: MetricDefinition[] = [
   { key: "quality_start", label: "QS" },
   { key: "goals_against_avg", label: "GAA" },
   { key: "save_pct", label: "SV%" },
-  { key: "percent_games", label: "GP%" }
+  { key: "percent_games", label: "GP%" } // GP% included for goalies calc
 ];
+
+// --- Define Metric Groups for Filter UI ---
+const skaterPointKeys: MetricKey[] = [
+  "goals",
+  "assists",
+  "points",
+  "pp_points",
+  "sh_points"
+];
+
+const skaterPeripheralKeys: MetricKey[] = [
+  "shots",
+  "blocked_shots",
+  "hits",
+  "total_fow",
+  "penalty_minutes"
+];
+const goalieQualityKeys: MetricKey[] = [
+  "save_pct",
+  "goals_against_avg",
+  "quality_start"
+  // Note: 'SO' is listed under Quantity in the diagram, adjust if needed
+];
+const goalieQuantityKeys: MetricKey[] = [
+  "wins",
+  "saves",
+  "shots_against",
+  "shutouts" // SO listed here as per diagram
+];
+const gamePlayedKey: MetricKey = "percent_games"; // Keep GP% separate for UI Grouping
 
 // ---------------------------
 // Default Filter Settings & Props
@@ -173,11 +223,14 @@ const normalizeTeamAbbreviation = (
   return mappedTeams[0] || null;
 };
 
-function getRankColorStyle(percentile: number): React.CSSProperties {
+function getRankColorStyle(
+  percentile: number | undefined | null
+): React.CSSProperties {
   if (percentile === undefined || percentile === null) {
-    return { backgroundColor: `rgba(128, 128, 128, 0.45)` };
+    return { backgroundColor: `rgba(128, 128, 128, 0.45)` }; // Grey for undefined/null
   }
   const weight = Math.max(0, Math.min(100, percentile)) / 100;
+  // Red to Green gradient
   const r = Math.round(255 * (1 - weight));
   const g = Math.round(255 * weight);
   return { backgroundColor: `rgba(${r}, ${g}, 0, 0.45)` };
@@ -195,13 +248,20 @@ interface FiltersProps {
   setTeamFilter: (value: string) => void;
   selectedPositions: Record<string, boolean>;
   setSelectedPositions: React.Dispatch<
+    // Allow direct setting for presets
     React.SetStateAction<Record<string, boolean>>
   >;
   resetFilters: () => void;
   teamOptions: string[];
   isMobile: boolean;
-  isMobileMinimized: boolean; // Prop to indicate minimized state
-  toggleMobileMinimize: () => void; // Prop to toggle minimize state
+  isMobileMinimized: boolean;
+  toggleMobileMinimize: () => void;
+  // --- Props for Metric Filtering ---
+  allPossibleMetrics: MetricDefinition[]; // Still needed for lookups and presets
+  selectedMetrics: Record<MetricKey, boolean>;
+  setSelectedMetrics: React.Dispatch<
+    React.SetStateAction<Record<MetricKey, boolean>>
+  >;
 }
 
 const Filters: React.FC<FiltersProps> = ({
@@ -210,13 +270,48 @@ const Filters: React.FC<FiltersProps> = ({
   teamFilter,
   setTeamFilter,
   selectedPositions,
-  setSelectedPositions,
+  setSelectedPositions, // Receive the setter function
   resetFilters,
   teamOptions,
   isMobile,
-  isMobileMinimized, // Destructure new props
-  toggleMobileMinimize // Destructure new props
+  isMobileMinimized,
+  toggleMobileMinimize,
+  // --- Destructure metric props ---
+  allPossibleMetrics,
+  selectedMetrics,
+  setSelectedMetrics
 }) => {
+  // --- NEW: Handler for clicking sub-group titles ---
+  const handleSubGroupPresetClick = (
+    keysToSelect: MetricKey[],
+    playerType: "skater" | "goalie"
+  ) => {
+    // 1. Set Position Filters
+    const skaterPositions = { C: true, LW: true, RW: true, D: true, G: false };
+    const goaliePositions = {
+      C: false,
+      LW: false,
+      RW: false,
+      D: false,
+      G: true
+    };
+    setSelectedPositions(
+      playerType === "skater" ? skaterPositions : goaliePositions
+    );
+
+    // 2. Set Metric Filters (only select keys from the specific subgroup)
+    const nextMetricsState = Object.fromEntries(
+      allPossibleMetrics.map((metric) => [metric.key, false]) // Start all false
+    ) as Record<MetricKey, boolean>;
+
+    keysToSelect.forEach((key) => {
+      if (key in nextMetricsState) {
+        nextMetricsState[key] = true;
+      }
+    });
+    setSelectedMetrics(nextMetricsState);
+  };
+
   const handlePositionChange = (pos: string) => {
     setSelectedPositions((prev: Record<string, boolean>) => ({
       ...prev,
@@ -224,11 +319,115 @@ const Filters: React.FC<FiltersProps> = ({
     }));
   };
 
+  const handleMetricChange = (key: MetricKey) => {
+    setSelectedMetrics((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // --- UPDATED handleSelectPreset ---
+  const handleSelectPreset = (type: "all" | "skater" | "goalie" | "none") => {
+    const nextMetricsState: Record<MetricKey, boolean> = Object.fromEntries(
+      allPossibleMetrics.map((metric) => [metric.key, false])
+    ) as Record<MetricKey, boolean>; // Start fresh with all metrics false
+
+    // Use the original skater/goalie metric definitions for determining which metrics to select
+    const skaterMetricKeys = new Set(skaterMetrics.map((m) => m.key));
+    const goalieMetricKeys = new Set(goalieMetrics.map((m) => m.key));
+
+    // --- Define Position States for Presets ---
+    const skaterPositions = { C: true, LW: true, RW: true, D: true, G: false };
+    const goaliePositions = {
+      C: false,
+      LW: false,
+      RW: false,
+      D: false,
+      G: true
+    };
+
+    // Update Metric Selection based on type
+    allPossibleMetrics.forEach((metric) => {
+      switch (type) {
+        case "all":
+          nextMetricsState[metric.key] = true;
+          break;
+        case "none":
+          nextMetricsState[metric.key] = false;
+          break;
+        case "skater":
+          // Select metric IF it's a skater metric AND NOT percent_games
+          nextMetricsState[metric.key] =
+            skaterMetricKeys.has(metric.key) && metric.key !== "percent_games";
+          break;
+        case "goalie":
+          // Select metric IF it's a goalie metric AND NOT percent_games
+          nextMetricsState[metric.key] =
+            goalieMetricKeys.has(metric.key) && metric.key !== "percent_games";
+          break;
+      }
+    });
+    setSelectedMetrics(nextMetricsState); // Update the selected metrics state
+
+    // --- Update Position Selection based on type ---
+    switch (type) {
+      case "skater":
+        setSelectedPositions(skaterPositions); // Show only skater positions
+        break;
+      case "goalie":
+        setSelectedPositions(goaliePositions); // Show only goalie position
+        break;
+      case "all":
+      case "none":
+        setSelectedPositions(defaultPositions); // Reset to default positions
+        break;
+    }
+  };
+
+  // Determine active metrics count and states for disabling buttons
+  const activeMetricKeys = useMemo(
+    () =>
+      Object.entries(selectedMetrics)
+        .filter(([, isSelected]) => isSelected)
+        .map(([key]) => key as MetricKey),
+    [selectedMetrics]
+  );
+
+  const isAllSelected = activeMetricKeys.length === allPossibleMetrics.length;
+  const isNoneSelected = activeMetricKeys.length === 0;
+
+  // Helper to find metric definition (label) by key
+  const getMetricDefinition = (
+    key: MetricKey
+  ): MetricDefinition | undefined => {
+    return allPossibleMetrics.find((m) => m.key === key);
+  };
+
+  // Renders the inner checkboxes for a specific sub-group
+  const renderCheckboxGroup = (metricKeys: MetricKey[]) => {
+    const validMetrics = metricKeys
+      .map((key) => getMetricDefinition(key))
+      .filter((metric): metric is MetricDefinition => !!metric);
+
+    if (validMetrics.length === 0) return null;
+
+    return (
+      <div className={styles.metricGroupCheckboxes}>
+        {validMetrics.map((metric) => (
+          <label key={metric.key} className={styles.metricCheckbox}>
+            <input
+              type="checkbox"
+              checked={selectedMetrics[metric.key] ?? false}
+              onChange={() => handleMetricChange(metric.key)}
+            />{" "}
+            {metric.label}
+          </label>
+        ))}
+      </div>
+    );
+  };
+
   // Handler for title click, only works on mobile
   const handleTitleClick = isMobile ? toggleMobileMinimize : undefined;
 
   return (
-    // Apply minimized class conditionally
     <div
       className={clsx(
         styles.filters,
@@ -237,17 +436,16 @@ const Filters: React.FC<FiltersProps> = ({
     >
       <div
         className={styles.filtersTitle}
-        onClick={handleTitleClick} // Add onClick for mobile toggle
-        role={isMobile ? "button" : undefined} // Accessibility
-        tabIndex={isMobile ? 0 : undefined} // Accessibility
-        aria-expanded={isMobile ? !isMobileMinimized : undefined} // Accessibility
-        aria-controls={isMobile ? "player-table-content" : undefined} // Accessibility (points to content ID)
+        onClick={handleTitleClick}
+        role={isMobile ? "button" : undefined}
+        tabIndex={isMobile ? 0 : undefined}
+        aria-expanded={isMobile ? !isMobileMinimized : undefined}
+        aria-controls={isMobile ? "player-table-content" : undefined}
       >
         <span className={styles.acronym}>BPA</span> -{" "}
         <span className={styles.acronym}>B</span>est{" "}
         <span className={styles.acronym}>P</span>layer{" "}
         <span className={styles.acronym}>A</span>vailable
-        {/* Minimize/Maximize Icon (only on mobile) */}
         {isMobile && (
           <span
             className={clsx(
@@ -261,11 +459,12 @@ const Filters: React.FC<FiltersProps> = ({
         )}
       </div>
 
-      {/* Conditionally render filter controls based on mobile minimize state */}
       {(!isMobile || !isMobileMinimized) && (
         <>
+          {/* --- Ownership, Team, Position Filters --- */}
+          {/* Conditionally render based on isMobile */}
           {isMobile ? (
-            // --- Mobile Filter Controls ---
+            // Mobile Layout for Basic Filters
             <div className={styles.filterContainerMobile}>
               <div className={styles.ownershipTeamContainer}>
                 <div className={styles.filterRowMobileOwnership}>
@@ -301,21 +500,26 @@ const Filters: React.FC<FiltersProps> = ({
               <div className={styles.filterRowMobile}>
                 <span className={styles.labelMobile}>Positions:</span>
                 <div className={styles.positionCheckboxGroup}>
-                  {Object.keys(defaultPositions).map((pos) => (
-                    <label key={pos} className={styles.positionCheckbox}>
-                      <input
-                        type="checkbox"
-                        checked={selectedPositions[pos] ?? false}
-                        onChange={() => handlePositionChange(pos)}
-                      />{" "}
-                      {pos}
-                    </label>
-                  ))}
+                  {Object.keys(defaultPositions).map(
+                    (
+                      pos // Use defaultPositions keys for rendering labels
+                    ) => (
+                      <label key={pos} className={styles.positionCheckbox}>
+                        <input
+                          type="checkbox"
+                          // Use selectedPositions state for checked status
+                          checked={selectedPositions[pos] ?? false}
+                          onChange={() => handlePositionChange(pos)}
+                        />{" "}
+                        {pos}
+                      </label>
+                    )
+                  )}
                 </div>
               </div>
             </div>
           ) : (
-            // --- Desktop Filter Controls ---
+            // Desktop Layout for Basic Filters
             <div className={styles.filterContainer}>
               <div className={styles.filterRow}>
                 <label className={styles.label}>
@@ -349,22 +553,132 @@ const Filters: React.FC<FiltersProps> = ({
               <div className={styles.filterRow}>
                 <span className={styles.label}>Positions:</span>
                 <div className={styles.positionCheckboxGroup}>
-                  {Object.keys(defaultPositions).map((pos) => (
-                    <label key={pos} className={styles.positionCheckbox}>
-                      <input
-                        type="checkbox"
-                        checked={selectedPositions[pos] ?? false}
-                        onChange={() => handlePositionChange(pos)}
-                      />{" "}
-                      {pos}
-                    </label>
-                  ))}
+                  {Object.keys(defaultPositions).map(
+                    (
+                      pos // Use defaultPositions keys for rendering labels
+                    ) => (
+                      <label key={pos} className={styles.positionCheckbox}>
+                        <input
+                          type="checkbox"
+                          // Use selectedPositions state for checked status
+                          checked={selectedPositions[pos] ?? false}
+                          onChange={() => handlePositionChange(pos)}
+                        />{" "}
+                        {pos}
+                      </label>
+                    )
+                  )}
                 </div>
               </div>
             </div>
           )}
+          <div className={styles.metricFilterContainer}>
+            {/* Header: Label + Preset Buttons */}
+            <div className={styles.metricFilterHeader}>
+              <span className={styles.label}>Filter by Metrics:</span>
+              <div className={styles.metricPresetButtons}>
+                <button
+                  onClick={() => handleSelectPreset("all")}
+                  disabled={isAllSelected}
+                >
+                  All
+                </button>
+                <button onClick={() => handleSelectPreset("skater")}>
+                  Skaters
+                </button>
+                <button onClick={() => handleSelectPreset("goalie")}>
+                  Goalies
+                </button>
+                <button
+                  onClick={() => handleSelectPreset("none")}
+                  disabled={isNoneSelected}
+                >
+                  None
+                </button>
+              </div>
+            </div>
+            {/* GP% Group (Full Width) */}
+            <div className={styles.gpGroupContainer}>
+              {renderCheckboxGroup([gamePlayedKey])}
+            </div>
+            {/* Skaters and Goalies Row */}
+            {/* Skaters and Goalies Row */}
+            <div className={styles.skaterGoalieRow}>
+              {/* Skaters Column */}
+              <fieldset className={styles.skaterMetricsColumn}>
+                <legend className={styles.columnLabel}>Skaters</legend>
+                <div className={styles.skaterSubGroupsRow}>
+                  <div className={styles.metricGroup}>
+                    {" "}
+                    {/* Points Group */}
+                    <button
+                      type="button" // Prevent form submission if wrapped in form
+                      className={styles.metricGroupTitle}
+                      onClick={() =>
+                        handleSubGroupPresetClick(skaterPointKeys, "skater")
+                      }
+                    >
+                      Points
+                    </button>
+                    {renderCheckboxGroup(skaterPointKeys)}
+                  </div>
+                  <div className={styles.metricGroup}>
+                    {" "}
+                    {/* Peripherals Group */}
+                    <button
+                      type="button"
+                      className={styles.metricGroupTitle}
+                      onClick={() =>
+                        handleSubGroupPresetClick(
+                          skaterPeripheralKeys,
+                          "skater"
+                        )
+                      }
+                    >
+                      Peripherals
+                    </button>
+                    {renderCheckboxGroup(skaterPeripheralKeys)}
+                  </div>
+                </div>
+              </fieldset>
 
-          {/* Reset button is also part of the collapsible content */}
+              {/* Goalies Column */}
+              <fieldset className={styles.goalieMetricsColumn}>
+                <legend className={styles.columnLabel}>Goalies</legend>
+                <div className={styles.goalieSubGroupsRow}>
+                  <div className={styles.metricGroup}>
+                    {" "}
+                    {/* Quality Group */}
+                    <button
+                      type="button"
+                      className={styles.metricGroupTitle}
+                      onClick={() =>
+                        handleSubGroupPresetClick(goalieQualityKeys, "goalie")
+                      }
+                    >
+                      Quality
+                    </button>
+                    {renderCheckboxGroup(goalieQualityKeys)}
+                  </div>
+                  <div className={styles.metricGroup}>
+                    {" "}
+                    {/* Quantity Group */}
+                    {/* UPDATED: Title is now a button */}
+                    <button
+                      type="button"
+                      className={styles.metricGroupTitle}
+                      onClick={() =>
+                        handleSubGroupPresetClick(goalieQuantityKeys, "goalie")
+                      }
+                    >
+                      Quantity
+                    </button>
+                    {renderCheckboxGroup(goalieQuantityKeys)}
+                  </div>
+                </div>
+              </fieldset>
+            </div>{" "}
+          </div>{" "}
           <button className={styles.buttonReset} onClick={resetFilters}>
             Reset Filters
           </button>
@@ -375,98 +689,133 @@ const Filters: React.FC<FiltersProps> = ({
 };
 
 // Table Components (Desktop & Mobile)
-type SortKey = keyof PlayerWithPercentiles;
+type SortKey = keyof PlayerWithScores | "composite"; // Allow 'composite' for the score column key
 interface PlayerTableCommonProps {
-  players: PlayerWithPercentiles[];
+  // Use PlayerWithScores here
+  players: PlayerWithScores[];
   sortKey: SortKey;
   sortOrder: "asc" | "desc";
   handleSort: (column: SortKey) => void;
   getOffNightsForPlayer: (player: UnifiedPlayerData) => number | string;
+  // Pass selectedMetrics for styling
+  selectedMetrics: Record<MetricKey, boolean>;
 }
+
+// --- DesktopTable, MobileTable, PaginationControls (No changes needed in these child components) ---
 interface DesktopTableProps extends PlayerTableCommonProps {}
 const DesktopTable: React.FC<DesktopTableProps> = ({
   players,
   sortKey,
   sortOrder,
   handleSort,
-  getOffNightsForPlayer
+  getOffNightsForPlayer,
+  selectedMetrics // Receive selectedMetrics
 }) => {
+  // Determine header text based on the mode of the first player (or default)
+  let scoreHeader = "Score";
+  let currentFilterMode: PlayerWithScores["filterMode"] | null = null;
+  if (players.length > 0) {
+    currentFilterMode = players[0].filterMode; // Assume consistency for the page
+    const firstPlayerActiveMetrics = players[0].activeSelectedMetrics;
+
+    // Get *all* metric definitions for label lookup
+    const allMetricDefs = [...skaterMetrics, ...goalieMetrics];
+
+    if (currentFilterMode === "single" && firstPlayerActiveMetrics.length > 0) {
+      // Find the label for the single metric
+      scoreHeader = `Other Avg`; // Simpler header for single metric mode
+    } else if (currentFilterMode === "multiple") {
+      scoreHeader = "Selected Avg";
+    } else if (currentFilterMode === "none") {
+      scoreHeader = "Score (N/A)";
+    }
+  }
+
   return (
     <div className={styles.tableContainer}>
       <table className={styles.table}>
         <colgroup>
-          {" "}
-          <col style={{ width: "17%" }} /> <col style={{ width: "6%" }} />{" "}
-          <col style={{ width: "6%" }} /> <col style={{ width: "6%" }} />{" "}
-          <col style={{ width: "6%" }} /> <col style={{ width: "6%" }} />{" "}
-          <col style={{ width: "47%" }} /> <col style={{ width: "6%" }} />{" "}
+          <col style={{ width: "15%" }} /> <col style={{ width: "5%" }} />
+          <col style={{ width: "5%" }} /> <col style={{ width: "5%" }} />
+          <col style={{ width: "5%" }} /> <col style={{ width: "5%" }} />
+          <col style={{ width: "50%" }} /> <col style={{ width: "10%" }} />
         </colgroup>
         <thead>
-          {" "}
           <tr>
-            {" "}
             <th onClick={() => handleSort("nhl_player_name")}>
-              {" "}
               Name{" "}
               {sortKey === "nhl_player_name"
                 ? sortOrder === "desc"
                   ? "▼"
                   : "▲"
-                : ""}{" "}
-            </th>{" "}
+                : ""}
+            </th>
             <th onClick={() => handleSort("nhl_team_abbreviation")}>
-              {" "}
               Team{" "}
               {sortKey === "nhl_team_abbreviation"
                 ? sortOrder === "desc"
                   ? "▼"
                   : "▲"
-                : ""}{" "}
-            </th>{" "}
+                : ""}
+            </th>
             <th onClick={() => handleSort("percent_ownership")}>
-              {" "}
               Own %{" "}
               {sortKey === "percent_ownership"
                 ? sortOrder === "desc"
                   ? "▼"
                   : "▲"
-                : ""}{" "}
-            </th>{" "}
-            <th>Pos.</th>{" "}
+                : ""}
+            </th>
+            <th>Pos.</th>
             <th onClick={() => handleSort("off_nights")}>
-              {" "}
               Off-Nights{" "}
               {sortKey === "off_nights"
                 ? sortOrder === "desc"
                   ? "▼"
                   : "▲"
-                : ""}{" "}
-            </th>{" "}
-            <th onClick={() => handleSort("percent_games")}>GP%</th>{" "}
-            <th>Percentile Ranks</th>{" "}
+                : ""}
+            </th>
+            {/* Sorting GP% might need direct access to percentile or raw value */}
+            <th onClick={() => handleSort("percent_games")}>
+              GP%{" "}
+              {sortKey === "percent_games"
+                ? sortOrder === "desc"
+                  ? "▼"
+                  : "▲"
+                : ""}
+            </th>
+            <th>Percentile Ranks</th>
+            {/* Use dynamic header text, keep sort key as 'composite' for the score column */}
             <th onClick={() => handleSort("composite")}>
-              {" "}
-              Score{" "}
+              {scoreHeader}{" "}
               {sortKey === "composite"
                 ? sortOrder === "desc"
                   ? "▼"
                   : "▲"
-                : ""}{" "}
-            </th>{" "}
-          </tr>{" "}
+                : ""}
+            </th>
+          </tr>
         </thead>
         <tbody>
           {players.map((player) => {
+            // Use base metric definitions based on player type for display
             const relevantMetrics =
               player.player_type === "skater" ? skaterMetrics : goalieMetrics;
             const teamAbbr = normalizeTeamAbbreviation(
               player.current_team_abbreviation || player.yahoo_team,
               player.yahoo_team
             );
+
+            // Determine styling based on filter mode and active selections for this player
+            const isMetricSelected = (key: MetricKey) =>
+              player.activeSelectedMetrics.includes(key);
+            const isDimmed =
+              player.filterMode === "single" ||
+              player.filterMode === "multiple";
+
             return (
               <tr key={player.nhl_player_id}>
                 <td>
-                  {" "}
                   <div className={styles.nameAndInjuryWrapper}>
                     <div className={styles.leftNamePart}>
                       <span className={styles.playerName}>
@@ -496,10 +845,9 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                           </div>
                         </div>
                       )}
-                  </div>{" "}
+                  </div>
                 </td>
                 <td>
-                  {" "}
                   {teamAbbr ? (
                     <Image
                       src={`/teamLogos/${teamAbbr}.png`}
@@ -509,28 +857,49 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                     />
                   ) : (
                     "N/A"
-                  )}{" "}
+                  )}
                 </td>
                 <td>
-                  {" "}
                   {player.percent_ownership !== null
                     ? `${player.percent_ownership}%`
-                    : "N/A"}{" "}
+                    : "N/A"}
                 </td>
                 <td>
-                  {" "}
                   {player.eligible_positions?.join(", ") ||
-                    (player.player_type === "goalie" ? "G" : "N/A")}{" "}
+                    (player.player_type === "goalie" ? "G" : "N/A")}
                 </td>
                 <td>{getOffNightsForPlayer(player)}</td>
                 <td>
-                  {" "}
                   {player.percent_games !== null ? (
-                    <div className={styles.percentileContainer}>
+                    <div
+                      className={clsx(
+                        styles.percentileContainer,
+                        // Apply selected style if GP% is *actively used* in the score
+                        isMetricSelected("percent_games") && styles.selected,
+                        // Apply dimmed style if other filters are active AND GP% is not one of them
+                        isDimmed &&
+                          !isMetricSelected("percent_games") &&
+                          styles.dimmed
+                      )}
+                    >
                       <div
-                        className={styles.percentileBox}
+                        className={clsx(
+                          styles.percentileLabel,
+                          isMetricSelected("percent_games") &&
+                            styles.selectedLabel // Specific style for selected label
+                        )}
+                      >
+                        GP%
+                      </div>
+                      <div
+                        className={clsx(
+                          styles.percentileBox,
+                          isMetricSelected("percent_games") &&
+                            styles.selectedBox // Specific style for selected box
+                        )}
                         style={getRankColorStyle(
-                          player.percentiles.percent_games
+                          // Check if percentiles object and the specific key exist before accessing
+                          player.percentiles?.percent_games
                         )}
                       >
                         {(Math.min(player.percent_games, 1) * 100).toFixed(0)}%
@@ -538,34 +907,53 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                     </div>
                   ) : (
                     "N/A"
-                  )}{" "}
+                  )}
                 </td>
                 <td>
-                  {" "}
                   <div className={styles.percentileFlexContainer}>
+                    {/* Filter out GP% since it has its own column */}
                     {relevantMetrics
                       .filter(({ key }) => key !== "percent_games")
                       .map(({ key, label }) => {
-                        const pctVal = player.percentiles[key];
+                        // Check if percentiles object and the specific key exist
+                        const pctVal = player.percentiles?.[key];
+                        const isSelected = isMetricSelected(key);
+
                         return (
-                          <div key={key} className={styles.percentileContainer}>
-                            <div className={styles.percentileLabel}>
+                          <div
+                            key={key}
+                            className={clsx(
+                              styles.percentileContainer,
+                              isSelected && styles.selected,
+                              isDimmed && !isSelected && styles.dimmed
+                            )}
+                          >
+                            <div
+                              className={clsx(
+                                styles.percentileLabel,
+                                isSelected && styles.selectedLabel
+                              )}
+                            >
                               {label}
                             </div>
                             <div
-                              className={styles.percentileBox}
-                              style={getRankColorStyle(pctVal)}
+                              className={clsx(
+                                styles.percentileBox,
+                                isSelected && styles.selectedBox
+                              )}
+                              style={getRankColorStyle(pctVal)} // Pass potentially undefined value
                             >
-                              {pctVal !== undefined
+                              {pctVal !== undefined && pctVal !== null
                                 ? `${pctVal.toFixed(0)}%`
-                                : "0%"}
+                                : "0%"}{" "}
+                              {/* Handle undefined/null */}
                             </div>
                           </div>
                         );
                       })}
-                  </div>{" "}
+                  </div>
                 </td>
-                <td>{player.composite.toFixed(1)}</td>
+                <td>{player.displayScore.toFixed(1)}</td>
               </tr>
             );
           })}
@@ -574,7 +962,7 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
     </div>
   );
 };
-
+// ... (MobileTable component remains the same) ...
 interface MobileTableProps extends PlayerTableCommonProps {
   expanded: Record<string, boolean>;
   toggleExpand: (playerId: string) => void;
@@ -586,24 +974,32 @@ const MobileTable: React.FC<MobileTableProps> = ({
   handleSort,
   expanded,
   toggleExpand,
-  getOffNightsForPlayer
+  getOffNightsForPlayer,
+  selectedMetrics // Receive selectedMetrics
 }) => {
   const totalColumns = 7;
+
+  // Determine header text for mobile score column (optional, could keep as "Score")
+  let scoreHeaderMobile = "Score";
+  if (players.length > 0) {
+    const firstPlayerMode = players[0].filterMode;
+    if (firstPlayerMode === "single") scoreHeaderMobile = "Other Avg";
+    else if (firstPlayerMode === "multiple") scoreHeaderMobile = "Sel. Avg";
+    else if (firstPlayerMode === "none") scoreHeaderMobile = "N/A";
+  }
+
   return (
     <div className={styles.containerMobile}>
       <table className={styles.tableMobile}>
         <colgroup>
-          {" "}
-          <col style={{ width: "5%" }} /> <col style={{ width: "35%" }} />{" "}
-          <col style={{ width: "10%" }} /> <col style={{ width: "10%" }} />{" "}
-          <col style={{ width: "15%" }} /> <col style={{ width: "10%" }} />{" "}
-          <col style={{ width: "15%" }} />{" "}
+          <col style={{ width: "5%" }} /> <col style={{ width: "35%" }} />
+          <col style={{ width: "10%" }} /> <col style={{ width: "10%" }} />
+          <col style={{ width: "15%" }} /> <col style={{ width: "10%" }} />
+          <col style={{ width: "15%" }} />
         </colgroup>
         <thead>
-          {" "}
           <tr>
-            {" "}
-            <th></th>{" "}
+            <th></th> {/* Expand Button */}
             <th onClick={() => handleSort("nhl_player_name")}>
               Name{" "}
               {sortKey === "nhl_player_name"
@@ -611,7 +1007,7 @@ const MobileTable: React.FC<MobileTableProps> = ({
                   ? "▼"
                   : "▲"
                 : ""}
-            </th>{" "}
+            </th>
             <th onClick={() => handleSort("nhl_team_abbreviation")}>
               Team{" "}
               {sortKey === "nhl_team_abbreviation"
@@ -619,7 +1015,7 @@ const MobileTable: React.FC<MobileTableProps> = ({
                   ? "▼"
                   : "▲"
                 : ""}
-            </th>{" "}
+            </th>
             <th onClick={() => handleSort("percent_ownership")}>
               Own{" "}
               {sortKey === "percent_ownership"
@@ -627,8 +1023,8 @@ const MobileTable: React.FC<MobileTableProps> = ({
                   ? "▼"
                   : "▲"
                 : ""}
-            </th>{" "}
-            <th>Pos.</th>{" "}
+            </th>
+            <th>Pos.</th>
             <th onClick={() => handleSort("off_nights")}>
               Offs{" "}
               {sortKey === "off_nights"
@@ -636,19 +1032,20 @@ const MobileTable: React.FC<MobileTableProps> = ({
                   ? "▼"
                   : "▲"
                 : ""}
-            </th>{" "}
+            </th>
             <th onClick={() => handleSort("composite")}>
-              Score{" "}
+              {scoreHeaderMobile}{" "}
               {sortKey === "composite"
                 ? sortOrder === "desc"
                   ? "▼"
                   : "▲"
                 : ""}
-            </th>{" "}
-          </tr>{" "}
+            </th>
+          </tr>
         </thead>
         <tbody>
           {players.map((player) => {
+            // Use base metric definitions based on player type
             const relevantMetrics =
               player.player_type === "skater" ? skaterMetrics : goalieMetrics;
             const teamAbbr = normalizeTeamAbbreviation(
@@ -656,48 +1053,68 @@ const MobileTable: React.FC<MobileTableProps> = ({
               player.yahoo_team
             );
             const isExpanded = expanded[player.nhl_player_id];
-            const allDetailItems = [
+
+            // Determine styling based on filter mode and active selections for this player
+            const isMetricSelected = (key: MetricKey) =>
+              player.activeSelectedMetrics.includes(key);
+            const isDimmed =
+              player.filterMode === "single" ||
+              player.filterMode === "multiple";
+
+            // Prepare items for expanded view using DetailItemData interface
+            // Include GP% first
+            const allDetailItems: DetailItemData[] = [
               {
                 key: "percent_games",
                 label: "GP%",
-                value: player.percentiles.percent_games,
+                // Safely access percentile value
+                value: player.percentiles?.percent_games,
                 displayValue:
                   player.percent_games !== null
                     ? `${(Math.min(player.percent_games, 1) * 100).toFixed(0)}%`
                     : "N/A"
               },
+              // Add other relevant metrics (excluding GP% as it's already added)
               ...relevantMetrics
                 .filter(({ key }) => key !== "percent_games")
-                .map(({ key, label }) => ({
-                  key: key,
-                  label: label,
-                  value: player.percentiles[key],
-                  displayValue:
-                    player.percentiles[key] !== undefined
-                      ? `${player.percentiles[key].toFixed(0)}%`
-                      : "0%"
-                }))
+                .map(({ key, label }): DetailItemData => {
+                  // Safely access percentile value
+                  const pctVal = player.percentiles?.[key];
+                  return {
+                    key: key,
+                    label: label,
+                    value: pctVal,
+                    displayValue:
+                      pctVal !== undefined && pctVal !== null
+                        ? `${pctVal.toFixed(0)}%`
+                        : "0%" // Handle undefined/null
+                  };
+                })
             ];
             const midpoint = Math.ceil(allDetailItems.length / 2);
             const row1Items = allDetailItems.slice(0, midpoint);
             const row2Items = allDetailItems.slice(midpoint);
+
             return (
               <React.Fragment key={player.nhl_player_id}>
                 <tr>
+                  {" "}
+                  {/* Main Row */}
                   <td>
                     {" "}
+                    {/* Expand Button */}
                     <button
                       onClick={() => toggleExpand(player.nhl_player_id)}
                       className={styles.expandButton}
                       aria-expanded={isExpanded}
                       aria-controls={`details-${player.nhl_player_id}`}
                     >
-                      {" "}
-                      {isExpanded ? "−" : "+"}{" "}
-                    </button>{" "}
+                      {isExpanded ? "−" : "+"}
+                    </button>
                   </td>
                   <td>
                     {" "}
+                    {/* Name */}
                     <div className={styles.nameAndInjuryWrapperMobile}>
                       <div className={styles.leftNamePartMobile}>
                         <span className={styles.playerName}>
@@ -725,6 +1142,7 @@ const MobileTable: React.FC<MobileTableProps> = ({
                   </td>
                   <td>
                     {" "}
+                    {/* Team */}
                     {teamAbbr ? (
                       <Image
                         src={`/teamLogos/${teamAbbr}.png`}
@@ -734,22 +1152,26 @@ const MobileTable: React.FC<MobileTableProps> = ({
                       />
                     ) : (
                       "N/A"
-                    )}{" "}
+                    )}
                   </td>
                   <td>
                     {" "}
+                    {/* Own% */}
                     {player.percent_ownership !== null
                       ? `${player.percent_ownership}%`
-                      : "N/A"}{" "}
+                      : "N/A"}
                   </td>
                   <td>
                     {" "}
+                    {/* Pos */}
                     {player.eligible_positions?.join(", ") ||
-                      (player.player_type === "goalie" ? "G" : "N/A")}{" "}
+                      (player.player_type === "goalie" ? "G" : "N/A")}
                   </td>
                   <td> {getOffNightsForPlayer(player)} </td>
-                  <td> {player.composite.toFixed(1)} </td>
+                  <td> {player.displayScore.toFixed(1)} </td>{" "}
+                  {/* Use displayScore */}
                 </tr>
+                {/* Expanded Row */}
                 {isExpanded && (
                   <tr className={styles.expandedRow}>
                     <td
@@ -757,38 +1179,74 @@ const MobileTable: React.FC<MobileTableProps> = ({
                       id={`details-${player.nhl_player_id}`}
                     >
                       <div className={styles.expandedDetails}>
+                        {/* Row 1 Details */}
                         <div className={styles.detailRow}>
-                          {" "}
-                          {row1Items.map((item) => (
-                            <div key={item.key} className={styles.detailItem}>
-                              <span className={styles.detailLabel}>
-                                {item.label}:
-                              </span>
-                              <span
-                                className={styles.detailValue}
-                                style={getRankColorStyle(item.value)}
+                          {row1Items.map((item) => {
+                            const isSelected = isMetricSelected(item.key);
+                            return (
+                              <div
+                                key={item.key}
+                                className={clsx(
+                                  styles.detailItem,
+                                  isSelected && styles.selected,
+                                  isDimmed && !isSelected && styles.dimmed
+                                )}
                               >
-                                {item.displayValue}
-                              </span>
-                            </div>
-                          ))}{" "}
-                        </div>
-                        {row2Items.length > 0 && (
-                          <div className={styles.detailRow}>
-                            {" "}
-                            {row2Items.map((item) => (
-                              <div key={item.key} className={styles.detailItem}>
-                                <span className={styles.detailLabel}>
+                                <span
+                                  className={clsx(
+                                    styles.detailLabel,
+                                    isSelected && styles.selectedLabel
+                                  )}
+                                >
                                   {item.label}:
                                 </span>
                                 <span
-                                  className={styles.detailValue}
+                                  className={clsx(
+                                    styles.detailValue,
+                                    isSelected && styles.selectedBox
+                                  )}
                                   style={getRankColorStyle(item.value)}
                                 >
                                   {item.displayValue}
                                 </span>
                               </div>
-                            ))}{" "}
+                            );
+                          })}
+                        </div>
+                        {/* Row 2 Details */}
+                        {row2Items.length > 0 && (
+                          <div className={styles.detailRow}>
+                            {row2Items.map((item) => {
+                              const isSelected = isMetricSelected(item.key);
+                              return (
+                                <div
+                                  key={item.key}
+                                  className={clsx(
+                                    styles.detailItem,
+                                    isSelected && styles.selected,
+                                    isDimmed && !isSelected && styles.dimmed
+                                  )}
+                                >
+                                  <span
+                                    className={clsx(
+                                      styles.detailLabel,
+                                      isSelected && styles.selectedLabel
+                                    )}
+                                  >
+                                    {item.label}:
+                                  </span>
+                                  <span
+                                    className={clsx(
+                                      styles.detailValue,
+                                      isSelected && styles.selectedBox
+                                    )}
+                                    style={getRankColorStyle(item.value)}
+                                  >
+                                    {item.displayValue}
+                                  </span>
+                                </div>
+                              );
+                            })}
                           </div>
                         )}
                       </div>
@@ -805,11 +1263,15 @@ const MobileTable: React.FC<MobileTableProps> = ({
 };
 
 // Pagination Component
+
 interface PaginationControlsProps {
   currentPage: number;
+
   totalPages: number;
+
   setCurrentPage: (page: number) => void;
 }
+
 const PaginationControls: React.FC<PaginationControlsProps> = ({
   currentPage,
   totalPages,
@@ -818,25 +1280,22 @@ const PaginationControls: React.FC<PaginationControlsProps> = ({
   if (totalPages <= 1) return null;
   return (
     <div className={styles.pagination}>
-      {" "}
       <button
         onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
         disabled={currentPage === 1}
       >
-        {" "}
-        Previous{" "}
-      </button>{" "}
+        Previous
+      </button>
       <span>
         {" "}
         Page {currentPage} of {totalPages}{" "}
-      </span>{" "}
+      </span>
       <button
         onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
         disabled={currentPage === totalPages}
       >
-        {" "}
-        Next{" "}
-      </button>{" "}
+        Next
+      </button>
     </div>
   );
 };
@@ -855,7 +1314,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   );
   const [teamFilter, setTeamFilter] = useState<string>(defaultTeamFilter);
   const [selectedPositions, setSelectedPositions] =
-    useState<Record<string, boolean>>(defaultPositions);
+    useState<Record<string, boolean>>(defaultPositions); // State for positions
   const [playersData, setPlayersData] = useState<UnifiedPlayerData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -863,9 +1322,30 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const pageSize = 25;
-  const [isMobileMinimized, setIsMobileMinimized] = useState(false); // State for mobile minimize
+  const [isMobileMinimized, setIsMobileMinimized] = useState(false);
 
-  // --- Data Fetching (useEffect) ---
+  // --- Calculate all possible metrics once (for filter UI, presets, state init) ---
+  const allPossibleMetrics = useMemo(() => {
+    const metricsMap = new Map<MetricKey, MetricDefinition>();
+    // Add all skater and goalie metrics, ensuring uniqueness
+    [...skaterMetrics, ...goalieMetrics].forEach((m) => {
+      metricsMap.set(m.key, m);
+    });
+    return Array.from(metricsMap.values()).sort((a, b) => {
+      return a.label.localeCompare(b.label);
+    });
+  }, []);
+
+  // --- Metric Filter State (Initialize with all true) ---
+  const [selectedMetrics, setSelectedMetrics] = useState<
+    Record<MetricKey, boolean>
+  >(() => {
+    return Object.fromEntries(
+      allPossibleMetrics.map((metric) => [metric.key, true])
+    ) as Record<MetricKey, boolean>;
+  });
+
+  // --- Data Fetching (useEffect - unchanged) ---
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true);
@@ -885,7 +1365,6 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           if (data.length < supabasePageSize) break;
           from += supabasePageSize;
         }
-        console.log(`Fetched ${allData.length} players.`);
         setPlayersData(allData);
       } catch (error) {
         console.error("Failed to load player data:", error);
@@ -897,87 +1376,74 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   }, []);
 
   // ---------------------------
-  // Memoized Calculations
+  // Memoized Calculations (Unchanged logic, but dependencies ensure updates)
   // ---------------------------
 
-  // Return off-nights for a given player, using teamWeekData if available.
-  const getOffNightsForPlayer = (
-    player: UnifiedPlayerData
-  ): number | string => {
-    if (!teamWeekData || teamWeekData.length === 0) {
-      return player.off_nights !== null ? player.off_nights : "N/A";
-    }
-    const teamAbbr = normalizeTeamAbbreviation(
-      player.current_team_abbreviation || player.yahoo_team,
-      player.yahoo_team
-    );
-    const teamData = teamWeekData.find(
-      (team) => team.teamAbbreviation === teamAbbr
-    );
-    return teamData
-      ? teamData.offNights
-      : player.off_nights !== null
-      ? player.off_nights
-      : "N/A";
-  };
-
-  // Filtered Players
-  const filteredPlayers = useMemo(() => {
-    return playersData.filter((player) => {
-      // Basic checks for required data
-      if (player.percent_ownership === null || player.percent_ownership === 0)
-        return false;
-      if (
-        !player.eligible_positions ||
-        player.eligible_positions.length === 0
-      ) {
-        // If no eligible positions, check if it's a Goalie and G is selected
-        if (player.player_type !== "goalie" || !selectedPositions["G"]) {
-          return false;
+  const getOffNightsForPlayer = useMemo(
+    /* ... unchanged ... */
+    () =>
+      (player: UnifiedPlayerData): number | string => {
+        if (!teamWeekData || teamWeekData.length === 0) {
+          return player.off_nights !== null ? player.off_nights : "N/A";
         }
-      }
+        const teamAbbr = normalizeTeamAbbreviation(
+          player.current_team_abbreviation || player.yahoo_team,
+          player.yahoo_team
+        );
+        const teamData = teamWeekData.find(
+          (team) => team.teamAbbreviation === teamAbbr
+        );
+        return teamData
+          ? teamData.offNights
+          : player.off_nights !== null
+          ? player.off_nights
+          : "N/A";
+      },
+    [teamWeekData]
+  );
 
-      // Ownership Threshold Filter
-      if (player.percent_ownership > ownershipThreshold) return false;
+  // --- Filtered Players (Now depends on selectedPositions state) ---
+  const filteredPlayers = useMemo(() => {
+    const result = playersData.filter((player) => {
+      // Ownership filter
+      if (
+        player.percent_ownership === null ||
+        player.percent_ownership === 0 ||
+        player.percent_ownership > ownershipThreshold
+      )
+        return false;
 
-      // Team Filter
+      // Team filter
       const playerTeamAbbr = normalizeTeamAbbreviation(
-        player.current_team_abbreviation || player.yahoo_team, // Prioritize current NHL team
-        player.yahoo_team // Use Yahoo team as fallback/secondary check
+        player.current_team_abbreviation || player.yahoo_team,
+        player.yahoo_team
       );
       if (teamFilter !== "ALL" && teamFilter !== playerTeamAbbr) return false;
 
-      // Position Filter
-      const playerPositions =
-        player.eligible_positions ||
-        (player.player_type === "goalie" ? ["G"] : []);
-      const positionMatch = playerPositions.some(
-        (pos) => selectedPositions[pos]
-      );
-      if (!positionMatch) return false;
+      // --- Position Filter (Crucial Part) ---
+      const hasEligiblePositions =
+        player.eligible_positions && player.eligible_positions.length > 0;
 
-      // Off-Nights check (ensure it's calculable) - Optional filter depending on requirements
-      const offNightsValue = getOffNightsForPlayer(player);
-      if (
-        offNightsValue === "N/A" ||
-        offNightsValue === undefined ||
-        offNightsValue === ""
-      ) {
-        // Decide if players without off-night data should be excluded
-        // return false; // Uncomment to exclude players without off-night data
+      // Handle Goalies
+      if (player.player_type === "goalie") {
+        // Show goalie ONLY if the 'G' position filter is selected
+        return selectedPositions["G"];
       }
-
-      return true; // Player passes all filters
+      // Handle Skaters
+      else {
+        // Skater needs eligible positions defined
+        if (!hasEligiblePositions) return false;
+        // Show skater if ANY of their eligible positions match ANY selected non-G position filter
+        return player.eligible_positions!.some(
+          (pos) => pos !== "G" && selectedPositions[pos]
+        );
+      }
     });
-  }, [
-    playersData,
-    ownershipThreshold,
-    teamFilter,
-    selectedPositions,
-    getOffNightsForPlayer
-  ]); // Include getOffNightsForPlayer dependency
+    return result;
+    // Dependency on selectedPositions is key here!
+  }, [playersData, ownershipThreshold, teamFilter, selectedPositions]);
 
-  // Compute Percentiles & Composite Score
+  // --- Compute Percentiles (Logic unchanged) ---
   const playersWithPercentiles: PlayerWithPercentiles[] = useMemo(() => {
     if (filteredPlayers.length === 0) return [];
 
@@ -988,8 +1454,10 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       values: (number | null)[],
       value: number | null
     ): number {
-      if (value === null) return 0;
-      const validValues = values.filter((v) => v !== null) as number[];
+      if (value === null || value === undefined) return 0;
+      const validValues = values.filter(
+        (v) => v !== null && v !== undefined
+      ) as number[];
       if (validValues.length === 0) return 0;
       validValues.sort((a, b) => a - b);
       const count = validValues.length;
@@ -1000,7 +1468,31 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         else if (v === value) numEqual++;
         else break;
       }
-      return ((numBelow + 0.5 * numEqual) / count) * 100;
+      if (count === 1) return 50.0;
+      return count > 0 ? ((numBelow + 0.5 * numEqual) / count) * 100 : 0;
+    }
+    function computeInvertedPercentile(
+      values: (number | null)[],
+      value: number | null
+    ): number {
+      if (value === null || value === undefined) return 0;
+      const validValues = values.filter(
+        (v) => v !== null && v !== undefined
+      ) as number[];
+      if (validValues.length === 0) return 0;
+      validValues.sort((a, b) => a - b);
+      const count = validValues.length;
+      let numAbove = 0;
+      let numEqual = 0;
+      for (const v of validValues) {
+        if (v > value) {
+          numAbove++;
+        } else if (v === value) {
+          numEqual++;
+        }
+      }
+      if (count === 1) return 50.0;
+      return count > 0 ? ((numAbove + 0.5 * numEqual) / count) * 100 : 0;
     }
 
     function assignPercentiles(
@@ -1009,54 +1501,49 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     ): PlayerWithPercentiles[] {
       if (group.length === 0) return [];
       const metricValuesMap: Map<MetricKey, (number | null)[]> = new Map();
-      for (const { key } of metrics) {
+
+      metrics.forEach(({ key }) => {
         metricValuesMap.set(
           key,
           group.map((p) => p[key as keyof UnifiedPlayerData] as number | null)
         );
-      }
+      });
+
       return group.map((player) => {
         const percentiles: Partial<Record<MetricKey, number>> = {};
         let sum = 0;
         let count = 0;
+
         for (const { key } of metrics) {
           const rawVal = player[key as keyof UnifiedPlayerData] as
             | number
             | null;
           const allValues = metricValuesMap.get(key) || [];
           let pct = 0;
+
           if (key === "goals_against_avg") {
-            // Inverted logic for GAA
-            const validValues = allValues.filter((v) => v !== null) as number[];
-            if (validValues.length > 0 && rawVal !== null) {
-              validValues.sort((a, b) => a - b);
-              const totalCount = validValues.length;
-              let numAbove = 0;
-              let numEqual = 0;
-              for (const v of validValues) {
-                if (v > rawVal) numAbove++;
-                else if (v === rawVal) numEqual++;
-              }
-              pct = ((numAbove + 0.5 * numEqual) / totalCount) * 100;
-            }
+            pct = computeInvertedPercentile(allValues, rawVal);
           } else {
-            // Standard logic
             pct = computePercentile(allValues, rawVal);
           }
+
           percentiles[key] = pct;
-          if (rawVal !== null) {
-            // Only add valid percentiles to composite
+          if (rawVal !== null && rawVal !== undefined) {
             sum += pct;
             count++;
           }
         }
+
         const composite = count > 0 ? sum / count : 0;
+
+        const finalPercentiles = metrics.reduce((acc, { key }) => {
+          acc[key] = percentiles[key] ?? 0;
+          return acc;
+        }, {} as Record<MetricKey, number>);
+
         return {
           ...player,
-          percentiles: metrics.reduce((acc, { key }) => {
-            acc[key] = percentiles[key] ?? 0;
-            return acc;
-          }, {} as Record<MetricKey, number>),
+          percentiles: finalPercentiles,
           composite
         };
       });
@@ -1064,24 +1551,127 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
     const skatersWithPct = assignPercentiles(skaters, skaterMetrics);
     const goaliesWithPct = assignPercentiles(goalies, goalieMetrics);
-    return [...skatersWithPct, ...goaliesWithPct];
+
+    // Combine and ensure `percentiles` is always an object
+    const result = [...skatersWithPct, ...goaliesWithPct].map((player) => ({
+      ...player,
+      percentiles: player.percentiles || {} // Ensure percentiles object exists
+    }));
+    return result;
   }, [filteredPlayers]);
 
-  // Sorted Players
+  // --- Calculate Display Scores (Logic unchanged, depends on playersWithPercentiles & selectedMetrics) ---
+  const playersWithScores: PlayerWithScores[] = useMemo(() => {
+    const activeMetricKeys = Object.entries(selectedMetrics)
+      .filter(([, isSelected]) => isSelected)
+      .map(([key]) => key as MetricKey);
+
+    const numActiveMetrics = activeMetricKeys.length;
+    const totalPossibleMetricsCount = allPossibleMetrics.length;
+
+    let globalFilterMode: PlayerWithScores["filterMode"] = "multiple";
+    if (numActiveMetrics === 0) globalFilterMode = "none";
+    else if (numActiveMetrics === totalPossibleMetricsCount)
+      globalFilterMode = "all";
+    else if (numActiveMetrics === 1) globalFilterMode = "single";
+
+    const result = playersWithPercentiles.map((player): PlayerWithScores => {
+      const relevantMetricsForPlayer =
+        player.player_type === "skater" ? skaterMetrics : goalieMetrics;
+      const relevantMetricKeysForPlayer = new Set(
+        relevantMetricsForPlayer.map((m) => m.key)
+      );
+
+      const applicableSelectedMetrics = activeMetricKeys.filter((key) =>
+        relevantMetricKeysForPlayer.has(key)
+      );
+      const numApplicableSelected = applicableSelectedMetrics.length;
+
+      let playerFilterMode = globalFilterMode;
+      if (globalFilterMode === "all") {
+        if (numApplicableSelected === relevantMetricsForPlayer.length)
+          playerFilterMode = "all";
+        else if (numApplicableSelected === 0) playerFilterMode = "none";
+        else if (numApplicableSelected === 1) playerFilterMode = "single";
+        else playerFilterMode = "multiple";
+      } else if (globalFilterMode === "single") {
+        playerFilterMode = numApplicableSelected === 1 ? "single" : "none";
+      } else if (globalFilterMode === "multiple") {
+        if (numApplicableSelected === 0) playerFilterMode = "none";
+        else if (numApplicableSelected === 1) playerFilterMode = "single";
+        else playerFilterMode = "multiple";
+      }
+
+      let displayScore = 0;
+      let sortByValue = 0;
+
+      switch (playerFilterMode) {
+        case "all":
+          displayScore = player.composite;
+          sortByValue = player.composite;
+          break;
+        case "single":
+          const singleMetricKey = applicableSelectedMetrics[0];
+          let otherSum = 0;
+          let otherCount = 0;
+          relevantMetricsForPlayer.forEach(({ key }) => {
+            // Safely access percentile value
+            const pct = player.percentiles?.[key];
+            if (key !== singleMetricKey && pct !== undefined && pct !== null) {
+              otherSum += pct;
+              otherCount++;
+            }
+          });
+          displayScore = otherCount > 0 ? otherSum / otherCount : 0;
+          // Safely access percentile value for sorting
+          sortByValue = player.percentiles?.[singleMetricKey] ?? 0;
+          break;
+        case "multiple":
+          let selectedSum = 0;
+          let selectedCount = 0;
+          applicableSelectedMetrics.forEach((key) => {
+            // Safely access percentile value
+            const pct = player.percentiles?.[key];
+            if (pct !== undefined && pct !== null) {
+              selectedSum += pct;
+              selectedCount++;
+            }
+          });
+          displayScore = selectedCount > 0 ? selectedSum / selectedCount : 0;
+          sortByValue = displayScore;
+          break;
+        case "none":
+        default:
+          displayScore = 0;
+          sortByValue = -1;
+          break;
+      }
+
+      return {
+        ...player,
+        displayScore,
+        sortByValue,
+        filterMode: playerFilterMode,
+        activeSelectedMetrics: applicableSelectedMetrics
+      };
+    });
+    return result;
+  }, [playersWithPercentiles, selectedMetrics, allPossibleMetrics]);
+
+  // --- Sorted Players (Logic unchanged) ---
   const sortedPlayers = useMemo(() => {
-    const sortablePlayers = [...playersWithPercentiles];
+    const sortablePlayers = [...playersWithScores];
     sortablePlayers.sort((a, b) => {
-      let aValue: any =
-        sortKey === "off_nights" ? getOffNightsForPlayer(a) : a[sortKey];
-      let bValue: any =
-        sortKey === "off_nights" ? getOffNightsForPlayer(b) : b[sortKey];
-      if (aValue === "N/A")
-        aValue = sortOrder === "desc" ? -Infinity : Infinity;
-      if (bValue === "N/A")
-        bValue = sortOrder === "desc" ? -Infinity : Infinity;
-      if (aValue === null || aValue === undefined) return 1;
-      if (bValue === null || bValue === undefined) return -1;
-      if (sortKey === "nhl_team_abbreviation") {
+      let aValue: any;
+      let bValue: any;
+
+      if (sortKey === "composite") {
+        aValue = a.sortByValue;
+        bValue = b.sortByValue;
+      } else if (sortKey === "off_nights") {
+        aValue = getOffNightsForPlayer(a);
+        bValue = getOffNightsForPlayer(b);
+      } else if (sortKey === "nhl_team_abbreviation") {
         aValue =
           normalizeTeamAbbreviation(
             a.current_team_abbreviation || a.yahoo_team,
@@ -1092,24 +1682,46 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
             b.current_team_abbreviation || b.yahoo_team,
             b.yahoo_team
           ) || "";
-      }
-      if (sortKey === "nhl_player_name") {
+      } else if (sortKey === "nhl_player_name") {
         aValue = (a.yahoo_player_name || a.nhl_player_name || "").toLowerCase();
         bValue = (b.yahoo_player_name || b.nhl_player_name || "").toLowerCase();
+      } else if (sortKey === "percent_games") {
+        aValue = a.percent_games;
+        bValue = b.percent_games;
+      } else {
+        aValue = a[sortKey as keyof PlayerWithScores];
+        bValue = b[sortKey as keyof PlayerWithScores];
       }
-      if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
-      return 0;
+
+      const isInvalidA =
+        aValue === "N/A" || aValue === null || aValue === undefined;
+      const isInvalidB =
+        bValue === "N/A" || bValue === null || bValue === undefined;
+
+      if (isInvalidA && isInvalidB) return 0;
+      if (isInvalidA) return sortOrder === "desc" ? 1 : -1;
+      if (isInvalidB) return sortOrder === "desc" ? -1 : 1;
+
+      if (typeof aValue === "string" && typeof bValue === "string") {
+        const comparison = aValue.localeCompare(bValue);
+        return sortOrder === "asc" ? comparison : -comparison;
+      } else {
+        if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
+        if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
+        return 0;
+      }
     });
     return sortablePlayers;
-  }, [playersWithPercentiles, sortKey, sortOrder, getOffNightsForPlayer]);
+  }, [playersWithScores, sortKey, sortOrder, getOffNightsForPlayer]);
 
+  // --- Pagination Calculation (Unchanged) ---
   const totalPages = Math.ceil(sortedPlayers.length / pageSize);
   const paginatedPlayers = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
     return sortedPlayers.slice(startIndex, startIndex + pageSize);
   }, [sortedPlayers, currentPage, pageSize]);
 
+  // --- Team Options Calculation (Unchanged) ---
   const teamOptions = useMemo(() => {
     const teamsSet = new Set<string>();
     playersData.forEach((p) => {
@@ -1121,7 +1733,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     return ["ALL", ...Array.from(teamsSet).sort()];
   }, [playersData]);
 
-  // --- Event Handlers ---
+  // --- Event Handlers (handleSort, toggleExpand, toggleMobileMinimize unchanged) ---
   const handleSort = (column: SortKey) => {
     setCurrentPage(1);
     if (sortKey === column) {
@@ -1131,63 +1743,77 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       setSortOrder("desc");
     }
   };
-  const resetFilters = () => {
-    setOwnershipThreshold(defaultOwnershipThreshold);
-    setTeamFilter(defaultTeamFilter);
-    setSelectedPositions(defaultPositions);
-    setCurrentPage(1);
-    setSortKey("composite");
-    setSortOrder("desc");
-    setIsMobileMinimized(false); // Expand on reset
-  };
+
   const toggleExpand = (playerId: string) => {
     setExpanded((prev) => ({ ...prev, [playerId]: !prev[playerId] }));
   };
+
   const toggleMobileMinimize = () => {
     if (isMobile) {
       setIsMobileMinimized((prev) => !prev);
     }
   };
 
-  // --- Effects ---
+  // --- resetFilters (Now resets selectedPositions too) ---
+  const resetFilters = () => {
+    setOwnershipThreshold(defaultOwnershipThreshold);
+    setTeamFilter(defaultTeamFilter);
+    setSelectedPositions(defaultPositions); // Reset positions to default
+    // Reset metric filters to all true
+    const initialMetrics = Object.fromEntries(
+      allPossibleMetrics.map((metric) => [metric.key, true])
+    ) as Record<MetricKey, boolean>;
+    setSelectedMetrics(initialMetrics);
+    // Reset sort order and pagination
+    setCurrentPage(1);
+    setSortKey("composite");
+    setSortOrder("desc");
+    setIsMobileMinimized(false);
+  };
+
+  // --- Effects (Unchanged) ---
   useEffect(() => {
     setCurrentPage(1);
-  }, [ownershipThreshold, teamFilter, selectedPositions]);
+    setExpanded({});
+  }, [ownershipThreshold, teamFilter, selectedPositions, selectedMetrics]);
+
   useEffect(() => {
-    if (currentPage > totalPages && totalPages > 0) {
+    if (totalPages > 0 && currentPage > totalPages) {
       setCurrentPage(totalPages);
-    } else if (currentPage < 1 && totalPages > 0) {
+    } else if (totalPages === 0 && currentPage !== 1) {
       setCurrentPage(1);
-    } else if (totalPages === 0) {
+    } else if (currentPage < 1 && totalPages > 0) {
       setCurrentPage(1);
     }
   }, [currentPage, totalPages]);
 
   // --- Render Logic ---
   return (
-    // Add class to container when minimized on mobile
     <div
       className={clsx(
         styles.container,
         isMobile && isMobileMinimized && styles.containerMinimized
       )}
     >
+      {/* Pass position state and setter to Filters */}
       <Filters
         ownershipThreshold={ownershipThreshold}
         setOwnershipThreshold={setOwnershipThreshold}
         teamFilter={teamFilter}
         setTeamFilter={setTeamFilter}
-        selectedPositions={selectedPositions}
-        setSelectedPositions={setSelectedPositions}
+        selectedPositions={selectedPositions} // Pass state
+        setSelectedPositions={setSelectedPositions} // Pass setter
         resetFilters={resetFilters}
         teamOptions={teamOptions}
         isMobile={isMobile}
-        // Pass minimize state and handler
         isMobileMinimized={isMobileMinimized}
         toggleMobileMinimize={toggleMobileMinimize}
+        allPossibleMetrics={allPossibleMetrics}
+        selectedMetrics={selectedMetrics}
+        setSelectedMetrics={setSelectedMetrics}
       />
 
-      {/* Content that gets hidden */}
+      {/* Table Content Area */}
       <div id="player-table-content" className={styles.collapsibleContent}>
         {loading ? (
           <div className={styles.message}>Loading players...</div>
@@ -1196,12 +1822,12 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
             No players match the current filters.
           </div>
         ) : (
-          // Render table/pagination only if NOT (mobile AND minimized)
           <>
             {(!isMobile || !isMobileMinimized) && (
               <>
                 {isMobile ? (
                   <MobileTable
+                    // Use paginatedPlayers derived from filteredPlayers
                     players={paginatedPlayers}
                     sortKey={sortKey}
                     sortOrder={sortOrder}
@@ -1209,14 +1835,17 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
                     expanded={expanded}
                     toggleExpand={toggleExpand}
                     getOffNightsForPlayer={getOffNightsForPlayer}
+                    selectedMetrics={selectedMetrics}
                   />
                 ) : (
                   <DesktopTable
+                    // Use paginatedPlayers derived from filteredPlayers
                     players={paginatedPlayers}
                     sortKey={sortKey}
                     sortOrder={sortOrder}
                     handleSort={handleSort}
                     getOffNightsForPlayer={getOffNightsForPlayer}
+                    selectedMetrics={selectedMetrics}
                   />
                 )}
                 <PaginationControls
