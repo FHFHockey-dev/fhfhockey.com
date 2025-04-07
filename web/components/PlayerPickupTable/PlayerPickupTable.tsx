@@ -91,6 +91,8 @@ interface DetailItemData {
 }
 
 // --- Base Metric Definitions (Used for Percentile Calculation, Presets etc.) ---
+// NOTE: GP% is included here because it's needed for percentile calculations for both types.
+// We will explicitly exclude it in the preset button logic later.
 const skaterMetrics: MetricDefinition[] = [
   { key: "points", label: "PTS" },
   { key: "goals", label: "G" },
@@ -102,7 +104,7 @@ const skaterMetrics: MetricDefinition[] = [
   { key: "total_fow", label: "FOW" },
   { key: "penalty_minutes", label: "PIM" },
   { key: "sh_points", label: "SHP" },
-  { key: "percent_games", label: "GP%" } // GP% included for skaters
+  { key: "percent_games", label: "GP%" } // GP% included for skaters calc
 ];
 
 const goalieMetrics: MetricDefinition[] = [
@@ -113,10 +115,10 @@ const goalieMetrics: MetricDefinition[] = [
   { key: "quality_start", label: "QS" },
   { key: "goals_against_avg", label: "GAA" },
   { key: "save_pct", label: "SV%" },
-  { key: "percent_games", label: "GP%" } // GP% included for goalies
+  { key: "percent_games", label: "GP%" } // GP% included for goalies calc
 ];
 
-// --- NEW: Define Metric Groups for Filter UI ---
+// --- Define Metric Groups for Filter UI ---
 const skaterPointKeys: MetricKey[] = [
   "goals",
   "assists",
@@ -124,6 +126,7 @@ const skaterPointKeys: MetricKey[] = [
   "pp_points",
   "sh_points"
 ];
+
 const skaterPeripheralKeys: MetricKey[] = [
   "shots",
   "blocked_shots",
@@ -131,16 +134,19 @@ const skaterPeripheralKeys: MetricKey[] = [
   "total_fow",
   "penalty_minutes"
 ];
-const goalieStatKeys: MetricKey[] = [
+const goalieQualityKeys: MetricKey[] = [
+  "save_pct",
+  "goals_against_avg",
+  "quality_start"
+  // Note: 'SO' is listed under Quantity in the diagram, adjust if needed
+];
+const goalieQuantityKeys: MetricKey[] = [
   "wins",
   "saves",
   "shots_against",
-  "save_pct",
-  "quality_start",
-  "goals_against_avg",
-  "shutouts"
+  "shutouts" // SO listed here as per diagram
 ];
-const gamePlayedKey: MetricKey = "percent_games"; // Keep GP% separate
+const gamePlayedKey: MetricKey = "percent_games"; // Keep GP% separate for UI Grouping
 
 // ---------------------------
 // Default Filter Settings & Props
@@ -242,6 +248,7 @@ interface FiltersProps {
   setTeamFilter: (value: string) => void;
   selectedPositions: Record<string, boolean>;
   setSelectedPositions: React.Dispatch<
+    // Allow direct setting for presets
     React.SetStateAction<Record<string, boolean>>
   >;
   resetFilters: () => void;
@@ -263,7 +270,7 @@ const Filters: React.FC<FiltersProps> = ({
   teamFilter,
   setTeamFilter,
   selectedPositions,
-  setSelectedPositions,
+  setSelectedPositions, // Receive the setter function
   resetFilters,
   teamOptions,
   isMobile,
@@ -274,6 +281,37 @@ const Filters: React.FC<FiltersProps> = ({
   selectedMetrics,
   setSelectedMetrics
 }) => {
+  // --- NEW: Handler for clicking sub-group titles ---
+  const handleSubGroupPresetClick = (
+    keysToSelect: MetricKey[],
+    playerType: "skater" | "goalie"
+  ) => {
+    // 1. Set Position Filters
+    const skaterPositions = { C: true, LW: true, RW: true, D: true, G: false };
+    const goaliePositions = {
+      C: false,
+      LW: false,
+      RW: false,
+      D: false,
+      G: true
+    };
+    setSelectedPositions(
+      playerType === "skater" ? skaterPositions : goaliePositions
+    );
+
+    // 2. Set Metric Filters (only select keys from the specific subgroup)
+    const nextMetricsState = Object.fromEntries(
+      allPossibleMetrics.map((metric) => [metric.key, false]) // Start all false
+    ) as Record<MetricKey, boolean>;
+
+    keysToSelect.forEach((key) => {
+      if (key in nextMetricsState) {
+        nextMetricsState[key] = true;
+      }
+    });
+    setSelectedMetrics(nextMetricsState);
+  };
+
   const handlePositionChange = (pos: string) => {
     setSelectedPositions((prev: Record<string, boolean>) => ({
       ...prev,
@@ -285,34 +323,62 @@ const Filters: React.FC<FiltersProps> = ({
     setSelectedMetrics((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // --- UPDATED handleSelectPreset ---
   const handleSelectPreset = (type: "all" | "skater" | "goalie" | "none") => {
-    const nextState: Record<MetricKey, boolean> = Object.fromEntries(
+    const nextMetricsState: Record<MetricKey, boolean> = Object.fromEntries(
       allPossibleMetrics.map((metric) => [metric.key, false])
-    ) as Record<MetricKey, boolean>; // Start fresh with all false
+    ) as Record<MetricKey, boolean>; // Start fresh with all metrics false
 
-    // Use the original skater/goalie metric definitions for presets
-    const skaterKeys = new Set(skaterMetrics.map((m) => m.key));
-    const goalieKeys = new Set(goalieMetrics.map((m) => m.key));
+    // Use the original skater/goalie metric definitions for determining which metrics to select
+    const skaterMetricKeys = new Set(skaterMetrics.map((m) => m.key));
+    const goalieMetricKeys = new Set(goalieMetrics.map((m) => m.key));
 
+    // --- Define Position States for Presets ---
+    const skaterPositions = { C: true, LW: true, RW: true, D: true, G: false };
+    const goaliePositions = {
+      C: false,
+      LW: false,
+      RW: false,
+      D: false,
+      G: true
+    };
+
+    // Update Metric Selection based on type
     allPossibleMetrics.forEach((metric) => {
       switch (type) {
         case "all":
-          nextState[metric.key] = true;
+          nextMetricsState[metric.key] = true;
           break;
         case "none":
-          nextState[metric.key] = false;
+          nextMetricsState[metric.key] = false;
           break;
         case "skater":
-          // Only select metrics defined in the base skaterMetrics array
-          nextState[metric.key] = skaterKeys.has(metric.key);
+          // Select metric IF it's a skater metric AND NOT percent_games
+          nextMetricsState[metric.key] =
+            skaterMetricKeys.has(metric.key) && metric.key !== "percent_games";
           break;
         case "goalie":
-          // Only select metrics defined in the base goalieMetrics array
-          nextState[metric.key] = goalieKeys.has(metric.key);
+          // Select metric IF it's a goalie metric AND NOT percent_games
+          nextMetricsState[metric.key] =
+            goalieMetricKeys.has(metric.key) && metric.key !== "percent_games";
           break;
       }
     });
-    setSelectedMetrics(nextState);
+    setSelectedMetrics(nextMetricsState); // Update the selected metrics state
+
+    // --- Update Position Selection based on type ---
+    switch (type) {
+      case "skater":
+        setSelectedPositions(skaterPositions); // Show only skater positions
+        break;
+      case "goalie":
+        setSelectedPositions(goaliePositions); // Show only goalie position
+        break;
+      case "all":
+      case "none":
+        setSelectedPositions(defaultPositions); // Reset to default positions
+        break;
+    }
   };
 
   // Determine active metrics count and states for disabling buttons
@@ -334,32 +400,26 @@ const Filters: React.FC<FiltersProps> = ({
     return allPossibleMetrics.find((m) => m.key === key);
   };
 
-  // Helper function to render a group of checkboxes
-  const renderMetricGroup = (title: string, metricKeys: MetricKey[]) => {
-    // Filter out any keys that might not be in allPossibleMetrics (optional safety check)
+  // Renders the inner checkboxes for a specific sub-group
+  const renderCheckboxGroup = (metricKeys: MetricKey[]) => {
     const validMetrics = metricKeys
       .map((key) => getMetricDefinition(key))
-      .filter((metric): metric is MetricDefinition => !!metric); // Type guard
+      .filter((metric): metric is MetricDefinition => !!metric);
 
-    if (validMetrics.length === 0) return null; // Don't render empty groups
+    if (validMetrics.length === 0) return null;
 
     return (
-      <div className={styles.metricGroup} key={title}>
-        {" "}
-        {/* Add key for react lists */}
-        <span className={styles.metricGroupTitle}>{title}</span>
-        <div className={styles.metricGroupCheckboxes}>
-          {validMetrics.map((metric) => (
-            <label key={metric.key} className={styles.metricCheckbox}>
-              <input
-                type="checkbox"
-                checked={selectedMetrics[metric.key] ?? false}
-                onChange={() => handleMetricChange(metric.key)}
-              />{" "}
-              {metric.label}
-            </label>
-          ))}
-        </div>
+      <div className={styles.metricGroupCheckboxes}>
+        {validMetrics.map((metric) => (
+          <label key={metric.key} className={styles.metricCheckbox}>
+            <input
+              type="checkbox"
+              checked={selectedMetrics[metric.key] ?? false}
+              onChange={() => handleMetricChange(metric.key)}
+            />{" "}
+            {metric.label}
+          </label>
+        ))}
       </div>
     );
   };
@@ -401,8 +461,10 @@ const Filters: React.FC<FiltersProps> = ({
 
       {(!isMobile || !isMobileMinimized) && (
         <>
-          {/* --- Ownership, Team, Position Filters (Unchanged) --- */}
+          {/* --- Ownership, Team, Position Filters --- */}
+          {/* Conditionally render based on isMobile */}
           {isMobile ? (
+            // Mobile Layout for Basic Filters
             <div className={styles.filterContainerMobile}>
               <div className={styles.ownershipTeamContainer}>
                 <div className={styles.filterRowMobileOwnership}>
@@ -438,20 +500,26 @@ const Filters: React.FC<FiltersProps> = ({
               <div className={styles.filterRowMobile}>
                 <span className={styles.labelMobile}>Positions:</span>
                 <div className={styles.positionCheckboxGroup}>
-                  {Object.keys(defaultPositions).map((pos) => (
-                    <label key={pos} className={styles.positionCheckbox}>
-                      <input
-                        type="checkbox"
-                        checked={selectedPositions[pos] ?? false}
-                        onChange={() => handlePositionChange(pos)}
-                      />{" "}
-                      {pos}
-                    </label>
-                  ))}
+                  {Object.keys(defaultPositions).map(
+                    (
+                      pos // Use defaultPositions keys for rendering labels
+                    ) => (
+                      <label key={pos} className={styles.positionCheckbox}>
+                        <input
+                          type="checkbox"
+                          // Use selectedPositions state for checked status
+                          checked={selectedPositions[pos] ?? false}
+                          onChange={() => handlePositionChange(pos)}
+                        />{" "}
+                        {pos}
+                      </label>
+                    )
+                  )}
                 </div>
               </div>
             </div>
           ) : (
+            // Desktop Layout for Basic Filters
             <div className={styles.filterContainer}>
               <div className={styles.filterRow}>
                 <label className={styles.label}>
@@ -485,26 +553,30 @@ const Filters: React.FC<FiltersProps> = ({
               <div className={styles.filterRow}>
                 <span className={styles.label}>Positions:</span>
                 <div className={styles.positionCheckboxGroup}>
-                  {Object.keys(defaultPositions).map((pos) => (
-                    <label key={pos} className={styles.positionCheckbox}>
-                      <input
-                        type="checkbox"
-                        checked={selectedPositions[pos] ?? false}
-                        onChange={() => handlePositionChange(pos)}
-                      />{" "}
-                      {pos}
-                    </label>
-                  ))}
+                  {Object.keys(defaultPositions).map(
+                    (
+                      pos // Use defaultPositions keys for rendering labels
+                    ) => (
+                      <label key={pos} className={styles.positionCheckbox}>
+                        <input
+                          type="checkbox"
+                          // Use selectedPositions state for checked status
+                          checked={selectedPositions[pos] ?? false}
+                          onChange={() => handlePositionChange(pos)}
+                        />{" "}
+                        {pos}
+                      </label>
+                    )
+                  )}
                 </div>
               </div>
             </div>
           )}
-          {/* --- MODIFIED: Metric Filter Section --- */}
           <div className={styles.metricFilterContainer}>
+            {/* Header: Label + Preset Buttons */}
             <div className={styles.metricFilterHeader}>
               <span className={styles.label}>Filter by Metrics:</span>
               <div className={styles.metricPresetButtons}>
-                {/* Preset buttons remain the same */}
                 <button
                   onClick={() => handleSelectPreset("all")}
                   disabled={isAllSelected}
@@ -525,35 +597,88 @@ const Filters: React.FC<FiltersProps> = ({
                 </button>
               </div>
             </div>
-
-            {/* NEW: Container for all metric groups */}
-            <div className={styles.metricGroupsWrapper}>
-              {/* Render each group using the helper function */}
-              {renderMetricGroup("Skater Points", skaterPointKeys)}
-              {renderMetricGroup("Skater Peripherals", skaterPeripheralKeys)}
-              {renderMetricGroup("Goalie Stats", goalieStatKeys)}
-              {/* Render GP% group - Note: passes an array with one item */}
-              {renderMetricGroup("Games Played %", [gamePlayedKey])}
+            {/* GP% Group (Full Width) */}
+            <div className={styles.gpGroupContainer}>
+              {renderCheckboxGroup([gamePlayedKey])}
             </div>
+            {/* Skaters and Goalies Row */}
+            {/* Skaters and Goalies Row */}
+            <div className={styles.skaterGoalieRow}>
+              {/* Skaters Column */}
+              <fieldset className={styles.skaterMetricsColumn}>
+                <legend className={styles.columnLabel}>Skaters</legend>
+                <div className={styles.skaterSubGroupsRow}>
+                  <div className={styles.metricGroup}>
+                    {" "}
+                    {/* Points Group */}
+                    <button
+                      type="button" // Prevent form submission if wrapped in form
+                      className={styles.metricGroupTitle}
+                      onClick={() =>
+                        handleSubGroupPresetClick(skaterPointKeys, "skater")
+                      }
+                    >
+                      Points
+                    </button>
+                    {renderCheckboxGroup(skaterPointKeys)}
+                  </div>
+                  <div className={styles.metricGroup}>
+                    {" "}
+                    {/* Peripherals Group */}
+                    <button
+                      type="button"
+                      className={styles.metricGroupTitle}
+                      onClick={() =>
+                        handleSubGroupPresetClick(
+                          skaterPeripheralKeys,
+                          "skater"
+                        )
+                      }
+                    >
+                      Peripherals
+                    </button>
+                    {renderCheckboxGroup(skaterPeripheralKeys)}
+                  </div>
+                </div>
+              </fieldset>
 
-            {/* REMOVED: Original single checkbox group loop */}
-            {/*
-            <div className={styles.metricCheckboxGroup}>
-              {allPossibleMetrics.map((metric) => (
-                <label key={metric.key} className={styles.metricCheckbox}>
-                  <input
-                    type="checkbox"
-                    checked={selectedMetrics[metric.key] ?? false}
-                    onChange={() => handleMetricChange(metric.key)}
-                  />{" "}
-                  {metric.label}
-                </label>
-              ))}
-            </div>
-            */}
+              {/* Goalies Column */}
+              <fieldset className={styles.goalieMetricsColumn}>
+                <legend className={styles.columnLabel}>Goalies</legend>
+                <div className={styles.goalieSubGroupsRow}>
+                  <div className={styles.metricGroup}>
+                    {" "}
+                    {/* Quality Group */}
+                    <button
+                      type="button"
+                      className={styles.metricGroupTitle}
+                      onClick={() =>
+                        handleSubGroupPresetClick(goalieQualityKeys, "goalie")
+                      }
+                    >
+                      Quality
+                    </button>
+                    {renderCheckboxGroup(goalieQualityKeys)}
+                  </div>
+                  <div className={styles.metricGroup}>
+                    {" "}
+                    {/* Quantity Group */}
+                    {/* UPDATED: Title is now a button */}
+                    <button
+                      type="button"
+                      className={styles.metricGroupTitle}
+                      onClick={() =>
+                        handleSubGroupPresetClick(goalieQuantityKeys, "goalie")
+                      }
+                    >
+                      Quantity
+                    </button>
+                    {renderCheckboxGroup(goalieQuantityKeys)}
+                  </div>
+                </div>
+              </fieldset>
+            </div>{" "}
           </div>{" "}
-          {/* End of metricFilterContainer */}
-          {/* Reset button (Unchanged) */}
           <button className={styles.buttonReset} onClick={resetFilters}>
             Reset Filters
           </button>
@@ -576,6 +701,7 @@ interface PlayerTableCommonProps {
   selectedMetrics: Record<MetricKey, boolean>;
 }
 
+// --- DesktopTable, MobileTable, PaginationControls (No changes needed in these child components) ---
 interface DesktopTableProps extends PlayerTableCommonProps {}
 const DesktopTable: React.FC<DesktopTableProps> = ({
   players,
@@ -597,26 +723,22 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
 
     if (currentFilterMode === "single" && firstPlayerActiveMetrics.length > 0) {
       // Find the label for the single metric
-      const singleMetricDef = allMetricDefs.find(
-        (m) => m.key === firstPlayerActiveMetrics[0]
-      );
-      scoreHeader = `Overall (excl. ${singleMetricDef?.label || "N/A"})`;
+      scoreHeader = `Other Avg`; // Simpler header for single metric mode
     } else if (currentFilterMode === "multiple") {
       scoreHeader = "Selected Avg";
     } else if (currentFilterMode === "none") {
       scoreHeader = "Score (N/A)";
     }
-    // 'all' mode keeps the default "Score"
   }
 
   return (
     <div className={styles.tableContainer}>
       <table className={styles.table}>
         <colgroup>
-          <col style={{ width: "17%" }} /> <col style={{ width: "6%" }} />
-          <col style={{ width: "6%" }} /> <col style={{ width: "6%" }} />
-          <col style={{ width: "6%" }} /> <col style={{ width: "6%" }} />
-          <col style={{ width: "47%" }} /> <col style={{ width: "6%" }} />
+          <col style={{ width: "15%" }} /> <col style={{ width: "5%" }} />
+          <col style={{ width: "5%" }} /> <col style={{ width: "5%" }} />
+          <col style={{ width: "5%" }} /> <col style={{ width: "5%" }} />
+          <col style={{ width: "50%" }} /> <col style={{ width: "10%" }} />
         </colgroup>
         <thead>
           <tr>
@@ -776,7 +898,8 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                             styles.selectedBox // Specific style for selected box
                         )}
                         style={getRankColorStyle(
-                          player.percentiles.percent_games
+                          // Check if percentiles object and the specific key exist before accessing
+                          player.percentiles?.percent_games
                         )}
                       >
                         {(Math.min(player.percent_games, 1) * 100).toFixed(0)}%
@@ -792,7 +915,8 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                     {relevantMetrics
                       .filter(({ key }) => key !== "percent_games")
                       .map(({ key, label }) => {
-                        const pctVal = player.percentiles[key];
+                        // Check if percentiles object and the specific key exist
+                        const pctVal = player.percentiles?.[key];
                         const isSelected = isMetricSelected(key);
 
                         return (
@@ -817,11 +941,12 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                                 styles.percentileBox,
                                 isSelected && styles.selectedBox
                               )}
-                              style={getRankColorStyle(pctVal)}
+                              style={getRankColorStyle(pctVal)} // Pass potentially undefined value
                             >
-                              {pctVal !== undefined
+                              {pctVal !== undefined && pctVal !== null
                                 ? `${pctVal.toFixed(0)}%`
-                                : "0%"}
+                                : "0%"}{" "}
+                              {/* Handle undefined/null */}
                             </div>
                           </div>
                         );
@@ -837,7 +962,7 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
     </div>
   );
 };
-
+// ... (MobileTable component remains the same) ...
 interface MobileTableProps extends PlayerTableCommonProps {
   expanded: Record<string, boolean>;
   toggleExpand: (playerId: string) => void;
@@ -942,7 +1067,8 @@ const MobileTable: React.FC<MobileTableProps> = ({
               {
                 key: "percent_games",
                 label: "GP%",
-                value: player.percentiles.percent_games,
+                // Safely access percentile value
+                value: player.percentiles?.percent_games,
                 displayValue:
                   player.percent_games !== null
                     ? `${(Math.min(player.percent_games, 1) * 100).toFixed(0)}%`
@@ -951,17 +1077,19 @@ const MobileTable: React.FC<MobileTableProps> = ({
               // Add other relevant metrics (excluding GP% as it's already added)
               ...relevantMetrics
                 .filter(({ key }) => key !== "percent_games")
-                .map(
-                  ({ key, label }): DetailItemData => ({
+                .map(({ key, label }): DetailItemData => {
+                  // Safely access percentile value
+                  const pctVal = player.percentiles?.[key];
+                  return {
                     key: key,
                     label: label,
-                    value: player.percentiles[key],
+                    value: pctVal,
                     displayValue:
-                      player.percentiles[key] !== undefined
-                        ? `${player.percentiles[key].toFixed(0)}%`
-                        : "0%"
-                  })
-                )
+                      pctVal !== undefined && pctVal !== null
+                        ? `${pctVal.toFixed(0)}%`
+                        : "0%" // Handle undefined/null
+                  };
+                })
             ];
             const midpoint = Math.ceil(allDetailItems.length / 2);
             const row1Items = allDetailItems.slice(0, midpoint);
@@ -1135,11 +1263,15 @@ const MobileTable: React.FC<MobileTableProps> = ({
 };
 
 // Pagination Component
+
 interface PaginationControlsProps {
   currentPage: number;
+
   totalPages: number;
+
   setCurrentPage: (page: number) => void;
 }
+
 const PaginationControls: React.FC<PaginationControlsProps> = ({
   currentPage,
   totalPages,
@@ -1182,7 +1314,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   );
   const [teamFilter, setTeamFilter] = useState<string>(defaultTeamFilter);
   const [selectedPositions, setSelectedPositions] =
-    useState<Record<string, boolean>>(defaultPositions);
+    useState<Record<string, boolean>>(defaultPositions); // State for positions
   const [playersData, setPlayersData] = useState<UnifiedPlayerData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -1199,13 +1331,10 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     [...skaterMetrics, ...goalieMetrics].forEach((m) => {
       metricsMap.set(m.key, m);
     });
-    // Sort alphabetically by label, maybe keep GP% separate if needed later?
-    // For now, simple sort is fine.
     return Array.from(metricsMap.values()).sort((a, b) => {
-      // Simple alphabetical sort by label
       return a.label.localeCompare(b.label);
     });
-  }, []); // Dependency array is empty as base metrics are constant
+  }, []);
 
   // --- Metric Filter State (Initialize with all true) ---
   const [selectedMetrics, setSelectedMetrics] = useState<
@@ -1216,7 +1345,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     ) as Record<MetricKey, boolean>;
   });
 
-  // --- Data Fetching (useEffect) ---
+  // --- Data Fetching (useEffect - unchanged) ---
   useEffect(() => {
     const fetchAllData = async () => {
       setLoading(true);
@@ -1236,7 +1365,6 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           if (data.length < supabasePageSize) break;
           from += supabasePageSize;
         }
-        // console.log(`Workspaceed ${allData.length} players.`); // Keep for debugging if needed
         setPlayersData(allData);
       } catch (error) {
         console.error("Failed to load player data:", error);
@@ -1248,10 +1376,11 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   }, []);
 
   // ---------------------------
-  // Memoized Calculations
+  // Memoized Calculations (Unchanged logic, but dependencies ensure updates)
   // ---------------------------
 
   const getOffNightsForPlayer = useMemo(
+    /* ... unchanged ... */
     () =>
       (player: UnifiedPlayerData): number | string => {
         if (!teamWeekData || teamWeekData.length === 0) {
@@ -1273,75 +1402,54 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     [teamWeekData]
   );
 
-  // Filtered Players
+  // --- Filtered Players (Now depends on selectedPositions state) ---
   const filteredPlayers = useMemo(() => {
     const result = playersData.filter((player) => {
-      // Basic filtering logic remains the same
-      if (player.percent_ownership === null || player.percent_ownership === 0)
-        return false;
-      const hasEligiblePositions =
-        player.eligible_positions && player.eligible_positions.length > 0;
-      if (!hasEligiblePositions && player.player_type !== "goalie")
+      // Ownership filter
+      if (
+        player.percent_ownership === null ||
+        player.percent_ownership === 0 ||
+        player.percent_ownership > ownershipThreshold
+      )
         return false;
 
-      if (player.percent_ownership > ownershipThreshold) return false;
-
+      // Team filter
       const playerTeamAbbr = normalizeTeamAbbreviation(
         player.current_team_abbreviation || player.yahoo_team,
         player.yahoo_team
       );
       if (teamFilter !== "ALL" && teamFilter !== playerTeamAbbr) return false;
 
-      const playerPositions = hasEligiblePositions
-        ? player.eligible_positions!
-        : player.player_type === "goalie"
-        ? ["G"]
-        : [];
+      // --- Position Filter (Crucial Part) ---
+      const hasEligiblePositions =
+        player.eligible_positions && player.eligible_positions.length > 0;
 
-      const positionMatch = playerPositions.some(
-        (pos) => selectedPositions[pos]
-      );
-
-      // Refined position logic:
-      // If 'G' is NOT selected, filter out goalies.
-      if (!selectedPositions["G"] && player.player_type === "goalie") {
-        return false;
+      // Handle Goalies
+      if (player.player_type === "goalie") {
+        // Show goalie ONLY if the 'G' position filter is selected
+        return selectedPositions["G"];
       }
-      // If 'G' IS selected AND the player is a goalie, allow unless other positions selected exclude them
-      if (selectedPositions["G"] && player.player_type === "goalie") {
-        // If ONLY 'G' is selected among filters, goalie is allowed.
-        const onlyGSelected = Object.entries(selectedPositions).every(
-          ([pos, selected]) => (pos === "G" ? selected : !selected)
+      // Handle Skaters
+      else {
+        // Skater needs eligible positions defined
+        if (!hasEligiblePositions) return false;
+        // Show skater if ANY of their eligible positions match ANY selected non-G position filter
+        return player.eligible_positions!.some(
+          (pos) => pos !== "G" && selectedPositions[pos]
         );
-        if (onlyGSelected) {
-          return true; // Only G selected, goalie allowed
-        }
-        // If G + other positions are selected, the goalie *must* also match one of the *other* selected positions
-        // (This scenario is rare for goalies, but handles edge cases)
-        if (positionMatch) {
-          return true; // Goalie matches one of the selected non-G positions
-        } else {
-          return false; // G + others selected, but goalie doesn't match others
-        }
       }
-      // If player is NOT a goalie, they MUST match one of the selected non-G positions.
-      if (player.player_type !== "goalie" && !positionMatch) {
-        return false;
-      }
-
-      return true; // Player passed all filters
     });
     return result;
+    // Dependency on selectedPositions is key here!
   }, [playersData, ownershipThreshold, teamFilter, selectedPositions]);
 
-  // Compute Percentiles (Initial Calculation)
+  // --- Compute Percentiles (Logic unchanged) ---
   const playersWithPercentiles: PlayerWithPercentiles[] = useMemo(() => {
     if (filteredPlayers.length === 0) return [];
 
     const skaters = filteredPlayers.filter((p) => p.player_type === "skater");
     const goalies = filteredPlayers.filter((p) => p.player_type === "goalie");
 
-    // Percentile calculation functions (unchanged)
     function computePercentile(
       values: (number | null)[],
       value: number | null
@@ -1372,11 +1480,10 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         (v) => v !== null && v !== undefined
       ) as number[];
       if (validValues.length === 0) return 0;
-      validValues.sort((a, b) => a - b); // Sort ascending needed for logic below
+      validValues.sort((a, b) => a - b);
       const count = validValues.length;
       let numAbove = 0;
       let numEqual = 0;
-      // Iterate through sorted values to count how many are above or equal
       for (const v of validValues) {
         if (v > value) {
           numAbove++;
@@ -1385,19 +1492,16 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         }
       }
       if (count === 1) return 50.0;
-      // Percentile Rank = ((Number Above + 0.5 * Number Equal) / Total Count) * 100
       return count > 0 ? ((numAbove + 0.5 * numEqual) / count) * 100 : 0;
     }
 
     function assignPercentiles(
       group: UnifiedPlayerData[],
-      // Use the base skaterMetrics/goalieMetrics definitions here for calculation
       metrics: MetricDefinition[]
     ): PlayerWithPercentiles[] {
       if (group.length === 0) return [];
       const metricValuesMap: Map<MetricKey, (number | null)[]> = new Map();
 
-      // Populate map only with metrics relevant to this group (skater or goalie)
       metrics.forEach(({ key }) => {
         metricValuesMap.set(
           key,
@@ -1410,7 +1514,6 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         let sum = 0;
         let count = 0;
 
-        // Calculate percentiles only for metrics relevant to this group
         for (const { key } of metrics) {
           const rawVal = player[key as keyof UnifiedPlayerData] as
             | number
@@ -1418,7 +1521,6 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           const allValues = metricValuesMap.get(key) || [];
           let pct = 0;
 
-          // Apply inverted calculation for GAA
           if (key === "goals_against_avg") {
             pct = computeInvertedPercentile(allValues, rawVal);
           } else {
@@ -1426,7 +1528,6 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           }
 
           percentiles[key] = pct;
-          // Include all relevant metrics (including GP%) in the composite score calculation
           if (rawVal !== null && rawVal !== undefined) {
             sum += pct;
             count++;
@@ -1435,9 +1536,8 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
         const composite = count > 0 ? sum / count : 0;
 
-        // Ensure all keys defined for this type (skater/goalie) exist in the final percentiles object
         const finalPercentiles = metrics.reduce((acc, { key }) => {
-          acc[key] = percentiles[key] ?? 0; // Default to 0 if somehow missing
+          acc[key] = percentiles[key] ?? 0;
           return acc;
         }, {} as Record<MetricKey, number>);
 
@@ -1449,30 +1549,26 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       });
     }
 
-    // Use the base skater/goalie metrics lists for assigning percentiles
     const skatersWithPct = assignPercentiles(skaters, skaterMetrics);
     const goaliesWithPct = assignPercentiles(goalies, goalieMetrics);
 
-    // Combine and ensure all players have a `percentiles` object, even if empty
+    // Combine and ensure `percentiles` is always an object
     const result = [...skatersWithPct, ...goaliesWithPct].map((player) => ({
       ...player,
       percentiles: player.percentiles || {} // Ensure percentiles object exists
     }));
-
     return result;
-  }, [filteredPlayers]); // Dependency remains filteredPlayers
+  }, [filteredPlayers]);
 
-  // Calculate Display Scores based on selected metrics
+  // --- Calculate Display Scores (Logic unchanged, depends on playersWithPercentiles & selectedMetrics) ---
   const playersWithScores: PlayerWithScores[] = useMemo(() => {
     const activeMetricKeys = Object.entries(selectedMetrics)
       .filter(([, isSelected]) => isSelected)
       .map(([key]) => key as MetricKey);
 
     const numActiveMetrics = activeMetricKeys.length;
-    // Use allPossibleMetrics derived earlier for total count
     const totalPossibleMetricsCount = allPossibleMetrics.length;
 
-    // Determine Global Filter Mode
     let globalFilterMode: PlayerWithScores["filterMode"] = "multiple";
     if (numActiveMetrics === 0) globalFilterMode = "none";
     else if (numActiveMetrics === totalPossibleMetricsCount)
@@ -1480,122 +1576,100 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     else if (numActiveMetrics === 1) globalFilterMode = "single";
 
     const result = playersWithPercentiles.map((player): PlayerWithScores => {
-      // Determine relevant metrics for *this player* (skater or goalie) using base definitions
       const relevantMetricsForPlayer =
         player.player_type === "skater" ? skaterMetrics : goalieMetrics;
       const relevantMetricKeysForPlayer = new Set(
         relevantMetricsForPlayer.map((m) => m.key)
       );
 
-      // Find which of the *globally selected* metrics apply to *this player*
       const applicableSelectedMetrics = activeMetricKeys.filter((key) =>
         relevantMetricKeysForPlayer.has(key)
       );
       const numApplicableSelected = applicableSelectedMetrics.length;
 
-      // --- Determine Player-Specific Filter Mode ---
-      // This adjusts the global mode based on how many *selected* metrics actually apply to the player type
-      let playerFilterMode = globalFilterMode; // Start with global mode
-
+      let playerFilterMode = globalFilterMode;
       if (globalFilterMode === "all") {
-        // If global is 'all', player mode depends on how many apply to them
         if (numApplicableSelected === relevantMetricsForPlayer.length)
           playerFilterMode = "all";
         else if (numApplicableSelected === 0) playerFilterMode = "none";
         else if (numApplicableSelected === 1) playerFilterMode = "single";
-        else playerFilterMode = "multiple"; // Some, but not all, selected metrics apply
+        else playerFilterMode = "multiple";
       } else if (globalFilterMode === "single") {
-        // If global is 'single', player is only 'single' if that one metric applies to them
         playerFilterMode = numApplicableSelected === 1 ? "single" : "none";
       } else if (globalFilterMode === "multiple") {
-        // If global is 'multiple', player mode depends on how many apply
         if (numApplicableSelected === 0) playerFilterMode = "none";
         else if (numApplicableSelected === 1) playerFilterMode = "single";
-        else playerFilterMode = "multiple"; // More than one applicable selected metric
+        else playerFilterMode = "multiple";
       }
-      // If global is 'none', player mode is also 'none'.
 
-      // --- Calculate Display Score and Sort Value ---
       let displayScore = 0;
-      let sortByValue = 0; // Use composite score as the base for sorting the 'Score' column
+      let sortByValue = 0;
 
       switch (playerFilterMode) {
         case "all":
-          // When all relevant metrics are effectively selected (either globally or by coincidence)
-          displayScore = player.composite; // Show the standard composite score
-          sortByValue = player.composite; // Sort by composite
+          displayScore = player.composite;
+          sortByValue = player.composite;
           break;
-
         case "single":
-          // Only one relevant metric is selected for this player type
           const singleMetricKey = applicableSelectedMetrics[0];
-          // Display Score: Average of *other* relevant percentiles (excluding the single selected one)
           let otherSum = 0;
           let otherCount = 0;
           relevantMetricsForPlayer.forEach(({ key }) => {
-            if (key !== singleMetricKey) {
-              const pct = player.percentiles[key];
-              if (pct !== undefined && pct !== null) {
-                otherSum += pct;
-                otherCount++;
-              }
+            // Safely access percentile value
+            const pct = player.percentiles?.[key];
+            if (key !== singleMetricKey && pct !== undefined && pct !== null) {
+              otherSum += pct;
+              otherCount++;
             }
           });
           displayScore = otherCount > 0 ? otherSum / otherCount : 0;
-          // Sort Value: Use the percentile of the *single selected metric* itself
-          sortByValue = player.percentiles[singleMetricKey] ?? 0;
+          // Safely access percentile value for sorting
+          sortByValue = player.percentiles?.[singleMetricKey] ?? 0;
           break;
-
         case "multiple":
-          // Multiple (but not all) relevant metrics are selected for this player type
-          // Display Score: Average of *only the selected* relevant percentiles
           let selectedSum = 0;
           let selectedCount = 0;
           applicableSelectedMetrics.forEach((key) => {
-            const pct = player.percentiles[key];
+            // Safely access percentile value
+            const pct = player.percentiles?.[key];
             if (pct !== undefined && pct !== null) {
               selectedSum += pct;
               selectedCount++;
             }
           });
           displayScore = selectedCount > 0 ? selectedSum / selectedCount : 0;
-          // Sort Value: Use this calculated average of selected percentiles
           sortByValue = displayScore;
           break;
-
         case "none":
         default:
-          // No relevant metrics selected for this player type
-          displayScore = 0; // Show 0
-          sortByValue = -1; // Sort these players to the bottom (or top if ascending)
+          displayScore = 0;
+          sortByValue = -1;
           break;
       }
 
       return {
         ...player,
         displayScore,
-        sortByValue, // This value determines sorting for the 'Score' column
+        sortByValue,
         filterMode: playerFilterMode,
-        activeSelectedMetrics: applicableSelectedMetrics // Store which metrics were actually used
+        activeSelectedMetrics: applicableSelectedMetrics
       };
     });
     return result;
-    // Dependencies: playersWithPercentiles, selectedMetrics, allPossibleMetrics (for total count)
   }, [playersWithPercentiles, selectedMetrics, allPossibleMetrics]);
 
-  // Sorted Players
+  // --- Sorted Players (Logic unchanged) ---
   const sortedPlayers = useMemo(() => {
     const sortablePlayers = [...playersWithScores];
     sortablePlayers.sort((a, b) => {
       let aValue: any;
       let bValue: any;
 
-      // Handle sorting based on the 'Score' column using 'sortByValue'
       if (sortKey === "composite") {
         aValue = a.sortByValue;
         bValue = b.sortByValue;
       } else if (sortKey === "off_nights") {
-        aValue = getOffNightsForPlayer(a); // Keep handling 'N/A' etc.
+        aValue = getOffNightsForPlayer(a);
         bValue = getOffNightsForPlayer(b);
       } else if (sortKey === "nhl_team_abbreviation") {
         aValue =
@@ -1612,46 +1686,42 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         aValue = (a.yahoo_player_name || a.nhl_player_name || "").toLowerCase();
         bValue = (b.yahoo_player_name || b.nhl_player_name || "").toLowerCase();
       } else if (sortKey === "percent_games") {
-        // Sort by raw GP% value or percentile? Let's use raw value for direct comparison
         aValue = a.percent_games;
         bValue = b.percent_games;
       } else {
-        // Handle sorting by other direct properties (like own%)
         aValue = a[sortKey as keyof PlayerWithScores];
         bValue = b[sortKey as keyof PlayerWithScores];
       }
 
-      // Handle null/undefined/'N/A' values for consistent sorting
       const isInvalidA =
         aValue === "N/A" || aValue === null || aValue === undefined;
       const isInvalidB =
         bValue === "N/A" || bValue === null || bValue === undefined;
 
-      if (isInvalidA && isInvalidB) return 0; // Both invalid, treat as equal
-      if (isInvalidA) return sortOrder === "desc" ? 1 : -1; // Push invalid A down in desc, up in asc
-      if (isInvalidB) return sortOrder === "desc" ? -1 : 1; // Push invalid B down in desc, up in asc
+      if (isInvalidA && isInvalidB) return 0;
+      if (isInvalidA) return sortOrder === "desc" ? 1 : -1;
+      if (isInvalidB) return sortOrder === "desc" ? -1 : 1;
 
-      // Standard comparison for valid values
       if (typeof aValue === "string" && typeof bValue === "string") {
-        // Case-insensitive string comparison
         const comparison = aValue.localeCompare(bValue);
         return sortOrder === "asc" ? comparison : -comparison;
       } else {
-        // Numeric comparison
         if (aValue < bValue) return sortOrder === "asc" ? -1 : 1;
         if (aValue > bValue) return sortOrder === "asc" ? 1 : -1;
         return 0;
       }
     });
     return sortablePlayers;
-  }, [playersWithScores, sortKey, sortOrder, getOffNightsForPlayer]); // Dependency includes playersWithScores now
+  }, [playersWithScores, sortKey, sortOrder, getOffNightsForPlayer]);
 
+  // --- Pagination Calculation (Unchanged) ---
   const totalPages = Math.ceil(sortedPlayers.length / pageSize);
   const paginatedPlayers = useMemo(() => {
     const startIndex = (currentPage - 1) * pageSize;
     return sortedPlayers.slice(startIndex, startIndex + pageSize);
   }, [sortedPlayers, currentPage, pageSize]);
 
+  // --- Team Options Calculation (Unchanged) ---
   const teamOptions = useMemo(() => {
     const teamsSet = new Set<string>();
     playersData.forEach((p) => {
@@ -1663,32 +1733,15 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     return ["ALL", ...Array.from(teamsSet).sort()];
   }, [playersData]);
 
-  // --- Event Handlers ---
+  // --- Event Handlers (handleSort, toggleExpand, toggleMobileMinimize unchanged) ---
   const handleSort = (column: SortKey) => {
-    setCurrentPage(1); // Reset page on sort
+    setCurrentPage(1);
     if (sortKey === column) {
       setSortOrder(sortOrder === "desc" ? "asc" : "desc");
     } else {
       setSortKey(column);
-      setSortOrder("desc"); // Default to descending on new column
+      setSortOrder("desc");
     }
-  };
-
-  // --- CORRECTED Reset Function ---
-  const resetFilters = () => {
-    setOwnershipThreshold(defaultOwnershipThreshold);
-    setTeamFilter(defaultTeamFilter);
-    setSelectedPositions(defaultPositions);
-    // Reset metric filters to all true using the derived allPossibleMetrics
-    const initialMetrics = Object.fromEntries(
-      allPossibleMetrics.map((metric) => [metric.key, true])
-    ) as Record<MetricKey, boolean>;
-    setSelectedMetrics(initialMetrics);
-    // Reset sort order and pagination
-    setCurrentPage(1);
-    setSortKey("composite"); // Reset sort to default 'Score' column
-    setSortOrder("desc");
-    setIsMobileMinimized(false); // Ensure filters are visible on mobile
   };
 
   const toggleExpand = (playerId: string) => {
@@ -1701,21 +1754,35 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     }
   };
 
-  // --- Effects ---
-  // Reset page and expanded rows when filters change
+  // --- resetFilters (Now resets selectedPositions too) ---
+  const resetFilters = () => {
+    setOwnershipThreshold(defaultOwnershipThreshold);
+    setTeamFilter(defaultTeamFilter);
+    setSelectedPositions(defaultPositions); // Reset positions to default
+    // Reset metric filters to all true
+    const initialMetrics = Object.fromEntries(
+      allPossibleMetrics.map((metric) => [metric.key, true])
+    ) as Record<MetricKey, boolean>;
+    setSelectedMetrics(initialMetrics);
+    // Reset sort order and pagination
+    setCurrentPage(1);
+    setSortKey("composite");
+    setSortOrder("desc");
+    setIsMobileMinimized(false);
+  };
+
+  // --- Effects (Unchanged) ---
   useEffect(() => {
     setCurrentPage(1);
     setExpanded({});
   }, [ownershipThreshold, teamFilter, selectedPositions, selectedMetrics]);
 
-  // Adjust current page if it becomes invalid due to filtering/pagination changes
   useEffect(() => {
     if (totalPages > 0 && currentPage > totalPages) {
       setCurrentPage(totalPages);
     } else if (totalPages === 0 && currentPage !== 1) {
       setCurrentPage(1);
     } else if (currentPage < 1 && totalPages > 0) {
-      // Ensure currentPage is at least 1
       setCurrentPage(1);
     }
   }, [currentPage, totalPages]);
@@ -1725,28 +1792,28 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     <div
       className={clsx(
         styles.container,
-        isMobile && isMobileMinimized && styles.containerMinimized // Apply class if mobile & minimized
+        isMobile && isMobileMinimized && styles.containerMinimized
       )}
     >
+      {/* Pass position state and setter to Filters */}
       <Filters
         ownershipThreshold={ownershipThreshold}
         setOwnershipThreshold={setOwnershipThreshold}
         teamFilter={teamFilter}
         setTeamFilter={setTeamFilter}
-        selectedPositions={selectedPositions}
-        setSelectedPositions={setSelectedPositions}
+        selectedPositions={selectedPositions} // Pass state
+        setSelectedPositions={setSelectedPositions} // Pass setter
         resetFilters={resetFilters}
         teamOptions={teamOptions}
         isMobile={isMobile}
         isMobileMinimized={isMobileMinimized}
         toggleMobileMinimize={toggleMobileMinimize}
-        // Pass metric state and definitions down
         allPossibleMetrics={allPossibleMetrics}
         selectedMetrics={selectedMetrics}
         setSelectedMetrics={setSelectedMetrics}
       />
 
-      {/* ID added for ARIA control by filter title */}
+      {/* Table Content Area */}
       <div id="player-table-content" className={styles.collapsibleContent}>
         {loading ? (
           <div className={styles.message}>Loading players...</div>
@@ -1756,11 +1823,11 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           </div>
         ) : (
           <>
-            {/* Conditional rendering based on mobile state AND minimized state */}
             {(!isMobile || !isMobileMinimized) && (
               <>
                 {isMobile ? (
                   <MobileTable
+                    // Use paginatedPlayers derived from filteredPlayers
                     players={paginatedPlayers}
                     sortKey={sortKey}
                     sortOrder={sortOrder}
@@ -1768,16 +1835,17 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
                     expanded={expanded}
                     toggleExpand={toggleExpand}
                     getOffNightsForPlayer={getOffNightsForPlayer}
-                    selectedMetrics={selectedMetrics} // Pass down for styling
+                    selectedMetrics={selectedMetrics}
                   />
                 ) : (
                   <DesktopTable
+                    // Use paginatedPlayers derived from filteredPlayers
                     players={paginatedPlayers}
                     sortKey={sortKey}
                     sortOrder={sortOrder}
                     handleSort={handleSort}
                     getOffNightsForPlayer={getOffNightsForPlayer}
-                    selectedMetrics={selectedMetrics} // Pass down for styling
+                    selectedMetrics={selectedMetrics}
                   />
                 )}
                 <PaginationControls

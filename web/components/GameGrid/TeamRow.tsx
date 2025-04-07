@@ -187,7 +187,6 @@ type MatchUpCellProps = {
   home: boolean;
   homeTeam: GameData["homeTeam"];
   awayTeam: GameData["awayTeam"];
-  situation?: "home" | "away";
 };
 
 function MatchUpCell({ home, homeTeam, awayTeam, gameId }: MatchUpCellProps) {
@@ -241,16 +240,17 @@ function MatchUpCell({ home, homeTeam, awayTeam, gameId }: MatchUpCellProps) {
           justifyContent: "space-between"
         }}
       >
-        {/* <div className={styles.scoreAndHomeAway}>
-          <span className={styles.homeAway}>{text}</span>
-          <p className={styles.score}>{stat}</p>
-        </div> */}
+        {/* Apply conditional classes to the opponent's logo Image */}
         <Image
-          className={`${styles.mobileLogoSize}`}
+          // Use clsx to combine the base class and the conditional shadow class
+          className={clsx(
+            styles.mobileLogoSize, // Always apply the base class
+            home ? styles["home-shadow"] : styles["away-shadow"] // Apply green if home, red if away
+          )}
           objectFit="contain"
           alt={`${opponentTeam.name} logo`}
-          width={35}
-          height={35}
+          width={35} // Consider if this should also be in mobileLogoSize class
+          height={35} // Consider if this should also be in mobileLogoSize class
           src={opponentTeam.logo}
           title={opponentTeam.name}
         />
@@ -265,6 +265,7 @@ function MatchUpCell({ home, homeTeam, awayTeam, gameId }: MatchUpCellProps) {
             zIndex: 0
           }}
         >
+          {/* This icon indicates home/away, the shadow is now on the opponent logo */}
           {home ? (
             <Image
               src="/pictures/homeIcon.png"

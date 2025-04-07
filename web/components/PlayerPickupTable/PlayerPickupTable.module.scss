@@ -2,6 +2,10 @@
 @use "styles/vars" as v; // Use an alias for brevity
 @use "sass:math";
 
+// Define border color and width as variables for consistency
+$metric-border-color: #07aae2; // Your blue color
+$selected-border-width: 2px; // The width of the indicator
+
 .container {
   width: 100%;
   margin: 0px auto;
@@ -340,13 +344,13 @@
   }
 }
 
-/* --- UPDATED: Metric Filter Styles --- */
+/* --- Metric Filter Section --- */
 .metricFilterContainer {
   display: flex;
   flex-direction: column;
-  gap: 10px; // Gap between header and the groups wrapper
+  gap: 5px; // Reduced gap slightly
   padding: 15px;
-  background-color: v.$background-medium; // Match other filter sections
+  background-color: v.$background-medium;
   border-radius: 8px;
 }
 
@@ -354,23 +358,36 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap; // Allow wrapping on small screens
+  flex-wrap: wrap;
   gap: 10px;
-  // No bottom margin needed, gap on parent container handles spacing
 
   .label {
-    // Reuse existing label style, maybe adjust size
-    font-size: 1em; // Slightly larger label for this section header
+    font-size: 1em;
     font-weight: 600;
     color: v.$text-color-secondary;
-    margin-right: auto; // Push buttons to the right
+    margin-right: auto;
+  }
+}
+
+/* --- Layout Styles --- */
+
+.gpGroupContainer {
+  width: 100%;
+  padding: 5px 0;
+  border-bottom: 1px solid v.$border-color-secondary;
+  margin-bottom: 15px;
+
+  .metricGroupCheckboxes {
+    justify-content: center;
+    padding-left: 0;
+    min-height: auto; // Don't need forced height for single checkbox
   }
 }
 
 .metricPresetButtons {
   display: flex;
   gap: 8px;
-  flex-shrink: 0; // Prevent buttons shrinking too much
+  flex-shrink: 0;
   button {
     // Style preset buttons
     padding: 4px 8px;
@@ -392,6 +409,17 @@
   }
 }
 
+.skaterGoalieRow {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+
+  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
+    flex-direction: column;
+    gap: 15px;
+  }
+}
+
 /* --- NEW: Styles for Metric Groups --- */
 .metricGroupsWrapper {
   display: flex;
@@ -400,55 +428,109 @@
   margin-top: 5px; // Small space below the header
 }
 
+%metricsColumn {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid v.$primary-color;
+  border-radius: 8px;
+  padding: 20px 15px 15px 15px;
+  position: relative;
+  margin: 0;
+
+  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
+    flex-basis: auto;
+  }
+}
+
+.skaterMetricsColumn {
+  @extend %metricsColumn;
+}
+
+.goalieMetricsColumn {
+  @extend %metricsColumn;
+}
+
+.columnLabel {
+  font-size: 1.1em;
+  font-weight: bold;
+  color: v.$border-color;
+  padding: 0 10px;
+  margin-left: 10px;
+  // background-color: v.$background-medium; // Needed if border shows through legend
+  width: auto;
+  border: none;
+}
+
+// Containers for sub-groups (Points/Peripherals, Quality/Quantity)
+.skaterSubGroupsRow,
+.goalieSubGroupsRow {
+  display: flex;
+  flex-direction: row; // Side-by-side layout for sub-groups
+  gap: 15px; // Gap between sub-groups
+
+  @media (max-width: 600px) {
+    // Stack sub-groups on very small screens if needed
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+
+// Styling for the individual group rendered by the helper
 .metricGroup {
-  // Container for a single group (title + checkboxes)
-  // Optional: Add visual separation if desired
-  // border: 1px solid darken(v.$background-medium, 10%);
-  // background-color: rgba(v.$background-light, 0.2);
-  // padding: 10px;
-  // border-radius: 6px;
+  flex: 1; // Allow sub-groups to share space equally
+  min-width: 0; // Prevent flex overflow
+  // background-color: rgba(v.$background-light, 0.1); // Optional subtle background
+  // padding: 5px;
+  // border-radius: 4px;
 }
 
 .metricGroupTitle {
-  display: block; // Ensure it takes its own line above checkboxes
+  // Now a button, needs base styles + button resets
+  display: block;
+  width: 100%; // Make button take full width of its group
   font-weight: 600;
   font-size: 0.9em;
-  color: v.$text-color-secondary; // Use secondary color for group titles
-  margin-bottom: 8px; // Space between title and checkboxes
-  padding-left: 2px; // Slight indent
-  // Optional: Add a subtle underline
-  // border-bottom: 1px solid v.$border-color-secondary;
-  // padding-bottom: 4px;
+  color: v.$text-color-secondary;
+  text-align: center;
+  border-bottom: 1px solid v.$border-color-secondary; // Keep the separator look
+  padding-bottom: 3px;
+  margin-bottom: 10px;
+
+  // Button Resets
+  background: none;
+  color: inherit;
+  border: none;
+  padding: 0; // Reset padding before re-applying specific padding
+  padding-bottom: 3px; // Re-apply specific padding
+  font: inherit;
+  cursor: pointer;
+  outline: inherit;
+  transition: color 0.2s ease;
+
+  &:hover,
+  &:focus {
+    color: v.$primary-color; // Highlight on hover/focus
+    border-bottom-color: v.$primary-color;
+  }
 }
 
 .metricGroupCheckboxes {
-  // Container for the checkboxes within ONE group
   display: flex;
   flex-wrap: wrap;
-  gap: 8px 15px; // Row and column gap for checkboxes
-  justify-content: flex-start; // Align checkboxes to the start (left)
-  padding-left: 5px; // Indent checkboxes slightly more than title
+  gap: 6px 12px;
+  justify-content: center;
+  padding-left: 0;
+  min-height: 40px;
 }
-
-/* REMOVED: Original .metricCheckboxGroup style block as it's replaced by .metricGroupCheckboxes */
-/*
-.metricCheckboxGroup {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 15px; // Row and column gap
-  justify-content: flex-start; // Align checkboxes left
-}
-*/
 
 .metricCheckbox {
-  // Style for metric checkboxes LABEL
   display: inline-flex;
   align-items: center;
   cursor: pointer;
   font-size: 0.85em;
   gap: 5px;
-  color: v.$text-color-primary; // Ensure label text is visible
-  white-space: nowrap; // Prevent label wrapping
+  color: v.$text-color-primary;
+  white-space: nowrap;
 
   input[type="checkbox"] {
     // Style for metric INPUT checkbox
@@ -487,6 +569,18 @@
   }
 }
 
+.skaterMetricsColumn {
+  .metricGroupCheckboxes {
+    // Target checkboxes specifically within the skater column
+    .metricCheckbox {
+      // Aim for roughly 33% width minus gap spacing
+      // Adjust the percentage and gap subtraction as needed based on actual rendering
+      flex-basis: calc(33.33% - 30px); // (gap is 12px -> ~5px per side)
+      justify-content: center; // Center content within the flex item
+    }
+  }
+}
+
 /* Reset Button Styling & Placement */
 .buttonReset {
   padding: 10px 20px;
@@ -515,7 +609,6 @@
   flex-direction: column;
   width: 100%;
   height: 100%;
-  gap: 3px; // Reduced gap
   justify-content: center; // Center vertically
   padding: 2px 0; // Small vertical padding
 }
@@ -599,7 +692,7 @@
   tbody {
     tr {
       font-family: v.$font-family-primary;
-      height: 55px; // Adjust row height as needed
+      height: 64px; // Adjust row height as needed
       text-align: center;
       transition: background-color v.$transition-duration v.$transition-easing;
       &:nth-child(even) {
@@ -612,10 +705,11 @@
         background-color: color.scale(v.$primary-color, $lightness: -30%);
       }
       td {
-        padding: 3px 5px; // Adjust cell padding
-        border: 0.5px solid v.$border-color-secondary; // Subtle cell borders
-        vertical-align: middle;
-        font-size: 14px; // Base font size for cells
+        padding: 4px 5px; // Keep padding consistent
+        border: 0.5px solid v.$border-color-secondary;
+        vertical-align: middle; // Crucial for consistent height
+        font-size: 14px;
+        box-sizing: border-box; // Ensure padding/border included in height calc
       }
     }
   }
@@ -637,13 +731,14 @@
 }
 
 .percentileFlexContainer {
-  // Container within the 'Percentile Ranks' cell
   display: flex;
-  justify-content: center; // Center items horizontally
-  align-items: flex-start; // Align items to the top
+  justify-content: center;
+  align-items: center; // Align items top baseline
   flex-wrap: wrap;
-  gap: 4px 6px; // Row and column gap
-  padding: 4px 0; // Small padding within the cell
+  gap: 0px 6px;
+  padding: 4px 0;
+  // Ensure the container itself doesn't contribute to height changes
+  line-height: 1; // Reset line height just in case
 }
 
 .percentileContainer {
@@ -653,51 +748,44 @@
   align-items: center;
   transition: opacity v.$transition-duration v.$transition-easing; // For dimming
 
-  // --- Styling for selected/dimmed states ---
-  &.selected {
-    // Applied when this metric is part of the active filter
-    .percentileLabel {
-      // font-weight: bold; // Optional: make label bolder
-      color: v.$secondary-color; // Highlight label color
-    }
-    .percentileBox {
-      outline: 2px solid v.$secondary-color; // Highlight border
-      outline-offset: 1px;
-    }
-  }
   &.dimmed {
     // Applied when filters are active, but this metric is NOT selected
     opacity: 0.6; // Dim non-selected metrics
   }
 }
-.percentileLabel {
-  font-size: 0.75em; // Smaller label
-  margin-bottom: 3px;
-  color: v.$text-color-secondary; // Default subdued color
-  white-space: nowrap;
-  transition: color v.$transition-duration v.$transition-easing; // Smooth color change
 
-  // --- NEW: Style for selected label ---
+.percentileLabel {
+  font-size: 0.75em;
+  margin-bottom: 3px;
+  color: v.$text-color-secondary;
+  white-space: nowrap;
+  transition: color v.$transition-duration v.$transition-easing;
+
+  // Style for selected label is applied directly via class
   &.selectedLabel {
-    color: v.$secondary-color;
-    // font-weight: bold; // Optional
+    color: $metric-border-color; // Use the same color as the border for consistency
+    font-weight: bold; // Optional
   }
 }
+
 .percentileBox {
-  padding: 5px 4px; // Adjust padding
+  padding: 5px 4px; //  padding consistent
   border-radius: 4px;
-  font-size: 1em; // Adjust font size
+  font-size: 1em;
   font-weight: bold;
   text-align: center;
-  min-width: 38px; // Minimum width
-  color: v.$text-color-primary; // Ensure text is visible on gradient bg
+  min-width: 38px;
+  color: v.$text-color-primary;
   box-sizing: border-box;
-  transition: outline v.$transition-duration v.$transition-easing; // Smooth outline transition
+  transition: border-color v.$transition-duration v.$transition-easing; // Transition border color
 
-  // --- NEW: Style for selected box ---
+  // Add transparent border by default to reserve space
+  border: $selected-border-width solid transparent;
+
+  // Apply border color only when selected class is present
   &.selectedBox {
-    outline: 2px solid v.$secondary-color;
-    outline-offset: 1px;
+    border-color: $metric-border-color; // Change color, not add border/outline
+    // outline/offset removed
   }
 }
 
@@ -860,6 +948,7 @@
   gap: 10px; // Space between rows of stats
   width: 100%;
 }
+
 .detailRow {
   // A row of stats within the expanded view
   display: flex;
@@ -869,61 +958,56 @@
   gap: 8px; // Gap between individual stats
   width: 100%;
 }
+
 .detailItem {
-  // Individual stat box in expanded view
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start; // Align content (label, value) to top
-  background-color: v.$background-dark; // Dark background for contrast
+  justify-content: flex-start;
+  background-color: v.$background-dark;
   border-radius: 6px;
   padding: 5px;
-  min-width: 55px; // Ensure minimum width for readability
+  min-width: 55px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-  flex-grow: 1; // Allow items to grow slightly to fill space
-  flex-basis: 0; // Allow flex-grow to work properly
-  transition: opacity v.$transition-duration v.$transition-easing; // For dimming
+  flex-grow: 1;
+  flex-basis: 0;
+  transition: opacity v.$transition-duration v.$transition-easing;
 
-  // --- Styling for selected/dimmed states in mobile ---
-  &.selected {
-    // .detailLabel { font-weight: bold; } // Optional
-    // .detailValue { outline: 1px solid v.$secondary-color; } // Handled by selectedBox class now
-  }
   &.dimmed {
-    opacity: 0.6; // Dim non-selected metrics
+    opacity: 0.6;
   }
 }
+
 .detailLabel {
-  // Label (e.g., "PTS:") in expanded stat item
   font-size: 0.7em;
   margin-bottom: 3px;
   color: v.$text-color-secondary;
   text-align: center;
   white-space: nowrap;
-  transition: color v.$transition-duration v.$transition-easing; // Smooth color change
+  transition: color v.$transition-duration v.$transition-easing;
 
-  // Apply selected style via class
   &.selectedLabel {
-    color: v.$secondary-color;
-    // font-weight: bold; // Optional
+    color: $metric-border-color;
   }
 }
+
 .detailValue {
-  // Value (e.g., "85%") in expanded stat item
   font-weight: bold;
   text-align: center;
   font-size: 1.1em;
-  padding: 4px;
+  padding: 4px; // Keep padding consistent
   border-radius: 4px;
   color: v.$text-color-primary;
-  width: 100%; // Fill the item width
-  box-sizing: border-box; // Include padding in width
-  transition: outline v.$transition-duration v.$transition-easing; // Smooth outline transition
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color v.$transition-duration v.$transition-easing; // Transition border color
 
-  // Apply selected style via class
+  // Add transparent border by default
+  border: $selected-border-width solid transparent; // Use same width as desktop
+
+  // Apply border color only when selected class is present
   &.selectedBox {
-    outline: 1px solid v.$secondary-color; // Slightly thinner outline for mobile?
-    outline-offset: 1px;
+    border-color: $metric-border-color; // Change color
   }
 }
 
@@ -933,8 +1017,8 @@
   flex-direction: row;
   align-items: center;
   width: 100%;
-  gap: 5px; // Space between name and icon
 }
+
 .leftNamePartMobile {
   flex-grow: 1; // Allow name to take available space
   display: flex;
@@ -975,13 +1059,6 @@
     overflow: hidden; // Hide content completely
   }
 }
-
-/* Redundant style block removed as logic moved inside .collapsibleContent */
-/*
-.containerMinimized {
-  .collapsibleContent { ... }
-}
-*/
 
 .message {
   // Loading/No results message

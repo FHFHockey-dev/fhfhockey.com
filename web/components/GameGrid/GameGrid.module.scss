@@ -574,6 +574,7 @@ $mobile-column-short: 30px;
       &.cellInnerBorder {
         position: relative;
         padding: v.$space-xs;
+
         &:before {
           content: "";
           position: absolute;
@@ -583,10 +584,10 @@ $mobile-column-short: 30px;
           pointer-events: none;
         }
         &.heavy-day:before {
-          border-color: rgba(255, 0, 0, 0.3);
+          border-color: #ff00004d;
         }
         &.off-night-day:before {
-          border-color: rgba(0, 255, 0, 0.2);
+          border-color: #00ff0033;
         }
       }
 
@@ -847,11 +848,6 @@ $mobile-column-short: 30px;
   height: 100%;
 }
 
-.mobileLogoSize img {
-  filter: drop-shadow(1px 1px 0 #fff) drop-shadow(-1px -1px 0 #fff)
-    drop-shadow(1px -1px 0 #fff) drop-shadow(-1px 1px 0 #fff);
-}
-
 /* =============================================== */
 /* ========== MOBILE STYLES START HERE ========== */
 /* =============================================== */
@@ -1048,23 +1044,25 @@ $mobile-column-short: 30px;
   .teamRow .mobileTeamLogo {
     display: inline-flex;
   }
+
   .mobileLogoSize {
     display: inline-block;
-    filter: drop-shadow(1px 1px 0 #fff) drop-shadow(-1px -1px 0 #fff)
-      drop-shadow(1px -1px 0 #fff) drop-shadow(-1px 1px 0 #fff);
+    /* REMOVE the filter from here */
+    /* filter: drop-shadow(0.5px 0.5px 0 #fff) drop-shadow(-0.5px -0.5px 0 #fff)
+      drop-shadow(0.5px -0.5px 0 #fff) drop-shadow(-0.5px 0.5px 0 #fff); */
   }
-}
 
-@media only screen and (min-width: v.$screen-medium) and (max-width: v.$screen-large) {
-  .teamRow {
-    .teamName {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .teamAbbreviation {
-      display: none;
-    }
+  /* ADD these new classes */
+  .home-shadow {
+    filter: drop-shadow(1px 1px 0 #00ff0033) drop-shadow(-1px -1px 0 #00ff0033)
+      /* Green */ drop-shadow(1px -1px 0 #00ff0033)
+      drop-shadow(-1px 1px 0 #00ff0033);
+  }
+
+  .away-shadow {
+    filter: drop-shadow(1px 1px 0 #ff00004d) drop-shadow(-1px -1px 0 #ff00004d)
+      /* Red */ drop-shadow(1px -1px 0 #ff00004d)
+      drop-shadow(-1px 1px 0 #ff00004d);
   }
 }
 
@@ -1327,6 +1325,7 @@ $mobile-column-short: 30px;
       display: flex;
       justify-content: center;
       align-items: center;
+      overflow: visible !important;
     }
     .teamName,
     .desktopTeamAbbreviation {
