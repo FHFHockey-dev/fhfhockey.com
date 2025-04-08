@@ -7,7 +7,7 @@ import {
   PointElement,
   LineElement,
   Tooltip,
-  Filler,
+  Filler
 } from "chart.js";
 
 import usePercentileRank from "hooks/usePercentileRank";
@@ -29,7 +29,7 @@ const LABELS: { key: keyof PercentileRank; label: string }[] = [
   { key: "plusMinus", label: "+/-" },
   { key: "pim", label: "PIM" },
   { key: "blockedShots", label: "BLK" },
-  { key: "hits", label: "HITS" },
+  { key: "hits", label: "HITS" }
 ];
 
 const DATA = {
@@ -46,9 +46,9 @@ const DATA = {
       pointHoverBackgroundColor: "#fff",
       pointHoverBorderColor: "#07aae2",
       pointRadius: 0,
-      tension: 0.1,
-    },
-  ],
+      tension: 0.1
+    }
+  ]
 };
 
 type CategoryCoverageChartProps = {
@@ -60,7 +60,7 @@ type CategoryCoverageChartProps = {
 function CategoryCoverageChart({
   playerId,
   timeOption,
-  showTitle = false,
+  showTitle = false
 }: CategoryCoverageChartProps) {
   const chartRef = useRef<ChartJS>(null);
   const size = useScreenSize();
@@ -128,48 +128,48 @@ function CategoryCoverageChart({
         chart.ctx.fillStyle = "rgba(76, 167, 221, 1)";
         dataset[i] && chart.ctx.fillText(`${dataset[i].toFixed(1)}`, x, y - 16);
       });
-    },
+    }
   };
 
   const OPTIONS = {
     responsive: true,
-    maintainAspectRatio: false,
+    maintainAspectRatio: true,
     elements: {
       line: {
         borderWidth: 2,
-        color: "rgba(255, 255, 255, 0.25)",
-      },
+        color: "rgba(255, 255, 255, 0.25)"
+      }
     },
     plugins: {
       legend: {
-        display: false, // This hides the legend
-      },
+        display: false // This hides the legend
+      }
     },
     scales: {
       r: {
         angleLines: {
-          color: "rgba(255, 255, 255, 0.25)",
+          color: "rgba(255, 255, 255, 0.25)"
         },
         grid: {
-          color: "white",
+          color: "white"
         },
         pointLabels: {
           color: "white",
           callback() {
             return " ";
-          },
+          }
         },
         ticks: {
           display: false,
-          stepSize: 20,
+          stepSize: 20
         },
         min: 0,
-        max: 100,
-      },
+        max: 100
+      }
     },
     layout: {
-      padding: size.screen === BreakPoint.l ? 30 : 20,
-    },
+      padding: size.screen === BreakPoint.l ? 30 : 20
+    }
   } as const;
 
   return (

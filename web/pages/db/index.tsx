@@ -309,8 +309,8 @@ export default function Page() {
         .select("id,date")
         .eq("seasonId", season.seasonId)
         .lte("startTime", new Date().toISOString())
-        .order("date", { ascending: true });
-      setGames(finishedGames?.slice(10, 30) ?? []);
+        .order("date", { ascending: false });
+      setGames(finishedGames?.slice(0, 20) ?? []);
     })();
   }, [season?.seasonId]);
 

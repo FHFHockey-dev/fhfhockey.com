@@ -10,7 +10,7 @@ import {
   Tooltip,
   BarElement,
   LineController,
-  BarController,
+  BarController
 } from "chart.js";
 
 // Register Chart.js components
@@ -37,31 +37,31 @@ interface RollingAverageChartProps<T> {
 const COLOR_PALLET = [
   {
     borderColor: "rgb(75, 192, 192)",
-    backgroundColor: "rgba(75, 192, 192, 0.2)",
+    backgroundColor: "rgba(75, 192, 192, 0.2)"
   }, // Teal
   {
     borderColor: "rgb(255, 99, 132)",
-    backgroundColor: "rgba(255, 99, 132, 0.2)",
+    backgroundColor: "rgba(255, 99, 132, 0.2)"
   }, // Pink
   {
     borderColor: "rgb(153, 102, 255)",
-    backgroundColor: "rgba(153, 102, 255, 0.2)",
+    backgroundColor: "rgba(153, 102, 255, 0.2)"
   }, // Purple
   {
     borderColor: "rgb(255, 159, 64)",
-    backgroundColor: "rgba(255, 159, 64, 0.2)",
+    backgroundColor: "rgba(255, 159, 64, 0.2)"
   }, // Orange
   {
     borderColor: "rgb(255, 205, 86)",
-    backgroundColor: "rgba(255, 205, 86, 0.2)",
-  }, // Yellow
+    backgroundColor: "rgba(255, 205, 86, 0.2)"
+  } // Yellow
 ];
 
 function RollingAverageChart<T>({
   data,
   windowSizes,
   getValue,
-  getLabel,
+  getLabel
 }: RollingAverageChartProps<T>) {
   // Function to calculate rolling averages for a given window size
   function calculateRollingAverage(
@@ -87,7 +87,7 @@ function RollingAverageChart<T>({
       backgroundColor,
       fill: true,
       tension: 0.1,
-      type: "line" as const,
+      type: "line" as const
     };
   });
 
@@ -102,10 +102,10 @@ function RollingAverageChart<T>({
         backgroundColor: "rgba(54, 162, 235, 0.2)",
         fill: true,
         tension: 0.1,
-        type: "bar" as const,
+        type: "bar" as const
       },
-      ...datasets, // Include the rolling averages datasets
-    ],
+      ...datasets // Include the rolling averages datasets
+    ]
   };
 
   return (
@@ -117,9 +117,9 @@ function RollingAverageChart<T>({
         maintainAspectRatio: false,
         plugins: {
           legend: {
-            display: false,
-          },
-        },
+            display: false
+          }
+        }
       }}
     />
   );

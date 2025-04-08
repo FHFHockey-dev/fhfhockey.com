@@ -1,4 +1,7 @@
 // /components/WiGO/TimeframeComparison.module.scss
+@use "sass:color";
+@use "sass:math";
+@use "styles/vars" as v;
 
 .timeframeContainer {
   display: flex;
@@ -7,10 +10,11 @@
   height: 100%;
   padding: 4px;
   gap: 8px;
+  background-color: v.$background-dark;
 }
 
 .timeframeSelect {
-  background-color: #303030;
+  background-color: v.$background-medium;
   color: #fff;
   border: 1px solid #07aae2;
   padding: 4px 8px;

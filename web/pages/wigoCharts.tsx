@@ -1,114 +1,43 @@
 // /pages/wigoCharts.tsx
 
-// TODO
-// GET IPP for L5, 10, 20
-// Maybe I can have a L5, L10, L20 API endpoint specifically?
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import styles from "styles/wigoCharts.module.scss";
 import {
   Player,
   TeamColors,
   defaultColors,
   TableAggregateData,
-  CombinedPlayerStats,
+  CombinedPlayerStats
 } from "components/WiGO/types";
-import NameSearchBar from "../components/WiGO/NameSearchBar";
-import Image from "next/legacy/image";
+import NameSearchBar from "components/WiGO/NameSearchBar"; // Corrected path
 import { getTeamInfoById, teamNameToAbbreviationMap } from "lib/teamsInfo";
-import { fetchPlayerAggregatedStats } from "../utils/fetchWigoPlayerStats";
-import TeamNameSVG from "../components/WiGO/TeamNameSVG";
-import TimeframeComparison from "../components/WiGO/TimeframeComparison";
-import CategoryCoverageChart from "components/CategoryCoverageChart";
-import GameScoreLineChart from "components/WiGO/GameScoreLineChart";
-
-/**
- * Helper that takes the tableData for (counts or rates)
- * and updates the .DIFF property based on comparing leftKey vs. rightKey
- * as a per-game difference.
- */
-/**
- * For the COUNTS table:
- * We find the row labeled "GP" and do a ( value / GP ) comparison,
- * producing a percentage difference for each row.
- */
-function computeDiffColumnForCounts(
-  tableData: TableAggregateData[],
-  leftKey: keyof TableAggregateData,
-  rightKey: keyof TableAggregateData
-) {
-  const gpRow = tableData.find((r) => r.label === "GP");
-
-  tableData.forEach((row) => {
-    const leftVal = row[leftKey];
-    const rightVal = row[rightKey];
-
-    // If it's the "GP" row itself, we might skip or just set DIFF=undefined
-    if (row.label === "GP") {
-      row.DIFF = undefined;
-      return;
-    }
-
-    // Safely get the GP # for each timeframe
-    const gpLeft = gpRow ? gpRow[leftKey] : 0;
-    const gpRight = gpRow ? gpRow[rightKey] : 0;
-
-    if (
-      typeof leftVal === "number" &&
-      typeof rightVal === "number" &&
-      typeof gpLeft === "number" &&
-      typeof gpRight === "number" &&
-      gpLeft > 0 &&
-      gpRight > 0
-    ) {
-      const perGameLeft = leftVal / gpLeft;
-      const perGameRight = rightVal / gpRight;
-      row.DIFF = ((perGameLeft - perGameRight) / perGameRight) * 100;
-    } else {
-      row.DIFF = undefined;
-    }
-  });
-}
-
-/**
- * For the RATES table:
- * The data is already "per hour" (or per-60) for each timeframe,
- * so we just do a direct ( leftVal - rightVal ) / rightVal * 100 difference,
- * with no reference to "GP" needed.
- */
-function computeDiffColumnForRates(
-  tableData: TableAggregateData[],
-  leftKey: keyof TableAggregateData,
-  rightKey: keyof TableAggregateData
-) {
-  tableData.forEach((row) => {
-    const leftVal = row[leftKey];
-    const rightVal = row[rightKey];
-
-    if (
-      typeof leftVal === "number" &&
-      typeof rightVal === "number" &&
-      rightVal !== 0
-    ) {
-      row.DIFF = ((leftVal - rightVal) / rightVal) * 100;
-    } else {
-      row.DIFF = undefined;
-    }
-  });
-}
+import { fetchPlayerAggregatedStats } from "utils/fetchWigoPlayerStats"; // Corrected path
+import TimeframeComparison from "components/WiGO/TimeframeComparison"; // Corrected path
+import CategoryCoverageChart from "components/CategoryCoverageChart"; // Keep if path is correct
+import GameScoreSection from "components/WiGO/GameScoreSection"; // Import the new section component
+import PlayerHeader from "components/WiGO/PlayerHeader"; // Import the new header component
+import StatsTable from "components/WiGO/StatsTable"; // Import the new table component
+import {
+  computeDiffColumnForCounts,
+  computeDiffColumnForRates,
+  formatCell // Import utils
+} from "components/WiGO/tableUtils"; // Corrected path
 
 const WigoCharts: React.FC = () => {
-  // State
+  // State remains largely the same
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
   const [headshotUrl, setHeadshotUrl] = useState<string | null>(null);
   const [teamColors, setTeamColors] = useState<TeamColors>(defaultColors);
 
-  const [countsTableData, setCountsTableData] = useState<TableAggregateData[]>(
-    []
-  );
-  const [ratesTableData, setRatesTableData] = useState<TableAggregateData[]>(
-    []
-  );
+  const [rawCountsData, setRawCountsData] = useState<TableAggregateData[]>([]); // Store raw data
+  const [rawRatesData, setRawRatesData] = useState<TableAggregateData[]>([]); // Store raw data
+
+  const [displayCountsData, setDisplayCountsData] = useState<
+    TableAggregateData[]
+  >([]); // Data with DIFF calculated
+  const [displayRatesData, setDisplayRatesData] = useState<
+    TableAggregateData[]
+  >([]); // Data with DIFF calculated
 
   const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
   const [dataError, setDataError] = useState<string | null>(null);
@@ -116,8 +45,7 @@ const WigoCharts: React.FC = () => {
   const [teamName, setTeamName] = useState<string>("");
   const [teamAbbreviation, setTeamAbbreviation] = useState<string | null>(null);
 
-  // The user's chosen timeframes for the “VS.” comparison
-  // (We won’t use them except to re-calc the DIFF column)
+  // User's chosen timeframes for comparison
   const [leftTimeframe, setLeftTimeframe] =
     useState<keyof TableAggregateData>("STD");
   const [rightTimeframe, setRightTimeframe] =
@@ -125,6 +53,7 @@ const WigoCharts: React.FC = () => {
 
   const placeholderImage = "/pictures/player-placeholder.jpg";
 
+  // Handle player selection (remains the same)
   const handlePlayerSelect = (player: Player, headshot: string) => {
     setSelectedPlayer(player);
     setHeadshotUrl(headshot);
@@ -140,7 +69,7 @@ const WigoCharts: React.FC = () => {
           secondaryColor: teamInfo.secondaryColor,
           accentColor: teamInfo.accent,
           altColor: teamInfo.alt,
-          jerseyColor: teamInfo.jersey,
+          jerseyColor: teamInfo.jersey
         });
       } else {
         setTeamName("");
@@ -152,42 +81,57 @@ const WigoCharts: React.FC = () => {
       setTeamAbbreviation(null);
       setTeamColors(defaultColors);
     }
+    // Reset timeframes on new player select
+    setLeftTimeframe("STD");
+    setRightTimeframe("CA");
   };
 
-  // Simple function to format seconds as MM:SS
-  const formatSecondsToMMSS = (seconds: number): string => {
-    const totalSeconds = Math.round(seconds);
-    const mins = Math.floor(totalSeconds / 60);
-    const secs = totalSeconds % 60;
-    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
-  };
-
-  // Format cell values for display
-  const formatCell = (label: string, value?: number): string => {
-    if (value == null) return "-";
-    switch (label) {
-      case "ATOI":
-      case "PPTOI":
-        return formatSecondsToMMSS(value);
-      case "PP%":
-        return `${value.toFixed(2)}%`;
-      default:
-        return value.toFixed(2);
+  // Function to update display data based on selected timeframes
+  // Use useCallback to memoize this function
+  const updateDisplayData = useCallback(() => {
+    if (rawCountsData.length > 0) {
+      const updatedCounts = computeDiffColumnForCounts(
+        rawCountsData,
+        leftTimeframe,
+        rightTimeframe
+      );
+      setDisplayCountsData(updatedCounts);
+    } else {
+      setDisplayCountsData([]);
     }
-  };
 
-  // Fetch data once a player is selected
+    if (rawRatesData.length > 0) {
+      const updatedRates = computeDiffColumnForRates(
+        rawRatesData,
+        leftTimeframe,
+        rightTimeframe
+      );
+      setDisplayRatesData(updatedRates);
+    } else {
+      setDisplayRatesData([]);
+    }
+  }, [rawCountsData, rawRatesData, leftTimeframe, rightTimeframe]); // Dependencies
+
+  // Fetch data effect
   useEffect(() => {
     if (!selectedPlayer) {
-      setCountsTableData([]);
-      setRatesTableData([]);
+      setRawCountsData([]);
+      setRawRatesData([]);
+      setDisplayCountsData([]); // Clear display data
+      setDisplayRatesData([]); // Clear display data
       setDataError(null);
+      setTeamName("");
+      setTeamAbbreviation(null);
+      setTeamColors(defaultColors);
+      setHeadshotUrl(null);
       return;
     }
 
     const fetchData = async () => {
       setIsLoadingData(true);
       setDataError(null);
+      setRawCountsData([]); // Clear previous raw data
+      setRawRatesData([]); // Clear previous raw data
 
       try {
         const aggregatedData: CombinedPlayerStats =
@@ -198,31 +142,38 @@ const WigoCharts: React.FC = () => {
           aggregatedData.rates.length === 0
         ) {
           setDataError("No statistics available for the selected player.");
+          setRawCountsData([]);
+          setRawRatesData([]);
+        } else {
+          // Set the raw data first
+          setRawCountsData(aggregatedData.counts);
+          setRawRatesData(aggregatedData.rates);
         }
-
-        // Set the raw data
-        setCountsTableData(aggregatedData.counts);
-        setRatesTableData(aggregatedData.rates);
-
-        // Then compute DIFF right away with the default left=STD, right=CA
-        const updatedCounts = structuredClone(aggregatedData.counts);
-        computeDiffColumnForCounts(updatedCounts, "STD", "CA");
-
-        const updatedRates = structuredClone(aggregatedData.rates);
-        computeDiffColumnForRates(updatedRates, "STD", "CA");
-
-        setCountsTableData(updatedCounts);
-        setRatesTableData(updatedRates);
       } catch (error) {
         console.error("Error fetching aggregated stats:", error);
         setDataError("Failed to load player statistics.");
+        setRawCountsData([]);
+        setRawRatesData([]);
       } finally {
         setIsLoadingData(false);
       }
     };
 
     fetchData();
-  }, [selectedPlayer]);
+  }, [selectedPlayer]); // Only depends on selectedPlayer
+
+  // Effect to recalculate DIFF columns when raw data or timeframes change
+  useEffect(() => {
+    updateDisplayData();
+  }, [updateDisplayData]); // Dependency is the memoized function
+
+  // Handler for timeframe changes
+  const handleTimeframeCompare = (left: string, right: string) => {
+    // Update the state for selected timeframes
+    setLeftTimeframe(left as keyof TableAggregateData);
+    setRightTimeframe(right as keyof TableAggregateData);
+    // The updateDisplayData effect will automatically recalculate
+  };
 
   // Render
   return (
@@ -235,7 +186,7 @@ const WigoCharts: React.FC = () => {
             "--secondary-color": teamColors.secondaryColor,
             "--accent-color": teamColors.accentColor,
             "--alt-color": teamColors.altColor,
-            "--jersey-color": teamColors.jerseyColor,
+            "--jersey-color": teamColors.jerseyColor
           } as React.CSSProperties
         }
       >
@@ -247,66 +198,19 @@ const WigoCharts: React.FC = () => {
               {selectedPlayer.fullName}
             </span>
           ) : (
-            <span>No player selected</span>
+            <span>Search Player...</span> // Modified placeholder text
           )}
         </div>
 
-        {/* Player Headshot / Team Logo Section */}
-        <div className={styles.playerHeadshot}>
-          {teamName && (
-            <TeamNameSVG
-              teamName={teamName}
-              primaryColor={teamColors.primaryColor}
-              secondaryColor={teamColors.secondaryColor}
-            />
-          )}
-
-          <div className={styles.headshotContainer}>
-            <div className={styles.leftSide}>
-              <div className={styles.headshot}>
-                {headshotUrl ? (
-                  <Image
-                    src={headshotUrl}
-                    alt={`${selectedPlayer?.fullName} headshot`}
-                    className={styles.headshotImage}
-                    layout="fill"
-                    objectFit="cover"
-                    style={{ border: `6px solid ${teamColors.primaryColor}` }}
-                  />
-                ) : (
-                  <Image
-                    src={placeholderImage}
-                    alt="No headshot available"
-                    className={styles.headshotImage}
-                    layout="fill"
-                    objectFit="cover"
-                    style={{
-                      border: `6px solid #07aae2`,
-                      borderRadius: "90px",
-                    }}
-                  />
-                )}
-              </div>
-            </div>
-            <div className={styles.rightSide}>
-              <div className={styles.teamLogo}>
-                {teamAbbreviation ? (
-                  <Image
-                    src={`/teamLogos/${teamAbbreviation}.png`}
-                    alt={`${teamName} logo`}
-                    layout="intrinsic"
-                    width={120}
-                    height={120}
-                  />
-                ) : (
-                  <p style={{ color: "#ccc", fontSize: "14px" }}>
-                    No team logo found
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Player Headshot / Team Logo Section - Use Component */}
+        <PlayerHeader
+          selectedPlayer={selectedPlayer}
+          headshotUrl={headshotUrl}
+          teamName={teamName}
+          teamAbbreviation={teamAbbreviation}
+          teamColors={teamColors}
+          placeholderImage={placeholderImage}
+        />
 
         {/* Offense / Defense / Per-Game / Opponent / Consistency ... */}
         <div className={styles.offenseRatings}></div>
@@ -318,214 +222,52 @@ const WigoCharts: React.FC = () => {
 
         {/* Timeframe Comparison */}
         <div className={styles.timeframeComparison}>
+          {/* Pass default/current values and the handler */}
           <TimeframeComparison
-            onCompare={(left, right) => {
-              setLeftTimeframe(left as keyof TableAggregateData);
-              setRightTimeframe(right as keyof TableAggregateData);
-
-              const updatedCounts = structuredClone(countsTableData);
-              const updatedRates = structuredClone(ratesTableData);
-
-              // We want to do “per-game” for counts...
-              computeDiffColumnForCounts(
-                updatedCounts,
-                left as keyof TableAggregateData,
-                right as keyof TableAggregateData
-              );
-
-              // ...and direct difference for rates
-              computeDiffColumnForRates(
-                updatedRates,
-                left as keyof TableAggregateData,
-                right as keyof TableAggregateData
-              );
-
-              setCountsTableData(updatedCounts);
-              setRatesTableData(updatedRates);
-            }}
+            initialLeft={leftTimeframe}
+            initialRight={rightTimeframe}
+            onCompare={handleTimeframeCompare}
           />
         </div>
 
-        {/* Counts Table */}
-        <div className={styles.countsTable}>
-          <table aria-label="Counts Table">
-            <thead>
-              {/* "COUNTS" label row */}
-              <tr className={styles.countsLabel}>
-                {/* 9 columns total => 8 existing + 1 for DIFF */}
-                <th colSpan={9}>COUNTS</th>
-              </tr>
-              {/* Column headers */}
-              <tr>
-                <th>Stat</th>
-                <th>CA</th>
-                <th>3YA</th>
-                <th>LY</th>
-                <th>L5</th>
-                <th>L10</th>
-                <th>L20</th>
-                <th>STD</th>
-                <th>DIFF</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoadingData ? (
-                <tr>
-                  <td colSpan={9}>Loading counts data...</td>
-                </tr>
-              ) : dataError ? (
-                <tr>
-                  <td colSpan={9}>{dataError}</td>
-                </tr>
-              ) : countsTableData.length > 0 ? (
-                countsTableData.map((row, rowIndex) => (
-                  <tr
-                    key={`counts-row-${rowIndex}`}
-                    className={row.label === "GP" ? styles.gpRow : ""}
-                  >
-                    <td className={styles.statLabel}>{row.label}</td>
-                    <td>{formatCell(row.label, row.CA)}</td>
-                    <td>{formatCell(row.label, row["3YA"])}</td>
-                    <td>{formatCell(row.label, row.LY)}</td>
-                    <td>{formatCell(row.label, row.L5)}</td>
-                    <td>{formatCell(row.label, row.L10)}</td>
-                    <td>{formatCell(row.label, row.L20)}</td>
-                    <td>{formatCell(row.label, row.STD)}</td>
-                    <td
-                      style={{
-                        color:
-                          row.DIFF !== undefined
-                            ? row.DIFF >= 0
-                              ? "limegreen"
-                              : "red"
-                            : "#fff",
-                      }}
-                    >
-                      {row.DIFF !== undefined ? `${row.DIFF.toFixed(1)}%` : "-"}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={9}>No data available.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        {/* Counts Table - Use Component */}
+        <StatsTable
+          title="COUNTS"
+          data={displayCountsData}
+          isLoading={isLoadingData && displayCountsData.length === 0} // Show loading only if data isn't there yet
+          error={dataError}
+          formatCell={formatCell} // Pass the imported utility function
+        />
 
-        {/* Rates Table */}
-        <div className={styles.ratesTable}>
-          <table aria-label="Rates Table">
-            <thead>
-              {/* "RATES" label row */}
-              <tr className={styles.ratesLabel}>
-                <th colSpan={9}>RATES</th> {/* 8 + 1 DIFF */}
-              </tr>
-              <tr>
-                <th>Stat</th>
-                <th>CA</th>
-                <th>3YA</th>
-                <th>LY</th>
-                <th>L5</th>
-                <th>L10</th>
-                <th>L20</th>
-                <th>STD</th>
-                <th>DIFF</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoadingData ? (
-                <tr>
-                  <td colSpan={9}>Loading rates data...</td>
-                </tr>
-              ) : dataError ? (
-                <tr>
-                  <td colSpan={9}>{dataError}</td>
-                </tr>
-              ) : ratesTableData.length > 0 ? (
-                ratesTableData.map((row, rowIndex) => (
-                  <tr
-                    key={`rates-row-${rowIndex}`}
-                    className={row.label === "GP" ? styles.gpRow : ""}
-                  >
-                    <td className={styles.statLabel}>{row.label}</td>
-                    <td>{formatCell(row.label, row.CA)}</td>
-                    <td>{formatCell(row.label, row["3YA"])}</td>
-                    <td>{formatCell(row.label, row.LY)}</td>
-                    <td>{formatCell(row.label, row.L5)}</td>
-                    <td>{formatCell(row.label, row.L10)}</td>
-                    <td>{formatCell(row.label, row.L20)}</td>
-                    <td>{formatCell(row.label, row.STD)}</td>
-                    <td
-                      style={{
-                        color:
-                          row.DIFF !== undefined
-                            ? row.DIFF >= 0
-                              ? "limegreen"
-                              : "red"
-                            : "#fff",
-                      }}
-                    >
-                      {row.DIFF !== undefined ? `${row.DIFF.toFixed(1)}%` : "-"}
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={9}>No data available.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        {/* Rates Table - Use Component */}
+        <StatsTable
+          title="RATES"
+          data={displayRatesData}
+          isLoading={isLoadingData && displayRatesData.length === 0}
+          error={dataError}
+          formatCell={formatCell} // Pass the imported utility function
+        />
 
         {/* The rest of your layout sections */}
         <div className={styles.paceTable}></div>
         <div className={styles.toiLineChart}></div>
         <div className={styles.ppgLineChart}></div>
-        <div className={styles.gameScoreLineChart}>
-          <GameScore playerId={selectedPlayer?.id} />
-        </div>
+
+        {/* Game Score - Use Section Component */}
+        <GameScoreSection playerId={selectedPlayer?.id} />
+
         <div className={styles.rateStatBarPercentiles}></div>
+
+        {/* Ensure CategoryCoverageChart path is correct if it's not in components/WiGO */}
         <div className={styles.percentileChart}>
           <CategoryCoverageChart
             playerId={selectedPlayer?.id}
-            timeOption="L30"
+            timeOption="L30" // Example, adjust as needed
           />
         </div>
       </div>
     </div>
   );
 };
-
-function GameScore({ playerId }: { playerId: number | undefined }) {
-  return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateRows: "repeat(6,1fr)",
-        height: "100%",
-      }}
-    >
-      {/* Title */}
-      <div
-        className={styles.ratesLabel}
-        style={{
-          backgroundColor: "#1d3239",
-          gridRow: "1/2",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <h3 style={{ margin: 0, fontSize: 12, fontWeight: 700 }}>Game Score</h3>
-      </div>
-      <div style={{ gridRow: "2/7", maxWidth: "100%" }}>
-        <GameScoreLineChart playerId={playerId} />
-      </div>
-    </div>
-  );
-}
 
 export default WigoCharts;
