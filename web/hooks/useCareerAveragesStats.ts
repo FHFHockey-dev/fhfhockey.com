@@ -13,7 +13,7 @@ export default function useCareerAveragesStats(playerId: number | undefined) {
         `/api/CareerAverages/${playerId}`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json" }
         }
       )
         .then((res) => res.json())

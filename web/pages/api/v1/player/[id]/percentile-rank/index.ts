@@ -1,3 +1,5 @@
+// /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/player/[id]/percentile-rank/index.ts
+
 import { getPlayer } from "lib/NHL/server";
 import { PercentileRank } from "lib/NHL/types";
 import supabase from "lib/supabase";
@@ -17,7 +19,7 @@ export default async function handler(
     res.status(200).json({
       success: true,
       message: "Success!",
-      data,
+      data
     });
   } catch (e: any) {
     console.error(e);
@@ -33,7 +35,7 @@ async function getPercentileRank(
   const { data } = await supabase
     .rpc("get_skaters_avg_stats", {
       start_date: StartTime,
-      end_date: EndTime,
+      end_date: EndTime
     })
     .returns<PlayerAvgStats[]>()
     .throwOnError();
@@ -49,7 +51,7 @@ async function getPercentileRank(
       hits: 0,
       blockedShots: 0,
       powerPlayPoints: 0,
-      shots: 0,
+      shots: 0
     };
   }
 
@@ -65,7 +67,7 @@ async function getPercentileRank(
       playerStats,
       "powerPlayPoints"
     ),
-    shots: getSinglePercentileRank(data, playerStats, "shots"),
+    shots: getSinglePercentileRank(data, playerStats, "shots")
   };
 }
 
@@ -77,7 +79,7 @@ const statMapping: Record<Stat, keyof PlayerAvgStats> = {
   hits: "avghits",
   blockedShots: "avgblockedshots",
   powerPlayPoints: "avgpowerplaypoints",
-  shots: "avgshots",
+  shots: "avgshots"
 };
 
 function getSinglePercentileRank(

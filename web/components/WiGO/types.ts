@@ -55,17 +55,15 @@ export interface SkaterStat {
   shots: number; // Shots on Goal
   pp_assists: number; // Power Play Assists
   pp_goals: number; // Power Play Goals
-  ppp: number; // Power Play Points
   hits: number; // Hits
   blocked_shots: number; // Blocked Shots
   penalty_minutes: number; // Penalty Minutes
-  ixG: number; // Ice Faceoffs
-  toi_per_game: number; // Time on Ice in seconds
+  toi_per_game: number; // Time on Ice in seconds (per game average?)
   pp_toi_per_game: number; // Power Play Time on Ice in seconds
-  toi: number; // Total Time on Ice in seconds
   pp_toi_pct_per_game: number; // Power Play Time on Ice Percentage
-  // hdcf: number;
-  // scf: number;
+
+  // Add any OTHER columns actually present in wgo_skater_stats if needed
+  [key: string]: any; // Add index signature if other unknown columns are selected with '*'
 }
 
 export interface PlayerStats {
