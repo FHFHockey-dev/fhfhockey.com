@@ -632,6 +632,7 @@ async function main() {
         if (parsedData.length > 0) {
           const upsertedCount = await upsertData(targetTable, parsedData);
           grandTotalRowsUpserted += upsertedCount;
+          console.log(`Finished Upsert for ${ReportType[reportType]}.`);
         } else {
           console.log(
             `No valid data parsed for ${ReportType[reportType]} / ${strength}. Skipping upsert.`
