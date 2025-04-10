@@ -15,7 +15,7 @@ export function calculateAverages(goalies: GoalieStat[]): Averages {
     shutouts: 0,
     timeOnIce: 0,
     savePct: 0,
-    goalsAgainstAverage: 0,
+    goalsAgainstAverage: 0
   };
 
   goalies.forEach((goalie) => {
@@ -48,6 +48,6 @@ export function calculateAverages(goalies: GoalieStat[]): Averages {
     shutouts: count > 0 ? totals.shutouts / count : 0,
     timeOnIce: count > 0 ? totals.timeOnIce / count : 0,
     savePct: count > 0 ? totals.savePct / count : 0,
-    goalsAgainstAverage: count > 0 ? totals.goalsAgainstAverage / count : 0,
+    goalsAgainstAverage: count > 0 ? totals.goalsAgainstAverage / count : 0
   };
 }
