@@ -18,6 +18,7 @@ if (!supabaseUrl || !supabaseKey) {
   console.error("Supabase URL or Service Role Key is missing.");
   process.exit(1);
 }
+
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // --- Constants ---
@@ -343,7 +344,7 @@ async function fetchAndParseAllPlayersData(
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       console.log(
-        `Workspaceing data for ${ReportType[reportType]} (Strength: ${strength}, Season: ${seasonId}) - Attempt ${attempt}`
+        `fetching data for ${ReportType[reportType]} (Strength: ${strength}, Season: ${seasonId}) - Attempt ${attempt}`
       );
       const response = await axios.get(url, { timeout: 60000 });
       if (!response.data) {
@@ -661,29 +662,19 @@ async function main() {
   }
 }
 
-// --- API Route Handler (Unchanged from previous version without auth) ---
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "POST" && req.method !== "GET") {
-    // Allow GET for easy testing? Or POST only.
-    res.setHeader("Allow", ["POST", "GET"]);
-    return res
-      .status(405)
-      .json({ message: `Method ${req.method} Not Allowed` });
+  if (req.method !== "GET") {
+    res.status(405).json({ message: "Method Not Allowed" });
+    return;
   }
-  console.log(
-    `API endpoint /api/v1/db/update-nst-current-season triggered via POST.`
-  );
-  main().catch((err) => {
-    console.error(
-      "Error running main function triggered by API (update-nst-current-season):",
-      err
-    );
-  });
-  res.status(202).json({
-    message:
-      "NST All Players current season update process initiated. Check server logs for progress."
-  });
+  try {
+    await main();
+    res.status(200).json({ message: "Data fetching and upsertion initiated." });
+  } catch (error: any) {
+    console.error("Error in API handler:", error.message);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 }
