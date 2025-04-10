@@ -15,7 +15,7 @@ import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import type { Element } from "domhandler";
 import { format as tzFormat, toZonedTime } from "date-fns-tz";
 
-dotenv.config({ path: "./../../../.env.local" });
+// dotenv.config({ path: "./../../../.env.local" });
 
 // --- Supabase Setup ---
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
