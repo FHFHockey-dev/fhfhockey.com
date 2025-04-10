@@ -24,8 +24,26 @@ if (!supabaseUrl || !supabaseKey) {
   console.error("Supabase URL or Service Role Key is missing.");
   process.exit(1);
 }
-const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
+// *** ADDED: Log env vars (remove sensitive key log after debugging) ***
+console.log("Supabase URL:", supabaseUrl ? "Loaded" : "MISSING!");
+console.log("Supabase Key:", supabaseKey ? "Loaded" : "MISSING!"); // Be careful logging keys, remove when done
 
+if (!supabaseUrl || !supabaseKey) {
+  console.error(
+    "FATAL: Supabase URL or Service Role Key is missing in environment variables."
+  );
+  // Optionally: throw new Error("Missing Supabase credentials"); // Or exit cleanly
+  process.exit(1); // Exit if essential vars are missing
+}
+
+let supabase: SupabaseClient;
+try {
+  supabase = createClient(supabaseUrl, supabaseKey);
+  console.log("Supabase client created successfully."); // ADDED LOG
+} catch (error: any) {
+  console.error("FATAL: Error creating Supabase client:", error.message);
+  throw error; // Throw error to prevent function execution
+}
 // --- Constants ---
 const REQUEST_INTERVAL_MS = 5000; // Delay between processing each player (5 seconds)
 const PLAYER_FETCH_BATCH_SIZE = 1000; // Supabase fetch limit
