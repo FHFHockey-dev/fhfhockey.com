@@ -35,6 +35,7 @@ const BASE_URL = "https://www.naturalstattrick.com/playerteams.php";
 
 // Player name mapping
 const playerNameMapping: Record<string, { fullName: string }> = {
+  // NST VERSION: { NHL VERSION }
   "Matthew Benning": { fullName: "Matt Benning" },
   "Alex Kerfoot": { fullName: "Alexander Kerfoot" },
   "Zach Aston-Reese": { fullName: "Zachary Aston-Reese" },
@@ -44,7 +45,9 @@ const playerNameMapping: Record<string, { fullName: string }> = {
   "Janis Moser": { fullName: "J.J. Moser" },
   "Nathan Légaré": { fullName: "Nathan Legare" },
   "Mat?j Blümel": { fullName: "Matěj Blümel" },
-  "Alex Petrovic": { fullName: "Alexander Petrovic" }
+  "Alex Petrovic": { fullName: "Alexander Petrovic" },
+  "Martin Fehervary": { fullName: "Martin Fehérváry" },
+  "Jonathan Lekkerimaki": { fullName: "Jonathan Lekkerimäki" }
 };
 
 const troublesomePlayers: string[] = [];
@@ -900,4 +903,3 @@ export default async function handler(
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
-//test

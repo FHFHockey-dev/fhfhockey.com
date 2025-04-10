@@ -213,12 +213,12 @@ const WigoCharts: React.FC = () => {
         />
 
         {/* Offense / Defense / Per-Game / Opponent / Consistency ... */}
-        <div className={styles.offenseRatings}></div>
-        <div className={styles.overallRatings}></div>
-        <div className={styles.defenseRatings}></div>
-        <div className={styles.perGameStats}></div>
-        <div className={styles.opponentLog}></div>
-        <div className={styles.consistencyRating}></div>
+        <div className={styles.offenseRatings}>Offense Rating</div>
+        <div className={styles.overallRatings}>Overall Rating</div>
+        <div className={styles.defenseRatings}>Defense Rating</div>
+        <div className={styles.perGameStats}>Per Game Stats</div>
+        <div className={styles.opponentLog}>Opponent Game Log</div>
+        <div className={styles.consistencyRating}>Consistency Rating</div>
 
         {/* Timeframe Comparison */}
         <div className={styles.timeframeComparison}>
@@ -249,14 +249,16 @@ const WigoCharts: React.FC = () => {
         />
 
         {/* The rest of your layout sections */}
-        <div className={styles.paceTable}></div>
-        <div className={styles.toiLineChart}></div>
-        <div className={styles.ppgLineChart}></div>
+        <div className={styles.paceTable}>Pace Table</div>
+        <div className={styles.toiLineChart}>Time On Ice Line Chart</div>
+        <div className={styles.ppgLineChart}>Point Per Game Line Chart</div>
 
         {/* Game Score - Use Section Component */}
         <GameScoreSection playerId={selectedPlayer?.id} />
 
-        <div className={styles.rateStatBarPercentiles}></div>
+        <div className={styles.rateStatBarPercentiles}>
+          Rate Stat Bar Percentiles
+        </div>
 
         {/* Ensure CategoryCoverageChart path is correct if it's not in components/WiGO */}
         <div className={styles.percentileChart}>
