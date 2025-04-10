@@ -9,7 +9,7 @@ import dotenv from "dotenv";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import type { Element } from "domhandler";
 
-// dotenv.config({ path: "./../../../.env.local" });
+dotenv.config({ path: "./../../../.env.local" });
 
 // --- Supabase Setup ---
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -18,6 +18,7 @@ if (!supabaseUrl || !supabaseKey) {
   console.error("Supabase URL or Service Role Key is missing.");
   process.exit(1);
 }
+
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // --- Constants ---
