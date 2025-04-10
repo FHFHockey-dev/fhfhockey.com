@@ -24,6 +24,7 @@ export const teamsInfo: {
     darkColor?: string;
     alt: string;
     franchiseId: number;
+    nstAbbr: string;
     id: number;
   };
 } = {
@@ -38,6 +39,7 @@ export const teamsInfo: {
     darkColor: "#670919", // Darker Red
     alt: "#FFFFFF", // White
     franchiseId: 23,
+    nstAbbr: "N.J",
     id: 1
   },
   NYI: {
@@ -51,6 +53,7 @@ export const teamsInfo: {
     darkColor: "#08265f", // Darker Blue
     alt: "#FFFFFF",
     franchiseId: 22,
+    nstAbbr: "NYI",
     id: 2
   },
   NYR: {
@@ -64,6 +67,7 @@ export const teamsInfo: {
     darkColor: "#001d5c", // Darker Blue
     alt: "#FFFFFF",
     franchiseId: 10,
+    nstAbbr: "NYR",
     id: 3
   },
   PHI: {
@@ -77,6 +81,7 @@ export const teamsInfo: {
     darkColor: "#b7340d", // Darker Orange
     alt: "#FFFFFF",
     franchiseId: 16,
+    nstAbbr: "PHI",
     id: 4
   },
   PIT: {
@@ -90,6 +95,7 @@ export const teamsInfo: {
     darkColor: "#ffa200", // Darker
     alt: "#FFFFFF",
     franchiseId: 17,
+    nstAbbr: "PIT",
     id: 5
   },
   BOS: {
@@ -103,6 +109,7 @@ export const teamsInfo: {
     darkColor: "#e19a01", // Darker Yellow
     alt: "#FFFFFF", // white
     franchiseId: 6,
+    nstAbbr: "BOS",
     id: 6
   },
   BUF: {
@@ -116,6 +123,7 @@ export const teamsInfo: {
     darkColor: "#072f6f", // Darker Blue
     alt: "#FFFFFF",
     franchiseId: 19,
+    nstAbbr: "BUF",
     id: 7
   },
   MTL: {
@@ -129,6 +137,7 @@ export const teamsInfo: {
     darkColor: "#08265f", // Darker Blue
     alt: "#FFFFFF", // White
     franchiseId: 1,
+    nstAbbr: "MTL",
     id: 8
   },
   OTT: {
@@ -142,6 +151,7 @@ export const teamsInfo: {
     darkColor: "#931523", // Darker Red
     alt: "#B9975B",
     franchiseId: 30,
+    nstAbbr: "OTT",
     id: 9
   },
   TOR: {
@@ -155,6 +165,7 @@ export const teamsInfo: {
     lightColor: "#3478f6", // Lighter Blue
     darkColor: "#080a91", // Darker Blue
     franchiseId: 5,
+    nstAbbr: "TOR",
     id: 10
   },
   CAR: {
@@ -168,6 +179,7 @@ export const teamsInfo: {
     lightColor: "#e92549", // Lighter Red
     darkColor: "#8a0113", // Darker Red
     franchiseId: 26,
+    nstAbbr: "CAR",
     id: 12
   },
   FLA: {
@@ -181,6 +193,7 @@ export const teamsInfo: {
     darkColor: "#6a0415", // Darker red
     alt: "#000000",
     franchiseId: 33,
+    nstAbbr: "FLA",
     id: 13
   },
   TBL: {
@@ -194,6 +207,7 @@ export const teamsInfo: {
     darkColor: "#1b1d7e", // Darker Blue
     alt: "#",
     franchiseId: 31,
+    nstAbbr: "T.B",
     id: 14
   },
   WSH: {
@@ -207,6 +221,7 @@ export const teamsInfo: {
     darkColor: "#011f4a", // Darker Blue
     alt: "#",
     franchiseId: 24,
+    nstAbbr: "WSH",
     id: 15
   },
   CHI: {
@@ -220,6 +235,7 @@ export const teamsInfo: {
     lightColor: "#d72d49", // Lighter Red
     darkColor: "#6c0415", // Darker Red
     franchiseId: 11,
+    nstAbbr: "CHI",
     id: 16
   },
   DET: {
@@ -233,6 +249,7 @@ export const teamsInfo: {
     lightColor: "#d72d49", // Lighter Red
     darkColor: "#6c0415", // Darker Red
     franchiseId: 12,
+    nstAbbr: "DET",
     id: 17
   },
   NSH: {
@@ -246,6 +263,7 @@ export const teamsInfo: {
     darkColor: "#da9501", // Darker gold
     alt: "#",
     franchiseId: 34,
+    nstAbbr: "NSH",
     id: 18
   },
   STL: {
@@ -259,6 +277,7 @@ export const teamsInfo: {
     darkColor: "#1b1d7e", // Darker Blue
     alt: "#",
     franchiseId: 18,
+    nstAbbr: "STL",
     id: 19
   },
   CGY: {
@@ -272,6 +291,7 @@ export const teamsInfo: {
     lightColor: "#d72d49", // Lighter Red
     darkColor: "#6c0415", // Darker Red
     franchiseId: 21,
+    nstAbbr: "CGY",
     id: 20
   },
   COL: {
@@ -285,6 +305,7 @@ export const teamsInfo: {
     darkColor: "#1b1d7e", // Darker Blue
     alt: "#",
     franchiseId: 27,
+    nstAbbr: "COL",
     id: 21
   },
   EDM: {
@@ -298,6 +319,7 @@ export const teamsInfo: {
     lightColor: "#1953bf", // Lighter Blue
     darkColor: "#1b1d7e", // Darker Blue
     franchiseId: 25,
+    nstAbbr: "EDM",
     id: 22
   },
   VAN: {
@@ -311,6 +333,7 @@ export const teamsInfo: {
     lightColor: "#259358", // Lighter green
     darkColor: "#024421", // Darker green
     franchiseId: 20,
+    nstAbbr: "VAN",
     id: 23
   },
   ANA: {
@@ -324,6 +347,7 @@ export const teamsInfo: {
     lightColor: "#ec623c", // Lighter orange
     darkColor: "#992809", // Darker orange
     franchiseId: 32,
+    nstAbbr: "ANA",
     id: 24
   },
   DAL: {
@@ -337,6 +361,7 @@ export const teamsInfo: {
     darkColor: "#116704", // Darker green
     alt: "#",
     franchiseId: 15,
+    nstAbbr: "DAL",
     id: 25
   },
   LAK: {
@@ -350,6 +375,7 @@ export const teamsInfo: {
     darkColor: "#656768", // Darker Black
     alt: "#",
     franchiseId: 14,
+    nstAbbr: "L.A",
     id: 26
   },
   SJS: {
@@ -363,6 +389,7 @@ export const teamsInfo: {
     darkColor: "#015156", // Darker teal
     alt: "#",
     franchiseId: 29,
+    nstAbbr: "S.J",
     id: 28
   },
   CBJ: {
@@ -376,6 +403,7 @@ export const teamsInfo: {
     darkColor: "#001835", // Darker Blue
     alt: "#",
     franchiseId: 36,
+    nstAbbr: "CBJ",
     id: 29
   },
   MIN: {
@@ -389,6 +417,7 @@ export const teamsInfo: {
     lightColor: "#24694f", // Lighter green
     darkColor: "#0b2e21", // Darker green
     franchiseId: 37,
+    nstAbbr: "MIN",
     id: 30
   },
   WPG: {
@@ -402,6 +431,7 @@ export const teamsInfo: {
     darkColor: "#1b1d7e", // Darker Blue
     alt: "#",
     franchiseId: 35,
+    nstAbbr: "WPG",
     id: 52
   },
   ARI: {
@@ -415,6 +445,7 @@ export const teamsInfo: {
     lightColor: "#d72d49", // Lighter Red
     darkColor: "#6c0415", // Darker Red
     franchiseId: 28,
+    nstAbbr: "ARI",
     id: 53
   },
   VGK: {
@@ -428,6 +459,7 @@ export const teamsInfo: {
     darkColor: "#0f1112", // Darker Grey
     alt: "#",
     franchiseId: 38,
+    nstAbbr: "VGK",
     id: 54
   },
   SEA: {
@@ -441,6 +473,7 @@ export const teamsInfo: {
     darkColor: "#4592b0", // Darker Blue
     alt: "#",
     franchiseId: 39,
+    nstAbbr: "SEA",
     id: 55
   },
   UTA: {
@@ -454,6 +487,7 @@ export const teamsInfo: {
     darkColor: "#47a4c9", // Darker Blue
     alt: "#FFFFFF",
     franchiseId: 40,
+    nstAbbr: "UTA",
     id: 59
   }
 };

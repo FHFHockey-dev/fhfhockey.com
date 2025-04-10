@@ -25,12 +25,12 @@ const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 // NST Rate Limits: 40/min, 80/5min, 100/15min, 180/hr
 const PLAYER_MAP_VIEW = "view_active_player_ids_max_season";
 const BASE_URL_ALL_PLAYERS = "https://www.naturalstattrick.com/playerteams.php";
-
 // Define target table names
 const TABLE_INDIVIDUAL_COUNTS = "nst_seasonal_individual_counts";
 const TABLE_INDIVIDUAL_RATES = "nst_seasonal_individual_rates";
 const TABLE_ON_ICE_COUNTS = "nst_seasonal_on_ice_counts";
 const TABLE_ON_ICE_RATES = "nst_seasonal_on_ice_rates";
+const REQUEST_DELAY_MS = 1500; // 1.5 second delay between NST requests - conservative but safe
 
 // Enum for report types
 enum ReportType {
