@@ -288,7 +288,7 @@
 }
 
 .ratesTable {
-  grid-area: 3 / 19 / 21 / 28;
+  grid-area: 3 / 19 / 23 / 28;
   overflow: auto;
   border: 3px solid #606060;
   border-radius: 4px 4px 0 0;
@@ -343,18 +343,98 @@
 }
 
 .paceTable {
-  grid-area: 21 / 19 / 30 / 28;
+  grid-area: 23 / 19 / 30 / 28;
   border: 1px solid #07aae2;
 }
 
 .toiLineChart {
-  grid-area: 30 / 1 / 39 / 13;
+  grid-area: 30 / 1 / 39 / 13; // Adjust if needed
   border: 1px solid #07aae2;
+  overflow: hidden; // Prevent content spillover
+
+  // Add inner grid styling similar to GameScoreSection for title + chart layout
+  .chartContainer {
+    // Add a class to the inner grid div in the component if needed
+    display: grid;
+    grid-template-rows: auto 1fr; // Title auto height, chart takes rest
+    height: 100%;
+    width: 100%;
+
+    .chartTitle {
+      // Class for the title div
+      // Using .ratesLabel style as a base like in GameScoreSection
+      @extend .ratesLabel; // Inherit styles from .ratesLabel
+      padding: 3px 0; // Smaller padding
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-bottom: 1px solid #444; // Separator line
+
+      h3 {
+        margin: 0;
+        font-size: 11px; // Smaller font size for title
+        font-weight: 600;
+        letter-spacing: 2px; // Less spacing than main labels
+      }
+    }
+
+    .chartCanvasContainer {
+      // Class for the div directly wrapping the chart canvas
+      position: relative; // Needed for chart responsiveness
+      width: 100%;
+      height: 100%;
+      overflow: hidden; // Prevent chart overflow
+      padding: 5px; // Add padding around the chart canvas itself
+      box-sizing: border-box;
+    }
+  }
 }
 
+// Define grid area and apply shared styles
 .ppgLineChart {
-  grid-area: 30 / 13 / 39 / 25;
-  border: 1px solid #07aae2;
+  grid-area: 30 / 13 / 39 / 25; // Next grid slot
+  border: 1px solid #07aae2; // Consistent border
+  overflow: hidden; // Prevent content spillover
+
+  // Apply the shared container styles directly or via extend if preferred
+  .chartContainer {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 100%;
+    width: 100%;
+
+    .chartTitle {
+      @extend .ratesLabel; // Inherit styles from .ratesLabel (or define separately)
+      padding: 5px 0 !important;
+      display: flex;
+      background-color: #1d3239 !important;
+      justify-content: center;
+      align-items: center;
+      border-bottom: 2px solid #444;
+
+      h3 {
+        margin: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 12px;
+        font-family: "Lucida Sans", sans-serif;
+        font-weight: 700;
+        letter-spacing: 15px;
+        text-transform: uppercase;
+        font-variant: small-caps;
+      }
+    }
+
+    .chartCanvasContainer {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      padding: 5px;
+      box-sizing: border-box;
+    }
+  }
 }
 
 .gameScoreLineChart {

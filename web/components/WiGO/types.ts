@@ -366,7 +366,6 @@ export interface CareerAverageRates {
   "PPP/60": number;
 }
 
-// components/WiGO/types.ts
 export interface ThreeYearAveragesResponse {
   success: boolean;
   message: string;
@@ -382,24 +381,7 @@ export interface ThreeYearAveragesResponse {
   careerAverageRates: CareerAverageRates;
 }
 
-// // **New Interface**: CombinedPlayerStats
-// export interface CombinedPlayerStats extends PlayerStats {
-//   threeYearCountsAverages: ThreeYearCountsAverages;
-//   threeYearRatesAverages: ThreeYearRatesAverages;
-//   careerAverageCounts: CareerAverageCounts;
-//   careerAverageRates: CareerAverageRates;
-// }
-
-// components/WiGO/types.ts
-
 export interface CombinedPlayerStats {
   counts: TableAggregateData[];
   rates: TableAggregateData[];
-
-  threeYearCountsAverages: Record<string, any>;
-  threeYearRatesAverages: Record<string, any>;
-  careerAverageCounts: Record<string, any>;
-  careerAverageRates: Record<string, any>;
-
-  threeYearApiData?: ThreeYearAveragesResponse; // Add this line
 }

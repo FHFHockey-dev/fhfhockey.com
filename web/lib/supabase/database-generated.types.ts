@@ -343,6 +343,841 @@ export type Database = {
           }
         ];
       };
+      wigo_career: {
+        Row: {
+          player_id: number; // bigint NOT NULL PRIMARY KEY
+          last_updated: string; // timestamp with time zone DEFAULT now() NOT NULL
+
+          // Season To Date (STD) Columns
+          std_gp: number | null;
+          std_atoi: number | null;
+          std_pptoi: number | null;
+          std_pp_pct: number | null;
+          std_g: number | null;
+          std_a: number | null;
+          std_pts: number | null;
+          std_pts1_pct: number | null;
+          std_sog: number | null;
+          std_s_pct: number | null;
+          std_ixg: number | null;
+          std_ipp: number | null;
+          std_oi_sh_pct: number | null;
+          std_ozs_pct: number | null;
+          std_icf: number | null;
+          std_ppg: number | null;
+          std_ppa: number | null;
+          std_ppp: number | null;
+          std_hit: number | null;
+          std_blk: number | null;
+          std_pim: number | null;
+          std_g_per_60: number | null;
+          std_a_per_60: number | null;
+          std_pts_per_60: number | null;
+          std_pts1_per_60: number | null;
+          std_sog_per_60: number | null;
+          std_ixg_per_60: number | null;
+          std_icf_per_60: number | null;
+          std_ihdcf_per_60: number | null;
+          std_iscf_per_60: number | null;
+          std_ppg_per_60: number | null;
+          std_ppa_per_60: number | null;
+          std_ppp_per_60: number | null;
+          std_hit_per_60: number | null;
+          std_blk_per_60: number | null;
+          std_pim_per_60: number | null;
+
+          // Last Year (LY) Columns
+          ly_gp: number | null;
+          ly_atoi: number | null;
+          ly_pptoi: number | null;
+          ly_pp_pct: number | null;
+          ly_g: number | null;
+          ly_a: number | null;
+          ly_pts: number | null;
+          ly_pts1_pct: number | null;
+          ly_sog: number | null;
+          ly_s_pct: number | null;
+          ly_ixg: number | null;
+          ly_ipp: number | null;
+          ly_oi_sh_pct: number | null;
+          ly_ozs_pct: number | null;
+          ly_icf: number | null;
+          ly_ppg: number | null;
+          ly_ppa: number | null;
+          ly_ppp: number | null;
+          ly_hit: number | null;
+          ly_blk: number | null;
+          ly_pim: number | null;
+          ly_g_per_60: number | null;
+          ly_a_per_60: number | null;
+          ly_pts_per_60: number | null;
+          ly_pts1_per_60: number | null;
+          ly_sog_per_60: number | null;
+          ly_ixg_per_60: number | null;
+          ly_icf_per_60: number | null;
+          ly_ihdcf_per_60: number | null;
+          ly_iscf_per_60: number | null;
+          ly_ppg_per_60: number | null;
+          ly_ppa_per_60: number | null;
+          ly_ppp_per_60: number | null;
+          ly_hit_per_60: number | null;
+          ly_blk_per_60: number | null;
+          ly_pim_per_60: number | null;
+
+          // 3-Year Average (3YA) Columns
+          ya3_seasons_used: number | null;
+          ya3_gp: number | null;
+          ya3_atoi: number | null;
+          ya3_pptoi: number | null;
+          ya3_pp_pct: number | null;
+          ya3_g: number | null;
+          ya3_a: number | null;
+          ya3_pts: number | null;
+          ya3_pts1_pct: number | null;
+          ya3_sog: number | null;
+          ya3_s_pct: number | null;
+          ya3_ixg: number | null;
+          ya3_ipp: number | null;
+          ya3_oi_sh_pct: number | null;
+          ya3_ozs_pct: number | null;
+          ya3_icf: number | null;
+          ya3_ppg: number | null;
+          ya3_ppa: number | null;
+          ya3_ppp: number | null;
+          ya3_hit: number | null;
+          ya3_blk: number | null;
+          ya3_pim: number | null;
+          ya3_g_per_60: number | null;
+          ya3_a_per_60: number | null;
+          ya3_pts_per_60: number | null;
+          ya3_pts1_per_60: number | null;
+          ya3_sog_per_60: number | null;
+          ya3_ixg_per_60: number | null;
+          ya3_icf_per_60: number | null;
+          ya3_ihdcf_per_60: number | null;
+          ya3_iscf_per_60: number | null;
+          ya3_ppg_per_60: number | null;
+          ya3_ppa_per_60: number | null;
+          ya3_ppp_per_60: number | null;
+          ya3_hit_per_60: number | null;
+          ya3_blk_per_60: number | null;
+          ya3_pim_per_60: number | null;
+
+          // Career Average (CA) Columns
+          ca_seasons_used: number | null;
+          ca_gp: number | null;
+          ca_atoi: number | null;
+          ca_pptoi: number | null;
+          ca_pp_pct: number | null;
+          ca_g: number | null;
+          ca_a: number | null;
+          ca_pts: number | null;
+          ca_pts1_pct: number | null;
+          ca_sog: number | null;
+          ca_s_pct: number | null;
+          ca_ixg: number | null;
+          ca_ipp: number | null;
+          ca_oi_sh_pct: number | null;
+          ca_ozs_pct: number | null;
+          ca_icf: number | null;
+          ca_ppg: number | null;
+          ca_ppa: number | null;
+          ca_ppp: number | null;
+          ca_hit: number | null;
+          ca_blk: number | null;
+          ca_pim: number | null;
+          ca_g_per_60: number | null;
+          ca_a_per_60: number | null;
+          ca_pts_per_60: number | null;
+          ca_pts1_per_60: number | null;
+          ca_sog_per_60: number | null;
+          ca_ixg_per_60: number | null;
+          ca_icf_per_60: number | null;
+          ca_ihdcf_per_60: number | null;
+          ca_iscf_per_60: number | null;
+          ca_ppg_per_60: number | null;
+          ca_ppa_per_60: number | null;
+          ca_ppp_per_60: number | null;
+          ca_hit_per_60: number | null;
+          ca_blk_per_60: number | null;
+          ca_pim_per_60: number | null;
+        };
+        Insert: {
+          player_id: number;
+          last_updated?: string;
+
+          // STD Columns
+          std_gp?: number | null;
+          std_atoi?: number | null;
+          std_pptoi?: number | null;
+          std_pp_pct?: number | null;
+          std_g?: number | null;
+          std_a?: number | null;
+          std_pts?: number | null;
+          std_pts1_pct?: number | null;
+          std_sog?: number | null;
+          std_s_pct?: number | null;
+          std_ixg?: number | null;
+          std_ipp?: number | null;
+          std_oi_sh_pct?: number | null;
+          std_ozs_pct?: number | null;
+          std_icf?: number | null;
+          std_ppg?: number | null;
+          std_ppa?: number | null;
+          std_ppp?: number | null;
+          std_hit?: number | null;
+          std_blk?: number | null;
+          std_pim?: number | null;
+          std_g_per_60?: number | null;
+          std_a_per_60?: number | null;
+          std_pts_per_60?: number | null;
+          std_pts1_per_60?: number | null;
+          std_sog_per_60?: number | null;
+          std_ixg_per_60?: number | null;
+          std_icf_per_60?: number | null;
+          std_ihdcf_per_60?: number | null;
+          std_iscf_per_60?: number | null;
+          std_ppg_per_60?: number | null;
+          std_ppa_per_60?: number | null;
+          std_ppp_per_60?: number | null;
+          std_hit_per_60?: number | null;
+          std_blk_per_60?: number | null;
+          std_pim_per_60?: number | null;
+
+          // LY Columns
+          ly_gp?: number | null;
+          ly_atoi?: number | null;
+          ly_pptoi?: number | null;
+          ly_pp_pct?: number | null;
+          ly_g?: number | null;
+          ly_a?: number | null;
+          ly_pts?: number | null;
+          ly_pts1_pct?: number | null;
+          ly_sog?: number | null;
+          ly_s_pct?: number | null;
+          ly_ixg?: number | null;
+          ly_ipp?: number | null;
+          ly_oi_sh_pct?: number | null;
+          ly_ozs_pct?: number | null;
+          ly_icf?: number | null;
+          ly_ppg?: number | null;
+          ly_ppa?: number | null;
+          ly_ppp?: number | null;
+          ly_hit?: number | null;
+          ly_blk?: number | null;
+          ly_pim?: number | null;
+          ly_g_per_60?: number | null;
+          ly_a_per_60?: number | null;
+          ly_pts_per_60?: number | null;
+          ly_pts1_per_60?: number | null;
+          ly_sog_per_60?: number | null;
+          ly_ixg_per_60?: number | null;
+          ly_icf_per_60?: number | null;
+          ly_ihdcf_per_60?: number | null;
+          ly_iscf_per_60?: number | null;
+          ly_ppg_per_60?: number | null;
+          ly_ppa_per_60?: number | null;
+          ly_ppp_per_60?: number | null;
+          ly_hit_per_60?: number | null;
+          ly_blk_per_60?: number | null;
+          ly_pim_per_60?: number | null;
+
+          // 3YA Columns
+          ya3_seasons_used?: number | null;
+          ya3_gp?: number | null;
+          ya3_atoi?: number | null;
+          ya3_pptoi?: number | null;
+          ya3_pp_pct?: number | null;
+          ya3_g?: number | null;
+          ya3_a?: number | null;
+          ya3_pts?: number | null;
+          ya3_pts1_pct?: number | null;
+          ya3_sog?: number | null;
+          ya3_s_pct?: number | null;
+          ya3_ixg?: number | null;
+          ya3_ipp?: number | null;
+          ya3_oi_sh_pct?: number | null;
+          ya3_ozs_pct?: number | null;
+          ya3_icf?: number | null;
+          ya3_ppg?: number | null;
+          ya3_ppa?: number | null;
+          ya3_ppp?: number | null;
+          ya3_hit?: number | null;
+          ya3_blk?: number | null;
+          ya3_pim?: number | null;
+          ya3_g_per_60?: number | null;
+          ya3_a_per_60?: number | null;
+          ya3_pts_per_60?: number | null;
+          ya3_pts1_per_60?: number | null;
+          ya3_sog_per_60?: number | null;
+          ya3_ixg_per_60?: number | null;
+          ya3_icf_per_60?: number | null;
+          ya3_ihdcf_per_60?: number | null;
+          ya3_iscf_per_60?: number | null;
+          ya3_ppg_per_60?: number | null;
+          ya3_ppa_per_60?: number | null;
+          ya3_ppp_per_60?: number | null;
+          ya3_hit_per_60?: number | null;
+          ya3_blk_per_60?: number | null;
+          ya3_pim_per_60?: number | null;
+
+          // CA Columns
+          ca_seasons_used?: number | null;
+          ca_gp?: number | null;
+          ca_atoi?: number | null;
+          ca_pptoi?: number | null;
+          ca_pp_pct?: number | null;
+          ca_g?: number | null;
+          ca_a?: number | null;
+          ca_pts?: number | null;
+          ca_pts1_pct?: number | null;
+          ca_sog?: number | null;
+          ca_s_pct?: number | null;
+          ca_ixg?: number | null;
+          ca_ipp?: number | null;
+          ca_oi_sh_pct?: number | null;
+          ca_ozs_pct?: number | null;
+          ca_icf?: number | null;
+          ca_ppg?: number | null;
+          ca_ppa?: number | null;
+          ca_ppp?: number | null;
+          ca_hit?: number | null;
+          ca_blk?: number | null;
+          ca_pim?: number | null;
+          ca_g_per_60?: number | null;
+          ca_a_per_60?: number | null;
+          ca_pts_per_60?: number | null;
+          ca_pts1_per_60?: number | null;
+          ca_sog_per_60?: number | null;
+          ca_ixg_per_60?: number | null;
+          ca_icf_per_60?: number | null;
+          ca_ihdcf_per_60?: number | null;
+          ca_iscf_per_60?: number | null;
+          ca_ppg_per_60?: number | null;
+          ca_ppa_per_60?: number | null;
+          ca_ppp_per_60?: number | null;
+          ca_hit_per_60?: number | null;
+          ca_blk_per_60?: number | null;
+          ca_pim_per_60?: number | null;
+        };
+        Update: {
+          player_id?: number;
+          last_updated?: string;
+
+          // STD Columns
+          std_gp?: number | null;
+          std_atoi?: number | null;
+          std_pptoi?: number | null;
+          std_pp_pct?: number | null;
+          std_g?: number | null;
+          std_a?: number | null;
+          std_pts?: number | null;
+          std_pts1_pct?: number | null;
+          std_sog?: number | null;
+          std_s_pct?: number | null;
+          std_ixg?: number | null;
+          std_ipp?: number | null;
+          std_oi_sh_pct?: number | null;
+          std_ozs_pct?: number | null;
+          std_icf?: number | null;
+          std_ppg?: number | null;
+          std_ppa?: number | null;
+          std_ppp?: number | null;
+          std_hit?: number | null;
+          std_blk?: number | null;
+          std_pim?: number | null;
+          std_g_per_60?: number | null;
+          std_a_per_60?: number | null;
+          std_pts_per_60?: number | null;
+          std_pts1_per_60?: number | null;
+          std_sog_per_60?: number | null;
+          std_ixg_per_60?: number | null;
+          std_icf_per_60?: number | null;
+          std_ihdcf_per_60?: number | null;
+          std_iscf_per_60?: number | null;
+          std_ppg_per_60?: number | null;
+          std_ppa_per_60?: number | null;
+          std_ppp_per_60?: number | null;
+          std_hit_per_60?: number | null;
+          std_blk_per_60?: number | null;
+          std_pim_per_60?: number | null;
+
+          // LY Columns
+          ly_gp?: number | null;
+          ly_atoi?: number | null;
+          ly_pptoi?: number | null;
+          ly_pp_pct?: number | null;
+          ly_g?: number | null;
+          ly_a?: number | null;
+          ly_pts?: number | null;
+          ly_pts1_pct?: number | null;
+          ly_sog?: number | null;
+          ly_s_pct?: number | null;
+          ly_ixg?: number | null;
+          ly_ipp?: number | null;
+          ly_oi_sh_pct?: number | null;
+          ly_ozs_pct?: number | null;
+          ly_icf?: number | null;
+          ly_ppg?: number | null;
+          ly_ppa?: number | null;
+          ly_ppp?: number | null;
+          ly_hit?: number | null;
+          ly_blk?: number | null;
+          ly_pim?: number | null;
+          ly_g_per_60?: number | null;
+          ly_a_per_60?: number | null;
+          ly_pts_per_60?: number | null;
+          ly_pts1_per_60?: number | null;
+          ly_sog_per_60?: number | null;
+          ly_ixg_per_60?: number | null;
+          ly_icf_per_60?: number | null;
+          ly_ihdcf_per_60?: number | null;
+          ly_iscf_per_60?: number | null;
+          ly_ppg_per_60?: number | null;
+          ly_ppa_per_60?: number | null;
+          ly_ppp_per_60?: number | null;
+          ly_hit_per_60?: number | null;
+          ly_blk_per_60?: number | null;
+          ly_pim_per_60?: number | null;
+
+          // 3YA Columns
+          ya3_seasons_used?: number | null;
+          ya3_gp?: number | null;
+          ya3_atoi?: number | null;
+          ya3_pptoi?: number | null;
+          ya3_pp_pct?: number | null;
+          ya3_g?: number | null;
+          ya3_a?: number | null;
+          ya3_pts?: number | null;
+          ya3_pts1_pct?: number | null;
+          ya3_sog?: number | null;
+          ya3_s_pct?: number | null;
+          ya3_ixg?: number | null;
+          ya3_ipp?: number | null;
+          ya3_oi_sh_pct?: number | null;
+          ya3_ozs_pct?: number | null;
+          ya3_icf?: number | null;
+          ya3_ppg?: number | null;
+          ya3_ppa?: number | null;
+          ya3_ppp?: number | null;
+          ya3_hit?: number | null;
+          ya3_blk?: number | null;
+          ya3_pim?: number | null;
+          ya3_g_per_60?: number | null;
+          ya3_a_per_60?: number | null;
+          ya3_pts_per_60?: number | null;
+          ya3_pts1_per_60?: number | null;
+          ya3_sog_per_60?: number | null;
+          ya3_ixg_per_60?: number | null;
+          ya3_icf_per_60?: number | null;
+          ya3_ihdcf_per_60?: number | null;
+          ya3_iscf_per_60?: number | null;
+          ya3_ppg_per_60?: number | null;
+          ya3_ppa_per_60?: number | null;
+          ya3_ppp_per_60?: number | null;
+          ya3_hit_per_60?: number | null;
+          ya3_blk_per_60?: number | null;
+          ya3_pim_per_60?: number | null;
+
+          // CA Columns
+          ca_seasons_used?: number | null;
+          ca_gp?: number | null;
+          ca_atoi?: number | null;
+          ca_pptoi?: number | null;
+          ca_pp_pct?: number | null;
+          ca_g?: number | null;
+          ca_a?: number | null;
+          ca_pts?: number | null;
+          ca_pts1_pct?: number | null;
+          ca_sog?: number | null;
+          ca_s_pct?: number | null;
+          ca_ixg?: number | null;
+          ca_ipp?: number | null;
+          ca_oi_sh_pct?: number | null;
+          ca_ozs_pct?: number | null;
+          ca_icf?: number | null;
+          ca_ppg?: number | null;
+          ca_ppa?: number | null;
+          ca_ppp?: number | null;
+          ca_hit?: number | null;
+          ca_blk?: number | null;
+          ca_pim?: number | null;
+          ca_g_per_60?: number | null;
+          ca_a_per_60?: number | null;
+          ca_pts_per_60?: number | null;
+          ca_pts1_per_60?: number | null;
+          ca_sog_per_60?: number | null;
+          ca_ixg_per_60?: number | null;
+          ca_icf_per_60?: number | null;
+          ca_ihdcf_per_60?: number | null;
+          ca_iscf_per_60?: number | null;
+          ca_ppg_per_60?: number | null;
+          ca_ppa_per_60?: number | null;
+          ca_ppp_per_60?: number | null;
+          ca_hit_per_60?: number | null;
+          ca_blk_per_60?: number | null;
+          ca_pim_per_60?: number | null;
+        };
+        Relationships: [];
+      };
+      wigo_recent: {
+        Row: {
+          player_id: number; // bigint NOT NULL PRIMARY KEY
+          last_updated: string; // timestamp with time zone DEFAULT now() NOT NULL
+
+          // Last 5 Games Columns
+          l5_gp: number | null; // integer
+          l5_atoi: number | null; // double precision
+          l5_pptoi: number | null; // double precision
+          l5_pp_pct: number | null; // double precision
+          l5_g: number | null; // integer
+          l5_a: number | null; // integer
+          l5_pts: number | null; // integer
+          l5_pts1_pct: number | null; // double precision
+          l5_sog: number | null; // integer
+          l5_s_pct: number | null; // double precision
+          l5_ixg: number | null; // double precision
+          l5_ipp: number | null; // double precision
+          l5_oi_sh_pct: number | null; // double precision
+          l5_ozs_pct: number | null; // double precision
+          l5_icf: number | null; // integer
+          l5_ppg: number | null; // integer
+          l5_ppa: number | null; // integer
+          l5_ppp: number | null; // integer
+          l5_hit: number | null; // integer
+          l5_blk: number | null; // integer
+          l5_pim: number | null; // integer
+          l5_g_per_60: number | null; // double precision
+          l5_a_per_60: number | null; // double precision
+          l5_pts_per_60: number | null; // double precision
+          l5_pts1_per_60: number | null; // double precision
+          l5_sog_per_60: number | null; // double precision
+          l5_ixg_per_60: number | null; // double precision
+          l5_icf_per_60: number | null; // double precision
+          l5_ihdcf_per_60: number | null; // double precision
+          l5_iscf_per_60: number | null; // double precision
+          l5_ppg_per_60: number | null; // double precision
+          l5_ppa_per_60: number | null; // double precision
+          l5_ppp_per_60: number | null; // double precision
+          l5_hit_per_60: number | null; // double precision
+          l5_blk_per_60: number | null; // double precision
+          l5_pim_per_60: number | null; // double precision
+
+          // Last 10 Games Columns
+          l10_gp: number | null;
+          l10_atoi: number | null;
+          l10_pptoi: number | null;
+          l10_pp_pct: number | null;
+          l10_g: number | null;
+          l10_a: number | null;
+          l10_pts: number | null;
+          l10_pts1_pct: number | null;
+          l10_sog: number | null;
+          l10_s_pct: number | null;
+          l10_ixg: number | null;
+          l10_ipp: number | null;
+          l10_oi_sh_pct: number | null;
+          l10_ozs_pct: number | null;
+          l10_icf: number | null;
+          l10_ppg: number | null;
+          l10_ppa: number | null;
+          l10_ppp: number | null;
+          l10_hit: number | null;
+          l10_blk: number | null;
+          l10_pim: number | null;
+          l10_g_per_60: number | null;
+          l10_a_per_60: number | null;
+          l10_pts_per_60: number | null;
+          l10_pts1_per_60: number | null;
+          l10_sog_per_60: number | null;
+          l10_ixg_per_60: number | null;
+          l10_icf_per_60: number | null;
+          l10_ihdcf_per_60: number | null;
+          l10_iscf_per_60: number | null;
+          l10_ppg_per_60: number | null;
+          l10_ppa_per_60: number | null;
+          l10_ppp_per_60: number | null;
+          l10_hit_per_60: number | null;
+          l10_blk_per_60: number | null;
+          l10_pim_per_60: number | null;
+
+          // Last 20 Games Columns
+          l20_gp: number | null;
+          l20_atoi: number | null;
+          l20_pptoi: number | null;
+          l20_pp_pct: number | null;
+          l20_g: number | null;
+          l20_a: number | null;
+          l20_pts: number | null;
+          l20_pts1_pct: number | null;
+          l20_sog: number | null;
+          l20_s_pct: number | null;
+          l20_ixg: number | null;
+          l20_ipp: number | null;
+          l20_oi_sh_pct: number | null;
+          l20_ozs_pct: number | null;
+          l20_icf: number | null;
+          l20_ppg: number | null;
+          l20_ppa: number | null;
+          l20_ppp: number | null;
+          l20_hit: number | null;
+          l20_blk: number | null;
+          l20_pim: number | null;
+          l20_g_per_60: number | null;
+          l20_a_per_60: number | null;
+          l20_pts_per_60: number | null;
+          l20_pts1_per_60: number | null;
+          l20_sog_per_60: number | null;
+          l20_ixg_per_60: number | null;
+          l20_icf_per_60: number | null;
+          l20_ihdcf_per_60: number | null;
+          l20_iscf_per_60: number | null;
+          l20_ppg_per_60: number | null;
+          l20_ppa_per_60: number | null;
+          l20_ppp_per_60: number | null;
+          l20_hit_per_60: number | null;
+          l20_blk_per_60: number | null;
+          l20_pim_per_60: number | null;
+        };
+        Insert: {
+          player_id: number; // Required on insert
+          last_updated?: string; // Optional due to DEFAULT
+
+          // Last 5 Games Columns - All optional/nullable
+          l5_gp?: number | null;
+          l5_atoi?: number | null;
+          l5_pptoi?: number | null;
+          l5_pp_pct?: number | null;
+          l5_g?: number | null;
+          l5_a?: number | null;
+          l5_pts?: number | null;
+          l5_pts1_pct?: number | null;
+          l5_sog?: number | null;
+          l5_s_pct?: number | null;
+          l5_ixg?: number | null;
+          l5_ipp?: number | null;
+          l5_oi_sh_pct?: number | null;
+          l5_ozs_pct?: number | null;
+          l5_icf?: number | null;
+          l5_ppg?: number | null;
+          l5_ppa?: number | null;
+          l5_ppp?: number | null;
+          l5_hit?: number | null;
+          l5_blk?: number | null;
+          l5_pim?: number | null;
+          l5_g_per_60?: number | null;
+          l5_a_per_60?: number | null;
+          l5_pts_per_60?: number | null;
+          l5_pts1_per_60?: number | null;
+          l5_sog_per_60?: number | null;
+          l5_ixg_per_60?: number | null;
+          l5_icf_per_60?: number | null;
+          l5_ihdcf_per_60?: number | null;
+          l5_iscf_per_60?: number | null;
+          l5_ppg_per_60?: number | null;
+          l5_ppa_per_60?: number | null;
+          l5_ppp_per_60?: number | null;
+          l5_hit_per_60?: number | null;
+          l5_blk_per_60?: number | null;
+          l5_pim_per_60?: number | null;
+
+          // Last 10 Games Columns - All optional/nullable
+          l10_gp?: number | null;
+          l10_atoi?: number | null;
+          l10_pptoi?: number | null;
+          l10_pp_pct?: number | null;
+          l10_g?: number | null;
+          l10_a?: number | null;
+          l10_pts?: number | null;
+          l10_pts1_pct?: number | null;
+          l10_sog?: number | null;
+          l10_s_pct?: number | null;
+          l10_ixg?: number | null;
+          l10_ipp?: number | null;
+          l10_oi_sh_pct?: number | null;
+          l10_ozs_pct?: number | null;
+          l10_icf?: number | null;
+          l10_ppg?: number | null;
+          l10_ppa?: number | null;
+          l10_ppp?: number | null;
+          l10_hit?: number | null;
+          l10_blk?: number | null;
+          l10_pim?: number | null;
+          l10_g_per_60?: number | null;
+          l10_a_per_60?: number | null;
+          l10_pts_per_60?: number | null;
+          l10_pts1_per_60?: number | null;
+          l10_sog_per_60?: number | null;
+          l10_ixg_per_60?: number | null;
+          l10_icf_per_60?: number | null;
+          l10_ihdcf_per_60?: number | null;
+          l10_iscf_per_60?: number | null;
+          l10_ppg_per_60?: number | null;
+          l10_ppa_per_60?: number | null;
+          l10_ppp_per_60?: number | null;
+          l10_hit_per_60?: number | null;
+          l10_blk_per_60?: number | null;
+          l10_pim_per_60?: number | null;
+
+          // Last 20 Games Columns - All optional/nullable
+          l20_gp?: number | null;
+          l20_atoi?: number | null;
+          l20_pptoi?: number | null;
+          l20_pp_pct?: number | null;
+          l20_g?: number | null;
+          l20_a?: number | null;
+          l20_pts?: number | null;
+          l20_pts1_pct?: number | null;
+          l20_sog?: number | null;
+          l20_s_pct?: number | null;
+          l20_ixg?: number | null;
+          l20_ipp?: number | null;
+          l20_oi_sh_pct?: number | null;
+          l20_ozs_pct?: number | null;
+          l20_icf?: number | null;
+          l20_ppg?: number | null;
+          l20_ppa?: number | null;
+          l20_ppp?: number | null;
+          l20_hit?: number | null;
+          l20_blk?: number | null;
+          l20_pim?: number | null;
+          l20_g_per_60?: number | null;
+          l20_a_per_60?: number | null;
+          l20_pts_per_60?: number | null;
+          l20_pts1_per_60?: number | null;
+          l20_sog_per_60?: number | null;
+          l20_ixg_per_60?: number | null;
+          l20_icf_per_60?: number | null;
+          l20_ihdcf_per_60?: number | null;
+          l20_iscf_per_60?: number | null;
+          l20_ppg_per_60?: number | null;
+          l20_ppa_per_60?: number | null;
+          l20_ppp_per_60?: number | null;
+          l20_hit_per_60?: number | null;
+          l20_blk_per_60?: number | null;
+          l20_pim_per_60?: number | null;
+        };
+        Update: {
+          player_id?: number; // PK, usually not updated
+          last_updated?: string; // Optional on update
+
+          // Last 5 Games Columns - All optional
+          l5_gp?: number | null;
+          l5_atoi?: number | null;
+          l5_pptoi?: number | null;
+          l5_pp_pct?: number | null;
+          l5_g?: number | null;
+          l5_a?: number | null;
+          l5_pts?: number | null;
+          l5_pts1_pct?: number | null;
+          l5_sog?: number | null;
+          l5_s_pct?: number | null;
+          l5_ixg?: number | null;
+          l5_ipp?: number | null;
+          l5_oi_sh_pct?: number | null;
+          l5_ozs_pct?: number | null;
+          l5_icf?: number | null;
+          l5_ppg?: number | null;
+          l5_ppa?: number | null;
+          l5_ppp?: number | null;
+          l5_hit?: number | null;
+          l5_blk?: number | null;
+          l5_pim?: number | null;
+          l5_g_per_60?: number | null;
+          l5_a_per_60?: number | null;
+          l5_pts_per_60?: number | null;
+          l5_pts1_per_60?: number | null;
+          l5_sog_per_60?: number | null;
+          l5_ixg_per_60?: number | null;
+          l5_icf_per_60?: number | null;
+          l5_ihdcf_per_60?: number | null;
+          l5_iscf_per_60?: number | null;
+          l5_ppg_per_60?: number | null;
+          l5_ppa_per_60?: number | null;
+          l5_ppp_per_60?: number | null;
+          l5_hit_per_60?: number | null;
+          l5_blk_per_60?: number | null;
+          l5_pim_per_60?: number | null;
+
+          // Last 10 Games Columns - All optional
+          l10_gp?: number | null;
+          l10_atoi?: number | null;
+          l10_pptoi?: number | null;
+          l10_pp_pct?: number | null;
+          l10_g?: number | null;
+          l10_a?: number | null;
+          l10_pts?: number | null;
+          l10_pts1_pct?: number | null;
+          l10_sog?: number | null;
+          l10_s_pct?: number | null;
+          l10_ixg?: number | null;
+          l10_ipp?: number | null;
+          l10_oi_sh_pct?: number | null;
+          l10_ozs_pct?: number | null;
+          l10_icf?: number | null;
+          l10_ppg?: number | null;
+          l10_ppa?: number | null;
+          l10_ppp?: number | null;
+          l10_hit?: number | null;
+          l10_blk?: number | null;
+          l10_pim?: number | null;
+          l10_g_per_60?: number | null;
+          l10_a_per_60?: number | null;
+          l10_pts_per_60?: number | null;
+          l10_pts1_per_60?: number | null;
+          l10_sog_per_60?: number | null;
+          l10_ixg_per_60?: number | null;
+          l10_icf_per_60?: number | null;
+          l10_ihdcf_per_60?: number | null;
+          l10_iscf_per_60?: number | null;
+          l10_ppg_per_60?: number | null;
+          l10_ppa_per_60?: number | null;
+          l10_ppp_per_60?: number | null;
+          l10_hit_per_60?: number | null;
+          l10_blk_per_60?: number | null;
+          l10_pim_per_60?: number | null;
+
+          // Last 20 Games Columns - All optional
+          l20_gp?: number | null;
+          l20_atoi?: number | null;
+          l20_pptoi?: number | null;
+          l20_pp_pct?: number | null;
+          l20_g?: number | null;
+          l20_a?: number | null;
+          l20_pts?: number | null;
+          l20_pts1_pct?: number | null;
+          l20_sog?: number | null;
+          l20_s_pct?: number | null;
+          l20_ixg?: number | null;
+          l20_ipp?: number | null;
+          l20_oi_sh_pct?: number | null;
+          l20_ozs_pct?: number | null;
+          l20_icf?: number | null;
+          l20_ppg?: number | null;
+          l20_ppa?: number | null;
+          l20_ppp?: number | null;
+          l20_hit?: number | null;
+          l20_blk?: number | null;
+          l20_pim?: number | null;
+          l20_g_per_60?: number | null;
+          l20_a_per_60?: number | null;
+          l20_pts_per_60?: number | null;
+          l20_pts1_per_60?: number | null;
+          l20_sog_per_60?: number | null;
+          l20_ixg_per_60?: number | null;
+          l20_icf_per_60?: number | null;
+          l20_ihdcf_per_60?: number | null;
+          l20_iscf_per_60?: number | null;
+          l20_ppg_per_60?: number | null;
+          l20_ppa_per_60?: number | null;
+          l20_ppp_per_60?: number | null;
+          l20_hit_per_60?: number | null;
+          l20_blk_per_60?: number | null;
+          l20_pim_per_60?: number | null;
+        };
+        Relationships: [];
+      };
+
       wgo_avg_three_year: {
         Row: {
           avg_toi_per_gp: number | null;
@@ -1207,6 +2042,1227 @@ export type Database = {
         };
         Relationships: [];
       };
+      wigo_counts: {
+        Row: {
+          player_id: number; // bigint PRIMARY KEY NOT NULL
+          updated_at: string; // timestamp with time zone DEFAULT now() NOT NULL
+          gp_ca: number | null; // integer NULL
+          gp_3ya: number | null; // integer NULL
+          gp_ly: number | null; // integer NULL
+          gp_std: number | null; // integer NULL
+          gp_l20: number | null; // integer NULL
+          gp_l10: number | null; // integer NULL
+          gp_l5: number | null; // integer NULL
+          toi_ca: number | null; // double precision NULL
+          toi_3ya: number | null; // double precision NULL
+          toi_ly: number | null; // double precision NULL
+          toi_std: number | null; // double precision NULL
+          toi_l20: number | null; // double precision NULL
+          toi_l10: number | null; // double precision NULL
+          toi_l5: number | null; // double precision NULL
+          pptoi_ca: number | null; // double precision NULL
+          pptoi_3ya: number | null; // double precision NULL
+          pptoi_ly: number | null; // double precision NULL
+          pptoi_std: number | null; // double precision NULL
+          pptoi_l20: number | null; // double precision NULL
+          pptoi_l10: number | null; // double precision NULL
+          pptoi_l5: number | null; // double precision NULL
+          pp_pct_ca: number | null; // double precision NULL
+          pp_pct_3ya: number | null; // double precision NULL
+          pp_pct_ly: number | null; // double precision NULL
+          pp_pct_std: number | null; // double precision NULL
+          pp_pct_l20: number | null; // double precision NULL
+          pp_pct_l10: number | null; // double precision NULL
+          pp_pct_l5: number | null; // double precision NULL
+          g_ca: number | null; // double precision NULL
+          g_3ya: number | null; // double precision NULL
+          g_ly: number | null; // integer NULL
+          g_std: number | null; // integer NULL
+          g_l20: number | null; // integer NULL
+          g_l10: number | null; // integer NULL
+          g_l5: number | null; // integer NULL
+          a_ca: number | null; // double precision NULL
+          a_3ya: number | null; // double precision NULL
+          a_ly: number | null; // integer NULL
+          a_std: number | null; // integer NULL
+          a_l20: number | null; // integer NULL
+          a_l10: number | null; // integer NULL
+          a_l5: number | null; // integer NULL
+          pts_ca: number | null; // double precision NULL
+          pts_3ya: number | null; // double precision NULL
+          pts_ly: number | null; // integer NULL
+          pts_std: number | null; // integer NULL
+          pts_l20: number | null; // integer NULL
+          pts_l10: number | null; // integer NULL
+          pts_l5: number | null; // integer NULL
+          a1_ca: number | null; // double precision NULL
+          a1_3ya: number | null; // double precision NULL
+          a1_ly: number | null; // integer NULL
+          a1_std: number | null; // integer NULL
+          a1_l20: number | null; // integer NULL
+          a1_l10: number | null; // integer NULL
+          a1_l5: number | null; // integer NULL
+          a2_ca: number | null; // double precision NULL
+          a2_3ya: number | null; // double precision NULL
+          a2_ly: number | null; // integer NULL
+          a2_std: number | null; // integer NULL
+          a2_l20: number | null; // integer NULL
+          a2_l10: number | null; // integer NULL
+          a2_l5: number | null; // integer NULL
+          pts1_ca: number | null; // double precision NULL
+          pts1_3ya: number | null; // double precision NULL
+          pts1_ly: number | null; // integer NULL
+          pts1_std: number | null; // integer NULL
+          pts1_l20: number | null; // integer NULL
+          pts1_l10: number | null; // integer NULL
+          pts1_l5: number | null; // integer NULL
+          pts1_pct_ca: number | null; // double precision NULL
+          pts1_pct_3ya: number | null; // double precision NULL
+          pts1_pct_ly: number | null; // double precision NULL
+          pts1_pct_std: number | null; // double precision NULL
+          pts1_pct_l20: number | null; // double precision NULL
+          pts1_pct_l10: number | null; // double precision NULL
+          pts1_pct_l5: number | null; // double precision NULL
+          sog_ca: number | null; // double precision NULL
+          sog_3ya: number | null; // double precision NULL
+          sog_ly: number | null; // integer NULL
+          sog_std: number | null; // integer NULL
+          sog_l20: number | null; // integer NULL
+          sog_l10: number | null; // integer NULL
+          sog_l5: number | null; // integer NULL
+          sh_pct_ca: number | null; // double precision NULL
+          sh_pct_3ya: number | null; // double precision NULL
+          sh_pct_ly: number | null; // double precision NULL
+          sh_pct_std: number | null; // double precision NULL
+          sh_pct_l20: number | null; // double precision NULL
+          sh_pct_l10: number | null; // double precision NULL
+          sh_pct_l5: number | null; // double precision NULL
+          ixg_ca: number | null; // double precision NULL
+          ixg_3ya: number | null; // double precision NULL
+          ixg_ly: number | null; // double precision NULL
+          ixg_std: number | null; // double precision NULL
+          ixg_l20: number | null; // double precision NULL
+          ixg_l10: number | null; // double precision NULL
+          ixg_l5: number | null; // double precision NULL
+          ipp_ca: number | null; // double precision NULL
+          ipp_3ya: number | null; // double precision NULL
+          ipp_ly: number | null; // double precision NULL
+          ipp_std: number | null; // double precision NULL
+          ipp_l20: number | null; // double precision NULL
+          ipp_l10: number | null; // double precision NULL
+          ipp_l5: number | null; // double precision NULL
+          oish_pct_ca: number | null; // double precision NULL
+          oish_pct_3ya: number | null; // double precision NULL
+          oish_pct_ly: number | null; // double precision NULL
+          oish_pct_std: number | null; // double precision NULL
+          oish_pct_l20: number | null; // double precision NULL
+          oish_pct_l10: number | null; // double precision NULL
+          oish_pct_l5: number | null; // double precision NULL
+          ozs_pct_ca: number | null; // double precision NULL
+          ozs_pct_3ya: number | null; // double precision NULL
+          ozs_pct_ly: number | null; // double precision NULL
+          ozs_pct_std: number | null; // double precision NULL
+          ozs_pct_l20: number | null; // double precision NULL
+          ozs_pct_l10: number | null; // double precision NULL
+          ozs_pct_l5: number | null; // double precision NULL
+          icf_ca: number | null; // double precision NULL
+          icf_3ya: number | null; // double precision NULL
+          icf_ly: number | null; // double precision NULL
+          icf_std: number | null; // double precision NULL
+          icf_l20: number | null; // double precision NULL
+          icf_l10: number | null; // double precision NULL
+          icf_l5: number | null; // double precision NULL
+          ppg_ca: number | null; // double precision NULL
+          ppg_3ya: number | null; // double precision NULL
+          ppg_ly: number | null; // integer NULL
+          ppg_std: number | null; // integer NULL
+          ppg_l20: number | null; // integer NULL
+          ppg_l10: number | null; // integer NULL
+          ppg_l5: number | null; // integer NULL
+          ppa_ca: number | null; // double precision NULL
+          ppa_3ya: number | null; // double precision NULL
+          ppa_ly: number | null; // integer NULL
+          ppa_std: number | null; // integer NULL
+          ppa_l20: number | null; // integer NULL
+          ppa_l10: number | null; // integer NULL
+          ppa_l5: number | null; // integer NULL
+          ppa1_ca: number | null; // double precision NULL
+          ppa1_3ya: number | null; // double precision NULL
+          ppa1_ly: number | null; // integer NULL
+          ppa1_std: number | null; // integer NULL
+          ppa1_l20: number | null; // integer NULL
+          ppa1_l10: number | null; // integer NULL
+          ppa1_l5: number | null; // integer NULL
+          ppa2_ca: number | null; // double precision NULL
+          ppa2_3ya: number | null; // double precision NULL
+          ppa2_ly: number | null; // integer NULL
+          ppa2_std: number | null; // integer NULL
+          ppa2_l20: number | null; // integer NULL
+          ppa2_l10: number | null; // integer NULL
+          ppa2_l5: number | null; // integer NULL
+          ppp_ca: number | null; // double precision NULL
+          ppp_3ya: number | null; // double precision NULL
+          ppp_ly: number | null; // integer NULL
+          ppp_std: number | null; // integer NULL
+          ppp_l20: number | null; // integer NULL
+          ppp_l10: number | null; // integer NULL
+          ppp_l5: number | null; // integer NULL
+          hit_ca: number | null; // double precision NULL
+          hit_3ya: number | null; // double precision NULL
+          hit_ly: number | null; // integer NULL
+          hit_std: number | null; // integer NULL
+          hit_l20: number | null; // integer NULL
+          hit_l10: number | null; // integer NULL
+          hit_l5: number | null; // integer NULL
+          blk_ca: number | null; // double precision NULL
+          blk_3ya: number | null; // double precision NULL
+          blk_ly: number | null; // integer NULL
+          blk_std: number | null; // integer NULL
+          blk_l20: number | null; // integer NULL
+          blk_l10: number | null; // integer NULL
+          blk_l5: number | null; // integer NULL
+          pim_ca: number | null; // double precision NULL
+          pim_3ya: number | null; // double precision NULL
+          pim_ly: number | null; // integer NULL
+          pim_std: number | null; // integer NULL
+          pim_l20: number | null; // integer NULL
+          pim_l10: number | null; // integer NULL
+          pim_l5: number | null; // integer NULL
+        };
+        Insert: {
+          player_id: number; // bigint PRIMARY KEY NOT NULL
+          updated_at?: string; // timestamp with time zone DEFAULT now() NOT NULL
+          gp_ca?: number | null; // integer NULL
+          gp_3ya?: number | null; // integer NULL
+          gp_ly?: number | null; // integer NULL
+          gp_std?: number | null; // integer NULL
+          gp_l20?: number | null; // integer NULL
+          gp_l10?: number | null; // integer NULL
+          gp_l5?: number | null; // integer NULL
+          toi_ca?: number | null; // double precision NULL
+          toi_3ya?: number | null; // double precision NULL
+          toi_ly?: number | null; // double precision NULL
+          toi_std?: number | null; // double precision NULL
+          toi_l20?: number | null; // double precision NULL
+          toi_l10?: number | null; // double precision NULL
+          toi_l5?: number | null; // double precision NULL
+          pptoi_ca?: number | null; // double precision NULL
+          pptoi_3ya?: number | null; // double precision NULL
+          pptoi_ly?: number | null; // double precision NULL
+          pptoi_std?: number | null; // double precision NULL
+          pptoi_l20?: number | null; // double precision NULL
+          pptoi_l10?: number | null; // double precision NULL
+          pptoi_l5?: number | null; // double precision NULL
+          pp_pct_ca?: number | null; // double precision NULL
+          pp_pct_3ya?: number | null; // double precision NULL
+          pp_pct_ly?: number | null; // double precision NULL
+          pp_pct_std?: number | null; // double precision NULL
+          pp_pct_l20?: number | null; // double precision NULL
+          pp_pct_l10?: number | null; // double precision NULL
+          pp_pct_l5?: number | null; // double precision NULL
+          g_ca?: number | null; // double precision NULL
+          g_3ya?: number | null; // double precision NULL
+          g_ly?: number | null; // integer NULL
+          g_std?: number | null; // integer NULL
+          g_l20?: number | null; // integer NULL
+          g_l10?: number | null; // integer NULL
+          g_l5?: number | null; // integer NULL
+          a_ca?: number | null; // double precision NULL
+          a_3ya?: number | null; // double precision NULL
+          a_ly?: number | null; // integer NULL
+          a_std?: number | null; // integer NULL
+          a_l20?: number | null; // integer NULL
+          a_l10?: number | null; // integer NULL
+          a_l5?: number | null; // integer NULL
+          pts_ca?: number | null; // double precision NULL
+          pts_3ya?: number | null; // double precision NULL
+          pts_ly?: number | null; // integer NULL
+          pts_std?: number | null; // integer NULL
+          pts_l20?: number | null; // integer NULL
+          pts_l10?: number | null; // integer NULL
+          pts_l5?: number | null; // integer NULL
+          a1_ca?: number | null; // double precision NULL
+          a1_3ya?: number | null; // double precision NULL
+          a1_ly?: number | null; // integer NULL
+          a1_std?: number | null; // integer NULL
+          a1_l20?: number | null; // integer NULL
+          a1_l10?: number | null; // integer NULL
+          a1_l5?: number | null; // integer NULL
+          a2_ca?: number | null; // double precision NULL
+          a2_3ya?: number | null; // double precision NULL
+          a2_ly?: number | null; // integer NULL
+          a2_std?: number | null; // integer NULL
+          a2_l20?: number | null; // integer NULL
+          a2_l10?: number | null; // integer NULL
+          a2_l5?: number | null; // integer NULL
+          pts1_ca?: number | null; // double precision NULL
+          pts1_3ya?: number | null; // double precision NULL
+          pts1_ly?: number | null; // integer NULL
+          pts1_std?: number | null; // integer NULL
+          pts1_l20?: number | null; // integer NULL
+          pts1_l10?: number | null; // integer NULL
+          pts1_l5?: number | null; // integer NULL
+          pts1_pct_ca?: number | null; // double precision NULL
+          pts1_pct_3ya?: number | null; // double precision NULL
+          pts1_pct_ly?: number | null; // double precision NULL
+          pts1_pct_std?: number | null; // double precision NULL
+          pts1_pct_l20?: number | null; // double precision NULL
+          pts1_pct_l10?: number | null; // double precision NULL
+          pts1_pct_l5?: number | null; // double precision NULL
+          sog_ca?: number | null; // double precision NULL
+          sog_3ya?: number | null; // double precision NULL
+          sog_ly?: number | null; // integer NULL
+          sog_std?: number | null; // integer NULL
+          sog_l20?: number | null; // integer NULL
+          sog_l10?: number | null; // integer NULL
+          sog_l5?: number | null; // integer NULL
+          sh_pct_ca?: number | null; // double precision NULL
+          sh_pct_3ya?: number | null; // double precision NULL
+          sh_pct_ly?: number | null; // double precision NULL
+          sh_pct_std?: number | null; // double precision NULL
+          sh_pct_l20?: number | null; // double precision NULL
+          sh_pct_l10?: number | null; // double precision NULL
+          sh_pct_l5?: number | null; // double precision NULL
+          ixg_ca?: number | null; // double precision NULL
+          ixg_3ya?: number | null; // double precision NULL
+          ixg_ly?: number | null; // double precision NULL
+          ixg_std?: number | null; // double precision NULL
+          ixg_l20?: number | null; // double precision NULL
+          ixg_l10?: number | null; // double precision NULL
+          ixg_l5?: number | null; // double precision NULL
+          ipp_ca?: number | null; // double precision NULL
+          ipp_3ya?: number | null; // double precision NULL
+          ipp_ly?: number | null; // double precision NULL
+          ipp_std?: number | null; // double precision NULL
+          ipp_l20?: number | null; // double precision NULL
+          ipp_l10?: number | null; // double precision NULL
+          ipp_l5?: number | null; // double precision NULL
+          oish_pct_ca?: number | null; // double precision NULL
+          oish_pct_3ya?: number | null; // double precision NULL
+          oish_pct_ly?: number | null; // double precision NULL
+          oish_pct_std?: number | null; // double precision NULL
+          oish_pct_l20?: number | null; // double precision NULL
+          oish_pct_l10?: number | null; // double precision NULL
+          oish_pct_l5?: number | null; // double precision NULL
+          ozs_pct_ca?: number | null; // double precision NULL
+          ozs_pct_3ya?: number | null; // double precision NULL
+          ozs_pct_ly?: number | null; // double precision NULL
+          ozs_pct_std?: number | null; // double precision NULL
+          ozs_pct_l20?: number | null; // double precision NULL
+          ozs_pct_l10?: number | null; // double precision NULL
+          ozs_pct_l5?: number | null; // double precision NULL
+          icf_ca?: number | null; // double precision NULL
+          icf_3ya?: number | null; // double precision NULL
+          icf_ly?: number | null; // double precision NULL
+          icf_std?: number | null; // double precision NULL
+          icf_l20?: number | null; // double precision NULL
+          icf_l10?: number | null; // double precision NULL
+          icf_l5?: number | null; // double precision NULL
+          ppg_ca?: number | null; // double precision NULL
+          ppg_3ya?: number | null; // double precision NULL
+          ppg_ly?: number | null; // integer NULL
+          ppg_std?: number | null; // integer NULL
+          ppg_l20?: number | null; // integer NULL
+          ppg_l10?: number | null; // integer NULL
+          ppg_l5?: number | null; // integer NULL
+          ppa_ca?: number | null; // double precision NULL
+          ppa_3ya?: number | null; // double precision NULL
+          ppa_ly?: number | null; // integer NULL
+          ppa_std?: number | null; // integer NULL
+          ppa_l20?: number | null; // integer NULL
+          ppa_l10?: number | null; // integer NULL
+          ppa_l5?: number | null; // integer NULL
+          ppa1_ca?: number | null; // double precision NULL
+          ppa1_3ya?: number | null; // double precision NULL
+          ppa1_ly?: number | null; // integer NULL
+          ppa1_std?: number | null; // integer NULL
+          ppa1_l20?: number | null; // integer NULL
+          ppa1_l10?: number | null; // integer NULL
+          ppa1_l5?: number | null; // integer NULL
+          ppa2_ca?: number | null; // double precision NULL
+          ppa2_3ya?: number | null; // double precision NULL
+          ppa2_ly?: number | null; // integer NULL
+          ppa2_std?: number | null; // integer NULL
+          ppa2_l20?: number | null; // integer NULL
+          ppa2_l10?: number | null; // integer NULL
+          ppa2_l5?: number | null; // integer NULL
+          ppp_ca?: number | null; // double precision NULL
+          ppp_3ya?: number | null; // double precision NULL
+          ppp_ly?: number | null; // integer NULL
+          ppp_std?: number | null; // integer NULL
+          ppp_l20?: number | null; // integer NULL
+          ppp_l10?: number | null; // integer NULL
+          ppp_l5?: number | null; // integer NULL
+          hit_ca?: number | null; // double precision NULL
+          hit_3ya?: number | null; // double precision NULL
+          hit_ly?: number | null; // integer NULL
+          hit_std?: number | null; // integer NULL
+          hit_l20?: number | null; // integer NULL
+          hit_l10?: number | null; // integer NULL
+          hit_l5?: number | null; // integer NULL
+          blk_ca?: number | null; // double precision NULL
+          blk_3ya?: number | null; // double precision NULL
+          blk_ly?: number | null; // integer NULL
+          blk_std?: number | null; // integer NULL
+          blk_l20?: number | null; // integer NULL
+          blk_l10?: number | null; // integer NULL
+          blk_l5?: number | null; // integer NULL
+          pim_ca?: number | null; // double precision NULL
+          pim_3ya?: number | null; // double precision NULL
+          pim_ly?: number | null; // integer NULL
+          pim_std?: number | null; // integer NULL
+          pim_l20?: number | null; // integer NULL
+          pim_l10?: number | null; // integer NULL
+          pim_l5?: number | null; // integer NULL
+        };
+        Update: {
+          player_id?: number; // bigint PRIMARY KEY NOT NULL
+          updated_at?: string; // timestamp with time zone DEFAULT now() NOT NULL
+          gp_ca?: number | null; // integer NULL
+          gp_3ya?: number | null; // integer NULL
+          gp_ly?: number | null; // integer NULL
+          gp_std?: number | null; // integer NULL
+          gp_l20?: number | null; // integer NULL
+          gp_l10?: number | null; // integer NULL
+          gp_l5?: number | null; // integer NULL
+          toi_ca?: number | null; // double precision NULL
+          toi_3ya?: number | null; // double precision NULL
+          toi_ly?: number | null; // double precision NULL
+          toi_std?: number | null; // double precision NULL
+          toi_l20?: number | null; // double precision NULL
+          toi_l10?: number | null; // double precision NULL
+          toi_l5?: number | null; // double precision NULL
+          pptoi_ca?: number | null; // double precision NULL
+          pptoi_3ya?: number | null; // double precision NULL
+          pptoi_ly?: number | null; // double precision NULL
+          pptoi_std?: number | null; // double precision NULL
+          pptoi_l20?: number | null; // double precision NULL
+          pptoi_l10?: number | null; // double precision NULL
+          pptoi_l5?: number | null; // double precision NULL
+          pp_pct_ca?: number | null; // double precision NULL
+          pp_pct_3ya?: number | null; // double precision NULL
+          pp_pct_ly?: number | null; // double precision NULL
+          pp_pct_std?: number | null; // double precision NULL
+          pp_pct_l20?: number | null; // double precision NULL
+          pp_pct_l10?: number | null; // double precision NULL
+          pp_pct_l5?: number | null; // double precision NULL
+          g_ca?: number | null; // double precision NULL
+          g_3ya?: number | null; // double precision NULL
+          g_ly?: number | null; // integer NULL
+          g_std?: number | null; // integer NULL
+          g_l20?: number | null; // integer NULL
+          g_l10?: number | null; // integer NULL
+          g_l5?: number | null; // integer NULL
+          a_ca?: number | null; // double precision NULL
+          a_3ya?: number | null; // double precision NULL
+          a_ly?: number | null; // integer NULL
+          a_std?: number | null; // integer NULL
+          a_l20?: number | null; // integer NULL
+          a_l10?: number | null; // integer NULL
+          a_l5?: number | null; // integer NULL
+          pts_ca?: number | null; // double precision NULL
+          pts_3ya?: number | null; // double precision NULL
+          pts_ly?: number | null; // integer NULL
+          pts_std?: number | null; // integer NULL
+          pts_l20?: number | null; // integer NULL
+          pts_l10?: number | null; // integer NULL
+          pts_l5?: number | null; // integer NULL
+          a1_ca?: number | null; // double precision NULL
+          a1_3ya?: number | null; // double precision NULL
+          a1_ly?: number | null; // integer NULL
+          a1_std?: number | null; // integer NULL
+          a1_l20?: number | null; // integer NULL
+          a1_l10?: number | null; // integer NULL
+          a1_l5?: number | null; // integer NULL
+          a2_ca?: number | null; // double precision NULL
+          a2_3ya?: number | null; // double precision NULL
+          a2_ly?: number | null; // integer NULL
+          a2_std?: number | null; // integer NULL
+          a2_l20?: number | null; // integer NULL
+          a2_l10?: number | null; // integer NULL
+          a2_l5?: number | null; // integer NULL
+          pts1_ca?: number | null; // double precision NULL
+          pts1_3ya?: number | null; // double precision NULL
+          pts1_ly?: number | null; // integer NULL
+          pts1_std?: number | null; // integer NULL
+          pts1_l20?: number | null; // integer NULL
+          pts1_l10?: number | null; // integer NULL
+          pts1_l5?: number | null; // integer NULL
+          pts1_pct_ca?: number | null; // double precision NULL
+          pts1_pct_3ya?: number | null; // double precision NULL
+          pts1_pct_ly?: number | null; // double precision NULL
+          pts1_pct_std?: number | null; // double precision NULL
+          pts1_pct_l20?: number | null; // double precision NULL
+          pts1_pct_l10?: number | null; // double precision NULL
+          pts1_pct_l5?: number | null; // double precision NULL
+          sog_ca?: number | null; // double precision NULL
+          sog_3ya?: number | null; // double precision NULL
+          sog_ly?: number | null; // integer NULL
+          sog_std?: number | null; // integer NULL
+          sog_l20?: number | null; // integer NULL
+          sog_l10?: number | null; // integer NULL
+          sog_l5?: number | null; // integer NULL
+          sh_pct_ca?: number | null; // double precision NULL
+          sh_pct_3ya?: number | null; // double precision NULL
+          sh_pct_ly?: number | null; // double precision NULL
+          sh_pct_std?: number | null; // double precision NULL
+          sh_pct_l20?: number | null; // double precision NULL
+          sh_pct_l10?: number | null; // double precision NULL
+          sh_pct_l5?: number | null; // double precision NULL
+          ixg_ca?: number | null; // double precision NULL
+          ixg_3ya?: number | null; // double precision NULL
+          ixg_ly?: number | null; // double precision NULL
+          ixg_std?: number | null; // double precision NULL
+          ixg_l20?: number | null; // double precision NULL
+          ixg_l10?: number | null; // double precision NULL
+          ixg_l5?: number | null; // double precision NULL
+          ipp_ca?: number | null; // double precision NULL
+          ipp_3ya?: number | null; // double precision NULL
+          ipp_ly?: number | null; // double precision NULL
+          ipp_std?: number | null; // double precision NULL
+          ipp_l20?: number | null; // double precision NULL
+          ipp_l10?: number | null; // double precision NULL
+          ipp_l5?: number | null; // double precision NULL
+          oish_pct_ca?: number | null; // double precision NULL
+          oish_pct_3ya?: number | null; // double precision NULL
+          oish_pct_ly?: number | null; // double precision NULL
+          oish_pct_std?: number | null; // double precision NULL
+          oish_pct_l20?: number | null; // double precision NULL
+          oish_pct_l10?: number | null; // double precision NULL
+          oish_pct_l5?: number | null; // double precision NULL
+          ozs_pct_ca?: number | null; // double precision NULL
+          ozs_pct_3ya?: number | null; // double precision NULL
+          ozs_pct_ly?: number | null; // double precision NULL
+          ozs_pct_std?: number | null; // double precision NULL
+          ozs_pct_l20?: number | null; // double precision NULL
+          ozs_pct_l10?: number | null; // double precision NULL
+          ozs_pct_l5?: number | null; // double precision NULL
+          icf_ca?: number | null; // double precision NULL
+          icf_3ya?: number | null; // double precision NULL
+          icf_ly?: number | null; // double precision NULL
+          icf_std?: number | null; // double precision NULL
+          icf_l20?: number | null; // double precision NULL
+          icf_l10?: number | null; // double precision NULL
+          icf_l5?: number | null; // double precision NULL
+          ppg_ca?: number | null; // double precision NULL
+          ppg_3ya?: number | null; // double precision NULL
+          ppg_ly?: number | null; // integer NULL
+          ppg_std?: number | null; // integer NULL
+          ppg_l20?: number | null; // integer NULL
+          ppg_l10?: number | null; // integer NULL
+          ppg_l5?: number | null; // integer NULL
+          ppa_ca?: number | null; // double precision NULL
+          ppa_3ya?: number | null; // double precision NULL
+          ppa_ly?: number | null; // integer NULL
+          ppa_std?: number | null; // integer NULL
+          ppa_l20?: number | null; // integer NULL
+          ppa_l10?: number | null; // integer NULL
+          ppa_l5?: number | null; // integer NULL
+          ppa1_ca?: number | null; // double precision NULL
+          ppa1_3ya?: number | null; // double precision NULL
+          ppa1_ly?: number | null; // integer NULL
+          ppa1_std?: number | null; // integer NULL
+          ppa1_l20?: number | null; // integer NULL
+          ppa1_l10?: number | null; // integer NULL
+          ppa1_l5?: number | null; // integer NULL
+          ppa2_ca?: number | null; // double precision NULL
+          ppa2_3ya?: number | null; // double precision NULL
+          ppa2_ly?: number | null; // integer NULL
+          ppa2_std?: number | null; // integer NULL
+          ppa2_l20?: number | null; // integer NULL
+          ppa2_l10?: number | null; // integer NULL
+          ppa2_l5?: number | null; // integer NULL
+          ppp_ca?: number | null; // double precision NULL
+          ppp_3ya?: number | null; // double precision NULL
+          ppp_ly?: number | null; // integer NULL
+          ppp_std?: number | null; // integer NULL
+          ppp_l20?: number | null; // integer NULL
+          ppp_l10?: number | null; // integer NULL
+          ppp_l5?: number | null; // integer NULL
+          hit_ca?: number | null; // double precision NULL
+          hit_3ya?: number | null; // double precision NULL
+          hit_ly?: number | null; // integer NULL
+          hit_std?: number | null; // integer NULL
+          hit_l20?: number | null; // integer NULL
+          hit_l10?: number | null; // integer NULL
+          hit_l5?: number | null; // integer NULL
+          blk_ca?: number | null; // double precision NULL
+          blk_3ya?: number | null; // double precision NULL
+          blk_ly?: number | null; // integer NULL
+          blk_std?: number | null; // integer NULL
+          blk_l20?: number | null; // integer NULL
+          blk_l10?: number | null; // integer NULL
+          blk_l5?: number | null; // integer NULL
+          pim_ca?: number | null; // double precision NULL
+          pim_3ya?: number | null; // double precision NULL
+          pim_ly?: number | null; // integer NULL
+          pim_std?: number | null; // integer NULL
+          pim_l20?: number | null; // integer NULL
+          pim_l10?: number | null; // integer NULL
+          pim_l5?: number | null; // integer NULL
+        };
+        Relationships: [];
+      };
+      wigo_rates: {
+        Row: {
+          player_id: number; // bigint PRIMARY KEY NOT NULL
+          updated_at: string; // timestamp with time zone DEFAULT now() NOT NULL
+          g_per_60_ca: number | null; // double precision NULL
+          g_per_60_3ya: number | null; // double precision NULL
+          g_per_60_ly: number | null; // double precision NULL
+          g_per_60_std: number | null; // double precision NULL
+          g_per_60_l20: number | null; // double precision NULL
+          g_per_60_l10: number | null; // double precision NULL
+          g_per_60_l5: number | null; // double precision NULL
+          a_per_60_ca: number | null; // double precision NULL
+          a_per_60_3ya: number | null; // double precision NULL
+          a_per_60_ly: number | null; // double precision NULL
+          a_per_60_std: number | null; // double precision NULL
+          a_per_60_l20: number | null; // double precision NULL
+          a_per_60_l10: number | null; // double precision NULL
+          a_per_60_l5: number | null; // double precision NULL
+          pts_per_60_ca: number | null; // double precision NULL
+          pts_per_60_3ya: number | null; // double precision NULL
+          pts_per_60_ly: number | null; // double precision NULL
+          pts_per_60_std: number | null; // double precision NULL
+          pts_per_60_l20: number | null; // double precision NULL
+          pts_per_60_l10: number | null; // double precision NULL
+          pts_per_60_l5: number | null; // double precision NULL
+          pts1_per_60_ca: number | null; // double precision NULL
+          pts1_per_60_3ya: number | null; // double precision NULL
+          pts1_per_60_ly: number | null; // double precision NULL
+          pts1_per_60_std: number | null; // double precision NULL
+          pts1_per_60_l20: number | null; // double precision NULL
+          pts1_per_60_l10: number | null; // double precision NULL
+          pts1_per_60_l5: number | null; // double precision NULL
+          sog_per_60_ca: number | null; // double precision NULL
+          sog_per_60_3ya: number | null; // double precision NULL
+          sog_per_60_ly: number | null; // double precision NULL
+          sog_per_60_std: number | null; // double precision NULL
+          sog_per_60_l20: number | null; // double precision NULL
+          sog_per_60_l10: number | null; // double precision NULL
+          sog_per_60_l5: number | null; // double precision NULL
+          ixg_per_60_ca: number | null; // double precision NULL
+          ixg_per_60_3ya: number | null; // double precision NULL
+          ixg_per_60_ly: number | null; // double precision NULL
+          ixg_per_60_std: number | null; // double precision NULL
+          ixg_per_60_l20: number | null; // double precision NULL
+          ixg_per_60_l10: number | null; // double precision NULL
+          ixg_per_60_l5: number | null; // double precision NULL
+          icf_per_60_ca: number | null; // double precision NULL
+          icf_per_60_3ya: number | null; // double precision NULL
+          icf_per_60_ly: number | null; // double precision NULL
+          icf_per_60_std: number | null; // double precision NULL
+          icf_per_60_l20: number | null; // double precision NULL
+          icf_per_60_l10: number | null; // double precision NULL
+          icf_per_60_l5: number | null; // double precision NULL
+          ppg_per_60_ca: number | null; // double precision NULL
+          ppg_per_60_3ya: number | null; // double precision NULL
+          ppg_per_60_ly: number | null; // double precision NULL
+          ppg_per_60_std: number | null; // double precision NULL
+          ppg_per_60_l20: number | null; // double precision NULL
+          ppg_per_60_l10: number | null; // double precision NULL
+          ppg_per_60_l5: number | null; // double precision NULL
+          ppa_per_60_ca: number | null; // double precision NULL
+          ppa_per_60_3ya: number | null; // double precision NULL
+          ppa_per_60_ly: number | null; // double precision NULL
+          ppa_per_60_std: number | null; // double precision NULL
+          ppa_per_60_l20: number | null; // double precision NULL
+          ppa_per_60_l10: number | null; // double precision NULL
+          ppa_per_60_l5: number | null; // double precision NULL
+          ppp_per_60_ca: number | null; // double precision NULL
+          ppp_per_60_3ya: number | null; // double precision NULL
+          ppp_per_60_ly: number | null; // double precision NULL
+          ppp_per_60_std: number | null; // double precision NULL
+          ppp_per_60_l20: number | null; // double precision NULL
+          ppp_per_60_l10: number | null; // double precision NULL
+          ppp_per_60_l5: number | null; // double precision NULL
+          ppg_per_60pp_ca: number | null; // double precision NULL
+          ppg_per_60pp_3ya: number | null; // double precision NULL
+          ppg_per_60pp_ly: number | null; // double precision NULL
+          ppg_per_60pp_std: number | null; // double precision NULL
+          ppg_per_60pp_l20: number | null; // double precision NULL
+          ppg_per_60pp_l10: number | null; // double precision NULL
+          ppg_per_60pp_l5: number | null; // double precision NULL
+          ppa_per_60pp_ca: number | null; // double precision NULL
+          ppa_per_60pp_3ya: number | null; // double precision NULL
+          ppa_per_60pp_ly: number | null; // double precision NULL
+          ppa_per_60pp_std: number | null; // double precision NULL
+          ppa_per_60pp_l20: number | null; // double precision NULL
+          ppa_per_60pp_l10: number | null; // double precision NULL
+          ppa_per_60pp_l5: number | null; // double precision NULL
+          ppp_per_60pp_ca: number | null; // double precision NULL
+          ppp_per_60pp_3ya: number | null; // double precision NULL
+          ppp_per_60pp_ly: number | null; // double precision NULL
+          ppp_per_60pp_std: number | null; // double precision NULL
+          ppp_per_60pp_l20: number | null; // double precision NULL
+          ppp_per_60pp_l10: number | null; // double precision NULL
+          ppp_per_60pp_l5: number | null; // double precision NULL
+          hit_per_60_ca: number | null; // double precision NULL
+          hit_per_60_3ya: number | null; // double precision NULL
+          hit_per_60_ly: number | null; // double precision NULL
+          hit_per_60_std: number | null; // double precision NULL
+          hit_per_60_l20: number | null; // double precision NULL
+          hit_per_60_l10: number | null; // double precision NULL
+          hit_per_60_l5: number | null; // double precision NULL
+          blk_per_60_ca: number | null; // double precision NULL
+          blk_per_60_3ya: number | null; // double precision NULL
+          blk_per_60_ly: number | null; // double precision NULL
+          blk_per_60_std: number | null; // double precision NULL
+          blk_per_60_l20: number | null; // double precision NULL
+          blk_per_60_l10: number | null; // double precision NULL
+          blk_per_60_l5: number | null; // double precision NULL
+          pim_per_60_ca: number | null; // double precision NULL
+          pim_per_60_3ya: number | null; // double precision NULL
+          pim_per_60_ly: number | null; // double precision NULL
+          pim_per_60_std: number | null; // double precision NULL
+          pim_per_60_l20: number | null; // double precision NULL
+          pim_per_60_l10: number | null; // double precision NULL
+          pim_per_60_l5: number | null; // double precision NULL
+        };
+        Insert: {
+          player_id: number; // bigint PRIMARY KEY NOT NULL
+          updated_at?: string; // timestamp with time zone DEFAULT now() NOT NULL
+          g_per_60_ca?: number | null; // double precision NULL
+          g_per_60_3ya?: number | null; // double precision NULL
+          g_per_60_ly?: number | null; // double precision NULL
+          g_per_60_std?: number | null; // double precision NULL
+          g_per_60_l20?: number | null; // double precision NULL
+          g_per_60_l10?: number | null; // double precision NULL
+          g_per_60_l5?: number | null; // double precision NULL
+          a_per_60_ca?: number | null; // double precision NULL
+          a_per_60_3ya?: number | null; // double precision NULL
+          a_per_60_ly?: number | null; // double precision NULL
+          a_per_60_std?: number | null; // double precision NULL
+          a_per_60_l20?: number | null; // double precision NULL
+          a_per_60_l10?: number | null; // double precision NULL
+          a_per_60_l5?: number | null; // double precision NULL
+          pts_per_60_ca?: number | null; // double precision NULL
+          pts_per_60_3ya?: number | null; // double precision NULL
+          pts_per_60_ly?: number | null; // double precision NULL
+          pts_per_60_std?: number | null; // double precision NULL
+          pts_per_60_l20?: number | null; // double precision NULL
+          pts_per_60_l10?: number | null; // double precision NULL
+          pts_per_60_l5?: number | null; // double precision NULL
+          pts1_per_60_ca?: number | null; // double precision NULL
+          pts1_per_60_3ya?: number | null; // double precision NULL
+          pts1_per_60_ly?: number | null; // double precision NULL
+          pts1_per_60_std?: number | null; // double precision NULL
+          pts1_per_60_l20?: number | null; // double precision NULL
+          pts1_per_60_l10?: number | null; // double precision NULL
+          pts1_per_60_l5?: number | null; // double precision NULL
+          sog_per_60_ca?: number | null; // double precision NULL
+          sog_per_60_3ya?: number | null; // double precision NULL
+          sog_per_60_ly?: number | null; // double precision NULL
+          sog_per_60_std?: number | null; // double precision NULL
+          sog_per_60_l20?: number | null; // double precision NULL
+          sog_per_60_l10?: number | null; // double precision NULL
+          sog_per_60_l5?: number | null; // double precision NULL
+          ixg_per_60_ca?: number | null; // double precision NULL
+          ixg_per_60_3ya?: number | null; // double precision NULL
+          ixg_per_60_ly?: number | null; // double precision NULL
+          ixg_per_60_std?: number | null; // double precision NULL
+          ixg_per_60_l20?: number | null; // double precision NULL
+          ixg_per_60_l10?: number | null; // double precision NULL
+          ixg_per_60_l5?: number | null; // double precision NULL
+          icf_per_60_ca?: number | null; // double precision NULL
+          icf_per_60_3ya?: number | null; // double precision NULL
+          icf_per_60_ly?: number | null; // double precision NULL
+          icf_per_60_std?: number | null; // double precision NULL
+          icf_per_60_l20?: number | null; // double precision NULL
+          icf_per_60_l10?: number | null; // double precision NULL
+          icf_per_60_l5?: number | null; // double precision NULL
+          ppg_per_60_ca?: number | null; // double precision NULL
+          ppg_per_60_3ya?: number | null; // double precision NULL
+          ppg_per_60_ly?: number | null; // double precision NULL
+          ppg_per_60_std?: number | null; // double precision NULL
+          ppg_per_60_l20?: number | null; // double precision NULL
+          ppg_per_60_l10?: number | null; // double precision NULL
+          ppg_per_60_l5?: number | null; // double precision NULL
+          ppa_per_60_ca?: number | null; // double precision NULL
+          ppa_per_60_3ya?: number | null; // double precision NULL
+          ppa_per_60_ly?: number | null; // double precision NULL
+          ppa_per_60_std?: number | null; // double precision NULL
+          ppa_per_60_l20?: number | null; // double precision NULL
+          ppa_per_60_l10?: number | null; // double precision NULL
+          ppa_per_60_l5?: number | null; // double precision NULL
+          ppp_per_60_ca?: number | null; // double precision NULL
+          ppp_per_60_3ya?: number | null; // double precision NULL
+          ppp_per_60_ly?: number | null; // double precision NULL
+          ppp_per_60_std?: number | null; // double precision NULL
+          ppp_per_60_l20?: number | null; // double precision NULL
+          ppp_per_60_l10?: number | null; // double precision NULL
+          ppp_per_60_l5?: number | null; // double precision NULL
+          ppg_per_60pp_ca?: number | null; // double precision NULL
+          ppg_per_60pp_3ya?: number | null; // double precision NULL
+          ppg_per_60pp_ly?: number | null; // double precision NULL
+          ppg_per_60pp_std?: number | null; // double precision NULL
+          ppg_per_60pp_l20?: number | null; // double precision NULL
+          ppg_per_60pp_l10?: number | null; // double precision NULL
+          ppg_per_60pp_l5?: number | null; // double precision NULL
+          ppa_per_60pp_ca?: number | null; // double precision NULL
+          ppa_per_60pp_3ya?: number | null; // double precision NULL
+          ppa_per_60pp_ly?: number | null; // double precision NULL
+          ppa_per_60pp_std?: number | null; // double precision NULL
+          ppa_per_60pp_l20?: number | null; // double precision NULL
+          ppa_per_60pp_l10?: number | null; // double precision NULL
+          ppa_per_60pp_l5?: number | null; // double precision NULL
+          ppp_per_60pp_ca?: number | null; // double precision NULL
+          ppp_per_60pp_3ya?: number | null; // double precision NULL
+          ppp_per_60pp_ly?: number | null; // double precision NULL
+          ppp_per_60pp_std?: number | null; // double precision NULL
+          ppp_per_60pp_l20?: number | null; // double precision NULL
+          ppp_per_60pp_l10?: number | null; // double precision NULL
+          ppp_per_60pp_l5?: number | null; // double precision NULL
+          hit_per_60_ca?: number | null; // double precision NULL
+          hit_per_60_3ya?: number | null; // double precision NULL
+          hit_per_60_ly?: number | null; // double precision NULL
+          hit_per_60_std?: number | null; // double precision NULL
+          hit_per_60_l20?: number | null; // double precision NULL
+          hit_per_60_l10?: number | null; // double precision NULL
+          hit_per_60_l5?: number | null; // double precision NULL
+          blk_per_60_ca?: number | null; // double precision NULL
+          blk_per_60_3ya?: number | null; // double precision NULL
+          blk_per_60_ly?: number | null; // double precision NULL
+          blk_per_60_std?: number | null; // double precision NULL
+          blk_per_60_l20?: number | null; // double precision NULL
+          blk_per_60_l10?: number | null; // double precision NULL
+          blk_per_60_l5?: number | null; // double precision NULL
+          pim_per_60_ca?: number | null; // double precision NULL
+          pim_per_60_3ya?: number | null; // double precision NULL
+          pim_per_60_ly?: number | null; // double precision NULL
+          pim_per_60_std?: number | null; // double precision NULL
+          pim_per_60_l20?: number | null; // double precision NULL
+          pim_per_60_l10?: number | null; // double precision NULL
+          pim_per_60_l5?: number | null; // double precision NULL
+        };
+        Update: {
+          player_id?: number; // bigint PRIMARY KEY NOT NULL
+          updated_at?: string; // timestamp with time zone DEFAULT now() NOT NULL
+          g_per_60_ca?: number | null; // double precision NULL
+          g_per_60_3ya?: number | null; // double precision NULL
+          g_per_60_ly?: number | null; // double precision NULL
+          g_per_60_std?: number | null; // double precision NULL
+          g_per_60_l20?: number | null; // double precision NULL
+          g_per_60_l10?: number | null; // double precision NULL
+          g_per_60_l5?: number | null; // double precision NULL
+          a_per_60_ca?: number | null; // double precision NULL
+          a_per_60_3ya?: number | null; // double precision NULL
+          a_per_60_ly?: number | null; // double precision NULL
+          a_per_60_std?: number | null; // double precision NULL
+          a_per_60_l20?: number | null; // double precision NULL
+          a_per_60_l10?: number | null; // double precision NULL
+          a_per_60_l5?: number | null; // double precision NULL
+          pts_per_60_ca?: number | null; // double precision NULL
+          pts_per_60_3ya?: number | null; // double precision NULL
+          pts_per_60_ly?: number | null; // double precision NULL
+          pts_per_60_std?: number | null; // double precision NULL
+          pts_per_60_l20?: number | null; // double precision NULL
+          pts_per_60_l10?: number | null; // double precision NULL
+          pts_per_60_l5?: number | null; // double precision NULL
+          pts1_per_60_ca?: number | null; // double precision NULL
+          pts1_per_60_3ya?: number | null; // double precision NULL
+          pts1_per_60_ly?: number | null; // double precision NULL
+          pts1_per_60_std?: number | null; // double precision NULL
+          pts1_per_60_l20?: number | null; // double precision NULL
+          pts1_per_60_l10?: number | null; // double precision NULL
+          pts1_per_60_l5?: number | null; // double precision NULL
+          sog_per_60_ca?: number | null; // double precision NULL
+          sog_per_60_3ya?: number | null; // double precision NULL
+          sog_per_60_ly?: number | null; // double precision NULL
+          sog_per_60_std?: number | null; // double precision NULL
+          sog_per_60_l20?: number | null; // double precision NULL
+          sog_per_60_l10?: number | null; // double precision NULL
+          sog_per_60_l5?: number | null; // double precision NULL
+          ixg_per_60_ca?: number | null; // double precision NULL
+          ixg_per_60_3ya?: number | null; // double precision NULL
+          ixg_per_60_ly?: number | null; // double precision NULL
+          ixg_per_60_std?: number | null; // double precision NULL
+          ixg_per_60_l20?: number | null; // double precision NULL
+          ixg_per_60_l10?: number | null; // double precision NULL
+          ixg_per_60_l5?: number | null; // double precision NULL
+          icf_per_60_ca?: number | null; // double precision NULL
+          icf_per_60_3ya?: number | null; // double precision NULL
+          icf_per_60_ly?: number | null; // double precision NULL
+          icf_per_60_std?: number | null; // double precision NULL
+          icf_per_60_l20?: number | null; // double precision NULL
+          icf_per_60_l10?: number | null; // double precision NULL
+          icf_per_60_l5?: number | null; // double precision NULL
+          ppg_per_60_ca?: number | null; // double precision NULL
+          ppg_per_60_3ya?: number | null; // double precision NULL
+          ppg_per_60_ly?: number | null; // double precision NULL
+          ppg_per_60_std?: number | null; // double precision NULL
+          ppg_per_60_l20?: number | null; // double precision NULL
+          ppg_per_60_l10?: number | null; // double precision NULL
+          ppg_per_60_l5?: number | null; // double precision NULL
+          ppa_per_60_ca?: number | null; // double precision NULL
+          ppa_per_60_3ya?: number | null; // double precision NULL
+          ppa_per_60_ly?: number | null; // double precision NULL
+          ppa_per_60_std?: number | null; // double precision NULL
+          ppa_per_60_l20?: number | null; // double precision NULL
+          ppa_per_60_l10?: number | null; // double precision NULL
+          ppa_per_60_l5?: number | null; // double precision NULL
+          ppp_per_60_ca?: number | null; // double precision NULL
+          ppp_per_60_3ya?: number | null; // double precision NULL
+          ppp_per_60_ly?: number | null; // double precision NULL
+          ppp_per_60_std?: number | null; // double precision NULL
+          ppp_per_60_l20?: number | null; // double precision NULL
+          ppp_per_60_l10?: number | null; // double precision NULL
+          ppp_per_60_l5?: number | null; // double precision NULL
+          ppg_per_60pp_ca?: number | null; // double precision NULL
+          ppg_per_60pp_3ya?: number | null; // double precision NULL
+          ppg_per_60pp_ly?: number | null; // double precision NULL
+          ppg_per_60pp_std?: number | null; // double precision NULL
+          ppg_per_60pp_l20?: number | null; // double precision NULL
+          ppg_per_60pp_l10?: number | null; // double precision NULL
+          ppg_per_60pp_l5?: number | null; // double precision NULL
+          ppa_per_60pp_ca?: number | null; // double precision NULL
+          ppa_per_60pp_3ya?: number | null; // double precision NULL
+          ppa_per_60pp_ly?: number | null; // double precision NULL
+          ppa_per_60pp_std?: number | null; // double precision NULL
+          ppa_per_60pp_l20?: number | null; // double precision NULL
+          ppa_per_60pp_l10?: number | null; // double precision NULL
+          ppa_per_60pp_l5?: number | null; // double precision NULL
+          ppp_per_60pp_ca?: number | null; // double precision NULL
+          ppp_per_60pp_3ya?: number | null; // double precision NULL
+          ppp_per_60pp_ly?: number | null; // double precision NULL
+          ppp_per_60pp_std?: number | null; // double precision NULL
+          ppp_per_60pp_l20?: number | null; // double precision NULL
+          ppp_per_60pp_l10?: number | null; // double precision NULL
+          ppp_per_60pp_l5?: number | null; // double precision NULL
+          hit_per_60_ca?: number | null; // double precision NULL
+          hit_per_60_3ya?: number | null; // double precision NULL
+          hit_per_60_ly?: number | null; // double precision NULL
+          hit_per_60_std?: number | null; // double precision NULL
+          hit_per_60_l20?: number | null; // double precision NULL
+          hit_per_60_l10?: number | null; // double precision NULL
+          hit_per_60_l5?: number | null; // double precision NULL
+          blk_per_60_ca?: number | null; // double precision NULL
+          blk_per_60_3ya?: number | null; // double precision NULL
+          blk_per_60_ly?: number | null; // double precision NULL
+          blk_per_60_std?: number | null; // double precision NULL
+          blk_per_60_l20?: number | null; // double precision NULL
+          blk_per_60_l10?: number | null; // double precision NULL
+          blk_per_60_l5?: number | null; // double precision NULL
+          pim_per_60_ca?: number | null; // double precision NULL
+          pim_per_60_3ya?: number | null; // double precision NULL
+          pim_per_60_ly?: number | null; // double precision NULL
+          pim_per_60_std?: number | null; // double precision NULL
+          pim_per_60_l20?: number | null; // double precision NULL
+          pim_per_60_l10?: number | null; // double precision NULL
+          pim_per_60_l5?: number | null; // double precision NULL
+        };
+        Relationships: [];
+      };
+      wigo_per_game: {
+        Row: {
+          player_id: number; // bigint PRIMARY KEY NOT NULL
+          updated_at: string; // timestamp with time zone DEFAULT now() NOT NULL
+          atoi_ca: number | null; // double precision NULL
+          atoi_3ya: number | null; // double precision NULL
+          atoi_ly: number | null; // double precision NULL
+          atoi_std: number | null; // double precision NULL
+          atoi_l20: number | null; // double precision NULL
+          atoi_l10: number | null; // double precision NULL
+          atoi_l5: number | null; // double precision NULL
+          pptoi_ca: number | null; // double precision NULL
+          pptoi_3ya: number | null; // double precision NULL
+          pptoi_ly: number | null; // double precision NULL
+          pptoi_std: number | null; // double precision NULL
+          pptoi_l20: number | null; // double precision NULL
+          pptoi_l10: number | null; // double precision NULL
+          pptoi_l5: number | null; // double precision NULL
+          g_per_game_ca: number | null; // double precision NULL
+          g_per_game_3ya: number | null; // double precision NULL
+          g_per_game_ly: number | null; // double precision NULL
+          g_per_game_std: number | null; // double precision NULL
+          g_per_game_l20: number | null; // double precision NULL
+          g_per_game_l10: number | null; // double precision NULL
+          g_per_game_l5: number | null; // double precision NULL
+          a_per_game_ca: number | null; // double precision NULL
+          a_per_game_3ya: number | null; // double precision NULL
+          a_per_game_ly: number | null; // double precision NULL
+          a_per_game_std: number | null; // double precision NULL
+          a_per_game_l20: number | null; // double precision NULL
+          a_per_game_l10: number | null; // double precision NULL
+          a_per_game_l5: number | null; // double precision NULL
+          pts_per_game_ca: number | null; // double precision NULL
+          pts_per_game_3ya: number | null; // double precision NULL
+          pts_per_game_ly: number | null; // double precision NULL
+          pts_per_game_std: number | null; // double precision NULL
+          pts_per_game_l20: number | null; // double precision NULL
+          pts_per_game_l10: number | null; // double precision NULL
+          pts_per_game_l5: number | null; // double precision NULL
+          pts1_per_game_ca: number | null; // double precision NULL
+          pts1_per_game_3ya: number | null; // double precision NULL
+          pts1_per_game_ly: number | null; // double precision NULL
+          pts1_per_game_std: number | null; // double precision NULL
+          pts1_per_game_l20: number | null; // double precision NULL
+          pts1_per_game_l10: number | null; // double precision NULL
+          pts1_per_game_l5: number | null; // double precision NULL
+          sog_per_game_ca: number | null; // double precision NULL
+          sog_per_game_3ya: number | null; // double precision NULL
+          sog_per_game_ly: number | null; // double precision NULL
+          sog_per_game_std: number | null; // double precision NULL
+          sog_per_game_l20: number | null; // double precision NULL
+          sog_per_game_l10: number | null; // double precision NULL
+          sog_per_game_l5: number | null; // double precision NULL
+          ixg_per_game_ca: number | null; // double precision NULL
+          ixg_per_game_3ya: number | null; // double precision NULL
+          ixg_per_game_ly: number | null; // double precision NULL
+          ixg_per_game_std: number | null; // double precision NULL
+          ixg_per_game_l20: number | null; // double precision NULL
+          ixg_per_game_l10: number | null; // double precision NULL
+          ixg_per_game_l5: number | null; // double precision NULL
+          ppg_per_game_ca: number | null; // double precision NULL
+          ppg_per_game_3ya: number | null; // double precision NULL
+          ppg_per_game_ly: number | null; // double precision NULL
+          ppg_per_game_std: number | null; // double precision NULL
+          ppg_per_game_l20: number | null; // double precision NULL
+          ppg_per_game_l10: number | null; // double precision NULL
+          ppg_per_game_l5: number | null; // double precision NULL
+          ppa_per_game_ca: number | null; // double precision NULL
+          ppa_per_game_3ya: number | null; // double precision NULL
+          ppa_per_game_ly: number | null; // double precision NULL
+          ppa_per_game_std: number | null; // double precision NULL
+          ppa_per_game_l20: number | null; // double precision NULL
+          ppa_per_game_l10: number | null; // double precision NULL
+          ppa_per_game_l5: number | null; // double precision NULL
+          ppp_per_game_ca: number | null; // double precision NULL
+          ppp_per_game_3ya: number | null; // double precision NULL
+          ppp_per_game_ly: number | null; // double precision NULL
+          ppp_per_game_std: number | null; // double precision NULL
+          ppp_per_game_l20: number | null; // double precision NULL
+          ppp_per_game_l10: number | null; // double precision NULL
+          ppp_per_game_l5: number | null; // double precision NULL
+          hit_per_game_ca: number | null; // double precision NULL
+          hit_per_game_3ya: number | null; // double precision NULL
+          hit_per_game_ly: number | null; // double precision NULL
+          hit_per_game_std: number | null; // double precision NULL
+          hit_per_game_l20: number | null; // double precision NULL
+          hit_per_game_l10: number | null; // double precision NULL
+          hit_per_game_l5: number | null; // double precision NULL
+          blk_per_game_ca: number | null; // double precision NULL
+          blk_per_game_3ya: number | null; // double precision NULL
+          blk_per_game_ly: number | null; // double precision NULL
+          blk_per_game_std: number | null; // double precision NULL
+          blk_per_game_l20: number | null; // double precision NULL
+          blk_per_game_l10: number | null; // double precision NULL
+          blk_per_game_l5: number | null; // double precision NULL
+          pim_per_game_ca: number | null; // double precision NULL
+          pim_per_game_3ya: number | null; // double precision NULL
+          pim_per_game_ly: number | null; // double precision NULL
+          pim_per_game_std: number | null; // double precision NULL
+          pim_per_game_l20: number | null; // double precision NULL
+          pim_per_game_l10: number | null; // double precision NULL
+          pim_per_game_l5: number | null; // double precision NULL
+        };
+        Insert: {
+          player_id: number; // bigint PRIMARY KEY NOT NULL
+          updated_at?: string; // timestamp with time zone DEFAULT now() NOT NULL
+          atoi_ca?: number | null; // double precision NULL
+          atoi_3ya?: number | null; // double precision NULL
+          atoi_ly?: number | null; // double precision NULL
+          atoi_std?: number | null; // double precision NULL
+          atoi_l20?: number | null; // double precision NULL
+          atoi_l10?: number | null; // double precision NULL
+          atoi_l5?: number | null; // double precision NULL
+          pptoi_ca?: number | null; // double precision NULL
+          pptoi_3ya?: number | null; // double precision NULL
+          pptoi_ly?: number | null; // double precision NULL
+          pptoi_std?: number | null; // double precision NULL
+          pptoi_l20?: number | null; // double precision NULL
+          pptoi_l10?: number | null; // double precision NULL
+          pptoi_l5?: number | null; // double precision NULL
+          g_per_game_ca?: number | null; // double precision NULL
+          g_per_game_3ya?: number | null; // double precision NULL
+          g_per_game_ly?: number | null; // double precision NULL
+          g_per_game_std?: number | null; // double precision NULL
+          g_per_game_l20?: number | null; // double precision NULL
+          g_per_game_l10?: number | null; // double precision NULL
+          g_per_game_l5?: number | null; // double precision NULL
+          a_per_game_ca?: number | null; // double precision NULL
+          a_per_game_3ya?: number | null; // double precision NULL
+          a_per_game_ly?: number | null; // double precision NULL
+          a_per_game_std?: number | null; // double precision NULL
+          a_per_game_l20?: number | null; // double precision NULL
+          a_per_game_l10?: number | null; // double precision NULL
+          a_per_game_l5?: number | null; // double precision NULL
+          pts_per_game_ca?: number | null; // double precision NULL
+          pts_per_game_3ya?: number | null; // double precision NULL
+          pts_per_game_ly?: number | null; // double precision NULL
+          pts_per_game_std?: number | null; // double precision NULL
+          pts_per_game_l20?: number | null; // double precision NULL
+          pts_per_game_l10?: number | null; // double precision NULL
+          pts_per_game_l5?: number | null; // double precision NULL
+          pts1_per_game_ca?: number | null; // double precision NULL
+          pts1_per_game_3ya?: number | null; // double precision NULL
+          pts1_per_game_ly?: number | null; // double precision NULL
+          pts1_per_game_std?: number | null; // double precision NULL
+          pts1_per_game_l20?: number | null; // double precision NULL
+          pts1_per_game_l10?: number | null; // double precision NULL
+          pts1_per_game_l5?: number | null; // double precision NULL
+          sog_per_game_ca?: number | null; // double precision NULL
+          sog_per_game_3ya?: number | null; // double precision NULL
+          sog_per_game_ly?: number | null; // double precision NULL
+          sog_per_game_std?: number | null; // double precision NULL
+          sog_per_game_l20?: number | null; // double precision NULL
+          sog_per_game_l10?: number | null; // double precision NULL
+          sog_per_game_l5?: number | null; // double precision NULL
+          ixg_per_game_ca?: number | null; // double precision NULL
+          ixg_per_game_3ya?: number | null; // double precision NULL
+          ixg_per_game_ly?: number | null; // double precision NULL
+          ixg_per_game_std?: number | null; // double precision NULL
+          ixg_per_game_l20?: number | null; // double precision NULL
+          ixg_per_game_l10?: number | null; // double precision NULL
+          ixg_per_game_l5?: number | null; // double precision NULL
+          ppg_per_game_ca?: number | null; // double precision NULL
+          ppg_per_game_3ya?: number | null; // double precision NULL
+          ppg_per_game_ly?: number | null; // double precision NULL
+          ppg_per_game_std?: number | null; // double precision NULL
+          ppg_per_game_l20?: number | null; // double precision NULL
+          ppg_per_game_l10?: number | null; // double precision NULL
+          ppg_per_game_l5?: number | null; // double precision NULL
+          ppa_per_game_ca?: number | null; // double precision NULL
+          ppa_per_game_3ya?: number | null; // double precision NULL
+          ppa_per_game_ly?: number | null; // double precision NULL
+          ppa_per_game_std?: number | null; // double precision NULL
+          ppa_per_game_l20?: number | null; // double precision NULL
+          ppa_per_game_l10?: number | null; // double precision NULL
+          ppa_per_game_l5?: number | null; // double precision NULL
+          ppp_per_game_ca?: number | null; // double precision NULL
+          ppp_per_game_3ya?: number | null; // double precision NULL
+          ppp_per_game_ly?: number | null; // double precision NULL
+          ppp_per_game_std?: number | null; // double precision NULL
+          ppp_per_game_l20?: number | null; // double precision NULL
+          ppp_per_game_l10?: number | null; // double precision NULL
+          ppp_per_game_l5?: number | null; // double precision NULL
+          hit_per_game_ca?: number | null; // double precision NULL
+          hit_per_game_3ya?: number | null; // double precision NULL
+          hit_per_game_ly?: number | null; // double precision NULL
+          hit_per_game_std?: number | null; // double precision NULL
+          hit_per_game_l20?: number | null; // double precision NULL
+          hit_per_game_l10?: number | null; // double precision NULL
+          hit_per_game_l5?: number | null; // double precision NULL
+          blk_per_game_ca?: number | null; // double precision NULL
+          blk_per_game_3ya?: number | null; // double precision NULL
+          blk_per_game_ly?: number | null; // double precision NULL
+          blk_per_game_std?: number | null; // double precision NULL
+          blk_per_game_l20?: number | null; // double precision NULL
+          blk_per_game_l10?: number | null; // double precision NULL
+          blk_per_game_l5?: number | null; // double precision NULL
+          pim_per_game_ca?: number | null; // double precision NULL
+          pim_per_game_3ya?: number | null; // double precision NULL
+          pim_per_game_ly?: number | null; // double precision NULL
+          pim_per_game_std?: number | null; // double precision NULL
+          pim_per_game_l20?: number | null; // double precision NULL
+          pim_per_game_l10?: number | null; // double precision NULL
+          pim_per_game_l5?: number | null; // double precision NULL
+        };
+        Update: {
+          player_id?: number; // bigint PRIMARY KEY NOT NULL
+          updated_at?: string; // timestamp with time zone DEFAULT now() NOT NULL
+          atoi_ca?: number | null; // double precision NULL
+          atoi_3ya?: number | null; // double precision NULL
+          atoi_ly?: number | null; // double precision NULL
+          atoi_std?: number | null; // double precision NULL
+          atoi_l20?: number | null; // double precision NULL
+          atoi_l10?: number | null; // double precision NULL
+          atoi_l5?: number | null; // double precision NULL
+          pptoi_ca?: number | null; // double precision NULL
+          pptoi_3ya?: number | null; // double precision NULL
+          pptoi_ly?: number | null; // double precision NULL
+          pptoi_std?: number | null; // double precision NULL
+          pptoi_l20?: number | null; // double precision NULL
+          pptoi_l10?: number | null; // double precision NULL
+          pptoi_l5?: number | null; // double precision NULL
+          g_per_game_ca?: number | null; // double precision NULL
+          g_per_game_3ya?: number | null; // double precision NULL
+          g_per_game_ly?: number | null; // double precision NULL
+          g_per_game_std?: number | null; // double precision NULL
+          g_per_game_l20?: number | null; // double precision NULL
+          g_per_game_l10?: number | null; // double precision NULL
+          g_per_game_l5?: number | null; // double precision NULL
+          a_per_game_ca?: number | null; // double precision NULL
+          a_per_game_3ya?: number | null; // double precision NULL
+          a_per_game_ly?: number | null; // double precision NULL
+          a_per_game_std?: number | null; // double precision NULL
+          a_per_game_l20?: number | null; // double precision NULL
+          a_per_game_l10?: number | null; // double precision NULL
+          a_per_game_l5?: number | null; // double precision NULL
+          pts_per_game_ca?: number | null; // double precision NULL
+          pts_per_game_3ya?: number | null; // double precision NULL
+          pts_per_game_ly?: number | null; // double precision NULL
+          pts_per_game_std?: number | null; // double precision NULL
+          pts_per_game_l20?: number | null; // double precision NULL
+          pts_per_game_l10?: number | null; // double precision NULL
+          pts_per_game_l5?: number | null; // double precision NULL
+          pts1_per_game_ca?: number | null; // double precision NULL
+          pts1_per_game_3ya?: number | null; // double precision NULL
+          pts1_per_game_ly?: number | null; // double precision NULL
+          pts1_per_game_std?: number | null; // double precision NULL
+          pts1_per_game_l20?: number | null; // double precision NULL
+          pts1_per_game_l10?: number | null; // double precision NULL
+          pts1_per_game_l5?: number | null; // double precision NULL
+          sog_per_game_ca?: number | null; // double precision NULL
+          sog_per_game_3ya?: number | null; // double precision NULL
+          sog_per_game_ly?: number | null; // double precision NULL
+          sog_per_game_std?: number | null; // double precision NULL
+          sog_per_game_l20?: number | null; // double precision NULL
+          sog_per_game_l10?: number | null; // double precision NULL
+          sog_per_game_l5?: number | null; // double precision NULL
+          ixg_per_game_ca?: number | null; // double precision NULL
+          ixg_per_game_3ya?: number | null; // double precision NULL
+          ixg_per_game_ly?: number | null; // double precision NULL
+          ixg_per_game_std?: number | null; // double precision NULL
+          ixg_per_game_l20?: number | null; // double precision NULL
+          ixg_per_game_l10?: number | null; // double precision NULL
+          ixg_per_game_l5?: number | null; // double precision NULL
+          ppg_per_game_ca?: number | null; // double precision NULL
+          ppg_per_game_3ya?: number | null; // double precision NULL
+          ppg_per_game_ly?: number | null; // double precision NULL
+          ppg_per_game_std?: number | null; // double precision NULL
+          ppg_per_game_l20?: number | null; // double precision NULL
+          ppg_per_game_l10?: number | null; // double precision NULL
+          ppg_per_game_l5?: number | null; // double precision NULL
+          ppa_per_game_ca?: number | null; // double precision NULL
+          ppa_per_game_3ya?: number | null; // double precision NULL
+          ppa_per_game_ly?: number | null; // double precision NULL
+          ppa_per_game_std?: number | null; // double precision NULL
+          ppa_per_game_l20?: number | null; // double precision NULL
+          ppa_per_game_l10?: number | null; // double precision NULL
+          ppa_per_game_l5?: number | null; // double precision NULL
+          ppp_per_game_ca?: number | null; // double precision NULL
+          ppp_per_game_3ya?: number | null; // double precision NULL
+          ppp_per_game_ly?: number | null; // double precision NULL
+          ppp_per_game_std?: number | null; // double precision NULL
+          ppp_per_game_l20?: number | null; // double precision NULL
+          ppp_per_game_l10?: number | null; // double precision NULL
+          ppp_per_game_l5?: number | null; // double precision NULL
+          hit_per_game_ca?: number | null; // double precision NULL
+          hit_per_game_3ya?: number | null; // double precision NULL
+          hit_per_game_ly?: number | null; // double precision NULL
+          hit_per_game_std?: number | null; // double precision NULL
+          hit_per_game_l20?: number | null; // double precision NULL
+          hit_per_game_l10?: number | null; // double precision NULL
+          hit_per_game_l5?: number | null; // double precision NULL
+          blk_per_game_ca?: number | null; // double precision NULL
+          blk_per_game_3ya?: number | null; // double precision NULL
+          blk_per_game_ly?: number | null; // double precision NULL
+          blk_per_game_std?: number | null; // double precision NULL
+          blk_per_game_l20?: number | null; // double precision NULL
+          blk_per_game_l10?: number | null; // double precision NULL
+          blk_per_game_l5?: number | null; // double precision NULL
+          pim_per_game_ca?: number | null; // double precision NULL
+          pim_per_game_3ya?: number | null; // double precision NULL
+          pim_per_game_ly?: number | null; // double precision NULL
+          pim_per_game_std?: number | null; // double precision NULL
+          pim_per_game_l20?: number | null; // double precision NULL
+          pim_per_game_l10?: number | null; // double precision NULL
+          pim_per_game_l5?: number | null; // double precision NULL
+        };
+        Relationships: [];
+      };
       nst_seasonal_individual_counts: {
         Row: {
           created_at: string;
@@ -1789,7 +3845,6 @@ export type Database = {
         };
         Relationships: [];
       };
-
       nhl_team_data: {
         Row: {
           season_id: number | null;

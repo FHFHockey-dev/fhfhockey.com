@@ -1,8 +1,8 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/GameScoreSection.tsx
 
 import React from "react";
-import GameScoreLineChart from "./GameScoreLineChart"; // Assuming it's in the same folder
-import styles from "styles/wigoCharts.module.scss"; // Or dedicated GameScoreSection.module.scss
+import GameScoreLineChart from "./GameScoreLineChart";
+import styles from "styles/wigoCharts.module.scss";
 
 interface GameScoreSectionProps {
   playerId: number | undefined;
