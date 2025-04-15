@@ -33,6 +33,7 @@ ChartJS.register(
   Title,
   Filler
 );
+import zoomPlugin from "chartjs-plugin-zoom";
 
 interface ToiLineChartProps {
   playerId: number | null | undefined;
