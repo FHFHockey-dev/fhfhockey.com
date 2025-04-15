@@ -145,7 +145,7 @@ function mapOnIceHeaderToColumn(header: string): string | null {
     "GF%": "gf_pct",
     xGF: "xgf",
     xGA: "xga",
-    "xG%": "xgf_pct", // Note: xG% in on-ice table
+    "xG%": "xgf_pct",
     SCF: "scf",
     SCA: "sca",
     "SCF%": "scf_pct",
@@ -167,9 +167,20 @@ function mapOnIceHeaderToColumn(header: string): string | null {
     LDGF: "ldgf",
     LDGA: "ldga",
     "LDGF%": "ldgf_pct",
-    "On-Ice SH%": "on_ice_sh_pct",
-    "On-Ice SV%": "on_ice_sv_pct",
-    PDO: "pdo",
+    // These might be the hidden ones causing shifts
+    "On-Ice SH%": "on_ice_sh_pct", // Check exact spelling/spacing on site
+    "On-Ice SV%": "on_ice_sv_pct", // Check exact spelling/spacing on site
+    PDO: "pdo", // Check exact spelling/spacing on site
+    "Off. Zone Starts": "off_zone_starts", // Original mapping
+    "Neu. Zone Starts": "neu_zone_starts", // Original mapping
+    "Def. Zone Starts": "def_zone_starts", // Original mapping
+    "On The Fly Starts": "on_the_fly_starts", // Original mapping
+    "Off. Zone Start %": "off_zone_start_pct", // Original mapping
+    "Off. Zone Faceoffs": "off_zone_faceoffs", // Original mapping
+    "Neu. Zone Faceoffs": "neu_zone_faceoffs", // Original mapping
+    "Def. Zone Faceoffs": "def_zone_faceoffs", // Original mapping
+    "Off. Zone Faceoff %": "off_zone_faceoff_pct", // Original mapping
+    "On The Fly Starts": "on_the_fly_starts",
     "Off. Zone Starts": "off_zone_starts",
     "Neu. Zone Starts": "neu_zone_starts",
     "Def. Zone Starts": "def_zone_starts",
@@ -216,26 +227,34 @@ function mapOnIceHeaderToColumn(header: string): string | null {
     // LDCF% is often the same
     "LDGF/60": "ldgf_per_60",
     "LDGA/60": "ldga_per_60",
-    // LDGF% is often the same
-    // On-Ice SH%, On-Ice SV%, PDO are often the same
+
+    // Off. Zone Faceoff % is often the same
+    "Off. Zone Starts/60": "off_zone_starts_per_60", // Original
+    "Neu. Zone Starts/60": "neu_zone_starts_per_60", // Original
+    "Def. Zone Starts/60": "def_zone_starts_per_60", // Original
+    "On The Fly Starts/60": "on_the_fly_starts_per_60", // Original
+    "Off. Zone Faceoffs/60": "off_zone_faceoffs_per_60", // Original
+    "Neu. Zone Faceoffs/60": "neu_zone_faceoffs_per_60", // Original
+    "Def. Zone Faceoffs/60": "def_zone_faceoffs_per_60", // Original
+
     "Off. Zone Starts/60": "off_zone_starts_per_60",
     "Neu. Zone Starts/60": "neu_zone_starts_per_60",
     "Def. Zone Starts/60": "def_zone_starts_per_60",
-    // Off. Zone Start % is often the same
-    "On The Fly Starts": "on_the_fly_starts",
+    // // Off. Zone Start % is often the same
+    "On The Fly Starts/60": "on_the_fly_starts_per_60", //
     "Off. Zone Faceoffs/60": "off_zone_faceoffs_per_60",
     "Neu. Zone Faceoffs/60": "neu_zone_faceoffs_per_60",
     "Def. Zone Faceoffs/60": "def_zone_faceoffs_per_60"
     // Off. Zone Faceoff % is often the same
   };
 
-  // Ignore these headers explicitly as they are handled separately
+  // Ignore these headers explicitly as they are handled separately by name
   if (["Season", "Team"].includes(header)) return null;
 
   const mapped = headerMap[header];
   if (!mapped && !["Season", "Team"].includes(header)) {
-    // Avoid warning for Season/Team
-    console.warn(`Unmapped On-Ice header: "${header}"`);
+    // Avoid warning for Season/Team, but warn for others
+    console.warn(`Unmapped On-Ice header encountered: "${header}"`); // Keep this warning
   }
   return mapped || null;
 }
@@ -305,7 +324,7 @@ async function fetchActivePlayerIds(): Promise<number[]> {
   const VIEW_NAME = "view_active_player_ids_max_season";
 
   console.log(
-    `Workspaceing active player IDs from database view '${VIEW_NAME}'...`
+    `Fetching active player IDs from database view '${VIEW_NAME}'...`
   );
 
   while (hasMore) {
@@ -325,7 +344,7 @@ async function fetchActivePlayerIds(): Promise<number[]> {
       playerIds.push(...data.map((row) => row.player_id));
       offset += data.length;
       console.log(
-        `Workspaceed batch of ${data.length} player IDs from view. Total fetched: ${playerIds.length}`
+        `Fetched batch of ${data.length} player IDs from view. Total fetched: ${playerIds.length}`
       );
     } else {
       // No more data
@@ -377,7 +396,7 @@ async function fetchAndParsePlayerData(
 ): Promise<{ individualData: any[]; onIceData: any[] }> {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      // console.log(`Workspaceing data for Player ${playerId}, Strength ${strength}, Rate ${isRate ? 'Y':'N'} (Attempt ${attempt})`);
+      // console.log(`Fetching data for Player ${playerId}, Strength ${strength}, Rate ${isRate ? 'Y':'N'} (Attempt ${attempt})`);
       const response = await axios.get(url, { timeout: 30000 }); // Increased timeout
       if (!response.data) {
         console.warn(`No data received from URL: ${url}`);
@@ -435,88 +454,145 @@ async function fetchAndParsePlayerData(
 /**
  * Generic function to parse a Cheerio table element.
  */
+// --- REVISED parseTableData function with corrected header selector ---
 function parseTableData(
   $: cheerio.CheerioAPI,
-  table: cheerio.Cheerio<Element>, // Use global Element type
+  table: cheerio.Cheerio<Element>,
   headerMapper: (header: string) => string | null,
   playerId: number,
   strength: string,
   isRate: boolean
 ): any[] {
-  const headers: string[] = []; // Stores the text of each header cell (e.g., "Season", "Team", "GP", "Goals/60")
-  table.find("thead tr th").each((_, th) => {
-    headers.push($(th).text().trim());
+  const headers: string[] = [];
+
+  // *** THE FIX IS HERE: Select BOTH <th> and <td> within <thead> ***
+  table.find("thead th, thead td").each((_, headerElement) => {
+    const headerText = $(headerElement).text().trim();
+    if (headerText) {
+      headers.push(headerText);
+    }
   });
-  // mappedHeaders will contain the DB column names or null (e.g., [null, null, "gp", "goals_per_60", ...])
+  // *** END FIX ***
+
+  // Get the number of cells in the first data row for comparison
+  const firstDataRow = table.find("tbody tr:first-child");
+  const cellCount = firstDataRow.find("td").length;
+
+  // *** START DEBUG LOGGING - Specifically for On-Ice Tables ***
+  const isDebuggingOnIce = headerMapper === mapOnIceHeaderToColumn;
+
+  if (isDebuggingOnIce) {
+    console.log(`\n--- Debug: Parsing On-Ice Table ---`);
+    console.log(
+      `Player ID: ${playerId}, Strength: ${strength}, Rate: ${
+        isRate ? "Y" : "N"
+      }`
+    );
+    // Use the corrected selector for logging now too
+    console.log("Headers Found by Cheerio (`thead th, thead td`):");
+    console.log(JSON.stringify(headers, null, 2));
+    console.log(`Total Headers Found: ${headers.length}`);
+    console.log(`Data Cells (<td>) Found in First Row: ${cellCount}`);
+
+    if (headers.length !== cellCount && cellCount > 0) {
+      console.warn(
+        `*** MISMATCH DETECTED: Header count (${headers.length}) does not match cell count (${cellCount}) ***`
+      );
+      console.log("This likely causes the column shift issue.");
+      const firstCellsText = firstDataRow
+        .find("td")
+        .slice(0, 10)
+        .map((_, td) => `"${$(td).text().trim()}"`)
+        .get();
+      console.log(`First ~10 Cell Texts: [${firstCellsText.join(", ")}]`);
+    } else if (cellCount === 0) {
+      console.log("No data rows found in the table body.");
+    } else {
+      // SUCCESS CASE!
+      console.log(
+        "Header count matches cell count. Alignment should now be correct."
+      );
+    }
+    console.log(`-------------------------------------\n`);
+  }
+  // *** END DEBUG LOGGING ***
+
   const mappedHeaders = headers.map(headerMapper);
   const dataRowsCollected: any[] = [];
 
-  table.find("tbody tr").each((_, tr) => {
-    const rowData: any = {}; // Object to hold data for the current row
-    let season: number | null = null; // Variable to specifically store the season value
-    let team: string | null = null; // Variable to specifically store the team value
+  table.find("tbody tr").each((rowIndex, tr) => {
+    const rowData: any = {};
+    let season: number | null = null;
+    let team: string | null = null;
     let isValidRow = true;
+    const currentRowCells = $(tr).find("td");
 
-    // Loop through each CELL (<td>) in the current row (<tr>)
-    $(tr)
-      .find("td")
-      .each((i, td) => {
-        const cellText = $(td).text().trim();
-        const originalHeader = headers[i]; // Get the header corresponding to this cell's index
+    currentRowCells.each((i, td) => {
+      // Cell index check - This should no longer trigger warnings if the header count is now 52
+      if (i >= headers.length) {
+        if (isDebuggingOnIce) {
+          const cellText = $(td).text().trim();
+          // You shouldn't see this warning anymore if the header count is fixed
+          console.warn(
+            `Row ${rowIndex}, Cell Index ${i}: Found data cell ("${cellText}") but no corresponding header was detected (max header index ${
+              headers.length - 1
+            }). Skipping this cell.`
+          );
+        }
+        return;
+      }
 
-        // Check if the header for this column (at index i) is "Season"
-        if (originalHeader === "Season") {
-          const seasonNum = parseInt(cellText, 10);
-          if (!isNaN(seasonNum)) {
-            season = seasonNum; // Store the parsed season number
-          } else {
-            isValidRow = false;
-            return false; // Stop processing cells in THIS ROW
-          }
-          return; // Go to the next CELL in the row
-        }
-        // Check if the header for this column is "Team"
-        if (originalHeader === "Team") {
-          if (cellText) {
-            team = cellText; // Store the team name
-          } else {
-            isValidRow = false;
-            return false; // Stop processing cells in THIS ROW
-          }
-          return; // Go to the next CELL in the row
-        }
+      const cellText = $(td).text().trim();
+      const originalHeader = headers[i]; // Now includes headers from <td> elements like "On-Ice SH%"
 
-        // --- REGULAR HANDLING for other columns ---
-        // Use the mapped header name (e.g., "gp", "goals_per_60") from the array created earlier
-        const column = mappedHeaders[i];
-        // If 'column' is not null (meaning it's a stat we want to map)
-        if (column) {
-          // This part uses the result from map...HeaderToColumn
-          if (cellText === "-" || cellText === "" || cellText === "\\-") {
-            rowData[column] = null;
-          } else {
-            const num = Number(cellText.replace(/[^0-9.-]+/g, ""));
-            rowData[column] = isNaN(num) ? cellText : num;
-          }
+      if (originalHeader === "Season") {
+        const seasonNum = parseInt(cellText, 10);
+        if (!isNaN(seasonNum)) {
+          season = seasonNum;
+        } else {
+          isValidRow = false;
+          return false;
         }
-        // If 'column' is null (because the mapper ignored it, like for Season/Team,
-        // OR it's an unmapped stat header), we simply do nothing here for this cell.
-      }); // End loop through cells (<td>)
-    // After processing all cells in this row, check if the row is valid
-    // Check if the row is still valid AND we successfully extracted season and team
+        return;
+      }
+      if (originalHeader === "Team") {
+        if (cellText && cellText !== "-") {
+          team = cellText;
+        } else {
+          isValidRow = false;
+          return false;
+        }
+        return;
+      }
+
+      // --- REGULAR HANDLING ---
+      // The existing mapOnIceHeaderToColumn should correctly map "On-Ice SH%", "On-Ice SV%", "PDO" now
+      const column = mappedHeaders[i];
+      if (column) {
+        if (cellText === "-" || cellText === "" || cellText === "\\-") {
+          rowData[column] = null;
+        } else {
+          const cleanedText = cellText.replace(/\s+/g, " ").trim();
+          const numText = cleanedText.replace(/,/g, "");
+          const num = Number(numText);
+          rowData[column] = isNaN(num) ? cleanedText : num;
+        }
+      }
+    }); // End loop through cells (<td>)
+
     if (isValidRow && season !== null && team !== null) {
-      // ADD the separately handled identifiers to the rowData object
       rowData["player_id"] = playerId;
-      rowData["season"] = season; // Add the extracted season
-      rowData["team"] = team; // Add the extracted team
+      rowData["season"] = season;
+      rowData["team"] = team;
       rowData["strength"] = strength;
-
-      // Push the complete row object (including player_id, season, team, strength, and mapped stats)
       dataRowsCollected.push(rowData);
     } else if (isValidRow && (season === null || team === null)) {
-      // console.warn(`Row skipped due to missing season or team after processing cells for Player ${playerId}.`);
+      // console.warn(`Row ${rowIndex} skipped for Player ${playerId}: Valid row but missing season or team after processing cells.`);
+    } else if (!isValidRow) {
+      // console.warn(`Row ${rowIndex} skipped for Player ${playerId}: Marked invalid during cell processing (likely bad Season/Team).`);
     }
   }); // End loop through rows (<tr>)
+
   return dataRowsCollected;
 }
 

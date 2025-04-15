@@ -1,0 +1,100 @@
+// components/WiGO/PerGameStatsTable.module.scss
+@use "styles/vars" as v; // Adjust path if needed
+
+.perGameTableContainer {
+  width: 100%;
+  height: 100%;
+  overflow: auto; // Add scroll if content overflows
+  background-color: v.$background-medium; // Match parent background
+  color: #ffffff;
+  font-family: "Roboto Condensed", sans-serif;
+  display: flex; // Use flex for centering messages
+  flex-direction: column; // Stack table/messages vertically
+  // Add padding if needed, or let the grid gap handle spacing
+  // padding: 5px;
+
+  table {
+    width: 100%;
+    border-collapse: collapse; // Ensure borders connect cleanly
+    flex-grow: 1; // Allow table to take available space
+
+    th,
+    td {
+      padding: 4px 6px; // Adjust padding as needed
+      text-align: center;
+      font-size: 11px; // Slightly smaller font might fit better
+      border: 1px solid #606060; // Match other tables' internal borders
+      white-space: nowrap; // Prevent text wrapping
+    }
+
+    th {
+      background-color: #1d3239; // Match header style
+      border: 1px solid #888; // Slightly lighter border for header? Or match td
+      position: sticky; // Keep header visible on scroll
+      top: 0; // Stick to the top
+      z-index: 1; // Ensure header stays above scrolling content
+    }
+
+    // First column (Stat names) - right aligned
+    td:first-child {
+      text-align: right;
+      width: 40%; // Adjust width for stat names
+      // border-left: #fff 2px solid; // Optional outer border like others
+    }
+
+    // Last column (Optional outer border)
+    // td:last-child {
+    //   border-right: #fff 2px solid;
+    // }
+
+    // Alternating row colors
+    tr:nth-child(even) {
+      background-color: #404040;
+    }
+
+    tr:nth-child(odd) {
+      background-color: #303030;
+    }
+
+    // Highlight GP Row
+    tr.gpRowHighlight {
+      background-color: #202020; // Darker background
+      color: #07aae2; // Accent color for text
+      font-weight: bold;
+    }
+
+    // Optional: Bottom border for the last row
+    // tr:last-child td {
+    //   border-bottom: #fff 2px solid;
+    // }
+
+    tr:hover {
+      background-color: #555; // Hover effect
+    }
+  }
+
+  // Centered messages for loading/error/no data states
+  .loadingMessage,
+  .errorMessage,
+  .noDataMessage,
+  .noPlayerMessage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    width: 100%;
+    height: 100%; // Take full height of container
+    font-size: 14px;
+    padding: 10px;
+    flex-grow: 1; // Ensure it takes space if table isn't rendered
+  }
+
+  .errorMessage {
+    color: #ff6b6b; // Red for errors
+  }
+
+  .noDataMessage,
+  .noPlayerMessage {
+    color: #aaa; // Grey for informational messages
+  }
+}

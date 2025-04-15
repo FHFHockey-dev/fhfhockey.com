@@ -9,19 +9,24 @@ import {
   TableAggregateData,
   CombinedPlayerStats
 } from "components/WiGO/types";
-import NameSearchBar from "components/WiGO/NameSearchBar"; // Corrected path
+
+import NameSearchBar from "components/WiGO/NameSearchBar";
 import { getTeamInfoById, teamNameToAbbreviationMap } from "lib/teamsInfo";
-import { fetchPlayerAggregatedStats } from "utils/fetchWigoPlayerStats"; // Corrected path
-import TimeframeComparison from "components/WiGO/TimeframeComparison"; // Corrected path
-import CategoryCoverageChart from "components/CategoryCoverageChart"; // Keep if path is correct
-import GameScoreSection from "components/WiGO/GameScoreSection"; // Import the new section component
-import PlayerHeader from "components/WiGO/PlayerHeader"; // Import the new header component
-import StatsTable from "components/WiGO/StatsTable"; // Import the new table component
+import { fetchPlayerAggregatedStats } from "utils/fetchWigoPlayerStats";
+import TimeframeComparison from "components/WiGO/TimeframeComparison";
+import CategoryCoverageChart from "components/CategoryCoverageChart";
+import GameScoreSection from "components/WiGO/GameScoreSection";
+import PlayerHeader from "components/WiGO/PlayerHeader";
+import StatsTable from "components/WiGO/StatsTable";
+import PerGameStatsTable from "components/WiGO/PerGameStatsTable";
+import ToiLineChart from "components/WiGO/ToiLineChart";
+import PpgLineChart from "components/WiGO/PpgLineChart";
+
 import {
   computeDiffColumnForCounts,
   computeDiffColumnForRates,
   formatCell // Import utils
-} from "components/WiGO/tableUtils"; // Corrected path
+} from "components/WiGO/tableUtils";
 
 const WigoCharts: React.FC = () => {
   // State remains largely the same
@@ -128,12 +133,13 @@ const WigoCharts: React.FC = () => {
     }
 
     const fetchData = async () => {
-      setIsLoadingData(true);
+      setIsLoadingData(true); // Use this state for Counts/Rates loading
       setDataError(null);
       setRawCountsData([]); // Clear previous raw data
       setRawRatesData([]); // Clear previous raw data
 
       try {
+        // Fetch data needed for Counts and Rates tables
         const aggregatedData: CombinedPlayerStats =
           await fetchPlayerAggregatedStats(selectedPlayer.id);
 
@@ -141,31 +147,32 @@ const WigoCharts: React.FC = () => {
           aggregatedData.counts.length === 0 &&
           aggregatedData.rates.length === 0
         ) {
-          setDataError("No statistics available for the selected player.");
-          setRawCountsData([]);
-          setRawRatesData([]);
+          // Set error only if BOTH are empty, PerGameStats handles its own errors/loading
+          if (aggregatedData.counts.length === 0) setDisplayCountsData([]); // Ensure display is clear
+          if (aggregatedData.rates.length === 0) setDisplayRatesData([]); // Ensure display is clear
+          // Maybe don't set a global error here, let individual components handle it
+          // setDataError("No statistics available for the selected player.");
         } else {
-          // Set the raw data first
           setRawCountsData(aggregatedData.counts);
           setRawRatesData(aggregatedData.rates);
         }
       } catch (error) {
         console.error("Error fetching aggregated stats:", error);
-        setDataError("Failed to load player statistics.");
+        setDataError("Failed to load Counts/Rates statistics."); // Specific error
         setRawCountsData([]);
         setRawRatesData([]);
       } finally {
-        setIsLoadingData(false);
+        setIsLoadingData(false); // Stop loading indicator for Counts/Rates
       }
     };
 
     fetchData();
   }, [selectedPlayer]); // Only depends on selectedPlayer
 
-  // Effect to recalculate DIFF columns when raw data or timeframes change
+  // Effect to recalculate DIFF columns remains the same
   useEffect(() => {
     updateDisplayData();
-  }, [updateDisplayData]); // Dependency is the memoized function
+  }, [updateDisplayData]);
 
   // Handler for timeframe changes
   const handleTimeframeCompare = (left: string, right: string) => {
@@ -216,7 +223,11 @@ const WigoCharts: React.FC = () => {
         <div className={styles.offenseRatings}>Offense Rating</div>
         <div className={styles.overallRatings}>Overall Rating</div>
         <div className={styles.defenseRatings}>Defense Rating</div>
-        <div className={styles.perGameStats}>Per Game Stats</div>
+
+        <div className={styles.perGameStats}>
+          <PerGameStatsTable playerId={selectedPlayer?.id} />
+        </div>
+
         <div className={styles.opponentLog}>Opponent Game Log</div>
         <div className={styles.consistencyRating}>Consistency Rating</div>
 
@@ -250,9 +261,14 @@ const WigoCharts: React.FC = () => {
 
         {/* The rest of your layout sections */}
         <div className={styles.paceTable}>Pace Table</div>
-        <div className={styles.toiLineChart}>Time On Ice Line Chart</div>
-        <div className={styles.ppgLineChart}>Point Per Game Line Chart</div>
 
+        <div className={styles.toiLineChart}>
+          <ToiLineChart playerId={selectedPlayer?.id} />
+        </div>
+
+        <div className={styles.ppgLineChart}>
+          <PpgLineChart playerId={selectedPlayer?.id} />
+        </div>
         {/* Game Score - Use Section Component */}
         <GameScoreSection playerId={selectedPlayer?.id} />
 
