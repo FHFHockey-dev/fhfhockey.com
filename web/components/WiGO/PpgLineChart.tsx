@@ -258,6 +258,25 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
             return label;
           }
         }
+      },
+      zoom: {
+        pan: {
+          enabled: true, // Enable panning
+          mode: "x" // Allow panning only on the x-axis
+          // modifierKey: 'ctrl', // Optional: Require Ctrl key for panning
+        },
+        zoom: {
+          wheel: {
+            enabled: true // Enable zooming with mouse wheel
+          },
+          pinch: {
+            enabled: true // Enable zooming with pinch gesture
+          },
+          drag: {
+            enabled: true // Enable drag-to-zoom (box selection) - THIS IS CLOSEST TO BRUSHING
+          },
+          mode: "x" // Allow zooming only on the x-axis
+        }
       }
     },
     interaction: { mode: "index", intersect: false }

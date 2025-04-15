@@ -243,7 +243,7 @@ export default async function handler(
     // FIX: Define batch arrays with non-partial types
     const allCareerUpsertData: WigoCareerData[] = [];
     const allRecentUpsertData: WigoRecentData[] = [];
-    const UPSERT_BATCH_SIZE = 100;
+    const UPSERT_BATCH_SIZE = 200;
 
     // 3. Process Each Player
     for (const playerId of uniquePlayerIds) {

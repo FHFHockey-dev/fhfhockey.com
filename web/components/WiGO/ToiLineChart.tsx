@@ -19,8 +19,10 @@ import {
   SkaterGameLogToiData,
   SkaterTotalsData
 } from "utils/fetchWigoPlayerStats"; // Adjust path
-import { formatSecondsToMMSS, formatDateToMMDD } from "utils/formattingUtils"; // Adjust path
-import styles from "styles/wigoCharts.module.scss"; // Import shared styles
+import { formatSecondsToMMSS, formatDateToMMDD } from "utils/formattingUtils";
+import styles from "styles/wigoCharts.module.scss";
+import zoomPlugin from "chartjs-plugin-zoom";
+
 // Register necessary Chart.js components
 ChartJS.register(
   CategoryScale,
@@ -31,9 +33,9 @@ ChartJS.register(
   Legend,
   TimeScale, // Register if using time scale for x-axis
   Title,
-  Filler
+  Filler,
+  zoomPlugin
 );
-import zoomPlugin from "chartjs-plugin-zoom";
 
 interface ToiLineChartProps {
   playerId: number | null | undefined;
@@ -202,19 +204,27 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
             return label;
           }
         }
-      }
+      },
       // Add zoom plugin options if installed and registered
-      // zoom: {
-      //    pan: {
-      //       enabled: true,
-      //       mode: 'x', // Enable panning only on x-axis
-      //    },
-      //    zoom: {
-      //       wheel: { enabled: true }, // Enable zooming with mouse wheel
-      //       pinch: { enabled: true }, // Enable zooming with pinch gestures
-      //       mode: 'x', // Enable zooming only on x-axis
-      //    }
-      // }
+      zoom: {
+        pan: {
+          enabled: true, // Enable panning
+          mode: "x" // Allow panning only on the x-axis
+          // modifierKey: 'ctrl', // Optional: Require Ctrl key for panning
+        },
+        zoom: {
+          wheel: {
+            enabled: true // Enable zooming with mouse wheel
+          },
+          pinch: {
+            enabled: true // Enable zooming with pinch gesture
+          },
+          drag: {
+            enabled: true // Enable drag-to-zoom (box selection) - THIS IS CLOSEST TO BRUSHING
+          },
+          mode: "x" // Allow zooming only on the x-axis
+        }
+      }
     },
     interaction: {
       // Improve hover/tooltip interaction

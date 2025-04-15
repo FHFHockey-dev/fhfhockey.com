@@ -1,6 +1,8 @@
 // /pages/wigoCharts.tsx
 
 import React, { useState, useEffect, useCallback } from "react";
+import dynamic from "next/dynamic"; // Import dynamic
+
 import styles from "styles/wigoCharts.module.scss";
 import {
   Player,
@@ -19,14 +21,35 @@ import GameScoreSection from "components/WiGO/GameScoreSection";
 import PlayerHeader from "components/WiGO/PlayerHeader";
 import StatsTable from "components/WiGO/StatsTable";
 import PerGameStatsTable from "components/WiGO/PerGameStatsTable";
-import ToiLineChart from "components/WiGO/ToiLineChart";
-import PpgLineChart from "components/WiGO/PpgLineChart";
+// import ToiLineChart from "components/WiGO/ToiLineChart";
+// import PpgLineChart from "components/WiGO/PpgLineChart";
 
 import {
   computeDiffColumnForCounts,
   computeDiffColumnForRates,
   formatCell // Import utils
 } from "components/WiGO/tableUtils";
+
+// --- Dynamically import components using Chart.js or browser APIs ---
+const ToiLineChart = dynamic(() => import("components/WiGO/ToiLineChart"), {
+  ssr: false, // Disable SSR for this component
+  loading: () => (
+    <div className={styles.chartLoadingPlaceholder}>Loading TOI Chart...</div>
+  ) // Optional: Placeholder during load
+});
+
+const PpgLineChart = dynamic(() => import("components/WiGO/PpgLineChart"), {
+  ssr: false,
+  loading: () => (
+    <div className={styles.chartLoadingPlaceholder}>Loading PPG Chart...</div>
+  )
+});
+
+// // GameScoreSection renders GameScoreLineChart -> RollingAverageChart -> Chart
+// const GameScoreSection = dynamic(() => import('components/WiGO/GameScoreSection'), {
+//   ssr: false,
+//   loading: () => <div className={styles.chartLoadingPlaceholder}>Loading Game Score...</div>
+// });
 
 const WigoCharts: React.FC = () => {
   // State remains largely the same
