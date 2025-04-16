@@ -14,14 +14,13 @@ import NameSearchBar from "components/WiGO/NameSearchBar";
 import { getTeamInfoById, teamNameToAbbreviationMap } from "lib/teamsInfo";
 import { fetchPlayerAggregatedStats } from "utils/fetchWigoPlayerStats";
 import TimeframeComparison from "components/WiGO/TimeframeComparison";
-// Assume CategoryCoverageChart exists and takes playerId/timeOption
 import CategoryCoverageChart from "components/CategoryCoverageChart";
 import GameScoreSection from "components/WiGO/GameScoreSection";
 import PlayerHeader from "components/WiGO/PlayerHeader";
-// Assume StatsTable takes title, data, isLoading, error, formatCell and expects data with 'stat' key
 import StatsTable from "components/WiGO/StatsTable";
-// Assume PerGameStatsTable takes playerId and handles internal fetching/loading/error
 import PerGameStatsTable from "components/WiGO/PerGameStatsTable";
+import RateStatPercentiles from "components/WiGO/RateStatPercentiles"; // Adjust path
+
 import {
   computeDiffColumnForCounts,
   computeDiffColumnForRates,
@@ -277,13 +276,13 @@ const WigoCharts: React.FC = () => {
             <ChartLoadingPlaceholder message="Select a player" />
           )}
         </div>
-        <div className={styles.paceTableContainer}>
-          {/* Placeholder Content */}
+
+        {/* <div className={styles.paceTableContainer}>
           Pace Table Placeholder
-        </div>
+        </div> */}
+
         <div className={styles.rateStatBarPercentilesContainer}>
-          {/* Placeholder Content */}
-          Rate Stat Bars Placeholder
+          <RateStatPercentiles playerId={selectedPlayer?.id} />
         </div>
 
         {/* --- Center Columns (Tables) --- */}
@@ -323,8 +322,8 @@ const WigoCharts: React.FC = () => {
           <div className={styles.overallRatingsContainer}>Ovr. Rating</div>
           <div className={styles.defenseRatingsContainer}>Def. Rating</div>
         </div>
+
         <div className={styles.opponentLogContainer}>
-          {/* Placeholder Content */}
           Opponent Log Placeholder
         </div>
 

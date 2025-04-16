@@ -6,11 +6,23 @@
 .timeframeContainer {
   display: flex;
   align-items: center;
-  justify-content: center; // Center horizontally
-  width: 100%; // Fill the wrapper
-  padding: v.$space-xs 0; // Reduced vertical padding
+  justify-content: space-evenly;
+  padding: v.$space-xs v.$space-xxxl; // Reduced vertical padding
   gap: v.$space-md; // Adjusted gap
+  background-color: #164352;
+  border-top: v.$border-color-secondary 1px solid; // Top border for separation
   // background-color: v.$background-dark; // Let wrapper handle background now
+}
+
+.timeframeSelectContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: v.$space-xs; // Reduced padding
+  gap: v.$space-sm; // Adjusted gap
+  background-color: v.$background-dark; // Dark background for contrast
+  border-radius: v.$border-radius; // Rounded corners
+  box-shadow: 0 0 10px rgba(v.$text-color-secondary, 0.1); // Subtle shadow for depth
 }
 
 .timeframeSelect {
@@ -53,4 +65,15 @@
   font-size: v.$font-size-small; // Smaller font size
   margin: 0 v.$space-xs; // Reduced margin
   flex-shrink: 0; // Prevent VS text from shrinking
+}
+
+.countsTableTitle {
+  font-size: 12px; // Slightly smaller font size
+  color: v.$text-color-primary;
+  font-family: "Lucida Sans", "Lucida Grande", sans-serif;
+  font-weight: 900; // Bold
+  font-feature-settings: "smcp";
+  letter-spacing: 15px;
+
+  text-align: center;
 }

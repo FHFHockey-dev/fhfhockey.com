@@ -12,10 +12,11 @@
   height: 100%;
   padding: v.$space-sm v.$space-md; // Use spacing variables
   border: 1px solid v.$border-color-secondary; // Use theme border color
+
   font-size: v.$font-size-base; // Use base font size
   box-sizing: border-box;
   background-color: v.$background-light; // Theme background
-  border-radius: v.$border-radius-sm; // Theme border radius
+  border-top-left-radius: v.$border-radius-sm; // Theme border radius
   font-family: v.$font-family-primary; // Theme font
   color: v.$text-color-primary; // Theme text color
   transition: border-color v.$transition-duration v.$transition-easing,

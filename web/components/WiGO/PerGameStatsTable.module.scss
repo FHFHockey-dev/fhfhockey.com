@@ -1,27 +1,24 @@
-// components/WiGO/PerGameStatsTable.module.scss
-/* /styles/wigoCharts.module.scss */
+/* components/WiGO/PerGameStatsTable.module.scss */
 @use "sass:color";
-@use "styles/vars" as v; // Import variables from vars.scss
+@use "styles/vars" as v;
 @use "sass:math";
-@import url("https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap");
 
 .perGameTableContainer {
   width: 100%;
   height: 100%;
-  overflow: hidden; // Prevent scrollbars on the container itself
+  overflow: hidden; // Keep overflow hidden on main container
   background-color: v.$background-medium;
   color: v.$text-color-primary;
   font-family: v.$font-family-primary;
   display: flex;
   flex-direction: column;
-  padding: v.$space-xs; // Add slight padding around table
   box-sizing: border-box;
 
-  // Add overflow-x specifically for the table if columns are too wide
-  overflow-x: auto;
+  // Add vertical scroll ONLY if the table content might exceed the container height
+  overflow-y: auto;
   &::-webkit-scrollbar {
-    height: 4px;
-  } // Slimmer horizontal scrollbar
+    width: 5px;
+  }
   &::-webkit-scrollbar-thumb {
     background-color: v.$primary-color;
     border-radius: 2px;
@@ -31,84 +28,113 @@
   }
   scrollbar-width: thin;
   scrollbar-color: v.$primary-color v.$background-medium;
+}
 
-  table.transposedTable {
-    // Target the specific table class
-    width: 100%; // Allow table to potentially exceed container width if needed
-    border-collapse: collapse;
-    // height: 100%; // Height determined by content rows now
+// Styles for the standard vertical table
+table.verticalStatsTable {
+  width: 100%;
+  height: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; // Helps with column widths
 
-    th,
-    td {
-      padding: v.$space-xs v.$space-sm; // Consistent padding
-      text-align: center;
-      font-size: v.$font-size-small * 0.9; // Keep font size potentially small
-      border: 1px solid v.$border-color-secondary; // Use secondary for internal lines
-      white-space: nowrap;
-    }
+  th,
+  td {
+    padding: v.$space-xs * 0.8;
+    text-align: center;
+    font-size: v.$font-size-small * 0.8;
+    border-bottom: 1px solid v.$border-color-secondary; // Bottom border for rows
+    white-space: nowrap;
+  }
 
-    thead th {
-      // Column Headers (GP, G, A...)
-      background-color: v.$background-dark;
-      color: v.$text-color-secondary;
-      font-weight: 600;
-      position: sticky;
-      top: 0;
-      z-index: 1; // Sticky header row
-      border-bottom: 2px solid v.$secondary-color; // Stronger bottom border
-    }
-
-    thead th.metricHeaderCell, // First header cell (top-left corner)
-    tbody th.rowHeaderCell {
-      // Row Headers (Per/GP, Per/82)
-      background-color: v.$background-dark;
-      color: v.$text-color-secondary;
-      font-weight: 600;
-      text-align: left;
-      padding-left: v.$space-md;
-      position: sticky;
-      left: 0;
-      z-index: 1; // Make row headers sticky
-      border-right: 2px solid v.$secondary-color; // Stronger right border
-    }
-
-    tbody th.rowHeaderCell {
-      // Specific styling for Per/GP, Per/82 headers
-      background-color: v.$background-medium; // Slightly different background
-      color: v.$primary-color; // Use primary color
-      font-size: v.$font-size-small;
-    }
-
-    thead th.metricHeaderCell {
-      // Style the very top-left cell if needed
-      z-index: 2; // Make sure it's above sticky row headers
-    }
-
-    tbody tr {
-      // Style the data rows
-      transition: background-color v.$transition-duration v.$transition-easing;
-      &:nth-child(even) {
-        background-color: v.$background-light;
-      }
-      &:nth-child(odd) {
-        background-color: v.$background-dark;
-      }
-      &:hover {
-        background-color: color.scale(v.$primary-color, $alpha: -70%);
-      }
-    }
-
-    tbody td {
-      // Style data cells
-      color: v.$text-color-primary;
+  thead th {
+    // Column Headers (Metric, Per/GP, Per/82)
+    background-color: v.$background-dark;
+    color: v.$text-color-secondary;
+    font-weight: 600;
+    position: sticky; // Make header row sticky
+    top: 0;
+    z-index: 1;
+    border-bottom: 2px solid v.$primary-color; // Stronger border below headers
+    border-right: 1px solid v.$border-color-secondary; // Add right border to headers
+    &:last-child {
+      border-right: none; // Remove border from last header
     }
   }
 
-  // Keep message styles
-  .loadingMessage,
-  .errorMessage,
-  .noDataMessage,
-  .noPlayerMessage {
-    // ... (styles remain the same) ...
+  thead th.metricHeader {
+    // First header cell ("Metric")
+    text-align: left;
+    padding-left: v.$space-xs;
+    width: 30%; // Allocate more width to metric name
   }
+
+  thead th.valueHeader {
+    // Headers for values ("Per/GP", "Per/82")
+    width: 35%; // Allocate remaining width
+  }
+
+  tbody tr {
+    transition: background-color v.$transition-duration v.$transition-easing;
+    &:nth-child(even) {
+      background-color: v.$background-light;
+    }
+    &:nth-child(odd) {
+      background-color: v.$background-dark;
+    }
+    &:hover {
+      background-color: color.scale(v.$primary-color, $alpha: -70%);
+    }
+    &:last-child {
+      th,
+      td {
+        border-bottom: none;
+        padding-bottom: v.$space-xs; // Adjust padding for last row
+      } // Remove border from last row
+    }
+  }
+
+  tbody th.metricCell {
+    // First cell in each data row (GP, G, A...)
+    text-align: left;
+    padding-left: v.$space-sm;
+    font-weight: 600;
+    color: v.$text-color-secondary; // Use secondary color like headers
+    border-right: 1px solid v.$border-color-secondary; // Add right border
+  }
+
+  tbody td.valueCell {
+    // Data cells (the numbers)
+    color: v.$text-color-primary;
+    font-family: monospace; // Optional: Monospace font for numbers
+    border-right: 1px solid v.$border-color-secondary;
+    &:last-child {
+      border-right: none; // Remove border from last cell in row
+    }
+  }
+}
+
+// Keep message styles
+.loadingMessage,
+.errorMessage,
+.noDataMessage,
+.noPlayerMessage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  flex-grow: 1; // Allow messages to take space if table isn't shown
+  min-height: 50px;
+  font-size: v.$font-size-small;
+  padding: v.$space-md;
+  color: v.$text-color-secondary;
+}
+.errorMessage {
+  color: #ff6b6b;
+}
+.noDataMessage {
+  color: #aaa;
+}
+.noPlayerMessage {
+  color: #aaa;
 }

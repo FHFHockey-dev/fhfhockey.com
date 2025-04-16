@@ -15,7 +15,7 @@ const GameScoreSection: React.FC<GameScoreSectionProps> = ({ playerId }) => {
       <div
         className={styles.ratesLabel}
         style={{
-          backgroundColor: "#1d3239",
+          backgroundColor: "#164352",
           // gridRow: "1/2", // Not needed with gridTemplateRows
           display: "flex",
           justifyContent: "center",

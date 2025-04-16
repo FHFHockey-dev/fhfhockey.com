@@ -145,6 +145,9 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ playerId }) => {
     plugins: {
       legend: { display: false },
       title: { display: false },
+      datalabels: {
+        display: false // Explicitly disable the plugin for this chart
+      },
       tooltip: {
         callbacks: {
           label: function (context: any) {

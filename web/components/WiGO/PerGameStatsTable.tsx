@@ -1,20 +1,19 @@
 // components/WiGO/PerGameStatsTable.tsx
 import React, { useState, useEffect } from "react";
-// Keep existing imports: supabase, utils, types, styles
 import supabase from "lib/supabase";
 import {
   fetchPlayerPerGameTotals,
   SkaterTotalsData
 } from "utils/fetchWigoPlayerStats";
 import styles from "./PerGameStatsTable.module.scss"; // Ensure this path is correct
-import { TableAggregateData } from "./types"; // Assuming SkaterTotalsData is defined here or imported
+// Removed TableAggregateData import as it's not used here
 
 interface PerGameStatsTableProps {
   playerId: number | null | undefined;
 }
 
-// Interface for the original calculated data (easier to work with)
-interface CalculatedStat {
+// Interface for the calculated data rows
+interface CalculatedStatRow {
   stat: string; // GP, G, A, PTS, SOG, PPP, HIT, BLK, PIM
   perGame: string;
   per82: string;
@@ -22,12 +21,16 @@ interface CalculatedStat {
 
 // Formatting functions remain the same
 const formatStatValue = (value: number | null | undefined): string => {
+  // ... (implementation unchanged) ...
   if (value === null || value === undefined || isNaN(value)) {
     return "-";
   }
+  // Using toFixed(2) might be too many decimals for some counting stats per game
+  // Consider adjusting precision based on the stat if needed
   return value.toFixed(2);
 };
 const formatPaceValue = (value: number | null | undefined): string => {
+  // ... (implementation unchanged) ...
   if (value === null || value === undefined || isNaN(value)) {
     return "-";
   }
@@ -36,33 +39,38 @@ const formatPaceValue = (value: number | null | undefined): string => {
 
 const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({ playerId }) => {
   const [totalsData, setTotalsData] = useState<SkaterTotalsData | null>(null);
-  // Store the calculated stats in the original row format first
-  const [calculatedStats, setCalculatedStats] = useState<CalculatedStat[]>([]);
+  // State now holds rows for the vertical table
+  const [statRows, setStatRows] = useState<CalculatedStatRow[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // useEffect for fetching data remains the same
+  // Fetching logic remains the same
   useEffect(() => {
-    // ... (fetch logic unchanged) ...
     if (!playerId) {
-      /* ... */ return;
+      setTotalsData(null);
+      setStatRows([]);
+      setError(null);
+      setIsLoading(false);
+      return;
     }
     const loadData = async () => {
       setIsLoading(true);
       setError(null);
       setTotalsData(null);
-      setCalculatedStats([]);
+      setStatRows([]);
       try {
         const data = await fetchPlayerPerGameTotals(playerId);
         if (data) {
           setTotalsData(data);
         } else {
+          // Set error only if player selected but no data found
           setError("No stats data found for this player.");
           setTotalsData(null);
         }
-      } catch (err) {
-        console.error("Failed...", err);
-        setError("Failed...");
+      } catch (err: any) {
+        console.error("Failed to fetch player totals:", err);
+        setError(`Failed to load stats: ${err.message || "Unknown error"}`);
+        setTotalsData(null);
       } finally {
         setIsLoading(false);
       }
@@ -70,7 +78,7 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({ playerId }) => {
     loadData();
   }, [playerId]);
 
-  // useEffect for calculating stats remains largely the same, just storing the result
+  // Calculation logic populates statRows
   useEffect(() => {
     if (totalsData && totalsData.games_played && totalsData.games_played > 0) {
       const gp = totalsData.games_played;
@@ -87,9 +95,11 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({ playerId }) => {
         { key: "blocked_shots", name: "BLK" },
         { key: "penalty_minutes", name: "PIM" }
       ];
-      const newCalculatedStats = statsToCalculate.map(({ key, name }) => {
-        const totalValue = totalsData[key] ?? 0;
-        const perGameValue = Number(totalValue) / gp;
+
+      const newStatRows = statsToCalculate.map(({ key, name }) => {
+        // Ensure totalValue is treated as a number, default to 0 if null/undefined
+        const totalValue = Number(totalsData[key] ?? 0);
+        const perGameValue = totalValue / gp;
         const per82Value = perGameValue * 82;
         return {
           stat: name,
@@ -97,67 +107,63 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({ playerId }) => {
           per82: formatPaceValue(per82Value)
         };
       });
-      newCalculatedStats.unshift({
+
+      // Add the GP row at the beginning
+      newStatRows.unshift({
         stat: "GP",
-        perGame: gp.toString(),
-        per82: "-"
+        perGame: gp.toString(), // GP per game is just GP
+        per82: "-" // Pace for GP doesn't make sense
       });
-      setCalculatedStats(newCalculatedStats);
-      setError(null); // Clear previous errors if data is now valid
+
+      setStatRows(newStatRows);
+      setError(null); // Clear previous errors
     } else {
-      setCalculatedStats([]);
+      setStatRows([]); // Clear rows if no valid data
+      // Set error only if data was fetched but GP is invalid
       if (
         totalsData &&
-        (!totalsData.games_played || totalsData.games_played <= 0)
+        (!totalsData.games_played || totalsData.games_played <= 0) &&
+        !isLoading
       ) {
         setError("Player has 0 games played.");
-      } else if (!totalsData && !isLoading) {
-        // Don't set an error if not loading and simply no data yet or player cleared
-        // setError("No stats data available.");
       }
+      // Do not set error if simply no data or player cleared
     }
-  }, [totalsData, isLoading]); // Depend on isLoading to potentially clear error when loading starts
-
-  // --- NEW Render Logic for Transposed Table ---
-  const statHeaders = calculatedStats.map((item) => item.stat); // Get ["GP", "G", "A", ...]
+  }, [totalsData, isLoading]); // Added isLoading dependency
 
   return (
+    // Container class remains
     <div className={styles.perGameTableContainer}>
       {isLoading && (
         <div className={styles.loadingMessage}>Loading Stats...</div>
       )}
       {error && <div className={styles.errorMessage}>{error}</div>}
-      {!isLoading && !error && calculatedStats.length === 0 && playerId && (
+      {!isLoading && !error && statRows.length === 0 && playerId && (
         <div className={styles.noDataMessage}>No data available.</div>
       )}
-      {!isLoading && !error && calculatedStats.length > 0 && (
-        // Add a class for specific transposed styling if needed
-        <table className={styles.transposedTable}>
+      {!isLoading && !error && statRows.length > 0 && (
+        // Use a different class for the standard vertical table if needed for styling
+        <table className={styles.verticalStatsTable}>
           <thead>
             <tr>
-              {/* First header cell is empty or 'Metric' */}
-              <th className={styles.metricHeaderCell}>Metric</th>
-              {/* Map stat names (G, A, PTS...) as column headers */}
-              {statHeaders.map((header) => (
-                <th key={header}>{header}</th>
-              ))}
+              {/* Fixed Column Headers */}
+              <th className={styles.metricHeader}>Metric</th>
+              <th className={styles.valueHeader}>Per/GP</th>
+              <th className={styles.valueHeader}>Per/82</th>
             </tr>
           </thead>
           <tbody>
-            {/* Row 1: Per Game */}
-            <tr>
-              <th className={styles.rowHeaderCell}>Per/GP</th>
-              {calculatedStats.map((item) => (
-                <td key={`${item.stat}-perGame`}>{item.perGame}</td>
-              ))}
-            </tr>
-            {/* Row 2: Per 82 */}
-            <tr>
-              <th className={styles.rowHeaderCell}>Per/82</th>
-              {calculatedStats.map((item) => (
-                <td key={`${item.stat}-per82`}>{item.per82}</td>
-              ))}
-            </tr>
+            {/* Map over calculated rows */}
+            {statRows.map((row) => (
+              <tr key={row.stat}>
+                {/* Metric name as row header for accessibility */}
+                <th scope="row" className={styles.metricCell}>
+                  {row.stat}
+                </th>
+                <td className={styles.valueCell}>{row.perGame}</td>
+                <td className={styles.valueCell}>{row.per82}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       )}

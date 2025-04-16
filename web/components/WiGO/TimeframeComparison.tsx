@@ -54,33 +54,37 @@ const TimeframeComparison: React.FC<TimeframeComparisonProps> = ({
 
   return (
     <div className={styles.timeframeContainer}>
-      <select
-        className={styles.timeframeSelect}
-        value={leftValue}
-        onChange={handleLeftChange} // Assign the handler
-        aria-label="Select left timeframe for comparison"
-      >
-        {TIMEFRAME_OPTIONS.map((opt) => (
-          <option key={`left-${opt}`} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
+      <div className={styles.countsTableTitle}>COUNTS</div>
+      <div className={styles.timeframeSelectContainer}>
+        <select
+          className={styles.timeframeSelect}
+          value={leftValue}
+          onChange={handleLeftChange} // Assign the handler
+          aria-label="Select left timeframe for comparison"
+        >
+          {TIMEFRAME_OPTIONS.map((opt) => (
+            <option key={`left-${opt}`} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
 
-      <span className={styles.vsText}>VS.</span>
+        <span className={styles.vsText}>VS.</span>
 
-      <select
-        className={styles.timeframeSelect}
-        value={rightValue}
-        onChange={handleRightChange} // Assign the handler
-        aria-label="Select right timeframe for comparison"
-      >
-        {TIMEFRAME_OPTIONS.map((opt) => (
-          <option key={`right-${opt}`} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
+        <select
+          className={styles.timeframeSelect}
+          value={rightValue}
+          onChange={handleRightChange} // Assign the handler
+          aria-label="Select right timeframe for comparison"
+        >
+          {TIMEFRAME_OPTIONS.map((opt) => (
+            <option key={`right-${opt}`} value={opt}>
+              {opt}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className={styles.countsTableTitle}>RATES</div>
     </div>
   );
 };

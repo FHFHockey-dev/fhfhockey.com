@@ -118,6 +118,9 @@ function RollingAverageChart<T>({
         plugins: {
           legend: {
             display: false
+          },
+          datalabels: {
+            display: false // Explicitly disable the plugin for this chart
           }
         }
       }}

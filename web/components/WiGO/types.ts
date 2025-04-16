@@ -385,3 +385,79 @@ export interface CombinedPlayerStats {
   counts: TableAggregateData[];
   rates: TableAggregateData[];
 }
+
+// PERCENTILE RANKS
+
+export type PercentileStrength = "as" | "es" | "pp" | "pk";
+
+export type OffensePercentileTable =
+  | "nst_percentile_as_offense"
+  | "nst_percentile_es_offense"
+  | "nst_percentile_pp_offense"
+  | "nst_percentile_pk_offense";
+
+export type DefensePercentileTable =
+  | "nst_percentile_as_defense"
+  | "nst_percentile_es_defense"
+  | "nst_percentile_pp_defense"
+  | "nst_percentile_pk_defense";
+
+export interface PlayerPercentileStats {
+  player_id: number;
+  season: string | number; // Type might vary based on table schema
+  gp: number | null;
+  toi: number | null;
+  // Rate Stats (Offense) - Ensure these keys match selected columns
+  goals_per_60: number | null;
+  total_assists_per_60: number | null;
+  total_points_per_60: number | null;
+  shots_per_60: number | null;
+  iscfs_per_60: number | null;
+  i_hdcf_per_60: number | null;
+  ixg_per_60: number | null;
+  icf_per_60: number | null;
+  cf_per_60: number | null;
+  scf_per_60: number | null;
+  oi_hdcf_per_60: number | null;
+  // Percentage Stats (Offense) - Ensure these keys match selected columns
+  cf_pct: number | null;
+  ff_pct: number | null;
+  sf_pct: number | null;
+  gf_pct: number | null;
+  xgf_pct: number | null;
+  scf_pct: number | null;
+  hdcf_pct: number | null;
+  // Add defense stats here if needed, e.g., xga_per_60
+}
+
+// Interface for RAW player stats fetched from DB
+export interface PlayerRawStats {
+  player_id: number;
+  season: string | number;
+  gp: number | null;
+  toi: number | null;
+  goals_per_60: number | null;
+  total_assists_per_60: number | null;
+  total_points_per_60: number | null;
+  shots_per_60: number | null;
+  iscfs_per_60: number | null;
+  i_hdcf_per_60: number | null;
+  ixg_per_60: number | null;
+  icf_per_60: number | null;
+  cf_per_60: number | null;
+  scf_per_60: number | null;
+  oi_hdcf_per_60: number | null;
+  cf_pct: number | null;
+  ff_pct: number | null;
+  sf_pct: number | null;
+  gf_pct: number | null;
+  xgf_pct: number | null;
+  scf_pct: number | null;
+  hdcf_pct: number | null;
+  // Add other fields as needed
+}
+
+export interface PlayerRawStats extends PlayerPercentileStats {
+  // Add any other raw stats needed from defense table if not already included
+  // Example: xga_per_60?: number | null;
+}

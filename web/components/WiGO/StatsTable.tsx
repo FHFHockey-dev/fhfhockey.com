@@ -91,13 +91,13 @@ const StatsTable: React.FC<StatsTableProps> = ({
         </colgroup>
         <thead>
           {/* Title label row */}
-          <tr
+          {/* <tr
             className={
               title === "COUNTS" ? styles.countsLabel : styles.ratesLabel
             }
           >
             <th colSpan={columnOrder.length}>{title}</th>
-          </tr>
+          </tr> */}
           {/* Column headers */}
           <tr>
             {columnOrder.map((key) => (

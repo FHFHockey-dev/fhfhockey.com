@@ -6,7 +6,7 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend,
+  Legend
 } from "chart.js";
 import { useQuery } from "@tanstack/react-query";
 import supabase from "lib/supabase/client";
@@ -33,12 +33,12 @@ export default function GameScoreLineChart({ playerId }: GameScoreLineChart) {
       const { data } = await supabase
         .rpc("get_skater_game_score_by_limit", {
           player_id: queryKey[0],
-          num_games: 20,
+          num_games: 20
         })
         .order("game_date", { ascending: true })
         .throwOnError();
       return data;
-    },
+    }
   });
 
   return (
