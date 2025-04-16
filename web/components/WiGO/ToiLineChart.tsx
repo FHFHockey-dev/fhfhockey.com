@@ -234,13 +234,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
   };
 
   return (
-    <div
-      style={{
-        position: "relative",
-        width: "100%",
-        height: "85%"
-      }}
-    >
+    <div className={styles.chartContainer}>
       <div
         className={styles.ratesLabel}
         style={{
@@ -254,31 +248,43 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
       >
         <h3 style={{ margin: 0, fontSize: 12, fontWeight: 700 }}>TOI</h3>
       </div>
-      {isLoading && (
-        <div style={{ color: "#ccc", textAlign: "center", paddingTop: "20px" }}>
-          Loading Chart...
-        </div>
-      )}
-      {error && (
-        <div
-          style={{ color: "#ff6b6b", textAlign: "center", paddingTop: "20px" }}
-        >
-          Error: {error}
-        </div>
-      )}
-      {!isLoading && !error && gameLogData.length === 0 && playerId && (
-        <div style={{ color: "#aaa", textAlign: "center", paddingTop: "20px" }}>
-          No Time On Ice data available.
-        </div>
-      )}
-      {!isLoading && !error && !playerId && (
-        <div style={{ color: "#aaa", textAlign: "center", paddingTop: "20px" }}>
-          Select a player to view chart.
-        </div>
-      )}
-      {!isLoading && !error && gameLogData.length > 0 && (
-        <Line ref={chartRef} options={chartOptions} data={chartData} />
-      )}
+      <div className={styles.chartCanvasContainer}>
+        {isLoading && (
+          <div
+            style={{ color: "#ccc", textAlign: "center", paddingTop: "20px" }}
+          >
+            Loading Chart...
+          </div>
+        )}
+        {error && (
+          <div
+            style={{
+              color: "#ff6b6b",
+              textAlign: "center",
+              paddingTop: "20px"
+            }}
+          >
+            Error: {error}
+          </div>
+        )}
+        {!isLoading && !error && gameLogData.length === 0 && playerId && (
+          <div
+            style={{ color: "#aaa", textAlign: "center", paddingTop: "20px" }}
+          >
+            No Time On Ice data available.
+          </div>
+        )}
+        {!isLoading && !error && !playerId && (
+          <div
+            style={{ color: "#aaa", textAlign: "center", paddingTop: "20px" }}
+          >
+            Select a player to view chart.
+          </div>
+        )}
+        {!isLoading && !error && gameLogData.length > 0 && (
+          <Line ref={chartRef} options={chartOptions} data={chartData} />
+        )}
+      </div>
     </div>
   );
 };

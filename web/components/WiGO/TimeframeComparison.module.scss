@@ -1,37 +1,56 @@
-// /components/WiGO/TimeframeComparison.module.scss
+/* /components/WiGO/TimeframeComparison.module.scss */
 @use "sass:color";
 @use "sass:math";
-@use "styles/vars" as v;
+@use "styles/vars" as v; // Use theme variables
 
 .timeframeContainer {
   display: flex;
   align-items: center;
-  justify-content: center;
-  height: 100%;
-  padding: 4px;
-  gap: 8px;
-  background-color: v.$background-dark;
+  justify-content: center; // Center horizontally
+  width: 100%; // Fill the wrapper
+  padding: v.$space-xs 0; // Reduced vertical padding
+  gap: v.$space-md; // Adjusted gap
+  // background-color: v.$background-dark; // Let wrapper handle background now
 }
 
 .timeframeSelect {
-  background-color: v.$background-medium;
-  color: #fff;
-  border: 1px solid #07aae2;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: "Roboto Condensed", sans-serif;
-  font-size: 14px;
+  // Inherit styles from wigoCharts.module.scss for consistency
+  // Or redefine here using variables:
+  appearance: none;
+  background-color: v.$background-light;
+  border: 1px solid v.$border-color-secondary;
+  border-radius: v.$border-radius-sm;
+  padding: v.$space-xs v.$space-lg v.$space-xs v.$space-sm; // Compact padding
+  font-size: v.$font-size-small; // Slightly smaller font
+  color: v.$text-color-primary;
+  font-family: v.$font-family-primary;
+  cursor: pointer;
+  min-width: 70px; // Reduced min-width
+  background-image: linear-gradient(
+      45deg,
+      transparent 50%,
+      v.$text-color-secondary 50%
+    ),
+    linear-gradient(135deg, v.$text-color-secondary 50%, transparent 50%);
+  background-position: calc(100% - (v.$space-xs * 1.5)) center,
+    calc(100% - (v.$space-xs * 2.5)) center; // Adjust arrow position slightly
+  background-size: 4px 4px, 4px 4px; // Smaller arrow
+  background-repeat: no-repeat;
+  transition: border-color v.$transition-duration v.$transition-easing,
+    box-shadow v.$transition-duration v.$transition-easing;
 
   &:focus {
     outline: none;
-    border-color: #07aae2;
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.3);
   }
 }
 
 .vsText {
-  color: #07aae2;
-  font-weight: 900;
-  font-family: "Roboto Condensed", sans-serif;
-  font-size: 16px;
-  margin: 0 4px;
+  color: v.$text-color-secondary; // More subtle VS text
+  font-weight: 600; // Less bold
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-small; // Smaller font size
+  margin: 0 v.$space-xs; // Reduced margin
+  flex-shrink: 0; // Prevent VS text from shrinking
 }

@@ -1,63 +1,104 @@
-/* \web\components\WiGO\NameSearchBar.module.scss */
+/* /web/components/WiGO/NameSearchBar.module.scss */
+@use "styles/vars" as v; // Import variables
 
 .searchBarContainer {
   position: relative;
-  width: 50%;
+  width: 100%;
+  height: 100%; // Fill the parent container (.nameSearchBarContainer)
 }
 
 .searchInput {
   width: 100%;
   height: 100%;
-  padding: 8px 12px;
-  border: 2px solid #808080;
-  font-size: 16px;
+  padding: v.$space-sm v.$space-md; // Use spacing variables
+  border: 1px solid v.$border-color-secondary; // Use theme border color
+  font-size: v.$font-size-base; // Use base font size
   box-sizing: border-box;
-  background-color: #606060;
-  border-radius: 6px 6px 0px 0px;
-  font-family: roboto condensed, sans-serif;
-}
+  background-color: v.$background-light; // Theme background
+  border-radius: v.$border-radius-sm; // Theme border radius
+  font-family: v.$font-family-primary; // Theme font
+  color: v.$text-color-primary; // Theme text color
+  transition: border-color v.$transition-duration v.$transition-easing,
+    box-shadow v.$transition-duration v.$transition-easing;
 
-.searchInput:focus {
-  outline: none;
-  color: #fff;
-  border-color: #07aae2;
+  &::placeholder {
+    color: v.$text-color-secondary;
+    opacity: 0.7;
+  }
+
+  // Focus state like GameGrid inputs
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.3);
+  }
 }
 
 .dropdown {
   position: absolute;
-  color: #fff;
-  top: 100%;
+  top: calc(100% + 2px); // Position below input with a small gap
   left: 0;
   right: 0;
-  background-color: #303030;
-  border: 1px solid #202020;
-  border-top: none;
-  max-height: 200px;
+  background-color: v.$background-dark; // Darker background for dropdown
+  border: 1px solid v.$border-color-primary; // Use primary border
+  border-top: none; // Remove top border as it connects to input area
+  border-radius: 0 0 v.$border-radius-sm v.$border-radius-sm; // Match input radius at bottom
+  max-height: 250px; // Adjust max height if needed
   overflow-y: auto;
-  z-index: 1000;
-  color: #a9a9a9;
-  font-weight: 900;
-  font-family: roboto condensed, sans-serif;
+  z-index: 1000; // Ensure dropdown is on top
+  font-family: v.$font-family-primary;
 
+  // Scrollbar styling using theme colors
   &::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
   }
-
   &::-webkit-scrollbar-thumb {
-    background-color: #07aae2;
-    border-radius: 10px;
+    background-color: v.$primary-color;
+    border-radius: 3px;
   }
-
   &::-webkit-scrollbar-track {
-    background-color: #141414;
+    background-color: v.$background-medium;
   }
+  // Add Firefox scrollbar styles if needed
+  scrollbar-width: thin;
+  scrollbar-color: v.$primary-color v.$background-medium;
 }
 
 .dropdownItem {
-  padding: 8px 12px;
+  padding: v.$space-sm v.$space-md; // Use spacing variables
   cursor: pointer;
+  color: v.$text-color-secondary; // Secondary text color for items
+  transition: background-color v.$transition-duration v.$transition-easing,
+    color v.$transition-duration v.$transition-easing;
+  white-space: nowrap; // Prevent wrapping
+
+  &:hover,
+  &:focus {
+    background-color: v.$background-light; // Hover background
+    color: v.$text-color-primary; // Hover text color
+    outline: none;
+  }
 }
 
-.dropdownItem:hover {
-  background-color: #404040;
+.noResults {
+  padding: v.$space-sm v.$space-md;
+  color: v.$text-color-secondary;
+  font-style: italic;
+  text-align: center;
+}
+
+// Loading/Error indicators positioned within the search input area
+.loading,
+.error {
+  position: absolute;
+  right: v.$space-md;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: v.$font-size-small;
+  color: v.$text-color-secondary;
+  pointer-events: none; // Don't interfere with input clicks
+}
+
+.error {
+  color: #ff6b6b; // Standard error color
 }

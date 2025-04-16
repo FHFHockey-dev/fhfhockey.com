@@ -1,100 +1,114 @@
 // components/WiGO/PerGameStatsTable.module.scss
-@use "styles/vars" as v; // Adjust path if needed
+/* /styles/wigoCharts.module.scss */
+@use "sass:color";
+@use "styles/vars" as v; // Import variables from vars.scss
+@use "sass:math";
+@import url("https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap");
 
 .perGameTableContainer {
   width: 100%;
   height: 100%;
-  overflow: auto; // Add scroll if content overflows
-  background-color: v.$background-medium; // Match parent background
-  color: #ffffff;
-  font-family: "Roboto Condensed", sans-serif;
-  display: flex; // Use flex for centering messages
-  flex-direction: column; // Stack table/messages vertically
-  // Add padding if needed, or let the grid gap handle spacing
-  // padding: 5px;
+  overflow: hidden; // Prevent scrollbars on the container itself
+  background-color: v.$background-medium;
+  color: v.$text-color-primary;
+  font-family: v.$font-family-primary;
+  display: flex;
+  flex-direction: column;
+  padding: v.$space-xs; // Add slight padding around table
+  box-sizing: border-box;
 
-  table {
-    width: 100%;
-    border-collapse: collapse; // Ensure borders connect cleanly
-    flex-grow: 1; // Allow table to take available space
+  // Add overflow-x specifically for the table if columns are too wide
+  overflow-x: auto;
+  &::-webkit-scrollbar {
+    height: 4px;
+  } // Slimmer horizontal scrollbar
+  &::-webkit-scrollbar-thumb {
+    background-color: v.$primary-color;
+    border-radius: 2px;
+  }
+  &::-webkit-scrollbar-track {
+    background-color: v.$background-medium;
+  }
+  scrollbar-width: thin;
+  scrollbar-color: v.$primary-color v.$background-medium;
+
+  table.transposedTable {
+    // Target the specific table class
+    width: 100%; // Allow table to potentially exceed container width if needed
+    border-collapse: collapse;
+    // height: 100%; // Height determined by content rows now
 
     th,
     td {
-      padding: 4px 6px; // Adjust padding as needed
+      padding: v.$space-xs v.$space-sm; // Consistent padding
       text-align: center;
-      font-size: 11px; // Slightly smaller font might fit better
-      border: 1px solid #606060; // Match other tables' internal borders
-      white-space: nowrap; // Prevent text wrapping
+      font-size: v.$font-size-small * 0.9; // Keep font size potentially small
+      border: 1px solid v.$border-color-secondary; // Use secondary for internal lines
+      white-space: nowrap;
     }
 
-    th {
-      background-color: #1d3239; // Match header style
-      border: 1px solid #888; // Slightly lighter border for header? Or match td
-      position: sticky; // Keep header visible on scroll
-      top: 0; // Stick to the top
-      z-index: 1; // Ensure header stays above scrolling content
+    thead th {
+      // Column Headers (GP, G, A...)
+      background-color: v.$background-dark;
+      color: v.$text-color-secondary;
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 1; // Sticky header row
+      border-bottom: 2px solid v.$secondary-color; // Stronger bottom border
     }
 
-    // First column (Stat names) - right aligned
-    td:first-child {
-      text-align: right;
-      width: 40%; // Adjust width for stat names
-      // border-left: #fff 2px solid; // Optional outer border like others
+    thead th.metricHeaderCell, // First header cell (top-left corner)
+    tbody th.rowHeaderCell {
+      // Row Headers (Per/GP, Per/82)
+      background-color: v.$background-dark;
+      color: v.$text-color-secondary;
+      font-weight: 600;
+      text-align: left;
+      padding-left: v.$space-md;
+      position: sticky;
+      left: 0;
+      z-index: 1; // Make row headers sticky
+      border-right: 2px solid v.$secondary-color; // Stronger right border
     }
 
-    // Last column (Optional outer border)
-    // td:last-child {
-    //   border-right: #fff 2px solid;
-    // }
-
-    // Alternating row colors
-    tr:nth-child(even) {
-      background-color: #404040;
+    tbody th.rowHeaderCell {
+      // Specific styling for Per/GP, Per/82 headers
+      background-color: v.$background-medium; // Slightly different background
+      color: v.$primary-color; // Use primary color
+      font-size: v.$font-size-small;
     }
 
-    tr:nth-child(odd) {
-      background-color: #303030;
+    thead th.metricHeaderCell {
+      // Style the very top-left cell if needed
+      z-index: 2; // Make sure it's above sticky row headers
     }
 
-    // Highlight GP Row
-    tr.gpRowHighlight {
-      background-color: #202020; // Darker background
-      color: #07aae2; // Accent color for text
-      font-weight: bold;
+    tbody tr {
+      // Style the data rows
+      transition: background-color v.$transition-duration v.$transition-easing;
+      &:nth-child(even) {
+        background-color: v.$background-light;
+      }
+      &:nth-child(odd) {
+        background-color: v.$background-dark;
+      }
+      &:hover {
+        background-color: color.scale(v.$primary-color, $alpha: -70%);
+      }
     }
 
-    // Optional: Bottom border for the last row
-    // tr:last-child td {
-    //   border-bottom: #fff 2px solid;
-    // }
-
-    tr:hover {
-      background-color: #555; // Hover effect
+    tbody td {
+      // Style data cells
+      color: v.$text-color-primary;
     }
   }
 
-  // Centered messages for loading/error/no data states
+  // Keep message styles
   .loadingMessage,
   .errorMessage,
   .noDataMessage,
   .noPlayerMessage {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    width: 100%;
-    height: 100%; // Take full height of container
-    font-size: 14px;
-    padding: 10px;
-    flex-grow: 1; // Ensure it takes space if table isn't rendered
-  }
-
-  .errorMessage {
-    color: #ff6b6b; // Red for errors
-  }
-
-  .noDataMessage,
-  .noPlayerMessage {
-    color: #aaa; // Grey for informational messages
+    // ... (styles remain the same) ...
   }
 }

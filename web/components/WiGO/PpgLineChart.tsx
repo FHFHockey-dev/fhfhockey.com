@@ -23,7 +23,7 @@ import {
 } from "utils/fetchWigoPlayerStats"; // Adjust path
 import { formatDateToMMDD } from "utils/formattingUtils"; // Adjust path
 import { calculateRollingAverage } from "utils/formattingUtils"; // Adjust path
-import chartStyles from "styles/wigoCharts.module.scss"; // Import shared styles
+import styles from "styles/wigoCharts.module.scss"; // Import shared styles
 
 // Register necessary Chart.js components
 ChartJS.register(
@@ -284,9 +284,9 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
 
   return (
     // Use shared layout classes
-    <div className={chartStyles.chartContainer}>
+    <div className={styles.chartContainer}>
       <div
-        className={chartStyles.ratesLabel}
+        className={styles.ratesLabel}
         style={{
           backgroundColor: "#1d3239",
           // gridRow: "1/2", // Not needed with gridTemplateRows
@@ -300,7 +300,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
           Points / Game
         </h3>
       </div>
-      <div className={chartStyles.chartCanvasContainer}>
+      <div className={styles.chartCanvasContainer}>
         {/* Loading/Error/Chart rendering logic */}
         {isLoading && (
           <div

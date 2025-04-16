@@ -1,100 +1,407 @@
+/* /styles/wigoCharts.module.scss */
 @use "sass:color";
-@use "styles/vars" as v;
+@use "styles/vars" as v; // Import variables from vars.scss
 @use "sass:math";
 @import url("https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap");
 
-/* 
-  This code is based on your updated layout:
-    - 36 columns x 38 rows
-    - 1px column/row gap
-    - 100% width, 85% height
-    - Removed old classes: .doughnutCharts, .barChart, .onIceLabel, etc.
-    - Uses .offenseRatings, .defenseRatings, etc.
-    - Now modifies the .playerHeadshot to have a flexbox with left and right sides,
-      plus the TeamNameSVG absolutely positioned behind them.
-*/
+/* =================== Main Dashboard Layout =================== */
 
-.wigoChartBorder {
-  /* This parent container is bigger than its child by padding on all sides */
-  @include v.component-wrapper;
-
-  // background-color: #404040;
+.wigoDashboardContainer {
+  @include v.component-wrapper; // Use wrapper for consistent styling
   width: 95%;
-  height: 85vh;
-  margin: 20px auto 20px auto; /* 25px margin at the top, centers the parent in the browser */
-  // box-sizing: border-box; /* ensures padding does not add to total width/height */
-  // border-radius: 16px;
+  max-width: 2000px; // Consider aligning max-width with inspiration? (e.g., 1600px)
+  height: 90vh; // Main constraint
+  margin: v.$space-xl auto; // Use variable for margin
+  display: flex;
 }
 
-.wigoChart {
-  /* Child takes the full remaining space inside .wigoChartBorder */
-  width: 100%;
-  height: 100%;
-  background-color: v.$background-medium;
-  border: 2px solid v.$background-dark;
-  border-radius: 8px;
+.wigoDashboardContent {
+  flex-grow: 1;
+  background-color: v.$background-dark; // Keep overall dark bg if needed, or remove if all children are wrapped
+  border-radius: v.$border-radius;
+  overflow: hidden; // Keep hidden
 
+  // --- Grid Definition ---
   display: grid;
   grid-template-columns: repeat(36, 1fr);
   grid-template-rows: repeat(38, 1fr);
-  grid-column-gap: 1px;
-  grid-row-gap: 1px;
-  margin: 0; /* remove the extra margin */
+  // Use variables for gaps if defined, otherwise keep fixed px
+  grid-column-gap: v.$space-xs; // Example: Use smallest space variable for gap
+  grid-row-gap: v.$space-xs; // Example: Use smallest space variable for gap
+  // Remove padding, use gaps instead
   padding: 0;
-
-  font-family: "Roboto Condensed", sans-serif;
-  color: #ffffff;
 }
 
-/* =================== Layout Areas =================== */
+/* =================== Base Styles for Grid Items (Applied Selectively) =================== */
 
-.nameSearchBar {
+// Mixin for common internal flex setup
+@mixin internal-flex-column {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%; // Allow items to fill their grid area
+  overflow: hidden; // Default overflow
+}
+
+/* =================== Specific Container Styles =================== */
+
+/* --- Top Row --- */
+.nameSearchBarContainer {
+  // --- Does NOT use component-wrapper ---
   grid-area: 1 / 1 / 3 / 10;
+  // Apply specific styles directly
   background-color: v.$background-dark;
-  border-bottom: #404040 3px solid;
-  border-radius: 8px 8px 0 0;
+  border-bottom: 3px solid #404040; // Can use v.$border-color-primary if it matches
+  border-radius: v.$border-radius-sm v.$border-radius-sm 0 0; // Example: Use small radius
+  padding: 0; // No padding needed usually for search bars
+  overflow: visible !important; // MUST override for dropdown
+  z-index: 10; // Ensure search is on top
+  // Internal layout
   display: flex;
   align-items: center;
-  justify-content: space-between;
-
-  .selectedPlayerName {
-    margin-right: 20px;
-    color: #07aae2;
-    font-size: 24px;
-    font-variant: small-caps;
-    text-transform: lowercase;
-    letter-spacing: 2.15px;
-    font-weight: 900;
+  justify-content: space-between; // Or center, depending on NameSearchBar design
+  > div {
+    // Target the actual NameSearchBar component inside
+    width: 100%;
+    height: 100%;
   }
 }
 
-/* 
-  Updated .playerHeadshot to incorporate a background TeamNameSVG 
-  plus a two-column flex layout: left for headshot, right for future team logo 
-*/
-.playerHeadshot {
-  grid-area: 3 / 1 / 12 / 10;
-  position: relative;
-  overflow: hidden; /* The entire .playerHeadshot is our bounding box */
-  background-color: var(--secondary-color);
-  border: 1px solid #07aae2;
+.timeframeComparisonWrapper {
+  // --- Uses component-wrapper (or custom equivalent) ---
+  grid-area: 1 / 10 / 2 / 28;
+  // Option 1: Use wrapper + overrides
+  // @include v.component-wrapper;
+  // border: 1px solid #07aae2; // Override border
+  // padding: v.$space-xs v.$space-md; // Override padding
 
-  .teamLogo span {
-    overflow: visible !important;
-  }
-
-  .teamLogo img {
+  // Option 2: Apply custom styles directly (simpler if wrapper doesn't fit well)
+  background-color: v.$background-dark; // Match search bg?
+  border-top: 2px solid v.$background-light; // Use variable
+  border-left: 2px solid v.$background-light; // Use variable
+  border-right: 2px solid v.$background-light; // Use variable
+  border-top-left-radius: v.$border-radius-sm;
+  border-top-right-radius: v.$border-radius-sm;
+  padding: v.$space-xs v.$space-md;
+  display: flex;
+  align-items: center; // Vertically center content
+  overflow: hidden;
+  > div {
+    // Target the actual TimeframeComparison component
     width: 100%;
-    height: 100%;
-    object-fit: contain;
-    -webkit-filter: drop-shadow(2px 2px 0 white) drop-shadow(-2px 2px 0 white)
-      drop-shadow(2px -2px 0 white) drop-shadow(-2px -2px 0 white);
+  }
+}
 
-    filter: drop-shadow(2px 2px 0 white) drop-shadow(-2px 2px 0 white)
-      drop-shadow(2px -2px 0 white) drop-shadow(-2px -2px 0 white);
+// --- Grid Area Definition ---
+.consistencyRatingContainer {
+  grid-area: 1 / 28 / 11 / 37; // Example: Top right area
+  border: 1px solid #555;
+  background-color: v.$background-dark;
+  overflow: hidden; // Important
+
+  // Apply shared container styles
+  .chartContainer {
+    display: grid;
+    grid-template-rows: auto 1fr; // Title auto, content takes rest
+    height: 100%;
+    width: 100%;
+
+    .chartTitle {
+      @extend .ratesLabel; // Inherit base title style
+      background-color: #1d3239;
+      padding: 3px 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-bottom: 1px solid #444;
+
+      h3 {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 2px;
+      }
+    }
+
+    // --- New styles for Consistency Layout ---
+    .consistencyContent {
+      display: flex; // Arrange chart and list side-by-side
+      height: 100%;
+      width: 100%;
+      padding: v.$space-xl;
+      box-sizing: border-box;
+      gap: 10px; // Space between chart and list
+      overflow: hidden; // Prevent internal scrollbars if possible
+    }
+
+    .consistencyChartArea {
+      flex: 1 1 65%; // Let chart take slightly more space, allow shrinking
+      position: relative; // Needed for chart.js canvas responsiveness
+      min-width: 100px; // Prevent collapsing too small
+    }
+
+    .consistencyListArea {
+      flex: 1 1 35%; // Let list take remaining space
+      overflow-y: auto; // Allow scrolling if list is long
+      font-size: 11px;
+      padding-right: 5px; // Padding on the right of the list
+      display: flex;
+      flex-direction: column; // Stack items vertically
+      justify-content: center;
+      align-items: center; // Align items to the left
+
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        display: flex;
+        flex-direction: column; // Stack items vertically
+        justify-content: space-evenly;
+        align-items: flex-start; // Center items
+      }
+    }
+
+    .consistencyItem {
+      display: flex;
+      // <<< Add align-items for vertical centering >>>
+      align-items: center;
+      padding: 3px 0;
+      border-bottom: 1px solid #3a3a3a;
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+
+    // --- Style for the Color Swatch ---
+    .consistencyColorSwatch {
+      display: inline-block; // Allow setting width/height/margins
+      width: 10px; // Adjust size as needed
+      height: 10px; // Adjust size as needed
+      border-radius: 50%; // Make it a circle (optional)
+      margin-right: 8px; // Space between swatch and label
+      flex-shrink: 0; // Prevent swatch from shrinking
+      background-color: #555; // Default/fallback color (for Cardio or items without color)
+      border: 1px solid #777; // Optional subtle border
+    }
+
+    .consistencyLabel {
+      color: #ccc;
+      margin-right: 10px;
+      white-space: nowrap; // Prevent wrapping
+    }
+
+    .consistencyValue {
+      color: #fff;
+      font-weight: bold;
+      margin-left: auto;
+      padding-left: 10px;
+    }
+
+    .consistencyCount {
+      color: #888;
+      font-size: 10px;
+      margin-left: 5px;
+      white-space: nowrap; // Prevent wrapping
+    }
+
+    // --- End Consistency Specific Styles ---
+
+    // General placeholders (can be reused)
+    .chartLoadingPlaceholder,
+    .chartErrorPlaceholder {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      width: 100%;
+      color: #aaa;
+      font-size: 12px;
+      text-align: center;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    .chartErrorPlaceholder {
+      color: #ff6b6b;
+    }
+  } // End .chartContainer
+} // End .consistencyRatingContainer
+
+/* --- Left Column --- */
+.playerHeaderContainer {
+  // --- Does NOT use component-wrapper (custom look) ---
+  grid-area: 3 / 1 / 12 / 10;
+  position: relative; // Keep for SVG positioning
+  z-index: 1; // Below search
+  padding: 0;
+  border: 1px solid v.$secondary-color; // Use variable
+  background-color: var(--secondary-color); // Use CSS var for dynamic color
+  border-radius: 0 0 v.$border-radius-sm v.$border-radius-sm; // Example radius
+  overflow: hidden;
+  // PlayerHeader component should handle internal layout
+}
+
+.percentileChartContainer {
+  // --- Uses component-wrapper ---
+  grid-area: 12 / 1 / 24 / 7;
+  @include internal-flex-column; // Use mixin for internal chart layout (title + canvas)
+  border: 1px solid v.$secondary-color;
+  padding: 0; // Remove padding, handled by internal elements (.chartTitle, .chartCanvasContainer)
+}
+
+.paceTableContainer {
+  // --- Uses component-wrapper ---
+  grid-area: 12 / 7 / 24 / 10;
+  @include internal-flex-column;
+  border: 1px solid v.$secondary-color;
+  // Center placeholder text
+  align-items: center;
+  justify-content: center;
+  padding: v.$space-md; // Add padding for placeholder text
+  // Placeholder styles
+  color: v.$text-color-secondary;
+  font-style: italic;
+  font-size: v.$font-size-small;
+  text-align: center;
+}
+
+.rateStatBarPercentilesContainer {
+  // --- Uses component-wrapper ---
+  grid-area: 24 / 1 / 30 / 10;
+  @include internal-flex-column;
+  border: 1px solid v.$secondary-color;
+  // Center placeholder text
+  align-items: center;
+  justify-content: center;
+  padding: v.$space-md;
+  // Placeholder styles
+  color: v.$text-color-secondary;
+  font-style: italic;
+  font-size: v.$font-size-small;
+  text-align: center;
+}
+
+/* --- Center Columns (Tables) --- */
+.countsTableContainer {
+  // --- Uses component-wrapper (provides frame, overflow is auto) ---
+  grid-area: 2 / 10 / 30 / 19;
+  @include internal-flex-column; // Use mixin
+  // Override specific wrapper styles
+  padding: 0; // Table handles internal padding
+  border-top-left-radius: v.$border-radius-sm; // Keep specific radius
+  background-color: v.$background-dark; // Ensure bg matches theme
+  overflow: auto; // Allow table scrolling
+}
+
+.ratesTableContainer {
+  // --- Uses component-wrapper ---
+  grid-area: 2 / 19 / 23 / 28;
+  @include internal-flex-column;
+  // Override specific wrapper styles
+  padding: 0;
+  border-top-right-radius: v.$border-radius-sm; // Keep specific radius
+  background-color: v.$background-dark;
+  overflow: auto;
+}
+
+.perGameStatsContainer {
+  // --- Uses component-wrapper ---
+  grid-area: 23 / 19 / 30 / 28;
+  @include internal-flex-column;
+  border: 1px solid v.$secondary-color;
+  padding: 0; // Let table inside handle padding/scrollbars
+  overflow: hidden; // Container hides overflow, table handles scroll
+  // Styles for table *inside* are below (.transposedTable)
+}
+
+/* --- Right Column --- */
+
+.ratingsContainer {
+  // --- Container for the 3 ratings - Does NOT use component-wrapper ---
+  grid-area: 11 / 28 / 21 / 37;
+  display: grid; // Keep using grid for precise placement relative to main grid
+  // Replicate columns 28-36 -> 9 columns total
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: 1fr; // Single row
+  gap: v.$space-sm; // Gap between rating boxes
+  padding: 0;
+  border: none;
+  background: none; // Transparent wrapper
+  overflow: hidden;
+
+  // Style the individual rating boxes *within* this container
+  > div {
+    // Apply wrapper to inner boxes
+    @include internal-flex-column;
+    border: 1px solid v.$secondary-color; // Example border
+    // Center placeholder text
+    align-items: center;
+    justify-content: center;
+    // Placeholder styles
+    color: v.$text-color-secondary;
+    font-style: italic;
+    font-size: v.$font-size-small;
+    text-align: center;
   }
 
-  /* TEAM NAME SVG behind everything */
+  // Place the individual rating boxes using grid columns relative to this container
+  .offenseRatingsContainer {
+    grid-column: 1 / 4; // Spans first 3 columns (equiv. 28, 29, 30)
+  }
+  .overallRatingsContainer {
+    grid-column: 4 / 7; // Spans middle 3 columns (equiv. 31, 32, 33)
+  }
+  .defenseRatingsContainer {
+    grid-column: 7 / 10; // Spans last 3 columns (equiv. 34, 35, 36)
+  }
+}
+
+.opponentLogContainer {
+  // --- Uses component-wrapper ---
+  grid-area: 21 / 28 / 30 / 37;
+  @include internal-flex-column;
+  border: 1px solid v.$secondary-color;
+  // Center placeholder text
+  align-items: center;
+  justify-content: center;
+  padding: v.$space-md;
+  // Placeholder styles
+  color: v.$text-color-secondary;
+  font-style: italic;
+  font-size: v.$font-size-small;
+  text-align: center;
+}
+
+/* --- Bottom Row (Charts) --- */
+.toiChartContainer,
+.ppgChartContainer,
+.gameScoreContainer {
+  // --- All use component-wrapper ---
+  @include internal-flex-column; // Use mixin for internal chart layout (title + canvas)
+  border: 1px solid v.$secondary-color;
+  padding: 0; // Remove padding, handled by internal elements
+}
+// Assign grid areas
+.toiChartContainer {
+  grid-area: 30 / 1 / 39 / 13;
+}
+.ppgChartContainer {
+  grid-area: 30 / 13 / 39 / 25;
+}
+.gameScoreContainer {
+  grid-area: 30 / 25 / 39 / 37;
+}
+
+/* =================== Player Header Internal Styles =================== */
+// These styles apply *within* the .playerHeaderContainer
+// Keep these largely as they were, ensuring they work within the container size
+.playerHeadshot {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  background-color: transparent; // Ensure container bg shows through if needed
+
   .teamNameSVG {
     position: absolute;
     top: 0;
@@ -102,391 +409,386 @@
     z-index: 0;
     width: 100%;
     height: 100%;
-    background-color: var(--primary-color);
+    background-color: var(--primary-color); // Use CSS var
     display: block;
   }
-
-  /* We'll treat the "halves" as absolutely positioned boxes. */
   .headshotContainer {
     position: relative;
+    z-index: 1;
     width: 100%;
     height: 100%;
-    z-index: 1; /* Above the SVG */
+    display: flex;
   }
 
-  /* LEFT SIDE: big enough to let the headshot spill over */
+  // Ensure sizes use percentages or are constrained by container if needed
   .leftSide {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 50%; /* or 50%, or 45%, etc. */
-    height: 100%;
-    overflow: visible;
-
-    /* The actual headshot is absolutely positioned again, 
-       so we can make it bigger and shift it around if needed. */
-    .headshot {
-      position: absolute;
-      width: 110%; /* bigger than 100% so it can spill out */
-      left: -5%; /* negative offset draws it into the right side */
-      top: 0;
-      bottom: 0;
-      margin: auto; /* if you want it vertically centered */
-
-      .headshotImage {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        z-index: 0;
-        filter: drop-shadow(var(--secondary-color) 0px 0px 70px);
-      }
-    }
-  }
-
-  /* RIGHT SIDE: 
-     We simply position it on the right. The headshot from the left can overlap this box. 
-  */
-  .rightSide {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 50%; /* second half of the container */
-    height: 100%;
-    overflow: visible;
+    flex-basis: 50%;
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+  .headshot {
+    position: relative; // Keep relative for potential adjustments
+    width: 110%; // Example: Use percentage for responsiveness
+    height: 110%; // Example: Use percentage
+    span {
+      overflow: visible !important; // Override any internal styles
+    }
+    transform: translateX(15%) translateY(10%); // Re-evaluate if needed
+  }
+  .headshotImage {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(1px 1px 5px rgba(0, 0, 0));
+    overflow: visible !important; // Override any internal styles
+  }
+  img[alt*="Placeholder"] {
+    outline: 3px solid v.$border-color-primary;
+    border-radius: 50%;
+  }
+  .rightSide {
+    flex-basis: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding-right: v.$space-xs;
+  }
+  .teamLogo {
+    span {
+      overflow: visible !important;
+    }
 
-    .teamLogo {
-      width: 90%;
-      height: 90%;
-      filter: drop-shadow(var(--secondary-color) 0px 0px 70px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #bbb;
-      font-size: 14px;
+    width: 100%;
+    height: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    filter: drop-shadow(1px 1px 2px rgba(255, 255, 255, 0.2));
+
+    img {
+      display: block;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      // Consider simplifying complex filter if performance is an issue
+      filter: drop-shadow(2px 2px 0 white) drop-shadow(-2px 2px 0 white)
+        drop-shadow(2px -2px 0 white) drop-shadow(-2px -2px 0 white);
     }
   }
 }
 
-.offenseRatings {
-  grid-area: 11 / 28 / 21 / 31;
-  border: 1px solid #07aae2;
+/* =================== Table Styling (COUNTS / RATES / PER GAME) =================== */
+// Base styles applied via mixin in component-specific rules below
+@mixin stats-table-common {
+  border-collapse: collapse; // Crucial for borders and sticky headers
+  table-layout: fixed; // Important for performance and column control
+  width: 100%; // Fill container width
+  height: 100%; // Fill container height
+
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 2; // Above body
+    background-color: v.$background-dark; // Ensure header bg doesn't become transparent
+
+    tr th {
+      background-color: v.$background-dark; // Inherit dark background
+      color: v.$text-color-secondary;
+      font-weight: 600;
+      font-size: v.$font-size-small * 0.85;
+      padding: v.$space-xs * 0.8 v.$space-sm * 0.8;
+      border-bottom: 2px solid v.$secondary-color;
+      border-right: v.$border-subtle;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      white-space: nowrap; // Keep headers nowrap
+      text-align: center; // Default center align
+
+      &:last-child {
+        border-right: none;
+      }
+    }
+  }
+
+  tbody {
+    tr {
+      border-bottom: v.$border-subtle;
+      transition: background-color v.$transition-duration v.$transition-easing;
+      &:nth-child(even) {
+        background-color: v.$background-light;
+      }
+      &:nth-child(odd) {
+        background-color: v.$background-dark;
+      }
+      &:last-child {
+        border-bottom: none;
+      }
+      &:hover {
+        background-color: color.scale(v.$primary-color, $alpha: -70%);
+      }
+    }
+    td {
+      padding: v.$space-xs * 0.8 v.$space-sm * 0.8;
+      font-size: v.$font-size-small * 0.85;
+      border-right: v.$border-subtle;
+      vertical-align: middle;
+      white-space: nowrap;
+      text-align: center; // Default center align data
+
+      &:last-child {
+        border-right: none;
+      }
+    }
+  }
 }
 
-.overallRatings {
-  grid-area: 11 / 31 / 21 / 34;
-  border: 1px solid #07aae2;
+// Styles for the table *inside* the Counts/Rates containers
+// ASSUMPTION: The <table> element inside StatsTable component has class="statsTableActual"
+.countsTableContainer .statsTableActual,
+.ratesTableContainer .statsTableActual {
+  @include stats-table-common; // Apply common styles
+  border: none !important; // Override any default borders
+
+  // Specifics for Counts/Rates Tables
+  thead {
+    th:first-child {
+      // Stat Header
+      text-align: left;
+      padding-left: v.$space-sm;
+      border-right: v.$border-separator; // Stronger separator
+      // Width should be controlled by <colgroup> in the HTML/Component
+      position: sticky; // Make first column sticky
+      left: 0;
+      z-index: 3; // Above other headers
+      background-color: v.$background-dark; // Ensure background for sticky
+    }
+    // Header cells for CA, STD, L10 etc (center aligned by default)
+
+    // Title Rows (Counts/Rates Labels)
+    tr.countsLabel th,
+    tr.ratesLabel th {
+      background-color: #1d3239; // Keep custom title bg
+      color: v.$text-color-primary;
+      font-family: "Lucida Sans", "Lucida Grande", sans-serif; // Keep custom font
+      font-weight: 900;
+      text-transform: uppercase;
+      font-variant: small-caps;
+      letter-spacing: 10px;
+      font-size: v.$font-size-base * 0.85;
+      text-align: center;
+      padding: v.$space-xs * 0.8 0;
+      border-bottom: 2px solid v.$border-color-primary;
+      border-right: none; // Span full width
+      // These are already sticky due to thead rule
+    }
+  }
+
+  tbody {
+    td {
+      padding: v.$space-xs * 0.7 v.$space-sm * 0.7; // Keep existing padding
+      font-size: v.$font-size-small * 0.85; // Keep existing font-size
+      border-right: v.$border-subtle;
+      vertical-align: middle;
+      white-space: nowrap;
+      text-align: center; // Default center align data
+
+      &:last-child {
+        border-right: none;
+      }
+    }
+
+    td:first-child {
+      // Stat Name Cell
+      text-align: left;
+      padding-left: v.$space-sm;
+      font-weight: 600;
+      color: v.$text-color-secondary;
+      border-right: v.$border-separator; // Match header separator
+      // Make first column sticky
+      position: sticky;
+      left: 0;
+      z-index: 1; // Below header
+      // Inherit background color from row for striping/hover
+      background-color: inherit;
+    }
+    // Data cells (CA, STD, L10 etc.) center aligned by default
+
+    td:last-child {
+      // DIFF Cell Style
+      font-weight: bold;
+      // Color applied inline based on value
+    }
+    // GP Row Highlight Style (assuming class is added in component)
+    tr.gpRow {
+      background-color: v.$background-medium !important; // Override striping
+      color: v.$secondary-color;
+      font-weight: bold;
+      td {
+        border-top: 1px solid v.$border-color-primary;
+      }
+    }
+  }
 }
 
-.defenseRatings {
-  grid-area: 11 / 34 / 21 / 37;
-  border: 1px solid #07aae2;
-}
-
-.perGameStats {
-  grid-area: 12 / 7 / 24 / 10; // Rows 12-23, Columns 7-9 (3 columns wide - 1 part)
-  border: 1px solid #07aae2;
-}
-
-.opponentLog {
-  grid-area: 21 / 28 / 30 / 37;
-  border: 1px solid #07aae2;
-}
-
-.consistencyRating {
-  grid-area: 1 / 28 / 11 / 37;
-  border: 1px solid #07aae2;
-}
-
-.timeframeComparison {
-  grid-area: 1 / 10 / 3 / 28;
-  border: 1px solid #07aae2;
-}
-
+.ratesTable,
 .countsTable {
-  grid-area: 3 / 10 / 30 / 19;
+  height: 100%; // Fill container height
+}
+
+// --- Per Game Stats Table Styling ---
+// Styles for the table *inside* the .perGameStatsContainer
+// ASSUMPTION: The <table> element inside PerGameStatsTable component has class="transposedTable"
+.perGameStatsContainer {
+  // Container handles scroll
   overflow: auto;
-  border: 3px solid #606060;
-  border-radius: 4px 4px 0 0;
+  padding: v.$space-xs; // Add small padding for scrollbar spacing
 
-  table {
-    width: 100%;
-    height: 100%;
-    border-collapse: collapse;
+  // Scrollbar styling (keep from original)
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: v.$primary-color;
+    border-radius: 2px;
+  }
+  &::-webkit-scrollbar-track {
+    background-color: v.$background-medium;
+  }
+  scrollbar-width: thin;
+  scrollbar-color: v.$primary-color v.$background-medium;
 
-    th,
-    td {
-      padding: 4px;
-      text-align: center;
-      font-size: 12px;
-      border: 1px solid #606060;
+  table.transposedTable {
+    @include stats-table-common; // Apply common styles
+    height: auto; // Height determined by content since container scrolls
+
+    thead th {
+      // Header cells (Stat, CA, STD, L10 etc.) are center aligned by default
+      font-size: v.$font-size-small * 0.8; // Slightly smaller again?
+      padding: v.$space-xs * 0.8; // Compact padding
     }
 
-    th {
-      background-color: #1d3239;
-      border: #fff 2px solid;
-      border-radius: 3px 3px 0 0;
-    }
-
-    td:first-child {
-      text-align: right;
-      width: 17%;
-      border-left: #fff 2px solid;
-    }
-
-    td:last-child {
-      border-right: #fff 2px solid;
-    }
-
-    tr:nth-child(even) {
-      background-color: #404040;
-    }
-
-    tr:nth-child(odd) {
-      background-color: #303030;
-    }
-
-    thead {
-      tr {
-        th:not(:last-child) {
-          border-right: 1px solid #606060;
-        }
-      }
-    }
-
-    tr:last-child {
-      td {
-        border-bottom: #fff 2px solid;
-      }
-    }
-
-    /* Target the TBODY row with class="gpRow" */
     tbody {
-      tr.gpRow {
-        td:not(:last-child) {
-          border-right: 1px solid #606060;
-        }
-      }
-
-      tr.gpRow {
-        background-color: #202020;
-        color: #07aae2;
-        border-top: 1px solid #606060;
-        outline: #fff 1px solid;
-      }
-    }
-
-    tr:hover {
-      background-color: #505050;
-    }
-  }
-}
-
-.ratesTable {
-  grid-area: 3 / 19 / 23 / 28;
-  overflow: auto;
-  border: 3px solid #606060;
-  border-radius: 4px 4px 0 0;
-
-  table {
-    width: 100%;
-    height: 100%;
-    border-collapse: collapse;
-
-    th,
-    td {
-      padding: 4px;
-      text-align: center;
-      font-size: 12px;
-      border: 1px solid #606060;
-    }
-
-    th {
-      background-color: #1d3239;
-      border: #fff 2px solid;
-      border-radius: 3px 3px 0 0;
-    }
-
-    td:first-child {
-      text-align: right;
-      width: 17%;
-      border-left: #fff 2px solid;
-    }
-
-    td:last-child {
-      border-right: #fff 2px solid;
-    }
-
-    tr:nth-child(even) {
-      background-color: #404040;
-    }
-
-    tr:nth-child(odd) {
-      background-color: #303030;
-    }
-
-    tr:last-child {
       td {
-        border-bottom: #fff 2px solid;
+        font-size: v.$font-size-small * 0.85; // Match counts/rates data font
+        padding: v.$space-xs * 0.8; // Compact padding
       }
-    }
-
-    tr:hover {
-      background-color: #505050;
-    }
-  }
-}
-
-.paceTable {
-  grid-area: 23 / 19 / 30 / 28;
-  border: 1px solid #07aae2;
-}
-
-.toiLineChart {
-  grid-area: 30 / 1 / 39 / 13; // Adjust if needed
-  border: 1px solid #07aae2;
-  overflow: hidden; // Prevent content spillover
-
-  // Add inner grid styling similar to GameScoreSection for title + chart layout
-  .chartContainer {
-    // Add a class to the inner grid div in the component if needed
-    display: grid;
-    grid-template-rows: auto 1fr; // Title auto height, chart takes rest
-    height: 100%;
-    width: 100%;
-
-    .chartTitle {
-      // Class for the title div
-      // Using .ratesLabel style as a base like in GameScoreSection
-      @extend .ratesLabel; // Inherit styles from .ratesLabel
-      padding: 3px 0; // Smaller padding
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border-bottom: 1px solid #444; // Separator line
-
-      h3 {
-        margin: 0;
-        font-size: 11px; // Smaller font size for title
+      td:first-child {
+        // Stat Name Column
+        text-align: left;
+        padding-left: v.$space-sm;
         font-weight: 600;
-        letter-spacing: 2px; // Less spacing than main labels
+        color: v.$text-color-secondary;
+        border-right: v.$border-separator;
+        // Width should be controlled by <colgroup>
+        // Make first column sticky
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        background-color: inherit; // Inherit row background
+      }
+      // GP Row Highlight (assuming class is added in component)
+      tr.gpRowHighlight {
+        // Use specific class if different from counts/rates
+        background-color: v.$background-medium !important; // Override striping
+        color: v.$secondary-color; // Use theme accent
+        font-weight: bold;
       }
     }
-
-    .chartCanvasContainer {
-      // Class for the div directly wrapping the chart canvas
-      position: relative; // Needed for chart responsiveness
-      width: 100%;
-      height: 100%;
-      overflow: hidden; // Prevent chart overflow
-      padding: 5px; // Add padding around the chart canvas itself
-      box-sizing: border-box;
-    }
   }
-}
 
-// Define grid area and apply shared styles
-.ppgLineChart {
-  grid-area: 30 / 13 / 39 / 25; // Next grid slot
-  border: 1px solid #07aae2; // Consistent border
-  overflow: hidden; // Prevent content spillover
-
-  // Apply the shared container styles directly or via extend if preferred
-  .chartContainer {
-    display: grid;
-    grid-template-rows: auto 1fr;
-    height: 100%;
+  // Loading/Error Message Styling (reuse if applicable)
+  .loadingMessage,
+  .errorMessage,
+  .noDataMessage,
+  .noPlayerMessage {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
     width: 100%;
-
-    .chartTitle {
-      @extend .ratesLabel; // Inherit styles from .ratesLabel (or define separately)
-      padding: 5px 0 !important;
-      display: flex;
-      background-color: #1d3239 !important;
-      justify-content: center;
-      align-items: center;
-      border-bottom: 2px solid #444;
-
-      h3 {
-        margin: 0;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 12px;
-        font-family: "Lucida Sans", sans-serif;
-        font-weight: 700;
-        letter-spacing: 15px;
-        text-transform: uppercase;
-        font-variant: small-caps;
-      }
-    }
-
-    .chartCanvasContainer {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      padding: 5px;
-      box-sizing: border-box;
-    }
+    min-height: 100px; // Give it some minimum height
+    font-size: 1em;
+    padding: v.$space-md;
+    color: v.$text-color-secondary;
   }
+  .errorMessage {
+    color: #ff6b6b;
+  } // Error color
+  .noDataMessage,
+  .noPlayerMessage {
+    color: #aaa;
+  } // Subtle color
 }
 
-.gameScoreLineChart {
-  grid-area: 30 / 25 / 39 / 37;
-  border: 1px solid #07aae2;
+/* =================== Chart Container Styling =================== */
+// These apply to the wrappers (.toiChartContainer, etc.)
+.chartTitle {
+  // Shared style for chart titles
+  background-color: v.$background-medium; // Subtle title background
+  color: v.$text-color-secondary;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-small;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: v.$space-xs v.$space-md;
+  text-align: center;
+  flex-shrink: 0; // Don't let title shrink
+  border-bottom: 1px solid v.$border-color-primary; // Separator
+  // Ensure title width fills container (already block by default)
 }
 
-.rateStatBarPercentiles {
-  grid-area: 24 / 1 / 30 / 10;
-  border: 1px solid #07aae2;
+.chartContainer {
+  height: 100%; // Fill container height
 }
 
-.percentileChart {
-  grid-area: 12 / 1 / 24 / 7;
-  border: 1px solid #07aae2;
+.chartCanvasContainer {
+  // Shared style for the chart canvas wrapper
+  position: relative; // Critical for chart.js responsiveness
+  width: 100%;
+  height: 90%; // Fill space
+  overflow: hidden; // Prevent canvas overflow spilling out
+  padding: v.$space-sm; // Small padding *around* the canvas within its container
+  box-sizing: border-box;
+  // Canvas element itself should be width/height 100% managed by chart.js
 }
 
-/* =================== Table / Text Styles =================== */
-.statLabel {
-  color: #07aae2;
+// Placeholder for loading charts
+.chartLoadingPlaceholder {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%; // Fill space
+  min-height: 100px; // Ensure visible height
+  color: v.$text-color-secondary;
+  font-size: v.$font-size-small;
+  flex-grow: 1; // Take space if chart isn't loaded
 }
 
-/* 
-  We still define .teamNameSVG here for any shared styling, 
-  but note that in .playerHeadshot we override it with position: absolute, etc.
-*/
-.teamNameSVG {
-  background-color: var(--secondary-color);
-  display: block;
-}
-
-.countsLabel,
-.ratesLabel {
-  color: #fff;
+/* Standalone Label Styles (If needed outside tables) */
+.countsLabel-standalone,
+.ratesLabel-standalone {
+  // Inherit from the styles defined within .statsTableActual thead tr.countsLabel th if identical
+  // Or redefine here if needed elsewhere with the exact same style
+  background-color: #1d3239;
+  color: v.$text-color-primary;
   font-family: "Lucida Sans", "Lucida Grande", sans-serif;
-
-  /* 900 bold, forced small-caps (all-lowercase + font-variant: small-caps) */
   font-weight: 900;
   text-transform: uppercase;
   font-variant: small-caps;
-
-  /* Increase spacing between letters */
-  letter-spacing: 15px;
-
-  /* Slightly bigger font size, if desired */
-  font-size: 16px;
-
-  /* A matching background (or whichever you prefer) */
-  background-color: #202020;
-
-  /* Center the text across all columns */
+  letter-spacing: 10px; // Match table title style
+  font-size: v.$font-size-base * 0.85; // Match table title style
   text-align: center;
-
-  border-bottom: 2px solid #606060;
+  padding: v.$space-xs v.$space-md;
+  border-bottom: 2px solid v.$border-color-primary;
+  border-radius: v.$border-radius-sm v.$border-radius-sm 0 0; // Match table top radius
 }

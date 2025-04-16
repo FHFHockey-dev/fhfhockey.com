@@ -43,6 +43,18 @@ const StatsTable: React.FC<StatsTableProps> = ({
     DIFFLabel: "DIFF" // Display header for the DIFF column
   };
 
+  const colWidths = [
+    "18%", // Stat
+    "10%", // CA
+    "10%", // 3YA
+    "10%", // LY
+    "10%", // L5
+    "10%", // L10
+    "10%", // L20
+    "10%", // STD
+    "12%" // DIFFLabel
+  ];
+
   const getStatValue = (
     row: TableAggregateData,
     key: keyof TableAggregateData | "Stat" | "DIFFLabel"
@@ -54,8 +66,8 @@ const StatsTable: React.FC<StatsTableProps> = ({
       const color =
         diffValue !== undefined
           ? diffValue >= 0
-            ? "limegreen"
-            : "red"
+            ? "rgb(18, 193, 126)"
+            : "rgb(206, 52, 85)"
           : "#fff";
       const displayValue =
         diffValue !== undefined ? `${diffValue.toFixed(1)}%` : "-";
@@ -71,7 +83,12 @@ const StatsTable: React.FC<StatsTableProps> = ({
     <div
       className={title === "COUNTS" ? styles.countsTable : styles.ratesTable}
     >
-      <table aria-label={`${title} Table`}>
+      <table aria-label={`${title} Table`} className={styles.statsTableActual}>
+        <colgroup>
+          {colWidths.map((width, index) => (
+            <col key={index} style={{ width: width }} />
+          ))}
+        </colgroup>
         <thead>
           {/* Title label row */}
           <tr
