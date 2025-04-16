@@ -23,7 +23,7 @@ import {
 } from "utils/fetchWigoPlayerStats"; // Adjust path
 import { formatDateToMMDD } from "utils/formattingUtils"; // Adjust path
 import { calculateRollingAverage } from "utils/formattingUtils"; // Adjust path
-import chartStyles from "styles/wigoCharts.module.scss"; // Import shared styles
+import styles from "styles/wigoCharts.module.scss"; // Import shared styles
 
 // Register necessary Chart.js components
 ChartJS.register(
@@ -231,6 +231,9 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
         align: "end" as const,
         labels: { color: "#ccc", boxWidth: 12, font: { size: 10 } }
       },
+      datalabels: {
+        display: false // Explicitly disable the plugin for this chart
+      },
       tooltip: {
         enabled: true,
         mode: "index" as const,
@@ -258,6 +261,25 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
             return label;
           }
         }
+      },
+      zoom: {
+        pan: {
+          enabled: true, // Enable panning
+          mode: "x" // Allow panning only on the x-axis
+          // modifierKey: 'ctrl', // Optional: Require Ctrl key for panning
+        },
+        zoom: {
+          wheel: {
+            enabled: true // Enable zooming with mouse wheel
+          },
+          pinch: {
+            enabled: true // Enable zooming with pinch gesture
+          },
+          drag: {
+            enabled: true // Enable drag-to-zoom (box selection) - THIS IS CLOSEST TO BRUSHING
+          },
+          mode: "x" // Allow zooming only on the x-axis
+        }
       }
     },
     interaction: { mode: "index", intersect: false }
@@ -265,11 +287,11 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
 
   return (
     // Use shared layout classes
-    <div className={chartStyles.chartContainer}>
+    <div className={styles.chartContainer}>
       <div
-        className={chartStyles.ratesLabel}
+        className={styles.ratesLabel}
         style={{
-          backgroundColor: "#1d3239",
+          backgroundColor: "#164352",
           // gridRow: "1/2", // Not needed with gridTemplateRows
           display: "flex",
           justifyContent: "center",
@@ -281,7 +303,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
           Points / Game
         </h3>
       </div>
-      <div className={chartStyles.chartCanvasContainer}>
+      <div className={styles.chartCanvasContainer}>
         {/* Loading/Error/Chart rendering logic */}
         {isLoading && (
           <div

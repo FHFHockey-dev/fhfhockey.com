@@ -68,8 +68,8 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                 src={`/teamLogos/${teamAbbreviation}.png`}
                 alt={`${teamName} logo`}
                 layout="intrinsic"
-                width={120}
-                height={120}
+                width={150}
+                height={150}
               />
             ) : (
               // Optionally display something else if no logo/team

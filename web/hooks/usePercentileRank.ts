@@ -32,8 +32,8 @@ export default function usePercentileRank(
           body: JSON.stringify({
             StartTime,
             EndTime,
-            Season: season ? season.seasonId : "",
-          }),
+            Season: season ? season.seasonId : ""
+          })
         }
       )
         .then((res) => res.json())

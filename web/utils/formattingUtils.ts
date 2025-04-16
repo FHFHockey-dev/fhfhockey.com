@@ -109,3 +109,14 @@ export function calculateRollingAverage<T>(
     return count > 0 ? sum / count : null;
   });
 }
+
+/**
+ * Formats a number into a percentage string with one decimal place.
+ * Example: 0.153 => "15.3%"
+ */
+export const formatPercentage = (value: number | null | undefined): string => {
+  if (value === null || value === undefined || isNaN(value)) {
+    return "-%"; // Or "0.0%"
+  }
+  return `${(value * 100).toFixed(1)}%`;
+};

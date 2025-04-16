@@ -24,6 +24,14 @@ export interface SkaterTotalsData {
   points_per_game: number | null;
 }
 
+export interface SkaterGameLogConsistencyData {
+  date: string;
+  points: number | null;
+  shots: number | null;
+  hits: number | null;
+  blocked_shots: number | null;
+}
+
 // Interface for the raw points game log data
 export interface SkaterGameLogPointsData {
   date: string; // 'YYYY-MM-DD'
@@ -325,5 +333,53 @@ export const fetchPlayerGameLogToi = async (
       err
     );
     throw err; // Re-throw
+  }
+};
+
+// --- NEW Function to fetch game-by-game data for Consistency ---
+export const fetchPlayerGameLogConsistencyData = async (
+  playerId: number,
+  season: string // Season identifier (e.g., "20232024")
+): Promise<SkaterGameLogConsistencyData[]> => {
+  if (!playerId || !season) return [];
+
+  const seasonIdNumber = parseInt(season, 10);
+  if (isNaN(seasonIdNumber)) {
+    console.error(
+      `Invalid season format received: "${season}". Cannot convert to number.`
+    );
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from("wgo_skater_stats") // Query the game log table
+      .select(
+        `
+        date,
+        points,
+        shots,
+        hits,
+        blocked_shots
+      ` // Select fields needed for calculation
+      )
+      .eq("player_id", playerId)
+      .eq("season_id", seasonIdNumber) // Filter by the specific season ID (numeric)
+      .order("date", { ascending: true }); // Order chronologically (optional for this calc)
+
+    if (error) {
+      console.error(
+        `Error fetching game log Consistency Data for player ${playerId}, season ${season}:`,
+        error
+      );
+      throw error;
+    }
+    return (data as SkaterGameLogConsistencyData[]) || []; // Ensure result is an array
+  } catch (err) {
+    console.error(
+      `Unexpected error in fetchPlayerGameLogConsistencyData for player ${playerId}, season ${season}:`,
+      err
+    );
+    throw err;
   }
 };

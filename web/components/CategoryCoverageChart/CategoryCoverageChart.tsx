@@ -143,6 +143,9 @@ function CategoryCoverageChart({
     plugins: {
       legend: {
         display: false // This hides the legend
+      },
+      datalabels: {
+        display: false // Explicitly disable the plugin for this chart
       }
     },
     scales: {
