@@ -208,7 +208,6 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
           }
         }
       },
-      // Add zoom plugin options if installed and registered
       zoom: {
         pan: {
           enabled: true, // Enable panning

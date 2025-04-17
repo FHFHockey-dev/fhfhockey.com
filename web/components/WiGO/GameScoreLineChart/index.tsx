@@ -9,7 +9,7 @@ import {
   Legend
 } from "chart.js";
 import { useQuery } from "@tanstack/react-query";
-import supabase from "lib/supabase/client"; // Ensure this is the client instance
+import supabase from "lib/supabase/client";
 import RollingAverageChart from "./RollingAverageChart";
 import useCurrentSeason from "hooks/useCurrentSeason";
 
@@ -30,9 +30,8 @@ type GameScoreLineChartProps = {
 export default function GameScoreLineChart({
   playerId
 }: GameScoreLineChartProps) {
-  // Call hooks inside the component
   const currentSeason = useCurrentSeason();
-  const seasonId = currentSeason?.seasonId; // Safely access seasonId
+  const seasonId = currentSeason?.seasonId;
 
   // Update queryKey to reflect the data source accurately
   const queryKey = ["skaterGameScoresForSeason", playerId, seasonId];
@@ -54,7 +53,6 @@ export default function GameScoreLineChart({
       );
 
       // --- Single RPC Call ---
-      // Call the NEW RPC function directly with player and season IDs
       const { data: rpcData, error: rpcError } = await supabase
         .rpc("get_skater_game_scores_for_season", {
           p_player_id: pId,
