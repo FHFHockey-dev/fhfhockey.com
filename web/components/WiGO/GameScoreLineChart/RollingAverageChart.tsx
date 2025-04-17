@@ -133,11 +133,11 @@ function RollingAverageChart<T>({
               drag: {
                 enabled: true // Enable drag-to-zoom (box selection) - THIS IS CLOSEST TO BRUSHING
               },
-              mode: "x" // Allow zooming only on the x-axis
+              mode: "x"
             }
           },
           datalabels: {
-            display: false // Explicitly disable the plugin for this chart
+            display: false
           }
         }
       }}

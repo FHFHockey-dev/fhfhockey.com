@@ -47,13 +47,12 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ playerId }) => {
   useEffect(() => {
     // --- Fetching logic remains the same ---
     if (!playerId) {
-      /* ... clear state ... */ return;
+      return;
     }
     const loadConsistencyData = async () => {
       setIsLoading(true);
-      setError(null); /* ... clear state ... */
+      setError(null);
       try {
-        // ... (fetch totals, fetch game logs, check errors) ...
         const totals = await fetchPlayerPerGameTotals(playerId);
         if (!totals || !totals.season)
           throw new Error("Could not determine latest season for player.");
@@ -68,13 +67,12 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ playerId }) => {
           return;
         }
 
-        // ... (calculate counts, maxPoints, cardioGameCount) ...
         const totalGames = gameLogs.length;
         let maxPoints = 0;
         const pointCounts: { [key: number]: number } = {};
         let cardioGameCount = 0;
         gameLogs.forEach((log) => {
-          /* ... count logic ... */ const points = log.points ?? 0;
+          const points = log.points ?? 0;
           const shots = log.shots ?? 0;
           const hits = log.hits ?? 0;
           const blocks = log.blocked_shots ?? 0;
@@ -93,7 +91,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ playerId }) => {
           const count = pointCounts[i] || 0;
           const percentage = totalGames > 0 ? count / totalGames : 0;
           const label = `${i} Pt${i !== 1 ? "s" : ""}`;
-          // <<< Use new CONSISTENCY_COLORS mapping >>>
+
           const color = CONSISTENCY_COLORS[i] ?? FALLBACK_COLOR;
 
           displayData.push({ label, percentage, count, color }); // Store specific color
@@ -118,7 +116,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ playerId }) => {
             {
               label: "Points per Game Distribution",
               data: chartPercentages,
-              backgroundColor: chartBackgroundColors, // Use the new colors
+              backgroundColor: chartBackgroundColors,
               borderColor: "#444", // Dark border between slices
               borderWidth: 1
             }
@@ -139,7 +137,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ playerId }) => {
 
   // --- chartOptions remain the same ---
   const chartOptions: any = {
-    /* ... options ... */ responsive: true,
+    responsive: true,
     maintainAspectRatio: false,
     cutout: "60%",
     plugins: {
@@ -151,7 +149,6 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ playerId }) => {
       tooltip: {
         callbacks: {
           label: function (context: any) {
-            /* ... tooltip label formatting ... */
             let label = context.label || "";
             if (label) label += ": ";
             if (context.parsed !== null)
@@ -169,7 +166,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ playerId }) => {
 
   // --- JSX structure remains the same ---
   // The inline style `style={{ color: item.color }}` on the label
-  // will automatically pick up the new colors stored in processedData.
+  // will automatically pick up the new colors stored in processedData
   return (
     <div className={styles.chartContainer}>
       <div className={styles.chartTitle}>
@@ -193,7 +190,6 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ playerId }) => {
             Error: {error}
           </div>
         )}
-        {/* ... other conditional renders ... */}
 
         {!isLoading && !error && processedData.length > 0 && (
           <>
