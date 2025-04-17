@@ -1,6 +1,6 @@
 // /components/WiGO/RateStatPercentiles.tsx
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Bar } from "react-chartjs-2"; // Import the Bar component
+import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -13,11 +13,11 @@ import {
   ChartData,
   ScriptableContext
 } from "chart.js";
-import ChartDataLabels from "chartjs-plugin-datalabels"; // Import the plugin
+import ChartDataLabels from "chartjs-plugin-datalabels";
 import styles from "styles/wigoCharts.module.scss";
-import { fetchAllPlayerStatsForStrength } from "utils/fetchWigoPercentiles"; // Adjust path if needed
-import { PlayerRawStats, PercentileStrength } from "components/WiGO/types"; // Adjust path if needed
-import { calculatePercentileRank } from "utils/calculatePercentiles"; // Adjust path if needed
+import { fetchAllPlayerStatsForStrength } from "utils/fetchWigoPercentiles";
+import { PlayerRawStats, PercentileStrength } from "components/WiGO/types";
+import { calculatePercentileRank } from "utils/calculatePercentiles";
 
 // Register Chart.js components and the datalabels plugin
 ChartJS.register(
@@ -87,11 +87,24 @@ const generateChartConfig = (
     return validPercentile !== null ? Math.round(validPercentile * 100) : null; // Scale to 0-100
   });
 
-  // Generate background colors based on value (Green=100, Red=0)
   const backgroundColors = dataValues.map((value) => {
-    if (value === null) return "#555"; // Grey for null
-    return `hsl(${(value / 100) * 120}, 70%, 45%)`;
+    if (value === null) {
+      return "#555555"; // Grey for null values
+    }
+
+    const brandHue = 195; // Hue for brand blue (#14a2d2)
+    const brandSaturation = 70;
+
+    // Vary Lightness: Map percentile (0-100) to a lightness range.
+    // 0 maps to 25% lightness (darker blue), 100 maps to 65% (brighter blue)
+    const minLightness = 25;
+    const maxLightness = 65;
+    const lightness =
+      minLightness + (value / 100) * (maxLightness - minLightness);
+
+    return `hsl(${brandHue}, ${brandSaturation}%, ${lightness}%)`;
   });
+  // --- End of NEW color generation ---
 
   const data: ChartData<"bar"> = {
     labels: labels,
@@ -100,7 +113,7 @@ const generateChartConfig = (
         label: "Percentile Rank",
         data: dataValues,
         backgroundColor: backgroundColors,
-        borderColor: backgroundColors, // Optional: border color same as bg
+        borderColor: backgroundColors,
         borderWidth: 1
       }
     ]
@@ -112,36 +125,32 @@ const generateChartConfig = (
     maintainAspectRatio: false,
     scales: {
       y: {
-        // The value axis (0-100)
         beginAtZero: true,
         max: 100,
         ticks: {
-          color: "#ccc",
+          color: "#ccc", // Consider using $text-color-secondary from vars?
           font: { size: 10 },
-          stepSize: 20 // Adjust step size as needed
+          stepSize: 20
         },
         grid: {
-          color: "rgba(255, 255, 255, 0.1)"
+          color: "rgba(255, 255, 255, 0.1)" // Consider using $border-color-primary/secondary?
         }
       },
       x: {
-        // The category axis (stat labels)
         ticks: {
-          display: false, // Hide labels on axis, we'll use datalabels
-          color: "#ccc",
-          font: { size: 12 }
+          display: false,
+          color: "#ccc"
         },
         grid: {
-          display: false // Hide vertical grid lines
+          display: false
         }
       }
     },
     plugins: {
       legend: {
-        display: false // Hide dataset legend
+        display: false
       },
       tooltip: {
-        // Customize tooltips
         enabled: true,
         callbacks: {
           label: function (context) {
@@ -150,45 +159,63 @@ const generateChartConfig = (
               label += ": ";
             }
             if (context.parsed.y !== null) {
-              label += context.parsed.y + "%"; // Add percentage sign
+              label += context.parsed.y + "%";
             }
             return label;
           },
           title: function (context) {
-            // Show the stat label (e.g., "G/60") as the tooltip title
             return context[0]?.label || "";
           }
         }
       },
       datalabels: {
-        // Configure the datalabels plugin
-        display: true,
-        rotation: -90,
-        color: (context) => {
-          // Basic contrast check: white text on darker/taller bars
-          // Type inference should handle the context type correctly here
-          const value = context.dataset.data[context.dataIndex] as
-            | number
-            | null;
-          return value !== null && value > 50 ? "#ffffff" : "#dddddd";
-        },
-        font: {
-          size: 12, // Adjust font size
-          weight: "bold",
-          family: "Roboto Condensed",
-          lineHeight: 1.2 // Adjust line height for better spacing
-        },
-        anchor: "center", // Anchor the label text to the center of the bar
-        align: "center", // Align the label text to the center of the bar
-        formatter: (value, context) => {
-          // Display the category label (e.g., "G/60") inside the bar
-          return (
-            (context.chart.data.labels?.[context.dataIndex] as string) || ""
-          );
+        // Wrap configurations inside a 'labels' object
+        labels: {
+          // --- Configuration for Category Label (INSIDE bar) ---
+          categoryLabel: {
+            display: true,
+            rotation: -90,
+            color: (context) => {
+              const value = context.dataset.data[context.dataIndex] as
+                | number
+                | null;
+              return value !== null && value > 50 ? "#ffffff" : "#dddddd";
+            },
+            font: {
+              size: 12,
+              weight: "bolder",
+              family: "Roboto Condensed",
+              lineHeight: 1.2
+            },
+            anchor: "center",
+            align: "center",
+            formatter: (value, context) => {
+              // Keep formatter for category name
+              return (
+                (context.chart.data.labels?.[context.dataIndex] as string) || ""
+              );
+            }
+          },
+          // --- Configuration for Value Label (ABOVE bar) ---
+          valueLabel: {
+            display: true,
+            color: "#ccc",
+            anchor: "end",
+            align: "center",
+            offset: 6,
+            font: {
+              size: 14,
+              weight: "bolder",
+              family: "Roboto Condensed"
+            },
+            formatter: (value, context) => {
+              // Formatter for the value itself
+              if (value === null) {
+                return value + "%"; // Display the percentile value with a % sign
+              }
+            }
+          }
         }
-        // Optional: Add padding or offset if needed
-        // offset: 10,
-        // padding: 0,
       }
     }
   };

@@ -28,8 +28,8 @@ ChartJS.register(
 
 // Define props types for the component
 interface RollingAverageChartProps<T> {
-  data: T[]; // The main dataset to calculate rolling averages
-  windowSizes: number[]; // Array of window sizes for rolling averages (e.g. [5, 10, 15])
+  data: T[];
+  windowSizes: number[];
   getLabel: (item: T, index: number) => string;
   getValue: (item: T) => number;
 }

@@ -20009,6 +20009,16 @@ export type Database = {
         };
         Returns: undefined;
       };
+      get_skater_game_scores_for_season: {
+        Args: {
+          p_player_id: number;
+          p_season_id: number;
+        };
+        Returns: {
+          game_date: string | null;
+          game_score: number | null;
+        }[];
+      };
       get_aggregated_player_stats:
         | {
             Args: {

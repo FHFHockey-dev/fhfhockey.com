@@ -1,12 +1,10 @@
 // components/WiGO/PerGameStatsTable.tsx
 import React, { useState, useEffect } from "react";
-import supabase from "lib/supabase";
 import {
   fetchPlayerPerGameTotals,
   SkaterTotalsData
 } from "utils/fetchWigoPlayerStats";
-import styles from "./PerGameStatsTable.module.scss"; // Ensure this path is correct
-// Removed TableAggregateData import as it's not used here
+import styles from "./PerGameStatsTable.module.scss";
 
 interface PerGameStatsTableProps {
   playerId: number | null | undefined;
@@ -21,16 +19,13 @@ interface CalculatedStatRow {
 
 // Formatting functions remain the same
 const formatStatValue = (value: number | null | undefined): string => {
-  // ... (implementation unchanged) ...
   if (value === null || value === undefined || isNaN(value)) {
     return "-";
   }
   // Using toFixed(2) might be too many decimals for some counting stats per game
-  // Consider adjusting precision based on the stat if needed
   return value.toFixed(2);
 };
 const formatPaceValue = (value: number | null | undefined): string => {
-  // ... (implementation unchanged) ...
   if (value === null || value === undefined || isNaN(value)) {
     return "-";
   }
@@ -39,12 +34,10 @@ const formatPaceValue = (value: number | null | undefined): string => {
 
 const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({ playerId }) => {
   const [totalsData, setTotalsData] = useState<SkaterTotalsData | null>(null);
-  // State now holds rows for the vertical table
   const [statRows, setStatRows] = useState<CalculatedStatRow[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetching logic remains the same
   useEffect(() => {
     if (!playerId) {
       setTotalsData(null);
@@ -111,8 +104,8 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({ playerId }) => {
       // Add the GP row at the beginning
       newStatRows.unshift({
         stat: "GP",
-        perGame: gp.toString(), // GP per game is just GP
-        per82: "-" // Pace for GP doesn't make sense
+        perGame: gp.toString(),
+        per82: "-"
       });
 
       setStatRows(newStatRows);
@@ -127,12 +120,10 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({ playerId }) => {
       ) {
         setError("Player has 0 games played.");
       }
-      // Do not set error if simply no data or player cleared
     }
-  }, [totalsData, isLoading]); // Added isLoading dependency
+  }, [totalsData, isLoading]);
 
   return (
-    // Container class remains
     <div className={styles.perGameTableContainer}>
       {isLoading && (
         <div className={styles.loadingMessage}>Loading Stats...</div>
@@ -142,7 +133,6 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({ playerId }) => {
         <div className={styles.noDataMessage}>No data available.</div>
       )}
       {!isLoading && !error && statRows.length > 0 && (
-        // Use a different class for the standard vertical table if needed for styling
         <table className={styles.verticalStatsTable}>
           <thead>
             <tr>
@@ -156,7 +146,6 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({ playerId }) => {
             {/* Map over calculated rows */}
             {statRows.map((row) => (
               <tr key={row.stat}>
-                {/* Metric name as row header for accessibility */}
                 <th scope="row" className={styles.metricCell}>
                   {row.stat}
                 </th>

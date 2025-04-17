@@ -6,7 +6,7 @@
 .perGameTableContainer {
   width: 100%;
   height: 100%;
-  overflow: hidden; // Keep overflow hidden on main container
+  overflow: hidden;
   background-color: v.$background-medium;
   color: v.$text-color-primary;
   font-family: v.$font-family-primary;
@@ -42,7 +42,7 @@ table.verticalStatsTable {
     padding: v.$space-xs * 0.8;
     text-align: center;
     font-size: v.$font-size-small * 0.8;
-    border-bottom: 1px solid v.$border-color-secondary; // Bottom border for rows
+    border-bottom: 1px solid v.$border-color-secondary;
     white-space: nowrap;
   }
 
@@ -55,7 +55,7 @@ table.verticalStatsTable {
     top: 0;
     z-index: 1;
     border-bottom: 2px solid v.$primary-color; // Stronger border below headers
-    border-right: 1px solid v.$border-color-secondary; // Add right border to headers
+    border-right: 1px solid v.$border-color-secondary;
     &:last-child {
       border-right: none; // Remove border from last header
     }
@@ -65,12 +65,12 @@ table.verticalStatsTable {
     // First header cell ("Metric")
     text-align: left;
     padding-left: v.$space-xs;
-    width: 30%; // Allocate more width to metric name
+    width: 30%;
   }
 
   thead th.valueHeader {
     // Headers for values ("Per/GP", "Per/82")
-    width: 35%; // Allocate remaining width
+    width: 35%;
   }
 
   tbody tr {
@@ -89,23 +89,23 @@ table.verticalStatsTable {
       td {
         border-bottom: none;
         padding-bottom: v.$space-xs; // Adjust padding for last row
-      } // Remove border from last row
+      }
     }
   }
 
   tbody th.metricCell {
-    // First cell in each data row (GP, G, A...)
+    // First cell in each data row
     text-align: left;
     padding-left: v.$space-sm;
     font-weight: 600;
-    color: v.$text-color-secondary; // Use secondary color like headers
-    border-right: 1px solid v.$border-color-secondary; // Add right border
+    color: v.$text-color-secondary;
+    border-right: 1px solid v.$border-color-secondary;
   }
 
   tbody td.valueCell {
     // Data cells (the numbers)
     color: v.$text-color-primary;
-    font-family: monospace; // Optional: Monospace font for numbers
+    font-family: "roboto-condensed" sans-serif;
     border-right: 1px solid v.$border-color-secondary;
     &:last-child {
       border-right: none; // Remove border from last cell in row

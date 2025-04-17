@@ -9,7 +9,7 @@
   justify-content: space-evenly;
   padding: v.$space-xs v.$space-xxxl; // Reduced vertical padding
   gap: v.$space-md; // Adjusted gap
-  background-color: #164352;
+  background-color: darken(v.$primary-color, 32%);
   border-top: v.$border-color-secondary 1px solid; // Top border for separation
   // background-color: v.$background-dark; // Let wrapper handle background now
 }

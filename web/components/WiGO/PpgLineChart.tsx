@@ -291,7 +291,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
       <div
         className={styles.ratesLabel}
         style={{
-          backgroundColor: "#164352",
+          backgroundColor: "Rgb(6, 47, 61)",
           // gridRow: "1/2", // Not needed with gridTemplateRows
           display: "flex",
           justifyContent: "center",
