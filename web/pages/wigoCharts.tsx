@@ -20,6 +20,7 @@ import PlayerHeader from "components/WiGO/PlayerHeader";
 import StatsTable from "components/WiGO/StatsTable";
 import PerGameStatsTable from "components/WiGO/PerGameStatsTable";
 import RateStatPercentiles from "components/WiGO/RateStatPercentiles"; // Adjust path
+import useCurrentSeason from "hooks/useCurrentSeason";
 import TimeOptions, { TimeOption } from "components/TimeOptions/TimeOptions";
 
 import {
@@ -82,6 +83,9 @@ const WigoCharts: React.FC = () => {
   const [rightTimeframe, setRightTimeframe] =
     useState<keyof TableAggregateData>("CA");
   const placeholderImage = "/pictures/player-placeholder.jpg";
+
+  const currentSeasonData = useCurrentSeason();
+  const currentSeasonId = currentSeasonData?.seasonId ?? null;
 
   // Handle player selection (remains the same)
   const handlePlayerSelect = useCallback((player: Player, headshot: string) => {
@@ -283,7 +287,7 @@ const WigoCharts: React.FC = () => {
           <div className={styles.percentileChartContainer}>
             <CategoryCoverageChart
               playerId={selectedPlayer?.id}
-              timeOption="L30"
+              timeOption="SEASON"
             />
           </div>
 
@@ -299,12 +303,15 @@ const WigoCharts: React.FC = () => {
           <div className={styles.countsTableContainer}>
             {/* Pass loading/error state specific to aggregated data */}
             <StatsTable
-              title="COUNTS" // Prop for table title row
+              title="COUNTS"
               data={displayCountsData}
-              isLoading={isLoadingAggData && displayCountsData.length === 0} // Show loading only if data is empty
+              isLoading={isLoadingAggData && displayCountsData.length === 0}
               error={aggDataError}
               formatCell={formatCell}
-              // Make sure StatsTable renders a <table className={styles.statsTableActual}>
+              // **** PASS REQUIRED PROPS ****
+              playerId={selectedPlayer?.id ?? 0} // Pass ID or 0/handle appropriately if no player
+              currentSeasonId={currentSeasonId ?? 0} // Pass season or 0/handle appropriately if no season
+              // Conditionally render or disable table if !selectedPlayer or !currentSeasonId
             />
           </div>
           <div className={styles.ratesTableContainer}>
@@ -314,7 +321,9 @@ const WigoCharts: React.FC = () => {
               isLoading={isLoadingAggData && displayRatesData.length === 0}
               error={aggDataError}
               formatCell={formatCell}
-              // Make sure StatsTable renders a <table className={styles.statsTableActual}>
+              // **** PASS REQUIRED PROPS ****
+              playerId={selectedPlayer?.id ?? 0}
+              currentSeasonId={currentSeasonId ?? 0}
             />
           </div>
           <div className={styles.perGameStatsContainer}>

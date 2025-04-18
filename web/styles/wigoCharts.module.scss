@@ -13,7 +13,7 @@
 }
 
 .wigoHeader {
-  margin: v.$space-md auto;
+  margin: v.$space-md auto v.$space-lg;
   width: 100%;
   display: flex;
   justify-content: center;
@@ -523,6 +523,12 @@
       white-space: nowrap; // Keep headers nowrap
       text-align: center; // Default center align
 
+      &:first-child {
+        // Style for Expander column header
+        width: 5%; // Ensure width is applied
+        padding: v.$space-xs * 0.8 4px; // Reduced padding
+      }
+
       &:last-child {
         border-right: none;
       }
@@ -558,29 +564,98 @@
         border-right: none;
       }
     }
+
+    .expanderCell {
+      // Target the TD specifically
+      text-align: center;
+      width: 5%; // Match header width
+      border-right: v.$border-subtle; // Keep consistent border
+      // Inherit background from row for striping/hover
+      background-color: inherit;
+
+      // Make Expander column sticky (along with Stat column)
+      position: sticky;
+      left: 0; // Stick to the far left
+      z-index: 1; // Below header
+    }
+
+    button.expandButton {
+      // Target the button inside the cell
+      background: none;
+      border: none;
+      color: v.$primary-color;
+      font-weight: 900;
+      cursor: pointer;
+      padding: 2px 5px;
+      font-size: v.$font-size-base;
+      margin: 0 auto;
+      line-height: 1; // Ensure icon aligns well vertically
+
+      &:hover {
+        color: #fff;
+      }
+    }
+
+    td:nth-child(2) {
+      // Target the Stat Label TD (now the second child)
+      text-align: left;
+      padding-left: v.$space-sm;
+      font-weight: 600;
+      color: v.$text-color-secondary;
+      border-right: v.$border-separator; // Match header separator
+      // Make Stat column sticky (needs left offset due to expander)
+      position: sticky;
+      left: 5%; // Offset by the width of the expander column
+      z-index: 1;
+      background-color: inherit;
+    }
+
+    // Style the row containing the chart
+    tr.chartRow {
+      td.chartCell {
+        // Target the single cell in the chart row
+        border-bottom: 1px solid #555; // Separator line
+        border-top: 1px solid #555; // Separator line
+        background-color: #282c34; // Darker background for chart area
+        padding: v.$space-sm !important; // Add padding *inside* the chart cell
+      }
+      // Ensure hover effect doesn't apply to chart row if desired
+      &:hover {
+        background-color: transparent; // Or match chartCell background
+      }
+    }
   }
 }
 
 // Styles for the table *inside* the Counts/Rates containers
 .countsTableContainer .statsTableActual,
 .ratesTableContainer .statsTableActual {
-  @include stats-table-common; // Apply common styles
-  border: none !important; // Override any default borders
+  // Target the nested table element
+  @include stats-table-common;
+  border: none !important;
 
-  // Specifics for Counts/Rates Tables
   thead {
+    // Adjust first child (Expander) and second child (Stat) headers
     th:first-child {
+      // Expander Header
+      text-align: center;
+      padding: v.$space-xs * 0.8 4px;
+      border-right: v.$border-subtle;
+      position: sticky;
+      left: 0; // Stick expander to far left
+      z-index: 3;
+      background-color: v.$background-dark;
+    }
+    th:nth-child(2) {
       // Stat Header
       text-align: left;
       padding-left: v.$space-sm;
       border-right: v.$border-separator; // Stronger separator
-      // Width should be controlled by <colgroup> in the HTML/Component
-      position: sticky; // Make first column sticky
-      left: 0;
-      z-index: 3; // Above other headers
-      background-color: v.$background-dark; // Ensure background for sticky
+      position: sticky;
+      left: 5%; // Offset Stat header
+      z-index: 3;
+      background-color: v.$background-dark;
     }
-    // Header cells for CA, STD, L10 etc (center aligned by default)
 
     // Title Rows (Counts/Rates Labels)
     tr.countsLabel th,
@@ -620,13 +695,13 @@
     td:first-child {
       // Stat Name Cell
       text-align: left;
-      padding-left: v.$space-sm;
       font-weight: 600;
       color: v.$text-color-secondary;
+      padding: 0;
+      text-align: center;
       border-right: v.$border-separator; // Match header separator
       // Make first column sticky
       position: sticky;
-      left: 0;
       z-index: 1; // Below header
       // Inherit background color from row for striping/hover
       background-color: inherit;
@@ -650,14 +725,78 @@
   }
 }
 
+// --- GameLogChart Internal Styles ---
+.gameLogChartContainer {
+  h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    text-align: center;
+    color: #eee;
+    font-size: 1.1em;
+  }
+  .averageToggleButtons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+
+  .avgButton {
+    background-color: #444;
+    border: 1px solid #666;
+    color: #ccc;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+      color 0.2s ease; // Added color transition
+
+    &:hover {
+      background-color: #555;
+      border-color: #888;
+    }
+
+    &.active {
+      background-color: v.$primary-color;
+      border-color: darken(v.$primary-color, 15%);
+      color: white;
+      font-weight: bold;
+    }
+  }
+}
+
+.chartStatus {
+  // For Loading/Error/No Data within the chart cell
+  padding: 20px;
+  text-align: center;
+  color: #aaa;
+  font-style: italic;
+  background-color: #282c34; // Match chart background
+}
+
+// Style for Recharts Tooltip
+.chartTooltip {
+  background-color: rgba(40, 44, 52, 0.9);
+  border: 1px solid #666;
+  padding: 10px;
+  border-radius: 4px;
+  color: #eee;
+  font-size: 0.9em;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+
+  p {
+    margin: 3px 0;
+  }
+}
+
 .ratesTable,
 .countsTable {
   height: 100%; // Fill container height
 }
 
 // --- Per Game Stats Table Styling ---
-// Styles for the table *inside* the .perGameStatsContainer
-// ASSUMPTION: The <table> element inside PerGameStatsTable component has class="transposedTable"
 .perGameStatsContainer {
   // Container handles scroll
   overflow: auto;

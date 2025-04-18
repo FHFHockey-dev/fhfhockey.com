@@ -146,7 +146,7 @@ export default function GameScoreLineChart({
         backgroundColor: useDummyData
           ? "transparent"
           : COLOR_PALLET[colorIndex].backgroundColor,
-        fill: false, // Typically don't fill rolling averages
+        fill: true, // Typically don't fill rolling averages
         tension: 0.2,
         pointRadius: 0, // No points on rolling average lines
         pointHoverRadius: 3,

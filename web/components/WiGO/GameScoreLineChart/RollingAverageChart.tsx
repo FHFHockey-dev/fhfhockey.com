@@ -7,11 +7,11 @@ import {
   LinearScale,
   PointElement,
   LineElement,
-  BarElement, // Make sure BarElement is registered if using bars
+  BarElement,
   Title,
   Tooltip,
-  Legend, // Keep Legend registered if options might enable it
-  Filler, // Keep Filler registered if datasets use fill
+  Legend,
+  Filler,
   LineController,
   BarController,
   ChartOptions,

@@ -46,6 +46,143 @@ export interface SkaterGameLogStatsData {
   pp_toi_pct_per_game: number | null; // <<< ADDED
 }
 
+export interface GameLogDataPoint {
+  date: string; // 'YYYY-MM-DD'
+  value: number | null;
+}
+
+type GameLogTableName = Extract<
+  keyof Database["public"]["Tables"],
+  | "wgo_skater_stats"
+  | "nst_gamelog_as_counts"
+  | "nst_gamelog_as_rates"
+  | "nst_gamelog_as_counts_oi"
+  | "nst_gamelog_as_rates_oi"
+>;
+
+const statToGameLogColumnMap: Record<
+  string,
+  | { table: GameLogTableName; column: string; unit?: string }
+  | {
+      calculation: "PTS1%";
+      table: "wgo_skater_stats";
+      requiredColumns: string[];
+    } // Special calculation mapping
+  | {
+      calculation: "PTS1/60";
+      table: "nst_gamelog_as_rates";
+      requiredColumns: string[];
+    } // **** ADDED PTS1/60 Calculation Type ****
+> = {
+  // --- From wgo_skater_stats (Likely best source for direct game stats) ---
+  GP: { table: "wgo_skater_stats", column: "games_played" }, // Value is usually 1 per game row
+  ATOI: { table: "wgo_skater_stats", column: "toi_per_game", unit: "seconds" }, // NHL API gives seconds
+  Goals: { table: "wgo_skater_stats", column: "goals" },
+  Assists: { table: "wgo_skater_stats", column: "assists" },
+  Points: { table: "wgo_skater_stats", column: "points" },
+  SOG: { table: "wgo_skater_stats", column: "shots" },
+  "S%": {
+    table: "wgo_skater_stats",
+    column: "shooting_percentage",
+    unit: "percent_decimal"
+  }, // Often stored 0-100 or 0-1? CHECK DB
+  ixG: { table: "nst_gamelog_as_counts", column: "ixg" },
+  PPG: { table: "wgo_skater_stats", column: "pp_goals" },
+  PPA: { table: "wgo_skater_stats", column: "pp_assists" },
+  PPP: { table: "wgo_skater_stats", column: "pp_points" },
+  PPTOI: {
+    table: "wgo_skater_stats",
+    column: "pp_toi_per_game",
+    unit: "seconds"
+  }, // NHL API gives seconds
+  "PP%": {
+    table: "wgo_skater_stats",
+    column: "pp_toi_pct_per_game",
+    unit: "percent_decimal"
+  }, // CHECK DB format (likely 0-1 decimal)
+  HIT: { table: "wgo_skater_stats", column: "hits" },
+  BLK: { table: "wgo_skater_stats", column: "blocked_shots" },
+  PIM: { table: "wgo_skater_stats", column: "penalty_minutes" },
+  // --- From nst_gamelog_as_counts (Individual counts) ---
+  iCF: { table: "nst_gamelog_as_counts", column: "icf" },
+  IPP: { table: "nst_gamelog_as_counts", column: "ipp" },
+  "oiSH%": {
+    table: "nst_gamelog_as_counts_oi",
+    column: "on_ice_sh_pct",
+    unit: "percent_decimal"
+  },
+  "OZS%": {
+    table: "nst_gamelog_as_counts_oi",
+    column: "off_zone_start_pct",
+    unit: "percent_decimal"
+  }, // Check DB format
+
+  // --- From nst_gamelog_as_rates (Individual rates) ---
+  "G/60": { table: "nst_gamelog_as_rates", column: "goals_per_60" },
+  "A/60": { table: "nst_gamelog_as_rates", column: "total_assists_per_60" },
+  "PTS/60": { table: "nst_gamelog_as_rates", column: "total_points_per_60" },
+  "SOG/60": { table: "nst_gamelog_as_rates", column: "shots_per_60" },
+  "ixG/60": { table: "nst_gamelog_as_rates", column: "ixg_per_60" },
+  "iCF/60": { table: "nst_gamelog_as_rates", column: "icf_per_60" },
+  "iHDCF/60": { table: "nst_gamelog_as_rates", column: "hdcf_per_60" }, // NST uses hdcf_per_60
+  "iSCF/60": { table: "nst_gamelog_as_rates", column: "iscfs_per_60" }, // NST uses iscfs_per_60
+  "PPG/60": { table: "nst_gamelog_as_rates", column: "ppg_per_60" }, // Need powerplay specific table/columns
+  "PPA/60": { table: "nst_gamelog_as_rates", column: "ppa_per_60" }, // Need powerplay specific table/columns
+  "PPP/60": { table: "nst_gamelog_as_rates", column: "ppp_per_60" }, // Need powerplay specific table/columns
+  "HIT/60": { table: "nst_gamelog_as_rates", column: "hits_per_60" },
+  "BLK/60": { table: "nst_gamelog_as_rates", column: "shots_blocked_per_60" }, // NST uses shots_blocked_per_60
+  "PIM/60": { table: "nst_gamelog_as_rates", column: "pim_per_60" },
+
+  // **** Special Calculation for PTS1% ****
+  "PTS1%": {
+    calculation: "PTS1%",
+    table: "wgo_skater_stats",
+    requiredColumns: ["goals", "total_primary_assists", "points"] // Map to ACTUAL column names in wgo_skater_stats
+  },
+  "PTS1/60": {
+    calculation: "PTS1/60",
+    table: "nst_gamelog_as_rates",
+    requiredColumns: ["goals_per_60", "first_assists_per_60"] // Columns needed for calculation
+  },
+  // --- From nst_gamelog_as_rates_oi (On-Ice Rates/Percentages) ---
+  // Need to decide if you want individual rates (above) or on-ice rates for chart
+  "CF%": {
+    table: "nst_gamelog_as_rates_oi",
+    column: "cf_pct",
+    unit: "percent_decimal"
+  }, // Check DB format
+  "FF%": {
+    table: "nst_gamelog_as_rates_oi",
+    column: "ff_pct",
+    unit: "percent_decimal"
+  }, // Check DB format
+  "SF%": {
+    table: "nst_gamelog_as_rates_oi",
+    column: "sf_pct",
+    unit: "percent_decimal"
+  }, // Check DB format
+  "GF%": {
+    table: "nst_gamelog_as_rates_oi",
+    column: "gf_pct",
+    unit: "percent_decimal"
+  }, // Check DB format
+  "xGF%": {
+    table: "nst_gamelog_as_rates_oi",
+    column: "xgf_pct",
+    unit: "percent_decimal"
+  }, // Check DB format
+  "SCF%": {
+    table: "nst_gamelog_as_rates_oi",
+    column: "scf_pct",
+    unit: "percent_decimal"
+  }, // Check DB format
+  "HDCF%": {
+    table: "nst_gamelog_as_rates_oi",
+    column: "hdcf_pct",
+    unit: "percent_decimal"
+  } // Check DB format
+};
+
 const countStatsMap: Record<string, string> = {
   GP: "gp",
   ATOI: "atoi",
@@ -87,6 +224,172 @@ const rateStatsMap: Record<string, string> = {
   "BLK/60": "blk_per_60",
   "PIM/60": "pim_per_60"
 };
+
+export async function fetchPlayerGameLogForStat(
+  playerId: number,
+  seasonId: number,
+  statLabel: string
+): Promise<GameLogDataPoint[]> {
+  const mapping = statToGameLogColumnMap[statLabel];
+
+  if (!mapping) {
+    console.warn(`No game log mapping found for stat label: "${statLabel}"`);
+    return [];
+  }
+
+  try {
+    // **** Handle Special Calculation for PTS1% ****
+    if ("calculation" in mapping && mapping.calculation === "PTS1%") {
+      const { table, requiredColumns } = mapping;
+      // **** Determine correct date column for the calculation source table ****
+      const dateColumn = table === "wgo_skater_stats" ? "date" : "date_scraped"; // Use date_scraped for nst_*
+
+      console.log(
+        `Workspaceing game log for ${statLabel} calculation (Player ${playerId}, Season ${seasonId}) from ${table}, requires: ${requiredColumns.join(
+          ", "
+        )}`
+      );
+
+      const selectString = `${dateColumn}, ${requiredColumns.join(", ")}`;
+      const seasonColumn = "season_id"; // PTS1% uses wgo_skater_stats which has season_id
+
+      const { data, error } = await supabase
+        .from(table)
+        .select(selectString)
+        .eq("player_id", playerId)
+        .eq(seasonColumn, seasonId) // Use season_id here
+        .order(dateColumn, { ascending: true });
+
+      if (error) throw error;
+
+      const calculatedData =
+        data?.map((item: any) => {
+          const goals = item.goals;
+          const primaryAssists = item.total_primary_assists;
+          const points = item.points;
+          let value: number | null = null;
+
+          if (
+            typeof goals === "number" &&
+            typeof primaryAssists === "number" &&
+            typeof points === "number" &&
+            points > 0
+          ) {
+            value = (goals + primaryAssists) / points;
+          } else if (points === 0 && (goals > 0 || primaryAssists > 0)) {
+            value = null;
+          } else if (points === 0 && goals === 0 && primaryAssists === 0) {
+            value = 0;
+          }
+
+          return {
+            date: item[dateColumn], // Use the fetched date column
+            value: value
+          };
+        }) || [];
+      console.log(
+        `Workspaceed and calculated data for ${statLabel}:`,
+        calculatedData.length,
+        "rows"
+      ); // Log success/count
+      return calculatedData;
+    } else if ("calculation" in mapping && mapping.calculation === "PTS1/60") {
+      const { table, requiredColumns } = mapping; // table is nst_gamelog_as_rates
+      const dateColumn = "date_scraped"; // nst tables use date_scraped
+      const seasonColumn = "season"; // nst tables use season
+
+      console.log(
+        `Workspaceing game log for ${statLabel} calculation (Player ${playerId}, Season ${seasonId}) from ${table}, requires: ${requiredColumns.join(
+          ", "
+        )}`
+      );
+      const selectString = `${dateColumn}, ${requiredColumns.join(", ")}`; // Selects date, goals_per_60, first_assists_per_60
+
+      const { data, error } = await supabase
+        .from(table)
+        .select(selectString)
+        .eq("player_id", playerId)
+        .eq(seasonColumn, seasonId.toString()) // Convert number to string for 'season' column
+        .order(dateColumn, { ascending: true });
+      if (error) throw error;
+
+      const calculatedData =
+        data?.map((item: any) => {
+          const g60 = item.goals_per_60;
+          const a1_60 = item.first_assists_per_60;
+          let value: number | null = null;
+
+          // Sum the rates if both are valid numbers
+          if (typeof g60 === "number" && typeof a1_60 === "number") {
+            value = g60 + a1_60;
+          }
+          // If only one exists, maybe return that one? Or null? Let's return null if either is missing.
+          // else if (typeof g60 === 'number') value = g60;
+          // else if (typeof a1_60 === 'number') value = a1_60;
+
+          return { date: item[dateColumn], value: value };
+        }) || [];
+      console.log(
+        `Workspaceed and calculated data for ${statLabel}:`,
+        calculatedData.length,
+        "rows"
+      );
+      return calculatedData;
+    } else if ("column" in mapping) {
+      // **** Handle Standard Column Fetching ****
+      const { table, column: statColumn, unit } = mapping;
+      // **** Determine correct date AND season column based on table ****
+      const dateColumn = table === "wgo_skater_stats" ? "date" : "date_scraped";
+      const seasonColumn =
+        table === "wgo_skater_stats" ? "season_id" : "season";
+
+      console.log(
+        `Workspaceing game log for ${statLabel} (Player ${playerId}, Season ${seasonId}) from ${table}.${statColumn} using date='${dateColumn}' and season='${seasonColumn}'` // Log which columns are used
+      );
+
+      const { data, error } = await supabase
+        .from(table)
+        .select(`${dateColumn}, ${statColumn}`)
+        .eq("player_id", playerId)
+        .eq(seasonColumn, seasonId) // Use correct season column
+        .order(dateColumn, { ascending: true });
+
+      if (error) throw error;
+
+      const gameLogData =
+        data?.map((item: any) => {
+          let value = item[statColumn];
+
+          // Unit handling remains the same (commented out unless needed)
+          // if (unit === "percent_decimal" && typeof value === 'number' && value > 1) {
+          //    value = value / 100;
+          // }
+
+          return {
+            date: item[dateColumn], // Use the fetched date column
+            value: typeof value === "number" ? value : null
+          };
+        }) || [];
+      console.log(
+        `Workspaceed data for ${statLabel}:`,
+        gameLogData.length,
+        "rows"
+      ); // Log success/count
+      return gameLogData;
+    } else {
+      console.warn(
+        `Invalid mapping configuration for stat label: "${statLabel}"`
+      );
+      return [];
+    }
+  } catch (err: any) {
+    console.error(
+      `Supabase error fetching game log for ${statLabel} (Player ${playerId}, Season ${seasonId}):`, // Be more specific about Supabase errors
+      err.message || err
+    );
+    return [];
+  }
+}
 
 /**
  * Fetches pre-aggregated player stats from wigo_career and wigo_recent
