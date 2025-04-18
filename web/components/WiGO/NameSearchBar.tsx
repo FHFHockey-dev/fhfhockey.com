@@ -1,6 +1,13 @@
 // web/components/WiGO/NameSearchBar.tsx
 
-import React, { useState, useEffect, useRef, ChangeEvent } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  ChangeEvent,
+  KeyboardEvent,
+  useCallback // Import useCallback
+} from "react";
 import styles from "./NameSearchBar.module.scss";
 import supabase from "lib/supabase";
 import { Player } from "./types";
@@ -16,20 +23,25 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({ onSelect }) => {
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [activeIndex, setActiveIndex] = useState<number>(-1);
+
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listItemsRef = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Ref to track the latest query to handle out-of-order responses
-  const latestQueryRef = useRef<string>("");
+  const latestQueryRef = useRef<string>(""); // Ref to track the latest query to handle out-of-order responses
+  const isSelectingRef = useRef<boolean>(false); // Ref to track if a selection was made to prevent dropdown from reopening
 
-  // Ref to track if a selection was made to prevent dropdown from reopening
-  const isSelectingRef = useRef<boolean>(false);
-
-  // Debounce delay in milliseconds
   const DEBOUNCE_DELAY = 300;
 
   // Effect to handle debounced search
   useEffect(() => {
-    // If searchTerm is empty, reset the state
+    listItemsRef.current = listItemsRef.current.slice(
+      0,
+      filteredPlayers.length
+    );
+    setActiveIndex(-1); // Reset active index when players change
+
     if (searchTerm.trim() === "") {
       setFilteredPlayers([]);
       setIsDropdownVisible(false);
@@ -42,9 +54,7 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({ onSelect }) => {
     setFetchError(null);
     latestQueryRef.current = searchTerm;
 
-    // Set up the debounce
     const handler = setTimeout(async () => {
-      // If a selection was just made, skip the search and reset the flag
       if (isSelectingRef.current) {
         isSelectingRef.current = false;
         setIsLoading(false);
@@ -55,19 +65,21 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({ onSelect }) => {
         const { data, error } = await supabase
           .from("players")
           .select("*")
-          .ilike("fullName", `%${searchTerm}%`) // Case-insensitive search
-          .limit(10); // Limit results for performance
+          .ilike("fullName", `%${searchTerm}%`)
+          .limit(10);
 
         if (error) {
           console.error("Error fetching players:", error);
-          setFetchError("Failed to load players.");
-          setFilteredPlayers([]);
-          setIsDropdownVisible(false);
+          if (searchTerm === latestQueryRef.current) {
+            setFetchError("Failed to load players.");
+            setFilteredPlayers([]);
+            setIsDropdownVisible(false);
+          }
         } else {
-          // Ensure that the response corresponds to the latest query
           if (searchTerm === latestQueryRef.current) {
             setFilteredPlayers(data as Player[]);
-            setIsDropdownVisible(true);
+            setIsDropdownVisible(data.length > 0); // Only show if there are results
+            setActiveIndex(-1); // Reset index on new results
           }
         }
       } catch (err) {
@@ -78,14 +90,12 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({ onSelect }) => {
           setIsDropdownVisible(false);
         }
       } finally {
-        // Only update loading state if the query hasn't changed
         if (searchTerm === latestQueryRef.current && !isSelectingRef.current) {
           setIsLoading(false);
         }
       }
     }, DEBOUNCE_DELAY);
 
-    // Cleanup function to cancel the timeout if searchTerm changes
     return () => {
       clearTimeout(handler);
     };
@@ -102,9 +112,12 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({ onSelect }) => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        !dropdownRef.current.contains(event.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target as Node) // Also check if click is outside input
       ) {
         setIsDropdownVisible(false);
+        setActiveIndex(-1); // Reset index when closing
       }
     };
 
@@ -116,89 +129,176 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({ onSelect }) => {
 
   /**
    * Handles the selection of a player from the search bar.
-   * Checks if `image_url` is available in the database and uses it.
-   * If not available, fetches the headshot from NHL API and updates the database.
-   *
-   * @param {Player} player - The selected player object.
-   * @returns {Promise<void>} - A promise that resolves when the selection handling is complete.
-   * @throws {Error} - Throws an error if the HTTP response is not ok.
    */
-  const handleSelect = async (player: Player) => {
-    // Indicate that a selection is being made
-    isSelectingRef.current = true;
+  const handleSelect = useCallback(
+    async (player: Player) => {
+      isSelectingRef.current = true; // Mark as selecting
+      setSearchTerm(player.fullName);
+      setIsDropdownVisible(false);
+      setActiveIndex(-1); // Reset index on selection
 
-    setSearchTerm(player.fullName);
-    setIsDropdownVisible(false);
+      // Use existing image URL if available
+      if (player.image_url) {
+        onSelect(player, player.image_url);
+        setTimeout(() => (isSelectingRef.current = false), 50);
+        return;
+      }
 
-    // Use existing image URL if available
-    if (player.image_url) {
-      onSelect(player, player.image_url);
+      // Fetch the image URL
+      try {
+        const response = await Fetch(
+          `https://api-web.nhle.com/v1/player/${player.id}/landing`
+        );
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        const headshotUrl = data.headshot;
+        const teamId = data.teamId;
+        const sweaterNumber = data.sweaterNumber;
+
+        onSelect(player, headshotUrl);
+
+        // Update DB
+        await supabase
+          .from("players")
+          .update({
+            image_url: headshotUrl,
+            sweater_number: sweaterNumber,
+            team_id: teamId
+          })
+          .eq("id", player.id);
+      } catch (error) {
+        console.error("Error fetching headshot:", error);
+        onSelect(player, "");
+      } finally {
+        // Reset selecting flag slightly later
+        setTimeout(() => (isSelectingRef.current = false), 50);
+      }
+    },
+    [onSelect]
+  );
+
+  // Scroll active item into view
+  useEffect(() => {
+    if (activeIndex >= 0 && activeIndex < listItemsRef.current.length) {
+      const activeItem = listItemsRef.current[activeIndex];
+      activeItem?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest"
+      });
+    }
+  }, [activeIndex]);
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (!isDropdownVisible || filteredPlayers.length === 0) {
+      console.log(" -> Condition not met, returning early.");
+      // If dropdown is closed or empty, allow default behavior (except Enter)
+      if (e.key === "Enter") {
+        // Optionally prevent form submission if inside a form
+        // e.preventDefault();
+      }
       return;
     }
 
-    // Fetch the image URL from the NHL API if not in the database
-    try {
-      const response = await Fetch(
-        `https://api-web.nhle.com/v1/player/${player.id}/landing`
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      const headshotUrl = data.headshot;
-      const teamId = data.teamId;
-      const sweaterNumber = data.sweaterNumber;
-
-      // Pass the image URL to the onSelect callback
-      onSelect(player, headshotUrl);
-
-      // Update the player's image URL in the database for future use
-      await supabase
-        .from("players")
-        .update({
-          image_url: headshotUrl,
-          sweater_number: sweaterNumber,
-          team_id: teamId
-        })
-        .eq("id", player.id);
-    } catch (error) {
-      console.error("Error fetching headshot:", error);
-      onSelect(player, ""); // Optionally set a default or placeholder image URL
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault(); // Prevent cursor move
+        setActiveIndex((prevIndex) => {
+          const newIndex =
+            prevIndex >= filteredPlayers.length - 1 ? 0 : prevIndex + 1;
+          return newIndex;
+        });
+        break;
+      case "ArrowUp":
+        e.preventDefault(); // Prevent cursor move
+        setActiveIndex((prevIndex) => {
+          const newIndex =
+            prevIndex <= 0 ? filteredPlayers.length - 1 : prevIndex - 1;
+          return newIndex;
+        });
+        break;
+      case "Enter":
+      case "Tab": // Consider selecting on Tab as well, or just closing
+        e.preventDefault(); // Prevent form submit if inside a form
+        if (activeIndex >= 0 && activeIndex < filteredPlayers.length) {
+          handleSelect(filteredPlayers[activeIndex]);
+        } else if (e.key === "Tab") {
+          // If tabbed with no selection, just close
+          setIsDropdownVisible(false);
+          setActiveIndex(-1);
+        }
+        break;
+      case "Escape":
+        e.preventDefault(); // Prevent potential browser actions
+        setIsDropdownVisible(false);
+        setActiveIndex(-1);
+        break;
+      default:
+        // Allow other keys (like typing) to function normally
+        break;
     }
   };
+
+  // Also log activeIndex whenever it changes to confirm state updates
+  useEffect(() => {
+    console.log(`--- ActiveIndex State Updated To: ${activeIndex} ---`);
+  }, [activeIndex]);
+
+  // Determine the active descendant ID for ARIA
+  const activeDescendantId =
+    activeIndex >= 0 && activeIndex < filteredPlayers.length
+      ? `player-option-${filteredPlayers[activeIndex].id}`
+      : undefined;
 
   return (
     <div className={styles.searchBarContainer} ref={dropdownRef}>
       <input
+        ref={inputRef}
         type="text"
         placeholder="Search player..."
         value={searchTerm}
         onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
         className={styles.searchInput}
         role="combobox"
         aria-haspopup="listbox"
         aria-expanded={isDropdownVisible}
         aria-controls="player-dropdown"
+        aria-autocomplete="list"
+        aria-activedescendant={activeDescendantId}
+        onFocus={() => {
+          if (searchTerm.trim() && filteredPlayers.length > 0) {
+            setIsDropdownVisible(true);
+          }
+        }}
       />
 
       {isLoading && <div className={styles.loading}>Loading...</div>}
       {fetchError && <div className={styles.error}>{fetchError}</div>}
       {isDropdownVisible && (
-        <div id="player-dropdown" className={styles.dropdown} role="listbox">
+        <div
+          id="player-dropdown"
+          className={styles.dropdown}
+          role="listbox"
+          // capture focus briefly if needed, but keep focus on input
+          // tabIndex={-1}
+        >
           {filteredPlayers.length > 0 ? (
-            filteredPlayers.map((player) => (
+            filteredPlayers.map((player, index) => (
               <div
-                key={player.id}
-                className={styles.dropdownItem}
-                onClick={() => handleSelect(player)}
-                role="option"
-                aria-selected="false"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    handleSelect(player);
-                  }
+                ref={(el) => {
+                  listItemsRef.current[index] = el;
                 }}
+                key={player.id}
+                id={`player-option-${player.id}`} // Unique ID for aria-activedescendant
+                className={`${styles.dropdownItem} ${
+                  index === activeIndex ? styles.active : ""
+                }`}
+                onClick={() => handleSelect(player)}
+                onMouseDown={(e) => e.preventDefault()}
+                role="option"
+                aria-selected={index === activeIndex}
               >
                 {player.fullName}
               </div>

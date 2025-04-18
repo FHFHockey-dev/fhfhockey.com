@@ -62,3 +62,36 @@ export function calculatePercentileRank(
   // Clamp result between 0 and 1 (floating point math might slightly exceed bounds)
   return Math.max(0, Math.min(1, percentile));
 }
+
+// --- Helper Function to Calculate Rank ---
+// Moved calculation logic into a reusable function within the component scope
+// This could also be moved to the `calculatePercentiles.ts` utils file
+export const calculatePlayerRank = (
+  data: ReadonlyArray<{ player_id: number; value: number }>,
+  targetPlayerId: number,
+  higherIsBetter: boolean
+): number | null => {
+  if (!data || data.length === 0) {
+    return null;
+  }
+
+  const targetPlayerData = data.find((p) => p.player_id === targetPlayerId);
+  if (!targetPlayerData) {
+    return null; // Player not in filtered data for this stat
+  }
+
+  // Sort the data based on the value
+  const sortedData = [...data].sort((a, b) => {
+    // Handle potential nulls defensively although pre-filtered
+    const valA = a.value ?? (higherIsBetter ? -Infinity : Infinity);
+    const valB = b.value ?? (higherIsBetter ? -Infinity : Infinity);
+    return higherIsBetter ? valB - valA : valA - valB; // Desc for higherIsBetter, Asc otherwise
+  });
+
+  // Find the index (0-based) of the target player in the sorted list
+  // Note: findIndex stops at the first match, handling ties by assigning the highest rank (e.g., 1st)
+  const index = sortedData.findIndex((p) => p.player_id === targetPlayerId);
+
+  // Return rank (1-based index) or null if not found (shouldn't happen if targetPlayerData was found)
+  return index !== -1 ? index + 1 : null;
+};

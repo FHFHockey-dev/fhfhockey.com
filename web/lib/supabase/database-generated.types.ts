@@ -18449,7 +18449,7 @@ export type Database = {
           player_id: number | null;
           season: string | null;
           gp: number | null;
-          toi: number | null;
+          toi_seconds: number | null;
           ca_per_60: number | null;
           fa_per_60: number | null;
           sa_per_60: number | null;
@@ -18475,7 +18475,7 @@ export type Database = {
           player_id?: number | null;
           season?: string | null;
           gp?: number | null;
-          toi?: number | null;
+          toi_seconds?: number | null;
           ca_per_60?: number | null;
           fa_per_60?: number | null;
           sa_per_60?: number | null;
@@ -18501,7 +18501,7 @@ export type Database = {
           player_id?: number | null;
           season?: string | null;
           gp?: number | null;
-          toi?: number | null;
+          toi_seconds?: number | null;
           ca_per_60?: number | null;
           fa_per_60?: number | null;
           sa_per_60?: number | null;
@@ -18530,7 +18530,7 @@ export type Database = {
           player_id: number | null;
           season: string | null;
           gp: number | null;
-          toi: number | null;
+          toi_seconds: number | null;
           goals_per_60: number | null;
           total_assists_per_60: number | null;
           first_assists_per_60: number | null;
@@ -18573,7 +18573,7 @@ export type Database = {
           player_id?: number | null;
           season?: string | null;
           gp?: number | null;
-          toi?: number | null;
+          toi_seconds?: number | null;
           goals_per_60?: number | null;
           total_assists_per_60?: number | null;
           first_assists_per_60?: number | null;
@@ -18616,7 +18616,7 @@ export type Database = {
           player_id?: number | null;
           season?: string | null;
           gp?: number | null;
-          toi?: number | null;
+          toi_seconds?: number | null;
           goals_per_60?: number | null;
           total_assists_per_60?: number | null;
           first_assists_per_60?: number | null;
@@ -18662,7 +18662,7 @@ export type Database = {
           player_id: number | null; // Note: integer maps to number
           season: number | null; // Note: integer maps to number
           gp: number | null;
-          toi: number | null;
+          toi_seconds: number | null;
           ca_per_60: number | null;
           fa_per_60: number | null;
           sa_per_60: number | null;
@@ -18688,7 +18688,7 @@ export type Database = {
           player_id?: number | null;
           season?: number | null;
           gp?: number | null;
-          toi?: number | null;
+          toi_seconds?: number | null;
           ca_per_60?: number | null;
           fa_per_60?: number | null;
           sa_per_60?: number | null;
@@ -18714,7 +18714,7 @@ export type Database = {
           player_id?: number | null;
           season?: number | null;
           gp?: number | null;
-          toi?: number | null;
+          toi_seconds?: number | null;
           ca_per_60?: number | null;
           fa_per_60?: number | null;
           sa_per_60?: number | null;
@@ -18743,7 +18743,7 @@ export type Database = {
           player_id: number | null; // Note: integer maps to number
           season: number | null; // Note: integer maps to number
           gp: number | null;
-          toi: number | null;
+          toi_seconds: number | null;
           goals_per_60: number | null;
           total_assists_per_60: number | null;
           first_assists_per_60: number | null;
@@ -18786,7 +18786,7 @@ export type Database = {
           player_id?: number | null;
           season?: number | null;
           gp?: number | null;
-          toi?: number | null;
+          toi_seconds?: number | null;
           goals_per_60?: number | null;
           total_assists_per_60?: number | null;
           first_assists_per_60?: number | null;
@@ -18829,7 +18829,7 @@ export type Database = {
           player_id?: number | null;
           season?: number | null;
           gp?: number | null;
-          toi?: number | null;
+          toi_seconds?: number | null;
           goals_per_60?: number | null;
           total_assists_per_60?: number | null;
           first_assists_per_60?: number | null;
@@ -18875,7 +18875,7 @@ export type Database = {
           player_id: number | null; // Note: integer maps to number
           season: number | null; // Note: integer maps to number
           gp: number | null;
-          toi: number | null;
+          toi_seconds: number | null;
           ca_per_60: number | null;
           fa_per_60: number | null;
           sa_per_60: number | null;
@@ -18901,7 +18901,7 @@ export type Database = {
           player_id?: number | null;
           season?: number | null;
           gp?: number | null;
-          toi?: number | null;
+          toi_seconds?: number | null;
           ca_per_60?: number | null;
           fa_per_60?: number | null;
           sa_per_60?: number | null;
@@ -18927,7 +18927,7 @@ export type Database = {
           player_id?: number | null;
           season?: number | null;
           gp?: number | null;
-          toi?: number | null;
+          toi_seconds?: number | null;
           ca_per_60?: number | null;
           fa_per_60?: number | null;
           sa_per_60?: number | null;
@@ -18956,7 +18956,7 @@ export type Database = {
           player_id: number | null; // Note: integer maps to number
           season: number | null; // Note: integer maps to number
           gp: number | null;
-          toi: number | null;
+          toi_seconds: number | null;
           goals_per_60: number | null;
           total_assists_per_60: number | null;
           first_assists_per_60: number | null;
@@ -18999,7 +18999,7 @@ export type Database = {
           player_id?: number | null;
           season?: number | null;
           gp?: number | null;
-          toi?: number | null;
+          toi_seconds?: number | null;
           goals_per_60?: number | null;
           total_assists_per_60?: number | null;
           first_assists_per_60?: number | null;
@@ -19042,7 +19042,7 @@ export type Database = {
           player_id?: number | null;
           season?: number | null;
           gp?: number | null;
-          toi?: number | null;
+          toi_seconds?: number | null;
           goals_per_60?: number | null;
           total_assists_per_60?: number | null;
           first_assists_per_60?: number | null;
@@ -19088,7 +19088,7 @@ export type Database = {
           player_id: number | null;
           season: string | null;
           gp: number | null;
-          toi: number | null;
+          toi_seconds: number | null;
           ca_per_60: number | null;
           fa_per_60: number | null;
           sa_per_60: number | null;
@@ -19114,7 +19114,7 @@ export type Database = {
           player_id?: number | null;
           season?: string | null;
           gp?: number | null;
-          toi?: number | null;
+          toi_seconds?: number | null;
           ca_per_60?: number | null;
           fa_per_60?: number | null;
           sa_per_60?: number | null;
@@ -19140,7 +19140,7 @@ export type Database = {
           player_id?: number | null;
           season?: string | null;
           gp?: number | null;
-          toi?: number | null;
+          toi_seconds?: number | null;
           ca_per_60?: number | null;
           fa_per_60?: number | null;
           sa_per_60?: number | null;
@@ -19169,7 +19169,7 @@ export type Database = {
           player_id: number | null;
           season: string | null;
           gp: number | null;
-          toi: number | null;
+          toi_seconds: number | null;
           goals_per_60: number | null;
           total_assists_per_60: number | null;
           first_assists_per_60: number | null;
@@ -19212,7 +19212,7 @@ export type Database = {
           player_id?: number | null;
           season?: string | null;
           gp?: number | null;
-          toi?: number | null;
+          toi_seconds?: number | null;
           goals_per_60?: number | null;
           total_assists_per_60?: number | null;
           first_assists_per_60?: number | null;
@@ -19255,7 +19255,7 @@ export type Database = {
           player_id?: number | null;
           season?: string | null;
           gp?: number | null;
-          toi?: number | null;
+          toi_seconds?: number | null;
           goals_per_60?: number | null;
           total_assists_per_60?: number | null;
           first_assists_per_60?: number | null;
@@ -20008,6 +20008,16 @@ export type Database = {
           _seasonid: number;
         };
         Returns: undefined;
+      };
+      get_skater_game_scores_for_season: {
+        Args: {
+          p_player_id: number;
+          p_season_id: number;
+        };
+        Returns: {
+          game_date: string | null;
+          game_score: number | null;
+        }[];
       };
       get_aggregated_player_stats:
         | {

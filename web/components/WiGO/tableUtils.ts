@@ -95,20 +95,61 @@ export const formatSecondsToMMSS = (seconds: number): string => {
 /**
  * Format cell values for display based on the statistic label.
  */
-export const formatCell = (label: string, value?: number): string => {
-  if (value == null || isNaN(value)) return "-"; // Handle null, undefined, and NaN
+export const formatCell = (
+  row: TableAggregateData,
+  columnKey: keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">
+): string => {
+  const value = row[columnKey];
+  const label = row.label;
+  const gpForColumn = row.GP ? row.GP[columnKey] : null;
+
+  // **** ADD LOGGING ****
+  if (label === "PPTOI") {
+    console.log(
+      `Formatting PPTOI: Column='<span class="math-inline">\{columnKey\}', Value\=</span>{value}, GP=${gpForColumn}, GP Object=`,
+      row.GP
+    );
+  }
+  // **** END LOGGING ****
+
+  if (value == null || isNaN(value)) return "-";
+
   switch (label) {
     case "ATOI":
+      const avgSecondsATOI = value * 60;
+      return formatSecondsToMMSS(avgSecondsATOI);
+
     case "PPTOI":
-      return formatSecondsToMMSS(value);
-    case "PP%":
-      // Assuming PP% is stored like 61.6 for 61.6%
-      return `${value.toFixed(1)}%`; // Keep one decimal place for PP%
-    default:
-      // Check if the number is an integer
-      if (Number.isInteger(value)) {
-        return value.toString(); // Display integers without decimals
+      // Value is Total Minutes for the period. Convert to Average Seconds/Game.
+      if (gpForColumn != null && gpForColumn > 0) {
+        const avgMinutesPPTOI = value / gpForColumn;
+        const avgSecondsPPTOI = avgMinutesPPTOI * 60;
+        return formatSecondsToMMSS(avgSecondsPPTOI);
+      } else if (gpForColumn === 0) {
+        return "0:00";
       }
-      return value.toFixed(2); // Default to 2 decimal places for other stats
+      // Log why we are returning '-'
+      console.warn(
+        `Returning '-' for PPTOI: Column='<span class="math-inline">\{columnKey\}', Value\=</span>{value}, GP=${gpForColumn}`
+      );
+      return "-";
+
+    case "PP%":
+      return `${(value * 100).toFixed(1)}`;
+
+    case "IPP":
+      return `${(value * 100).toFixed(1)}`;
+
+    default:
+      // Default formatting for other numbers
+      if (Number.isInteger(value)) {
+        return value.toString();
+      }
+      // Display percentages with one decimal
+      if (label.endsWith("%") || label.endsWith("_pct")) {
+        return `${(value * 100).toFixed(1)}%`;
+      }
+      // Default to 2 decimal places for other rates/numbers
+      return value.toFixed(2);
   }
 };

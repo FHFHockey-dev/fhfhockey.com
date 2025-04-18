@@ -7,40 +7,38 @@ import {
   LinearScale,
   PointElement,
   LineElement,
-  BarElement, // Import BarElement for the bar chart part
+  BarElement,
   Tooltip,
   Legend,
   Title,
   Filler,
-  LineController, // Needed for mixed charts
-  BarController // Needed for mixed charts
+  LineController,
+  BarController
 } from "chart.js";
 import {
   fetchPlayerGameLogPoints,
   fetchPlayerPerGameTotals,
   SkaterGameLogPointsData,
   SkaterTotalsData
-} from "utils/fetchWigoPlayerStats"; // Adjust path
-import { formatDateToMMDD } from "utils/formattingUtils"; // Adjust path
-import { calculateRollingAverage } from "utils/formattingUtils"; // Adjust path
-import styles from "styles/wigoCharts.module.scss"; // Import shared styles
+} from "utils/fetchWigoPlayerStats";
+import { formatDateToMMDD } from "utils/formattingUtils";
+import { calculateRollingAverage } from "utils/formattingUtils";
+import styles from "styles/wigoCharts.module.scss";
 
-// Register necessary Chart.js components
 ChartJS.register(
   CategoryScale,
   LinearScale,
   PointElement,
   LineElement,
-  BarElement, // Register BarElement
+  BarElement,
   Tooltip,
   Legend,
   Title,
   Filler,
-  LineController, // Register controllers
+  LineController,
   BarController
 );
 
-// Reuse color palette (could be moved to a shared utils file)
 const COLOR_PALLET = [
   {
     borderColor: "rgb(75, 192, 192)",
@@ -58,9 +56,7 @@ const COLOR_PALLET = [
     borderColor: "rgb(255, 205, 86)",
     backgroundColor: "rgba(255, 205, 86, 0.2)"
   } // Yellow
-  // Add more if needed
 ];
-// Define specific colors
 const PpgBarColor = {
   borderColor: "rgb(54, 162, 235)",
   backgroundColor: "rgba(54, 162, 235, 0.5)"
@@ -76,7 +72,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
   const [averagePpg, setAveragePpg] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const chartRef = useRef<ChartJS | null>(null); // Ref for mixed type chart
+  const chartRef = useRef<ChartJS | null>(null);
 
   useEffect(() => {
     // Reset logic when playerId is null/undefined
@@ -153,7 +149,8 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
         data: rollingAvg5,
         borderColor: COLOR_PALLET[0].borderColor, // Teal
         backgroundColor: COLOR_PALLET[0].backgroundColor,
-        fill: false, // Don't fill rolling average lines by default
+        fill: false,
+
         tension: 0.2,
         pointRadius: 0,
         pointHoverRadius: 3,
@@ -176,10 +173,11 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
             {
               type: "line" as const,
               label: "Season Avg PPG",
-              data: gameLogData.map(() => averagePpg), // Repeat avg value
+              data: gameLogData.map(() => averagePpg),
               borderColor: AvgPpgLineColor.borderColor, // Pink/Red
               borderDash: [3, 3],
-              fill: false,
+              fill: true,
+              backgroundColor: "rgba(255, 99, 132, 0.25)", // Transparent fill
               pointRadius: 0,
               pointHoverRadius: 0,
               tension: 0,
@@ -206,7 +204,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
         ticks: {
           color: "#ccc",
           font: { size: 9 },
-          stepSize: 1, // Ensure ticks are integers for points
+          stepSize: 1,
           precision: 0 // Display ticks as whole numbers
         },
         grid: { color: "rgba(255, 255, 255, 0.1)" }
@@ -226,7 +224,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
     },
     plugins: {
       legend: {
-        display: true,
+        display: false,
         position: "top" as const,
         align: "end" as const,
         labels: { color: "#ccc", boxWidth: 12, font: { size: 10 } }
@@ -255,7 +253,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
                 label += context.parsed.y.toFixed(2);
               } else {
                 // Bars or average line
-                label += context.parsed.y.toFixed(0);
+                label += context.parsed.y.toFixed(2);
               }
             }
             return label;
@@ -291,7 +289,7 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
       <div
         className={styles.ratesLabel}
         style={{
-          backgroundColor: "#164352",
+          backgroundColor: "Rgb(6, 47, 61)",
           // gridRow: "1/2", // Not needed with gridTemplateRows
           display: "flex",
           justifyContent: "center",
@@ -304,7 +302,6 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
         </h3>
       </div>
       <div className={styles.chartCanvasContainer}>
-        {/* Loading/Error/Chart rendering logic */}
         {isLoading && (
           <div
             style={{ color: "#ccc", textAlign: "center", paddingTop: "20px" }}

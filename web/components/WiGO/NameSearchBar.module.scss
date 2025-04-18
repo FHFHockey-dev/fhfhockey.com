@@ -4,21 +4,21 @@
 .searchBarContainer {
   position: relative;
   width: 100%;
-  height: 100%; // Fill the parent container (.nameSearchBarContainer)
+  height: 100%;
 }
 
 .searchInput {
   width: 100%;
   height: 100%;
-  padding: v.$space-sm v.$space-md; // Use spacing variables
-  border: 1px solid v.$border-color-secondary; // Use theme border color
+  padding: v.$space-sm v.$space-md;
+  border: 1px solid v.$border-color-secondary;
 
-  font-size: v.$font-size-base; // Use base font size
+  font-size: v.$font-size-base;
   box-sizing: border-box;
-  background-color: v.$background-light; // Theme background
-  border-top-left-radius: v.$border-radius-sm; // Theme border radius
-  font-family: v.$font-family-primary; // Theme font
-  color: v.$text-color-primary; // Theme text color
+  background-color: v.$background-light;
+  border-top-left-radius: v.$border-radius-sm;
+  font-family: v.$font-family-primary;
+  color: v.$text-color-primary;
   transition: border-color v.$transition-duration v.$transition-easing,
     box-shadow v.$transition-duration v.$transition-easing;
 
@@ -40,11 +40,11 @@
   top: calc(100% + 2px); // Position below input with a small gap
   left: 0;
   right: 0;
-  background-color: v.$background-dark; // Darker background for dropdown
-  border: 1px solid v.$border-color-primary; // Use primary border
-  border-top: none; // Remove top border as it connects to input area
-  border-radius: 0 0 v.$border-radius-sm v.$border-radius-sm; // Match input radius at bottom
-  max-height: 250px; // Adjust max height if needed
+  background-color: v.$background-dark;
+  border: 1px solid v.$border-color-primary;
+  border-top: none;
+  border-radius: 0 0 v.$border-radius-sm v.$border-radius-sm;
+  max-height: 250px;
   overflow-y: auto;
   z-index: 1000; // Ensure dropdown is on top
   font-family: v.$font-family-primary;
@@ -60,23 +60,35 @@
   &::-webkit-scrollbar-track {
     background-color: v.$background-medium;
   }
-  // Add Firefox scrollbar styles if needed
+  // Add Firefox scrollbar styling
   scrollbar-width: thin;
   scrollbar-color: v.$primary-color v.$background-medium;
 }
 
 .dropdownItem {
-  padding: v.$space-sm v.$space-md; // Use spacing variables
+  padding: v.$space-sm v.$space-md;
   cursor: pointer;
-  color: v.$text-color-secondary; // Secondary text color for items
+  color: v.$text-color-secondary;
   transition: background-color v.$transition-duration v.$transition-easing,
     color v.$transition-duration v.$transition-easing;
-  white-space: nowrap; // Prevent wrapping
+  white-space: nowrap;
+  outline: none;
 
   &:hover,
   &:focus {
-    background-color: v.$background-light; // Hover background
-    color: v.$text-color-primary; // Hover text color
+    // These apply directly to .dropdownItem
+    background-color: v.$background-light;
+    color: v.$text-color-primary;
+    outline: none;
+  }
+
+  &.active {
+    background-color: darken(v.$primary-color, 35%);
+    color: v.$text-color-primary;
+    // red for testing:
+    // background-color: red !important;
+    // color: white !important;
+    // font-weight: bold !important;
     outline: none;
   }
 }

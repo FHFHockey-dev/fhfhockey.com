@@ -3,27 +3,26 @@ import React, { useState, useEffect, useRef } from "react";
 import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
-  CategoryScale, // For X-axis labels (dates)
-  LinearScale, // For Y-axis values (TOI)
-  PointElement, // For points on the line
-  LineElement, // For the line itself
-  Tooltip, // For hover interactions
-  Legend, // To label datasets (optional)
-  TimeScale, // If using actual time objects on x-axis
-  Title, // For chart title (optional)
-  Filler // To fill area under line (optional)
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Tooltip,
+  Legend,
+  TimeScale,
+  Title,
+  Filler
 } from "chart.js";
 import {
   fetchPlayerGameLogToi,
   fetchPlayerPerGameTotals,
   SkaterGameLogToiData,
   SkaterTotalsData
-} from "utils/fetchWigoPlayerStats"; // Adjust path
+} from "utils/fetchWigoPlayerStats";
 import { formatSecondsToMMSS, formatDateToMMDD } from "utils/formattingUtils";
 import styles from "styles/wigoCharts.module.scss";
 import zoomPlugin from "chartjs-plugin-zoom";
 
-// Register necessary Chart.js components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -31,7 +30,7 @@ ChartJS.register(
   LineElement,
   Tooltip,
   Legend,
-  TimeScale, // Register if using time scale for x-axis
+  TimeScale,
   Title,
   Filler,
   zoomPlugin
@@ -46,7 +45,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
   const [averageToi, setAverageToi] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const chartRef = useRef<ChartJS<"line", (number | null)[], string>>(null); // Ref for chart instance
+  const chartRef = useRef<ChartJS<"line", (number | null)[], string>>(null);
 
   useEffect(() => {
     if (!playerId) {
@@ -172,7 +171,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
     },
     plugins: {
       legend: {
-        display: true, // Show legend (TOI per Game, Season Avg TOI)
+        display: false, // Show legend (TOI per Game, Season Avg TOI)
         position: "top" as const,
         align: "end" as const,
         labels: {
@@ -190,11 +189,11 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
         intersect: false,
         callbacks: {
           // Format tooltip title (usually the x-label)
-          // title: function(tooltipItems: any[]) {
-          //     return tooltipItems[0]?.label ? `Date: ${tooltipItems[0].label}` : '';
-          // },
-          // Format tooltip body label
-          // Inside chartOptions.plugins.tooltip.callbacks
+          title: function (tooltipItems: any[]) {
+            return tooltipItems[0]?.label
+              ? `Date: ${tooltipItems[0].label}`
+              : "";
+          },
           label: function (context: any) {
             let label = context.dataset.label || "";
             if (label) {
@@ -208,7 +207,6 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
           }
         }
       },
-      // Add zoom plugin options if installed and registered
       zoom: {
         pan: {
           enabled: true, // Enable panning
@@ -241,7 +239,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
       <div
         className={styles.ratesLabel}
         style={{
-          backgroundColor: "#164352",
+          backgroundColor: "Rgb(6, 47, 61)",
           // gridRow: "1/2", // Not needed with gridTemplateRows
           display: "flex",
           justifyContent: "center",

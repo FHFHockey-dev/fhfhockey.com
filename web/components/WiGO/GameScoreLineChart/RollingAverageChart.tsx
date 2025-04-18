@@ -28,8 +28,8 @@ ChartJS.register(
 
 // Define props types for the component
 interface RollingAverageChartProps<T> {
-  data: T[]; // The main dataset to calculate rolling averages
-  windowSizes: number[]; // Array of window sizes for rolling averages (e.g. [5, 10, 15])
+  data: T[];
+  windowSizes: number[];
   getLabel: (item: T, index: number) => string;
   getValue: (item: T) => number;
 }
@@ -63,13 +63,12 @@ function RollingAverageChart<T>({
   getValue,
   getLabel
 }: RollingAverageChartProps<T>) {
-  // Function to calculate rolling averages for a given window size
   function calculateRollingAverage(
     data: T[],
     windowSize: number
   ): (number | null)[] {
     return data.map((_, index) => {
-      if (index < windowSize - 1) return null; // Not enough data points for the window
+      if (index < windowSize - 1) return null;
       const window = data.slice(index - windowSize + 1, index + 1);
       const sum = window.reduce((acc, val) => acc + getValue(val), 0);
       return sum / windowSize;
@@ -91,7 +90,6 @@ function RollingAverageChart<T>({
     };
   });
 
-  // Chart data configuration
   const chartData = {
     labels: data.map(getLabel),
     datasets: [
@@ -119,8 +117,27 @@ function RollingAverageChart<T>({
           legend: {
             display: false
           },
+          zoom: {
+            pan: {
+              enabled: true, // Enable panning
+              mode: "x" // Allow panning only on the x-axis
+              // modifierKey: 'ctrl', // Optional: Require Ctrl key for panning
+            },
+            zoom: {
+              wheel: {
+                enabled: true // Enable zooming with mouse wheel
+              },
+              pinch: {
+                enabled: true // Enable zooming with pinch gesture
+              },
+              drag: {
+                enabled: true // Enable drag-to-zoom (box selection) - THIS IS CLOSEST TO BRUSHING
+              },
+              mode: "x"
+            }
+          },
           datalabels: {
-            display: false // Explicitly disable the plugin for this chart
+            display: false
           }
         }
       }}

@@ -31,6 +31,7 @@ $text-color-secondary: #f0f0f0; // Secondary text color (e.g., table headers)
 $border-color-primary: #404040; // Main border color
 $border-color-secondary: #505050; // Secondary border color
 $focus-color: rgb(255, 193, 8); // Color for focus states (accessibility)
+$warning-color: #ffcc00; // Warning color (e.g., for alerts)
 
 // Typography
 $font-family-primary: "Roboto Condensed", sans-serif; // Main font family
@@ -94,7 +95,8 @@ $border-radius-sm: 6px; // Smaller radius for inputs/buttons maybe
   transition: border $transition-duration $transition-easing;
 
   &:hover {
-    border: 3px solid $text-color-primary;
+    border: 1px solid $text-color-primary;
+    outline: 1px solid $text-color-primary;
   }
 
   &:focus {

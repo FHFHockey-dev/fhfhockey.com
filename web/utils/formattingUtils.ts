@@ -120,3 +120,27 @@ export const formatPercentage = (value: number | null | undefined): string => {
   }
   return `${(value * 100).toFixed(1)}%`;
 };
+
+/**
+ * Converts a number into an ordinal string (e.g., 1 -> "1st", 2 -> "2nd").
+ * Returns null if the input is null or not a positive integer.
+ */
+export function formatOrdinal(rank: number | null): string | null {
+  if (rank === null || rank <= 0 || !Number.isInteger(rank)) {
+    return null; // Or return 'N/A', '-', etc. based on preference
+  }
+
+  const j = rank % 10;
+  const k = rank % 100;
+
+  if (j === 1 && k !== 11) {
+    return rank + "st";
+  }
+  if (j === 2 && k !== 12) {
+    return rank + "nd";
+  }
+  if (j === 3 && k !== 13) {
+    return rank + "rd";
+  }
+  return rank + "th";
+}
