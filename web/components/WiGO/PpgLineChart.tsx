@@ -302,7 +302,6 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
         </h3>
       </div>
       <div className={styles.chartCanvasContainer}>
-        {/* Loading/Error/Chart rendering logic */}
         {isLoading && (
           <div
             style={{ color: "#ccc", textAlign: "center", paddingTop: "20px" }}

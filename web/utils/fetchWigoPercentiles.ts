@@ -12,7 +12,7 @@ import {
 // Define the columns needed from each table for ranking + TOI/GP calculation
 // Crucially includes player_id, gp, toi, and all stats being ranked
 const ALL_OFFENSE_COLUMNS_TO_SELECT = `
-    player_id, season, gp, toi,
+    player_id, season, gp, toi_seconds,
     goals_per_60, total_assists_per_60, total_points_per_60, shots_per_60,
     iscfs_per_60, i_hdcf_per_60, ixg_per_60, icf_per_60,
     cf_per_60, scf_per_60, oi_hdcf_per_60,
@@ -20,7 +20,7 @@ const ALL_OFFENSE_COLUMNS_TO_SELECT = `
 `; // Add more if needed
 
 const ALL_DEFENSE_COLUMNS_TO_SELECT = `
-    player_id, season, gp, toi
+    player_id, season, gp, toi_seconds
 `; // Only fetch overlap/required defense stats to merge
 
 /**
@@ -38,7 +38,6 @@ export async function fetchAllPlayerStatsForStrength(
 
   // TODO: Determine the latest season dynamically if necessary
   // For now, assuming we fetch all rows and filter later, or that tables only contain latest
-  // A better approach might query distinct seasons first, then query for the max season.
   // Example: const { data: seasonData } = await supabase.from(offenseTable).select('season').order('season', {ascending: false}).limit(1).single();
   // const latestSeason = seasonData?.season;
   // if (!latestSeason) return []; ... then add .eq('season', latestSeason) to queries below
@@ -69,7 +68,7 @@ export async function fetchAllPlayerStatsForStrength(
         ...offensePlayer,
         // Ensure gp/toi are present, prioritizing offense, fallback to defense
         gp: offensePlayer.gp ?? defensePlayer?.gp ?? null,
-        toi: offensePlayer.toi ?? defensePlayer?.toi ?? null
+        toi: offensePlayer.toi_seconds ?? defensePlayer?.toi_seconds ?? null
       } as PlayerRawStats; // Assert type based on selection
     });
 

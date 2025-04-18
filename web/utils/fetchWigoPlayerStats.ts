@@ -1,10 +1,10 @@
 // web/utils/fetchWigoPlayerStats.ts
 
-import { TableAggregateData, CombinedPlayerStats } from "components/WiGO/types"; // Ensure path is correct
+import { TableAggregateData, CombinedPlayerStats } from "components/WiGO/types";
 import supabase from "lib/supabase";
-import { Database } from "lib/supabase/database-generated.types"; // Import your generated types
+import { Database } from "lib/supabase/database-generated.types";
 
-// FIX: Use generated types directly for the fetched rows
+// Import the types for the tables
 type WigoCareerRow = Database["public"]["Tables"]["wigo_career"]["Row"];
 type WigoRecentRow = Database["public"]["Tables"]["wigo_recent"]["Row"];
 
@@ -38,29 +38,24 @@ export interface SkaterGameLogPointsData {
   points: number | null;
 }
 
-// Keep existing SkaterGameLogData for TOI if needed elsewhere
 export interface SkaterGameLogToiData {
   date: string;
   toi_per_game: number | null;
 }
 
-// Define the stats we want to display and map them to DB columns
-// Keys are the display labels, values are the base column names (without prefixes)
 const countStatsMap: Record<string, string> = {
   GP: "gp",
   ATOI: "atoi",
   Goals: "g",
   Assists: "a",
   Points: "pts",
-  // A1: 'a1', // Uncomment if a1 columns exist
   SOG: "sog",
   "S%": "s_pct",
   ixG: "ixg",
   PPG: "ppg",
   PPA: "ppa",
   PPP: "ppp",
-
-  PPTOI: "pptoi", // Stored as number (seconds avg?) in DB, formatted later
+  PPTOI: "pptoi",
   "PP%": "pp_pct",
   HIT: "hit",
   BLK: "blk",
@@ -81,7 +76,7 @@ const rateStatsMap: Record<string, string> = {
   "ixG/60": "ixg_per_60",
   "iCF/60": "icf_per_60",
   "iHDCF/60": "ihdcf_per_60",
-  "iSCF/60": "iscf_per_60", // Renamed from iscfs
+  "iSCF/60": "iscf_per_60",
   "PPG/60": "ppg_per_60",
   "PPA/60": "ppa_per_60",
   "PPP/60": "ppp_per_60",
@@ -97,7 +92,6 @@ const rateStatsMap: Record<string, string> = {
 export async function fetchPlayerAggregatedStats(
   playerId: number
 ): Promise<CombinedPlayerStats> {
-  // Return type matches the *modified* interface
   console.log(`Workspaceing pre-aggregated stats for Player ID: ${playerId}`);
 
   const [careerRes, recentRes] = await Promise.all([
@@ -122,7 +116,6 @@ export async function fetchPlayerAggregatedStats(
     throw new Error(`Failed to fetch recent stats: ${recentRes.error.message}`);
   }
 
-  // Use the correct imported types
   const careerData = careerRes.data as WigoCareerRow | null;
   const recentData = recentRes.data as WigoRecentRow | null;
 
@@ -130,28 +123,45 @@ export async function fetchPlayerAggregatedStats(
     console.warn(
       `No aggregated data found for player ${playerId} in wigo_career or wigo_recent.`
     );
-    return { counts: [], rates: [] }; // Return type matches modified CombinedPlayerStats
+    return { counts: [], rates: [] };
   }
 
   const countsData: TableAggregateData[] = [];
   const ratesData: TableAggregateData[] = [];
 
-  // Helper to safely get value and default to 0
+  // Updated getValue to explicitly return null if value is null/undefined or NaN
   const getValue = (
     row: WigoCareerRow | WigoRecentRow | null,
     key: string | undefined
-  ): number => {
-    // Default to 0 if row is null or key is undefined/null or value is null/undefined
-    // Use 'any' for dynamic access, assuming key structure matches DB columns
-    return row && key && (row as any)[key] != null
-      ? Number((row as any)[key])
-      : 0;
+  ): number | null => {
+    if (row && key && (row as any)[key] != null) {
+      const num = Number((row as any)[key]);
+      // Return the number if it's valid, otherwise null
+      return isNaN(num) ? null : num;
+    }
+    // Return null if row, key, or the value itself is null/undefined
+    return null;
   };
 
-  // Process Count Stats
+  // --- Process Count Stats ---
+  const gpBaseColName = "gp"; // The base column name for Games Played
+
   for (const [label, baseColName] of Object.entries(countStatsMap)) {
+    // **** ADD THE GP OBJECT HERE ****
     const rowData: TableAggregateData = {
       label: label,
+      // Populate the GP object using the correct column names
+      GP: {
+        STD: getValue(careerData, `std_${gpBaseColName}`),
+        LY: getValue(careerData, `ly_${gpBaseColName}`),
+        // The script stores these as integers/doubles representing actual GP totals/averages
+        "3YA": getValue(careerData, `ya3_${gpBaseColName}`),
+        CA: getValue(careerData, `ca_${gpBaseColName}`),
+        L5: getValue(recentData, `l5_${gpBaseColName}`),
+        L10: getValue(recentData, `l10_${gpBaseColName}`),
+        L20: getValue(recentData, `l20_${gpBaseColName}`)
+      },
+      // Populate the stat values
       STD: getValue(careerData, `std_${baseColName}`),
       LY: getValue(careerData, `ly_${baseColName}`),
       "3YA": getValue(careerData, `ya3_${baseColName}`),
@@ -163,26 +173,39 @@ export async function fetchPlayerAggregatedStats(
     countsData.push(rowData);
   }
 
-  // Process Rate Stats
+  // --- Process Rate Stats ---
+  // Rate stats typically don't need the GP object for formatting,
+  // unless you were calculating something complex.
   for (const [label, baseColName] of Object.entries(rateStatsMap)) {
-    // Handle special case for PP% where DB stores fraction, display needs percentage
-    const isPPPercent = label === "PP%";
-    const transform = (val: number) => (isPPPercent ? val * 100 : val); // Multiply by 100 only for PP%
-
     const rowData: TableAggregateData = {
+      // Create rowData *without* GP for rates table
       label: label,
-      STD: transform(getValue(careerData, `std_${baseColName}`)),
-      LY: transform(getValue(careerData, `ly_${baseColName}`)),
-      "3YA": transform(getValue(careerData, `ya3_${baseColName}`)),
-      CA: transform(getValue(careerData, `ca_${baseColName}`)),
-      L5: transform(getValue(recentData, `l5_${baseColName}`)),
-      L10: transform(getValue(recentData, `l10_${baseColName}`)),
-      L20: transform(getValue(recentData, `l20_${baseColName}`))
+      // Note: getValue now returns null properly if data is missing
+      STD: getValue(careerData, `std_${baseColName}`),
+      LY: getValue(careerData, `ly_${baseColName}`),
+      "3YA": getValue(careerData, `ya3_${baseColName}`),
+      CA: getValue(careerData, `ca_${baseColName}`),
+      L5: getValue(recentData, `l5_${baseColName}`),
+      L10: getValue(recentData, `l10_${baseColName}`),
+      L20: getValue(recentData, `l20_${baseColName}`)
     };
+    // Handle PP% transformation (check for null or undefined)
+    if (label === "PP%") {
+      const transform = (val: number | null | undefined) =>
+        val != null ? val * 100 : null;
+      rowData.STD = transform(rowData.STD);
+      rowData.LY = transform(rowData.LY);
+      rowData["3YA"] = transform(rowData["3YA"]);
+      rowData.CA = transform(rowData.CA);
+      rowData.L5 = transform(rowData.L5);
+      rowData.L10 = transform(rowData.L10);
+      rowData.L20 = transform(rowData.L20);
+    }
+
     ratesData.push(rowData);
   }
 
-  // Return the simplified structure matching the modified CombinedPlayerStats
+  // Return the structured data
   return {
     counts: countsData,
     rates: ratesData

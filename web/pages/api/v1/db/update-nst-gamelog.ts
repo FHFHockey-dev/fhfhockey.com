@@ -563,30 +563,65 @@ async function fetchAndParseData(
             if (column === null) return;
 
             let cellText: string | null = $(td).text().trim();
+
             if (cellText === "-" || cellText === "" || cellText === "\\-") {
               cellText = null; // Treat empty/placeholder cells as null
             }
 
             if (cellText !== null) {
               // Improved number conversion: handles percentages, keeps structure
-              if (
+              if (column === "toi" || column === "toi_per_gp") {
+                let totalSeconds = null; // Default to null if parsing fails
+
+                // 1. Try parsing as MM:SS format
+                if (/^\d{1,2}:\d{2}$/.test(cellText)) {
+                  try {
+                    const parts = cellText.split(":");
+                    const minutes = parseInt(parts[0], 10);
+                    const seconds = parseInt(parts[1], 10);
+                    if (!isNaN(minutes) && !isNaN(seconds)) {
+                      totalSeconds = minutes * 60 + seconds;
+                    }
+                  } catch (e) {
+                    console.warn(
+                      `Error parsing MM:SS format '${cellText}' for column ${column}:`,
+                      e
+                    );
+                  }
+                }
+                // 2. If not MM:SS, try parsing as a float (assuming total minutes)
+                else {
+                  // Remove potential commas before parsing
+                  const num = parseFloat(cellText.replace(/,/g, ""));
+                  if (!isNaN(num)) {
+                    // Assume the float represents total minutes, convert to seconds and round
+                    totalSeconds = Math.round(num * 60);
+                  } else {
+                    // Optional: Warn if format is neither MM:SS nor a valid number
+                    // console.warn(`Unexpected TOI format encountered: '${cellText}' for column ${column}. Storing as null.`);
+                  }
+                }
+                // Store the result (total seconds as integer, or null)
+                rowData[column] = totalSeconds;
+              }
+              // *** END MODIFICATION FOR TOI ***
+
+              // Handle other column types (percentages, numbers, text)
+              else if (
                 column.endsWith("_percentage") ||
-                column.endsWith("_pct") ||
-                column.endsWith("_percentage")
+                column.endsWith("_pct") // Combined percentage check
               ) {
                 const num = parseFloat(cellText.replace("%", ""));
                 rowData[column] = isNaN(num) ? null : num; // Store as number 0-100
-              } else if (column === "toi" || column === "toi_per_gp") {
-                // Keep TOI as string "MM:SS" for now, conversion can happen later if needed
-                rowData[column] = cellText.match(/^\d{1,2}:\d{2}$/)
-                  ? cellText
-                  : null;
               } else {
+                // General number/text handling
                 const num = Number(cellText.replace(/,/g, "")); // Remove commas for thousands
-                rowData[column] = isNaN(num) ? cellText : num; // Fallback to text if not a number
+                // Store as number if possible, otherwise keep as text (unless it was null already)
+                rowData[column] = isNaN(num) ? cellText : num;
               }
             } else {
-              rowData[column] = null; // Assign null if cell was empty/placeholder
+              // If cellText was null from the start (empty/placeholder cell)
+              rowData[column] = null;
             }
           });
 

@@ -35,14 +35,25 @@ export const defaultColors: TeamColors = {
 
 // Existing table aggregate interfaces
 export interface TableAggregateData {
-  label: string; // "Games Played", "Goals", "Assists", etc.
-  CA: number; // Current Average
-  "3YA": number; // Three-Year Average
-  LY: number; // Last Year
-  L5: number; // Last 5 Games
-  L10: number; // Last 10 Games
-  L20: number; // Last 20 Games
-  STD: number; // Season To Date
+  label: string;
+  // Add GP fields potentially nested or separate
+  GP?: {
+    STD?: number | null;
+    LY?: number | null;
+    "3YA"?: number | null; // Note: 3YA/CA GP from script are averages, use relevant _gp field
+    CA?: number | null;
+    L5?: number | null;
+    L10?: number | null;
+    L20?: number | null;
+  } | null;
+  // Existing value fields
+  STD?: number | null;
+  LY?: number | null;
+  "3YA"?: number | null;
+  CA?: number | null;
+  L5?: number | null;
+  L10?: number | null;
+  L20?: number | null;
   DIFF?: number;
 }
 

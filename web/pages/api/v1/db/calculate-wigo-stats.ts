@@ -390,16 +390,24 @@ export default async function handler(
       });
       const processNstRecord = (
         record: SelectedNstIndCounts | SelectedNstOnIceCounts,
-        seasonKey: number
+        seasonKey: number,
+        isIndividualRecord: boolean // Flag to identify the source table type
       ) => {
         if (record.strength !== "all") return;
         if (!aggregatedDataBySeason[seasonKey]) {
           aggregatedDataBySeason[seasonKey] = initSeasonData(seasonKey);
         }
         const seasonData = aggregatedDataBySeason[seasonKey];
+
+        // Always try to get the most accurate GP
         seasonData.gp = Math.max(seasonData.gp, record.gp ?? 0);
-        const toi = record.toi ?? 0;
-        seasonData.toi_all += toi;
+        // --- Only add TOI if it's from the individual counts record ---
+        if (isIndividualRecord && "toi" in record) {
+          const toi = record.toi ?? 0; // toi is in minutes here
+          seasonData.toi_all += toi; // Add TOI (minutes) only once per season
+        }
+        // -------------------------------------------------------------
+
         if ("ixg" in record) seasonData.ixg_all += record.ixg ?? 0;
         if ("icf" in record) seasonData.icf_all += record.icf ?? 0;
         if ("ihdcf" in record) seasonData.ihdcf_all += record.ihdcf ?? 0;
@@ -411,14 +419,19 @@ export default async function handler(
         if ("def_zone_starts" in record)
           seasonData.def_zs_all += record.def_zone_starts ?? 0;
       };
-      nstIndCounts.forEach((rec) => processNstRecord(rec, rec.season));
-      nstOnIceCounts.forEach((rec) => processNstRecord(rec, rec.season));
+      // **** Pass the flag when calling processNstRecord ****
+      nstIndCounts.forEach((rec) => processNstRecord(rec, rec.season, true)); // Pass true for individual records
+      nstOnIceCounts.forEach((rec) => processNstRecord(rec, rec.season, false)); // Pass false for on-ice records
+
       wgoTotals.forEach((rec) => {
         const seasonKey = parseInt(rec.season);
         if (isNaN(seasonKey)) return;
         if (!aggregatedDataBySeason[seasonKey]) {
+          // If only WGO data exists, GP might come from here
           aggregatedDataBySeason[seasonKey] = initSeasonData(seasonKey);
+          aggregatedDataBySeason[seasonKey].gp = rec.games_played ?? 0; // Capture GP if only WGO exists
         }
+
         const seasonData = aggregatedDataBySeason[seasonKey];
         seasonData.gp = Math.max(seasonData.gp, rec.games_played ?? 0);
         seasonData.wgo_g = rec.goals ?? 0;
