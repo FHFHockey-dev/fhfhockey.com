@@ -6,12 +6,41 @@
 
 /* =================== Main Dashboard Layout =================== */
 
+.wigoDashHeader {
+  display: flex;
+  flex-direction: column;
+  border-collapse: collapse;
+}
+
+.wigoHeader {
+  margin: v.$space-md auto;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  font-family: "Train One", sans-serif;
+  letter-spacing: 1.5em;
+  font-size: v.$font-size-base * 1.3;
+  font-weight: 100;
+  line-height: 0.85;
+}
+
+.spanColorBlue {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: v.$primary-color;
+  font-family: "Train One", sans-serif;
+  font-size: v.$font-size-base * 1.4;
+  font-weight: 900;
+}
+
 .wigoDashboardContainer {
   @include v.component-wrapper;
   width: 90%;
   max-width: 2000px;
   height: 87vh;
-  margin: v.$space-xl auto;
+  margin: 0 auto v.$space-xxl auto;
   display: flex;
   border-collapse: collapse;
   border: 2px solid v.$border-color;
@@ -424,12 +453,13 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
-    filter: drop-shadow(1px 1px 5px rgba(0, 0, 0));
     overflow: visible !important; // Override any internal styles
   }
-  img[alt*="Placeholder"] {
-    outline: 3px solid v.$border-color-primary;
-    border-radius: 50%;
+  img[alt*="Placeholder headshot"] {
+    transform: translateY(-10%);
+    object-fit: contain;
+    overflow: visible !important; // Override any internal styles
+    opacity: 0.4; // Adjust opacity for placeholder
   }
   .rightSide {
     flex-basis: 50%;
@@ -713,17 +743,85 @@
 /* =================== Chart Container Styling =================== */
 .chartContainer {
   height: 100%; // Fill container height
+  display: flex; // Added for flex structure (header + canvas)
+  flex-direction: column; // Stack header and canvas vertically
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background-color: rgb(
+    6,
+    47,
+    61
+  ); // Or use a variable: darken(v.$background-dark, 5%);
+  flex-shrink: 0; // Prevent header from shrinking
+
+  // Title style within the header
+  h3 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: #ccc; // Or v.$text-color-secondary;
+    // Add padding adjustment if needed to match previous inline style vertical alignment exactly
+    padding: 3px 0 3.5px 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  // Container for toggle buttons
+  // .toggleButtons {
+  //   // Buttons align automatically due to justify-content: space-between
+  // }
+
+  // Style for the toggle buttons themselves
+  button {
+    // Base button styles from inline
+    padding: 3px 5px;
+    font-size: 10px;
+    cursor: pointer;
+    color: v.$text-color-secondary;
+    background-color: darken(v.$background-medium, 10%);
+    border: v.$border-color;
+    border-radius: v.$border-radius-sm; // Add slight rounding
+    margin-left: 5px; // Use margin-left instead of margin-right on the first button
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+
+    &:first-child {
+      margin-left: 0; // No left margin on the very first button
+    }
+
+    &:hover:not(:disabled) {
+      background-color: #444; // Slightly lighter on hover
+      border-color: #777;
+      outline: 1px solid v.$border-color;
+    }
+
+    // Disabled state styles
+    &:disabled {
+      cursor: crosshair;
+      background-color: v.$primary-color;
+      // color: #aaa; // Optionally change text color too
+
+      &:hover {
+        background-color: v.$primary-color; // Keep same color on hover
+        outline: 1px solid v.$warning-color;
+        border-color: v.$primary-color; // Keep same border color on hover
+      }
+    }
+  }
 }
 
 .chartCanvasContainer {
-  // Shared style for the chart canvas wrapper
-  position: relative; // Critical for chart.js responsiveness
+  position: relative;
   width: 100%;
-  height: 90%; // Fill space
-  overflow: hidden; // Prevent canvas overflow spilling out
-  padding: v.$space-sm; // Small padding *around* the canvas within its container
+  // height: 90%; // Let flex-grow handle height instead
+  flex-grow: 1; // Allow canvas container to fill remaining space
+  overflow: hidden;
+  padding: v.$space-xs;
   box-sizing: border-box;
-  // Canvas element itself should be width/height 100% managed by chart.js
 }
 
 // Placeholder for loading charts

@@ -20,6 +20,7 @@ import PlayerHeader from "components/WiGO/PlayerHeader";
 import StatsTable from "components/WiGO/StatsTable";
 import PerGameStatsTable from "components/WiGO/PerGameStatsTable";
 import RateStatPercentiles from "components/WiGO/RateStatPercentiles"; // Adjust path
+import TimeOptions, { TimeOption } from "components/TimeOptions/TimeOptions";
 
 import {
   computeDiffColumnForCounts,
@@ -216,143 +217,146 @@ const WigoCharts: React.FC = () => {
 
   console.log("WigoCharts - selectedPlayer:", selectedPlayer);
   return (
-    <div className={styles.wigoDashboardContainer}>
-      <div
-        className={styles.wigoDashboardContent} // The Grid Container
-        style={
-          {
-            // CSS variables for dynamic team colors
-            "--primary-color": teamColors.primaryColor,
-            "--secondary-color": teamColors.secondaryColor,
-            "--accent-color": teamColors.accentColor,
-            "--alt-color": teamColors.altColor,
-            "--jersey-color": teamColors.jerseyColor
-          } as React.CSSProperties
-        }
-      >
-        {/* Grid Items: Assign SCSS class for grid-area and styling */}
+    <div className={styles.wigoDashHeader}>
+      <div className={styles.wigoHeader}>
+        <span className={styles.spanColorBlue}>WiGO</span>
+        {/* Use Unicode non-breaking space */}
+        {"\u00A0\u00A0//\u00A0\u00A0"}
+        <span className={styles.spanColorBlue}>W</span>
+        HAT
+        {"\u00A0\u00A0"}
+        <span className={styles.spanColorBlue}>I</span>S{"\u00A0\u00A0"}
+        <span className={styles.spanColorBlue}>G</span>
+        OING
+        {"\u00A0\u00A0"}
+        <span className={styles.spanColorBlue}>O</span>N
+      </div>
+      <div className={styles.wigoDashboardContainer}>
+        <div
+          className={styles.wigoDashboardContent} // The Grid Container
+          style={
+            {
+              // CSS variables for dynamic team colors
+              "--primary-color": teamColors.primaryColor,
+              "--secondary-color": teamColors.secondaryColor,
+              "--accent-color": teamColors.accentColor,
+              "--alt-color": teamColors.altColor,
+              "--jersey-color": teamColors.jerseyColor
+            } as React.CSSProperties
+          }
+        >
+          {/* Grid Items: Assign SCSS class for grid-area and styling */}
 
-        {/* --- Top Row --- */}
-        <div className={styles.nameSearchBarContainer}>
-          <NameSearchBar onSelect={handlePlayerSelect} />
-        </div>
-        <div className={styles.timeframeComparisonWrapper}>
-          <TimeframeComparison
-            initialLeft={leftTimeframe}
-            initialRight={rightTimeframe}
-            onCompare={handleTimeframeCompare}
-            // Disable if aggregated data is loading?
-          />
-        </div>
-
-        <div className={styles.consistencyRatingContainer}>
-          {selectedPlayer ? ( // <--- Is selectedPlayer definitely not null/undefined?
-            <ConsistencyChart playerId={selectedPlayer.id} />
-          ) : (
-            <ChartLoadingPlaceholder message="Select a player" />
-          )}
-        </div>
-
-        {/* --- Left Column --- */}
-        <div className={styles.playerHeaderContainer}>
-          {/* PlayerHeader component renders its own internals */}
-          <PlayerHeader
-            selectedPlayer={selectedPlayer}
-            headshotUrl={headshotUrl}
-            teamName={teamName}
-            teamAbbreviation={teamAbbreviation}
-            teamColors={teamColors} // Pass colors if needed internally, else rely on CSS vars
-            placeholderImage={placeholderImage}
-          />
-        </div>
-        <div className={styles.percentileChartContainer}>
-          {/* Assumes CategoryCoverageChart handles its own title/loading/data */}
-          {selectedPlayer ? (
-            <CategoryCoverageChart
-              playerId={selectedPlayer.id}
-              timeOption="L30" // Example: Make dynamic if needed
+          {/* --- Top Row --- */}
+          <div className={styles.nameSearchBarContainer}>
+            <NameSearchBar onSelect={handlePlayerSelect} />
+          </div>
+          <div className={styles.timeframeComparisonWrapper}>
+            <TimeframeComparison
+              initialLeft={leftTimeframe}
+              initialRight={rightTimeframe}
+              onCompare={handleTimeframeCompare}
+              // Disable if aggregated data is loading?
             />
-          ) : (
-            <ChartLoadingPlaceholder message="Select a player" />
-          )}
-        </div>
+          </div>
 
-        {/* <div className={styles.paceTableContainer}>
+          <div className={styles.consistencyRatingContainer}>
+            {selectedPlayer ? ( // <--- Is selectedPlayer definitely not null/undefined?
+              <ConsistencyChart playerId={selectedPlayer.id} />
+            ) : (
+              <ChartLoadingPlaceholder message="Select a player" />
+            )}
+          </div>
+
+          {/* --- Left Column --- */}
+          <div className={styles.playerHeaderContainer}>
+            {/* PlayerHeader component renders its own internals */}
+            <PlayerHeader
+              selectedPlayer={selectedPlayer}
+              headshotUrl={headshotUrl}
+              teamName={teamName}
+              teamAbbreviation={teamAbbreviation}
+              teamColors={teamColors} // Pass colors if needed internally, else rely on CSS vars
+              placeholderImage={placeholderImage}
+            />
+          </div>
+          <div className={styles.percentileChartContainer}>
+            <CategoryCoverageChart
+              playerId={selectedPlayer?.id}
+              timeOption="L30"
+            />
+          </div>
+
+          {/* <div className={styles.paceTableContainer}>
           Pace Table Placeholder
         </div> */}
 
-        <div className={styles.rateStatBarPercentilesContainer}>
-          <RateStatPercentiles playerId={selectedPlayer?.id} />
-        </div>
+          <div className={styles.rateStatBarPercentilesContainer}>
+            <RateStatPercentiles playerId={selectedPlayer?.id} />
+          </div>
 
-        {/* --- Center Columns (Tables) --- */}
-        <div className={styles.countsTableContainer}>
-          {/* Pass loading/error state specific to aggregated data */}
-          <StatsTable
-            title="COUNTS" // Prop for table title row
-            data={displayCountsData}
-            isLoading={isLoadingAggData && displayCountsData.length === 0} // Show loading only if data is empty
-            error={aggDataError}
-            formatCell={formatCell}
-            // Make sure StatsTable renders a <table className={styles.statsTableActual}>
-          />
-        </div>
-        <div className={styles.ratesTableContainer}>
-          <StatsTable
-            title="RATES"
-            data={displayRatesData}
-            isLoading={isLoadingAggData && displayRatesData.length === 0}
-            error={aggDataError}
-            formatCell={formatCell}
-            // Make sure StatsTable renders a <table className={styles.statsTableActual}>
-          />
-        </div>
-        <div className={styles.perGameStatsContainer}>
-          {/* PerGameStatsTable handles its own fetching, loading, error states */}
-          <PerGameStatsTable
-            playerId={selectedPlayer?.id}
-            // Make sure PerGameStatsTable renders a <table className={styles.transposedTable}>
-          />
-        </div>
+          {/* --- Center Columns (Tables) --- */}
+          <div className={styles.countsTableContainer}>
+            {/* Pass loading/error state specific to aggregated data */}
+            <StatsTable
+              title="COUNTS" // Prop for table title row
+              data={displayCountsData}
+              isLoading={isLoadingAggData && displayCountsData.length === 0} // Show loading only if data is empty
+              error={aggDataError}
+              formatCell={formatCell}
+              // Make sure StatsTable renders a <table className={styles.statsTableActual}>
+            />
+          </div>
+          <div className={styles.ratesTableContainer}>
+            <StatsTable
+              title="RATES"
+              data={displayRatesData}
+              isLoading={isLoadingAggData && displayRatesData.length === 0}
+              error={aggDataError}
+              formatCell={formatCell}
+              // Make sure StatsTable renders a <table className={styles.statsTableActual}>
+            />
+          </div>
+          <div className={styles.perGameStatsContainer}>
+            {/* PerGameStatsTable handles its own fetching, loading, error states */}
+            <PerGameStatsTable
+              playerId={selectedPlayer?.id}
+              // Make sure PerGameStatsTable renders a <table className={styles.transposedTable}>
+            />
+          </div>
 
-        {/* --- Right Column --- */}
-        <div className={styles.ratingsContainer}>
-          {/* Individual rating boxes are styled internally by the container rule */}
-          <div className={styles.offenseRatingsContainer}>Off. Rating</div>
-          <div className={styles.overallRatingsContainer}>Ovr. Rating</div>
-          <div className={styles.defenseRatingsContainer}>Def. Rating</div>
-        </div>
+          {/* --- Right Column --- */}
+          <div className={styles.ratingsContainer}>
+            {/* Individual rating boxes are styled internally by the container rule */}
+            <div className={styles.offenseRatingsContainer}>Off. Rating</div>
+            <div className={styles.overallRatingsContainer}>Ovr. Rating</div>
+            <div className={styles.defenseRatingsContainer}>Def. Rating</div>
+          </div>
 
-        <div className={styles.opponentLogContainer}>
-          Opponent Log Placeholder
-        </div>
+          <div className={styles.opponentLogContainer}>
+            Opponent Log Placeholder
+          </div>
 
-        {/* --- Bottom Row (Charts) --- */}
-        <div className={styles.toiChartContainer}>
-          {/* Assumes ToiLineChart handles title/loading internally */}
-          {selectedPlayer ? (
-            <ToiLineChart playerId={selectedPlayer.id} />
-          ) : (
-            <ChartLoadingPlaceholder message="Select a player" />
-          )}
-        </div>
-        <div className={styles.ppgChartContainer}>
-          {selectedPlayer ? (
-            <PpgLineChart playerId={selectedPlayer.id} />
-          ) : (
-            <ChartLoadingPlaceholder message="Select a player" />
-          )}
-        </div>
-        <div className={styles.gameScoreContainer}>
-          {selectedPlayer ? (
-            <GameScoreSection playerId={selectedPlayer.id} />
-          ) : (
-            <ChartLoadingPlaceholder message="Select a player" />
-          )}
-        </div>
-      </div>{" "}
-      {/* End .wigoDashboardContent */}
-    </div> // End .wigoDashboardContainer
+          {/* --- Bottom Row (Charts) --- */}
+
+          {/* --- TOI --- */}
+          <div className={styles.toiChartContainer}>
+            <ToiLineChart playerId={selectedPlayer?.id} />
+          </div>
+
+          {/* --- PTs/GP --- */}
+          <div className={styles.ppgChartContainer}>
+            <PpgLineChart playerId={selectedPlayer?.id} />
+          </div>
+
+          {/* --- Game Score ---  */}
+          <div className={styles.gameScoreContainer}>
+            <GameScoreSection playerId={selectedPlayer?.id} />
+          </div>
+        </div>{" "}
+        {/* End .wigoDashboardContent */}
+      </div>
+    </div>
   );
 };
 

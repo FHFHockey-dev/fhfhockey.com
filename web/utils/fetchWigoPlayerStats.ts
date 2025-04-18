@@ -22,6 +22,7 @@ export interface SkaterTotalsData {
   season: string | null;
   toi_per_game: number | null;
   points_per_game: number | null;
+  pp_toi_pct_per_game: number | null;
 }
 
 export interface SkaterGameLogConsistencyData {
@@ -38,9 +39,11 @@ export interface SkaterGameLogPointsData {
   points: number | null;
 }
 
-export interface SkaterGameLogToiData {
+export interface SkaterGameLogStatsData {
   date: string;
   toi_per_game: number | null;
+  pp_toi_per_game: number | null; // <<< ADDED
+  pp_toi_pct_per_game: number | null; // <<< ADDED
 }
 
 const countStatsMap: Record<string, string> = {
@@ -219,7 +222,6 @@ export const fetchPlayerPerGameTotals = async (
   if (!playerId) return null;
 
   try {
-    // Fetch the latest season's stats for the player
     const { data, error } = await supabase
       .from("wgo_skater_stats_totals")
       .select(
@@ -236,37 +238,42 @@ export const fetchPlayerPerGameTotals = async (
         penalty_minutes,
         season,
         toi_per_game,
-        points_per_game
+        points_per_game,
+        pp_toi_pct_per_game
       `
       )
       .eq("player_id", playerId)
-      .order("season", { ascending: false }) // <<< ORDER BY LATEST SEASON
-      .limit(1) // <<< GET ONLY ONE ROW (THE LATEST)
-      .maybeSingle(); // <<< STILL USE maybeSingle() - handles the case where player has NO rows at all
+      .order("season", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (error) {
-      // This specific PGRST116 error for multiple rows should be gone now,
-      // but other errors could still occur.
       console.error(
         `Error fetching player totals for player ${playerId}:`,
         error
       );
-      throw error; // Re-throw the error to be caught by the component
+      throw error;
     }
 
-    // console.log(`Workspaceed Per Game Totals Data for player ${playerId} (Latest Season):`, data); // Debug log
-    return data as SkaterTotalsData | null;
+    // --- Convert average pp_toi_pct_per_game from decimal to percentage ---
+    let processedData = data;
+    if (processedData && processedData.pp_toi_pct_per_game !== null) {
+      // comes from totals as a decimal (e.g., 0.35)
+      processedData.pp_toi_pct_per_game *= 100;
+    }
+
+    // console.log(`Workspaceed Per Game Totals Data for player ${playerId} (Latest Season):`, processedData);
+    return processedData as SkaterTotalsData | null; // Cast to updated interface
   } catch (err) {
-    // Catch unexpected errors during the fetch process
     console.error(
       `Unexpected error in fetchPlayerPerGameTotals for player ${playerId}:`,
       err
     );
-    throw err; // Re-throw
+    throw err;
   }
 };
 
-// --- NEW Function to fetch game-by-game Points ---
+// --- Function to fetch game-by-game Points ---
 export const fetchPlayerGameLogPoints = async (
   playerId: number,
   season: string // Season identifier (e.g., "20232024")
@@ -311,21 +318,18 @@ export const fetchPlayerGameLogPoints = async (
   }
 };
 
-export const fetchPlayerGameLogToi = async (
+export const fetchPlayerGameLogStats = async (
   playerId: number,
   season: string // Keep accepting the string identifier from the totals data
-): Promise<SkaterGameLogToiData[]> => {
+): Promise<SkaterGameLogStatsData[]> => {
+  // <<< UPDATE Return Type
   if (!playerId || !season) return []; // Return empty array if no player or season
 
-  // --- Convert the string season to a number ---
   const seasonIdNumber = parseInt(season, 10);
-
-  // Optional: Add a check if the conversion failed (e.g., season was not a valid number string)
   if (isNaN(seasonIdNumber)) {
     console.error(`Failed to parse season string "${season}" into a number.`);
     return [];
   }
-  // ---------------------------------------------
 
   try {
     const { data, error } = await supabase
@@ -333,26 +337,41 @@ export const fetchPlayerGameLogToi = async (
       .select(
         `
         date,
-        toi_per_game
+        toi_per_game,
+        pp_toi_per_game,
+        pp_toi_pct_per_game
       `
       )
       .eq("player_id", playerId)
       .eq("season_id", seasonIdNumber)
-      // -------------------------------------------------------
       .order("date", { ascending: true }); // Order chronologically
 
     if (error) {
       console.error(
-        `Error fetching game log TOI for player ${playerId}, season ID ${seasonIdNumber}:`, // Log the numeric ID used
+        `Error fetching game log stats for player ${playerId}, season ID ${seasonIdNumber}:`,
         error
       );
       throw error;
     }
 
-    return (data as SkaterGameLogToiData[]) || []; // Ensure result is an array
+    // --- Convert pp_toi_pct_per_game from decimal to percentage ---
+    const processedData =
+      data?.map((item) => ({
+        ...item,
+        // Assuming pp_toi_pct_per_game is stored as a decimal (e.g., 0.25 for 25%)
+        // Multiply by 100 if it's not null, otherwise keep it null
+        pp_toi_pct_per_game:
+          item.pp_toi_pct_per_game !== null
+            ? item.pp_toi_pct_per_game * 100
+            : null
+      })) || [];
+
+    // console.log(`Workspaceed Game Log Stats for player ${playerId}, season ${seasonIdNumber}:`, processedData); // Optional Debug Log
+
+    return (processedData as SkaterGameLogStatsData[]) || []; // Ensure result is an array
   } catch (err) {
     console.error(
-      `Unexpected error in fetchPlayerGameLogToi for player ${playerId}, season ID ${seasonIdNumber}:`, // Log the numeric ID used
+      `Unexpected error in fetchPlayerGameLogStats for player ${playerId}, season ID ${seasonIdNumber}:`,
       err
     );
     throw err; // Re-throw

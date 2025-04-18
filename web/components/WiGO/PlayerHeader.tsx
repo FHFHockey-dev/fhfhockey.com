@@ -53,10 +53,6 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                 className={styles.headshotImage}
                 layout="fill"
                 objectFit="cover"
-                style={{
-                  border: `6px solid #07aae2`, // Default border if no team color
-                  borderRadius: "90px" // Keep rounded placeholder
-                }}
               />
             )}
           </div>
