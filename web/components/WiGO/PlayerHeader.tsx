@@ -1,10 +1,10 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/PlayerHeader.tsx
 
 import React from "react";
-import Image from "next/legacy/image";
+import Image from "next/legacy/image"; // Using legacy Image as per original
 import { Player, TeamColors } from "./types";
-import TeamNameSVG from "./TeamNameSVG"; // Assuming TeamNameSVG is in the same directory
-import styles from "styles/wigoCharts.module.scss"; // Use parent's styles for now, or create dedicated ones
+import TeamNameSVG from "./TeamNameSVG";
+import styles from "styles/wigoCharts.module.scss";
 
 interface PlayerHeaderProps {
   selectedPlayer: Player | null;
@@ -24,17 +24,28 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({
   placeholderImage
 }) => {
   return (
+    // This div provides the overall background color
     <div className={styles.playerHeadshot}>
-      {teamName && (
-        <TeamNameSVG
-          teamName={teamName}
-          primaryColor={teamColors.primaryColor}
-          secondaryColor={teamColors.secondaryColor}
-        />
-      )}
-
+      {/* Container for Left/Right visual areas (Logo, Headshot) */}
+      {/* This sits below the SVG Text Overlay */}
       <div className={styles.headshotContainer}>
         <div className={styles.leftSide}>
+          {/* TeamLogo */}
+          <div className={styles.teamLogo}>
+            {teamAbbreviation && selectedPlayer ? (
+              <Image
+                src={`/teamLogos/${teamAbbreviation}.png`}
+                alt={`${teamName} logo`}
+                layout="intrinsic"
+                width={200}
+                height={200}
+                objectFit="contain"
+              />
+            ) : (
+              selectedPlayer && <p>No Logo</p>
+            )}
+          </div>
+          {/* Headshot */}
           <div className={styles.headshot}>
             {headshotUrl ? (
               <Image
@@ -43,8 +54,7 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                 className={styles.headshotImage}
                 layout="fill"
                 objectFit="cover"
-                priority // Load headshot faster
-                style={{ border: `6px solid ${teamColors.primaryColor}` }}
+                priority
               />
             ) : (
               <Image
@@ -52,32 +62,25 @@ const PlayerHeader: React.FC<PlayerHeaderProps> = ({
                 alt="Placeholder headshot"
                 className={styles.headshotImage}
                 layout="fill"
-                objectFit="cover"
+                objectFit="contain"
               />
             )}
           </div>
         </div>
+        {/* rightSide might not need specific content now, */}
+        {/* but keep for flex structure if desired */}
         <div className={styles.rightSide}>
-          <div className={styles.teamLogo}>
-            {teamAbbreviation ? (
-              <Image
-                src={`/teamLogos/${teamAbbreviation}.png`}
-                alt={`${teamName} logo`}
-                layout="intrinsic"
-                width={150}
-                height={150}
-              />
-            ) : (
-              // Optionally display something else if no logo/team
-              selectedPlayer && (
-                <p style={{ color: "#ccc", fontSize: "14px" }}>
-                  No team logo found
-                </p>
-              )
-            )}
-          </div>
+          {/* Intentionally empty or for other elements */}
         </div>
       </div>
+
+      {teamName && (
+        <TeamNameSVG
+          teamName={teamName}
+          primaryColor={teamColors.primaryColor} // Prop might be irrelevant now
+          secondaryColor={teamColors.secondaryColor} // Color for the text itself
+        />
+      )}
     </div>
   );
 };

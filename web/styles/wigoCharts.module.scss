@@ -3,9 +3,8 @@
 @use "styles/vars" as v; // Import variables from vars.scss
 @use "sass:math";
 @import url("https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap");
-
+@import url("https://fonts.googleapis.com/css2?family=Train+One&display=swap");
 /* =================== Main Dashboard Layout =================== */
-
 .wigoDashHeader {
   display: flex;
   flex-direction: column;
@@ -257,9 +256,8 @@
   z-index: 1; // Below search
   padding: 0;
   border-bottom: 2px solid v.$border-color;
-  background-color: var(--secondary-color); // Use CSS var for dynamic color
+  background-color: var(--primary-color); // Use CSS var for dynamic color
   overflow: hidden;
-  // PlayerHeader component should handle internal layout
 }
 
 .percentileChartContainer {
@@ -322,58 +320,24 @@
 /* --- Right Column --- */
 
 .ratingsContainer {
-  // --- Container for the 3 ratings - Does NOT use component-wrapper ---
-  grid-area: 12 / 29 / 21 / 37;
-  display: grid; // Keep using grid for precise placement relative to main grid
-  grid-template-columns: repeat(9, 1fr);
-  grid-template-rows: 1fr; // Single row
-  gap: v.$space-sm; // Gap between rating boxes
+  // Defines the AREA where PlayerRatingsDisplay will live
+  grid-area: 12 / 29 / 21 / 37; // Position on the main dashboard grid
+
+  // Basic container setup - No internal layout rules
   padding: 0;
   border: none;
-  background: none; // Transparent wrapper
-  overflow: hidden;
-
-  // Style the individual rating boxes *within* this container
-  > div {
-    // Apply wrapper to inner boxes
-    @include internal-flex-column;
-    border-right: 1px solid v.$secondary-color; // Example border
-    // Center placeholder text
-    align-items: center;
-    justify-content: center;
-    // Placeholder styles
-    color: v.$text-color-secondary;
-    font-style: italic;
-    font-size: v.$font-size-small;
-    text-align: center;
-
-    &:last-child {
-      border-right: none; // Remove right border from last box
-    }
-  }
-
-  // Place the individual rating boxes using grid columns relative to this container
-  .offenseRatingsContainer {
-    grid-column: 1 / 4; // Spans first 3 columns (equiv. 28, 29, 30)
-  }
-  .overallRatingsContainer {
-    grid-column: 4 / 7; // Spans middle 3 columns (equiv. 31, 32, 33)
-  }
-  .defenseRatingsContainer {
-    grid-column: 7 / 10; // Spans last 3 columns (equiv. 34, 35, 36)
-  }
+  background: none;
+  overflow: hidden; // Important to contain the component inside
 }
 
 .opponentLogContainer {
   // --- Uses component-wrapper ---
   grid-area: 21 / 5 / 30 / 9;
-  border: v.$border-color 2px solid;
+  border-left: v.$border-color 2px solid;
   @include internal-flex-column;
-  border-top: 2px solid v.$border-color;
   // Center placeholder text
   align-items: center;
   justify-content: center;
-  padding: v.$space-md;
   // Placeholder styles
   color: v.$text-color-secondary;
   font-style: italic;
@@ -403,97 +367,162 @@
   border-right: none; // Remove right border from last chart
 }
 
+/* /styles/wigoCharts.module.scss */
+
 /* =================== Player Header Internal Styles =================== */
-// These styles apply *within* the .playerHeaderContainer
-// Keep these largely as they were, ensuring they work within the container size
+
+// Main container for the entire header component area
 .playerHeadshot {
   width: 100%;
   height: 100%;
-  position: relative;
-  background-color: transparent; // Ensure container bg shows through if needed
+  position: relative; // Establishes stacking context for ::before and children
+  overflow: hidden;
+  // Make the element itself transparent, background is handled by ::before
+  background-color: transparent;
+  z-index: 0;
+}
 
-  .teamNameSVG {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 0;
-    width: 100%;
-    height: 100%;
-    background-color: var(--primary-color); // Use CSS var
-    opacity: 0.9; // Adjust opacity for visibility
+// Container holding the left (logo/headshot) and right (SVG text) areas
+// This sits above the ::before background
+.headshotContainer {
+  position: relative; // Positioned relative to playerHeadshot parent
+  width: 100%;
+  height: 100%;
+  display: flex; // Arranges leftSide and rightSide
+  z-index: 0; // <<< Sits above the ::before pseudo-element (z-index: 0)
+}
+
+// Container for the left 50% content
+.leftSide {
+  flex-basis: 55%;
+  position: relative; // Context for logo & headshot absolute positioning
+  display: flex; // Helps center content if needed, works with absolute children
+  align-items: center;
+  justify-content: center;
+  background-color: transparent; // Ensure no conflicting background here
+}
+
+// Container for the team logo image (within leftSide)
+.teamLogo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%; // Fill leftSide
+  height: 100%;
+  z-index: 1; // <<< Bottom layer WITHIN leftSide
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5; // 50% opacity for the logo
+
+  // Styling for the actual logo <img> tag
+  img {
     display: block;
-  }
-  .headshotContainer {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    height: 100%;
-    display: flex;
-  }
-
-  // Ensure sizes use percentages or are constrained by container if needed
-  .leftSide {
-    flex-basis: 50%;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .headshot {
-    position: relative; // Keep relative for potential adjustments
-    width: 110%; // Example: Use percentage for responsiveness
-    height: 110%; // Example: Use percentage
-    span {
-      overflow: visible !important; // Override any internal styles
-    }
-    transform: translateY(10%); // Re-evaluate if needed
-  }
-  .headshotImage {
-    display: block;
-    width: 100%;
-    height: 100%;
+    max-width: 100%; // Adjust size as desired
+    max-height: 100%;
+    width: auto;
+    height: auto;
     object-fit: contain;
-    overflow: visible !important; // Override any internal styles
+    filter: drop-shadow(3px 3px 0 var(--secondary-color))
+      drop-shadow(-3px -3px 0 var(--secondary-color))
+      drop-shadow(3px -3px 0 var(--secondary-color))
+      drop-shadow(-3px 3px 0 var(--secondary-color));
   }
-  img[alt*="Placeholder headshot"] {
-    transform: translateY(-10%);
-    object-fit: contain;
-    overflow: visible !important; // Override any internal styles
-    opacity: 0.4; // Adjust opacity for placeholder
-  }
-  .rightSide {
-    flex-basis: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    padding-right: v.$space-xs;
-  }
-  .teamLogo {
-    span {
-      overflow: visible !important;
-    }
 
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    filter: drop-shadow(1px 1px 2px rgba(255, 255, 255, 0.2));
-
-    img {
-      display: block;
-      max-width: 100%;
-      max-height: 100%;
-      width: auto;
-      height: auto;
-      object-fit: contain;
-      // Consider simplifying complex filter if performance is an issue
-      filter: drop-shadow(2px 2px 0 white) drop-shadow(-2px 2px 0 white)
-        drop-shadow(2px -2px 0 white) drop-shadow(-2px -2px 0 white);
-    }
+  span {
+    // Targeting the span wrapper from next/legacy/image
+    overflow: visible !important; // Allow filter drop-shadow to be visible
   }
+
+  // Placeholder text if image fails
+  p {
+    color: #ccc;
+    font-size: 14px;
+    text-align: center;
+  }
+}
+
+// Container for the player headshot image (within leftSide)
+.headshot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%; // Fill leftSide
+  height: 100%;
+  transform: translateY(10%);
+  z-index: 2; // <<< Top layer WITHIN leftSide (appears over logo)
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  // Targeting the span wrapper from next/legacy/image
+  span {
+    overflow: visible !important; // Allow filter drop-shadow to be visible
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  img {
+    height: 90%;
+    width: 90%;
+  }
+}
+
+// Styling for the actual headshot <img> tag
+.headshotImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; // As specified in TSX
+
+  // Apply the outline filter using drop-shadow
+  filter: drop-shadow(3px 3px 0 var(--primary-color))
+    drop-shadow(-3px 3px 0 var(--primary-color))
+    drop-shadow(3px -3px 0 var(--primary-color))
+    drop-shadow(-3px -3px 0 var(--primary-color))
+    drop-shadow(3px 3px 0 var(--secondary-color))
+    drop-shadow(-3px -3px 0 var(--secondary-color))
+    drop-shadow(3px -3px 0 var(--secondary-color))
+    drop-shadow(-3px 3px 0 var(--secondary-color)) drop-shadow(3px 3px 0 white)
+    drop-shadow(-3px -3px 0 white) drop-shadow(3px -3px 0 white)
+    drop-shadow(-3px 3px 0 white);
+}
+
+// Specific styling for the placeholder image to remove outline
+img[alt*="Placeholder headshot"].headshotImage {
+  object-fit: contain; // Adjust fit if needed
+  opacity: 0.4;
+  filter: none; // Remove outline from placeholder
+}
+
+// Container for the right 50% content
+.rightSide {
+  position: relative; // Context for the SVG if needed
+  background-color: transparent; // Ensure transparent
+  // No z-index needed here relative to leftSide
+  // This div contains the TeamNameSVG component
+}
+
+// Styling for the <svg> element rendered by TeamNameSVG
+.teamNameSVG {
+  // Position it to fill the .rightSide container
+  position: absolute; // Or relative if block layout is sufficient
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  // Ensure NO background color is applied to the SVG element itself
+  background-color: transparent !important; // Use !important for certainty if needed
+
+  opacity: 1; // Set opacity for the text (use 1 for fully opaque text)
+  display: block;
+
+  // Prevent the transparent SVG overlay from interfering with mouse events below
+  pointer-events: none;
+
+  // The text elements inside are styled by the TeamNameSVG component's logic
+  // (fill, font-size, textLength, etc.)
 }
 
 /* =================== Table Styling (COUNTS / RATES / PER GAME) =================== */

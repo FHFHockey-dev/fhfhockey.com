@@ -401,6 +401,11 @@ export interface CombinedPlayerStats {
 
 export type PercentileStrength = "as" | "es" | "pp" | "pk";
 
+// Use Database type helper for table names if possible, otherwise define manually
+// (These types might primarily be useful within the fetch function itself)
+export type NSTRatesTable = `nst_gamelog_${PercentileStrength}_rates`;
+export type NSTRatesOiTable = `nst_gamelog_${PercentileStrength}_rates_oi`;
+
 export type OffensePercentileTable =
   | "nst_percentile_as_offense"
   | "nst_percentile_es_offense"
@@ -413,62 +418,89 @@ export type DefensePercentileTable =
   | "nst_percentile_pp_defense"
   | "nst_percentile_pk_defense";
 
-export interface PlayerPercentileStats {
-  player_id: number;
-  season: string | number; // Type might vary based on table schema
-  gp: number | null;
-  toi: number | null;
-  // Rate Stats (Offense) - Ensure these keys match selected columns
-  goals_per_60: number | null;
-  total_assists_per_60: number | null;
-  total_points_per_60: number | null;
-  shots_per_60: number | null;
-  iscfs_per_60: number | null;
-  i_hdcf_per_60: number | null;
-  ixg_per_60: number | null;
-  icf_per_60: number | null;
-  cf_per_60: number | null;
-  scf_per_60: number | null;
-  oi_hdcf_per_60: number | null;
-  // Percentage Stats (Offense) - Ensure these keys match selected columns
-  cf_pct: number | null;
-  ff_pct: number | null;
-  sf_pct: number | null;
-  gf_pct: number | null;
-  xgf_pct: number | null;
-  scf_pct: number | null;
-  hdcf_pct: number | null;
-  // Add defense stats here if needed, e.g., xga_per_60
-}
-
 // Interface for RAW player stats fetched from DB
+/**
+ * Represents the COMBINED raw stats for a player for a specific strength,
+ * potentially merging data from _rates and _rates_oi tables.
+ * Ensure all keys needed for OFFENSE_RATING_STATS, DEFENSE_RATING_STATS,
+ * and HIGHER_IS_BETTER_MAP are included here.
+ * Also includes 'toi' (total seconds) and 'gp'.
+ */
+/**
+ * Defines the structure for raw player statistics fetched and merged
+ * from nst_gamelog_[strength]_rates and nst_gamelog_[strength]_rates_oi.
+ * This is the primary type used for percentile and rating calculations.
+ * All potentially used stats should be listed here as optional.
+ * 'toi' MUST represent total seconds played in that strength for the season.
+ */
+// web/components/WiGO/types.ts (Excerpt - replace previous PlayerRawStats)
 export interface PlayerRawStats {
   player_id: number;
-  season: string | number;
+  season: number;
   gp: number | null;
-  toi: number | null;
-  goals_per_60: number | null;
-  total_assists_per_60: number | null;
-  total_points_per_60: number | null;
-  shots_per_60: number | null;
-  iscfs_per_60: number | null;
-  i_hdcf_per_60: number | null;
-  ixg_per_60: number | null;
-  icf_per_60: number | null;
-  cf_per_60: number | null;
-  scf_per_60: number | null;
-  oi_hdcf_per_60: number | null;
-  cf_pct: number | null;
-  ff_pct: number | null;
-  sf_pct: number | null;
-  gf_pct: number | null;
-  xgf_pct: number | null;
-  scf_pct: number | null;
-  hdcf_pct: number | null;
-  // Add other fields as needed
-}
+  toi_seconds: number | null; // Use toi_seconds
 
-export interface PlayerRawStats extends PlayerPercentileStats {
-  // Add any other raw stats needed from defense table if not already included
-  // Example: xga_per_60?: number | null;
+  // Combined Available Offense Stats (Optional)
+  goals_per_60?: number | null;
+  total_assists_per_60?: number | null;
+  first_assists_per_60?: number | null;
+  second_assists_per_60?: number | null;
+  total_points_per_60?: number | null;
+  shots_per_60?: number | null;
+  ixg_per_60?: number | null;
+  icf_per_60?: number | null;
+  iff_per_60?: number | null;
+  iscfs_per_60?: number | null;
+  i_hdcf_per_60?: number | null; // From offense table schema
+  rush_attempts_per_60?: number | null;
+  rebounds_created_per_60?: number | null;
+  cf_per_60?: number | null;
+  ff_per_60?: number | null;
+  sf_per_60?: number | null;
+  gf_per_60?: number | null;
+  xgf_per_60?: number | null;
+  scf_per_60?: number | null;
+  oi_hdcf_per_60?: number | null; // From offense table schema
+  hdgf_per_60?: number | null;
+  mdgf_per_60?: number | null;
+  ldgf_per_60?: number | null;
+  cf_pct?: number | null;
+  ff_pct?: number | null;
+  sf_pct?: number | null;
+  gf_pct?: number | null;
+  xgf_pct?: number | null;
+  scf_pct?: number | null;
+  hdcf_pct?: number | null;
+  hdgf_pct?: number | null;
+  mdgf_pct?: number | null;
+  ldgf_pct?: number | null;
+  ipp?: number | null;
+  sh_percentage?: number | null;
+  on_ice_sh_pct?: number | null;
+  penalties_drawn_per_60?: number | null;
+
+  // Combined Available Defense Stats (Optional)
+  ca_per_60?: number | null;
+  fa_per_60?: number | null;
+  sa_per_60?: number | null;
+  ga_per_60?: number | null;
+  xga_per_60?: number | null;
+  sca_per_60?: number | null;
+  hdca_per_60?: number | null;
+  hdga_per_60?: number | null;
+  mdga_per_60?: number | null;
+  ldga_per_60?: number | null;
+  shots_blocked_per_60?: number | null;
+  takeaways_per_60?: number | null;
+  hits_per_60?: number | null; // Note: Also in defense schema
+  pim_per_60?: number | null;
+  total_penalties_per_60?: number | null;
+  minor_penalties_per_60?: number | null;
+  major_penalties_per_60?: number | null;
+  misconduct_penalties_per_60?: number | null;
+  giveaways_per_60?: number | null;
+  on_ice_sv_pct?: number | null;
+
+  // Allow indexing for constants
+  [key: string]: number | string | null | undefined;
 }

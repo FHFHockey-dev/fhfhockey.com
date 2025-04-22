@@ -2,7 +2,6 @@
 import supabase from "lib/supabase";
 import { Database } from "lib/supabase/database-generated.types";
 import {
-  PlayerPercentileStats,
   PercentileStrength,
   OffensePercentileTable,
   DefensePercentileTable,

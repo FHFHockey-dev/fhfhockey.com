@@ -1,6 +1,11 @@
 // web/utils/fetchWigoPlayerStats.ts
 
-import { TableAggregateData, CombinedPlayerStats } from "components/WiGO/types";
+import {
+  TableAggregateData,
+  CombinedPlayerStats,
+  PlayerRawStats,
+  PercentileStrength
+} from "components/WiGO/types";
 import supabase from "lib/supabase";
 import { Database } from "lib/supabase/database-generated.types";
 
@@ -518,6 +523,68 @@ export async function fetchPlayerAggregatedStats(
   };
 }
 
+const PAGE_SIZE = 1000; // Supabase default limit
+
+/**
+ * Fetches ALL rows from a specified table using pagination.
+ */
+async function fetchPaginatedData<T>(
+  tableName: keyof Database["public"]["Tables"],
+  selectColumns: string
+  // Add season filtering if tables contain multiple seasons
+  // seasonFilter?: { column: string; value: number | string }
+): Promise<T[]> {
+  let allData: T[] = [];
+  let page = 0;
+  let fetchMore = true;
+
+  console.log(`[fetchPaginatedData] Starting fetch for ${tableName}`);
+
+  while (fetchMore) {
+    const startIndex = page * PAGE_SIZE;
+    const endIndex = startIndex + PAGE_SIZE - 1;
+
+    let query = supabase
+      .from(tableName)
+      .select(selectColumns)
+      .range(startIndex, endIndex);
+
+    // Add season filter if provided
+    // if (seasonFilter) {
+    //     query = query.eq(seasonFilter.column, seasonFilter.value);
+    // }
+
+    const { data, error, count } = await query; // 'count' might be null depending on settings
+
+    if (error) {
+      console.error(
+        `[fetchPaginatedData] Error fetching page ${page} for ${tableName}:`,
+        error
+      );
+      throw error; // Re-throw error to be caught by calling function
+    }
+
+    if (data) {
+      console.log(
+        `[fetchPaginatedData] Fetched ${data.length} rows on page ${page} for ${tableName}.`
+      );
+      allData = allData.concat(data as T[]);
+      // Check if the number of rows returned is less than the page size
+      if (data.length < PAGE_SIZE) {
+        fetchMore = false; // Reached the end
+      } else {
+        page++; // Prepare for the next page
+      }
+    } else {
+      fetchMore = false; // No data returned, stop.
+    }
+  }
+  console.log(
+    `[fetchPaginatedData] Finished fetch for ${tableName}. Total rows: ${allData.length}`
+  );
+  return allData;
+}
+
 // New function to fetch per-game relevant totals
 export const fetchPlayerPerGameTotals = async (
   playerId: number
@@ -728,3 +795,94 @@ export const fetchPlayerGameLogConsistencyData = async (
     throw err;
   }
 };
+
+const getPercentileOffenseTable = (strength: PercentileStrength) =>
+  `nst_percentile_${strength}_offense` as keyof Database["public"]["Tables"];
+const getPercentileDefenseTable = (strength: PercentileStrength) =>
+  `nst_percentile_${strength}_defense` as keyof Database["public"]["Tables"];
+
+export async function fetchPercentilePlayerData(
+  strength: PercentileStrength
+): Promise<PlayerRawStats[]> {
+  console.log(
+    `[Ratings Fetch] Fetching PAGINATED percentile player data for Strength: ${strength}`
+  );
+  const offenseTable = getPercentileOffenseTable(strength);
+  const defenseTable = getPercentileDefenseTable(strength);
+
+  // Define expected data types (can be Partial<PlayerRawStats> for safety)
+  type OffenseRow = Partial<PlayerRawStats> & {
+    player_id: number;
+    season: number;
+  };
+  type DefenseRow = Partial<PlayerRawStats> & {
+    player_id: number;
+    season: number;
+  };
+
+  try {
+    // **** FETCH USING PAGINATION ****
+    // Select '*' is simplest if schemas generally match PlayerRawStats,
+    // otherwise list specific columns needed
+    const [offenseData, defenseData] = await Promise.all([
+      fetchPaginatedData<OffenseRow>(offenseTable, "*"),
+      fetchPaginatedData<DefenseRow>(defenseTable, "*")
+      // Add season filter to fetchPaginatedData calls if needed
+    ]);
+
+    // Create Map for efficient merging using defense data
+    const defenseDataMap = new Map<number, DefenseRow>(
+      defenseData
+        .filter((d) => d.player_id != null)
+        .map((d) => [d.player_id, d])
+    );
+
+    // Merge data
+    const combinedData: PlayerRawStats[] = offenseData
+      .filter((o) => o.player_id != null)
+      .map((offensePlayer) => {
+        const defensePlayer = defenseDataMap.get(offensePlayer.player_id);
+
+        // Construct the PlayerRawStats object
+        const playerStats: PlayerRawStats = {
+          // Merge properties, prioritize offense table for common keys if needed
+          ...(defensePlayer ?? {}), // Spread defense first
+          ...(offensePlayer ?? {}), // Spread offense second
+
+          // Explicitly set/overwrite keys to ensure correct source/type
+          player_id: offensePlayer.player_id,
+          season: offensePlayer.season,
+          // ***** VERIFY GP SOURCE *****
+          // Does GP in offense table represent season total? Or defense? Or neither?
+          // Assuming offense table is primary source for now:
+          gp: offensePlayer.gp ?? defensePlayer?.gp ?? null,
+          // Use toi_seconds, prioritize offense table
+          toi_seconds:
+            offensePlayer.toi_seconds ?? defensePlayer?.toi_seconds ?? null
+        };
+
+        // Remove potential duplicate keys from spread if necessary
+        // delete (playerStats as any).player_id_defense; // etc.
+
+        return playerStats;
+      });
+
+    console.log(
+      `[Ratings Fetch] Merged ${combinedData.length} players for strength ${strength}. Sample GP: ${combinedData[0]?.gp}`
+    );
+    // **** Log a sample object to verify structure and GP ****
+    if (combinedData.length > 0) {
+      console.log(
+        `[Ratings Fetch] Sample combined object for strength ${strength}:`,
+        JSON.stringify(combinedData[0], null, 2)
+      );
+    }
+    return combinedData;
+  } catch (err: any) {
+    console.error(
+      `[Ratings Fetch] Error fetching percentile player data for strength ${strength}:`,
+      err.message || err
+    );
+    return [];
+  }
+}

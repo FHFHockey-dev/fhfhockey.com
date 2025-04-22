@@ -21,6 +21,8 @@ import StatsTable from "components/WiGO/StatsTable";
 import PerGameStatsTable from "components/WiGO/PerGameStatsTable";
 import RateStatPercentiles from "components/WiGO/RateStatPercentiles"; // Adjust path
 import useCurrentSeason from "hooks/useCurrentSeason";
+import OpponentGamelog from "components/WiGO/OpponentGamelog";
+import PlayerRatingsDisplay from "components/WiGO/PlayerRatingsDisplay";
 import TimeOptions, { TimeOption } from "components/TimeOptions/TimeOptions";
 
 import {
@@ -64,6 +66,8 @@ const ConsistencyChart = dynamic(
 const WigoCharts: React.FC = () => {
   // --- State variables remain the same ---
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
+  const [teamIdForLog, setTeamIdForLog] = useState<number | null>(null); // Separate state for the log component
+
   const [headshotUrl, setHeadshotUrl] = useState<string | null>(null);
   const [teamColors, setTeamColors] = useState<TeamColors>(defaultColors);
   const [rawCountsData, setRawCountsData] = useState<TableAggregateData[]>([]);
@@ -84,6 +88,8 @@ const WigoCharts: React.FC = () => {
     useState<keyof TableAggregateData>("CA");
   const placeholderImage = "/pictures/player-placeholder.jpg";
 
+  const [minGp, setMinGp] = useState<number>(10); // Default minimum GP threshold
+
   const currentSeasonData = useCurrentSeason();
   const currentSeasonId = currentSeasonData?.seasonId ?? null;
 
@@ -91,6 +97,7 @@ const WigoCharts: React.FC = () => {
   const handlePlayerSelect = useCallback((player: Player, headshot: string) => {
     setSelectedPlayer(player);
     setHeadshotUrl(headshot);
+    setTeamIdForLog(player.team_id ?? null); // <--- SET TEAM ID FOR LOG
 
     if (player.team_id) {
       const teamInfo = getTeamInfoById(player.team_id);
@@ -296,7 +303,11 @@ const WigoCharts: React.FC = () => {
         </div> */}
 
           <div className={styles.rateStatBarPercentilesContainer}>
-            <RateStatPercentiles playerId={selectedPlayer?.id} />
+            <RateStatPercentiles
+              playerId={selectedPlayer?.id}
+              minGp={minGp} // Pass the lifted state
+              onMinGpChange={setMinGp} // Pass the setter function
+            />
           </div>
 
           {/* --- Center Columns (Tables) --- */}
@@ -336,14 +347,28 @@ const WigoCharts: React.FC = () => {
 
           {/* --- Right Column --- */}
           <div className={styles.ratingsContainer}>
-            {/* Individual rating boxes are styled internally by the container rule */}
-            <div className={styles.offenseRatingsContainer}>Off. Rating</div>
-            <div className={styles.overallRatingsContainer}>Ovr. Rating</div>
-            <div className={styles.defenseRatingsContainer}>Def. Rating</div>
+            {/* Render only if a player is selected */}
+            {selectedPlayer ? (
+              <PlayerRatingsDisplay
+                playerId={selectedPlayer.id}
+                minGp={minGp} // Pass the lifted state
+              />
+            ) : (
+              // Optional: Placeholder when no player is selected
+              <div className={styles.chartLoadingPlaceholder}>
+                Select player for ratings
+              </div>
+            )}
           </div>
 
           <div className={styles.opponentLogContainer}>
-            Opponent Log Placeholder
+            {" "}
+            {/* This div acts as the grid area container */}
+            <OpponentGamelog
+              teamId={teamIdForLog}
+              highlightColor="#07aae2"
+            />{" "}
+            {/* <--- USE THE COMPONENT HERE */}
           </div>
 
           {/* --- Bottom Row (Charts) --- */}
