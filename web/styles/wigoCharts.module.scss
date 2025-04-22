@@ -3,15 +3,43 @@
 @use "styles/vars" as v; // Import variables from vars.scss
 @use "sass:math";
 @import url("https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap");
-
+@import url("https://fonts.googleapis.com/css2?family=Train+One&display=swap");
 /* =================== Main Dashboard Layout =================== */
+.wigoDashHeader {
+  display: flex;
+  flex-direction: column;
+  border-collapse: collapse;
+}
+
+.wigoHeader {
+  margin: v.$space-md auto v.$space-lg;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  font-family: "Train One", sans-serif;
+  letter-spacing: 1.5em;
+  font-size: v.$font-size-base * 1.3;
+  font-weight: 100;
+  line-height: 0.85;
+}
+
+.spanColorBlue {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: v.$primary-color;
+  font-family: "Train One", sans-serif;
+  font-size: v.$font-size-base * 1.4;
+  font-weight: 900;
+}
 
 .wigoDashboardContainer {
   @include v.component-wrapper;
   width: 90%;
   max-width: 2000px;
   height: 87vh;
-  margin: v.$space-xl auto;
+  margin: 0 auto v.$space-xxl auto;
   display: flex;
   border-collapse: collapse;
   border: 2px solid v.$border-color;
@@ -228,9 +256,8 @@
   z-index: 1; // Below search
   padding: 0;
   border-bottom: 2px solid v.$border-color;
-  background-color: var(--secondary-color); // Use CSS var for dynamic color
+  background-color: var(--primary-color); // Use CSS var for dynamic color
   overflow: hidden;
-  // PlayerHeader component should handle internal layout
 }
 
 .percentileChartContainer {
@@ -293,58 +320,24 @@
 /* --- Right Column --- */
 
 .ratingsContainer {
-  // --- Container for the 3 ratings - Does NOT use component-wrapper ---
-  grid-area: 12 / 29 / 21 / 37;
-  display: grid; // Keep using grid for precise placement relative to main grid
-  grid-template-columns: repeat(9, 1fr);
-  grid-template-rows: 1fr; // Single row
-  gap: v.$space-sm; // Gap between rating boxes
+  // Defines the AREA where PlayerRatingsDisplay will live
+  grid-area: 12 / 29 / 21 / 37; // Position on the main dashboard grid
+
+  // Basic container setup - No internal layout rules
   padding: 0;
   border: none;
-  background: none; // Transparent wrapper
-  overflow: hidden;
-
-  // Style the individual rating boxes *within* this container
-  > div {
-    // Apply wrapper to inner boxes
-    @include internal-flex-column;
-    border-right: 1px solid v.$secondary-color; // Example border
-    // Center placeholder text
-    align-items: center;
-    justify-content: center;
-    // Placeholder styles
-    color: v.$text-color-secondary;
-    font-style: italic;
-    font-size: v.$font-size-small;
-    text-align: center;
-
-    &:last-child {
-      border-right: none; // Remove right border from last box
-    }
-  }
-
-  // Place the individual rating boxes using grid columns relative to this container
-  .offenseRatingsContainer {
-    grid-column: 1 / 4; // Spans first 3 columns (equiv. 28, 29, 30)
-  }
-  .overallRatingsContainer {
-    grid-column: 4 / 7; // Spans middle 3 columns (equiv. 31, 32, 33)
-  }
-  .defenseRatingsContainer {
-    grid-column: 7 / 10; // Spans last 3 columns (equiv. 34, 35, 36)
-  }
+  background: none;
+  overflow: hidden; // Important to contain the component inside
 }
 
 .opponentLogContainer {
   // --- Uses component-wrapper ---
   grid-area: 21 / 5 / 30 / 9;
-  border: v.$border-color 2px solid;
+  border-left: v.$border-color 2px solid;
   @include internal-flex-column;
-  border-top: 2px solid v.$border-color;
   // Center placeholder text
   align-items: center;
   justify-content: center;
-  padding: v.$space-md;
   // Placeholder styles
   color: v.$text-color-secondary;
   font-style: italic;
@@ -374,96 +367,162 @@
   border-right: none; // Remove right border from last chart
 }
 
+/* /styles/wigoCharts.module.scss */
+
 /* =================== Player Header Internal Styles =================== */
-// These styles apply *within* the .playerHeaderContainer
-// Keep these largely as they were, ensuring they work within the container size
+
+// Main container for the entire header component area
 .playerHeadshot {
   width: 100%;
   height: 100%;
-  position: relative;
-  background-color: transparent; // Ensure container bg shows through if needed
+  position: relative; // Establishes stacking context for ::before and children
+  overflow: hidden;
+  // Make the element itself transparent, background is handled by ::before
+  background-color: transparent;
+  z-index: 0;
+}
 
-  .teamNameSVG {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 0;
-    width: 100%;
-    height: 100%;
-    background-color: var(--primary-color); // Use CSS var
-    opacity: 0.9; // Adjust opacity for visibility
-    display: block;
-  }
-  .headshotContainer {
-    position: relative;
-    z-index: 1;
-    width: 100%;
-    height: 100%;
-    display: flex;
-  }
+// Container holding the left (logo/headshot) and right (SVG text) areas
+// This sits above the ::before background
+.headshotContainer {
+  position: relative; // Positioned relative to playerHeadshot parent
+  width: 100%;
+  height: 100%;
+  display: flex; // Arranges leftSide and rightSide
+  z-index: 0; // <<< Sits above the ::before pseudo-element (z-index: 0)
+}
 
-  // Ensure sizes use percentages or are constrained by container if needed
-  .leftSide {
-    flex-basis: 50%;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .headshot {
-    position: relative; // Keep relative for potential adjustments
-    width: 110%; // Example: Use percentage for responsiveness
-    height: 110%; // Example: Use percentage
-    span {
-      overflow: visible !important; // Override any internal styles
-    }
-    transform: translateY(10%); // Re-evaluate if needed
-  }
-  .headshotImage {
+// Container for the left 50% content
+.leftSide {
+  flex-basis: 55%;
+  position: relative; // Context for logo & headshot absolute positioning
+  display: flex; // Helps center content if needed, works with absolute children
+  align-items: center;
+  justify-content: center;
+  background-color: transparent; // Ensure no conflicting background here
+}
+
+// Container for the team logo image (within leftSide)
+.teamLogo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%; // Fill leftSide
+  height: 100%;
+  z-index: 1; // <<< Bottom layer WITHIN leftSide
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5; // 50% opacity for the logo
+
+  // Styling for the actual logo <img> tag
+  img {
     display: block;
-    width: 100%;
-    height: 100%;
+    max-width: 100%; // Adjust size as desired
+    max-height: 100%;
+    width: auto;
+    height: auto;
     object-fit: contain;
-    filter: drop-shadow(1px 1px 5px rgba(0, 0, 0));
-    overflow: visible !important; // Override any internal styles
+    filter: drop-shadow(3px 3px 0 var(--secondary-color))
+      drop-shadow(-3px -3px 0 var(--secondary-color))
+      drop-shadow(3px -3px 0 var(--secondary-color))
+      drop-shadow(-3px 3px 0 var(--secondary-color));
   }
-  img[alt*="Placeholder"] {
-    outline: 3px solid v.$border-color-primary;
-    border-radius: 50%;
-  }
-  .rightSide {
-    flex-basis: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    padding-right: v.$space-xs;
-  }
-  .teamLogo {
-    span {
-      overflow: visible !important;
-    }
 
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    filter: drop-shadow(1px 1px 2px rgba(255, 255, 255, 0.2));
-
-    img {
-      display: block;
-      max-width: 100%;
-      max-height: 100%;
-      width: auto;
-      height: auto;
-      object-fit: contain;
-      // Consider simplifying complex filter if performance is an issue
-      filter: drop-shadow(2px 2px 0 white) drop-shadow(-2px 2px 0 white)
-        drop-shadow(2px -2px 0 white) drop-shadow(-2px -2px 0 white);
-    }
+  span {
+    // Targeting the span wrapper from next/legacy/image
+    overflow: visible !important; // Allow filter drop-shadow to be visible
   }
+
+  // Placeholder text if image fails
+  p {
+    color: #ccc;
+    font-size: 14px;
+    text-align: center;
+  }
+}
+
+// Container for the player headshot image (within leftSide)
+.headshot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%; // Fill leftSide
+  height: 100%;
+  transform: translateY(10%);
+  z-index: 2; // <<< Top layer WITHIN leftSide (appears over logo)
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  // Targeting the span wrapper from next/legacy/image
+  span {
+    overflow: visible !important; // Allow filter drop-shadow to be visible
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  img {
+    height: 90%;
+    width: 90%;
+  }
+}
+
+// Styling for the actual headshot <img> tag
+.headshotImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; // As specified in TSX
+
+  // Apply the outline filter using drop-shadow
+  filter: drop-shadow(3px 3px 0 var(--primary-color))
+    drop-shadow(-3px 3px 0 var(--primary-color))
+    drop-shadow(3px -3px 0 var(--primary-color))
+    drop-shadow(-3px -3px 0 var(--primary-color))
+    drop-shadow(3px 3px 0 var(--secondary-color))
+    drop-shadow(-3px -3px 0 var(--secondary-color))
+    drop-shadow(3px -3px 0 var(--secondary-color))
+    drop-shadow(-3px 3px 0 var(--secondary-color)) drop-shadow(3px 3px 0 white)
+    drop-shadow(-3px -3px 0 white) drop-shadow(3px -3px 0 white)
+    drop-shadow(-3px 3px 0 white);
+}
+
+// Specific styling for the placeholder image to remove outline
+img[alt*="Placeholder headshot"].headshotImage {
+  object-fit: contain; // Adjust fit if needed
+  opacity: 0.4;
+  filter: none; // Remove outline from placeholder
+}
+
+// Container for the right 50% content
+.rightSide {
+  position: relative; // Context for the SVG if needed
+  background-color: transparent; // Ensure transparent
+  // No z-index needed here relative to leftSide
+  // This div contains the TeamNameSVG component
+}
+
+// Styling for the <svg> element rendered by TeamNameSVG
+.teamNameSVG {
+  // Position it to fill the .rightSide container
+  position: absolute; // Or relative if block layout is sufficient
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  // Ensure NO background color is applied to the SVG element itself
+  background-color: transparent !important; // Use !important for certainty if needed
+
+  opacity: 1; // Set opacity for the text (use 1 for fully opaque text)
+  display: block;
+
+  // Prevent the transparent SVG overlay from interfering with mouse events below
+  pointer-events: none;
+
+  // The text elements inside are styled by the TeamNameSVG component's logic
+  // (fill, font-size, textLength, etc.)
 }
 
 /* =================== Table Styling (COUNTS / RATES / PER GAME) =================== */
@@ -492,6 +551,12 @@
       letter-spacing: 0.3px;
       white-space: nowrap; // Keep headers nowrap
       text-align: center; // Default center align
+
+      &:first-child {
+        // Style for Expander column header
+        width: 5%; // Ensure width is applied
+        padding: v.$space-xs * 0.8 4px; // Reduced padding
+      }
 
       &:last-child {
         border-right: none;
@@ -528,29 +593,98 @@
         border-right: none;
       }
     }
+
+    .expanderCell {
+      // Target the TD specifically
+      text-align: center;
+      width: 5%; // Match header width
+      border-right: v.$border-subtle; // Keep consistent border
+      // Inherit background from row for striping/hover
+      background-color: inherit;
+
+      // Make Expander column sticky (along with Stat column)
+      position: sticky;
+      left: 0; // Stick to the far left
+      z-index: 1; // Below header
+    }
+
+    button.expandButton {
+      // Target the button inside the cell
+      background: none;
+      border: none;
+      color: v.$primary-color;
+      font-weight: 900;
+      cursor: pointer;
+      padding: 2px 5px;
+      font-size: v.$font-size-base;
+      margin: 0 auto;
+      line-height: 1; // Ensure icon aligns well vertically
+
+      &:hover {
+        color: #fff;
+      }
+    }
+
+    td:nth-child(2) {
+      // Target the Stat Label TD (now the second child)
+      text-align: left;
+      padding-left: v.$space-sm;
+      font-weight: 600;
+      color: v.$text-color-secondary;
+      border-right: v.$border-separator; // Match header separator
+      // Make Stat column sticky (needs left offset due to expander)
+      position: sticky;
+      left: 5%; // Offset by the width of the expander column
+      z-index: 1;
+      background-color: inherit;
+    }
+
+    // Style the row containing the chart
+    tr.chartRow {
+      td.chartCell {
+        // Target the single cell in the chart row
+        border-bottom: 1px solid #555; // Separator line
+        border-top: 1px solid #555; // Separator line
+        background-color: #282c34; // Darker background for chart area
+        padding: v.$space-sm !important; // Add padding *inside* the chart cell
+      }
+      // Ensure hover effect doesn't apply to chart row if desired
+      &:hover {
+        background-color: transparent; // Or match chartCell background
+      }
+    }
   }
 }
 
 // Styles for the table *inside* the Counts/Rates containers
 .countsTableContainer .statsTableActual,
 .ratesTableContainer .statsTableActual {
-  @include stats-table-common; // Apply common styles
-  border: none !important; // Override any default borders
+  // Target the nested table element
+  @include stats-table-common;
+  border: none !important;
 
-  // Specifics for Counts/Rates Tables
   thead {
+    // Adjust first child (Expander) and second child (Stat) headers
     th:first-child {
+      // Expander Header
+      text-align: center;
+      padding: v.$space-xs * 0.8 4px;
+      border-right: v.$border-subtle;
+      position: sticky;
+      left: 0; // Stick expander to far left
+      z-index: 3;
+      background-color: v.$background-dark;
+    }
+    th:nth-child(2) {
       // Stat Header
       text-align: left;
       padding-left: v.$space-sm;
       border-right: v.$border-separator; // Stronger separator
-      // Width should be controlled by <colgroup> in the HTML/Component
-      position: sticky; // Make first column sticky
-      left: 0;
-      z-index: 3; // Above other headers
-      background-color: v.$background-dark; // Ensure background for sticky
+      position: sticky;
+      left: 5%; // Offset Stat header
+      z-index: 3;
+      background-color: v.$background-dark;
     }
-    // Header cells for CA, STD, L10 etc (center aligned by default)
 
     // Title Rows (Counts/Rates Labels)
     tr.countsLabel th,
@@ -590,13 +724,13 @@
     td:first-child {
       // Stat Name Cell
       text-align: left;
-      padding-left: v.$space-sm;
       font-weight: 600;
       color: v.$text-color-secondary;
+      padding: 0;
+      text-align: center;
       border-right: v.$border-separator; // Match header separator
       // Make first column sticky
       position: sticky;
-      left: 0;
       z-index: 1; // Below header
       // Inherit background color from row for striping/hover
       background-color: inherit;
@@ -620,14 +754,78 @@
   }
 }
 
+// --- GameLogChart Internal Styles ---
+.gameLogChartContainer {
+  h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    text-align: center;
+    color: #eee;
+    font-size: 1.1em;
+  }
+  .averageToggleButtons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 15px;
+  }
+
+  .avgButton {
+    background-color: #444;
+    border: 1px solid #666;
+    color: #ccc;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8em;
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+      color 0.2s ease; // Added color transition
+
+    &:hover {
+      background-color: #555;
+      border-color: #888;
+    }
+
+    &.active {
+      background-color: v.$primary-color;
+      border-color: darken(v.$primary-color, 15%);
+      color: white;
+      font-weight: bold;
+    }
+  }
+}
+
+.chartStatus {
+  // For Loading/Error/No Data within the chart cell
+  padding: 20px;
+  text-align: center;
+  color: #aaa;
+  font-style: italic;
+  background-color: #282c34; // Match chart background
+}
+
+// Style for Recharts Tooltip
+.chartTooltip {
+  background-color: rgba(40, 44, 52, 0.9);
+  border: 1px solid #666;
+  padding: 10px;
+  border-radius: 4px;
+  color: #eee;
+  font-size: 0.9em;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+
+  p {
+    margin: 3px 0;
+  }
+}
+
 .ratesTable,
 .countsTable {
   height: 100%; // Fill container height
 }
 
 // --- Per Game Stats Table Styling ---
-// Styles for the table *inside* the .perGameStatsContainer
-// ASSUMPTION: The <table> element inside PerGameStatsTable component has class="transposedTable"
 .perGameStatsContainer {
   // Container handles scroll
   overflow: auto;
@@ -713,17 +911,85 @@
 /* =================== Chart Container Styling =================== */
 .chartContainer {
   height: 100%; // Fill container height
+  display: flex; // Added for flex structure (header + canvas)
+  flex-direction: column; // Stack header and canvas vertically
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background-color: rgb(
+    6,
+    47,
+    61
+  ); // Or use a variable: darken(v.$background-dark, 5%);
+  flex-shrink: 0; // Prevent header from shrinking
+
+  // Title style within the header
+  h3 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: #ccc; // Or v.$text-color-secondary;
+    // Add padding adjustment if needed to match previous inline style vertical alignment exactly
+    padding: 3px 0 3.5px 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  // Container for toggle buttons
+  // .toggleButtons {
+  //   // Buttons align automatically due to justify-content: space-between
+  // }
+
+  // Style for the toggle buttons themselves
+  button {
+    // Base button styles from inline
+    padding: 3px 5px;
+    font-size: 10px;
+    cursor: pointer;
+    color: v.$text-color-secondary;
+    background-color: darken(v.$background-medium, 10%);
+    border: v.$border-color;
+    border-radius: v.$border-radius-sm; // Add slight rounding
+    margin-left: 5px; // Use margin-left instead of margin-right on the first button
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+
+    &:first-child {
+      margin-left: 0; // No left margin on the very first button
+    }
+
+    &:hover:not(:disabled) {
+      background-color: #444; // Slightly lighter on hover
+      border-color: #777;
+      outline: 1px solid v.$border-color;
+    }
+
+    // Disabled state styles
+    &:disabled {
+      cursor: crosshair;
+      background-color: v.$primary-color;
+      // color: #aaa; // Optionally change text color too
+
+      &:hover {
+        background-color: v.$primary-color; // Keep same color on hover
+        outline: 1px solid v.$warning-color;
+        border-color: v.$primary-color; // Keep same border color on hover
+      }
+    }
+  }
 }
 
 .chartCanvasContainer {
-  // Shared style for the chart canvas wrapper
-  position: relative; // Critical for chart.js responsiveness
+  position: relative;
   width: 100%;
-  height: 90%; // Fill space
-  overflow: hidden; // Prevent canvas overflow spilling out
-  padding: v.$space-sm; // Small padding *around* the canvas within its container
+  // height: 90%; // Let flex-grow handle height instead
+  flex-grow: 1; // Allow canvas container to fill remaining space
+  overflow: hidden;
+  padding: v.$space-xs;
   box-sizing: border-box;
-  // Canvas element itself should be width/height 100% managed by chart.js
 }
 
 // Placeholder for loading charts

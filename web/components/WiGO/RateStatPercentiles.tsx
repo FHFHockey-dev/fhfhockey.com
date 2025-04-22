@@ -13,8 +13,8 @@ import {
   ChartData
 } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
-import styles from "styles/wigoCharts.module.scss";
-import { fetchAllPlayerStatsForStrength } from "utils/fetchWigoPercentiles";
+import styles from "styles/wigoCharts.module.scss"; // Assuming styles are shared or adjust path
+import { fetchAllPlayerStatsForStrength } from "utils/fetchWigoPercentiles"; // Adjust path if needed
 import { PlayerRawStats, PercentileStrength } from "components/WiGO/types";
 import {
   calculatePercentileRank,
@@ -22,7 +22,6 @@ import {
 } from "utils/calculatePercentiles";
 import { formatOrdinal } from "utils/formattingUtils";
 
-// Register Chart.js components and the datalabels plugin
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -35,12 +34,14 @@ ChartJS.register(
 
 interface RateStatPercentilesProps {
   playerId: number | null | undefined;
+  minGp: number; // Received from parent
+  onMinGpChange: (newMinGp: number) => void; // Handler received from parent
 }
 
 // --- Stat Definitions ---
 const ALL_STATS_TO_DISPLAY: Array<{
   label: string;
-  key: keyof PlayerRawStats | "toi_per_gp_calc";
+  key: string;
   higherIsBetter: boolean;
 }> = [
   // Rate Stats
@@ -253,7 +254,9 @@ const generateChartConfig = (
 
 // --- RateStatPercentiles Component ---
 const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
-  playerId
+  playerId,
+  minGp,
+  onMinGpChange
 }) => {
   const [selectedStrength, setSelectedStrength] =
     useState<PercentileStrength>("as");
@@ -263,7 +266,6 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   const [calculatedRanks, setCalculatedRanks] = // <-- NEW STATE FOR RANKS
     useState<CalculatedData | null>(null);
 
-  const [minGp, setMinGp] = useState<number>(10);
   const [maxPossibleGp, setMaxPossibleGp] = useState<number>(82);
   const [selectedPlayerGp, setSelectedPlayerGp] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -317,19 +319,14 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
   // --- Calculation Logic (Percentiles and Ranks) ---
   useEffect(() => {
     if (!playerId || allPlayersStats.length === 0) {
-      setCalculatedPercentiles(null);
-      setCalculatedRanks(null); // <-- Clear ranks
-      return;
+      /* ... clear state ... */ return;
     }
-
     const selectedPlayerData = allPlayersStats.find(
       (p) => p.player_id === playerId
     );
-    // Ensure selectedPlayerGp reflects the data corresponding to the current strength
     const currentPlayerGp = selectedPlayerData?.gp ?? null;
     setSelectedPlayerGp(currentPlayerGp);
 
-    // Filter players based on min GP threshold ONCE
     const filteredPlayers = allPlayersStats.filter(
       (p) => p.gp !== null && p.gp >= minGp
     );
@@ -348,7 +345,11 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
     const toiGpData = filteredPlayers
       .map((p) => ({
         player_id: p.player_id,
-        value: p.toi !== null && p.gp !== null && p.gp > 0 ? p.toi / p.gp : null
+        // Ensure both toi and gp are numbers before division
+        value:
+          p.toi != null && p.gp != null && p.gp > 0
+            ? Number(p.toi) / Number(p.gp)
+            : null
       }))
       .filter(
         (p): p is { player_id: number; value: number } => p.value !== null
@@ -408,11 +409,11 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
     setSelectedStrength(strength);
   }, []);
 
-  const handleGpChange = useCallback(
+  const handleSliderChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
-      setMinGp(Number(event.target.value));
+      onMinGpChange(Number(event.target.value)); // Call parent's handler
     },
-    []
+    [onMinGpChange]
   );
 
   // Memoized check (remains the same)
@@ -509,7 +510,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                   min="0"
                   max={sliderMax}
                   value={minGp}
-                  onChange={handleGpChange}
+                  onChange={handleSliderChange}
                   disabled={isLoading || allPlayersStats.length === 0}
                   className={styles.gpSlider}
                   // Add orient="vertical" for semantic correctness, though CSS handles appearance

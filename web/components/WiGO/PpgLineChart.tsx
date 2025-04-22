@@ -13,7 +13,9 @@ import {
   Title,
   Filler,
   LineController,
-  BarController
+  BarController,
+  ChartOptions,
+  ChartData
 } from "chart.js";
 import {
   fetchPlayerGameLogPoints,
@@ -24,6 +26,8 @@ import {
 import { formatDateToMMDD } from "utils/formattingUtils";
 import { calculateRollingAverage } from "utils/formattingUtils";
 import styles from "styles/wigoCharts.module.scss";
+import Spinner from "components/Spinner";
+import Zoom from "chartjs-plugin-zoom";
 
 ChartJS.register(
   CategoryScale,
@@ -36,7 +40,8 @@ ChartJS.register(
   Title,
   Filler,
   LineController,
-  BarController
+  BarController,
+  Zoom
 );
 
 const COLOR_PALLET = [
@@ -67,12 +72,14 @@ interface PpgLineChartProps {
   playerId: number | null | undefined;
 }
 
+const dummyLabels = ["", "Start", "", "Mid", "", "End", ""];
+
 const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
   const [gameLogData, setGameLogData] = useState<SkaterGameLogPointsData[]>([]);
   const [averagePpg, setAveragePpg] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const chartRef = useRef<ChartJS | null>(null);
+  const chartRef = useRef<ChartJS<"bar" | "line"> | null>(null);
 
   useEffect(() => {
     // Reset logic when playerId is null/undefined
@@ -93,11 +100,16 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
       try {
         // 1. Fetch totals for average PPG and season
         const totals = await fetchPlayerPerGameTotals(playerId);
-        if (!totals || !totals.season || totals.points_per_game === null) {
+        const avgPoints = totals?.points_per_game ?? null;
+        const currentSeason = totals?.season;
+
+        if (!currentSeason || avgPoints === null) {
+          // Check if essential data is missing
+          // Decide how to handle: Throw error or allow chart with missing avg?
+          // Let's throw an error for consistency
           throw new Error("Missing required totals data (season or avg PPG).");
         }
-        setAveragePpg(totals.points_per_game);
-        const currentSeason = totals.season;
+        setAveragePpg(avgPoints);
 
         // 2. Fetch game log points for that season
         const gameLogs = await fetchPlayerGameLogPoints(
@@ -111,240 +123,299 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
         setGameLogData([]);
         setAveragePpg(null);
       } finally {
-        setIsLoading(false);
+        setIsLoading(false); // Set loading false in finally block
       }
     };
 
     loadChartData();
   }, [playerId]);
 
-  // --- Calculate Rolling Averages ---
-  const rollingAvg5 = calculateRollingAverage(
-    gameLogData,
-    5,
-    (item) => item.points
-  );
-  const rollingAvg10 = calculateRollingAverage(
-    gameLogData,
-    10,
-    (item) => item.points
-  );
-  // --- ------------------------ ---
+  // --- Prepare Chart Data ---
+  const getChartData = (): ChartData<
+    "bar" | "line",
+    (number | null)[],
+    string
+  > => {
+    const useDummyData = isLoading || gameLogData.length === 0;
+    const labels = useDummyData
+      ? dummyLabels
+      : gameLogData.map((log) => formatDateToMMDD(log.date));
 
-  // Prepare data for Chart.js
-  const chartData = {
-    labels: gameLogData.map((log) => formatDateToMMDD(log.date)),
-    datasets: [
-      {
-        type: "bar" as const, // Specify type for this dataset
-        label: "Points per Game",
-        data: gameLogData.map((log) => log.points ?? 0), // Default null points to 0 for bar chart
-        borderColor: PpgBarColor.borderColor,
-        backgroundColor: PpgBarColor.backgroundColor,
-        order: 4 // Render bars behind lines
-      },
-      {
-        type: "line" as const,
-        label: "5-Game Rolling Avg",
-        data: rollingAvg5,
-        borderColor: COLOR_PALLET[0].borderColor, // Teal
-        backgroundColor: COLOR_PALLET[0].backgroundColor,
-        fill: false,
+    // Helper to generate null data for dummy state
+    const getNullData = () => dummyLabels.map(() => null);
 
-        tension: 0.2,
-        pointRadius: 0,
-        pointHoverRadius: 3,
-        order: 2
-      },
-      {
-        type: "line" as const,
-        label: "10-Game Rolling Avg",
-        data: rollingAvg10,
-        borderColor: COLOR_PALLET[1].borderColor, // Purple
-        backgroundColor: COLOR_PALLET[1].backgroundColor,
-        fill: false,
-        tension: 0.2,
-        pointRadius: 0,
-        pointHoverRadius: 3,
-        order: 1 // Render above 5-game avg
-      },
-      ...(averagePpg !== null
-        ? [
-            {
-              type: "line" as const,
-              label: "Season Avg PPG",
-              data: gameLogData.map(() => averagePpg),
-              borderColor: AvgPpgLineColor.borderColor, // Pink/Red
-              borderDash: [3, 3],
-              fill: true,
-              backgroundColor: "rgba(255, 99, 132, 0.25)", // Transparent fill
-              pointRadius: 0,
-              pointHoverRadius: 0,
-              tension: 0,
-              order: 0 // Render on top
-            }
-          ]
-        : [])
-    ]
+    // Calculate rolling averages ONLY if not using dummy data
+    const rollingAvg5 = useDummyData
+      ? getNullData()
+      : calculateRollingAverage(gameLogData, 5, (item) => item.points);
+    const rollingAvg10 = useDummyData
+      ? getNullData()
+      : calculateRollingAverage(gameLogData, 10, (item) => item.points);
+    const pointsData = useDummyData
+      ? getNullData()
+      : gameLogData.map((log) => log.points ?? 0); // Use null data for dummy
+    const avgPpgData = useDummyData
+      ? getNullData()
+      : gameLogData.map(() => averagePpg);
+
+    return {
+      labels: labels,
+      datasets: [
+        {
+          // Bar dataset for actual points
+          type: "bar" as const,
+          label: "Points per Game",
+          data: pointsData,
+          // Make transparent if dummy
+          borderColor: useDummyData ? "transparent" : PpgBarColor.borderColor,
+          backgroundColor: useDummyData
+            ? "transparent"
+            : PpgBarColor.backgroundColor,
+          order: 4
+        },
+        {
+          // 5-Game Rolling Average Line
+          type: "line" as const,
+          label: "5-Game Rolling Avg",
+          data: rollingAvg5,
+          borderColor: useDummyData
+            ? "transparent"
+            : COLOR_PALLET[0].borderColor,
+          backgroundColor: useDummyData
+            ? "transparent"
+            : COLOR_PALLET[0].backgroundColor,
+          fill: false,
+          tension: 0.2,
+          pointRadius: 0,
+          pointHoverRadius: 3,
+          order: 2
+        },
+        {
+          // 10-Game Rolling Average Line
+          type: "line" as const,
+          label: "10-Game Rolling Avg",
+          data: rollingAvg10,
+          borderColor: useDummyData
+            ? "transparent"
+            : COLOR_PALLET[1].borderColor,
+          backgroundColor: useDummyData
+            ? "transparent"
+            : COLOR_PALLET[1].backgroundColor,
+          fill: false,
+          tension: 0.2,
+          pointRadius: 0,
+          pointHoverRadius: 3,
+          order: 1
+        },
+        // Season Average Line (conditionally added)
+        ...(averagePpg !== null
+          ? [
+              {
+                type: "line" as const,
+                label: "Season Avg PPG",
+                data: avgPpgData,
+                borderColor: useDummyData
+                  ? "transparent"
+                  : AvgPpgLineColor.borderColor,
+                borderDash: [3, 3],
+                // Keep fill transparent or remove if not desired for avg line
+                fill: !useDummyData,
+                backgroundColor: useDummyData
+                  ? "transparent"
+                  : "rgba(255, 99, 132, 0.15)",
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                tension: 0,
+                order: 0
+              }
+            ]
+          : [])
+      ]
+    };
   };
 
-  // Prepare options for Chart.js
-  const chartOptions: any = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: "Points",
-          font: { size: 10 },
-          color: "#ccc"
-        },
-        ticks: {
-          color: "#ccc",
-          font: { size: 9 },
-          stepSize: 1,
-          precision: 0 // Display ticks as whole numbers
-        },
-        grid: { color: "rgba(255, 255, 255, 0.1)" }
+  // --- Prepare Chart Options ---
+  const getChartOptions = (): ChartOptions<"bar" | "line"> => {
+    // Options remain largely the same
+    const baseOptions: ChartOptions<"bar" | "line"> = {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {
+        duration: isLoading ? 0 : 400 // Disable animation during loading
       },
-      x: {
-        title: { display: false },
-        ticks: {
-          color: "#ccc",
-          font: { size: 9 },
-          maxRotation: 90,
-          minRotation: 45,
-          autoSkip: true,
-          maxTicksLimit: 10
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: "Points",
+            font: { size: 10 },
+            color: "#ccc"
+          },
+          ticks: {
+            color: "#ccc",
+            font: { size: 9 },
+            stepSize: 1,
+            precision: 0 // Display ticks as whole numbers
+          },
+          grid: { color: "rgba(255, 255, 255, 0.1)" }
         },
-        grid: { display: false }
-      }
-    },
-    plugins: {
-      legend: {
-        display: false,
-        position: "top" as const,
-        align: "end" as const,
-        labels: { color: "#ccc", boxWidth: 12, font: { size: 10 } }
+        x: {
+          title: { display: false },
+          ticks: {
+            color: "#ccc",
+            font: { size: 9 },
+            maxRotation: 90,
+            minRotation: 45,
+            autoSkip: true,
+            maxTicksLimit: 10
+          },
+          grid: { display: false }
+        }
       },
-      datalabels: {
-        display: false // Explicitly disable the plugin for this chart
-      },
-      tooltip: {
-        enabled: true,
-        mode: "index" as const,
-        intersect: false,
-        // Add callbacks if specific formatting is needed for points vs averages
-        callbacks: {
-          label: function (context: any) {
-            let label = context.dataset.label || "";
-            if (label) {
-              label += ": ";
-            }
-            if (context.parsed.y !== null) {
-              // Format averages to 2 decimal places, points as integers
-              if (
-                context.dataset.type === "line" &&
-                !context.dataset.borderDash
-              ) {
-                // Rolling average lines
-                label += context.parsed.y.toFixed(2);
-              } else {
-                // Bars or average line
-                label += context.parsed.y.toFixed(2);
+      plugins: {
+        legend: {
+          display: false,
+          position: "top" as const,
+          align: "end" as const,
+          labels: { color: "#ccc", boxWidth: 12, font: { size: 10 } }
+        },
+        datalabels: {
+          display: false // Explicitly disable the plugin for this chart
+        },
+        tooltip: {
+          enabled: true,
+          mode: "index" as const,
+          intersect: false,
+          // Add callbacks if specific formatting is needed for points vs averages
+          callbacks: {
+            label: function (context: any) {
+              let label = context.dataset.label || "";
+              if (label) {
+                label += ": ";
               }
+              if (context.parsed.y !== null) {
+                // Format averages to 2 decimal places, points as integers
+                if (
+                  context.dataset.type === "line" &&
+                  !context.dataset.borderDash
+                ) {
+                  // Rolling average lines
+                  label += context.parsed.y.toFixed(2);
+                } else {
+                  // Bars or average line
+                  label += context.parsed.y.toFixed(2);
+                }
+              }
+              return label;
             }
-            return label;
+          }
+        },
+        zoom: {
+          pan: {
+            enabled: true, // Enable panning
+            mode: "x" // Allow panning only on the x-axis
+            // modifierKey: 'ctrl', // Optional: Require Ctrl key for panning
+          },
+          zoom: {
+            wheel: {
+              enabled: true // Enable zooming with mouse wheel
+            },
+            pinch: {
+              enabled: true // Enable zooming with pinch gesture
+            },
+            drag: {
+              enabled: true // Enable drag-to-zoom (box selection) - THIS IS CLOSEST TO BRUSHING
+            },
+            mode: "x" // Allow zooming only on the x-axis
           }
         }
       },
-      zoom: {
-        pan: {
-          enabled: true, // Enable panning
-          mode: "x" // Allow panning only on the x-axis
-          // modifierKey: 'ctrl', // Optional: Require Ctrl key for panning
-        },
-        zoom: {
-          wheel: {
-            enabled: true // Enable zooming with mouse wheel
-          },
-          pinch: {
-            enabled: true // Enable zooming with pinch gesture
-          },
-          drag: {
-            enabled: true // Enable drag-to-zoom (box selection) - THIS IS CLOSEST TO BRUSHING
-          },
-          mode: "x" // Allow zooming only on the x-axis
-        }
-      }
-    },
-    interaction: { mode: "index", intersect: false }
+      interaction: { mode: "index", intersect: false }
+    };
+    return baseOptions;
   };
 
+  const chartData = getChartData();
+  const chartOptions = getChartOptions();
   return (
-    // Use shared layout classes
     <div className={styles.chartContainer}>
-      <div
-        className={styles.ratesLabel}
-        style={{
-          backgroundColor: "Rgb(6, 47, 61)",
-          // gridRow: "1/2", // Not needed with gridTemplateRows
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          padding: "5px 0" // Add some padding
-        }}
-      >
-        <h3 style={{ margin: 0, fontSize: 12, fontWeight: 700 }}>
-          Points / Game
-        </h3>
+      {/* Header remains the same */}
+      <div className={styles.chartHeader}>
+        <h3>Points / Game</h3>
       </div>
+
+      {/* Chart Canvas Container */}
       <div className={styles.chartCanvasContainer}>
-        {isLoading && (
-          <div
-            style={{ color: "#ccc", textAlign: "center", paddingTop: "20px" }}
-          >
-            Loading Chart...
-          </div>
-        )}
-        {error && (
-          <div
-            style={{
-              color: "#ff6b6b",
-              textAlign: "center",
-              paddingTop: "20px"
-            }}
-          >
-            Error: {error}
-          </div>
-        )}
-        {!isLoading && !error && gameLogData.length === 0 && playerId && (
-          <div
-            style={{ color: "#aaa", textAlign: "center", paddingTop: "20px" }}
-          >
-            No Points data available.
-          </div>
-        )}
-        {!isLoading && !error && !playerId && (
-          <div
-            style={{ color: "#aaa", textAlign: "center", paddingTop: "20px" }}
-          >
-            Select a player to view chart.
-          </div>
-        )}
-        {!isLoading && !error && gameLogData.length > 0 && (
-          <Chart
+        {/* Render the chart structure if NO error */}
+        {/* Shows empty state (with dummy labels) while loading */}
+        {!error && (
+          <Chart // Use the mixed type Chart component
             ref={chartRef}
-            type="bar"
+            type="bar" // Base type is bar, lines override in datasets
             options={chartOptions}
             data={chartData}
           />
         )}
+
+        {/* --- Overlapping Status Indicators --- */}
+
+        {/* Loading Indicator */}
+        {isLoading && (
+          <div style={loadingOverlayStyle}>
+            <Spinner />
+          </div>
+        )}
+
+        {/* Error Message */}
+        {error && !isLoading && (
+          <div style={placeholderStyle}>Error: {error}</div>
+        )}
+
+        {/* "Select Player" Placeholder */}
+        {!isLoading && !error && !playerId && (
+          <div style={placeholderStyle}>Select a player to view chart.</div>
+        )}
+
+        {/* "No Data" Placeholder */}
+        {!isLoading && !error && playerId && gameLogData.length === 0 && (
+          <div style={placeholderStyle}>
+            No Points data available for this player.
+          </div>
+        )}
       </div>
     </div>
   );
+};
+
+// --- Copy styles from ToiLineChart ---
+// Base style for overlapping text placeholders
+const placeholderBaseStyle: React.CSSProperties = {
+  position: "absolute",
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  textAlign: "center",
+  padding: "20px",
+  fontSize: "12px",
+  pointerEvents: "none"
+};
+// Style for general placeholders (Select Player, No Data, Error)
+const placeholderStyle: React.CSSProperties = {
+  ...placeholderBaseStyle,
+  color: "#aaa",
+  backgroundColor: "rgba(16, 16, 16, 0.3)" // Match ToiLineChart
+};
+// Style for the loading overlay
+const loadingOverlayStyle: React.CSSProperties = {
+  ...placeholderBaseStyle,
+  backgroundColor: "rgba(16, 16, 16, 0.7)", // Match ToiLineChart
+  color: "#eee",
+  zIndex: 10
 };
 
 export default PpgLineChart;
