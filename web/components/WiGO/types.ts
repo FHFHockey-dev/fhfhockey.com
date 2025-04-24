@@ -436,7 +436,7 @@ export type DefensePercentileTable =
 // web/components/WiGO/types.ts (Excerpt - replace previous PlayerRawStats)
 export interface PlayerRawStats {
   player_id: number;
-  season: number;
+  season: number | null;
   gp: number | null;
   toi_seconds: number | null; // Use toi_seconds
 

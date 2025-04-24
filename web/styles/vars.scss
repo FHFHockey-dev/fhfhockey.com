@@ -139,3 +139,37 @@ $border-radius-sm: 6px; // Smaller radius for inputs/buttons maybe
   $hue: (1 - $percentage) * 120; // 120 (green) down to 0 (red)
   @return rgba(hsl($hue, 100%, 50%), $opacity);
 }
+
+// --- Chart Color Palette ---
+// Using primary, secondary, and generating variations
+$chart-color-1: $primary-color; // #14a2d2
+$chart-color-2: $secondary-color; // #07aae2
+$chart-color-3: color.adjust(
+  $primary-color,
+  $lightness: 15%,
+  $saturation: -10%
+); // Lighter Teal/Blue
+$chart-color-4: color.adjust(
+  $secondary-color,
+  $lightness: -15%,
+  $saturation: 10%
+); // Darker Sky Blue
+$chart-color-5: $warning-color; // #ffcc00 (Yellow/Gold)
+$chart-color-6: #ff6b6b; // A contrasting Red/Pink for averages or negative values if needed
+$chart-color-7: #98d8a8; // A soft Green
+$chart-color-8: #f0f0f0; // Light Grey/White for text or subtle lines
+
+$chart-background-transparent-1: rgba($chart-color-1, 0.2);
+$chart-background-transparent-2: rgba($chart-color-2, 0.2);
+$chart-background-transparent-3: rgba($chart-color-3, 0.2);
+$chart-background-transparent-4: rgba($chart-color-4, 0.2);
+$chart-background-transparent-5: rgba($chart-color-5, 0.2);
+$chart-background-transparent-6: rgba($chart-color-6, 0.15);
+$chart-background-transparent-7: rgba($chart-color-7, 0.2);
+
+// Specific Chart Elements
+$chart-grid-color: rgba($text-color-primary, 0.1);
+$chart-tick-color: $text-color-secondary;
+$chart-tooltip-bg: rgba($background-dark, 0.9);
+$chart-tooltip-border: $border-color-secondary;
+$chart-tooltip-text: $text-color-primary;

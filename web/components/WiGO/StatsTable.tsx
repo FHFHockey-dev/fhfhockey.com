@@ -1,8 +1,8 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/StatsTable.tsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { TableAggregateData } from "./types";
 import styles from "styles/wigoCharts.module.scss";
-import GameLogChart from "./StatsTableRowChart"; // Import the new chart component
+import GameLogChart from "./StatsTableRowChart"; // Keep using this, but triggered differently
 import {
   fetchPlayerGameLogForStat,
   GameLogDataPoint
@@ -10,15 +10,44 @@ import {
 
 interface StatsTableProps {
   title: "COUNTS" | "RATES"; // Use literal types
-  data: TableAggregateData[];
+  data: TableAggregateData[]; // This structure remains the same input
   isLoading: boolean;
   error: string | null;
-  formatCell: (row: TableAggregateData, columnKey: DataColumnKey) => string;
+  formatCell: (
+    row: TableAggregateData, // The original row data for a stat
+    columnKey: DataColumnKey // The original column key (e.g., 'CA', 'LY')
+  ) => string;
   playerId: number;
-  currentSeasonId: number; //
+  currentSeasonId: number;
+  leftTimeframe: keyof TableAggregateData; // Needed for DIFF calculation context
+  rightTimeframe: keyof TableAggregateData; // Needed for DIFF calculation context
 }
 
+// Original column keys (now represent rows)
 type DataColumnKey = keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">;
+
+// Keys for the rows in the transposed table
+const rowKeys: (DataColumnKey | "DIFFLabel")[] = [
+  "CA",
+  "3YA",
+  "LY",
+  "L5",
+  "L10",
+  "L20",
+  "STD",
+  "DIFFLabel" // Add DIFF row key
+];
+
+const rowHeaders: { [key: string]: string } = {
+  CA: "CA",
+  "3YA": "3YA",
+  LY: "LY",
+  L5: "L5",
+  L10: "L10",
+  L20: "L20",
+  STD: "STD",
+  DIFFLabel: "DIFF"
+};
 
 const StatsTable: React.FC<StatsTableProps> = ({
   title,
@@ -26,68 +55,34 @@ const StatsTable: React.FC<StatsTableProps> = ({
   isLoading,
   error,
   formatCell,
-  playerId, // Get playerId
-  currentSeasonId // Get currentSeasonId
+  playerId,
+  currentSeasonId,
+  leftTimeframe, // Receive timeframes
+  rightTimeframe
 }) => {
-  const [expandedRowIndex, setExpandedRowIndex] = useState<number | null>(null);
+  const [expandedStatLabel, setExpandedStatLabel] = useState<string | null>(
+    null
+  );
   const [gameLogData, setGameLogData] = useState<GameLogDataPoint[]>([]);
   const [isLoadingGameLog, setIsLoadingGameLog] = useState<boolean>(false);
   const [gameLogError, setGameLogError] = useState<string | null>(null);
+  const [hoveredStatLabel, setHoveredStatLabel] = useState<string | null>(null); // For column hover
+  const tableRef = useRef<HTMLTableElement>(null); // Ref for table element
 
-  // Define the order of columns - ADDING EXPANDER COLUMN
-  const columnOrder: (
-    | keyof TableAggregateData
-    | "Expander"
-    | "Stat"
-    | "DIFFLabel"
-  )[] = [
-    "Expander", // New column for the +/- button
-    "Stat",
-    "CA",
-    "3YA",
-    "LY",
-    "L5",
-    "L10",
-    "L20",
-    "STD",
-    "DIFFLabel"
-  ];
-  const columnHeaders: { [key: string]: string } = {
-    Expander: "", // No header text needed
-    Stat: "Stat",
-    CA: "CA",
-    "3YA": "3YA",
-    LY: "LY",
-    L5: "L5",
-    L10: "L10",
-    L20: "L20",
-    STD: "STD",
-    DIFFLabel: "DIFF"
-  };
-
-  // Adjust widths to accommodate the new Expander column
-  const colWidths = [
-    "5%", // Expander
-    "15%", // Stat (Reduced slightly)
-    "10%", // CA
-    "10%", // 3YA
-    "10%", // LY
-    "10%", // L5
-    "10%", // L10
-    "10%", // L20
-    "8%", // STD (Reduced slightly)
-    "12%" // DIFFLabel
-  ];
+  // Extract stat labels to use as column headers (filter out GP if present)
+  const statLabels = data.filter((d) => d.label !== "GP").map((d) => d.label);
+  // Find GP data if it exists
+  const gpRowData = data.find((d) => d.label === "GP");
 
   const handleExpandClick = useCallback(
-    (rowIndex: number, statLabel: string) => {
-      const newIndex = expandedRowIndex === rowIndex ? null : rowIndex;
-      setExpandedRowIndex(newIndex);
+    (statLabel: string) => {
+      const newLabel = expandedStatLabel === statLabel ? null : statLabel;
+      setExpandedStatLabel(newLabel);
       setGameLogData([]); // Clear previous data
       setGameLogError(null); // Clear previous error
 
-      if (newIndex !== null) {
-        // Only fetch if expanding a new row
+      if (newLabel !== null) {
+        // Only fetch if expanding a new column
         setIsLoadingGameLog(true);
         fetchPlayerGameLogForStat(playerId, currentSeasonId, statLabel)
           .then((data) => {
@@ -101,154 +96,183 @@ const StatsTable: React.FC<StatsTableProps> = ({
           });
       }
     },
-    [expandedRowIndex, playerId, currentSeasonId]
-  ); // Dependencies for the callback
+    [expandedStatLabel, playerId, currentSeasonId] // Dependencies
+  );
 
-  const getStatValue = (
-    row: TableAggregateData,
-    key: keyof TableAggregateData | "Expander" | "Stat" | "DIFFLabel",
-    rowIndex: number // Need rowIndex for the click handler
+  // Function to get the data for a specific cell in the transposed table
+  const getCellValue = (
+    rowKey: DataColumnKey | "DIFFLabel",
+    statLabel: string
   ) => {
-    // Handle the new Expander column
-    if (key === "Expander") {
-      // Don't show expander for GP row or if data is empty/loading/error
-      if (row.label === "GP" || isLoading || error || data.length === 0) {
-        return <td className={styles.expanderCell}></td>; // Empty cell
-      }
-      return (
-        <td className={styles.expanderCell}>
-          <button
-            onClick={() => handleExpandClick(rowIndex, row.label)}
-            className={styles.expandButton}
-            aria-expanded={expandedRowIndex === rowIndex}
-            aria-controls={`chart-${title.toLowerCase()}-${rowIndex}`}
-          >
-            {expandedRowIndex === rowIndex ? "-" : "+"}
-          </button>
-        </td>
-      );
-    }
+    const statData = data.find((d) => d.label === statLabel);
+    if (!statData) return "-"; // Should not happen if statLabels derived correctly
 
-    // --- Rest of the getStatValue logic remains the same ---
-    if (key === "Stat")
-      return <td className={styles.statLabel}>{row.label}</td>;
-    if (key === "DIFFLabel") {
-      const diffValue = row.DIFF;
+    if (rowKey === "DIFFLabel") {
+      const diffValue = statData.DIFF; // DIFF is pre-calculated on the data object
       const color =
-        diffValue !== undefined
+        diffValue !== undefined && diffValue !== null
           ? diffValue >= 0
-            ? "rgb(18, 193, 126)"
-            : "rgb(240, 85, 118)"
-          : "#fff";
+            ? "rgb(18, 193, 126)" // Green for positive/zero
+            : "rgb(240, 85, 118)" // Red for negative
+          : "#fff"; // Default color if undefined/null
       const displayValue =
-        diffValue !== undefined ? `${diffValue.toFixed(1)}%` : "-";
-      return <td style={{ color }}>{displayValue}</td>;
+        diffValue !== undefined && diffValue !== null
+          ? `${diffValue.toFixed(1)}%` // Format as percentage
+          : "-";
+      return <span style={{ color }}>{displayValue}</span>;
+    } else {
+      // Use the original formatCell for regular data points
+      // Note: formatCell expects the *original* row structure (the statData)
+      // and the *original* column key (which is now our rowKey)
+      return formatCell(statData, rowKey as DataColumnKey);
     }
-
-    const dataColumnKeys: DataColumnKey[] = [
-      "CA",
-      "3YA",
-      "LY",
-      "L5",
-      "L10",
-      "L20",
-      "STD"
-    ];
-    if (dataColumnKeys.includes(key as DataColumnKey)) {
-      return <td>{formatCell(row, key as DataColumnKey)}</td>;
-    }
-    return <td>-</td>;
   };
 
-  // Helper to get averages for the chart
-  const getAveragesForChart = (rowData: TableAggregateData) => {
+  // Helper to get averages for the chart (needs the data for the specific stat)
+  const getAveragesForChart = (statLabel: string) => {
+    const statData = data.find((d) => d.label === statLabel);
+    if (!statData) return {}; // Return empty object if not found
     return {
-      STD: rowData.STD,
-      LY: rowData.LY,
-      "3YA": rowData["3YA"],
-      CA: rowData.CA,
-      L5: rowData.L5,
-      L10: rowData.L10,
-      L20: rowData.L20
+      STD: statData.STD,
+      LY: statData.LY,
+      "3YA": statData["3YA"],
+      CA: statData.CA,
+      L5: statData.L5,
+      L10: statData.L10,
+      L20: statData.L20
     };
   };
 
   // **** Helper to get GP data for the chart ****
-  const getGpDataForChart = (rowData: TableAggregateData) => {
-    return rowData.GP; // Return the whole GP object (or null/undefined if it doesn't exist)
+  const getGpDataForChart = () => {
+    // GP data is now separate, not tied to a specific stat row in the original sense
+    // Pass the entire GP data object if available
+    return gpRowData?.GP; // Return the GP object (or undefined)
   };
+
+  // Find the data for the currently expanded stat
+  const expandedStatData = expandedStatLabel
+    ? data.find((d) => d.label === expandedStatLabel)
+    : null;
+
+  // Column Hover Handlers
+  const handleColumnHeaderMouseEnter = (statLabel: string) => {
+    setHoveredStatLabel(statLabel);
+  };
+
+  const handleColumnHeaderMouseLeave = () => {
+    setHoveredStatLabel(null);
+  };
+
+  // Calculate total columns for colSpan
+  const totalColumns = statLabels.length + 1; // +1 for the timeframe header column
 
   return (
     <div
-      className={title === "COUNTS" ? styles.countsTable : styles.ratesTable}
+      className={`${styles.transposedTableContainer} ${
+        title === "COUNTS" ? styles.countsTable : styles.ratesTable
+      }`}
     >
-      <table aria-label={`${title} Table`} className={styles.statsTableActual}>
-        <colgroup>
-          {colWidths.map((width, index) => (
-            <col key={index} style={{ width: width }} />
-          ))}
-        </colgroup>
+      <table
+        ref={tableRef}
+        aria-label={`${title} Transposed Table`}
+        className={`${styles.statsTableActual} ${styles.transposedTable}`} // Add transposedTable class for specific styling
+      >
+        {/* No colgroup needed as width is less predictable */}
         <thead>
           <tr>
-            {columnOrder.map((key) => (
-              <th key={String(key)}>{columnHeaders[String(key)]}</th>
+            {/* First header cell is for Timeframes */}
+            <th className={styles.timeframeHeader}>
+              {title} {/* Or maybe leave empty */}
+            </th>
+            {/* Map stat labels to column headers */}
+            {statLabels.map((label) => (
+              <th
+                key={label}
+                className={hoveredStatLabel === label ? styles.columnHover : ""}
+                onMouseEnter={() => handleColumnHeaderMouseEnter(label)}
+                onMouseLeave={handleColumnHeaderMouseLeave}
+              >
+                <div className={styles.headerContent}>
+                  <span>{label}</span>
+                  <button
+                    onClick={() => handleExpandClick(label)}
+                    className={styles.expandButton}
+                    aria-expanded={expandedStatLabel === label}
+                    aria-controls={`chart-${title.toLowerCase()}-${label}`} // Use label for unique ID
+                  >
+                    {expandedStatLabel === label ? "-" : "+"}
+                  </button>
+                </div>
+              </th>
             ))}
           </tr>
         </thead>
         <tbody>
           {isLoading ? (
             <tr>
-              <td colSpan={columnOrder.length}>
+              {/* Loading message spans all columns */}
+              <td colSpan={totalColumns}>
                 Loading {title.toLowerCase()} data...
               </td>
             </tr>
           ) : error ? (
             <tr>
-              <td colSpan={columnOrder.length}>{error}</td>
+              <td colSpan={totalColumns} style={{ color: "red" }}>
+                {error}
+              </td>
             </tr>
-          ) : data.length > 0 ? (
-            data.map((row, rowIndex) => (
-              <React.Fragment key={`${title.toLowerCase()}-row-${rowIndex}`}>
-                {/* The main data row */}
-                <tr className={row.label === "GP" ? styles.gpRow : ""}>
-                  {columnOrder.map((key) =>
-                    // Pass rowIndex to getStatValue
-                    getStatValue(row, key, rowIndex)
-                  )}
-                </tr>
-                {/* Conditionally rendered chart row */}
-                {expandedRowIndex === rowIndex && (
-                  <tr
-                    className={styles.chartRow}
-                    id={`chart-${title.toLowerCase()}-${rowIndex}`}
+          ) : data.length > 0 && statLabels.length > 0 ? (
+            // Map row keys (CA, 3YA, ..., DIFF) to table rows
+            rowKeys.map((rowKey) => (
+              <tr key={rowKey}>
+                {/* First cell is the row header (Timeframe/DIFF) */}
+                <td className={styles.timeframeCell}>{rowHeaders[rowKey]}</td>
+                {/* Map stat labels to data cells within this row */}
+                {statLabels.map((statLabel) => (
+                  <td
+                    key={`${rowKey}-${statLabel}`}
+                    className={
+                      hoveredStatLabel === statLabel ? styles.columnHover : ""
+                    }
+                    // Add mouse enter/leave here too if needed for full column hover persistence
+                    onMouseEnter={() => handleColumnHeaderMouseEnter(statLabel)}
+                    onMouseLeave={handleColumnHeaderMouseLeave}
                   >
-                    <td
-                      colSpan={columnOrder.length}
-                      className={styles.chartCell}
-                    >
-                      <GameLogChart
-                        playerId={playerId}
-                        seasonId={currentSeasonId}
-                        statLabel={row.label}
-                        gameLogData={gameLogData}
-                        averages={getAveragesForChart(row)}
-                        gpData={getGpDataForChart(row)}
-                        isLoading={isLoadingGameLog}
-                        error={gameLogError}
-                        tableType={title}
-                      />
-                    </td>
-                  </tr>
-                )}
-              </React.Fragment>
+                    {getCellValue(rowKey, statLabel)}
+                  </td>
+                ))}
+              </tr>
             ))
           ) : (
             <tr>
-              <td colSpan={columnOrder.length}>No data available.</td>
+              <td colSpan={totalColumns}>No data available.</td>
             </tr>
           )}
         </tbody>
       </table>
+
+      {/* Conditionally rendered chart container - Rendered *after* the main table */}
+      {expandedStatLabel && expandedStatData && (
+        <div
+          id={`chart-${title.toLowerCase()}-${expandedStatLabel}`}
+          className={styles.chartRowExpanded} // Use a class for styling the container
+          // Style this div to visually connect it if desired
+        >
+          <GameLogChart
+            playerId={playerId}
+            seasonId={currentSeasonId}
+            statLabel={expandedStatLabel} // The stat label of the expanded column
+            gameLogData={gameLogData}
+            // Pass averages and GP data relevant to the *expanded stat*
+            averages={getAveragesForChart(expandedStatLabel)}
+            gpData={getGpDataForChart()} // Pass the general GP data
+            isLoading={isLoadingGameLog}
+            error={gameLogError}
+            tableType={title}
+          />
+        </div>
+      )}
     </div>
   );
 };

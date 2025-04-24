@@ -57,9 +57,9 @@ nav.items.small {
   }
   .menu_list {
     list-style-type: none;
-    font-family: "Roboto Condensed";
+    font-family: roboto condensed, sans-serif;
     font-weight: 500;
-    font-size: 2rem;
+    font-size: 2.5rem;
     color: rgba(249, 235, 234, 1);
 
     li:not(:first-child) {
@@ -87,9 +87,10 @@ nav.items.large {
     display: flex;
     gap: 24px;
     color: rgba(249, 235, 234, 1);
-    font-family: "Roboto Condensed";
+    font-family: roboto condensed, sans-serif;
     font-weight: 900;
-    font-size: 1.125rem;
+    font-size: 1.25rem;
+    letter-spacing: 2px;
 
     li {
       &:hover {

@@ -312,29 +312,31 @@ const WigoCharts: React.FC = () => {
 
           {/* --- Center Columns (Tables) --- */}
           <div className={styles.countsTableContainer}>
-            {/* Pass loading/error state specific to aggregated data */}
             <StatsTable
               title="COUNTS"
-              data={displayCountsData}
+              data={displayCountsData} // Pass data with DIFF pre-calculated
               isLoading={isLoadingAggData && displayCountsData.length === 0}
               error={aggDataError}
               formatCell={formatCell}
-              // **** PASS REQUIRED PROPS ****
-              playerId={selectedPlayer?.id ?? 0} // Pass ID or 0/handle appropriately if no player
-              currentSeasonId={currentSeasonId ?? 0} // Pass season or 0/handle appropriately if no season
-              // Conditionally render or disable table if !selectedPlayer or !currentSeasonId
+              playerId={selectedPlayer?.id ?? 0}
+              currentSeasonId={currentSeasonId ?? 0}
+              // **** PASS TIMEFRAMES ****
+              leftTimeframe={leftTimeframe}
+              rightTimeframe={rightTimeframe}
             />
           </div>
           <div className={styles.ratesTableContainer}>
             <StatsTable
               title="RATES"
-              data={displayRatesData}
+              data={displayRatesData} // Pass data with DIFF pre-calculated
               isLoading={isLoadingAggData && displayRatesData.length === 0}
               error={aggDataError}
               formatCell={formatCell}
-              // **** PASS REQUIRED PROPS ****
               playerId={selectedPlayer?.id ?? 0}
               currentSeasonId={currentSeasonId ?? 0}
+              // **** PASS TIMEFRAMES ****
+              leftTimeframe={leftTimeframe}
+              rightTimeframe={rightTimeframe}
             />
           </div>
           <div className={styles.perGameStatsContainer}>
