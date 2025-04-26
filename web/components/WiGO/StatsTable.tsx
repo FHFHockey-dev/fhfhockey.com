@@ -6,7 +6,10 @@ import React, {
   useRef,
   useMemo
 } from "react";
+<<<<<<< HEAD
 
+=======
+>>>>>>> 74d6d08 (some edits to wigochart)
 import { TableAggregateData } from "./types";
 import styles from "styles/wigoCharts.module.scss";
 import GameLogChart from "./StatsTableRowChart";
