@@ -528,62 +528,87 @@ export async function fetchPlayerAggregatedStats(
   };
 }
 
-const PAGE_SIZE = 1000; // Supabase default limit
-
-/**
- * Fetches ALL rows from a specified table using pagination.
- */
 export async function fetchPaginatedData<T>(
   tableName: keyof Database["public"]["Tables"],
-  selectColumns: string
-  // Add season filtering if tables contain multiple seasons
-  // seasonFilter?: { column: string; value: number | string }
+  selectColumns: string,
+  seasonFilter?: { column: string; value: number | string }
 ): Promise<T[]> {
+  const PAGE_SIZE = 500; // Reduced from 1000 to 500
   let allData: T[] = [];
   let page = 0;
   let fetchMore = true;
-
-  console.log(`[fetchPaginatedData] Starting fetch for ${tableName}`);
+  const MAX_RETRIES = 3;
 
   while (fetchMore) {
     const startIndex = page * PAGE_SIZE;
     const endIndex = startIndex + PAGE_SIZE - 1;
 
-    let query = supabase
-      .from(tableName)
-      .select(selectColumns)
-      .range(startIndex, endIndex);
+    let retries = 0;
+    let success = false;
+    let lastError = null;
 
-    // Add season filter if provided
-    // if (seasonFilter) {
-    //     query = query.eq(seasonFilter.column, seasonFilter.value);
-    // }
+    while (retries < MAX_RETRIES && !success) {
+      try {
+        let query = supabase
+          .from(tableName)
+          .select(selectColumns)
+          .range(startIndex, endIndex);
 
-    const { data, error, count } = await query; // 'count' might be null depending on settings
+        // Add season filter if provided
+        if (seasonFilter) {
+          query = query.eq(seasonFilter.column, seasonFilter.value);
+        }
 
-    if (error) {
-      console.error(
-        `[fetchPaginatedData] Error fetching page ${page} for ${tableName}:`,
-        error
-      );
-      throw error; // Re-throw error to be caught by calling function
+        const { data, error, count } = await query;
+
+        if (error) {
+          lastError = error;
+          retries++;
+          if (retries < MAX_RETRIES) {
+            // Wait before retrying (exponential backoff)
+            await new Promise((resolve) =>
+              setTimeout(resolve, Math.pow(2, retries) * 1000)
+            );
+            continue;
+          }
+          throw error;
+        }
+
+        if (data) {
+          console.log(
+            `[fetchPaginatedData] Fetched ${data.length} rows on page ${page} for ${tableName}.`
+          );
+          allData = allData.concat(data as T[]);
+          success = true;
+
+          // Check if the number of rows returned is less than the page size
+          if (data.length < PAGE_SIZE) {
+            fetchMore = false; // Reached the end
+          } else {
+            page++; // Prepare for the next page
+          }
+        } else {
+          fetchMore = false; // No data returned, stop.
+          success = true;
+        }
+      } catch (error) {
+        lastError = error;
+        retries++;
+        if (retries < MAX_RETRIES) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, Math.pow(2, retries) * 1000)
+          );
+          continue;
+        }
+        throw error;
+      }
     }
 
-    if (data) {
-      console.log(
-        `[fetchPaginatedData] Fetched ${data.length} rows on page ${page} for ${tableName}.`
-      );
-      allData = allData.concat(data as T[]);
-      // Check if the number of rows returned is less than the page size
-      if (data.length < PAGE_SIZE) {
-        fetchMore = false; // Reached the end
-      } else {
-        page++; // Prepare for the next page
-      }
-    } else {
-      fetchMore = false; // No data returned, stop.
+    if (!success && lastError) {
+      throw lastError;
     }
   }
+
   console.log(
     `[fetchPaginatedData] Finished fetch for ${tableName}. Total rows: ${allData.length}`
   );
@@ -807,134 +832,192 @@ const getPercentileOffenseTable = (strength: PercentileStrength) =>
 const getPercentileDefenseTable = (strength: PercentileStrength) =>
   `nst_percentile_${strength}_defense` as keyof Database["public"]["Tables"];
 
+// Helper function to merge player data from multiple strength situations
+function mergePlayerData(
+  dataArrays: Record<string, any>[][]
+): Record<string, any>[] {
+  const playerMap = new Map<number, Record<string, any>>();
+
+  // Process each array of player data
+  dataArrays.forEach((data) => {
+    data.forEach((player) => {
+      if (!player.player_id) return;
+
+      const existingPlayer = playerMap.get(player.player_id);
+      if (existingPlayer) {
+        // Merge the data, preferring non-null values
+        Object.entries(player).forEach(([key, value]) => {
+          if (value !== null && value !== undefined) {
+            existingPlayer[key] = value;
+          }
+        });
+      } else {
+        playerMap.set(player.player_id, { ...player });
+      }
+    });
+  });
+
+  return Array.from(playerMap.values());
+}
+
 // --- Corrected fetchPercentilePlayerData Function ---
-export async function fetchPercentilePlayerData(
-  strength: PercentileStrength
-): Promise<PlayerRawStats[]> {
+export async function fetchPercentilePlayerData(seasonId: number): Promise<{
+  offense: Record<string, any>[];
+  defense: Record<string, any>[];
+}> {
   console.log(
-    `[Ratings Fetch] Preparing to fetch specific columns for Strength: ${strength}`
-  );
-  const offenseTable = getPercentileOffenseTable(strength);
-  const defenseTable = getPercentileDefenseTable(strength);
-
-  // 1. Define Core Columns Needed (Needed for both tables)
-  const coreColumns = new Set<string>([
-    "player_id",
-    "season",
-    "gp",
-    "toi_seconds"
-  ]);
-
-  // 2. Gather ONLY Offense Stat Columns Needed from Constants
-  const neededOffenseStatColumns = new Set<string>();
-  const offenseKeys = OFFENSE_RATING_STATS[strength];
-  if (offenseKeys) {
-    offenseKeys.forEach((key) => neededOffenseStatColumns.add(key as string));
-  }
-
-  // 3. Gather ONLY Defense Stat Columns Needed from Constants
-  const neededDefenseStatColumns = new Set<string>();
-  const defenseKeys = DEFENSE_RATING_STATS[strength];
-  if (defenseKeys) {
-    defenseKeys.forEach((key) => neededDefenseStatColumns.add(key as string));
-  }
-
-  // 4. Create the Select String FOR OFFENSE TABLE
-  // (Combine core columns + offense stat columns)
-  const offenseSelectColumns = Array.from(
-    new Set([...coreColumns, ...neededOffenseStatColumns])
-  ).join(",");
-
-  // 5. Create the Select String FOR DEFENSE TABLE
-  // (Combine core columns + defense stat columns)
-  const defenseSelectColumns = Array.from(
-    new Set([...coreColumns, ...neededDefenseStatColumns])
-  ).join(",");
-
-  console.log(
-    `[Ratings Fetch] Columns to select for ${offenseTable}: ${offenseSelectColumns}`
-  );
-  console.log(
-    `[Ratings Fetch] Columns to select for ${defenseTable}: ${defenseSelectColumns}`
+    "[fetchPercentilePlayerData] Starting fetch for season:",
+    seasonId
   );
 
-  // Define expected data types
-  type RowData = Partial<PlayerRawStats> & {
-    // Use Partial for fetched data
-    player_id: number;
-    season?: number | null;
-  };
+  // Prepare select strings for both offense and defense tables
+  const offenseSelect = `
+    player_id,
+    player_name,
+    team_abbr,
+    position,
+    games_played,
+    toi,
+    goals,
+    assists,
+    points,
+    primary_assists,
+    secondary_assists,
+    shots,
+    shot_attempts,
+    individual_xg,
+    individual_cf,
+    individual_ff,
+    individual_sf,
+    individual_scf,
+    individual_hdcf,
+    individual_hdsf,
+    individual_hdgf,
+    individual_mdcf,
+    individual_mdsf,
+    individual_mdgf,
+    individual_ldcf,
+    individual_ldsf,
+    individual_ldgf,
+    individual_rush_attempts,
+    individual_rebounds_created,
+    individual_pim,
+    individual_takeaways,
+    individual_giveaways,
+    individual_hits,
+    individual_blocks,
+    individual_faceoffs_won,
+    individual_faceoffs_lost,
+    individual_faceoffs_win_pct,
+    individual_penalties_drawn,
+    individual_penalties_taken,
+    individual_penalties_net,
+    individual_penalties_net_per_60,
+    individual_penalties_net_per_game,
+    individual_penalties_net_per_60_rank,
+    individual_penalties_net_per_game_rank,
+    individual_penalties_net_per_60_percentile,
+    individual_penalties_net_per_game_percentile
+  `;
+
+  const defenseSelect = `
+    player_id,
+    player_name,
+    team_abbr,
+    position,
+    games_played,
+    toi,
+    goals_against,
+    shots_against,
+    shot_attempts_against,
+    xg_against,
+    cf_against,
+    ff_against,
+    sf_against,
+    scf_against,
+    hdcf_against,
+    hdsf_against,
+    hdgf_against,
+    mdcf_against,
+    mdsf_against,
+    mdgf_against,
+    ldcf_against,
+    ldsf_against,
+    ldgf_against,
+    rush_attempts_against,
+    rebounds_created_against,
+    pim_against,
+    takeaways_against,
+    giveaways_against,
+    hits_against,
+    blocks_against,
+    faceoffs_won_against,
+    faceoffs_lost_against,
+    faceoffs_win_pct_against,
+    penalties_drawn_against,
+    penalties_taken_against,
+    penalties_net_against,
+    penalties_net_per_60_against,
+    penalties_net_per_game_against,
+    penalties_net_per_60_rank_against,
+    penalties_net_per_game_rank_against,
+    penalties_net_per_60_percentile_against,
+    penalties_net_per_game_percentile_against
+  `;
 
   try {
-    // 6. Fetch using pagination WITH the CORRECT select string for EACH table
-    const [offenseData, defenseData] = await Promise.all([
-      fetchPaginatedData<RowData>(offenseTable, offenseSelectColumns), // Use offense columns
-      fetchPaginatedData<RowData>(defenseTable, defenseSelectColumns) // Use defense columns
-    ]);
+    // Fetch data for each strength situation with season filter
+    const [esOffense, ppOffense, pkOffense, esDefense, ppDefense, pkDefense] =
+      await Promise.all([
+        fetchPaginatedData<Record<string, any>>(
+          "nst_percentile_es_offense" as keyof Database["public"]["Tables"],
+          offenseSelect,
+          { column: "season_id", value: seasonId }
+        ),
+        fetchPaginatedData<Record<string, any>>(
+          "nst_percentile_pp_offense" as keyof Database["public"]["Tables"],
+          offenseSelect,
+          { column: "season_id", value: seasonId }
+        ),
+        fetchPaginatedData<Record<string, any>>(
+          "nst_percentile_pk_offense" as keyof Database["public"]["Tables"],
+          offenseSelect,
+          { column: "season_id", value: seasonId }
+        ),
+        fetchPaginatedData<Record<string, any>>(
+          "nst_percentile_es_defense" as keyof Database["public"]["Tables"],
+          defenseSelect,
+          { column: "season_id", value: seasonId }
+        ),
+        fetchPaginatedData<Record<string, any>>(
+          "nst_percentile_pp_defense" as keyof Database["public"]["Tables"],
+          defenseSelect,
+          { column: "season_id", value: seasonId }
+        ),
+        fetchPaginatedData<Record<string, any>>(
+          "nst_percentile_pk_defense" as keyof Database["public"]["Tables"],
+          defenseSelect,
+          { column: "season_id", value: seasonId }
+        )
+      ]);
 
-    // 7. Merge data (Logic remains the same - spread handles missing props)
-    const defenseDataMap = new Map<number, RowData>(
-      defenseData
-        .filter((d) => d.player_id != null)
-        .map((d) => [d.player_id!, d])
-    );
+    // Merge the data for offense and defense
+    const mergedOffense = mergePlayerData([esOffense, ppOffense, pkOffense]);
+    const mergedDefense = mergePlayerData([esDefense, ppDefense, pkDefense]);
 
-    const combinedData: PlayerRawStats[] = offenseData
-      .filter((o) => o.player_id != null)
-      .map((offensePlayer) => {
-        const defensePlayer = defenseDataMap.get(offensePlayer.player_id!);
-
-        // Spread syntax correctly handles merging objects with potentially different properties
-        const playerStats = {
-          ...(defensePlayer ?? {}),
-          ...(offensePlayer ?? {})
-        };
-
-        // Ensure essential fields are correctly typed (Important!)
-        // Convert to number or null AFTER merging to get final value
-        playerStats.season = Number(playerStats.season) || null;
-        playerStats.gp = Number(playerStats.gp) || null;
-        playerStats.toi_seconds = Number(playerStats.toi_seconds) || null;
-
-        return playerStats as PlayerRawStats; // Cast assumes merged object matches type
-      });
-
-    // Logging unchanged
     console.log(
-      `[Ratings Fetch] Merged ${combinedData.length} players for strength ${strength}. Sample GP: ${combinedData[0]?.gp}`
+      `[fetchPercentilePlayerData] Merged ${mergedOffense.length} offense players and ${mergedDefense.length} defense players for season ${seasonId}`
     );
-    if (combinedData.length > 0) {
-      console.log(
-        `[Ratings Fetch] Sample combined object for strength ${strength}:`,
-        JSON.stringify(combinedData[0], null, 2)
-      );
-    }
-    return combinedData;
-  } catch (err: any) {
-    // Error handling unchanged
-    if (
-      err.message?.includes("timeout") ||
-      (err as any).details?.includes("timeout")
-    ) {
-      console.error(
-        `[Ratings Fetch] Database timeout occurred fetching percentile player data for strength ${strength}. Returning empty array.`,
-        err.message || err
-      );
-    } else if (
-      (err as any).code === "42703" || // Handle specific "column does not exist" code
-      (err.message?.includes("column") &&
-        err.message?.includes("does not exist"))
-    ) {
-      console.error(
-        `[Ratings Fetch] Column Mismatch Error fetching for strength ${strength}. A selected column likely doesn't exist in the queried table. Error:`,
-        err.message || err
-      );
-    } else {
-      console.error(
-        `[Ratings Fetch] Error fetching percentile player data for strength ${strength}:`,
-        err.message || err
-      );
-    }
-    return []; // Return empty array on error
+
+    return {
+      offense: mergedOffense,
+      defense: mergedDefense
+    };
+  } catch (error) {
+    console.error(
+      "[fetchPercentilePlayerData] Error fetching percentile data:",
+      error
+    );
+    throw error;
   }
 }

@@ -239,12 +239,12 @@ const WigoCharts: React.FC = () => {
         }
       }
       if (label === "ATOI") {
-        // Assuming formatSecondsToMMSS is available
-        // return formatSecondsToMMSS(value * 60); // Assuming value is average minutes
-        // Placeholder:
-        const totalSeconds = Math.round(value * 60);
+        // Check if the value is from wigo_recent (seconds) or wigo_career (minutes)
+        // If the value is greater than 60, it's likely in seconds (from wigo_recent)
+        const isRecentData = value > 60;
+        const totalSeconds = isRecentData ? value : value * 60;
         const mins = Math.floor(totalSeconds / 60);
-        const secs = totalSeconds % 60;
+        const secs = Math.round(totalSeconds % 60);
         return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
       }
 

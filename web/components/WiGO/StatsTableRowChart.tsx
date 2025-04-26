@@ -1,5 +1,5 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/StatsTableRowChart.tsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   LineChart,
   Line,
@@ -9,7 +9,9 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ReferenceLine
+  ReferenceLine,
+  ComposedChart,
+  Bar
 } from "recharts";
 import { GameLogDataPoint } from "utils/fetchWigoPlayerStats";
 import { formatSecondsToMMSS } from "./tableUtils";
@@ -180,6 +182,8 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
     return null;
   };
 
+  // Modify chart dimensions for column layout
+
   // **** RENDER LOGIC ****
   if (isLoading)
     return <div className={styles.chartStatus}>Loading game log...</div>;
@@ -198,9 +202,6 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
 
   return (
     <div className={styles.gameLogChartContainer}>
-      <h4>
-        {statLabel} - Game Log ({seasonId})
-      </h4>
       <div className={styles.averageToggleButtons}>
         {availableAverages.map((key) => {
           const avgValue = averages[key]; // This is the raw average value (e.g., total minutes for TOI)
@@ -258,7 +259,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
           return null;
         })}
       </div>
-      <ResponsiveContainer width="100%" height={150}>
+      <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
           margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
@@ -267,7 +268,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
           <XAxis
             dataKey="game"
             label={{
-              value: "Game Number",
+              value: "Game",
               position: "insideBottom",
               offset: -10,
               style: {
@@ -275,12 +276,11 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 fontSize: "10px",
                 fill: "#ccc",
                 fontWeight: "bold",
-                letterSpacing: "5px",
+                letterSpacing: "2px",
                 textTransform: "uppercase"
-              } // Smaller label font
+              }
             }}
           />
-          {/* Format Y Axis Ticks - Pass value directly */}
           <YAxis
             tickFormatter={(tick) =>
               formatDisplayValue(
@@ -288,22 +288,21 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 isTOIStat ? "TOI" : "Other"
               )
             }
-            tick={{ fontSize: 9, fill: "#aaa" }} // Smaller ticks
-            width={40} // Reduced width
+            tick={{ fontSize: 9, fill: "#aaa" }}
+            width={40}
             label={{
               value: statLabel,
               angle: -90,
               position: "insideLeft",
-              // Adjust offset or remove if margin handles spacing
-              offset: 10, // Increase offset slightly due to smaller margin
+              offset: 10,
               style: {
                 textAnchor: "middle",
                 fontSize: "10px",
                 fill: "#ccc",
                 fontWeight: "bold",
-                letterSpacing: "5px",
+                letterSpacing: "2px",
                 textTransform: "uppercase"
-              } // Smaller label font
+              }
             }}
           />
           <Tooltip content={<CustomTooltip />} />
@@ -326,11 +325,10 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
             connectNulls
           />
 
-          {/* Season Average Line (Calculated from game log) */}
-          {/* Use seasonAverageValue for formatting (raw value before scaling) */}
+          {/* Season Average Line */}
           {seasonAverageValue !== null && seasonAverageReference !== null && (
             <ReferenceLine
-              y={seasonAverageReference} // Already calculated correctly (minutes if TOI)
+              y={seasonAverageReference}
               label={{
                 value: `Avg: ${formatDisplayValue(
                   seasonAverageValue,
