@@ -866,9 +866,10 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
   defense: Record<string, any>[];
 }> {
 <<<<<<< HEAD
+<<<<<<< HEAD
   console.log("seasonId type:", typeof seasonId, seasonId);
 =======
->>>>>>> 74d6d08 (some edits to wigochart)
+>>>>>>> a5378af (some edits to wigochart)
   console.log(
     "[fetchPercentilePlayerData] Starting fetch for season:",
     seasonId
@@ -877,6 +878,7 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
   // Prepare select strings for both offense and defense tables
   const offenseSelect = `
     player_id,
+<<<<<<< HEAD
 <<<<<<< HEAD
     season,
     gp,
@@ -964,11 +966,12 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
     individual_penalties_net_per_game_rank,
     individual_penalties_net_per_60_percentile,
     individual_penalties_net_per_game_percentile
->>>>>>> 74d6d08 (some edits to wigochart)
+>>>>>>> a5378af (some edits to wigochart)
   `;
 
   const defenseSelect = `
     player_id,
+<<<<<<< HEAD
 <<<<<<< HEAD
     season,
     gp,
@@ -1035,11 +1038,12 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
     penalties_net_per_game_rank_against,
     penalties_net_per_60_percentile_against,
     penalties_net_per_game_percentile_against
->>>>>>> 74d6d08 (some edits to wigochart)
+>>>>>>> a5378af (some edits to wigochart)
   `;
 
   try {
     // Fetch data for each strength situation with season filter
+<<<<<<< HEAD
 <<<<<<< HEAD
     const [
       esOffenseRaw,
@@ -1134,7 +1138,7 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
     const mergedOffense = mergePlayerData([esOffense, ppOffense, pkOffense]);
     const mergedDefense = mergePlayerData([esDefense, ppDefense, pkDefense]);
 
->>>>>>> 74d6d08 (some edits to wigochart)
+>>>>>>> a5378af (some edits to wigochart)
     console.log(
       `[fetchPercentilePlayerData] Merged ${mergedOffense.length} offense players and ${mergedDefense.length} defense players for season ${seasonId}`
     );

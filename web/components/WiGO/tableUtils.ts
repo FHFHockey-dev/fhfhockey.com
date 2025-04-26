@@ -108,6 +108,7 @@ export const formatCell = (
   switch (label) {
     case "ATOI":
 <<<<<<< HEAD
+<<<<<<< HEAD
       // Value is in minutes per game, convert to MM:SS format
       const avgMinutesATOI = value;
       const totalSeconds = Math.round(avgMinutesATOI * 60);
@@ -120,7 +121,7 @@ export const formatCell = (
       const isRecentData = value > 60;
       const totalSeconds = isRecentData ? value : value * 60;
       return formatSecondsToMMSS(totalSeconds);
->>>>>>> 74d6d08 (some edits to wigochart)
+>>>>>>> a5378af (some edits to wigochart)
 
     case "PPTOI":
       // Value is Total Minutes for the period. Convert to Average Seconds/Game.
