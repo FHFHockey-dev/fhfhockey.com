@@ -865,7 +865,10 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
   offense: Record<string, any>[];
   defense: Record<string, any>[];
 }> {
+<<<<<<< HEAD
   console.log("seasonId type:", typeof seasonId, seasonId);
+=======
+>>>>>>> 74d6d08 (some edits to wigochart)
   console.log(
     "[fetchPercentilePlayerData] Starting fetch for season:",
     seasonId
@@ -874,6 +877,7 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
   // Prepare select strings for both offense and defense tables
   const offenseSelect = `
     player_id,
+<<<<<<< HEAD
     season,
     gp,
     toi_seconds,
@@ -914,10 +918,58 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
     sh_percentage,
     on_ice_sh_pct,
     penalties_drawn_per_60
+=======
+    player_name,
+    team_abbr,
+    position,
+    games_played,
+    toi,
+    goals,
+    assists,
+    points,
+    primary_assists,
+    secondary_assists,
+    shots,
+    shot_attempts,
+    individual_xg,
+    individual_cf,
+    individual_ff,
+    individual_sf,
+    individual_scf,
+    individual_hdcf,
+    individual_hdsf,
+    individual_hdgf,
+    individual_mdcf,
+    individual_mdsf,
+    individual_mdgf,
+    individual_ldcf,
+    individual_ldsf,
+    individual_ldgf,
+    individual_rush_attempts,
+    individual_rebounds_created,
+    individual_pim,
+    individual_takeaways,
+    individual_giveaways,
+    individual_hits,
+    individual_blocks,
+    individual_faceoffs_won,
+    individual_faceoffs_lost,
+    individual_faceoffs_win_pct,
+    individual_penalties_drawn,
+    individual_penalties_taken,
+    individual_penalties_net,
+    individual_penalties_net_per_60,
+    individual_penalties_net_per_game,
+    individual_penalties_net_per_60_rank,
+    individual_penalties_net_per_game_rank,
+    individual_penalties_net_per_60_percentile,
+    individual_penalties_net_per_game_percentile
+>>>>>>> 74d6d08 (some edits to wigochart)
   `;
 
   const defenseSelect = `
     player_id,
+<<<<<<< HEAD
     season,
     gp,
     toi_seconds,
@@ -941,10 +993,54 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
     misconduct_penalties_per_60,
     giveaways_per_60,
     on_ice_sv_pct
+=======
+    player_name,
+    team_abbr,
+    position,
+    games_played,
+    toi,
+    goals_against,
+    shots_against,
+    shot_attempts_against,
+    xg_against,
+    cf_against,
+    ff_against,
+    sf_against,
+    scf_against,
+    hdcf_against,
+    hdsf_against,
+    hdgf_against,
+    mdcf_against,
+    mdsf_against,
+    mdgf_against,
+    ldcf_against,
+    ldsf_against,
+    ldgf_against,
+    rush_attempts_against,
+    rebounds_created_against,
+    pim_against,
+    takeaways_against,
+    giveaways_against,
+    hits_against,
+    blocks_against,
+    faceoffs_won_against,
+    faceoffs_lost_against,
+    faceoffs_win_pct_against,
+    penalties_drawn_against,
+    penalties_taken_against,
+    penalties_net_against,
+    penalties_net_per_60_against,
+    penalties_net_per_game_against,
+    penalties_net_per_60_rank_against,
+    penalties_net_per_game_rank_against,
+    penalties_net_per_60_percentile_against,
+    penalties_net_per_game_percentile_against
+>>>>>>> 74d6d08 (some edits to wigochart)
   `;
 
   try {
     // Fetch data for each strength situation with season filter
+<<<<<<< HEAD
     const [
       esOffenseRaw,
       ppOffenseRaw,
@@ -999,6 +1095,46 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
     const mergedOffense = mergePlayerData([esOffense, ppOffense, pkOffense]);
     const mergedDefense = mergePlayerData([esDefense, ppDefense, pkDefense]);
 
+=======
+    const [esOffense, ppOffense, pkOffense, esDefense, ppDefense, pkDefense] =
+      await Promise.all([
+        fetchPaginatedData<Record<string, any>>(
+          "nst_percentile_es_offense" as keyof Database["public"]["Tables"],
+          offenseSelect,
+          { column: "season_id", value: seasonId }
+        ),
+        fetchPaginatedData<Record<string, any>>(
+          "nst_percentile_pp_offense" as keyof Database["public"]["Tables"],
+          offenseSelect,
+          { column: "season_id", value: seasonId }
+        ),
+        fetchPaginatedData<Record<string, any>>(
+          "nst_percentile_pk_offense" as keyof Database["public"]["Tables"],
+          offenseSelect,
+          { column: "season_id", value: seasonId }
+        ),
+        fetchPaginatedData<Record<string, any>>(
+          "nst_percentile_es_defense" as keyof Database["public"]["Tables"],
+          defenseSelect,
+          { column: "season_id", value: seasonId }
+        ),
+        fetchPaginatedData<Record<string, any>>(
+          "nst_percentile_pp_defense" as keyof Database["public"]["Tables"],
+          defenseSelect,
+          { column: "season_id", value: seasonId }
+        ),
+        fetchPaginatedData<Record<string, any>>(
+          "nst_percentile_pk_defense" as keyof Database["public"]["Tables"],
+          defenseSelect,
+          { column: "season_id", value: seasonId }
+        )
+      ]);
+
+    // Merge the data for offense and defense
+    const mergedOffense = mergePlayerData([esOffense, ppOffense, pkOffense]);
+    const mergedDefense = mergePlayerData([esDefense, ppDefense, pkDefense]);
+
+>>>>>>> 74d6d08 (some edits to wigochart)
     console.log(
       `[fetchPercentilePlayerData] Merged ${mergedOffense.length} offense players and ${mergedDefense.length} defense players for season ${seasonId}`
     );

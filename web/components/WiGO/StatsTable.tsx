@@ -1,5 +1,11 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/StatsTable.tsx
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo
+} from "react";
 import { TableAggregateData } from "./types";
 import styles from "styles/wigoCharts.module.scss";
 import GameLogChart from "./StatsTableRowChart";
@@ -96,8 +102,37 @@ const StatsTable: React.FC<StatsTableProps> = ({
   );
 
   // Extract stat labels (columns) from the combined data
-  const statLabels = data.filter((d) => d.label !== "GP").map((d) => d.label);
-  const gpRowData = data.find((d) => d.label === "GP");
+  const statLabels = useMemo(
+    () => data.filter((d) => d.label !== "GP").map((d) => d.label),
+    [data]
+  );
+  const gpRowData = useMemo(() => data.find((d) => d.label === "GP"), [data]);
+
+  // Initialize column order
+  useEffect(() => {
+    if (statLabels.length > 0) {
+      setColumnOrder(statLabels);
+    }
+  }, [statLabels]);
+
+  // Scroll table to show selected column in position 2
+  useEffect(() => {
+    if (selectedColumnIndex !== null && tableRef.current) {
+      const table = tableRef.current;
+      const column = table.querySelector(
+        `th:nth-child(${selectedColumnIndex + 2})`
+      );
+      if (column) {
+        const columnRect = column.getBoundingClientRect();
+        const tableRect = table.getBoundingClientRect();
+        const scrollLeft = columnRect.left - tableRect.left - 100; // 100px offset for timeframe column
+        table.scrollTo({
+          left: scrollLeft,
+          behavior: "smooth"
+        });
+      }
+    }
+  }, [selectedColumnIndex, columnOrder]);
 
   // Initialize column order
   useEffect(() => {

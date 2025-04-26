@@ -1,5 +1,5 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/StatsTableRowChart.tsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   LineChart,
   Line,
@@ -9,7 +9,9 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ReferenceLine
+  ReferenceLine,
+  ComposedChart,
+  Bar
 } from "recharts";
 import { GameLogDataPoint } from "utils/fetchWigoPlayerStats";
 import { formatSecondsToMMSS } from "./tableUtils";
@@ -181,8 +183,6 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
   };
 
   // Modify chart dimensions for column layout
-  const chartHeight = 150; // Reduced height for column layout
-  const chartWidth = 400; // Fixed width for column layout
 
   // **** RENDER LOGIC ****
   if (isLoading)
@@ -259,7 +259,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
           return null;
         })}
       </div>
-      <ResponsiveContainer width="100%" height={chartHeight}>
+      <ResponsiveContainer width="100%" height="100%">
         <LineChart
           data={chartData}
           margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
@@ -325,6 +325,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
             connectNulls
           />
 
+          {/* Season Average Line */}
           {/* Season Average Line */}
           {seasonAverageValue !== null && seasonAverageReference !== null && (
             <ReferenceLine
