@@ -1,11 +1,5 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/StatsTable.tsx
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useMemo
-} from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { TableAggregateData } from "./types";
 import styles from "styles/wigoCharts.module.scss";
 import GameLogChart from "./StatsTableRowChart";
@@ -102,17 +96,12 @@ const StatsTable: React.FC<StatsTableProps> = ({
   );
 
   // Extract stat labels (columns) from the combined data
-  const statLabels = useMemo(
-    () => data.filter((d) => d.label !== "GP").map((d) => d.label),
-    [data]
-  );
-  const gpRowData = useMemo(() => data.find((d) => d.label === "GP"), [data]);
+  const statLabels = data.filter((d) => d.label !== "GP").map((d) => d.label);
+  const gpRowData = data.find((d) => d.label === "GP");
 
   // Initialize column order
   useEffect(() => {
-    if (statLabels.length > 0) {
-      setColumnOrder(statLabels);
-    }
+    setColumnOrder(statLabels);
   }, [statLabels]);
 
   // Scroll table to show selected column in position 2
@@ -132,7 +121,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
         });
       }
     }
-  }, [selectedColumnIndex, columnOrder]);
+  }, [selectedColumnIndex]);
 
   const handleExpandClick = useCallback(
     (statLabel: string) => {
