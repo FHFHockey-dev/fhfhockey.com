@@ -537,78 +537,48 @@ export async function fetchPaginatedData<T>(
   let allData: T[] = [];
   let page = 0;
   let fetchMore = true;
-  const MAX_RETRIES = 3;
+
+  console.log(`[fetchPaginatedData] Starting fetch for ${tableName}`);
 
   while (fetchMore) {
     const startIndex = page * PAGE_SIZE;
     const endIndex = startIndex + PAGE_SIZE - 1;
 
-    let retries = 0;
-    let success = false;
-    let lastError = null;
+    let query = supabase
+      .from(tableName)
+      .select(selectColumns)
+      .range(startIndex, endIndex);
 
-    while (retries < MAX_RETRIES && !success) {
-      try {
-        let query = supabase
-          .from(tableName)
-          .select(selectColumns)
-          .range(startIndex, endIndex);
+    // Add season filter if provided
+    // if (seasonFilter) {
+    //     query = query.eq(seasonFilter.column, seasonFilter.value);
+    // }
 
-        // Add season filter if provided
-        if (seasonFilter) {
-          query = query.eq(seasonFilter.column, seasonFilter.value);
-        }
+    const { data, error, count } = await query; // 'count' might be null depending on settings
 
-        const { data, error, count } = await query;
-
-        if (error) {
-          lastError = error;
-          retries++;
-          if (retries < MAX_RETRIES) {
-            // Wait before retrying (exponential backoff)
-            await new Promise((resolve) =>
-              setTimeout(resolve, Math.pow(2, retries) * 1000)
-            );
-            continue;
-          }
-          throw error;
-        }
-
-        if (data) {
-          console.log(
-            `[fetchPaginatedData] Fetched ${data.length} rows on page ${page} for ${tableName}.`
-          );
-          allData = allData.concat(data as T[]);
-          success = true;
-
-          // Check if the number of rows returned is less than the page size
-          if (data.length < PAGE_SIZE) {
-            fetchMore = false; // Reached the end
-          } else {
-            page++; // Prepare for the next page
-          }
-        } else {
-          fetchMore = false; // No data returned, stop.
-          success = true;
-        }
-      } catch (error) {
-        lastError = error;
-        retries++;
-        if (retries < MAX_RETRIES) {
-          await new Promise((resolve) =>
-            setTimeout(resolve, Math.pow(2, retries) * 1000)
-          );
-          continue;
-        }
-        throw error;
-      }
+    if (error) {
+      console.error(
+        `[fetchPaginatedData] Error fetching page ${page} for ${tableName}:`,
+        error
+      );
+      throw error; // Re-throw error to be caught by calling function
     }
 
-    if (!success && lastError) {
-      throw lastError;
+    if (data) {
+      console.log(
+        `[fetchPaginatedData] Fetched ${data.length} rows on page ${page} for ${tableName}.`
+      );
+      allData = allData.concat(data as T[]);
+      // Check if the number of rows returned is less than the page size
+      if (data.length < PAGE_SIZE) {
+        fetchMore = false; // Reached the end
+      } else {
+        page++; // Prepare for the next page
+      }
+    } else {
+      fetchMore = false; // No data returned, stop.
     }
   }
-
   console.log(
     `[fetchPaginatedData] Finished fetch for ${tableName}. Total rows: ${allData.length}`
   );

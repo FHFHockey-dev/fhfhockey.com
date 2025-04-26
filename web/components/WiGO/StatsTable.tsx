@@ -7,9 +7,12 @@ import React, {
   useMemo
 } from "react";
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 >>>>>>> 74d6d08 (some edits to wigochart)
+=======
+>>>>>>> 5d11cb6 (some edits to wigochart)
 import { TableAggregateData } from "./types";
 import styles from "styles/wigoCharts.module.scss";
 import GameLogChart from "./StatsTableRowChart";
@@ -111,6 +114,35 @@ const StatsTable: React.FC<StatsTableProps> = ({
     [data]
   );
   const gpRowData = useMemo(() => data.find((d) => d.label === "GP"), [data]);
+<<<<<<< HEAD
+=======
+
+  // Initialize column order
+  useEffect(() => {
+    if (statLabels.length > 0) {
+      setColumnOrder(statLabels);
+    }
+  }, [statLabels]);
+
+  // Scroll table to show selected column in position 2
+  useEffect(() => {
+    if (selectedColumnIndex !== null && tableRef.current) {
+      const table = tableRef.current;
+      const column = table.querySelector(
+        `th:nth-child(${selectedColumnIndex + 2})`
+      );
+      if (column) {
+        const columnRect = column.getBoundingClientRect();
+        const tableRect = table.getBoundingClientRect();
+        const scrollLeft = columnRect.left - tableRect.left - 100; // 100px offset for timeframe column
+        table.scrollTo({
+          left: scrollLeft,
+          behavior: "smooth"
+        });
+      }
+    }
+  }, [selectedColumnIndex, columnOrder]);
+>>>>>>> 5d11cb6 (some edits to wigochart)
 
   // Initialize column order
   useEffect(() => {
