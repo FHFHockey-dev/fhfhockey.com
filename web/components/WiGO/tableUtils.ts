@@ -150,6 +150,6 @@ export const formatCell = (
         return `${(value * 100).toFixed(1)}%`;
       }
       // Default to 2 decimal places for other rates/numbers
-      return value.toFixed(2);
+      return value.toFixed(1);
   }
 };

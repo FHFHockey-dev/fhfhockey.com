@@ -54,7 +54,7 @@ const TimeframeComparison: React.FC<TimeframeComparisonProps> = ({
 
   return (
     <div className={styles.timeframeContainer}>
-      <div className={styles.countsTableTitle}>COUNTS</div>
+      <div className={styles.countsTableTitle}>COMPARE</div>
       <div className={styles.timeframeSelectContainer}>
         <select
           className={styles.timeframeSelect}
@@ -84,7 +84,6 @@ const TimeframeComparison: React.FC<TimeframeComparisonProps> = ({
           ))}
         </select>
       </div>
-      <div className={styles.countsTableTitle}>RATES</div>
     </div>
   );
 };

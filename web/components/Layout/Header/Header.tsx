@@ -13,7 +13,10 @@ import ClientOnly from "components/ClientOnly";
 import SocialMedias from "components/SocialMedias";
 
 import styles from "./Header.module.scss";
-import LOGO from "public/pictures/logo3.png";
+// import LOGO from "public/pictures/logo3.png";
+// import LOGO from "public/pictures/fhfh-italic-2.png";
+import LOGO from "public/pictures/fhfh-gpt.png";
+//         src="/pictures/logo-fhfh.svg"
 
 function BurgerButton({ onClick }: { onClick: () => void }) {
   return (
@@ -48,8 +51,8 @@ function Header() {
             src={LOGO}
             alt="FHFH logo"
             placeholder="blur"
-            width={200}
-            height={30}
+            width={140}
+            height={50}
             priority
           />
         </Link>

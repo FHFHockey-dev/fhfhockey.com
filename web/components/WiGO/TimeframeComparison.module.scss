@@ -5,39 +5,48 @@
 
 .timeframeContainer {
   display: flex;
-  align-items: center;
-  justify-content: space-evenly;
-  padding: v.$space-xs v.$space-xxxl; // Reduced vertical padding
-  gap: v.$space-md; // Adjusted gap
-  background-color: darken(v.$primary-color, 32%);
-  border-top: v.$border-color-secondary 1px solid; // Top border for separation
-  // background-color: v.$background-dark; // Let wrapper handle background now
+  flex-direction: row; // *** CHANGED TO COLUMN ***
+  align-items: center; // Center items horizontally
+  justify-content: space-between; // Space out Title, Selects, Title vertically
+  padding: v.$space-sm v.$space-xs; // Adjust padding for vertical layout
+  gap: v.$space-sm; // Gap between Title, Selects, Title
+  height: 100%; // Fill the grid area height
+  width: 100%;
+  background-color: v.$background-dark; // Match dashboard background
+  // Remove background from previous version if it was different
 }
 
 .timeframeSelectContainer {
   display: flex;
-  align-items: center;
+  flex-direction: row; // *** CHANGED TO COLUMN ***
+  align-items: center; // Center dropdowns and VS text
   justify-content: center;
-  padding: v.$space-xs; // Reduced padding
-  gap: v.$space-sm; // Adjusted gap
-  background-color: v.$background-dark; // Dark background for contrast
-  border-radius: v.$border-radius; // Rounded corners
-  box-shadow: 0 0 10px rgba(v.$text-color-secondary, 0.1); // Subtle shadow for depth
+  padding: v.$space-sm; // Padding within the select area
+  gap: v.$space-sm; // Gap between top select, VS, bottom select
+  background-color: darken(
+    v.$background-dark,
+    3%
+  ); // Slightly darker background for contrast
+  border-radius: v.$border-radius;
+  box-shadow: 0 1px 3px rgba(v.$text-color-primary, 0.1); // Subtle shadow
+  width: 90%; // Constrain width slightly
 }
 
 .timeframeSelect {
-  // Inherit styles from wigoCharts.module.scss for consistency
-  // Or redefine here using variables:
   appearance: none;
   background-color: v.$background-light;
   border: 1px solid v.$border-color-secondary;
   border-radius: v.$border-radius-sm;
-  padding: v.$space-xs v.$space-lg v.$space-xs v.$space-sm; // Compact padding
-  font-size: v.$font-size-small; // Slightly smaller font
+  // Adjust padding for better fit in narrow container
+  padding: v.$space-xs v.$space-md v.$space-xs v.$space-sm;
+  font-size: v.$font-size-small;
   color: v.$text-color-primary;
   font-family: v.$font-family-primary;
   cursor: pointer;
-  min-width: 70px; // Reduced min-width
+  width: 100%; // Make select take full width of its container
+  min-width: 50px; // Ensure minimum usable width
+  text-align: center; // Center the text within the select
+  // Adjust background arrow position and size if needed
   background-image: linear-gradient(
       45deg,
       transparent 50%,
@@ -45,8 +54,8 @@
     ),
     linear-gradient(135deg, v.$text-color-secondary 50%, transparent 50%);
   background-position: calc(100% - (v.$space-xs * 1.5)) center,
-    calc(100% - (v.$space-xs * 2.5)) center; // Adjust arrow position slightly
-  background-size: 4px 4px, 4px 4px; // Smaller arrow
+    calc(100% - (v.$space-xs * 2.5)) center;
+  background-size: 4px 4px, 4px 4px;
   background-repeat: no-repeat;
   transition: border-color v.$transition-duration v.$transition-easing,
     box-shadow v.$transition-duration v.$transition-easing;
@@ -56,24 +65,34 @@
     border-color: v.$primary-color;
     box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.3);
   }
+  // Target the options for consistent styling (optional)
+  option {
+    background-color: v.$background-light;
+    color: v.$text-color-primary;
+  }
 }
 
 .vsText {
-  color: v.$text-color-secondary; // More subtle VS text
-  font-weight: 600; // Less bold
+  color: v.$text-color-secondary;
+  font-weight: 600;
   font-family: v.$font-family-primary;
-  font-size: v.$font-size-small; // Smaller font size
-  margin: 0 v.$space-xs; // Reduced margin
-  flex-shrink: 0; // Prevent VS text from shrinking
+  font-size: v.$font-size-small * 0.9; // Slightly smaller VS text
+  margin: v.$space-xs 0; // Vertical margin for spacing
+  flex-shrink: 0;
 }
 
 .countsTableTitle {
-  font-size: 12px; // Slightly smaller font size
-  color: v.$text-color-primary;
+  font-size: 10px; // *** REDUCED FONT SIZE ***
+  color: v.$text-color-secondary; // More subtle color
   font-family: "Lucida Sans", "Lucida Grande", sans-serif;
-  font-weight: 900; // Bold
-  font-feature-settings: "smcp";
-  letter-spacing: 15px;
-
+  font-weight: 600; // Less bold
+  letter-spacing: 2px; // *** REDUCED LETTER SPACING ***
+  text-transform: uppercase; // Keep uppercase
   text-align: center;
+  width: 100%; // Ensure it takes full width
+  padding: v.$space-xs 0; // Add some padding
+  // Removed font-feature-settings - might not fit well vertically
+  // Optional: Add subtle border top/bottom if desired
+  // border-top: 1px solid v.$border-color-secondary;
+  // border-bottom: 1px solid v.$border-color-secondary;
 }

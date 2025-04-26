@@ -1,6 +1,6 @@
 @use "styles/vars" as *;
 
-$mobile-header-height: 72px;
+$mobile-header-height: 65px;
 
 .header {
   display: flex;
@@ -8,7 +8,7 @@ $mobile-header-height: 72px;
   align-items: center;
   height: $mobile-header-height;
   background-color: #161616;
-  padding: 1rem;
+  border-bottom: double 5px white;
 
   button {
     all: unset;
@@ -17,25 +17,25 @@ $mobile-header-height: 72px;
     }
   }
 
-  // two lines under the header
-  &::before {
-    content: "";
-    background-color: $primary-color;
-    width: 100%;
-    height: 2.5px;
-    position: absolute;
-    left: 0;
-    bottom: 0;
-  }
-  &::after {
-    content: "";
-    background-color: $primary-color;
-    width: 100%;
-    height: 2.5px;
-    position: absolute;
-    left: 0;
-    bottom: 5px;
-  }
+  // // two lines under the header
+  // &::before {
+  //   content: "";
+  //   background-color: $primary-color;
+  //   width: 100%;
+  //   height: 2.5px;
+  //   position: absolute;
+  //   left: 0;
+  //   bottom: 0;
+  // }
+  // &::after {
+  //   content: "";
+  //   background-color: $primary-color;
+  //   width: 100%;
+  //   height: 2.5px;
+  //   position: absolute;
+  //   left: 0;
+  //   bottom: 5px;
+  // }
 
   // hideable nav bar
   position: sticky;
@@ -49,8 +49,7 @@ $mobile-header-height: 72px;
   .logo {
     position: relative;
     margin: 0 auto;
-    padding: 1%;
-    filter: drop-shadow(0px 1px 4px #3498db);
+    // filter: drop-shadow(0px 1px 6px white);
 
     // Disbale overflow hidden.
     // This is designed for the Image component from Next.js 12
@@ -74,12 +73,13 @@ $mobile-header-height: 72px;
   // PC
   @media only screen and (min-width: $screen-large) {
     .logo {
-      left: -4px;
+      left: 0;
+      margin-left: 5%;
     }
     .nav {
       display: block;
       flex: 1;
-      margin-left: 30px;
+      margin-left: 70px;
 
       ul {
         padding: 0;
@@ -94,19 +94,19 @@ $mobile-header-height: 72px;
     }
     .join {
       all: unset;
+      display: none;
       &:hover {
         cursor: pointer;
       }
 
-      padding: 8px 8px;
+      padding: 4px 4px;
       font-family: "Roboto Condensed";
       font-weight: 500;
       font-size: 1.125rem;
-      filter: drop-shadow(0px 1px 4px #3498db);
+      filter: drop-shadow(0px 1px 4px white);
       letter-spacing: 0.01em;
       border-radius: 8px;
       border: 1.5px solid #3498db;
-      display: flex;
       justify-content: center;
       align-items: center;
     }
