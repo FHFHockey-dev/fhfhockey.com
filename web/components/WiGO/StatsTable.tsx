@@ -1,5 +1,6 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/StatsTable.tsx
 <<<<<<< HEAD
+<<<<<<< HEAD
 import React, {
   useState,
   useEffect,
@@ -17,6 +18,19 @@ import React, {
 =======
 import React, { useState, useEffect, useCallback, useRef } from "react";
 >>>>>>> e3cc089 (some edits to wigochart)
+=======
+import React, { useState, useEffect, useCallback, useRef } from "react";
+=======
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo
+} from "react";
+
+>>>>>>> 683a2bc (some edits to wigochart)
+>>>>>>> dd002b4 (some edits to wigochart)
 import { TableAggregateData } from "./types";
 import styles from "styles/wigoCharts.module.scss";
 import GameLogChart from "./StatsTableRowChart";
@@ -122,6 +136,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
 <<<<<<< HEAD
 =======
 
+<<<<<<< HEAD
   // Initialize column order
   useEffect(() => {
     if (statLabels.length > 0) {
@@ -179,6 +194,8 @@ const StatsTable: React.FC<StatsTableProps> = ({
     }
   }, [selectedColumnIndex, columnOrder]);
 
+=======
+>>>>>>> dd002b4 (some edits to wigochart)
   const handleExpandClick = useCallback(
     (statLabel: string) => {
       const newLabel = expandedStatLabel === statLabel ? null : statLabel;
