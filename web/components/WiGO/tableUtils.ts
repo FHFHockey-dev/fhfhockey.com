@@ -103,21 +103,15 @@ export const formatCell = (
   const label = row.label;
   const gpForColumn = row.GP ? row.GP[columnKey] : null;
 
-  // **** ADD LOGGING ****
-  if (label === "PPTOI") {
-    console.log(
-      `Formatting PPTOI: Column='<span class="math-inline">\{columnKey\}', Value\=</span>{value}, GP=${gpForColumn}, GP Object=`,
-      row.GP
-    );
-  }
-  // **** END LOGGING ****
-
   if (value == null || isNaN(value)) return "-";
 
   switch (label) {
     case "ATOI":
-      const avgSecondsATOI = value * 60;
-      return formatSecondsToMMSS(avgSecondsATOI);
+      // Check if the value is from wigo_recent (seconds) or wigo_career (minutes)
+      // If the value is greater than 60, it's likely in seconds (from wigo_recent)
+      const isRecentData = value > 60;
+      const totalSeconds = isRecentData ? value : value * 60;
+      return formatSecondsToMMSS(totalSeconds);
 
     case "PPTOI":
       // Value is Total Minutes for the period. Convert to Average Seconds/Game.
@@ -128,10 +122,6 @@ export const formatCell = (
       } else if (gpForColumn === 0) {
         return "0:00";
       }
-      // Log why we are returning '-'
-      console.warn(
-        `Returning '-' for PPTOI: Column='<span class="math-inline">\{columnKey\}', Value\=</span>{value}, GP=${gpForColumn}`
-      );
       return "-";
 
     case "PP%":
@@ -141,15 +131,6 @@ export const formatCell = (
       return `${(value * 100).toFixed(1)}`;
 
     default:
-      // Default formatting for other numbers
-      if (Number.isInteger(value)) {
-        return value.toString();
-      }
-      // Display percentages with one decimal
-      if (label.endsWith("%") || label.endsWith("_pct")) {
-        return `${(value * 100).toFixed(1)}%`;
-      }
-      // Default to 2 decimal places for other rates/numbers
       return value.toFixed(1);
   }
 };
