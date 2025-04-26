@@ -183,8 +183,6 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
   };
 
   // Modify chart dimensions for column layout
-  const chartHeight = 150; // Reduced height for column layout
-  const chartWidth = 400; // Fixed width for column layout
 
   // **** RENDER LOGIC ****
   if (isLoading)
@@ -327,7 +325,6 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
             connectNulls
           />
 
-          {/* Season Average Line */}
           {/* Season Average Line */}
           {seasonAverageValue !== null && seasonAverageReference !== null && (
             <ReferenceLine

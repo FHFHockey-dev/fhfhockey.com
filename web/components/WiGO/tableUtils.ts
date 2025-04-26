@@ -107,21 +107,11 @@ export const formatCell = (
 
   switch (label) {
     case "ATOI":
-<<<<<<< HEAD
-<<<<<<< HEAD
-      // Value is in minutes per game, convert to MM:SS format
-      const avgMinutesATOI = value;
-      const totalSeconds = Math.round(avgMinutesATOI * 60);
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
-=======
       // Check if the value is from wigo_recent (seconds) or wigo_career (minutes)
       // If the value is greater than 60, it's likely in seconds (from wigo_recent)
       const isRecentData = value > 60;
       const totalSeconds = isRecentData ? value : value * 60;
       return formatSecondsToMMSS(totalSeconds);
->>>>>>> a5378af (some edits to wigochart)
 
     case "PPTOI":
       // Value is Total Minutes for the period. Convert to Average Seconds/Game.
