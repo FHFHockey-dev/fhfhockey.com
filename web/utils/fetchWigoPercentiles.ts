@@ -44,8 +44,10 @@ export async function fetchAllPlayerStatsForStrength(
   try {
     // Fetch data from both tables - potentially large datasets!
     const [offenseRes, defenseRes] = await Promise.all([
-      supabase.from(offenseTable).select(ALL_OFFENSE_COLUMNS_TO_SELECT),
-      // .eq('season', latestSeason) // Add if latestSeason is determined
+      supabase
+        .from(offenseTable)
+        .select(ALL_OFFENSE_COLUMNS_TO_SELECT)
+        .gt("gp", 0), // Only fetch players with GP > 0
       supabase.from(defenseTable).select(ALL_DEFENSE_COLUMNS_TO_SELECT)
       // .eq('season', latestSeason) // Add if latestSeason is determined
     ]);
