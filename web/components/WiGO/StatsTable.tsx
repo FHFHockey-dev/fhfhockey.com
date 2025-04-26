@@ -2,31 +2,50 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { TableAggregateData } from "./types";
 import styles from "styles/wigoCharts.module.scss";
-import GameLogChart from "./StatsTableRowChart"; // Keep using this, but triggered differently
+import GameLogChart from "./StatsTableRowChart";
 import {
   fetchPlayerGameLogForStat,
   GameLogDataPoint
 } from "utils/fetchWigoPlayerStats";
 
+// Define which stats are generally treated as 'COUNTS' for chart purposes
+// (This list might need refinement based on your specific data)
+const countStatLabels = [
+  "Goals",
+  "Assists",
+  "Points",
+  "SOG",
+  "ixG",
+  "PPG",
+  "PPA",
+  "PPP",
+  "HIT",
+  "BLK",
+  "PIM",
+  "iCF",
+  "ATOI", // Even though time, it's often aggregated like a count total
+  "PPTOI" // Same as ATOI
+  // Add any other stat labels that should be treated as counts
+];
+
 interface StatsTableProps {
-  title: "COUNTS" | "RATES"; // Use literal types
-  data: TableAggregateData[]; // This structure remains the same input
+  // title?: "COUNTS" | "RATES"; // Title is now optional or removed
+  tableTitle?: string; // Optional generic title for the combined table header
+  data: TableAggregateData[]; // Combined counts and rates data
   isLoading: boolean;
   error: string | null;
   formatCell: (
-    row: TableAggregateData, // The original row data for a stat
-    columnKey: DataColumnKey // The original column key (e.g., 'CA', 'LY')
-  ) => string;
+    row: TableAggregateData,
+    columnKey: DataColumnKey
+  ) => string | React.ReactNode; // Allow ReactNode for DIFF span
   playerId: number;
   currentSeasonId: number;
-  leftTimeframe: keyof TableAggregateData; // Needed for DIFF calculation context
-  rightTimeframe: keyof TableAggregateData; // Needed for DIFF calculation context
+  leftTimeframe: keyof TableAggregateData;
+  rightTimeframe: keyof TableAggregateData;
 }
 
-// Original column keys (now represent rows)
 type DataColumnKey = keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">;
 
-// Keys for the rows in the transposed table
 const rowKeys: (DataColumnKey | "DIFFLabel")[] = [
   "CA",
   "3YA",
@@ -35,7 +54,7 @@ const rowKeys: (DataColumnKey | "DIFFLabel")[] = [
   "L10",
   "L20",
   "STD",
-  "DIFFLabel" // Add DIFF row key
+  "DIFFLabel"
 ];
 
 const rowHeaders: { [key: string]: string } = {
@@ -50,39 +69,47 @@ const rowHeaders: { [key: string]: string } = {
 };
 
 const StatsTable: React.FC<StatsTableProps> = ({
-  title,
+  tableTitle = "", // Default title if needed
   data,
   isLoading,
   error,
   formatCell,
   playerId,
   currentSeasonId,
-  leftTimeframe, // Receive timeframes
+  leftTimeframe,
   rightTimeframe
 }) => {
   const [expandedStatLabel, setExpandedStatLabel] = useState<string | null>(
     null
   );
+  const [expandedStatType, setExpandedStatType] = useState<"COUNTS" | "RATES">(
+    "RATES"
+  ); // Default, will be set on expand
   const [gameLogData, setGameLogData] = useState<GameLogDataPoint[]>([]);
   const [isLoadingGameLog, setIsLoadingGameLog] = useState<boolean>(false);
   const [gameLogError, setGameLogError] = useState<string | null>(null);
-  const [hoveredStatLabel, setHoveredStatLabel] = useState<string | null>(null); // For column hover
-  const tableRef = useRef<HTMLTableElement>(null); // Ref for table element
+  const [hoveredStatLabel, setHoveredStatLabel] = useState<string | null>(null);
+  const tableRef = useRef<HTMLTableElement>(null);
 
-  // Extract stat labels to use as column headers (filter out GP if present)
+  // Extract stat labels (columns) from the combined data
   const statLabels = data.filter((d) => d.label !== "GP").map((d) => d.label);
-  // Find GP data if it exists
   const gpRowData = data.find((d) => d.label === "GP");
 
   const handleExpandClick = useCallback(
     (statLabel: string) => {
       const newLabel = expandedStatLabel === statLabel ? null : statLabel;
       setExpandedStatLabel(newLabel);
-      setGameLogData([]); // Clear previous data
-      setGameLogError(null); // Clear previous error
+      setGameLogData([]);
+      setGameLogError(null);
 
       if (newLabel !== null) {
-        // Only fetch if expanding a new column
+        // Determine if the expanded stat is a count or rate for the chart
+        const isCountStat = countStatLabels.includes(newLabel);
+        const typeForChart: "COUNTS" | "RATES" = isCountStat
+          ? "COUNTS"
+          : "RATES";
+        setExpandedStatType(typeForChart); // Store the type
+
         setIsLoadingGameLog(true);
         fetchPlayerGameLogForStat(playerId, currentSeasonId, statLabel)
           .then((data) => {
@@ -96,42 +123,40 @@ const StatsTable: React.FC<StatsTableProps> = ({
           });
       }
     },
-    [expandedStatLabel, playerId, currentSeasonId] // Dependencies
+    [expandedStatLabel, playerId, currentSeasonId] // Removed data dependency here - not needed for triggering fetch
   );
 
-  // Function to get the data for a specific cell in the transposed table
   const getCellValue = (
     rowKey: DataColumnKey | "DIFFLabel",
     statLabel: string
   ) => {
     const statData = data.find((d) => d.label === statLabel);
-    if (!statData) return "-"; // Should not happen if statLabels derived correctly
+    if (!statData) return "-";
 
     if (rowKey === "DIFFLabel") {
-      const diffValue = statData.DIFF; // DIFF is pre-calculated on the data object
+      // DIFF calculation likely happens in the parent before data is passed
+      const diffValue = statData.DIFF;
       const color =
         diffValue !== undefined && diffValue !== null
           ? diffValue >= 0
-            ? "rgb(18, 193, 126)" // Green for positive/zero
-            : "rgb(240, 85, 118)" // Red for negative
-          : "#fff"; // Default color if undefined/null
+            ? "rgb(18, 193, 126)"
+            : "rgb(240, 85, 118)"
+          : "#fff";
       const displayValue =
         diffValue !== undefined && diffValue !== null
-          ? `${diffValue.toFixed(1)}%` // Format as percentage
+          ? `${diffValue.toFixed(1)}%`
           : "-";
       return <span style={{ color }}>{displayValue}</span>;
     } else {
-      // Use the original formatCell for regular data points
-      // Note: formatCell expects the *original* row structure (the statData)
-      // and the *original* column key (which is now our rowKey)
+      // Use the original formatCell, assuming it handles both counts/rates formatting
       return formatCell(statData, rowKey as DataColumnKey);
     }
   };
 
-  // Helper to get averages for the chart (needs the data for the specific stat)
   const getAveragesForChart = (statLabel: string) => {
     const statData = data.find((d) => d.label === statLabel);
-    if (!statData) return {}; // Return empty object if not found
+    if (!statData) return {};
+    // Return all potential average keys
     return {
       STD: statData.STD,
       LY: statData.LY,
@@ -143,19 +168,14 @@ const StatsTable: React.FC<StatsTableProps> = ({
     };
   };
 
-  // **** Helper to get GP data for the chart ****
   const getGpDataForChart = () => {
-    // GP data is now separate, not tied to a specific stat row in the original sense
-    // Pass the entire GP data object if available
-    return gpRowData?.GP; // Return the GP object (or undefined)
+    return gpRowData?.GP;
   };
 
-  // Find the data for the currently expanded stat
   const expandedStatData = expandedStatLabel
     ? data.find((d) => d.label === expandedStatLabel)
     : null;
 
-  // Column Hover Handlers
   const handleColumnHeaderMouseEnter = (statLabel: string) => {
     setHoveredStatLabel(statLabel);
   };
@@ -164,28 +184,21 @@ const StatsTable: React.FC<StatsTableProps> = ({
     setHoveredStatLabel(null);
   };
 
-  // Calculate total columns for colSpan
-  const totalColumns = statLabels.length + 1; // +1 for the timeframe header column
+  const totalColumns = statLabels.length + 1;
 
   return (
-    <div
-      className={`${styles.transposedTableContainer} ${
-        title === "COUNTS" ? styles.countsTable : styles.ratesTable
-      }`}
-    >
+    // Remove conditional class, maybe add a generic one if needed
+    <div className={`${styles.transposedTableContainer}`}>
       <table
         ref={tableRef}
-        aria-label={`${title} Transposed Table`}
-        className={`${styles.statsTableActual} ${styles.transposedTable}`} // Add transposedTable class for specific styling
+        aria-label={`${tableTitle} Table`} // Use generic title
+        className={`${styles.statsTableActual} ${styles.transposedTable}`}
       >
-        {/* No colgroup needed as width is less predictable */}
         <thead>
           <tr>
-            {/* First header cell is for Timeframes */}
             <th className={styles.timeframeHeader}>
-              {title} {/* Or maybe leave empty */}
+              {tableTitle} {/* Display generic title */}
             </th>
-            {/* Map stat labels to column headers */}
             {statLabels.map((label) => (
               <th
                 key={label}
@@ -199,7 +212,8 @@ const StatsTable: React.FC<StatsTableProps> = ({
                     onClick={() => handleExpandClick(label)}
                     className={styles.expandButton}
                     aria-expanded={expandedStatLabel === label}
-                    aria-controls={`chart-${title.toLowerCase()}-${label}`} // Use label for unique ID
+                    // Unique ID based on label (no title needed)
+                    aria-controls={`chart-${label}`}
                   >
                     {expandedStatLabel === label ? "-" : "+"}
                   </button>
@@ -211,10 +225,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
         <tbody>
           {isLoading ? (
             <tr>
-              {/* Loading message spans all columns */}
-              <td colSpan={totalColumns}>
-                Loading {title.toLowerCase()} data...
-              </td>
+              <td colSpan={totalColumns}>Loading stats data...</td>
             </tr>
           ) : error ? (
             <tr>
@@ -223,19 +234,15 @@ const StatsTable: React.FC<StatsTableProps> = ({
               </td>
             </tr>
           ) : data.length > 0 && statLabels.length > 0 ? (
-            // Map row keys (CA, 3YA, ..., DIFF) to table rows
             rowKeys.map((rowKey) => (
               <tr key={rowKey}>
-                {/* First cell is the row header (Timeframe/DIFF) */}
                 <td className={styles.timeframeCell}>{rowHeaders[rowKey]}</td>
-                {/* Map stat labels to data cells within this row */}
                 {statLabels.map((statLabel) => (
                   <td
                     key={`${rowKey}-${statLabel}`}
                     className={
                       hoveredStatLabel === statLabel ? styles.columnHover : ""
                     }
-                    // Add mouse enter/leave here too if needed for full column hover persistence
                     onMouseEnter={() => handleColumnHeaderMouseEnter(statLabel)}
                     onMouseLeave={handleColumnHeaderMouseLeave}
                   >
@@ -252,24 +259,23 @@ const StatsTable: React.FC<StatsTableProps> = ({
         </tbody>
       </table>
 
-      {/* Conditionally rendered chart container - Rendered *after* the main table */}
+      {/* Chart container - ID uses only label */}
       {expandedStatLabel && expandedStatData && (
         <div
-          id={`chart-${title.toLowerCase()}-${expandedStatLabel}`}
-          className={styles.chartRowExpanded} // Use a class for styling the container
-          // Style this div to visually connect it if desired
+          id={`chart-${expandedStatLabel}`} // Unique ID based on label
+          className={styles.chartRowExpanded}
         >
           <GameLogChart
             playerId={playerId}
             seasonId={currentSeasonId}
-            statLabel={expandedStatLabel} // The stat label of the expanded column
+            statLabel={expandedStatLabel}
             gameLogData={gameLogData}
-            // Pass averages and GP data relevant to the *expanded stat*
             averages={getAveragesForChart(expandedStatLabel)}
-            gpData={getGpDataForChart()} // Pass the general GP data
+            gpData={getGpDataForChart()}
             isLoading={isLoadingGameLog}
             error={gameLogError}
-            tableType={title}
+            // Pass the determined type
+            tableType={expandedStatType}
           />
         </div>
       )}

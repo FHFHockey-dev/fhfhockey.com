@@ -1,5 +1,5 @@
 // /pages/wigoCharts.tsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react"; // Added useMemo
 import dynamic from "next/dynamic";
 
 import styles from "styles/wigoCharts.module.scss"; // Main styles
@@ -17,22 +17,21 @@ import TimeframeComparison from "components/WiGO/TimeframeComparison";
 import CategoryCoverageChart from "components/CategoryCoverageChart";
 import GameScoreSection from "components/WiGO/GameScoreSection";
 import PlayerHeader from "components/WiGO/PlayerHeader";
-import StatsTable from "components/WiGO/StatsTable";
+import StatsTable from "components/WiGO/StatsTable"; // The modified component
 import PerGameStatsTable from "components/WiGO/PerGameStatsTable";
-import RateStatPercentiles from "components/WiGO/RateStatPercentiles"; // Adjust path
+import RateStatPercentiles from "components/WiGO/RateStatPercentiles";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import OpponentGamelog from "components/WiGO/OpponentGamelog";
 import PlayerRatingsDisplay from "components/WiGO/PlayerRatingsDisplay";
-import TimeOptions, { TimeOption } from "components/TimeOptions/TimeOptions";
+// Removed TimeOptions import if not used elsewhere
 
 import {
   computeDiffColumnForCounts,
   computeDiffColumnForRates,
-  formatCell
+  formatCell as formatCellUtil // Rename imported function to avoid naming conflict
 } from "components/WiGO/tableUtils";
 
-// --- Dynamically import components using Chart.js or browser APIs ---
-// Helper for loading placeholder
+// --- Dynamically import components (remains the same) ---
 const ChartLoadingPlaceholder = ({ message }: { message: string }) => (
   <div className={styles.chartLoadingPlaceholder}>{message}</div>
 );
@@ -54,32 +53,20 @@ const ConsistencyChart = dynamic(
     loading: () => <ChartLoadingPlaceholder message="Loading Consistency..." />
   }
 );
-
-// GameScoreSection might internally render charts, so dynamic import might apply there too.
-// If GameScoreSection itself uses Chart.js directly:
-// const GameScoreSection = dynamic(() => import('components/WiGO/GameScoreSection'), {
-//   ssr: false,
-//   loading: () => <ChartLoadingPlaceholder message="Loading Game Score..." />
-// });
-// If GameScoreSection just orchestrates other dynamic chart components, it might not need to be dynamic itself.
+// --- End Dynamic Imports ---
 
 const WigoCharts: React.FC = () => {
-  // --- State variables remain the same ---
+  // --- State variables ---
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
-  const [teamIdForLog, setTeamIdForLog] = useState<number | null>(null); // Separate state for the log component
-
+  const [teamIdForLog, setTeamIdForLog] = useState<number | null>(null);
   const [headshotUrl, setHeadshotUrl] = useState<string | null>(null);
   const [teamColors, setTeamColors] = useState<TeamColors>(defaultColors);
+  // Raw data state remains separate for DIFF calculation
   const [rawCountsData, setRawCountsData] = useState<TableAggregateData[]>([]);
   const [rawRatesData, setRawRatesData] = useState<TableAggregateData[]>([]);
-  const [displayCountsData, setDisplayCountsData] = useState<
-    TableAggregateData[]
-  >([]);
-  const [displayRatesData, setDisplayRatesData] = useState<
-    TableAggregateData[]
-  >([]);
-  const [isLoadingAggData, setIsLoadingAggData] = useState<boolean>(false); // Specific loader for Counts/Rates
-  const [aggDataError, setAggDataError] = useState<string | null>(null); // Specific error for Counts/Rates
+  // ** REMOVED displayCountsData and displayRatesData state **
+  const [isLoadingAggData, setIsLoadingAggData] = useState<boolean>(false);
+  const [aggDataError, setAggDataError] = useState<string | null>(null);
   const [teamName, setTeamName] = useState<string>("");
   const [teamAbbreviation, setTeamAbbreviation] = useState<string | null>(null);
   const [leftTimeframe, setLeftTimeframe] =
@@ -87,8 +74,7 @@ const WigoCharts: React.FC = () => {
   const [rightTimeframe, setRightTimeframe] =
     useState<keyof TableAggregateData>("CA");
   const placeholderImage = "/pictures/player-placeholder.jpg";
-
-  const [minGp, setMinGp] = useState<number>(10); // Default minimum GP threshold
+  const [minGp, setMinGp] = useState<number>(10);
 
   const currentSeasonData = useCurrentSeason();
   const currentSeasonId = currentSeasonData?.seasonId ?? null;
@@ -97,7 +83,7 @@ const WigoCharts: React.FC = () => {
   const handlePlayerSelect = useCallback((player: Player, headshot: string) => {
     setSelectedPlayer(player);
     setHeadshotUrl(headshot);
-    setTeamIdForLog(player.team_id ?? null); // <--- SET TEAM ID FOR LOG
+    setTeamIdForLog(player.team_id ?? null);
 
     if (player.team_id) {
       const teamInfo = getTeamInfoById(player.team_id);
@@ -122,116 +108,156 @@ const WigoCharts: React.FC = () => {
       setTeamAbbreviation(null);
       setTeamColors(defaultColors);
     }
-    // Reset timeframes on new player select
     setLeftTimeframe("STD");
     setRightTimeframe("CA");
-    // Clear previous data immediately on selection
-    setRawCountsData([]);
-    setRawRatesData([]);
-    setDisplayCountsData([]);
-    setDisplayRatesData([]);
-    setAggDataError(null);
+    setRawCountsData([]); // Clear raw data
+    setRawRatesData([]); // Clear raw data
+    setAggDataError(null); // Clear error
   }, []);
-
-  // Function to update display data based on selected timeframes
-  const updateDisplayData = useCallback(() => {
-    if (rawCountsData.length > 0) {
-      const updatedCounts = computeDiffColumnForCounts(
-        rawCountsData,
-        leftTimeframe,
-        rightTimeframe
-      );
-      setDisplayCountsData(updatedCounts);
-    } else {
-      setDisplayCountsData([]);
-    }
-
-    if (rawRatesData.length > 0) {
-      const updatedRates = computeDiffColumnForRates(
-        rawRatesData,
-        leftTimeframe,
-        rightTimeframe
-      );
-      setDisplayRatesData(updatedRates);
-    } else {
-      setDisplayRatesData([]);
-    }
-  }, [rawCountsData, rawRatesData, leftTimeframe, rightTimeframe]); // Dependencies
 
   // Fetch aggregated data effect (Counts/Rates)
   useEffect(() => {
     if (!selectedPlayer) {
-      // Clear state if no player is selected
       setRawCountsData([]);
       setRawRatesData([]);
-      setDisplayCountsData([]);
-      setDisplayRatesData([]);
       setAggDataError(null);
-      // Note: Player header info is cleared in handlePlayerSelect or should be reset here too if needed.
       return;
     }
 
     const fetchData = async () => {
-      setIsLoadingAggData(true); // Start loading indicator for Counts/Rates
+      setIsLoadingAggData(true);
       setAggDataError(null);
-      setRawCountsData([]); // Clear previous raw data
-      setRawRatesData([]); // Clear previous raw data
+      setRawCountsData([]);
+      setRawRatesData([]);
 
       try {
         const aggregatedData: CombinedPlayerStats =
           await fetchPlayerAggregatedStats(selectedPlayer.id);
 
-        // Check if *any* data was returned before setting state
+        // Set raw data, let useMemo handle processing and combining
+        setRawCountsData(aggregatedData.counts || []); // Ensure array even if null/undefined
+        setRawRatesData(aggregatedData.rates || []); // Ensure array even if null/undefined
+
         if (
-          aggregatedData.counts.length > 0 ||
-          aggregatedData.rates.length > 0
+          aggregatedData.counts.length === 0 &&
+          aggregatedData.rates.length === 0
         ) {
-          setRawCountsData(aggregatedData.counts);
-          setRawRatesData(aggregatedData.rates);
-          // Let updateDisplayData effect handle setting display data
-        } else {
-          // Handle case where API returns success but empty arrays
           console.log(
             "No aggregated stats returned for player:",
             selectedPlayer.id
           );
-          // Set error or message? Or let tables show "no data"?
-          // setAggDataError("No aggregated statistics available."); // Optional: Set specific message
-          setDisplayCountsData([]); // Ensure display is clear
-          setDisplayRatesData([]); // Ensure display is clear
+          // Optional: setAggDataError("No aggregated statistics available.");
         }
       } catch (error) {
         console.error("Error fetching aggregated stats:", error);
-        setAggDataError("Failed to load Counts/Rates statistics."); // Specific error
+        setAggDataError("Failed to load Counts/Rates statistics.");
         setRawCountsData([]);
         setRawRatesData([]);
-        setDisplayCountsData([]); // Ensure display is clear on error
-        setDisplayRatesData([]); // Ensure display is clear on error
       } finally {
-        setIsLoadingAggData(false); // Stop loading indicator for Counts/Rates
+        setIsLoadingAggData(false);
       }
     };
 
     fetchData();
-  }, [selectedPlayer]); // Only depends on selectedPlayer
+  }, [selectedPlayer]);
 
-  // Effect to recalculate DIFF columns whenever raw data or timeframes change
-  useEffect(() => {
-    updateDisplayData();
-  }, [updateDisplayData]); // updateDisplayData is memoized with its own dependencies
+  // --- Calculate Combined Data with DIFF using useMemo ---
+  const combinedDisplayData = useMemo(() => {
+    // Compute DIFF columns first
+    const processedCounts =
+      rawCountsData.length > 0
+        ? computeDiffColumnForCounts(
+            rawCountsData,
+            leftTimeframe,
+            rightTimeframe
+          )
+        : [];
+    const processedRates =
+      rawRatesData.length > 0
+        ? computeDiffColumnForRates(rawRatesData, leftTimeframe, rightTimeframe)
+        : [];
 
-  // Handler for timeframe changes
+    // Find the GP row *from the processed counts data*
+    // It's important to find it *after* computeDiff... because that func returns a clone
+    const gpRow = processedCounts.find((r) => r.label === "GP") || null;
+
+    // Combine the processed arrays
+    const combinedData = [...processedCounts, ...processedRates];
+
+    // Return both combined data and the GP row for use in formatCell
+    return { combinedData, gpRow };
+  }, [rawCountsData, rawRatesData, leftTimeframe, rightTimeframe]); // Dependencies
+
+  // Handler for timeframe changes (remains the same)
   const handleTimeframeCompare = useCallback((left: string, right: string) => {
     setLeftTimeframe(left as keyof TableAggregateData);
     setRightTimeframe(right as keyof TableAggregateData);
-  }, []); // No dependencies needed if it only sets state
+  }, []);
 
-  console.log("WigoCharts - selectedPlayer:", selectedPlayer);
+  // --- Wrapper for formatCell to pass the correct GP value ---
+  // This function will be passed to the StatsTable component
+  const formatCellForTable = useCallback(
+    (
+      row: TableAggregateData,
+      columnKey: keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">
+    ): string => {
+      // Get the specific GP value for the current column (timeframe) from the gpRow
+      // The gpRow is available via the combinedDisplayData memoized value
+      const gpValueForColumn =
+        combinedDisplayData.gpRow && combinedDisplayData.gpRow[columnKey]
+          ? combinedDisplayData.gpRow[columnKey]
+          : null;
+
+      // Call the original utility function with the necessary GP value
+      // You might need to adjust formatCellUtil if it doesn't accept gpValueForColumn
+      // OR adjust the logic here based on formatCellUtil's needs.
+      // Assuming formatCellUtil *can* use this (based on previous PPTOI logic needing GP):
+      // return formatCellUtil(row, columnKey, gpValueForColumn); // Pass GP if needed
+
+      // If formatCellUtil CANNOT be modified, replicate logic here or slightly adjust call:
+      const value = row[columnKey];
+      const label = row.label;
+
+      if (value == null || (typeof value === "number" && isNaN(value)))
+        return "-";
+
+      // Handle specific cases needing GP (like PPTOI from your util)
+      if (label === "PPTOI") {
+        if (gpValueForColumn != null && gpValueForColumn > 0) {
+          const avgMinutesPPTOI = value / gpValueForColumn;
+          const avgSecondsPPTOI = avgMinutesPPTOI * 60;
+          // You'll need formatSecondsToMMSS accessible here too
+          // Assuming formatSecondsToMMSS is also exported from tableUtils
+          // return formatSecondsToMMSS(avgSecondsPPTOI); // If available
+          // Placeholder if formatSecondsToMMSS isn't imported:
+          const totalSeconds = Math.round(avgSecondsPPTOI);
+          const mins = Math.floor(totalSeconds / 60);
+          const secs = totalSeconds % 60;
+          return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+        } else {
+          return "0:00"; // Or "-" if preferred when GP is 0 or null
+        }
+      }
+      if (label === "ATOI") {
+        // Assuming formatSecondsToMMSS is available
+        // return formatSecondsToMMSS(value * 60); // Assuming value is average minutes
+        // Placeholder:
+        const totalSeconds = Math.round(value * 60);
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = totalSeconds % 60;
+        return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+      }
+
+      // Fallback to the general logic from formatCellUtil for other cases
+      return formatCellUtil(row, columnKey); // Call original for other types
+    },
+    [combinedDisplayData.gpRow, formatCellUtil] // Dependency: gpRow from memo
+  );
+
   return (
     <div className={styles.wigoDashHeader}>
       <div className={styles.wigoHeader}>
         <span className={styles.spanColorBlue}>WiGO</span>
-        {/* Use Unicode non-breaking space */}
         {"\u00A0\u00A0//\u00A0\u00A0"}
         <span className={styles.spanColorBlue}>W</span>
         HAT
@@ -247,7 +273,6 @@ const WigoCharts: React.FC = () => {
           className={styles.wigoDashboardContent} // The Grid Container
           style={
             {
-              // CSS variables for dynamic team colors
               "--primary-color": teamColors.primaryColor,
               "--secondary-color": teamColors.secondaryColor,
               "--accent-color": teamColors.accentColor,
@@ -256,23 +281,14 @@ const WigoCharts: React.FC = () => {
             } as React.CSSProperties
           }
         >
-          {/* Grid Items: Assign SCSS class for grid-area and styling */}
-
           {/* --- Top Row --- */}
           <div className={styles.nameSearchBarContainer}>
             <NameSearchBar onSelect={handlePlayerSelect} />
           </div>
-          <div className={styles.timeframeComparisonWrapper}>
-            <TimeframeComparison
-              initialLeft={leftTimeframe}
-              initialRight={rightTimeframe}
-              onCompare={handleTimeframeCompare}
-              // Disable if aggregated data is loading?
-            />
-          </div>
+          {/* Moved TimeframeComparison near the combined table it affects */}
 
           <div className={styles.consistencyRatingContainer}>
-            {selectedPlayer ? ( // <--- Is selectedPlayer definitely not null/undefined?
+            {selectedPlayer ? (
               <ConsistencyChart playerId={selectedPlayer.id} />
             ) : (
               <ChartLoadingPlaceholder message="Select a player" />
@@ -281,82 +297,77 @@ const WigoCharts: React.FC = () => {
 
           {/* --- Left Column --- */}
           <div className={styles.playerHeaderContainer}>
-            {/* PlayerHeader component renders its own internals */}
             <PlayerHeader
               selectedPlayer={selectedPlayer}
               headshotUrl={headshotUrl}
               teamName={teamName}
               teamAbbreviation={teamAbbreviation}
-              teamColors={teamColors} // Pass colors if needed internally, else rely on CSS vars
+              teamColors={teamColors}
               placeholderImage={placeholderImage}
             />
           </div>
           <div className={styles.percentileChartContainer}>
             <CategoryCoverageChart
               playerId={selectedPlayer?.id}
-              timeOption="SEASON"
+              timeOption="SEASON" // Or make dynamic if needed
             />
           </div>
-
-          {/* <div className={styles.paceTableContainer}>
-          Pace Table Placeholder
-        </div> */}
+          {/* Timeframe selection often placed near the tables */}
+          <div className={styles.timeframeComparisonWrapper}>
+            <TimeframeComparison
+              initialLeft={leftTimeframe}
+              initialRight={rightTimeframe}
+              onCompare={handleTimeframeCompare}
+              // Disable interaction while loading if desired
+              // disabled={isLoadingAggData}
+            />
+          </div>
 
           <div className={styles.rateStatBarPercentilesContainer}>
             <RateStatPercentiles
               playerId={selectedPlayer?.id}
-              minGp={minGp} // Pass the lifted state
-              onMinGpChange={setMinGp} // Pass the setter function
+              minGp={minGp}
+              onMinGpChange={setMinGp}
             />
           </div>
 
-          {/* --- Center Columns (Tables) --- */}
-          <div className={styles.countsTableContainer}>
+          {/* --- Center Columns (Combined Table & PerGame) --- */}
+
+          {/* ** Combined Stats Table Container ** */}
+          <div className={styles.combinedStatsTableContainer}>
             <StatsTable
-              title="COUNTS"
-              data={displayCountsData} // Pass data with DIFF pre-calculated
-              isLoading={isLoadingAggData && displayCountsData.length === 0}
+              // tableTitle="Aggregated Stats" // Optional title
+              // Use the data from useMemo
+              data={combinedDisplayData.combinedData}
+              // Show loading only if fetching AND we have no data yet
+              isLoading={
+                isLoadingAggData &&
+                combinedDisplayData.combinedData.length === 0
+              }
               error={aggDataError}
-              formatCell={formatCell}
+              // Pass the formatting function that uses the correct GP row
+              formatCell={formatCellForTable}
               playerId={selectedPlayer?.id ?? 0}
               currentSeasonId={currentSeasonId ?? 0}
-              // **** PASS TIMEFRAMES ****
               leftTimeframe={leftTimeframe}
               rightTimeframe={rightTimeframe}
             />
           </div>
-          <div className={styles.ratesTableContainer}>
-            <StatsTable
-              title="RATES"
-              data={displayRatesData} // Pass data with DIFF pre-calculated
-              isLoading={isLoadingAggData && displayRatesData.length === 0}
-              error={aggDataError}
-              formatCell={formatCell}
-              playerId={selectedPlayer?.id ?? 0}
-              currentSeasonId={currentSeasonId ?? 0}
-              // **** PASS TIMEFRAMES ****
-              leftTimeframe={leftTimeframe}
-              rightTimeframe={rightTimeframe}
-            />
-          </div>
+
+          {/* ** REMOVED the separate countsTableContainer and ratesTableContainer divs ** */}
+
           <div className={styles.perGameStatsContainer}>
-            {/* PerGameStatsTable handles its own fetching, loading, error states */}
-            <PerGameStatsTable
-              playerId={selectedPlayer?.id}
-              // Make sure PerGameStatsTable renders a <table className={styles.transposedTable}>
-            />
+            <PerGameStatsTable playerId={selectedPlayer?.id} />
           </div>
 
           {/* --- Right Column --- */}
           <div className={styles.ratingsContainer}>
-            {/* Render only if a player is selected */}
             {selectedPlayer ? (
               <PlayerRatingsDisplay
                 playerId={selectedPlayer.id}
-                minGp={minGp} // Pass the lifted state
+                minGp={minGp}
               />
             ) : (
-              // Optional: Placeholder when no player is selected
               <div className={styles.chartLoadingPlaceholder}>
                 Select player for ratings
               </div>
@@ -364,28 +375,19 @@ const WigoCharts: React.FC = () => {
           </div>
 
           <div className={styles.opponentLogContainer}>
-            {" "}
-            {/* This div acts as the grid area container */}
             <OpponentGamelog
               teamId={teamIdForLog}
-              highlightColor="#07aae2"
-            />{" "}
-            {/* <--- USE THE COMPONENT HERE */}
+              highlightColor={teamColors.primaryColor || "#07aae2"} // Use team color
+            />
           </div>
 
           {/* --- Bottom Row (Charts) --- */}
-
-          {/* --- TOI --- */}
           <div className={styles.toiChartContainer}>
             <ToiLineChart playerId={selectedPlayer?.id} />
           </div>
-
-          {/* --- PTs/GP --- */}
           <div className={styles.ppgChartContainer}>
             <PpgLineChart playerId={selectedPlayer?.id} />
           </div>
-
-          {/* --- Game Score ---  */}
           <div className={styles.gameScoreContainer}>
             <GameScoreSection playerId={selectedPlayer?.id} />
           </div>

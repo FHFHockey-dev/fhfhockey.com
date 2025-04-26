@@ -9,7 +9,7 @@
 .wigoDashHeader {
   display: flex;
   flex-direction: column;
-  border-collapse: collapse;
+  // border-collapse: collapse; // Likely unnecessary here
 }
 
 .wigoHeader {
@@ -37,13 +37,13 @@
 
 .wigoDashboardContainer {
   @include v.component-wrapper;
-  width: 90%;
-  max-width: 2200px; // Max width adjusted slightly if needed for 39 columns
-  min-width: 1300px; // Minimum width adjusted slightly if needed
-  height: 87vh; // Viewport height
+  width: 95%;
+  max-width: 2200px;
+  min-width: 1300px;
+  height: 87vh;
   margin: 0 auto v.$space-xxl auto;
   display: flex;
-  border-collapse: collapse;
+  // border-collapse: collapse; // Likely unnecessary here
   border: 2px solid v.$border-color;
 }
 
@@ -54,10 +54,12 @@
   overflow: hidden; // Prevent content spilling out
 
   // --- Grid Definition ---
-  // *** UPDATED GRID DIMENSIONS ***
   display: grid;
-  grid-template-columns: repeat(39, 1fr); // 39 columns
-  grid-template-rows: repeat(36, 1fr); // 36 rows
+  grid-template-columns: repeat(
+    36,
+    1fr
+  ); // 36 columns (spans grid lines 1 to 37)
+  grid-template-rows: repeat(36, 1fr); // 36 rows (spans grid lines 1 to 37)
   padding: v.$space-xs; // Padding around the grid
   gap: v.$space-xs; // Gap between grid items
 }
@@ -77,12 +79,11 @@
   box-sizing: border-box; // Include border/padding in size
 }
 
-/* =================== Specific Container Styles & Grid Areas =================== */
-/* ----- Applied based on user-provided grid layout ----- */
+/* =================== Specific Container Styles & Grid Areas (BENTO BOX LAYOUT) =================== */
 
+// --- Top Band (Rows 1-9) ---
 .nameSearchBarContainer {
-  // *** UPDATED GRID AREA ***
-  grid-area: 1 / 1 / 3 / 11;
+  grid-area: 1 / 1 / 3 / 7; // Row 1-2, Col 1-6
   background-color: v.$background-dark;
   border-bottom: 3px solid #404040;
   border-top-left-radius: v.$border-radius-sm;
@@ -99,289 +100,242 @@
 }
 
 .playerHeaderContainer {
-  // *** UPDATED GRID AREA ***
-  grid-area: 3 / 1 / 10 / 11;
+  grid-area: 3 / 1 / 13 / 7; // Row 3-9, Col 1-6
   position: relative;
   z-index: 1;
   padding: 0;
-  background-color: var(--primary-color);
+  background-color: var(--primary-color); // Uses CSS variable
   overflow: hidden;
   border-radius: v.$border-radius-sm;
   border: 1px solid v.$border-color;
 }
 
-.percentileChartContainer {
-  // Corresponds to .categorycoverage
-  // *** UPDATED GRID AREA ***
-  grid-area: 1 / 11 / 10 / 26;
+.perGameStatsContainer {
+  grid-area: 1 / 7 / 13 / 12; // Row 1-9, Col 7-11
+  @include internal-flex-column;
+  padding: 0 !important; // Overrides internal padding if table adds its own
+  overflow: hidden; // Let internal table scroll manage itself
+}
+
+.opponentLogContainer {
+  grid-area: 13 / 7 / 25 / 12; // Row 1-9, Col 12-16
   @include internal-flex-column;
   padding: 0;
 }
 
+.ratingsContainer {
+  grid-area: 13 / 1 / 23 / 7; // Row 27-31, Col 1-12
+  @include internal-flex-column;
+  padding: 0;
+  overflow: hidden;
+}
+
 .consistencyRatingContainer {
-  // Corresponds to .consistency
-  // *** UPDATED GRID AREA ***
-  grid-area: 1 / 26 / 10 / 40;
+  grid-area: 1 / 12 / 13 / 19; // Row 10-26, Col 1-6
+
   @include internal-flex-column;
   padding: 0;
   border-top-right-radius: v.$border-radius-sm;
-  border-left: none;
-
-  // Internal styles for Consistency Chart remain the same...
+  // --- Internal styles for Consistency Chart ---
   .chartContainer {
     display: grid;
     grid-template-rows: auto 1fr;
     height: 100%;
     width: 100%;
     overflow: hidden;
-    .chartTitle {
-      background-color: darken(v.$primary-color, 32%);
-      padding: 6px 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border-bottom: 1px solid #444;
-      text-transform: uppercase;
-      h3 {
-        margin: 0;
-        font-size: 12px;
-        font-weight: 600;
-        letter-spacing: 10px;
-        font-family: "Lucida Sans", "Lucida Grande", sans-serif;
-        color: v.$text-color-primary;
-      }
+  }
+  .chartTitle {
+    background-color: darken(v.$primary-color, 32%);
+    padding: 6px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 1px solid #444;
+    text-transform: uppercase;
+    h3 {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 10px;
+      font-family: "Lucida Sans", "Lucida Grande", sans-serif;
+      color: v.$text-color-primary;
     }
-    .consistencyContent {
-      display: flex;
+  }
+  .consistencyContent {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    padding: v.$space-sm;
+    box-sizing: border-box;
+    gap: v.$space-sm;
+    overflow: hidden;
+  }
+  .consistencyChartArea {
+    flex: 1 1 50%;
+    position: relative;
+    min-width: 80px;
+    padding: v.$space-sm;
+  }
+  .consistencyListArea {
+    flex: 1 1 30%;
+    overflow-y: auto;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: stretch;
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
       height: 100%;
-      width: 100%;
-      padding: v.$space-sm;
-      box-sizing: border-box;
-      gap: v.$space-sm;
-      overflow: hidden;
-    }
-    .consistencyChartArea {
-      flex: 1 1 60%;
-      position: relative;
-      min-width: 80px;
-    }
-    .consistencyListArea {
-      flex: 1 1 40%;
-      overflow-y: auto;
-      font-size: 11px;
-      padding-right: 5px;
       display: flex;
       flex-direction: column;
       justify-content: center;
-      align-items: stretch;
-      ul {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-evenly;
-        align-items: flex-start;
-      }
-    }
-    .consistencyItem {
-      display: flex;
-      align-items: center;
-      padding: 3px 0;
-      border-bottom: 1px solid #3a3a3a;
-      &:last-child {
-        border-bottom: none;
-      }
-    }
-    .consistencyColorSwatch {
-      display: inline-block;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      margin-right: 8px;
-      flex-shrink: 0;
-      background-color: #555;
-      border: 1px solid #777;
-    }
-    .consistencyLabel {
-      color: #ccc;
-      margin-right: 10px;
-      white-space: nowrap;
-    }
-    .consistencyValue {
-      color: #fff;
-      font-weight: bold;
-      margin-left: auto;
-      padding-left: 10px;
-    }
-    .consistencyCount {
-      color: #888;
-      font-size: 10px;
-      margin-left: 5px;
-      white-space: nowrap;
-    }
-    .chartLoadingPlaceholder,
-    .chartErrorPlaceholder {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-      width: 100%;
-      color: #aaa;
-      font-size: 12px;
-      text-align: center;
-      padding: 10px;
-      box-sizing: border-box;
-    }
-    .chartErrorPlaceholder {
-      color: #ff6b6b;
+      align-items: flex-start;
     }
   }
+  .consistencyItem {
+    display: flex;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid #3a3a3a;
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+  .consistencyColorSwatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+    flex-shrink: 0;
+    background-color: #555;
+    border: 1px solid #777;
+  }
+  .consistencyLabel {
+    color: #ccc;
+    margin-right: 10px;
+    white-space: nowrap;
+  }
+  .consistencyValue {
+    color: #fff;
+    font-weight: bold;
+    margin-left: auto;
+    padding-left: 10px;
+  }
+  .consistencyCount {
+    color: #888;
+    font-size: 10px;
+    margin-left: 5px;
+    white-space: nowrap;
+  }
+  .chartLoadingPlaceholder,
+  .chartErrorPlaceholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    color: #aaa;
+    font-size: 12px;
+    text-align: center;
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  .chartErrorPlaceholder {
+    color: #ff6b6b;
+  }
+  // --- End Consistency Chart Internal Styles ---
 }
 
-.opponentLogContainer {
-  // Corresponds to .gamelogopponents
-  // *** UPDATED GRID AREA ***
-  grid-area: 10 / 1 / 19 / 6;
+// --- Middle Band (Rows 10-26) ---
+.percentileChartContainer {
+  // Category Coverage
+  grid-area: 1 / 19 / 13 / 25; // Row 1-9, Col 17-24
+
   @include internal-flex-column;
   padding: 0;
-}
-
-.perGameStatsContainer {
-  // Corresponds to .pergame
-  // *** UPDATED GRID AREA ***
-  grid-area: 10 / 6 / 19 / 11;
-  @include internal-flex-column;
-  padding: 0 !important;
-  overflow: hidden;
-}
-
-.ratingsContainer {
-  // Corresponds to .ratings
-  // *** UPDATED GRID AREA ***
-  grid-area: 10 / 11 / 19 / 21;
-  padding: 0;
-  border: none;
-  background: none;
-  overflow: hidden;
-  // Optionally add @include internal-flex-column; if consistent styling is desired
 }
 
 .rateStatBarPercentilesContainer {
-  // Corresponds to .ratestatpercentiles
-  // *** UPDATED GRID AREA ***
-  grid-area: 10 / 21 / 19 / 40;
+  // Rate Percentiles (Expanded Width)
+  grid-area: 13 / 12 / 25 / 25; // Row 10-26, Col 7-36
   @include internal-flex-column;
   padding: 0;
 }
 
-// --- Special area potentially holding TimeframeComparison ---
-.timeframeComparisonWrapper {
-  // Corresponds to .timeframeAndCountsTableLabel
-  // *** UPDATED GRID AREA ***
-  grid-area: 19 / 1 / 28 / 3;
-  @include internal-flex-column; // Apply common styling, adjust as needed
-  padding: v.$space-sm; // Add some padding
-  // Add specific styles for how TimeframeComparison should look here
-  align-items: center; // Example alignment
-  justify-content: center; // Example alignment
-  border-right: none; // Remove right border if adjacent to counts table
-
-  > div {
-    // Target inner component if needed
-    width: 100%;
-    height: auto; // Allow component to size vertically
-  }
-}
-
-.countsTableContainer {
-  // Corresponds to .countstable
-  // *** UPDATED GRID AREA ***
-  grid-area: 19 / 3 / 28 / 23;
-  @include internal-flex-column;
-  padding: 0;
-  border-left: none; // Remove left border if adjacent to timeframe wrapper
-  border-right: none; // Remove right border if adjacent to label area
-}
-
-// --- Optional: Placeholder/Separator between tables ---
-// If you have a div in your JSX with className={styles.tableSeparatorLabel}
-.tableSeparatorLabel {
-  // Corresponds to .labelForRatesTable
-  // *** ADDED GRID AREA ***
-  grid-area: 19 / 23 / 28 / 24;
-  @include internal-flex-column;
-  // Style as a visual separator or leave empty
-  background-color: v.$background-dark; // Example: Darker separator color
-  border-left: 1px solid v.$border-color-primary;
-  border-right: 1px solid v.$border-color-primary;
-  padding: 0;
-  writing-mode: vertical-rl; // Example: vertical text label
-  text-orientation: mixed;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: v.$text-color-secondary;
-  font-size: v.$font-size-small;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
-.ratesTableContainer {
-  // Corresponds to .ratesTable
-  // *** UPDATED GRID AREA ***
-  grid-area: 19 / 24 / 28 / 40;
-  @include internal-flex-column;
-  padding: 0;
-  border-left: none; // Remove left border if adjacent to label area
-}
-
+// --- Lower-Mid Band: Line Charts (Rows 27-31) ---
 .toiChartContainer {
-  // Corresponds to .toiLingChart
-  // *** UPDATED GRID AREA ***
-  grid-area: 28 / 1 / 37 / 14;
+  // TOI Line Chart
+  grid-area: 1 / 25 / 9 / 37; // Row 1-9, Col 25-36
   @include internal-flex-column;
   padding: 0;
 }
 
 .ppgChartContainer {
-  // Corresponds to .ppgLineChart
-  // *** UPDATED GRID AREA ***
-  grid-area: 28 / 14 / 37 / 27;
+  // PPG Line Chart
+  grid-area: 9 / 25 / 17 / 37; // Row 27-31, Col 13-24
   @include internal-flex-column;
   padding: 0;
 }
 
 .gameScoreContainer {
-  // Corresponds to .gameScorelinechart
-  // *** UPDATED GRID AREA ***
-  grid-area: 28 / 27 / 37 / 40;
+  // GameScore Line Chart
+  grid-area: 17 / 25 / 25 / 37; // Row 27-31, Col 25-36
   @include internal-flex-column;
   padding: 0;
-  // border-right: none; // Optional: remove right border on the very last item
 }
 
+// --- Bottom Band: Timeframe + Stats Table (Rows 32-36) ---
+.timeframeComparisonWrapper {
+  // Timeframe Selector
+  grid-area: 23 / 1 / 25 / 7; // Row 32-36, Col 1-3
+  @include internal-flex-column;
+  padding: v.$space-sm;
+  align-items: center;
+  justify-content: center; // Or flex-start if content should align top
+  border-bottom: none;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  > div {
+    // Target the TimeframeComparison component inside
+    width: 100%;
+    height: auto; // Allow it to determine its own height
+  }
+}
+
+.combinedStatsTableContainer {
+  // Combined Stats Table
+  grid-area: 25 / 1 / 37 / 37; // Row 32-36, Col 4-36
+  @include internal-flex-column;
+  padding: 0; // Let internal table handle scrolling
+  overflow: hidden; // Crucial for table's own scrollbars
+}
+
+// --- REMOVED Containers ---
+/* Style definitions for .countsTableContainer, .ratesTableContainer, .tableSeparatorLabel are removed */
+
 /* =================== Player Header Internal Styles =================== */
-// (These remain unchanged)
 .playerHeadshot {
   width: 100%;
   height: 100%;
   position: relative;
   overflow: hidden;
-  background-color: transparent;
-  z-index: 0;
+  background-color: transparent; // Allow background to show through if needed
+  z-index: 0; // Base layer
 }
 .headshotContainer {
-  position: relative;
+  position: relative; // For absolute positioning of children
   width: 100%;
   height: 100%;
   display: flex;
-  z-index: 0;
+  z-index: 0; // Keep on base layer
 }
 .leftSide {
-  flex-basis: 55%;
-  position: relative;
+  flex-basis: 55%; // Adjust split as needed
+  position: relative; // For absolute positioning of logo/headshot
   display: flex;
   align-items: center;
   justify-content: center;
@@ -393,11 +347,12 @@
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 1;
+  z-index: 1; // Above leftSide background, below headshot
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.5;
+  transform: translateX(10%);
+  opacity: 0.5; // Make it semi-transparent
   img {
     display: block;
     max-width: 100%;
@@ -425,8 +380,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  transform: translateY(10%);
-  z-index: 2;
+  z-index: 2; // Above logo
   display: flex;
   align-items: center;
   justify-content: center;
@@ -444,17 +398,19 @@
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  filter: drop-shadow(3px 3px 0 var(--primary-color))
-    drop-shadow(-3px 3px 0 var(--primary-color))
-    drop-shadow(3px -3px 0 var(--primary-color))
-    drop-shadow(-3px -3px 0 var(--primary-color))
-    drop-shadow(3px 3px 0 var(--secondary-color))
-    drop-shadow(-3px -3px 0 var(--secondary-color))
-    drop-shadow(3px -3px 0 var(--secondary-color))
-    drop-shadow(-3px 3px 0 var(--secondary-color)) drop-shadow(3px 3px 0 white)
-    drop-shadow(-3px -3px 0 white) drop-shadow(3px -3px 0 white)
-    drop-shadow(-3px 3px 0 white);
+  transform: translateX(-20%);
+  object-fit: cover; // Cover the area, potentially cropping
+  // filter: drop-shadow(3px 3px 0 var(--primary-color))
+  //   drop-shadow(-3px 3px 0 var(--primary-color))
+  //   drop-shadow(3px -3px 0 var(--primary-color))
+  //   drop-shadow(-3px -3px 0 var(--primary-color))
+  //   drop-shadow(3px 3px 0 var(--secondary-color))
+  //   drop-shadow(-3px -3px 0 var(--secondary-color))
+  //   drop-shadow(3px -3px 0 var(--secondary-color))
+  //   drop-shadow(-3px 3px 0 var(--secondary-color)) drop-shadow(3px 3px 0 white)
+  //   drop-shadow(-3px -3px 0 white) drop-shadow(3px -3px 0 white)
+  //   drop-shadow(-3px 3px 0 white);
+  filter: drop-shadow(0px 4px 8px white);
 }
 img[alt*="Placeholder headshot"].headshotImage {
   object-fit: contain;
@@ -476,9 +432,9 @@ img[alt*="Placeholder headshot"].headshotImage {
   display: block;
   pointer-events: none;
 }
+/* --- End Player Header Internal Styles --- */
 
-/* =================== TRANSPOSED Table Styling (COUNTS / RATES) =================== */
-// (These remain unchanged as they apply *within* the containers)
+/* =================== TRANSPOSED Table Styling (Now applies to combined table) =================== */
 .transposedTableContainer {
   height: 100%;
   width: 100%;
@@ -498,14 +454,16 @@ img[alt*="Placeholder headshot"].headshotImage {
   scrollbar-width: thin;
   scrollbar-color: v.$primary-color v.$background-medium;
 }
+
 .statsTableActual.transposedTable {
   border-collapse: collapse;
   width: 100%;
-  table-layout: auto;
+  height: 100%;
+  table-layout: fixed;
   th,
   td {
     padding: v.$space-xs * 0.7 v.$space-sm * 0.7;
-    font-size: v.$font-size-small * 0.9;
+    font-size: v.$font-size-small;
     font-weight: 400;
     font-family: "roboto condensed", sans-serif;
     letter-spacing: 0px;
@@ -528,13 +486,14 @@ img[alt*="Placeholder headshot"].headshotImage {
       &:first-child {
         font-weight: bold;
         text-align: left;
+        width: 5%;
         padding-left: v.$space-sm;
         color: v.$text-color-primary;
         position: sticky;
         left: 0;
         z-index: 4;
         background-color: v.$background-dark;
-        border-right: 1px solid v.$border-separator;
+        border-right: 1px solid v.$primary-color;
       }
     }
     .headerContent {
@@ -549,10 +508,11 @@ img[alt*="Placeholder headshot"].headshotImage {
     button.expandButton {
       background: #444;
       color: #eee;
-      border: 1px solid #666;
+      border: 1px solid v.$primary-color;
       border-radius: 3px;
       cursor: pointer;
-      font-size: 10px;
+      font-size: 12px;
+      font-weight: 900;
       line-height: 1;
       padding: 1px 4px;
       margin-top: 2px;
@@ -579,9 +539,10 @@ img[alt*="Placeholder headshot"].headshotImage {
     }
     td.timeframeCell {
       text-align: left;
-      padding-left: v.$space-sm;
-      font-weight: 600;
-      color: v.$text-color-secondary;
+      padding-left: v.$space-lg;
+      font-weight: 900;
+      letter-spacing: 1.25px;
+      color: v.$text-color-primary;
       background-color: inherit;
       border-right: 1px solid v.$border-separator;
       position: sticky;
@@ -591,16 +552,16 @@ img[alt*="Placeholder headshot"].headshotImage {
     tr:last-child {
       td {
         font-weight: bold;
+        border-top: v.$primary-color solid 2px;
       }
       td.timeframeCell {
-        color: v.$text-color-primary;
+        color: v.$primary-color;
       }
     }
   }
   th.columnHover,
   td.columnHover {
     background-color: color.scale(v.$primary-color, $alpha: -70%) !important;
-    transition: background-color 0.1s ease-in-out;
   }
 }
 .chartRowExpanded {
@@ -611,9 +572,9 @@ img[alt*="Placeholder headshot"].headshotImage {
   width: 100%;
   box-sizing: border-box;
 }
+/* --- End Transposed Table Styling --- */
 
 /* =================== GameLogChart Internal Styles =================== */
-// (These remain unchanged)
 .gameLogChartContainer {
   h4 {
     margin-top: 0;
@@ -672,13 +633,10 @@ img[alt*="Placeholder headshot"].headshotImage {
     margin: 4px 0;
   }
 }
+/* --- End GameLogChart Internal Styles --- */
 
 /* =================== Per Game Stats Table Styling =================== */
-// (These remain unchanged, assuming non-transposed layout for this specific table)
 .perGameStatsContainer {
-  overflow: auto;
-  padding: 0;
-  height: 100%;
   &::-webkit-scrollbar {
     height: 4px;
     width: 4px;
@@ -795,9 +753,9 @@ img[alt*="Placeholder headshot"].headshotImage {
     color: #aaa;
   }
 }
+/* --- End Per Game Stats Table Styling --- */
 
-/* =================== Chart Container Styling (Bottom Row Charts) =================== */
-// (These remain unchanged)
+/* =================== Chart Container Styling (Generic) =================== */
 .chartContainer {
   height: 100%;
   display: flex;
@@ -839,7 +797,8 @@ img[alt*="Placeholder headshot"].headshotImage {
       border-color: #777;
     }
     &:disabled {
-      /* Styles */
+      opacity: 0.6;
+      cursor: not-allowed;
     }
   }
 }
@@ -863,9 +822,9 @@ img[alt*="Placeholder headshot"].headshotImage {
   flex-grow: 1;
   background-color: inherit;
 }
+/* --- End Generic Chart Styling --- */
 
 /* =================== Rate Stat Percentiles Component Styles =================== */
-// (These remain unchanged)
 .rateStatPercentilesComponent {
   display: flex;
   flex-direction: column;
@@ -877,7 +836,7 @@ img[alt*="Placeholder headshot"].headshotImage {
 }
 .mainContentWrapper {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   flex-grow: 1;
   width: 100%;
   overflow: hidden;
@@ -887,7 +846,7 @@ img[alt*="Placeholder headshot"].headshotImage {
   flex-direction: column;
   gap: v.$space-xs;
   flex-shrink: 0;
-  flex-basis: 150px;
+  flex-basis: 50px;
   padding: v.$space-xs;
   box-sizing: border-box;
   border-right: 1px solid v.$border-color-secondary;
@@ -910,22 +869,20 @@ img[alt*="Placeholder headshot"].headshotImage {
 .filterControlsWrapper {
   display: flex;
   flex-direction: row;
-  gap: v.$space-lg;
-  flex-grow: 1;
   width: 100%;
   align-items: flex-start;
   overflow: hidden;
-  min-height: 150px;
 }
 .strengthSelector {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-grow: 1;
+  width: 70%;
   align-items: center;
   justify-content: space-between;
-  gap: v.$space-sm;
-  flex: 2;
+  gap: v.$space-xs;
   min-width: 0;
-  padding: v.$space-xs 0 v.$space-md v.$space-lg;
+  padding: v.$space-sm;
   height: 100%;
   button {
     @include v.button-style;
@@ -950,22 +907,19 @@ img[alt*="Placeholder headshot"].headshotImage {
 }
 .gpSliderContainer {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  gap: v.$space-xs;
   color: v.$text-color-secondary;
   font-size: v.$font-size-small;
-  flex: 0 0 50px;
   height: 100%;
-  padding-bottom: v.$space-md;
-  padding-right: v.$space-sm;
+  width: 100%;
+  padding: v.$space-sm;
   label {
     white-space: nowrap;
     font-size: v.$font-size-small * 0.8;
     font-weight: bold;
     margin-bottom: v.$space-xs;
     text-align: center;
-    width: 100%;
     .minGpValue {
       color: v.$primary-color;
       padding-left: v.$space-xs;
@@ -976,8 +930,8 @@ img[alt*="Placeholder headshot"].headshotImage {
     height: auto;
   }
   .gpSlider {
-    appearance: slider-vertical;
-    -webkit-appearance: slider-vertical;
+    appearance: slider-horizontal;
+    -webkit-appearance: slider-horizontal;
     writing-mode: bt-lr;
     width: 8px;
     flex-grow: 1;
@@ -1022,11 +976,11 @@ img[alt*="Placeholder headshot"].headshotImage {
   .gpSliderMinLabel {
     font-size: v.$font-size-small;
     color: v.$primary-color;
-    width: 100%;
+    width: 20%;
     text-align: center;
   }
   .gpSliderMaxLabel {
-    order: 0;
+    order: -1;
   }
   .gpSliderMinLabel {
     order: 1;
@@ -1052,7 +1006,7 @@ img[alt*="Placeholder headshot"].headshotImage {
   width: 100%;
 }
 .chartAndRanksArea {
-  padding: v.$space-md;
+  padding: v.$space-sm;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
@@ -1077,3 +1031,4 @@ img[alt*="Placeholder headshot"].headshotImage {
     position: relative;
   }
 }
+/* --- End Rate Stat Percentiles Styles --- */

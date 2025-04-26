@@ -83,6 +83,7 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({ playerId }) => {
         { key: "assists", name: "A" },
         { key: "points", name: "PTS" },
         { key: "shots", name: "SOG" },
+        { key: "shooting_percentage", name: "S%" },
         { key: "pp_points", name: "PPP" },
         { key: "hits", name: "HIT" },
         { key: "blocked_shots", name: "BLK" },

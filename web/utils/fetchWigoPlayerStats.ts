@@ -24,6 +24,7 @@ export interface SkaterTotalsData {
   assists: number | null;
   points: number | null;
   shots: number | null;
+  shooting_percentage: number | null;
   pp_points: number | null;
   hits: number | null;
   blocked_shots: number | null;
@@ -606,6 +607,7 @@ export const fetchPlayerPerGameTotals = async (
         assists,
         points,
         shots,
+        shooting_percentage,
         pp_points,
         hits,
         blocked_shots,
