@@ -865,6 +865,7 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
   offense: Record<string, any>[];
   defense: Record<string, any>[];
 }> {
+  console.log("seasonId type:", typeof seasonId, seasonId);
   console.log(
     "[fetchPercentilePlayerData] Starting fetch for season:",
     seasonId
@@ -873,133 +874,126 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
   // Prepare select strings for both offense and defense tables
   const offenseSelect = `
     player_id,
-    player_name,
-    team_abbr,
-    position,
-    games_played,
-    toi,
-    goals,
-    assists,
-    points,
-    primary_assists,
-    secondary_assists,
-    shots,
-    shot_attempts,
-    individual_xg,
-    individual_cf,
-    individual_ff,
-    individual_sf,
-    individual_scf,
-    individual_hdcf,
-    individual_hdsf,
-    individual_hdgf,
-    individual_mdcf,
-    individual_mdsf,
-    individual_mdgf,
-    individual_ldcf,
-    individual_ldsf,
-    individual_ldgf,
-    individual_rush_attempts,
-    individual_rebounds_created,
-    individual_pim,
-    individual_takeaways,
-    individual_giveaways,
-    individual_hits,
-    individual_blocks,
-    individual_faceoffs_won,
-    individual_faceoffs_lost,
-    individual_faceoffs_win_pct,
-    individual_penalties_drawn,
-    individual_penalties_taken,
-    individual_penalties_net,
-    individual_penalties_net_per_60,
-    individual_penalties_net_per_game,
-    individual_penalties_net_per_60_rank,
-    individual_penalties_net_per_game_rank,
-    individual_penalties_net_per_60_percentile,
-    individual_penalties_net_per_game_percentile
+    season,
+    gp,
+    toi_seconds,
+    goals_per_60,
+    total_assists_per_60,
+    first_assists_per_60,
+    second_assists_per_60,
+    total_points_per_60,
+    shots_per_60,
+    ixg_per_60,
+    icf_per_60,
+    iff_per_60,
+    iscfs_per_60,
+    i_hdcf_per_60,
+    rush_attempts_per_60,
+    rebounds_created_per_60,
+    cf_per_60,
+    ff_per_60,
+    sf_per_60,
+    gf_per_60,
+    xgf_per_60,
+    scf_per_60,
+    oi_hdcf_per_60,
+    hdgf_per_60,
+    mdgf_per_60,
+    ldgf_per_60,
+    cf_pct,
+    ff_pct,
+    sf_pct,
+    gf_pct,
+    xgf_pct,
+    scf_pct,
+    hdcf_pct,
+    hdgf_pct,
+    mdgf_pct,
+    ldgf_pct,
+    ipp,
+    sh_percentage,
+    on_ice_sh_pct,
+    penalties_drawn_per_60
   `;
 
   const defenseSelect = `
     player_id,
-    player_name,
-    team_abbr,
-    position,
-    games_played,
-    toi,
-    goals_against,
-    shots_against,
-    shot_attempts_against,
-    xg_against,
-    cf_against,
-    ff_against,
-    sf_against,
-    scf_against,
-    hdcf_against,
-    hdsf_against,
-    hdgf_against,
-    mdcf_against,
-    mdsf_against,
-    mdgf_against,
-    ldcf_against,
-    ldsf_against,
-    ldgf_against,
-    rush_attempts_against,
-    rebounds_created_against,
-    pim_against,
-    takeaways_against,
-    giveaways_against,
-    hits_against,
-    blocks_against,
-    faceoffs_won_against,
-    faceoffs_lost_against,
-    faceoffs_win_pct_against,
-    penalties_drawn_against,
-    penalties_taken_against,
-    penalties_net_against,
-    penalties_net_per_60_against,
-    penalties_net_per_game_against,
-    penalties_net_per_60_rank_against,
-    penalties_net_per_game_rank_against,
-    penalties_net_per_60_percentile_against,
-    penalties_net_per_game_percentile_against
+    season,
+    gp,
+    toi_seconds,
+    ca_per_60,
+    fa_per_60,
+    sa_per_60,
+    ga_per_60,
+    xga_per_60,
+    sca_per_60,
+    hdca_per_60,
+    hdga_per_60,
+    mdga_per_60,
+    ldga_per_60,
+    shots_blocked_per_60,
+    takeaways_per_60,
+    hits_per_60,
+    pim_per_60,
+    total_penalties_per_60,
+    minor_penalties_per_60,
+    major_penalties_per_60,
+    misconduct_penalties_per_60,
+    giveaways_per_60,
+    on_ice_sv_pct
   `;
 
   try {
     // Fetch data for each strength situation with season filter
-    const [esOffense, ppOffense, pkOffense, esDefense, ppDefense, pkDefense] =
-      await Promise.all([
-        fetchPaginatedData<Record<string, any>>(
-          "nst_percentile_es_offense" as keyof Database["public"]["Tables"],
-          offenseSelect,
-          { column: "season_id", value: seasonId }
-        ),
-        fetchPaginatedData<Record<string, any>>(
-          "nst_percentile_pp_offense" as keyof Database["public"]["Tables"],
-          offenseSelect,
-          { column: "season_id", value: seasonId }
-        ),
-        fetchPaginatedData<Record<string, any>>(
-          "nst_percentile_pk_offense" as keyof Database["public"]["Tables"],
-          offenseSelect,
-          { column: "season_id", value: seasonId }
-        ),
-        fetchPaginatedData<Record<string, any>>(
-          "nst_percentile_es_defense" as keyof Database["public"]["Tables"],
-          defenseSelect,
-          { column: "season_id", value: seasonId }
-        ),
-        fetchPaginatedData<Record<string, any>>(
-          "nst_percentile_pp_defense" as keyof Database["public"]["Tables"],
-          defenseSelect,
-          { column: "season_id", value: seasonId }
-        ),
-        fetchPaginatedData<Record<string, any>>(
-          "nst_percentile_pk_defense" as keyof Database["public"]["Tables"],
-          defenseSelect,
-          { column: "season_id", value: seasonId }
-        )
-      ]);
+    const [
+      esOffenseRaw,
+      ppOffenseRaw,
+      pkOffenseRaw,
+      esDefenseRaw,
+      ppDefenseRaw,
+      pkDefenseRaw
+    ] = await Promise.all([
+      fetchPaginatedData<Record<string, any>>(
+        "nst_percentile_es_offense" as keyof Database["public"]["Tables"],
+        offenseSelect,
+        { column: "season", value: seasonId }
+      ),
+      fetchPaginatedData<Record<string, any>>(
+        "nst_percentile_pp_offense" as keyof Database["public"]["Tables"],
+        offenseSelect,
+        { column: "season", value: seasonId }
+      ),
+      fetchPaginatedData<Record<string, any>>(
+        "nst_percentile_pk_offense" as keyof Database["public"]["Tables"],
+        offenseSelect,
+        { column: "season", value: seasonId }
+      ),
+      fetchPaginatedData<Record<string, any>>(
+        "nst_percentile_es_defense" as keyof Database["public"]["Tables"],
+        defenseSelect,
+        { column: "season", value: seasonId }
+      ),
+      fetchPaginatedData<Record<string, any>>(
+        "nst_percentile_pp_defense" as keyof Database["public"]["Tables"],
+        defenseSelect,
+        { column: "season", value: seasonId }
+      ),
+      fetchPaginatedData<Record<string, any>>(
+        "nst_percentile_pk_defense" as keyof Database["public"]["Tables"],
+        defenseSelect,
+        { column: "season", value: seasonId }
+      )
+    ]);
+
+    // Add strength property to each row
+    const addStrength = (arr: Record<string, any>[], strength: string) =>
+      arr.map((row: Record<string, any>) => ({ ...row, strength }));
+    const esOffense = addStrength(esOffenseRaw, "es");
+    const ppOffense = addStrength(ppOffenseRaw, "pp");
+    const pkOffense = addStrength(pkOffenseRaw, "pk");
+    const esDefense = addStrength(esDefenseRaw, "es");
+    const ppDefense = addStrength(ppDefenseRaw, "pp");
+    const pkDefense = addStrength(pkDefenseRaw, "pk");
 
     // Merge the data for offense and defense
     const mergedOffense = mergePlayerData([esOffense, ppOffense, pkOffense]);

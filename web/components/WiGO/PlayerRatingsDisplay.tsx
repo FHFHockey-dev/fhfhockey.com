@@ -10,6 +10,7 @@ import {
   HIGHER_IS_BETTER_MAP
 } from "./ratingsConstants"; // Adjust import path
 import styles from "./PlayerRatingsDisplay.module.scss";
+import useCurrentSeason from "hooks/useCurrentSeason";
 
 interface PlayerRatingsProps {
   playerId: number | null | undefined;
@@ -34,78 +35,55 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
   const [ratings, setRatings] = useState<CalculatedRatings | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const season = useCurrentSeason();
 
   useEffect(() => {
-    if (!playerId) {
+    if (!playerId || !season) {
       setRatings(null);
       setIsLoading(false);
       setError(null);
-      console.log("[Ratings] No Player ID, clearing state.");
+      if (!playerId) console.log("[Ratings] No Player ID, clearing state.");
+      if (!season) console.log("[Ratings] No season loaded yet.");
       return;
     }
 
     const calculateRatings = async () => {
-      // Note: minGp is available here from props, but we won't use it for filtering below
-      console.log(
-        `[Ratings] Starting calculation for Player ID: ${playerId} (minGp prop: ${minGp} - NOT used for filtering percentile data)`
-      );
       setIsLoading(true);
       setError(null);
       setRatings(null);
-
       try {
-        // 1. Fetch Data (using fetchPercentilePlayerData)
-        console.log("[Ratings] Fetching data from PERCENTILE tables...");
-        const results = await Promise.allSettled([
-          fetchPercentilePlayerData("as"),
-          fetchPercentilePlayerData("es"),
-          fetchPercentilePlayerData("pp"),
-          fetchPercentilePlayerData("pk")
-        ]);
+        // Fetch all percentile data for the current season
+        const { offense, defense } = await fetchPercentilePlayerData(
+          season.seasonId
+        );
 
-        const getDataFromResult = (
-          result: PromiseSettledResult<PlayerRawStats[]>,
-          strength: string
-        ): PlayerRawStats[] => {
-          if (result.status === "fulfilled") {
-            console.log(
-              `[Ratings] Fetched ${result.value.length} players for ${strength}.`
-            );
-            // Log first few player data for inspection (optional, can be large)
-            // if (result.value.length > 0) {
-            //     console.log(`[Ratings] Sample ${strength} data[0]:`, JSON.stringify(result.value[0], null, 2));
-            // }
-            return result.value;
-          } else {
-            console.error(
-              `[Ratings] Failed to fetch data for strength ${strength}:`,
-              result.reason
-            );
-            setError((prev) =>
-              `${prev || ""} Failed to fetch ${strength} data.`.trim()
-            ); // Append error
-            return [];
-          }
-        };
+        // Helper to filter by player and strength
+        const filterByStrength = (arr: any[], strength: PercentileStrength) =>
+          arr.find(
+            (row) => row.player_id === playerId && row.strength === strength
+          );
 
-        const dataAS = getDataFromResult(results[0], "AS");
-        const dataES = getDataFromResult(results[1], "ES");
-        const dataPP = getDataFromResult(results[2], "PP");
-        const dataPK = getDataFromResult(results[3], "PK");
-
-        // Check if essential data was fetched
-        if (
-          dataAS.length === 0 &&
-          dataES.length === 0 &&
-          dataPP.length === 0 &&
-          dataPK.length === 0
-        ) {
-          throw new Error("Failed to fetch data for all strengths.");
-        }
+        // Extract data for each strength
+        const filteredAS = offense.filter(
+          (row) => row.strength === "as" && row.player_id === playerId
+        );
+        const filteredES = offense.filter(
+          (row) => row.strength === "es" && row.player_id === playerId
+        );
+        const filteredPP = offense.filter(
+          (row) => row.strength === "pp" && row.player_id === playerId
+        );
+        const filteredPK = defense.filter(
+          (row) => row.strength === "pk" && row.player_id === playerId
+        );
 
         // Get Player TOI using toi_seconds
-        const targetPlayerDataPP = dataPP.find((p) => p.player_id === playerId);
-        const targetPlayerDataPK = dataPK.find((p) => p.player_id === playerId);
+        const targetPlayerDataPP = filteredPP.find(
+          (p) => p.player_id === playerId
+        );
+        const targetPlayerDataPK = filteredPK.find(
+          (p) => p.player_id === playerId
+        );
         const player_pp_toi_seconds = targetPlayerDataPP?.toi_seconds ?? 0; // USE toi_seconds
         const player_pk_toi_seconds = targetPlayerDataPK?.toi_seconds ?? 0; // USE toi_seconds
         console.log(
@@ -115,10 +93,10 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
         // Filter data - **** REMOVE THIS IF GP IS NOT SEASON TOTAL ****
         const filterByGp = (data: PlayerRawStats[]) =>
           data.filter((p) => p.gp != null && p.gp >= minGp);
-        const filteredAS = filterByGp(dataAS);
-        const filteredES = filterByGp(dataES);
-        const filteredPP = filterByGp(dataPP);
-        const filteredPK = filterByGp(dataPK);
+        const filteredASFiltered = filterByGp(filteredAS as PlayerRawStats[]);
+        const filteredESFiltered = filterByGp(filteredES as PlayerRawStats[]);
+        const filteredPPFiltered = filterByGp(filteredPP as PlayerRawStats[]);
+        const filteredPKFiltered = filterByGp(filteredPK as PlayerRawStats[]);
 
         // 3. Calculate Percentiles Helper (Now receives unfiltered data)
         const getAvgPercentile = (
@@ -208,37 +186,37 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
         console.log("[Ratings] Calculating individual strength ratings...");
         const offAS = getAvgPercentile(
           OFFENSE_RATING_STATS.as,
-          filteredAS,
+          filteredASFiltered as PlayerRawStats[],
           playerId,
           "as"
         );
         const defAS = getAvgPercentile(
           DEFENSE_RATING_STATS.as,
-          filteredAS,
+          filteredASFiltered as PlayerRawStats[],
           playerId,
           "as"
         );
         const offES = getAvgPercentile(
           OFFENSE_RATING_STATS.es,
-          filteredES,
+          filteredESFiltered as PlayerRawStats[],
           playerId,
           "es"
         );
         const defES = getAvgPercentile(
           DEFENSE_RATING_STATS.es,
-          filteredES,
+          filteredESFiltered as PlayerRawStats[],
           playerId,
           "es"
         );
         const offPP = getAvgPercentile(
           OFFENSE_RATING_STATS.pp,
-          filteredPP,
+          filteredPPFiltered as PlayerRawStats[],
           playerId,
           "pp"
         );
         const defPK = getAvgPercentile(
           DEFENSE_RATING_STATS.pk,
-          filteredPK,
+          filteredPKFiltered as PlayerRawStats[],
           playerId,
           "pk"
         );
@@ -322,7 +300,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
     };
 
     calculateRatings();
-  }, [playerId, minGp]); // Dependencies
+  }, [playerId, minGp, season]); // Dependencies
 
   const formatRating = (rating: number | null): string => {
     return rating !== null && !isNaN(rating) ? rating.toFixed(0) : "-";
