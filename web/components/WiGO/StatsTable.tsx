@@ -1,4 +1,5 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/StatsTable.tsx
+<<<<<<< HEAD
 import React, {
   useState,
   useEffect,
@@ -13,6 +14,9 @@ import React, {
 >>>>>>> 74d6d08 (some edits to wigochart)
 =======
 >>>>>>> 5d11cb6 (some edits to wigochart)
+=======
+import React, { useState, useEffect, useCallback, useRef } from "react";
+>>>>>>> e3cc089 (some edits to wigochart)
 import { TableAggregateData } from "./types";
 import styles from "styles/wigoCharts.module.scss";
 import GameLogChart from "./StatsTableRowChart";
@@ -109,6 +113,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
   );
 
   // Extract stat labels (columns) from the combined data
+<<<<<<< HEAD
   const statLabels = useMemo(
     () => data.filter((d) => d.label !== "GP").map((d) => d.label),
     [data]
@@ -143,6 +148,10 @@ const StatsTable: React.FC<StatsTableProps> = ({
     }
   }, [selectedColumnIndex, columnOrder]);
 >>>>>>> 5d11cb6 (some edits to wigochart)
+=======
+  const statLabels = data.filter((d) => d.label !== "GP").map((d) => d.label);
+  const gpRowData = data.find((d) => d.label === "GP");
+>>>>>>> e3cc089 (some edits to wigochart)
 
   // Initialize column order
   useEffect(() => {
