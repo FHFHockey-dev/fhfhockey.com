@@ -37,37 +37,31 @@
 
 .wigoDashboardContainer {
   @include v.component-wrapper;
-
   width: 95%;
   max-width: 2200px;
   min-width: 1300px;
-  height: 100%;
-  max-height: 90%; // Constrains the height
+  height: 87vh;
   margin: 0 auto v.$space-xxl auto;
   display: flex;
-  border: 2px solid v.$background-light;
-  overflow: hidden;
+  // border-collapse: collapse; // Likely unnecessary here
+  border: 2px solid v.$border-color;
 }
 
 .wigoDashboardContent {
-  flex-grow: 0;
+  flex-grow: 1;
   background-color: v.$background-dark;
   border-radius: v.$border-radius;
-  overflow: hidden; // Keeps content clipped to the grid container bounds
-  padding: v.$space-md;
-
-  // variable for the desired cell size
-  --grid-cell-base-size: 2rem; // Adjust this value as needed (e.g., 20px, 1.5rem, etc.)
+  overflow: hidden; // Prevent content spilling out
 
   // --- Grid Definition ---
   display: grid;
-  // Use the variable for equal column and row track sizes
-  grid-template-columns: repeat(36, var(--grid-cell-base-size));
-  grid-template-rows: repeat(
-    30,
-    var(--grid-cell-base-size)
-  ); // Corrected to 19 rows based on code
-  gap: v.$space-sm; // Gap between grid items
+  grid-template-columns: repeat(
+    36,
+    1fr
+  ); // 36 columns (spans grid lines 1 to 37)
+  grid-template-rows: repeat(36, 1fr); // 36 rows (spans grid lines 1 to 37)
+  padding: v.$space-xs; // Padding around the grid
+  gap: v.$space-xs; // Gap between grid items
 }
 
 /* =================== Base Styles for Grid Items =================== */
@@ -81,7 +75,7 @@
   overflow: hidden; // Important: prevent internal content from breaking grid layout
   background-color: v.$background-dark; // Consistent background
   border-radius: v.$border-radius-sm; // Slight rounding for containers
-  border: 1px solid v.$border-color-secondary; // Subtle border for definition
+  border: 1px solid v.$border-color; // Subtle border for definition
   box-sizing: border-box; // Include border/padding in size
 }
 
@@ -89,7 +83,7 @@
 
 // --- Top Band (Rows 1-9) ---
 .nameSearchBarContainer {
-  grid-area: 1 / 1 / 2 / 9; // Row 1-2, Col 1-6
+  grid-area: 1 / 1 / 3 / 7; // Row 1-2, Col 1-6
   background-color: v.$background-dark;
   border-bottom: 3px solid #404040;
   border-top-left-radius: v.$border-radius-sm;
@@ -106,7 +100,7 @@
 }
 
 .playerHeaderContainer {
-  grid-area: 2 / 1 / 5 / 9; // Row 3-9, Col 1-6
+  grid-area: 3 / 1 / 13 / 7; // Row 3-9, Col 1-6
   position: relative;
   z-index: 1;
   padding: 0;
@@ -117,27 +111,29 @@
 }
 
 .perGameStatsContainer {
-  grid-area: 1 / 9 / 5 / 15; // Row 1-9, Col 7-11
+  grid-area: 1 / 7 / 13 / 12; // Row 1-9, Col 7-11
   @include internal-flex-column;
   padding: 0 !important; // Overrides internal padding if table adds its own
   overflow: hidden; // Let internal table scroll manage itself
 }
 
 .opponentLogContainer {
-  grid-area: 5 / 1 / 9 / 9; // Row 27-31, Col 1-12
+  grid-area: 13 / 7 / 25 / 12; // Row 1-9, Col 12-16
   @include internal-flex-column;
   padding: 0;
 }
 
 .ratingsContainer {
-  grid-area: 5 / 15 / 9 / 25; // Row 1-9, Col 12-16
+  grid-area: 13 / 1 / 23 / 7; // Row 27-31, Col 1-12
+  @include internal-flex-column;
   padding: 0;
   overflow: hidden;
 }
 
 .consistencyRatingContainer {
-  grid-area: 1 / 15 / 5 / 25; // Row 10-26, Col 1-6
+  grid-area: 1 / 12 / 13 / 19; // Row 10-26, Col 1-6
 
+  @include internal-flex-column;
   padding: 0;
   border-top-right-radius: v.$border-radius-sm;
   // --- Internal styles for Consistency Chart ---
@@ -257,7 +253,7 @@
 // --- Middle Band (Rows 10-26) ---
 .percentileChartContainer {
   // Category Coverage
-  grid-area: 5 / 9 / 9 / 15; // Row 1-9, Col 17-24
+  grid-area: 1 / 19 / 13 / 25; // Row 1-9, Col 17-24
 
   @include internal-flex-column;
   padding: 0;
@@ -265,7 +261,7 @@
 
 .rateStatBarPercentilesContainer {
   // Rate Percentiles (Expanded Width)
-  grid-area: 9 / 1 / 14 / 25; // Row 10-26, Col 7-36
+  grid-area: 13 / 12 / 25 / 25; // Row 10-26, Col 7-36
   @include internal-flex-column;
   padding: 0;
 }
@@ -273,21 +269,21 @@
 // --- Lower-Mid Band: Line Charts (Rows 27-31) ---
 .toiChartContainer {
   // TOI Line Chart
-  grid-area: 1 / 25 / 5 / 37; // Row 1-9, Col 25-36
+  grid-area: 1 / 25 / 9 / 37; // Row 1-9, Col 25-36
   @include internal-flex-column;
   padding: 0;
 }
 
 .ppgChartContainer {
   // PPG Line Chart
-  grid-area: 5 / 25 / 9 / 37; // Row 27-31, Col 13-24
+  grid-area: 9 / 25 / 17 / 37; // Row 27-31, Col 13-24
   @include internal-flex-column;
   padding: 0;
 }
 
 .gameScoreContainer {
   // GameScore Line Chart
-  grid-area: 9 / 25 / 14 / 37; // Row 27-31, Col 25-36
+  grid-area: 17 / 25 / 25 / 37; // Row 27-31, Col 25-36
   @include internal-flex-column;
   padding: 0;
 }
@@ -295,16 +291,14 @@
 // --- Bottom Band: Timeframe + Stats Table (Rows 32-36) ---
 .timeframeComparisonWrapper {
   // Timeframe Selector
-  grid-area: 14 / 1 / 15 / 37; // Row 32-36, Col 1-3
+  grid-area: 23 / 1 / 25 / 7; // Row 32-36, Col 1-3
   @include internal-flex-column;
-  border: 2px solid v.$border-color-secondary;
   padding: v.$space-sm;
   align-items: center;
   justify-content: center; // Or flex-start if content should align top
   border-bottom: none;
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
-  z-index: 10;
   > div {
     // Target the TimeframeComparison component inside
     width: 100%;
@@ -314,9 +308,8 @@
 
 .combinedStatsTableContainer {
   // Combined Stats Table
-  grid-area: 15 / 1 / 20 / 37; // Row 32-36, Col 4-36
+  grid-area: 25 / 1 / 37 / 37; // Row 32-36, Col 4-36
   @include internal-flex-column;
-  border-top-left-radius: 0px;
   padding: 0; // Let internal table handle scrolling
   overflow: hidden; // Crucial for table's own scrollbars
 }
