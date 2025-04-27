@@ -942,6 +942,9 @@ export default async function handler(
         if (numGames > 0) {
           const totals = gamesInInterval.reduce(
             (acc, game) => {
+              // nst_toi_all is already per game in minutes
+              acc.nst_toi_all += game.nst_toi_all ?? 0;
+              acc.gp += 1;
               acc.wgo_g += game.wgo_g;
               acc.wgo_a += game.wgo_a;
               acc.wgo_pts += game.wgo_pts;
@@ -953,22 +956,21 @@ export default async function handler(
               acc.wgo_hit += game.wgo_hit;
               acc.wgo_blk += game.wgo_blk;
               acc.wgo_pim += game.wgo_pim;
+              acc.wgo_pp_toi_pct_values.push(game.wgo_pp_toi_pct);
               acc.wgo_pp_toi += game.wgo_pp_toi ?? 0;
-              acc.nst_toi_all += game.nst_toi_all ?? 0;
               acc.nst_ixg += game.nst_ixg ?? 0;
-              acc.nst_icf += game.nst_icf ?? 0;
-              acc.nst_ihdcf += game.nst_ihdcf ?? 0;
-              acc.nst_iscfs += game.nst_iscfs ?? 0;
               acc.nst_oi_gf += game.nst_oi_gf ?? 0;
               acc.nst_oi_sf += game.nst_oi_sf ?? 0;
               acc.nst_oi_off_zs += game.nst_oi_off_zs ?? 0;
               acc.nst_oi_def_zs += game.nst_oi_def_zs ?? 0;
-              if (game.wgo_pp_toi_pct != null) {
-                acc.pp_toi_pct_values.push(game.wgo_pp_toi_pct);
-              }
+              acc.nst_icf += game.nst_icf ?? 0;
+              acc.nst_ihdcf += game.nst_ihdcf ?? 0;
+              acc.nst_iscfs += game.nst_iscfs ?? 0;
               return acc;
             },
             {
+              nst_toi_all: 0,
+              gp: 0,
               wgo_g: 0,
               wgo_a: 0,
               wgo_pts: 0,
@@ -980,30 +982,30 @@ export default async function handler(
               wgo_hit: 0,
               wgo_blk: 0,
               wgo_pim: 0,
+              wgo_pp_toi_pct_values: [] as (number | null)[],
               wgo_pp_toi: 0,
-              pp_toi_pct_values: [] as number[],
-              nst_toi_all: 0,
               nst_ixg: 0,
-              nst_icf: 0,
-              nst_ihdcf: 0,
-              nst_iscfs: 0,
               nst_oi_gf: 0,
               nst_oi_sf: 0,
               nst_oi_off_zs: 0,
-              nst_oi_def_zs: 0
+              nst_oi_def_zs: 0,
+              nst_icf: 0,
+              nst_ihdcf: 0,
+              nst_iscfs: 0
             }
           );
 
-          const totalPpToiMinutes = safeDivide(totals.wgo_pp_toi, 60);
-
-          // Populate recentStats object using dynamic assignment with 'any' cast
+          // For recent stats, nst_toi_all is in seconds, so we need to convert to minutes
           (recentStats as any)[`${prefix}atoi`] = safeDivide(
-            totals.nst_toi_all,
-            numGames
+            totals.nst_toi_all / 60, // Convert seconds to minutes
+            totals.gp
           );
-          (recentStats as any)[`${prefix}pptoi`] = totalPpToiMinutes;
+          (recentStats as any)[`${prefix}pptoi`] = safeDivide(
+            totals.nst_toi_all,
+            totals.gp
+          );
           (recentStats as any)[`${prefix}pp_pct`] = safeAverage(
-            totals.pp_toi_pct_values
+            totals.wgo_pp_toi_pct_values
           );
           (recentStats as any)[`${prefix}g`] = totals.wgo_g;
           (recentStats as any)[`${prefix}a`] = totals.wgo_a;

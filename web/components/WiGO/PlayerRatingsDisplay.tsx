@@ -345,75 +345,82 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
         {/* Column 1: Offense */}
         <div className={styles.ratingSection}>
           <h3 className={styles.ratingTitle}>Offense</h3>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>All</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.offense.as)}
-            </span>
-          </div>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>Even</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.offense.es)}
-            </span>
-          </div>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>PP</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.offense.pp)}
-            </span>
+          <div className={styles.ratingsBoxes}>
+            <div className={styles.ratingBox}>
+              <span className={styles.ratingLabel}>All</span>
+              <span className={styles.ratingValue}>
+                {formatRating(ratings.offense.as)}
+              </span>
+            </div>
+            <div className={styles.ratingBox}>
+              <span className={styles.ratingLabel}>Even</span>
+              <span className={styles.ratingValue}>
+                {formatRating(ratings.offense.es)}
+              </span>
+            </div>
+            <div className={styles.ratingBox}>
+              <span className={styles.ratingLabel}>PP</span>
+              <span className={styles.ratingValue}>
+                {formatRating(ratings.offense.pp)}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Column 2: Overall */}
         <div className={styles.ratingSection}>
           <h3 className={styles.ratingTitle}>Overall</h3>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>All</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.overall.as)}
-            </span>
-          </div>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>Even</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.overall.es)}
-            </span>
-          </div>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>Special</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.overall.st)}
-            </span>
-          </div>
-          <div className={`${styles.ratingBox} ${styles.finalRating}`}>
-            <span className={styles.ratingLabel}>Total</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.overall.final)}
-            </span>
+
+          <div className={styles.ratingsBoxes}>
+            <div className={styles.ratingBox}>
+              <span className={styles.ratingLabel}>All</span>
+              <span className={styles.ratingValue}>
+                {formatRating(ratings.overall.as)}
+              </span>
+            </div>
+            <div className={styles.ratingBox}>
+              <span className={styles.ratingLabel}>Even</span>
+              <span className={styles.ratingValue}>
+                {formatRating(ratings.overall.es)}
+              </span>
+            </div>
+            <div className={styles.ratingBox}>
+              <span className={styles.ratingLabel}>Special</span>
+              <span className={styles.ratingValue}>
+                {formatRating(ratings.overall.st)}
+              </span>
+            </div>
+            <div className={`${styles.ratingBox} ${styles.finalRating}`}>
+              <span className={styles.ratingLabel}>Total</span>
+              <span className={styles.ratingValue}>
+                {formatRating(ratings.overall.final)}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Column 3: Defense */}
         <div className={styles.ratingSection}>
           <h3 className={styles.ratingTitle}>Defense</h3>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>All</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.defense.as)}
-            </span>
-          </div>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>Even</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.defense.es)}
-            </span>
-          </div>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>PK</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.defense.pk)}
-            </span>
+          <div className={styles.ratingsBoxes}>
+            <div className={styles.ratingBox}>
+              <span className={styles.ratingLabel}>All</span>
+              <span className={styles.ratingValue}>
+                {formatRating(ratings.defense.as)}
+              </span>
+            </div>
+            <div className={styles.ratingBox}>
+              <span className={styles.ratingLabel}>Even</span>
+              <span className={styles.ratingValue}>
+                {formatRating(ratings.defense.es)}
+              </span>
+            </div>
+            <div className={styles.ratingBox}>
+              <span className={styles.ratingLabel}>PK</span>
+              <span className={styles.ratingValue}>
+                {formatRating(ratings.defense.pk)}
+              </span>
+            </div>
           </div>
         </div>
       </div>

@@ -73,7 +73,7 @@ $border-radius-sm: 6px; // Smaller radius for inputs/buttons maybe
 
 // Base border style
 @mixin border-base {
-  border: 4px solid $border-color-primary;
+  border: 4px solid $border-color-secondary;
   border-radius: $border-radius;
 }
 
@@ -127,7 +127,6 @@ $border-radius-sm: 6px; // Smaller radius for inputs/buttons maybe
   // Access variables directly as they are defined in this file
   background-color: $background-dark;
   outline: 8px solid $background-dark;
-  border: 3px solid $background-light;
   border-radius: $border-radius;
   overflow: hidden;
 }
