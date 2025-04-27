@@ -12,6 +12,7 @@ import {
   OFFENSE_RATING_STATS,
   DEFENSE_RATING_STATS
 } from "components/WiGO/ratingsConstants";
+import { add } from "date-fns";
 
 // Import the types for the tables
 type WigoCareerRow = Database["public"]["Tables"]["wigo_career"]["Row"];
@@ -827,51 +828,28 @@ export const fetchPlayerGameLogConsistencyData = async (
   }
 };
 
-const getPercentileOffenseTable = (strength: PercentileStrength) =>
-  `nst_percentile_${strength}_offense` as keyof Database["public"]["Tables"];
-const getPercentileDefenseTable = (strength: PercentileStrength) =>
-  `nst_percentile_${strength}_defense` as keyof Database["public"]["Tables"];
-
-// Helper function to merge player data from multiple strength situations
-function mergePlayerData(
-  dataArrays: Record<string, any>[][]
-): Record<string, any>[] {
-  const playerMap = new Map<number, Record<string, any>>();
-
-  // Process each array of player data
-  dataArrays.forEach((data) => {
-    data.forEach((player) => {
-      if (!player.player_id) return;
-
-      const existingPlayer = playerMap.get(player.player_id);
-      if (existingPlayer) {
-        // Merge the data, preferring non-null values
-        Object.entries(player).forEach(([key, value]) => {
-          if (value !== null && value !== undefined) {
-            existingPlayer[key] = value;
-          }
-        });
-      } else {
-        playerMap.set(player.player_id, { ...player });
-      }
-    });
-  });
-
-  return Array.from(playerMap.values());
-}
+// Helper function (keep as is)
+const addStrength = <T>(
+  arr: T[],
+  strength: string
+): (T & { strength: string })[] =>
+  arr.map((row: T) => ({
+    ...row,
+    strength: strength
+  }));
 
 // --- Corrected fetchPercentilePlayerData Function ---
+
+// --- Corrected fetchPercentilePlayerData Function ---
+// Updated Return Type Signature
 export async function fetchPercentilePlayerData(seasonId: number): Promise<{
-  offense: Record<string, any>[];
-  defense: Record<string, any>[];
+  offense: (PlayerRawStats & { strength: string })[];
+  defense: (PlayerRawStats & { strength: string })[];
 }> {
-  console.log("seasonId type:", typeof seasonId, seasonId);
   console.log(
-    "[fetchPercentilePlayerData] Starting fetch for season:",
-    seasonId
+    `[fetchPercentilePlayerData] Starting fetch for season: ${seasonId}`
   );
 
-  // Prepare select strings for both offense and defense tables
   const offenseSelect = `
     player_id,
     season,
@@ -916,6 +894,8 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
     penalties_drawn_per_60
   `;
 
+  // Define the columns needed for defense ratings calculation
+  // Ensure ALL columns listed in DEFENSE_RATING_STATS are included here
   const defenseSelect = `
     player_id,
     season,
@@ -944,72 +924,72 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
   `;
 
   try {
-    // Fetch data for each strength situation with season filter
+    // Fetch data specifying PlayerRawStats as the expected type
     const [
+      asOffenseRaw,
+      asDefenseRaw,
       esOffenseRaw,
-      ppOffenseRaw,
-      pkOffenseRaw,
       esDefenseRaw,
-      ppDefenseRaw,
+      ppOffenseRaw,
       pkDefenseRaw
     ] = await Promise.all([
-      fetchPaginatedData<Record<string, any>>(
+      fetchPaginatedData<PlayerRawStats>( // Specify type
+        "nst_percentile_as_offense" as keyof Database["public"]["Tables"],
+        offenseSelect,
+        { column: "season", value: seasonId }
+      ),
+      fetchPaginatedData<PlayerRawStats>( // Specify type
+        "nst_percentile_as_defense" as keyof Database["public"]["Tables"],
+        defenseSelect,
+        { column: "season", value: seasonId }
+      ),
+      fetchPaginatedData<PlayerRawStats>( // Specify type
         "nst_percentile_es_offense" as keyof Database["public"]["Tables"],
         offenseSelect,
         { column: "season", value: seasonId }
       ),
-      fetchPaginatedData<Record<string, any>>(
-        "nst_percentile_pp_offense" as keyof Database["public"]["Tables"],
-        offenseSelect,
-        { column: "season", value: seasonId }
-      ),
-      fetchPaginatedData<Record<string, any>>(
-        "nst_percentile_pk_offense" as keyof Database["public"]["Tables"],
-        offenseSelect,
-        { column: "season", value: seasonId }
-      ),
-      fetchPaginatedData<Record<string, any>>(
+      fetchPaginatedData<PlayerRawStats>( // Specify type
         "nst_percentile_es_defense" as keyof Database["public"]["Tables"],
         defenseSelect,
         { column: "season", value: seasonId }
       ),
-      fetchPaginatedData<Record<string, any>>(
-        "nst_percentile_pp_defense" as keyof Database["public"]["Tables"],
-        defenseSelect,
+      fetchPaginatedData<PlayerRawStats>( // Specify type
+        "nst_percentile_pp_offense" as keyof Database["public"]["Tables"],
+        offenseSelect,
         { column: "season", value: seasonId }
       ),
-      fetchPaginatedData<Record<string, any>>(
+      fetchPaginatedData<PlayerRawStats>( // Specify type
         "nst_percentile_pk_defense" as keyof Database["public"]["Tables"],
         defenseSelect,
         { column: "season", value: seasonId }
       )
     ]);
 
-    // Add strength property to each row
-    const addStrength = (arr: Record<string, any>[], strength: string) =>
-      arr.map((row: Record<string, any>) => ({ ...row, strength }));
+    // Add strength property using the generic helper
+    // The result type is (PlayerRawStats & { strength: string })[]
+    const asOffense = addStrength(asOffenseRaw, "as");
+    const asDefense = addStrength(asDefenseRaw, "as");
     const esOffense = addStrength(esOffenseRaw, "es");
-    const ppOffense = addStrength(ppOffenseRaw, "pp");
-    const pkOffense = addStrength(pkOffenseRaw, "pk");
     const esDefense = addStrength(esDefenseRaw, "es");
-    const ppDefense = addStrength(ppDefenseRaw, "pp");
+    const ppOffense = addStrength(ppOffenseRaw, "pp");
     const pkDefense = addStrength(pkDefenseRaw, "pk");
 
-    // Merge the data for offense and defense
-    const mergedOffense = mergePlayerData([esOffense, ppOffense, pkOffense]);
-    const mergedDefense = mergePlayerData([esDefense, ppDefense, pkDefense]);
+    // Concatenate the arrays
+    const allOffense = [...asOffense, ...esOffense, ...ppOffense];
+    const allDefense = [...asDefense, ...esDefense, ...pkDefense];
 
     console.log(
-      `[fetchPercentilePlayerData] Merged ${mergedOffense.length} offense players and ${mergedDefense.length} defense players for season ${seasonId}`
+      `[fetchPercentilePlayerData] Concatenated ${allOffense.length} relevant offense rows and ${allDefense.length} relevant defense rows for season ${seasonId}`
     );
 
+    // Return matches the updated function signature - no casting needed
     return {
-      offense: mergedOffense,
-      defense: mergedDefense
+      offense: allOffense,
+      defense: allDefense
     };
   } catch (error) {
     console.error(
-      "[fetchPercentilePlayerData] Error fetching percentile data:",
+      `[fetchPercentilePlayerData] Error fetching percentile data for season ${seasonId}:`,
       error
     );
     throw error;

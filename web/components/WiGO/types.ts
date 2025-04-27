@@ -504,3 +504,137 @@ export interface PlayerRawStats {
   // Allow indexing for constants
   [key: string]: number | string | null | undefined;
 }
+
+// web/components/WiGO/types.ts (Refactored/New Types)
+
+// Represents the raw stats fetched for ONE strength from ONE table (offense or defense)
+// Based on the provided Supabase table schemas
+export interface PlayerStrengthStats {
+  player_id: number;
+  season: number;
+  gp: number; // Games played AT THIS STRENGTH
+  toi_seconds: number; // TOI AT THIS STRENGTH
+
+  // Offensive Stats (from offense tables) - Optional because they won't exist in defense data
+  goals_per_60?: number | null;
+  total_assists_per_60?: number | null;
+  first_assists_per_60?: number | null;
+  second_assists_per_60?: number | null;
+  total_points_per_60?: number | null;
+  shots_per_60?: number | null;
+  ixg_per_60?: number | null;
+  icf_per_60?: number | null;
+  iff_per_60?: number | null;
+  iscfs_per_60?: number | null;
+  i_hdcf_per_60?: number | null;
+  rush_attempts_per_60?: number | null;
+  rebounds_created_per_60?: number | null;
+  cf_per_60?: number | null;
+  ff_per_60?: number | null;
+  sf_per_60?: number | null;
+  gf_per_60?: number | null;
+  xgf_per_60?: number | null;
+  scf_per_60?: number | null;
+  oi_hdcf_per_60?: number | null;
+  hdgf_per_60?: number | null;
+  mdgf_per_60?: number | null;
+  ldgf_per_60?: number | null;
+  cf_pct?: number | null;
+  ff_pct?: number | null;
+  sf_pct?: number | null;
+  gf_pct?: number | null;
+  xgf_pct?: number | null;
+  scf_pct?: number | null;
+  hdcf_pct?: number | null;
+  hdgf_pct?: number | null;
+  mdgf_pct?: number | null;
+  ldgf_pct?: number | null;
+  ipp?: number | null;
+  sh_percentage?: number | null;
+  on_ice_sh_pct?: number | null;
+  penalties_drawn_per_60?: number | null;
+
+  // Defensive Stats (from defense tables) - Optional
+  ca_per_60?: number | null;
+  fa_per_60?: number | null;
+  sa_per_60?: number | null;
+  ga_per_60?: number | null;
+  xga_per_60?: number | null;
+  sca_per_60?: number | null;
+  hdca_per_60?: number | null;
+  hdga_per_60?: number | null;
+  mdga_per_60?: number | null;
+  ldga_per_60?: number | null;
+  shots_blocked_per_60?: number | null;
+  takeaways_per_60?: number | null;
+  hits_per_60?: number | null;
+  pim_per_60?: number | null;
+  total_penalties_per_60?: number | null;
+  minor_penalties_per_60?: number | null;
+  major_penalties_per_60?: number | null;
+  misconduct_penalties_per_60?: number | null;
+  giveaways_per_60?: number | null;
+  on_ice_sv_pct?: number | null;
+
+  // Allow flexible access using string keys (used by calculation logic)
+  [key: string]: number | string | null | undefined;
+}
+
+// Structure to hold all fetched raw stats, organized by strength
+export type Strength = "as" | "es" | "pp" | "pk";
+export type RawStatsCollection = {
+  [key in Strength]?: {
+    offense: PlayerStrengthStats[];
+    defense: PlayerStrengthStats[];
+  };
+};
+
+// Structure for the final calculated ratings
+export interface CalculatedPlayerRatings {
+  offense: {
+    as: number | null;
+    es: number | null;
+    pp: number | null;
+    // pk offense rating might not be meaningful, can omit if desired
+    pk: number | null;
+  };
+  defense: {
+    as: number | null;
+    es: number | null;
+    // pp defense rating might not be meaningful
+    pp: number | null;
+    pk: number | null;
+  };
+  overall: {
+    // We can recalculate these easily from the offense/defense ratings
+    as: number | null;
+    es: number | null;
+    st: number | null; // Special Teams (weighted PP Offense + PK Defense)
+    final: number | null; // Overall combined rating
+  };
+  // Include raw data or intermediate steps for debugging if needed
+  _debug?: {
+    percentiles?: any; // Store calculated percentiles before weighting/regression
+    regressedPercentiles?: any; // Store percentiles after regression
+  };
+}
+
+// Type for the weighting configuration
+export type StatWeight = {
+  stat: keyof PlayerStrengthStats; // The column name from the database/interface
+  weight: number; // The importance factor
+  higherIsBetter: boolean; // Needed for percentile calculation
+};
+
+export type RatingWeightsConfig = {
+  [key in Strength]?: {
+    offense: StatWeight[];
+    defense: StatWeight[];
+  };
+};
+
+// Configuration for small sample size regression
+export interface RegressionConfig {
+  minGPThreshold: number; // e.g., 10 games played *at that strength*
+  enabled: boolean; // Toggle regression on/off
+}

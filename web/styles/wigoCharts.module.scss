@@ -125,6 +125,7 @@
 
 .ratingsContainer {
   grid-area: 13 / 1 / 23 / 7; // Row 27-31, Col 1-12
+  border: none !important;
   @include internal-flex-column;
   padding: 0;
   overflow: hidden;
