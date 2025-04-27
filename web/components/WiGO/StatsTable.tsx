@@ -1,5 +1,11 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/StatsTable.tsx
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo
+} from "react";
 import { TableAggregateData } from "./types";
 import styles from "styles/wigoCharts.module.scss";
 import GameLogChart from "./StatsTableRowChart";
@@ -95,13 +101,21 @@ const StatsTable: React.FC<StatsTableProps> = ({
     null
   );
 
-  // Extract stat labels (columns) from the combined data
-  const statLabels = data.filter((d) => d.label !== "GP").map((d) => d.label);
-  const gpRowData = data.find((d) => d.label === "GP");
+  // Memoize statLabels so it doesn't change on every render
+  const statLabels = useMemo(
+    () => data.filter((d) => d.label !== "GP").map((d) => d.label),
+    [data]
+  );
 
-  // Initialize column order
+  // Memoize gpRowData so it is available for getGpDataForChart
+  const gpRowData = useMemo(() => data.find((d) => d.label === "GP"), [data]);
+
+  // Initialize column order only if it actually changes
   useEffect(() => {
-    setColumnOrder(statLabels);
+    if (JSON.stringify(columnOrder) !== JSON.stringify(statLabels)) {
+      setColumnOrder(statLabels);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statLabels]);
 
   // Scroll table to show selected column in position 2
