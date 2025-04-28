@@ -28,6 +28,7 @@ import { calculateRollingAverage } from "utils/formattingUtils";
 import styles from "styles/wigoCharts.module.scss";
 import Spinner from "components/Spinner";
 import Zoom from "chartjs-plugin-zoom";
+import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors";
 
 ChartJS.register(
   CategoryScale,
@@ -43,30 +44,6 @@ ChartJS.register(
   BarController,
   Zoom
 );
-
-const COLOR_PALLET = [
-  {
-    borderColor: "rgb(75, 192, 192)",
-    backgroundColor: "rgba(75, 192, 192, 0.2)"
-  }, // Teal
-  {
-    borderColor: "rgb(153, 102, 255)",
-    backgroundColor: "rgba(153, 102, 255, 0.2)"
-  }, // Purple
-  {
-    borderColor: "rgb(255, 159, 64)",
-    backgroundColor: "rgba(255, 159, 64, 0.2)"
-  }, // Orange
-  {
-    borderColor: "rgb(255, 205, 86)",
-    backgroundColor: "rgba(255, 205, 86, 0.2)"
-  } // Yellow
-];
-const PpgBarColor = {
-  borderColor: "rgb(54, 162, 235)",
-  backgroundColor: "rgba(54, 162, 235, 0.5)"
-}; // Blue for bars
-const AvgPpgLineColor = { borderColor: "rgb(255, 99, 132)" }; // Pink/Red for dotted average
 
 interface PpgLineChartProps {
   playerId: number | null | undefined;
@@ -167,10 +144,12 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
           label: "Points per Game",
           data: pointsData,
           // Make transparent if dummy
-          borderColor: useDummyData ? "transparent" : PpgBarColor.borderColor,
+          borderColor: useDummyData
+            ? WIGO_COLORS.TRANSPARENT
+            : CHART_COLORS.BAR_PRIMARY,
           backgroundColor: useDummyData
-            ? "transparent"
-            : PpgBarColor.backgroundColor,
+            ? WIGO_COLORS.TRANSPARENT
+            : addAlpha(CHART_COLORS.BAR_PRIMARY, 0.7),
           order: 4
         },
         {
@@ -179,12 +158,10 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
           label: "5-Game Rolling Avg",
           data: rollingAvg5,
           borderColor: useDummyData
-            ? "transparent"
-            : COLOR_PALLET[0].borderColor,
-          backgroundColor: useDummyData
-            ? "transparent"
-            : COLOR_PALLET[0].backgroundColor,
-          fill: false,
+            ? WIGO_COLORS.TRANSPARENT
+            : CHART_COLORS.LINE_PRIMARY,
+          backgroundColor: addAlpha(CHART_COLORS.LINE_PRIMARY, 0.2),
+          fill: true,
           tension: 0.2,
           pointRadius: 0,
           pointHoverRadius: 3,
@@ -196,11 +173,11 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
           label: "10-Game Rolling Avg",
           data: rollingAvg10,
           borderColor: useDummyData
-            ? "transparent"
-            : COLOR_PALLET[1].borderColor,
+            ? WIGO_COLORS.TRANSPARENT
+            : CHART_COLORS.PP_TOI,
           backgroundColor: useDummyData
-            ? "transparent"
-            : COLOR_PALLET[1].backgroundColor,
+            ? WIGO_COLORS.TRANSPARENT
+            : addAlpha(CHART_COLORS.PP_TOI, 0.2),
           fill: false,
           tension: 0.2,
           pointRadius: 0,
@@ -215,14 +192,12 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
                 label: "Season Avg PPG",
                 data: avgPpgData,
                 borderColor: useDummyData
-                  ? "transparent"
-                  : AvgPpgLineColor.borderColor,
+                  ? WIGO_COLORS.TRANSPARENT
+                  : CHART_COLORS.AVG_LINE_PRIMARY,
                 borderDash: [3, 3],
                 // Keep fill transparent or remove if not desired for avg line
-                fill: !useDummyData,
-                backgroundColor: useDummyData
-                  ? "transparent"
-                  : "rgba(255, 99, 132, 0.15)",
+                fill: false,
+                backgroundColor: WIGO_COLORS.TRANSPARENT,
                 pointRadius: 0,
                 pointHoverRadius: 0,
                 tension: 0,

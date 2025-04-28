@@ -6,6 +6,12 @@ import {
 } from "utils/fetchWigoPlayerStats";
 import styles from "./PerGameStatsTable.module.scss";
 
+type NumericSkaterTotalsKeys = {
+  [K in keyof SkaterTotalsData]: SkaterTotalsData[K] extends number | null
+    ? K
+    : never;
+}[keyof SkaterTotalsData];
+
 interface PerGameStatsTableProps {
   playerId: number | null | undefined;
 }
@@ -30,6 +36,14 @@ const formatPaceValue = (value: number | null | undefined): string => {
     return "-";
   }
   return Math.round(value).toString();
+};
+const formatPercentageValue = (value: number | null | undefined): string => {
+  if (value === null || value === undefined || isNaN(value)) {
+    return "-";
+  }
+
+  value = value * 100;
+  return `${value.toFixed(1)}%`;
 };
 
 const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({ playerId }) => {
@@ -73,10 +87,14 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({ playerId }) => {
 
   // Calculation logic populates statRows
   useEffect(() => {
+    // const gp = totalsData?.games_played ?? 0; // <-- REMOVE THIS - Defined inside if block
+
     if (totalsData && totalsData.games_played && totalsData.games_played > 0) {
-      const gp = totalsData.games_played;
+      const gp = totalsData.games_played; // Use gp defined within the valid scope
+
+      // Use the helper type for the key property
       const statsToCalculate: Array<{
-        key: keyof SkaterTotalsData;
+        key: NumericSkaterTotalsKeys; // <--- USE NUMERIC ONLY KEYS
         name: string;
       }> = [
         { key: "goals", name: "G" },
@@ -91,15 +109,28 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({ playerId }) => {
       ];
 
       const newStatRows = statsToCalculate.map(({ key, name }) => {
-        // Ensure totalValue is treated as a number, default to 0 if null/undefined
-        const totalValue = Number(totalsData[key] ?? 0);
-        const perGameValue = totalValue / gp;
-        const per82Value = perGameValue * 82;
-        return {
-          stat: name,
-          perGame: formatStatValue(perGameValue),
-          per82: formatPaceValue(per82Value)
-        };
+        // Get the raw value, allow it to be null
+        const totalValue = totalsData[key] ?? null;
+
+        // Special case for shooting percentage
+        if (key === "shooting_percentage") {
+          return {
+            stat: name,
+            perGame: formatPercentageValue(totalValue),
+            per82: "-"
+          };
+        }
+        // Default case for counting stats
+        else {
+          const numericTotalValue = Number(totalValue ?? 0);
+          const perGameValue = numericTotalValue / gp;
+          const per82Value = perGameValue * 82;
+          return {
+            stat: name,
+            perGame: formatStatValue(perGameValue),
+            per82: formatPaceValue(per82Value)
+          };
+        }
       });
 
       // Add the GP row at the beginning
@@ -110,19 +141,19 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({ playerId }) => {
       });
 
       setStatRows(newStatRows);
-      setError(null); // Clear previous errors
+      setError(null);
     } else {
-      setStatRows([]); // Clear rows if no valid data
-      // Set error only if data was fetched but GP is invalid
-      if (
-        totalsData &&
-        (!totalsData.games_played || totalsData.games_played <= 0) &&
-        !isLoading
-      ) {
+      setStatRows([]);
+      if (totalsData && (totalsData.games_played ?? 0) <= 0 && !isLoading) {
+        // Check using nullish coalescing
         setError("Player has 0 games played.");
+      } else if (!totalsData && !isLoading && playerId) {
+        if (!error) {
+          setError("No stats data found for this player.");
+        }
       }
     }
-  }, [totalsData, isLoading]);
+  }, [totalsData, isLoading, error]);
 
   return (
     <div className={styles.perGameTableContainer}>

@@ -7,6 +7,7 @@ import {
   fetchPlayerGameLogForStat,
   GameLogDataPoint
 } from "utils/fetchWigoPlayerStats";
+import clsx from "clsx";
 
 // Define which stats are generally treated as 'COUNTS' for chart purposes
 const countStatLabels = [
@@ -47,20 +48,20 @@ type DataColumnKey = keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">;
 
 // Define Column Keys and Headers
 const columnKeys: DataColumnKey[] = [
+  "STD", // Moved to first position after Stat Label
+  "LY",
   "CA",
   "3YA",
-  "LY",
-  "STD",
-  "L20",
+  "L5",
   "L10",
-  "L5"
+  "L20"
 ];
 
 const columnHeaders: { [key in DataColumnKey | "DIFF"]: string } = {
+  STD: "STD",
   CA: "CA",
   "3YA": "3YA",
   LY: "LY",
-  STD: "STD",
   L20: "L20",
   L10: "L10",
   L5: "L5",
@@ -75,7 +76,9 @@ const StatsTable: React.FC<StatsTableProps> = ({
   error,
   formatCell, // Keep the prop
   playerId,
-  currentSeasonId
+  currentSeasonId,
+  leftTimeframe,
+  rightTimeframe
 }) => {
   const [expandedStatLabel, setExpandedStatLabel] = useState<string | null>(
     null
@@ -93,8 +96,19 @@ const StatsTable: React.FC<StatsTableProps> = ({
   );
   const gpRowData = useMemo(() => data.find((d) => d.label === "GP"), [data]);
 
+  // --- Calculate highlight indices ---
+  const leftIndex = columnKeys.indexOf(leftTimeframe as DataColumnKey);
+  const rightIndex = columnKeys.indexOf(rightTimeframe as DataColumnKey);
+
+  // Determine the actual start and end index of the highlighted block
+  const validIndices = [leftIndex, rightIndex].filter((index) => index !== -1);
+  const minHighlightIndex =
+    validIndices.length > 0 ? Math.min(...validIndices) : -1;
+  const maxHighlightIndex =
+    validIndices.length > 0 ? Math.max(...validIndices) : -1;
+
   const handleExpandClick = useCallback(
-    /* ... same as before ... */ (statLabel: string) => {
+    (statLabel: string) => {
       const newLabel = expandedStatLabel === statLabel ? null : statLabel;
       setExpandedStatLabel(newLabel);
       setGameLogData([]);
@@ -150,14 +164,38 @@ const StatsTable: React.FC<StatsTableProps> = ({
       <table className={styles.statsTable}>
         <thead>
           <tr>
+            {/* Stat Header (No Highlight) */}
             <th>
               <div className={styles.headerContent}>
                 <span>{tableTitle}</span>
               </div>
             </th>
-            {columnKeys.map((key) => (
-              <th key={key}>{columnHeaders[key]}</th>
-            ))}
+
+            {/* Data Column Headers */}
+            {columnKeys.map((key, index) => {
+              // Get index from map
+              const isHighlighted =
+                key === leftTimeframe || key === rightTimeframe;
+              const isMin = index === minHighlightIndex;
+              const isMax = index === maxHighlightIndex;
+
+              // Combine classes using clsx
+              const thClasses = clsx({
+                [styles.highlightedLeft]: key === leftTimeframe,
+                [styles.highlightedRight]: key === rightTimeframe,
+                // Apply corner class if this cell is highlighted AND is the min/max index
+                [styles.highlightCornerTopLeft]: isHighlighted && isMin,
+                [styles.highlightCornerTopRight]: isHighlighted && isMax
+              });
+
+              return (
+                <th key={key} className={thClasses}>
+                  {columnHeaders[key]}
+                </th>
+              );
+            })}
+
+            {/* DIFF Header (No Highlight) */}
             <th>{columnHeaders["DIFF"]}</th>
           </tr>
         </thead>
@@ -173,96 +211,119 @@ const StatsTable: React.FC<StatsTableProps> = ({
               </td>
             </tr>
           ) : statRowsData.length > 0 ? (
-            statRowsData.map((statData) => (
-              <React.Fragment key={statData.label}>
-                {/* Stat Row */}
-                <tr>
-                  <td className={styles.statLabelCell}>
-                    <div className={styles.statLabelContent}>
-                      <span>{statData.label}</span>
-                      <button
-                        onClick={() => handleExpandClick(statData.label)}
-                        className={styles.expandButton}
-                        aria-expanded={expandedStatLabel === statData.label}
-                        aria-controls={`chart-${statData.label}`}
-                      >
-                        {expandedStatLabel === statData.label ? "-" : "+"}
-                      </button>
-                    </div>
-                  </td>
-                  {/* Timeframe Data Cells - Use formatCell here */}
-                  {columnKeys.map((key) => (
-                    <td key={key}>{formatCell(statData, key)}</td>
-                  ))}
+            // vvvvv CORRECT: No extra curly brace here vvvvv
+            statRowsData.map((statData, rowIndex) => {
+              // Get rowIndex from map
+              // Determine if this is the last data row being rendered
+              const isLastRow = rowIndex === statRowsData.length - 1;
 
-                  {/* DIFF Cell - Handle formatting and coloring directly */}
-                  <td className={styles.diffCell}>
-                    {(() => {
-                      // IIFE to allow conditional logic
-                      const diffValue = statData.DIFF; // Get the pre-calculated DIFF value
-                      if (
-                        diffValue !== undefined &&
-                        diffValue !== null &&
-                        !isNaN(diffValue)
-                      ) {
-                        // 1. Determine if positive or negative
-                        const isPositive = diffValue > 0;
-                        const isNegative = diffValue < 0;
-
-                        // 2. Select the CSS class based on the sign <--- COLOR LOGIC HERE
-                        const colorClass = isPositive
-                          ? styles.diffPositive // Use green class if positive
-                          : isNegative
-                          ? styles.diffNegative // Use red class if negative
-                          : styles.diffNeutral; // Use neutral class if zero
-
-                        // 3. Format the display value
-                        const displayValue = `${
-                          isPositive ? "+" : ""
-                        }${diffValue.toFixed(1)}%`;
-
-                        // 4. Render a span WITH THE CORRECT CSS CLASS
-                        return (
-                          <span className={colorClass}>{displayValue}</span>
-                        );
-                      } else {
-                        return "-"; // Render hyphen if DIFF is not a valid number
-                      }
-                    })()}
-                  </td>
-                </tr>
-
-                {/* Chart Row (Conditionally Rendered) */}
-                {expandedStatLabel === statData.label && (
-                  <tr
-                    className={styles.chartRowExpanded}
-                    id={`chart-${statData.label}`}
-                  >
-                    <td colSpan={totalColumns}>
-                      <div className={styles.chartWrapper}>
-                        <h4>{`${statData.label} Per Game - ${currentSeasonId
-                          .toString()
-                          .slice(0, 4)}-${currentSeasonId
-                          .toString()
-                          .slice(6, 8)}`}</h4>
-                        <GameLogChart
-                          playerId={playerId}
-                          seasonId={currentSeasonId}
-                          statLabel={statData.label}
-                          gameLogData={gameLogData}
-                          averages={getAveragesForChart(statData.label)}
-                          gpData={getGpDataForChart()}
-                          isLoading={isLoadingGameLog}
-                          error={gameLogError}
-                          tableType={expandedStatType}
-                        />
+              return (
+                <React.Fragment key={statData.label}>
+                  {/* Stat Row */}
+                  <tr>
+                    {/* Stat Label Cell (No Highlight) */}
+                    <td className={styles.statLabelCell}>
+                      <div className={styles.statLabelContent}>
+                        <span>{statData.label}</span>
+                        <button
+                          onClick={() => handleExpandClick(statData.label)}
+                          className={styles.expandButton}
+                          aria-expanded={expandedStatLabel === statData.label}
+                          aria-controls={`chart-${statData.label}`}
+                        >
+                          {expandedStatLabel === statData.label ? "-" : "+"}
+                        </button>
                       </div>
                     </td>
+
+                    {/* Data Cells */}
+                    {columnKeys.map((key, index) => {
+                      // Get index from map
+                      const isHighlighted =
+                        key === leftTimeframe || key === rightTimeframe;
+                      const isMin = index === minHighlightIndex;
+                      const isMax = index === maxHighlightIndex;
+
+                      // Combine classes using clsx
+                      const tdClasses = clsx({
+                        [styles.highlightedLeft]: key === leftTimeframe,
+                        [styles.highlightedRight]: key === rightTimeframe,
+                        // Apply bottom corners ONLY if highlighted, the min/max AND it's the last row
+                        [styles.highlightCornerBottomLeft]:
+                          isLastRow && isHighlighted && isMin,
+                        [styles.highlightCornerBottomRight]:
+                          isLastRow && isHighlighted && isMax
+                      });
+
+                      return (
+                        <td key={key} className={tdClasses}>
+                          {formatCell(statData, key)}
+                        </td>
+                      );
+                    })}
+
+                    {/* DIFF Cell - Handle formatting and coloring directly */}
+                    <td className={styles.diffCell}>
+                      {(() => {
+                        const diffValue = statData.DIFF;
+                        if (
+                          diffValue !== undefined &&
+                          diffValue !== null &&
+                          !isNaN(diffValue)
+                        ) {
+                          const isPositive = diffValue > 0;
+                          const isNegative = diffValue < 0;
+                          const colorClass = isPositive
+                            ? styles.diffPositive
+                            : isNegative
+                            ? styles.diffNegative
+                            : styles.diffNeutral;
+                          const displayValue = `${
+                            isPositive ? "+" : ""
+                          }${diffValue.toFixed(1)}%`;
+                          return (
+                            <span className={colorClass}>{displayValue}</span>
+                          );
+                        } else {
+                          return "-";
+                        }
+                      })()}
+                    </td>
                   </tr>
-                )}
-              </React.Fragment>
-            ))
+
+                  {/* Chart Row (Conditionally Rendered) */}
+                  {expandedStatLabel === statData.label && (
+                    <tr
+                      className={styles.chartRowExpanded}
+                      id={`chart-${statData.label}`}
+                    >
+                      <td colSpan={totalColumns}>
+                        <div className={styles.chartWrapper}>
+                          <h4>{`${statData.label} Per Game - ${currentSeasonId
+                            .toString()
+                            .slice(0, 4)}-${currentSeasonId
+                            .toString()
+                            .slice(6, 8)}`}</h4>
+                          <GameLogChart
+                            playerId={playerId}
+                            seasonId={currentSeasonId}
+                            statLabel={statData.label}
+                            gameLogData={gameLogData}
+                            averages={getAveragesForChart(statData.label)}
+                            gpData={getGpDataForChart()}
+                            isLoading={isLoadingGameLog}
+                            error={gameLogError}
+                            tableType={expandedStatType}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            }) // <--- Correct closing parenthesis for map
           ) : (
+            // ^^^^^ CORRECT: No extra curly brace here ^^^^^
             <tr>
               <td colSpan={totalColumns}>No data available.</td>
             </tr>

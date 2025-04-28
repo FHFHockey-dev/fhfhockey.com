@@ -172,3 +172,259 @@ $chart-tick-color: $text-color-secondary;
 $chart-tooltip-bg: rgba($background-dark, 0.9);
 $chart-tooltip-border: $border-color-secondary;
 $chart-tooltip-text: $text-color-primary;
+
+// --- Base Colors ---
+$color-green: #00ff99;
+$color-red: #ff6384; // Matches TS definition
+$color-yellow: #ffcc33;
+$color-blue: #66ccff;
+$color-brand-blue: #07aae2;
+$color-purple: #9b59b6;
+
+$color-grey-light: #d3d3d3;
+$color-grey-medium: #808080;
+$color-grey-dark: #444444;
+$color-grey-darker: #333333;
+$color-grey-text: #cccccc;
+$color-white: #ffffff;
+$color-black: #000000;
+$color-transparent: transparent;
+
+// --- Semantic UI Colors (Map from base colors or define directly) ---
+$background-dark: #1a1d21; // Example: Keep your existing
+$background-medium: darken($background-dark, 3%);
+$background-header: darken($background-dark, 5%);
+$text-color-primary: $color-grey-text;
+$text-color-secondary: darken($color-grey-text, 20%);
+$border-color-primary: $color-grey-darker;
+$border-color-secondary: $color-grey-dark;
+$error-color: $color-red;
+
+// Chart Specific (Optional - might not be needed directly in SCSS often)
+$chart-color-teal: #4bc0c0;
+$chart-color-orange: #ff9f40;
+$chart-color-blue: #36a2eb;
+$space-xs: 4px;
+$space-sm: 8px;
+$space-md: 16px;
+$border-radius-sm: 4px;
+$font-size-small: 0.85rem;
+$font-family-condensed: "Roboto Condensed", sans-serif;
+
+// /Users/tim/Desktop/FHFH/fhfhockey.com/web/styles/vars.scss
+
+// =============================================
+// 1. Base Colors (Single Source of Truth - Match wigoColors.ts)
+// =============================================
+$color-green: #00ff99;
+$color-red: #ff6384; // Primary Red/Error/Averages
+$color-yellow: #ffcc33; // Warning / Highlight
+$color-blue: #66ccff; // Lighter Blue
+$color-brand-blue: #07aae2; // Secondary Brand Blue
+$color-primary-blue: #14a2d2; // Primary Brand Blue / Accent
+$color-purple: #9b59b6;
+$color-pink-red: #ff6b6b; // Alternative Red/Pink
+$color-soft-green: #98d8a8;
+$color-teal: #4bc0c0; // Explicit Teal
+$color-orange: #ff9f40; // Explicit Orange
+
+$color-white: #ffffff;
+$color-black: #000000;
+$color-grey-light: #d3d3d3;
+$color-grey-medium: #808080;
+$color-grey-dark: #505050;
+$color-grey-darker: #404040;
+$color-grey-text: #cccccc; // Main text/ticks on dark
+$color-grey-text-sec: #aaaaaa; // Secondary text / Axis titles
+
+$color-bg-dark-1: #101010; // Darkest
+$color-bg-dark-2: #1a1d21; // Medium Dark (use this or _3 for primary bg?)
+$color-bg-dark-3: #202020; // Lighter Dark (used for even rows)
+$color-bg-dark-4: #272727; // Lightest Dark
+
+$color-transparent: transparent;
+$color-focus: rgb(255, 193, 8); // Yellowish focus
+
+// =============================================
+// 2. Semantic UI Colors & Themes (Define ONCE)
+// =============================================
+$primary-color: $color-primary-blue;
+$secondary-color: $color-brand-blue;
+
+$background-dark: $color-bg-dark-2; // Main component background
+$background-medium: darken($background-dark, 3%); // Slightly darker variant
+$background-light: $color-bg-dark-3; // Contrasting lighter bg (e.g., even rows)
+$background-header: darken($background-dark, 5%); // Header/Title background
+
+$text-primary: $color-grey-text;
+$text-secondary: $color-grey-text-sec;
+$text-button: $color-white;
+$text-link: $color-primary-blue; // Example
+
+$border-primary: $color-grey-darker; // Main container borders
+$border-secondary: $color-grey-dark; // Internal borders
+$border-accent: $secondary-color; // Accent borders
+$border-color: $border-secondary; // Default border color alias
+
+$focus-color: $color-focus;
+$warning-color: $color-yellow;
+$error-color: $color-red;
+
+// =============================================
+// 3. Breakpoints & Grid (Define ONCE)
+// =============================================
+$breakpoint-sm-max: 640px; // Max width for small screens (handset)
+$breakpoint-md-min: 641px;
+$breakpoint-md-max: 1007px; // Max width for medium screens (tablet)
+$breakpoint-lg-min: 1008px; // Min width for large screens (desktop)
+
+// =============================================
+// 4. Typography (Define ONCE)
+// =============================================
+$font-family-condensed: "Roboto Condensed", sans-serif; // Specific elements
+$font-family-accent: "Train One", sans-serif; // Accent font
+
+$font-size-base: 1rem; // 16px
+$font-size-sm: 0.875rem; // 14px
+$font-size-xs: 0.75rem; // 12px
+$font-size-xxs: 0.625rem; // 10px
+$font-size-md: 1.125rem; // 18px
+$font-size-lg: 1.25rem; // 20px
+$font-size-xl: 1.5rem; // 24px
+
+// =============================================
+// 5. Spacing & Sizing (Define ONCE)
+// =============================================
+$space-xxs: 2px;
+$space-xs: 4px;
+$space-sm: 8px;
+$space-md: 16px;
+$space-lg: 24px;
+$space-xl: 32px;
+$space-xxl: 48px;
+$space-xxxl: 64px;
+
+$table-header-height: 35px;
+$table-cell-padding: $space-sm $space-md;
+$filter-vertical-spacing: $space-xl;
+
+// =============================================
+// 6. Borders & Shadows (Define ONCE)
+// =============================================
+$border-radius-sm: 4px;
+$border-radius-md: 8px;
+$border-radius-lg: 12px;
+$border-radius: $border-radius-lg; // Alias for standard radius
+
+$border-subtle: 1px solid $border-secondary;
+$border-default: 1px solid $border-primary;
+$border-separator: 2px solid $border-accent;
+
+$box-shadow-default: 0 4px 8px rgba($color-black, 0.25);
+
+// =============================================
+// 7. Transitions (Define ONCE)
+// =============================================
+$transition-duration: 0.2s;
+$transition-easing: ease;
+
+// =============================================
+// 8. Chart Specific Colors & Styles (Use finalized semantic colors)
+// =============================================
+$chart-color-1: $primary-color;
+$chart-color-2: $color-teal; // Match TS Palette[1]
+$chart-color-3: $color-purple; // Match TS Palette[2]
+$chart-color-4: $secondary-color; // Match TS Palette[3]
+$chart-color-5: $warning-color; // Match TS Palette[4]
+$chart-color-6: $color-orange; // Match TS Palette[5]
+$chart-color-7: $color-soft-green; // Match TS Palette[6]
+$chart-color-8: $color-blue; // Match TS Palette[7]
+
+// Backgrounds only needed if used directly in SCSS, TS handles alpha
+// $chart-background-transparent-1: rgba($chart-color-1, 0.2); ... etc
+
+// Specific Chart Elements using semantic variables
+$chart-grid-color: rgba($text-primary, 0.1);
+$chart-tick-color: $text-secondary;
+$chart-tooltip-bg: rgba($background-dark, 0.9);
+$chart-tooltip-border: $border-secondary;
+$chart-tooltip-text: $text-primary;
+
+// =============================================
+// 9. Mixins & Functions (Use finalized variables)
+// =============================================
+// Base border style
+@mixin border-base(
+  $radius: $border-radius-lg,
+  $color: $border-primary,
+  $width: 1px
+) {
+  border: $width solid $color;
+  border-radius: $radius;
+}
+
+// Dark container style
+@mixin dark-container {
+  background-color: $background-dark;
+  color: $text-primary;
+}
+
+// Button style
+@mixin button-style {
+  background-color: $primary-color;
+  color: $text-button;
+  border: 1px solid $border-accent;
+  padding: $space-sm $space-md;
+  border-radius: $border-radius-md;
+  cursor: pointer;
+  font-family: $font-family-primary;
+  transition: background-color $transition-duration $transition-easing,
+    border-color $transition-duration $transition-easing;
+
+  &:hover:not(:disabled) {
+    background-color: color.adjust($primary-color, $lightness: 5%);
+    border-color: color.adjust($border-accent, $lightness: 10%);
+  }
+
+  &:focus-visible {
+    // Use focus-visible for accessibility
+    outline: 3px solid $focus-color;
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// Table base style
+@mixin table-base {
+  margin: 0 auto;
+  color: $text-primary;
+  overflow: hidden;
+  border: 1px solid $border-primary;
+  border-radius: $border-radius-md;
+  border-spacing: 0;
+  font-size: $font-size-sm;
+  text-align: left;
+  width: 100%;
+}
+
+// Component wrapper
+@mixin component-wrapper {
+  width: 100%;
+  background-color: $background-dark; // Use the main dark background
+  border: 1px solid $border-primary;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+  box-sizing: border-box; // Add box-sizing
+}
+
+// Rank color function (no changes needed if variables are correct)
+@function get-rank-color($rank, $max-rank: 32, $opacity: 0.45) {
+  $clamped-rank: math.max(1, math.min($rank, $max-rank));
+  $percentage: ($clamped-rank - 1) / math.max(1, ($max-rank - 1));
+  $hue: (1 - $percentage) * 120;
+  @return rgba(hsl($hue, 100%, 50%), $opacity);
+}

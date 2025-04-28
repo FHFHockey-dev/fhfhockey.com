@@ -307,6 +307,20 @@ const WigoCharts: React.FC = () => {
                 placeholderImage={placeholderImage}
               />
             </div>
+            <div className={styles.playerNameContainer}>
+              {selectedPlayer ? (
+                <h2 className={styles.playerName}>
+                  <span className={styles.spanColorBlueName}>
+                    {selectedPlayer.firstName}
+                  </span>{" "}
+                  {selectedPlayer.lastName}
+                </h2>
+              ) : (
+                <div className={styles.chartLoadingPlaceholder}>
+                  Select a player
+                </div>
+              )}
+            </div>
             <div className={styles.perGameStatsContainer}>
               <PerGameStatsTable playerId={selectedPlayer?.id} />
             </div>

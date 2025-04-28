@@ -2,17 +2,15 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import supabase from "lib/supabase/client";
-import RollingAverageChart from "./RollingAverageChart"; // The refactored presentational chart
+import RollingAverageChart from "./RollingAverageChart";
 import useCurrentSeason from "hooks/useCurrentSeason";
-import Spinner from "components/Spinner"; // Import Spinner
+import Spinner from "components/Spinner";
 import {
   calculateRollingAverage,
   formatDateToMMDD
-} from "utils/formattingUtils"; // Import formatters/calculators
-import { ChartOptions, ChartData, ChartDataset } from "chart.js"; // Import Chart.js types
-
-// Import the base styles (assuming styles object is available if needed, otherwise define inline)
-// import styles from "styles/wigoCharts.module.scss"; // If needed for specific styling
+} from "utils/formattingUtils";
+import { ChartOptions, ChartData, ChartDataset } from "chart.js";
+import { WIGO_COLORS, addAlpha, CHART_COLORS } from "styles/wigoColors";
 
 // --- Define props and dummy labels ---
 type GameScoreLineChartProps = {
@@ -26,23 +24,6 @@ interface GameScoreDataPoint {
   game_score: number | null;
   // Add other fields if your RPC returns more
 }
-
-// --- Color definitions (can be moved to a constants file) ---
-const COLOR_PALLET = [
-  {
-    borderColor: "rgb(75, 192, 192)",
-    backgroundColor: "rgba(75, 192, 192, 0.2)"
-  }, // Teal
-  {
-    borderColor: "rgb(153, 102, 255)",
-    backgroundColor: "rgba(153, 102, 255, 0.2)"
-  } // Purple
-  // ... add more if windowSizes can exceed 2
-];
-const GameScoreBarColor = {
-  borderColor: "rgb(54, 162, 235)",
-  backgroundColor: "rgba(54, 162, 235, 0.5)"
-}; // Blue
 
 export default function GameScoreLineChart({
   playerId
@@ -134,18 +115,14 @@ export default function GameScoreLineChart({
             windowSize,
             (item) => item.game_score ?? 0
           ); // Handle nulls in calculation
-      const colorIndex = index % COLOR_PALLET.length; // Cycle through colors
-
+      const lineColor =
+        index === 0 ? CHART_COLORS.LINE_PRIMARY : CHART_COLORS.PP_TOI;
       return {
         type: "line" as const,
         label: `${windowSize}-Game Rolling Avg`,
         data: rollingAvgData,
-        borderColor: useDummyData
-          ? "transparent"
-          : COLOR_PALLET[colorIndex].borderColor,
-        backgroundColor: useDummyData
-          ? "transparent"
-          : COLOR_PALLET[colorIndex].backgroundColor,
+        borderColor: useDummyData ? WIGO_COLORS.TRANSPARENT : lineColor,
+        backgroundColor: addAlpha(CHART_COLORS.LINE_PRIMARY, 0.2),
         fill: true, // Typically don't fill rolling averages
         tension: 0.2,
         pointRadius: 0, // No points on rolling average lines
@@ -163,11 +140,12 @@ export default function GameScoreLineChart({
           label: "Game Score",
           data: gameScoreValues,
           borderColor: useDummyData
-            ? "transparent"
-            : GameScoreBarColor.borderColor,
+            ? WIGO_COLORS.TRANSPARENT
+            : CHART_COLORS.BAR_PRIMARY,
           backgroundColor: useDummyData
-            ? "transparent"
-            : GameScoreBarColor.backgroundColor,
+            ? WIGO_COLORS.TRANSPARENT
+            : addAlpha(CHART_COLORS.BAR_PRIMARY, 0.7),
+
           order: windowSizes.length + 1 // Render bars behind all lines
         },
         // Spread the rolling average datasets

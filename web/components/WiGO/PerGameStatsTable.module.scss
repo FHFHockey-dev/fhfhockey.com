@@ -36,24 +36,49 @@ table.verticalStatsTable {
   height: 100%;
   border-collapse: collapse;
   table-layout: fixed; // Helps with column widths
-  border-bottom: 8px solid v.$background-light; // Optional: border for visual separation
+  border-bottom: 8px solid darken(v.$background-light, 4%); // Optional: border for visual separation
 
   th,
   td {
+    text-align: left;
+    width: 30%;
+    text-align: left;
+    padding-left: v.$space-md;
+    font-weight: 900;
+    color: v.$text-primary-color;
+
+    th,
+    td {
+      font-family: v.$font-family-primary;
+      text-transform: uppercase;
+      padding: v.$space-xs * 0.8;
+      text-align: center;
+      font-size: v.$font-size-base * 0.8;
+      white-space: nowrap;
+    }
+
+    &:not(:first-child) {
+      color: v.$text-color-primary;
+      text-align: center;
+      font-family: "roboto-condensed" sans-serif;
+      font-size: v.$font-size-small * 0.8;
+      letter-spacing: 0.15em;
+      width: 35%;
+    }
+
     font-family: v.$font-family-primary;
     text-transform: uppercase;
     padding: v.$space-xs * 0.8;
     text-align: center;
-    font-size: v.$font-size-base;
+    font-size: v.$font-size-small * 0.9;
     white-space: nowrap;
   }
 
   thead th {
-    // Column Headers (Metric, Per/GP, Per/82)
     padding: v.$space-sm;
-    font-size: v.$font-size-small;
+    font-size: v.$font-size-small * 0.9;
     letter-spacing: 0.25em;
-    background-color: v.$background-dark;
+    background-color: lighten(v.$background-dark, 1%);
     color: v.$text-primary-color;
     font-weight: 900;
     position: sticky; // Make header row sticky
@@ -80,10 +105,11 @@ table.verticalStatsTable {
   tbody tr {
     transition: background-color v.$transition-duration v.$transition-easing;
     &:nth-child(even) {
-      background-color: v.$background-dark;
+      background-color: lighten(v.$background-light, 0%);
     }
+
     &:nth-child(odd) {
-      background-color: v.$background-light;
+      background-color: lighten(v.$background-light, 2%);
     }
     &:hover {
       background-color: color.scale(v.$primary-color, $alpha: -70%);
@@ -109,7 +135,7 @@ table.verticalStatsTable {
     // Data cells (the numbers)
     color: v.$text-color-primary;
     font-family: "roboto-condensed" sans-serif;
-    font-size: v.$font-size-base;
+    font-size: v.$font-size-base * 0.8;
     letter-spacing: 0.15em;
   }
 }
