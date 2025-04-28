@@ -1,11 +1,5 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/StatsTable.tsx
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useMemo
-} from "react";
+import React, { useState, useCallback, useMemo } from "react"; // Removed useEffect if not used
 import { TableAggregateData } from "./types";
 import styles from "styles/wigoCharts.module.scss";
 import GameLogChart from "./StatsTableRowChart";
@@ -15,7 +9,6 @@ import {
 } from "utils/fetchWigoPlayerStats";
 
 // Define which stats are generally treated as 'COUNTS' for chart purposes
-// (This list might need refinement based on your specific data)
 const countStatLabels = [
   "Goals",
   "Assists",
@@ -29,127 +22,85 @@ const countStatLabels = [
   "BLK",
   "PIM",
   "iCF",
-  "ATOI", // Even though time, it's often aggregated like a count total
-  "PPTOI" // Same as ATOI
-  // Add any other stat labels that should be treated as counts
+  "ATOI",
+  "PPTOI"
 ];
 
 interface StatsTableProps {
-  // title?: "COUNTS" | "RATES"; // Title is now optional or removed
-  tableTitle?: string; // Optional generic title for the combined table header
-  data: TableAggregateData[]; // Combined counts and rates data
+  tableTitle?: string;
+  data: TableAggregateData[];
   isLoading: boolean;
   error: string | null;
+  // Update formatCell's type definition to reflect its actual usage
   formatCell: (
     row: TableAggregateData,
-    columnKey: DataColumnKey
-  ) => string | React.ReactNode; // Allow ReactNode for DIFF span
+    columnKey: keyof Omit<TableAggregateData, "label" | "GP" | "DIFF"> // Keep Omit here
+  ) => string; // It returns string based on its implementation
   playerId: number;
   currentSeasonId: number;
   leftTimeframe: keyof TableAggregateData;
   rightTimeframe: keyof TableAggregateData;
 }
 
+// These are the keys for the standard data COLUMNS
 type DataColumnKey = keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">;
 
-const rowKeys: (DataColumnKey | "DIFFLabel")[] = [
+// Define Column Keys and Headers
+const columnKeys: DataColumnKey[] = [
   "CA",
   "3YA",
   "LY",
-  "L5",
-  "L10",
-  "L20",
   "STD",
-  "DIFFLabel"
+  "L20",
+  "L10",
+  "L5"
 ];
 
-const rowHeaders: { [key: string]: string } = {
+const columnHeaders: { [key in DataColumnKey | "DIFF"]: string } = {
   CA: "CA",
   "3YA": "3YA",
   LY: "LY",
-  L5: "L5",
-  L10: "L10",
-  L20: "L20",
   STD: "STD",
-  DIFFLabel: "DIFF"
+  L20: "L20",
+  L10: "L10",
+  L5: "L5",
+  DIFF: "DIFF"
 };
 
+// --- Component Start ---
 const StatsTable: React.FC<StatsTableProps> = ({
-  tableTitle = "",
+  tableTitle = "Stat",
   data,
   isLoading,
   error,
-  formatCell,
+  formatCell, // Keep the prop
   playerId,
-  currentSeasonId,
-  leftTimeframe,
-  rightTimeframe
+  currentSeasonId
 }) => {
   const [expandedStatLabel, setExpandedStatLabel] = useState<string | null>(
     null
   );
-  const [expandedStatType, setExpandedStatType] = useState<"COUNTS" | "RATES">(
-    "RATES"
-  );
   const [gameLogData, setGameLogData] = useState<GameLogDataPoint[]>([]);
   const [isLoadingGameLog, setIsLoadingGameLog] = useState<boolean>(false);
   const [gameLogError, setGameLogError] = useState<string | null>(null);
-  const [hoveredStatLabel, setHoveredStatLabel] = useState<string | null>(null);
-  const tableRef = useRef<HTMLTableElement>(null);
-  const [columnOrder, setColumnOrder] = useState<string[]>([]);
-  const [selectedColumnIndex, setSelectedColumnIndex] = useState<number | null>(
-    null
+  const [expandedStatType, setExpandedStatType] = useState<"COUNTS" | "RATES">(
+    "RATES"
   );
 
-  // Memoize statLabels so it doesn't change on every render
-  const statLabels = useMemo(
-    () => data.filter((d) => d.label !== "GP").map((d) => d.label),
+  const statRowsData = useMemo(
+    () => data.filter((d) => d.label !== "GP"),
     [data]
   );
-
-  // Memoize gpRowData so it is available for getGpDataForChart
   const gpRowData = useMemo(() => data.find((d) => d.label === "GP"), [data]);
 
-  // Initialize column order only if it actually changes
-  useEffect(() => {
-    if (JSON.stringify(columnOrder) !== JSON.stringify(statLabels)) {
-      setColumnOrder(statLabels);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statLabels]);
-
-  // Scroll table to show selected column in position 2
-  useEffect(() => {
-    if (selectedColumnIndex !== null && tableRef.current) {
-      const table = tableRef.current;
-      const column = table.querySelector(
-        `th:nth-child(${selectedColumnIndex + 2})`
-      );
-      if (column) {
-        const columnRect = column.getBoundingClientRect();
-        const tableRect = table.getBoundingClientRect();
-        const scrollLeft = columnRect.left - tableRect.left - 100; // 100px offset for timeframe column
-        table.scrollTo({
-          left: scrollLeft,
-          behavior: "smooth"
-        });
-      }
-    }
-  }, [selectedColumnIndex]);
-
   const handleExpandClick = useCallback(
-    (statLabel: string) => {
+    /* ... same as before ... */ (statLabel: string) => {
       const newLabel = expandedStatLabel === statLabel ? null : statLabel;
       setExpandedStatLabel(newLabel);
       setGameLogData([]);
       setGameLogError(null);
 
       if (newLabel !== null) {
-        // Find the index of the selected column
-        const index = columnOrder.indexOf(statLabel);
-        setSelectedColumnIndex(index);
-
-        // Determine if the expanded stat is a count or rate for the chart
         const isCountStat = countStatLabels.includes(newLabel);
         const typeForChart: "COUNTS" | "RATES" = isCountStat
           ? "COUNTS"
@@ -158,8 +109,8 @@ const StatsTable: React.FC<StatsTableProps> = ({
 
         setIsLoadingGameLog(true);
         fetchPlayerGameLogForStat(playerId, currentSeasonId, statLabel)
-          .then((data) => {
-            setGameLogData(data);
+          .then((fetchedData) => {
+            setGameLogData(fetchedData);
             setIsLoadingGameLog(false);
           })
           .catch((err) => {
@@ -167,44 +118,16 @@ const StatsTable: React.FC<StatsTableProps> = ({
             setGameLogError(`Failed to load game log for ${statLabel}.`);
             setIsLoadingGameLog(false);
           });
-      } else {
-        setSelectedColumnIndex(null);
       }
     },
-    [expandedStatLabel, playerId, currentSeasonId, columnOrder]
+    [expandedStatLabel, playerId, currentSeasonId]
   );
 
-  const getCellValue = (
-    rowKey: DataColumnKey | "DIFFLabel",
+  const getAveragesForChart = /* ... same as before ... */ (
     statLabel: string
   ) => {
-    const statData = data.find((d) => d.label === statLabel);
-    if (!statData) return "-";
-
-    if (rowKey === "DIFFLabel") {
-      // DIFF calculation likely happens in the parent before data is passed
-      const diffValue = statData.DIFF;
-      const color =
-        diffValue !== undefined && diffValue !== null
-          ? diffValue >= 0
-            ? "rgb(18, 193, 126)"
-            : "rgb(240, 85, 118)"
-          : "#fff";
-      const displayValue =
-        diffValue !== undefined && diffValue !== null
-          ? `${diffValue.toFixed(1)}%`
-          : "-";
-      return <span style={{ color }}>{displayValue}</span>;
-    } else {
-      // Use the original formatCell, assuming it handles both counts/rates formatting
-      return formatCell(statData, rowKey as DataColumnKey);
-    }
-  };
-
-  const getAveragesForChart = (statLabel: string) => {
-    const statData = data.find((d) => d.label === statLabel);
+    const statData = statRowsData.find((d) => d.label === statLabel);
     if (!statData) return {};
-    // Return all potential average keys
     return {
       STD: statData.STD,
       LY: statData.LY,
@@ -216,181 +139,132 @@ const StatsTable: React.FC<StatsTableProps> = ({
     };
   };
 
-  const getGpDataForChart = () => {
+  const getGpDataForChart = /* ... same as before ... */ () => {
     return gpRowData?.GP;
   };
 
-  const expandedStatData = expandedStatLabel
-    ? data.find((d) => d.label === expandedStatLabel)
-    : null;
-
-  const handleColumnHeaderMouseEnter = (statLabel: string) => {
-    setHoveredStatLabel(statLabel);
-  };
-
-  const handleColumnHeaderMouseLeave = () => {
-    setHoveredStatLabel(null);
-  };
+  const totalColumns = columnKeys.length + 2;
 
   return (
-    <div
-      className={`${styles.transposedTableContainer} ${
-        expandedStatLabel ? styles.hasExpandedChart : ""
-      }`}
-    >
-      {/* Timeframe Table */}
-      <table className={styles.timeframeTable}>
-        <thead>
-          <tr>
-            <th>Stat</th>
-          </tr>
-        </thead>
-        <tbody>
-          {isLoading ? (
-            <tr>
-              <td>Loading...</td>
-            </tr>
-          ) : error ? (
-            <tr>
-              <td style={{ color: "red" }}>{error}</td>
-            </tr>
-          ) : data.length > 0 && statLabels.length > 0 ? (
-            rowKeys.map((rowKey) => (
-              <tr key={rowKey}>
-                <td>{rowHeaders[rowKey]}</td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td>No data</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-
-      {/* Stats Table */}
+    <div className={styles.statsTableContainer}>
       <table className={styles.statsTable}>
         <thead>
           <tr>
-            {columnOrder.map((label, index) => (
-              <React.Fragment key={label}>
-                <th
-                  className={`${
-                    hoveredStatLabel === label ? styles.columnHover : ""
-                  }`}
-                  onMouseEnter={() => handleColumnHeaderMouseEnter(label)}
-                  onMouseLeave={handleColumnHeaderMouseLeave}
-                >
-                  <div className={styles.headerContent}>
-                    <span>{label}</span>
-                    <button
-                      onClick={() => handleExpandClick(label)}
-                      className={styles.expandButton}
-                      aria-expanded={expandedStatLabel === label}
-                      aria-controls={`chart-${label}`}
-                    >
-                      {expandedStatLabel === label ? "-" : "+"}
-                    </button>
-                  </div>
-                </th>
-                <th
-                  className={`${styles.chartColumn} ${
-                    expandedStatLabel === label ? styles.visible : ""
-                  }`}
-                >
-                  {expandedStatLabel === label && (
-                    <div className={styles.chartColumnHeader}>
-                      {`${label} Per Game - ${currentSeasonId
-                        .toString()
-                        .slice(0, 4)}-${currentSeasonId
-                        .toString()
-                        .slice(6, 8)}`}
-                    </div>
-                  )}
-                </th>
-              </React.Fragment>
+            <th>
+              <div className={styles.headerContent}>
+                <span>{tableTitle}</span>
+              </div>
+            </th>
+            {columnKeys.map((key) => (
+              <th key={key}>{columnHeaders[key]}</th>
             ))}
+            <th>{columnHeaders["DIFF"]}</th>
           </tr>
         </thead>
         <tbody>
           {isLoading ? (
             <tr>
-              <td colSpan={columnOrder.length * 2}>Loading stats data...</td>
+              <td colSpan={totalColumns}>Loading stats data...</td>
             </tr>
           ) : error ? (
             <tr>
-              <td colSpan={columnOrder.length * 2} style={{ color: "red" }}>
+              <td colSpan={totalColumns} style={{ color: "red" }}>
                 {error}
               </td>
             </tr>
-          ) : data.length > 0 && statLabels.length > 0 ? (
-            <>
-              <tr>
-                {columnOrder.map((statLabel) => (
-                  <React.Fragment key={statLabel}>
-                    <td
-                      className={`${
-                        hoveredStatLabel === statLabel ? styles.columnHover : ""
-                      }`}
-                      onMouseEnter={() =>
-                        handleColumnHeaderMouseEnter(statLabel)
-                      }
-                      onMouseLeave={handleColumnHeaderMouseLeave}
-                    >
-                      {getCellValue(rowKeys[0], statLabel)}
-                    </td>
-                    <td
-                      className={`${styles.chartColumn} ${
-                        expandedStatLabel === statLabel ? styles.visible : ""
-                      }`}
-                      rowSpan={rowKeys.length}
-                    >
-                      {expandedStatLabel === statLabel && (
-                        <div
-                          id={`chart-${statLabel}`}
-                          className={`${styles.chartColumnContent} ${
-                            gameLogData.length > 0 ? styles.visible : ""
-                          }`}
-                        >
-                          <GameLogChart
-                            playerId={playerId}
-                            seasonId={currentSeasonId}
-                            statLabel={statLabel}
-                            gameLogData={gameLogData}
-                            averages={getAveragesForChart(statLabel)}
-                            gpData={getGpDataForChart()}
-                            isLoading={isLoadingGameLog}
-                            error={gameLogError}
-                            tableType={expandedStatType}
-                          />
-                        </div>
-                      )}
-                    </td>
-                  </React.Fragment>
-                ))}
-              </tr>
-              {rowKeys.slice(1).map((rowKey) => (
-                <tr key={rowKey}>
-                  {columnOrder.map((statLabel) => (
-                    <td
-                      key={statLabel}
-                      className={`${
-                        hoveredStatLabel === statLabel ? styles.columnHover : ""
-                      }`}
-                      onMouseEnter={() =>
-                        handleColumnHeaderMouseEnter(statLabel)
-                      }
-                      onMouseLeave={handleColumnHeaderMouseLeave}
-                    >
-                      {getCellValue(rowKey, statLabel)}
-                    </td>
+          ) : statRowsData.length > 0 ? (
+            statRowsData.map((statData) => (
+              <React.Fragment key={statData.label}>
+                {/* Stat Row */}
+                <tr>
+                  <td className={styles.statLabelCell}>
+                    <div className={styles.statLabelContent}>
+                      <span>{statData.label}</span>
+                      <button
+                        onClick={() => handleExpandClick(statData.label)}
+                        className={styles.expandButton}
+                        aria-expanded={expandedStatLabel === statData.label}
+                        aria-controls={`chart-${statData.label}`}
+                      >
+                        {expandedStatLabel === statData.label ? "-" : "+"}
+                      </button>
+                    </div>
+                  </td>
+                  {/* Timeframe Data Cells - Use formatCell here */}
+                  {columnKeys.map((key) => (
+                    <td key={key}>{formatCell(statData, key)}</td>
                   ))}
+
+                  {/* DIFF Cell - Handle formatting and coloring directly */}
+                  <td className={styles.diffCell}>
+                    {(() => {
+                      // IIFE to allow conditional logic
+                      const diffValue = statData.DIFF; // Get the pre-calculated DIFF value
+                      if (
+                        diffValue !== undefined &&
+                        diffValue !== null &&
+                        !isNaN(diffValue)
+                      ) {
+                        // 1. Determine if positive or negative
+                        const isPositive = diffValue > 0;
+                        const isNegative = diffValue < 0;
+
+                        // 2. Select the CSS class based on the sign <--- COLOR LOGIC HERE
+                        const colorClass = isPositive
+                          ? styles.diffPositive // Use green class if positive
+                          : isNegative
+                          ? styles.diffNegative // Use red class if negative
+                          : styles.diffNeutral; // Use neutral class if zero
+
+                        // 3. Format the display value
+                        const displayValue = `${
+                          isPositive ? "+" : ""
+                        }${diffValue.toFixed(1)}%`;
+
+                        // 4. Render a span WITH THE CORRECT CSS CLASS
+                        return (
+                          <span className={colorClass}>{displayValue}</span>
+                        );
+                      } else {
+                        return "-"; // Render hyphen if DIFF is not a valid number
+                      }
+                    })()}
+                  </td>
                 </tr>
-              ))}
-            </>
+
+                {/* Chart Row (Conditionally Rendered) */}
+                {expandedStatLabel === statData.label && (
+                  <tr
+                    className={styles.chartRowExpanded}
+                    id={`chart-${statData.label}`}
+                  >
+                    <td colSpan={totalColumns}>
+                      <div className={styles.chartWrapper}>
+                        <h4>{`${statData.label} Per Game - ${currentSeasonId
+                          .toString()
+                          .slice(0, 4)}-${currentSeasonId
+                          .toString()
+                          .slice(6, 8)}`}</h4>
+                        <GameLogChart
+                          playerId={playerId}
+                          seasonId={currentSeasonId}
+                          statLabel={statData.label}
+                          gameLogData={gameLogData}
+                          averages={getAveragesForChart(statData.label)}
+                          gpData={getGpDataForChart()}
+                          isLoading={isLoadingGameLog}
+                          error={gameLogError}
+                          tableType={expandedStatType}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            ))
           ) : (
             <tr>
-              <td colSpan={columnOrder.length * 2}>No data available.</td>
+              <td colSpan={totalColumns}>No data available.</td>
             </tr>
           )}
         </tbody>

@@ -16,7 +16,7 @@ import { formatSecondsToMMSS } from "./tableUtils";
 import styles from "styles/wigoCharts.module.scss";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import { TableAggregateData } from "./types";
-import { letterSpacing, textTransform } from "@mui/system";
+// Removed unused imports: letterSpacing, textTransform, useState (if not used elsewhere now)
 
 interface GameLogChartProps {
   playerId: number;
@@ -64,7 +64,6 @@ const convertibleCountStats: string[] = [
   "iCF"
 ];
 
-// **** Define Color Map for Averages ****
 const averageColors: Record<AverageKey, string> = {
   STD: "#e60000", // Red
   LY: "#00b300", // Green
@@ -96,8 +95,9 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
     L20: false
   });
 
-  const currentSeasonData = useCurrentSeason();
-  const seasonId = currentSeasonData?.seasonId || 0;
+  // Removed unused useCurrentSeason hook as seasonId is passed via props now
+  // const currentSeasonData = useCurrentSeason();
+  // const seasonId = currentSeasonData?.seasonId || 0;
 
   const handleAverageToggle = (key: AverageKey) => {
     setVisibleAverages((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -115,18 +115,16 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
   }, [gameLogData, isTOIStat]);
 
   const seasonAverageValue = useMemo(() => {
-    // Renamed for clarity
     if (!gameLogData || gameLogData.length === 0) return null;
     const validValues = gameLogData
       .map((d) => d.value)
       .filter((v) => typeof v === "number") as number[];
     if (validValues.length === 0) return null;
     const sum = validValues.reduce((acc, val) => acc + val, 0);
-    return sum / validValues.length; // Return raw average (seconds for TOI)
+    return sum / validValues.length;
   }, [gameLogData]);
 
   const seasonAverageReference = useMemo(() => {
-    // Value for ReferenceLine
     if (seasonAverageValue === null) return null;
     return isTOIStat ? seasonAverageValue / 60 : seasonAverageValue;
   }, [seasonAverageValue, isTOIStat]);
@@ -136,14 +134,13 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
     statType: "TOI" | "Percent" | "CountPerGame" | "Other"
   ): string => {
     if (value == null || isNaN(value)) return "-";
-
     switch (statType) {
       case "TOI":
-        return formatSecondsToMMSS(value); // Expects seconds
+        return formatSecondsToMMSS(value);
       case "Percent":
-        return `${(value * 100).toFixed(1)}%`; // Expects 0-1 decimal
+        return `${(value * 100).toFixed(1)}%`;
       case "CountPerGame":
-        return value.toFixed(2); // Show 2 decimal places
+        return value.toFixed(2);
       case "Other":
       default:
         return Number.isInteger(value) ? value.toString() : value.toFixed(2);
@@ -154,22 +151,15 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
     if (active && payload && payload.length) {
       const dataPoint = chartData.find((d) => d.game === label);
       if (!dataPoint) return null;
-
-      const rawValue = payload[0].value; // This value is potentially scaled (minutes for TOI)
+      const rawValue = payload[0].value;
       let formattedValue = "N/A";
-
       if (typeof rawValue === "number") {
-        if (isTOIStat) {
-          // Convert axis value (minutes) back to seconds for formatting
+        if (isTOIStat)
           formattedValue = formatDisplayValue(rawValue * 60, "TOI");
-        } else if (isPercentStat) {
+        else if (isPercentStat)
           formattedValue = formatDisplayValue(rawValue, "Percent");
-        } else {
-          // Attempt to determine if it's a count - difficult here, default to 'Other'
-          formattedValue = formatDisplayValue(rawValue, "Other");
-        }
+        else formattedValue = formatDisplayValue(rawValue, "Other");
       }
-
       return (
         <div className={styles.chartTooltip}>
           <p>{`Game ${label} (${dataPoint.date})`}</p>
@@ -180,9 +170,8 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
     return null;
   };
 
-  // Modify chart dimensions for column layout
-  const chartHeight = 150; // Reduced height for column layout
-  const chartWidth = 400; // Fixed width for column layout
+  // Adjust chart height if needed for row layout, REMOVE fixed width
+  const chartHeight = 220; // Increased height slightly for better visibility in a row
 
   // **** RENDER LOGIC ****
   if (isLoading)
@@ -204,39 +193,33 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
     <div className={styles.gameLogChartContainer}>
       <div className={styles.averageToggleButtons}>
         {availableAverages.map((key) => {
-          const avgValue = averages[key]; // This is the raw average value (e.g., total minutes for TOI)
+          const avgValue = averages[key];
           const gpValue = gpData?.[key];
-          let valueForButton = avgValue; // Start with the raw average
+          let valueForButton = avgValue;
           let formattingType: "TOI" | "Percent" | "CountPerGame" | "Other" =
             "Other";
           let suffix = "";
-
           if (avgValue != null) {
             if (isTOIStat) {
-              // Convert average minutes to seconds for formatting
               valueForButton = avgValue * 60;
               formattingType = "TOI";
             } else if (isPercentStat) {
-              formattingType = "Percent"; // Assume avgValue is already 0-1 decimal
+              formattingType = "Percent";
             } else if (
               tableType === "COUNTS" &&
               convertibleCountStats.includes(statLabel) &&
               typeof gpValue === "number" &&
               gpValue > 0
             ) {
-              valueForButton = avgValue / gpValue; // Calculate per-game average
+              valueForButton = avgValue / gpValue;
               formattingType = "CountPerGame";
               suffix = "/GP";
             } else if (tableType === "RATES") {
-              formattingType = "Other"; // Rates usually need toFixed(2)
+              formattingType = "Other";
             }
           }
-
-          // Get the color for this average key
           const buttonColor = averageColors[key];
           const isActive = visibleAverages[key];
-
-          // Render button only if we have a valid value to display
           if (valueForButton != null) {
             return (
               <button
@@ -262,15 +245,17 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
       <ResponsiveContainer width="100%" height={chartHeight}>
         <LineChart
           data={chartData}
-          margin={{ top: 0, right: 10, left: 0, bottom: 0 }}
+          margin={{ top: 5, right: 20, left: 0, bottom: 20 }}
         >
+          {" "}
+          {/* Adjusted margins */}
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="game"
             label={{
               value: "Game",
               position: "insideBottom",
-              offset: -10,
+              offset: -15,
               style: {
                 textAnchor: "middle",
                 fontSize: "10px",
@@ -280,6 +265,8 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 textTransform: "uppercase"
               }
             }}
+            tick={{ fontSize: 9, fill: "#aaa" }}
+            height={35} // Increased height for label
           />
           <YAxis
             tickFormatter={(tick) =>
@@ -289,12 +276,12 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
               )
             }
             tick={{ fontSize: 9, fill: "#aaa" }}
-            width={40}
+            width={45} // Slightly increased width
             label={{
               value: statLabel,
               angle: -90,
               position: "insideLeft",
-              offset: 10,
+              offset: -5,
               style: {
                 textAnchor: "middle",
                 fontSize: "10px",
@@ -306,25 +293,18 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
             }}
           />
           <Tooltip content={<CustomTooltip />} />
-          <Legend
-            verticalAlign="bottom"
-            align="right"
-            formatter={(value, entry) => {
-              const color = entry.color;
-              return <span style={{ color, fontSize: "10px" }}>{value}</span>;
-            }}
-          />
+          {/* <Legend verticalAlign="bottom" align="right" wrapperStyle={{ fontSize: "10px" }} /> */}{" "}
+          {/* Optional: Legend can take space */}
           <Line
             type="monotone"
             dataKey="value"
             name={statLabel}
             stroke="#8884d8"
             strokeWidth={2}
-            activeDot={{ r: 8 }}
+            activeDot={{ r: 6 }}
             dot={false}
             connectNulls
           />
-
           {/* Season Average Line */}
           {seasonAverageValue !== null && seasonAverageReference !== null && (
             <ReferenceLine
@@ -343,14 +323,11 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
               strokeWidth={1.5}
             />
           )}
-
           {/* Toggleable Average Lines */}
           {availableAverages.map((key) => {
-            const avgValue = averages[key]; // Raw average value (minutes for TOI)
+            const avgValue = averages[key];
             const gpValue = gpData?.[key];
             let referenceValue = null;
-
-            // Calculate referenceValue (scaled for axis)
             if (avgValue != null) {
               if (
                 tableType === "COUNTS" &&
@@ -358,24 +335,22 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 typeof gpValue === "number" &&
                 gpValue > 0
               ) {
-                referenceValue = avgValue / gpValue; // Per-game value for counts
+                referenceValue = avgValue / gpValue;
               } else if (isTOIStat) {
-                // **** FIX: Use avgValue directly (it's already average minutes) ****
                 referenceValue = avgValue;
-              } else if (tableType === "RATES" || isPercentStat) {
-                referenceValue = avgValue; // Raw value for rates/percentages
+              } // Already average minutes
+              else if (tableType === "RATES" || isPercentStat) {
+                referenceValue = avgValue;
               } else if (
                 tableType === "COUNTS" &&
                 !convertibleCountStats.includes(statLabel) &&
                 !isTOIStat &&
                 !isPercentStat
               ) {
-                referenceValue = avgValue; // Raw value for other counts
+                referenceValue = avgValue;
               }
             }
-
             const strokeColor = averageColors[key];
-
             if (visibleAverages[key] && referenceValue != null) {
               return (
                 <ReferenceLine
@@ -384,7 +359,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                   stroke={strokeColor}
                   strokeDasharray="4 4"
                   strokeWidth={1}
-                /> // Thinner reference lines
+                />
               );
             }
             return null;

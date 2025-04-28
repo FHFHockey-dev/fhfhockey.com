@@ -7,32 +7,20 @@
 
 /* =================== Main Dashboard Layout =================== */
 .wigoDashHeader {
+  margin-top: 25px;
+  margin-bottom: 25px;
   display: flex;
   flex-direction: column;
-  // border-collapse: collapse; // Likely unnecessary here
-}
-
-.wigoHeader {
-  margin: v.$space-md auto v.$space-lg;
   width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  font-family: "Train One", sans-serif;
-  letter-spacing: 1.5em;
-  font-size: v.$font-size-base * 1.3;
-  font-weight: 100;
-  line-height: 0.85;
 }
 
 .spanColorBlue {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  display: inline-block;
   color: v.$primary-color;
   font-family: "Train One", sans-serif;
   font-size: v.$font-size-base * 1.4;
   font-weight: 900;
+  vertical-align: baseline;
 }
 
 .wigoDashboardContainer {
@@ -40,28 +28,29 @@
   width: 95%;
   max-width: 2200px;
   min-width: 1300px;
-  height: 87vh;
-  margin: 0 auto v.$space-xxl auto;
+  min-height: 100vh;
+  max-height: 140vh;
+  margin: v.$space-lg auto v.$space-xxl auto;
   display: flex;
-  // border-collapse: collapse; // Likely unnecessary here
-  border: 2px solid v.$border-color;
+  border: 10px solid v.$border-color-primary;
+  border-radius: v.$border-radius * 2;
+  outline: 15px solid v.$background-dark;
 }
 
 .wigoDashboardContent {
   flex-grow: 1;
   background-color: v.$background-dark;
   border-radius: v.$border-radius;
-  overflow: hidden; // Prevent content spilling out
+  overflow: hidden; // Keep hidden on the main grid container
 
   // --- Grid Definition ---
   display: grid;
-  grid-template-columns: repeat(
-    36,
-    1fr
-  ); // 36 columns (spans grid lines 1 to 37)
-  grid-template-rows: repeat(36, 1fr); // 36 rows (spans grid lines 1 to 37)
-  padding: v.$space-xs; // Padding around the grid
-  gap: v.$space-xs; // Gap between grid items
+  grid-template-columns: repeat(36, 1fr);
+  grid-template-rows: repeat(44, 1fr); // 44 rows (spans grid lines 1 to 45)
+  padding: v.$space-lg;
+  column-gap: v.$space-xl; // Keep the horizontal gap between columns
+  row-gap: v.$space-sm; // Remove the vertical gap between rows
+  margin-bottom: v.$space-sm; // Keep the bottom margin
 }
 
 /* =================== Base Styles for Grid Items =================== */
@@ -71,72 +60,174 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100%; // Allow items to fill their grid area
-  overflow: hidden; // Important: prevent internal content from breaking grid layout
-  background-color: v.$background-dark; // Consistent background
-  border-radius: v.$border-radius-sm; // Slight rounding for containers
-  border: 1px solid v.$border-color; // Subtle border for definition
-  box-sizing: border-box; // Include border/padding in size
+  height: 100%;
+  overflow: hidden; // Important: prevent internal content from breaking grid
+  background-color: v.$background-dark;
+  box-sizing: border-box;
+}
+
+/* =================== Wrapper Column Styles =================== */
+// These wrappers will now be the direct children positioned by the grid
+
+.leftColumnWrapper,
+.middleColumnWrapper,
+.rightColumnWrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%; // Make wrapper fill its grid area height
+  width: 100%; // Make wrapper fill its grid area width
+  overflow: hidden; // Prevent wrappers from overflowing grid area, children handle scroll
+  outline: 8px solid v.$background-light; // Optional: border for visual separation
+  // outline: 6px solid v.$background-light; // Optional: outline for visual separation
+  border-radius: v.$border-radius * 0.25; // Optional: round the column wrapper itself
+  margin-top: v.$space-sm;
+
+  // background-color: darken(v.$background-dark, 1%); // Optional: slight bg diff for debugging
+}
+
+// grid areas for the *wrappers*
+// DOWN / LEFT / RIGHT / DOWN
+.leftColumnWrapper {
+  grid-area: 3 / 1 / 45 / 9; // Rows 3-44, Cols 1-8
+}
+
+.middleColumnWrapper {
+  grid-area: 3 / 9 / 45 / 25; // Rows 3-44, Cols 9-24
+}
+
+.rightColumnWrapper {
+  grid-area: 3 / 25 / 45 / 37; // Rows 3-44, Cols 25-36
 }
 
 /* =================== Specific Container Styles & Grid Areas (BENTO BOX LAYOUT) =================== */
 
-// --- Top Band (Rows 1-9) ---
+.headerRowWrapper {
+  grid-area: 1 / 1 / 3 / 37; // Span the full width where the two items were
+  display: flex; // Use flexbox to position children horizontally
+  align-items: center; // Make children fill the height of the wrapper
+  justify-content: space-between; // Space out children
+  gap: 0; // Ensure no gap between the flex children (search bar and header)
+  padding-bottom: v.$space-md;
+  height: 100%;
+  width: 100%;
+
+  // Apply a border to the wrapper if desired, instead of individual items
+
+  border-bottom: 8px double v.$primary-color;
+}
+
+// --- Top Row Items (Still direct grid children) ---
 .nameSearchBarContainer {
-  grid-area: 1 / 1 / 3 / 7; // Row 1-2, Col 1-6
+  // REMOVED grid-area
   background-color: v.$background-dark;
-  border-bottom: 3px solid #404040;
-  border-top-left-radius: v.$border-radius-sm;
-  padding: 0;
-  overflow: visible !important; // MUST override for dropdown
-  z-index: 10;
-  display: flex;
+  height: 100%; // Fill height of wrapper
+  min-height: 45px; // Keep minimum
+  overflow: visible !important; // Keep for dropdown
+  display: flex; // Keep internal flex
   align-items: center;
   justify-content: space-between;
+  z-index: 3; // Keep
+  // border: 3px solid v.$border-color-primary; // Remove if border applied to wrapper
+
+  // --- Flex sizing ---
+  flex: 7 1 0%; // Approx original width (8 columns wide) - Grow 8, Shrink 1, Basis 0
+  min-width: 0; // Prevent flex overflow issues
+
   > div {
+    // Target inner div if needed
+
     width: 100%;
     height: 100%;
   }
 }
 
-.playerHeaderContainer {
-  grid-area: 3 / 1 / 13 / 7; // Row 3-9, Col 1-6
-  position: relative;
-  z-index: 1;
-  padding: 0;
-  background-color: var(--primary-color); // Uses CSS variable
+.wigoHeader {
+  // REMOVED grid-area
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: v.$space-md;
+  background-color: v.$background-dark;
   overflow: hidden;
-  border-radius: v.$border-radius-sm;
-  border: 1px solid v.$border-color;
+  white-space: nowrap;
+  // border-bottom: 8px double v.$primary-color; // Remove if border applied to wrapper
+  border: none; // Remove border
+  height: 100%; // Fill height of wrapper
+
+  // --- Flex sizing ---
+  flex: 27 1 0%; // Approx original width (28 columns wide) - Grow 28, Shrink 1, Basis 0
+  min-width: 0; // Prevent flex overflow issues
+
+  .headerText {
+    font-family: "Train One", sans-serif;
+    letter-spacing: 1.5em;
+    font-size: v.$font-size-base * 1.2;
+    font-weight: 100;
+  }
 }
 
-.perGameStatsContainer {
-  grid-area: 1 / 7 / 13 / 12; // Row 1-9, Col 7-11
-  @include internal-flex-column;
-  padding: 0 !important; // Overrides internal padding if table adds its own
-  overflow: hidden; // Let internal table scroll manage itself
+// --- Left Column Components (Children of .leftColumnWrapper) ---
+
+.playerHeaderContainer {
+  position: relative; // Keep relative for internal absolute positioning
+  z-index: 1; // Keep for stacking context if needed
+  padding: 0;
+  background-color: var(--primary-color);
+  overflow: hidden;
+  border-bottom: 8px solid v.$background-light;
+  flex: 0 0 auto; // Don't grow or shrink, take content height (adjust if needed)
+  min-height: 150px; // Example: ensure minimum height
 }
 
 .opponentLogContainer {
-  grid-area: 13 / 7 / 25 / 12; // Row 1-9, Col 12-16
   @include internal-flex-column;
   padding: 0;
+  flex: 1 1 auto; // Allow growing and shrinking
+  margin-bottom: auto;
+  height: 100%;
 }
 
 .ratingsContainer {
-  grid-area: 13 / 1 / 23 / 7; // Row 27-31, Col 1-12
-  border: none !important;
   @include internal-flex-column;
+  padding: 5px 0; // Adjust padding as needed
+  flex: 1 1 auto; // Allow growing and shrinking
+  height: 100%;
+  min-height: 250px;
+  max-height: 250px;
+  border-top: 8px solid v.$background-light;
+}
+
+.perGameStatsContainer {
+  @include internal-flex-column; // Keep mixin for internal structure
+  padding: 0 !important;
+  overflow: hidden; // Mixin handles this, but good to be explicit
+  flex: 1 1 auto; // Allow growing and shrinking, base size auto
+  height: 100%;
+  max-height: 415px;
+}
+
+.consistencyAndCategoryWrapper {
   padding: 0;
+  display: flex;
+  flex-direction: row; // Explicitly row
+  // align-items: center; // Change this if you want them to fill height
+  align-items: stretch; // Make children fill the height of the wrapper
+  // justify-content: center; // Remove or adjust as needed (e.g., flex-start)
   overflow: hidden;
+  flex: 1 1 auto; // Allow this wrapper row to grow/shrink in the main column
+  min-height: 230px;
+  border-bottom: 8px solid v.$background-light; // Optional: border for visual separation
 }
 
 .consistencyRatingContainer {
-  grid-area: 1 / 12 / 13 / 19; // Row 10-26, Col 1-6
-
-  @include internal-flex-column;
+  @include internal-flex-column; // Keep for internal column layout
   padding: 0;
-  border-top-right-radius: v.$border-radius-sm;
+  min-height: 200px; // Keep min-height
+
+  // --- Flex Sizing ---
+  flex: 3 1 0%; // Grow = 2, Shrink = 1, Basis = 0% (Takes 2/3rds of available width)
+  min-width: 0; // Prevent flexbox overflow issues
+
   // --- Internal styles for Consistency Chart ---
   .chartContainer {
     display: grid;
@@ -146,7 +237,7 @@
     overflow: hidden;
   }
   .chartTitle {
-    background-color: darken(v.$primary-color, 32%);
+    background-color: darken(v.$primary-color, 25%);
     padding: 6px 0;
     display: flex;
     justify-content: center;
@@ -157,7 +248,7 @@
       margin: 0;
       font-size: 12px;
       font-weight: 600;
-      letter-spacing: 10px;
+      letter-spacing: 12px;
       font-family: "Lucida Sans", "Lucida Grande", sans-serif;
       color: v.$text-color-primary;
     }
@@ -197,9 +288,11 @@
     }
   }
   .consistencyItem {
+    width: 100%;
     display: flex;
     align-items: center;
-    padding: 6px 0;
+    justify-content: space-between;
+    padding: 2px 0;
     border-bottom: 1px solid #3a3a3a;
     &:last-child {
       border-bottom: none;
@@ -219,18 +312,23 @@
     color: #ccc;
     margin-right: 10px;
     white-space: nowrap;
+    width: 50%;
+    text-align: left;
   }
+
   .consistencyValue {
     color: #fff;
     font-weight: bold;
-    margin-left: auto;
-    padding-left: 10px;
+    text-align: right;
+    width: 50%;
   }
   .consistencyCount {
     color: #888;
     font-size: 10px;
     margin-left: 5px;
     white-space: nowrap;
+    width: 50%;
+    text-align: right;
   }
   .chartLoadingPlaceholder,
   .chartErrorPlaceholder {
@@ -251,55 +349,75 @@
   // --- End Consistency Chart Internal Styles ---
 }
 
-// --- Middle Band (Rows 10-26) ---
+// --- Middle Column Components (Children of .middleColumnWrapper) ---
 .percentileChartContainer {
-  // Category Coverage
-  grid-area: 1 / 19 / 13 / 25; // Row 1-9, Col 17-24
-
-  @include internal-flex-column;
+  // Renamed from Category Coverage based on component name
+  @include internal-flex-column; // Keep for internal column layout
   padding: 0;
+  min-height: 200px; // Keep min-height
+
+  // --- Flex Sizing ---
+  flex: 2 1 0%; // Grow = 1, Shrink = 1, Basis = 0% (Takes 1/3rd of available width)
+  min-width: 0; // Prevent flexbox overflow issues
+  border-left: 8px solid v.$background-light; // Optional: border for visual separation
+
+  .chartTitle {
+    background-color: darken(v.$primary-color, 25%);
+    padding: 6px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-bottom: 1px solid #444;
+    text-transform: uppercase;
+    h3 {
+      margin: 0;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 12px;
+      font-family: "Lucida Sans", "Lucida Grande", sans-serif;
+      color: v.$text-color-primary;
+    }
+  }
 }
 
-.rateStatBarPercentilesContainer {
-  // Rate Percentiles (Expanded Width)
-  grid-area: 13 / 12 / 25 / 25; // Row 10-26, Col 7-36
-  @include internal-flex-column;
-  padding: 0;
-}
-
-// --- Lower-Mid Band: Line Charts (Rows 27-31) ---
 .toiChartContainer {
-  // TOI Line Chart
-  grid-area: 1 / 25 / 9 / 37; // Row 1-9, Col 25-36
   @include internal-flex-column;
   padding: 0;
+  flex: 1 1 auto;
+  min-height: 150px;
+  border-bottom: 8px solid v.$background-light; // Optional: border for visual separation
 }
 
 .ppgChartContainer {
-  // PPG Line Chart
-  grid-area: 9 / 25 / 17 / 37; // Row 27-31, Col 13-24
   @include internal-flex-column;
   padding: 0;
+  flex: 1 1 auto;
+  min-height: 150px;
+  border-bottom: 8px solid v.$background-light; // Optional: border for visual separation
 }
 
 .gameScoreContainer {
-  // GameScore Line Chart
-  grid-area: 17 / 25 / 25 / 37; // Row 27-31, Col 25-36
   @include internal-flex-column;
   padding: 0;
+  flex: 1 1 auto;
+  min-height: 150px;
 }
 
-// --- Bottom Band: Timeframe + Stats Table (Rows 32-36) ---
-.timeframeComparisonWrapper {
-  // Timeframe Selector
-  grid-area: 23 / 1 / 25 / 7; // Row 32-36, Col 1-3
+.rateStatBarPercentilesContainer {
   @include internal-flex-column;
-  padding: v.$space-sm;
+  padding: 0;
+  border-top: 8px solid v.$background-light; // Optional: border for visual separation
+  flex: 1 1 auto;
+  min-height: 250px;
+  max-height: 250px;
+}
+
+// --- Right Column Components (Children of .rightColumnWrapper) ---
+.timeframeComparisonWrapper {
+  @include internal-flex-column; // Use mixin if appropriate, or custom styles
   align-items: center;
-  justify-content: center; // Or flex-start if content should align top
-  border-bottom: none;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
+  justify-content: center;
+  flex: 0 0 auto; // Don't grow or shrink, fixed height based on content
   > div {
     // Target the TimeframeComparison component inside
     width: 100%;
@@ -308,15 +426,261 @@
 }
 
 .combinedStatsTableContainer {
-  // Combined Stats Table
-  grid-area: 25 / 1 / 37 / 37; // Row 32-36, Col 4-36
   @include internal-flex-column;
-  padding: 0; // Let internal table handle scrolling
-  overflow: hidden; // Crucial for table's own scrollbars
+  padding: 0;
+  overflow: hidden; // Mixin handles this
+  flex: 1 1 auto; // Allow table container to grow and shrink
+  height: 100%;
 }
 
-// --- REMOVED Containers ---
-/* Style definitions for .countsTableContainer, .ratesTableContainer, .tableSeparatorLabel are removed */
+/* =================== VERTICAL Table Styling =================== */
+.statsTableContainer {
+  height: 100%;
+  width: 100%;
+  overflow-y: auto; // Enable vertical scroll if content overflows height
+
+  &::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: v.$primary-color;
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-track {
+    background-color: v.$background-medium;
+  }
+  scrollbar-width: thin;
+  scrollbar-color: v.$primary-color v.$background-medium;
+}
+
+.statsTable {
+  border-collapse: collapse;
+  width: 100%; // Make table fill container width
+  height: 100%; // Allow table to potentially fill height if needed
+  table-layout: fixed; // Use fixed layout for predictable column widths
+
+  .diffPositive {
+    color: rgb(18, 193, 126); /* Green */
+    font-weight: bold;
+  }
+
+  .diffNegative {
+    color: rgb(240, 85, 118); /* Red */
+    font-weight: bold;
+  }
+
+  .diffNeutral {
+    color: #ccc; /* Light grey for zero */
+    font-weight: bold;
+  }
+  th,
+  td {
+    padding: 0 v.$space-sm * 0.5; // Adjust padding
+    font-size: v.$font-size-small;
+    height: 35px;
+    font-weight: 400;
+    font-family: "roboto condensed", sans-serif;
+    letter-spacing: 0.2px;
+    vertical-align: middle;
+    white-space: nowrap;
+    text-align: center;
+    overflow: hidden; // Prevent content overflow
+    text-overflow: ellipsis; // Add ellipsis if text too long
+  }
+
+  th {
+    background-color: darken(v.$background-dark, 3%); // Slightly darker header
+    color: v.$text-color-secondary;
+    font-weight: 600;
+    font-size: v.$font-size-small * 0.9;
+    border-bottom: 3px solid v.$primary-color;
+
+    position: sticky; // Make header sticky
+    top: 0; // Stick to the top of the scroll container
+    z-index: 1; // Ensure header is above scrolling content
+  }
+
+  // First column (Stat Label) styling
+  th:first-child,
+  td:first-child {
+    width: 100px; // Wider column for stat labels + button
+    min-width: 75px;
+    text-align: left;
+    font-weight: 600;
+    color: v.$text-color-primary; // Make stat labels stand out
+    position: sticky; // Make first column sticky
+    left: 0; // Stick to the left
+    z-index: 0; // Behind sticky header if needed
+    border-right: 2px solid v.$border-color; // Stronger border
+  }
+  th:first-child {
+    z-index: 2; // Make sure top-left header cell is above all
+    padding-left: v.$space-sm; // Add padding
+  }
+
+  td:first-child {
+    // Target the data cell in the first column
+    padding-left: v.$space-sm;
+  }
+
+  // Last column (DIFF) styling
+  th:last-child,
+  td:last-child {
+    width: 65px; // Specific width for DIFF
+    min-width: 65px;
+    font-weight: bold;
+    // background-color: lighten(v.$background-dark, 2%); // Optional subtle background diff
+  }
+  .diffCell span {
+    // Target the span inside the DIFF cell generated by formatCell
+    display: block; // Ensure span takes full cell width if needed
+    font-weight: bold;
+  }
+
+  // Data columns (Timeframes)
+  td {
+    // General data cell styling already covered by th, td above
+    color: v.$text-color-primary; // Ensure data is visible
+  }
+  tr:nth-child(even) {
+    // Subtle striping for data rows (excluding first column)
+    background-color: v.$background-light;
+  }
+  tr:hover > td:not(:first-child) {
+    // Hover effect (excluding first column)
+    background-color: lighten(v.$background-light, 5%);
+    cursor: default; // Indicate non-interactive cells
+  }
+
+  // Stat Label cell specific content layout
+  .statLabelCell {
+    // The <td> containing the stat label
+    vertical-align: middle;
+  }
+  .statLabelContent {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; // Push button to the right
+    gap: v.$space-sm; // Space between label and button
+    width: 100%;
+  }
+
+  button.expandButton {
+    background: v.$border-color-primary;
+    color: v.$primary-color;
+    border: 2px solid v.$border-color-secondary;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 900;
+    line-height: 1.2;
+    padding: 1px 4px;
+    min-width: 15px;
+    flex-shrink: 0;
+    margin-right: 5px;
+    &:hover {
+      background: #555;
+    }
+    &[aria-expanded="true"] {
+      background-color: v.$primary-color;
+      border-color: darken(v.$primary-color, 15%);
+      color: white;
+    }
+  }
+
+  // --- Chart Row Styling ---
+  .chartRowExpanded {
+    td {
+      // Target the single cell spanning columns in the chart row
+      padding: v.$space-sm v.$space-md; // Add padding around the chart
+      background-color: darken(
+        v.$background-dark,
+        5%
+      ); // Darker background for chart area
+      border: 1px solid v.$border-color-secondary; // Match table borders
+      border-top: 2px solid v.$primary-color; // Highlight top border
+      border-bottom: 2px solid v.$primary-color; // Highlight bottom border
+      // Remove sticky positioning if inherited
+      position: static;
+      left: auto;
+      text-align: left; // Reset text align if needed
+    }
+  }
+
+  .chartWrapper {
+    // Wrapper div inside the chart row's cell
+    width: 100%;
+    height: auto; // Let chart determine height
+    h4 {
+      // Style the chart title added in StatsTable
+      margin-top: 0;
+      margin-bottom: v.$space-sm;
+      text-align: center;
+      color: v.$primary-color;
+      font-size: v.$font-size-base * 0.9;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+  }
+}
+
+.gameLogChartContainer {
+  // h4 removed as it's now styled via .chartWrapper h4
+  .averageToggleButtons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px; // Slightly smaller gap
+    margin-bottom: v.$space-sm; // Reduced margin
+  }
+  .avgButton {
+    background-color: v.$background-medium;
+    border: 1px solid v.$border-color-secondary;
+    color: v.$text-color-secondary;
+    padding: 3px 6px; // Smaller padding
+    border-radius: v.$border-radius-sm;
+    cursor: pointer;
+    font-size: v.$font-size-small * 0.9; // Smaller font
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+      color 0.2s ease;
+    &:hover {
+      background-color: lighten(v.$background-medium, 5%);
+      border-color: v.$border-color-primary;
+    }
+    &.active {
+      color: white;
+      font-weight: bold;
+      outline: 1px solid white;
+      outline-offset: 1px;
+    }
+  }
+}
+.chartStatus {
+  padding: v.$space-md; // Reduced padding
+  text-align: center;
+  color: v.$text-color-secondary;
+  font-style: italic;
+  background-color: inherit; // Inherit from parent td
+  min-height: 100px; // Give it some minimum height
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chartTooltip {
+  background-color: rgba(v.$background-dark, 0.95);
+  border: 1px solid v.$border-color-primary;
+  padding: v.$space-sm;
+  border-radius: v.$border-radius-sm;
+  color: v.$text-color-primary;
+  font-size: v.$font-size-small;
+  box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+  p {
+    margin: 4px 0;
+  }
+}
+/* --- End GameLogChart Internal Styles --- */
 
 /* =================== Player Header Internal Styles =================== */
 .playerHeadshot {
@@ -520,138 +884,6 @@ img[alt*="Placeholder headshot"].headshotImage {
 }
 
 // Stats table (right side)
-.statsTable {
-  border-collapse: collapse;
-  height: 100%;
-  table-layout: fixed;
-  flex-grow: 1; // Take remaining space
-
-  th,
-  td {
-    width: 50px; // Further reduced width for stat columns
-    min-width: 50px;
-    max-width: 50px;
-    padding: v.$space-xs * 0.7 v.$space-sm * 0.7;
-    font-size: v.$font-size-small;
-    font-weight: 400;
-    font-family: "roboto condensed", sans-serif;
-    letter-spacing: 0px;
-    border: 1px solid v.$border-color-secondary;
-    vertical-align: middle;
-    white-space: nowrap;
-    text-align: center;
-  }
-
-  th {
-    height: 50px;
-
-    background-color: v.$background-dark;
-    color: v.$text-color-secondary;
-    font-weight: 600;
-    font-size: v.$font-size-small * 0.85;
-    border-bottom: 2px solid v.$secondary-color;
-    position: relative;
-
-    span {
-      height: 100%;
-      width: 100%;
-    }
-  }
-  tr:last-child td {
-    border-top: 2px solid v.$secondary-color;
-    border-right: 1px solid v.$border-color-secondary;
-  }
-
-  .headerContent {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-
-  button.expandButton {
-    background: #444;
-    color: #eee;
-    border: 1px solid v.$primary-color;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 900;
-    line-height: 1;
-    padding: 1px 4px;
-    margin-top: 2px;
-    min-width: 15px;
-    flex-shrink: 0;
-    &:hover {
-      background: #555;
-    }
-    &[aria-expanded="true"] {
-      background-color: v.$primary-color;
-      border-color: darken(v.$primary-color, 15%);
-      color: white;
-    }
-  }
-
-  // Chart column styles
-  .chartColumn {
-    position: relative;
-    width: 1000px !important; // Force width
-    min-width: 1000px !important;
-    max-width: 1000px !important;
-    background-color: darken(v.$background-dark, 3%);
-    border-left: 2px solid v.$border-color-primary;
-    border-right: none;
-    border-bottom: none;
-    border-top: none;
-    padding: 0;
-    display: none; // Hidden by default
-
-    &.visible {
-      display: table-cell;
-      height: 50px;
-    }
-
-    // Remove all borders from chart column cells
-    td {
-      border: none;
-      background: none;
-    }
-  }
-
-  .chartColumnHeader {
-    height: 50px;
-    padding: v.$space-xs v.$space-sm;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: v.$primary-color;
-    font-size: v.$font-size-base;
-    font-weight: 900;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    border-bottom: 2px solid v.$primary-color;
-  }
-
-  // Chart container in new column
-  .chartColumnContent {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    padding: v.$space-sm;
-    box-sizing: border-box;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    background-color: darken(v.$background-dark, 3%);
-    border-bottom: 2px solid v.$border-color-secondary;
-
-    &.visible {
-      opacity: 1;
-    }
-  }
-}
 
 .chartRowExpanded {
   padding: v.$space-md;
@@ -723,126 +955,6 @@ img[alt*="Placeholder headshot"].headshotImage {
   }
 }
 /* --- End GameLogChart Internal Styles --- */
-
-/* =================== Per Game Stats Table Styling =================== */
-.perGameStatsContainer {
-  &::-webkit-scrollbar {
-    height: 4px;
-    width: 4px;
-  }
-  &::-webkit-scrollbar-thumb {
-    background-color: v.$primary-color;
-    border-radius: 2px;
-  }
-  &::-webkit-scrollbar-track {
-    background-color: v.$background-medium;
-  }
-  scrollbar-width: thin;
-  scrollbar-color: v.$primary-color v.$background-medium;
-  table {
-    border-collapse: collapse;
-    table-layout: fixed;
-    width: 100%;
-    height: 100%;
-    thead {
-      position: sticky;
-      top: 0;
-      z-index: 2;
-      background-color: v.$background-dark;
-      th {
-        background-color: inherit;
-        color: v.$text-color-secondary;
-        font-weight: 600;
-        font-size: v.$font-size-small * 0.8;
-        padding: v.$space-xs * 0.8;
-        border-bottom: 2px solid v.$secondary-color;
-        border-right: v.$border-subtle;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-        white-space: nowrap;
-        text-align: center;
-        &:last-child {
-          border-right: none;
-        }
-      }
-    }
-    tbody {
-      tr {
-        border-bottom: v.$border-subtle;
-        transition: background-color v.$transition-duration v.$transition-easing;
-        &:nth-child(even) {
-          background-color: v.$background-light;
-        }
-        &:nth-child(odd) {
-          background-color: v.$background-dark;
-        }
-        &:last-child {
-          border-bottom: none;
-        }
-        &:hover {
-          background-color: color.scale(v.$primary-color, $alpha: -70%);
-        }
-      }
-      td {
-        padding: v.$space-xs * 0.7;
-        font-size: v.$font-size-small * 0.85;
-        border-right: v.$border-subtle;
-        vertical-align: middle;
-        white-space: nowrap;
-        text-align: center;
-        &:last-child {
-          border-right: none;
-        }
-      }
-      td:first-child {
-        text-align: left;
-        padding-left: v.$space-sm;
-        font-weight: 600;
-        color: v.$text-color-secondary;
-        border-right: v.$border-separator;
-        position: sticky;
-        left: 0;
-        z-index: 1;
-        background-color: inherit;
-      }
-      tr.gpRowHighlight {
-        background-color: v.$background-medium !important;
-        color: v.$secondary-color;
-        font-weight: bold;
-      }
-    }
-    colgroup {
-      col:first-child {
-        width: 25%;
-      }
-      col:not(:first-child) {
-        width: 10%;
-      }
-    }
-  }
-  .loadingMessage,
-  .errorMessage,
-  .noDataMessage,
-  .noPlayerMessage {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    width: 100%;
-    min-height: 100px;
-    font-size: 1em;
-    padding: v.$space-md;
-    color: v.$text-color-secondary;
-  }
-  .errorMessage {
-    color: #ff6b6b;
-  }
-  .noDataMessage,
-  .noPlayerMessage {
-    color: #aaa;
-  }
-}
-/* --- End Per Game Stats Table Styling --- */
 
 /* =================== Chart Container Styling (Generic) =================== */
 .chartContainer {

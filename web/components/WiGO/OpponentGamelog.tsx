@@ -235,7 +235,7 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
           <tr>
             <th>Date</th>
             <th>Opponent</th>
-            <th>Result/Time</th>
+            <th>Details</th>
           </tr>
         </thead>
         <tbody>

@@ -12,11 +12,12 @@
   height: 100%;
   padding: v.$space-sm v.$space-md;
   border: 1px solid v.$border-color-secondary;
+  border-top-left-radius: v.$border-radius-sm * 1.5; // Keep if desired
+  border-bottom-left-radius: v.$border-radius-sm * 1.5; // Keep if desired
 
-  font-size: v.$font-size-base;
+  font-size: v.$font-size-base * 1.1;
   box-sizing: border-box;
   background-color: v.$background-light;
-  border-top-left-radius: v.$border-radius-sm;
   font-family: v.$font-family-primary;
   color: v.$text-color-primary;
   transition: border-color v.$transition-duration v.$transition-easing,

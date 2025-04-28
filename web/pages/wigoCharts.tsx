@@ -256,18 +256,6 @@ const WigoCharts: React.FC = () => {
 
   return (
     <div className={styles.wigoDashHeader}>
-      <div className={styles.wigoHeader}>
-        <span className={styles.spanColorBlue}>WiGO</span>
-        {"\u00A0\u00A0//\u00A0\u00A0"}
-        <span className={styles.spanColorBlue}>W</span>
-        HAT
-        {"\u00A0\u00A0"}
-        <span className={styles.spanColorBlue}>I</span>S{"\u00A0\u00A0"}
-        <span className={styles.spanColorBlue}>G</span>
-        OING
-        {"\u00A0\u00A0"}
-        <span className={styles.spanColorBlue}>O</span>N
-      </div>
       <div className={styles.wigoDashboardContainer}>
         <div
           className={styles.wigoDashboardContent} // The Grid Container
@@ -281,121 +269,140 @@ const WigoCharts: React.FC = () => {
             } as React.CSSProperties
           }
         >
-          {/* --- Top Row --- */}
-          <div className={styles.nameSearchBarContainer}>
-            <NameSearchBar onSelect={handlePlayerSelect} />
-          </div>
-          {/* Moved TimeframeComparison near the combined table it affects */}
+          {/* === Grid Items START === */}
 
-          <div className={styles.consistencyRatingContainer}>
-            {selectedPlayer ? (
-              <ConsistencyChart playerId={selectedPlayer.id} />
-            ) : (
-              <ChartLoadingPlaceholder message="Select a player" />
-            )}
-          </div>
-
-          {/* --- Left Column --- */}
-          <div className={styles.playerHeaderContainer}>
-            <PlayerHeader
-              selectedPlayer={selectedPlayer}
-              headshotUrl={headshotUrl}
-              teamName={teamName}
-              teamAbbreviation={teamAbbreviation}
-              teamColors={teamColors}
-              placeholderImage={placeholderImage}
-            />
-          </div>
-          <div className={styles.percentileChartContainer}>
-            <CategoryCoverageChart
-              playerId={selectedPlayer?.id}
-              timeOption="SEASON" // Or make dynamic if needed
-            />
-          </div>
-          {/* Timeframe selection often placed near the tables */}
-          <div className={styles.timeframeComparisonWrapper}>
-            <TimeframeComparison
-              initialLeft={leftTimeframe}
-              initialRight={rightTimeframe}
-              onCompare={handleTimeframeCompare}
-              // Disable interaction while loading if desired
-              // disabled={isLoadingAggData}
-            />
-          </div>
-
-          <div className={styles.rateStatBarPercentilesContainer}>
-            <RateStatPercentiles
-              playerId={selectedPlayer?.id}
-              minGp={minGp}
-              onMinGpChange={setMinGp}
-            />
-          </div>
-
-          {/* --- Center Columns (Combined Table & PerGame) --- */}
-
-          {/* ** Combined Stats Table Container ** */}
-          <div className={styles.combinedStatsTableContainer}>
-            <StatsTable
-              // tableTitle="Aggregated Stats" // Optional title
-              // Use the data from useMemo
-              data={combinedDisplayData.combinedData}
-              // Show loading only if fetching AND we have no data yet
-              isLoading={
-                isLoadingAggData &&
-                combinedDisplayData.combinedData.length === 0
-              }
-              error={aggDataError}
-              // Pass the formatting function that uses the correct GP row
-              formatCell={formatCellForTable}
-              playerId={selectedPlayer?.id ?? 0}
-              currentSeasonId={currentSeasonId ?? 0}
-              leftTimeframe={leftTimeframe}
-              rightTimeframe={rightTimeframe}
-            />
-          </div>
-
-          {/* ** REMOVED the separate countsTableContainer and ratesTableContainer divs ** */}
-
-          <div className={styles.perGameStatsContainer}>
-            <PerGameStatsTable playerId={selectedPlayer?.id} />
-          </div>
-
-          {/* --- Right Column --- */}
-          <div className={styles.ratingsContainer}>
-            {selectedPlayer ? (
-              <PlayerRatingsDisplay
-                playerId={selectedPlayer.id}
-                minGp={minGp}
-              />
-            ) : (
-              <div className={styles.chartLoadingPlaceholder}>
-                Select player for ratings
+          {/* --- Top Row Items (Direct Grid Children) --- */}
+          {/* --- NEW: Header Row Wrapper (Direct Grid Child) --- */}
+          <div className={styles.headerRowWrapper}>
+            {/* Components within the header wrapper, arranged by flexbox */}
+            <div className={styles.nameSearchBarContainer}>
+              <NameSearchBar onSelect={handlePlayerSelect} />
+            </div>
+            <div className={styles.wigoHeader}>
+              <div className={styles.headerText}>
+                <span className={styles.spanColorBlue}>WiGO</span>
+                {"\u00A0\u00A0//\u00A0\u00A0"}
+                <span className={styles.spanColorBlue}>W</span>
+                HAT
+                {"\u00A0\u00A0"}
+                <span className={styles.spanColorBlue}>I</span>S{"\u00A0\u00A0"}
+                <span className={styles.spanColorBlue}>G</span>
+                OING
+                {"\u00A0\u00A0"}
+                <span className={styles.spanColorBlue}>O</span>N
               </div>
-            )}
+            </div>
           </div>
 
-          <div className={styles.opponentLogContainer}>
-            <OpponentGamelog
-              teamId={teamIdForLog}
-              highlightColor={teamColors.primaryColor || "#07aae2"} // Use team color
-            />
+          {/* --- NEW: Left Column Wrapper (Direct Grid Child) --- */}
+          <div className={styles.leftColumnWrapper}>
+            {/* Components within the left column */}
+            <div className={styles.playerHeaderContainer}>
+              <PlayerHeader
+                selectedPlayer={selectedPlayer}
+                headshotUrl={headshotUrl}
+                teamName={teamName}
+                teamAbbreviation={teamAbbreviation}
+                teamColors={teamColors}
+                placeholderImage={placeholderImage}
+              />
+            </div>
+            <div className={styles.perGameStatsContainer}>
+              <PerGameStatsTable playerId={selectedPlayer?.id} />
+            </div>
+            <div className={styles.opponentLogContainer}>
+              <OpponentGamelog
+                teamId={teamIdForLog}
+                highlightColor={teamColors.primaryColor || "#07aae2"}
+              />
+            </div>
+            <div className={styles.ratingsContainer}>
+              {selectedPlayer ? (
+                <PlayerRatingsDisplay
+                  playerId={selectedPlayer.id}
+                  minGp={minGp}
+                />
+              ) : (
+                <div className={styles.chartLoadingPlaceholder}>
+                  Select player for ratings
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* --- Bottom Row (Charts) --- */}
-          <div className={styles.toiChartContainer}>
-            <ToiLineChart playerId={selectedPlayer?.id} />
+          {/* --- NEW: Middle Column Wrapper (Direct Grid Child) --- */}
+          <div className={styles.middleColumnWrapper}>
+            {/* Components within the middle column */}
+            <div className={styles.consistencyAndCategoryWrapper}>
+              <div className={styles.consistencyRatingContainer}>
+                {selectedPlayer ? (
+                  <ConsistencyChart playerId={selectedPlayer.id} />
+                ) : (
+                  <ChartLoadingPlaceholder message="Select a player" />
+                )}
+              </div>
+              <div className={styles.percentileChartContainer}>
+                <div className={styles.chartTitle}>
+                  <h3 style={{ margin: 0 }}>Percentiles</h3>
+                </div>
+                <CategoryCoverageChart
+                  playerId={selectedPlayer?.id}
+                  timeOption="SEASON" // Or make dynamic if needed
+                />
+              </div>
+            </div>
+            <div className={styles.toiChartContainer}>
+              <ToiLineChart playerId={selectedPlayer?.id} />
+            </div>
+            <div className={styles.ppgChartContainer}>
+              <PpgLineChart playerId={selectedPlayer?.id} />
+            </div>
+            <div className={styles.gameScoreContainer}>
+              <GameScoreSection playerId={selectedPlayer?.id} />
+            </div>
+            <div className={styles.rateStatBarPercentilesContainer}>
+              <RateStatPercentiles
+                playerId={selectedPlayer?.id}
+                minGp={minGp}
+                onMinGpChange={setMinGp}
+              />
+            </div>
           </div>
-          <div className={styles.ppgChartContainer}>
-            <PpgLineChart playerId={selectedPlayer?.id} />
+
+          {/* --- NEW: Right Column Wrapper (Direct Grid Child) --- */}
+          <div className={styles.rightColumnWrapper}>
+            {/* Components within the right column */}
+            <div className={styles.timeframeComparisonWrapper}>
+              <TimeframeComparison
+                initialLeft={leftTimeframe}
+                initialRight={rightTimeframe}
+                onCompare={handleTimeframeCompare}
+                // disabled={isLoadingAggData}
+              />
+              <div className={styles.combinedStatsTableContainer}>
+                <StatsTable
+                  data={combinedDisplayData.combinedData}
+                  isLoading={
+                    isLoadingAggData &&
+                    combinedDisplayData.combinedData.length === 0
+                  }
+                  error={aggDataError}
+                  formatCell={formatCellForTable}
+                  playerId={selectedPlayer?.id ?? 0}
+                  currentSeasonId={currentSeasonId ?? 0}
+                  leftTimeframe={leftTimeframe}
+                  rightTimeframe={rightTimeframe}
+                />
+              </div>
+            </div>
           </div>
-          <div className={styles.gameScoreContainer}>
-            <GameScoreSection playerId={selectedPlayer?.id} />
-          </div>
+
+          {/* === Grid Items END === */}
         </div>{" "}
         {/* End .wigoDashboardContent */}
-      </div>
-    </div>
+      </div>{" "}
+      {/* End .wigoDashboardContainer */}
+    </div> // End .wigoDashHeader
   );
 };
-
 export default WigoCharts;

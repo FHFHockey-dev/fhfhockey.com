@@ -15,14 +15,17 @@ ChartJS.register(ArcElement, Tooltip, Legend, Title);
 // --- NEW: Specific colors for Consistency Categories ---
 const CONSISTENCY_COLORS = [
   "rgb(128, 128, 128)", // 0 Pts (Grey) - Slightly lighter grey
-  "rgb(54, 162, 235)", // 1 Pt (Blue - matches PPG/GameScore bars)
-  "rgb(82, 170, 92)", // 2 Pts (Teal - matches TOI/PPG lines)
-  "rgb(255, 205, 86)", // 3 Pts (Yellow)
-  "rgb(255, 133, 82)", // 4 Pts (Orange)
-  "rgb(153, 102, 255)", // 5 Pts (Purple)
-  "rgb(255, 255, 255)" // 6 Pts (Pink) - Fallback for higher points
+  "rgb(255, 99, 132)", // 1 Pt (Red - matches PPG/GameScore bars)
+  "rgb(54, 162, 235)", // 2 Pts (Blue - matches TOI/PPG lines)
+  "rgb(75, 192, 192)", // 3 Pts (Teal)
+  "rgb(255, 205, 86)", // 4 Pts (Yellow)
+  "rgb(255, 159, 64)", // 5 Pts (Orange)
+  "rgb(255, 99, 132)", // 6 Pts (Red)
+  "rgb(255, 205, 86)" // 7 Pts (Yellow)
 ];
-// Fallback if more than 7 categories (unlikely for points)
+
+// Define the key color points
+
 const FALLBACK_COLOR = "rgb(201, 203, 207)"; // Light grey
 
 interface ConsistencyDataPoint {

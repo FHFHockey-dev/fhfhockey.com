@@ -8,7 +8,7 @@
   flex-direction: row; // *** CHANGED TO COLUMN ***
   align-items: center; // Center items horizontally
   justify-content: space-between; // Space out Title, Selects, Title vertically
-  padding: v.$space-sm v.$space-xs; // Adjust padding for vertical layout
+  padding: 0 v.$space-sm; // Adjust padding for vertical layout
   gap: v.$space-sm; // Gap between Title, Selects, Title
   height: 100%; // Fill the grid area height
   width: 100%;
@@ -21,14 +21,14 @@
   flex-direction: row; // *** CHANGED TO COLUMN ***
   align-items: center; // Center dropdowns and VS text
   justify-content: center;
+  margin: v.$space-sm 0; // Vertical margin for spacing
   padding: v.$space-sm; // Padding within the select area
   gap: v.$space-sm; // Gap between top select, VS, bottom select
-  background-color: darken(
+  background-color: lighten(
     v.$background-dark,
-    3%
+    10%
   ); // Slightly darker background for contrast
   border-radius: v.$border-radius;
-  box-shadow: 0 1px 3px rgba(v.$text-color-primary, 0.1); // Subtle shadow
   width: 90%; // Constrain width slightly
 }
 

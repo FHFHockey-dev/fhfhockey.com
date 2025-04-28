@@ -36,26 +36,30 @@ table.verticalStatsTable {
   height: 100%;
   border-collapse: collapse;
   table-layout: fixed; // Helps with column widths
+  border-bottom: 8px solid v.$background-light; // Optional: border for visual separation
 
   th,
   td {
+    font-family: v.$font-family-primary;
+    text-transform: uppercase;
     padding: v.$space-xs * 0.8;
     text-align: center;
-    font-size: v.$font-size-small * 0.8;
-    border-bottom: 1px solid v.$border-color-secondary;
+    font-size: v.$font-size-base;
     white-space: nowrap;
   }
 
   thead th {
     // Column Headers (Metric, Per/GP, Per/82)
+    padding: v.$space-sm;
+    font-size: v.$font-size-small;
+    letter-spacing: 0.25em;
     background-color: v.$background-dark;
-    color: v.$text-color-secondary;
-    font-weight: 600;
+    color: v.$text-primary-color;
+    font-weight: 900;
     position: sticky; // Make header row sticky
     top: 0;
     z-index: 1;
-    border-bottom: 2px solid v.$primary-color; // Stronger border below headers
-    border-right: 1px solid v.$border-color-secondary;
+    border-bottom: 3px solid v.$primary-color; // Stronger border below headers
     &:last-child {
       border-right: none; // Remove border from last header
     }
@@ -64,7 +68,7 @@ table.verticalStatsTable {
   thead th.metricHeader {
     // First header cell ("Metric")
     text-align: left;
-    padding-left: v.$space-xs;
+    padding-left: v.$space-md;
     width: 30%;
   }
 
@@ -76,10 +80,10 @@ table.verticalStatsTable {
   tbody tr {
     transition: background-color v.$transition-duration v.$transition-easing;
     &:nth-child(even) {
-      background-color: v.$background-light;
+      background-color: v.$background-dark;
     }
     &:nth-child(odd) {
-      background-color: v.$background-dark;
+      background-color: v.$background-light;
     }
     &:hover {
       background-color: color.scale(v.$primary-color, $alpha: -70%);
@@ -96,20 +100,17 @@ table.verticalStatsTable {
   tbody th.metricCell {
     // First cell in each data row
     text-align: left;
-    padding-left: v.$space-sm;
-    font-weight: 600;
-    color: v.$text-color-secondary;
-    border-right: 1px solid v.$border-color-secondary;
+    padding-left: v.$space-md;
+    font-weight: 900;
+    color: v.$text-primary-color;
   }
 
   tbody td.valueCell {
     // Data cells (the numbers)
     color: v.$text-color-primary;
     font-family: "roboto-condensed" sans-serif;
-    border-right: 1px solid v.$border-color-secondary;
-    &:last-child {
-      border-right: none; // Remove border from last cell in row
-    }
+    font-size: v.$font-size-base;
+    letter-spacing: 0.15em;
   }
 }
 
@@ -125,7 +126,7 @@ table.verticalStatsTable {
   width: 100%;
   flex-grow: 1; // Allow messages to take space if table isn't shown
   min-height: 50px;
-  font-size: v.$font-size-small;
+  font-size: v.$font-size-base;
   padding: v.$space-md;
   color: v.$text-color-secondary;
 }
