@@ -25,8 +25,6 @@ import PlayerRatingsDisplay from "components/WiGO/PlayerRatingsDisplay";
 // Removed TimeOptions import if not used elsewhere
 
 import {
-  computeDiffColumnForCounts,
-  computeDiffColumnForRates,
   computeDiffColumn,
   formatCell as formatCellUtil
 } from "components/WiGO/tableUtils";
