@@ -7,8 +7,7 @@ import {
   Player,
   TeamColors,
   defaultColors,
-  TableAggregateData,
-  CombinedPlayerStats
+  TableAggregateData
 } from "components/WiGO/types";
 import NameSearchBar from "components/WiGO/NameSearchBar";
 import { getTeamInfoById, teamNameToAbbreviationMap } from "lib/teamsInfo";
@@ -28,7 +27,8 @@ import PlayerRatingsDisplay from "components/WiGO/PlayerRatingsDisplay";
 import {
   computeDiffColumnForCounts,
   computeDiffColumnForRates,
-  formatCell as formatCellUtil // Rename imported function to avoid naming conflict
+  computeDiffColumn,
+  formatCell as formatCellUtil
 } from "components/WiGO/tableUtils";
 
 // --- Dynamically import components (remains the same) ---
@@ -61,10 +61,9 @@ const WigoCharts: React.FC = () => {
   const [teamIdForLog, setTeamIdForLog] = useState<number | null>(null);
   const [headshotUrl, setHeadshotUrl] = useState<string | null>(null);
   const [teamColors, setTeamColors] = useState<TeamColors>(defaultColors);
-  // Raw data state remains separate for DIFF calculation
-  const [rawCountsData, setRawCountsData] = useState<TableAggregateData[]>([]);
-  const [rawRatesData, setRawRatesData] = useState<TableAggregateData[]>([]);
-  // ** REMOVED displayCountsData and displayRatesData state **
+  const [rawCombinedData, setRawCombinedData] = useState<TableAggregateData[]>(
+    []
+  );
   const [isLoadingAggData, setIsLoadingAggData] = useState<boolean>(false);
   const [aggDataError, setAggDataError] = useState<string | null>(null);
   const [teamName, setTeamName] = useState<string>("");
@@ -110,16 +109,15 @@ const WigoCharts: React.FC = () => {
     }
     setLeftTimeframe("STD");
     setRightTimeframe("CA");
-    setRawCountsData([]); // Clear raw data
-    setRawRatesData([]); // Clear raw data
+    setRawCombinedData([]); // Clear combined raw data
+
     setAggDataError(null); // Clear error
   }, []);
 
   // Fetch aggregated data effect (Counts/Rates)
   useEffect(() => {
     if (!selectedPlayer) {
-      setRawCountsData([]);
-      setRawRatesData([]);
+      setRawCombinedData([]);
       setAggDataError(null);
       return;
     }
@@ -127,21 +125,16 @@ const WigoCharts: React.FC = () => {
     const fetchData = async () => {
       setIsLoadingAggData(true);
       setAggDataError(null);
-      setRawCountsData([]);
-      setRawRatesData([]);
+      setRawCombinedData([]);
 
       try {
-        const aggregatedData: CombinedPlayerStats =
+        // --- <<< CHANGE: Expect single array from fetch >>> ---
+        const fetchedData: TableAggregateData[] =
           await fetchPlayerAggregatedStats(selectedPlayer.id);
 
         // Set raw data, let useMemo handle processing and combining
-        setRawCountsData(aggregatedData.counts || []); // Ensure array even if null/undefined
-        setRawRatesData(aggregatedData.rates || []); // Ensure array even if null/undefined
-
-        if (
-          aggregatedData.counts.length === 0 &&
-          aggregatedData.rates.length === 0
-        ) {
+        setRawCombinedData(fetchedData);
+        if (!fetchedData || fetchedData.length === 0) {
           console.log(
             "No aggregated stats returned for player:",
             selectedPlayer.id
@@ -151,8 +144,7 @@ const WigoCharts: React.FC = () => {
       } catch (error) {
         console.error("Error fetching aggregated stats:", error);
         setAggDataError("Failed to load Counts/Rates statistics.");
-        setRawCountsData([]);
-        setRawRatesData([]);
+        setRawCombinedData([]);
       } finally {
         setIsLoadingAggData(false);
       }
@@ -161,98 +153,19 @@ const WigoCharts: React.FC = () => {
     fetchData();
   }, [selectedPlayer]);
 
-  // --- Calculate Combined Data with DIFF using useMemo ---
-  const combinedDisplayData = useMemo(() => {
-    // Compute DIFF columns first
-    const processedCounts =
-      rawCountsData.length > 0
-        ? computeDiffColumnForCounts(
-            rawCountsData,
-            leftTimeframe,
-            rightTimeframe
-          )
-        : [];
-    const processedRates =
-      rawRatesData.length > 0
-        ? computeDiffColumnForRates(rawRatesData, leftTimeframe, rightTimeframe)
-        : [];
-
-    // Find the GP row *from the processed counts data*
-    // It's important to find it *after* computeDiff... because that func returns a clone
-    const gpRow = processedCounts.find((r) => r.label === "GP") || null;
-
-    // Combine the processed arrays
-    const combinedData = [...processedCounts, ...processedRates];
-
-    // Return both combined data and the GP row for use in formatCell
-    return { combinedData, gpRow };
-  }, [rawCountsData, rawRatesData, leftTimeframe, rightTimeframe]); // Dependencies
+  // --- <<< CHANGE: Calculate Display Data with DIFF using single raw state >>> ---
+  const displayDataWithDiff = useMemo(() => {
+    if (rawCombinedData.length === 0) {
+      return []; // Return empty array if no raw data
+    }
+    return computeDiffColumn(rawCombinedData, leftTimeframe, rightTimeframe);
+  }, [rawCombinedData, leftTimeframe, rightTimeframe]); // Dependencies
 
   // Handler for timeframe changes (remains the same)
   const handleTimeframeCompare = useCallback((left: string, right: string) => {
     setLeftTimeframe(left as keyof TableAggregateData);
     setRightTimeframe(right as keyof TableAggregateData);
   }, []);
-
-  // --- Wrapper for formatCell to pass the correct GP value ---
-  // This function will be passed to the StatsTable component
-  const formatCellForTable = useCallback(
-    (
-      row: TableAggregateData,
-      columnKey: keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">
-    ): string => {
-      // Get the specific GP value for the current column (timeframe) from the gpRow
-      // The gpRow is available via the combinedDisplayData memoized value
-      const gpValueForColumn =
-        combinedDisplayData.gpRow && combinedDisplayData.gpRow[columnKey]
-          ? combinedDisplayData.gpRow[columnKey]
-          : null;
-
-      // Call the original utility function with the necessary GP value
-      // You might need to adjust formatCellUtil if it doesn't accept gpValueForColumn
-      // OR adjust the logic here based on formatCellUtil's needs.
-      // Assuming formatCellUtil *can* use this (based on previous PPTOI logic needing GP):
-      // return formatCellUtil(row, columnKey, gpValueForColumn); // Pass GP if needed
-
-      // If formatCellUtil CANNOT be modified, replicate logic here or slightly adjust call:
-      const value = row[columnKey];
-      const label = row.label;
-
-      if (value == null || (typeof value === "number" && isNaN(value)))
-        return "-";
-
-      // Handle specific cases needing GP (like PPTOI from your util)
-      if (label === "PPTOI") {
-        if (gpValueForColumn != null && gpValueForColumn > 0) {
-          const avgMinutesPPTOI = value / gpValueForColumn;
-          const avgSecondsPPTOI = avgMinutesPPTOI * 60;
-          // You'll need formatSecondsToMMSS accessible here too
-          // Assuming formatSecondsToMMSS is also exported from tableUtils
-          // return formatSecondsToMMSS(avgSecondsPPTOI); // If available
-          // Placeholder if formatSecondsToMMSS isn't imported:
-          const totalSeconds = Math.round(avgSecondsPPTOI);
-          const mins = Math.floor(totalSeconds / 60);
-          const secs = totalSeconds % 60;
-          return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
-        } else {
-          return "0:00"; // Or "-" if preferred when GP is 0 or null
-        }
-      }
-      if (label === "ATOI") {
-        // Check if the value is from wigo_recent (seconds) or wigo_career (minutes)
-        // If the value is greater than 60, it's likely in seconds (from wigo_recent)
-        const isRecentData = value > 60;
-        const totalSeconds = isRecentData ? value : value * 60;
-        const mins = Math.floor(totalSeconds / 60);
-        const secs = Math.round(totalSeconds % 60);
-        return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
-      }
-
-      // Fallback to the general logic from formatCellUtil for other cases
-      return formatCellUtil(row, columnKey); // Call original for other types
-    },
-    [combinedDisplayData.gpRow, formatCellUtil] // Dependency: gpRow from memo
-  );
 
   return (
     <div className={styles.wigoDashHeader}>
@@ -395,13 +308,12 @@ const WigoCharts: React.FC = () => {
               />
               <div className={styles.combinedStatsTableContainer}>
                 <StatsTable
-                  data={combinedDisplayData.combinedData}
+                  data={displayDataWithDiff}
                   isLoading={
-                    isLoadingAggData &&
-                    combinedDisplayData.combinedData.length === 0
+                    isLoadingAggData && displayDataWithDiff.length === 0
                   }
                   error={aggDataError}
-                  formatCell={formatCellForTable}
+                  formatCell={formatCellUtil} // Ensure this handles mixed types
                   playerId={selectedPlayer?.id ?? 0}
                   currentSeasonId={currentSeasonId ?? 0}
                   leftTimeframe={leftTimeframe}

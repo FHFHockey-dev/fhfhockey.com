@@ -3,22 +3,22 @@
 // 1. Base Colors (Keep as previously defined or adjust as needed)
 export const WIGO_COLORS = {
   GREEN: "#00ff99",
-  RED: "#ff6384", // Primary Red/Error/Averages
-  YELLOW: "#ffcc33", // Warning / Highlight
-  BLUE: "#66ccff", // Lighter Blue
-  BRAND_BLUE: "#07aae2", // Secondary Brand Blue
-  PRIMARY_BLUE: "#14a2d2", // Primary Brand Blue / Accent
-  PURPLE: "#9b59b6",
-  PINK_RED: "#ff6b6b", // Alternative Red/Pink
-  SOFT_GREEN: "#98d8a8",
-  TEAL: "#4bc0c0",
-  ORANGE: "#ff9f40",
+  RED: "#ff6384", // Primary Red/Error/Averages #ff6384
+  YELLOW: "#ffcc33", // Warning / Highlight #ffcc33
+  BLUE: "#66ccff", // Lighter Blue #66ccff
+  BRAND_BLUE: "#07aae2", // Secondary Brand Blue #07aae2
+  PRIMARY_BLUE: "#14a2d2", // Primary Brand Blue / Accent   #14a2d2
+  PURPLE: "#9b59b6", // Purple #9b59b6
+  PINK_RED: "#ff6b6b", // Alternative Red/Pink #ff6b6b
+  SOFT_GREEN: "#98d8a8", // Soft Green #98d8a8
+  TEAL: "#4bc0c0", // Teal #4bc0c0
+  ORANGE: "#ff9f40", // Orange #ff9f40
 
   // Greys & Neutrals
-  GREY_LIGHT: "#d3d3d3",
-  GREY_MEDIUM: "#808080",
-  GREY_DARK: "#505050",
-  GREY_DARKER: "#404040",
+  GREY_LIGHT: "#d3d3d3", // #d3d3d3
+  GREY_MEDIUM: "#808080", // #808080
+  GREY_DARK: "#505050", // #505050
+  GREY_DARKER: "#404040", // #404040
   GREY_TEXT: "#cccccc", // Main text/ticks on dark
   GREY_TEXT_SEC: "#aaaaaa", // Secondary text / Axis titles
   WHITE: "#ffffff",

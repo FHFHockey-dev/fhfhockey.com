@@ -9,7 +9,8 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ReferenceLine
+  ReferenceLine,
+  Area
 } from "recharts";
 import { GameLogDataPoint } from "utils/fetchWigoPlayerStats";
 import { formatSecondsToMMSS } from "./tableUtils";
@@ -65,13 +66,13 @@ const convertibleCountStats: string[] = [
 ];
 
 const averageColors: Record<AverageKey, string> = {
-  STD: "#e60000", // Red
-  LY: "#00b300", // Green
-  "3YA": "#ff9900", // Orange
-  CA: "#0099cc", // Blue
-  L5: "#cc33ff", // Purple
-  L10: "#ffcc00", // Yellow
-  L20: "#cccccc" // Light Grey
+  STD: "#ff6b6b", // Red #ff6b6b
+  LY: "#98d8a8", // Green #98d8a8
+  "3YA": "#ff9f40", // Orange #ff9f40
+  CA: "#14a2d2", // Blue #14a2d2
+  L5: "#9b59b6", // Purple  #9b59b6
+  L10: "#ffcc33", // Yellow   #ffcc33
+  L20: "#cccccc" // Light Grey #cccccc
 };
 
 const GameLogChart: React.FC<GameLogChartProps> = ({
@@ -276,7 +277,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
               )
             }
             tick={{ fontSize: 9, fill: "#aaa" }}
-            width={45} // Slightly increased width
+            width={85} // Slightly increased width
             label={{
               value: statLabel,
               angle: -90,
@@ -293,13 +294,19 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
             }}
           />
           <Tooltip content={<CustomTooltip />} />
-          {/* <Legend verticalAlign="bottom" align="right" wrapperStyle={{ fontSize: "10px" }} /> */}{" "}
-          {/* Optional: Legend can take space */}
+          <Area
+            type="monotone" // Match the line's curve type
+            dataKey="value" // Use the same data
+            fill="#14a2d2" // The base blue color for the fill
+            fillOpacity={0.9} // Set the desired opacity
+            stroke="none" // No border needed for the area itself
+            connectNulls // Handle gaps consistently with the line
+          />
           <Line
             type="monotone"
             dataKey="value"
             name={statLabel}
-            stroke="#8884d8"
+            stroke="#14a2d2" // #8884d8
             strokeWidth={2}
             activeDot={{ r: 6 }}
             dot={false}
@@ -314,11 +321,12 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                   seasonAverageValue,
                   isTOIStat ? "TOI" : "CountPerGame"
                 )}`,
-                position: "insideTopRight",
-                fill: "#ff7300",
-                fontSize: 9
+                position: "insideBottomRight",
+                fill: "#FFF", // #ff7300
+                fontSize: 16,
+                fontWeight: "bolder"
               }}
-              stroke="#ff7300"
+              stroke="#ff6b6b" // #ff7300
               strokeDasharray="3 3"
               strokeWidth={1.5}
             />

@@ -10,7 +10,7 @@
   justify-content: space-between; // Space out Title, Selects, Title vertically
   padding: 0 v.$space-sm; // Adjust padding for vertical layout
   gap: v.$space-sm; // Gap between Title, Selects, Title
-  height: 100%; // Fill the grid area height
+  height: 5%;
   width: 100%;
   background-color: darken(
     v.$background-dark,
@@ -135,10 +135,10 @@ $arrow-color: v.$text-color-secondary; // Use theme variable for arrow color
 
 .countsTableTitle {
   font-size: 14px; // *** REDUCED FONT SIZE ***
-  color: v.$text-color-secondary; // More subtle color
+  color: v.$text-color-primary; // More subtle color
   font-family: "Lucida Sans", "Lucida Grande", sans-serif;
   font-weight: 600; // Less bold
-  letter-spacing: 4px; // *** REDUCED LETTER SPACING ***
+  letter-spacing: 7px; // *** REDUCED LETTER SPACING ***
   text-transform: uppercase; // Keep uppercase
   text-align: center;
   width: 100%; // Ensure it takes full width

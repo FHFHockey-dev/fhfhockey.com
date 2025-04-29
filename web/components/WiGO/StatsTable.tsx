@@ -11,6 +11,7 @@ import clsx from "clsx";
 
 // Define which stats are generally treated as 'COUNTS' for chart purposes
 const countStatLabels = [
+  "GP",
   "Goals",
   "Assists",
   "Points",
@@ -32,7 +33,6 @@ interface StatsTableProps {
   data: TableAggregateData[];
   isLoading: boolean;
   error: string | null;
-  // Update formatCell's type definition to reflect its actual usage
   formatCell: (
     row: TableAggregateData,
     columnKey: keyof Omit<TableAggregateData, "label" | "GP" | "DIFF"> // Keep Omit here
@@ -74,7 +74,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
   data,
   isLoading,
   error,
-  formatCell, // Keep the prop
+  formatCell,
   playerId,
   currentSeasonId,
   leftTimeframe,
@@ -90,11 +90,11 @@ const StatsTable: React.FC<StatsTableProps> = ({
     "RATES"
   );
 
-  const statRowsData = useMemo(
-    () => data.filter((d) => d.label !== "GP"),
-    [data]
-  );
-  const gpRowData = useMemo(() => data.find((d) => d.label === "GP"), [data]);
+  // const statRowsData = useMemo(
+  //   () => data.filter((d) => d.label !== "GP"),
+  //   [data]
+  // );
+  // const gpRowData = useMemo(() => data.find((d) => d.label === "GP"), [data]);
 
   // --- Calculate highlight indices ---
   const leftIndex = columnKeys.indexOf(leftTimeframe as DataColumnKey);
@@ -109,11 +109,15 @@ const StatsTable: React.FC<StatsTableProps> = ({
 
   const handleExpandClick = useCallback(
     (statLabel: string) => {
+      // Don't allow expanding the GP row if it doesn't make sense
+      if (statLabel === "GP") {
+        setExpandedStatLabel(null); // Close any open chart
+        return;
+      }
+
       const newLabel = expandedStatLabel === statLabel ? null : statLabel;
       setExpandedStatLabel(newLabel);
-      setGameLogData([]);
-      setGameLogError(null);
-
+      // ... (rest of handleExpandClick remains the same) ...
       if (newLabel !== null) {
         const isCountStat = countStatLabels.includes(newLabel);
         const typeForChart: "COUNTS" | "RATES" = isCountStat
@@ -134,28 +138,45 @@ const StatsTable: React.FC<StatsTableProps> = ({
           });
       }
     },
-    [expandedStatLabel, playerId, currentSeasonId]
+    [expandedStatLabel, playerId, currentSeasonId] // Removed dependency on statRowsData/gpRowData
   );
 
-  const getAveragesForChart = /* ... same as before ... */ (
-    statLabel: string
-  ) => {
-    const statData = statRowsData.find((d) => d.label === statLabel);
-    if (!statData) return {};
-    return {
-      STD: statData.STD,
-      LY: statData.LY,
-      "3YA": statData["3YA"],
-      CA: statData.CA,
-      L5: statData.L5,
-      L10: statData.L10,
-      L20: statData.L20
-    };
-  };
+  const getAveragesForChart = useCallback(
+    (statLabel: string) => {
+      // Find the specific row from the main data array
+      const statData = data.find((d) => d.label === statLabel);
+      if (!statData) return {};
+      // Return the values needed for the chart's average lines
+      return {
+        STD: statData.STD,
+        LY: statData.LY,
+        "3YA": statData["3YA"],
+        CA: statData.CA,
+        L5: statData.L5,
+        L10: statData.L10,
+        L20: statData.L20
+      };
+    },
+    [data] // Depend on the main data array
+  );
 
-  const getGpDataForChart = /* ... same as before ... */ () => {
-    return gpRowData?.GP;
-  };
+  const getGpMetadataForChart = useCallback(() => {
+    const gpRow = data.find((d) => d.label === "GP");
+    if (gpRow) {
+      return {
+        STD: gpRow.STD,
+        LY: gpRow.LY,
+        "3YA": gpRow["3YA"],
+        CA: gpRow.CA,
+        L5: gpRow.L5,
+        L10: gpRow.L10,
+        L20: gpRow.L20
+      };
+    }
+    // If it has a nested GP object like other rows (less likely for the GP row itself):
+    // return gpRow?.GP;
+    return undefined; // Return undefined if GP row not found
+  }, [data]);
 
   const totalColumns = columnKeys.length + 2;
 
@@ -210,29 +231,30 @@ const StatsTable: React.FC<StatsTableProps> = ({
                 {error}
               </td>
             </tr>
-          ) : statRowsData.length > 0 ? (
-            // vvvvv CORRECT: No extra curly brace here vvvvv
-            statRowsData.map((statData, rowIndex) => {
-              // Get rowIndex from map
-              // Determine if this is the last data row being rendered
-              const isLastRow = rowIndex === statRowsData.length - 1;
+          ) : data.length > 0 ? (
+            data.map((statData, rowIndex) => {
+              const isLastRow = rowIndex === data.length - 1; // <--- Use 'data.length'
+              const isGpRow = statData.label === "GP"; // Check if it's the GP row
 
               return (
                 <React.Fragment key={statData.label}>
                   {/* Stat Row */}
                   <tr>
-                    {/* Stat Label Cell (No Highlight) */}
+                    {/* Stat Label Cell */}
                     <td className={styles.statLabelCell}>
                       <div className={styles.statLabelContent}>
                         <span>{statData.label}</span>
-                        <button
-                          onClick={() => handleExpandClick(statData.label)}
-                          className={styles.expandButton}
-                          aria-expanded={expandedStatLabel === statData.label}
-                          aria-controls={`chart-${statData.label}`}
-                        >
-                          {expandedStatLabel === statData.label ? "-" : "+"}
-                        </button>
+                        {/* Conditionally render expand button (e.g., hide for GP) */}
+                        {!isGpRow && ( // <-- Don't show expand for GP row
+                          <button
+                            onClick={() => handleExpandClick(statData.label)}
+                            className={styles.expandButton}
+                            aria-expanded={expandedStatLabel === statData.label}
+                            aria-controls={`chart-${statData.label}`}
+                          >
+                            {expandedStatLabel === statData.label ? "-" : "+"}
+                          </button>
+                        )}
                       </div>
                     </td>
 
@@ -248,7 +270,6 @@ const StatsTable: React.FC<StatsTableProps> = ({
                       const tdClasses = clsx({
                         [styles.highlightedLeft]: key === leftTimeframe,
                         [styles.highlightedRight]: key === rightTimeframe,
-                        // Apply bottom corners ONLY if highlighted, the min/max AND it's the last row
                         [styles.highlightCornerBottomLeft]:
                           isLastRow && isHighlighted && isMin,
                         [styles.highlightCornerBottomRight]:
@@ -262,10 +283,11 @@ const StatsTable: React.FC<StatsTableProps> = ({
                       );
                     })}
 
-                    {/* DIFF Cell - Handle formatting and coloring directly */}
+                    {/* DIFF Cell */}
                     <td className={styles.diffCell}>
                       {(() => {
-                        const diffValue = statData.DIFF;
+                        const diffValue = statData.DIFF; // Keep as is if % change in GP is desired
+
                         if (
                           diffValue !== undefined &&
                           diffValue !== null &&
@@ -280,7 +302,7 @@ const StatsTable: React.FC<StatsTableProps> = ({
                             : styles.diffNeutral;
                           const displayValue = `${
                             isPositive ? "+" : ""
-                          }${diffValue.toFixed(1)}%`;
+                          }${diffValue.toFixed(1)}%`; // Assuming DIFF is always percentage
                           return (
                             <span className={colorClass}>{displayValue}</span>
                           );
@@ -309,8 +331,10 @@ const StatsTable: React.FC<StatsTableProps> = ({
                             seasonId={currentSeasonId}
                             statLabel={statData.label}
                             gameLogData={gameLogData}
+                            // Pass averages for the *specific* stat being expanded
                             averages={getAveragesForChart(statData.label)}
-                            gpData={getGpDataForChart()}
+                            // Pass GP metadata if chart needs it (e.g., for per-game calcs)
+                            gpData={getGpMetadataForChart()} // <-- Use the updated helper
                             isLoading={isLoadingGameLog}
                             error={gameLogError}
                             tableType={expandedStatType}
