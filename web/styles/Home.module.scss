@@ -29,8 +29,9 @@ $mobile-column-short: 30px;
 // --- Main Page Layout ---
 .homepage {
   // Use main container variables for consistency
-  width: 90%; // Slightly wider for home page potentially
-  max-width: 1600px; // Same max-width
+  width: 95%; // Slightly wider for home page potentially
+  max-width: 2200px;
+  min-width: 1300px;
   margin: v.$space-xl auto; // Consistent vertical margin
   display: flex;
   flex-direction: column;
@@ -46,7 +47,6 @@ $mobile-column-short: 30px;
 // --- Games Section ---
 .gameCardsContainer {
   @include v.component-wrapper; // Apply consistent component frame
-  border-top: none;
 }
 
 .gamesHeader {

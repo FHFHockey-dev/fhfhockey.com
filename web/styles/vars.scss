@@ -126,8 +126,9 @@ $border-radius-sm: 6px; // Smaller radius for inputs/buttons maybe
   width: 100%;
   // Access variables directly as they are defined in this file
   background-color: $background-dark;
-  outline: 8px solid $background-dark;
-  border-radius: $border-radius;
+  border: 10px solid v.$border-color-primary;
+  border-radius: v.$border-radius * 2;
+  outline: 15px solid darken(v.$background-dark, 2%);
   overflow: hidden;
 }
 // Function to get color between green and red based on rank (1=green, 32=red)
