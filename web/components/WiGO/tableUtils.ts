@@ -1,86 +1,185 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/WiGO/tableUtils.ts
 
+import {
+  formatMinutesToMMSS,
+  formatSecondsToMMSS as formatSecondsUtil
+} from "utils/formattingUtils"; // Use a consistent name
 import { TableAggregateData } from "./types";
 
+// --- <<< NEW: Define labels needing per-game DIFF calculation >>> ---
+// These are stats typically stored as cumulative totals for STD/LY/CA/3YA,
+// requiring division by GP for a meaningful comparison across those timeframes.
+const trueCountLabelsForDiff = new Set([
+  "Goals",
+  "Assists",
+  "Points",
+  "SOG",
+  "ixG",
+  "PPG",
+  "PPA",
+  "PPP",
+  "HIT",
+  "BLK",
+  "PIM",
+  "iCF"
+  // Note: ATOI/PPTOI are handled separately as they become averages.
+  // Note: IPP, OZS%, oiSH%, S%, PP% are percentages/rates already.
+]);
+
 /**
- * Helper that takes the tableData for counts
- * and updates the .DIFF property based on comparing leftKey vs. rightKey
- * as a per-game difference.
+ * Computes the .DIFF property for each row in the tableData based on comparing leftKey vs. rightKey.
+ * Applies per-game calculation for true counts and direct comparison for rates/averages/percentages.
  */
-export function computeDiffColumnForCounts(
+export function computeDiffColumn( // <<< NEW Unified Function
   tableData: TableAggregateData[],
   leftKey: keyof TableAggregateData,
   rightKey: keyof TableAggregateData
 ): TableAggregateData[] {
+  if (!tableData || tableData.length === 0) {
+    return [];
+  }
+
   // Create a deep clone to avoid modifying the original array directly
   const updatedData = structuredClone(tableData);
+  // Find the GP row *within the cloned data*
   const gpRow = updatedData.find((r) => r.label === "GP");
 
   updatedData.forEach((row) => {
     const leftVal = row[leftKey];
     const rightVal = row[rightKey];
 
-    // If it's the "GP" row itself, we might skip or just set DIFF=undefined
+    // Skip the GP row itself for DIFF calculation
     if (row.label === "GP") {
       row.DIFF = undefined;
       return;
     }
 
-    // Safely get the GP # for each timeframe
-    const gpLeft = gpRow ? gpRow[leftKey] : 0;
-    const gpRight = gpRow ? gpRow[rightKey] : 0;
+    // Check if values are valid numbers
+    if (typeof leftVal === "number" && typeof rightVal === "number") {
+      let diffBaseLeft: number | undefined = undefined;
+      let diffBaseRight: number | undefined = undefined;
 
-    if (
-      typeof leftVal === "number" &&
-      typeof rightVal === "number" &&
-      typeof gpLeft === "number" &&
-      typeof gpRight === "number" &&
-      gpLeft > 0 &&
-      gpRight > 0 // Avoid division by zero
-    ) {
-      const perGameLeft = leftVal / gpLeft;
-      const perGameRight = rightVal / gpRight;
-      // Avoid division by zero if perGameRight is 0
-      row.DIFF =
-        perGameRight !== 0
-          ? ((perGameLeft - perGameRight) / perGameRight) * 100
-          : undefined;
+      // Determine the base values for comparison
+      if (trueCountLabelsForDiff.has(row.label)) {
+        // --- Calculate per-game rate for true counts ---
+        const gpLeft = gpRow ? gpRow[leftKey] : null;
+        const gpRight = gpRow ? gpRow[rightKey] : null;
+
+        // Check if GP values are valid numbers > 0
+        if (
+          typeof gpLeft === "number" &&
+          gpLeft > 0 &&
+          typeof gpRight === "number" &&
+          gpRight > 0
+        ) {
+          diffBaseLeft = leftVal / gpLeft;
+          diffBaseRight = rightVal / gpRight;
+        }
+        // If GP is invalid, diffBase remains undefined
+      } else {
+        // --- Use values directly for rates, averages (ATOI/PPTOI), percentages ---
+        diffBaseLeft = leftVal;
+        diffBaseRight = rightVal;
+      }
+
+      // Calculate percentage difference if base values are valid
+      if (
+        typeof diffBaseLeft === "number" &&
+        typeof diffBaseRight === "number"
+      ) {
+        if (diffBaseRight !== 0) {
+          const diff =
+            ((diffBaseLeft - diffBaseRight) / Math.abs(diffBaseRight)) * 100; // Use Math.abs for consistent base
+          // Assign if the result is a finite number
+          row.DIFF = isFinite(diff) ? diff : undefined;
+        } else {
+          // Handle right value being 0
+          row.DIFF = diffBaseLeft !== 0 ? undefined : 0; // If left is non-zero -> infinite change (undefined), if left is 0 -> 0% change
+        }
+      } else {
+        // If base values couldn't be determined (e.g., invalid GP)
+        row.DIFF = undefined;
+      }
     } else {
+      // If leftVal or rightVal is not a number
       row.DIFF = undefined;
     }
   });
   return updatedData; // Return the modified clone
 }
+
+// Remove the old separate functions if no longer needed elsewhere
+// export function computeDiffColumnForCounts(...) { ... }
+// export function computeDiffColumnForRates(...) { ... }
 
 /**
- * Helper that takes the tableData for rates
- * and updates the .DIFF property based on comparing leftKey vs. rightKey
- * directly as a percentage difference.
+ * Format cell values for display based on the statistic label.
+ * Assumes time values (ATOI, PPTOI) are consistently in average seconds per game.
+ * Assumes percentage values (S%, PP%, etc.) are consistently scaled 0-100.
  */
-export function computeDiffColumnForRates(
-  tableData: TableAggregateData[],
-  leftKey: keyof TableAggregateData,
-  rightKey: keyof TableAggregateData
-): TableAggregateData[] {
-  // Create a deep clone
-  const updatedData = structuredClone(tableData);
+export const formatCell = (
+  row: TableAggregateData,
+  columnKey: keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">
+): string => {
+  const value = row[columnKey];
+  const label = row.label;
 
-  updatedData.forEach((row) => {
-    const leftVal = row[leftKey];
-    const rightVal = row[rightKey];
+  // Handle null, undefined, or non-numeric values first
+  if (value == null || typeof value !== "number" || isNaN(value)) {
+    return "-";
+  }
 
-    if (
-      typeof leftVal === "number" &&
-      typeof rightVal === "number" &&
-      rightVal !== 0 // Avoid division by zero
-    ) {
-      row.DIFF = ((leftVal - rightVal) / rightVal) * 100;
-    } else {
-      row.DIFF = undefined;
-    }
-  });
-  return updatedData; // Return the modified clone
-}
+  // --- Time Formatting ---
+  // Assumes fetchPlayerAggregatedStats now ensures these are avg SECONDS/game
+  if (label === "ATOI" || label === "PPTOI") {
+    return formatSecondsUtil(value); // Use the seconds formatter
+  }
+
+  // --- Percentage Formatting ---
+  // Assumes fetchPlayerAggregatedStats ensures these are scaled 0-100
+  if (
+    label === "S%" ||
+    label === "PP%" ||
+    label === "oiSH%" ||
+    label === "IPP" ||
+    label === "OZS%" ||
+    label === "PTS1%"
+  ) {
+    // Also catch dynamic percentages if needed: || label.endsWith('%') || label.endsWith('_pct')
+    return `${value.toFixed(1)}%`;
+  }
+
+  // --- Rate Formatting ---
+  if (label.includes("/60")) {
+    return value.toFixed(2); // Typically show 2 decimal places for /60 rates
+  }
+
+  // --- Integer Count Formatting ---
+  // Add any other known integer counts if needed
+  if (
+    label === "GP" ||
+    label === "Goals" ||
+    label === "Assists" ||
+    label === "Points" ||
+    label === "SOG" ||
+    label === "PPG" ||
+    label === "PPA" ||
+    label === "PPP" ||
+    label === "HIT" ||
+    label === "BLK" ||
+    label === "PIM" ||
+    label === "iCF"
+  ) {
+    // Check if it's effectively an integer (within tolerance for floating point issues if needed)
+    // Or just round if values might have decimals from averaging (e.g., L5 GP)
+    return Math.round(value).toString();
+  }
+
+  // --- Default Formatting ---
+  // For other numbers (like ixG, potentially some averages not caught above)
+  // Default to 1 decimal place
+  return value.toFixed(1);
+};
 
 /**
  * Simple function to format seconds as MM:SS
@@ -90,70 +189,4 @@ export const formatSecondsToMMSS = (seconds: number): string => {
   const mins = Math.floor(totalSeconds / 60);
   const secs = totalSeconds % 60;
   return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
-};
-
-/**
- * Format cell values for display based on the statistic label.
- */
-export const formatCell = (
-  row: TableAggregateData,
-  columnKey: keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">
-): string => {
-  const value = row[columnKey];
-  const label = row.label;
-  const gpForColumn = row.GP ? row.GP[columnKey] : null;
-
-  // **** ADD LOGGING ****
-  if (label === "PPTOI") {
-    console.log(
-      `Formatting PPTOI: Column='<span class="math-inline">\{columnKey\}', Value\=</span>{value}, GP=${gpForColumn}, GP Object=`,
-      row.GP
-    );
-  }
-  // **** END LOGGING ****
-
-  if (value == null || isNaN(value)) return "-";
-
-  switch (label) {
-    case "ATOI":
-      // Value is in minutes per game, convert to MM:SS format
-      const avgMinutesATOI = value;
-      const totalSeconds = Math.round(avgMinutesATOI * 60);
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
-
-    case "PPTOI":
-      // Value is Total Minutes for the period. Convert to Average Seconds/Game.
-      if (gpForColumn != null && gpForColumn > 0) {
-        const avgMinutesPPTOI = value / gpForColumn;
-        const avgSecondsPPTOI = avgMinutesPPTOI * 60;
-        return formatSecondsToMMSS(avgSecondsPPTOI);
-      } else if (gpForColumn === 0) {
-        return "0:00";
-      }
-      // Log why we are returning '-'
-      console.warn(
-        `Returning '-' for PPTOI: Column='<span class="math-inline">\{columnKey\}', Value\=</span>{value}, GP=${gpForColumn}`
-      );
-      return "-";
-
-    case "PP%":
-      return `${(value * 100).toFixed(1)}`;
-
-    case "IPP":
-      return `${(value * 100).toFixed(1)}`;
-
-    default:
-      // Default formatting for other numbers
-      if (Number.isInteger(value)) {
-        return value.toString();
-      }
-      // Display percentages with one decimal
-      if (label.endsWith("%") || label.endsWith("_pct")) {
-        return `${(value * 100).toFixed(1)}%`;
-      }
-      // Default to 2 decimal places for other rates/numbers
-      return value.toFixed(1);
-  }
 };

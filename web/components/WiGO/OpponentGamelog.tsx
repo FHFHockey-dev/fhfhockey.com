@@ -205,7 +205,7 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
   if (!teamId) {
     return (
       <div className={styles.opponentLogContainer}>
-        Select a player to see their team&aposs schedule.
+        Select a player to see their schedule.
       </div>
     );
   }
@@ -235,7 +235,7 @@ const OpponentGamelog: React.FC<OpponentGamelogProps> = ({
           <tr>
             <th>Date</th>
             <th>Opponent</th>
-            <th>Result/Time</th>
+            <th>Details</th>
           </tr>
         </thead>
         <tbody>

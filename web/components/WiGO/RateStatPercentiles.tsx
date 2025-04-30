@@ -54,7 +54,6 @@ const ALL_STATS_TO_DISPLAY: Array<{
   { label: "iHDCF/60", key: "i_hdcf_per_60", higherIsBetter: true },
   { label: "ixG/60", key: "ixg_per_60", higherIsBetter: true },
   { label: "iCF/60", key: "icf_per_60", higherIsBetter: true },
-  { label: "CF/60", key: "cf_per_60", higherIsBetter: true },
   { label: "SCF/60", key: "scf_per_60", higherIsBetter: true },
   { label: "HDCF/60", key: "oi_hdcf_per_60", higherIsBetter: true },
   // Percentage Stats
@@ -62,8 +61,7 @@ const ALL_STATS_TO_DISPLAY: Array<{
   { label: "SF%", key: "sf_pct", higherIsBetter: true },
   { label: "GF%", key: "gf_pct", higherIsBetter: true },
   { label: "SCF%", key: "scf_pct", higherIsBetter: true },
-  { label: "HDCF%", key: "hdcf_pct", higherIsBetter: true },
-  { label: "xGF%", key: "xgf_pct", higherIsBetter: true }
+  { label: "HDCF%", key: "hdcf_pct", higherIsBetter: true }
 ];
 
 // Type for calculated percentiles and ranks
@@ -187,7 +185,7 @@ const generateChartConfig = (
               return value !== null && value > 50 ? "#ffffff" : "#dddddd";
             },
             font: {
-              size: 12,
+              size: 14,
               weight: "bolder",
               family: "Roboto Condensed",
               lineHeight: 1.2
@@ -204,12 +202,12 @@ const generateChartConfig = (
           // --- Configuration for Value Label (ABOVE bar) ---
           valueLabel: {
             display: true,
-            color: "#ccc",
+            color: "#fff",
             anchor: "end",
             align: "center",
             offset: 6,
             font: {
-              size: 14,
+              size: 16,
               weight: "bolder",
               family: "Roboto Condensed"
             },
@@ -228,7 +226,7 @@ const generateChartConfig = (
             align: "center", // Center horizontally relative to the anchor
             offset: 10, // Distance below the bar (adjust as needed)
             font: {
-              size: 12, // Adjust size
+              size: 14, // Adjust size
               weight: "bolder", // Adjust weight
               family: "Roboto Condensed"
             },

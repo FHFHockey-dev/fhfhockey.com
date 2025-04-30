@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import styles from "./TimeframeComparison.module.scss"; // Make sure this path is correct
+import clsx from "clsx"; // Assuming you have clsx installed for conditional class names
 
 // Define the available timeframe options
 const TIMEFRAME_OPTIONS = ["STD", "L5", "L10", "L20", "LY", "3YA", "CA"]; // Added LY based on table headers
@@ -40,15 +41,12 @@ const TimeframeComparison: React.FC<TimeframeComparisonProps> = ({
   const handleLeftChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newLeftValue = e.target.value;
     setLeftValue(newLeftValue);
-    // Call the comparison function with the new left value and current right value
     onCompare(newLeftValue, rightValue);
   };
 
-  // Define the handler for the right dropdown change
   const handleRightChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newRightValue = e.target.value;
     setRightValue(newRightValue);
-    // Call the comparison function with the current left value and new right value
     onCompare(leftValue, newRightValue);
   };
 
@@ -57,7 +55,7 @@ const TimeframeComparison: React.FC<TimeframeComparisonProps> = ({
       <div className={styles.countsTableTitle}>COMPARE</div>
       <div className={styles.timeframeSelectContainer}>
         <select
-          className={styles.timeframeSelect}
+          className={clsx(styles.timeframeSelect, styles.selectHighlightedLeft)}
           value={leftValue}
           onChange={handleLeftChange} // Assign the handler
           aria-label="Select left timeframe for comparison"
@@ -69,10 +67,13 @@ const TimeframeComparison: React.FC<TimeframeComparisonProps> = ({
           ))}
         </select>
 
-        <span className={styles.vsText}>VS.</span>
+        <span className={styles.vsText}>TO:</span>
 
         <select
-          className={styles.timeframeSelect}
+          className={clsx(
+            styles.timeframeSelect,
+            styles.selectHighlightedRight
+          )}
           value={rightValue}
           onChange={handleRightChange} // Assign the handler
           aria-label="Select right timeframe for comparison"

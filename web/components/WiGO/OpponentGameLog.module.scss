@@ -10,58 +10,89 @@
   width: 100%;
   display: flex;
   flex-direction: column;
+  border-radius: v.$border-radius;
 }
 
 .scheduleTable {
   width: 100%;
   height: 100%;
   border-collapse: collapse;
-  font-size: v.$font-size-small * 0.65;
+  table-layout: fixed; // Helps with column widths
+  font-size: v.$font-size-small * 0.85;
+  font-family: v.$font-family-primary;
   overflow-y: auto; // Allow scrolling if content overflows
 
   th,
   td {
-    padding: 3px 4px; // Reduced padding
     text-align: left;
-    border-bottom: 1px solid var(--table-border-color, #e0e0e0);
+    width: 30%;
+    text-align: left;
+    padding-left: v.$space-md;
+    font-weight: 900;
+    color: v.$text-primary-color;
+
+    th,
+    td {
+      font-family: v.$font-family-primary;
+      text-transform: uppercase;
+      padding: v.$space-xs * 0.8;
+      text-align: center;
+      font-size: v.$font-size-base * 0.8;
+      white-space: nowrap;
+    }
+
+    &:not(:first-child) {
+      color: v.$text-color-primary;
+      text-align: center;
+      font-family: "roboto-condensed" sans-serif;
+      font-size: v.$font-size-small * 0.8;
+      letter-spacing: 0.15em;
+      width: 35%;
+    }
+
+    font-family: v.$font-family-primary;
+    text-transform: uppercase;
+    padding: v.$space-xs * 0.8;
+    text-align: center;
+    font-size: v.$font-size-small * 0.9;
+    white-space: nowrap;
   }
 
-  th {
-    font-weight: bold;
-    background-color: v.$background-dark;
+  thead th {
+    // Column Headers (Metric, Per/GP, Per/82)
+    padding: v.$space-sm;
+    font-size: v.$font-size-small * 0.9;
+    letter-spacing: 0.25em;
+    background-color: darken(v.$background-dark, 5%);
     color: v.$text-primary-color;
-    position: sticky; // Make header sticky if table scrolls
+    font-weight: 900;
+    position: sticky; // Make header row sticky
     top: 0;
+    z-index: 1;
+    border-bottom: 3px solid v.$primary-color; // Stronger border below headers
+    &:last-child {
+      border-right: none; // Remove border from last header
+    }
   }
 
   tbody tr {
-    &:hover {
-      background-color: darken(v.$primary-color, 30);
-    }
-    // Alternating row colors (optional)
+    transition: background-color v.$transition-duration v.$transition-easing;
     &:nth-child(even) {
-      // background-color: var(--table-row-even-bg, #fafafa);
+      background-color: darken(v.$background-light, 1%);
     }
-  }
 
-  td {
-    color: v.$text-primary-color;
-
-    // Specific alignment/styling
-    &:nth-child(1) {
-      // Date
-      width: 30%;
-      white-space: nowrap;
+    &:nth-child(odd) {
+      background-color: darken(v.$background-light, 3%);
     }
-    &:nth-child(2) {
-      // Opponent
-      width: 30%;
+    &:hover {
+      background-color: color.scale(v.$primary-color, $alpha: -70%);
     }
-    &:nth-child(3) {
-      // Result/Time
-      width: 40%;
-      text-align: right;
-      font-weight: 500;
+    &:last-child {
+      th,
+      td {
+        border-bottom: none;
+        padding-bottom: v.$space-xs; // Adjust padding for last row
+      }
     }
   }
 }

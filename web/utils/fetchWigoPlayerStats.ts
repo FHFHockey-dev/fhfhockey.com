@@ -3,15 +3,10 @@
 import {
   TableAggregateData,
   CombinedPlayerStats,
-  PlayerRawStats,
-  PercentileStrength
+  PlayerRawStats
 } from "components/WiGO/types";
 import supabase from "lib/supabase";
 import { Database } from "lib/supabase/database-generated.types";
-import {
-  OFFENSE_RATING_STATS,
-  DEFENSE_RATING_STATS
-} from "components/WiGO/ratingsConstants";
 
 // Import the types for the tables
 type WigoCareerRow = Database["public"]["Tables"]["wigo_career"]["Row"];
@@ -193,20 +188,19 @@ const statToGameLogColumnMap: Record<
   } // Check DB format
 };
 
-const countStatsMap: Record<string, string> = {
+const statMap: Record<string, string> = {
+  // Counts
   GP: "gp",
   ATOI: "atoi",
   Goals: "g",
   Assists: "a",
   Points: "pts",
-  SOG: "sog",
-  "S%": "s_pct",
+  SOG: "sog", // <-- Count
   ixG: "ixg",
   PPG: "ppg",
   PPA: "ppa",
   PPP: "ppp",
   PPTOI: "pptoi",
-  "PP%": "pp_pct",
   HIT: "hit",
   BLK: "blk",
   PIM: "pim",
@@ -214,10 +208,9 @@ const countStatsMap: Record<string, string> = {
   IPP: "ipp",
   "oiSH%": "oi_sh_pct",
   "OZS%": "ozs_pct",
-  "PTS1%": "pts1_pct"
-};
-
-const rateStatsMap: Record<string, string> = {
+  "PTS1%": "pts1_pct",
+  // Rates
+  "S%": "s_pct", // <-- Rate (Shooting Percentage)
   "G/60": "g_per_60",
   "A/60": "a_per_60",
   "PTS/60": "pts_per_60",
@@ -232,8 +225,80 @@ const rateStatsMap: Record<string, string> = {
   "PPP/60": "ppp_per_60",
   "HIT/60": "hit_per_60",
   "BLK/60": "blk_per_60",
-  "PIM/60": "pim_per_60"
+  "PIM/60": "pim_per_60",
+  "PP%": "pp_pct" // Power Play Percentage (often treated as rate/percentage)
 };
+
+// --- <<< NEW: Define SINGLE desired order, mixing counts & rates >>> ---
+const orderedStatLabels: string[] = [
+  "GP",
+  "ATOI",
+
+  "Points",
+  "Goals",
+  "Assists",
+
+  "SOG", // <-- Shots on Goal (Count)
+  "S%", // <-- Shooting Percentage (Rate) - Placed right below SOG
+
+  "PPP",
+  "PPG",
+  "PPA",
+  "PPTOI",
+  "PP%", // <-- PP Percentage
+
+  "HIT",
+  "BLK",
+  "PIM",
+
+  "ixG",
+  "iCF",
+  // --- Add other stats in your preferred mixed order ---
+  "G/60",
+  "A/60",
+  "PTS/60",
+  "SOG/60",
+  "ixG/60",
+  "iCF/60",
+  // --- Power Play Section ---
+
+  "PPP/60",
+  "PPG/60",
+  "PPA/60",
+  // --- Other Stats ---
+
+  "iHDCF/60",
+  "iSCF/60",
+  "HIT/60",
+  "BLK/60",
+  "PIM/60",
+  "IPP",
+  "oiSH%",
+  "OZS%",
+  "PTS1%",
+  "PTS1/60"
+  // Add any remaining stats from statMap here
+];
+
+// Identify which stats still benefit from having the GP object attached (usually counts)
+const statsNeedingGpMetadata = new Set([
+  "GP",
+  "ATOI",
+  "Goals",
+  "Assists",
+  "Points",
+  "SOG",
+  "ixG",
+  "PPG",
+  "PPA",
+  "PPP",
+  "PPTOI",
+  "HIT",
+  "BLK",
+  "PIM",
+  "iCF",
+  "IPP"
+]);
 
 export async function fetchPlayerGameLogForStat(
   playerId: number,
@@ -407,7 +472,7 @@ export async function fetchPlayerGameLogForStat(
  */
 export async function fetchPlayerAggregatedStats(
   playerId: number
-): Promise<CombinedPlayerStats> {
+): Promise<TableAggregateData[]> {
   console.log(`Workspaceing pre-aggregated stats for Player ID: ${playerId}`);
 
   const [careerRes, recentRes] = await Promise.all([
@@ -439,93 +504,104 @@ export async function fetchPlayerAggregatedStats(
     console.warn(
       `No aggregated data found for player ${playerId} in wigo_career or wigo_recent.`
     );
-    return { counts: [], rates: [] };
+    return []; // Return empty array
   }
 
-  const countsData: TableAggregateData[] = [];
-  const ratesData: TableAggregateData[] = [];
+  const combinedStatsData: TableAggregateData[] = [];
 
-  // Updated getValue to explicitly return null if value is null/undefined or NaN
   const getValue = (
     row: WigoCareerRow | WigoRecentRow | null,
     key: string | undefined
   ): number | null => {
     if (row && key && (row as any)[key] != null) {
       const num = Number((row as any)[key]);
-      // Return the number if it's valid, otherwise null
       return isNaN(num) ? null : num;
     }
-    // Return null if row, key, or the value itself is null/undefined
     return null;
   };
 
   // --- Process Count Stats ---
-  const gpBaseColName = "gp"; // The base column name for Games Played
+  const gpBaseColName = "gp";
 
-  for (const [label, baseColName] of Object.entries(countStatsMap)) {
-    // **** ADD THE GP OBJECT HERE ****
-    const rowData: TableAggregateData = {
-      label: label,
-      // Populate the GP object using the correct column names
-      GP: {
-        STD: getValue(careerData, `std_${gpBaseColName}`),
-        LY: getValue(careerData, `ly_${gpBaseColName}`),
-        // The script stores these as integers/doubles representing actual GP totals/averages
-        "3YA": getValue(careerData, `ya3_${gpBaseColName}`),
-        CA: getValue(careerData, `ca_${gpBaseColName}`),
-        L5: getValue(recentData, `l5_${gpBaseColName}`),
-        L10: getValue(recentData, `l10_${gpBaseColName}`),
-        L20: getValue(recentData, `l20_${gpBaseColName}`)
-      },
-      // Populate the stat values
-      STD: getValue(careerData, `std_${baseColName}`),
-      LY: getValue(careerData, `ly_${baseColName}`),
-      "3YA": getValue(careerData, `ya3_${baseColName}`),
-      CA: getValue(careerData, `ca_${baseColName}`),
-      L5: getValue(recentData, `l5_${baseColName}`),
-      L10: getValue(recentData, `l10_${baseColName}`),
-      L20: getValue(recentData, `l20_${baseColName}`)
-    };
-    countsData.push(rowData);
-  }
-
-  // --- Process Rate Stats ---
-  // Rate stats typically don't need the GP object for formatting,
-  // unless you were calculating something complex.
-  for (const [label, baseColName] of Object.entries(rateStatsMap)) {
-    const rowData: TableAggregateData = {
-      // Create rowData *without* GP for rates table
-      label: label,
-      // Note: getValue now returns null properly if data is missing
-      STD: getValue(careerData, `std_${baseColName}`),
-      LY: getValue(careerData, `ly_${baseColName}`),
-      "3YA": getValue(careerData, `ya3_${baseColName}`),
-      CA: getValue(careerData, `ca_${baseColName}`),
-      L5: getValue(recentData, `l5_${baseColName}`),
-      L10: getValue(recentData, `l10_${baseColName}`),
-      L20: getValue(recentData, `l20_${baseColName}`)
-    };
-    // Handle PP% transformation (check for null or undefined)
-    if (label === "PP%") {
-      const transform = (val: number | null | undefined) =>
-        val != null ? val * 100 : null;
-      rowData.STD = transform(rowData.STD);
-      rowData.LY = transform(rowData.LY);
-      rowData["3YA"] = transform(rowData["3YA"]);
-      rowData.CA = transform(rowData.CA);
-      rowData.L5 = transform(rowData.L5);
-      rowData.L10 = transform(rowData.L10);
-      rowData.L20 = transform(rowData.L20);
+  // --- <<< NEW: Single loop over the combined ordered list >>> ---
+  for (const label of orderedStatLabels) {
+    const baseColName = statMap[label]; // Look up in the combined map
+    if (!baseColName) {
+      console.warn(
+        `Label "${label}" found in orderedStatLabels but not in statMap. Skipping.`
+      );
+      continue;
     }
 
-    ratesData.push(rowData);
-  }
+    // Get raw values first
+    let stdValue = getValue(careerData, `std_${baseColName}`);
+    let lyValue = getValue(careerData, `ly_${baseColName}`);
+    let ya3Value = getValue(careerData, `ya3_${baseColName}`);
+    let caValue = getValue(careerData, `ca_${baseColName}`);
+    let l5Value = getValue(recentData, `l5_${baseColName}`);
+    let l10Value = getValue(recentData, `l10_${baseColName}`);
+    let l20Value = getValue(recentData, `l20_${baseColName}`);
 
-  // Return the structured data
-  return {
-    counts: countsData,
-    rates: ratesData
-  };
+    // --- Apply conditional unit conversions ---
+    if (label === "ATOI") {
+      // ... ATOI conversion logic ...
+      const convertMinutesToSeconds = (val: number | null): number | null =>
+        val != null ? val * 60 : null;
+      stdValue = convertMinutesToSeconds(stdValue);
+      lyValue = convertMinutesToSeconds(lyValue);
+      ya3Value = convertMinutesToSeconds(ya3Value);
+      caValue = convertMinutesToSeconds(caValue);
+      // L5/L10/L20 for ATOI are likely already per-game averages in correct unit? Double check source data. If they are total minutes, divide by GP here. Assuming they are avg minutes/game:
+      // No conversion needed for L5/L10/L20 if they are already avg minutes/game
+    } else if (
+      label === "PP%" ||
+      label === "S%" ||
+      label === "oiSH%" ||
+      label === "OZS%" ||
+      label === "PTS1%"
+    ) {
+      // Assuming these percentages might be stored 0-1 decimal, convert to 0-100 for display
+      // Adjust if your source data format is different
+      const transformPct = (val: number | null | undefined) =>
+        val != null && !isNaN(val) ? val * 100 : null;
+      stdValue = transformPct(stdValue);
+      lyValue = transformPct(lyValue);
+      ya3Value = transformPct(ya3Value);
+      caValue = transformPct(caValue);
+      l5Value = transformPct(l5Value);
+      l10Value = transformPct(l10Value);
+      l20Value = transformPct(l20Value);
+    }
+
+    // --- Create the row data ---
+    const rowData: TableAggregateData = {
+      label: label,
+      // Conditionally add the GP object only for relevant stats
+      GP: statsNeedingGpMetadata.has(label)
+        ? {
+            STD: getValue(careerData, `std_${gpBaseColName}`),
+            LY: getValue(careerData, `ly_${gpBaseColName}`),
+            "3YA": getValue(careerData, `ya3_${gpBaseColName}`),
+            CA: getValue(careerData, `ca_${gpBaseColName}`),
+            L5: getValue(recentData, `l5_${gpBaseColName}`),
+            L10: getValue(recentData, `l10_${gpBaseColName}`),
+            L20: getValue(recentData, `l20_${gpBaseColName}`)
+          }
+        : undefined, // Set to undefined if not needed for this stat
+      // Populate the actual stat values (potentially converted)
+      STD: stdValue,
+      LY: lyValue,
+      "3YA": ya3Value,
+      CA: caValue,
+      L5: l5Value,
+      L10: l10Value,
+      L20: l20Value
+    };
+    combinedStatsData.push(rowData);
+  } // End of the single loop
+
+  // --- <<< NEW: Return the single combined array >>> ---
+  return combinedStatsData;
 }
 
 export async function fetchPaginatedData<T>(
@@ -827,51 +903,25 @@ export const fetchPlayerGameLogConsistencyData = async (
   }
 };
 
-const getPercentileOffenseTable = (strength: PercentileStrength) =>
-  `nst_percentile_${strength}_offense` as keyof Database["public"]["Tables"];
-const getPercentileDefenseTable = (strength: PercentileStrength) =>
-  `nst_percentile_${strength}_defense` as keyof Database["public"]["Tables"];
+// Helper function (keep as is)
+const addStrength = <T>(
+  arr: T[],
+  strength: string
+): (T & { strength: string })[] =>
+  arr.map((row: T) => ({
+    ...row,
+    strength: strength
+  }));
 
-// Helper function to merge player data from multiple strength situations
-function mergePlayerData(
-  dataArrays: Record<string, any>[][]
-): Record<string, any>[] {
-  const playerMap = new Map<number, Record<string, any>>();
-
-  // Process each array of player data
-  dataArrays.forEach((data) => {
-    data.forEach((player) => {
-      if (!player.player_id) return;
-
-      const existingPlayer = playerMap.get(player.player_id);
-      if (existingPlayer) {
-        // Merge the data, preferring non-null values
-        Object.entries(player).forEach(([key, value]) => {
-          if (value !== null && value !== undefined) {
-            existingPlayer[key] = value;
-          }
-        });
-      } else {
-        playerMap.set(player.player_id, { ...player });
-      }
-    });
-  });
-
-  return Array.from(playerMap.values());
-}
-
-// --- Corrected fetchPercentilePlayerData Function ---
+// Updated Return Type Signature
 export async function fetchPercentilePlayerData(seasonId: number): Promise<{
-  offense: Record<string, any>[];
-  defense: Record<string, any>[];
+  offense: (PlayerRawStats & { strength: string })[];
+  defense: (PlayerRawStats & { strength: string })[];
 }> {
-  console.log("seasonId type:", typeof seasonId, seasonId);
   console.log(
-    "[fetchPercentilePlayerData] Starting fetch for season:",
-    seasonId
+    `[fetchPercentilePlayerData] Starting fetch for season: ${seasonId}`
   );
 
-  // Prepare select strings for both offense and defense tables
   const offenseSelect = `
     player_id,
     season,
@@ -916,6 +966,8 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
     penalties_drawn_per_60
   `;
 
+  // Define the columns needed for defense ratings calculation
+  // Ensure ALL columns listed in DEFENSE_RATING_STATS are included here
   const defenseSelect = `
     player_id,
     season,
@@ -944,72 +996,72 @@ export async function fetchPercentilePlayerData(seasonId: number): Promise<{
   `;
 
   try {
-    // Fetch data for each strength situation with season filter
+    // Fetch data specifying PlayerRawStats as the expected type
     const [
+      asOffenseRaw,
+      asDefenseRaw,
       esOffenseRaw,
-      ppOffenseRaw,
-      pkOffenseRaw,
       esDefenseRaw,
-      ppDefenseRaw,
+      ppOffenseRaw,
       pkDefenseRaw
     ] = await Promise.all([
-      fetchPaginatedData<Record<string, any>>(
+      fetchPaginatedData<PlayerRawStats>( // Specify type
+        "nst_percentile_as_offense" as keyof Database["public"]["Tables"],
+        offenseSelect,
+        { column: "season", value: seasonId }
+      ),
+      fetchPaginatedData<PlayerRawStats>( // Specify type
+        "nst_percentile_as_defense" as keyof Database["public"]["Tables"],
+        defenseSelect,
+        { column: "season", value: seasonId }
+      ),
+      fetchPaginatedData<PlayerRawStats>( // Specify type
         "nst_percentile_es_offense" as keyof Database["public"]["Tables"],
         offenseSelect,
         { column: "season", value: seasonId }
       ),
-      fetchPaginatedData<Record<string, any>>(
-        "nst_percentile_pp_offense" as keyof Database["public"]["Tables"],
-        offenseSelect,
-        { column: "season", value: seasonId }
-      ),
-      fetchPaginatedData<Record<string, any>>(
-        "nst_percentile_pk_offense" as keyof Database["public"]["Tables"],
-        offenseSelect,
-        { column: "season", value: seasonId }
-      ),
-      fetchPaginatedData<Record<string, any>>(
+      fetchPaginatedData<PlayerRawStats>( // Specify type
         "nst_percentile_es_defense" as keyof Database["public"]["Tables"],
         defenseSelect,
         { column: "season", value: seasonId }
       ),
-      fetchPaginatedData<Record<string, any>>(
-        "nst_percentile_pp_defense" as keyof Database["public"]["Tables"],
-        defenseSelect,
+      fetchPaginatedData<PlayerRawStats>( // Specify type
+        "nst_percentile_pp_offense" as keyof Database["public"]["Tables"],
+        offenseSelect,
         { column: "season", value: seasonId }
       ),
-      fetchPaginatedData<Record<string, any>>(
+      fetchPaginatedData<PlayerRawStats>( // Specify type
         "nst_percentile_pk_defense" as keyof Database["public"]["Tables"],
         defenseSelect,
         { column: "season", value: seasonId }
       )
     ]);
 
-    // Add strength property to each row
-    const addStrength = (arr: Record<string, any>[], strength: string) =>
-      arr.map((row: Record<string, any>) => ({ ...row, strength }));
+    // Add strength property using the generic helper
+    // The result type is (PlayerRawStats & { strength: string })[]
+    const asOffense = addStrength(asOffenseRaw, "as");
+    const asDefense = addStrength(asDefenseRaw, "as");
     const esOffense = addStrength(esOffenseRaw, "es");
-    const ppOffense = addStrength(ppOffenseRaw, "pp");
-    const pkOffense = addStrength(pkOffenseRaw, "pk");
     const esDefense = addStrength(esDefenseRaw, "es");
-    const ppDefense = addStrength(ppDefenseRaw, "pp");
+    const ppOffense = addStrength(ppOffenseRaw, "pp");
     const pkDefense = addStrength(pkDefenseRaw, "pk");
 
-    // Merge the data for offense and defense
-    const mergedOffense = mergePlayerData([esOffense, ppOffense, pkOffense]);
-    const mergedDefense = mergePlayerData([esDefense, ppDefense, pkDefense]);
+    // Concatenate the arrays
+    const allOffense = [...asOffense, ...esOffense, ...ppOffense];
+    const allDefense = [...asDefense, ...esDefense, ...pkDefense];
 
     console.log(
-      `[fetchPercentilePlayerData] Merged ${mergedOffense.length} offense players and ${mergedDefense.length} defense players for season ${seasonId}`
+      `[fetchPercentilePlayerData] Concatenated ${allOffense.length} relevant offense rows and ${allDefense.length} relevant defense rows for season ${seasonId}`
     );
 
+    // Return matches the updated function signature - no casting needed
     return {
-      offense: mergedOffense,
-      defense: mergedDefense
+      offense: allOffense,
+      defense: allDefense
     };
   } catch (error) {
     console.error(
-      "[fetchPercentilePlayerData] Error fetching percentile data:",
+      `[fetchPercentilePlayerData] Error fetching percentile data for season ${seasonId}:`,
       error
     );
     throw error;

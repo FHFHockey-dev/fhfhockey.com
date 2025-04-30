@@ -1,397 +1,327 @@
 // components/WiGO/PlayerRatingsDisplay.tsx
 import React, { useState, useEffect } from "react";
-// **** Use the correct fetch function ****
-import { fetchPercentilePlayerData } from "utils/fetchWigoPlayerStats";
-import { calculatePercentileRank } from "utils/calculatePercentiles";
-import { PlayerRawStats, PercentileStrength } from "components/WiGO/types";
-import {
-  OFFENSE_RATING_STATS,
-  DEFENSE_RATING_STATS,
-  HIGHER_IS_BETTER_MAP
-} from "./ratingsConstants"; // Adjust import path
-import styles from "./PlayerRatingsDisplay.module.scss";
+
+import { fetchRawStatsForAllStrengths } from "utils/fetchWigoRatingStats"; // Adjust path as needed
+import { calculatePlayerRatings } from "utils/calculateWigoRatings"; // Adjust path
+import { CalculatedPlayerRatings } from "components/WiGO/types"; // Import the final ratings type
+
+import styles from "./PlayerRatingsDisplay.module.scss"; // Keep your styles import
 import useCurrentSeason from "hooks/useCurrentSeason";
 
 interface PlayerRatingsProps {
   playerId: number | null | undefined;
-  minGp: number; // Prop still received, but NOT used for filtering here
+  minGp: number;
 }
 
-interface CalculatedRatings {
-  offense: { as: number | null; es: number | null; pp: number | null };
-  defense: { as: number | null; es: number | null; pk: number | null };
-  overall: {
-    as: number | null;
-    es: number | null;
-    st: number | null;
-    final: number | null;
+// --- COLOR INTERPOLATION HELPER ---
+// Define the key color points
+const COLOR_POINTS = {
+  0: { r: 255, g: 0, b: 0 }, // Neon Red (Pure Red)
+  50: { r: 255, g: 255, b: 0 }, // Neon Yellow (Pure Yellow)
+  100: { r: 57, g: 255, b: 20 } // Neon Green
+};
+// Linear interpolation function between two numbers
+const lerp = (a: number, b: number, t: number): number => {
+  return a + (b - a) * t;
+};
+
+// Function to get the interpolated color based on rating value (0-100)
+const getColorForRating = (
+  rating: number | null
+): { color: string; borderColor: string } => {
+  if (rating === null || isNaN(rating)) {
+    // Return default colors if rating is null or invalid
+    return { color: "#e0e0e0", borderColor: "#4a4f5a" }; // Default text and border
+  }
+
+  // Clamp rating between 0 and 100
+  const clampedRating = Math.max(0, Math.min(100, rating));
+
+  let r, g, b;
+
+  if (clampedRating <= 50) {
+    // Interpolate between Red (0) and Orange (50)
+    const t = clampedRating / 50; // Normalize to 0-1 range for this segment
+    r = Math.round(lerp(COLOR_POINTS[0].r, COLOR_POINTS[50].r, t));
+    g = Math.round(lerp(COLOR_POINTS[0].g, COLOR_POINTS[50].g, t));
+    b = Math.round(lerp(COLOR_POINTS[0].b, COLOR_POINTS[50].b, t));
+  } else {
+    // Interpolate between Orange (50) and Teal (100)
+    const t = (clampedRating - 50) / 50; // Normalize to 0-1 range for this segment
+    r = Math.round(lerp(COLOR_POINTS[50].r, COLOR_POINTS[100].r, t));
+    g = Math.round(lerp(COLOR_POINTS[50].g, COLOR_POINTS[100].g, t));
+    b = Math.round(lerp(COLOR_POINTS[50].b, COLOR_POINTS[100].b, t));
+  }
+
+  const colorString = `rgb(${r}, ${g}, ${b})`;
+
+  return {
+    color: colorString, // For text
+    borderColor: colorString // For border
   };
-}
+};
 
+// --- Component ---
 const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
   playerId,
-  minGp // Keep prop for potential future use or consistency, but don't filter with it
+  minGp
 }) => {
-  const [ratings, setRatings] = useState<CalculatedRatings | null>(null);
+  const [ratings, setRatings] = useState<CalculatedPlayerRatings | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const season = useCurrentSeason();
 
   useEffect(() => {
-    if (!playerId || !season) {
+    if (!playerId || !season?.seasonId) {
       setRatings(null);
       setIsLoading(false);
       setError(null);
       if (!playerId) console.log("[Ratings] No Player ID, clearing state.");
-      if (!season) console.log("[Ratings] No season loaded yet.");
+      if (!season?.seasonId) console.log("[Ratings] No season loaded yet.");
       return;
     }
 
-    const calculateRatings = async () => {
+    const loadAndCalculateRatings = async () => {
       setIsLoading(true);
       setError(null);
       setRatings(null);
+      console.log(
+        `[Ratings] Starting calculation for Player ${playerId}, Season ${season.seasonId}`
+      );
+
       try {
-        // Fetch all percentile data for the current season
-        const { offense, defense } = await fetchPercentilePlayerData(
-          season.seasonId
-        );
+        console.log(`[Ratings] Fetching raw stats...`);
+        const rawStats = await fetchRawStatsForAllStrengths(season.seasonId);
 
-        // Helper to filter by player and strength
-        const filterByStrength = (arr: any[], strength: PercentileStrength) =>
-          arr.find(
-            (row) => row.player_id === playerId && row.strength === strength
+        if (!rawStats || Object.keys(rawStats).length === 0) {
+          console.warn(
+            `[Ratings] No raw stats data returned for season ${season.seasonId}.`
           );
+        } else {
+          console.log(`[Ratings] Raw stats fetched successfully.`);
+        }
 
-        // Extract data for each strength
-        const filteredAS = offense.filter(
-          (row) => row.strength === "as" && row.player_id === playerId
-        );
-        const filteredES = offense.filter(
-          (row) => row.strength === "es" && row.player_id === playerId
-        );
-        const filteredPP = offense.filter(
-          (row) => row.strength === "pp" && row.player_id === playerId
-        );
-        const filteredPK = defense.filter(
-          (row) => row.strength === "pk" && row.player_id === playerId
-        );
+        console.log(`[Ratings] Calculating ratings...`);
+        const calculatedData = calculatePlayerRatings(playerId, rawStats);
 
-        // Get Player TOI using toi_seconds
-        const targetPlayerDataPP = filteredPP.find(
-          (p) => p.player_id === playerId
-        );
-        const targetPlayerDataPK = filteredPK.find(
-          (p) => p.player_id === playerId
-        );
-        const player_pp_toi_seconds = targetPlayerDataPP?.toi_seconds ?? 0; // USE toi_seconds
-        const player_pk_toi_seconds = targetPlayerDataPK?.toi_seconds ?? 0; // USE toi_seconds
-        console.log(
-          `[Ratings] Player TOI - PP: ${player_pp_toi_seconds}s, PK: ${player_pk_toi_seconds}s`
-        );
-
-        // Filter data - **** REMOVE THIS IF GP IS NOT SEASON TOTAL ****
-        const filterByGp = (data: PlayerRawStats[]) =>
-          data.filter((p) => p.gp != null && p.gp >= minGp);
-        const filteredASFiltered = filterByGp(filteredAS as PlayerRawStats[]);
-        const filteredESFiltered = filterByGp(filteredES as PlayerRawStats[]);
-        const filteredPPFiltered = filterByGp(filteredPP as PlayerRawStats[]);
-        const filteredPKFiltered = filterByGp(filteredPK as PlayerRawStats[]);
-
-        // 3. Calculate Percentiles Helper (Now receives unfiltered data)
-        const getAvgPercentile = (
-          categoryStats: (keyof PlayerRawStats)[] | undefined,
-          playerData: PlayerRawStats[], // Unfiltered data
-          targetId: number,
-          strengthForDebug: PercentileStrength
-        ): number | null => {
-          const debugPrefix = `[Ratings][${strengthForDebug}]`;
-          if (!categoryStats || categoryStats.length === 0) {
-            /* ... */ return null;
-          }
-          if (playerData.length === 0) {
-            console.log(`${debugPrefix} Source player data is empty.`); // Changed log message
-            return null;
-          }
-          // **** Check if target exists in the UNFILTERED source data ****
-          const targetPlayerExists = playerData.some(
-            (p) => p.player_id === targetId
-          );
-          if (!targetPlayerExists) {
-            console.log(
-              `${debugPrefix} Target player ${targetId} not found in source data.`
-            );
-            return null; // Player not in this percentile table at all
-          }
-
-          let sumPercentiles = 0;
-          let countValidStats = 0;
+        if (calculatedData) {
           console.log(
-            `${debugPrefix} Calculating average percentile for ${categoryStats.length} stats across ${playerData.length} players...`
+            "[Ratings] Calculation successful. Setting final ratings state:",
+            calculatedData
           );
-
-          for (const statKey of categoryStats) {
-            // Prepare comparison group by filtering ONLY for valid values of the specific stat
-            const statDataForCalc = playerData
-              .map((p) => ({
-                player_id: p.player_id,
-                value: p[statKey] as number | null
-              }))
-              .filter(
-                (p): p is { player_id: number; value: number } =>
-                  p.value !== null && !isNaN(p.value) && isFinite(p.value)
-              );
-
-            // Find the target player's value *within this specific stat's valid data*
-            const targetStatValue = statDataForCalc.find(
-              (p) => p.player_id === targetId
-            )?.value;
-
-            // Log info about this specific stat calculation (optional)
-            // const targetOriginalValue = playerData.find(p => p.player_id === targetId)?.[statKey];
-            // console.log(`${debugPrefix} Stat: ${String(statKey)} - Comparison Group Size: ${statDataForCalc.length}. Target Value for Calc: ${targetStatValue}`);
-
-            // Proceed only if comparison group exists AND target player has a valid value *for this stat*
-            if (
-              statDataForCalc.length > 0 &&
-              targetStatValue !== null &&
-              targetStatValue !== undefined
-            ) {
-              const higherIsBetter = HIGHER_IS_BETTER_MAP[statKey];
-              if (higherIsBetter === undefined) {
-                /* ... warning ... */ continue;
-              }
-
-              const percentile = calculatePercentileRank(
-                statDataForCalc,
-                targetId,
-                "value",
-                higherIsBetter
-              );
-              if (percentile !== null) {
-                sumPercentiles += percentile;
-                countValidStats++;
-              }
-            }
-          }
-          console.log(
-            `${debugPrefix} Calculated average from ${countValidStats} valid stats.`
-          );
-          return countValidStats > 0
-            ? (sumPercentiles / countValidStats) * 100
-            : null;
-        };
-
-        // 4. Calculate All Ratings (using unfiltered data)
-        console.log("[Ratings] Calculating individual strength ratings...");
-        const offAS = getAvgPercentile(
-          OFFENSE_RATING_STATS.as,
-          filteredASFiltered as PlayerRawStats[],
-          playerId,
-          "as"
-        );
-        const defAS = getAvgPercentile(
-          DEFENSE_RATING_STATS.as,
-          filteredASFiltered as PlayerRawStats[],
-          playerId,
-          "as"
-        );
-        const offES = getAvgPercentile(
-          OFFENSE_RATING_STATS.es,
-          filteredESFiltered as PlayerRawStats[],
-          playerId,
-          "es"
-        );
-        const defES = getAvgPercentile(
-          DEFENSE_RATING_STATS.es,
-          filteredESFiltered as PlayerRawStats[],
-          playerId,
-          "es"
-        );
-        const offPP = getAvgPercentile(
-          OFFENSE_RATING_STATS.pp,
-          filteredPPFiltered as PlayerRawStats[],
-          playerId,
-          "pp"
-        );
-        const defPK = getAvgPercentile(
-          DEFENSE_RATING_STATS.pk,
-          filteredPKFiltered as PlayerRawStats[],
-          playerId,
-          "pk"
-        );
-        console.log(
-          `[Ratings] Individual Results - offAS: ${offAS}, defAS: ${defAS}, offES: ${offES}, defES: ${defES}, offPP: ${offPP}, defPK: ${defPK}`
-        ); // Check these values
-
-        // 5. Calculate Weighted ST Rating
-        let overallST: number | null = null;
-        // **** USE toi_seconds ****
-        const total_st_toi_seconds =
-          player_pp_toi_seconds + player_pk_toi_seconds;
-        if (total_st_toi_seconds > 0) {
-          if (typeof offPP === "number" && typeof defPK === "number") {
-            // **** USE toi_seconds ****
-            const pp_weight = player_pp_toi_seconds / total_st_toi_seconds;
-            const pk_weight = player_pk_toi_seconds / total_st_toi_seconds;
-            overallST = offPP * pp_weight + defPK * pk_weight;
-            console.log(`[Ratings] Weighted ST: ...`);
-          } else if (typeof offPP === "number") {
-            overallST = offPP;
+          setRatings(calculatedData);
+          if (calculatedData._debug) {
             console.log(
-              `[Ratings] Weighted ST based only on PP: ${overallST?.toFixed(1)}`
+              "[Ratings Debug] Intermediate Percentiles:",
+              calculatedData._debug.percentiles
             );
-          } else if (typeof defPK === "number") {
-            overallST = defPK;
             console.log(
-              `[Ratings] Weighted ST based only on PK: ${overallST?.toFixed(1)}`
+              "[Ratings Debug] Regressed Percentiles:",
+              calculatedData._debug.regressedPercentiles
             );
           }
         } else {
-          console.log("[Ratings] Skipping ST Rating: Total PP/PK TOI is 0.");
+          console.warn(
+            `[Ratings] Calculation returned null for Player ${playerId}. Player might not have data for this season.`
+          );
+          setRatings(null);
         }
-
-        // 6. Calculate Final Overall Ratings
-        const calculateOverall = (
-          off: number | null,
-          def: number | null
-        ): number | null =>
-          typeof off === "number" && typeof def === "number"
-            ? (off + def) / 2
-            : null;
-        const overallAS = calculateOverall(offAS, defAS);
-        const overallES = calculateOverall(offES, defES);
-        const finalRatingsComponents = [overallAS, overallES, overallST];
-        const validFinalRatings = finalRatingsComponents.filter(
-          (r) => typeof r === "number"
-        ) as number[];
-        const finalOverall =
-          validFinalRatings.length > 0
-            ? validFinalRatings.reduce((a, b) => a + b, 0) /
-              validFinalRatings.length
-            : null;
-        console.log(
-          `[Ratings] Final Overall Inputs - OverallAS: ${overallAS}, OverallES: ${overallES}, OverallST: ${overallST}. Final Result: ${finalOverall}`
-        );
-
-        // 7. Set State
-        const finalRatingsObj = {
-          offense: { as: offAS, es: offES, pp: offPP },
-          defense: { as: defAS, es: defES, pk: defPK },
-          overall: {
-            as: overallAS,
-            es: overallES,
-            st: overallST,
-            final: finalOverall
-          }
-        };
-        console.log("[Ratings] Setting final ratings state:", finalRatingsObj);
-        setRatings(finalRatingsObj);
       } catch (err: any) {
-        console.error("[Ratings] Error during calculation:", err);
+        console.error("[Ratings] Error during fetch or calculation:", err);
         setError(
           `Failed to calculate ratings: ${err.message || "Unknown error"}`
         );
         setRatings(null);
       } finally {
         setIsLoading(false);
-        console.log("[Ratings] Calculation process finished.");
+        console.log("[Ratings] Load and calculation process finished.");
       }
     };
 
-    calculateRatings();
-  }, [playerId, minGp, season]); // Dependencies
+    loadAndCalculateRatings();
+  }, [playerId, season?.seasonId]);
 
   const formatRating = (rating: number | null): string => {
-    return rating !== null && !isNaN(rating) ? rating.toFixed(0) : "-";
+    return rating !== null && !isNaN(rating) ? rating.toFixed(1) : "-";
   };
 
-  // --- Render Logic (Updated to show values) ---
+  // --- Render Logic ---
   const renderContent = () => {
     if (isLoading)
       return <div className={styles.loading}>Loading Ratings...</div>;
     if (error) return <div className={styles.error}>{error}</div>;
-    // Show calculating message if loading is done but ratings are still null (and no error)
     if (!ratings && !isLoading && playerId)
       return <div className={styles.calculating}>Calculating...</div>;
     if (!playerId)
       return <div className={styles.noPlayer}>Select player for ratings</div>;
-    if (!ratings) return null; // Should be covered by above, but as a fallback
+    if (!ratings)
+      return (
+        <div className={styles.noData}>
+          No rating data available for this player/season.
+        </div>
+      );
+
+    // Helper to generate styles for a rating box
+    const getRatingStyles = (ratingValue: number | null) => {
+      const { color, borderColor } = getColorForRating(ratingValue);
+      return {
+        // Apply border color to the box
+        boxStyle: {
+          borderColor: borderColor,
+          borderWidth: "3px",
+          borderStyle: "solid"
+        },
+        // Apply text color to the value span
+        valueStyle: { color: color }
+      };
+    };
 
     return (
       <div className={styles.ratingsRoot}>
         {/* Column 1: Offense */}
         <div className={styles.ratingSection}>
           <h3 className={styles.ratingTitle}>Offense</h3>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>All</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.offense.as)}
-            </span>
-          </div>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>Even</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.offense.es)}
-            </span>
-          </div>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>PP</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.offense.pp)}
-            </span>
+          <div className={styles.ratingsBoxes}>
+            {/* --- Apply dynamic styles --- */}
+            <div
+              className={styles.ratingBox}
+              style={getRatingStyles(ratings.offense.as).boxStyle}
+            >
+              <span className={styles.ratingLabel}>All</span>
+              <span
+                className={styles.ratingValue}
+                style={getRatingStyles(ratings.offense.as).valueStyle}
+              >
+                {formatRating(ratings.offense.as)}
+              </span>
+            </div>
+            <div
+              className={styles.ratingBox}
+              style={getRatingStyles(ratings.offense.es).boxStyle}
+            >
+              <span className={styles.ratingLabel}>Even</span>
+              <span
+                className={styles.ratingValue}
+                style={getRatingStyles(ratings.offense.es).valueStyle}
+              >
+                {formatRating(ratings.offense.es)}
+              </span>
+            </div>
+            <div
+              className={styles.ratingBox}
+              style={getRatingStyles(ratings.offense.pp).boxStyle}
+            >
+              <span className={styles.ratingLabel}>PP</span>
+              <span
+                className={styles.ratingValue}
+                style={getRatingStyles(ratings.offense.pp).valueStyle}
+              >
+                {formatRating(ratings.offense.pp)}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Column 2: Overall */}
         <div className={styles.ratingSection}>
           <h3 className={styles.ratingTitle}>Overall</h3>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>All</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.overall.as)}
-            </span>
-          </div>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>Even</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.overall.es)}
-            </span>
-          </div>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>Special</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.overall.st)}
-            </span>
-          </div>
-          <div className={`${styles.ratingBox} ${styles.finalRating}`}>
-            <span className={styles.ratingLabel}>Total</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.overall.final)}
-            </span>
+          <div className={styles.ratingsBoxes}>
+            <div
+              className={styles.ratingBox}
+              style={getRatingStyles(ratings.overall.as).boxStyle}
+            >
+              <span className={styles.ratingLabel}>All</span>
+              <span
+                className={styles.ratingValue}
+                style={getRatingStyles(ratings.overall.as).valueStyle}
+              >
+                {formatRating(ratings.overall.as)}
+              </span>
+            </div>
+            <div
+              className={styles.ratingBox}
+              style={getRatingStyles(ratings.overall.es).boxStyle}
+            >
+              <span className={styles.ratingLabel}>Even</span>
+              <span
+                className={styles.ratingValue}
+                style={getRatingStyles(ratings.overall.es).valueStyle}
+              >
+                {formatRating(ratings.overall.es)}
+              </span>
+            </div>
+            <div
+              className={styles.ratingBox}
+              style={getRatingStyles(ratings.overall.st).boxStyle}
+            >
+              <span className={styles.ratingLabel}>Special</span>
+              <span
+                className={styles.ratingValue}
+                style={getRatingStyles(ratings.overall.st).valueStyle}
+              >
+                {formatRating(ratings.overall.st)}
+              </span>
+            </div>
+            {/* Final rating uses class for background, but we can add dynamic text/border */}
+            {/* <div
+              className={`${styles.ratingBox} ${styles.finalRating}`}
+              // Override border color, keep background from class
+              style={{
+                ...getRatingStyles(ratings.overall.final).boxStyle,
+                backgroundColor: ""
+              }}
+            >
+              <span className={styles.ratingLabel}>Total</span>
+              <span
+                className={styles.ratingValue}
+                style={getRatingStyles(ratings.overall.final).valueStyle}
+              >
+                {formatRating(ratings.overall.final)}
+              </span>
+            </div> */}
           </div>
         </div>
 
         {/* Column 3: Defense */}
         <div className={styles.ratingSection}>
           <h3 className={styles.ratingTitle}>Defense</h3>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>All</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.defense.as)}
-            </span>
-          </div>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>Even</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.defense.es)}
-            </span>
-          </div>
-          <div className={styles.ratingBox}>
-            <span className={styles.ratingLabel}>PK</span>
-            <span className={styles.ratingValue}>
-              {formatRating(ratings.defense.pk)}
-            </span>
+          <div className={styles.ratingsBoxes}>
+            <div
+              className={styles.ratingBox}
+              style={getRatingStyles(ratings.defense.as).boxStyle}
+            >
+              <span className={styles.ratingLabel}>All</span>
+              <span
+                className={styles.ratingValue}
+                style={getRatingStyles(ratings.defense.as).valueStyle}
+              >
+                {formatRating(ratings.defense.as)}
+              </span>
+            </div>
+            <div
+              className={styles.ratingBox}
+              style={getRatingStyles(ratings.defense.es).boxStyle}
+            >
+              <span className={styles.ratingLabel}>Even</span>
+              <span
+                className={styles.ratingValue}
+                style={getRatingStyles(ratings.defense.es).valueStyle}
+              >
+                {formatRating(ratings.defense.es)}
+              </span>
+            </div>
+            <div
+              className={styles.ratingBox}
+              style={getRatingStyles(ratings.defense.pk).boxStyle}
+            >
+              <span className={styles.ratingLabel}>PK</span>
+              <span
+                className={styles.ratingValue}
+                style={getRatingStyles(ratings.defense.pk).valueStyle}
+              >
+                {formatRating(ratings.defense.pk)}
+              </span>
+            </div>
           </div>
         </div>
       </div>

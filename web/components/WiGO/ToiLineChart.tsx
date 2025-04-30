@@ -25,6 +25,7 @@ import { formatSecondsToMMSS, formatDateToMMDD } from "utils/formattingUtils";
 import styles from "styles/wigoCharts.module.scss";
 import zoomPlugin from "chartjs-plugin-zoom";
 import Spinner from "components/Spinner";
+import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors"; // Adjust path
 
 ChartJS.register(
   CategoryScale,
@@ -143,10 +144,12 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
           {
             label: "Total TOI",
             data: getData("toi_per_game"),
-            borderColor: useDummyData ? "transparent" : "rgb(75, 192, 192)",
+            borderColor: useDummyData
+              ? WIGO_COLORS.TRANSPARENT
+              : CHART_COLORS.BAR_PRIMARY,
             backgroundColor: useDummyData
-              ? "transparent"
-              : "rgba(75, 192, 192, 0.2)",
+              ? WIGO_COLORS.TRANSPARENT
+              : addAlpha(CHART_COLORS.BAR_PRIMARY, 0.2),
             fill: !useDummyData,
             yAxisID: "yTime",
             pointRadius: useDummyData ? 0 : 2,
@@ -156,10 +159,12 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
           {
             label: "PP TOI",
             data: getData("pp_toi_per_game"),
-            borderColor: useDummyData ? "transparent" : "rgb(255, 159, 64)",
+            borderColor: useDummyData
+              ? WIGO_COLORS.TRANSPARENT
+              : CHART_COLORS.PP_TOI,
             backgroundColor: useDummyData
-              ? "transparent"
-              : "rgba(255, 159, 64, 0.2)",
+              ? WIGO_COLORS.TRANSPARENT
+              : addAlpha(CHART_COLORS.PP_TOI, 0.2),
             fill: false,
             yAxisID: "yTime",
             pointRadius: useDummyData ? 0 : 2,
@@ -172,8 +177,8 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
                   label: "Season Avg Total TOI",
                   data: getAvgData(averageToi),
                   borderColor: useDummyData
-                    ? "transparent"
-                    : "rgb(255, 99, 132)",
+                    ? WIGO_COLORS.TRANSPARENT
+                    : CHART_COLORS.AVG_LINE_PRIMARY,
                   borderDash: [3, 3],
                   fill: false,
                   pointRadius: 0,
@@ -193,10 +198,12 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
           {
             label: "PP TOI % per Game",
             data: getData("pp_toi_pct_per_game"),
-            borderColor: useDummyData ? "transparent" : "rgb(153, 102, 255)",
+            borderColor: useDummyData
+              ? WIGO_COLORS.TRANSPARENT
+              : CHART_COLORS.LINE_TERTIARY, // Use semantic tertiary line color
             backgroundColor: useDummyData
-              ? "transparent"
-              : "rgba(153, 102, 255, 0.2)",
+              ? WIGO_COLORS.TRANSPARENT
+              : addAlpha(CHART_COLORS.LINE_TERTIARY, 0.2),
             fill: !useDummyData,
             yAxisID: "yPercentage",
             pointRadius: useDummyData ? 0 : 2,
@@ -209,8 +216,8 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
                   label: "Season Avg PP TOI %",
                   data: getAvgData(averagePpToiPct),
                   borderColor: useDummyData
-                    ? "transparent"
-                    : "rgb(201, 203, 207)",
+                    ? WIGO_COLORS.TRANSPARENT
+                    : CHART_COLORS.AVG_LINE_SECONDARY,
                   borderDash: [3, 3],
                   fill: false,
                   pointRadius: 0,
@@ -237,14 +244,15 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
         x: {
           title: { display: false },
           ticks: {
-            color: "#ccc",
+            color: CHART_COLORS.TICK_LABEL,
             font: { size: 9 },
             maxRotation: 90,
             minRotation: 45,
             autoSkip: true,
             maxTicksLimit: 10
           },
-          grid: { display: false }
+          grid: { display: false },
+          border: { color: CHART_COLORS.AXIS_BORDER }
         },
         // Define TWO Y-axes one for toi/pptoi and one for PP%
         // only one will be active depending on the view
@@ -258,15 +266,16 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
             display: true,
             text: "Time On Ice (Minutes)",
             font: { size: 10 },
-            color: "#ccc"
+            color: CHART_COLORS.TICK_LABEL
           },
           ticks: {
-            color: "#ccc",
+            color: CHART_COLORS.TICK_LABEL,
             font: { size: 9 },
             callback: (value) =>
               typeof value === "number" ? formatSecondsToMMSS(value) : value
           },
-          grid: { color: "rgba(255, 255, 255, 0.1)" }
+          grid: { color: CHART_COLORS.GRID_LINE },
+          border: { color: CHART_COLORS.AXIS_BORDER }
         },
         yPercentage: {
           // Axis for PP TOI %
@@ -277,15 +286,16 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
             display: true,
             text: "PP TOI Percentage (%)",
             font: { size: 10 },
-            color: "#ccc"
+            color: CHART_COLORS.TICK_LABEL
           },
           ticks: {
-            color: "#ccc",
+            color: CHART_COLORS.TICK_LABEL,
             font: { size: 9 },
             callback: (value) =>
               typeof value === "number" ? `${value}%` : value // Format as percentage
           },
-          grid: { color: "rgba(255, 255, 255, 0.1)" }
+          grid: { color: CHART_COLORS.GRID_LINE },
+          border: { color: CHART_COLORS.AXIS_BORDER }
         }
       },
       plugins: {
@@ -293,13 +303,22 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
           display: false, // Enable legend to see dataset labels
           position: "top" as const,
           align: "end" as const,
-          labels: { color: "#ccc", boxWidth: 12, font: { size: 10 } }
+          labels: {
+            color: CHART_COLORS.TICK_LABEL,
+            boxWidth: 12,
+            font: { size: 10 }
+          }
         },
         datalabels: { display: false },
         tooltip: {
           enabled: true,
           mode: "index" as const,
           intersect: false,
+          backgroundColor: CHART_COLORS.TOOLTIP_BACKGROUND,
+          titleColor: CHART_COLORS.TOOLTIP_TEXT,
+          bodyColor: CHART_COLORS.TOOLTIP_TEXT,
+          borderColor: CHART_COLORS.TOOLTIP_BORDER,
+          borderWidth: 1,
           callbacks: {
             title: (tooltipItems) =>
               tooltipItems[0]?.label ? `Date: ${tooltipItems[0].label}` : "",

@@ -1001,7 +1001,7 @@ export default async function handler(
             totals.gp
           );
           (recentStats as any)[`${prefix}pptoi`] = safeDivide(
-            totals.nst_toi_all,
+            totals.wgo_pp_toi,
             totals.gp
           );
           (recentStats as any)[`${prefix}pp_pct`] = safeAverage(

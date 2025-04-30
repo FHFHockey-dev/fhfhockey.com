@@ -9,21 +9,14 @@ import {
 } from "utils/fetchWigoPlayerStats"; // Adjust path
 import { formatPercentage } from "utils/formattingUtils"; // Adjust path
 import styles from "styles/wigoCharts.module.scss"; // Import shared styles
+import {
+  WIGO_COLORS,
+  CHART_COLORS,
+  CONSISTENCY_CHART_COLORS,
+  addAlpha
+} from "styles/wigoColors";
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
-
-// --- NEW: Specific colors for Consistency Categories ---
-const CONSISTENCY_COLORS = [
-  "rgb(128, 128, 128)", // 0 Pts (Grey) - Slightly lighter grey
-  "rgb(54, 162, 235)", // 1 Pt (Blue - matches PPG/GameScore bars)
-  "rgb(82, 170, 92)", // 2 Pts (Teal - matches TOI/PPG lines)
-  "rgb(255, 205, 86)", // 3 Pts (Yellow)
-  "rgb(255, 133, 82)", // 4 Pts (Orange)
-  "rgb(153, 102, 255)", // 5 Pts (Purple)
-  "rgb(255, 255, 255)" // 6 Pts (Pink) - Fallback for higher points
-];
-// Fallback if more than 7 categories (unlikely for points)
-const FALLBACK_COLOR = "rgb(201, 203, 207)"; // Light grey
 
 interface ConsistencyDataPoint {
   label: string;
@@ -92,7 +85,7 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ playerId }) => {
           const percentage = totalGames > 0 ? count / totalGames : 0;
           const label = `${i} Pt${i !== 1 ? "s" : ""}`;
 
-          const color = CONSISTENCY_COLORS[i] ?? FALLBACK_COLOR;
+          const color = CONSISTENCY_CHART_COLORS[i] ?? WIGO_COLORS.GREY_MEDIUM;
 
           displayData.push({ label, percentage, count, color }); // Store specific color
 
@@ -101,13 +94,18 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ playerId }) => {
           chartBackgroundColors.push(color); // Use the assigned color
         }
 
+        // --- Handle Cardio separately ---
         const cardioPercentage =
           totalGames > 0 ? cardioGameCount / totalGames : 0;
+
+        // Assign a specific color for Cardio, maybe grey?
+        const cardioColor = WIGO_COLORS.GREY_MEDIUM;
         displayData.push({
           label: "Cardio",
           percentage: cardioPercentage,
-          count: cardioGameCount
-        }); // No color stored
+          count: cardioGameCount,
+          color: cardioColor // Add color for the list item
+        });
 
         setProcessedData(displayData);
         setChartData({
@@ -117,13 +115,12 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ playerId }) => {
               label: "Points per Game Distribution",
               data: chartPercentages,
               backgroundColor: chartBackgroundColors,
-              borderColor: "#444", // Dark border between slices
+              borderColor: CHART_COLORS.BORDER_DARK, // Use var
               borderWidth: 1
             }
           ]
         });
       } catch (err: any) {
-        /* ... error handling ... */
         console.error("Failed to load Consistency chart data:", err);
         setError(`Failed to load data: ${err.message || "Unknown error"}`);
         setProcessedData([]);
@@ -147,16 +144,26 @@ const ConsistencyChart: React.FC<ConsistencyChartProps> = ({ playerId }) => {
         display: false // Explicitly disable the plugin for this chart
       },
       tooltip: {
+        backgroundColor: CHART_COLORS.TOOLTIP_BACKGROUND, // Use new var name
+        titleColor: CHART_COLORS.TOOLTIP_TEXT,
+        bodyColor: CHART_COLORS.TOOLTIP_TEXT,
+        borderColor: CHART_COLORS.TOOLTIP_BORDER, // Add border
+        borderWidth: 1,
         callbacks: {
           label: function (context: any) {
+            // Consider using TooltipItem<'doughnut'> from 'chart.js' for better typing
             let label = context.label || "";
-            if (label) label += ": ";
-            if (context.parsed !== null)
-              label += context.parsed.toFixed(1) + "%";
+            // Ensure processedData is accessible here (it should be via closure)
             const dataPoint = processedData.find(
               (p) => p.label === context.label
             );
+            const valueColor = dataPoint?.color ?? CHART_COLORS.TOOLTIP_TEXT;
+            if (label) label += ": ";
+            if (context.parsed !== null)
+              label += context.parsed.toFixed(1) + "%";
+
             if (dataPoint) label += ` (${dataPoint.count} Games)`;
+
             return label;
           }
         }
