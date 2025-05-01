@@ -1,3 +1,7 @@
+@use "sass:color";
+@use "styles/vars" as v; // Import variables from vars.scss
+@use "sass:math";
+
 /* Base styles */
 .game-page,
 .statsAndPlayerCompContainer,
@@ -34,6 +38,14 @@
 }
 
 /* Game details styles */
+
+.tableHeader {
+  font-family: roboto condensed, sans-serif;
+  font-size: 2em;
+  font-weight: 200;
+  text-align: left;
+  text-transform: uppercase;
+}
 
 .gameDetailsContainer {
   justify-content: center;
@@ -101,26 +113,28 @@
   margin: 0;
 }
 
-.tableHeader {
-  font-family: roboto condensed, sans-serif;
-  font-size: 2em;
-  font-weight: 200;
-  text-align: left;
-  margin-top: 0;
-}
-
 /* Stats container and rows */
 .statsAndPlayerCompContainer {
-  margin-top: 20px;
+  margin: 20px 0 40px 0;
   display: flex;
   justify-content: space-between;
   width: 85%;
+  // height: 100%; /* REMOVE this unless the parent has a defined height */
+  align-items: stretch; /* ADD or ensure this is present (it's default) */
+}
+
+.statsPlayerAndGoalieCompContainer {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  align-items: stretch; /* ADD or ensure this is present (it's default) */
 }
 
 .gamePageVsTableContainer {
+  display: flex; /* ADD display: flex if it wasn't already (it was in yours) */
   flex-direction: column;
   flex-basis: 40%;
-  margin-right: 5%; /* Gap between tables */
+  margin-right: 5%;
 }
 
 .statRow,
@@ -133,6 +147,19 @@
   flex-direction: column;
   display: flex;
   align-items: center;
+  width: 100%;
+  // Target the LAST element with the .statRow class within its parent
+  &:last-child {
+    border-bottom: none; /* Remove bottom border for the last row */
+  }
+  &:nth-child(odd) {
+    background-color: v.$background-dark; /* Darker background for odd rows */
+    border-bottom: 2px solid v.$border-color-primary;
+  }
+  &:nth-child(even) {
+    background-color: v.$background-medium; /* Lighter background for even rows */
+    border-bottom: 2px solid v.$border-color-primary;
+  }
 }
 
 .statRowHeader {
@@ -155,8 +182,12 @@
 
 /* Player comparison styles */
 .playerCompContainer {
+  @include v.element-wrapper;
+  margin: 0;
   border: 3px solid white;
-  border-radius: 5px;
+  outline: 10px solid lighten(v.$background-dark, 15%);
+
+  border-radius: v.$border-radius * 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -186,15 +217,17 @@
   background: linear-gradient(
     65deg,
     var(--home-jersey-color) 0%,
-    var(--home-jersey-color) 50%,
+    var(--home-jersey-color) 40%,
+    var(--home-secondary-color) 40%,
+    var(--home-secondary-color) 45%,
+    var(--home-primary-color) 45%,
+    var(--home-primary-color) 50%,
     var(--home-secondary-color) 50%,
     var(--home-secondary-color) 55%,
     var(--home-primary-color) 55%,
     var(--home-primary-color) 60%,
-    var(--home-secondary-color) 60%,
-    var(--home-secondary-color) 65%,
-    var(--home-primary-color) 65%,
-    var(--home-primary-color) 100%
+    white 60%,
+    white 100%
   );
 }
 
@@ -203,15 +236,17 @@
   justify-content: flex-end;
   background: linear-gradient(
     115deg,
-    var(--away-primary-color) 0%,
-    var(--away-primary-color) 35%,
-    var(--away-secondary-color) 35%,
-    var(--away-secondary-color) 40%,
-    var(--away-jersey-color) 40%,
-    var(--away-jersey-color) 45%,
+    white 0%,
+    white 40%,
+    var(--away-primary-color) 40%,
+    var(--away-primary-color) 45%,
     var(--away-secondary-color) 45%,
     var(--away-secondary-color) 50%,
-    var(--away-jersey-color) 50%,
+    var(--away-primary-color) 50%,
+    var(--away-primary-color) 55%,
+    var(--away-secondary-color) 55%,
+    var(--away-secondary-color) 60%,
+    var(--away-jersey-color) 60%,
     var(--away-jersey-color) 100%
   );
 }
@@ -267,20 +302,6 @@
   width: 100%;
 }
 
-.goalieCompHeader p {
-  display: flex;
-  justify-content: center;
-  align-items: center; /* Add this line */
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  background: linear-gradient(
-    90deg,
-    var(--home-primary-color) 0%,
-    var(--away-primary-color) 100%
-  );
-}
-
 .goalieCompHeaderRight,
 .goalieCompHeaderLeft {
   width: 100%; /* Split the width */
@@ -289,11 +310,12 @@
 }
 
 .goalieCompHeaderMiddle {
-  background: linear-gradient(
-    90deg,
-    var(--home-primary-color) 0%,
-    var(--away-primary-color) 100%
-  );
+  background: white;
+  color: black;
+  font-size: 1.2em;
+  font-weight: bolder;
+  letter-spacing: 0.25rem;
+  text-transform: uppercase;
   width: 100%;
   height: 100%;
   align-items: center;
@@ -306,15 +328,17 @@
   justify-content: flex-end;
   background: linear-gradient(
     115deg,
-    var(--away-primary-color) 0%,
-    var(--away-primary-color) 35%,
-    var(--away-secondary-color) 35%,
-    var(--away-secondary-color) 40%,
-    var(--away-jersey-color) 40%,
-    var(--away-jersey-color) 45%,
+    white 0%,
+    white 40%,
+    var(--away-primary-color) 40%,
+    var(--away-primary-color) 45%,
     var(--away-secondary-color) 45%,
     var(--away-secondary-color) 50%,
-    var(--away-jersey-color) 50%,
+    var(--away-primary-color) 50%,
+    var(--away-primary-color) 55%,
+    var(--away-secondary-color) 55%,
+    var(--away-secondary-color) 60%,
+    var(--away-jersey-color) 60%,
     var(--away-jersey-color) 100%
   );
 }
@@ -325,15 +349,17 @@
   background: linear-gradient(
     65deg,
     var(--home-jersey-color) 0%,
-    var(--home-jersey-color) 50%,
+    var(--home-jersey-color) 40%,
+    var(--home-secondary-color) 40%,
+    var(--home-secondary-color) 45%,
+    var(--home-primary-color) 45%,
+    var(--home-primary-color) 50%,
     var(--home-secondary-color) 50%,
     var(--home-secondary-color) 55%,
     var(--home-primary-color) 55%,
     var(--home-primary-color) 60%,
-    var(--home-secondary-color) 60%,
-    var(--home-secondary-color) 65%,
-    var(--home-primary-color) 65%,
-    var(--home-primary-color) 100%
+    white 60%,
+    white 100%
   );
 }
 
@@ -379,17 +405,16 @@
   width: 100%;
   height: 100%;
   margin: 0;
-  background: linear-gradient(
-    90deg,
-    var(--home-primary-color) 0%,
-    var(--away-primary-color) 100%
-  );
+  background: v.$color-white; /* Dark background for home */
+  color: v.$color-black; /* Text color for home */
+  font-size: 1.2em;
+  font-weight: bolder;
+  letter-spacing: 0.25rem;
+  text-transform: uppercase;
 }
 
 .teamLogoAwayPC {
   margin-right: 10%;
-  height: 50px; /* Adjusted height */
-  width: 40px; /* Adjusted width */
   filter: drop-shadow(
     0 0 10px var(--away-secondary-color)
   ); /* Adjusted shadow */
@@ -622,12 +647,19 @@ strong {
 }
 
 .gamePageVsTable {
-  width: 100%;
-  border: 3px solid #fff;
-  border-radius: 5px;
-  border-collapse: collapse;
-  background-color: #303030;
-  height: 100%;
+  @include v.element-wrapper;
+  outline: 10px solid lighten(v.$background-dark, 15%);
+  margin: 0;
+  border: 3px solid white;
+  border-radius: v.$border-radius * 2;
+  flex-grow: 1; /* ADD this to make the table fill the container height */
+  display: flex; /* ADD if you want its children (tbody?) to flex */
+  flex-direction: column; /* ADD if you want its children (tbody?) to flex */
+}
+
+.gamePageVsTable table {
+  // If there's a nested table element
+  height: 100%; // Allow table to fill the wrapper div
 }
 
 .gamePageVsTable tbody tr:not(:first-child) {
@@ -662,6 +694,7 @@ strong {
 .gamePageVsTable th {
   border-bottom: 2px solid #ddd;
   height: 3em;
+  overflow: hidden;
 }
 
 .statLabel {
@@ -688,12 +721,12 @@ strong {
 
 .statLabel.home-advantage::after {
   right: 85%;
-  border-right-color: var(--home-primary-color);
+  border-right-color: v.$primary-color;
 }
 
 .statLabel.away-advantage::after {
   left: 85%;
-  border-left-color: var(--away-secondary-color);
+  border-left-color: v.$primary-color;
 }
 
 .teamLogoHomeStatTable {
@@ -709,17 +742,19 @@ strong {
 .statTableHeader {
   display: flex;
   justify-content: space-between;
-  border-bottom: 4px solid #ddd;
-  color: white;
+  border-bottom: 3px solid white;
   width: 100%;
-  height: 3em;
+  height: 5em;
 }
 
 .statTableRight {
   justify-content: flex-end;
+  padding-right: 2%;
+  overflow: hidden;
   align-items: center;
   display: flex;
   width: 100%;
+
   background: linear-gradient(
     115deg,
     var(--away-primary-color) 0%,
@@ -737,6 +772,7 @@ strong {
 
 .statTableLeft {
   justify-content: flex-start;
+  padding-left: 2%;
   align-items: center;
   display: flex;
   width: 100%;
@@ -798,10 +834,9 @@ strong {
   justify-content: center;
   flex-direction: column;
   align-items: center;
-  width: 100%; /* Match the width of playerCompContainer for consistency */
-  margin-top: 20px; /* Space between playerCompContainer and goalieCompContainer */
-  border: 3px solid white; /* Consistent container border */
-  border-radius: 5px;
+  @include v.element-wrapper;
+  border: 3px solid white;
+  outline: 10px solid lighten(v.$background-dark, 15%);
 }
 
 .homeGoalies {
@@ -924,9 +959,15 @@ strong {
 }
 
 .poissonChartContainer {
+  @include v.element-wrapper;
+  @include v.element-wrapper;
+  border: 3px solid white;
+  outline: 10px solid lighten(v.$background-dark, 15%);
+  width: auto;
   display: flex;
   justify-content: space-between;
   margin-top: 20px;
+  margin-bottom: 50px;
 }
 
 /* //////////////////////////////////////////    GAME OVER PAGE STYLES ///////////////////////////////////////////////////// */
@@ -1455,6 +1496,10 @@ strong {
 
   .statsAndPlayerCompContainer {
     flex-direction: column; /* Adjust to a column layout */
+    justify-content: space-between;
+    align-items: center;
+    width: 100%; /* Full width for smaller screens */
+    height: 100%;
   }
 
   .gamePageVsTableContainer {
@@ -1468,8 +1513,15 @@ strong {
   }
 
   .tableHeader {
-    margin-bottom: 3px;
+    margin-bottom: 10px;
+    margin-top: 10px;
     text-align: left;
+    font-family: roboto condensed, sans-serif;
+    font-size: 2em;
+    font-weight: 200;
+    text-align: left;
+    margin-top: 0;
+    text-transform: uppercase;
   }
 
   .goalieCompContainer {
@@ -1605,7 +1657,7 @@ strong {
 
   .statsPlayerAndGoalieCompContainer .tableHeader {
     margin-top: 10px;
-    margin-bottom: 3px;
+    margin-bottom: 10px;
     text-align: left;
   }
 }

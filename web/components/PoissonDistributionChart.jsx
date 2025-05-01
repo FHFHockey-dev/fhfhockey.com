@@ -1,15 +1,23 @@
 import React, { useEffect, useRef, useState } from "react";
 import Fetch from "lib/cors-fetch";
 import * as d3 from "d3";
+import styles from "./GamePoissonChart.module.scss"; // Import the SCSS module
 
-// Poisson Probability Function
+// --- Helper Functions (Keep as they are) ---
 const poissonProbability = (lambda, k) => {
-  return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k);
+  if (lambda <= 0) return 0;
+  if (k < 0) return 0;
+  const fact = factorial(k);
+  // Avoid division by zero or Infinity if factorial calculation failed
+  if (fact === Infinity || fact === 0) return 0;
+  return (Math.pow(lambda, k) * Math.exp(-lambda)) / fact;
 };
 
-// Factorial Function
 const factorial = (num) => {
+  if (num < 0) return Infinity;
   if (num === 0 || num === 1) return 1;
+  // Add a limit to prevent excessive calculation/potential Infinity for large numbers
+  if (num > 170) return Infinity;
   let result = 1;
   for (let i = 2; i <= num; i++) {
     result *= i;
@@ -19,479 +27,341 @@ const factorial = (num) => {
 
 const PoissonDistributionChart = ({ chartData }) => {
   const svgRef = useRef();
-  const [leagueAverages, setLeagueAverages] = useState({});
-  const [homeExpectedGoals, setHomeExpectedGoals] = useState(0);
-  const [awayExpectedGoals, setAwayExpectedGoals] = useState(0);
   const [homeWinProb, setHomeWinProb] = useState(0);
   const [awayWinProb, setAwayWinProb] = useState(0);
   const [prediction, setPrediction] = useState("");
   const [otPrediction, setOtPrediction] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
-  console.log("LINE 31:", isLoading, chartData);
-
   useEffect(() => {
-    if (!chartData || chartData.length < 2) {
-      setIsLoading(true); // Ensure loading state is true if data is not ready
-      console.error("Chart data is not ready or insufficient.", setIsLoading);
+    console.log("PDC useEffect triggered. chartData:", chartData);
+
+    const isChartDataValid =
+      chartData &&
+      chartData.length === 2 &&
+      chartData[0]?.team &&
+      chartData[1]?.team &&
+      chartData[0]?.homeExpectedGoals != null && // Check for null/undefined explicitly
+      chartData[1]?.awayExpectedGoals != null &&
+      chartData[0]?.homeExpectedGoals > 0 && // Ensure > 0 for Poisson lambda
+      chartData[1]?.awayExpectedGoals > 0;
+
+    if (!isChartDataValid) {
+      setIsLoading(true);
+      console.log(
+        "PDC useEffect: Chart data not ready, insufficient, or invalid (e.g., xG <= 0). Waiting..."
+      );
+      d3.select(svgRef.current).selectAll("*").remove();
+      d3.select("body").select(`.${styles.tooltip}`).remove();
+      // Reset states if data becomes invalid
+      setPrediction("");
+      setOtPrediction("");
+      setHomeWinProb(0);
+      setAwayWinProb(0);
       return;
     }
-    const fetchLeagueData = async () => {
-      // Early exit if chartData is not ready, but handle isLoading state outside
 
-      console.log("INSIDE PDC USEEFFECT:", chartData);
+    setIsLoading(false);
 
-      setIsLoading(true); // Set loading true when starting to fetch data
+    const homeLambda = chartData[0].homeExpectedGoals;
+    const awayLambda = chartData[1].awayExpectedGoals;
+    const homeTeamName = chartData[0].team;
+    const awayTeamName = chartData[1].team;
 
-      try {
-        const today = new Date().toISOString().slice(0, 10); // Gets today's date in "YYYY-MM-DD" format
-        const standingsUrl = `https://api-web.nhle.com/v1/standings/${today}`;
+    let heatmapData = [];
+    let homeWins = 0,
+      awayWins = 0,
+      draws = 0;
 
-        try {
-          const standingsResponse = await Fetch(standingsUrl).then((res) =>
-            res.json()
-          );
+    // --- Find Key Outcomes in One Pass ---
+    // Initialize with impossible values/scores
+    let overallMostLikely = { x: -1, y: -1, value: -Infinity }; // Absolute highest probability outcome
+    let nonDrawMostLikely = { x: -1, y: -1, value: -Infinity }; // Highest probability outcome where x != y
+    let drawMostLikely = { x: -1, y: -1, value: -Infinity }; // Highest probability outcome where x == y
 
-          const { standings } = standingsResponse;
-          if (!standings || standings.length === 0) {
-            console.error("Standings data is empty or not available.");
-            setIsLoading(false); // Stop loading if data is empty
-            return;
-          }
+    for (let i = 0; i <= 10; i++) {
+      // Home Score (y-axis)
+      for (let j = 0; j <= 10; j++) {
+        // Away Score (x-axis)
+        const homeProb = poissonProbability(homeLambda, i);
+        const awayProb = poissonProbability(awayLambda, j);
+        const outcomeProb = homeProb * awayProb;
 
-          console.log("Standings data:", standings);
+        // Skip negligible probabilities to avoid clutter and potential floating point issues near zero
+        if (outcomeProb < 1e-9) continue;
 
-          const seasonId = standings[0].seasonId; // Assume same seasonId for all teams
-          const numberOfTeams = standings.length; // Define numberOfTeams based on the standings length
+        const currentOutcome = { x: j, y: i, value: outcomeProb };
+        heatmapData.push(currentOutcome);
 
-          // Initialize sums for each stat category
-          let sums = {
-            gamesPlayed: 0,
-            goalDifferential: 0,
-            goalDifferentialPctg: 0,
-            goalAgainst: 0,
-            goalFor: 0,
-            goalsForPctg: 0,
-            homeGamesPlayed: 0,
-            homeGoalDifferential: 0,
-            homeGoalsAgainst: 0,
-            homeGoalsFor: 0,
-            homeLosses: 0,
-            homeOtLosses: 0,
-            homePoints: 0,
-            homeRegulationPlusOtWins: 0,
-            homeRegulationWins: 0,
-            homeWins: 0,
-            l10GamesPlayed: 0,
-            l10GoalDifferential: 0,
-            l10GoalsAgainst: 0,
-            l10GoalsFor: 0,
-            l10Losses: 0,
-            l10OtLosses: 0,
-            l10Points: 0,
-            l10RegulationPlusOtWins: 0,
-            l10RegulationWins: 0,
-            l10Wins: 0,
-            losses: 0,
-            otLosses: 0,
-            pointPctg: 0,
-            points: 0,
-            regulationPlusOtWinPctg: 0,
-            regulationPlusOtWins: 0,
-            regulationWinPctg: 0,
-            regulationWins: 0,
-            roadGamesPlayed: 0,
-            roadGoalDifferential: 0,
-            roadGoalsAgainst: 0,
-            roadGoalsFor: 0,
-            roadLosses: 0,
-            roadOtLosses: 0,
-            roadPoints: 0,
-            roadRegulationPlusOtWins: 0,
-            roadRegulationWins: 0,
-            roadWins: 0,
-            shootoutLosses: 0,
-            shootoutWins: 0,
-            winPctg: 0,
-            wins: 0,
-          };
+        // Update aggregate win/draw/loss probabilities
+        if (i > j) homeWins += outcomeProb;
+        else if (j > i) awayWins += outcomeProb;
+        else draws += outcomeProb;
 
-          // Loop through each team to sum up stats
-          standings.forEach((team) => {
-            // Sum up stats for each team
-            Object.keys(sums).forEach((stat) => {
-              if (typeof team[stat] !== "undefined") {
-                sums[stat] += team[stat];
-              }
-            });
-          });
-
-          // Calculate averages by dividing each sum by the number of teams
-          let averages = {};
-          Object.keys(sums).forEach((stat) => {
-            averages[stat] = sums[stat] / numberOfTeams;
-          });
-          // Second endpoint for additional stats
-          const summaryUrl = `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"teamId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=gameTypeId=2 and seasonId<=${seasonId} and seasonId>=${seasonId}`;
-          const summaryResponse = await Fetch(summaryUrl).then((res) =>
-            res.json()
-          );
-          const { data } = summaryResponse;
-
-          // Extend sums object to include new stats
-          sums.penaltyKillPct = 0;
-          sums.powerPlayPct = 0;
-          sums.shotsAgainstPerGame = 0;
-          sums.shotsForPerGame = 0;
-
-          data.forEach((team) => {
-            sums.penaltyKillPct += team.penaltyKillPct;
-            sums.powerPlayPct += team.powerPlayPct;
-            sums.shotsAgainstPerGame += team.shotsAgainstPerGame;
-            sums.shotsForPerGame += team.shotsForPerGame;
-          });
-
-          // Update averages object with new stats
-          averages.penaltyKillPct = sums.penaltyKillPct / numberOfTeams;
-          averages.powerPlayPct = sums.powerPlayPct / numberOfTeams;
-          averages.shotsAgainstPerGame =
-            sums.shotsAgainstPerGame / numberOfTeams;
-          averages.shotsForPerGame = sums.shotsForPerGame / numberOfTeams;
-
-          console.log("Updated League averages:", averages);
-
-          setLeagueAverages(averages);
-          setIsLoading(false); // Data is ready, stop loading.
-        } catch (error) {
-          console.error("Error fetching league data:", error);
+        // --- Update Most Likely Outcomes ---
+        // 1. Check for Overall Most Likely
+        if (currentOutcome.value > overallMostLikely.value) {
+          overallMostLikely = currentOutcome;
         }
-      } catch (error) {
-        console.error("Error fetching league data:", error);
-      }
 
-      fetchLeagueData();
-      console.log("League Averages:", leagueAverages);
-
-      const processData = () => {
-        if (chartData.length < 2) {
-          return { homeExpectedGoals: 0, awayExpectedGoals: 0 };
+        // 2. Check for Most Likely Non-Draw
+        if (i !== j && currentOutcome.value > nonDrawMostLikely.value) {
+          nonDrawMostLikely = currentOutcome;
         }
-        const homeExpectedGoals = chartData?.[0]?.goalsForPerGame ?? 0;
-        const awayExpectedGoals = chartData?.[1]?.goalsForPerGame ?? 0;
 
-        console.log("Home Expected Goals:", homeExpectedGoals);
-        console.log("Away Expected Goals:", awayExpectedGoals);
-
-        return { homeExpectedGoals, awayExpectedGoals };
-      };
-
-      const { homeExpectedGoals, awayExpectedGoals } = processData();
-
-      // Initialize heatmapData for Poisson probabilities
-      let heatmapData = [];
-      console.log("Chart Data inside heatmapData:", chartData);
-      console.log("Home Expected Goals:", chartData[0].homeExpectedGoals);
-      console.log("Away Expected Goals:", chartData[1].awayExpectedGoals);
-      console.log("GF/gm:", chartData[0].goalsForPerGame);
-      console.log("GA/gm:", chartData[1].goalsAgainstPerGame);
-      for (let i = 0; i <= 10; i++) {
-        for (let j = 0; j <= 10; j++) {
-          const homeProb = poissonProbability(
-            chartData[0].homeExpectedGoals,
-            i
-          );
-          const awayProb = poissonProbability(
-            chartData[1].awayExpectedGoals,
-            j
-          );
-          heatmapData.push({ x: i, y: j, value: homeProb * awayProb });
+        // 3. Check for Most Likely Draw (useful for display text later)
+        if (i === j && currentOutcome.value > drawMostLikely.value) {
+          drawMostLikely = currentOutcome;
         }
       }
+    }
 
-      // Setup SVG
-      const margin = { top: 50, right: 30, bottom: 70, left: 70 };
-      const width = 600 - margin.left - margin.right;
-      const height = 600 - margin.top - margin.bottom;
+    // --- Normalization and Adjusted Win Probabilities ---
+    const totalProb = homeWins + awayWins + draws;
+    // Only normalize if the total is significantly different from 1 and greater than 0
+    if (totalProb > 1e-6 && Math.abs(1 - totalProb) > 0.01) {
+      console.warn(
+        `Total probability (${totalProb}) is not close to 1. Normalizing win/draw/loss probabilities.`
+      );
+      const scaleFactor = 1 / totalProb;
+      homeWins *= scaleFactor;
+      awayWins *= scaleFactor;
+      draws *= scaleFactor; // Normalize draws too for consistency if needed elsewhere
+    }
 
-      // Calculate win probabilities excluding draws
-      let homeWins = 0;
-      let awayWins = 0;
-      let draws = 0;
-      heatmapData.forEach(({ x, y, value }) => {
-        if (x > y) homeWins += value;
-        else if (y > x) awayWins += value;
-        else draws += value; // Count draws separately
-      });
+    const totalWinsProb = homeWins + awayWins; // Denominator for adjusted win %
+    // Handle division by zero if only draws are possible (or all probabilities are zero)
+    const adjustedHomeWinProb =
+      totalWinsProb > 1e-9 ? (homeWins / totalWinsProb) * 100 : 50; // Default to 50/50 if no wins
+    const adjustedAwayWinProb =
+      totalWinsProb > 1e-9 ? (awayWins / totalWinsProb) * 100 : 50;
 
-      // Adjust probabilities for home and away wins to account for draws
-      const totalWins = homeWins + awayWins;
-      const adjustedHomeWinProb = (homeWins / totalWins) * 100;
-      const adjustedAwayWinProb = (awayWins / totalWins) * 100;
+    setHomeWinProb(adjustedHomeWinProb.toFixed(2));
+    setAwayWinProb(adjustedAwayWinProb.toFixed(2));
 
-      // Update state with adjusted probabilities
-      setHomeWinProb(adjustedHomeWinProb.toFixed(2));
-      setAwayWinProb(adjustedAwayWinProb.toFixed(2));
+    // --- Set Prediction Text Based on New Logic ---
+    let finalPrediction = "";
+    let finalOtPrediction = "";
 
-      // Dynamic team names from chartData
-      const homeTeamName = chartData[0]?.team || "Home Team";
-      const awayTeamName = chartData[1]?.team || "Away Team";
+    // Check if we found any likely outcome at all
+    if (overallMostLikely.value <= 1e-9) {
+      finalPrediction = "Prediction unavailable (probabilities too low).";
+      finalOtPrediction = "";
+    } else {
+      const otWinner =
+        adjustedHomeWinProb > adjustedAwayWinProb ? homeTeamName : awayTeamName;
 
-      // Determine the most likely outcome and consider OT prediction
-      let mostLikelyOutcome = { x: 0, y: 0, value: 0 };
-      let highestDrawValue = 0;
-      heatmapData.forEach((outcome) => {
-        if (outcome.x === outcome.y && outcome.value > highestDrawValue) {
-          highestDrawValue = outcome.value;
-        } else if (outcome.value > mostLikelyOutcome.value) {
-          mostLikelyOutcome = outcome;
+      // *** Core Logic: Is the absolute MOST likely outcome a draw? ***
+      if (overallMostLikely.x === overallMostLikely.y) {
+        // YES, the highest probability outcome IS a draw.
+        // The main prediction should show the MOST LIKELY *NON*-DRAW score.
+        if (nonDrawMostLikely.value > 1e-9) {
+          // Check if a valid non-draw outcome was found
+          finalPrediction = `Model Prediction: | ${homeTeamName} | ${nonDrawMostLikely.y} - ${nonDrawMostLikely.x} | ${awayTeamName} |`;
+          // The OT prediction explains that the draw was most likely overall
+          // Use drawMostLikely here as overallMostLikely *is* the most likely draw
+          finalOtPrediction = `(Most likely: Draw ${drawMostLikely.y}-${drawMostLikely.x}, favoring ${otWinner} in OT/SO)`;
+        } else {
+          // Edge Case: Only draws have significant probability. Show the most likely draw.
+          finalPrediction = `Model Prediction: Draw ${drawMostLikely.y}-${drawMostLikely.x}`;
+          finalOtPrediction = `(Favoring ${otWinner} in OT/SO)`;
         }
-      });
-
-      // Update prediction text
-      const predictionText = ` Model-Bot Prediction: | ${homeTeamName} | ${mostLikelyOutcome.x}-${mostLikelyOutcome.y} | ${awayTeamName} |`;
-      setPrediction(predictionText);
-
-      // Handle OT prediction for draws
-      if (highestDrawValue > mostLikelyOutcome.value) {
-        // If the highest draw probability is greater than the most likely outcome's probability
-        const otWinner =
-          adjustedHomeWinProb > adjustedAwayWinProb
-            ? homeTeamName
-            : awayTeamName;
-        setOtPrediction(`${otWinner} wins in OT`);
       } else {
-        setOtPrediction(""); // Clear OT prediction if not applicable
+        // NO, the highest probability outcome is NOT a draw.
+        // Display this non-draw outcome as the main prediction.
+        finalPrediction = `Model Prediction: | ${homeTeamName} | ${overallMostLikely.y} - ${overallMostLikely.x} | ${awayTeamName} |`;
+        finalOtPrediction = ""; // No need for OT text if the primary prediction isn't a draw
       }
+    }
 
-      // Select the SVG if it exists or append it if not, set its attributes
-      const svg = d3
-        .select(svgRef.current)
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
+    setPrediction(finalPrediction);
+    setOtPrediction(finalOtPrediction);
 
-      svg.selectAll("*").remove(); // Clear previous SVG content
+    // --- D3 Drawing Code ( Largely Unchanged ) ---
+    const margin = { top: 50, right: 30, bottom: 70, left: 70 };
+    const width = 500 - margin.left - margin.right;
+    const height = 500 - margin.top - margin.bottom;
 
-      // Build X scales and axis:
-      const x = d3
-        .scaleBand()
-        .range([0, width])
-        .domain(d3.range(11)) // 0 to 10 for scores
-        .padding(0.1); // Increased padding for gaps
+    const svg = d3
+      .select(svgRef.current)
+      .attr("class", styles.chartSvg) // Use SCSS module class
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom);
 
-      svg
-        .append("g")
-        .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(x));
+    svg.selectAll("*").remove(); // Clear previous SVG content
 
-      // Build Y scales and axis:
-      const y = d3
-        .scaleBand()
-        .range([height, 0])
-        .domain(d3.range(11))
-        .padding(0.1);
+    const chartGroup = svg
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
 
-      svg.append("g").call(d3.axisLeft(y));
+    // --- Scales ---
+    const maxScore = 10; // Keep consistent with loop limit
+    const scoreDomain = d3.range(maxScore + 1); // 0 to 10
 
-      // Build color scale
-      const myColor = d3
-        .scaleSequential()
-        .interpolator(d3.interpolateRgb("#101010", "#07aae2"))
-        .domain([0, d3.max(heatmapData, (d) => d.value)]);
+    const x = d3
+      .scaleBand()
+      .range([0, width])
+      .domain(scoreDomain)
+      .padding(0.05);
 
-      // Create the heatmap
-      svg
-        .selectAll()
-        .data(heatmapData, function (d) {
-          return d.x + ":" + d.y;
-        })
-        .enter()
-        .append("rect")
-        .attr("x", function (d) {
-          return x(d.x);
-        })
-        .attr("y", function (d) {
-          return y(d.y);
-        })
-        .attr("rx", 4) // Optional: for rounded corners
-        .attr("ry", 4) // Optional: for rounded corners
-        .attr("width", x.bandwidth())
-        .attr("height", y.bandwidth())
-        .style("fill", function (d) {
-          return myColor(d.value);
-        })
-        .style("stroke", "#808080") // Add white border
-        .style("stroke-width", "1px");
+    const y = d3
+      .scaleBand()
+      .range([height, 0])
+      .domain(scoreDomain)
+      .padding(0.05);
 
-      // Add text labels
-      svg
-        .selectAll()
-        .data(heatmapData, function (d) {
-          return d.x + ":" + d.y;
-        })
-        .enter()
-        .append("text")
-        .text(function (d) {
-          return `${(d.value * 100).toFixed(1)}%`;
-        })
-        .attr("x", function (d) {
-          return x(d.x) + x.bandwidth() / 2;
-        })
-        .attr("y", function (d) {
-          return y(d.y) + y.bandwidth() / 2;
-        })
-        .style("text-anchor", "middle")
-        .attr("alignment-baseline", "central")
+    // --- Axes ---
+    chartGroup
+      .append("g")
+      .attr("class", styles.xAxis) // Apply module class
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x).tickSize(0))
+      .select(".domain")
+      .remove();
 
-        .style("fill", function (d) {
-          return d.value > 0.5 ? "#ccc" : "#CCC";
-        })
-        .style("font-family", "Helvetica")
-        .style("font-weight", "bold")
-        .style("font-size", "12px"); // Smaller font size
+    chartGroup
+      .append("g")
+      .attr("class", styles.yAxis) // Apply module class
+      .call(d3.axisLeft(y).tickSize(0))
+      .select(".domain")
+      .remove();
 
-      // Add X axis label
-      svg
-        .append("text")
-        .attr("text-anchor", "end")
-        .attr("x", width / 2 + margin.left)
-        .attr("y", height + margin.top + 20)
-        .text(chartData[1].team) // Away team name for X axis
-        .style("font-family", "Helvetica")
-        .style("font-size", "16px")
-        .style("fill", "white"); // Make the text white
+    // --- Color Scale ---
+    // Use max probability *found* in the data, or a small default if none found
+    const maxProb =
+      heatmapData.length > 0 ? d3.max(heatmapData, (d) => d.value) : 1e-9;
+    const myColor = d3
+      .scaleSequential(d3.interpolateBlues)
+      // Ensure domain doesn't start and end at the same point if maxProb is 0
+      .domain([0, maxProb > 0 ? maxProb : 1e-9]);
 
-      // Add Y axis label
-      svg
-        .append("text")
-        .attr("text-anchor", "end")
-        .attr("transform", "rotate(-90)")
-        .attr("y", -margin.left + 20)
-        .attr("x", -height / 2 + margin.top)
-        .text(chartData[0].team) // Home team name for Y axis
-        .style("font-family", "Helvetica")
-        .style("font-size", "16px")
-        .style("fill", "white"); // Make the text white
-      if (chartData && chartData.length >= 2) {
-        fetchLeagueData();
-      } else {
-        // Handle case where chartData is not sufficient
-        setIsLoading(false); // You might want to set isLoading to false here as well, or handle the condition appropriately
-      }
+    // --- Tooltip ---
+    d3.select("body").select(`.${styles.tooltip}`).remove(); // Ensure cleanup
+    const tooltip = d3
+      .select("body")
+      .append("div")
+      .attr("class", styles.tooltip) // Use module class
+      .style("opacity", 0); // Start hidden
+
+    // --- Mouse Event Handlers ---
+    const mouseover = function (event, d) {
+      tooltip.style("opacity", 1);
+      d3.select(this)
+        .style("stroke", "black")
+        .style("stroke-width", 2)
+        .style("opacity", 1);
     };
-  }, [chartData, leagueAverages]);
+    const mousemove = function (event, d) {
+      tooltip
+        .html(
+          `Score: ${homeTeamName} ${d.y} - ${
+            d.x
+          } ${awayTeamName}<br>Probability: ${(d.value * 100).toFixed(2)}%`
+        )
+        .style("left", event.pageX + 15 + "px")
+        .style("top", event.pageY - 30 + "px");
+    };
+    const mouseleave = function (event, d) {
+      tooltip.style("opacity", 0);
+      d3.select(this)
+        .style("stroke", "#808080") // Match SCSS or default
+        .style("stroke-width", 1) // Match SCSS or default
+        .style("opacity", 0.8); // Match SCSS or default
+    };
 
-  console.log("LOADING STATUS:", isLoading);
-  // if (isLoading) {
-  //   return <div>Loading Chart data...</div>;
-  // }
+    // --- Draw Rectangles ---
+    chartGroup
+      .selectAll("rect")
+      .data(heatmapData, (d) => `${d.x}:${d.y}`) // Key function for object constancy
+      .join("rect") // Enter-update-exit pattern
+      .attr("x", (d) => x(d.x))
+      .attr("y", (d) => y(d.y))
+      .attr("width", x.bandwidth())
+      .attr("height", y.bandwidth())
+      .style("fill", (d) => myColor(d.value))
+      .attr("rx", 4) // Example: Rounded corners (or move to SCSS)
+      .attr("ry", 4) // Example: Rounded corners (or move to SCSS)
+      .style("stroke-width", 1) // Base style (or move to SCSS)
+      .style("stroke", "#808080") // Base style (or move to SCSS)
+      .style("opacity", 0.8) // Base style (or move to SCSS)
+      .on("mouseover", mouseover)
+      .on("mousemove", mousemove)
+      .on("mouseleave", mouseleave);
+
+    // --- Labels and Title ---
+    chartGroup
+      .append("text")
+      .attr("class", styles.axisLabel) // Use module class
+      .attr("x", width / 2)
+      .attr("y", height + margin.bottom - 20) // Adjusted position
+      .style("text-anchor", "middle")
+      .text(`${awayTeamName} Goals`);
+
+    chartGroup
+      .append("text")
+      .attr("class", styles.axisLabel) // Use module class
+      .attr("transform", "rotate(-90)")
+      .attr("y", 0 - margin.left + 15) // Adjusted position
+      .attr("x", 0 - height / 2)
+      .style("text-anchor", "middle")
+      .text(`${homeTeamName} Goals`);
+
+    chartGroup
+      .append("text")
+      .attr("class", styles.chartTitle) // Use module class
+      .attr("x", width / 2)
+      .attr("y", 0 - margin.top / 2) // Adjusted position
+      .style("text-anchor", "middle")
+      .text(`Predicted Score Probability Distribution`);
+
+    // --- Effect Cleanup ---
+    return () => {
+      // Remove the tooltip specific to this component instance when it unmounts
+      tooltip.remove();
+    };
+  }, [chartData]); // Dependency array
+
+  // --- Render Logic ---
+  if (isLoading) {
+    return <div className={styles.loadingMessage}>Loading Chart data...</div>;
+  }
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        marginBottom: "20px",
-        backgroundColor: "rgba(255, 255, 255, 0.1)",
-        borderRadius: "5px",
-        padding: "10px",
-      }}
-    >
-      <div
-        className="predictionValues"
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <div
-          style={{
-            marginTop: "20px",
-            width: "50%",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            fontSize: "16px",
-            fontWeight: "bold",
-            backgroundColor: "rgba(255, 255, 255, 0.1)",
-            borderRadius: "5px",
-            padding: "10px",
-            margin: "10px",
-          }}
-        >
-          {prediction}
+    <div className={styles.chartContainer}>
+      <div className={styles.predictionValues}>
+        {/* Display the determined prediction */}
+        <div className={styles.predictionText}>{prediction}</div>
+
+        {/* Win Probability Displays */}
+        <div className={styles.winProbabilityBox}>
+          {chartData?.[0]?.logo && (
+            <img
+              src={chartData[0].logo}
+              alt={`${chartData[0].team} logo`}
+              className={styles.teamLogo}
+            />
+          )}
+          {`${chartData?.[0]?.team || "Home"} Win%: ${homeWinProb}%`}{" "}
+          {/* Add fallback text */}
+        </div>
+        <div className={styles.winProbabilityBox}>
+          {chartData?.[1]?.logo && (
+            <img
+              src={chartData[1].logo}
+              alt={`${chartData[1].team} logo`}
+              className={styles.teamLogo}
+            />
+          )}
+          {`${chartData?.[1]?.team || "Away"} Win%: ${awayWinProb}%`}{" "}
+          {/* Add fallback text */}
         </div>
 
-        <div
-          style={{
-            height: "3.5em",
-            width: "100%",
-            justifyContent: "space-around",
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: "rgba(255, 255, 255, 0.1)",
-            borderRadius: "5px",
-            padding: "10px",
-            margin: "10px",
-          }}
-        >
-          {chartData && chartData.length > 0 && (
-            <>
-              <img
-                src={chartData[0].logo}
-                alt={chartData[0].team}
-                style={{ width: "50px" }}
-              />
-              {chartData[0].team} Win Probability: {homeWinProb}%
-            </>
-          )}
-        </div>
-
-        <div
-          style={{
-            height: "3.5em",
-            width: "100%",
-            justifyContent: "space-around",
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            backgroundColor: "rgba(255, 255, 255, 0.1)",
-            borderRadius: "5px",
-            padding: "10px",
-            margin: "10px",
-          }}
-        >
-          {chartData && chartData.length > 0 && (
-            <>
-              <img
-                src={chartData[1].logo}
-                alt={chartData[1].team}
-                style={{ width: "50px" }}
-              />
-              {chartData[1].team} Win Probability: {awayWinProb}%
-            </>
-          )}
-        </div>
-        {otPrediction && <div style={{ marginTop: "5px" }}>{otPrediction}</div>}
+        {/* Display OT/SO prediction/context only if it's populated */}
+        {otPrediction && (
+          <div className={styles.otPredictionText}>{otPrediction}</div>
+        )}
       </div>
-      <svg
-        ref={svgRef}
-        style={{
-          alignSelf: "center",
-          marginTop: "20px",
-          backgroundColor: "rgba(255, 255, 255, 0.1)",
-          borderRadius: "5px",
-          padding: "10px",
-          margin: "10px",
-          width: "625px",
-          height: "625px",
-        }}
-      ></svg>
+      <svg ref={svgRef}></svg>
     </div>
   );
 };

@@ -1,11 +1,13 @@
 // @ts-nocheck
 // PATH: web/pages/game/[gameId].tsx
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Fetch from "lib/cors-fetch";
 import { teamsInfo } from "lib/NHL/teamsInfo";
 import PoissonDistributionChart from "components/PoissonDistributionChart";
 import Image from "next/image";
+import { awayTeamColors, homeTeamColors } from "lib/NHL/teamColors";
+import styles from "styles/GamePage.module.scss";
 
 export default function Page() {
   const router = useRouter();
@@ -243,8 +245,7 @@ export default function Page() {
           style={{
             height: "20px",
             width: "100%",
-            display: "flex",
-            borderBottom: "3px double #FFF"
+            display: "flex"
           }}
         >
           {" "}
@@ -265,80 +266,97 @@ export default function Page() {
   };
 
   ///////////////////////// CHART STUFF //////////////////////////////
-  // Prepare the data for PoissonDistributionChart
 
-  const l10pointsPct = (teamType) => {
-    // Check if gameLandingDetails and gameLandingDetails.matchup are loaded
-    if (!gameLandingDetails || !gameLandingDetails.matchup) {
-      return 0; // Return a default value or handle this case as needed
-    }
+  const chartData = useMemo(() => {
+    console.log("Recalculating chartData with useMemo"); // Add for debugging
+    // Ensure default values (like 0 or empty strings) are consistent
+    const homeTeamAbbrev = gameDetails?.homeTeam?.abbrev || "";
+    const awayTeamAbbrev = gameDetails?.awayTeam?.abbrev || "";
+    const homeLogo = gameDetails?.homeTeam?.logo || "";
+    const awayLogo = gameDetails?.awayTeam?.logo || "";
 
-    // Determine which team's record to use based on the teamType parameter
-    const last10Record =
-      teamType === "home"
-        ? gameLandingDetails?.matchup?.last10Record?.homeTeam?.record
-        : gameLandingDetails?.matchup?.last10Record?.awayTeam?.record;
-
-    // Split the record string into wins, losses, and overtime losses
-    const [wins, losses, overtimeLosses] = last10Record
-      .split("-")
-      .map((num) => parseInt(num, 10));
-
-    // Calculate the points achieved in the last 10 games
-    const points = wins * 2 + overtimeLosses; // Assuming 2 points for a win and 1 point for an overtime loss
-
-    // Calculate the points percentage
-    const totalPossiblePoints = 10 * 2; // 10 games, 2 points possible per game
-    return points / totalPossiblePoints;
-  };
-
-  const chartData = [
-    {
-      team: gameDetails?.homeTeam?.abbrev || "",
-      logo: gameDetails?.homeTeam?.logo || "",
-      homeExpectedGoals: homeTeamStats?.goalsForPerGame || 0,
-      goalsForPerGame: homeTeamStats?.goalsForPerGame || 0,
-      goalsAgainstPerGame: homeTeamStats?.goalsAgainstPerGame || 0,
-      shotsForPerGame: homeTeamStats?.shotsForPerGame || 0,
-      shotsAgainstPerGame: homeTeamStats?.shotsAgainstPerGame || 0,
-      powerPlayPercentage: homeTeamPowerPlayStats?.powerPlayPct || 0,
-      penaltyKillPercentage: homeTeamStats?.penaltyKillPct || 0,
-      powerPlayGoalsPerGame: homeTeamPowerPlayStats?.ppGoalsPerGame || 0,
-      powerPlayOpportunitesPerGame:
-        homeTeamPowerPlayStats?.ppOpportunitiesPerGame || 0,
-      shGoalsAgainstPerGame: homeTeamPowerPlayStats?.shGoalsAgainstPerGame || 0,
-      l10ptsPct: l10pointsPct("home"),
-      seasonSeriesWins:
-        gameLandingDetails?.matchup?.seasonSeriesWins?.homeTeamWins || 0
-    },
-    {
-      team: gameDetails?.awayTeam?.abbrev || "",
-      logo: gameDetails?.awayTeam?.logo || "",
-      awayExpectedGoals: awayTeamStats?.goalsForPerGame || 0,
-      goalsForPerGame: awayTeamStats?.goalsForPerGame || 0,
-      goalsAgainstPerGame: awayTeamStats?.goalsAgainstPerGame || 0,
-      shotsForPerGame: awayTeamStats?.shotsForPerGame || 0,
-      shotsAgainstPerGame: awayTeamStats?.shotsAgainstPerGame || 0,
-      powerPlayPercentage: awayTeamPowerPlayStats?.powerPlayPct || 0,
-      penaltyKillPercentage: awayTeamStats?.penaltyKillPct || 0,
-      powerPlayGoalsPerGame: awayTeamPowerPlayStats?.ppGoalsPerGame || 0,
-      powerPlayOpportunitesPerGame:
-        awayTeamPowerPlayStats?.ppOpportunitiesPerGame || 0,
-      shGoalsAgainstPerGame: awayTeamPowerPlayStats?.shGoalsAgainstPerGame || 0,
-      l10ptsPct: l10pointsPct("away"),
-      seasonSeriesWins:
-        gameLandingDetails?.matchup?.seasonSeriesWins?.awayTeamWins || 0
-    }
-  ];
+    // Use nullish coalescing (??) or || to provide defaults safely
+    return [
+      {
+        team: homeTeamAbbrev,
+        logo: homeLogo,
+        // IMPORTANT: Use the correct fields for the Poisson calculation
+        homeExpectedGoals: homeTeamStats?.goalsForPerGame ?? 0, // Assuming this is the intended value
+        // Include other stats needed by the component, defaulting to 0 or appropriate value
+        goalsForPerGame: homeTeamStats?.goalsForPerGame ?? 0,
+        goalsAgainstPerGame: homeTeamStats?.goalsAgainstPerGame ?? 0,
+        shotsForPerGame: homeTeamStats?.shotsForPerGame ?? 0,
+        shotsAgainstPerGame: homeTeamStats?.shotsAgainstPerGame ?? 0,
+        powerPlayPercentage: homeTeamPowerPlayStats?.powerPlayPct ?? 0,
+        penaltyKillPercentage: homeTeamStats?.penaltyKillPct ?? 0,
+        powerPlayGoalsPerGame: homeTeamPowerPlayStats?.ppGoalsPerGame ?? 0,
+        powerPlayOpportunitesPerGame:
+          homeTeamPowerPlayStats?.ppOpportunitiesPerGame ?? 0,
+        shGoalsAgainstPerGame:
+          homeTeamPowerPlayStats?.shGoalsAgainstPerGame ?? 0,
+        seasonSeriesWins:
+          gameLandingDetails?.matchup?.seasonSeriesWins?.homeTeamWins ?? 0
+      },
+      {
+        team: awayTeamAbbrev,
+        logo: awayLogo,
+        // IMPORTANT: Use the correct fields for the Poisson calculation
+        awayExpectedGoals: awayTeamStats?.goalsForPerGame ?? 0, // Assuming this is the intended value
+        // Include other stats needed by the component, defaulting to 0 or appropriate value
+        goalsForPerGame: awayTeamStats?.goalsForPerGame ?? 0,
+        goalsAgainstPerGame: awayTeamStats?.goalsAgainstPerGame ?? 0,
+        shotsForPerGame: awayTeamStats?.shotsForPerGame ?? 0,
+        shotsAgainstPerGame: awayTeamStats?.shotsAgainstPerGame ?? 0,
+        powerPlayPercentage: awayTeamPowerPlayStats?.powerPlayPct ?? 0,
+        penaltyKillPercentage: awayTeamStats?.penaltyKillPct ?? 0,
+        powerPlayGoalsPerGame: awayTeamPowerPlayStats?.ppGoalsPerGame ?? 0,
+        powerPlayOpportunitesPerGame:
+          awayTeamPowerPlayStats?.ppOpportunitiesPerGame ?? 0,
+        shGoalsAgainstPerGame:
+          awayTeamPowerPlayStats?.shGoalsAgainstPerGame ?? 0,
+        seasonSeriesWins:
+          gameLandingDetails?.matchup?.seasonSeriesWins?.awayTeamWins ?? 0
+      }
+    ];
+  }, [
+    // List ALL state variables used inside this useMemo block
+    gameDetails,
+    homeTeamStats,
+    awayTeamStats,
+    homeTeamPowerPlayStats,
+    awayTeamPowerPlayStats,
+    gameLandingDetails
+  ]);
 
   console.log("chartData:", chartData);
 
-  const isDataLoaded =
-    gameDetails &&
-    homeTeamStats &&
-    awayTeamStats &&
-    homeTeamPowerPlayStats &&
-    awayTeamPowerPlayStats;
+  const isDataLoaded = useMemo(
+    () =>
+      !!(
+        gameDetails && // Check for truthiness
+        homeTeamStats &&
+        Object.keys(homeTeamStats).length > 0 && // Check if object is not empty
+        awayTeamStats &&
+        Object.keys(awayTeamStats).length > 0 &&
+        homeTeamPowerPlayStats &&
+        Object.keys(homeTeamPowerPlayStats).length > 0 &&
+        awayTeamPowerPlayStats &&
+        Object.keys(awayTeamPowerPlayStats).length > 0 &&
+        // Ensure the specific data needed by chartData has non-default values if possible
+        chartData[0]?.team &&
+        chartData[1]?.team && // e.g., check if team names are loaded
+        chartData[0]?.homeExpectedGoals !== 0 && // Check if key stats are loaded
+        chartData[1]?.awayExpectedGoals !== 0
+      ),
+    [
+      gameDetails,
+      homeTeamStats,
+      awayTeamStats,
+      homeTeamPowerPlayStats,
+      awayTeamPowerPlayStats,
+      chartData
+    ]
+  ); // Recalculate when dependencies change
 
   if (
     gameLandingDetails?.gameState === "FUT" ||
@@ -368,12 +386,12 @@ export default function Page() {
                   <Image
                     className="teamLogoHome"
                     src={gameDetails.homeTeam.logo}
-                    alt={`${gameDetails.homeTeam.name.default} logo`}
+                    alt={`${gameDetails.homeTeam.commonName.default} logo`}
                     width={75} // Adjust the width as needed
                     height={75} // Adjust the height as needed
                   />
                   <span className="team-nameGPvs home-team">
-                    {gameDetails.homeTeam.name.default} <br />
+                    {gameDetails.homeTeam.commonName.default} <br />
                     {homeTeamRecord ? (
                       <span className="team-record">{homeTeamRecord}</span>
                     ) : null}
@@ -382,7 +400,7 @@ export default function Page() {
                 <span className="GPvs">VS</span>
                 <div className="gamePageCardRight">
                   <span className="team-nameGPvs away-team">
-                    {gameDetails.awayTeam.name.default} <br />
+                    {gameDetails.awayTeam.commonName.default} <br />
                     {awayTeamRecord ? (
                       <span className="team-record">{awayTeamRecord}</span>
                     ) : null}
@@ -390,7 +408,7 @@ export default function Page() {
                   <Image
                     className="teamLogoAway"
                     src={gameDetails.awayTeam.logo}
-                    alt={`${gameDetails.awayTeam.name.default} logo`}
+                    alt={`${gameDetails.awayTeam.commonName.default} logo`}
                     width={75} // Adjust the width as needed
                     height={75} // Adjust the height as needed
                   />
@@ -401,7 +419,7 @@ export default function Page() {
             <div className="statsAndPlayerCompContainer">
               {/* ///////////////////////////////// STAT ROW ///////////////////////////////////////////////////////// */}
               <div className="gamePageVsTableContainer">
-                <h1 className="tableHeader" style={{ marginTop: "0" }}>
+                <h1 className="tableHeader">
                   Team <span className="spanColorBlue">Advantage</span>
                 </h1>
 
@@ -425,9 +443,9 @@ export default function Page() {
                       <Image
                         className="teamLogoHomeStatTable"
                         src={gameDetails.homeTeam.logo}
-                        alt={`${gameDetails.homeTeam.name.default} logo`}
-                        width={40}
-                        height={40}
+                        alt={`${gameDetails.homeTeam.commonName.default} logo`}
+                        width={60}
+                        height={60}
                       />
                     </div>
                     <span className="advantageHeaderText">VS</span>
@@ -436,9 +454,9 @@ export default function Page() {
                       <Image
                         className="teamLogoAwayStatTable"
                         src={gameDetails.awayTeam.logo}
-                        alt={`${gameDetails.awayTeam.name.default} logo`}
-                        width={40}
-                        height={40}
+                        alt={`${gameDetails.awayTeam.commonName.default} logo`}
+                        width={60}
+                        height={60}
                       />
                     </div>
                   </div>
@@ -657,7 +675,7 @@ export default function Page() {
                       <Image
                         className="teamLogoHomePC"
                         src={gameDetails.homeTeam.logo}
-                        alt={`${gameDetails.homeTeam.name.default} logo`}
+                        alt={`${gameDetails.homeTeam.commonName.default} logo`}
                         width={75}
                         height={75}
                       />
@@ -668,13 +686,13 @@ export default function Page() {
                       <Image
                         className="teamLogoAwayPC"
                         src={gameDetails.awayTeam.logo}
-                        alt={`${gameDetails.awayTeam.name.default} logo`}
+                        alt={`${gameDetails.awayTeam.commonName.default} logo`}
                         width={75}
                         height={75}
                       />
                     </div>
                   </div>
-                  {gameLandingDetails?.matchup?.teamLeadersL5
+                  {gameLandingDetails?.matchup?.skaterComparison?.leaders
                     ?.filter(
                       (leader) => leader.category.toLowerCase() !== "plusminus"
                     )
@@ -734,10 +752,7 @@ export default function Page() {
                 </div>
 
                 {/* Goalie Comparison Container */}
-                <h1
-                  className="tableHeader"
-                  style={{ marginTop: "15px", marginBottom: "0" }}
-                >
+                <h1 className="tableHeader">
                   Goalie <span className="spanColorBlue">Comparison</span>
                 </h1>
                 <div
@@ -762,7 +777,7 @@ export default function Page() {
                       <img
                         className="teamLogoHomePC"
                         src={gameDetails.homeTeam.logo}
-                        alt={`${gameDetails.homeTeam.name.default} logo`}
+                        alt={`${gameDetails.homeTeam.commonName.default} logo`}
                         style={{ width: "75px" }}
                       />
                     </div>
@@ -771,14 +786,14 @@ export default function Page() {
                       <img
                         className="teamLogoAwayPC"
                         src={gameDetails.awayTeam.logo}
-                        alt={`${gameDetails.awayTeam.name.default} logo`}
+                        alt={`${gameDetails.awayTeam.commonName.default} logo`}
                         style={{ width: "75px" }}
                       />
                     </div>
                   </div>
                   <div className="goalieStatsContainer">
                     <div className="homeGoalies">
-                      {gameLandingDetails?.matchup?.goalieComparison?.homeTeam.map(
+                      {gameLandingDetails?.matchup?.goalieComparison?.homeTeam?.leaders?.map(
                         (goalie) => (
                           <div key={goalie.playerId} className="goalieStatRow">
                             <div className="goalieImage">
@@ -808,7 +823,7 @@ export default function Page() {
                               <div className="goalieStatDetails">
                                 <span className="spanGoalieValue">GAA:</span>
                                 <span className="spanGoalieStat">
-                                  {goalie?.gaa?.toFixed(2)}
+                                  {goalie?.gaa?.toFixed(2) ?? "-"}
                                 </span>
                               </div>
                               <div className="goalieStatDetails">
@@ -832,7 +847,7 @@ export default function Page() {
                       )}
                     </div>
                     <div className="awayGoalies">
-                      {gameLandingDetails?.matchup?.goalieComparison?.awayTeam.map(
+                      {gameLandingDetails?.matchup?.goalieComparison?.awayTeam?.leaders?.map(
                         (goalie) => (
                           <div key={goalie.playerId} className="goalieStatRow">
                             <div className="awayGoalieStatHighlight">
@@ -845,22 +860,26 @@ export default function Page() {
                               <div className="goalieStatDetails">
                                 <span className="spanGoalieValue">GAA:</span>
                                 <span className="spanGoalieStat">
-                                  {goalie.gaa.toFixed(2)}
+                                  {goalie.gaa != null
+                                    ? goalie.gaa.toFixed(2)
+                                    : "-"}
                                 </span>
                               </div>
                               <div className="goalieStatDetails">
                                 <span className="spanGoalieValue">SV%:</span>
                                 <span className="spanGoalieStat">
-                                  {goalie.savePctg
-                                    .toFixed(3)
-                                    .replace(/^0+/, "")}
+                                  {goalie.savePctg != null
+                                    ? goalie.savePctg
+                                        .toFixed(3)
+                                        .replace(/^0+/, "")
+                                    : "-"}
                                   %
                                 </span>
                               </div>
                               <div className="goalieStatDetails">
                                 <span className="spanGoalieValue">SO:</span>
                                 <span className="spanGoalieStat">
-                                  {goalie.shutouts}
+                                  {goalie.shutouts ?? "-"}{" "}
                                 </span>
                               </div>
                             </div>
@@ -893,12 +912,9 @@ export default function Page() {
             </div>
             {/* Conditionally render PoissonDistributionChart if all data is loaded */}
             {isDataLoaded ? (
-              (console.log("chartData:", chartData),
-              (
-                <div className="poissonChartContainer">
-                  <PoissonDistributionChart chartData={chartData} />
-                </div>
-              ))
+              <div className="poissonChartContainer">
+                <PoissonDistributionChart chartData={chartData} />
+              </div>
             ) : (
               <p>Loading chart data...</p>
             )}
@@ -937,10 +953,10 @@ export default function Page() {
                   <img
                     className="teamLogoHome"
                     src={gameDetails.homeTeam.logo}
-                    alt={`${gameDetails.homeTeam.name.default} logo`}
+                    alt={`${gameDetails.homeTeam.commonName.default} logo`}
                   />
                   <span className="team-nameGPvs home-team">
-                    {gameDetails.homeTeam.name.default} <br />
+                    {gameDetails.homeTeam.commonName.default} <br />
                     <span className="team-record">
                       {gameDetails.homeTeam.score}
                     </span>
@@ -949,7 +965,7 @@ export default function Page() {
                 <span className="GPvs">VS</span>
                 <div className="gamePageCardRight">
                   <span className="team-nameGPvs away-team">
-                    {gameDetails.awayTeam.name.default} <br />
+                    {gameDetails.awayTeam.commonName.default} <br />
                     <span className="team-record">
                       {gameDetails.awayTeam.score}
                     </span>
@@ -957,7 +973,7 @@ export default function Page() {
                   <img
                     className="teamLogoAway"
                     src={gameDetails.awayTeam.logo}
-                    alt={`${gameDetails.awayTeam.name.default} logo`}
+                    alt={`${gameDetails.awayTeam.commonName.default} logo`}
                   />
                 </div>
               </div>
@@ -988,7 +1004,7 @@ export default function Page() {
                             <img
                               className="GOteamLogoHome"
                               src={gameDetails.homeTeam.logo}
-                              alt={`${gameDetails.homeTeam.name.default} logo`}
+                              alt={`${gameDetails.homeTeam.commonName.default} logo`}
                               style={{ width: "75px" }}
                             />
                           </th>
@@ -997,7 +1013,7 @@ export default function Page() {
                             <img
                               className="GOteamLogoAway"
                               src={gameDetails.awayTeam.logo}
-                              alt={`${gameDetails.awayTeam.name.default} logo`}
+                              alt={`${gameDetails.awayTeam.commonName.default} logo`}
                               style={{ width: "75px" }}
                             />
                           </th>
@@ -1128,7 +1144,7 @@ export default function Page() {
                 <div className="GOscratchDetails">
                   <div className="GOhomeScratches">
                     <div className="GOscratchHomeHeader">
-                      <span>{gameDetails.homeTeam.name.default}</span>
+                      <span>{gameDetails.homeTeam.commonName.default}</span>
                     </div>
                     {gameLandingDetails.summary.gameInfo.homeTeam.scratches.map(
                       (player) => (
@@ -1143,7 +1159,7 @@ export default function Page() {
 
                   <div className="GOawayScratches">
                     <div className="GOscratchAwayHeader">
-                      <span>{gameDetails.awayTeam.name.default}</span>
+                      <span>{gameDetails.awayTeam.commonName.default}</span>
                     </div>
                     {gameLandingDetails.summary.gameInfo.awayTeam.scratches.map(
                       (player) => (

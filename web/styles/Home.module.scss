@@ -46,7 +46,7 @@ $mobile-column-short: 30px;
 
 // --- Games Section ---
 .gameCardsContainer {
-  @include v.component-wrapper; // Apply consistent component frame
+  @include v.element-wrapper; // Apply consistent component frame
 }
 
 .gamesHeader {
@@ -54,7 +54,7 @@ $mobile-column-short: 30px;
   align-items: stretch;
   justify-content: space-between;
   border-bottom: 2px solid v.$secondary-color;
-  background-color: v.$background-dark;
+  background-color: darken(v.$background-dark, 2%);
   width: 100%; // Ensure it spans the wrapper
   position: relative;
 
@@ -174,7 +174,7 @@ $mobile-column-short: 30px;
   align-items: center;
   justify-content: center;
   color: v.$primary-color; // Arrow color
-  background-color: v.$background-medium; // button background
+  background-color: darken(v.$background-dark, 5%);
   transition: background-color v.$transition-duration v.$transition-easing;
 
   &:hover {
@@ -282,8 +282,10 @@ $mobile-column-short: 30px;
   transition: transform 0.2s v.$transition-easing; // Add subtle hover effect
 
   &:hover {
-    transform: translateY(-3px); // Lift card slightly on hover
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3); // Enhance shadow on hover
+    transform: scale(103%); // Lift card slightly on hover
+    outline: 5px solid v.$primary-color;
+    outline-offset: 3px;
+    border-radius: 3px;
   }
   &:focus-visible {
     outline: 2px solid v.$focus-color;
