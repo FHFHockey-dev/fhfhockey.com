@@ -6,13 +6,18 @@ import supabase from "lib/supabase";
 import Fetch from "lib/cors-fetch";
 import { format, parseISO, addDays, isBefore, isAfter } from "date-fns";
 import { getCurrentSeason } from "lib/NHL/server";
-import { WGOGoalieStat, WGOAdvancedGoalieStat } from "lib/NHL/types";
-import { fetchAllGoalies } from "lib/supabase/GoaliePage/fetchAllGoalies";
+import {
+  WGOGoalieStat,
+  WGOAdvancedGoalieStat,
+  WGODaysLeftStat
+} from "lib/NHL/types";
 import { updateAllGoaliesStats } from "lib/supabase/utils/updateAllGoalies";
+
+// TO DO - Got more stats from NHL API including the days rest statistics.
 
 // Define the structure of the NHL API response for goalie stats
 interface NHLApiResponse {
-  data: WGOGoalieStat[] | WGOAdvancedGoalieStat[];
+  data: WGOGoalieStat[] | WGOAdvancedGoalieStat[] | WGODaysLeftStat[];
 }
 
 /**
@@ -29,11 +34,13 @@ export async function fetchDataForPlayer(
 ): Promise<{
   goalieStats: WGOGoalieStat[];
   advancedGoalieStats: WGOAdvancedGoalieStat[];
+  daysLeftStats: WGODaysLeftStat[];
 }> {
   let start = 0;
   let moreDataAvailable = true;
   let goalieStats: WGOGoalieStat[] = [];
   let advancedGoalieStats: WGOAdvancedGoalieStat[] = [];
+  let daysLeftStats: WGODaysLeftStat[] = [];
 
   const limit = 100; // Adjust as needed
 
@@ -48,11 +55,11 @@ export async function fetchDataForPlayer(
 
     // Update the URL to fetch aggregate data up to the specified date
     const goalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=false&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedSeasonStartDate}%22%20and%20gameTypeId=2%20and%20playerId=%22${playerId}%22`;
-
     const advancedGoalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=false&sort=%5B%7B%22property%22:%22qualityStart%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsAgainstAverage%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedSeasonStartDate}%22%20and%20gameTypeId=2%20and%20playerId=%22${playerId}%22`;
+    const daysRestUrl = `https://api.nhle.com/stats/rest/en/goalie/daysrest?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&${start}&limit=${limit}&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedEndDate}%22`;
 
     // Fetch data from both URLs in parallel using Promise.all
-    const [goalieStatsResponse, advancedGoalieStatsResponse] =
+    const [goalieStatsResponse, advancedGoalieStatsResponse, daysRestResponse] =
       await Promise.all([
         Fetch(goalieStatsUrl).then(
           (res) => res.json() as Promise<NHLApiResponse>
@@ -60,6 +67,7 @@ export async function fetchDataForPlayer(
         Fetch(advancedGoalieStatsUrl).then(
           (res) => res.json() as Promise<NHLApiResponse>
         ),
+        Fetch(daysRestUrl).then((res) => res.json() as Promise<NHLApiResponse>)
       ]);
 
     // Concatenate the fetched data to the accumulated arrays
@@ -69,17 +77,22 @@ export async function fetchDataForPlayer(
     advancedGoalieStats = advancedGoalieStats.concat(
       advancedGoalieStatsResponse.data as WGOAdvancedGoalieStat[]
     );
+    daysLeftStats = daysLeftStats.concat(
+      daysRestResponse.data as WGODaysLeftStat[]
+    );
 
     // Determine if more data is available to fetch in the next iteration
     moreDataAvailable =
       goalieStatsResponse.data.length === limit ||
-      advancedGoalieStatsResponse.data.length === limit;
+      advancedGoalieStatsResponse.data.length === limit ||
+      daysRestResponse.data.length === limit;
     start += limit; // Increment the start index for the next fetch
   }
 
   return {
     goalieStats,
     advancedGoalieStats,
+    daysLeftStats
   };
 }
 
@@ -92,17 +105,19 @@ async function updateGoalieStats(date: string): Promise<{
   updated: boolean;
   goalieStats: WGOGoalieStat[];
   advancedGoalieStats: WGOAdvancedGoalieStat[];
+  daysRestStats: WGODaysLeftStat[];
 }> {
   const formattedDate = format(parseISO(date), "yyyy-MM-dd");
-  const { goalieStats, advancedGoalieStats } = await fetchAllDataForDate(
-    formattedDate,
-    100
-  );
+  const { goalieStats, advancedGoalieStats, daysRestStats } =
+    await fetchAllDataForDate(formattedDate, 100);
 
   // Iterate over each goalie stat and upsert into the Supabase table
   for (const stat of goalieStats) {
     const advStats = advancedGoalieStats.find(
       (aStat) => aStat.playerId === stat.playerId
+    );
+    const daysRestStat = daysRestStats.find(
+      (dStat) => dStat.playerId === stat.playerId
     );
     await supabase.from("wgo_goalie_stats").upsert({
       // Mapping fields from fetched data to Supabase table columns
@@ -133,10 +148,21 @@ async function updateGoalieStats(date: string): Promise<{
       regulation_losses: advStats?.regulationLosses, // int
       regulation_wins: advStats?.regulationWins, // int
       shots_against_per_60: advStats?.shotsAgainstPer60, // float
+      // Days left stats
+      games_played_days_rest_0: daysRestStat?.gamesPlayedDaysRest0, // int
+      games_played_days_rest_1: daysRestStat?.gamesPlayedDaysRest1, // int
+      games_played_days_rest_2: daysRestStat?.gamesPlayedDaysRest2, // int
+      games_played_days_rest_3: daysRestStat?.gamesPlayedDaysRest3, // int
+      games_played_days_rest_4_plus: daysRestStat?.gamesPlayedDaysRest4Plus, // int
+      save_pct_days_rest_0: daysRestStat?.savePctDaysRest0, // float
+      save_pct_days_rest_1: daysRestStat?.savePctDaysRest1, // float
+      save_pct_days_rest_2: daysRestStat?.savePctDaysRest2, // float
+      save_pct_days_rest_3: daysRestStat?.savePctDaysRest3, // float
+      save_pct_days_rest_4_plus: daysRestStat?.savePctDaysRest4Plus // float
     });
   }
 
-  return { updated: true, goalieStats, advancedGoalieStats };
+  return { updated: true, goalieStats, advancedGoalieStats, daysRestStats };
 }
 
 /**
@@ -151,11 +177,13 @@ async function fetchAllDataForDate(
 ): Promise<{
   goalieStats: WGOGoalieStat[];
   advancedGoalieStats: WGOAdvancedGoalieStat[];
+  daysRestStats: WGODaysLeftStat[];
 }> {
   let start = 0;
   let moreDataAvailable = true;
   let goalieStats: WGOGoalieStat[] = [];
   let advancedGoalieStats: WGOAdvancedGoalieStat[] = [];
+  let daysRestStats: WGODaysLeftStat[] = [];
   console.log("Fetching data for date:", formattedDate);
 
   // Loop to fetch all pages of data from the API
@@ -163,9 +191,10 @@ async function fetchAllDataForDate(
     // Construct the URLs for fetching goalie stats and advanced stats
     const goalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`;
     const advancedGoalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22qualityStart%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsAgainstAverage%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`;
+    const daysRestUrl = `https://api.nhle.com/stats/rest/en/goalie/daysrest?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&${start}&limit=${limit}&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22`;
 
     // Fetch data from both URLs in parallel using Promise.all
-    const [goalieStatsResponse, advancedGoalieStatsResponse] =
+    const [goalieStatsResponse, advancedGoalieStatsResponse, daysRestResponse] =
       await Promise.all([
         Fetch(goalieStatsUrl).then(
           (res) => res.json() as Promise<NHLApiResponse>
@@ -173,6 +202,7 @@ async function fetchAllDataForDate(
         Fetch(advancedGoalieStatsUrl).then(
           (res) => res.json() as Promise<NHLApiResponse>
         ),
+        Fetch(daysRestUrl).then((res) => res.json() as Promise<NHLApiResponse>)
       ]);
 
     // Concatenate the fetched data to the accumulated arrays
@@ -182,17 +212,23 @@ async function fetchAllDataForDate(
     advancedGoalieStats = advancedGoalieStats.concat(
       advancedGoalieStatsResponse.data as WGOAdvancedGoalieStat[]
     );
+    daysRestStats = daysRestStats.concat(
+      daysRestResponse.data as WGODaysLeftStat[]
+    );
 
     // Determine if more data is available to fetch in the next iteration
     moreDataAvailable =
       goalieStatsResponse.data.length === limit ||
-      advancedGoalieStatsResponse.data.length === limit;
+      advancedGoalieStatsResponse.data.length === limit ||
+      daysRestResponse.data.length === limit;
+
     start += limit; // Increment the start index for the next fetch
   }
 
   return {
     goalieStats,
     advancedGoalieStats,
+    daysRestStats // Placeholder for days left stats, if needed
   };
 }
 
@@ -213,14 +249,15 @@ async function updateAllGoalieStatsForSeason() {
     const formattedDate = format(currentDate, "yyyy-MM-dd");
     console.log(`Processing data for date: ${formattedDate}`);
 
-    const { goalieStats, advancedGoalieStats } = await fetchAllDataForDate(
-      formattedDate,
-      100
-    );
+    const { goalieStats, advancedGoalieStats, daysRestStats } =
+      await fetchAllDataForDate(formattedDate, 100);
 
     for (const stat of goalieStats) {
       const advStats = advancedGoalieStats.find(
         (aStat) => aStat.playerId === stat.playerId
+      );
+      const daysLeftStat = daysRestStats.find(
+        (dStat) => dStat.playerId === stat.playerId
       );
       await supabase.from("wgo_goalie_stats").upsert({
         // Mapping fields from fetched data to Supabase table columns
@@ -252,6 +289,17 @@ async function updateAllGoalieStatsForSeason() {
         regulation_losses: advStats?.regulationLosses, // int
         regulation_wins: advStats?.regulationWins, // int
         shots_against_per_60: advStats?.shotsAgainstPer60, // float
+        // Days left stats
+        games_played_days_rest_0: daysLeftStat?.gamesPlayedDaysRest0, // int
+        games_played_days_rest_1: daysLeftStat?.gamesPlayedDaysRest1, // int
+        games_played_days_rest_2: daysLeftStat?.gamesPlayedDaysRest2, // int
+        games_played_days_rest_3: daysLeftStat?.gamesPlayedDaysRest3, // int
+        games_played_days_rest_4_plus: daysLeftStat?.gamesPlayedDaysRest4Plus, // int
+        save_pct_days_rest_0: daysLeftStat?.savePctDaysRest0, // float
+        save_pct_days_rest_1: daysLeftStat?.savePctDaysRest1, // float
+        save_pct_days_rest_2: daysLeftStat?.savePctDaysRest2, // float
+        save_pct_days_rest_3: daysLeftStat?.savePctDaysRest3, // float
+        save_pct_days_rest_4_plus: daysLeftStat?.savePctDaysRest4Plus // float
       });
       totalUpdates += 1;
     }
@@ -263,7 +311,7 @@ async function updateAllGoalieStatsForSeason() {
   return {
     message: `Season data updated successfully. Total updates: ${totalUpdates}`,
     success: true,
-    totalUpdates: totalUpdates,
+    totalUpdates: totalUpdates
   };
 }
 
@@ -290,7 +338,16 @@ export default async function handler(
       return res.status(200).json({
         message: `Successfully updated all goalie stats.`,
         success: true,
-        data: result,
+        data: result
+      });
+    }
+
+    if (actionParam === "fullRefresh") {
+      const result = await updateAllGoalieStatsForSeason();
+      return res.status(200).json({
+        message: `Successfully updated all goalie stats for the season.`,
+        success: true,
+        data: result
       });
     }
 
@@ -300,7 +357,7 @@ export default async function handler(
       return res.status(200).json({
         message: `Successfully updated goalie stats for date ${date}.`,
         success: true,
-        data: result,
+        data: result
       });
     }
 
@@ -311,7 +368,7 @@ export default async function handler(
         return res.status(400).json({
           message:
             "Missing required query parameter: date. Please provide a date when fetching data for a specific player.",
-          success: false,
+          success: false
         });
       }
 
@@ -321,7 +378,7 @@ export default async function handler(
       return res.status(200).json({
         message: `Successfully fetched goalie stats for player ID ${playerId} up to date ${date}.`,
         success: true,
-        data: result,
+        data: result
       });
     }
 
@@ -329,13 +386,13 @@ export default async function handler(
     return res.status(400).json({
       message:
         "Missing required query parameters. Please provide an action, date, or a player ID and goalie full name.",
-      success: false,
+      success: false
     });
   } catch (e: any) {
     console.error(`Handler Error: ${e.message}`);
     return res.status(500).json({
       message: "Failed to process request. Reason: " + e.message,
-      success: false,
+      success: false
     });
   }
 }

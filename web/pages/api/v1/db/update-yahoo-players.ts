@@ -3,6 +3,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import YahooFantasy from "yahoo-fantasy";
+import { format } from "date-fns";
 
 interface YahooCredentials {
   id: number;
@@ -64,16 +65,23 @@ async function getPlayerKeys(supabase: SupabaseClient): Promise<string[]> {
     }
   }
 
-  console.log(`✅ Total player keys fetched: ${allPlayerKeys.length}`);
+  console.log(`Total player keys fetched: ${allPlayerKeys.length}`);
   return allPlayerKeys;
 }
 
-function transformPlayerData(player: any) {
+// MODIFIED: Prepare payload for the RPC function
+function prepareRpcPayload(player: any, currentDate: string) {
+  // Extract the current ownership value
+  const currentOwnershipValue = parseFloat(
+    player.percent_owned?.[1]?.value || "0"
+  );
+
   return {
+    // Include all fields needed by the INSERT/UPDATE part of the function
     player_key: player.player_key,
     player_id: player.player_id,
     player_name: player.name?.full || null,
-    draft_analysis: player.draft_analysis || {},
+    draft_analysis: player.draft_analysis || {}, // Pass as JSON
     average_draft_pick: parseFloat(player.draft_analysis?.average_pick || "0"),
     average_draft_round: parseFloat(
       player.draft_analysis?.average_round || "0"
@@ -83,20 +91,23 @@ function transformPlayerData(player: any) {
     editorial_player_key: player.editorial_player_key || null,
     editorial_team_abbreviation: player.editorial_team_abbr || null,
     editorial_team_full_name: player.editorial_team_full_name || null,
-    eligible_positions: player.eligible_positions || [],
+    eligible_positions: player.eligible_positions || [], // Pass as JSON array
     display_position: player.display_position || null,
     headshot_url: player.headshot?.url || null,
     injury_note: player.injury_note || null,
     full_name: player.name?.full || null,
-    // For an array approach, see "percent_owned" fix:
-    percent_ownership: parseFloat(player.percent_owned?.[1]?.value || "0"),
+    // percent_ownership: currentOwnershipValue, // Keep if you still want the old column updated
     position_type: player.position_type || null,
     status: player.status || null,
     status_full: player.status_full || null,
     last_updated: new Date().toISOString(),
     uniform_number: player.uniform_number
       ? parseInt(player.uniform_number)
-      : null
+      : null,
+
+    // --- Add the special fields needed for the append logic ---
+    current_ownership_value: currentOwnershipValue,
+    current_date: currentDate // Pass today's date (YYYY-MM-DD)
   };
 }
 
@@ -115,7 +126,7 @@ export default async function handler(
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  console.log("🟢 Starting update-yahoo-players handler.");
+  console.log("Starting update-yahoo-players handler.");
 
   try {
     const creds = await getYahooAPICredentials(supabase);
@@ -130,7 +141,7 @@ export default async function handler(
         access_token: string;
         refresh_token: string;
       }) => {
-        console.log("🔄 Refreshing tokens...");
+        console.log("Refreshing tokens...");
         const { error } = await supabase
           .from("yahoo_api_credentials")
           .update({
@@ -141,10 +152,10 @@ export default async function handler(
           .eq("id", creds.id);
 
         if (error) {
-          console.error("❌ Failed to persist refreshed tokens:", error);
+          console.error("Failed to persist refreshed tokens:", error);
           throw error;
         } else {
-          console.log("✅ Tokens refreshed and stored.");
+          console.log("Tokens refreshed and stored.");
         }
       }
     );
@@ -153,7 +164,7 @@ export default async function handler(
     yf.setRefreshToken(creds.refresh_token);
 
     const playerKeys = await getPlayerKeys(supabase);
-    console.log(`🗂️ Fetched ${playerKeys.length} player keys.`);
+    console.log(`Fetched ${playerKeys.length} player keys.`);
 
     if (!playerKeys.length) {
       return res
@@ -162,14 +173,15 @@ export default async function handler(
     }
 
     const subresources = ["draft_analysis", "percent_owned"];
-    const allRows: ReturnType<typeof transformPlayerData>[] = [];
+    const allRpcPayloads: ReturnType<typeof prepareRpcPayload>[] = []; // Store payloads for RPC
 
     const BATCH_SIZE = 25;
+    const currentDate = format(new Date(), "yyyy-MM-dd");
 
     for (let i = 0; i < playerKeys.length; i += BATCH_SIZE) {
       const batchKeys = playerKeys.slice(i, i + BATCH_SIZE);
       console.log(
-        `🔍 Fetching players ${i + 1}-${Math.min(
+        `Fetching players ${i + 1}-${Math.min(
           i + BATCH_SIZE,
           playerKeys.length
         )}/${playerKeys.length}`
@@ -187,15 +199,15 @@ export default async function handler(
             fetchErr.message.includes("Unexpected token");
 
           if (tokenExpired) {
-            console.warn("⚠️ Token expired. Refreshing explicitly.");
+            console.warn("Token expired. Refreshing explicitly.");
 
             await new Promise<void>((resolve, reject) => {
               yf.refreshToken((err: any) => {
                 if (err) {
-                  console.error("❌ Failed to refresh token explicitly:", err);
+                  console.error("Failed to refresh token explicitly:", err);
                   reject(err);
                 } else {
-                  console.log("🔄 Token refreshed explicitly.");
+                  console.log("Token refreshed explicitly.");
                   resolve();
                 }
               });
@@ -209,21 +221,21 @@ export default async function handler(
 
         if (players && players.length) {
           players.forEach((playerData: any) => {
-            allRows.push(transformPlayerData(playerData));
+            allRpcPayloads.push(prepareRpcPayload(playerData, currentDate)); // Pass current date
             console.log(
-              `✅ Player data queued: ${
+              `Player payload queued: ${
                 playerData.name?.full || playerData.player_key
               }`
             );
           });
         } else {
           console.warn(
-            `⚠️ No data returned for batch starting with: ${batchKeys[0]}`
+            `No data returned for batch starting with: ${batchKeys[0]}`
           );
         }
       } catch (err: any) {
         console.error(
-          `🚨 Failed fetching batch starting with ${batchKeys[0]}:`,
+          `Failed fetching batch starting with ${batchKeys[0]}:`,
           err.message || err
         );
         continue; // continue with next batch
@@ -232,53 +244,60 @@ export default async function handler(
       await new Promise((r) => setTimeout(r, 500)); // Slightly increased delay
     }
 
-    const UPSERT_BATCH_SIZE = 500;
+    const RPC_BATCH_SIZE = 500; // Adjust as needed for performance/limits
 
-    if (allRows.length) {
+    if (allRpcPayloads.length) {
       console.log(
-        `📡 Upserting ${allRows.length} players to Supabase in batches.`
+        `Upserting ${allRpcPayloads.length} players to Supabase in batches.`
       );
 
-      for (let i = 0; i < allRows.length; i += UPSERT_BATCH_SIZE) {
-        const batch = allRows.slice(i, i + UPSERT_BATCH_SIZE);
+      for (let i = 0; i < allRpcPayloads.length; i += RPC_BATCH_SIZE) {
+        const batch = allRpcPayloads.slice(i, i + RPC_BATCH_SIZE);
         console.log(
-          `↪️ Upserting batch ${i + 1}-${Math.min(
-            i + UPSERT_BATCH_SIZE,
-            allRows.length
+          `Upserting batch ${i + 1}-${Math.min(
+            i + RPC_BATCH_SIZE,
+            allRpcPayloads.length
           )}`
         );
 
-        const { error } = await supabase
-          .from("yahoo_players")
-          .upsert(batch, { onConflict: "player_key" });
+        // *** FIX HERE ***
+        // Call the NEW function name 'upsert_players_batch'
+        // Pass the batch array as the value for the 'players_data' argument
+        const { error } = await supabase.rpc(
+          "upsert_players_batch", // <<< Changed function name
+          { players_data: batch } // <<< Pass the array under the key matching the function argument
+        );
+        // *** END FIX ***
 
         if (error) {
           console.error(
-            `❌ Batch upsert failed for batch starting at record ${i + 1}:`,
+            `RPC batch call failed for batch starting at record ${i + 1}:`,
             error
           );
-          throw error;
+          throw new Error(`RPC batch failed: ${error.message}`);
+        } else {
+          console.log(`RPC Batch ${i + 1} successful.`);
         }
 
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500)); // Keep delay between batches
       }
 
-      console.log(`✅ Successfully upserted all ${allRows.length} players.`);
-
-      // Then send back your final response
+      console.log(
+        `Successfully processed all ${allRpcPayloads.length} player payloads via RPC.`
+      );
       return res.status(200).json({
         success: true,
-        message: `Upserted ${allRows.length} players.`
+        message: `Processed ${allRpcPayloads.length} players via RPC.`
       });
-      // ============ END SINGLE-PLAYER FETCH ===========
     }
 
-    // If we reach here, no players were found
     return res
       .status(200)
-      .json({ success: true, message: "No player data retrieved." });
+      .json({ success: true, message: "No player data retrieved to process." });
   } catch (err: any) {
     console.error("🚨 API error encountered:", err);
-    return res.status(500).json({ success: false, message: err.message });
+    // Ensure the error message is captured
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    return res.status(500).json({ success: false, message: errorMessage });
   }
-} // end of handler
+}

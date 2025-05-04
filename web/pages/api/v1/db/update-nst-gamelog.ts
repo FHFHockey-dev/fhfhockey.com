@@ -868,6 +868,17 @@ async function processUrls(
       upsertSuccess = true;
     }
 
+    // ──────────────────── AUDIT ROW  ────────────────────────
+    await supabase.from("cron_job_audit").insert([
+      {
+        job_name: "update-nst-gamelog",
+        status: upsertSuccess ? "success" : "error",
+        rows_affected: upsertedCount,
+        details: { datasetType, date }
+      }
+    ]);
+    // ────────────────────────────────────────────────────────
+
     // --- Logging and Failure Tracking ---
     totalProcessed++;
     printInfoBlock({

@@ -1565,6 +1565,19 @@ export default async function handler(
     // // **Action: Bulk Update for All Non-Goalie Players**
     if (action === "all") {
       const result = await updateSkaterStatsForSeason();
+
+      // 2) audit that run
+      await supabase.from("cron_job_audit").insert([
+        {
+          job_name: "update-all-wgo-skaters",
+          status: result.success ? "success" : "error",
+          rows_affected: result.totalUpdates,
+          details: {
+            totalErrors: result.totalErrors,
+            processingTime: result.processingTime
+          }
+        }
+      ]);
       return res.status(200).json({
         message: `Successfully updated skater stats for the entire season.`,
         success: true,
