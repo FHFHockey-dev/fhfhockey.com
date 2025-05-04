@@ -68,6 +68,7 @@
     "react-flip-move": "^3.0.5",
     "react-transition-group": "^4.4.5",
     "recharts": "^2.13.0",
+    "resend": "^4.5.0",
     "resize-observer-polyfill": "^1.5.1",
     "retry": "^0.13.1",
     "use-immer": "^0.7.0",
