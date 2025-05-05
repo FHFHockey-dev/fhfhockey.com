@@ -26590,6 +26590,19 @@ export type Database = {
         }
         Relationships: []
       }
+      cron_job_report: {
+        Row: {
+          end_time: string | null
+          jobid: number | null
+          jobname: unknown | null
+          return_message: string | null
+          runid: number | null
+          scheduled_time: string | null
+          sql_text: string | null
+          status: string | null
+        }
+        Relationships: []
+      }
       game_score_view: {
         Row: {
           advanced_game_score_as: number | null
@@ -26656,6 +26669,97 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      goalie_weekly_aggregates: {
+        Row: {
+          goalie_game_season: number | null
+          goalie_id: number | null
+          goalie_name: string | null
+          matchup_season: string | null
+          team: string | null
+          week: number | null
+          week_end_date: string | null
+          week_start_date: string | null
+          weekly_ga: number | null
+          weekly_gaa: number | null
+          weekly_gp: number | null
+          weekly_gs: number | null
+          weekly_losses: number | null
+          weekly_ot_losses: number | null
+          weekly_sa: number | null
+          weekly_sa_per_60: number | null
+          weekly_saves: number | null
+          weekly_saves_per_60: number | null
+          weekly_so: number | null
+          weekly_sv_pct: number | null
+          weekly_toi_seconds: number | null
+          weekly_wins: number | null
+        }
+        Relationships: []
+      }
+      job_run_details: {
+        Row: {
+          command: string | null
+          database: string | null
+          end_time: string | null
+          job_pid: number | null
+          jobid: number | null
+          return_message: string | null
+          runid: number | null
+          start_time: string | null
+          status: string | null
+          username: string | null
+        }
+        Insert: {
+          command?: string | null
+          database?: string | null
+          end_time?: string | null
+          job_pid?: number | null
+          jobid?: number | null
+          return_message?: string | null
+          runid?: number | null
+          start_time?: string | null
+          status?: string | null
+          username?: string | null
+        }
+        Update: {
+          command?: string | null
+          database?: string | null
+          end_time?: string | null
+          job_pid?: number | null
+          jobid?: number | null
+          return_message?: string | null
+          runid?: number | null
+          start_time?: string | null
+          status?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
+      league_weekly_goalie_averages: {
+        Row: {
+          avg_league_weekly_ga: number | null
+          avg_league_weekly_gaa: number | null
+          avg_league_weekly_gp: number | null
+          avg_league_weekly_gs: number | null
+          avg_league_weekly_losses: number | null
+          avg_league_weekly_ot_losses: number | null
+          avg_league_weekly_sa: number | null
+          avg_league_weekly_sa_per_60: number | null
+          avg_league_weekly_saves: number | null
+          avg_league_weekly_saves_per_60: number | null
+          avg_league_weekly_so: number | null
+          avg_league_weekly_sv_pct: number | null
+          avg_league_weekly_toi_seconds: number | null
+          avg_league_weekly_wins: number | null
+          matchup_season: string | null
+          total_league_ga: number | null
+          total_league_sa: number | null
+          total_league_saves: number | null
+          total_league_toi_seconds: number | null
+          week: number | null
+        }
+        Relationships: []
       }
       nhl_team_data: {
         Row: {

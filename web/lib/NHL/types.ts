@@ -393,6 +393,7 @@ export type WGOGoalieStat = {
   timeOnIce: number;
   wins: number;
   teamAbbrevs: string;
+  seasonId: number;
 };
 
 export type WGOAdvancedGoalieStat = {

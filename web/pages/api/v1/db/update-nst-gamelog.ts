@@ -1166,6 +1166,16 @@ async function main(isFullRefresh: boolean) {
 
     if (datesToScrape.length === 0) {
       console.log("No new dates to scrape based on the determined range.");
+      // ──────────────────── AUDIT ROW  ────────────────────────
+      await supabase.from("cron_job_audit").insert([
+        {
+          job_name: "update-nst-gamelog",
+          status: "success", // it ran, just nothing new
+          rows_affected: 0,
+          details: { message: "no new dates to scrape" }
+        }
+      ]);
+      // ────────────────────────────────────────────────────────
       // If full refresh, maybe still proceed to cross-reference? No, because no players were processed.
       console.log(
         "--- Script execution finished early: No dates to process. ---"
