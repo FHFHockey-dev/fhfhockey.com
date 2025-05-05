@@ -1559,14 +1559,30 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const jobName = "update-all-wgo-skaters";
+
+  // Prepare audit fields with defaults
+  let status: "success" | "error" = "success";
+  let rowsAffected = 0;
+  let details: Record<string, any> = {};
+
   try {
     const { date, playerId, playerFullName, action } = req.query;
 
     // // **Action: Bulk Update for All Non-Goalie Players**
     if (action === "all") {
       const result = await updateSkaterStatsForSeason();
+      // --- Capture exactly what happened ---
+      status = result.success ? "success" : "error";
+      rowsAffected = result.totalUpdates;
+      details = {
+        totalErrors: result.totalErrors,
+        processingTime: result.processingTime
+      };
+
+      // --- Respond to the HTTP request ---
       return res.status(200).json({
-        message: `Successfully updated skater stats for the entire season.`,
+        message: "Successfully updated skater stats for the entire season.",
         success: true,
         data: result
       });
@@ -1610,17 +1626,28 @@ export default async function handler(
       });
     }
 
-    // **Invalid Request: Missing Required Parameters**
-    return res.status(400).json({
-      message:
-        "Missing required query parameters. Please provide an action, date, or a player ID and player name.",
-      success: false
-    });
-  } catch (e: any) {
-    console.error(`Handler Error: ${e.message}`);
-    return res.status(500).json({
-      message: "Failed to process request. Reason: " + e.message,
-      success: false
-    });
+    status = "error";
+    details = { error: "Missing or invalid parameters" };
+    return res.status(400).json({ message: details.error, success: false });
+  } catch (err: any) {
+    status = "error";
+    details = { error: err.message };
+    if (!res.headersSent) {
+      res.status(500).json({ message: err.message, success: false });
+    }
+  } finally {
+    // This will now always see the right `status`, `rowsAffected`, and `details`
+    try {
+      await supabase.from("cron_job_audit").insert([
+        {
+          job_name: jobName,
+          status,
+          rows_affected: rowsAffected,
+          details
+        }
+      ]);
+    } catch (auditErr) {
+      console.error("Failed to write audit row:", auditErr);
+    }
   }
 }

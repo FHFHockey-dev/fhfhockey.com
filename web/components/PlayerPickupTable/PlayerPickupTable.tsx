@@ -45,6 +45,8 @@ export type UnifiedPlayerData = {
   injury_note: string | null;
 };
 
+type RawDataFromDb = UnifiedPlayerData;
+
 export interface PlayerWithPercentiles extends UnifiedPlayerData {
   percentiles: Record<MetricKey, number>;
   composite: number; // Original overall score based on all relevant metrics
@@ -1354,13 +1356,18 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       const supabasePageSize = 1000;
       try {
         while (true) {
+          // Assuming RawDataFromDb is the intended row type, specify it in the select method
           const { data, error, count } = await supabase
             .from("yahoo_nhl_player_map_mat")
-            .select("*", { count: "exact" })
+            .select<"*", RawDataFromDb>("*", { count: "exact" }) // Specify row type here
             .range(from, from + supabasePageSize - 1);
+
           if (error) throw error;
           if (!data) break;
+
+          // Now TS believes `data` is `UnifiedPlayerData[]`
           allData = allData.concat(data);
+
           if (count !== null && allData.length >= count) break;
           if (data.length < supabasePageSize) break;
           from += supabasePageSize;
@@ -1396,8 +1403,8 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         return teamData
           ? teamData.offNights
           : player.off_nights !== null
-          ? player.off_nights
-          : "N/A";
+            ? player.off_nights
+            : "N/A";
       },
     [teamWeekData]
   );
@@ -1536,10 +1543,13 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
         const composite = count > 0 ? sum / count : 0;
 
-        const finalPercentiles = metrics.reduce((acc, { key }) => {
-          acc[key] = percentiles[key] ?? 0;
-          return acc;
-        }, {} as Record<MetricKey, number>);
+        const finalPercentiles = metrics.reduce(
+          (acc, { key }) => {
+            acc[key] = percentiles[key] ?? 0;
+            return acc;
+          },
+          {} as Record<MetricKey, number>
+        );
 
         return {
           ...player,

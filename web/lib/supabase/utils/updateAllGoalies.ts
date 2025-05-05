@@ -6,9 +6,11 @@ import supabase from "lib/supabase";
 import { format, parseISO, addDays, isBefore, isAfter } from "date-fns";
 import { getCurrentSeason } from "lib/NHL/server"; // Adjust the import path as needed
 import pLimit from "p-limit";
+import { to } from "@react-spring/web";
 
 interface UpdateResult {
   totalUpdates: number;
+  totalErrors: number;
 }
 
 export async function updateAllGoaliesStats(): Promise<UpdateResult> {
@@ -50,6 +52,7 @@ export async function updateAllGoaliesStats(): Promise<UpdateResult> {
     console.log("Ending update at date:", format(finalEndDate, "yyyy-MM-dd"));
 
     let totalUpdates = 0; // To track the total number of updates made
+    let totalErrors = 0; // To track the total number of errors
 
     // Initialize concurrency limiter (adjust concurrency as needed)
     const limit = pLimit(5);
@@ -70,8 +73,21 @@ export async function updateAllGoaliesStats(): Promise<UpdateResult> {
           const goalieFullName = goalie.fullName;
 
           try {
-            const { goalieStats, advancedGoalieStats } =
-              await fetchDataForPlayer(playerId, goalieFullName, formattedDate);
+            const fetchedData = await fetchDataForPlayer(
+              playerId,
+              goalieFullName,
+              formattedDate
+            );
+
+            // Check if fetchedData is null before destructuring
+            if (!fetchedData) {
+              console.log(
+                `No data returned for goalie ID: ${playerId} on date: ${formattedDate}`
+              );
+              return; // Skip this goalie for this date
+            }
+
+            const { goalieStats, advancedGoalieStats } = fetchedData;
 
             if (goalieStats.length === 0) {
               console.log(
@@ -114,7 +130,7 @@ export async function updateAllGoaliesStats(): Promise<UpdateResult> {
                 quality_starts_pct: advStats?.qualityStartsPct,
                 regulation_losses: advStats?.regulationLosses,
                 regulation_wins: advStats?.regulationWins,
-                shots_against_per_60: advStats?.shotsAgainstPer60,
+                shots_against_per_60: advStats?.shotsAgainstPer60
               };
             });
 
@@ -124,14 +140,17 @@ export async function updateAllGoaliesStats(): Promise<UpdateResult> {
               .upsert(upsertData);
 
             if (error) {
+              totalErrors++;
               throw error;
             }
 
             totalUpdates += upsertData.length;
+
             console.log(
               `Successfully updated stats for goalie ID: ${playerId} on date: ${formattedDate}`
             );
           } catch (error: any) {
+            totalErrors++;
             console.error(
               `Failed to update stats for goalie ID: ${playerId} on date: ${formattedDate}. Reason: ${error.message}`
             );
@@ -150,7 +169,7 @@ export async function updateAllGoaliesStats(): Promise<UpdateResult> {
       `Finished updating goalie stats for the season. Total updates: ${totalUpdates}`
     );
 
-    return { totalUpdates };
+    return { totalUpdates, totalErrors };
   } catch (error: any) {
     console.error(`Error in updateAllGoaliesStats: ${error.message}`);
     throw error;

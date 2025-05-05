@@ -384,7 +384,7 @@ export async function fetchPlayerGameLogForStat(
         .from(table)
         .select(selectString)
         .eq("player_id", playerId)
-        .eq(seasonColumn, seasonId.toString()) // Convert number to string for 'season' column
+        .eq(seasonColumn, seasonId)
         .order(dateColumn, { ascending: true });
       if (error) throw error;
 

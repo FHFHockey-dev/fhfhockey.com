@@ -14,10 +14,10 @@ import Layout from "../components/Layout";
 import "../styles/globals.css";
 import "../styles/vars.scss";
 
-// TODO: rewrite using css module
-import "../styles/Home.scss";
+import "../styles/Home.module.scss";
 import "pages/game/GamePage.scss";
 import "components/TeamLandingPage/teamLandingPage.scss";
+
 const queryClient = new QueryClient();
 
 function MyApp({ Component, pageProps }: AppProps) {

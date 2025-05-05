@@ -393,6 +393,7 @@ export type WGOGoalieStat = {
   timeOnIce: number;
   wins: number;
   teamAbbrevs: string;
+  seasonId: number;
 };
 
 export type WGOAdvancedGoalieStat = {
@@ -406,6 +407,27 @@ export type WGOAdvancedGoalieStat = {
   regulationWins: number;
   shotsAgainstPer60: number;
   currentTeamAbbrev: string;
+};
+
+export type WGODaysLeftStat = {
+  playerId: number;
+  gamesPlayed: number;
+  gamesPlayedDaysRest0: number;
+  gamesPlayedDaysRest1: number;
+  gamesPlayedDaysRest2: number;
+  gamesPlayedDaysRest3: number;
+  gamesPlayedDaysRest4Plus: number;
+  gamesStarted: number;
+  goalieFullName: string;
+  lastName: string;
+  losses: number;
+  otLosses: number;
+  savePct: number;
+  savePctDaysRest0: number | null;
+  savePctDaysRest1: number | null;
+  savePctDaysRest2: number | null;
+  savePctDaysRest3: number;
+  savePctDaysRest4Plus: number | null;
 };
 
 export type WGOSummarySkaterStat = {

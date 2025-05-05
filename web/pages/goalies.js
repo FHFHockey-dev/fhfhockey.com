@@ -1,7 +1,9 @@
+// /Users/tim/Desktop/fhfhockey.com/web/pages/goalies.js
+
 import React, { useEffect, useState } from "react";
 import Fetch from "lib/cors-fetch";
-import GoalieList from "components/GoalieList";
-import GoalieLeaderboard from "components/GoalieLeaderboard";
+import GoalieList from "components/GoaliePage/GoalieList";
+import GoalieLeaderboard from "components/GoaliePage/GoalieLeaderboard";
 import styles from "styles/Goalies.module.scss";
 import {
   parseISO,
@@ -9,7 +11,7 @@ import {
   endOfWeek,
   addDays,
   format,
-  startOfWeek,
+  startOfWeek
 } from "date-fns";
 
 const calculateAverages = (goalies) => {
@@ -37,7 +39,7 @@ const calculateAverages = (goalies) => {
       shotsAgainst: 0,
       goalsAgainst: 0,
       shutouts: 0,
-      timeOnIce: 0,
+      timeOnIce: 0
     }
   );
 
@@ -55,7 +57,7 @@ const calculateAverages = (goalies) => {
     savePct: (totals.saves / totals.shotsAgainst).toFixed(3),
     goalsAgainstAverage: (totals.goalsAgainst / numGoalies).toFixed(2),
     shutouts: (totals.shutouts / numGoalies).toFixed(2),
-    timeOnIce: (totals.timeOnIce / numGoalies).toFixed(2),
+    timeOnIce: (totals.timeOnIce / numGoalies).toFixed(2)
   };
 };
 
@@ -72,7 +74,7 @@ const calculateRanking = (goalie, averages, selectedStats) => {
     savePct: "larger",
     goalsAgainstAverage: "smaller",
     shutouts: "larger",
-    timeOnIce: "larger",
+    timeOnIce: "larger"
   };
 
   let betterStats = 0;
@@ -113,7 +115,7 @@ const calculateGoalieRankings = (goalies, selectedStats) => {
     "Quality Week": 10,
     Week: 5,
     "Bad Week": 3,
-    "Really Bad Week": 1,
+    "Really Bad Week": 1
   };
 
   const averages = calculateAverages(goalies);
@@ -125,7 +127,7 @@ const calculateGoalieRankings = (goalies, selectedStats) => {
       "Quality Week": 0,
       Week: 0,
       "Bad Week": 0,
-      "Really Bad Week": 0,
+      "Really Bad Week": 0
     };
 
     goalie.weeks.forEach((week) => {
@@ -137,7 +139,7 @@ const calculateGoalieRankings = (goalies, selectedStats) => {
     return {
       ...goalie,
       totalPoints,
-      weekCounts,
+      weekCounts
     };
   });
 
@@ -156,7 +158,7 @@ const statColumns = [
   { label: "SV%", value: "savePct" },
   { label: "GAA", value: "goalsAgainstAverage" },
   { label: "SO", value: "shutouts" },
-  { label: "TOI", value: "timeOnIce" },
+  { label: "TOI", value: "timeOnIce" }
 ];
 
 const defaultSelectedStats = ["saves", "savePct", "wins"];
@@ -197,15 +199,15 @@ const GoalieTrends = () => {
         const firstSunday = endOfWeek(seasonStart, { weekStartsOn: 1 });
         const firstWeek = {
           start: seasonStart,
-          end: firstSunday,
+          end: firstSunday
         };
 
         const remainingWeeks = eachWeekOfInterval({
           start: addDays(firstSunday, 7),
-          end: seasonEnd,
+          end: seasonEnd
         }).map((weekStart) => ({
           start: startOfWeek(weekStart, { weekStartsOn: 1 }),
-          end: endOfWeek(weekStart, { weekStartsOn: 1 }),
+          end: endOfWeek(weekStart, { weekStartsOn: 1 })
         }));
 
         const allWeeks = [firstWeek, ...remainingWeeks];
@@ -216,7 +218,7 @@ const GoalieTrends = () => {
               week.start,
               "MM/dd/yyyy"
             )} - ${format(week.end, "MM/dd/yyyy")}`,
-            value: week,
+            value: week
           }))
         );
         setSelectedWeek(allWeeks[0].value);
@@ -243,7 +245,7 @@ const GoalieTrends = () => {
             }
             acc[goalie.playerId].weeks.push({
               ...goalie,
-              weekLabel: `Week ${index + 1}`,
+              weekLabel: `Week ${index + 1}`
             });
           });
           return acc;
@@ -293,7 +295,7 @@ const GoalieTrends = () => {
       setLoading(true);
       try {
         const response = await Fetch(
-          "https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50"
+          "https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&cayenneExp=gameDate%3C=%222025-04-17%2023%3A59%3A59%22%20and%20gameDate%3E=%222024-10-04%22%20and%20gameTypeId=2"
         ).then((res) => res.json());
         setGoalies(response.data);
 
@@ -375,7 +377,7 @@ const GoalieTrends = () => {
           }
           acc[goalie.playerId].weeks.push({
             ...goalie,
-            weekLabel: `Week ${index + 1}`,
+            weekLabel: `Week ${index + 1}`
           });
         });
         return acc;
@@ -526,7 +528,7 @@ const GoalieTrends = () => {
         <GoalieList
           week={{
             start: season?.start,
-            end: season?.end,
+            end: season?.end
           }}
           selectedStats={selectedStats}
           statColumns={statColumns}
