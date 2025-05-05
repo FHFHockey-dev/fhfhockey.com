@@ -49,6 +49,8 @@ $border-color-primary: #404040; // Definition 1
 $border-color-secondary: #505050; // Definition 1
 $focus-color: rgb(255, 193, 8); // Definition 1
 $warning-color: #ffcc00; // Definition 1
+$success-color: #00ff99; // Definition 1
+$danger-color: #ff6384; // Definition 1
 
 // --- Base Colors Block ---
 $color-green: #00ff99;
@@ -141,8 +143,10 @@ $font-size-base: 16px; // Definition 1
 $font-size-small: 14px; // Definition 1
 $text-color-button: #ffffff; // Definition 1
 $font-size-small: 0.85rem; // Definition 2 (From Chart Specific block, overrides 14px)
-$font-family-condensed: "Roboto Condensed", sans-serif; // Definition 1 (From Chart Specific block)
-$font-family-accent: "Train One", sans-serif; // Definition 1 (From Structured Section 4)
+$font-family-condensed:
+  "Roboto Condensed", sans-serif; // Definition 1 (From Chart Specific block)
+$font-family-accent:
+  "Train One", sans-serif; // Definition 1 (From Structured Section 4)
 $font-size-base: 1rem; // Definition 2 (From Structured Section 4, overrides 16px)
 $font-size-sm: 0.875rem; // Definition 1 (From Structured Section 4, new name)
 $font-size-xs: 0.75rem; // Definition 1 (From Structured Section 4)
@@ -337,6 +341,41 @@ $chart-tooltip-text: $text-primary; // Definition 2 (Uses $text-primary)
   width: 100%;
 }
 
+@mixin custom-scrollbar(
+  $thumb-color: $primary-color,
+  $track-color: $background-medium,
+  $width: 6px
+) {
+  // For Webkit browsers (Chrome, Safari, Edge Chromium)
+  &::-webkit-scrollbar {
+    width: $width;
+    height: $width; // For horizontal scrollbars
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $track-color;
+    border-radius: math.div($width, 2); // Make track rounded
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: $thumb-color;
+    border-radius: math.div($width, 2); // Make thumb rounded
+    border: 1px solid darken($track-color, 5%); // Optional subtle border
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: color.adjust(
+      $thumb-color,
+      $lightness: 10%
+    ); // Slightly lighter on hover
+  }
+
+  // For Firefox
+  // Note: Firefox support for scrollbar-color is more limited than webkit pseudo-elements
+  // scrollbar-width: thin; // Options: auto, thin, none
+  // scrollbar-color: $thumb-color $track-color; // thumb color followed by track color
+}
+
 @mixin component-wrapper {
   // Definition 1
   width: 100%;
@@ -377,7 +416,8 @@ $chart-tooltip-text: $text-primary; // Definition 2 (Uses $text-primary)
   border-radius: $border-radius-md; // Uses $border-radius-md Def 1
   cursor: pointer;
   font-family: $font-family-primary; // Uses $font-family-primary Def 1
-  transition: background-color $transition-duration $transition-easing,
+  transition:
+    background-color $transition-duration $transition-easing,
     // Uses Def 1 values
     border-color $transition-duration $transition-easing;
 

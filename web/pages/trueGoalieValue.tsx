@@ -107,6 +107,12 @@ const DEFAULT_FANTASY_SETTINGS: FantasyPointSettings = {
   win: 4
 };
 
+// Define the SortConfig interface (can be placed outside component)
+export interface SortConfig<T> {
+  key: keyof T | null;
+  direction: "ascending" | "descending";
+}
+
 // --- Component Definition ---
 const GoalieTrends: FC = () => {
   const currentSeason = useCurrentSeason(); // Use the hook to get season data
@@ -152,6 +158,17 @@ const GoalieTrends: FC = () => {
   );
   const [singleWeekLoading, setSingleWeekLoading] = useState<boolean>(false);
   const [singleWeekError, setSingleWeekError] = useState<string | null>(null);
+
+  const [leaderboardRankings_Unsorted, setLeaderboardRankings_Unsorted] =
+    useState<GoalieRanking[]>([]); // Store unsorted results
+
+  // State for Leaderboard Sorting
+  const [leaderboardSortConfig, setLeaderboardSortConfig] = useState<
+    SortConfig<GoalieRanking>
+  >({
+    key: "totalPoints", // Default sort by points
+    direction: "descending" // Default descending
+  });
 
   // --- Effects ---
   // Effect 1: Fetch Week Options once the currentSeason is loaded
@@ -483,7 +500,7 @@ const GoalieTrends: FC = () => {
     fetchSingleWeekData();
   }, [selectedWeekIndex, weekOptions, useSingleWeek]); // Dependencies
 
-  const leaderboardRankings = useMemo((): GoalieRanking[] => {
+  const calculatedLeaderboardRankings = useMemo((): GoalieRanking[] => {
     if (
       useSingleWeek ||
       !goalieWeeklyData ||
@@ -522,6 +539,35 @@ const GoalieTrends: FC = () => {
     useSingleWeek,
     fantasySettings // Dependency added
   ]);
+
+  // *** NEW: Memo to SORT the calculated rankings ***
+  const sortedLeaderboardRankings = useMemo(() => {
+    let sortableItems = [...calculatedLeaderboardRankings]; // Create a new array
+    if (leaderboardSortConfig.key !== null) {
+      sortableItems.sort((a, b) => {
+        const key = leaderboardSortConfig.key!;
+        // Type guard for properties that might not exist on all items (though GoalieRanking should be consistent)
+        if (!(key in a) || !(key in b)) {
+          return 0;
+        }
+        const aValue = a[key];
+        const bValue = b[key];
+
+        // Basic comparison logic (expand as needed for specific types)
+        if (aValue === null || aValue === undefined) return 1; // Sort nulls/undefined last
+        if (bValue === null || bValue === undefined) return -1;
+
+        if (aValue < bValue) {
+          return leaderboardSortConfig.direction === "ascending" ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return leaderboardSortConfig.direction === "ascending" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [calculatedLeaderboardRankings, leaderboardSortConfig]);
 
   // --- Event Handlers (useCallback) ---
   const handleWeekChange = useCallback(
@@ -571,6 +617,11 @@ const GoalieTrends: FC = () => {
     setError(null); // Clear errors on mode change
   }, []);
 
+  // Define the specific handler for the back button
+  const handleBackToLeaderboard = useCallback(() => {
+    handleModeToggle("range"); // Trigger the mode switch to range/leaderboard
+  }, [handleModeToggle]); // Dependency is correct
+
   const handleFantasySettingChange = useCallback(
     (event: ChangeEvent<HTMLInputElement>) => {
       const { name, value } = event.target;
@@ -597,6 +648,18 @@ const GoalieTrends: FC = () => {
     []
   );
 
+  const handleLeaderboardSort = useCallback((key: keyof GoalieRanking) => {
+    setLeaderboardSortConfig((prevConfig) => {
+      let direction: "ascending" | "descending" = "ascending";
+      // If clicking the same key, toggle direction
+      if (prevConfig.key === key && prevConfig.direction === "ascending") {
+        direction = "descending";
+      }
+      // Otherwise, default to ascending for the new key
+      return { key, direction };
+    });
+  }, []);
+
   // --- Render Logic ---
   // Get the Week object for the currently selected single week
   const currentSingleWeekValue = useSingleWeek
@@ -609,89 +672,96 @@ const GoalieTrends: FC = () => {
     useSingleWeek && view === "week" && currentSingleWeekValue;
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.headerText}>NHL Goalie True Value & Variance</h1>
-      {error && <p className={styles.errorText}>Error: {error}</p>}
-
-      {/* Mode Toggle */}
-      <div className={styles.toggleContainer}>
-        <button
-          className={`${styles.toggleButton} ${
-            !useSingleWeek ? styles.active : ""
-          }`}
-          onClick={() => handleModeToggle("range")}
-          disabled={loading && useSingleWeek}
-        >
-          Date Range Leaderboard
-        </button>
-        <button
-          className={`${styles.toggleButton} ${
-            useSingleWeek ? styles.active : ""
-          }`}
-          onClick={() => handleModeToggle("single")}
-          disabled={loading && !useSingleWeek}
-        >
-          Single Week Stats
-        </button>
+    // Use the main page container style
+    <div className={styles.pageContainer}>
+      {/* --- Header --- */}
+      <div className={styles.headerWrapper}>
+        <h1 className={styles.pageTitle}>
+          <span className={styles.spanColorBlue}>NHL</span> Goalie{" "}
+          <span className={styles.spanColorBlue}>T</span>rue{" "}
+          <span className={styles.spanColorBlue}>V</span>alue &{" "}
+          <span className={styles.spanColorBlue}>V</span>ariance
+        </h1>
       </div>
 
-      {/* Loading Indicator */}
-      {loading && <p>{loadingMessage}</p>}
+      {/* --- Loading / Error --- */}
+      {loading && <p className={styles.loadingMessage}>{loadingMessage}</p>}
+      {error && <p className={styles.errorText}>Error: {error}</p>}
 
-      {/* Controls Area */}
-      {/* Make sure week dropdowns populate from the new weekOptions state */}
-      {!loading &&
-        weekOptions.length > 0 && ( // Check weekOptions length
-          <>
+      {/* --- Controls --- */}
+      {/* Only show controls if week options are loaded */}
+      {!loading && weekOptions.length > 0 && (
+        <div className={styles.controlsWrapper}>
+          {/* Mode Toggles Section */}
+          <div className={styles.controlsSection}>
+            <h2 className={styles.sectionTitle}>Display Mode</h2>
+            <div className={styles.toggleContainer}>
+              <button
+                className={`${styles.toggleButton} ${
+                  !useSingleWeek ? styles.active : ""
+                }`}
+                onClick={() => handleModeToggle("range")}
+                disabled={loading && useSingleWeek} // Keep disabled logic if loading state applies here
+              >
+                Date Range Leaderboard
+              </button>
+              <button
+                className={`${styles.toggleButton} ${
+                  useSingleWeek ? styles.active : ""
+                }`}
+                onClick={() => handleModeToggle("single")}
+                disabled={loading && !useSingleWeek} // Keep disabled logic if loading state applies here
+              >
+                Single Week Stats
+              </button>
+            </div>
+          </div>
+
+          {/* Date Selection Section */}
+          <div className={styles.controlsSection}>
+            <h2 className={styles.sectionTitle}>Select Date Range</h2>
             {useSingleWeek ? (
-              // Single Week Selector (using new weekOptions)
-              <div className={styles.singleWeekDropdown}>
-                <label
-                  htmlFor="single-week-select"
-                  className={styles.singleWeekLabel}
-                >
-                  Select Week:
-                </label>
-                <select
-                  id="single-week-select"
-                  className={styles.customSelect}
-                  value={selectedWeekIndex} // Index still works here
-                  onChange={handleWeekChange}
-                >
-                  {weekOptions.map(
-                    (
-                      opt,
-                      index // Use index as key/value for selection state
-                    ) => (
+              // Single Week Selector
+              <div className={styles.dateSelectorContainer}>
+                <div className={styles.dropdownGroup}>
+                  <label
+                    htmlFor="single-week-select"
+                    className={styles.selectLabel}
+                  >
+                    Week:
+                  </label>
+                  <select
+                    id="single-week-select"
+                    className={styles.customSelect}
+                    value={selectedWeekIndex}
+                    onChange={handleWeekChange}
+                  >
+                    {weekOptions.map((opt, index) => (
                       <option key={index} value={index}>
                         {opt.label}
                       </option>
-                    )
-                  )}
-                </select>
-                <p className={styles.singleWeekNote}>
-                  {/* Adjust note based on what single week view will show */}
+                    ))}
+                  </select>
+                </div>
+                <p className={styles.selectorNote}>
                   View stats for the selected week.
                 </p>
               </div>
             ) : (
-              // Date Range Selector (using new weekOptions)
-              <div className={styles.weekRangeDropdowns}>
-                <label className={styles.singleWeekLabel}>
-                  Select Week Range for Leaderboard:
-                </label>
+              // Date Range Selector
+              <div className={styles.dateSelectorContainer}>
                 <div className={styles.rangeSelectContainer}>
-                  <div className={styles.startWeekDropdown}>
+                  <div className={styles.dropdownGroup}>
                     <label
                       htmlFor="range-start-select"
-                      className={styles.startEndLabel}
+                      className={styles.selectLabel}
                     >
                       Start:
                     </label>
                     <select
                       id="range-start-select"
                       className={styles.customSelect}
-                      value={selectedRange.start} // Index still works
+                      value={selectedRange.start}
                       onChange={handleRangeStartChange}
                     >
                       {weekOptions.map((opt, index) => (
@@ -701,17 +771,17 @@ const GoalieTrends: FC = () => {
                       ))}
                     </select>
                   </div>
-                  <div className={styles.endWeekDropdown}>
+                  <div className={styles.dropdownGroup}>
                     <label
                       htmlFor="range-end-select"
-                      className={styles.startEndLabel}
+                      className={styles.selectLabel}
                     >
                       End:
                     </label>
                     <select
                       id="range-end-select"
                       className={styles.customSelect}
-                      value={selectedRange.end} // Index still works
+                      value={selectedRange.end}
                       onChange={handleRangeEndChange}
                     >
                       {weekOptions.map((opt, index) => (
@@ -722,7 +792,7 @@ const GoalieTrends: FC = () => {
                     </select>
                   </div>
                 </div>
-                <p className={styles.singleWeekNote}>
+                <p className={styles.selectorNote}>
                   Leaderboard ranks goalies based on performance across the
                   selected weeks, including week-to-week (WoW) and game-to-game
                   (GoG) consistency. Adapted from{" "}
@@ -730,7 +800,7 @@ const GoalieTrends: FC = () => {
                     href="https://dobberhockey.com/2024/05/19/geek-of-the-week-true-goalie-value-season-recap/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={styles.hyperlink}
+                    className={styles.hyperlink} // Ensure hyperlink style exists or add it
                   >
                     True Goalie Value
                   </a>{" "}
@@ -738,113 +808,111 @@ const GoalieTrends: FC = () => {
                 </p>
               </div>
             )}
+          </div>
 
-            {/* --- NEW: Fantasy Point Settings Inputs --- */}
-            {!useSingleWeek && ( // Only show for leaderboard/range view where GoG variance is calculated
-              <div className={styles.fantasySettingsContainer}>
-                <label className={styles.fantasySettingsLabel}>
-                  Fantasy Point Settings (for GoG Variance):
-                </label>
-                <div className={styles.fantasyInputGrid}>
-                  {(
-                    Object.keys(
-                      DEFAULT_FANTASY_SETTINGS
-                    ) as FantasyCountStatKey[]
-                  ).map((key) => (
-                    <div key={key} className={styles.fantasyInputItem}>
-                      <label htmlFor={`fantasy-${key}`}>
-                        {key === "goalAgainst"
-                          ? "GA"
-                          : key === "save"
-                            ? "SV"
-                            : key === "shutout"
-                              ? "SO"
-                              : "W"}
-                        :
-                      </label>
-                      <input
-                        type="number"
-                        id={`fantasy-${key}`}
-                        name={key}
-                        value={fantasySettings[key]}
-                        onChange={handleFantasySettingChange}
-                        step={key === "save" ? 0.1 : 1} // Allow decimals for saves
-                        className={styles.fantasyInput}
-                      />
-                    </div>
-                  ))}
-                </div>
-                <p className={styles.fantasyNote}>
-                  Adjust points per stat. GoG Variance recalculates based on
-                  these values.
-                </p>
-              </div>
-            )}
-
-            {/* Stat Selection Checkboxes (Common) */}
-            {/* Ensure selectedStats uses the UI 'value' like "saves", "savePct" */}
-            <div className={styles.customizeStatsContainer}>
-              <label className={styles.customizeStatsLabel}>
-                Customize Ranking Stats:
-              </label>
-              <div className={styles.checkboxContainer}>
-                {STAT_COLUMNS
-                  // Add filtering if needed
-                  .map((stat) => (
-                    <div key={stat.value} className={styles.checkboxItem}>
-                      <input
-                        type="checkbox"
-                        id={`checkbox-${stat.value}`}
-                        value={stat.value} // Use the UI value ('savePct')
-                        checked={selectedStats.includes(
-                          stat.value as NumericGoalieStatKey
-                        )}
-                        onChange={handleStatChange}
-                      />
-                      <label htmlFor={`checkbox-${stat.value}`}>
-                        {stat.label}
-                      </label>
-                    </div>
-                  ))}
-              </div>
+          {/* Stat Selection Section */}
+          <div className={styles.controlsSection}>
+            <h2 className={styles.sectionTitle}>Customize Ranking Stats</h2>
+            <div className={styles.checkboxContainer}>
+              {STAT_COLUMNS
+                // Filter out non-rankable stats if desired, e.g. those without dbFieldGoalie/dbFieldAverage
+                // .filter(stat => stat.dbFieldGoalie && stat.dbFieldAverage)
+                .map((stat) => (
+                  <div key={stat.value} className={styles.checkboxItem}>
+                    <input
+                      type="checkbox"
+                      id={`checkbox-${stat.value}`}
+                      value={stat.value}
+                      checked={selectedStats.includes(
+                        stat.value as NumericGoalieStatKey
+                      )}
+                      onChange={handleStatChange}
+                    />
+                    <label htmlFor={`checkbox-${stat.value}`}>
+                      {stat.label}
+                    </label>
+                  </div>
+                ))}
             </div>
-          </>
-        )}
+          </div>
 
-      {/* Content Display Area */}
-      {!loading && (
-        <>
+          {/* Fantasy Settings Section - Only show for leaderboard */}
+          {!useSingleWeek && (
+            <div className={styles.controlsSection}>
+              <h2 className={styles.sectionTitle}>Fantasy Settings</h2>
+              <div className={styles.fantasyInputGrid}>
+                {(
+                  Object.keys(DEFAULT_FANTASY_SETTINGS) as FantasyCountStatKey[]
+                ).map((key) => (
+                  <div key={key} className={styles.fantasyInputItem}>
+                    <label htmlFor={`fantasy-${key}`}>
+                      {key === "goalAgainst"
+                        ? "GA"
+                        : key === "save"
+                          ? "SV"
+                          : key === "shutout"
+                            ? "SO"
+                            : "W"}
+                    </label>
+                    <input
+                      type="number"
+                      id={`fantasy-${key}`}
+                      name={key}
+                      value={fantasySettings[key]}
+                      onChange={handleFantasySettingChange}
+                      step={key === "save" ? 0.1 : 1}
+                      className={styles.fantasyInput}
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className={styles.selectorNote}>
+                Adjust points per stat. GoG Variance recalculates based on these
+                values.
+              </p>
+            </div>
+          )}
+        </div> // End controlsWrapper
+      )}
+
+      {/* --- Main Content Area (Leaderboard or List) --- */}
+      {/* Only render content area if not loading initial options, OR if options are loaded */}
+      {(!loading || weekOptions.length > 0) && (
+        <div className={styles.contentWrapper}>
+          {/* Optional: Add scroll container if tables might overflow */}
+          {/* <div className={styles.tableScrollContainer}> */}
           {showLeaderboard && (
             <GoalieLeaderboard
-              goalieRankings={leaderboardRankings} // Pass memoized rankings (now includes fPts, percentiles)
-              setView={setView}
-              statColumns={STAT_COLUMNS} // Pass stat columns for percentile headers
+              // Pass SORTED data
+              goalieRankings={sortedLeaderboardRankings}
+              statColumns={STAT_COLUMNS}
+              // Pass sort handler and config
+              requestSort={handleLeaderboardSort}
+              sortConfig={leaderboardSortConfig}
+              setView={setView} // Keep if needed
             />
           )}
-
-          {/* Single Week View - Needs decision on what data to show */}
-          {showSingleWeekList &&
-            !singleWeekLoading &&
-            currentSingleWeekValue && ( // Check loading state and value existence
-              <GoalieList
-                goalieAggregates={singleWeekGoalieData} // Pass fetched single week aggregates
-                leagueAverage={singleWeekLeagueAverage} // Pass fetched single week average
-                week={currentSingleWeekValue} // Pass the week value object
-                selectedStats={selectedStats}
-                statColumns={STAT_COLUMNS}
-                setView={setView}
-              />
-            )}
-          {showSingleWeekList && (
-            <p>Single week view needs implementation based on Supabase data.</p>
+          {showSingleWeekList && currentSingleWeekValue && (
+            <GoalieList
+              goalieAggregates={singleWeekGoalieData}
+              leagueAverage={singleWeekLeagueAverage}
+              week={currentSingleWeekValue}
+              selectedStats={selectedStats}
+              statColumns={STAT_COLUMNS}
+              setView={setView} // Pass setView if GoalieList/Table needs it internally
+              onBackToLeaderboard={handleBackToLeaderboard}
+              loading={singleWeekLoading} // Pass correct loading state
+            />
           )}
-        </>
+          {/* </div> End tableScrollContainer */}
+
+          {/* Placeholder if no weeks loaded after initial load */}
+          {!loading && weekOptions.length === 0 && !error && (
+            <p className={styles.loadingMessage}>No week data found.</p>
+          )}
+        </div> // End contentWrapper
       )}
-      {/* Placeholder if no weeks loaded or error state */}
-      {!loading && weekOptions.length === 0 && !error && (
-        <p>Loading or no weeks found...</p>
-      )}
-    </div>
+    </div> // End pageContainer
   );
 };
 

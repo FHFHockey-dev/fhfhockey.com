@@ -213,6 +213,3 @@ export interface WeekOption {
     end: Date; // Keep as Date object
   };
 }
-
-// ADJUST: StatColumn value type might need mapping if 'saves' should map to 'weekly_saves'
-// Already done: dbFieldGoalie, dbFieldAverage added before

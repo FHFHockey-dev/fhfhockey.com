@@ -11,6 +11,7 @@ import type {
 } from "components/GoaliePage/goalieTypes";
 // Import shared statMap
 import { statMap } from "./goalieCalculations"; // Adjust path if needed
+import { SortConfig } from "pages/trueGoalieValue";
 
 // Type for the data rows this table displays (can be ranked games or ranked weeks)
 type DisplayGoalie = GoalieBaseStats & {
@@ -27,25 +28,33 @@ type DisplayGoalie = GoalieBaseStats & {
 };
 
 interface Props {
-  goalies: DisplayGoalie[]; // Expects array of games/weeks to display
-  averages: GoalieAverages; // Expects pre-calculated averages for THIS specific dataset
+  goalies: DisplayGoalie[]; // Receives sorted goalies
+  averages: GoalieAverages;
   selectedStats: NumericGoalieStatKey[];
-  statColumns: StatColumn[]; // Use the passed columns for headers/iteration
-  setView: React.Dispatch<React.SetStateAction<"leaderboard" | "week">>;
-  startDate: string; // For title
-  endDate: string; // For title
-  isSingleWeek: boolean; // Flag indicating single week context (displaying games)
+  statColumns: StatColumn[];
+  // setView: React.Dispatch<React.SetStateAction<"leaderboard" | "week">>; // Keep if needed
+  startDate: string;
+  endDate: string;
+  isSingleWeek: boolean;
+  onBackToLeaderboard?: () => void;
+  // *** NEW: Add sort props ***
+  requestSort: (key: keyof DisplayGoalie) => void;
+  sortConfig: SortConfig<DisplayGoalie>;
 }
 
 const GoalieTable: FC<Props> = ({
   goalies,
-  averages, // Use the passed averages
+  averages,
   selectedStats,
   statColumns,
-  setView,
+  // setView,
   startDate,
   endDate,
-  isSingleWeek
+  isSingleWeek,
+  onBackToLeaderboard,
+  // *** Destructure sort props ***
+  requestSort,
+  sortConfig
 }) => {
   // Helper to determine CSS class based on comparison percentage (if available)
   const getPercentageClass = (percentage: number | undefined): string => {
@@ -117,36 +126,50 @@ const GoalieTable: FC<Props> = ({
     return String(value);
   };
 
+  // *** NEW: Helper function for sort indicators ***
+  const getSortIndicator = (key: keyof DisplayGoalie): string => {
+    if (!sortConfig || sortConfig.key !== key) return ""; // Check if sortConfig exists
+    return sortConfig.direction === "ascending" ? " ▲" : " ▼";
+  };
+
   return (
-    <div>
-      {/* Conditionally show Back button only in single week context */}
-      {isSingleWeek && (
-        <button
-          className={styles.weekLeaderboardButton}
-          onClick={() => setView("leaderboard")} // Navigate back
-        >
-          Back to Leaderboard
-        </button>
-      )}
-      <h2 className={styles.tableHeader}>
+    <>
+      {/* Conditionally show Back button */}
+      {/* CHANGE className for the button */}
+      {isSingleWeek &&
+        onBackToLeaderboard && ( // Check if handler exists
+          <button
+            className={styles.backButton} // Use the new button class
+            onClick={onBackToLeaderboard}
+          >
+            Back to Leaderboard
+          </button>
+        )}
+
+      {/* Use standard h2, remove specific class */}
+      {/* Removed className={styles.tableHeader} */}
+      <h2>
         {isSingleWeek ? "Weekly Game Stats" : "Goalie Leaderboard Details"} from{" "}
         {startDate} to {endDate}
       </h2>
-      <table className={styles.goalieTable}>
+
+      {/* Optional: Add scroll container if needed */}
+      {/* <div className={styles.tableScrollContainer}> */}
+
+      {/* CHANGE table class name */}
+      <table className={styles.dataTable}>
         <thead>
-          {/* Display Averages Row */}
+          {/* Averages Row - uses .averageHeader, .averageCell which should exist */}
           <tr>
-            {/* Adjust colspan based on whether Name/Team or Name/Date is shown */}
             <td colSpan={isSingleWeek ? 2 : 2} className={styles.averageHeader}>
               {isSingleWeek ? "Weekly Game Averages:" : "Range Averages:"}
             </td>
             {statColumns.map((statCol) => (
               <td key={`avg-${statCol.value}`} className={styles.averageCell}>
-                {/* Access pre-calculated averages */}
                 {averages[statCol.value] ?? "N/A"}
               </td>
             ))}
-            {/* Spacers for optional Percentage/Ranking columns */}
+            {/* Spacers for optional columns */}
             {goalies[0]?.percentage !== undefined && (
               <td className={styles.averageHeader}></td>
             )}
@@ -156,14 +179,39 @@ const GoalieTable: FC<Props> = ({
           </tr>
           {/* Header Row */}
           <tr>
-            <th>{isSingleWeek ? "Date" : "Name"}</th>
-            <th>{isSingleWeek ? "Goalie" : "Team"}</th>
+            <th
+              onClick={() =>
+                requestSort(isSingleWeek ? "gameDate" : "goalieFullName")
+              }
+            >
+              {isSingleWeek ? "Date" : "Name"}
+              {getSortIndicator(isSingleWeek ? "gameDate" : "goalieFullName")}
+            </th>
+            <th
+              onClick={() =>
+                requestSort(isSingleWeek ? "goalieFullName" : "team")
+              }
+            >
+              {isSingleWeek ? "Goalie" : "Team"}
+              {getSortIndicator(isSingleWeek ? "goalieFullName" : "team")}
+            </th>
             {statColumns.map((stat) => (
               // Use value for key, label for display
-              <th key={`th-${stat.value}`}>{stat.label}</th>
+              <th
+                key={`th-${stat.value}`}
+                onClick={() => requestSort(stat.value)}
+              >
+                {stat.label}
+                {getSortIndicator(stat.value)}
+              </th>
             ))}
-            {/* Conditionally show Percentage/Ranking headers */}
-            {goalies[0]?.percentage !== undefined && <th>% &gt; AVG</th>}
+            {/* Conditionally show Percentage/Ranking headers (add sorting if needed) */}
+            {goalies[0]?.percentage !== undefined && (
+              <th onClick={() => requestSort("percentage")}>
+                % &gt; AVG
+                {getSortIndicator("percentage")}
+              </th>
+            )}
             {goalies[0]?.ranking !== undefined && <th>Rank</th>}
           </tr>
         </thead>
@@ -183,12 +231,12 @@ const GoalieTable: FC<Props> = ({
                     ? goalie.gameDate
                       ? new Date(goalie.gameDate).toLocaleDateString()
                       : "N/A"
-                    : goalie.goalieFullName ?? "N/A"}
+                    : (goalie.goalieFullName ?? "N/A")}
                 </td>
                 <td>
                   {isSingleWeek
-                    ? goalie.goalieFullName ?? "N/A"
-                    : goalie.team ?? "N/A"}
+                    ? (goalie.goalieFullName ?? "N/A")
+                    : (goalie.team ?? "N/A")}
                 </td>
                 {/* Map through defined stat columns to render cells */}
                 {statColumns.map((statCol) => {
@@ -204,17 +252,18 @@ const GoalieTable: FC<Props> = ({
                     statCol.value,
                     isSelected
                   );
+                  const combinedClassName = `${cellClass}`; // Add base td class if needed
 
                   return (
                     <td
                       key={`${goalie.playerId}-${statCol.value}-${index}`}
-                      className={cellClass}
+                      className={combinedClassName || undefined} // Apply class only if not empty
                     >
                       {formatStatValue(goalieStatValue, statCol.value)}
                     </td>
                   );
                 })}
-                {/* Conditionally show Percentage/Ranking cells */}
+                {/* Optional Percentage/Ranking cells */}
                 {goalie.percentage !== undefined && (
                   <td className={getPercentageClass(goalie.percentage)}>
                     {goalie.percentage !== undefined
@@ -230,7 +279,8 @@ const GoalieTable: FC<Props> = ({
           )}
         </tbody>
       </table>
-    </div>
+      {/* </div> End optional tableScrollContainer */}
+    </>
   );
 };
 
