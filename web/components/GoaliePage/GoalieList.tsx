@@ -11,16 +11,17 @@ import {
   LeagueWeeklyAverage,
   Ranking,
   WeekOption,
-  GoalieBaseStats, // Ensure GoalieBaseStats is imported
+  GoalieBaseStats,
   GoalieAverages
 } from "components/GoaliePage/goalieTypes";
-import { calculateWeeklyRanking, rankingPoints } from "./goalieCalculations";
+import { calculateWeeklyRanking } from "./goalieCalculations"; // Removed unused rankingPoints import
 
 // Define SortConfig interface if not imported
 interface SortConfig<T> {
   key: keyof T | null;
   direction: "ascending" | "descending";
 }
+
 // Define the type GoalieTable expects
 type DisplayGoalie = GoalieBaseStats & {
   playerId: number;
@@ -53,10 +54,12 @@ const GoalieList: FC<Props> = ({
   week,
   selectedStats,
   statColumns,
-  setView,
+  // setView, // Commented out if not used
   loading,
   onBackToLeaderboard
 }) => {
+  // --- Start of Hook Declarations ---
+
   const [listSortConfig, setListSortConfig] = useState<
     SortConfig<DisplayGoalie>
   >({
@@ -64,23 +67,29 @@ const GoalieList: FC<Props> = ({
     direction: "ascending"
   });
 
-  // Helper object to check keys against GoalieBaseStats structure during mapping
-  const GoalieBaseStatsExample: Required<GoalieBaseStats> = {
-    gamesPlayed: 0,
-    gamesStarted: 0,
-    wins: 0,
-    losses: 0,
-    otLosses: 0,
-    saves: 0,
-    shotsAgainst: 0,
-    goalsAgainst: 0,
-    shutouts: 0,
-    timeOnIce: 0, // minutes from mapping
-    savePct: 0,
-    goalsAgainstAverage: 0,
-    savesPer60: 0,
-    shotsAgainstPer60: 0
-  };
+  // Define GoalieBaseStatsExample *before* hooks that depend on it
+  // Note: While defining constants inside is fine, if this never changes,
+  // defining it *outside* the component could be slightly more optimal.
+  // But for dependency array correctness, keeping it here is okay.
+  const GoalieBaseStatsExample: Required<GoalieBaseStats> = useMemo(
+    () => ({
+      gamesPlayed: 0,
+      gamesStarted: 0,
+      wins: 0,
+      losses: 0,
+      otLosses: 0,
+      saves: 0,
+      shotsAgainst: 0,
+      goalsAgainst: 0,
+      shutouts: 0,
+      timeOnIce: 0,
+      savePct: 0,
+      goalsAgainstAverage: 0,
+      savesPer60: 0,
+      shotsAgainstPer60: 0
+    }),
+    []
+  ); // Wrap in useMemo to ensure stable reference for dependency arrays
 
   // Step 1: Calculate internal ranked data (GoalieWeeklyRank)
   const rankedWeeklyData = useMemo((): GoalieWeeklyRank[] => {
@@ -101,6 +110,7 @@ const GoalieList: FC<Props> = ({
         weeklyRankPoints: points
       };
     });
+    // Sort by points descending
     rankedData.sort((a, b) => b.weeklyRankPoints - a.weeklyRankPoints);
     return rankedData;
   }, [goalieAggregates, leagueAverage, selectedStats, statColumns]);
@@ -118,69 +128,55 @@ const GoalieList: FC<Props> = ({
       // Add other GoalieBaseStats properties from rankData
       Object.keys(GoalieBaseStatsExample).forEach((baseKey) => {
         const key = baseKey as keyof GoalieBaseStats;
-        // Assert rankData to any for index access, assuming GoalieWeeklyRank includes GoalieBaseStats fields
-        const value = (rankData as any)[key];
+        const value = (rankData as any)[key]; // Assuming GoalieWeeklyRank includes GoalieBaseStats fields
         if (value !== undefined && value !== null) {
-          // Assign the value from rankData
           (displayGoalie as any)[key] = value;
         } else {
-          // Assign a default or handle missing base stats if necessary
-          (displayGoalie as any)[key] = GoalieBaseStatsExample[key]; // Or null, or 'N/A'
+          // Assign default from GoalieBaseStatsExample if value is missing/null
+          (displayGoalie as any)[key] = GoalieBaseStatsExample[key];
         }
       });
       return displayGoalie as DisplayGoalie;
     });
 
-    // 2. Sort the transformed data
+    // Sort the transformed data based on listSortConfig
     if (listSortConfig.key !== null) {
+      const key = listSortConfig.key; // Key is known to be non-null here
       transformedGoalies.sort((a, b) => {
-        const key = listSortConfig.key!;
-        // Ensure key exists (though DisplayGoalie should be consistent)
+        // Ensure the key exists on both objects before accessing
         if (!(key in a) || !(key in b)) return 0;
 
         const aValue = a[key];
         const bValue = b[key];
 
-        // Robust comparison (handle null/undefined, numbers, strings)
+        // Handle null/undefined values consistently
         if (aValue == null && bValue == null) return 0;
         if (aValue == null)
           return listSortConfig.direction === "ascending" ? 1 : -1; // Nulls last
         if (bValue == null)
           return listSortConfig.direction === "ascending" ? -1 : 1; // Nulls last
 
-        // Basic comparison, expand if needed (e.g., case-insensitive string)
+        // Specific comparison logic based on type
         if (typeof aValue === "string" && typeof bValue === "string") {
           return (
             aValue.localeCompare(bValue) *
             (listSortConfig.direction === "ascending" ? 1 : -1)
           );
         }
-        // Add comparison for Ranking type if needed
-        if (
-          key === "ranking" &&
-          typeof aValue === "object" &&
-          typeof bValue === "object" &&
-          aValue !== null &&
-          bValue !== null &&
-          "value" in aValue &&
-          "valueOf" in aValue && // Check if it's a string-like object
-          "valueOf" in bValue
-        ) {
-          // Define the desired sort order for rankings
+
+        if (key === "ranking") {
+          // Special sort for Ranking type
           const rankingOrder: Ranking[] = [
             "Elite",
             "Quality",
             "Average",
             "Bad",
             "Really Bad"
-          ]; // Add "Unknown" or adjust as needed
+          ];
           const aRankIndex = rankingOrder.indexOf(aValue as Ranking);
           const bRankIndex = rankingOrder.indexOf(bValue as Ranking);
-
-          // Handle cases where a ranking might not be in the defined order
           const effectiveARank = aRankIndex === -1 ? Infinity : aRankIndex;
           const effectiveBRank = bRankIndex === -1 ? Infinity : bRankIndex;
-
           if (effectiveARank < effectiveBRank)
             return listSortConfig.direction === "ascending" ? -1 : 1;
           if (effectiveARank > effectiveBRank)
@@ -193,25 +189,25 @@ const GoalieList: FC<Props> = ({
             return listSortConfig.direction === "ascending" ? -1 : 1;
           if (aValue > bValue)
             return listSortConfig.direction === "ascending" ? 1 : -1;
+          return 0;
         }
-        // Fallback comparison (might need adjustment based on actual types)
+
+        // Fallback comparison (might need adjustments for other types)
         if (aValue < bValue)
           return listSortConfig.direction === "ascending" ? -1 : 1;
         if (aValue > bValue)
           return listSortConfig.direction === "ascending" ? 1 : -1;
-
         return 0;
       });
     }
 
     return transformedGoalies;
-    // *** Add listSortConfig to dependencies ***
-  }, [rankedWeeklyData, statColumns, listSortConfig]);
+  }, [rankedWeeklyData, listSortConfig, GoalieBaseStatsExample]); // <-- Added GoalieBaseStatsExample dependency (line 209 warning)
 
   // Step 3: Format the single LeagueWeeklyAverage into GoalieAverages for the table header
   const averagesForTable = useMemo((): GoalieAverages => {
     const averages: Partial<GoalieAverages> = {};
-    if (!leagueAverage) return averages as GoalieAverages; // Return empty if no average
+    if (!leagueAverage) return averages as GoalieAverages;
 
     statColumns.forEach((col) => {
       const uiKey = col.value;
@@ -221,7 +217,6 @@ const GoalieList: FC<Props> = ({
         const avgValue = leagueAverage[dbKey];
         if (avgValue !== null && avgValue !== undefined) {
           if (typeof avgValue === "number") {
-            // Format based on stat type (ensure consistency with GoalieTable)
             if (uiKey === "savePct") averages[uiKey] = avgValue.toFixed(3);
             else if (
               uiKey === "goalsAgainstAverage" ||
@@ -233,15 +228,14 @@ const GoalieList: FC<Props> = ({
               uiKey === "timeOnIce" &&
               leagueAverage.avg_league_weekly_toi_seconds
             )
-              // Convert average TOI from seconds to minutes before formatting
               averages[uiKey] = (
                 leagueAverage.avg_league_weekly_toi_seconds / 60
               ).toFixed(1);
             else if (Number.isInteger(avgValue))
               averages[uiKey] = String(avgValue);
-            else averages[uiKey] = avgValue.toFixed(2); // Default format
+            else averages[uiKey] = avgValue.toFixed(2);
           } else {
-            averages[uiKey] = String(avgValue); // Keep non-numeric as string
+            averages[uiKey] = String(avgValue);
           }
         } else {
           averages[uiKey] = "N/A";
@@ -250,44 +244,27 @@ const GoalieList: FC<Props> = ({
         averages[uiKey] = "N/A";
       }
     });
-    // Ensure all expected keys exist, even if not in averages data
+    // Ensure all base stat keys exist, even if not in statColumns/averages data
     Object.keys(GoalieBaseStatsExample).forEach((key) => {
       if (!(key in averages)) {
-        averages[key as keyof GoalieAverages] = "N/A";
+        averages[key as keyof GoalieAverages] = "N/A"; // Use N/A as default
       }
     });
 
     return averages as GoalieAverages;
-  }, [leagueAverage, statColumns]);
+  }, [leagueAverage, statColumns, GoalieBaseStatsExample]); // <-- Added GoalieBaseStatsExample dependency (line 261 warning)
 
   // Format week dates for display
   const { startDate, endDate } = useMemo(() => {
     if (!week || !week.start || !week.end)
       return { startDate: "N/A", endDate: "N/A" };
     return {
-      startDate: format(week.start, "MM/dd/yyyy"),
-      endDate: format(week.end, "MM/dd/yyyy")
+      startDate: format(new Date(week.start), "MM/dd/yyyy"), // Ensure week.start/end are Date objects or parseable strings
+      endDate: format(new Date(week.end), "MM/dd/yyyy")
     };
   }, [week]);
 
-  // Loading/Error checks - these return messages directly, which is fine
-  if (loading) {
-    // Handle loading state passed from parent
-    return <p className={styles.loadingMessage}>Loading week data...</p>; // Use new style
-  }
-  if (!goalieAggregates || !leagueAverage) {
-    return (
-      <p className={styles.standoutNote}>Weekly data or average unavailable.</p>
-    ); // Use appropriate note style
-  }
-  if (goaliesForTable.length === 0 && !loading) {
-    return (
-      <p className={styles.standoutNote}>No goalie data found for this week.</p>
-    ); // Use appropriate note style
-  }
-
-  // <<< --- MOVED useCallback HERE --- >>>
-  // Define the sort handler using useCallback before conditional returns
+  // Define the sort handler using useCallback
   const handleListSort = useCallback(
     (
       key:
@@ -297,22 +274,20 @@ const GoalieList: FC<Props> = ({
         | "team"
         | "percentage"
         | "ranking"
-        | "gameDate" // Keep gameDate here as GoalieTable might pass it
+        | "gameDate" // Keep potential key from GoalieTable
     ) => {
-      // Check if the key is valid for DisplayGoalie *before* setting state
+      // Build list of valid keys *based on GoalieBaseStatsExample*
       const validKeys: Array<keyof DisplayGoalie> = [
         "playerId",
         "goalieFullName",
         "team",
         "percentage",
         "ranking",
-        // Add all keys from GoalieBaseStats
         ...(Object.keys(GoalieBaseStatsExample) as Array<keyof GoalieBaseStats>)
       ];
 
-      // Explicitly check if the incoming key is one we can sort DisplayGoalie by
+      // Check if the incoming key is one we can sort DisplayGoalie by
       if (!validKeys.includes(key as keyof DisplayGoalie)) {
-        // Handle unsupported keys like 'gameDate' for this view
         if (key === "gameDate") {
           console.warn(
             "Sorting by 'gameDate' is not applicable in the weekly GoalieList view."
@@ -320,14 +295,13 @@ const GoalieList: FC<Props> = ({
         } else {
           console.warn(`Attempted to sort by an unsupported key: ${key}`);
         }
-        return; // Do not update sort state for unsupported keys
+        return; // Do not update sort state for unsupported/invalid keys
       }
 
-      // Now we know 'key' is a valid key for DisplayGoalie (excluding 'gameDate')
+      // Now we know 'key' is a valid key for DisplayGoalie
       setListSortConfig((prevConfig) => {
         let direction: "ascending" | "descending" = "ascending";
-        // Type assertion needed because TS doesn't automatically narrow 'key'
-        // based on the runtime check above within the callback scope.
+        // Assert key type as it's confirmed valid now
         const sortKey = key as keyof DisplayGoalie;
 
         if (
@@ -336,23 +310,26 @@ const GoalieList: FC<Props> = ({
         ) {
           direction = "descending";
         }
+        // Ensure the key being set is one of the valid keys for DisplayGoalie
         return { key: sortKey, direction };
       });
     },
-    [] // No dependencies needed as it only uses setListSortConfig and constants
+    [GoalieBaseStatsExample] // <-- Added GoalieBaseStatsExample dependency (line 342 warning)
+    // setListSortConfig is stable and doesn't need to be listed
   );
 
-  // Loading/Error checks - Now safe to have after all hook calls
+  // --- End of Hook Declarations ---
+
+  // Conditional Returns (Now guaranteed to be AFTER all hooks)
   if (loading) {
     return <p className={styles.loadingMessage}>Loading week data...</p>;
   }
+
   if (!goalieAggregates || !leagueAverage) {
     return (
       <div className={styles.messageContainer}>
-        {" "}
-        {/* Use a container for centering/styling */}
         <p className={styles.standoutNote}>
-          Weekly data or average unavailable.
+          Weekly data or league average unavailable.
         </p>
         <button onClick={onBackToLeaderboard} className={styles.backButton}>
           Back to Leaderboard
@@ -360,11 +337,12 @@ const GoalieList: FC<Props> = ({
       </div>
     );
   }
+
+  // Check goaliesForTable *after* checking aggregates/average
   if (goaliesForTable.length === 0 && !loading) {
+    // Added !loading check again for clarity
     return (
       <div className={styles.messageContainer}>
-        {" "}
-        {/* Use a container for centering/styling */}
         <p className={styles.standoutNote}>
           No goalie data found for this week.
         </p>
@@ -375,20 +353,19 @@ const GoalieList: FC<Props> = ({
     );
   }
 
-  // Render the table if data is available
+  // Render the table if all checks pass
   return (
     <GoalieTable
-      goalies={goaliesForTable} // Pass sorted data
+      goalies={goaliesForTable}
       averages={averagesForTable}
       selectedStats={selectedStats}
       statColumns={statColumns}
-      // setView={setView} // Keep if needed for other functionality
       startDate={startDate}
       endDate={endDate}
       isSingleWeek={true}
       onBackToLeaderboard={onBackToLeaderboard}
-      requestSort={handleListSort} // Pass the memoized sort handler
-      sortConfig={listSortConfig} // Pass the current sort config
+      requestSort={handleListSort}
+      sortConfig={listSortConfig}
     />
   );
 };
