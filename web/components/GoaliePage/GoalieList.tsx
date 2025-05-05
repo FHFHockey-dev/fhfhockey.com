@@ -64,7 +64,6 @@ const GoalieList: FC<Props> = ({
     direction: "ascending"
   });
 
-  // <<<--- MOVE DECLARATION HERE --- >>>
   // Helper object to check keys against GoalieBaseStats structure during mapping
   const GoalieBaseStatsExample: Required<GoalieBaseStats> = {
     gamesPlayed: 0,
@@ -116,8 +115,22 @@ const GoalieList: FC<Props> = ({
         ranking: rankData.weeklyRank,
         percentage: rankData.weeklyRankPercentage
       };
+      // Add other GoalieBaseStats properties from rankData
+      Object.keys(GoalieBaseStatsExample).forEach((baseKey) => {
+        const key = baseKey as keyof GoalieBaseStats;
+        // Assert rankData to any for index access, assuming GoalieWeeklyRank includes GoalieBaseStats fields
+        const value = (rankData as any)[key];
+        if (value !== undefined && value !== null) {
+          // Assign the value from rankData
+          (displayGoalie as any)[key] = value;
+        } else {
+          // Assign a default or handle missing base stats if necessary
+          (displayGoalie as any)[key] = GoalieBaseStatsExample[key]; // Or null, or 'N/A'
+        }
+      });
       return displayGoalie as DisplayGoalie;
     });
+
     // 2. Sort the transformed data
     if (listSortConfig.key !== null) {
       transformedGoalies.sort((a, b) => {
@@ -142,11 +155,51 @@ const GoalieList: FC<Props> = ({
             (listSortConfig.direction === "ascending" ? 1 : -1)
           );
         }
+        // Add comparison for Ranking type if needed
+        if (
+          key === "ranking" &&
+          typeof aValue === "object" &&
+          typeof bValue === "object" &&
+          aValue !== null &&
+          bValue !== null &&
+          "value" in aValue &&
+          "valueOf" in aValue && // Check if it's a string-like object
+          "valueOf" in bValue
+        ) {
+          // Define the desired sort order for rankings
+          const rankingOrder: Ranking[] = [
+            "Elite",
+            "Quality",
+            "Average",
+            "Bad",
+            "Really Bad"
+          ]; // Add "Unknown" or adjust as needed
+          const aRankIndex = rankingOrder.indexOf(aValue as Ranking);
+          const bRankIndex = rankingOrder.indexOf(bValue as Ranking);
 
+          // Handle cases where a ranking might not be in the defined order
+          const effectiveARank = aRankIndex === -1 ? Infinity : aRankIndex;
+          const effectiveBRank = bRankIndex === -1 ? Infinity : bRankIndex;
+
+          if (effectiveARank < effectiveBRank)
+            return listSortConfig.direction === "ascending" ? -1 : 1;
+          if (effectiveARank > effectiveBRank)
+            return listSortConfig.direction === "ascending" ? 1 : -1;
+          return 0;
+        }
+
+        if (typeof aValue === "number" && typeof bValue === "number") {
+          if (aValue < bValue)
+            return listSortConfig.direction === "ascending" ? -1 : 1;
+          if (aValue > bValue)
+            return listSortConfig.direction === "ascending" ? 1 : -1;
+        }
+        // Fallback comparison (might need adjustment based on actual types)
         if (aValue < bValue)
           return listSortConfig.direction === "ascending" ? -1 : 1;
         if (aValue > bValue)
           return listSortConfig.direction === "ascending" ? 1 : -1;
+
         return 0;
       });
     }
@@ -205,7 +258,7 @@ const GoalieList: FC<Props> = ({
     });
 
     return averages as GoalieAverages;
-  }, [leagueAverage, statColumns]); // Add GoalieBaseStatsExample as dependency isn't strictly needed but ensures consistency if its structure changes
+  }, [leagueAverage, statColumns]);
 
   // Format week dates for display
   const { startDate, endDate } = useMemo(() => {
@@ -233,8 +286,8 @@ const GoalieList: FC<Props> = ({
     ); // Use appropriate note style
   }
 
-  // *** NEW: Handler for List Sorting ***
-  // Update key type to match GoalieTable's expected requestSort prop type
+  // <<< --- MOVED useCallback HERE --- >>>
+  // Define the sort handler using useCallback before conditional returns
   const handleListSort = useCallback(
     (
       key:
@@ -244,46 +297,98 @@ const GoalieList: FC<Props> = ({
         | "team"
         | "percentage"
         | "ranking"
-        | "gameDate" // Add gameDate to match GoalieTable prop type
+        | "gameDate" // Keep gameDate here as GoalieTable might pass it
     ) => {
-      // Ensure we only try to set keys that are valid for DisplayGoalie in the state
-      // This assumes GoalieTable won't pass 'gameDate' when isSingleWeek is true,
-      // or handles it appropriately. If 'gameDate' could be passed, add a check here.
-      if (key === "gameDate") {
-        console.warn(
-          "Sorting by 'gameDate' is not supported in the weekly view."
-        );
-        return; // Do nothing if 'gameDate' is requested
+      // Check if the key is valid for DisplayGoalie *before* setting state
+      const validKeys: Array<keyof DisplayGoalie> = [
+        "playerId",
+        "goalieFullName",
+        "team",
+        "percentage",
+        "ranking",
+        // Add all keys from GoalieBaseStats
+        ...(Object.keys(GoalieBaseStatsExample) as Array<keyof GoalieBaseStats>)
+      ];
+
+      // Explicitly check if the incoming key is one we can sort DisplayGoalie by
+      if (!validKeys.includes(key as keyof DisplayGoalie)) {
+        // Handle unsupported keys like 'gameDate' for this view
+        if (key === "gameDate") {
+          console.warn(
+            "Sorting by 'gameDate' is not applicable in the weekly GoalieList view."
+          );
+        } else {
+          console.warn(`Attempted to sort by an unsupported key: ${key}`);
+        }
+        return; // Do not update sort state for unsupported keys
       }
 
+      // Now we know 'key' is a valid key for DisplayGoalie (excluding 'gameDate')
       setListSortConfig((prevConfig) => {
         let direction: "ascending" | "descending" = "ascending";
-        // Now 'key' could be 'gameDate', but we've returned early if it is.
-        // So here, 'key' must be one of the keys applicable to DisplayGoalie.
-        // We might need a type assertion if TS can't infer this, but let's try without first.
-        if (prevConfig.key === key && prevConfig.direction === "ascending") {
+        // Type assertion needed because TS doesn't automatically narrow 'key'
+        // based on the runtime check above within the callback scope.
+        const sortKey = key as keyof DisplayGoalie;
+
+        if (
+          prevConfig.key === sortKey &&
+          prevConfig.direction === "ascending"
+        ) {
           direction = "descending";
         }
-        return { key, direction };
+        return { key: sortKey, direction };
       });
     },
-    []
+    [] // No dependencies needed as it only uses setListSortConfig and constants
   );
 
+  // Loading/Error checks - Now safe to have after all hook calls
+  if (loading) {
+    return <p className={styles.loadingMessage}>Loading week data...</p>;
+  }
+  if (!goalieAggregates || !leagueAverage) {
+    return (
+      <div className={styles.messageContainer}>
+        {" "}
+        {/* Use a container for centering/styling */}
+        <p className={styles.standoutNote}>
+          Weekly data or average unavailable.
+        </p>
+        <button onClick={onBackToLeaderboard} className={styles.backButton}>
+          Back to Leaderboard
+        </button>
+      </div>
+    );
+  }
+  if (goaliesForTable.length === 0 && !loading) {
+    return (
+      <div className={styles.messageContainer}>
+        {" "}
+        {/* Use a container for centering/styling */}
+        <p className={styles.standoutNote}>
+          No goalie data found for this week.
+        </p>
+        <button onClick={onBackToLeaderboard} className={styles.backButton}>
+          Back to Leaderboard
+        </button>
+      </div>
+    );
+  }
+
+  // Render the table if data is available
   return (
     <GoalieTable
       goalies={goaliesForTable} // Pass sorted data
       averages={averagesForTable}
       selectedStats={selectedStats}
       statColumns={statColumns}
-      // setView={setView} // Keep if needed
+      // setView={setView} // Keep if needed for other functionality
       startDate={startDate}
       endDate={endDate}
       isSingleWeek={true}
       onBackToLeaderboard={onBackToLeaderboard}
-      // *** Pass sort props ***
-      requestSort={handleListSort}
-      sortConfig={listSortConfig}
+      requestSort={handleListSort} // Pass the memoized sort handler
+      sortConfig={listSortConfig} // Pass the current sort config
     />
   );
 };
