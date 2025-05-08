@@ -480,7 +480,9 @@ export default function UpsertProjectionsPage() {
             {isDragActive ? (
               <p>Drop the CSV file here ...</p>
             ) : (
-              <p>Drag 'n' drop a CSV file here, or click to select file</p>
+              <p>
+                Drag &aposn&apos drop a CSV file here, or click to select file
+              </p>
             )}
             {file && (
               <Typography sx={{ marginTop: 1 }}>

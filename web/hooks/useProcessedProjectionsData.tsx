@@ -652,24 +652,21 @@ export const useProcessedProjectionsData = ({
           header: "Player",
           accessorKey: "fullName",
           meta: { columnType: "text" },
-          enableSorting: true,
-          enableSortingRemoval: false
+          enableSorting: true
         });
         newTableColumns.push({
           id: "displayTeam",
           header: "Team",
           accessorKey: "displayTeam",
           meta: { columnType: "text" },
-          enableSorting: true,
-          enableSortingRemoval: false
+          enableSorting: true
         });
         newTableColumns.push({
           id: "displayPosition",
           header: "Pos",
           accessorKey: "displayPosition",
           meta: { columnType: "text" },
-          enableSorting: true,
-          enableSortingRemoval: false
+          enableSorting: true
         });
 
         relevantStatDefinitions.forEach((statDef) => {
@@ -736,8 +733,7 @@ export const useProcessedProjectionsData = ({
               columnType: "numeric",
               higherIsBetter: statDef.higherIsBetter
             },
-            enableSorting: true,
-            enableSortingRemoval: false
+            enableSorting: true
           });
         });
 
@@ -778,8 +774,7 @@ export const useProcessedProjectionsData = ({
               columnType: "numeric",
               higherIsBetter: yc.higherIsBetter
             },
-            enableSorting: true,
-            enableSortingRemoval: false
+            enableSorting: true
           });
         });
 

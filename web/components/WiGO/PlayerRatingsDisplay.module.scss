@@ -34,7 +34,7 @@
 .ratingTitle {
   text-align: center;
   color: v.$text-color-primary;
-  background-color: darkcolor.adjusten(
+  background-color: color.adjust(
     v.$background-dark,
     $lightness: -5%
   ); // Header background

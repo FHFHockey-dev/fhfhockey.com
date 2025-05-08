@@ -1,5 +1,6 @@
 /* /web/components/WiGO/NameSearchBar.module.scss */
 @use "styles/vars" as v; // Import variables
+@use "sass:color";
 
 .searchBarContainer {
   position: relative;

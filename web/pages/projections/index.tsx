@@ -213,9 +213,9 @@ const ProjectionsDataTable: React.FC<ProjectionsDataTableProps> = ({
                       columnType: string;
                       higherIsBetter?: boolean;
                     };
-                    const isCurrentlySorted = header.column.getIsSorted();
+                    const currentSortDirection = header.column.getIsSorted(); // false, 'asc', or 'desc'
 
-                    if (isCurrentlySorted === false) {
+                    if (currentSortDirection === false) {
                       // First click
                       if (meta?.columnType === "text") {
                         header.column.toggleSorting(false); // Sort A-Z (asc)
@@ -223,11 +223,15 @@ const ProjectionsDataTable: React.FC<ProjectionsDataTableProps> = ({
                         const sortDescending = meta.higherIsBetter === true;
                         header.column.toggleSorting(sortDescending);
                       } else {
-                        header.column.toggleSorting(); // Fallback
+                        header.column.toggleSorting(false); // Fallback to ascending
                       }
+                    } else if (currentSortDirection === "asc") {
+                      // Currently ascending, switch to descending
+                      header.column.toggleSorting(true);
                     } else {
-                      // Subsequent clicks
-                      header.column.toggleSorting(); // Toggles between asc/desc due to enableSortingRemoval: false
+                      // Currently descending (currentSortDirection === 'desc'), switch to ascending
+                      // This also handles any other unexpected sort state by forcing ascending.
+                      header.column.toggleSorting(false);
                     }
                   }}
                 >
