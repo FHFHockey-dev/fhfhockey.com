@@ -40,7 +40,7 @@ function CommentForm({
       comment: Yup.string()
         .min(1, "Comment must be at least 1 characters")
         .max(1000, "Comment must be 1000 characters or less")
-        .required("A comment is required"),
+        .required("A comment is required")
     }),
     onSubmit: async (
       { displayName, comment }: Values,
@@ -51,9 +51,9 @@ function CommentForm({
       const response = await fetch("/api/createComment", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({ name: displayName, comment, postId }),
+        body: JSON.stringify({ name: displayName, comment, postId })
       }).then((res) => res.json());
 
       // handle error
@@ -69,7 +69,7 @@ function CommentForm({
       // reset comment
       setFieldValue("comment", "");
       setTouched({ comment: false });
-    },
+    }
   });
 
   return (

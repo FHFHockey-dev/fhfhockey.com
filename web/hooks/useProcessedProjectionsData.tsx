@@ -76,6 +76,7 @@ export interface UseProcessedProjectionsDataProps {
   fantasyPointSettings: Record<string, number>;
   supabaseClient: SupabaseClient<any, "public">; // Expect non-null from page
   currentSeasonId?: string; // Added to accept the current season ID
+  styles: Record<string, string>; // To pass CSS Modules styles object
 }
 
 export interface UseProcessedProjectionsDataReturn {
@@ -106,6 +107,7 @@ declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
     columnType?: "text" | "numeric" | "custom";
     higherIsBetter?: boolean;
+    isDiffCell?: boolean; // Marker for diff cells that need full background
   }
 }
 interface YahooPlayerDetailData extends Record<string, any> {} // Keep as is
@@ -207,7 +209,8 @@ export const useProcessedProjectionsData = ({
   yahooDraftMode,
   supabaseClient,
   fantasyPointSettings,
-  currentSeasonId
+  currentSeasonId,
+  styles // Destructure styles
 }: UseProcessedProjectionsDataProps): UseProcessedProjectionsDataReturn => {
   const [processedPlayers, setProcessedPlayers] = useState<ProcessedPlayer[]>(
     []
@@ -876,7 +879,7 @@ export const useProcessedProjectionsData = ({
                   }
                 } else if (typeof rawActual === "number") {
                   // Assumes number is total seconds (e.g., 1230)
-                                    // rawActual is total seconds from DB (e.g., 1067.6097)
+                  // rawActual is total seconds from DB (e.g., 1067.6097)
                   // Convert to decimal minutes for storage, as the formatter expects decimal minutes.
                   actualValue = rawActual / 60; // e.g., 1067.6097 / 60 = 17.793495
                 } else if (rawActual === null || rawActual === undefined) {
@@ -1210,24 +1213,39 @@ export const useProcessedProjectionsData = ({
                 cell: (info) => {
                   const val = info.getValue() as number | null;
                   if (val === null || val === undefined) return "-";
-                  if (val === 99999)
-                    return <span className="positiveDiff">++</span>;
-                  if (val === -99999)
-                    return <span className="negativeDiff">--</span>;
+
+                  let diffStyleKey = ""; // e.g., "positiveDiffStrong"
+                  if (val === 99999) {
+                    diffStyleKey = "positiveDiffStrong";
+                    return <span className={styles[diffStyleKey]}>++</span>;
+                  }
+                  if (val === -99999) {
+                    diffStyleKey = "negativeDiffStrong";
+                    return <span className={styles[diffStyleKey]}>--</span>;
+                  }
+
+                  if (val > 0) {
+                    if (val <= 10) diffStyleKey = "positiveDiffLight";
+                    else if (val <= 25)
+                      diffStyleKey = "positiveDiff"; // Standard positive
+                    else diffStyleKey = "positiveDiffStrong";
+                  } else if (val < 0) {
+                    const absVal = Math.abs(val);
+                    if (absVal <= 10) diffStyleKey = "negativeDiffLight";
+                    else if (absVal <= 25)
+                      diffStyleKey = "negativeDiff"; // Standard negative
+                    else diffStyleKey = "negativeDiffStrong";
+                  }
+
                   const displayVal = `${val > 0 ? "+" : ""}${val.toFixed(1)}%`;
                   return (
-                    <span
-                      className={
-                        val > 0 ? "positiveDiff" : val < 0 ? "negativeDiff" : ""
-                      }
-                    >
+                    <span className={styles[diffStyleKey] || ""}>
                       {displayVal}
                     </span>
                   );
                 },
-                meta: { columnType: "numeric" },
-                enableSorting: true,
-                sortUndefined: "last"
+                meta: { columnType: "numeric", isDiffCell: true },
+                enableSorting: true
               }
             ]
           });
@@ -1318,24 +1336,39 @@ export const useProcessedProjectionsData = ({
               cell: (info) => {
                 const val = info.getValue() as number | null;
                 if (val === null || val === undefined) return "-";
-                if (val === 99999)
-                  return <span className="positiveDiff">++</span>;
-                if (val === -99999)
-                  return <span className="negativeDiff">--</span>;
+
+                let diffStyleKey = ""; // e.g., "positiveDiffStrong"
+                if (val === 99999) {
+                  diffStyleKey = "positiveDiffStrong";
+                  return <span className={styles[diffStyleKey]}>++</span>;
+                }
+                if (val === -99999) {
+                  diffStyleKey = "negativeDiffStrong";
+                  return <span className={styles[diffStyleKey]}>--</span>;
+                }
+
+                if (val > 0) {
+                  if (val <= 10) diffStyleKey = "positiveDiffLight";
+                  else if (val <= 25)
+                    diffStyleKey = "positiveDiff"; // Standard positive
+                  else diffStyleKey = "positiveDiffStrong";
+                } else if (val < 0) {
+                  const absVal = Math.abs(val);
+                  if (absVal <= 10) diffStyleKey = "negativeDiffLight";
+                  else if (absVal <= 25)
+                    diffStyleKey = "negativeDiff"; // Standard negative
+                  else diffStyleKey = "negativeDiffStrong";
+                }
+
                 const displayVal = `${val > 0 ? "+" : ""}${val.toFixed(1)}%`;
                 return (
-                  <span
-                    className={
-                      val > 0 ? "positiveDiff" : val < 0 ? "negativeDiff" : ""
-                    }
-                  >
+                  <span className={styles[diffStyleKey] || ""}>
                     {displayVal}
                   </span>
                 );
               },
-              meta: { columnType: "numeric" },
-              enableSorting: true,
-              sortUndefined: "last"
+              meta: { columnType: "numeric", isDiffCell: true },
+              enableSorting: true
             }
           ]
         });
@@ -1379,7 +1412,8 @@ export const useProcessedProjectionsData = ({
     yahooDraftMode,
     fantasyPointSettings,
     supabaseClient,
-    currentSeasonId // Add currentSeasonId to dependency array
+    currentSeasonId,
+    styles // Add styles to dependency array
   ]);
 
   return { processedPlayers, tableColumns, isLoading, error };

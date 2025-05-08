@@ -307,14 +307,70 @@
   }
 }
 
+.diffCellContainer {
+  padding: 0 !important; /* Override default td padding. Important might be needed due to specificity. */
+  padding-top: 0 !important; /* Override default td padding. Important might be needed due to specificity. */
+  padding-bottom: 0 !important; /* Override default td padding. Important might be needed due to specificity. */
+}
+
+/* Common styles for the span elements that will show the % Diff */
+.positiveDiff,
+.negativeDiff,
+.positiveDiffLight,
+.positiveDiffStrong,
+.negativeDiffLight,
+.negativeDiffStrong {
+  font-weight: bold;
+  display: block; /* Make the span fill the td */
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box; /* Ensures padding is included in width/height calculation */
+  color: v.$color-white; /* Default text color, good for darker backgrounds */
+  line-height: 1.2; /* Ensure text is vertically centered well within the padding */
+}
+
 /* Styles for % Diff cells in the table */
 .positiveDiff {
-  color: v.$success-color; // Or your preferred green
-  font-weight: bold;
+  background-color: v.$success-color;
+  /* color: v.$color-white; // Inherits from common block */
 }
 .negativeDiff {
-  color: v.$danger-color; // Or your preferred red
-  font-weight: bold;
+  background-color: v.$danger-color;
+  /* color: v.$color-white; // Inherits from common block */
+}
+
+.positiveDiffLight {
+  background-color: color.adjust(
+    v.$success-color,
+    $lightness: 25%,
+    $saturation: -10%
+  ); // Lighter, less saturated green
+  color: v.$text-primary; /* Darker text for better contrast on light green */
+}
+.positiveDiffStrong {
+  background-color: color.adjust(
+    v.$success-color,
+    $lightness: -15%,
+    $saturation: 10%
+  ); // Darker, more saturated green
+  /* color: v.$color-white; // Inherits from common block */
+}
+
+.negativeDiffLight {
+  background-color: color.adjust(
+    v.$danger-color,
+    $lightness: 20%,
+    $saturation: -10%
+  ); // Lighter, slightly less saturated red
+  color: v.$text-primary; /* Darker text for better contrast on light red */
+}
+.negativeDiffStrong {
+  background-color: color.adjust(
+    v.$danger-color,
+    $lightness: -15%,
+    $saturation: 10%
+  ); // Darker, more saturated red
+  /* color: v.$color-white; // Inherits from common block */
 }
 
 // --- YahooModeToggle ---

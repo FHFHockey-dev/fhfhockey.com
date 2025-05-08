@@ -311,11 +311,21 @@ const ProjectionsDataTable: React.FC<ProjectionsDataTableProps> = ({
         <tbody>
           {table.getRowModel().rows.map((row) => (
             <tr key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
+              {row.getVisibleCells().map((cell) => {
+                // @ts-ignore Accessing custom meta more safely
+                const meta = cell.column.columnDef.meta as
+                  | { isDiffCell?: boolean }
+                  | undefined;
+                const tdClassName = meta?.isDiffCell
+                  ? styles.diffCellContainer
+                  : "";
+
+                return (
+                  <td key={cell.id} className={tdClassName}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>
@@ -382,6 +392,7 @@ const ProjectionsPage: NextPage = () => {
       yahooDraftMode,
       fantasyPointSettings,
       supabaseClient,
+      styles,
       currentSeasonId: currentSeasonId ? String(currentSeasonId) : undefined // Pass the dynamic season ID
     });
 
