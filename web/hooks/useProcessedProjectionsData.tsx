@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { SupabaseClient, PostgrestResponse } from "@supabase/supabase-js"; // prettier-ignore
-import { ColumnDef, RowData } from "@tanstack/react-table";
+import { ColumnDef, RowData, SortingFnOption } from "@tanstack/react-table";
 
 // Configuration Imports
 import {
@@ -43,7 +43,26 @@ export interface ProcessedPlayer {
   fullName: string;
   displayTeam: string | null;
   displayPosition: string | null;
-  stats: Record<StatDefinition["key"], AggregatedStatValue>;
+
+  // New structure for combined stats
+  combinedStats: Record<
+    StatDefinition["key"],
+    {
+      projected: number | null;
+      actual: number | null;
+      diffPercentage: number | null;
+      projectedDetail: AggregatedStatValue; // Original projection details
+    }
+  >;
+
+  // Fantasy Points - also with projected, actual, diff
+  fantasyPoints: {
+    projected: number | null;
+    actual: number | null;
+    diffPercentage: number | null;
+  };
+
+  // Yahoo data (existing)
   yahooPlayerId?: string;
   yahooAvgPick?: number | null;
   yahooAvgRound?: number | null;
@@ -54,7 +73,9 @@ export interface UseProcessedProjectionsDataProps {
   activePlayerType: "skater" | "goalie";
   sourceControls: Record<string, { isSelected: boolean; weight: number }>;
   yahooDraftMode: "ALL" | "PRESEASON";
-  supabaseClient: SupabaseClient<any, "public"> | null;
+  fantasyPointSettings: Record<string, number>;
+  supabaseClient: SupabaseClient<any, "public">; // Expect non-null from page
+  currentSeasonId?: string; // Added to accept the current season ID
 }
 
 export interface UseProcessedProjectionsDataReturn {
@@ -64,17 +85,84 @@ export interface UseProcessedProjectionsDataReturn {
   error: string | null;
 }
 
+interface CachedBasePlayerData {
+  data: ProcessedPlayer[]; // Player data after main aggregation, FPs might be stale or from previous settings
+  columns: ColumnDef<ProcessedPlayer, any>[]; // Columns generated based on these source/yahoo settings
+  sourceControlsSnapshot: string;
+  yahooModeSnapshot: "ALL" | "PRESEASON";
+  currentSeasonIdSnapshot?: string; // For caching based on season
+}
+
+interface CachedFullPlayerData extends CachedBasePlayerData {
+  fantasyPointSettingsSnapshot: string; // Specific to the fully calculated FP data
+  // currentSeasonIdSnapshot is inherited from CachedBasePlayerData
+}
+
 interface RawProjectionSourcePlayer extends Record<string, any> {}
 interface YahooNhlPlayerMapEntry extends Record<string, any> {}
 
 // Augment ColumnMeta for custom properties
 declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
-    columnType?: "text" | "numeric";
+    columnType?: "text" | "numeric" | "custom";
     higherIsBetter?: boolean;
   }
 }
-interface YahooPlayerDetailData extends Record<string, any> {}
+interface YahooPlayerDetailData extends Record<string, any> {} // Keep as is
+interface ActualPlayerStatsRow extends Record<string, any> {
+  current_team_abbreviation?: string | null; // Add specific known field
+}
+
+// --- Constants for Actual Stats ---
+const ACTUAL_SKATER_STATS_TABLE = "wgo_skater_stats_totals";
+const ACTUAL_GOALIE_STATS_TABLE = "wgo_goalie_stats_totals";
+const ACTUAL_STATS_COLUMN_MAP: Record<
+  "skater" | "goalie",
+  Partial<Record<StatDefinition["key"], string>>
+> = {
+  skater: {
+    GAMES_PLAYED: "games_played",
+    GOALS: "goals",
+    ASSISTS: "assists",
+    POINTS: "points",
+    PLUS_MINUS: "plus_minus",
+    SHOTS_ON_GOAL: "shots",
+    HITS: "hits",
+    BLOCKED_SHOTS: "blocked_shots",
+    PENALTY_MINUTES: "penalty_minutes",
+    PP_POINTS: "pp_points",
+    PP_GOALS: "pp_goals",
+    PP_ASSISTS: "pp_assists",
+    SH_POINTS: "sh_points",
+    TIME_ON_ICE_PER_GAME: "toi_per_game", // Assumed in seconds from DB
+    FACEOFFS_WON: "total_fow",
+    FACEOFFS_LOST: "total_fol"
+  },
+  goalie: {
+    GAMES_PLAYED: "games_played",
+    WINS_GOALIE: "wins",
+    LOSSES_GOALIE: "losses",
+    OTL_GOALIE: "ot_losses",
+    SAVES_GOALIE: "saves",
+    SHOTS_AGAINST_GOALIE: "shots_against",
+    GOALS_AGAINST_GOALIE: "goals_against",
+    GOALS_AGAINST_AVERAGE: "goals_against_avg",
+    SAVE_PERCENTAGE: "save_pct", // Assumed decimal like 0.915
+    SHUTOUTS_GOALIE: "shutouts"
+  }
+};
+
+function calculateDiffPercentage(
+  actual: number | null | undefined,
+  projected: number | null | undefined
+): number | null {
+  if (actual == null || projected == null) return null;
+  if (projected === 0) {
+    if (actual === 0) return 0;
+    return actual > 0 ? 99999 : -99999; // Special value for "infinite" percentage
+  }
+  return ((actual - projected) / projected) * 100;
+}
 
 // --- Helper function for paginated Supabase fetches ---
 const SUPABASE_PAGE_SIZE = 1000;
@@ -117,7 +205,9 @@ export const useProcessedProjectionsData = ({
   activePlayerType,
   sourceControls,
   yahooDraftMode,
-  supabaseClient
+  supabaseClient,
+  fantasyPointSettings,
+  currentSeasonId
 }: UseProcessedProjectionsDataProps): UseProcessedProjectionsDataReturn => {
   const [processedPlayers, setProcessedPlayers] = useState<ProcessedPlayer[]>(
     []
@@ -130,55 +220,140 @@ export const useProcessedProjectionsData = ({
 
   const cache = useRef<{
     skater?: {
-      data: ProcessedPlayer[];
-      columns: ColumnDef<ProcessedPlayer, any>[];
-      sourceControlsSnapshot: string;
-      yahooModeSnapshot: "ALL" | "PRESEASON";
+      base?: CachedBasePlayerData;
+      full?: CachedFullPlayerData;
     };
     goalie?: {
-      data: ProcessedPlayer[];
-      columns: ColumnDef<ProcessedPlayer, any>[];
-      sourceControlsSnapshot: string;
-      yahooModeSnapshot: "ALL" | "PRESEASON";
+      base?: CachedBasePlayerData;
+      full?: CachedFullPlayerData;
     };
   }>({});
-  if (!supabaseClient) {
-    return {
-      processedPlayers: [],
-      tableColumns: [],
-      isLoading: false,
-      error: "Supabase client not available."
-    };
-  }
 
   useEffect(() => {
     const fetchDataAndProcess = async () => {
       if (!supabaseClient) {
-        setError("Supabase client not available.");
+        setError("Supabase client not available in hook.");
+        // Ensure fantasyPointSettings is not used here if client is null
         setProcessedPlayers([]);
         setTableColumns([]);
         return;
       }
 
+      // If currentSeasonId is not yet available, wait.
+      if (!currentSeasonId) {
+        // console.log("Current season ID not yet available in hook. Skipping data fetch.");
+        setProcessedPlayers([]);
+        setTableColumns([]);
+        setIsLoading(false); // Or true if a loading state is preferred
+        setError(null);
+        // Optionally, set a specific message: setError("Waiting for current season data...");
+        return;
+      }
+
       // --- Cache Check ---
       const stringifiedSourceControls = JSON.stringify(sourceControls);
-      const cacheKey = activePlayerType; // 'skater' or 'goalie'
-      const currentCacheEntry = cache.current[cacheKey];
+      const stringifiedFantasyPointSettings =
+        JSON.stringify(fantasyPointSettings);
+      const cacheTypeKey = activePlayerType; // 'skater' or 'goalie'
 
+      // Ensure cache structure for current player type exists
+      if (!cache.current[cacheTypeKey]) {
+        cache.current[cacheTypeKey] = {};
+      }
+      const currentTypeCache = cache.current[cacheTypeKey]!;
+
+      // --- Full Cache Check (all settings match) ---
       if (
-        currentCacheEntry &&
-        currentCacheEntry.sourceControlsSnapshot ===
+        currentTypeCache.full &&
+        currentTypeCache.full.sourceControlsSnapshot ===
           stringifiedSourceControls &&
-        currentCacheEntry.yahooModeSnapshot === yahooDraftMode
+        currentTypeCache.full.yahooModeSnapshot === yahooDraftMode &&
+        currentTypeCache.full.currentSeasonIdSnapshot === currentSeasonId && // Check season
+        currentTypeCache.full.fantasyPointSettingsSnapshot === // Check fantasy settings last
+          stringifiedFantasyPointSettings
       ) {
-        // Cache hit
-        setProcessedPlayers(currentCacheEntry.data);
-        setTableColumns(currentCacheEntry.columns);
+        // Full cache hit, use it directly
+        setProcessedPlayers(currentTypeCache.full.data);
+        setTableColumns(currentTypeCache.full.columns);
         setIsLoading(false);
         setError(null);
+        // console.log(`[Cache] Full hit for ${cacheTypeKey}`);
         return; // Skip fetching and processing
       }
-      // --- End Cache Check ---
+
+      // --- Base Cache Check (sourceControls & yahooMode match, but fantasyPointSettings differ) ---
+      if (
+        currentTypeCache.base &&
+        currentTypeCache.base.sourceControlsSnapshot ===
+          stringifiedSourceControls &&
+        currentTypeCache.base.yahooModeSnapshot === yahooDraftMode &&
+        currentTypeCache.base.currentSeasonIdSnapshot === currentSeasonId // Check season
+        // Implicitly, fantasyPointSettingsSnapshot is different, or full cache would have hit
+      ) {
+        // Base data cache hit! Only fantasy points need recalculation.
+        // console.log(`[Cache] Base hit for ${cacheTypeKey}. Recalculating FPs.`);
+        setIsLoading(true); // Still show loading as FP recalc can take a moment for many players
+        setError(null);
+
+        const basePlayers = currentTypeCache.base.data; // Data from a previous full run
+        const newPlayersWithRecalculatedFP = basePlayers.map((player) => {
+          let calculatedProjectedFantasyPoints = 0;
+          let calculatedActualFantasyPoints = 0;
+          let hasValidStatForFP = false;
+
+          for (const statKey in player.combinedStats) {
+            const combinedStat = player.combinedStats[statKey];
+            const pointValueForStat = fantasyPointSettings[statKey]; // Use NEW settings
+
+            if (pointValueForStat !== undefined && pointValueForStat !== 0) {
+              if (combinedStat?.projected !== null) {
+                calculatedProjectedFantasyPoints +=
+                  combinedStat.projected * pointValueForStat;
+                hasValidStatForFP = true;
+              }
+              if (combinedStat?.actual !== null) {
+                calculatedActualFantasyPoints +=
+                  combinedStat.actual * pointValueForStat;
+                hasValidStatForFP = true; // ensure this is set if actuals exist even if projected don't
+              }
+            }
+          }
+          const newFantasyPoints = {
+            projected: hasValidStatForFP
+              ? calculatedProjectedFantasyPoints
+              : null,
+            actual: hasValidStatForFP ? calculatedActualFantasyPoints : null,
+            diffPercentage: calculateDiffPercentage(
+              hasValidStatForFP ? calculatedActualFantasyPoints : null,
+              hasValidStatForFP ? calculatedProjectedFantasyPoints : null
+            )
+          };
+
+          return {
+            ...player,
+            fantasyPoints: newFantasyPoints
+          };
+        });
+
+        setProcessedPlayers(newPlayersWithRecalculatedFP);
+        setTableColumns(currentTypeCache.base.columns); // Columns from base cache are suitable
+
+        // Update the full cache with this new data
+        currentTypeCache.full = {
+          data: newPlayersWithRecalculatedFP,
+          columns: currentTypeCache.base.columns,
+          sourceControlsSnapshot: stringifiedSourceControls,
+          yahooModeSnapshot: yahooDraftMode,
+          currentSeasonIdSnapshot: currentSeasonId, // Add season to full cache
+          fantasyPointSettingsSnapshot: stringifiedFantasyPointSettings // NEW FP snapshot
+        };
+
+        setIsLoading(false);
+        return; // Data processed from base cache
+      }
+
+      // --- No Cache Hit / Stale Base Cache: Proceed with full data fetching and processing ---
+      // console.log(`[Cache] Miss for ${cacheTypeKey}. Full fetch & process.`);
       setIsLoading(true);
       setError(null);
 
@@ -266,13 +441,79 @@ export const useProcessedProjectionsData = ({
           return;
         }
 
-        const yahooMapSelectString = `${YAHOO_PLAYER_MAP_KEYS.nhlPlayerId}, ${YAHOO_PLAYER_MAP_KEYS.yahooPlayerId}, ${YAHOO_PLAYER_MAP_KEYS.teamAbbreviation}, ${YAHOO_PLAYER_MAP_KEYS.position}, ${YAHOO_PLAYER_MAP_KEYS.nhlPlayerName}`;
+        // --- Fetch Actual Stats ---
+        let actualStatsMap = new Map<number, ActualPlayerStatsRow>();
+        if (uniqueNhlPlayerIds.size > 0) {
+          const actualStatsPlayerIdColumn =
+            activePlayerType === "skater" ? "player_id" : "goalie_id";
+          const actualStatsSeasonColumn =
+            activePlayerType === "skater" ? "season" : "season_id";
+          const actualStatsSeasonValue = // Use currentSeasonId here
+            activePlayerType === "skater"
+              ? currentSeasonId
+              : parseInt(currentSeasonId, 10);
+          const actualStatsTable =
+            activePlayerType === "skater"
+              ? ACTUAL_SKATER_STATS_TABLE
+              : ACTUAL_GOALIE_STATS_TABLE;
+
+          const relevantActualStatDbColumns = Object.values(
+            ACTUAL_STATS_COLUMN_MAP[activePlayerType]
+          );
+          // Filter out undefined values more explicitly and ensure type safety
+          const definedRelevantActualStatDbColumns =
+            relevantActualStatDbColumns.filter(
+              (colName): colName is string => typeof colName === "string"
+            );
+          // Ensure the ID column is always selected for mapping, and filter out any undefined/null from Object.values if keys were missing
+          const actualStatsSelectColumns = new Set([
+            actualStatsPlayerIdColumn,
+            ...definedRelevantActualStatDbColumns,
+            "current_team_abbreviation" // Explicitly select the team abbreviation
+          ]);
+          const actualStatsSelectString = Array.from(
+            actualStatsSelectColumns
+          ).join(",");
+
+          if (actualStatsSelectColumns.size > 1) {
+            // Only fetch if there are stats beyond just the ID
+            try {
+              const queryBuilder = supabaseClient
+                .from(actualStatsTable)
+                .select(actualStatsSelectString)
+                .eq(actualStatsSeasonColumn, actualStatsSeasonValue)
+                .in(actualStatsPlayerIdColumn, Array.from(uniqueNhlPlayerIds));
+
+              const fetchedActualStats =
+                await fetchAllSupabaseData<ActualPlayerStatsRow>(
+                  queryBuilder,
+                  actualStatsSelectString
+                );
+
+              fetchedActualStats.forEach((row) => {
+                const playerIdFromRow = row[actualStatsPlayerIdColumn];
+                if (
+                  playerIdFromRow !== null &&
+                  playerIdFromRow !== undefined &&
+                  !isNaN(Number(playerIdFromRow))
+                ) {
+                  actualStatsMap.set(Number(playerIdFromRow), row);
+                }
+              });
+            } catch (e: any) {
+              console.warn(
+                `Failed to fetch actual stats for ${activePlayerType}: ${e.message}`
+              );
+              // Continue without actual stats if fetching fails
+            }
+          }
+        }
+
+        const yahooMapSelectString = `${YAHOO_PLAYER_MAP_KEYS.nhlPlayerId}, ${YAHOO_PLAYER_MAP_KEYS.yahooPlayerId}, ${YAHOO_PLAYER_MAP_KEYS.teamAbbreviation}, ${YAHOO_PLAYER_MAP_KEYS.position}, ${YAHOO_PLAYER_MAP_KEYS.nhlPlayerName}, ${YAHOO_PLAYER_MAP_KEYS.yahooPlayerNameInMap}`;
 
         const yahooMapQueryBuilder = supabaseClient
           .from("yahoo_nhl_player_map_mat")
-          .select(
-            `${YAHOO_PLAYER_MAP_KEYS.nhlPlayerId}, ${YAHOO_PLAYER_MAP_KEYS.yahooPlayerId}, ${YAHOO_PLAYER_MAP_KEYS.teamAbbreviation}, ${YAHOO_PLAYER_MAP_KEYS.position}, ${YAHOO_PLAYER_MAP_KEYS.nhlPlayerName}`
-          )
+          .select(yahooMapSelectString)
           .in(
             YAHOO_PLAYER_MAP_KEYS.nhlPlayerId,
             Array.from(uniqueNhlPlayerIds).map(String)
@@ -336,7 +577,9 @@ export const useProcessedProjectionsData = ({
         const tempProcessedPlayers: ProcessedPlayer[] = [];
         const playersRequiringNameDebug: Array<{
           nhlPlayerId: number;
-          nameFromYahooMap: string | null; // Name from yahoo_nhl_player_map_mat.nhl_player_name (cleaned)
+          nameFromYahooMapNhlName: string | null; // From yahoo_nhl_player_map_mat.nhl_player_name
+          nameFromYahooMapYahooName: string | null; // From yahoo_nhl_player_map_mat.yahoo_player_name
+          nameFromYahooPlayersTable: string | null; // Name from yahoo_players.full_name (cleaned)
           nameFromProjectionSource: string | null; // Name from the first projection source fallback (cleaned)
           finalNameUsed: string; // Actual name used in the table
           sourcesProvidingThisId: Array<{
@@ -350,23 +593,62 @@ export const useProcessedProjectionsData = ({
           const playerYahooMapEntry = nhlToYahooMap.get(nhlPlayerId);
 
           // --- Player Name Resolution ---
-          const nameFromYahooMapRaw =
+          // Attempt 1: From yahoo_nhl_player_map_mat.nhl_player_name
+          const nameFromYahooMapNhlNameRaw =
             playerYahooMapEntry?.[YAHOO_PLAYER_MAP_KEYS.nhlPlayerName];
-          // Clean the name: use null if it's empty or just whitespace
-          const nameFromYahooMap =
-            typeof nameFromYahooMapRaw === "string" &&
-            nameFromYahooMapRaw.trim() !== ""
-              ? nameFromYahooMapRaw.trim()
+          const nameFromYahooMapNhlName =
+            typeof nameFromYahooMapNhlNameRaw === "string" &&
+            nameFromYahooMapNhlNameRaw.trim() !== ""
+              ? nameFromYahooMapNhlNameRaw.trim()
               : null;
 
-          let resolvedName = nameFromYahooMap;
-          let nameFromProjectionSource: string | null = null;
-          let logThisPlayer = false;
+          let resolvedName = nameFromYahooMapNhlName;
+          let logThisPlayer = !nameFromYahooMapNhlName; // Log if primary name (nhl_player_name from map) is missing
+
+          // Attempt 2: From yahoo_nhl_player_map_mat.yahoo_player_name
+          let nameFromYahooMapYahooName: string | null = null;
+          if (!resolvedName && playerYahooMapEntry) {
+            const nameFromYahooMapYahooNameRaw =
+              playerYahooMapEntry?.[YAHOO_PLAYER_MAP_KEYS.yahooPlayerNameInMap];
+            nameFromYahooMapYahooName =
+              typeof nameFromYahooMapYahooNameRaw === "string" &&
+              nameFromYahooMapYahooNameRaw.trim() !== ""
+                ? nameFromYahooMapYahooNameRaw.trim()
+                : null;
+            if (nameFromYahooMapYahooName) {
+              resolvedName = nameFromYahooMapYahooName;
+              // logThisPlayer remains true if nameFromYahooMapNhlName was null
+            }
+          }
+
+          const yahooPlayerDetail = playerYahooMapEntry?.[
+            YAHOO_PLAYER_MAP_KEYS.yahooPlayerId
+          ]
+            ? yahooPlayersMap.get(
+                String(playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId])
+              )
+            : null;
+
+          // Attempt 3: From yahoo_players.full_name (if prior attempts failed and yahooPlayerDetail exists)
+          let nameFromYahooPlayersTable: string | null = null;
+          if (!resolvedName && yahooPlayerDetail) {
+            const nameFromYahooPlayersTableRaw =
+              yahooPlayerDetail[YAHOO_PLAYERS_TABLE_KEYS.fullName];
+            nameFromYahooPlayersTable =
+              typeof nameFromYahooPlayersTableRaw === "string" &&
+              nameFromYahooPlayersTableRaw.trim() !== ""
+                ? nameFromYahooPlayersTableRaw.trim()
+                : null;
+            if (nameFromYahooPlayersTable) {
+              resolvedName = nameFromYahooPlayersTable;
+              // logThisPlayer remains true if nameFromYahooMapNhlName was null
+            }
+          }
 
           if (!resolvedName) {
-            // Primary condition for logging: Yahoo map didn't provide a usable name.
-            logThisPlayer = true;
-            // Try to get from projection sources as a fallback
+            // Attempt 4: From projection source (if all prior attempts failed)
+            // logThisPlayer is already true if nameFromYahooMapNhlName was null.
+            // If nameFromYahooPlayersTable was also null, logThisPlayer remains true.
             for (const sourceConfig of activeSourceConfigs) {
               const sourceDataForPlayer = rawProjectionDataBySourceId[
                 sourceConfig.id
@@ -384,7 +666,7 @@ export const useProcessedProjectionsData = ({
 
               if (nameFromSrc) {
                 resolvedName = nameFromSrc;
-                nameFromProjectionSource = nameFromSrc;
+                // nameFromProjectionSource will be set later when constructing playersRequiringNameDebug
                 break; // Found a usable name from a source
               }
             }
@@ -398,20 +680,17 @@ export const useProcessedProjectionsData = ({
           }
           // --- End Player Name Resolution ---
 
-          const yahooPlayerDetail = playerYahooMapEntry?.[
-            YAHOO_PLAYER_MAP_KEYS.yahooPlayerId
-          ]
-            ? yahooPlayersMap.get(
-                String(playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId])
-              )
-            : null;
-
           const processedPlayer: ProcessedPlayer = {
             playerId: nhlPlayerId,
             fullName: finalName, // Use the resolved finalName
             displayTeam: null,
             displayPosition: null,
-            stats: {},
+            combinedStats: {},
+            fantasyPoints: {
+              projected: null,
+              actual: null,
+              diffPercentage: null
+            },
             yahooPlayerId: playerYahooMapEntry?.[
               YAHOO_PLAYER_MAP_KEYS.yahooPlayerId
             ]
@@ -419,7 +698,40 @@ export const useProcessedProjectionsData = ({
               : undefined
           };
 
+          // Get actual stats for this player
+          const playerActualStatsRow = actualStatsMap.get(nhlPlayerId);
+
           if (logThisPlayer) {
+            // Re-check nameFromProjectionSource for logging if resolvedName came from it
+            let loggedNameFromProjectionSource: string | null = null;
+            if (
+              resolvedName && // A name was found
+              !nameFromYahooMapNhlName && // But not from the primary map source
+              !nameFromYahooMapYahooName && // Nor from the secondary map source
+              !nameFromYahooPlayersTable // Nor from the yahoo_players table
+            ) {
+              // resolvedName must have come from a projection source
+              for (const sourceConfig of activeSourceConfigs) {
+                const sourceDataForPlayer = rawProjectionDataBySourceId[
+                  sourceConfig.id
+                ]?.data.find(
+                  (p: RawProjectionSourcePlayer) =>
+                    Number(p[sourceConfig.primaryPlayerIdKey]) === nhlPlayerId
+                );
+                const nameFromSrcRaw =
+                  sourceDataForPlayer?.[sourceConfig.originalPlayerNameKey];
+                const nameFromSrc =
+                  typeof nameFromSrcRaw === "string" &&
+                  nameFromSrcRaw.trim() !== ""
+                    ? nameFromSrcRaw.trim()
+                    : null;
+                if (nameFromSrc && nameFromSrc === resolvedName) {
+                  loggedNameFromProjectionSource = nameFromSrc;
+                  break;
+                }
+              }
+            }
+
             const sourcesInfo: Array<{
               sourceId: string;
               sourceDisplayName: string;
@@ -444,9 +756,11 @@ export const useProcessedProjectionsData = ({
             });
             playersRequiringNameDebug.push({
               nhlPlayerId,
-              nameFromYahooMap,
-              nameFromProjectionSource,
+              nameFromYahooMapNhlName,
+              nameFromYahooMapYahooName,
+              nameFromYahooPlayersTable,
               finalNameUsed: finalName,
+              nameFromProjectionSource: loggedNameFromProjectionSource,
               sourcesProvidingThisId: sourcesInfo
             });
           }
@@ -454,6 +768,8 @@ export const useProcessedProjectionsData = ({
           for (const statDef of relevantStatDefinitions) {
             const currentStatValues: RawPlayerStatFromSource[] = [];
             const missingFromSelectedForStat: string[] = [];
+
+            let projectedValue: number | null = null;
 
             for (const sourceConfig of activeSourceConfigs) {
               const sourceControl = sourceControls[sourceConfig.id];
@@ -501,10 +817,12 @@ export const useProcessedProjectionsData = ({
               }
             }
 
+            // Calculate weightedSum, totalWeight, and contributingToAvg from currentStatValues
             let weightedSum = 0;
             let totalWeight = 0;
             const contributingToAvg: AggregatedStatValue["contributingSources"] =
               [];
+
             currentStatValues.forEach((item) => {
               if (item.value !== null) {
                 weightedSum += item.value * item.weight;
@@ -516,19 +834,100 @@ export const useProcessedProjectionsData = ({
                 });
               }
             });
-            const aggregatedValue =
-              totalWeight > 0 ? weightedSum / totalWeight : null;
-            processedPlayer.stats[statDef.key] = {
-              value: aggregatedValue,
+
+            projectedValue = totalWeight > 0 ? weightedSum / totalWeight : null; // Now calculate projectedValue
+
+            const projectedDetail: AggregatedStatValue = {
+              value: projectedValue,
               contributingSources: contributingToAvg,
               missingFromSelectedSources: missingFromSelectedForStat,
               statDefinition: statDef
             };
+
+            // --- Process Actual Stat ---
+            let actualValue: number | null = null;
+            const actualStatDbColumn =
+              ACTUAL_STATS_COLUMN_MAP[activePlayerType]?.[statDef.key];
+
+            if (
+              playerActualStatsRow &&
+              actualStatDbColumn && // This would be "toi_per_game"
+              playerActualStatsRow[actualStatDbColumn] !== null &&
+              playerActualStatsRow[actualStatDbColumn] !== undefined
+            ) {
+              let rawActual = playerActualStatsRow[actualStatDbColumn]; // Value from DB (e.g., 1230 seconds)
+
+              if (statDef.key === "TIME_ON_ICE_PER_GAME") {
+                if (typeof rawActual === "string") {
+                  const parts = rawActual.split(":");
+                  if (parts.length === 2) {
+                    // Handles "MM:SS" string from DB
+                    const minutes = parseInt(parts[0], 10);
+                    const seconds = parseInt(parts[1], 10);
+                    if (!isNaN(minutes) && !isNaN(seconds)) {
+                      actualValue = minutes * 60 + seconds; // Converts to total seconds
+                    } else {
+                      actualValue = null;
+                    }
+                  } else {
+                    // Assumes string is a number representing total seconds (e.g., "1230")
+                    const numericVal = Number(rawActual);
+                    actualValue = isNaN(numericVal) ? null : numericVal;
+                  }
+                } else if (typeof rawActual === "number") {
+                  // Assumes number is total seconds (e.g., 1230)
+                                    // rawActual is total seconds from DB (e.g., 1067.6097)
+                  // Convert to decimal minutes for storage, as the formatter expects decimal minutes.
+                  actualValue = rawActual / 60; // e.g., 1067.6097 / 60 = 17.793495
+                } else if (rawActual === null || rawActual === undefined) {
+                  actualValue = null;
+                } else {
+                  // Fallback for unexpected types, try to convert to number then to decimal minutes
+                  const numericVal = Number(rawActual);
+                  actualValue = isNaN(numericVal) ? null : numericVal / 60;
+                }
+              } else if (statDef.key === "SAVE_PERCENTAGE") {
+                let numValue: number | null = null;
+                if (typeof rawActual === "number") {
+                  // Handles 0.915 or 91.5 (converts 91.5 to 0.915)
+                  numValue =
+                    rawActual > 1 && rawActual <= 100
+                      ? rawActual / 100
+                      : rawActual;
+                } else if (typeof rawActual === "string") {
+                  if (rawActual.endsWith("%")) {
+                    // "91.5%"
+                    numValue = parseFloat(rawActual.replace("%", "")) / 100;
+                  } else {
+                    // "0.915"
+                    numValue = parseFloat(rawActual);
+                  }
+                }
+                actualValue =
+                  numValue === null || isNaN(numValue) ? null : numValue;
+              } else {
+                // For all other stats
+                const numericVal = Number(rawActual);
+                actualValue = isNaN(numericVal) ? null : numericVal;
+              }
+            }
+
+            processedPlayer.combinedStats[statDef.key] = {
+              projected: projectedValue, // This should be in decimal minutes if from projections
+              actual: actualValue, // This is now stored as decimal minutes
+              diffPercentage: calculateDiffPercentage(
+                actualValue,
+                projectedValue
+              ),
+              projectedDetail: projectedDetail
+            };
           }
 
-          let finalTeam: string | null = null;
-          let finalPosition: string | null = null;
+          // --- Team and Position Resolution ---
+          let teamFromSources: string | null = null;
+          let positionFromSources: string | null = null;
 
+          // 1. Try from projection sources
           for (const sourceConfig of activeSourceConfigs) {
             const sourceDataForPlayer = rawProjectionDataBySourceId[
               sourceConfig.id
@@ -538,56 +937,74 @@ export const useProcessedProjectionsData = ({
             );
             if (sourceDataForPlayer) {
               if (
-                !finalTeam &&
+                !teamFromSources &&
                 sourceConfig.teamKey &&
                 sourceDataForPlayer[sourceConfig.teamKey]
               ) {
-                finalTeam = sourceDataForPlayer[sourceConfig.teamKey];
+                teamFromSources = sourceDataForPlayer[sourceConfig.teamKey];
               }
               if (
-                !finalPosition &&
+                !positionFromSources &&
                 sourceConfig.positionKey &&
                 sourceDataForPlayer[sourceConfig.positionKey]
               ) {
-                finalPosition = sourceDataForPlayer[sourceConfig.positionKey];
+                positionFromSources =
+                  sourceDataForPlayer[sourceConfig.positionKey];
               }
             }
-            if (finalTeam && finalPosition) break;
+            if (teamFromSources && positionFromSources) break;
           }
+
+          // 2. Fallback to Yahoo map
           if (
-            !finalTeam &&
+            !teamFromSources &&
             playerYahooMapEntry?.[YAHOO_PLAYER_MAP_KEYS.teamAbbreviation]
           ) {
-            finalTeam =
+            teamFromSources =
               playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.teamAbbreviation];
           }
           if (
-            !finalPosition &&
+            !positionFromSources &&
             playerYahooMapEntry?.[YAHOO_PLAYER_MAP_KEYS.position]
           ) {
-            finalPosition = playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.position];
+            positionFromSources =
+              playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.position];
           }
+
+          // 3. Fallback to Yahoo players table
           if (
-            !finalTeam &&
+            !teamFromSources &&
             yahooPlayerDetail?.[
               YAHOO_PLAYERS_TABLE_KEYS.editorialTeamAbbreviation
             ]
           ) {
-            finalTeam =
+            teamFromSources = // Corrected from finalTeam to teamFromSources
               yahooPlayerDetail[
                 YAHOO_PLAYERS_TABLE_KEYS.editorialTeamAbbreviation
               ];
           }
           if (
-            !finalPosition &&
+            !positionFromSources &&
             yahooPlayerDetail?.[YAHOO_PLAYERS_TABLE_KEYS.displayPosition]
           ) {
-            finalPosition =
+            positionFromSources =
               yahooPlayerDetail[YAHOO_PLAYERS_TABLE_KEYS.displayPosition];
           }
-          processedPlayer.displayTeam = finalTeam;
-          processedPlayer.displayPosition = finalPosition;
 
+          // 4. Prioritize current_team_abbreviation from actual stats for displayTeam
+          const actualTeamAbbreviation =
+            playerActualStatsRow?.current_team_abbreviation;
+
+          if (
+            actualTeamAbbreviation &&
+            typeof actualTeamAbbreviation === "string" &&
+            actualTeamAbbreviation.trim() !== ""
+          ) {
+            processedPlayer.displayTeam = actualTeamAbbreviation.trim();
+          } else {
+            processedPlayer.displayTeam = teamFromSources; // Use the team found from sources/Yahoo
+          }
+          processedPlayer.displayPosition = positionFromSources;
           if (
             yahooPlayerDetail &&
             yahooPlayerDetail[YAHOO_PLAYERS_TABLE_KEYS.draftAnalysis]
@@ -616,17 +1033,38 @@ export const useProcessedProjectionsData = ({
               pctDraftedNum !== null ? pctDraftedNum * 100 : null;
           }
 
-          // Ensure all stats are initialized for players who might not have any data for some stats
-          relevantStatDefinitions.forEach((statDef) => {
-            if (!processedPlayer.stats[statDef.key]) {
-              processedPlayer.stats[statDef.key] = {
-                value: null,
-                contributingSources: [],
-                missingFromSelectedSources: [],
-                statDefinition: statDef
-              };
+          // Calculate Projected Fantasy Points
+          let calculatedProjectedFP = 0;
+          let calculatedActualFP = 0;
+          let hasValidStatForFP = false; // To determine if FP should be null or 0
+
+          for (const statKey in processedPlayer.combinedStats) {
+            const combinedStat = processedPlayer.combinedStats[statKey];
+            const pointValueForStat = fantasyPointSettings[statKey];
+
+            if (pointValueForStat !== undefined && pointValueForStat !== 0) {
+              if (combinedStat?.projected !== null) {
+                calculatedProjectedFP +=
+                  combinedStat.projected * pointValueForStat;
+                hasValidStatForFP = true;
+              }
+              if (combinedStat?.actual !== null) {
+                calculatedActualFP += combinedStat.actual * pointValueForStat;
+                hasValidStatForFP = true;
+              }
             }
-          });
+          }
+          processedPlayer.fantasyPoints.projected = hasValidStatForFP
+            ? calculatedProjectedFP
+            : null;
+          processedPlayer.fantasyPoints.actual = hasValidStatForFP
+            ? calculatedActualFP
+            : null;
+          processedPlayer.fantasyPoints.diffPercentage =
+            calculateDiffPercentage(
+              processedPlayer.fantasyPoints.actual,
+              processedPlayer.fantasyPoints.projected
+            );
 
           tempProcessedPlayers.push(processedPlayer);
         }
@@ -640,7 +1078,7 @@ export const useProcessedProjectionsData = ({
           );
           console.log(JSON.stringify(playersRequiringNameDebug, null, 2));
           console.info(
-            "[FHFHockey Debug] Review 'nameFromYahooMap' (from 'yahoo_nhl_player_map_mat'), 'nameFromProjectionSource' (first fallback found), and 'finalNameUsed'. 'sourcesProvidingThisId' lists all selected projection sources that contain the 'nhlPlayerId' and the name they have for it. This can help identify discrepancies or missing data in 'yahoo_nhl_player_map_mat' or your primary player data."
+            "[FHFHockey Debug] Review 'nameFromYahooMapNhlName' (from 'yahoo_nhl_player_map_mat.nhl_player_name'), 'nameFromYahooMapYahooName' (from 'yahoo_nhl_player_map_mat.yahoo_player_name'), 'nameFromYahooPlayersTable' (from 'yahoo_players.full_name'), 'nameFromProjectionSource' (first fallback found from projection data), and 'finalNameUsed'. 'sourcesProvidingThisId' lists all selected projection sources that contain the 'nhlPlayerId' and the name they have for it. This can help identify discrepancies or missing data in 'yahoo_nhl_player_map_mat' or your primary player data."
           );
         }
 
@@ -678,11 +1116,12 @@ export const useProcessedProjectionsData = ({
             statDef.key !== "GAMES_PLAYED"
           )
             return;
+
+          // Create a group for each stat
           newTableColumns.push({
-            id: statDef.key,
-            accessorKey: statDef.key,
+            id: `${statDef.key}_group`, // <-- ADDED ID FOR THE STAT GROUP
             header: ({ column }) => {
-              let tooltipText = `${statDef.displayName} (${statDef.key})\nWeighted average. Sources defining this: `;
+              let tooltipText = `${statDef.displayName} (${statDef.key})\nProjected is a weighted average. Actual is from ${currentSeasonId} season totals.`; // Use dynamic currentSeasonId
               const definingSources =
                 activeSourceConfigs
                   .filter(
@@ -692,55 +1131,112 @@ export const useProcessedProjectionsData = ({
                   )
                   .map((sc) => sc.displayName)
                   .join(", ") || "None selected";
-              tooltipText += definingSources;
+              tooltipText += `\nProjection sources for this stat: ${definingSources}`;
               return <div title={tooltipText}>{statDef.displayName}</div>;
             },
-            accessorFn: (player) => player.stats[statDef.key]?.value,
+            columns: [
+              // Sub-columns for Proj, Actual, Diff
+              {
+                id: `${statDef.key}_proj`,
+                header: "Proj",
+                accessorFn: (player) =>
+                  player.combinedStats[statDef.key]?.projected ?? undefined,
+                cell: (info) => {
+                  const combinedStat =
+                    info.row.original.combinedStats[statDef.key];
+                  const val = combinedStat?.projected;
+                  if (val === null || val === undefined) return "-";
 
-            cell: (info) => {
-              const aggStat = info.row.original.stats[statDef.key];
-              const val = aggStat?.value;
+                  const projectedDetail = combinedStat.projectedDetail;
+                  let cellTooltip = `Projected Value: ${val.toFixed(statDef.decimalPlaces ?? (statDef.dataType === "percentage" && statDef.key !== "SAVE_PERCENTAGE" ? 1 : statDef.key === "TIME_ON_ICE_PER_GAME" ? 2 : 0))}\nContributing Sources:\n`;
+                  projectedDetail?.contributingSources.forEach((cs) => {
+                    cellTooltip += `  - ${cs.name} (Val: ${cs.value?.toFixed(2)}, W: ${cs.weight})\n`;
+                  });
+                  if (projectedDetail?.missingFromSelectedSources.length) {
+                    cellTooltip += "Missing from projection sources:\n";
+                    projectedDetail.missingFromSelectedSources.forEach((ms) => {
+                      cellTooltip += `  - ${ms}\n`;
+                    });
+                  }
 
-              if (val === null || val === undefined) return "-"; // Handles null/undefined upfront
-
-              let cellTooltip = `Value: ${val.toFixed(statDef.decimalPlaces ?? (statDef.dataType === "percentage" && statDef.key !== "SAVE_PERCENTAGE" ? 1 : statDef.key === "TIME_ON_ICE_PER_GAME" ? 2 : 0))}\nContributing:\n`;
-              aggStat?.contributingSources.forEach((cs) => {
-                cellTooltip += `  - ${cs.name} (Val: ${cs.value?.toFixed(2)}, W: ${cs.weight})\n`;
-              });
-              if (aggStat?.missingFromSelectedSources.length) {
-                cellTooltip += "Missing from:\n";
-                aggStat.missingFromSelectedSources.forEach((ms) => {
-                  cellTooltip += `  - ${ms}\n`;
-                });
+                  let displayValue: string;
+                  if (statDef.formatter) displayValue = statDef.formatter(val);
+                  else if (statDef.dataType === "percentage")
+                    displayValue =
+                      statDef.key === "SAVE_PERCENTAGE"
+                        ? val.toFixed(statDef.decimalPlaces ?? 3)
+                        : `${(val * 100).toFixed(statDef.decimalPlaces ?? 1)}%`;
+                  else displayValue = val.toFixed(statDef.decimalPlaces ?? 0);
+                  return <div title={cellTooltip.trim()}>{displayValue}</div>;
+                },
+                meta: {
+                  columnType: "numeric",
+                  higherIsBetter: statDef.higherIsBetter
+                },
+                enableSorting: true,
+                sortUndefined: "last"
+              },
+              {
+                id: `${statDef.key}_actual`,
+                header: "REAL",
+                accessorFn: (player) =>
+                  player.combinedStats[statDef.key]?.actual ?? undefined,
+                cell: (info) => {
+                  const val = info.getValue() as number | null;
+                  if (val === null || val === undefined) return "-";
+                  let displayValue: string;
+                  if (statDef.formatter) displayValue = statDef.formatter(val);
+                  else if (statDef.dataType === "percentage")
+                    displayValue =
+                      statDef.key === "SAVE_PERCENTAGE"
+                        ? val.toFixed(statDef.decimalPlaces ?? 3)
+                        : `${(val * 100).toFixed(statDef.decimalPlaces ?? 1)}%`;
+                  else displayValue = val.toFixed(statDef.decimalPlaces ?? 0);
+                  return displayValue;
+                },
+                meta: {
+                  columnType: "numeric",
+                  higherIsBetter: statDef.higherIsBetter
+                },
+                enableSorting: true,
+                sortUndefined: "last"
+              },
+              {
+                id: `${statDef.key}_diff`,
+                header: "% Diff",
+                accessorFn: (player) =>
+                  player.combinedStats[statDef.key]?.diffPercentage ??
+                  undefined,
+                cell: (info) => {
+                  const val = info.getValue() as number | null;
+                  if (val === null || val === undefined) return "-";
+                  if (val === 99999)
+                    return <span className="positiveDiff">++</span>;
+                  if (val === -99999)
+                    return <span className="negativeDiff">--</span>;
+                  const displayVal = `${val > 0 ? "+" : ""}${val.toFixed(1)}%`;
+                  return (
+                    <span
+                      className={
+                        val > 0 ? "positiveDiff" : val < 0 ? "negativeDiff" : ""
+                      }
+                    >
+                      {displayVal}
+                    </span>
+                  );
+                },
+                meta: { columnType: "numeric" },
+                enableSorting: true,
+                sortUndefined: "last"
               }
-
-              let displayValue: string;
-              if (statDef.formatter) {
-                // formatter takes precedence
-                displayValue = statDef.formatter(val);
-              } else if (statDef.dataType === "percentage") {
-                displayValue =
-                  statDef.key === "SAVE_PERCENTAGE"
-                    ? val.toFixed(statDef.decimalPlaces ?? 3)
-                    : `${(val * 100).toFixed(statDef.decimalPlaces ?? 1)}%`;
-              } else {
-                // Default for numeric
-                displayValue = val.toFixed(statDef.decimalPlaces ?? 0);
-              }
-              return <div title={cellTooltip.trim()}>{displayValue}</div>;
-            },
-            meta: {
-              columnType: "numeric",
-              higherIsBetter: statDef.higherIsBetter
-            },
-            enableSorting: true
+            ]
           });
         });
 
         const yahooStatConfigs = [
           {
             key: "yahooAvgPick",
-            header: "Avg Pick",
+            header: "ADP",
             decimals: 1,
             higherIsBetter: false
           }, // Lower is better
@@ -762,7 +1258,9 @@ export const useProcessedProjectionsData = ({
           newTableColumns.push({
             id: yc.key,
             header: yc.header,
-            accessorKey: yc.key as keyof ProcessedPlayer,
+            // Ensure undefined is returned if value is null, for sortUndefined to work
+            accessorFn: (player) =>
+              player[yc.key as keyof ProcessedPlayer] ?? undefined,
             cell: (info) => {
               const val = info.getValue() as number | null;
               if (val === null || val === undefined) return "-";
@@ -774,18 +1272,93 @@ export const useProcessedProjectionsData = ({
               columnType: "numeric",
               higherIsBetter: yc.higherIsBetter
             },
-            enableSorting: true
+            enableSorting: true,
+            sortUndefined: "last" // This will push undefined (formerly null) values to the bottom
           });
         });
 
+        // Add Projected Fantasy Points Column
+        // This also becomes a group
+        newTableColumns.push({
+          id: "fantasyPoints_group", // <-- ADDED ID FOR THE FANTASY POINTS GROUP
+          header: "Fantasy Pts",
+          columns: [
+            {
+              id: "fp_proj",
+              header: "Proj",
+              accessorFn: (player) =>
+                player.fantasyPoints.projected ?? undefined,
+              cell: (info) => {
+                const val = info.getValue() as number | null;
+                if (val === null || val === undefined) return "-";
+                return val.toFixed(1);
+              },
+              meta: { columnType: "numeric", higherIsBetter: true },
+              enableSorting: true,
+              sortUndefined: "last"
+            },
+            {
+              id: "fp_actual",
+              header: "fPts",
+              accessorFn: (player) => player.fantasyPoints.actual ?? undefined,
+              cell: (info) => {
+                const val = info.getValue() as number | null;
+                if (val === null || val === undefined) return "-";
+                return val.toFixed(1);
+              },
+              meta: { columnType: "numeric", higherIsBetter: true },
+              enableSorting: true,
+              sortUndefined: "last"
+            },
+            {
+              id: "fp_diff",
+              header: "% Diff",
+              accessorFn: (player) =>
+                player.fantasyPoints.diffPercentage ?? undefined,
+              cell: (info) => {
+                const val = info.getValue() as number | null;
+                if (val === null || val === undefined) return "-";
+                if (val === 99999)
+                  return <span className="positiveDiff">++</span>;
+                if (val === -99999)
+                  return <span className="negativeDiff">--</span>;
+                const displayVal = `${val > 0 ? "+" : ""}${val.toFixed(1)}%`;
+                return (
+                  <span
+                    className={
+                      val > 0 ? "positiveDiff" : val < 0 ? "negativeDiff" : ""
+                    }
+                  >
+                    {displayVal}
+                  </span>
+                );
+              },
+              meta: { columnType: "numeric" },
+              enableSorting: true,
+              sortUndefined: "last"
+            }
+          ]
+        });
         // --- Update Cache ---
-        cache.current[cacheKey] = {
+        // Base cache stores data and columns based on source/yahoo settings
+        currentTypeCache.base = {
           data: tempProcessedPlayers,
           columns: newTableColumns,
           sourceControlsSnapshot: stringifiedSourceControls,
-          yahooModeSnapshot: yahooDraftMode
+          yahooModeSnapshot: yahooDraftMode,
+          currentSeasonIdSnapshot: currentSeasonId // Store season ID in base cache
         };
-        // --- End Update Cache ---
+
+        // Full cache also gets this data, including the fantasyPointSettings snapshot
+        currentTypeCache.full = {
+          data: tempProcessedPlayers,
+          columns: newTableColumns,
+          sourceControlsSnapshot: stringifiedSourceControls,
+          yahooModeSnapshot: yahooDraftMode,
+          fantasyPointSettingsSnapshot: stringifiedFantasyPointSettings,
+          currentSeasonIdSnapshot: currentSeasonId // Store season ID in full cache
+        };
+
         setTableColumns(newTableColumns);
       } catch (e: any) {
         console.error("Error in useProcessedProjectionsData:", e);
@@ -799,15 +1372,15 @@ export const useProcessedProjectionsData = ({
       }
     };
 
-    if (supabaseClient) {
-      fetchDataAndProcess();
-    } else {
-      setError("Supabase client became unavailable.");
-      setProcessedPlayers([]);
-      setTableColumns([]);
-      setIsLoading(false);
-    }
-  }, [activePlayerType, sourceControls, yahooDraftMode, supabaseClient]);
+    fetchDataAndProcess(); // supabaseClient is guaranteed from props
+  }, [
+    activePlayerType,
+    sourceControls,
+    yahooDraftMode,
+    fantasyPointSettings,
+    supabaseClient,
+    currentSeasonId // Add currentSeasonId to dependency array
+  ]);
 
   return { processedPlayers, tableColumns, isLoading, error };
 };

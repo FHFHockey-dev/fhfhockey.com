@@ -27,6 +27,12 @@ import {
   PROJECTION_SOURCES_CONFIG,
   ProjectionSourceConfig
 } from "lib/projectionsConfig/projectionSourcesConfig";
+import { getDefaultFantasyPointsConfig } from "lib/projectionsConfig/fantasyPointsConfig";
+import {
+  STATS_MASTER_LIST,
+  StatDefinition
+} from "lib/projectionsConfig/statsMasterList";
+import useCurrentSeason from "hooks/useCurrentSeason"; // Import the hook
 import styles from "styles/ProjectionsPage.module.scss";
 
 const supabaseClient = supabase;
@@ -153,6 +159,59 @@ const YahooModeToggle: React.FC<YahooModeToggleProps> = ({
   </div>
 );
 
+interface FantasyPointsSettingsPanelProps {
+  activePlayerType: "skater" | "goalie";
+  fantasyPointSettings: Record<string, number>;
+  onFantasyPointSettingChange: (statKey: string, value: number) => void;
+}
+const FantasyPointsSettingsPanel: React.FC<FantasyPointsSettingsPanelProps> = ({
+  activePlayerType,
+  fantasyPointSettings,
+  onFantasyPointSettingChange
+}) => {
+  const relevantStats = useMemo(() => {
+    return STATS_MASTER_LIST.filter(
+      (stat) =>
+        (activePlayerType === "skater" && stat.isSkaterStat) ||
+        (activePlayerType === "goalie" && stat.isGoalieStat)
+    ).sort((a, b) => a.displayName.localeCompare(b.displayName)); // Sort for consistent order
+  }, [activePlayerType]);
+
+  return (
+    <div className={styles.controlPanel}>
+      <h3 className={styles.panelTitle}>
+        Fantasy <span className={styles.spanColorBlue}>Point Values</span>
+      </h3>
+      <div className={styles.fantasySettingsGrid}>
+        {relevantStats.map((stat) => (
+          <div key={stat.key} className={styles.fantasySettingItem}>
+            <label
+              htmlFor={`fp-${stat.key}`}
+              className={styles.fantasySettingLabel}
+            >
+              {stat.displayName} ({stat.key})
+            </label>
+            <input
+              type="number"
+              id={`fp-${stat.key}`}
+              step="0.01" // Allow for fine-tuning like 0.2, 0.25
+              value={fantasyPointSettings[stat.key] ?? 0}
+              onChange={(e) =>
+                onFantasyPointSettingChange(
+                  stat.key,
+                  parseFloat(e.target.value)
+                )
+              }
+              className={styles.fantasySettingInput}
+              title={`Fantasy points for ${stat.displayName}`}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 interface ProjectionsDataTableProps {
   columns: ColumnDef<ProcessedPlayer, any>[];
   data: ProcessedPlayer[];
@@ -276,6 +335,10 @@ const ProjectionsPage: NextPage = () => {
   const [yahooDraftMode, setYahooDraftMode] = useState<"ALL" | "PRESEASON">(
     "ALL"
   );
+  const [fantasyPointSettings, setFantasyPointSettings] = useState<
+    Record<string, number>
+  >({});
+  const currentSeason = useCurrentSeason(); // Fetch current season data
 
   useEffect(() => {
     const initialControls: Record<
@@ -288,6 +351,19 @@ const ProjectionsPage: NextPage = () => {
       initialControls[src.id] = { isSelected: true, weight: 1 };
     });
     setSourceControls(initialControls);
+
+    // Initialize fantasy point settings
+    const defaultFPConfig = getDefaultFantasyPointsConfig(activePlayerType);
+    const initialFPSettings: Record<string, number> = {};
+    STATS_MASTER_LIST.forEach((stat) => {
+      if (
+        (activePlayerType === "skater" && stat.isSkaterStat) ||
+        (activePlayerType === "goalie" && stat.isGoalieStat)
+      ) {
+        initialFPSettings[stat.key] = defaultFPConfig[stat.key] ?? 0;
+      }
+    });
+    setFantasyPointSettings(initialFPSettings);
   }, [activePlayerType]);
 
   const availableSourcesForTab = useMemo(() => {
@@ -296,13 +372,41 @@ const ProjectionsPage: NextPage = () => {
     );
   }, [activePlayerType]);
 
+  // Guard against calling the hook before currentSeason is loaded
+  const currentSeasonId = currentSeason?.seasonId;
+
   const { processedPlayers, tableColumns, isLoading, error } =
     useProcessedProjectionsData({
       activePlayerType,
       sourceControls,
       yahooDraftMode,
-      supabaseClient
+      fantasyPointSettings,
+      supabaseClient,
+      currentSeasonId: currentSeasonId ? String(currentSeasonId) : undefined // Pass the dynamic season ID
     });
+
+  // Handle case where supabaseClient might not be initialized on first render, though it should be.
+  // Or, ensure ProjectionsPage only renders when supabaseClient is available.
+  // For now, the hook expects it. If it can be null, the hook needs to handle it.
+  // The hook was modified to expect non-null, so this check is more for robustness if supabaseClient could be null.
+  if (!supabaseClient) {
+    return (
+      <div className={styles.loadingState}>
+        <p>Initializing...</p>
+      </div>
+    );
+    // Or some other loading/error state if supabase client itself is the issue.
+    // This scenario should be rare if supabase is initialized correctly at app startup.
+  }
+
+  // Show loading state while currentSeason is being fetched
+  if (!currentSeasonId) {
+    return (
+      <div className={styles.loadingState}>
+        <p>Loading current season data...</p>
+      </div>
+    );
+  }
 
   const handlePlayerTypeChange = (tab: "skater" | "goalie") => {
     setActivePlayerType(tab);
@@ -351,6 +455,13 @@ const ProjectionsPage: NextPage = () => {
     setSourceControls(updatedControls);
   };
 
+  const handleFantasyPointSettingChange = (statKey: string, value: number) => {
+    setFantasyPointSettings((prev) => ({
+      ...prev,
+      [statKey]: isNaN(value) ? 0 : value // Ensure value is a number, default to 0 if NaN
+    }));
+  };
+
   return (
     <>
       <Head>
@@ -384,6 +495,11 @@ const ProjectionsPage: NextPage = () => {
           <YahooModeToggle
             currentMode={yahooDraftMode}
             onModeChange={setYahooDraftMode}
+          />
+          <FantasyPointsSettingsPanel
+            activePlayerType={activePlayerType}
+            fantasyPointSettings={fantasyPointSettings}
+            onFantasyPointSettingChange={handleFantasyPointSettingChange}
           />
         </section>
 

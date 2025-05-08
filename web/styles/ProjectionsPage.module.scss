@@ -307,6 +307,16 @@
   }
 }
 
+/* Styles for % Diff cells in the table */
+.positiveDiff {
+  color: v.$success-color; // Or your preferred green
+  font-weight: bold;
+}
+.negativeDiff {
+  color: v.$danger-color; // Or your preferred red
+  font-weight: bold;
+}
+
 // --- YahooModeToggle ---
 .yahooModeContainer {
   display: flex;
@@ -405,6 +415,23 @@
     tr:first-child th {
       border-top: none;
     }
+
+    // Corrected styling for column group headers (e.g., G, A, SOG groups)
+    // These styles apply to th elements with a colspan in the first row of the thead.
+    tr:first-child {
+      th[colspan] {
+        // Make background slightly lighter or distinct from sub-headers
+        background-color: color.adjust(v.$background-header, $lightness: 7%);
+        // Use primary color for the text of group titles to make them pop
+        color: v.$primary-color;
+        // Use a thicker, primary-colored border to clearly separate metric groups
+        border-right: 3px solid v.$primary-color;
+      }
+      th[colspan]:last-of-type {
+        // Remove border from the very last group header
+        border-right: none;
+      }
+    }
   }
 
   th {
@@ -417,14 +444,7 @@
     border-bottom: 2px solid v.$primary-color; // Consistent with GoalieTrends
     border-right-width: 0;
     border-left-width: 0;
-
-    &:first-child {
-      position: sticky; // This should still work with table-layout: auto
-      left: 0;
-      z-index: 3; // Higher z-index for the sticky column header cell
-      background-color: v.$background-header; // Ensure background for sticky
-      border-right: 1px solid v.$border-secondary; // Separator for sticky column
-    }
+    // Removed incorrectly nested block from here
   }
 
   tbody tr {
@@ -521,4 +541,101 @@
   text-align: center;
   padding: v.$space-lg;
   font-size: v.$font-size-base;
+}
+
+.fantasySettingsGrid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(200px, 1fr)
+  ); // Adjust as needed
+  gap: 1rem;
+  padding: 0.5rem;
+}
+
+.fantasySettingItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--border-radius-small);
+  background-color: var(--color-background-secondary);
+}
+
+.fantasySettingLabel {
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.fantasySettingInput {
+  // Adopt styles from .sourceWeightInput
+  padding: v.$space-xs;
+  border: 1px solid v.$border-color;
+  border-radius: v.$border-radius-sm;
+  background-color: color.adjust(v.$background-dark, $lightness: -10%);
+  color: v.$color-white;
+  font-size: v.$font-size-sm;
+  font-weight: 900; // Match .sourceWeightInput
+  text-align: center; // Match .sourceWeightInput
+
+  width: 100%; // Take full width of the grid cell
+  box-sizing: border-box;
+
+  accent-color: v.$primary-color; // May influence focused state or parts of the control in some browsers
+
+  // Ensure default spinners are visible (some styles might have hidden them)
+  appearance: number-input;
+  -moz-appearance: number-input; // Explicitly set for Firefox if it was 'textfield'
+
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    width: 1.2em;
+    height: 1.2em;
+    opacity: 1; // Ensure not transparent
+    cursor: pointer;
+    border-radius: 4px;
+    position: relative;
+    text-align: center;
+    background-image: url("data:image/svg+xml;utf8,%3Csvg%20version%3D%221.1%22%20viewBox%3D%220%200%2050%2067%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20stroke-width%3D%222%22%3E%3Cline%20x1%3D%221%22%20x2%3D%2250%22%20y1%3D%2233.5%22%20y2%3D%2233.5%22%20stroke%3D%22%23D8D8D8%22%2F%3E%3Cpolyline%20transform%3D%22translate(25%2020)%20rotate(45)%20translate(-25%20-20)%22%20points%3D%2219%2026%2019%2014%2032%2014%22%20stroke%3D%22%23000%22%2F%3E%3Cpolyline%20transform%3D%22translate(25%2045)%20rotate(225)%20translate(-25%20-45)%22%20points%3D%2219%2052%2019%2039%2032%2039%22%20stroke%3D%22%23000%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    caret-color: white;
+    font-weight: 900;
+
+    // Style the button area of the spinner
+    background-color: v.$primary-color;
+    border: 1px solid v.$color-white; // A separator line
+    padding-right: 0;
+
+    // Attempt to style the arrow glyphs themselves.
+    // The 'color' property here *might* be picked up by some WebKit versions for the arrow icons.
+    // If not, they often inherit the 'color' from the input field itself.
+    // color: v.$color-white;
+
+    &:hover {
+      background-color: color.adjust(
+        v.$primary-color,
+        $lightness: -10%
+      ); // Slightly lighter on hover
+      color: color.adjust(v.$color-white, $lightness: 10%);
+    }
+  }
+  &:focus {
+    // Match .sourceWeightInput focus
+    outline: 1px solid v.$primary-color;
+    outline-offset: 1px;
+    border-color: color.adjust(v.$primary-color, $lightness: -10%);
+    box-shadow: none; // Remove previous box-shadow if any
+  }
+
+  &:disabled {
+    // Add disabled state like .sourceWeightInput
+    opacity: 0.5;
+    background-color: color.adjust(v.$background-dark, $lightness: -5%);
+    cursor: not-allowed;
+  }
 }

@@ -125,6 +125,27 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
   },
 
   {
+    key: "PP_GOALS",
+    displayName: "PPG",
+    dataType: "numeric",
+    higherIsBetter: true,
+    isSkaterStat: true,
+    isGoalieStat: false,
+    defaultVisible: false, // Often part of PPP, can be enabled
+    category: "Power Play"
+  },
+  {
+    key: "PP_ASSISTS",
+    displayName: "PPA",
+    dataType: "numeric",
+    higherIsBetter: true,
+    isSkaterStat: true,
+    isGoalieStat: false,
+    defaultVisible: false, // Often part of PPP, can be enabled
+    category: "Power Play"
+  },
+
+  {
     key: "SH_POINTS",
     displayName: "SHP",
     dataType: "numeric",

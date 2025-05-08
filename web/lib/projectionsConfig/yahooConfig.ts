@@ -39,7 +39,8 @@ export const YAHOO_PLAYER_MAP_KEYS = {
   yahooPlayerId: "yahoo_player_id",
   teamAbbreviation: "nhl_team_abbreviation",
   position: "mapped_position",
-  nhlPlayerName: "nhl_player_name"
+  nhlPlayerName: "nhl_player_name", // Name as per NHL (used by projections)
+  yahooPlayerNameInMap: "yahoo_player_name" // Name as per Yahoo, in the mapping table
 };
 
 // Column names in your `yahoo_players` table

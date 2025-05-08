@@ -1,6 +1,7 @@
 // /Users/tim/Desktop/fhfhockey.com/web/lib/projectionsConfig/projectionSourcesConfig.ts
 
 import { StatDefinition } from "./statsMasterList";
+import { formatToMMSS } from "./formatToMMSS";
 
 export interface SourceStatMapping {
   /** Key from STATS_MASTER_LIST (e.g., 'GOALS') */
@@ -8,6 +9,7 @@ export interface SourceStatMapping {
   /** Actual column name in this source's Supabase table (e.g., 'Goals', 'g') */
   dbColumnName: string;
   parser?: (value: any) => number | null;
+  formatter?: (value: number | null | undefined) => string;
 }
 
 export interface ProjectionSourceConfig {
@@ -48,7 +50,8 @@ export const PROJECTION_SOURCES_CONFIG: ProjectionSourceConfig[] = [
       { key: "PENALTY_MINUTES", dbColumnName: "Penalty_Minutes" },
       {
         key: "TIME_ON_ICE_PER_GAME",
-        dbColumnName: "Time_on_Ice_Per_Game"
+        dbColumnName: "Time_on_Ice_Per_Game",
+        formatter: formatToMMSS
       }
     ]
   },
