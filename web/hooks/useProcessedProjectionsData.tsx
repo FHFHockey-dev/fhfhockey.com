@@ -326,9 +326,70 @@ export const useProcessedProjectionsData = ({
         } else {
         }
         const tempProcessedPlayers: ProcessedPlayer[] = [];
+        const playersRequiringNameDebug: Array<{
+          nhlPlayerId: number;
+          nameFromYahooMap: string | null; // Name from yahoo_nhl_player_map_mat.nhl_player_name (cleaned)
+          nameFromProjectionSource: string | null; // Name from the first projection source fallback (cleaned)
+          finalNameUsed: string; // Actual name used in the table
+          sourcesProvidingThisId: Array<{
+            sourceId: string;
+            sourceDisplayName: string;
+            originalPlayerNameInSource: string | null; // Name as per this specific source
+          }>;
+        }> = [];
 
         for (const nhlPlayerId of uniqueNhlPlayerIds) {
           const playerYahooMapEntry = nhlToYahooMap.get(nhlPlayerId);
+
+          // --- Player Name Resolution ---
+          const nameFromYahooMapRaw =
+            playerYahooMapEntry?.[YAHOO_PLAYER_MAP_KEYS.nhlPlayerName];
+          // Clean the name: use null if it's empty or just whitespace
+          const nameFromYahooMap =
+            typeof nameFromYahooMapRaw === "string" &&
+            nameFromYahooMapRaw.trim() !== ""
+              ? nameFromYahooMapRaw.trim()
+              : null;
+
+          let resolvedName = nameFromYahooMap;
+          let nameFromProjectionSource: string | null = null;
+          let logThisPlayer = false;
+
+          if (!resolvedName) {
+            // Primary condition for logging: Yahoo map didn't provide a usable name.
+            logThisPlayer = true;
+            // Try to get from projection sources as a fallback
+            for (const sourceConfig of activeSourceConfigs) {
+              const sourceDataForPlayer = rawProjectionDataBySourceId[
+                sourceConfig.id
+              ]?.data.find(
+                (p: RawProjectionSourcePlayer) =>
+                  Number(p[sourceConfig.primaryPlayerIdKey]) === nhlPlayerId
+              );
+              const nameFromSrcRaw =
+                sourceDataForPlayer?.[sourceConfig.originalPlayerNameKey];
+              const nameFromSrc =
+                typeof nameFromSrcRaw === "string" &&
+                nameFromSrcRaw.trim() !== ""
+                  ? nameFromSrcRaw.trim()
+                  : null;
+
+              if (nameFromSrc) {
+                resolvedName = nameFromSrc;
+                nameFromProjectionSource = nameFromSrc;
+                break; // Found a usable name from a source
+              }
+            }
+          }
+
+          const finalName = resolvedName || "Unknown Player";
+
+          // If the final name is "Unknown Player", ensure it's logged.
+          if (finalName === "Unknown Player") {
+            logThisPlayer = true;
+          }
+          // --- End Player Name Resolution ---
+
           const yahooPlayerDetail = playerYahooMapEntry?.[
             YAHOO_PLAYER_MAP_KEYS.yahooPlayerId
           ]
@@ -337,13 +398,9 @@ export const useProcessedProjectionsData = ({
               )
             : null;
 
-          const displayName =
-            playerYahooMapEntry?.[YAHOO_PLAYER_MAP_KEYS.nhlPlayerName] ||
-            "Unknown Player";
-
           const processedPlayer: ProcessedPlayer = {
             playerId: nhlPlayerId,
-            fullName: displayName,
+            fullName: finalName, // Use the resolved finalName
             displayTeam: null,
             displayPosition: null,
             stats: {},
@@ -353,6 +410,38 @@ export const useProcessedProjectionsData = ({
               ? String(playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId])
               : undefined
           };
+
+          if (logThisPlayer) {
+            const sourcesInfo: Array<{
+              sourceId: string;
+              sourceDisplayName: string;
+              originalPlayerNameInSource: string | null;
+            }> = [];
+            activeSourceConfigs.forEach((sourceConfig) => {
+              const sourceDataForPlayer = rawProjectionDataBySourceId[
+                sourceConfig.id
+              ]?.data.find(
+                (p: RawProjectionSourcePlayer) =>
+                  Number(p[sourceConfig.primaryPlayerIdKey]) === nhlPlayerId
+              );
+              if (sourceDataForPlayer) {
+                sourcesInfo.push({
+                  sourceId: sourceConfig.id,
+                  sourceDisplayName: sourceConfig.displayName,
+                  originalPlayerNameInSource:
+                    sourceDataForPlayer[sourceConfig.originalPlayerNameKey] ||
+                    null
+                });
+              }
+            });
+            playersRequiringNameDebug.push({
+              nhlPlayerId,
+              nameFromYahooMap,
+              nameFromProjectionSource,
+              finalNameUsed: finalName,
+              sourcesProvidingThisId: sourcesInfo
+            });
+          }
 
           for (const statDef of relevantStatDefinitions) {
             const currentStatValues: RawPlayerStatFromSource[] = [];
@@ -533,6 +622,20 @@ export const useProcessedProjectionsData = ({
 
           tempProcessedPlayers.push(processedPlayer);
         }
+
+        if (playersRequiringNameDebug.length > 0) {
+          console.warn(
+            `[FHFHockey Debug] Player Name Resolution Issues Encountered (${playersRequiringNameDebug.length} players):`
+          );
+          console.log(
+            "The following players may display as 'Unknown Player' or use a fallback name. This typically occurs if 'nhl_player_name' is missing or invalid in the 'yahoo_nhl_player_map_mat' table for the given 'nhlPlayerId'."
+          );
+          console.log(JSON.stringify(playersRequiringNameDebug, null, 2));
+          console.info(
+            "[FHFHockey Debug] Review 'nameFromYahooMap' (from 'yahoo_nhl_player_map_mat'), 'nameFromProjectionSource' (first fallback found), and 'finalNameUsed'. 'sourcesProvidingThisId' lists all selected projection sources that contain the 'nhlPlayerId' and the name they have for it. This can help identify discrepancies or missing data in 'yahoo_nhl_player_map_mat' or your primary player data."
+          );
+        }
+
         setProcessedPlayers(tempProcessedPlayers);
 
         const newTableColumns: ColumnDef<ProcessedPlayer, any>[] = [];

@@ -53,7 +53,6 @@
   flex-direction: column;
   overflow: hidden;
   background-color: color.adjust(v.$background-dark, $lightness: -1%);
-  border-radius: v.$border;
   border-radius: v.$border-radius;
   padding: v.$space-sm;
   outline: 5px solid color.adjust(v.$background-dark, $lightness: 3%);
