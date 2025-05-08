@@ -1,8 +1,8 @@
 // lib/hooks/useProcessedProjectionsData.tsx
 
-import { useState, useEffect, useRef } from "react";
-import { SupabaseClient, PostgrestResponse } from "@supabase/supabase-js";
-import { ColumnDef } from "@tanstack/react-table";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { SupabaseClient, PostgrestResponse } from "@supabase/supabase-js"; // prettier-ignore
+import { ColumnDef, RowData } from "@tanstack/react-table";
 
 // Configuration Imports
 import {
@@ -66,6 +66,14 @@ export interface UseProcessedProjectionsDataReturn {
 
 interface RawProjectionSourcePlayer extends Record<string, any> {}
 interface YahooNhlPlayerMapEntry extends Record<string, any> {}
+
+// Augment ColumnMeta for custom properties
+declare module "@tanstack/react-table" {
+  interface ColumnMeta<TData extends RowData, TValue> {
+    columnType?: "text" | "numeric";
+    higherIsBetter?: boolean;
+  }
+}
 interface YahooPlayerDetailData extends Record<string, any> {}
 
 // --- Helper function for paginated Supabase fetches ---
@@ -642,21 +650,33 @@ export const useProcessedProjectionsData = ({
         newTableColumns.push({
           id: "fullName",
           header: "Player",
-          accessorKey: "fullName"
+          accessorKey: "fullName",
+          meta: { columnType: "text" },
+          enableSorting: true,
+          enableSortingRemoval: false
         });
         newTableColumns.push({
           id: "displayTeam",
           header: "Team",
-          accessorKey: "displayTeam"
+          accessorKey: "displayTeam",
+          meta: { columnType: "text" },
+          enableSorting: true,
+          enableSortingRemoval: false
         });
         newTableColumns.push({
           id: "displayPosition",
           header: "Pos",
-          accessorKey: "displayPosition"
+          accessorKey: "displayPosition",
+          meta: { columnType: "text" },
+          enableSorting: true,
+          enableSortingRemoval: false
         });
 
         relevantStatDefinitions.forEach((statDef) => {
           if (
+            // Ensure defaultVisible is explicitly checked. If undefined, assume visible.
+            // Keep GAMES_PLAYED always visible regardless of its defaultVisible setting.
+            statDef.defaultVisible !== undefined &&
             statDef.defaultVisible === false &&
             statDef.key !== "GAMES_PLAYED"
           )
@@ -712,18 +732,34 @@ export const useProcessedProjectionsData = ({
               }
               return <div title={cellTooltip.trim()}>{displayValue}</div>;
             },
-            enableSorting: true
+            meta: {
+              columnType: "numeric",
+              higherIsBetter: statDef.higherIsBetter
+            },
+            enableSorting: true,
+            enableSortingRemoval: false
           });
         });
 
         const yahooStatConfigs = [
-          { key: "yahooAvgPick", header: "Avg Pick", decimals: 1 },
-          { key: "yahooAvgRound", header: "Avg Rd", decimals: 1 },
+          {
+            key: "yahooAvgPick",
+            header: "Avg Pick",
+            decimals: 1,
+            higherIsBetter: false
+          }, // Lower is better
+          {
+            key: "yahooAvgRound",
+            header: "Avg Rd",
+            decimals: 1,
+            higherIsBetter: false
+          }, // Lower is better
           {
             key: "yahooPctDrafted",
             header: "% Drafted",
             decimals: 1,
-            isPercentage: true
+            isPercentage: true,
+            higherIsBetter: true
           }
         ];
         yahooStatConfigs.forEach((yc) => {
@@ -738,7 +774,12 @@ export const useProcessedProjectionsData = ({
                 ? `${val.toFixed(yc.decimals)}%`
                 : val.toFixed(yc.decimals);
             },
-            enableSorting: true
+            meta: {
+              columnType: "numeric",
+              higherIsBetter: yc.higherIsBetter
+            },
+            enableSorting: true,
+            enableSortingRemoval: false
           });
         });
 

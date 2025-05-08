@@ -14,7 +14,9 @@ import Head from "next/head";
 import {
   flexRender,
   getCoreRowModel,
+  getSortedRowModel,
   useReactTable,
+  SortingState,
   ColumnDef
 } from "@tanstack/react-table";
 import {
@@ -160,12 +162,20 @@ const ProjectionsDataTable: React.FC<ProjectionsDataTableProps> = ({
   columns,
   data
 }) => {
+  // Sorting state for the table
+  const [sorting, setSorting] = React.useState<SortingState>([]);
   const tableData = useMemo(() => data, [data]); // Use all data
 
   const table = useReactTable<ProcessedPlayer>({
     data: tableData, // Now uses all data
     columns,
-    getCoreRowModel: getCoreRowModel()
+    state: {
+      sorting
+    },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    manualSorting: false // We are using client-side sorting
   });
 
   if (columns.length === 0) {
@@ -190,13 +200,46 @@ const ProjectionsDataTable: React.FC<ProjectionsDataTableProps> = ({
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <th key={header.id} colSpan={header.colSpan}>
+                <th
+                  key={header.id}
+                  colSpan={header.colSpan}
+                  className={
+                    header.column.getCanSort() ? styles.sortableHeader : ""
+                  }
+                  onClick={() => {
+                    if (!header.column.getCanSort()) return;
+                    // @ts-ignore // Accessing custom meta
+                    const meta = header.column.columnDef.meta as {
+                      columnType: string;
+                      higherIsBetter?: boolean;
+                    };
+                    const isCurrentlySorted = header.column.getIsSorted();
+
+                    if (isCurrentlySorted === false) {
+                      // First click
+                      if (meta?.columnType === "text") {
+                        header.column.toggleSorting(false); // Sort A-Z (asc)
+                      } else if (meta?.columnType === "numeric") {
+                        const sortDescending = meta.higherIsBetter === true;
+                        header.column.toggleSorting(sortDescending);
+                      } else {
+                        header.column.toggleSorting(); // Fallback
+                      }
+                    } else {
+                      // Subsequent clicks
+                      header.column.toggleSorting(); // Toggles between asc/desc due to enableSortingRemoval: false
+                    }
+                  }}
+                >
                   {header.isPlaceholder
                     ? null
                     : flexRender(
                         header.column.columnDef.header,
                         header.getContext()
                       )}
+                  {{ asc: " 🔼", desc: " 🔽" }[
+                    header.column.getIsSorted() as string
+                  ] ?? null}
                 </th>
               ))}
             </tr>

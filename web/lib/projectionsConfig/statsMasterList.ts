@@ -67,12 +67,12 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     key: "PLUS_MINUS",
     displayName: "+/-",
     dataType: "numeric",
-    higherIsBetter: false,
+    higherIsBetter: true, // Higher is better (e.g. +20 is better than -10)
     isSkaterStat: true,
     isGoalieStat: false,
     defaultVisible: true,
     category: "Standard"
-  }, // Note: lower is generally better for fantasy
+  },
   {
     key: "SHOTS_ON_GOAL",
     displayName: "SOG",
@@ -107,12 +107,12 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     key: "PENALTY_MINUTES",
     displayName: "PIM",
     dataType: "numeric",
-    higherIsBetter: false,
+    higherIsBetter: true, // For display/common understanding, more is more; fantasy value can vary.
     isSkaterStat: true,
     isGoalieStat: false,
     defaultVisible: true,
     category: "Standard"
-  }, // Lower PIM can be better in some formats, but for display, more is more. Sorting will handle.
+  },
   {
     key: "PP_POINTS",
     displayName: "PPP",
