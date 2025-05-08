@@ -10,6 +10,9 @@ import {
   Typography,
   TextField
 } from "@mui/material";
+import Link from "next/link";
+import { useUser } from "contexts/AuthProviderContext"; // Assuming you have this for role checking
+
 import Grid from "@mui/material/Unstable_Grid2"; // Grid version 2
 
 import { TextBanner } from "components/Banner/Banner";
@@ -21,6 +24,8 @@ import { color } from "d3";
 
 export default function Page() {
   const { enqueueSnackbar } = useSnackbar();
+  const user = useUser(); // Get user from context
+  const isAdmin = user?.role === "admin";
 
   const [numPlayers, setNumPlayers] = useState(0);
   const [numSeasons, setNumSeasons] = useState(0);
@@ -800,6 +805,52 @@ export default function Page() {
             </CardActions>
           </Card>
         </Grid>
+
+        {/* New Card/Button to link to the CSV Upsert Page */}
+        {isAdmin && ( // Only show this card/link if user is admin
+          <Grid xs={12} md={4}>
+            {" "}
+            {/* Adjust grid size as needed */}
+            <Card
+              sx={{
+                border: "5px solid #4caf50", // Different color for distinction
+                borderRadius: "8px",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                background: "linear-gradient(180deg, #202020 50%, #101010 80%)",
+                color: "#fff"
+              }}
+            >
+              <CardMedia
+                sx={{ height: 140 }}
+                image="/pictures/csvImportIcon.png" // Add a relevant icon/image
+                title="CSV Projection Importer"
+              />
+              <CardContent sx={{ flexGrow: 1 }}>
+                <Typography gutterBottom variant="h5" component="div">
+                  CSV PROJECTION IMPORTER
+                </Typography>
+                <Typography variant="body2">
+                  Upload CSV files, standardize player names and column metrics,
+                  and upsert projections to new Supabase tables.
+                </Typography>
+              </CardContent>
+              <CardActions>
+                <Link href="/db/upsert-projections" passHref legacyBehavior>
+                  <Button
+                    component="a"
+                    size="small"
+                    variant="contained"
+                    color="success"
+                  >
+                    Go to Importer
+                  </Button>
+                </Link>
+              </CardActions>
+            </Card>
+          </Grid>
+        )}
       </Grid>
 
       <Button

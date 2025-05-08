@@ -63,7 +63,7 @@
     padding: v.$space-sm;
     font-size: v.$font-size-small * 0.9;
     letter-spacing: 0.25em;
-    background-color: darken(v.$background-dark, 5%);
+    background-color: color.adjust(v.$background-dark, $lightness: -5%);
     color: v.$text-primary-color;
     font-weight: 900;
     position: sticky; // Make header row sticky
@@ -78,11 +78,11 @@
   tbody tr {
     transition: background-color v.$transition-duration v.$transition-easing;
     &:nth-child(even) {
-      background-color: darken(v.$background-light, 1%);
+      background-color: color.adjust(v.$background-light, $lightness: -1%);
     }
 
     &:nth-child(odd) {
-      background-color: darken(v.$background-light, 3%);
+      background-color: color.adjust(v.$background-light, $lightness: -3%);
     }
     &:hover {
       background-color: color.scale(v.$primary-color, $alpha: -70%);

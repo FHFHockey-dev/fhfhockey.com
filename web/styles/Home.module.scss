@@ -54,7 +54,7 @@ $mobile-column-short: 30px;
   align-items: stretch;
   justify-content: space-between;
   border-bottom: 2px solid v.$secondary-color;
-  background-color: darken(v.$background-dark, 2%);
+  background-color: color.adjust(v.$background-dark, $lightness: -2%);
   width: 100%; // Ensure it spans the wrapper
   position: relative;
 
@@ -174,7 +174,7 @@ $mobile-column-short: 30px;
   align-items: center;
   justify-content: center;
   color: v.$primary-color; // Arrow color
-  background-color: darken(v.$background-dark, 5%);
+  background-color: color.adjust(v.$background-dark, $lightness: -5%);
   transition: background-color v.$transition-duration v.$transition-easing;
 
   &:hover {

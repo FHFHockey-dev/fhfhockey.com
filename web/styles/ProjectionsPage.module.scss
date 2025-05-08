@@ -1,0 +1,525 @@
+/* /styles/ProjectionsPage.module.scss */
+@use "sass:color";
+@use "styles/vars" as v; // Import variables from vars.scss
+@import url("https://fonts.googleapis.com/css2?family=Train+One&display=swap"); // If still needed for titles
+
+/* =================== Main Page Layout =================== */
+
+.pageContainer {
+  @include v.component-wrapper;
+  width: 95%;
+  max-width: 2200px; // Allow slightly wider for projection tables
+  min-width: 1000px;
+  min-height: 90vh;
+  margin: v.$space-lg auto v.$space-xxl auto;
+  display: flex;
+  flex-direction: column;
+  // Using effective final values from vars.scss
+  border: 1px solid v.$border-primary; // Adjusted from GoalieTrends as component-wrapper now defines border
+  border-radius: v.$border-radius-lg; // Adjusted from GoalieTrends
+  // outline: 15px solid color.adjust(v.$background-dark, $lightness: -2%); // component-wrapper doesn't include outline
+  background-color: v.$background-dark; // From component-wrapper
+  overflow: hidden;
+  padding: v.$space-lg;
+  gap: v.$space-lg;
+}
+
+/* =================== Section Wrappers =================== */
+
+.headerSection {
+  align-items: center;
+  text-align: left;
+  padding-bottom: v.$space-md;
+  border-bottom: 8px double v.$primary-color;
+  margin-bottom: v.$space-lg; // More space after header
+  width: 100%;
+}
+
+.controlsSectionWrapper {
+  display: flex;
+  flex-direction: column; // Stack control panels vertically
+  gap: v.$space-lg;
+  width: 100%;
+  background-color: color.adjust(v.$background-dark, $lightness: -1%);
+  border-radius: v.$border-radius;
+  padding: v.$space-md;
+  outline: 5px solid color.adjust(v.$background-dark, $lightness: 3%);
+  border: 1px solid v.$border-color-secondary;
+}
+
+.dataDisplaySection {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: color.adjust(v.$background-dark, $lightness: -1%);
+  border-radius: v.$border;
+  border-radius: v.$border-radius;
+  padding: v.$space-sm;
+  outline: 5px solid color.adjust(v.$background-dark, $lightness: 3%);
+  border: 1px solid v.$border-color-secondary;
+}
+
+/* =================== Header Styling =================== */
+
+.pageTitle {
+  font-family: "Train One", sans-serif; // Assuming you want to keep this style
+  font-size: v.$font-size-xl; // Larger title
+  font-weight: 100;
+  color: v.$text-primary;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  margin-bottom: v.$space-xs; // Space between title and subtitle
+}
+
+.spanColorBlue {
+  // If you want to use this for parts of the title
+  display: inline-block;
+  color: v.$primary-color;
+  font-weight: 900;
+  font-family: inherit;
+}
+
+.pageSubtitle {
+  font-size: v.$font-size-md;
+  color: v.$text-secondary;
+  font-weight: 300; // Lighter subtitle
+}
+
+/* =================== Controls Styling =================== */
+
+.controlPanel {
+  // Base style for SourceSelectorPanel, YahooModeToggle
+  background-color: v.$background-dark; // Use the darkest background
+  border-radius: v.$border-radius-sm;
+  padding: v.$space-md;
+  border: 1px solid v.$border-secondary;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+  width: 100%;
+}
+
+.panelTitle {
+  font-family: "Train One", sans-serif; // Assuming you want to keep this style
+
+  font-size: v.$font-size-lg; // Larger panel titles
+  font-weight: 700;
+  color: v.$text-primary; // Brighter title
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding-bottom: v.$space-sm;
+  margin-bottom: v.$space-sm;
+  margin-top: v.$space-sm;
+  border-bottom: 2px solid v.$primary-color;
+  text-align: left; // Align to left
+}
+
+// --- PlayerTypeTabs ---
+.playerTypeTabsContainer {
+  display: flex;
+  border-bottom: 2px solid v.$border-secondary; // Underline for the whole tab bar
+  margin-bottom: v.$space-xs; // Space below tabs
+}
+
+.playerTypeTabButton {
+  @include v.button-style; // Use the button mixin
+  background-color: transparent; // Override mixin for non-active
+  color: v.$text-secondary;
+  border: none; // No border for inactive
+  border-bottom: 3px solid transparent; // Placeholder for active border
+  border-radius: 0; // No radius for tabs
+  padding: v.$space-sm v.$space-md;
+  margin-right: v.$space-sm;
+  font-size: v.$font-size-base;
+  font-weight: 600;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover:not(.activeTab) {
+    color: v.$color-white; // Change color on hover
+    background-color: color.adjust(
+      v.$primary-color,
+      $lightness: -25%
+    ); // Keep transparent on hover
+    border-color: transparent; // Keep transparent for border
+  }
+
+  &.activeTab {
+    color: v.$primary-color;
+    font-weight: 700;
+    border-bottom-color: v.$primary-color; // Active tab underline
+    background-color: transparent; // No background for active tab itself
+
+    &:hover {
+      background-color: v.$primary-color; // No background on hover
+      color: v.$color-white; // Change color on hover
+    }
+  }
+}
+
+// --- SourceSelectorPanel ---
+.sourceSelectorHeader {
+  // For "Select All / Deselect All" buttons area
+  display: flex;
+  gap: v.$space-sm;
+  margin-bottom: v.$space-md;
+}
+
+.sourceSelectorButton {
+  @include v.button-style;
+  padding: v.$space-xs v.$space-sm; // Smaller buttons
+  font-size: v.$font-size-sm;
+}
+
+.sourceGrid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(300px, 1fr)
+  ); // Responsive columns
+  gap: v.$space-md;
+}
+
+.sourceItem {
+  display: flex;
+  align-items: center; // Vertically center the checkbox/label with the weight control group
+  justify-content: space-between;
+  padding: v.$space-sm;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  background-color: color.adjust(v.$background-dark, $lightness: 3%);
+}
+
+.sourceLabel {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+  color: v.$text-primary;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+  flex-grow: 1; // Allow label to take available space
+  margin-right: v.$space-sm; // Add some space between label and weight controls
+
+  input[type="checkbox"] {
+    opacity: 0;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+
+    &:focus + span::before {
+      outline: 1px solid v.$primary-color;
+      outline-offset: 1px;
+      border-color: v.$primary-color;
+    }
+
+    & + span {
+      position: relative;
+      padding-left: 28px;
+      user-select: none;
+
+      &::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 18px;
+        height: 18px;
+        border: 1px solid v.$border-color;
+        background-color: color.adjust(v.$background-dark, $lightness: -10%);
+        border-radius: v.$border-radius-sm;
+        transition:
+          background-color 0.2s ease,
+          border-color 0.2s ease;
+      }
+
+      &::after {
+        content: "";
+        position: absolute;
+        left: 6px;
+        top: 50%;
+        width: 5px;
+        height: 10px;
+        border: solid v.$color-white;
+        border-width: 0 2px 2px 0;
+        transform: translateY(-65%) rotate(45deg);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+    }
+
+    &:checked + span::before {
+      background-color: v.$primary-color;
+      border-color: color.adjust(v.$primary-color, $lightness: -10%);
+    }
+
+    &:checked + span::after {
+      opacity: 1;
+    }
+  }
+}
+
+.weightControlContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: v.$space-xxs;
+}
+
+.weightLabel {
+  font-size: v.$font-size-xxs;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  font-weight: 900;
+  line-height: 1; // Prevent extra spacing - font size is very small
+  letter-spacing: 0.4em;
+  text-align: center;
+  margin-bottom: v.$space-xxs; // Space between label and input
+}
+/* MODIFICATION END */
+
+.sourceWeightInput {
+  padding: v.$space-xs;
+  border: 1px solid v.$border-color;
+  border-radius: v.$border-radius-sm;
+  background-color: color.adjust(v.$background-dark, $lightness: -10%);
+  color: v.$text-color-primary;
+  width: 70px;
+  text-align: center;
+  font-size: v.$font-size-sm;
+  -moz-appearance: textfield;
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  &:focus {
+    outline: 1px solid v.$primary-color;
+    outline-offset: 1px;
+    border-color: v.$primary-color;
+  }
+  &:disabled {
+    opacity: 0.5;
+    background-color: color.adjust(v.$background-dark, $lightness: -5%);
+    cursor: not-allowed;
+  }
+}
+
+// --- YahooModeToggle ---
+.yahooModeContainer {
+  display: flex;
+  align-items: center;
+  gap: v.$space-md; // Space between radio options
+}
+
+.yahooModeLabel {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+  color: v.$text-primary;
+  font-size: v.$font-size-sm;
+  cursor: pointer;
+
+  input[type="radio"] {
+    // Basic styling for radio, can be customized further if needed
+    accent-color: v.$primary-color; // Modern way to color radios/checkboxes
+    width: 16px;
+    height: 16px;
+
+    &:focus {
+      outline: 1px solid v.$primary-color;
+      outline-offset: 2px;
+    }
+  }
+}
+
+/* =================== Data Table Styling (ProjectionsDataTable) =================== */
+.dataTableContainer {
+  width: 100%;
+  height: 100%;
+  overflow: auto; // Enable scrollbars
+  @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
+}
+
+.dataTable {
+  @include v.table-base; // Uses Definition 2 of table-base from vars.scss
+  border-collapse: separate; // Ensure border-spacing and radius work
+  border-spacing: 0;
+  /* CHANGED: 'fixed' to 'auto' for content-based column widths */
+  table-layout: auto;
+  font-family: v.$font-family-primary; // Use primary font from vars (Roboto Condensed)
+  width: 100%; // Optional: ensure table uses available width, but auto layout will expand it further if needed.
+  // Can also be min-width: 100%; if you want it to always fill container, but expand beyond.
+
+  th.sortableHeader {
+    cursor: pointer;
+    user-select: none;
+    &:hover {
+      background-color: color.adjust(v.$background-header, $lightness: -2%);
+      color: v.$primary-color;
+    }
+  }
+
+  .sortIndicator {
+    display: inline-block;
+    margin-left: v.$space-xs;
+  }
+
+  th,
+  td {
+    padding: v.$table-cell-padding; // Uses Definition 2 from vars
+    font-size: v.$font-size-sm; // Uses 0.875rem
+    font-weight: 400;
+    vertical-align: middle;
+    text-align: center;
+    overflow: hidden; // This might be overridden by nowrap if content is larger
+    text-overflow: ellipsis; // Only works if overflow is hidden and text is nowrap and there's a width constraint
+    white-space: nowrap; // Prevent wrapping by default, columns will expand to fit content
+    border-bottom: 1px solid v.$border-secondary; // Thinner than header border
+    border-right: 1px solid v.$border-secondary;
+    background-color: color.adjust(
+      v.$background-light,
+      $lightness: -1%
+    ); // Slightly darker than GoalieTrends cells
+    color: v.$text-primary;
+
+    &:first-child {
+      border-left: none;
+      text-align: left;
+      font-weight: 600;
+      padding-left: v.$space-md;
+    }
+    &:last-child {
+      border-right: none;
+    }
+  }
+
+  thead {
+    position: sticky; // This should still work with table-layout: auto
+    top: 0;
+    z-index: 2;
+    background-color: v.$background-header; // From vars.scss
+
+    tr:first-child th {
+      border-top: none;
+    }
+  }
+
+  th {
+    background-color: v.$background-header; // From vars.scss (darker than GoalieTrends)
+    color: v.$text-secondary; // Lighter than GoalieTrends
+    font-weight: 700;
+    font-size: v.$font-size-xs; // Slightly smaller than GoalieTrends
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    border-bottom: 2px solid v.$primary-color; // Consistent with GoalieTrends
+    border-right-width: 0;
+    border-left-width: 0;
+
+    &:first-child {
+      position: sticky; // This should still work with table-layout: auto
+      left: 0;
+      z-index: 3; // Higher z-index for the sticky column header cell
+      background-color: v.$background-header; // Ensure background for sticky
+      border-right: 1px solid v.$border-secondary; // Separator for sticky column
+    }
+  }
+
+  tbody tr {
+    &:nth-child(even) td {
+      background-color: v.$background-dark; // Darker for even rows
+    }
+    &:nth-child(odd) td {
+      background-color: color.adjust(
+        v.$background-dark,
+        $lightness: 2%
+      ); // Slightly lighter for odd rows
+    }
+
+    &:hover td {
+      background-color: color.change(
+        color.adjust(v.$focus-color, $lightness: -20%),
+        $alpha: 0.4
+      );
+      color: v.$focus-color;
+      font-weight: 600;
+    }
+
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+}
+
+.tableFooterMessage {
+  text-align: center;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+  padding: v.$space-md 0;
+  font-style: italic;
+}
+
+/* =================== Loading / Error / Placeholder States =================== */
+
+.loadingState,
+.errorState,
+.emptyState {
+  text-align: center;
+  padding: v.$space-xl v.$space-md;
+  margin: v.$space-lg auto;
+  width: 80%;
+  max-width: 600px;
+  border-radius: v.$border-radius-md;
+}
+
+.loadingState {
+  font-size: v.$font-size-lg;
+  color: v.$primary-color;
+  font-style: italic;
+}
+
+.errorState {
+  background-color: rgba(v.$error-color, 0.1);
+  border: 1px solid rgba(v.$error-color, 0.3);
+  color: v.$error-color;
+  font-weight: 600;
+
+  .errorTitle {
+    font-size: v.$font-size-md;
+    margin-bottom: v.$space-sm;
+  }
+  .errorMessage {
+    font-size: v.$font-size-base;
+  }
+}
+
+.emptyState {
+  font-size: v.$font-size-base;
+  color: v.$text-secondary;
+  background-color: color.adjust(v.$background-dark, $lightness: 5%);
+  border: 1px solid v.$border-secondary;
+}
+
+// Re-use GoalieTrends' error/loading if preferred, these are slightly different
+.generalErrorText {
+  color: v.$danger-color; // Using $danger-color from vars
+  font-weight: bold;
+  text-align: center;
+  padding: v.$space-md;
+  background-color: rgba(v.$danger-color, 0.1);
+  border: 1px solid rgba(v.$danger-color, 0.3);
+  border-radius: v.$border-radius;
+  margin: v.$space-md auto;
+  width: 90%;
+}
+
+.generalLoadingMessage {
+  color: v.$text-color-secondary;
+  font-style: italic;
+  text-align: center;
+  padding: v.$space-lg;
+  font-size: v.$font-size-base;
+}

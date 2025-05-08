@@ -17,8 +17,11 @@
   flex-direction: column; // Stack sections vertically
   border: 10px solid v.$border-color-primary; // Prominent border like wigo
   border-radius: v.$border-radius * 1.5; // Slightly less rounded than wigo
-  outline: 15px solid darken(v.$background-dark, 2%); // Outline like wigo
-  background-color: darken(v.$background-dark, 2%); // Main background
+  outline: 15px solid color.adjust(v.$background-dark, $lightness: -2%); // Outline like wigo
+  background-color: color.adjust(
+    v.$background-dark,
+    $lightness: -2%
+  ); // Main background
   overflow: hidden; // Prevent content spill
   padding: v.$space-lg; // Padding inside the main container
   gap: v.$space-lg; // Gap between direct children (header, controls, content)
@@ -43,13 +46,13 @@
   flex-direction: row; // Stack control sections vertically
   gap: v.$space-lg; // Gap between control sections
   width: 100%;
-  background-color: darken(
+  background-color: color.adjust(
     v.$background-dark,
-    1%
+    $lightness: -1%
   ); // Slightly different background
   border-radius: v.$border-radius;
   padding: v.$space-md;
-  outline: 5px solid lighten(v.$background-dark, 3%); // Subtle outline
+  outline: 5px solid color.adjust(v.$background-dark, $lightness: 3%); // Subtle outline
   border: 1px solid v.$border-color-secondary; // Thin border
 }
 
@@ -58,13 +61,13 @@
   display: flex; // Use flex to manage the table/leaderboard inside
   flex-direction: column;
   overflow: hidden; // Important for table scrolling later
-  background-color: darken(
+  background-color: color.adjust(
     v.$background-dark,
-    1%
+    $lightness: -1%
   ); // Background for the content area
   border-radius: v.$border-radius;
   padding: v.$space-sm; // Padding around the table/leaderboard
-  outline: 5px solid lighten(v.$background-dark, 3%);
+  outline: 5px solid color.adjust(v.$background-dark, $lightness: 3%);
   border: 1px solid v.$border-color-secondary;
 }
 
@@ -112,9 +115,9 @@
 
 .controlsSection {
   // Wrapper for each group of controls (Toggle, Date, Stats, Fantasy)
-  background-color: darken(
+  background-color: color.adjust(
     v.$background-dark,
-    0%
+    $lightness: 0%
   ); // Slightly lighter than wrapper
   border-radius: v.$border-radius-sm;
   padding: v.$space-md;
@@ -148,7 +151,7 @@
 
 .toggleButton {
   @include v.button-style; // Use button mixin if available in vars
-  background-color: darken(v.$background-dark, 10%);
+  background-color: color.adjust(v.$background-dark, $lightness: -10%);
   color: v.$text-color-button;
   border: 1px solid v.$border-color;
   padding: v.$space-sm v.$space-lg; // Use variables
@@ -157,7 +160,7 @@
   border-radius: v.$border-radius-sm; // Consistent radius
 
   &:hover:not(:disabled) {
-    background-color: darken(v.$background-dark, 5%);
+    background-color: color.adjust(v.$background-dark, $lightness: -5%);
     border-color: v.$primary-color;
     color: v.$primary-color;
   }
@@ -165,7 +168,7 @@
   &.active {
     background-color: v.$primary-color;
     color: v.$color-white; // Ensure white text on active
-    border-color: darken(v.$primary-color, 10%);
+    border-color: color.adjust(v.$primary-color, $lightness: -10%);
     font-weight: 700;
   }
   &:disabled {
@@ -218,7 +221,7 @@
   padding: v.$space-xs v.$space-sm; // Adjust padding
   border: 1px solid v.$border-color;
   border-radius: v.$border-radius-sm;
-  background-color: darken(v.$background-dark, 10%);
+  background-color: color.adjust(v.$background-dark, $lightness: -10%);
   font-size: v.$font-size-base * 0.9;
   color: v.$text-color-primary; // Brighter text
   flex-grow: 1; // Allow select to take available space in dropdownGroup
@@ -306,7 +309,7 @@
         width: 18px;
         height: 18px;
         border: 1px solid v.$border-color;
-        background-color: darken(v.$background-dark, 10%);
+        background-color: color.adjust(v.$background-dark, $lightness: -10%);
         border-radius: v.$border-radius-sm; // Small radius
         transition:
           background-color 0.2s ease,
@@ -332,7 +335,7 @@
     &:checked + label::before {
       // Checked box style
       background-color: v.$primary-color;
-      border-color: darken(v.$primary-color, 10%);
+      border-color: color.adjust(v.$primary-color, $lightness: -10%);
     }
 
     &:checked + label::after {
@@ -374,7 +377,7 @@
   padding: v.$space-xs;
   border: 1px solid v.$border-color;
   border-radius: v.$border-radius-sm;
-  background-color: darken(v.$background-dark, 10%);
+  background-color: color.adjust(v.$background-dark, $lightness: -10%);
   color: v.$text-color-primary;
   width: 70px; // Slightly narrower
   text-align: center;
@@ -427,7 +430,10 @@
     user-select: none; // Prevent text selection on click
 
     &:hover {
-      background-color: darken(v.$background-dark, 2%); // Subtle hover effect
+      background-color: color.adjust(
+        v.$background-dark,
+        $lightness: -2%
+      ); // Subtle hover effect
       color: v.$primary-color; // Highlight text on hover
     }
   }
@@ -450,7 +456,10 @@
     text-overflow: ellipsis;
     border-bottom: 1px solid v.$border-color-secondary; // Thin bottom border for rows
     border-right: 1px solid v.$border-color-secondary; // Thin right border for columns
-    background-color: darken(v.$background-light, 3%); // Base cell background
+    background-color: color.adjust(
+      v.$background-light,
+      $lightness: -3%
+    ); // Base cell background
     color: v.$text-color-primary;
 
     &:first-child {
@@ -480,7 +489,7 @@
   }
 
   th {
-    background-color: darken(v.$background-dark, 5%);
+    background-color: color.adjust(v.$background-dark, $lightness: -5%);
     color: v.$text-color-secondary;
     font-weight: 700; // Bold headers
     font-size: v.$font-size-small * 0.9;
@@ -495,9 +504,9 @@
       position: sticky;
       left: 0;
       z-index: 3; // Above other headers
-      background-color: darken(
+      background-color: color.adjust(
         v.$background-dark,
-        5%
+        $lightness: -5%
       ); // Ensure bg covers content
       border-right: 1px solid v.$border-color; // Keep separator for sticky col
     }
@@ -507,17 +516,20 @@
   tbody tr {
     &:nth-child(even) {
       td {
-        background-color: darken(v.$background-light, 1%);
+        background-color: color.adjust(v.$background-light, $lightness: -1%);
       }
     }
     &:nth-child(odd) {
       td {
-        background-color: darken(v.$background-light, 3%);
+        background-color: color.adjust(v.$background-light, $lightness: -3%);
       }
     }
 
     &:hover td {
-      background-color: color.change(darken(v.$focus-color, 15%), $alpha: 0.3);
+      background-color: color.change(
+        color.adjust(v.$focus-color, $lightness: -15%),
+        $alpha: 0.3
+      );
       color: v.$focus-color;
       font-weight: 600;
     }
@@ -533,12 +545,12 @@
     font-weight: 600;
     font-style: italic;
     color: v.$text-color-secondary;
-    background-color: darken(v.$background-dark, 2%);
+    background-color: color.adjust(v.$background-dark, $lightness: -2%);
   }
   .averageCell {
     font-weight: 600;
     color: v.$text-color-primary;
-    background-color: darken(v.$background-dark, 2%);
+    background-color: color.adjust(v.$background-dark, $lightness: -2%);
   }
 
   // --- Integrate Existing Conditional Styles ---
@@ -571,7 +583,10 @@
       v.$warning-color,
       0.7
     ) !important; // Use warning color
-    color: darken(v.$warning-color, 40%); // Darker text for yellow bg
+    color: color.adjust(
+      v.$warning-color,
+      $lightness: -40%
+    ); // Darker text for yellow bg
     font-weight: 600;
   }
 

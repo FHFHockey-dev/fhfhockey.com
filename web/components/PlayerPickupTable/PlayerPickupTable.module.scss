@@ -37,9 +37,12 @@ $selected-border-width: 2px; // The width of the indicator
   .metricFilterContainer, // Container for metric header + groups
   .buttonReset {
     // Reset button
-    transition: max-height 0.4s v.$transition-easing,
-      opacity 0.3s v.$transition-easing, visibility 0.3s v.$transition-easing,
-      margin 0.4s v.$transition-easing, padding 0.4s v.$transition-easing;
+    transition:
+      max-height 0.4s v.$transition-easing,
+      opacity 0.3s v.$transition-easing,
+      visibility 0.3s v.$transition-easing,
+      margin 0.4s v.$transition-easing,
+      padding 0.4s v.$transition-easing;
     max-height: 1000px; // Arbitrary large height when visible
     opacity: 1;
     visibility: visible;
@@ -87,7 +90,8 @@ $selected-border-width: 2px; // The width of the indicator
   // margin-bottom: 5px; // Spacing handled by parent gap
   position: relative;
   padding-right: 30px; // Space for icon
-  transition: padding-bottom v.$transition-duration v.$transition-easing,
+  transition:
+    padding-bottom v.$transition-duration v.$transition-easing,
     border-bottom v.$transition-duration v.$transition-easing,
     margin-bottom v.$transition-duration v.$transition-easing;
 
@@ -284,14 +288,15 @@ $selected-border-width: 2px; // The width of the indicator
   width: 100%;
   max-width: 150px; // Limit select width
   // Custom arrow
-  background-image: linear-gradient(
-      45deg,
-      transparent 50%,
-      v.$text-color-secondary 50%
-    ),
+  background-image:
+    linear-gradient(45deg, transparent 50%, v.$text-color-secondary 50%),
     linear-gradient(135deg, v.$text-color-secondary 50%, transparent 50%);
-  background-position: calc(100% - 15px) center, calc(100% - 10px) center;
-  background-size: 5px 5px, 5px 5px;
+  background-position:
+    calc(100% - 15px) center,
+    calc(100% - 10px) center;
+  background-size:
+    5px 5px,
+    5px 5px;
   background-repeat: no-repeat;
   &:focus {
     outline: none;
@@ -318,7 +323,8 @@ $selected-border-width: 2px; // The width of the indicator
     background-color: v.$background-light; // Use light background for checkbox itself
     cursor: pointer;
     position: relative;
-    transition: background-color v.$transition-duration v.$transition-easing,
+    transition:
+      background-color v.$transition-duration v.$transition-easing,
       border-color v.$transition-duration v.$transition-easing;
 
     &:checked {
@@ -397,7 +403,9 @@ $selected-border-width: 2px; // The width of the indicator
     color: v.$text-color-secondary;
     border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.2s, border-color 0.2s;
+    transition:
+      background-color 0.2s,
+      border-color 0.2s;
     &:hover:not(:disabled) {
       background-color: color.scale(v.$background-light, $lightness: -10%);
       border-color: v.$primary-color;
@@ -543,7 +551,8 @@ $selected-border-width: 2px; // The width of the indicator
     cursor: pointer;
     position: relative;
     flex-shrink: 0; // Prevent checkbox shrinking if label is long
-    transition: background-color v.$transition-duration v.$transition-easing,
+    transition:
+      background-color v.$transition-duration v.$transition-easing,
       border-color v.$transition-duration v.$transition-easing;
 
     &:checked {
@@ -629,7 +638,7 @@ $selected-border-width: 2px; // The width of the indicator
   color: v.$text-color-secondary; // Subdued color
   .statusRightInjuryPart {
     font-weight: bold;
-    color: darken(red, 10%); // Darker red for status
+    color: color.adjust(v.$color-red, $lightness: -10%);
     flex-shrink: 0;
   }
   .injuryNoteRightInjuryPart {
@@ -828,7 +837,8 @@ $selected-border-width: 2px; // The width of the indicator
   font-size: 1.5rem;
   cursor: pointer;
   padding: 0 5px;
-  transition: transform v.$transition-duration v.$transition-easing,
+  transition:
+    transform v.$transition-duration v.$transition-easing,
     color v.$transition-duration v.$transition-easing;
   line-height: 1; // Prevent extra spacing
   display: inline-flex; // Ensure proper alignment
@@ -1041,8 +1051,10 @@ $selected-border-width: 2px; // The width of the indicator
 
 /* --- Styles for the Collapsible Table/Pagination Content --- */
 .collapsibleContent {
-  transition: max-height 0.4s v.$transition-easing,
-    opacity 0.3s v.$transition-easing, visibility 0.3s v.$transition-easing,
+  transition:
+    max-height 0.4s v.$transition-easing,
+    opacity 0.3s v.$transition-easing,
+    visibility 0.3s v.$transition-easing,
     margin-top 0.4s v.$transition-easing;
   max-height: 5000px; // Arbitrarily large height when visible
   opacity: 1;
