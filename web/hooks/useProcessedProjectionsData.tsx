@@ -1,6 +1,6 @@
 // lib/hooks/useProcessedProjectionsData.tsx
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { SupabaseClient, PostgrestResponse } from "@supabase/supabase-js"; // prettier-ignore
 import { ColumnDef, RowData, SortingFnOption } from "@tanstack/react-table";
 
@@ -367,26 +367,16 @@ export const useProcessedProjectionsData = ({
   }>({});
 
   useEffect(() => {
+    // Always call this effect, but handle missing args inside
+    if (!supabaseClient || !currentSeasonId) {
+      setError("Supabase client or current season ID not available in hook.");
+      setProcessedPlayers([]);
+      setTableColumns([]);
+      setIsLoading(false);
+      return;
+    }
+
     const fetchDataAndProcess = async () => {
-      if (!supabaseClient) {
-        setError("Supabase client not available in hook.");
-        // Ensure fantasyPointSettings is not used here if client is null
-        setProcessedPlayers([]);
-        setTableColumns([]);
-        return;
-      }
-
-      // If currentSeasonId is not yet available, wait.
-      if (!currentSeasonId) {
-        // console.log("Current season ID not yet available in hook. Skipping data fetch.");
-        setProcessedPlayers([]);
-        setTableColumns([]);
-        setIsLoading(false); // Or true if a loading state is preferred
-        setError(null);
-        // Optionally, set a specific message: setError("Waiting for current season data...");
-        return;
-      }
-
       // --- Cache Check ---
       const stringifiedSourceControls = JSON.stringify(sourceControls);
       const stringifiedFantasyPointSettings =
@@ -1698,12 +1688,11 @@ export const useProcessedProjectionsData = ({
     fetchDataAndProcess(); // supabaseClient is guaranteed from props
   }, [
     activePlayerType,
-    sourceControls,
+    JSON.stringify(sourceControls),
     yahooDraftMode,
-    fantasyPointSettings,
+    JSON.stringify(fantasyPointSettings),
     supabaseClient,
-    currentSeasonId,
-    styles // Add styles to dependency array
+    currentSeasonId
   ]);
 
   return { processedPlayers, tableColumns, isLoading, error };

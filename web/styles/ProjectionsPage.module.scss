@@ -503,6 +503,12 @@
     // Removed incorrectly nested block from here
   }
 
+  // Ensure flex items in header take full width for proper alignment of collapse button
+  th div[style*="display: flex"] {
+    width: 100%;
+    justify-content: space-between; // Ensures button is pushed to the right
+  }
+
   tbody tr {
     &:nth-child(even) td {
       background-color: v.$background-dark; // Darker for even rows
@@ -710,5 +716,26 @@
     opacity: 0.5;
     background-color: color.adjust(v.$background-dark, $lightness: -5%);
     cursor: not-allowed;
+  }
+}
+
+.collapseButton {
+  background: none;
+  border: 1px solid v.$text-secondary;
+  color: v.$text-secondary;
+  cursor: pointer;
+  padding: 0px 6px; // Adjusted padding
+  margin-left: v.$space-xs;
+  font-size: v.$font-size-base; // Slightly larger for better click target and visibility
+  font-weight: bold;
+  border-radius: v.$border-radius-sm;
+  line-height: 1.2; // Ensure text is centered
+  min-width: 24px; // Ensure button has a decent width
+  text-align: center;
+
+  &:hover {
+    background-color: v.$primary-color;
+    color: v.$color-white;
+    border-color: v.$primary-color;
   }
 }

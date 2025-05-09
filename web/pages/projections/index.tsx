@@ -36,6 +36,7 @@ import {
 } from "lib/projectionsConfig/statsMasterList";
 import useCurrentSeason from "hooks/useCurrentSeason"; // Import the hook
 import styles from "styles/ProjectionsPage.module.scss";
+import { assignGlobalRanks, injectRanks } from "utils/projectionsRanking";
 
 // Import the new chart component
 import RoundPerformanceBoxPlotChart from "components/Projections/RoundPerformanceBoxPlotChart"; // Adjust path as needed
@@ -45,8 +46,8 @@ const supabaseClient = supabase;
 // Helper for formatting TOI/G moved to lib/utils/formatting.ts and handled by cell renderer in useProcessedProjectionsData
 
 interface PlayerTypeTabsProps {
-  activeTab: "skater" | "goalie";
-  onTabChange: (tab: "skater" | "goalie") => void;
+  activeTab: "skater" | "goalie" | "overall";
+  onTabChange: (tab: "skater" | "goalie" | "overall") => void;
 }
 const PlayerTypeTabs: React.FC<PlayerTypeTabsProps> = ({
   activeTab,
@@ -68,6 +69,14 @@ const PlayerTypeTabs: React.FC<PlayerTypeTabsProps> = ({
       onClick={() => onTabChange("goalie")}
     >
       Goalies
+    </button>
+    <button
+      className={`${styles.playerTypeTabButton} ${
+        activeTab === "overall" ? styles.activeTab : ""
+      }`}
+      onClick={() => onTabChange("overall")}
+    >
+      Overall
     </button>
   </div>
 );
@@ -165,7 +174,7 @@ const YahooModeToggle: React.FC<YahooModeToggleProps> = ({
 );
 
 interface FantasyPointsSettingsPanelProps {
-  activePlayerType: "skater" | "goalie";
+  activePlayerType: "skater" | "goalie" | "overall";
   fantasyPointSettings: Record<string, number>;
   onFantasyPointSettingChange: (statKey: string, value: number) => void;
 }
@@ -354,72 +363,221 @@ const ProjectionsDataTable: React.FC<ProjectionsDataTableProps> = ({
 
 // --- Main Page Component ---
 const ProjectionsPage: NextPage = () => {
-  const [activePlayerType, setActivePlayerType] = useState<"skater" | "goalie">(
-    "skater"
-  );
+  // All hooks must be called unconditionally at the top
+  const currentSeason = useCurrentSeason();
+  const currentSeasonId = currentSeason?.seasonId;
+  const [activePlayerType, setActivePlayerType] = useState<
+    "skater" | "goalie" | "overall"
+  >("skater");
   const [sourceControls, setSourceControls] = useState<
     Record<string, { isSelected: boolean; weight: number }>
   >({});
   const [yahooDraftMode, setYahooDraftMode] = useState<"ALL" | "PRESEASON">(
     "ALL"
   );
-  const [fantasyPointSettings, setFantasyPointSettings] = useState<
-    Record<string, number>
-  >({});
-  const currentSeason = useCurrentSeason(); // Fetch current season data
 
-  useEffect(() => {
-    const initialControls: Record<
-      string,
-      { isSelected: boolean; weight: number }
-    > = {};
-    PROJECTION_SOURCES_CONFIG.filter(
-      (src) => src.playerType === activePlayerType
-    ).forEach((src) => {
-      initialControls[src.id] = { isSelected: true, weight: 1 };
-    });
-    setSourceControls(initialControls);
-
-    // Initialize fantasy point settings
-    const defaultFPConfig = getDefaultFantasyPointsConfig(activePlayerType);
+  // Helper to get default FP config for a type
+  const getFPConfig = (type: "skater" | "goalie") => {
+    const defaultFPConfig = getDefaultFantasyPointsConfig(type);
     const initialFPSettings: Record<string, number> = {};
     STATS_MASTER_LIST.forEach((stat) => {
       if (
-        (activePlayerType === "skater" && stat.isSkaterStat) ||
-        (activePlayerType === "goalie" && stat.isGoalieStat)
+        (type === "skater" && stat.isSkaterStat) ||
+        (type === "goalie" && stat.isGoalieStat)
       ) {
         initialFPSettings[stat.key] = defaultFPConfig[stat.key] ?? 0;
       }
     });
-    setFantasyPointSettings(initialFPSettings);
-  }, [activePlayerType]);
+    return initialFPSettings;
+  };
 
-  const availableSourcesForTab = useMemo(() => {
-    return PROJECTION_SOURCES_CONFIG.filter(
-      (src) => src.playerType === activePlayerType
+  // Calculate default skater and goalie FP settings once
+  const skaterFPSettings = useMemo(() => getFPConfig("skater"), []);
+  const goalieFPSettings = useMemo(() => getFPConfig("goalie"), []);
+
+  // Initialize fantasyPointSettings based on the initial activePlayerType ("skater")
+  const [fantasyPointSettings, setFantasyPointSettings] = useState<
+    Record<string, number>
+  >(() => skaterFPSettings);
+
+  // Effect to update UI-bound fantasyPointSettings when activePlayerType changes
+  useEffect(() => {
+    if (activePlayerType === "skater") {
+      setFantasyPointSettings(skaterFPSettings);
+    } else if (activePlayerType === "goalie") {
+      setFantasyPointSettings(goalieFPSettings);
+    } else if (activePlayerType === "overall") {
+      // For "overall" tab, FantasyPointsSettingsPanel shows skater settings by default
+      setFantasyPointSettings(skaterFPSettings);
+    }
+  }, [activePlayerType, skaterFPSettings, goalieFPSettings]);
+
+  // Always call all hooks at the top level (now safe)
+  const skaterTabData = useProcessedProjectionsData({
+    activePlayerType: "skater",
+    sourceControls: Object.fromEntries(
+      PROJECTION_SOURCES_CONFIG.filter(
+        (src) => src.playerType === "skater"
+      ).map((src) => [
+        src.id,
+        sourceControls[src.id] || { isSelected: true, weight: 1 }
+      ])
+    ),
+    yahooDraftMode,
+    fantasyPointSettings: skaterFPSettings,
+    supabaseClient,
+    styles,
+    currentSeasonId: currentSeasonId ? String(currentSeasonId) : undefined
+  });
+
+  const goalieTabData = useProcessedProjectionsData({
+    activePlayerType: "goalie",
+    sourceControls: Object.fromEntries(
+      PROJECTION_SOURCES_CONFIG.filter(
+        (src) => src.playerType === "goalie"
+      ).map((src) => [
+        src.id,
+        sourceControls[src.id] || { isSelected: true, weight: 1 }
+      ])
+    ),
+    yahooDraftMode,
+    fantasyPointSettings: goalieFPSettings,
+    supabaseClient,
+    styles,
+    currentSeasonId: currentSeasonId ? String(currentSeasonId) : undefined
+  });
+
+  // Compute overall data with useMemo (must be called unconditionally)
+  const overallData = useMemo(() => {
+    // Only use ProcessedPlayer rows (not summary rows)
+    const skaters = skaterTabData.processedPlayers.filter(
+      (p): p is ProcessedPlayer => !("type" in p)
     );
-  }, [activePlayerType]);
+    const goalies = goalieTabData.processedPlayers.filter(
+      (p): p is ProcessedPlayer => !("type" in p)
+    );
+    if (skaters.length === 0 && goalies.length === 0) {
+      return {
+        processedPlayers: [],
+        tableColumns: [],
+        isLoading: skaterTabData.isLoading || goalieTabData.isLoading,
+        error: skaterTabData.error || goalieTabData.error
+      };
+    }
+    const ranked = assignGlobalRanks(skaters, goalies);
+    // Inject ranks back
+    const skatersWithRanks = injectRanks(skaters, ranked);
+    const goaliesWithRanks = injectRanks(goalies, ranked);
+    // For overall, combine and sort by actual FP desc
+    const overallRows = [...skatersWithRanks, ...goaliesWithRanks].sort(
+      (a, b) =>
+        (b.fantasyPoints.actual ?? -Infinity) -
+        (a.fantasyPoints.actual ?? -Infinity)
+    );
+    // Only show core columns for overall
+    const overallColumns: ColumnDef<TableDataRow, any>[] = [
+      {
+        id: "fullName",
+        header: "Player",
+        accessorKey: "fullName",
+        cell: (info) => (info.row.original as ProcessedPlayer).fullName,
+        meta: { columnType: "text" },
+        enableSorting: true
+      },
+      {
+        id: "displayTeam",
+        header: "Team",
+        accessorKey: "displayTeam",
+        cell: (info) => (info.row.original as ProcessedPlayer).displayTeam,
+        meta: { columnType: "text" },
+        enableSorting: true
+      },
+      {
+        id: "displayPosition",
+        header: "Pos",
+        accessorKey: "displayPosition",
+        cell: (info) => (info.row.original as ProcessedPlayer).displayPosition,
+        meta: { columnType: "text" },
+        enableSorting: true
+      },
+      {
+        id: "fp_proj",
+        header: "Proj FP",
+        accessorFn: (player) =>
+          (player as ProcessedPlayer).fantasyPoints.projected ?? undefined,
+        cell: (info) => {
+          const val = (info.row.original as ProcessedPlayer).fantasyPoints
+            .projected;
+          return val !== null && val !== undefined ? val.toFixed(1) : "-";
+        },
+        meta: { columnType: "numeric", higherIsBetter: true },
+        enableSorting: true,
+        sortUndefined: "last"
+      },
+      {
+        id: "fp_actual",
+        header: "Actual FP",
+        accessorFn: (player) =>
+          (player as ProcessedPlayer).fantasyPoints.actual ?? undefined,
+        cell: (info) => {
+          const val = (info.row.original as ProcessedPlayer).fantasyPoints
+            .actual;
+          return val !== null && val !== undefined ? val.toFixed(1) : "-";
+        },
+        meta: { columnType: "numeric", higherIsBetter: true },
+        enableSorting: true,
+        sortUndefined: "last"
+      },
+      {
+        id: "projectedRank",
+        header: "P-Rank",
+        accessorFn: (player) =>
+          (player as ProcessedPlayer).projectedRank ?? undefined,
+        cell: (info) => {
+          const val = (info.row.original as ProcessedPlayer).projectedRank;
+          return val !== null && val !== undefined ? val : "-";
+        },
+        meta: { columnType: "numeric", higherIsBetter: false },
+        enableSorting: true,
+        sortUndefined: "last"
+      },
+      {
+        id: "actualRank",
+        header: "A-Rank",
+        accessorFn: (player) =>
+          (player as ProcessedPlayer).actualRank ?? undefined,
+        cell: (info) => {
+          const val = (info.row.original as ProcessedPlayer).actualRank;
+          return val !== null && val !== undefined ? val : "-";
+        },
+        meta: { columnType: "numeric", higherIsBetter: false },
+        enableSorting: true,
+        sortUndefined: "last"
+      }
+    ];
+    return {
+      processedPlayers: overallRows,
+      tableColumns: overallColumns,
+      isLoading: skaterTabData.isLoading || goalieTabData.isLoading,
+      error: skaterTabData.error || goalieTabData.error
+    };
+  }, [skaterTabData, goalieTabData]);
 
-  // Guard against calling the hook before currentSeason is loaded
-  const currentSeasonId = currentSeason?.seasonId;
-
-  const { processedPlayers, tableColumns, isLoading, error } =
-    useProcessedProjectionsData({
-      activePlayerType,
-      sourceControls,
-      yahooDraftMode,
-      fantasyPointSettings,
-      supabaseClient,
-      styles,
-      currentSeasonId: currentSeasonId ? String(currentSeasonId) : undefined // Pass the dynamic season ID
-    });
+  // --- Tab switching logic ---
+  let displayedData: ReturnType<typeof useProcessedProjectionsData> =
+    skaterTabData;
+  if (activePlayerType === "goalie") displayedData = goalieTabData;
+  if (activePlayerType === "overall") displayedData = overallData;
 
   const chartPresentationData = useMemo(() => {
-    if (!processedPlayers || processedPlayers.length === 0) {
+    if (
+      !displayedData.processedPlayers ||
+      displayedData.processedPlayers.length === 0
+    ) {
       return { labels: [], dataForChart: [] };
     }
 
-    const players = processedPlayers.filter(
+    const players = displayedData.processedPlayers.filter(
       (p): p is ProcessedPlayer => !("type" in p) || p.type !== "summary"
     );
 
@@ -475,32 +633,39 @@ const ProjectionsPage: NextPage = () => {
     // --- End "All Drafted" category ---
 
     return { labels, dataForChart };
-  }, [processedPlayers]);
+  }, [displayedData.processedPlayers]);
 
-  // Handle case where supabaseClient might not be initialized on first render, though it should be.
-  // Or, ensure ProjectionsPage only renders when supabaseClient is available.
-  // For now, the hook expects it. If it can be null, the hook needs to handle it.
-  // The hook was modified to expect non-null, so this check is more for robustness if supabaseClient could be null.
-  if (!supabaseClient) {
-    return (
-      <div className={styles.loadingState}>
-        <p>Initializing...</p>
-      </div>
+  // Unconditionally call all hooks before any return
+  // Unconditionally call all hooks before any return
+  const availableSourcesForTab = useMemo(() => {
+    return PROJECTION_SOURCES_CONFIG.filter(
+      (src) => src.playerType === activePlayerType
     );
-    // Or some other loading/error state if supabase client itself is the issue.
-    // This scenario should be rare if supabase is initialized correctly at app startup.
-  }
+  }, [activePlayerType]);
 
-  // Show loading state while currentSeason is being fetched
-  if (!currentSeasonId) {
-    return (
-      <div className={styles.loadingState}>
-        <p>Loading current season data...</p>
-      </div>
-    );
-  }
+  // // Now, render loading state if needed
+  // if (!supabaseClient || !currentSeasonId) {
+  //   return (
+  //     <div className={styles.loadingState}>
+  //       <p>Loading current season data...</p>
+  //     </div>
+  //   );
+  // }
 
-  const handlePlayerTypeChange = (tab: "skater" | "goalie") => {
+  // Initialize sourceControls with all sources selected by default
+  useEffect(() => {
+    const initialControls: Record<
+      string,
+      { isSelected: boolean; weight: number }
+    > = {};
+    PROJECTION_SOURCES_CONFIG.forEach((source) => {
+      // Set isSelected to true and weight to 1 for all sources initially
+      initialControls[source.id] = { isSelected: true, weight: 1 };
+    });
+    setSourceControls(initialControls);
+  }, []); // Run only once on mount
+
+  const handlePlayerTypeChange = (tab: "skater" | "goalie" | "overall") => {
     setActivePlayerType(tab);
   };
 
@@ -589,7 +754,9 @@ const ProjectionsPage: NextPage = () => {
             onModeChange={setYahooDraftMode}
           />
           <FantasyPointsSettingsPanel
-            activePlayerType={activePlayerType}
+            activePlayerType={
+              activePlayerType === "overall" ? "skater" : activePlayerType
+            }
             fantasyPointSettings={fantasyPointSettings}
             onFantasyPointSettingChange={handleFantasyPointSettingChange}
           />
@@ -597,9 +764,9 @@ const ProjectionsPage: NextPage = () => {
 
         <section className={styles.dataDisplaySection}>
           {/* Chart Section - Rendered above the table */}
-          {!isLoading &&
-            !error &&
-            processedPlayers.length > 0 &&
+          {!displayedData.isLoading &&
+            !displayedData.error &&
+            displayedData.processedPlayers.length > 0 &&
             chartPresentationData.labels.length > 0 && (
               <div
                 className={styles.chartSectionWrapper}
@@ -628,21 +795,21 @@ const ProjectionsPage: NextPage = () => {
               </div>
             )}
 
-          {isLoading && (
+          {displayedData.isLoading && (
             <div className={styles.loadingState}>
               <p>Loading projections...</p>
             </div>
           )}
-          {error && !isLoading && (
+          {displayedData.error && !displayedData.isLoading && (
             <div className={styles.errorState}>
               <p className={styles.errorTitle}>Error loading data:</p>
-              <p className={styles.errorMessage}>{error}</p>
+              <p className={styles.errorMessage}>{displayedData.error}</p>
             </div>
           )}
-          {!isLoading && !error && (
+          {!displayedData.isLoading && !displayedData.error && (
             <ProjectionsDataTable
-              columns={tableColumns}
-              data={processedPlayers}
+              columns={displayedData.tableColumns}
+              data={displayedData.processedPlayers}
             />
           )}
         </section>
