@@ -1,133 +1,197 @@
-// /Users/tim/Desktop/fhfhockey.com/web/components/RoundPerformanceBoxPlotChart.tsx (New File)
-import React from "react";
+import React, { useMemo } from "react";
 import {
-  BarController,
-  BarElement,
+  Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  LogarithmicScale,
+  PointElement,
+  LineElement,
+  Title,
   Tooltip,
   Legend,
-  Chart as ChartJS
+  LineController,
+  // Boxplot specific imports
+  BarController, // Boxplot might use BarController as a base or for elements
+  BarElement // For the bars in the boxplot
 } from "chart.js";
 import { Chart } from "react-chartjs-2";
 import {
-  BoxAndWiskers,
-  BoxPlotController
+  BoxPlotController,
+  BoxAndWiskers
 } from "@sgratzl/chartjs-chart-boxplot";
 
-// Chart.js v3+ requires explicit controller, element, scale registration
-// For Chart.js v4, BoxPlotController.id is 'boxplot', BarController.id is 'bar'
+// Register all necessary components
 ChartJS.register(
-  BoxPlotController,
-  BarController,
-  BarElement,
   CategoryScale,
   LinearScale,
-  LogarithmicScale,
-  BoxAndWiskers,
+  PointElement,
+  LineElement,
+  Title,
   Tooltip,
-  Legend
+  Legend,
+  LineController,
+  // Boxplot specific
+  BoxPlotController,
+  BoxAndWiskers,
+  BarController, // Register BarController as BoxPlotController might depend on it or its elements
+  BarElement // Register BarElement
 );
 
-interface RoundPerformanceBoxPlotChartProps {
-  labels: string[]; // e.g., ["Round 1", "Round 2", ...]
-  data: number[][]; // Array of arrays, e.g., [[diffs for R1], [diffs for R2], ...]
-  styles?: Record<string, string>; // For SCSS modules if needed for container
+interface RoundPerformanceChartProps {
+  labels: string[]; // Will be empty for linear x-axis, but prop kept for boxplot
+  datasets: any[];
+  styles?: Record<string, string>;
+  chartType: "line" | "boxplot";
+  yAxisLabel: string;
 }
 
-const RoundPerformanceBoxPlotChart: React.FC<
-  RoundPerformanceBoxPlotChartProps
-> = ({ labels, data, styles }) => {
-  const chartData = {
-    labels: labels,
-    datasets: [
-      {
-        label: "Player Fantasy Points Diff % by Round (Actual vs. Projected)",
-        data: data,
-        backgroundColor: "#07aae2",
-        borderColor: "#07aae2", // Box border
-        borderWidth: 1,
-        itemRadius: 3, // Radius for outlier points
-        itemStyle: "circle" as const, // Style of outlier points
-        outlierColor: "#FF0000", // Color of outlier points (often red)
-        medianColor: "#FFFFFF" // Color of the median line
-      }
-    ]
-  };
+const RoundPerformanceChart: React.FC<RoundPerformanceChartProps> = ({
+  labels,
+  datasets,
+  styles,
+  chartType,
+  yAxisLabel
+}) => {
+  const chartData = useMemo(
+    () => ({
+      // For line chart with numeric x-axis, labels array can be empty if x values are in datasets.
+      // For boxplot, labels array is used for categories.
+      labels: chartType === "boxplot" ? labels : [],
+      datasets: datasets
+    }),
+    [labels, datasets, chartType]
+  );
 
-  const options: any = {
-    // Use any for options if type conflicts are tricky with plugins
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      y: {
-        beginAtZero: false,
-        title: {
-          display: true,
-          text: "Individual Player Difference %",
-          color: "#DDDDDD" // Light color for title
-        },
-        grid: {
-          color: function (context: any) {
-            if (context.tick && context.tick.value === 0) {
-              return "#07aae2"; // Your primary color for the zero line
-            }
-            return "rgba(255, 255, 255, 0.1)"; // Default grid line color
+  const options: any = useMemo(() => {
+    const baseOptions: any = {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: chartType === "line", // Actual FP starts at 0
+          title: {
+            display: true,
+            text: yAxisLabel,
+            color: "#DDDDDD"
           },
-          lineWidth: function (context: any) {
-            if (context.tick && context.tick.value === 0) {
-              return 2; // Make the zero line slightly thicker
+          grid: {
+            color: function (context: any) {
+              if (
+                chartType === "boxplot" &&
+                context.tick &&
+                context.tick.value === 0
+              ) {
+                return "#07aae2";
+              }
+              return "rgba(255, 255, 255, 0.1)";
+            },
+            lineWidth: function (context: any) {
+              if (
+                chartType === "boxplot" &&
+                context.tick &&
+                context.tick.value === 0
+              ) {
+                return 2;
+              }
+              return 1;
             }
-            return 1; // Default grid line width
+          },
+          ticks: {
+            color: "#DDDDDD",
+            callback: function (value: string | number) {
+              if (chartType === "boxplot" && typeof value === "number")
+                return value + "%";
+              if (chartType === "line" && typeof value === "number")
+                return value.toFixed(1);
+              return value;
+            }
           }
         },
-        ticks: {
-          color: "#DDDDDD", // Lighter tick labels
-          callback: function (value: string | number) {
-            if (typeof value === "number") return value + "%";
-            return value;
+        x: {
+          title: {
+            display: true,
+            text:
+              chartType === "line" ? "Yahoo Average Pick (ADP)" : "Draft Round",
+            color: "#DDDDDD"
+          },
+          grid: {
+            display: chartType === "line" ? true : false, // Show grid for line chart x-axis
+            color: "rgba(255, 255, 255, 0.05)" // Lighter grid for line chart x-axis
+          },
+          ticks: {
+            color: "#DDDDDD"
+            // For line chart, ticks will be auto-generated on the linear scale.
+            // For boxplot, labels are used as ticks.
           }
         }
       },
-      x: {
+      plugins: {
+        legend: {
+          position: "top" as const,
+          labels: {
+            color: "#DDDDDD",
+            boxWidth: chartType === "line" ? 15 : 40,
+            padding: chartType === "line" ? 20 : 10
+          }
+        },
         title: {
           display: true,
-          text: "Draft Round",
-          color: "#DDDDDD" // Light color for title
+          text:
+            chartType === "line"
+              ? "Actual Fantasy Points by Position vs. ADP"
+              : "Player-Level Fantasy Points Projection Accuracy by Round",
+          color: "#FFFFFF",
+          font: { size: 16 }
         },
-        grid: {
-          display: false // Hide vertical grid lines for cleaner look
-        },
-        ticks: {
-          color: "#DDDDDD" // Lighter tick labels
-        }
-      }
-    },
-    plugins: {
-      legend: {
-        position: "top" as const,
-        labels: { color: "#DDDDDD" } // Light color for legend
-      },
-      title: {
-        display: true,
-        text: "Player-Level Fantasy Points Projection Accuracy by Round",
-        color: "#FFFFFF", // Brightest for main title
-        font: { size: 16 }
-      },
-      tooltip: {
-        callbacks: {
-          // You can customize tooltips to show min, max, median, quartiles for the box plot
-          // The default tooltip for box plots is usually quite informative.
-        }
-      }
-    }
-  };
+        tooltip: {
+          callbacks: {
+            title: function (tooltipItems: any[]) {
+              // For line chart, show ADP as title. For boxplot, use category label.
+              if (chartType === "line" && tooltipItems.length > 0) {
+                const point = tooltipItems[0].raw as {
+                  x: number;
+                  playerFullName?: string;
+                };
+                return `ADP: ${point.x.toFixed(1)}`;
+              }
+              return tooltipItems[0]?.label || ""; // Default for boxplot
+            },
+            label: function (context: any) {
+              let label = context.dataset.label || ""; // Position or Boxplot series label
 
-  // Note: The plugin uses 'boxplot' as the chart type.
-  // For react-chartjs-2, you might need to render <Chart type="boxplot" ... />
-  // The `@sgratzl/chartjs-chart-boxplot` library provides `BoxPlotChart` which you can use directly.
-  // Or if using react-chartjs-2 v4+ with Chart.js v3+, you'd use <Chart type='boxplot' ... />
+              if (chartType === "boxplot") {
+                const stats = context.raw;
+                if (stats && typeof stats.median !== "undefined") {
+                  label = `Median: ${stats.median.toFixed(1)}%`;
+                } else if (typeof context.parsed.y === "number") {
+                  label = `${context.parsed.y.toFixed(1)}% (Diff)`;
+                }
+              } else {
+                // For line chart, context.raw is {x, y, playerFullName, ...}
+                const pointData = context.raw as {
+                  y: number;
+                  playerFullName?: string;
+                };
+                if (label) label += ": ";
+                label += `${pointData.y.toFixed(1)} FP`;
+                if (pointData.playerFullName) {
+                  return [label, `Player: ${pointData.playerFullName}`];
+                }
+              }
+              return label;
+            }
+          }
+        }
+      }
+    };
+
+    if (chartType === "line") {
+      baseOptions.scales.x.type = "linear";
+      // Optional: Suggest min/max for x-axis if data can be very sparse or to control zoom
+      // baseOptions.scales.x.min = 0;
+      // baseOptions.scales.x.max = 210; // ~17.5 rounds
+    }
+    return baseOptions;
+  }, [chartType, yAxisLabel, labels]);
 
   return (
     <div
@@ -139,8 +203,9 @@ const RoundPerformanceBoxPlotChart: React.FC<
         backgroundColor: "rgba(0,0,0,0.1)"
       }}
     >
-      <Chart type="boxplot" data={chartData} options={options} />
+      <Chart type={chartType} data={chartData} options={options} />
     </div>
   );
 };
-export default RoundPerformanceBoxPlotChart;
+
+export default RoundPerformanceChart;

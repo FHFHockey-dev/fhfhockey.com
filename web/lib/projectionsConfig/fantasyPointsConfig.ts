@@ -38,7 +38,9 @@ export const DEFAULT_GOALIE_FANTASY_POINTS: Record<string, number> = {
 export const getDefaultFantasyPointsConfig = (
   playerType: "skater" | "goalie" | "overall"
 ): Record<string, number> => {
-  return playerType === "skater"
-    ? DEFAULT_SKATER_FANTASY_POINTS
-    : DEFAULT_GOALIE_FANTASY_POINTS;
+  if (playerType === "goalie") {
+    return DEFAULT_GOALIE_FANTASY_POINTS;
+  }
+  // For "skater" or "overall", use skater fantasy points
+  return DEFAULT_SKATER_FANTASY_POINTS;
 };
