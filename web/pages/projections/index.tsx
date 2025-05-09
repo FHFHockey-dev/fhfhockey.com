@@ -21,7 +21,9 @@ import {
 } from "@tanstack/react-table";
 import {
   useProcessedProjectionsData,
-  ProcessedPlayer
+  ProcessedPlayer, // Keep for individual player type if needed elsewhere
+  TableDataRow, // Import the new union type
+  RoundSummaryRow
 } from "hooks/useProcessedProjectionsData";
 import {
   PROJECTION_SOURCES_CONFIG,
@@ -34,6 +36,9 @@ import {
 } from "lib/projectionsConfig/statsMasterList";
 import useCurrentSeason from "hooks/useCurrentSeason"; // Import the hook
 import styles from "styles/ProjectionsPage.module.scss";
+
+// Import the new chart component
+import RoundPerformanceBoxPlotChart from "components/Projections/RoundPerformanceBoxPlotChart"; // Adjust path as needed
 
 const supabaseClient = supabase;
 
@@ -213,19 +218,19 @@ const FantasyPointsSettingsPanel: React.FC<FantasyPointsSettingsPanelProps> = ({
 };
 
 interface ProjectionsDataTableProps {
-  columns: ColumnDef<ProcessedPlayer, any>[];
-  data: ProcessedPlayer[];
+  columns: ColumnDef<TableDataRow, any>[]; // Use TableDataRow
+  data: TableDataRow[]; // Use TableDataRow
 }
 
 const ProjectionsDataTable: React.FC<ProjectionsDataTableProps> = ({
   columns,
   data
 }) => {
-  // Sorting state for the table
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const tableData = useMemo(() => data, [data]); // Use all data
 
-  const table = useReactTable<ProcessedPlayer>({
+  const table = useReactTable<TableDataRow>({
+    // Use TableDataRow
     data: tableData, // Now uses all data
     columns,
     state: {
@@ -310,15 +315,28 @@ const ProjectionsDataTable: React.FC<ProjectionsDataTableProps> = ({
         </thead>
         <tbody>
           {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
+            <tr
+              key={row.id}
+              className={
+                "type" in row.original && row.original.type === "summary"
+                  ? styles.summaryRowVisual
+                  : ""
+              }
+            >
               {row.getVisibleCells().map((cell) => {
                 // @ts-ignore Accessing custom meta more safely
                 const meta = cell.column.columnDef.meta as
                   | { isDiffCell?: boolean }
                   | undefined;
-                const tdClassName = meta?.isDiffCell
-                  ? styles.diffCellContainer
-                  : "";
+
+                let tdClassName = "";
+                if (meta?.isDiffCell) {
+                  tdClassName = styles.diffCellContainer;
+                }
+                // If you add .summaryRowVisual to styles.ProjectionsPage.module.scss for full row styling:
+                // if (row.original.type === 'summary') {
+                //   tdClassName += ` ${styles.summaryCellInRow}`; // For specific cell styling within a summary row
+                // }
 
                 return (
                   <td key={cell.id} className={tdClassName}>
@@ -395,6 +413,69 @@ const ProjectionsPage: NextPage = () => {
       styles,
       currentSeasonId: currentSeasonId ? String(currentSeasonId) : undefined // Pass the dynamic season ID
     });
+
+  const chartPresentationData = useMemo(() => {
+    if (!processedPlayers || processedPlayers.length === 0) {
+      return { labels: [], dataForChart: [] };
+    }
+
+    const players = processedPlayers.filter(
+      (p): p is ProcessedPlayer => !("type" in p) || p.type !== "summary"
+    );
+
+    const playersByRound: Record<number, ProcessedPlayer[]> = {};
+    players.forEach((player) => {
+      if (player.yahooAvgPick != null && player.yahooAvgPick > 0) {
+        const round = Math.ceil(player.yahooAvgPick / 12); // Assuming 12 picks per round
+        if (!playersByRound[round]) {
+          playersByRound[round] = [];
+        }
+        playersByRound[round].push(player);
+      }
+    });
+
+    const rounds = Object.keys(playersByRound)
+      .map(Number)
+      .sort((a, b) => a - b)
+      .slice(0, 15); // Cap at 15 rounds for readability
+
+    const dataForChart = rounds.map((roundNum) => {
+      return playersByRound[roundNum]
+        .map((p) => p.fantasyPoints.diffPercentage)
+        .filter(
+          (diff) =>
+            diff !== null && // Check for null
+            diff !== 99999 && // Check for special positive value
+            diff !== -99999 && // Check for special negative value
+            typeof diff === "number" && // Ensure it's a number
+            !isNaN(diff) // Ensure it's not NaN
+        ) as number[]; // Filter out nulls and special large values for better plot scale
+    });
+    const labels = rounds.map((r) => `R${r}`); // Shorter labels: "R1", "R2", etc.
+
+    // --- Add "All Drafted" category ---
+    const allDraftedPlayersDiffs = players
+      .filter(
+        (player) => player.yahooAvgPick != null && player.yahooAvgPick > 0
+      ) // All players with an ADP
+      .map((p) => p.fantasyPoints.diffPercentage)
+      .filter(
+        (diff) =>
+          diff !== null &&
+          diff !== 99999 &&
+          diff !== -99999 &&
+          typeof diff === "number" &&
+          !isNaN(diff)
+      ) as number[];
+
+    if (allDraftedPlayersDiffs.length > 0) {
+      labels.push("All Drafted");
+      dataForChart.push(allDraftedPlayersDiffs);
+    }
+    // --- End "All Drafted" category ---
+
+    return { labels, dataForChart };
+  }, [processedPlayers]);
 
   // Handle case where supabaseClient might not be initialized on first render, though it should be.
   // Or, ensure ProjectionsPage only renders when supabaseClient is available.
@@ -515,6 +596,38 @@ const ProjectionsPage: NextPage = () => {
         </section>
 
         <section className={styles.dataDisplaySection}>
+          {/* Chart Section - Rendered above the table */}
+          {!isLoading &&
+            !error &&
+            processedPlayers.length > 0 &&
+            chartPresentationData.labels.length > 0 && (
+              <div
+                className={styles.chartSectionWrapper}
+                style={{
+                  marginBottom: "2rem",
+                  borderBottom: `2px solid ${styles.primaryColor || "#00bfff"}`,
+                  paddingBottom: "1rem"
+                }}
+              >
+                <h3
+                  className={styles.panelTitle}
+                  style={{
+                    textAlign: "center",
+                    marginBottom: "1rem",
+                    borderBottom: "none"
+                  }}
+                >
+                  Player Fantasy Point Difference %{" "}
+                  <span className={styles.spanColorBlue}>by Draft Round</span>
+                </h3>
+                <RoundPerformanceBoxPlotChart
+                  labels={chartPresentationData.labels}
+                  data={chartPresentationData.dataForChart}
+                  styles={styles}
+                />
+              </div>
+            )}
+
           {isLoading && (
             <div className={styles.loadingState}>
               <p>Loading projections...</p>

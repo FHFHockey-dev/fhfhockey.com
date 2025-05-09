@@ -67,7 +67,34 @@ export interface ProcessedPlayer {
   yahooAvgPick?: number | null;
   yahooAvgRound?: number | null;
   yahooPctDrafted?: number | null;
+
+  // Overall Ranks (across skaters & goalies)
+  projectedRank?: number | null;
+  actualRank?: number | null;
 }
+
+// Interface for the new round summary rows
+export interface RoundSummaryRow {
+  id: string; // Unique ID, e.g., "summary-round-1"
+  type: "summary";
+  roundNumber: number;
+  fantasyPoints: {
+    projected: null; // Not displaying summed FPs for now, could be added
+    actual: null; // Not displaying summed FPs for now, could be added
+    diffPercentage: number | null; // The key summary value for the round
+  };
+  // Fields to make it somewhat compatible with ProcessedPlayer for column definitions
+  // These will mostly be null or placeholder for summary rows.
+  playerId: string; // Can be the same as id
+  fullName: string; // e.g., "Round 1 Summary"
+  displayTeam: null;
+  displayPosition: null;
+  combinedStats: Record<string, any>; // Empty or placeholder
+  yahooAvgPick?: number | null; // Set to sort summary row after players of its round
+  // other ProcessedPlayer fields can be undefined or null
+}
+
+export type TableDataRow = ProcessedPlayer | RoundSummaryRow;
 
 export interface UseProcessedProjectionsDataProps {
   activePlayerType: "skater" | "goalie";
@@ -80,23 +107,29 @@ export interface UseProcessedProjectionsDataProps {
 }
 
 export interface UseProcessedProjectionsDataReturn {
-  processedPlayers: ProcessedPlayer[];
-  tableColumns: ColumnDef<ProcessedPlayer, any>[];
+  processedPlayers: TableDataRow[]; // Updated to be a union type
+  tableColumns: ColumnDef<TableDataRow, any>[]; // Updated for union type
   isLoading: boolean;
   error: string | null;
 }
 
-interface CachedBasePlayerData {
-  data: ProcessedPlayer[]; // Player data after main aggregation, FPs might be stale or from previous settings
-  columns: ColumnDef<ProcessedPlayer, any>[]; // Columns generated based on these source/yahoo settings
+// --- Cache Type Definitions ---
+interface BaseCacheSnapshotInfo {
   sourceControlsSnapshot: string;
   yahooModeSnapshot: "ALL" | "PRESEASON";
   currentSeasonIdSnapshot?: string; // For caching based on season
 }
 
-interface CachedFullPlayerData extends CachedBasePlayerData {
+interface CachedBasePlayerData extends BaseCacheSnapshotInfo {
+  data: ProcessedPlayer[]; // Player data after main aggregation (projections, actuals, initial FPs)
+  // but before round summaries are injected.
+  columns: ColumnDef<TableDataRow, any>[]; // Columns are designed to handle TableDataRow from the start.
+}
+
+interface CachedFullPlayerData extends BaseCacheSnapshotInfo {
+  data: TableDataRow[]; // Fully processed data including round summaries and final FPs.
+  columns: ColumnDef<TableDataRow, any>[]; // Same columns as base, designed for TableDataRow.
   fantasyPointSettingsSnapshot: string; // Specific to the fully calculated FP data
-  // currentSeasonIdSnapshot is inherited from CachedBasePlayerData
 }
 
 interface RawProjectionSourcePlayer extends Record<string, any> {}
@@ -203,6 +236,109 @@ async function fetchAllSupabaseData<T extends Record<string, any>>(
   return allData;
 }
 
+// Helper function to add round summaries to a list of processed players
+function addRoundSummariesToPlayers(
+  sortedPlayers: ProcessedPlayer[],
+  calculateDiffFn: (
+    actual: number | null | undefined,
+    projected: number | null | undefined
+  ) => number | null
+): TableDataRow[] {
+  const finalTableDataWithSummaries: TableDataRow[] = [];
+  let currentRoundPlayersBuffer: ProcessedPlayer[] = [];
+  let currentRoundNum = 0; // 0 means unranked or before first round
+
+  for (const player of sortedPlayers) {
+    const avgPick = player.yahooAvgPick;
+    let playerRound = 0;
+    if (avgPick != null && avgPick > 0) {
+      // Use != null to check for both null and undefined
+      playerRound = Math.ceil(avgPick / 12);
+    }
+
+    if (
+      playerRound !== currentRoundNum &&
+      currentRoundPlayersBuffer.length > 0
+    ) {
+      // End of a round (currentRoundNum must be > 0 here)
+      let roundTotalProjectedFP = 0;
+      let roundTotalActualFP = 0;
+      currentRoundPlayersBuffer.forEach((p) => {
+        if (p.fantasyPoints.projected !== null)
+          roundTotalProjectedFP += p.fantasyPoints.projected;
+        if (p.fantasyPoints.actual !== null)
+          roundTotalActualFP += p.fantasyPoints.actual;
+      });
+      const roundDiffPercentage = calculateDiffFn(
+        roundTotalActualFP,
+        roundTotalProjectedFP
+      );
+
+      finalTableDataWithSummaries.push(...currentRoundPlayersBuffer);
+      finalTableDataWithSummaries.push({
+        id: `summary-round-${currentRoundNum}`,
+        type: "summary",
+        roundNumber: currentRoundNum,
+        fantasyPoints: {
+          projected: null,
+          actual: null,
+          diffPercentage: roundDiffPercentage
+        },
+        playerId: `summary-round-${currentRoundNum}`,
+        fullName: `Round ${currentRoundNum} Summary`,
+        displayTeam: null,
+        displayPosition: null,
+        combinedStats: {},
+        yahooAvgPick: currentRoundNum * 12 + 0.00001 // Sorts summary just after its round players
+      });
+      currentRoundPlayersBuffer = [];
+    }
+
+    currentRoundNum = playerRound; // Update to the current player's round
+    if (playerRound > 0) {
+      // Only buffer players that belong to a round
+      currentRoundPlayersBuffer.push(player);
+    } else {
+      // Players not in a round (e.g. ADP null or 0) are added directly
+      finalTableDataWithSummaries.push(player);
+    }
+  }
+
+  // Add the last buffered round's players and summary (if any)
+  if (currentRoundPlayersBuffer.length > 0 && currentRoundNum > 0) {
+    let roundTotalProjectedFP = 0;
+    let roundTotalActualFP = 0;
+    currentRoundPlayersBuffer.forEach((p) => {
+      if (p.fantasyPoints.projected !== null)
+        roundTotalProjectedFP += p.fantasyPoints.projected;
+      if (p.fantasyPoints.actual !== null)
+        roundTotalActualFP += p.fantasyPoints.actual;
+    });
+    const roundDiffPercentage = calculateDiffFn(
+      roundTotalActualFP,
+      roundTotalProjectedFP
+    );
+    finalTableDataWithSummaries.push(...currentRoundPlayersBuffer);
+    finalTableDataWithSummaries.push({
+      id: `summary-round-${currentRoundNum}`,
+      type: "summary",
+      roundNumber: currentRoundNum,
+      fantasyPoints: {
+        projected: null,
+        actual: null,
+        diffPercentage: roundDiffPercentage
+      },
+      playerId: `summary-round-${currentRoundNum}`,
+      fullName: `Round ${currentRoundNum} Summary`,
+      displayTeam: null,
+      displayPosition: null,
+      combinedStats: {},
+      yahooAvgPick: currentRoundNum * 12 + 0.00001
+    });
+  }
+  return finalTableDataWithSummaries;
+}
+
 export const useProcessedProjectionsData = ({
   activePlayerType,
   sourceControls,
@@ -212,11 +348,9 @@ export const useProcessedProjectionsData = ({
   currentSeasonId,
   styles // Destructure styles
 }: UseProcessedProjectionsDataProps): UseProcessedProjectionsDataReturn => {
-  const [processedPlayers, setProcessedPlayers] = useState<ProcessedPlayer[]>(
-    []
-  );
+  const [processedPlayers, setProcessedPlayers] = useState<TableDataRow[]>([]);
   const [tableColumns, setTableColumns] = useState<
-    ColumnDef<ProcessedPlayer, any>[]
+    ColumnDef<TableDataRow, any>[]
   >([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -338,17 +472,32 @@ export const useProcessedProjectionsData = ({
           };
         });
 
-        setProcessedPlayers(newPlayersWithRecalculatedFP);
-        setTableColumns(currentTypeCache.base.columns); // Columns from base cache are suitable
+        // --- Perform Round Processing on Recalculated FP Data ---
+        // Sort by yahooAvgPick to prepare for round grouping
+        const sortedPlayersForRoundProcessing = [
+          ...newPlayersWithRecalculatedFP
+        ].sort((a, b) => {
+          const pickA = a.yahooAvgPick ?? Infinity;
+          const pickB = b.yahooAvgPick ?? Infinity;
+          return pickA - pickB;
+        });
+
+        const tableDataWithSummaries = addRoundSummariesToPlayers(
+          sortedPlayersForRoundProcessing,
+          calculateDiffPercentage
+        );
+
+        setProcessedPlayers(tableDataWithSummaries); // This is TableDataRow[]
+        setTableColumns(currentTypeCache.base.columns); // Columns from base cache are TableDataRow compatible
 
         // Update the full cache with this new data
         currentTypeCache.full = {
-          data: newPlayersWithRecalculatedFP,
+          data: tableDataWithSummaries, // Correctly store TableDataRow[]
           columns: currentTypeCache.base.columns,
           sourceControlsSnapshot: stringifiedSourceControls,
           yahooModeSnapshot: yahooDraftMode,
-          currentSeasonIdSnapshot: currentSeasonId, // Add season to full cache
-          fantasyPointSettingsSnapshot: stringifiedFantasyPointSettings // NEW FP snapshot
+          currentSeasonIdSnapshot: currentSeasonId,
+          fantasyPointSettingsSnapshot: stringifiedFantasyPointSettings
         };
 
         setIsLoading(false);
@@ -1085,13 +1234,25 @@ export const useProcessedProjectionsData = ({
           );
         }
 
-        setProcessedPlayers(tempProcessedPlayers);
-
-        const newTableColumns: ColumnDef<ProcessedPlayer, any>[] = [];
+        const newTableColumns: ColumnDef<TableDataRow, any>[] = [];
         newTableColumns.push({
           id: "fullName",
           header: "Player",
           accessorKey: "fullName",
+          cell: (info) => {
+            // Moved cell renderer here
+            const rowData = info.row.original; // TableDataRow
+            if ("type" in rowData && rowData.type === "summary") {
+              // rowData is now RoundSummaryRow
+              return (
+                <strong className={styles.roundSummaryText}>
+                  {rowData.fullName}
+                </strong>
+              );
+            }
+            return (rowData as ProcessedPlayer).fullName;
+            // If not summary, it's ProcessedPlayer
+          },
           meta: { columnType: "text" },
           enableSorting: true
         });
@@ -1099,6 +1260,10 @@ export const useProcessedProjectionsData = ({
           id: "displayTeam",
           header: "Team",
           accessorKey: "displayTeam",
+          cell: (info) =>
+            "type" in info.row.original && info.row.original.type === "summary"
+              ? "-" // It's a RoundSummaryRow
+              : (info.row.original as ProcessedPlayer).displayTeam, // It's a ProcessedPlayer
           meta: { columnType: "text" },
           enableSorting: true
         });
@@ -1106,6 +1271,15 @@ export const useProcessedProjectionsData = ({
           id: "displayPosition",
           header: "Pos",
           accessorKey: "displayPosition",
+          cell: (info) => {
+            const rowData = info.row.original;
+            if ("type" in rowData && rowData.type === "summary") {
+              // rowData is RoundSummaryRow
+              return "-";
+            }
+            // rowData is ProcessedPlayer
+            return (rowData as ProcessedPlayer).displayPosition;
+          },
           meta: { columnType: "text" },
           enableSorting: true
         });
@@ -1123,7 +1297,7 @@ export const useProcessedProjectionsData = ({
           // Create a group for each stat
           newTableColumns.push({
             id: `${statDef.key}_group`, // <-- ADDED ID FOR THE STAT GROUP
-            header: ({ column }) => {
+            header: () => {
               let tooltipText = `${statDef.displayName} (${statDef.key})\nProjected is a weighted average. Actual is from ${currentSeasonId} season totals.`; // Use dynamic currentSeasonId
               const definingSources =
                 activeSourceConfigs
@@ -1143,10 +1317,17 @@ export const useProcessedProjectionsData = ({
                 id: `${statDef.key}_proj`,
                 header: "Proj",
                 accessorFn: (player) =>
-                  player.combinedStats[statDef.key]?.projected ?? undefined,
+                  "type" in player && player.type === "summary"
+                    ? undefined
+                    : ((player as ProcessedPlayer).combinedStats[statDef.key]
+                        ?.projected ?? undefined),
                 cell: (info) => {
-                  const combinedStat =
-                    info.row.original.combinedStats[statDef.key];
+                  const rowData = info.row.original;
+                  if ("type" in rowData && rowData.type === "summary")
+                    return "-";
+
+                  const combinedStat = (rowData as ProcessedPlayer)
+                    .combinedStats[statDef.key];
                   const val = combinedStat?.projected;
                   if (val === null || val === undefined) return "-";
 
@@ -1183,9 +1364,16 @@ export const useProcessedProjectionsData = ({
                 id: `${statDef.key}_actual`,
                 header: "REAL",
                 accessorFn: (player) =>
-                  player.combinedStats[statDef.key]?.actual ?? undefined,
+                  "type" in player && player.type === "summary"
+                    ? undefined
+                    : ((player as ProcessedPlayer).combinedStats[statDef.key]
+                        ?.actual ?? undefined),
                 cell: (info) => {
+                  const rowData = info.row.original;
+                  if ("type" in rowData && rowData.type === "summary")
+                    return "-";
                   const val = info.getValue() as number | null;
+
                   if (val === null || val === undefined) return "-";
                   let displayValue: string;
                   if (statDef.formatter) displayValue = statDef.formatter(val);
@@ -1206,12 +1394,18 @@ export const useProcessedProjectionsData = ({
               },
               {
                 id: `${statDef.key}_diff`,
-                header: "% Diff",
+                header: "DIFF",
                 accessorFn: (player) =>
-                  player.combinedStats[statDef.key]?.diffPercentage ??
-                  undefined,
+                  "type" in player && player.type === "summary"
+                    ? undefined
+                    : ((player as ProcessedPlayer).combinedStats[statDef.key]
+                        ?.diffPercentage ?? undefined),
                 cell: (info) => {
+                  const rowData = info.row.original;
+                  if ("type" in rowData && rowData.type === "summary")
+                    return "-";
                   const val = info.getValue() as number | null;
+
                   if (val === null || val === undefined) return "-";
 
                   let diffStyleKey = ""; // e.g., "positiveDiffStrong"
@@ -1266,7 +1460,7 @@ export const useProcessedProjectionsData = ({
           }, // Lower is better
           {
             key: "yahooPctDrafted",
-            header: "% Drafted",
+            header: "Draft %",
             decimals: 1,
             isPercentage: true,
             higherIsBetter: true
@@ -1277,9 +1471,17 @@ export const useProcessedProjectionsData = ({
             id: yc.key,
             header: yc.header,
             // Ensure undefined is returned if value is null, for sortUndefined to work
-            accessorFn: (player) =>
-              player[yc.key as keyof ProcessedPlayer] ?? undefined,
+            accessorFn: (player) => {
+              if ("type" in player && player.type === "summary")
+                return undefined; // Type guard
+              return (
+                (player as ProcessedPlayer)[yc.key as keyof ProcessedPlayer] ??
+                undefined
+              );
+            },
             cell: (info) => {
+              const rowData = info.row.original;
+              if ("type" in rowData && rowData.type === "summary") return "-"; // Type guard
               const val = info.getValue() as number | null;
               if (val === null || val === undefined) return "-";
               return yc.isPercentage
@@ -1295,6 +1497,45 @@ export const useProcessedProjectionsData = ({
           });
         });
 
+        // --- Add Rank Columns ---
+        // These columns will display ranks calculated at the page level
+        newTableColumns.push({
+          id: "projectedRank",
+          header: "P-Rank",
+          accessorFn: (player) =>
+            "type" in player && player.type === "summary"
+              ? undefined
+              : ((player as ProcessedPlayer).projectedRank ?? undefined),
+          cell: (info) => {
+            const rowData = info.row.original;
+            if ("type" in rowData && rowData.type === "summary") return "-";
+            const val = info.getValue() as number | null;
+            return val !== null && val !== undefined ? val : "-";
+          },
+          meta: { columnType: "numeric", higherIsBetter: false }, // Lower rank is better
+          enableSorting: true,
+          sortUndefined: "last"
+        });
+
+        newTableColumns.push({
+          id: "actualRank",
+          header: "A-Rank",
+          accessorFn: (player) =>
+            "type" in player && player.type === "summary"
+              ? undefined
+              : ((player as ProcessedPlayer).actualRank ?? undefined),
+          cell: (info) => {
+            const rowData = info.row.original;
+            if ("type" in rowData && rowData.type === "summary") return "-";
+            const val = info.getValue() as number | null;
+            return val !== null && val !== undefined ? val : "-";
+          },
+          meta: { columnType: "numeric", higherIsBetter: false }, // Lower rank is better
+          enableSorting: true,
+          sortUndefined: "last"
+        });
+        // --- End Rank Columns ---
+
         // Add Projected Fantasy Points Column
         // This also becomes a group
         newTableColumns.push({
@@ -1305,8 +1546,13 @@ export const useProcessedProjectionsData = ({
               id: "fp_proj",
               header: "Proj",
               accessorFn: (player) =>
-                player.fantasyPoints.projected ?? undefined,
+                "type" in player && player.type === "summary"
+                  ? undefined
+                  : (player.fantasyPoints.projected ?? undefined),
               cell: (info) => {
+                const rowData = info.row.original;
+                if ("type" in rowData && rowData.type === "summary") return "-"; // Type guard
+
                 const val = info.getValue() as number | null;
                 if (val === null || val === undefined) return "-";
                 return val.toFixed(1);
@@ -1318,9 +1564,19 @@ export const useProcessedProjectionsData = ({
             {
               id: "fp_actual",
               header: "fPts",
-              accessorFn: (player) => player.fantasyPoints.actual ?? undefined,
+              accessorFn: (
+                player // Type guard for accessor
+              ) =>
+                "type" in player && player.type === "summary"
+                  ? undefined // Summary rows don't have actual FP sum
+                  : ((player as ProcessedPlayer).fantasyPoints.actual ??
+                    undefined),
+              // For summary rows, this will be null as per RoundSummaryRow interface
               cell: (info) => {
+                const rowData = info.row.original;
+                if ("type" in rowData && rowData.type === "summary") return "-"; // Type guard
                 const val = info.getValue() as number | null;
+
                 if (val === null || val === undefined) return "-";
                 return val.toFixed(1);
               },
@@ -1330,11 +1586,13 @@ export const useProcessedProjectionsData = ({
             },
             {
               id: "fp_diff",
-              header: "% Diff",
+              header: "DIFF",
               accessorFn: (player) =>
                 player.fantasyPoints.diffPercentage ?? undefined,
               cell: (info) => {
                 const val = info.getValue() as number | null;
+                // This cell WILL display for summary rows, as fantasyPoints.diffPercentage is populated for them
+
                 if (val === null || val === undefined) return "-";
 
                 let diffStyleKey = ""; // e.g., "positiveDiffStrong"
@@ -1372,19 +1630,50 @@ export const useProcessedProjectionsData = ({
             }
           ]
         });
+
+        // --- After all player data is processed and columns are defined ---
+        // Now, create the final array with players and injected summary rows
+        const sortedPlayers = [...tempProcessedPlayers].sort((a, b) => {
+          const pickA = a.yahooAvgPick ?? Infinity;
+          const pickB = b.yahooAvgPick ?? Infinity;
+          return pickA - pickB;
+        });
+
+        const byProj = [...tempProcessedPlayers].sort(
+          (a, b) =>
+            (b.fantasyPoints.projected ?? -Infinity) -
+            (a.fantasyPoints.projected ?? -Infinity)
+        );
+        byProj.forEach((player, idx) => {
+          player.projectedRank = idx + 1;
+        });
+
+        const byActual = [...tempProcessedPlayers].sort(
+          (a, b) =>
+            (b.fantasyPoints.actual ?? -Infinity) -
+            (a.fantasyPoints.actual ?? -Infinity)
+        );
+        byActual.forEach((player, idx) => {
+          player.actualRank = idx + 1;
+        });
+
+        const finalTableDataWithSummaries = addRoundSummariesToPlayers(
+          sortedPlayers,
+          calculateDiffPercentage
+        );
+
         // --- Update Cache ---
-        // Base cache stores data and columns based on source/yahoo settings
+        // Base cache stores ProcessedPlayer[] (before round summaries)
         currentTypeCache.base = {
-          data: tempProcessedPlayers,
-          columns: newTableColumns,
+          data: tempProcessedPlayers, // This is ProcessedPlayer[]
+          columns: newTableColumns, // These are ColumnDef<TableDataRow, any>[]
           sourceControlsSnapshot: stringifiedSourceControls,
           yahooModeSnapshot: yahooDraftMode,
-          currentSeasonIdSnapshot: currentSeasonId // Store season ID in base cache
+          currentSeasonIdSnapshot: currentSeasonId
         };
-
-        // Full cache also gets this data, including the fantasyPointSettings snapshot
+        // Full cache stores TableDataRow[] (with round summaries)
         currentTypeCache.full = {
-          data: tempProcessedPlayers,
+          data: finalTableDataWithSummaries, // Store the data with summaries
           columns: newTableColumns,
           sourceControlsSnapshot: stringifiedSourceControls,
           yahooModeSnapshot: yahooDraftMode,
@@ -1392,6 +1681,7 @@ export const useProcessedProjectionsData = ({
           currentSeasonIdSnapshot: currentSeasonId // Store season ID in full cache
         };
 
+        setProcessedPlayers(finalTableDataWithSummaries);
         setTableColumns(newTableColumns);
       } catch (e: any) {
         console.error("Error in useProcessedProjectionsData:", e);
