@@ -107,6 +107,7 @@ const PlayerTypeTabs: React.FC<PlayerTypeTabsProps> = React.memo(
     </div>
   )
 );
+PlayerTypeTabs.displayName = "PlayerTypeTabs";
 
 interface SourceSelectorPanelProps {
   availableSources: ProjectionSourceConfig[];
@@ -177,6 +178,7 @@ const SourceSelectorPanel: React.FC<SourceSelectorPanelProps> = React.memo(
     </div>
   )
 );
+SourceSelectorPanel.displayName = "SourceSelectorPanel";
 
 interface YahooModeToggleProps {
   currentMode: "ALL" | "PRESEASON";
@@ -205,6 +207,7 @@ const YahooModeToggle: React.FC<YahooModeToggleProps> = React.memo(
     </div>
   )
 );
+YahooModeToggle.displayName = "YahooModeToggle";
 
 interface FantasyPointsSettingsPanelProps {
   activePlayerType: "skater" | "goalie"; // "overall" will use skater settings
@@ -307,6 +310,7 @@ const FantasyPointsSettingsPanel: React.FC<FantasyPointsSettingsPanelProps> =
       );
     }
   );
+FantasyPointsSettingsPanel.displayName = "FantasyPointsSettingsPanel";
 
 interface ProjectionsDataTableProps {
   columns: ColumnDef<TableDataRow, any>[];
@@ -460,6 +464,7 @@ const ProjectionsDataTable: React.FC<ProjectionsDataTableProps> = React.memo(
     );
   }
 );
+ProjectionsDataTable.displayName = "ProjectionsDataTable";
 
 // --- Expanded Player Row Chart Wrapper ---
 const ExpandedPlayerRowChart: React.FC<{
@@ -872,6 +877,7 @@ const ProjectionsPage: NextPage = () => {
       togglePerGameFantasyPoints,
       expandedRows,
       toggleRowExpansion
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     ]
   );
 
