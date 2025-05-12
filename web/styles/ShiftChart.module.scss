@@ -75,15 +75,15 @@
 
   select {
     // Add dropdown arrow
-    background-image: linear-gradient(
-        45deg,
-        transparent 50%,
-        v.$text-color-secondary 50%
-      ),
+    background-image:
+      linear-gradient(45deg, transparent 50%, v.$text-color-secondary 50%),
       linear-gradient(135deg, v.$text-color-secondary 50%, transparent 50%);
-    background-position: calc(100% - #{v.$space-lg}) center,
+    background-position:
+      calc(100% - #{v.$space-lg}) center,
       calc(100% - #{v.$space-md}) center;
-    background-size: 5px 5px, 5px 5px;
+    background-size:
+      5px 5px,
+      5px 5px;
     background-repeat: no-repeat;
     padding-right: v.$space-xl * 1.5; // Ensure space for arrow
   }
@@ -192,7 +192,8 @@ $ot-units: 5;
 }
 
 .playerRow {
-  transition: filter v.$transition-duration v.$transition-easing,
+  transition:
+    filter v.$transition-duration v.$transition-easing,
     background-color v.$transition-duration v.$transition-easing; // Add filter to transition
   border-bottom: v.$border-subtle; // Row separator
 
@@ -235,7 +236,7 @@ $ot-units: 5;
     // Ensure text contrast remains acceptable - you might need to adjust text color slightly if filter makes it too hard to read
     // For example:
     // td { // Target all cells in inactive row
-    //   color: lighten(v.$text-color-primary, 10%) !important; // Slightly lighten text to compensate (use !important cautiously)
+    //   color: color.adjust(v.$text-color-primary, $lightness: 10%) !important; // Slightly lighten text to compensate (use !important cautiously)
     // }
   }
   // --- >>> END OF NEW STYLES <<< ---

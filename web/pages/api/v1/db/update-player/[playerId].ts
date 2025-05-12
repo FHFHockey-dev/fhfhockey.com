@@ -11,12 +11,12 @@ export default adminOnly(async (req, res) => {
 
     res.json({
       message: "Successfully updated the player " + playerId,
-      success: true,
+      success: true
     });
   } catch (e: any) {
     res.status(400).json({
       message: "Failed to update the player" + e.message,
-      success: false,
+      success: false
     });
   }
 });
@@ -46,7 +46,7 @@ export async function updatePlayer(playerId: number, supabase: SupabaseClient) {
       weightInKilograms: player.weight,
       team_id: player.teamId,
       sweater_number: player.sweaterNumber,
-      image_url: player.image,
+      image_url: player.image
     })
     .throwOnError();
 }
@@ -93,7 +93,7 @@ async function getPlayer(id: number): Promise<Player | null> {
       teamId: data.currentTeamId ?? 0,
       teamAbbreviation: data.currentTeamAbbrev ?? "XXX",
       teamLogo: data.teamLogo,
-      teamName: data.fullTeamName ? data.fullTeamName.default : "",
+      teamName: data.fullTeamName ? data.fullTeamName.default : ""
     };
   } catch (e: any) {
     console.error("Failed to get player: " + id, e);

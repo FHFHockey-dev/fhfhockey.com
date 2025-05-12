@@ -60,6 +60,6 @@ function mapUser(user: SupabaseUser | null | undefined, extra?: any): User {
     id: user.id,
     name: user.user_metadata["preferred_username"],
     role: null,
-    ...extra,
+    ...extra
   };
 }

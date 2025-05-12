@@ -17578,6 +17578,511 @@ export type Database = {
         }
         Relationships: []
       }
+      projections_apples_ginos: {
+        Row: {
+          Assists: number | null
+          Blocked_Shots: number | null
+          Games_Played: number | null
+          Goals: number | null
+          Hits: number | null
+          Penalty_Minutes: number | null
+          player_id: number | null
+          Player_Name: string | null
+          Points: number | null
+          Position: string | null
+          PP_Points: number | null
+          Shots_on_Goal: number | null
+          Team_Abbreviation: string | null
+          Time_on_Ice_Per_Game: number | null
+          upload_batch_id: string
+        }
+        Insert: {
+          Assists?: number | null
+          Blocked_Shots?: number | null
+          Games_Played?: number | null
+          Goals?: number | null
+          Hits?: number | null
+          Penalty_Minutes?: number | null
+          player_id?: number | null
+          Player_Name?: string | null
+          Points?: number | null
+          Position?: string | null
+          PP_Points?: number | null
+          Shots_on_Goal?: number | null
+          Team_Abbreviation?: string | null
+          Time_on_Ice_Per_Game?: number | null
+          upload_batch_id?: string
+        }
+        Update: {
+          Assists?: number | null
+          Blocked_Shots?: number | null
+          Games_Played?: number | null
+          Goals?: number | null
+          Hits?: number | null
+          Penalty_Minutes?: number | null
+          player_id?: number | null
+          Player_Name?: string | null
+          Points?: number | null
+          Position?: string | null
+          PP_Points?: number | null
+          Shots_on_Goal?: number | null
+          Team_Abbreviation?: string | null
+          Time_on_Ice_Per_Game?: number | null
+          upload_batch_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_player"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projections_cullen: {
+        Row: {
+          Assists: number | null
+          Blocked_Shots: number | null
+          Games_Played: number | null
+          Goals: number | null
+          Hits: number | null
+          Penalty_Minutes: number | null
+          player_id: number | null
+          Player_Name: string | null
+          Plus_Minus: number | null
+          Points: number | null
+          Position: string | null
+          PP_Points: number | null
+          Rank: number | null
+          Shots_on_Goal: number | null
+          Team_Abbreviation: string | null
+          upload_batch_id: string
+        }
+        Insert: {
+          Assists?: number | null
+          Blocked_Shots?: number | null
+          Games_Played?: number | null
+          Goals?: number | null
+          Hits?: number | null
+          Penalty_Minutes?: number | null
+          player_id?: number | null
+          Player_Name?: string | null
+          Plus_Minus?: number | null
+          Points?: number | null
+          Position?: string | null
+          PP_Points?: number | null
+          Rank?: number | null
+          Shots_on_Goal?: number | null
+          Team_Abbreviation?: string | null
+          upload_batch_id?: string
+        }
+        Update: {
+          Assists?: number | null
+          Blocked_Shots?: number | null
+          Games_Played?: number | null
+          Goals?: number | null
+          Hits?: number | null
+          Penalty_Minutes?: number | null
+          player_id?: number | null
+          Player_Name?: string | null
+          Plus_Minus?: number | null
+          Points?: number | null
+          Position?: string | null
+          PP_Points?: number | null
+          Rank?: number | null
+          Shots_on_Goal?: number | null
+          Team_Abbreviation?: string | null
+          upload_batch_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_player"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projections_cullen_goalies: {
+        Row: {
+          Games_Played: number | null
+          Goalie: string | null
+          Goals_Against_Average: number | null
+          player_id: number | null
+          Rank: number | null
+          Save_Percentage: number | null
+          Shutouts_Goalie: number | null
+          Team_Abbreviation: string | null
+          upload_batch_id: string
+          Wins_Goalie: number | null
+        }
+        Insert: {
+          Games_Played?: number | null
+          Goalie?: string | null
+          Goals_Against_Average?: number | null
+          player_id?: number | null
+          Rank?: number | null
+          Save_Percentage?: number | null
+          Shutouts_Goalie?: number | null
+          Team_Abbreviation?: string | null
+          upload_batch_id?: string
+          Wins_Goalie?: number | null
+        }
+        Update: {
+          Games_Played?: number | null
+          Goalie?: string | null
+          Goals_Against_Average?: number | null
+          player_id?: number | null
+          Rank?: number | null
+          Save_Percentage?: number | null
+          Shutouts_Goalie?: number | null
+          Team_Abbreviation?: string | null
+          upload_batch_id?: string
+          Wins_Goalie?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_player"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projections_cullen_top_400: {
+        Row: {
+          Assists: number | null
+          Games_Played: number | null
+          Goals: number | null
+          player_id: number | null
+          Player_Name: string | null
+          Points: number | null
+          Position: string | null
+          Rank: number | null
+          Team_Abbreviation: string | null
+          upload_batch_id: string
+        }
+        Insert: {
+          Assists?: number | null
+          Games_Played?: number | null
+          Goals?: number | null
+          player_id?: number | null
+          Player_Name?: string | null
+          Points?: number | null
+          Position?: string | null
+          Rank?: number | null
+          Team_Abbreviation?: string | null
+          upload_batch_id?: string
+        }
+        Update: {
+          Assists?: number | null
+          Games_Played?: number | null
+          Goals?: number | null
+          player_id?: number | null
+          Player_Name?: string | null
+          Points?: number | null
+          Position?: string | null
+          Rank?: number | null
+          Team_Abbreviation?: string | null
+          upload_batch_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_player"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projections_dom_goalies: {
+        Row: {
+          Ga: number | null
+          Games_Played: number | null
+          Goals_Against_Average: number | null
+          Losses_Goalie: number | null
+          player_id: number | null
+          Player_Name: string | null
+          Position: string | null
+          Sa: number | null
+          Save_Percentage: number | null
+          Saves_Goalie: number | null
+          Shutouts_Goalie: number | null
+          upload_batch_id: string
+          Wins_Goalie: number | null
+        }
+        Insert: {
+          Ga?: number | null
+          Games_Played?: number | null
+          Goals_Against_Average?: number | null
+          Losses_Goalie?: number | null
+          player_id?: number | null
+          Player_Name?: string | null
+          Position?: string | null
+          Sa?: number | null
+          Save_Percentage?: number | null
+          Saves_Goalie?: number | null
+          Shutouts_Goalie?: number | null
+          upload_batch_id?: string
+          Wins_Goalie?: number | null
+        }
+        Update: {
+          Ga?: number | null
+          Games_Played?: number | null
+          Goals_Against_Average?: number | null
+          Losses_Goalie?: number | null
+          player_id?: number | null
+          Player_Name?: string | null
+          Position?: string | null
+          Sa?: number | null
+          Save_Percentage?: number | null
+          Saves_Goalie?: number | null
+          Shutouts_Goalie?: number | null
+          upload_batch_id?: string
+          Wins_Goalie?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_player"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projections_dom_skaters: {
+        Row: {
+          Assists: number | null
+          Blocked_Shots: number | null
+          Faceoffs_Lost: number | null
+          Faceoffs_Won: number | null
+          Games_Played: number | null
+          Goals: number | null
+          Hits: number | null
+          Penalty_Minutes: number | null
+          player_id: number | null
+          Player_Name: string | null
+          Plus_Minus: number | null
+          Points: number | null
+          Position: string | null
+          PP_Points: number | null
+          Shots_on_Goal: number | null
+          upload_batch_id: string
+        }
+        Insert: {
+          Assists?: number | null
+          Blocked_Shots?: number | null
+          Faceoffs_Lost?: number | null
+          Faceoffs_Won?: number | null
+          Games_Played?: number | null
+          Goals?: number | null
+          Hits?: number | null
+          Penalty_Minutes?: number | null
+          player_id?: number | null
+          Player_Name?: string | null
+          Plus_Minus?: number | null
+          Points?: number | null
+          Position?: string | null
+          PP_Points?: number | null
+          Shots_on_Goal?: number | null
+          upload_batch_id?: string
+        }
+        Update: {
+          Assists?: number | null
+          Blocked_Shots?: number | null
+          Faceoffs_Lost?: number | null
+          Faceoffs_Won?: number | null
+          Games_Played?: number | null
+          Goals?: number | null
+          Hits?: number | null
+          Penalty_Minutes?: number | null
+          player_id?: number | null
+          Player_Name?: string | null
+          Plus_Minus?: number | null
+          Points?: number | null
+          Position?: string | null
+          PP_Points?: number | null
+          Shots_on_Goal?: number | null
+          upload_batch_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_player"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projections_dtz_goalies: {
+        Row: {
+          Age: string | null
+          Ga: number | null
+          Games_Played: number | null
+          Goals_Against_Average: number | null
+          Losses_Goalie: number | null
+          Otl: number | null
+          player_id: number | null
+          Player_Name: string | null
+          Position: string | null
+          Qs: number | null
+          Rank: number | null
+          Rbs: number | null
+          Sa: number | null
+          Save_Percentage: number | null
+          Saves_Goalie: number | null
+          Shutouts_Goalie: number | null
+          Team_Abbreviation: string | null
+          upload_batch_id: string
+          Vor: number | null
+          Wins_Goalie: number | null
+        }
+        Insert: {
+          Age?: string | null
+          Ga?: number | null
+          Games_Played?: number | null
+          Goals_Against_Average?: number | null
+          Losses_Goalie?: number | null
+          Otl?: number | null
+          player_id?: number | null
+          Player_Name?: string | null
+          Position?: string | null
+          Qs?: number | null
+          Rank?: number | null
+          Rbs?: number | null
+          Sa?: number | null
+          Save_Percentage?: number | null
+          Saves_Goalie?: number | null
+          Shutouts_Goalie?: number | null
+          Team_Abbreviation?: string | null
+          upload_batch_id?: string
+          Vor?: number | null
+          Wins_Goalie?: number | null
+        }
+        Update: {
+          Age?: string | null
+          Ga?: number | null
+          Games_Played?: number | null
+          Goals_Against_Average?: number | null
+          Losses_Goalie?: number | null
+          Otl?: number | null
+          player_id?: number | null
+          Player_Name?: string | null
+          Position?: string | null
+          Qs?: number | null
+          Rank?: number | null
+          Rbs?: number | null
+          Sa?: number | null
+          Save_Percentage?: number | null
+          Saves_Goalie?: number | null
+          Shutouts_Goalie?: number | null
+          Team_Abbreviation?: string | null
+          upload_batch_id?: string
+          Vor?: number | null
+          Wins_Goalie?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_player"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      projections_dtz_skaters: {
+        Row: {
+          Age: string | null
+          Assists: number | null
+          Blocked_Shots: number | null
+          Faceoffs_Lost: number | null
+          Faceoffs_Won: number | null
+          Games_Played: number | null
+          Goals: number | null
+          Hits: number | null
+          Penalty_Minutes: number | null
+          player_id: number | null
+          Player_Name: string | null
+          Points: number | null
+          Position: string | null
+          PP_Assists: number | null
+          PP_Goals: number | null
+          Pp_Points: number | null
+          Rank: number | null
+          SH_Points: number | null
+          Shots_on_Goal: number | null
+          Team_Abbreviation: string | null
+          Time_on_Ice_Per_Game: number | null
+          upload_batch_id: string
+          Vor: number | null
+        }
+        Insert: {
+          Age?: string | null
+          Assists?: number | null
+          Blocked_Shots?: number | null
+          Faceoffs_Lost?: number | null
+          Faceoffs_Won?: number | null
+          Games_Played?: number | null
+          Goals?: number | null
+          Hits?: number | null
+          Penalty_Minutes?: number | null
+          player_id?: number | null
+          Player_Name?: string | null
+          Points?: number | null
+          Position?: string | null
+          PP_Assists?: number | null
+          PP_Goals?: number | null
+          Pp_Points?: number | null
+          Rank?: number | null
+          SH_Points?: number | null
+          Shots_on_Goal?: number | null
+          Team_Abbreviation?: string | null
+          Time_on_Ice_Per_Game?: number | null
+          upload_batch_id?: string
+          Vor?: number | null
+        }
+        Update: {
+          Age?: string | null
+          Assists?: number | null
+          Blocked_Shots?: number | null
+          Faceoffs_Lost?: number | null
+          Faceoffs_Won?: number | null
+          Games_Played?: number | null
+          Goals?: number | null
+          Hits?: number | null
+          Penalty_Minutes?: number | null
+          player_id?: number | null
+          Player_Name?: string | null
+          Points?: number | null
+          Position?: string | null
+          PP_Assists?: number | null
+          PP_Goals?: number | null
+          Pp_Points?: number | null
+          Rank?: number | null
+          SH_Points?: number | null
+          Shots_on_Goal?: number | null
+          Team_Abbreviation?: string | null
+          Time_on_Ice_Per_Game?: number | null
+          upload_batch_id?: string
+          Vor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_player"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       raw_standings_sos: {
         Row: {
           date: string
@@ -20927,6 +21432,7 @@ export type Database = {
           save_pct_days_rest_3: number | null
           save_pct_days_rest_4_plus: number | null
           saves: number | null
+          season_id: number | null
           shoots_catches: string | null
           shots_against: number | null
           shots_against_per_60: number | null
@@ -20966,6 +21472,7 @@ export type Database = {
           save_pct_days_rest_3?: number | null
           save_pct_days_rest_4_plus?: number | null
           saves?: number | null
+          season_id?: number | null
           shoots_catches?: string | null
           shots_against?: number | null
           shots_against_per_60?: number | null
@@ -21005,6 +21512,7 @@ export type Database = {
           save_pct_days_rest_3?: number | null
           save_pct_days_rest_4_plus?: number | null
           saves?: number | null
+          season_id?: number | null
           shoots_catches?: string | null
           shots_against?: number | null
           shots_against_per_60?: number | null
@@ -30000,6 +30508,50 @@ export type Database = {
         }
         Relationships: []
       }
+      v_goalie_game_stats_linked: {
+        Row: {
+          assists: number | null
+          complete_game_pct: number | null
+          complete_games: number | null
+          date: string | null
+          games_played: number | null
+          games_played_days_rest_0: number | null
+          games_played_days_rest_1: number | null
+          games_played_days_rest_2: number | null
+          games_played_days_rest_3: number | null
+          games_played_days_rest_4_plus: number | null
+          games_started: number | null
+          goalie_id: number | null
+          goalie_name: string | null
+          goals: number | null
+          goals_against: number | null
+          goals_against_avg: number | null
+          incomplete_games: number | null
+          losses: number | null
+          matchup_season: string | null
+          ot_losses: number | null
+          position_code: string | null
+          quality_start: number | null
+          quality_starts_pct: number | null
+          regulation_losses: number | null
+          regulation_wins: number | null
+          save_pct: number | null
+          save_pct_days_rest_0: number | null
+          save_pct_days_rest_1: number | null
+          save_pct_days_rest_2: number | null
+          save_pct_days_rest_3: number | null
+          save_pct_days_rest_4_plus: number | null
+          saves: number | null
+          shoots_catches: string | null
+          shots_against: number | null
+          shots_against_per_60: number | null
+          shutouts: number | null
+          time_on_ice: number | null
+          week: number | null
+          wins: number | null
+        }
+        Relationships: []
+      }
       view_active_player_ids_max_season: {
         Row: {
           player_id: number | null
@@ -30284,6 +30836,10 @@ export type Database = {
     Functions: {
       delete_duplicate_players_in_rosters: {
         Args: { _seasonid: number }
+        Returns: undefined
+      }
+      execute_sql: {
+        Args: { sql_statement: string }
         Returns: undefined
       }
       get_aggregated_player_stats: {

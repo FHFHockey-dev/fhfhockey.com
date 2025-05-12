@@ -1,5 +1,6 @@
 /* /web/components/WiGO/NameSearchBar.module.scss */
 @use "styles/vars" as v; // Import variables
+@use "sass:color";
 
 .searchBarContainer {
   position: relative;
@@ -19,7 +20,8 @@
   background-color: v.$background-light;
   font-family: v.$font-family-primary;
   color: v.$text-color-primary;
-  transition: border-color v.$transition-duration v.$transition-easing,
+  transition:
+    border-color v.$transition-duration v.$transition-easing,
     box-shadow v.$transition-duration v.$transition-easing;
 
   &::placeholder {
@@ -69,7 +71,8 @@
   padding: v.$space-sm v.$space-md;
   cursor: pointer;
   color: v.$text-color-secondary;
-  transition: background-color v.$transition-duration v.$transition-easing,
+  transition:
+    background-color v.$transition-duration v.$transition-easing,
     color v.$transition-duration v.$transition-easing;
   white-space: nowrap;
   outline: none;
@@ -83,7 +86,7 @@
   }
 
   &.active {
-    background-color: darken(v.$primary-color, 35%);
+    background-color: color.adjust(v.$primary-color, $lightness: -35%);
     color: v.$text-color-primary;
     // red for testing:
     // background-color: red !important;

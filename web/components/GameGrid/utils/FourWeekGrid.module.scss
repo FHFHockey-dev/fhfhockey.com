@@ -104,8 +104,10 @@
 .tableWrapper {
   width: 100%;
   overflow: hidden;
-  transition: max-height 0.4s v.$transition-easing,
-    opacity 0.3s v.$transition-easing, visibility 0.3s v.$transition-easing;
+  transition:
+    max-height 0.4s v.$transition-easing,
+    opacity 0.3s v.$transition-easing,
+    visibility 0.3s v.$transition-easing;
   max-height: 5000px;
   opacity: 1;
   visibility: visible;
@@ -269,7 +271,7 @@
 
 /* --- Averages Row Styling --- */
 .averagesRow td {
-  background-color: darken(v.$background-dark, 5%);
+  background-color: color.adjust(v.$background-dark, $lightness: -5%);
   color: v.$text-color-secondary;
   font-weight: bold;
   font-size: 11px; // Smaller avg font

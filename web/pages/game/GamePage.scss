@@ -28,7 +28,9 @@
 .game-page {
   text-align: center;
   margin: auto;
-  font-family: roboto condensed, sans-serif;
+  font-family:
+    roboto condensed,
+    sans-serif;
   text-align: center;
   margin: auto;
   display: flex;
@@ -40,7 +42,9 @@
 /* Game details styles */
 
 .tableHeader {
-  font-family: roboto condensed, sans-serif;
+  font-family:
+    roboto condensed,
+    sans-serif;
   font-size: 2em;
   font-weight: 200;
   text-align: left;
@@ -185,7 +189,7 @@
   @include v.element-wrapper;
   margin: 0;
   border: 3px solid white;
-  outline: 10px solid lighten(v.$background-dark, 15%);
+  outline: 10px solid color.adjust(v.$background-dark, $lightness: 15%);
 
   border-radius: v.$border-radius * 2;
   display: flex;
@@ -648,7 +652,7 @@ strong {
 
 .gamePageVsTable {
   @include v.element-wrapper;
-  outline: 10px solid lighten(v.$background-dark, 15%);
+  outline: 10px solid color.adjust(v.$background-dark, $lightness: 15%);
   margin: 0;
   border: 3px solid white;
   border-radius: v.$border-radius * 2;
@@ -836,7 +840,7 @@ strong {
   align-items: center;
   @include v.element-wrapper;
   border: 3px solid white;
-  outline: 10px solid lighten(v.$background-dark, 15%);
+  outline: 10px solid color.adjust(v.$background-dark, $lightness: 15%);
 }
 
 .homeGoalies {
@@ -962,7 +966,7 @@ strong {
   @include v.element-wrapper;
   @include v.element-wrapper;
   border: 3px solid white;
-  outline: 10px solid lighten(v.$background-dark, 15%);
+  outline: 10px solid color.adjust(v.$background-dark, $lightness: 15%);
   width: auto;
   display: flex;
   justify-content: space-between;
@@ -1516,7 +1520,9 @@ strong {
     margin-bottom: 10px;
     margin-top: 10px;
     text-align: left;
-    font-family: roboto condensed, sans-serif;
+    font-family:
+      roboto condensed,
+      sans-serif;
     font-size: 2em;
     font-weight: 200;
     text-align: left;

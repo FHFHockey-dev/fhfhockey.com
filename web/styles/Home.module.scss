@@ -36,12 +36,6 @@ $mobile-column-short: 30px;
   display: flex;
   flex-direction: column;
   gap: v.$space-xl * 1.5; // Slightly larger gap between main sections
-
-  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    width: 95%;
-    margin: v.$space-lg auto;
-    gap: v.$space-xl;
-  }
 }
 
 // --- Games Section ---
@@ -54,8 +48,9 @@ $mobile-column-short: 30px;
   align-items: stretch;
   justify-content: space-between;
   border-bottom: 2px solid v.$secondary-color;
-  background-color: darken(v.$background-dark, 2%);
+  background-color: color.adjust(v.$background-dark, $lightness: -2%);
   width: 100%; // Ensure it spans the wrapper
+  height: 60px;
   position: relative;
 
   // Mobile adjustments if needed
@@ -71,6 +66,7 @@ $mobile-column-short: 30px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
   padding: 0 v.$space-lg;
 
@@ -142,6 +138,10 @@ $mobile-column-short: 30px;
   }
 }
 
+.gamesHeader h1.smallerHeader {
+  font-size: clamp(1rem, 3.2vw, 1.4rem);
+}
+
 .dateDisplay {
   color: v.$text-color-secondary; // Lighter color for date
   font-family: v.$font-family-primary;
@@ -174,7 +174,7 @@ $mobile-column-short: 30px;
   align-items: center;
   justify-content: center;
   color: v.$primary-color; // Arrow color
-  background-color: darken(v.$background-dark, 5%);
+  background-color: color.adjust(v.$background-dark, $lightness: -5%);
   transition: background-color v.$transition-duration v.$transition-easing;
 
   &:hover {
@@ -742,117 +742,250 @@ $mobile-column-short: 30px;
 // --- Mobile Overrides ---
 @media (max-width: #{v.$breakpoint-tablet - 1px}) {
   .homepage {
-    gap: v.$space-xl; // Adjust gap for mobile
+    margin-top: v.$space-md;
+    gap: v.$space-lg; // Tighter gap for mobile
+  }
+
+  .gameCardsContainer,
+  .standingsContainer,
+  .injuriesContainer,
+  .chartContainer {
+    min-width: 0 !important;
+    max-width: 96vw !important;
+    width: 96vw !important;
+    outline: none !important;
+    box-sizing: border-box;
+    border: 4px solid v.$border-color-primary;
+  }
+
+  .gameCardsContainer {
+    border-radius: v.$border-radius;
+  }
+
+  .headerAndDate {
+    border-left: 4px solid v.$border-color-primary;
+    border-right: 4px solid v.$border-color-primary;
+  }
+
+  .gamesHeader {
+    border-bottom: 4px solid v.$border-color-primary;
   }
 
   .gamesHeader button {
-    min-width: 35px;
-    padding: v.$space-xs v.$space-sm; // Smaller button padding
-    font-size: 1rem; // Smaller icon size
+    min-width: 44px;
+    min-height: 44px;
+    padding: v.$space-xs v.$space-sm;
+    font-size: 1rem;
   }
 
   .gamesContainer {
-    gap: v.$space-md;
-    padding: v.$space-md;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: v.$space-sm;
+    padding: v.$space-sm;
+    > * {
+      max-width: 95%;
+      margin: v.$space-sm;
+    }
   }
 
   .combinedGameCard {
-    min-height: 70px; // Slightly smaller cards
+    min-height: 60px;
+    border: 2px solid v.$border-color-secondary;
+    border-radius: v.$border-radius * 0.5;
   }
   .homeTeamLogo,
   .awayTeamLogo {
-    flex-basis: 55px;
-  } // Adjust logo width
+    flex-basis: 60px;
+    padding: v.$space-xxs;
+  }
   .leftImage,
   .rightImage {
-    max-width: 30px;
-    max-height: 30px;
+    max-width: 50px;
+    max-height: 50px;
   }
   .homeScore,
   .awayScore {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
   }
   .gameState {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
   }
   .gameTimeText {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
   }
 
   .standingsInjuriesContainer {
-    gap: v.$space-xl;
+    gap: v.$space-lg;
+  }
+
+  .standingsHeader,
+  .injuriesHeader {
+    padding: v.$space-sm;
   }
 
   .standingsHeader h1,
   .injuriesHeader h1 {
-    font-size: clamp(1.4rem, 4vw, 1.8rem);
-    padding: v.$space-sm v.$space-md;
+    font-size: clamp(1.2rem, 4vw, 1.5rem);
+    padding: v.$space-sm;
   }
 
-  // Reduce table font sizes and padding for mobile
   .standingsTable,
   .injuryTable {
     thead th {
-      font-size: 10px;
-      padding: v.$space-sm v.$space-sm;
+      font-variant: all-small-caps;
+      font-size: 18px;
+      padding: v.$space-xs v.$space-xs;
+      &:first-child {
+        padding-left: v.$space-xs * 1.5;
+      }
+      &:last-child {
+        padding-right: v.$space-sm;
+      }
     }
     tbody td {
-      font-size: 12px;
-      padding: v.$space-sm v.$space-sm;
+      font-variant: all-small-caps;
+      font-size: 16px;
+      font-family: v.$font-family-primary;
+      font-weight: 900;
 
+      line-height: 1;
+      padding: v.$space-sm v.$space-xs;
       &:first-child {
-        padding-left: v.$space-md;
+        padding-left: v.$space-xs;
       }
     }
   }
 
   .standingsTable {
-    // Mobile column widths
     th:nth-child(1),
     td:nth-child(1) {
-      width: 15%;
-    } // Rank
+      width: 10%;
+    }
     th:nth-child(2),
     td:nth-child(2) {
       width: 45%;
-    } // Team
+      padding-left: v.$space-sm;
+      text-transform: uppercase;
+      letter-spacing: 0.75px;
+    }
     th:nth-child(3),
     td:nth-child(3) {
       width: 20%;
-    } // Record
+    }
     th:nth-child(4),
     td:nth-child(4) {
-      width: 20%;
-    } // Points
-
+      width: 15%;
+    }
     .standingsTeamLogo {
-      width: 20px;
-      height: 20px;
+      width: 24px;
+      height: 24px;
       margin-right: v.$space-xs;
     }
   }
 
   .injuryTable {
-    // Allow auto layout on mobile or adjust widths
+    tbody tr {
+      height: 44px; // or your preferred value, e.g., 40px, 48px, etc.
+    }
+    tbody td {
+      height: 44px; // Ensures the cell fills the row height
+      vertical-align: middle; // Vertically center content
+    }
+
+    // COLUMN WIDTHS
+    // DATE
+    th:nth-child(1),
+    td:nth-child(1) {
+      width: 15%;
+      font-weight: 900;
+      font-size: 16px;
+      text-align: center;
+    }
+
+    // TEAM
+    th:nth-child(2),
+    td:nth-child(2) {
+      width: 5%;
+      padding-left: v.$space-sm;
+    }
+
+    // NAME
+    th:nth-child(3),
+    td:nth-child(3) {
+      width: 30%;
+      padding-left: v.$space-sm;
+      text-align: left;
+      letter-spacing: 0.75px;
+      font-size: 14px;
+    }
+
+    // STATUS
+    th:nth-child(4) {
+      text-align: left;
+      padding-left: v.$space-sm;
+    }
+
+    td:nth-child(4) {
+      width: 15%;
+      text-transform: uppercase;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    // DESCRIPTION
+    th:nth-child(5),
+    td:nth-child(5) {
+      width: 35%;
+      text-align: left;
+      padding-left: v.$space-sm;
+      font-size: 14px;
+    }
+
     table-layout: auto;
+    overflow-x: auto;
+    display: block;
     .dateColumn,
     .teamColumn,
     .nameColumn,
     .statusColumn,
     .descriptionColumn {
-      width: auto; // Let browser decide widths
-      white-space: normal; // Allow wrapping
+      white-space: normal;
     }
     td.dateColumn {
       white-space: nowrap;
     }
+    // Hide description column on very small screens
+    @media (max-width: 400px) {
+      th.descriptionColumn,
+      td.descriptionColumn {
+        display: none;
+      }
+    }
+
+    td.teamColumn {
+      padding: 0 !important;
+      margin: 0 !important;
+      text-align: center; // Optional: center the logo horizontally
+    }
+
+    .injuryTeamLogo {
+      padding: 0 !important;
+      margin: 0 auto !important;
+      height: 30px;
+      width: 30px;
+    }
   }
 
   .pagination {
-    padding: v.$space-sm v.$space-md;
+    padding: v.$space-xs v.$space-sm;
     button {
-      min-width: 80px;
+      min-width: 44px;
+      min-height: 44px;
       padding: v.$space-xs v.$space-sm;
+      font-size: 1rem;
     }
   }
 }

@@ -70,18 +70,18 @@ $color-transparent: transparent;
 
 // --- Semantic UI Colors Block ---
 $background-dark: #1a1d21; // Definition 2 (Implicitly overrides Def 1)
-$background-medium: darken(
+$background-medium: color.adjust(
   $background-dark,
-  3%
+  $lightness: -3%
 ); // Definition 2 (Uses $background-dark Def 2)
-$background-header: darken(
+$background-header: color.adjust(
   $background-dark,
-  5%
+  $lightness: -5%
 ); // Definition 1 (Uses $background-dark Def 2)
 $text-color-primary: $color-grey-text; // Definition 2 (Implicitly overrides Def 1)
-$text-color-secondary: darken(
+$text-color-secondary: color.adjust(
   $color-grey-text,
-  20%
+  $lightness: -20%
 ); // Definition 2 (Implicitly overrides Def 1)
 $border-color-primary: $color-grey-darker; // Definition 2 (Implicitly overrides Def 1, uses $color-grey-darker Def 1 value)
 $border-color-secondary: $color-grey-dark; // Definition 2 (Implicitly overrides Def 1, uses $color-grey-dark Def 1 value)
@@ -113,14 +113,14 @@ $color-focus: rgb(255, 193, 8); // New name (value = $focus-color Def 1)
 $primary-color: $color-primary-blue; // Definition 2 (Implicitly overrides Def 1)
 $secondary-color: $color-brand-blue; // Definition 2 (Implicitly overrides Def 1)
 $background-dark: $color-bg-dark-2; // Definition 3 (Implicitly overrides Def 2)
-$background-medium: darken(
+$background-medium: color.adjust(
   $background-dark,
-  3%
+  $lightness: -3%
 ); // Definition 3 (Uses $background-dark Def 3)
 $background-light: $color-bg-dark-3; // Definition 2 (Implicitly overrides Def 1)
-$background-header: darken(
+$background-header: color.adjust(
   $background-dark,
-  5%
+  $lightness: -5%
 ); // Definition 2 (Uses $background-dark Def 3)
 $text-primary: $color-grey-text; // New name
 $text-secondary: $color-grey-text-sec; // New name
@@ -360,7 +360,7 @@ $chart-tooltip-text: $text-primary; // Definition 2 (Uses $text-primary)
   &::-webkit-scrollbar-thumb {
     background-color: $thumb-color;
     border-radius: math.div($width, 2); // Make thumb rounded
-    border: 1px solid darken($track-color, 5%); // Optional subtle border
+    border: 1px solid color.adjust($track-color, $lightness: -5%); // Optional subtle border
   }
 
   &::-webkit-scrollbar-thumb:hover {
@@ -384,7 +384,7 @@ $chart-tooltip-text: $text-primary; // Definition 2 (Uses $text-primary)
   // The v. prefix was incorrect in the original file, removed here for correctness within the same file
   border: 10px solid $border-color-primary; // Uses $border-color-primary Def 2
   border-radius: $border-radius * 2; // Uses $border-radius Def 2 value
-  outline: 15px solid darken($background-dark, 2%); // Uses $background-dark Def 2
+  outline: 15px solid color.adjust($background-dark, $lightness: -2%); // Uses $background-dark Def 2
   overflow: hidden;
 }
 
@@ -472,6 +472,6 @@ $chart-tooltip-text: $text-primary; // Definition 2 (Uses $text-primary)
   width: 100%;
   border: 10px solid $border-color-primary;
   border-radius: $border-radius * 2;
-  outline: 15px solid darken($background-dark, 2%);
+  outline: 15px solid color.adjust($background-dark, $lightness: -2%);
   overflow: hidden;
 }

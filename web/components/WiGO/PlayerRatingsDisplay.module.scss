@@ -8,9 +8,9 @@
   justify-content: space-between; // Distribute space between sections
   gap: v.$space-md; // Add some gap between the columns
   padding: v.$space-sm v.$space-md; // Padding around the whole element
-  background-color: darken(
+  background-color: color.adjust(
     v.$background-dark,
-    3%
+    $lightness: -3%
   ); // Slightly darker background
   border-radius: v.$border-radius-sm;
   height: 100%; // Make it fill the container it's placed in
@@ -34,7 +34,10 @@
 .ratingTitle {
   text-align: center;
   color: v.$text-color-primary;
-  background-color: darken(v.$background-dark, 5%); // Header background
+  background-color: color.adjust(
+    v.$background-dark,
+    $lightness: -5%
+  ); // Header background
   padding: v.$space-xs v.$space-sm;
   margin: 0;
   font-size: v.$font-size-small;
