@@ -66,8 +66,8 @@ $mobile-column-short: 30px;
 // --- Component Containers ---
 
 .scheduleGridContainer {
-  @include v.component-wrapper;
   flex-grow: 1;
+  @include v.element-wrapper;
 
   @media (min-width: v.$breakpoint-desktop) {
     width: 70%;
@@ -76,10 +76,11 @@ $mobile-column-short: 30px;
 }
 
 .opponentStatsContainer {
-  @include v.component-wrapper;
+  @include v.element-wrapper;
   flex-shrink: 0;
 
   @media (min-width: v.$breakpoint-desktop) {
+    @include v.component-wrapper;
     flex-basis: 30%;
     display: flex;
     flex-direction: column;
@@ -87,6 +88,8 @@ $mobile-column-short: 30px;
 }
 
 .fourWeekGridContainerAll {
+  @include v.element-wrapper;
+
   width: 100%;
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
     @include v.component-wrapper;
@@ -765,7 +768,9 @@ $mobile-column-short: 30px;
 }
 
 .fourWeekLabelVertical {
-  font-family: roboto condensed, sans-serif;
+  font-family:
+    roboto condensed,
+    sans-serif;
   width: 100%;
   font-size: 1.2em;
   display: flex;
@@ -774,7 +779,9 @@ $mobile-column-short: 30px;
 }
 
 .fourWeekTitleVertical {
-  font-family: roboto condensed, sans-serif;
+  font-family:
+    roboto condensed,
+    sans-serif;
   font-size: 1.5em;
   font-weight: 100;
   text-transform: uppercase;
@@ -1123,7 +1130,9 @@ $mobile-column-short: 30px;
       th {
         // Nest 480px th overrides
         font-size: 8px !important;
-        font-family: roboto condensed, sans-serif;
+        font-family:
+          roboto condensed,
+          sans-serif;
         position: sticky;
         top: 0;
         padding: 0;
