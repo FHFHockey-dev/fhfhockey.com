@@ -824,3 +824,34 @@
     border-color: v.$primary-color;
   }
 }
+
+/* New styles for row expansion */
+.expanderButton {
+  @extend .collapseButton; // Inherit base styles
+  padding: v.$space-xxs v.$space-xs; // Smaller padding for a compact button
+  font-size: v.$font-size-sm; // Smaller font size
+  min-width: 20px; // Smaller min-width
+  line-height: 1; // Adjust line height for smaller font
+  margin-left: 0; // No margin for this specific button as it's in its own cell
+}
+
+.expandedContentRow {
+  td {
+    // Ensure background is consistent, even if table has alternating row colors
+    background-color: color.adjust(
+      v.$background-dark,
+      $lightness: -2%
+    ) !important;
+    padding: v.$space-md !important; // Add some padding around the chart area
+    border-top: 2px dashed v.$primary-color; // Visual separator
+    border-bottom: 2px dashed v.$primary-color; // Visual separator
+  }
+}
+
+.expandedContentCell {
+  // This class is on the <td> itself.
+  // Styles here will apply to the cell containing the chart.
+  // For example, if you want to ensure the chart has a specific alignment or background within this cell.
+  text-align: center; // Center the placeholder text for now
+  color: v.$text-secondary;
+}

@@ -1,7 +1,7 @@
 {
   "name": "FHFHockey",
   "short_name": "FHFH",
-  "theme_color": "#07aae2",
+  "theme_color": "#202020",
   "background_color": "#202020",
   "display": "standalone",
   "scope": "./",

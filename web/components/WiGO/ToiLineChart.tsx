@@ -86,9 +86,8 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
 
       try {
         // 1. Fetch totals (still needed for season and average total TOI)
-        const totals: SkaterTotalsData | null = await fetchPlayerPerGameTotals(
-          playerId
-        ); // Use updated type
+        const totals: SkaterTotalsData | null =
+          await fetchPlayerPerGameTotals(playerId); // Use updated type
 
         if (!totals || !totals.season) {
           throw new Error("Missing required totals data (season).");

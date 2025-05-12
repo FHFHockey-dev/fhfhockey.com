@@ -42,12 +42,19 @@ import { assignGlobalRanks, injectRanks } from "utils/projectionsRanking";
 
 // Import the new chart component
 import RoundPerformanceChart from "components/Projections/RoundPerformanceBoxPlotChart";
+import PlayerMatchupWeekPerformanceChart from "components/Projections/PlayerMatchupWeekPerformanceChart";
+import usePlayerMatchupWeekStats from "hooks/usePlayerMatchupWeekStats";
 
 // Import the new context and types
 import {
   RoundSummaryContext,
   RoundSummaryValue
 } from "contexts/RoundSummaryContext"; // Corrected path
+// Import tier calculation utilities
+import {
+  PerformanceTier,
+  calculateTierThresholds
+} from "../../utils/tierUtils"; // Adjusted path relative to pages/projections
 
 const supabaseClient = supabase;
 
@@ -302,18 +309,19 @@ const FantasyPointsSettingsPanel: React.FC<FantasyPointsSettingsPanelProps> =
   );
 
 interface ProjectionsDataTableProps {
-  columns: ColumnDef<TableDataRow, any>[]; // Use TableDataRow
-  data: TableDataRow[]; // Use TableDataRow
+  columns: ColumnDef<TableDataRow, any>[];
+  data: TableDataRow[];
+  expandedRows?: Record<string, boolean>;
+  toggleRowExpansion?: (rowId: string) => void;
 }
 
 const ProjectionsDataTable: React.FC<ProjectionsDataTableProps> = React.memo(
-  ({ columns, data }) => {
+  ({ columns, data, expandedRows, toggleRowExpansion }) => {
     const [sorting, setSorting] = React.useState<SortingState>([]);
-    const tableData = useMemo(() => data, [data]); // Use all data
+    const tableData = useMemo(() => data, [data]);
 
     const table = useReactTable<TableDataRow>({
-      // Use TableDataRow
-      data: tableData, // Now uses all data
+      data: tableData,
       columns,
       state: {
         sorting
@@ -321,7 +329,7 @@ const ProjectionsDataTable: React.FC<ProjectionsDataTableProps> = React.memo(
       onSortingChange: setSorting,
       getCoreRowModel: getCoreRowModel(),
       getSortedRowModel: getSortedRowModel(),
-      manualSorting: false // We are using client-side sorting
+      manualSorting: false
     });
 
     if (columns.length === 0) {
@@ -354,29 +362,24 @@ const ProjectionsDataTable: React.FC<ProjectionsDataTableProps> = React.memo(
                     }
                     onClick={() => {
                       if (!header.column.getCanSort()) return;
-                      // @ts-ignore // Accessing custom meta
                       const meta = header.column.columnDef.meta as {
                         columnType: string;
                         higherIsBetter?: boolean;
                       };
-                      const currentSortDirection = header.column.getIsSorted(); // false, 'asc', or 'desc'
+                      const currentSortDirection = header.column.getIsSorted();
 
                       if (currentSortDirection === false) {
-                        // First click
                         if (meta?.columnType === "text") {
-                          header.column.toggleSorting(false); // Sort A-Z (asc)
+                          header.column.toggleSorting(false);
                         } else if (meta?.columnType === "numeric") {
                           const sortDescending = meta.higherIsBetter === true;
                           header.column.toggleSorting(sortDescending);
                         } else {
-                          header.column.toggleSorting(false); // Fallback to ascending
+                          header.column.toggleSorting(false);
                         }
                       } else if (currentSortDirection === "asc") {
-                        // Currently ascending, switch to descending
                         header.column.toggleSorting(true);
                       } else {
-                        // Currently descending (currentSortDirection === 'desc'), switch to ascending
-                        // This also handles any other unexpected sort state by forcing ascending.
                         header.column.toggleSorting(false);
                       }
                     }}
@@ -396,41 +399,61 @@ const ProjectionsDataTable: React.FC<ProjectionsDataTableProps> = React.memo(
             ))}
           </thead>
           <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className={
-                  "type" in row.original && row.original.type === "summary"
-                    ? styles.summaryRowVisual
-                    : ""
-                }
-              >
-                {row.getVisibleCells().map((cell) => {
-                  // @ts-ignore Accessing custom meta more safely
-                  const meta = cell.column.columnDef.meta as
-                    | { isDiffCell?: boolean }
-                    | undefined;
+            {table.getRowModel().rows.map((row) => {
+              const isPlayerRow = !(
+                "type" in row.original && row.original.type === "summary"
+              );
+              const player = row.original as ProcessedPlayer; // Cast, assuming player if not summary
+              const rowId = isPlayerRow ? player.playerId.toString() : row.id;
+              const isExpanded =
+                isPlayerRow && expandedRows && expandedRows[rowId];
 
-                  let tdClassName = "";
-                  if (meta?.isDiffCell) {
-                    tdClassName = styles.diffCellContainer;
-                  }
-                  // If you add .summaryRowVisual to styles.ProjectionsPage.module.scss for full row styling:
-                  // if (row.original.type === 'summary') {
-                  //   tdClassName += ` ${styles.summaryCellInRow}`; // For specific cell styling within a summary row
-                  // }
+              // --- CHART INTEGRATION START ---
+              let expandedContent = null;
+              if (isPlayerRow && isExpanded) {
+                // Only show chart for 'overall' tab (expandedRows only set for overall)
+                expandedContent = (
+                  <ExpandedPlayerRowChart playerId={player.playerId} />
+                );
+              }
+              // --- CHART INTEGRATION END ---
 
-                  return (
-                    <td key={cell.id} className={tdClassName}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+              return (
+                <React.Fragment key={row.id}>
+                  <tr className={!isPlayerRow ? styles.summaryRowVisual : ""}>
+                    {row.getVisibleCells().map((cell) => {
+                      const meta = cell.column.columnDef.meta as
+                        | { isDiffCell?: boolean }
+                        | undefined;
+
+                      let tdClassName = "";
+                      if (meta?.isDiffCell) {
+                        tdClassName = styles.diffCellContainer;
+                      }
+
+                      return (
+                        <td key={cell.id} className={tdClassName}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  {isPlayerRow && isExpanded && (
+                    <tr className={styles.expandedContentRow}>
+                      <td
+                        colSpan={row.getVisibleCells().length}
+                        className={styles.expandedContentCell}
+                      >
+                        {expandedContent}
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -438,9 +461,60 @@ const ProjectionsDataTable: React.FC<ProjectionsDataTableProps> = React.memo(
   }
 );
 
+// --- Expanded Player Row Chart Wrapper ---
+const ExpandedPlayerRowChart: React.FC<{
+  playerId: number;
+  season?: string | null;
+}> = ({ playerId, season }) => {
+  // Get context for performance tiers and season
+  const { performanceTiers, currentSeasonId, skaterPointValues } =
+    React.useContext(ExpandedPlayerRowChartContext);
+
+  // Log currentSeasonId within ExpandedPlayerRowChart
+  console.log(
+    "[ExpandedPlayerRowChart] currentSeasonId from context:",
+    currentSeasonId
+  );
+
+  // Use currentSeasonId if season not provided
+  const seasonToUse: string | null = season ?? currentSeasonId ?? null;
+
+  // Log seasonToUse before passing to the hook
+  console.log(
+    "[ExpandedPlayerRowChart] seasonToUse for usePlayerMatchupWeekStats:",
+    seasonToUse,
+    "Player ID:",
+    playerId
+  );
+
+  const { matchupWeekStats, gameStatPoints, isLoading, error } =
+    usePlayerMatchupWeekStats({
+      playerId,
+      season: seasonToUse,
+      fantasyPointSettings: skaterPointValues,
+      isEnabled: !!playerId && !!seasonToUse
+    });
+
+  return (
+    <PlayerMatchupWeekPerformanceChart
+      matchupWeekStats={matchupWeekStats}
+      gameStatPoints={gameStatPoints}
+      performanceTiers={performanceTiers}
+      isLoading={isLoading}
+      error={error}
+    />
+  );
+};
+
+// --- Context for expanded row chart ---
+const ExpandedPlayerRowChartContext = React.createContext<{
+  performanceTiers: PerformanceTier[];
+  currentSeasonId: string | null;
+  skaterPointValues: Record<string, number>;
+}>({ performanceTiers: [], currentSeasonId: null, skaterPointValues: {} });
+
 // --- Main Page Component ---
 const ProjectionsPage: NextPage = () => {
-  // All hooks must be called unconditionally at the top
   const currentSeason = useCurrentSeason();
   const currentSeasonId = currentSeason?.seasonId;
   const [activePlayerType, setActivePlayerType] = useState<
@@ -453,7 +527,6 @@ const ProjectionsPage: NextPage = () => {
     "ALL"
   );
 
-  // State for fantasy point values for each player type
   const [skaterPointValues, setSkaterPointValues] = useState<
     Record<string, number>
   >(() => getDefaultFantasyPointsConfig("skater"));
@@ -461,17 +534,19 @@ const ProjectionsPage: NextPage = () => {
     Record<string, number>
   >(() => getDefaultFantasyPointsConfig("goalie"));
 
-  // Centralized state for the fantasy points toggle
   const [showPerGameFantasyPoints, setShowPerGameFantasyPoints] =
     useState<boolean>(false);
 
-  // NEW: State for chart data type
   const [chartDataType, setChartDataType] = useState<ChartDataType>("diff");
 
-  // NEW: State for pick bin size for the Actual FP chart
   const [pickBinSize, setPickBinSize] = useState<number>(12);
 
-  // NEW: State to hold extracted round summary data for the context
+  const [performanceTiers, setPerformanceTiers] = useState<PerformanceTier[]>(
+    []
+  );
+
+  const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+
   const [roundSummaryDataForContext, setRoundSummaryDataForContext] = useState<
     RoundSummaryValue[]
   >([]);
@@ -480,7 +555,13 @@ const ProjectionsPage: NextPage = () => {
     setShowPerGameFantasyPoints((prev) => !prev);
   }, []);
 
-  // Always call all hooks at the top level (now safe)
+  const toggleRowExpansion = useCallback((rowId: string) => {
+    setExpandedRows((prev) => ({
+      ...prev,
+      [rowId]: !prev[rowId]
+    }));
+  }, []);
+
   const skaterTabData = useProcessedProjectionsData({
     activePlayerType: "skater",
     sourceControls: Object.fromEntries(
@@ -492,12 +573,12 @@ const ProjectionsPage: NextPage = () => {
       ])
     ),
     yahooDraftMode,
-    fantasyPointSettings: skaterPointValues, // Use skaterPointValues
+    fantasyPointSettings: skaterPointValues,
     supabaseClient,
     styles,
     currentSeasonId: currentSeasonId ? String(currentSeasonId) : undefined,
-    showPerGameFantasyPoints, // Pass down state
-    togglePerGameFantasyPoints // Pass down callback
+    showPerGameFantasyPoints,
+    togglePerGameFantasyPoints
   });
 
   const goalieTabData = useProcessedProjectionsData({
@@ -511,102 +592,41 @@ const ProjectionsPage: NextPage = () => {
       ])
     ),
     yahooDraftMode,
-    fantasyPointSettings: goaliePointValues, // Use goaliePointValues
+    fantasyPointSettings: goaliePointValues,
     supabaseClient,
     styles,
     currentSeasonId: currentSeasonId ? String(currentSeasonId) : undefined,
-    showPerGameFantasyPoints, // Pass down state
-    togglePerGameFantasyPoints // Pass down callback
+    showPerGameFantasyPoints,
+    togglePerGameFantasyPoints
   });
 
-  // Compute overall data with useMemo (must be called unconditionally)
-  const overallData = useMemo(() => {
-    // Only use ProcessedPlayer rows (not summary rows)
-    const skaters = skaterTabData.processedPlayers.filter(
-      (p): p is ProcessedPlayer => !("type" in p)
-    );
-    const goalies = goalieTabData.processedPlayers.filter(
-      (p): p is ProcessedPlayer => !("type" in p)
-    );
-
-    if (skaters.length === 0 && goalies.length === 0) {
-      return {
-        processedPlayers: [],
-        tableColumns: [],
-        isLoading: skaterTabData.isLoading || goalieTabData.isLoading,
-        error: skaterTabData.error || goalieTabData.error
-      };
-    }
-    const rankedUnsorted = assignGlobalRanks(skaters, goalies); // This returns ProcessedPlayer[]
-
-    // Create a map for quick rank lookup
-    const rankMap = new Map<number, ProcessedPlayer>();
-    rankedUnsorted.forEach((p) => rankMap.set(p.playerId, p));
-
-    // Combine skaters and goalies (still as ProcessedPlayer for now) and inject ranks
-    const combinedPlayersWithRanks: ProcessedPlayer[] = [
-      ...skaters,
-      ...goalies
-    ].map((p) => {
-      const rankedPlayer = rankMap.get(p.playerId);
-      // Ensure per-game fantasy points are calculated or preserved for the Overall tab
-      let projectedPerGame = p.fantasyPoints.projectedPerGame;
-      let actualPerGame = p.fantasyPoints.actualPerGame;
-
-      const projectedGP = p.combinedStats.GAMES_PLAYED?.projected;
-      const actualGP = p.combinedStats.GAMES_PLAYED?.actual;
-
-      if (
-        p.fantasyPoints.projected !== null &&
-        projectedGP !== null &&
-        projectedGP > 0
-      ) {
-        projectedPerGame = p.fantasyPoints.projected / projectedGP;
-      } else if (projectedPerGame === undefined) {
-        // If it was undefined on p, ensure it's null
-        projectedPerGame = null;
-      }
-
-      if (
-        p.fantasyPoints.actual !== null &&
-        actualGP !== null &&
-        actualGP > 0
-      ) {
-        actualPerGame = p.fantasyPoints.actual / actualGP;
-      } else if (actualPerGame === undefined) {
-        // If it was undefined on p, ensure it's null
-        actualPerGame = null;
-      }
-
-      return {
-        ...p,
-        fantasyPoints: {
-          ...p.fantasyPoints,
-          projectedPerGame: projectedPerGame,
-          actualPerGame: actualPerGame
-        },
-        projectedRank: rankedPlayer?.projectedRank,
-        actualRank: rankedPlayer?.actualRank
-      };
-    });
-
-    // Sort by ADP for round summary generation
-    const sortedForRoundProcessing = [...combinedPlayersWithRanks].sort(
-      (a, b) => {
-        const pickA = a.yahooAvgPick ?? Infinity;
-        const pickB = b.yahooAvgPick ?? Infinity;
-        return pickA - pickB;
-      }
-    );
-
-    // Now generate rows with summaries, this will return TableDataRow[]
-    const overallRowsWithSummaries = addRoundSummariesToPlayers(
-      sortedForRoundProcessing,
-      calculateDiffPercentage
-    );
-
-    // Define columns for the "Overall" tab, including the FP toggle
-    const overallColumns: ColumnDef<TableDataRow, any>[] = [
+  // Define overallColumns at the top level using useMemo
+  const overallColumns = useMemo(
+    (): ColumnDef<TableDataRow, any>[] => [
+      {
+        id: "expander",
+        header: () => null, // No header text for expander column
+        size: 40, // Small fixed size for the expander button
+        minSize: 40,
+        maxSize: 40,
+        cell: ({ row }) => {
+          if ("type" in row.original && row.original.type === "summary") {
+            return null;
+          }
+          const player = row.original as ProcessedPlayer;
+          return (
+            <button
+              onClick={() => toggleRowExpansion(player.playerId.toString())}
+              className={styles.expanderButton}
+              title={
+                expandedRows[player.playerId.toString()] ? "Collapse" : "Expand"
+              }
+            >
+              {expandedRows[player.playerId.toString()] ? "−" : "+"}
+            </button>
+          );
+        }
+      },
       {
         id: "fullName",
         header: "Player",
@@ -663,11 +683,11 @@ const ProjectionsPage: NextPage = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                togglePerGameFantasyPoints(); // Use page-level toggle
+                togglePerGameFantasyPoints();
               }}
               className={styles.collapseButton}
               title={
-                showPerGameFantasyPoints // Use page-level state
+                showPerGameFantasyPoints
                   ? "Show Total Fantasy Points"
                   : "Show Fantasy Points Per Game"
               }
@@ -684,7 +704,6 @@ const ProjectionsPage: NextPage = () => {
             accessorFn: (row) => {
               const fp = row.fantasyPoints;
               if (showPerGameFantasyPoints) {
-                // Use page-level state
                 return fp.projectedPerGame ?? undefined;
               }
               return fp.projected ?? undefined;
@@ -704,7 +723,6 @@ const ProjectionsPage: NextPage = () => {
             accessorFn: (row) => {
               const fp = row.fantasyPoints;
               if (showPerGameFantasyPoints) {
-                // Use page-level state
                 return fp.actualPerGame ?? undefined;
               }
               return fp.actual ?? undefined;
@@ -724,15 +742,12 @@ const ProjectionsPage: NextPage = () => {
             accessorFn: (row) => {
               const fp = row.fantasyPoints;
               if (showPerGameFantasyPoints) {
-                // Use page-level state
-                // For summary rows, diffPercentagePerGame is pre-calculated
                 if ("type" in row && row.type === "summary") {
                   return (
                     (fp as RoundSummaryRow["fantasyPoints"])
                       .diffPercentagePerGame ?? undefined
                   );
                 }
-                // For player rows, calculate on the fly if needed, or ensure it's on ProcessedPlayer
                 const projPg = (row as ProcessedPlayer).fantasyPoints
                   .projectedPerGame;
                 const actualPg = (row as ProcessedPlayer).fantasyPoints
@@ -785,7 +800,7 @@ const ProjectionsPage: NextPage = () => {
           if (val === null || val === undefined) return "-";
           return val.toFixed(1);
         },
-        meta: { columnType: "numeric", higherIsBetter: false }, // Lower ADP is better
+        meta: { columnType: "numeric", higherIsBetter: false },
         enableSorting: true,
         sortUndefined: "last"
       },
@@ -801,7 +816,7 @@ const ProjectionsPage: NextPage = () => {
           if (val === null || val === undefined) return "-";
           return val.toFixed(1);
         },
-        meta: { columnType: "numeric", higherIsBetter: false }, // Lower Avg Rd is better
+        meta: { columnType: "numeric", higherIsBetter: false },
         enableSorting: true,
         sortUndefined: "last"
       },
@@ -815,7 +830,7 @@ const ProjectionsPage: NextPage = () => {
         cell: (info) => {
           const val = info.getValue() as number | null;
           if (val === null || val === undefined) return "-";
-          return `${val.toFixed(1)}%`; // Display as percentage
+          return `${val.toFixed(1)}%`;
         },
         meta: { columnType: "numeric", higherIsBetter: true },
         enableSorting: true,
@@ -851,10 +866,96 @@ const ProjectionsPage: NextPage = () => {
         enableSorting: true,
         sortUndefined: "last"
       }
-    ];
+    ],
+    [
+      showPerGameFantasyPoints,
+      togglePerGameFantasyPoints,
+      expandedRows,
+      toggleRowExpansion
+    ]
+  );
 
+  // Compute overall data with useMemo (must be called unconditionally)
+  const overallData = useMemo(() => {
+    const skaters = skaterTabData.processedPlayers.filter(
+      (p): p is ProcessedPlayer => !("type" in p)
+    );
+    const goalies = goalieTabData.processedPlayers.filter(
+      (p): p is ProcessedPlayer => !("type" in p)
+    );
+
+    if (skaters.length === 0 && goalies.length === 0) {
+      return {
+        processedPlayers: [],
+        tableColumns: [], // Return empty columns if no data
+        isLoading: skaterTabData.isLoading || goalieTabData.isLoading,
+        error: skaterTabData.error || goalieTabData.error
+      };
+    }
+    const rankedUnsorted = assignGlobalRanks(skaters, goalies);
+
+    const rankMap = new Map<number, ProcessedPlayer>();
+    rankedUnsorted.forEach((p) => rankMap.set(p.playerId, p));
+
+    const combinedPlayersWithRanks: ProcessedPlayer[] = [
+      ...skaters,
+      ...goalies
+    ].map((p) => {
+      const rankedPlayer = rankMap.get(p.playerId);
+      let projectedPerGame = p.fantasyPoints.projectedPerGame;
+      let actualPerGame = p.fantasyPoints.actualPerGame;
+
+      const projectedGP = p.combinedStats.GAMES_PLAYED?.projected;
+      const actualGP = p.combinedStats.GAMES_PLAYED?.actual;
+
+      if (
+        p.fantasyPoints.projected !== null &&
+        projectedGP !== null &&
+        projectedGP > 0
+      ) {
+        projectedPerGame = p.fantasyPoints.projected / projectedGP;
+      } else if (projectedPerGame === undefined) {
+        projectedPerGame = null;
+      }
+
+      if (
+        p.fantasyPoints.actual !== null &&
+        actualGP !== null &&
+        actualGP > 0
+      ) {
+        actualPerGame = p.fantasyPoints.actual / actualGP;
+      } else if (actualPerGame === undefined) {
+        actualPerGame = null;
+      }
+
+      return {
+        ...p,
+        fantasyPoints: {
+          ...p.fantasyPoints,
+          projectedPerGame: projectedPerGame,
+          actualPerGame: actualPerGame
+        },
+        projectedRank: rankedPlayer?.projectedRank,
+        actualRank: rankedPlayer?.actualRank
+      };
+    });
+
+    const sortedForRoundProcessing = [...combinedPlayersWithRanks].sort(
+      (a, b) => {
+        const pickA = a.yahooAvgPick ?? Infinity;
+        const pickB = b.yahooAvgPick ?? Infinity;
+        return pickA - pickB;
+      }
+    );
+
+    const overallRowsWithSummaries = addRoundSummariesToPlayers(
+      sortedForRoundProcessing,
+      calculateDiffPercentage
+    );
+
+    // Use the overallColumns defined at the top level of ProjectionsPage
     return {
-      processedPlayers: overallRowsWithSummaries, // Use the rows with summaries
+      processedPlayers: overallRowsWithSummaries,
       tableColumns: overallColumns,
       isLoading: skaterTabData.isLoading || goalieTabData.isLoading,
       error: skaterTabData.error || goalieTabData.error
@@ -863,8 +964,11 @@ const ProjectionsPage: NextPage = () => {
     skaterTabData,
     goalieTabData,
     showPerGameFantasyPoints,
-    togglePerGameFantasyPoints
-  ]); // Added dependencies
+    togglePerGameFantasyPoints,
+    expandedRows,
+    toggleRowExpansion,
+    overallColumns // Add overallColumns as a dependency here
+  ]);
 
   // EFFECT to update round summary data for context when overallData changes
   useEffect(() => {
@@ -881,24 +985,30 @@ const ProjectionsPage: NextPage = () => {
         }));
 
       setRoundSummaryDataForContext((prevSummaries) => {
-        // Simple stringify for comparison. For more complex objects, a deep-equal library might be better.
         if (JSON.stringify(prevSummaries) !== JSON.stringify(newSummaries)) {
           return newSummaries;
         }
         return prevSummaries;
       });
     } else if (overallData && overallData.processedPlayers.length === 0) {
-      // If overallData is present but has no players, clear the summaries if they aren't already empty.
       setRoundSummaryDataForContext((prevSummaries) => {
         if (prevSummaries.length > 0) return [];
         return prevSummaries;
       });
     }
-    // Consider if overallData itself being null/undefined (initial loading states) needs specific handling for clearing summaries.
-    // For now, this primarily addresses loops once overallData is being populated.
-  }, [overallData]); // Dependency on overallData
+  }, [overallData]);
 
-  // --- Tab switching logic ---
+  useEffect(() => {
+    if (roundSummaryDataForContext && roundSummaryDataForContext.length > 0) {
+      const calculatedTiers = calculateTierThresholds(
+        roundSummaryDataForContext
+      );
+      setPerformanceTiers(calculatedTiers);
+    } else {
+      setPerformanceTiers([]);
+    }
+  }, [roundSummaryDataForContext]);
+
   let displayedData: ReturnType<typeof useProcessedProjectionsData> =
     skaterTabData;
   if (activePlayerType === "goalie") displayedData = goalieTabData;
@@ -930,11 +1040,10 @@ const ProjectionsPage: NextPage = () => {
         : "Individual Player Difference %";
     const finalChartType: "line" | "boxplot" =
       chartDataType === "actualFp" ? "line" : "boxplot";
-    let labels: string[] = []; // For boxplot; for line chart, x-axis is numeric and labels are auto-generated
+    let labels: string[] = [];
     let datasets: any[] = [];
 
     if (chartDataType === "actualFp") {
-      // New logic for individual player plotting
       const positions = Array.from(
         new Set(
           players.map(
@@ -953,12 +1062,12 @@ const ProjectionsPage: NextPage = () => {
               p.fantasyPoints.actual !== null
           )
           .map((p) => ({
-            x: p.yahooAvgPick as number, // Ensure x is number
-            y: p.fantasyPoints.actual as number, // Ensure y is number
+            x: p.yahooAvgPick as number,
+            y: p.fantasyPoints.actual as number,
             playerFullName: p.fullName,
             displayPosition: p.displayPosition
           }))
-          .sort((a, b) => a.x - b.x); // Sort by ADP for correct line drawing
+          .sort((a, b) => a.x - b.x);
 
         return {
           label: position,
@@ -967,16 +1076,13 @@ const ProjectionsPage: NextPage = () => {
           backgroundColor:
             POSITION_COLORS[position] || POSITION_COLORS["Unknown"],
           fill: false,
-          tension: 0.1, // Slight smoothing for the line
-          pointRadius: 3, // Show points for players
+          tension: 0.1,
+          pointRadius: 3,
           pointHoverRadius: 5
         };
       });
-      // Labels for x-axis are not predefined strings here; Chart.js will use a linear scale based on x values.
-      // We can pass an empty array or let Chart.js handle it if x values are in datasets.
-      labels = []; // Or determine min/max ADP to provide some guidance to Chart.js if needed, but often not required for linear x-axis.
+      labels = [];
     } else {
-      // diff percentage - Box Plot logic (existing)
       const roundsData: Record<number, ProcessedPlayer[]> = {};
       players.forEach((player) => {
         if (player.yahooAvgPick != null && player.yahooAvgPick > 0) {
@@ -1034,9 +1140,8 @@ const ProjectionsPage: NextPage = () => {
     }
 
     return { labels, datasets, yAxisLabel, chartType: finalChartType };
-  }, [displayedData.processedPlayers, chartDataType]); // pickBinSize removed from dependencies as it's not used for this 'actualFp' view type
+  }, [displayedData.processedPlayers, chartDataType]);
 
-  // Unconditionally call all hooks before any return
   const availableSourcesForTab = useMemo(() => {
     const currentType =
       activePlayerType === "overall" ? "skater" : activePlayerType;
@@ -1045,24 +1150,22 @@ const ProjectionsPage: NextPage = () => {
     );
   }, [activePlayerType]);
 
-  // Initialize sourceControls with all sources selected by default
   useEffect(() => {
     const initialControls: Record<
       string,
       { isSelected: boolean; weight: number }
     > = {};
     PROJECTION_SOURCES_CONFIG.forEach((source) => {
-      // Set isSelected to true and weight to 1 for all sources initially
       initialControls[source.id] = { isSelected: true, weight: 1 };
     });
     setSourceControls(initialControls);
-  }, []); // Run only once on mount
+  }, []);
 
   const handlePlayerTypeChange = useCallback(
     (tab: "skater" | "goalie" | "overall") => {
       setActivePlayerType(tab);
     },
-    [setActivePlayerType] // Dependency: setActivePlayerType (stable)
+    [setActivePlayerType]
   );
 
   const handleSourceSelectionChange = useCallback(
@@ -1072,12 +1175,12 @@ const ProjectionsPage: NextPage = () => {
         [sourceId]: { ...(prev[sourceId] || { weight: 1 }), isSelected }
       }));
     },
-    [setSourceControls] // Dependency: setSourceControls (stable)
+    [setSourceControls]
   );
 
   const handleSourceWeightChange = useCallback(
     (sourceId: string, weight: number) => {
-      const newWeight = Math.max(0.1, weight); // Ensure weight is not too low
+      const newWeight = Math.max(0.1, weight);
       setSourceControls((prev) => ({
         ...prev,
         [sourceId]: {
@@ -1086,7 +1189,7 @@ const ProjectionsPage: NextPage = () => {
         }
       }));
     },
-    [setSourceControls] // Dependency: setSourceControls (stable)
+    [setSourceControls]
   );
 
   const handleSelectAllSources = useCallback(() => {
@@ -1131,6 +1234,28 @@ const ProjectionsPage: NextPage = () => {
     [activePlayerType, setSkaterPointValues, setGoaliePointValues]
   );
 
+  // Transform currentSeasonId for the provider
+  let seasonIdAsString: string | null = null;
+  if (currentSeasonId !== undefined && currentSeasonId !== null) {
+    seasonIdAsString = String(currentSeasonId); // Ensure it's a string
+  }
+
+  let currentSeasonIdForProvider: string | null = null;
+  if (seasonIdAsString) {
+    // Check if seasonIdAsString is not null
+    if (seasonIdAsString.length === 8) {
+      // e.g., "20242025"
+      currentSeasonIdForProvider = seasonIdAsString.substring(0, 4); // "2024"
+    } else {
+      currentSeasonIdForProvider = seasonIdAsString; // Use as is if not in YYYYYYYY format
+    }
+  }
+
+  console.log(
+    "[ProjectionsPage] currentSeasonId for Context.Provider (transformed):",
+    currentSeasonIdForProvider
+  );
+
   return (
     <>
       <Head>
@@ -1140,7 +1265,6 @@ const ProjectionsPage: NextPage = () => {
           content="View and analyze aggregated hockey player projections."
         />
       </Head>
-      {/* Provide the round summary data via context */}
       <RoundSummaryContext.Provider value={roundSummaryDataForContext}>
         <main className={styles.pageContainer}>
           <section className={styles.headerSection}>
@@ -1154,9 +1278,7 @@ const ProjectionsPage: NextPage = () => {
               activeTab={activePlayerType}
               onTabChange={handlePlayerTypeChange}
             />
-            {/* New two-column layout for control panels */}
             <div className={styles.controlPanelsGrid}>
-              {/* Column 1: Source Selector and Yahoo Mode */}
               <div className={styles.controlPanelsColumnLeft}>
                 <SourceSelectorPanel
                   availableSources={availableSourcesForTab}
@@ -1172,7 +1294,6 @@ const ProjectionsPage: NextPage = () => {
                 />
               </div>
 
-              {/* Column 2: Fantasy Points */}
               <div className={styles.controlPanelsColumnRight}>
                 <FantasyPointsSettingsPanel
                   activePlayerType={
@@ -1190,7 +1311,6 @@ const ProjectionsPage: NextPage = () => {
           </section>
 
           <section className={styles.dataDisplaySection}>
-            {/* Chart Section - Rendered above the table */}
             {!displayedData.isLoading &&
               !displayedData.error &&
               displayedData.processedPlayers.length > 0 &&
@@ -1212,12 +1332,12 @@ const ProjectionsPage: NextPage = () => {
                     className={styles.panelTitle}
                     style={{
                       textAlign: "center",
-                      marginBottom: "0.5rem", // Reduced margin to bring controls closer
+                      marginBottom: "0.5rem",
                       borderBottom: "none",
                       display: "flex",
                       justifyContent: "center",
                       alignItems: "center",
-                      flexWrap: "wrap" // Allow wrapping for smaller screens
+                      flexWrap: "wrap"
                     }}
                   >
                     <span>
@@ -1250,33 +1370,6 @@ const ProjectionsPage: NextPage = () => {
                       </button>
                     </div>
                   </h3>
-                  {/* Container for Pick Bin Size input, only shown for Actual FP chart IF we bring it back for an alternative view */}
-                  {/* For now, hiding it as the current ActualFP view is per-player, not binned */}
-                  {/* {chartDataType === 'actualFp' && (
-                    <div style={{
-                      display: 'flex', 
-                      justifyContent: 'center', 
-                      alignItems: 'center', 
-                      gap: '10px', 
-                      marginBottom: '1rem' 
-                    }}>
-                      <label htmlFor="pickBinSizeInput" style={{ color: 'var(--color-text-primary)', fontSize: '0.9rem' }}>
-                        Picks per Bin:
-                      </label>
-                      <input 
-                        type="number" 
-                        id="pickBinSizeInput"
-                        value={pickBinSize}
-                        onChange={(e) => setPickBinSize(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                        min="1"
-                        max="60" // Reasonable max
-                        step="1"
-                        className={styles.fantasySettingInput} // Re-use style for consistency
-                        style={{ width: '80px' }}
-                        title="Set the number of picks grouped into each bin for the x-axis (1-60)"
-                      />
-                    </div>
-                  )} */}
                   <RoundPerformanceChart
                     labels={chartPresentationData.labels}
                     datasets={chartPresentationData.datasets}
@@ -1299,10 +1392,26 @@ const ProjectionsPage: NextPage = () => {
               </div>
             )}
             {!displayedData.isLoading && !displayedData.error && (
-              <ProjectionsDataTable
-                columns={displayedData.tableColumns}
-                data={displayedData.processedPlayers}
-              />
+              <ExpandedPlayerRowChartContext.Provider
+                value={{
+                  performanceTiers,
+                  currentSeasonId: currentSeasonIdForProvider,
+                  skaterPointValues
+                }}
+              >
+                <ProjectionsDataTable
+                  columns={displayedData.tableColumns}
+                  data={displayedData.processedPlayers}
+                  expandedRows={
+                    activePlayerType === "overall" ? expandedRows : undefined
+                  }
+                  toggleRowExpansion={
+                    activePlayerType === "overall"
+                      ? toggleRowExpansion
+                      : undefined
+                  }
+                />
+              </ExpandedPlayerRowChartContext.Provider>
             )}
           </section>
         </main>

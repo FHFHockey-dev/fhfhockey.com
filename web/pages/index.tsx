@@ -81,7 +81,7 @@ const Home: NextPage = ({
   //   fetchStandings();
   // }, []);
 
-  () => {
+  useEffect(() => {
     const fetchGames = async () => {
       const res = await fetch(`/api/v1/games?date=${currentDate}`);
       const data = await res.json();
@@ -138,8 +138,7 @@ const Home: NextPage = ({
     };
 
     fetchGames();
-  },
-    [currentDate, isOffseason];
+  }, [currentDate, isOffseason]);
 
   const changeDate = async (days) => {
     const newDate = moment(currentDate).add(days, "days").format("YYYY-MM-DD");
@@ -194,7 +193,9 @@ const Home: NextPage = ({
       <tr key={`${injury.player?.id ?? idx}-${idx}`}>
         {" "}
         {/* More robust key */}
-        <td className={styles.dateColumn}>{injury.date ?? "N/A"}</td>
+        <td className={styles.dateColumn}>
+          {injury.date ? moment(injury.date).format("M/D/YY") : "N/A"}
+        </td>
         {/* Team Column now includes Logo */}
         <td className={styles.teamColumn}>
           <img
@@ -304,6 +305,19 @@ const Home: NextPage = ({
   const gamesToDisplay = games.length > 0 ? games : nextAvailableGames;
   const displayDate = games.length > 0 ? currentDate : nextGameDate;
 
+  const today = moment().format("YYYY-MM-DD");
+  const yesterday = moment().subtract(1, "days").format("YYYY-MM-DD");
+  const tomorrow = moment().add(1, "days").format("YYYY-MM-DD");
+
+  let gamesHeaderText = "Upcoming";
+  if (displayDate === today) {
+    gamesHeaderText = "Today's";
+  } else if (displayDate === yesterday) {
+    gamesHeaderText = "Yesterday's";
+  } else if (displayDate === tomorrow) {
+    gamesHeaderText = "Tomorrow's";
+  }
+
   return (
     <Container>
       <NextSeo
@@ -337,18 +351,18 @@ const Home: NextPage = ({
               aria-label="Previous Day"
             ></button>
             <div className={styles.headerAndDate}>
-              <h1>
-                {gamesToDisplay.length > 0
-                  ? games.length > 0
-                    ? "Today's"
-                    : "Upcoming"
-                  : isOffseason
-                  ? "Upcoming"
-                  : "Today's"}{" "}
-                <span>Games</span>
+              <h1
+                className={
+                  gamesHeaderText === "Yesterday's" ||
+                  gamesHeaderText === "Tomorrow's"
+                    ? styles.smallerHeader
+                    : ""
+                }
+              >
+                {gamesHeaderText} <span>Games</span>
               </h1>
               <p className={styles.dateDisplay}>
-                Scheduled for: {moment(displayDate).format("MM/DD/YYYY")}
+                {moment(displayDate).format("M/DD/YYYY")}
               </p>
             </div>
             <button
@@ -420,7 +434,7 @@ const Home: NextPage = ({
                           <span className={styles.gameTimeText}>
                             {game.gameState === "LIVE" &&
                             !game.clock?.inIntermission ? (
-                              game.clock?.timeRemaining ?? "--:--"
+                              (game.clock?.timeRemaining ?? "--:--")
                             ) : (
                               <ClientOnly placeHolder={<> </>}>
                                 {moment(game.startTimeUTC).format("h:mm A")}
