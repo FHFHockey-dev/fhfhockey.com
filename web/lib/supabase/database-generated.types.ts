@@ -17515,6 +17515,48 @@ export type Database = {
         }
         Relationships: []
       }
+      powerPlayCombinations: {
+        Row: {
+          created_at: string
+          gameId: number
+          percentageOfPP: number
+          playerId: number
+          PPTOI: number
+          unit: number
+        }
+        Insert: {
+          created_at?: string
+          gameId: number
+          percentageOfPP?: number
+          playerId: number
+          PPTOI?: number
+          unit?: number
+        }
+        Update: {
+          created_at?: string
+          gameId?: number
+          percentageOfPP?: number
+          playerId?: number
+          PPTOI?: number
+          unit?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "powerPlayCombinations_gameId_fkey"
+            columns: ["gameId"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "powerPlayCombinations_playerId_fkey"
+            columns: ["playerId"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pp_timeframes: {
         Row: {
           away_team_abbrev: string
@@ -17654,7 +17696,6 @@ export type Database = {
           Points: number | null
           Position: string | null
           PP_Points: number | null
-          Rank: number | null
           Shots_on_Goal: number | null
           Team_Abbreviation: string | null
           upload_batch_id: string
@@ -17672,7 +17713,6 @@ export type Database = {
           Points?: number | null
           Position?: string | null
           PP_Points?: number | null
-          Rank?: number | null
           Shots_on_Goal?: number | null
           Team_Abbreviation?: string | null
           upload_batch_id?: string
@@ -17690,7 +17730,6 @@ export type Database = {
           Points?: number | null
           Position?: string | null
           PP_Points?: number | null
-          Rank?: number | null
           Shots_on_Goal?: number | null
           Team_Abbreviation?: string | null
           upload_batch_id?: string
