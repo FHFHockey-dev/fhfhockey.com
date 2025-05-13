@@ -4,9 +4,10 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { createClientWithToken } from "lib/supabase";
 import { NextApiRequest, NextApiResponse } from "next";
 import serviceRoleClient from "lib/supabase/server";
+import { Database } from "lib/supabase/database-generated.types";
 
 interface ApiRequest extends NextApiRequest {
-  supabase: SupabaseClient<any, "public", any>;
+  supabase: SupabaseClient<Database>;
 }
 
 type Handler = (req: ApiRequest, res: NextApiResponse) => Promise<any>;
