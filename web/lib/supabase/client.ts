@@ -13,4 +13,5 @@ const supabase: SupabaseClient<Database> = createClient<Database>(
   supabaseKey
 );
 
+export type SupabaseType = typeof supabase;
 export default supabase;
