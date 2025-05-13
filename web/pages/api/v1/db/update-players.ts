@@ -2,6 +2,7 @@ import { getCurrentSeason, getTeams } from "lib/NHL/server";
 import { differenceInYears } from "date-fns";
 import { get } from "lib/NHL/base";
 import adminOnly from "utils/adminOnlyMiddleware";
+import { Database } from "lib/supabase/database-generated.types";
 
 export default adminOnly(async function handler(req, res) {
   try {
@@ -63,7 +64,7 @@ type Player = {
   firstName: string;
   fullName: string;
   lastName: string;
-  positionCode: string;
+  positionCode: Database["public"]["Enums"]["NHL_Position_Code"];
   sweaterNumber: number;
   age: number;
   birthDate: string;
