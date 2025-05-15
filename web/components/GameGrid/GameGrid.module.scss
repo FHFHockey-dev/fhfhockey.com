@@ -31,7 +31,7 @@ $mobile-column-short: 30px;
 // --- Base Layout & Containers ---
 
 .mainGridContainer {
-  width: 85%;
+  width: 95%;
   max-width: 1600px;
   margin: v.$space-xl auto;
   display: flex;
@@ -70,6 +70,7 @@ $mobile-column-short: 30px;
   @include v.element-wrapper;
 
   @media (min-width: v.$breakpoint-desktop) {
+    @include v.component-wrapper;
     width: 70%;
     flex-grow: 0; // Prevent growth when fixed width is set
   }
@@ -89,13 +90,10 @@ $mobile-column-short: 30px;
 
 .fourWeekGridContainerAll {
   @include v.element-wrapper;
-
   width: 100%;
-  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    @include v.component-wrapper;
-  }
   @media (min-width: v.$breakpoint-desktop) {
-    width: 50%; // Or 30% depending on layout
+    @include v.component-wrapper;
+    width: 40%; // Desktop width split, match .opponentStatsContainer
     display: flex;
   }
 }
@@ -172,25 +170,6 @@ $mobile-column-short: 30px;
   align-items: center;
   width: 100%;
   gap: v.$space-lg;
-
-  .gameGridTitle {
-    font-family: v.$font-family-primary;
-    font-size: clamp(1.8rem, 3vw, 2.5rem);
-    font-weight: 200;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin: 0;
-    white-space: nowrap;
-    color: v.$text-color-primary; // Ensure text color is set
-  }
-
-  .prevNextButtons {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: v.$space-md;
-    flex-shrink: 0;
-  }
 }
 
 .spanColorBlue {
@@ -198,30 +177,110 @@ $mobile-column-short: 30px;
   font-weight: 600;
 }
 
-// Standard Button Styling (Desktop Header / Mobile Header Rows)
+.prevNextButtons {
+  display: flex;
+  align-items: center;
+  gap: v.$space-md;
+  flex-shrink: 0;
+  white-space: nowrap;
+  justify-content: space-evenly;
+  align-items: center;
+  width: 50%;
+  margin-left: 2%;
+
+  button {
+    width: 100%;
+  }
+}
+
+// --- Unified Button Styles (Projections/Goalies Style) ---
+.panelControlButton,
 .dateButtonPrev,
 .dateButtonNext,
 .dateButtonMode,
-.orientationToggleButton {
-  @include v.button-style; // Apply base button style
-  height: 40px;
-  width: auto;
-  min-width: 100px;
-  padding: v.$space-sm v.$space-lg;
-  font-size: v.$font-size-small;
-  white-space: nowrap;
+.orientationToggleButton,
+.mobileHeaderActions .navButtonRow button {
+  @include v.button-style;
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-xs v.$space-md;
+  background-color: transparent;
+  color: v.$text-secondary;
+  transition:
+    background-color v.$transition-duration v.$transition-easing,
+    color v.$transition-duration v.$transition-easing,
+    border-color v.$transition-duration v.$transition-easing;
 
-  &:hover {
-    background-color: color.scale(v.$primary-color, $lightness: -15%);
-    border-color: v.$text-color-primary;
-    border-width: 1px; // Keep consistent
-    filter: brightness(1.1);
+  &:hover:not(:disabled) {
+    background-color: color.adjust(v.$primary-color, $alpha: -0.5);
+    color: v.$background-dark;
+    outline: 1px solid color.adjust(v.$primary-color, $lightness: -10%);
+    outline-offset: -3px;
   }
-
   &:focus-visible {
-    outline: 1px solid v.$focus-color;
-    outline-offset: 1px;
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+    z-index: 2;
   }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+.activePanelControlButton,
+.dateButtonPrev.active,
+.dateButtonNext.active,
+.dateButtonMode.active,
+.orientationToggleButton.active {
+  background-color: v.$primary-color;
+  color: v.$color-white;
+  border-color: v.$primary-color;
+  font-weight: bold;
+  &:hover {
+    background-color: color.adjust(v.$primary-color, $lightness: -10%);
+    border-color: color.adjust(v.$primary-color, $lightness: -10%);
+  }
+}
+
+// --- Title Header Styling (match .titleHeader from OpponentMetricsTable) ---
+.titleHeader,
+.gameGridHeaderContent {
+  background-color: v.$background-dark;
+  padding: 15px;
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  border-bottom: 2px solid v.$secondary-color;
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0;
+}
+
+.titleText,
+.gameGridTitle {
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: clamp(1.2rem, 4vw, 1.5rem);
+  font-weight: 100;
+  color: v.$text-color-primary;
+  flex-grow: 1;
+  text-align: left;
+  margin: 0;
+  width: 100%;
+}
+
+.spanColorBlue {
+  color: v.$secondary-color;
+  font-weight: 100;
 }
 
 // --- Mobile Specific Header Actions ---
@@ -242,7 +301,8 @@ $mobile-column-short: 30px;
       padding: v.$space-md v.$space-md;
 
       .gameGridTitle {
-        font-family: v.$font-family-primary;
+        font-family:
+          v.$font-family-accent, v.$font-family-primary, sans-serif !important;
         font-size: 1.6rem;
         font-weight: 200;
         text-transform: uppercase;
@@ -262,24 +322,29 @@ $mobile-column-short: 30px;
       gap: v.$space-md;
       width: 100%;
       padding: 0 v.$space-md;
+      margin-top: 0;
     }
 
     .navButtonRow {
       display: flex;
       width: 100%;
-      border: 1px solid v.$border-color;
-      border-top-right-radius: 8px;
-      border-top-left-radius: 8px;
+      // border: 1px solid v.$primary-color;
+      border-top-right-radius: 12px;
+      border-top-left-radius: 12px;
+
+      // background-color: color.adjust(v.$primary-color, $alpha: -0.7);
+      color: v.$primary-color;
 
       button {
         @include v.button-style;
+        background-color: color.adjust(v.$primary-color, $alpha: -0.85);
+        color: v.$primary-color;
         flex: 1 1 auto;
         height: 40px;
         font-size: v.$font-size-small * 0.8;
         border-radius: 0;
-        border-top: 1px solid v.$border-color;
-        border-left: none;
-        border-right: 1px solid v.$border-color; // Subtle separator
+        border: 2px solid color.adjust(v.$primary-color, $lightness: -5%);
+
         margin: 0;
         white-space: nowrap;
         min-width: none;
@@ -300,17 +365,18 @@ $mobile-column-short: 30px;
 
       button:first-child {
         // Apply to first button (.dateButtonPrev)
-        border-top-left-radius: v.$border-radius-sm;
-        border-left: 1px solid v.$border-color;
+        border-top-left-radius: 11px;
         flex-grow: 0;
         flex-basis: 15%;
         padding: v.$space-sm v.$space-xs;
         font-size: 0.6rem; // Larger arrow icon size
         text-transform: uppercase;
+        border-right: none;
       }
       button:last-child {
         // Apply to last button (.dateButtonNext)
-        border-top-right-radius: v.$border-radius-sm;
+        border-top-right-radius: 11px;
+        border-left: none;
         flex-grow: 0;
         flex-basis: 15%;
         padding: v.$space-sm v.$space-xs;
@@ -326,62 +392,89 @@ $mobile-column-short: 30px;
       transform: none;
       bottom: auto;
     }
+
+    .logoWithIconWrapper {
+      position: relative;
+      display: inline-block;
+    }
+    .homeAwayIconBehind {
+      position: absolute;
+      top: 45%;
+      left: 85%;
+      width: 28px;
+      height: 28px;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+      opacity: 0.75;
+      pointer-events: none;
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+    }
   }
 }
 
 // --- Schedule Grid Table Styling ---
 .scheduleGrid {
-  width: 100%;
+  @include v.table-base; // Apply base table styles from mixin
+  text-align: center; // OVERRIDE mixin's text-align: left for default cell alignment
+  border: none; // OVERRIDE mixin's border, assuming wrapper provides it visually
+  border-radius: 0; // OVERRIDE mixin's border-radius
+  table-layout: auto; // Use auto layout by default
   border-spacing: 0;
-  font-size: v.$font-size-small;
-  text-align: center;
-  color: v.$text-color-primary;
-  border-collapse: collapse;
 
-  // --- Desktop Specific (Inside Wrapper) ---
+  // --- Desktop Specific ---
   @media (min-width: v.$breakpoint-desktop) {
-    border: none;
-    outline: none;
-    border-radius: 0;
-    table-layout: auto;
+    // Desktop specific overrides if needed, otherwise defaults are fine
   }
 
-  // --- Mobile/Tablet Scrollable Behavior (Inside Wrapper) ---
+  // --- Mobile/Tablet Scrollable Behavior (Adjusted for Wrapper) ---
   @media (max-width: #{v.$breakpoint-desktop - 1px}) {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    white-space: nowrap;
-    width: 100%;
-    min-width: 100%;
-    border: none; // Rely on wrapper
-    outline: none;
-    border-radius: 0;
-    table-layout: fixed;
+    white-space: nowrap; // Keep nowrap for horizontal content flow
+    table-layout: fixed; // Keep fixed layout for mobile consistency
   }
 
   // --- Table Header (thead) ---
   thead {
     // Nested under .scheduleGrid
-    font-family: v.$font-family-primary;
-    font-size: 11px;
-    font-weight: 600;
-    color: v.$text-color-secondary;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-    background-color: v.$background-dark;
     position: sticky;
     top: 0;
+    z-index: 3; // Increase z-index relative to sticky cells
+    border-radius: 0;
+    border-collapse: collapse;
+    border-spacing: 0;
+    height: 32px;
+
+    background-color: v.$background-dark; // Ensure header background
+    color: v.$text-color-secondary;
+    font-weight: 600; // Slightly lighter than before
+    font-family: v.$font-family-primary;
+    font-size: 14px; // Smaller font size
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border: 0.5px solid v.$border-color-secondary;
+    border-top: none; // Remove top border
+    white-space: normal; // Allow header text wrapping
+    vertical-align: middle; // Vertically center wrapped text
+
+    @media (max-width: 480px) {
+      height: 30px;
+    }
 
     th {
       // Nested under thead
-      padding: v.$space-sm v.$space-md;
       vertical-align: middle;
-      border-bottom: 4px solid #c5c2c2;
       border-right: v.$border-subtle;
       white-space: normal;
       cursor: default;
       min-width: 55px;
+      padding: 0 !important;
+
+      @media (max-width: 480px) {
+        padding: 0 !important;
+      }
 
       &:last-child {
         border-right: none;
@@ -426,18 +519,21 @@ $mobile-column-short: 30px;
       // Day Toggle Styles
       .dayToggle {
         display: block;
-        margin: v.$space-xs auto 0 auto; // Center toggle below text
-        transform: scale(0.8);
       }
       .dayAbbreviation {
         font-weight: 700;
+        font-size: 9px;
       }
       .dayDate {
         display: block;
         font-size: 10px;
         color: v.$text-color-secondary;
-        margin-top: v.$space-xs / 2;
         white-space: nowrap;
+
+        @media (max-width: 480px) {
+          font-size: 8px;
+          font-weight: 700;
+        }
       }
     }
 
@@ -445,26 +541,186 @@ $mobile-column-short: 30px;
     th:first-child {
       // Nested under thead
       font-family: v.$font-family-primary;
-      font-size: 16px;
-      color: v.$primary-color;
-      text-align: left;
-      padding-left: v.$space-sm;
-      border-right: v.$border-separator;
+      font-size: 14px;
+      color: v.$text-color-primary;
+      text-align: center;
       position: sticky;
       left: 0;
-      z-index: 4;
+      z-index: 4; // Higher than body sticky cells
       min-width: 65px;
       width: 10%;
+      background-color: v.$background-dark; // Ensure sticky header cell bg overrides row bg
+      border-right: 2px solid color.adjust(v.$primary-color, $lightness: -5%);
+      @media (max-width: 480px) {
+        width: 100%;
+        height: auto;
+      }
+    }
+
+    @media (max-width: 480px) {
+      th:nth-child(9) {
+        border-left: 2px solid color.adjust(v.$primary-color, $lightness: -5%);
+      }
+
+      th:nth-child(8) {
+        border-right: none;
+      }
+    }
+
+    .dayHeaderLabel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      height: 40px;
+      width: 100%;
+      color: v.$text-color-primary;
+      font-weight: 600;
+
+      @media (max-width: 480px) {
+        display: flex;
+        gap: v.$space-xxs;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+
+        height: auto;
+        width: 100%;
+      }
+    }
+
+    .dayAndDate {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      height: 100%;
+      width: 100%;
+      background-color: v.$background-dark;
+      padding: v.$space-xxs v.$space-xxs;
+      border-bottom: 2px solid v.$color-white;
+
+      @media (max-width: 480px) {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-evenly;
+        height: 100%;
+        width: 100%;
+        background-color: v.$background-dark;
+        border-bottom: 2px solid v.$border-color-secondary;
+      }
     }
   } // End thead
+
+  .dayToggle {
+    width: 80%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: v.$space-xxs;
+
+    @media (max-width: 480px) {
+      width: 100%;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  .switchContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+
+    @media (max-width: 480px) {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      width: 100%;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  .desktopText {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+
+    @media (max-width: 480px) {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      border-bottom: 2px solid v.$border-color-secondary;
+      height: 14px;
+    }
+  }
+
+  .headerLabel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    height: auto;
+    padding: 0 !important;
+    background: v.$background-dark;
+    overflow: hidden;
+
+    .desktopText {
+      width: 100%;
+      background: v.$background-dark;
+      color: v.$text-color-primary;
+      padding: v.$space-xs v.$space-xs;
+      text-align: center;
+      font-weight: 600;
+      font-size: 1em;
+      border-bottom: 2px solid v.$border-color-secondary;
+      min-height: 16px;
+    }
+
+    .switchContainer {
+      width: 100%;
+      display: flex;
+      background-color: color.adjust(v.$primary-color, $alpha: -0.85);
+      align-items: center;
+      justify-content: center;
+      min-height: 18px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .headerLabel {
+      .desktopText {
+        font-size: 0.95em;
+        padding: 0;
+      }
+      .switchContainer {
+        padding: 0;
+        min-height: 16px;
+      }
+    }
+  }
 
   // --- Table Body (tbody) ---
   tbody {
     // Nested under .scheduleGrid
+    border-radius: 0;
+    border-collapse: collapse;
+    border-spacing: 0;
+
     tr {
+      height: 55px;
       // Nested under tbody
       transition: background-color v.$transition-duration v.$transition-easing;
-      border-bottom: 1px solid #ffffff23; // 1px separator
+      border-bottom: 1px solid v.$border-color-secondary; // 1px separator
 
       &:last-child {
         border-bottom: none;
@@ -474,6 +730,7 @@ $mobile-column-short: 30px;
       &:nth-child(even) {
         background-color: v.$background-light;
       }
+
       &:nth-child(odd) {
         background-color: v.$background-dark;
       }
@@ -491,48 +748,40 @@ $mobile-column-short: 30px;
         );
       }
 
-      &.teamRow td {
-        background-color: inherit; // Reset to allow other styles to show
-        height: 100%;
-      }
-
-      &.teamRowGreen td {
-        background-color: rgba(0, 255, 0, 0.075);
-        height: 100%;
-      }
-
-      &.teamRowRed td {
-        background-color: rgba(255, 0, 0, 0.065);
-        height: 100%;
+      td:first-child {
+        border-top: 1px solid v.$border-color-secondary;
+        border-right: 2px solid color.adjust(v.$primary-color, $lightness: -5%);
       }
 
       // Row Highlights (targeting first td)
       &.teamRowGreen td:first-child {
-        background-color: inherit;
-        border-left: 3px solid rgba(0, 255, 0, 0.6);
-        border-bottom: 3px solid rgba(0, 255, 0, 0.6);
-        border-bottom-left-radius: 12px;
+        background-color: rgba(0, 255, 0, 0.15);
+
+        border-left: 2px solid rgba(0, 255, 0, 0.3);
+        border-bottom: 2px solid rgba(0, 255, 0, 0.3);
+        border-top: 2px solid rgba(0, 255, 0, 0.3);
+        border-bottom-left-radius: 8px;
+        border-top-left-radius: 8px;
       }
 
-      &:nth-child(9),
-      &:nth-child(10),
-      &:nth-child(11) {
-        background-color: inherit;
+      &.teamRowGreen td:not(:first-child):before {
+        border-bottom: 2px solid rgba(0, 255, 0, 0.4);
+        border-top: 2px solid rgba(0, 255, 0, 0.3);
       }
 
       &.teamRowRed td:first-child {
-        background-color: inherit;
-        border-left: 3px solid rgba(255, 0, 0, 0.5);
-        border-bottom: 3px solid rgba(255, 0, 0, 0.5);
-        border-bottom-left-radius: 12px;
+        background-color: rgba(255, 0, 0, 0.15);
+
+        border-left: 2px solid rgba(255, 0, 0, 0.3);
+        border-bottom: 2px solid rgba(255, 0, 0, 0.3);
+        border-top: 2px solid rgba(255, 0, 0, 0.3);
+        border-top-left-radius: 8px;
+        border-bottom-left-radius: 8px;
       }
 
-      // 9th, 10th, 11th columns
-      &:nth-child(9),
-      &:nth-child(10),
-      &:nth-child(11) {
-        // Reset background to allow other styles (intensity, rank, alternating) to show
-        background-color: inherit;
+      &.teamRowRed td:not(:first-child):before {
+        border-bottom: 2px solid rgba(255, 0, 0, 0.4);
+        border-top: 2px solid rgba(255, 0, 0, 0.3);
       }
     }
 
@@ -542,8 +791,23 @@ $mobile-column-short: 30px;
       padding: v.$space-sm v.$space-md;
       vertical-align: middle;
       border-right: v.$border-subtle;
-      min-height: 40px;
-      min-width: 40px;
+      border-radius: 0;
+      border-collapse: collapse;
+      border-spacing: 0;
+      min-width: 37px;
+
+      &:nth-child(9) {
+        background-color: v.$background-light;
+        border-left: 2px solid color.adjust(v.$primary-color, $lightness: -5%);
+      }
+      &:nth-child(10),
+      &:nth-child(11) {
+        background-color: v.$background-light;
+      }
+
+      &:nth-child(8) {
+        border-right: none;
+      }
 
       &:last-child {
         border-right: none;
@@ -551,16 +815,16 @@ $mobile-column-short: 30px;
 
       // Apply data-intensity background directly to td
       &[data-intensity="low"] {
-        background-color: rgba(226, 43, 7, 0.25);
+        background-color: rgba(226, 43, 7, 0.15);
       }
       &[data-intensity="medium-low"] {
-        background-color: rgba(255, 165, 0, 0.2);
+        background-color: rgba(255, 165, 0, 0.15);
       }
       &[data-intensity="medium-high"] {
-        background-color: rgba(255, 255, 0, 0.2);
+        background-color: rgba(255, 255, 0, 0.15);
       }
       &[data-intensity="high"] {
-        background-color: rgba(0, 128, 0, 0.2);
+        background-color: rgba(0, 128, 0, 0.15);
       }
 
       // RANK COLOR STYLES
@@ -581,28 +845,40 @@ $mobile-column-short: 30px;
         &:before {
           content: "";
           position: absolute;
-          inset: 1px;
-          border: 1.5px solid transparent;
-          border-radius: v.$border-radius-sm;
+          inset: 0px;
+
           pointer-events: none;
         }
         &.heavy-day:before {
-          border-color: #ff00004d;
+          background-color: rgba(255, 0, 0, 0.1);
+        }
+        &.medium-heavy-day:before {
+          background-color: rgba(255, 165, 0, 0.1);
         }
         &.off-night-day:before {
-          border-color: #00ff0033;
+          background-color: rgba(0, 255, 0, 0.1);
+        }
+        &.off-night-home:before {
+          border-color: rgba(0, 255, 0, 0.1);
+        }
+        &.off-night-away:before {
+          border-color: rgba(255, 0, 0, 0.1);
         }
       }
 
-      // DAILY CELL EXCLUDED OVERLAY (nested is fine)
       .excludedOverlay {
-        background-color: rgba(80, 80, 80, 0.65);
+        background-color: rgba(80, 80, 80, 0.4);
+        color: v.$text-color-secondary;
         position: absolute;
         inset: 0;
-        z-index: 1;
+        z-index: 5;
         pointer-events: none;
+
+        .mobileLogoSize {
+          opacity: 0.8;
+        }
       }
-    } // End td
+    }
 
     // --- Sticky First Column TD ---
     td:first-child {
@@ -612,10 +888,15 @@ $mobile-column-short: 30px;
       border-right: v.$border-separator; // 2px secondary
       position: sticky;
       left: 0;
-      z-index: 5;
-      height: 43px;
+      z-index: 2; // Above normal cells, below header
       background-color: inherit; // Inherits from TR for alternating colors/hover
       min-width: 65px;
+    }
+
+    @media (max-width: 480px) {
+      td:first-child {
+        text-align: center;
+      }
     }
   }
 
@@ -624,20 +905,23 @@ $mobile-column-short: 30px;
   .totalGamesPerDayRow {
     // Nested under .scheduleGrid
     background-color: v.$background-medium;
-    font-weight: 600;
-    color: v.$text-color-secondary;
+    border-radius: 0;
+    height: 35px;
+    font-weight: 900;
+    color: v.$text-color-primary;
+    font-family: v.$font-family-primary;
     position: sticky;
     bottom: 0;
-    z-index: 9;
+    z-index: 3; // Above body cells, same level as header (may need adjustment)
 
     td {
       // Nested under .totalGamesPerDayRow
       padding: v.$space-sm;
       border-right: v.$border-subtle;
-      border-top: v.$border-separator;
+      border-top: 2px solid color.adjust(v.$primary-color, $lightness: -5%);
       position: relative;
       vertical-align: middle;
-      border-bottom: 2px solid v.$primary-color;
+      border-bottom: 2px solid #ffffffab;
 
       &:last-child {
         border-right: none;
@@ -670,21 +954,20 @@ $mobile-column-short: 30px;
     // Title cell styling (target by class)
     td.title {
       // Nested under .totalGamesPerDayRow
-      text-align: left;
       padding-left: v.$space-lg;
-      border-right: v.$border-separator; // 2px separator
       position: sticky;
-      left: 0;
-      z-index: 6;
+      z-index: 4; // Above other total row cells
       background-color: v.$background-dark !important; // Override intensity
+      border-top: 2px solid color.adjust(v.$primary-color, $lightness: -5%);
 
       // Text spans (nested are fine)
       .desktopText {
         display: none;
       }
       .mobileText {
-        display: inline;
-        font-size: 0.7em;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        text-align: center;
       }
       @media (min-width: v.$breakpoint-desktop) {
         .desktopText {
@@ -701,9 +984,9 @@ $mobile-column-short: 30px;
 // --- First Column Content (Team Abbr/Logo) ---
 .firstColumnContent {
   display: flex;
+  height: 55px;
   align-items: center;
   justify-content: center;
-
   .desktopTeamAbbreviation {
     display: none;
   }
@@ -714,7 +997,7 @@ $mobile-column-short: 30px;
 
   @media (min-width: v.$breakpoint-desktop) {
     .firstColumnContent {
-      height: 100%;
+      height: 55px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -743,16 +1026,15 @@ $mobile-column-short: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 40px;
   position: relative;
   cursor: pointer;
 }
-.matchupOpponentLogo {
-  display: block;
-  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.2));
-  width: 28px;
-  height: 28px;
-}
+// .matchupOpponentLogo {
+//   display: block;
+//   filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.2));
+//   width: 28px;
+//   height: 28px;
+// }
 .matchupHomeAwayIcon {
   display: none; // Hide by default
   @media (min-width: v.$breakpoint-tablet) {
@@ -789,27 +1071,6 @@ $mobile-column-short: 30px;
   margin-bottom: 25px;
 }
 
-.fourWeekGridContainerAll {
-  // Apply wrapper framing on mobile for consistency
-  width: 100%; // Already set for mobile stacking
-
-  // Apply standard framing ONLY on mobile
-  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    // Use tablet breakpoint
-    @include v.component-wrapper;
-  }
-
-  // Desktop styles remain separate
-  @media (min-width: v.$breakpoint-desktop) {
-    width: 50%;
-    display: flex;
-    // Reset mobile framing if needed
-    // outline: none;
-    // border: none;
-    // border-radius: 0;
-  }
-}
-
 .gameGridHeaderContent {
   display: flex;
   justify-content: space-between;
@@ -844,33 +1105,24 @@ $mobile-column-short: 30px;
     @include v.component-wrapper; // Apply framing
     width: 30%;
     @media (min-width: v.$breakpoint-desktop) {
-      width: 30%; // Desktop width split
+      width: 40%; // Desktop width split
       display: flex;
     }
   }
 }
 
-.bpaAndOppContainer {
-  width: 100%;
-  height: 100%;
-}
-
 /* =============================================== */
-/* ========== MOBILE STYLES START HERE ========== */
+/* ========== MOBILE & TABLET STYLES CONSOLIDATED ========== */
 /* =============================================== */
 
-/* --- Styles for Tablet and Below (<= 1023px) --- */
+// Tablet and below (<= 1023px)
 @media (max-width: #{v.$breakpoint-desktop - 1px}) {
-  // Targeting <= 1023px
-
   .mainGridContainer {
     width: 95%;
     margin: 20px auto;
     gap: 25px;
-    flex-direction: column; // Ensure vertical stacking
+    flex-direction: column;
   }
-
-  // Apply framing to containers
   .scheduleGridContainer,
   .opponentStatsContainer,
   .fourWeekGridContainerAll {
@@ -878,203 +1130,23 @@ $mobile-column-short: 30px;
     border: none !important;
     border-top-left-radius: 0 !important;
     border-top-right-radius: 0 !important;
-    width: 100% !important; // Ensure full width when stacked
+    width: 100% !important;
     display: block;
   }
-
-  // --- Schedule Grid Mobile Adjustments ---
   .scheduleGrid {
-    table-layout: fixed; // Keep fixed layout for mobile consistency
-    width: auto;
-    min-width: 100%;
-    background-color: transparent; // Ensure table itself isn't colored on mobile
+    table-layout: fixed;
+    background-color: transparent;
     border-spacing: 0;
-    border-right: 3px solid v.$border-color-secondary;
-    border-left: 3px solid v.$border-color-secondary;
-    border-bottom: 3px solid v.$border-color-secondary;
-    border-radius: 0 0 18px 18px; // Rounded bottom corners
-
-    th,
-    td {
-      // General thin borders for mobile scroll context
-      border: 0.5px solid v.$border-color-secondary;
-      min-width: auto;
-      max-width: none;
-      min-height: auto;
-      max-height: none;
-    }
-    th:first-child,
-    td:first-child {
-      border-left: none;
-    }
-    th:last-child,
-    td:last-child {
-      border-right: none;
-    }
-    thead th {
-      border-top: none;
-    }
-
-    thead {
-      th {
-        position: sticky;
-        top: 0;
-        background-color: v.$background-medium;
-        z-index: 2;
-        font-size: 12px;
-        padding: 6px 8px;
-        height: auto;
-        width: $mobile-fixed-width;
-        min-width: $mobile-fixed-width;
-        max-width: $mobile-fixed-width;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        border-bottom: 2px solid v.$secondary-color;
-        color: v.$text-color-secondary;
-
-        &:first-child {
-          background-color: v.$background-medium !important;
-          border-right: 2px solid v.$secondary-color;
-          text-align: left;
-          min-width: $mobile-fixed-width;
-          width: $mobile-fixed-width;
-          max-width: $mobile-fixed-width;
-        }
-      }
-    }
-
-    tbody {
-      tr {
-        // Keep alternating backgrounds (already inherited)
-        border-bottom: v.$border-subtle; // Thin row separator
-        &:last-child {
-          border-bottom: none;
-        }
-        &:hover {
-          // Mobile hover effect (can be simpler)
-          background-color: rgba(v.$primary-color, 0.1);
-        }
-      }
-
-      td {
-        // Styles for all mobile body cells
-        padding: 6px 5px;
-        font-size: 13px;
-        height: auto;
-        vertical-align: middle;
-        // Inherits thin border-right from th,td rule above
-        // Inherits alternating background from tr
-      }
-
-      // Sticky First Column Mobile
-      td:first-child {
-        position: sticky;
-        left: 0;
-        background-color: inherit; // Inherit from tr
-        z-index: 1;
-        border-right: 2px solid v.$secondary-color;
-        font-size: 14px;
-        padding: 0px 5px;
-        min-width: $mobile-fixed-width;
-        width: $mobile-fixed-width;
-        max-width: $mobile-fixed-width;
-
-        text-align: center; // Center align mobile team logo/abbr
-      }
-
-      td:nth-child(9),
-      th:nth-child(9) {
-        // Nest under .scheduleGrid
-        border-left: 2px solid v.$border-color-primary;
-      }
-
-      th:nth-child(9),
-      td:nth-child(9),
-      th:nth-child(10),
-      td:nth-child(10),
-      th:nth-child(11),
-      td:nth-child(11) {
-        width: $mobile-column-short;
-        min-width: $mobile-column-short;
-        max-width: $mobile-column-short;
-        border: 0.5px solid #86868690;
-      }
-    }
-
-    // Total Row mobile adjustments
-    .totalGamesPerDayRow {
-      // Nest under .scheduleGrid
-      background-color: v.$background-medium;
-      position: static;
-      bottom: auto;
-      z-index: auto;
-
-      td {
-        // Nest under .totalGamesPerDayRow
-        padding: 6px 5px; // Match mobile cell padding
-        vertical-align: middle;
-        border-top: v.$border-separator;
-        // Apply data-intensity background directly to th
-        &[data-intensity="low"] {
-          background-color: rgba(226, 43, 7, 0.25); // Red
-        }
-        &[data-intensity="medium-low"] {
-          background-color: rgba(226, 63, 7, 0.25); // Orange
-        }
-        &[data-intensity="medium-high"] {
-          background-color: rgba(255, 193, 8, 0.4); // Yellow
-        }
-        &[data-intensity="high"] {
-          background-color: rgba(107, 191, 58, 0.25); // Green
-        }
-      }
-      td.title {
-        // Nest under .totalGamesPerDayRow
-        position: sticky;
-        left: 0;
-        z-index: 1;
-        background-color: v.$background-medium !important; // override intensity
-        padding-left: 0;
-      }
-    }
-  }
-
-  // Hide desktop-only elements if necessary (though handled by display:none in base for mobile elements)
-  .teamRow .desktopTeamAbbreviation {
-    display: none;
-  }
-
-  // Show mobile-only elements
-  .teamRow .mobileTeamLogo {
-    display: inline-flex;
-  }
-
-  .mobileLogoSize {
-    display: inline-block;
-    /* REMOVE the filter from here */
-    /* filter: drop-shadow(0.5px 0.5px 0 #fff) drop-shadow(-0.5px -0.5px 0 #fff)
-      drop-shadow(0.5px -0.5px 0 #fff) drop-shadow(-0.5px 0.5px 0 #fff); */
-  }
-
-  /* ADD these new classes */
-  .home-shadow {
-    filter: drop-shadow(1px 1px 0 #00ff0033) drop-shadow(-1px -1px 0 #00ff0033)
-      /* Green */ drop-shadow(1px -1px 0 #00ff0033)
-      drop-shadow(-1px 1px 0 #00ff0033);
-  }
-
-  .away-shadow {
-    filter: drop-shadow(1px 1px 0 #ff00004d) drop-shadow(-1px -1px 0 #ff00004d)
-      /* Red */ drop-shadow(1px -1px 0 #ff00004d)
-      drop-shadow(-1px 1px 0 #ff00004d);
+    white-space: nowrap;
+    border-right: 2px solid color.adjust(v.$primary-color, $lightness: -5%);
+    border-left: 2px solid color.adjust(v.$primary-color, $lightness: -5%);
+    border-bottom: 2px solid color.adjust(v.$primary-color, $lightness: -5%);
+    border-radius: 0 0 18px 18px;
   }
 }
 
+// Mobile (<= 480px)
 @media (max-width: 480px) {
-  /* portrait */
   .mainGridContainer {
     width: 100%;
     margin: 0 auto;
@@ -1091,293 +1163,185 @@ $mobile-column-short: 30px;
     flex-direction: column;
     margin-bottom: 30px;
     border-radius: 12px;
-    outline: 10px solid v.$background-dark;
   }
 
   .scheduleGrid {
-    // Nest 480px overrides
-    width: 100%;
-    border-top: none;
-    border-spacing: 0;
     table-layout: fixed;
+    min-width: 100% !important;
 
-    tbody {
-      // Target the last row within the tbody
-      tr:last-child {
-        td:first-child {
-          border-bottom-left-radius: 12px;
-        }
-        td:last-child {
-          border-bottom-right-radius: 12px;
-        }
-        td {
-          background-color: v.$background-light;
-        }
-      }
+    tbody tr {
+      height: 37px;
+    }
+
+    .firstColumnContent {
+      height: 37px;
+    }
+
+    td {
+      width: 9.09% !important;
+      min-width: 0 !important;
+      max-width: none !important;
+      padding: 2px 2px !important;
+      font-size: 18px !important;
+      box-sizing: border-box;
     }
 
     th,
     td {
-      padding: 2px;
-      border: 1px solid #3f3f3f90;
-      font-family: v.$font-family-primary;
-      text-align: center;
-      font-size: 12px;
+      width: 9.09% !important;
+      min-width: 0 !important;
+      max-width: none !important;
+      font-size: 8px !important;
+      box-sizing: border-box;
+      height: auto;
+      padding: 0 !important;
     }
 
-    thead {
-      // Nest 480px thead overrides
-      th {
-        // Nest 480px th overrides
-        font-size: 8px !important;
-        font-family:
-          roboto condensed,
-          sans-serif;
-        position: sticky;
-        top: 0;
-        padding: 0;
-        z-index: 2;
-        background-color: v.$background-medium;
-        color: v.$text-color-secondary;
-        border-bottom: v.$border-separator;
-        border-right: v.$border-subtle;
-        &:last-child {
-          border-right: none;
-        }
-      }
-      th:first-child {
-        background-color: v.$background-medium !important; // Override intensity
-        border-right: 2px solid v.$secondary-color;
-      }
-    }
-
-    tr {
-      height: 40px;
-    }
-
-    // Nest 480px specific td/th overrides
     th:first-child,
-    td:first-child {
-      min-width: $mobile-fixed-width;
-      max-width: $mobile-fixed-width;
-      font-size: 10px;
-      font-weight: 900;
-      font-family: v.$font-family-primary;
-      text-transform: uppercase;
-      border-right: 2px solid #07aae2;
-      padding: 0;
-      text-align: center;
-      background-color: inherit;
+    td:first-child,
+    th:last-child,
+    td:last-child {
+      width: auto !important;
     }
+  }
 
-    th:nth-child(n + 2),
-    td:nth-child(n + 2) {
-      font-family: v.$font-family-primary;
-      min-width: $mobile-fixed-width;
-      max-width: $mobile-fixed-width;
-      text-align: center;
-      font-size: 12px;
-      padding: 2px 0 2px 0;
-      border: 1px solid #3f3f3f90;
-    }
-
-    // Keep very specific 480px nth-child border rules nested
-    th:nth-child(9),
-    th:nth-child(10),
-    td:nth-child(9),
-    td:nth-child(10) {
-      border: 0.5px solid #86868690;
-      font-size: 12px;
-    }
-    th:nth-child(11),
+  .totalGamesPerDayRow {
+    td:nth-child(10),
     td:nth-child(11) {
-      border-left: 0.5px solid #86868690;
-      border-bottom: 0.5px solid #86868690;
-      border-top: 0.5px solid #86868690;
-      border-right: none;
-      width: $mobile-column-short;
-      min-width: $mobile-column-short;
-      max-width: $mobile-column-short;
+      border-left: none !important;
     }
-    th:nth-child(9),
-    th:nth-child(10) {
-      font-family: v.$font-family-primary;
-      padding: 2px 2px;
-      min-width: $mobile-column-short;
-      max-width: $mobile-column-short;
-      text-align: center;
-      font-size: 8px;
-      padding-bottom: 8px;
-      border: 0.5px solid #86868690;
-      border-top: none;
-    }
-    th:nth-child(11) {
-      font-family: v.$font-family-primary;
-      padding: 2px 2px;
-      min-width: $mobile-column-short;
-      max-width: $mobile-column-short;
-      text-align: center;
-      font-size: 8px;
-      padding-bottom: 8px;
-      border-left: 0.5px solid #86868690;
-      border-bottom: 0.5px solid #86868690;
-      border-top: none;
-      border-right: none;
-    }
-    // Total Row 480px adjustments
-    .totalGamesPerDayRow {
-      // Nest under .scheduleGrid
-      td {
-        // Nest under .totalGamesPerDayRow
-        // Apply data-intensity background directly to th
-        &[data-intensity="low"] {
-          background-color: rgba(226, 43, 7, 0.25); // Red
-        }
-        &[data-intensity="medium-low"] {
-          background-color: rgba(226, 63, 7, 0.25); // Orange
-        }
-        &[data-intensity="medium-high"] {
-          background-color: rgba(255, 193, 8, 0.4); // Yellow
-        }
-        &[data-intensity="high"] {
-          background-color: rgba(107, 191, 58, 0.25); // Green
-        }
-      }
-      td.title {
-        // Nest under .totalGamesPerDayRow
-        background-color: v.$background-medium !important; // Override intensity
+  }
+
+  .firstColumnContent {
+    display: flex !important;
+    align-items: center !important;
+    gap: 2px !important;
+    padding-left: 0 !important;
+    .mobileTeamLogo {
+      display: inline-flex !important;
+      align-items: center;
+      img {
+        min-width: 20px !important;
+        min-height: 20px !important;
+        max-width: 28px !important;
+        max-height: 28px !important;
+        width: 24px !important;
+        height: 24px !important;
+        display: block !important;
       }
     }
   }
-
-  // Keep other 480px class-based overrides
-  .gameGridTitle {
-    font-size: 1.8em;
-    font-family: v.$font-family-primary;
-    font-weight: 100;
-    width: 100%;
-    text-transform: uppercase;
-    padding: 0;
-    margin-bottom: 15px;
-
-    .spanColorBlue {
-      font-family: v.$font-family-primary;
-      font-weight: 100;
-    }
-  }
-
-  .actions {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .gridWrapper {
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .fourWeekLabel {
-    display: none;
-  }
-
-  .gameGridHeaderContent {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-  }
-
-  .blurredImage {
-    filter: blur(4px);
-  }
-
-  .scoreAndHomeAway {
-    display: none;
-  }
-
-  .homeAway {
-    display: none;
-  }
-
   .hideOnMobile {
     display: none;
-  }
-
-  .mobileLogoSize {
-    padding: 1px !important;
-  }
-
-  .mobileTeamLogo {
-    padding: 0px !important;
-  }
-
-  .mobileFontStyle {
-    font-family: v.$font-family-primary;
-    font-size: 8px !important;
-    margin-bottom: 7px !important;
-  }
-
-  .score {
-    display: none;
-  }
-
-  .totalGamesPerDayCell {
-    background-color: #000;
-    color: white;
-  }
-
-  .teamRow {
-    /* Keep nested span rules */
-    span {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: visible !important;
-    }
-    .teamName,
-    .desktopTeamAbbreviation {
-      display: none;
+    align-items: center;
+    margin-left: 2px;
+    img {
+      width: 16px !important;
+      height: 16px !important;
     }
   }
-  .fourWeekLabelVertical {
-    display: none;
+  .navButtonRow button {
+    font-family:
+      v.$font-family-accent, v.$font-family-primary, sans-serif !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.7rem !important;
+    font-weight: 700;
+    border-radius: v.$border-radius-md;
+    padding: 4px 4px !important;
+    color: v.$text-secondary;
+    border: 1px solid v.$border-secondary;
+    transition:
+      background-color v.$transition-duration v.$transition-easing,
+      color v.$transition-duration v.$transition-easing,
+      border-color v.$transition-duration v.$transition-easing;
+    &:hover:not(:disabled) {
+      background-color: v.$background-medium;
+      color: v.$primary-color;
+      border-color: v.$color-white;
+    }
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: 2px;
+      z-index: 2;
+    }
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
   }
-  .fourWeekTitleVertical {
-    display: none;
+  // Remove overflow: hidden from parent containers if present
+  .mainGridContainer,
+  .gridWrapper,
+  .scheduleGridContainer {
+    overflow: visible !important;
   }
 }
 
+.logoWithIconWrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.homeAwayIconBehind {
+  position: absolute;
+  top: 15%;
+  left: 87%;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+  opacity: 1;
+  pointer-events: none;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+.mobileLogoSize {
+  z-index: 1;
+}
+
+// Small mobile (<= 360px)
 @media (max-width: 360px) {
   .scheduleGrid {
-    // Nest 360px overrides
     tr {
-      // Nest 360px tr overrides
       th:nth-child(n + 2),
       td:nth-child(n + 2) {
-        // Nest 360px nth-child overrides
         font-size: 8px;
         min-width: 25px;
         max-width: 25px;
       }
-
       th:first-child,
       td:first-child {
-        // Nest 360px first-child overrides
         max-width: 40px !important;
         min-width: 30px;
         font-size: 10px;
-        border-right: 3px solid #07aae2;
+        border-right: 2px solid color.adjust(v.$primary-color, $lightness: -5%);
         padding: 4px;
-        font-size: 0.5em; // Override size
+        font-size: 0.5em;
       }
     }
   }
-
   .gameGridTitle {
     font-size: 1em !important;
     width: 100%;
+  }
+}
+
+// Extra small mobile (<= 320px)
+@media (max-width: 320px) {
+  .scheduleGrid {
+    border-radius: 0;
+  }
+}
+
+// Landscape orientation for tablets/mobiles
+@media screen and (orientation: landscape) and (min-device-width: 479px) and (max-device-width: 932px) {
+  .scheduleGrid {
+    border-radius: 0;
   }
 }
 
@@ -1463,7 +1427,7 @@ $mobile-column-short: 30px;
       min-width: 40px;
       font-size: 14px;
       margin: auto;
-      border-right: 3px solid #07aae2;
+      border-right: 2px solid color.adjust(v.$primary-color, $lightness: -5%);
     }
 
     th:nth-child(n + 2),
@@ -1636,7 +1600,7 @@ $mobile-column-short: 30px;
       max-width: 40px;
       min-width: 30px;
       font-size: 10px;
-      border-right: 5px solid #07aae2;
+      border-right: 5px solid v.$primary-color;
       padding-left: 4px !important;
     }
 
@@ -1653,7 +1617,7 @@ $mobile-column-short: 30px;
 
     th:nth-child(9),
     td:nth-child(9) {
-      border-left: 5px solid #07aae2;
+      border-left: 5px solid v.$primary-color;
     }
     th:nth-child(9),
     th:nth-child(10),
@@ -1717,12 +1681,40 @@ $mobile-column-short: 30px;
     display: none;
   }
   .totalGamesPerDayCell {
-    background-color: #000;
+    background-color: v.$background-header;
     color: white;
   } // Keep specific 320px cell override
   .teamRow {
     .teamName {
       display: none;
+    }
+  }
+}
+
+// Add the scroll wrapper style within the main mobile block
+.tableScrollWrapper {
+  @media (max-width: #{v.$breakpoint-desktop - 1px}) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    @include v.custom-scrollbar(
+      v.$primary-color,
+      v.$background-medium
+    ); // Optional custom scrollbar
+  }
+}
+
+@media (min-width: 481px) {
+  .homeAwayIconDesktop {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 4px;
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      opacity: 0.75;
     }
   }
 }

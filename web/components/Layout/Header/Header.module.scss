@@ -8,11 +8,12 @@ $mobile-header-height: 65px;
   justify-content: space-between;
   align-items: center;
   height: $mobile-header-height;
-  background-color: #161616;
+  background-color: #181818;
   border-bottom: double 5px white;
 
   button {
     all: unset;
+    margin-right: 4%;
     &:hover {
       cursor: pointer;
     }
@@ -50,7 +51,7 @@ $mobile-header-height: 65px;
   .logo {
     position: relative;
     margin: 0 auto;
-    // filter: drop-shadow(0px 1px 6px white);
+    filter: drop-shadow(0px 1px 4px #07aae2);
 
     // Disbale overflow hidden.
     // This is designed for the Image component from Next.js 12

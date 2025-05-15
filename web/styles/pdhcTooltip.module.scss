@@ -36,7 +36,9 @@
   border-radius: 8px;
   max-width: 400px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
   opacity: 0;
   transform: translate(-50%, -50%) translateY(-20px) scale(0.95); /* Initial positioning */
   position: fixed; /* Fixed to viewport */
@@ -92,7 +94,9 @@
     transform: translate(-50%, -50%) translateY(-20px) scale(0.95); /* Initial slide up and scale */
     max-height: 90vh;
     overflow-y: auto;
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s ease;
     padding: 20px;
   }
 

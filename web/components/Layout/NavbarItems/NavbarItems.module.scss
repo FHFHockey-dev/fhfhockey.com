@@ -4,13 +4,14 @@ nav.items.small {
   margin-top: 32px;
   margin-left: 20px;
   line-height: 37.5px;
+  height: 80%;
   li {
     &:hover {
       cursor: pointer;
     }
   }
   .category {
-    margin-top: calc(32px - 2px);
+    margin-top: calc(32px - 15px);
     .category_item {
       display: inline-flex;
       justify-content: center;
@@ -50,6 +51,16 @@ nav.items.small {
     .menu_list {
       position: relative;
       left: 1.3rem;
+      top: 0.5rem;
+      font-size: 1.5rem;
+      color: rgba(249, 235, 234, 1);
+
+      .link:not(:first-child) {
+        margin-top: 0.5rem;
+      }
+      .link:last-child {
+        margin-bottom: 1.5rem;
+      }
     }
   }
   ul {
@@ -57,13 +68,14 @@ nav.items.small {
   }
   .menu_list {
     list-style-type: none;
-    font-family: roboto condensed, sans-serif;
+    font-family: $font-family-accent;
     font-weight: 500;
-    font-size: 2.5rem;
-    color: rgba(249, 235, 234, 1);
+    font-size: 2.1rem;
+    color: #07aae2;
+    letter-spacing: 0.15em;
 
     li:not(:first-child) {
-      margin-top: 0.7rem;
+      margin-top: 1rem;
     }
   }
 
@@ -87,7 +99,9 @@ nav.items.large {
     display: flex;
     gap: 24px;
     color: rgba(249, 235, 234, 1);
-    font-family: roboto condensed, sans-serif;
+    font-family:
+      roboto condensed,
+      sans-serif;
     font-weight: 900;
     font-size: 1.25rem;
     letter-spacing: 2px;

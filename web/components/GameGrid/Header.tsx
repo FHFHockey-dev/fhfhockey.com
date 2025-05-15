@@ -1,6 +1,6 @@
 // components/GameGrid/Header.tsx
 
-import { Dispatch, JSX, SetStateAction, useState } from "react";
+import { Dispatch, JSX, SetStateAction, useState, useEffect } from "react";
 import styles from "./GameGrid.module.scss";
 
 import { addDays, formatDate, getDayStr } from "./utils/date-func";
@@ -8,6 +8,18 @@ import Switch from "./Switch";
 import Toggle from "./Toggle";
 import { DAY_ABBREVIATION, TeamDataWithTotals } from "lib/NHL/types";
 import clsx from "clsx";
+
+// Simple hook to detect mobile (<=480px)
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 480);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isMobile;
+}
 
 type HeaderProps = {
   start: string;
@@ -34,11 +46,23 @@ type SortKey = {
 
 // Function to determine intensity based on game count
 const getIntensity = (numGames: number): string => {
-  if (numGames <= 6) return "high"; // Green (Fewest games = highest intensity day for streaming)
+  if (numGames <= 7) return "high"; // Green (Fewest games = highest intensity day for streaming)
   if (numGames <= 8) return "medium-high"; // Yellow
-  if (numGames <= 12) return "low"; // red
+  if (numGames <= 9) return "low"; // red
   return "low"; // Red (Most games = lowest intensity day for streaming)
 };
+
+// Add a mapping for mobile day abbreviations
+const MOBILE_DAY_ABBR: Record<string, string> = {
+  MON: "M",
+  TUE: "T",
+  WED: "W",
+  THU: "Th",
+  FRI: "F",
+  SAT: "S",
+  SUN: "Su"
+};
+
 function Header({
   start,
   end,
@@ -50,6 +74,7 @@ function Header({
   gamesPerDay
 }: HeaderProps) {
   const [currentSortKey, setCurrentSortKey] = useState<SortKey | null>(null);
+  const isMobile = useIsMobile();
 
   const handleSortToggle = (
     key: "totalOffNights" | "totalGamesPlayed" | "weekScore"
@@ -74,46 +99,53 @@ function Header({
     : [
         {
           label: (
-            <>
-              GP
-              <Switch
-                checked={
-                  currentSortKey?.key === "totalGamesPlayed" &&
-                  currentSortKey.ascending
-                }
-                onClick={() => handleSortToggle("totalGamesPlayed")}
-              />
-            </>
+            <div className={styles.headerLabel}>
+              <span className={styles.desktopText}>GP</span>
+
+              <span className={styles.switchContainer}>
+                <Switch
+                  checked={
+                    currentSortKey?.key === "totalGamesPlayed" &&
+                    currentSortKey.ascending
+                  }
+                  onClick={() => handleSortToggle("totalGamesPlayed")}
+                />
+              </span>
+            </div>
           ),
           id: "totalGamesPlayed"
         },
         {
           label: (
-            <>
-              Off
-              <Switch
-                checked={
-                  currentSortKey?.key === "totalOffNights" &&
-                  currentSortKey.ascending
-                }
-                onClick={() => handleSortToggle("totalOffNights")}
-              />
-            </>
+            <div className={styles.headerLabel}>
+              <span className={styles.desktopText}>Off</span>
+              <span className={styles.switchContainer}>
+                <Switch
+                  checked={
+                    currentSortKey?.key === "totalOffNights" &&
+                    currentSortKey.ascending
+                  }
+                  onClick={() => handleSortToggle("totalOffNights")}
+                />
+              </span>
+            </div>
           ),
           id: "totalOffNights"
         },
         {
           label: (
-            <>
-              Score
-              <Switch
-                checked={
-                  currentSortKey?.key === "weekScore" &&
-                  currentSortKey.ascending
-                }
-                onClick={() => handleSortToggle("weekScore")}
-              />
-            </>
+            <div className={styles.headerLabel}>
+              <span className={styles.desktopText}>Score</span>
+              <span className={styles.switchContainer}>
+                <Switch
+                  checked={
+                    currentSortKey?.key === "weekScore" &&
+                    currentSortKey.ascending
+                  }
+                  onClick={() => handleSortToggle("weekScore")}
+                />
+              </span>
+            </div>
           ),
           id: "weekScore"
         }
@@ -124,7 +156,8 @@ function Header({
     excludedDays,
     setExcludedDays,
     extended,
-    gamesPerDay
+    gamesPerDay,
+    isMobile
   );
 
   return (
@@ -134,7 +167,6 @@ function Header({
         <th>Team</th>
         {/* Day columns */}
         {dayColumns.map((col) => (
-          // *** Pass data-intensity to the th ***
           <th key={col.id} data-intensity={col.intensity}>
             {col.label}
           </th>
@@ -153,7 +185,8 @@ function getDayColumns(
   excludedDays: DAY_ABBREVIATION[],
   setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>,
   extended: boolean,
-  gamesPerDay: number[]
+  gamesPerDay: number[],
+  isMobile?: boolean
 ): { label: JSX.Element | string; id: string; intensity?: string }[] {
   const startDate = new Date(start);
 
@@ -185,17 +218,15 @@ function getDayColumns(
 
     columns.push({
       label: (
-        <div>
-          {" "}
-          {/* Wrap label content */}
-          <span className={styles.dayAbbreviation}>{day}</span>{" "}
-          {/* Use spans for better control */}
-          <br />
-          <span className={styles.dayDate}>{formatDate(current)}</span>
+        <div className={styles.dayHeaderLabel}>
+          <div className={styles.dayAndDate}>
+            <span className={styles.dayAbbreviation}>
+              {isMobile ? MOBILE_DAY_ABBR[day] || day : day}
+            </span>
+            <span className={styles.dayDate}>{formatDate(current)}</span>
+          </div>
           {!extended && (
             <div className={styles.dayToggle}>
-              {" "}
-              {/* Wrap toggle */}
               <Toggle
                 checked={excludedDays.includes(day)}
                 onChange={onChange}

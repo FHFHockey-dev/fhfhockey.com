@@ -80,11 +80,13 @@ $selected-border-width: 2px; // The width of the indicator
 .filtersTitle {
   width: 100%;
   text-align: left;
-  font-size: clamp(1.5rem, 4vw, 1.8rem);
+  font-size: clamp(1.2rem, 4vw, 1.5rem);
   font-weight: 100;
   color: v.$text-color-primary;
-  font-family: v.$font-family-primary;
-  letter-spacing: 1.5px;
+  font-family:
+    v.$font-family-accent, v.$font-family-primary, sans-serif !important;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   padding-bottom: 10px;
   border-bottom: 2px solid v.$secondary-color;
   // margin-bottom: 5px; // Spacing handled by parent gap

@@ -36,7 +36,7 @@ function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
         description="Five Hole Fantasy Hockey Podcast Game Grid."
       />
 
-      <div style={{ marginTop: "20px", width: "100%" }}>
+      <div style={{ marginTop: "0px", width: "100%" }}>
         <button
           style={{ display: "none" }}
           onClick={() => {
