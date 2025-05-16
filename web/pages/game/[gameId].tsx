@@ -7,7 +7,7 @@ import { teamsInfo } from "lib/NHL/teamsInfo";
 import PoissonDistributionChart from "components/PoissonDistributionChart";
 import Image from "next/image";
 import { awayTeamColors, homeTeamColors } from "lib/NHL/teamColors";
-import styles from "styles/GamePage.module.scss";
+import styles from "./GamePage.scss";
 
 export default function Page() {
   const router = useRouter();
@@ -115,8 +115,8 @@ export default function Page() {
         ? "home"
         : "away"
       : homeStat > awayStat
-      ? "home"
-      : "away";
+        ? "home"
+        : "away";
 
     // Determine the team colors based on which team has the advantage
     let teamColors = advantageTeam === "home" ? homeTeamColors : awayTeamColors;
@@ -192,8 +192,8 @@ export default function Page() {
         ? "home"
         : "away"
       : homeStat > awayStat
-      ? "home"
-      : "away";
+        ? "home"
+        : "away";
 
     const advantage = getAdvantage(
       homeStat,
