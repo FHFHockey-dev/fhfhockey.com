@@ -9,12 +9,11 @@ export default async function handler(
   try {
     // Dynamically import the fetchPbP module (adjust the path if necessary)
     const { main } = await import("lib/supabase/Upserts/fetchPbP");
-
-    // Check query parameter
+    const gameId = req.query.gameId ? String(req.query.gameId) : undefined;
     const fullProcess = req.query.games === "all";
 
     // Invoke the main function with the parameter
-    await main(fullProcess);
+    await main(fullProcess, gameId);
 
     res.status(200).json({
       message: `Play-by-play data processed successfully. (Full process: ${fullProcess})`

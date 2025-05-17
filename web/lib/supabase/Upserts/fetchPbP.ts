@@ -1,5 +1,6 @@
-require("dotenv").config({ path: "../../../.env.local" });
-const { createClient } = require("@supabase/supabase-js");
+import dotenv from "dotenv";
+dotenv.config({ path: "../../../.env.local" });
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { parseISO, isBefore, isAfter } from "date-fns";
 
 // Constants
@@ -8,21 +9,47 @@ const ROW_LIMIT = 1000; // Limit for Supabase row fetch
 // Supabase Client Initialization
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 
 // Helper function to delay retries
-function delay(ms) {
+function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 // Utility function to fetch and parse JSON
-async function Fetch(url) {
+async function Fetch(url: string): Promise<any> {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
   }
   return response.json();
 }
+
+// Add interfaces for clarity
+type Season = {
+  id: string | number;
+  startDate: string;
+  endDate: string;
+  regularSeasonEndDate?: string;
+};
+
+type Play = {
+  eventId: string | number;
+  periodDescriptor?: { number?: number; periodType?: string };
+  timeInPeriod?: string;
+  timeRemaining?: string;
+  situationCode?: string;
+  typeDescKey?: string;
+  typeCode?: string;
+  homeTeamDefendingSide?: string;
+  sortOrder?: number;
+  details?: Record<string, any>;
+};
+
+type GameData = {
+  gameDate: string;
+  plays: Play[];
+};
 
 /**
  * Fetch seasons from the NHL API.
@@ -35,7 +62,11 @@ async function fetchNHLSeasons() {
     const data = await Fetch(url);
     return data.data;
   } catch (error) {
-    console.error("Error fetching NHL seasons:", error.message);
+    if (error instanceof Error) {
+      console.error("Error fetching NHL seasons:", error.message);
+    } else {
+      console.error("Error fetching NHL seasons:", error);
+    }
     throw error;
   }
 }
@@ -43,13 +74,17 @@ async function fetchNHLSeasons() {
 /**
  * Determine the current season from the provided seasons.
  */
-async function determineCurrentSeason(seasons) {
+async function determineCurrentSeason(
+  seasons: Season[]
+): Promise<Season | null> {
   const today = new Date();
   let currentSeason = null;
   for (let i = 0; i < seasons.length; i++) {
     const season = seasons[i];
     const seasonStartDate = parseISO(season.startDate);
-    const regularSeasonEndDate = parseISO(season.regularSeasonEndDate);
+    const regularSeasonEndDate = parseISO(
+      season.regularSeasonEndDate || season.endDate
+    );
     if (isBefore(today, seasonStartDate)) {
       if (i + 1 < seasons.length) {
         currentSeason = seasons[i + 1];
@@ -70,30 +105,34 @@ async function determineCurrentSeason(seasons) {
   return currentSeason;
 }
 
-async function fetchCurrentSeason() {
-  const seasons = await fetchNHLSeasons();
-  const currentSeason = await determineCurrentSeason(seasons);
-  return currentSeason;
-}
-
 /**
  * Fetch play-by-play data from the NHL API with retry logic.
  */
-async function fetchPlayByPlayData(gameId, retries = 3) {
+async function fetchPlayByPlayData(
+  gameId: string | number,
+  retries = 3
+): Promise<GameData | null> {
   const url = `https://api-web.nhle.com/v1/gamecenter/${gameId}/play-by-play`;
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const gameData = await Fetch(url);
       return gameData;
     } catch (error) {
-      if (error.message.includes("502 Bad Gateway")) {
-        console.error(
-          `502 Bad Gateway for game ${gameId}. Attempt ${attempt} of ${retries}`
-        );
+      if (error instanceof Error) {
+        if (error.message.includes("502 Bad Gateway")) {
+          console.error(
+            `502 Bad Gateway for game ${gameId}. Attempt ${attempt} of ${retries}`
+          );
+        } else {
+          console.error(
+            `Failed to fetch data for game ${gameId}. Attempt ${attempt} of ${retries}:`,
+            error.message
+          );
+        }
       } else {
         console.error(
           `Failed to fetch data for game ${gameId}. Attempt ${attempt} of ${retries}:`,
-          error.message
+          error
         );
       }
       if (attempt < retries) {
@@ -107,69 +146,81 @@ async function fetchPlayByPlayData(gameId, retries = 3) {
       }
     }
   }
+  return null;
 }
 
 /**
  * Bulk upsert play-by-play data into Supabase for one game.
  * Each play record now gets a "game_date" field from gameData.gameDate.
  */
-async function upsertPlayByPlayData(gameId, gameData) {
-  if (gameData.plays && gameData.plays.length > 0) {
-    // Build a list of play objects from all plays returned by the API
-    const plays = gameData.plays.map((play) => {
-      const details = play.details || {};
-      return {
-        id: play.eventId, // Use eventId directly as id
-        gameid: gameId,
-        game_date: gameData.gameDate, // New field added (YYYY-MM-DD format)
-        periodnumber: play.periodDescriptor?.number || null,
-        periodtype: play.periodDescriptor?.periodType || null,
-        timeinperiod: play.timeInPeriod || null,
-        timeremaining: play.timeRemaining || null,
-        situationcode: play.situationCode || null,
-        typedesckey: play.typeDescKey || null,
-        typecode: play.typeCode || null,
-        hometeamdefendingside: play.homeTeamDefendingSide || null,
-        sortorder: play.sortOrder || null,
-        eventownerteamid: details.eventOwnerTeamId || null,
-        losingplayerid: details.losingPlayerId || null,
-        winningplayerid: details.winningPlayerId || null,
-        shootingplayerid: details.shootingPlayerId || null,
-        goalieinnetid: details.goalieInNetId || null,
-        awaysog: details.awaySOG ?? null,
-        homesog: details.homeSOG ?? null,
-        blockingplayerid: details.blockingPlayerId || null,
-        hittingplayerid: details.hittingPlayerId || null,
-        hitteeplayerid: details.hitteePlayerId || null,
-        durationofpenalty: details.duration || null,
-        committedbyplayerid: details.committedByPlayerId || null,
-        drawnbyplayerid: details.drawnByPlayerId || null,
-        penalizedteam: details.typeCode || null,
-        scoringplayerid: details.scoringPlayerId || null,
-        scoringplayertotal: details.scoringPlayerTotal || null,
-        shottype: details.shotType || null,
-        assist1playerid: details.assist1PlayerId || null,
-        assist1playertotal: details.assist1PlayerTotal || null,
-        assist2playerid: details.assist2PlayerId || null,
-        assist2playertotal: details.assist2PlayerTotal || null,
-        homescore: details.homeScore ?? null,
-        awayscore: details.awayScore ?? null,
-        playerid: details.playerId || null,
-        zonecode: details.zoneCode || null,
-        xcoord: details.xCoord ?? null,
-        ycoord: details.yCoord ?? null,
-        reason: details.reason || null,
-        updated_at: new Date().toISOString() // Set updated_at here
-      };
-    });
-
-    // Perform a single bulk upsert for all plays in this game
-    const { error } = await supabase.from("pbp_plays").upsert(plays);
-    if (error) {
-      console.error(`Error upserting plays for game ${gameId}:`, error.message);
-    }
-  } else {
+async function upsertPlayByPlayData(
+  gameId: string | number,
+  gameData: GameData
+): Promise<void> {
+  if (
+    !gameData ||
+    !Array.isArray(gameData.plays) ||
+    gameData.plays.length === 0
+  ) {
     console.warn(`No plays found for game ${gameId}.`);
+    return;
+  }
+  // Build a list of play objects from all plays returned by the API
+  const plays = gameData.plays.map((play: Play) => {
+    const details = play.details || {};
+    return {
+      id: play.eventId, // Use eventId directly as id
+      gameid: gameId,
+      game_date: gameData.gameDate, // New field added (YYYY-MM-DD format)
+      periodnumber: play.periodDescriptor?.number || null,
+      periodtype: play.periodDescriptor?.periodType || null,
+      timeinperiod: play.timeInPeriod || null,
+      timeremaining: play.timeRemaining || null,
+      situationcode: play.situationCode || null,
+      typedesckey: play.typeDescKey || null,
+      typecode: play.typeCode || null,
+      hometeamdefendingside: play.homeTeamDefendingSide || null,
+      sortorder: play.sortOrder || null,
+      eventownerteamid: details.eventOwnerTeamId || null,
+      losingplayerid: details.losingPlayerId || null,
+      winningplayerid: details.winningPlayerId || null,
+      shootingplayerid: details.shootingPlayerId || null,
+      goalieinnetid: details.goalieInNetId || null,
+      awaysog: details.awaySOG ?? null,
+      homesog: details.homeSOG ?? null,
+      blockingplayerid: details.blockingPlayerId || null,
+      hittingplayerid: details.hittingPlayerId || null,
+      hitteeplayerid: details.hitteePlayerId || null,
+      durationofpenalty: details.duration || null,
+      committedbyplayerid: details.committedByPlayerId || null,
+      drawnbyplayerid: details.drawnByPlayerId || null,
+      penalizedteam: details.typeCode || null,
+      scoringplayerid: details.scoringPlayerId || null,
+      scoringplayertotal: details.scoringPlayerTotal || null,
+      shottype: details.shotType || null,
+      assist1playerid: details.assist1PlayerId || null,
+      assist1playertotal: details.assist1PlayerTotal || null,
+      assist2playerid: details.assist2PlayerId || null,
+      assist2playertotal: details.assist2PlayerTotal || null,
+      homescore: details.homeScore ?? null,
+      awayscore: details.awayScore ?? null,
+      playerid: details.playerId || null,
+      zonecode: details.zoneCode || null,
+      xcoord: details.xCoord ?? null,
+      ycoord: details.yCoord ?? null,
+      reason: details.reason || null,
+      updated_at: new Date().toISOString() // Set updated_at here
+    };
+  });
+
+  // Perform a single bulk upsert for all plays in this game
+  const { error } = await supabase.from("pbp_plays").upsert(plays);
+  if (error) {
+    if (error instanceof Error) {
+      console.error(`Error upserting plays for game ${gameId}:`, error.message);
+    } else {
+      console.error(`Error upserting plays for game ${gameId}:`, error);
+    }
   }
 }
 
@@ -177,7 +228,10 @@ async function upsertPlayByPlayData(gameId, gameData) {
  * Helper: Given an array of season objects (from the seasons table),
  * return an array of season IDs and a map of season boundaries.
  */
-async function getSelectedSeasons() {
+async function getSelectedSeasons(): Promise<{
+  seasonIds: string[];
+  seasonBoundaries: Record<string, { start: string; end: string }>;
+}> {
   // Option 1: Use a hard-coded slice (force processing only these seasons)
   // Uncomment the next line to force specific season IDs.
   // const forcedSeasonIds = ["20192020", "20202021", "20212022", "20222023", "20232024", "20242025"];
@@ -197,7 +251,7 @@ async function getSelectedSeasons() {
   const forcedSeasonIds = sortedSeasons.slice(0, 6).map((s) => s.id.toString());
 
   // Build a map of boundaries { seasonId: { startDate, endDate } }
-  const seasonBoundaries = {};
+  const seasonBoundaries: Record<string, { start: string; end: string }> = {};
   seasonsData.forEach((season) => {
     if (forcedSeasonIds.includes(season.id.toString())) {
       seasonBoundaries[season.id.toString()] = {
@@ -216,12 +270,51 @@ async function getSelectedSeasons() {
  * @param {boolean} fullProcess - If true, process all games back to the backlog
  *                                and overwrite all data. If false, process only today's games.
  */
-async function processPlayByPlayData(fullProcess = false) {
-  // Get the selected season IDs and their date boundaries from the seasons table.
+async function processPlayByPlayData(
+  fullProcess = false,
+  gameId?: string
+): Promise<void> {
   const { seasonIds, seasonBoundaries } = await getSelectedSeasons();
+  const selectedSeasons: string[] = seasonIds;
 
-  // In queries below, we restrict games by seasonId using our selected IDs.
-  const selectedSeasons = seasonIds;
+  if (gameId) {
+    // Only process the given gameId if not already in pbp_plays or pbp_games
+    const { data: alreadyProcessedPlays } = await supabase
+      .from("pbp_plays")
+      .select("gameid")
+      .eq("gameid", gameId)
+      .maybeSingle();
+    const { data: alreadyProcessedGames } = await supabase
+      .from("pbp_games")
+      .select("gameid")
+      .eq("gameid", gameId)
+      .maybeSingle();
+    if (alreadyProcessedPlays || alreadyProcessedGames) {
+      console.log(`Game ${gameId} already processed. Skipping.`);
+      return;
+    }
+    // Fetch the game row
+    const { data: gameRow, error: gameError } = await supabase
+      .from("games")
+      .select("id, date, seasonId")
+      .eq("id", gameId)
+      .maybeSingle();
+    if (gameError || !gameRow) {
+      console.error(`Game ${gameId} not found or error:`, gameError?.message);
+      return;
+    }
+    // Fetch and upsert play-by-play for this game
+    const gameData = await fetchPlayByPlayData(gameId);
+    if (gameData && gameData.plays && gameData.plays.length > 0) {
+      await upsertPlayByPlayData(gameId, gameData);
+      console.log(
+        `Processed game ${gameId} with ${gameData.plays.length} plays.`
+      );
+    } else {
+      console.warn(`No play-by-play data found for game ${gameId}.`);
+    }
+    return;
+  }
 
   if (!fullProcess) {
     // Process only today's games if not in fullProcess mode.
@@ -308,7 +401,9 @@ async function processPlayByPlayData(fullProcess = false) {
   } else {
     // Full backlog processing: loop backward day by day until no games are found.
     // Compute the earliest start date from the selected seasons.
-    const earliestStartDate = Object.values(seasonBoundaries)
+    const earliestStartDate = (
+      Object.values(seasonBoundaries) as { start: string; end: string }[]
+    )
       .map((boundary) => boundary.start)
       .sort()[0];
     console.log(
@@ -404,13 +499,14 @@ async function processPlayByPlayData(fullProcess = false) {
 }
 
 // Main function now accepts a parameter to choose processing mode.
-export async function main(fullProcess = false) {
-  await processPlayByPlayData(fullProcess);
+export async function main(
+  fullProcess = false,
+  gameId?: string
+): Promise<void> {
+  await processPlayByPlayData(fullProcess, gameId);
 }
 
 if (require.main === module) {
   // Default run (process today's games only)
   main();
 }
-
-module.exports = { main };
