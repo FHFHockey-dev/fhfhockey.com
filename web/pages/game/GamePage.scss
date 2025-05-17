@@ -1797,7 +1797,7 @@ h6 {
   width: 100%;
 }
 
-/* --- Card & Table Containers --- */
+/* --- Card/Table/Container Wrappers --- */
 .gamePageCard,
 .gameOverCard,
 .gamePageVsTable,
@@ -1805,12 +1805,10 @@ h6 {
 .goalieCompContainer,
 .poissonChartContainer {
   @include v.element-wrapper;
-  border: 3px solid v.$secondary-color;
-  border-radius: v.$border-radius * 2;
   background: v.$background-medium;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
   margin-bottom: v.$space-xl;
-  padding: 0px !important;
+  padding: 0 !important;
 }
 
 /* --- Responsive --- */
@@ -1821,7 +1819,7 @@ h6 {
   .gameOverStatsContainer,
   .threeStarsContainer {
     width: 100%;
-    margin-bottom: 20px;
+    margin-bottom: v.$space-lg;
   }
   .gameDetailsContainer {
     flex-direction: column;

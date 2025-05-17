@@ -92,6 +92,7 @@
     "@storybook/nextjs": "^8.5.3",
     "@storybook/react": "^8.5.3",
     "@storybook/test": "^8.5.3",
+    "@svgr/webpack": "^8.1.0",
     "@testing-library/react": "^14.2.1",
     "@types/d3": "^7.4.3",
     "@types/dotenv": "^8.2.3",

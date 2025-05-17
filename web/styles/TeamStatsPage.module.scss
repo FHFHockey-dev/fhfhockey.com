@@ -1,0 +1,135 @@
+@use "sass:color";
+@use "styles/vars" as v;
+@use "sass:math";
+
+.teamStatsPageContainer {
+  width: 100%;
+}
+
+.teamHeader {
+  display: flex;
+  align-items: center;
+
+  margin-bottom: 2rem;
+  border-bottom: 1px solid v.$border-color-secondary;
+
+  background: linear-gradient(
+    180deg,
+    var(--primary-color) 0%,
+    var(--primary-color) 60%,
+    var(--jersey) 60%,
+    var(--jersey) 65%,
+    var(--secondary-color) 65%,
+    var(--secondary-color) 73%,
+    var(--accent) 73%,
+    var(--accent) 81%,
+    var(--jersey) 81%,
+    var(--jersey) 100%
+  );
+}
+
+.teamLogoContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.2rem 3rem;
+}
+
+.teamLogo {
+  width: 130px;
+  height: 130px;
+  object-fit: contain;
+}
+
+.teamName {
+  font-size: 2.2rem;
+  font-weight: 900;
+  margin: 0;
+  margin-left: 2rem;
+  margin-bottom: 3rem;
+  letter-spacing: 0.1em;
+  color: v.$color-white !important;
+}
+
+.teamStatsTableContainer {
+  width: 95%;
+  margin: 0 auto;
+  margin-bottom: 2rem;
+}
+
+.teamStatsTable {
+  @include v.table-base;
+  width: 100%;
+  border-collapse: collapse;
+  background: #232323;
+  color: #fefefe;
+  font-size: 1rem;
+  border: 5px solid v.$border-color-secondary;
+  outline: 5px solid v.$border-color-primary;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  margin-top: 1.5rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.teamStatsTable tr {
+  height: 40px;
+}
+
+.teamStatsTable th,
+.teamStatsTable td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #444;
+  text-align: center;
+  height: 35px;
+}
+
+.teamStatsTable th {
+  background: #181818;
+  color: #07aae2;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.teamStatsTable tr:nth-of-type(even) {
+  background: v.$background-dark;
+}
+
+.teamStatsTable tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr {
+  &:nth-child(even) td {
+    background-color: v.$background-dark;
+  }
+  &:nth-child(odd) td {
+    background-color: color.adjust(v.$background-dark, $lightness: 2%);
+  }
+
+  &:hover td {
+    background-color: color.change(
+      color.adjust(v.$focus-color, $lightness: -20%),
+      $alpha: 0.4
+    );
+    color: v.$focus-color;
+    font-weight: 600;
+    border-bottom: 2px solid v.$focus-color;
+    border-top: 2px solid v.$focus-color !important;
+  }
+
+  &:last-child td {
+    border-bottom: none;
+  }
+}
+
+.tableLabel {
+  color: v.$color-white !important;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 2.5rem 0 1rem 0;
+  letter-spacing: 0.2em;
+}

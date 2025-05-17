@@ -42,7 +42,9 @@
   width: 120px;
   height: 80px;
   background-color: var(--primary-color);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
   overflow: hidden;
 }
 
@@ -90,7 +92,9 @@
   filter: drop-shadow(0 0 5px var(--secondary-color));
   object-fit: cover;
   opacity: 1;
-  transition: transform 0.3s ease, filter 0.3s ease; /* Smooth transition for scale and brightness */
+  transition:
+    transform 0.3s ease,
+    filter 0.3s ease; /* Smooth transition for scale and brightness */
 }
 
 .teamLogoContainer:hover .teamLogo {
@@ -108,8 +112,10 @@
   font-style: italic;
   font-weight: 900;
   color: var(--secondary-color);
-  text-shadow: -3px -3px 3px var(--primary-color),
-    3px -3px 3px var(--primary-color), -3px 3px 3px var(--primary-color),
+  text-shadow:
+    -3px -3px 3px var(--primary-color),
+    3px -3px 3px var(--primary-color),
+    -3px 3px 3px var(--primary-color),
     3px 3px 3px var(--primary-color);
   padding: 5px;
   border-radius: 10px;
@@ -126,7 +132,9 @@
 }
 
 .statsTableContainer {
-  font-family: roboto condensed, sans-serif;
+  font-family:
+    roboto condensed,
+    sans-serif;
   font-size: 0.85rem;
   width: 95%;
   margin: 0 auto;

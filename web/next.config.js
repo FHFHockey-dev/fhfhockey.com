@@ -7,20 +7,20 @@ const nextConfig = {
       "images.unsplash.com",
       "cdn.sanity.io",
       "nhl.bamcontent.com",
-      "assets.nhle.com",
-    ],
+      "assets.nhle.com"
+    ]
   },
   reactStrictMode: true,
   async rewrites() {
     return [
       {
         source: "/studio",
-        destination: `${CMS_URL}/studio`,
+        destination: `${CMS_URL}/studio`
       },
       {
         source: "/studio/:path*",
-        destination: `${CMS_URL}/studio/:path*`,
-      },
+        destination: `${CMS_URL}/studio/:path*`
+      }
     ];
   },
   async redirects() {
@@ -29,10 +29,10 @@ const nextConfig = {
         source: "/game-grid",
         // not the url to change button label
         destination: "/game-grid/7-Day-Forecast",
-        permanent: false,
-      },
+        permanent: false
+      }
     ];
-  },
+  }
 };
 
 module.exports = nextConfig;

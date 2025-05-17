@@ -7,6 +7,18 @@ import LeaderboardCategoryBSH from "components/StatsPage/LeaderboardCategoryBSH"
 import LeaderboardCategoryGoalie from "components/StatsPage/LeaderboardCategoryGoalie";
 import { StatsProps } from "lib/NHL/statsPageTypes";
 import { fetchStatsData } from "lib/NHL/statsPageFetch";
+import PlayerSearchBar from "components/StatsPage/PlayerSearchBar";
+import Link from "next/link";
+import supabase from "lib/supabase";
+import { getCurrentSeason } from "lib/NHL/client";
+import { getTeamAbbreviationById, getTeamInfoById } from "lib/teamsInfo";
+import { getTeams } from "lib/NHL/server";
+
+interface TeamListItem {
+  team_id: number;
+  name: string;
+  abbreviation: string;
+}
 
 export default function StatsPage({
   pointsLeaders,
@@ -16,10 +28,36 @@ export default function StatsPage({
   goalieLeadersWins,
   goalieLeadersSavePct,
   goalieLeadersGAA,
-  goalieLeadersQS
-}: StatsProps) {
+  goalieLeadersQS,
+  teams = []
+}: StatsProps & { teams: TeamListItem[] }) {
   return (
     <div className={styles.container}>
+      <PlayerSearchBar />
+      <div className={styles.teamsSection}>
+        <h2 className={styles.teamsTitle}>Teams</h2>
+        <div className={styles.teamList}>
+          {teams.map((team) => (
+            <Link
+              key={team.team_id}
+              href={`/stats/team/${team.team_id}`}
+              className={styles.teamListItem}
+              title={team.name}
+            >
+              <img
+                src={`/teamLogos/${team.abbreviation}.png`}
+                alt={team.name}
+                className={styles.teamLogo}
+                loading="lazy"
+              />
+              <span className={styles.teamAbbreviation}>
+                {team.abbreviation}
+              </span>
+              <span className={styles.teamName}></span>
+            </Link>
+          ))}
+        </div>
+      </div>
       <div className={styles.leaderboardsContainer}>
         <h1 className={styles.title}>Skater Leaderboards</h1>
         <div className={styles.grid}>
@@ -70,5 +108,28 @@ export default function StatsPage({
 
 export async function getServerSideProps() {
   const data = await fetchStatsData();
-  return { props: data };
+
+  // Get teams for the current season using the existing getTeams function
+  try {
+    const teams = await getTeams();
+    // Map to the expected format
+    const formattedTeams = teams.map((team) => ({
+      team_id: team.id,
+      name: team.name,
+      abbreviation:
+        team.abbreviation?.trim() ||
+        getTeamAbbreviationById(team.id) ||
+        team.name
+    }));
+
+    // Sort alphabetically by abbreviation
+    formattedTeams.sort((a, b) =>
+      (a?.abbreviation ?? "").localeCompare(b?.abbreviation ?? "")
+    );
+
+    return { props: { ...data, teams: formattedTeams } };
+  } catch (error) {
+    console.error("Error fetching teams:", error);
+    return { props: { ...data, teams: [] } };
+  }
 }
