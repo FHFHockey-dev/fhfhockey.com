@@ -9,8 +9,9 @@ import {
   formatTOI,
   formatSeason,
   formatDate
-} from "../formatters";
-import { fetchAllGameLogRows } from "../nhlStatsFetch";
+} from "../../../utils/stats/formatters";
+import { fetchAllGameLogRows } from "../../../utils/stats/nhlStatsFetch";
+import Image from "next/image";
 
 interface PlayerDetailsProps {
   player: {

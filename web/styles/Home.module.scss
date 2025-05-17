@@ -1,6 +1,7 @@
 // styles/Home.module.scss
 @use "styles/vars" as v;
 @use "sass:color";
+@use "sass:math";
 
 // breakpoints
 $breakpoint-small: 320px;
@@ -248,9 +249,11 @@ $mobile-column-short: 30px;
 
   // --- Centering Logic using Flexbox Fallback ---
   // Apply flex properties to center the items
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  & {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 
   > * {
     // --- Adjust grid item styles for Flexbox ---
@@ -263,7 +266,7 @@ $mobile-column-short: 30px;
     @media (min-width: v.$breakpoint-tablet) {
       // Roughly 2 columns (minus gap)
       flex-basis: calc(
-        50% - #{v.$space-xl / 2}
+        50% - #{math.div(v.$space-xl, 2)}
       ); // Adjust basis for 2 columns + gap
       margin-bottom: v.$space-xl;
     }
@@ -271,7 +274,7 @@ $mobile-column-short: 30px;
     @media (min-width: v.$breakpoint-desktop) {
       // Roughly 3 columns (minus gap)
       flex-basis: calc(
-        33.333% - #{v.$space-lg * (2 / 3)}
+        33.333% - #{v.$space-lg * math.div(2, 3)}
       ); // Adjust basis for 3 columns + gap
       margin-bottom: v.$space-lg; // Match grid gap
     }

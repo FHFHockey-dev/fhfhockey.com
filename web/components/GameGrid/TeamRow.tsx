@@ -239,9 +239,10 @@ function MatchUpCell({
   const us = home ? homeTeam : awayTeam;
   const opponent = home ? awayTeam : homeTeam;
 
-  // Fetch combined team data from context
+  // Always call hooks at the top
   const usTeam = useTeam(us.id);
   const opponentTeam = useTeam(opponent.id);
+  const isMobile = useIsMobile();
 
   // Handle cases where team data might not be found
   if (!usTeam || !opponentTeam) {
@@ -276,8 +277,6 @@ function MatchUpCell({
       />
     </div>
   );
-
-  const isMobile = useIsMobile();
 
   return (
     <Tooltip content={tooltipContent}>

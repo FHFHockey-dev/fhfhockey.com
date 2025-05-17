@@ -280,7 +280,10 @@ $chart-tooltip-text: $text-primary; // Definition 2 (Uses $text-primary)
   $clamped-rank: math.max(1, math.min($rank, $max-rank));
   // Prevent division by zero if max-rank is 1
   $denominator: math.max(1, ($max-rank - 1));
-  $percentage: ($clamped-rank - 1) / $denominator; // 0 for rank 1, 1 for rank max-rank
+  $percentage: math.div(
+    $clamped-rank - 1,
+    $denominator
+  ); // 0 for rank 1, 1 for rank max-rank
   $hue: (1 - $percentage) * 120; // 120 (green) down to 0 (red)
   @return rgba(hsl($hue, 100%, 40%), $opacity);
 }

@@ -3,11 +3,23 @@ const CMS_URL = process.env.CMS_URL;
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: [
-      "images.unsplash.com",
-      "cdn.sanity.io",
-      "nhl.bamcontent.com",
-      "assets.nhle.com"
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com"
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.sanity.io"
+      },
+      {
+        protocol: "https",
+        hostname: "nhl.bamcontent.com"
+      },
+      {
+        protocol: "https",
+        hostname: "assets.nhle.com"
+      }
     ]
   },
   reactStrictMode: true,

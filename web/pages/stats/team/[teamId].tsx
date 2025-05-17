@@ -1,10 +1,11 @@
 import { GetServerSidePropsContext } from "next";
 import supabase from "lib/supabase";
-import { formatPercent, formatSeason } from "../formatters";
+import { formatPercent, formatSeason } from "../../../utils/stats/formatters";
 import styles from "styles/TeamStatsPage.module.scss";
 import { getTeamAbbreviationById, getTeamInfoById } from "lib/teamsInfo";
 import React, { useEffect } from "react";
 import { drawHockeyRink } from "lib/drawHockeyRink";
+import Image from "next/image";
 
 interface TeamSeasonSummary {
   season_id: number;

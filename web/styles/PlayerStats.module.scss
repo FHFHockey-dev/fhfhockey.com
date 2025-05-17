@@ -56,7 +56,7 @@
   border-bottom: none;
 }
 
-tbody tr {
+.playerStatsTable tbody tr {
   &:nth-child(even) td {
     background-color: v.$background-dark; // Darker for even rows
   }
