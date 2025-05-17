@@ -4,9 +4,10 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { createClientWithToken } from "lib/supabase";
 import { NextApiRequest, NextApiResponse } from "next";
 import serviceRoleClient from "lib/supabase/server";
+import { Database } from "lib/supabase/database-generated.types";
 
 interface ApiRequest extends NextApiRequest {
-  supabase: SupabaseClient<any, "public", any>;
+  supabase: SupabaseClient<Database>;
 }
 
 type Handler = (req: ApiRequest, res: NextApiResponse) => Promise<any>;
@@ -26,7 +27,7 @@ export default function adminOnly(handler: Handler): Handler {
       if (userError) {
         return res.status(401).json({
           message: userError.message,
-          success: false,
+          success: false
         });
       }
 
@@ -34,7 +35,7 @@ export default function adminOnly(handler: Handler): Handler {
       if (data?.role !== "admin") {
         return res.status(403).json({
           message: "You are not an Admin.",
-          success: false,
+          success: false
         });
       }
     }

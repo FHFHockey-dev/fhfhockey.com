@@ -149,7 +149,7 @@ export type TOIData = {
   p2: PlayerData;
 };
 
-async function fetchTOIRawData(id: number) {
+export async function fetchTOIRawData(id: number) {
   const [{ data: shiftsData }, { rostersMap, teams }, { plays }] =
     await Promise.all([
       Fetch(
@@ -170,7 +170,7 @@ export async function simpleGetTOIData(id: number) {
   return getTOIData(rawData, "line-combination");
 }
 
-function getTOIData(
+export function getTOIData(
   rawData: [
     {
       data: any;
@@ -405,7 +405,7 @@ export function sortByLineCombination(
   return result;
 }
 
-function sortByPPTOI(data: Record<string, TOIData>): PlayerData[] {
+export function sortByPPTOI(data: Record<string, TOIData>): PlayerData[] {
   const getTOI = (playerId1: number, playerId2: number) =>
     data[getKey(playerId1, playerId2)]?.toi ?? 0;
 
@@ -600,7 +600,7 @@ export function LinemateMatrixInternal({
         <div style={{ width: "90%", marginTop: "0.5rem" }}>
           <PPTOIComparasion
             AVG_PPTOI1={getAvg(sortedRoster.slice(0, 5), table)}
-            AVG_PPTOI2={getAvg(sortedRoster.slice(6, 10 + 1), table)}
+            AVG_PPTOI2={getAvg(sortedRoster.slice(5, 10), table)}
           />
         </div>
       )}
