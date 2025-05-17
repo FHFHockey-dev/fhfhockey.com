@@ -133,3 +133,96 @@
   margin: 2.5rem 0 1rem 0;
   letter-spacing: 0.2em;
 }
+
+// Shot visualization styles
+.sectionTitle {
+  margin: 2rem 0 1rem 1rem;
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: v.$color-white;
+  }
+
+  p {
+    font-size: 1rem;
+    color: v.$color-grey-dark;
+    margin: 0;
+  }
+}
+
+.shotVisualizationContainer {
+  width: 95%;
+  margin: 1rem auto 3rem;
+  background-color: v.$background-light;
+  border: 5px solid v.$border-color-secondary;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.errorMessage {
+  color: #e74c3c;
+  text-align: center;
+  margin: 1rem 0;
+  padding: 0.5rem;
+  background-color: rgba(231, 76, 60, 0.1);
+  border-radius: 0.25rem;
+  border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+// Filter controls styles
+.filterControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: v.$background-light;
+  border-radius: 0.5rem;
+  border: 1px solid v.$border-color-secondary;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  min-width: 200px;
+
+  label {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: v.$color-white;
+  }
+
+  select {
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1px solid v.$border-color-secondary;
+    background-color: v.$background-light;
+    color: v.$text-color-button;
+
+    &:focus {
+      outline: 2px solid v.$focus-color;
+      outline-offset: 2px;
+    }
+
+    option {
+      padding: 0.25rem;
+    }
+  }
+
+  small {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: v.$color-grey-dark;
+  }
+}
+
+.filterSelect {
+  height: 150px;
+  overflow-y: auto;
+}

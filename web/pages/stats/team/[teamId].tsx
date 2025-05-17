@@ -3,9 +3,18 @@ import supabase from "lib/supabase";
 import { formatPercent, formatSeason } from "../../../utils/stats/formatters";
 import styles from "styles/TeamStatsPage.module.scss";
 import { getTeamAbbreviationById, getTeamInfoById } from "lib/teamsInfo";
-import React, { useEffect } from "react";
-import { drawHockeyRink } from "lib/drawHockeyRink";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
+import useCurrentSeason from "hooks/useCurrentSeason";
+import { useShotData, ShotDataFilters } from "hooks/useShotData";
+import { ShotVisualization } from "components/ShotVisualization/ShotVisualization";
+
+// Shot data interface
+interface ShotData {
+  xcoord: number;
+  ycoord: number;
+  typedesckey: string; // 'goal' or 'shot'
+}
 
 interface TeamSeasonSummary {
   season_id: number;
@@ -50,9 +59,26 @@ export default function TeamStatsPage({
   teamAbbreviation: string;
   teamColors: TeamColors | null;
 }) {
-  useEffect(() => {
-    drawHockeyRink("#rink-d3-container");
-  }, []);
+  const currentSeason = useCurrentSeason();
+  const teamId = summaries[0]?.team_id;
+
+  // State for event and game type filters
+  const [filters, setFilters] = useState<ShotDataFilters>({
+    eventTypes: ["goal", "shot-on-goal"],
+    gameTypes: ["02"] // Regular season by default
+  });
+
+  // Use our custom hook to fetch shot data with filters
+  const { shotData, isLoading, error } = useShotData(
+    teamId,
+    currentSeason?.seasonId.toString(),
+    filters
+  );
+
+  // Handle filter changes from the visualization component
+  const handleFilterChange = (newFilters: ShotDataFilters) => {
+    setFilters(newFilters);
+  };
 
   return (
     <div
@@ -131,7 +157,28 @@ export default function TeamStatsPage({
           </tbody>
         </table>
       </div>
-      <div id="rink-d3-container" className={styles.rinkContainer}></div>
+
+      {/* Add Event Visualization section with filtering */}
+      <div className={styles.sectionTitle}>
+        <h3>Event Visualization</h3>
+        <p>
+          Event data for the {currentSeason?.seasonId} season. Use the filters
+          to select event types and game types to display.
+        </p>
+      </div>
+      <div className={styles.shotVisualizationContainer}>
+        <ShotVisualization
+          shotData={shotData}
+          isLoading={isLoading}
+          onFilterChange={handleFilterChange}
+          filters={filters}
+        />
+      </div>
+      {error && (
+        <div className={styles.errorMessage}>
+          Error loading event data: {error.message}
+        </div>
+      )}
     </div>
   );
 }
