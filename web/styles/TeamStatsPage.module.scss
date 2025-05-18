@@ -159,38 +159,66 @@
   border: 5px solid v.$border-color-secondary;
   border-radius: 0.5rem;
   padding: 1rem;
-  min-height: 400px;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex-direction: row; // Changed to row for side-by-side layout
+  min-height: 550px;
 }
 
-.errorMessage {
-  color: #e74c3c;
-  text-align: center;
+// New class for the control panel (left side container)
+.controlPanel {
+  display: flex;
+  flex-direction: column;
+  width: 280px;
+  padding-right: 1rem;
+}
+
+// New class for the rink visualization (right side container)
+.rinkContainer {
+  flex: 1;
+  min-height: 500px;
+  position: relative;
+}
+
+// Stats panel for displaying event stats
+.statsPanel {
   margin: 1rem 0;
-  padding: 0.5rem;
-  background-color: rgba(231, 76, 60, 0.1);
-  border-radius: 0.25rem;
-  border: 1px solid rgba(231, 76, 60, 0.3);
+  padding: 0.75rem;
+  background-color: v.$background-dark;
+  border-radius: 0.5rem;
+  border: 1px solid v.$border-color-secondary;
+
+  p {
+    margin: 0.5rem 0;
+    font-weight: bold;
+    color: v.$color-white;
+  }
+}
+
+// Legend container to style the legends
+.legendContainer {
+  margin: 1rem 0;
+
+  svg {
+    margin: 0.25rem 0 !important; // Override the auto margins
+    width: 100% !important;
+  }
 }
 
 // Filter controls styles
 .filterControls {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 1rem;
-  margin-bottom: 1rem;
   padding: 0.75rem;
-  background-color: v.$background-light;
+  background-color: v.$background-dark;
   border-radius: 0.5rem;
   border: 1px solid v.$border-color-secondary;
+  margin-bottom: 1rem;
 }
 
 .filterGroup {
-  display: flex;
-  flex-direction: column;
-  min-width: 200px;
+  min-width: initial; // Remove min-width that was causing overflow
+  width: 100%;
 
   label {
     font-weight: 600;
