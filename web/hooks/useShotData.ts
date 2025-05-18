@@ -97,7 +97,12 @@ export function useShotData(
           );
 
           const { data: games, error: gamesError } = await gamesQuery;
-          console.log("Fetched games for team", teamId, ":", games);
+          console.log(
+            "Fetched games for team",
+            teamId,
+            ":",
+            games?.length || 0
+          );
 
           if (gamesError) {
             throw new Error(`Error fetching games: ${gamesError.message}`);
@@ -161,9 +166,11 @@ export function useShotData(
               .select(
                 "xcoord, ycoord, typedesckey, hometeamdefendingside, eventownerteamid, gameid"
               )
-              .in("gameid", gameIdChunk)
-              .not("xcoord", "is", null)
-              .not("ycoord", "is", null);
+              .in("gameid", gameIdChunk);
+
+            // Don't filter out shots without coordinates initially
+            // We'll normalize them later in the processing step
+
             if (filters.eventTypes && filters.eventTypes.length > 0) {
               eventsQuery = eventsQuery.in("typedesckey", filters.eventTypes);
             }
@@ -178,65 +185,86 @@ export function useShotData(
             if (!events || events.length === 0) {
               hasMoreEvents = false;
             } else {
-              console.log("Sample event:", events[0]);
               console.log("All events count:", events.length);
-              console.log("gameIdToOpponentId:", gameIdToOpponentId);
-
-              // Check how many events would match as opponent
-              const testOpponentMatches = events.filter(
-                (shot) =>
-                  shot.xcoord !== null &&
-                  shot.ycoord !== null &&
-                  shot.typedesckey !== null &&
-                  gameIdToOpponentId[Number(shot.gameid)] !== undefined &&
-                  shot.eventownerteamid ===
-                    gameIdToOpponentId[Number(shot.gameid)]
-              );
-              console.log(
-                "Matching opponent events in this chunk:",
-                testOpponentMatches.length
-              );
 
               // Split into team and opponent events
+              // More permissive filtering for valid shots, with coordinate normalization
               const validTeamShots: ShotData[] = events
                 .filter(
                   (shot) =>
+                    shot.eventownerteamid === teamId &&
                     shot.xcoord !== null &&
-                    shot.ycoord !== null &&
-                    shot.typedesckey !== null &&
-                    shot.eventownerteamid === teamId
+                    shot.ycoord !== null
                 )
-                .map((shot) => ({
-                  xcoord: shot.xcoord as number,
-                  ycoord: shot.ycoord as number,
-                  typedesckey: shot.typedesckey as string,
-                  hometeamdefendingside: shot.hometeamdefendingside,
-                  eventownerteamid: shot.eventownerteamid
-                }));
+                .map((shot) => {
+                  // Normalize coordinates if needed
+                  let x = parseFloat(shot.xcoord as unknown as string);
+                  let y = parseFloat(shot.ycoord as unknown as string);
+
+                  // Ensure coordinates are valid numbers
+                  if (isNaN(x)) x = 0;
+                  if (isNaN(y)) y = 0;
+
+                  return {
+                    xcoord: x,
+                    ycoord: y,
+                    typedesckey: shot.typedesckey as string,
+                    hometeamdefendingside: shot.hometeamdefendingside,
+                    eventownerteamid: shot.eventownerteamid
+                  };
+                });
+
               const validOpponentShots: ShotData[] = events
                 .filter(
                   (shot) =>
-                    shot.xcoord !== null &&
-                    shot.ycoord !== null &&
-                    shot.typedesckey !== null &&
                     gameIdToOpponentId[Number(shot.gameid)] !== undefined &&
                     shot.eventownerteamid ===
-                      gameIdToOpponentId[Number(shot.gameid)]
+                      gameIdToOpponentId[Number(shot.gameid)] &&
+                    shot.xcoord !== null &&
+                    shot.ycoord !== null
                 )
-                .map((shot) => ({
-                  xcoord: shot.xcoord as number,
-                  ycoord: shot.ycoord as number,
-                  typedesckey: shot.typedesckey as string,
-                  hometeamdefendingside: shot.hometeamdefendingside,
-                  eventownerteamid: shot.eventownerteamid
-                }));
+                .map((shot) => {
+                  // Normalize coordinates if needed
+                  let x = parseFloat(shot.xcoord as unknown as string);
+                  let y = parseFloat(shot.ycoord as unknown as string);
+
+                  // Ensure coordinates are valid numbers
+                  if (isNaN(x)) x = 0;
+                  if (isNaN(y)) y = 0;
+
+                  return {
+                    xcoord: x,
+                    ycoord: y,
+                    typedesckey: shot.typedesckey as string,
+                    hometeamdefendingside: shot.hometeamdefendingside,
+                    eventownerteamid: shot.eventownerteamid
+                  };
+                });
+
               allShots = allShots.concat(validTeamShots);
               allOpponentShots = allOpponentShots.concat(validOpponentShots);
               hasMoreEvents = events.length === PAGE_SIZE;
               eventsPage++;
+
+              // Log some debugging info about the shot data
+              console.log(
+                `Processed ${validTeamShots.length} team shots and ${validOpponentShots.length} opponent shots`
+              );
+
+              // Sample a few shots to verify their coordinates
+              if (validTeamShots.length > 0) {
+                console.log("Sample team shot:", validTeamShots[0]);
+              }
+              if (validOpponentShots.length > 0) {
+                console.log("Sample opponent shot:", validOpponentShots[0]);
+              }
             }
           }
         }
+
+        console.log(
+          `Final shot counts - Team: ${allShots.length}, Opponent: ${allOpponentShots.length}`
+        );
 
         setShotData(allShots);
         setOpponentShotData(allOpponentShots);
