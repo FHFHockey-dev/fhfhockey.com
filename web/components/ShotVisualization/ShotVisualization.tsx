@@ -6,12 +6,16 @@ import {
   ShotDataFilters
 } from "hooks/useShotData";
 import styles from "styles/TeamStatsPage.module.scss";
+import * as d3 from "d3";
+import { hexbin as d3Hexbin, HexbinBin } from "d3-hexbin";
 
 interface ShotVisualizationProps {
   shotData: ShotData[];
+  opponentShotData?: ShotData[];
   isLoading: boolean;
   onFilterChange?: (filters: ShotDataFilters) => void;
   filters?: ShotDataFilters;
+  teamAbbreviation?: string;
 }
 
 /**
@@ -20,12 +24,14 @@ interface ShotVisualizationProps {
  */
 export function ShotVisualization({
   shotData,
+  opponentShotData = [],
   isLoading,
   onFilterChange,
   filters = {
     eventTypes: ["goal", "shot-on-goal"],
     gameTypes: [GAME_TYPES.REGULAR_SEASON]
-  }
+  },
+  teamAbbreviation
 }: ShotVisualizationProps) {
   // Use component key approach - whenever shotData changes, we'll remount the component
   // This avoids React DOM manipulation conflicts
@@ -170,7 +176,12 @@ export function ShotVisualization({
         </div>
       ) : (
         // Use the key to force a complete remount of the inner component
-        <InnerShotVisualization key={key} shotData={shotData} />
+        <InnerShotVisualization
+          key={key}
+          shotData={shotData}
+          opponentShotData={opponentShotData}
+          teamAbbreviation={teamAbbreviation}
+        />
       )}
     </div>
   );
@@ -180,7 +191,15 @@ export function ShotVisualization({
  * Inner component that handles the actual rendering of the hockey rink and shot data
  * This component gets remounted whenever the key changes in the parent
  */
-function InnerShotVisualization({ shotData }: { shotData: ShotData[] }) {
+function InnerShotVisualization({
+  shotData,
+  opponentShotData = [],
+  teamAbbreviation
+}: {
+  shotData: ShotData[];
+  opponentShotData?: ShotData[];
+  teamAbbreviation?: string;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [stats, setStats] = useState({
     eventCount: 0,
@@ -201,6 +220,18 @@ function InnerShotVisualization({ shotData }: { shotData: ShotData[] }) {
     // Get SVG element
     const svg = containerRef.current.querySelector("svg");
     if (!svg) return;
+
+    // Draw the team logo on the left side of the ice surface
+    if (teamAbbreviation) {
+      d3.select(svg)
+        .append("image")
+        .attr("href", `/teamLogos/${teamAbbreviation}.png`)
+        .attr("x", 44)
+        .attr("y", 28)
+        .attr("width", 30)
+        .attr("height", 30)
+        .attr("opacity", 0.5);
+    }
 
     // Get viewBox dimensions
     const viewBox = svg.getAttribute("viewBox")?.split(" ").map(Number) || [
@@ -227,94 +258,289 @@ function InnerShotVisualization({ shotData }: { shotData: ShotData[] }) {
 
     setStats({ eventCount, goalCount, shootingPct });
 
-    // Create a container for shot markers
-    const d3 = require("d3");
-    const d3svg = d3.select(svg);
-
-    // Function to map NHL coordinates to SVG space
-    const mapXToSvg = (x: number): number => {
-      return 2 + ((x + 100) / 200) * (viewBoxWidth - 4);
+    // Function to map NHL coordinates to SVG space (ice surface is 200x85 at (0,0)-(200,85))
+    // Fold right half to left and invert y for those points
+    const transformCoords = (x: number, y: number): [number, number] => {
+      if (x > 0) {
+        return [-x, -y];
+      } else {
+        return [x, y];
+      }
     };
+    const mapXToSvg = (x: number): number => x + 100;
+    const mapYToSvg = (y: number): number => y + 42.5;
 
-    const mapYToSvg = (y: number): number => {
-      return 2 + ((y + 42.5) / 85) * (viewBoxHeight - 4);
+    // Prepare shot data points in [x, y] SVG space (team events, left)
+    const points: [number, number][] = shotData
+      .filter(
+        (shot) =>
+          shot.xcoord !== null &&
+          shot.ycoord !== null &&
+          typeof shot.xcoord === "number" &&
+          typeof shot.ycoord === "number"
+      )
+      .map((shot) => {
+        const [tx, ty] = transformCoords(shot.xcoord, shot.ycoord);
+        return [mapXToSvg(tx), mapYToSvg(ty)];
+      });
+
+    // Prepare opponent shot data points in [x, y] SVG space (opponent events, right)
+    const transformOpponentCoords = (
+      x: number,
+      y: number
+    ): [number, number] => {
+      if (x < 0) {
+        return [-x, -y];
+      } else {
+        return [x, y];
+      }
     };
+    const opponentPoints: [number, number][] = opponentShotData
+      .filter(
+        (shot) =>
+          shot.xcoord !== null &&
+          shot.ycoord !== null &&
+          typeof shot.xcoord === "number" &&
+          typeof shot.ycoord === "number"
+      )
+      .map((shot) => {
+        const [tx, ty] = transformOpponentCoords(shot.xcoord, shot.ycoord);
+        return [mapXToSvg(tx), mapYToSvg(ty)];
+      });
 
-    // Create color mapping for different event types
-    const eventColorMap: Record<string, string> = {
-      goal: "#FF0000", // Red
-      "shot-on-goal": "#0066CC", // Blue
-      "missed-shot": "#FFA500", // Orange
-      "blocked-shot": "#800080", // Purple
-      faceoff: "#008000", // Green
-      hit: "#FFD700", // Gold
-      takeaway: "#00FFFF", // Cyan
-      giveaway: "#FF69B4", // Hot Pink
-      penalty: "#8B0000" // Dark Red
-    };
+    // Create a hexbin generator with even smaller hexagons
+    const hexbin = d3Hexbin<[number, number]>()
+      .x((d) => d[0])
+      .y((d) => d[1])
+      .radius(1.5) // Even smaller hexagons
+      .extent([
+        [0, 0],
+        [viewBoxWidth, viewBoxHeight]
+      ]);
 
-    // Add shots group
-    const eventsGroup = d3svg.append("g").attr("class", "event-markers");
-
-    // Add events
-    shotData.forEach((event) => {
-      // Determine color based on event type
-      const color = eventColorMap[event.typedesckey] || "#999999"; // Gray default
-
-      eventsGroup
-        .append("circle")
-        .attr("cx", mapXToSvg(event.xcoord))
-        .attr("cy", mapYToSvg(event.ycoord))
-        .attr("r", event.typedesckey === "goal" ? 4 : 3) // Make goals slightly larger
-        .attr("fill", color)
-        .attr("stroke", "white")
-        .attr("stroke-width", 1)
-        .attr("opacity", event.typedesckey === "goal" ? 1 : 0.7);
+    // --- TEAM EVENTS (LEFT) ---
+    const bins: HexbinBin<[number, number]>[] = hexbin(points);
+    const binMap = new Map<string, number>();
+    bins.forEach((bin) => {
+      binMap.set(`${bin.x},${bin.y}`, bin.length);
     });
-
-    // Add legend with dynamically determined event types
-    const legend = d3svg
+    const allCenters: [number, number][] = hexbin.centers();
+    const maxBin =
+      d3.max(bins, (d: HexbinBin<[number, number]>) => d.length) || 1;
+    // Good color scale: purple (low) → blue (mid) → green (high)
+    const teamColor = d3
+      .scaleLinear<string>()
+      .domain([0, Math.log1p(maxBin) / 2, Math.log1p(maxBin)])
+      .range(["#7b2ff2", "#00c6fb", "#00ff87"]); // purple → blue → green
+    d3.select(svg)
       .append("g")
-      .attr("class", "event-legend")
-      .attr("transform", `translate(${viewBoxWidth - 50}, 20)`);
+      .attr("class", "hexbin-heatmap team")
+      .attr("clip-path", "url(#rink-clip)")
+      .selectAll<SVGPathElement, [number, number]>("path")
+      .data(allCenters)
+      .enter()
+      .append("path")
+      .attr("d", () => hexbin.hexagon())
+      .attr("transform", (d: [number, number]) => `translate(${d[0]},${d[1]})`)
+      .attr("fill", (d: [number, number]) => {
+        const count = binMap.get(`${d[0]},${d[1]}`) || 0;
+        if (count === 0) return "#b0b8c9";
+        return teamColor(Math.log1p(count));
+      })
+      .attr("stroke", "#dcdcdc") //#d0d0d0
+      // lines between hexagons
+      .attr("stroke-width", 0.2)
+      .attr("opacity", 0.7);
 
-    // Get unique event types in the data
-    const uniqueEventTypes = Array.from(
-      new Set(shotData.map((d) => d.typedesckey))
-    );
-
-    // Limit to top 5 event types to avoid cluttering
-    const legendEventTypes = uniqueEventTypes.slice(0, 5);
-
-    // Add legend items
-    legendEventTypes.forEach((eventType, i) => {
-      const color = eventColorMap[eventType] || "#999999";
-      const displayName =
-        eventType.charAt(0).toUpperCase() +
-        eventType.slice(1).replace(/-/g, " ");
-
-      legend
-        .append("circle")
-        .attr("cx", 0)
-        .attr("cy", i * 20)
-        .attr("r", 3)
-        .attr("fill", color)
-        .attr("stroke", "white")
-        .attr("stroke-width", 1)
-        .attr("opacity", eventType === "goal" ? 1 : 0.7);
-
-      legend
-        .append("text")
-        .attr("x", 10)
-        .attr("y", i * 20 + 4)
-        .attr("font-size", 10)
-        .attr("fill", "black")
-        .text(displayName);
+    // --- OPPONENT EVENTS (RIGHT) ---
+    const oppBins: HexbinBin<[number, number]>[] = hexbin(opponentPoints);
+    const oppBinMap = new Map<string, number>();
+    oppBins.forEach((bin) => {
+      oppBinMap.set(`${bin.x},${bin.y}`, bin.length);
     });
+    const oppMaxBin =
+      d3.max(oppBins, (d: HexbinBin<[number, number]>) => d.length) || 1;
+    // Bad color scale: yellow (low) → orange (mid) → red (high)
+    const oppColor = d3
+      .scaleLinear<string>()
+      .domain([0, Math.log1p(oppMaxBin) / 2, Math.log1p(oppMaxBin)])
+      .range(["#fff700", "#ff9100", "#ff1744"]); // yellow → orange → red
+    d3.select(svg)
+      .append("g")
+      .attr("class", "hexbin-heatmap opponent")
+      .attr("clip-path", "url(#rink-clip)")
+      .selectAll<SVGPathElement, [number, number]>("path")
+      .data(allCenters)
+      .enter()
+      .append("path")
+      .attr("d", () => hexbin.hexagon())
+      .attr("transform", (d: [number, number]) => `translate(${d[0]},${d[1]})`)
+      .attr("fill", (d: [number, number]) => {
+        const count = oppBinMap.get(`${d[0]},${d[1]}`) || 0;
+        if (count === 0) return "#e0e7d7";
+        return oppColor(Math.log1p(count));
+      })
+      .attr("stroke", "#dcdcdc")
+      .attr("stroke-width", 0.2)
+      .attr("opacity", 0.4);
+
+    // --- LEGENDS ---
+    d3.select(containerRef.current).selectAll(".hexbin-legend").remove();
+    const legendWidth = 200;
+    const legendHeight = 16;
+    const legendBins = 120;
+    const minVal = 0;
+    const maxVal = maxBin;
+    const midVal = Math.round(maxVal / 2);
+    const logMin = Math.log1p(minVal);
+    const logMax = Math.log1p(maxVal);
+    const logMid = Math.log1p(midVal);
+
+    // Team legend
+    const teamLegendSvg = d3
+      .select(containerRef.current)
+      .append("svg")
+      .attr("width", legendWidth)
+      .attr("height", legendHeight + 30)
+      .attr("class", "hexbin-legend team-legend")
+      .style("display", "block")
+      .style("margin", "10px auto 0 auto");
+
+    const teamDefs = teamLegendSvg.append("defs");
+    const teamGradient = teamDefs
+      .append("linearGradient")
+      .attr("id", "hexbin-gradient-team")
+      .attr("x1", "0%")
+      .attr("x2", "100%")
+      .attr("y1", "0%")
+      .attr("y2", "0%");
+    for (let i = 0; i <= legendBins; i++) {
+      const t = i / legendBins;
+      const logVal = logMin + t * (logMax - logMin);
+      teamGradient
+        .append("stop")
+        .attr("offset", `${t * 100}%`)
+        .attr("stop-color", teamColor(logVal));
+    }
+
+    teamLegendSvg
+      .append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", legendWidth)
+      .attr("height", legendHeight)
+      .style("fill", "url(#hexbin-gradient-team)");
+
+    // Draw axis labels (min, mid, max) using the original (not log) values
+    const teamAxisScale = d3
+      .scaleLinear()
+      .domain([logMin, logMax])
+      .range([0, legendWidth]);
+    const teamAxis = teamLegendSvg.append("g");
+    const teamTickVals = [minVal, midVal, maxVal];
+    teamAxis
+      .selectAll("text")
+      .data(teamTickVals)
+      .enter()
+      .append("text")
+      .attr("x", (d) => teamAxisScale(Math.log1p(d)))
+      .attr("y", legendHeight + 14)
+      .attr("text-anchor", (d, i) =>
+        i === 0 ? "start" : i === 2 ? "end" : "middle"
+      )
+      .attr("font-size", 12)
+      .attr("fill", "#fff")
+      .text((d) => d);
+    teamLegendSvg
+      .append("text")
+      .attr("x", legendWidth / 2)
+      .attr("y", legendHeight + 28)
+      .attr("text-anchor", "middle")
+      .attr("font-size", 12)
+      .attr("fill", "#fff")
+      .text("Your Team Event Frequency");
+
+    // Opponent legend
+    const oppLegendWidth = 200;
+    const oppLegendHeight = 16;
+    const oppLegendBins = 120;
+    const oppMinVal = 0;
+    const oppMaxVal = oppMaxBin;
+    const oppMidVal = Math.round(oppMaxVal / 2);
+    const oppLogMin = Math.log1p(oppMinVal);
+    const oppLogMax = Math.log1p(oppMaxVal);
+    const oppLogMid = Math.log1p(oppMidVal);
+
+    const oppLegendSvg = d3
+      .select(containerRef.current)
+      .append("svg")
+      .attr("width", oppLegendWidth)
+      .attr("height", oppLegendHeight + 30)
+      .attr("class", "hexbin-legend opponent-legend")
+      .style("display", "block")
+      .style("margin", "10px auto 0 auto");
+
+    const oppDefs = oppLegendSvg.append("defs");
+    const oppGradient = oppDefs
+      .append("linearGradient")
+      .attr("id", "hexbin-gradient-opponent")
+      .attr("x1", "0%")
+      .attr("x2", "100%")
+      .attr("y1", "0%")
+      .attr("y2", "0%");
+    for (let i = 0; i <= oppLegendBins; i++) {
+      const t = i / oppLegendBins;
+      const logVal = oppLogMin + t * (oppLogMax - oppLogMin);
+      oppGradient
+        .append("stop")
+        .attr("offset", `${t * 100}%`)
+        .attr("stop-color", oppColor(logVal));
+    }
+
+    oppLegendSvg
+      .append("rect")
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("width", oppLegendWidth)
+      .attr("height", oppLegendHeight)
+      .style("fill", "url(#hexbin-gradient-opponent)");
+
+    // Draw axis labels (min, mid, max) using the original (not log) values
+    const oppAxisScale = d3
+      .scaleLinear()
+      .domain([oppLogMin, oppLogMax])
+      .range([0, oppLegendWidth]);
+    const oppAxis = oppLegendSvg.append("g");
+    const oppTickVals = [oppMinVal, oppMidVal, oppMaxVal];
+    oppAxis
+      .selectAll("text")
+      .data(oppTickVals)
+      .enter()
+      .append("text")
+      .attr("x", (d) => oppAxisScale(Math.log1p(d)))
+      .attr("y", oppLegendHeight + 14)
+      .attr("text-anchor", (d, i) =>
+        i === 0 ? "start" : i === 2 ? "end" : "middle"
+      )
+      .attr("font-size", 12)
+      .attr("fill", "#fff")
+      .text((d) => d);
+    oppLegendSvg
+      .append("text")
+      .attr("x", oppLegendWidth / 2)
+      .attr("y", oppLegendHeight + 28)
+      .attr("text-anchor", "middle")
+      .attr("font-size", 12)
+      .attr("fill", "#fff")
+      .text("Opponent Event Frequency");
+
+    console.log("Opponent shot data count:", opponentShotData.length);
+    console.log("Sample opponent shot:", opponentShotData[0]);
+    console.log("Total opponent shots collected:", opponentShotData.length);
 
     // We don't need to clean up anything since this component will be unmounted and recreated
     // completely when data changes
-  }, [shotData]);
+  }, [shotData, opponentShotData, teamAbbreviation]);
 
   return (
     <div style={{ width: "100%", minHeight: "400px" }}>

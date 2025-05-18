@@ -40,7 +40,7 @@ export default function StatsPage({
           {teams.map((team) => (
             <Link
               key={team.team_id}
-              href={`/stats/team/${team.team_id}`}
+              href={`/stats/team/${team.abbreviation}`}
               className={styles.teamListItem}
               title={team.name}
             >

@@ -26,13 +26,14 @@ export function drawHockeyRink(
   const scale = pxW / rinkFtW;
   const halfRink = options.halfRink || false;
 
+  const mapXToSvg = (x: number) => x + 100 + margin;
+  const mapYToSvg = (y: number) => y + 42.5 + margin;
+
   // Remove any previous SVGs
   const container = d3.select(containerSelector as any);
   container.selectAll<SVGSVGElement, unknown>("svg").remove();
 
-  // Adjusted viewBox to include margin
-  const viewBoxW = (halfRink ? rinkFtW / 2 : rinkFtW) + 2 * margin;
-  const viewBoxH = rinkFtH + 2 * margin;
+  // Set up SVG with viewBox to include the border
   const svg = container
     .append<SVGSVGElement>("svg")
     .attr("width", halfRink ? pxW / 2 : pxW)
@@ -40,46 +41,42 @@ export function drawHockeyRink(
     .attr(
       "viewBox",
       halfRink
-        ? `${-margin} ${-margin} ${rinkFtW / 2 + 2 * margin} ${rinkFtH + 2 * margin}`
-        : `${-margin} ${-margin} ${rinkFtW + 2 * margin} ${rinkFtH + 2 * margin}`
+        ? `-2 -2 ${rinkFtW / 2 + 4} ${rinkFtH + 4}`
+        : `-2 -2 ${rinkFtW + 4} ${rinkFtH + 4}`
     );
 
-  // Helper for shifting all features by margin
-  const shiftX = (x: number) => x;
-  const shiftY = (y: number) => y;
-
-  // Rink outline (rounded rectangle, with black border)
+  // Main rink outline (ice surface is 200x85, border is outside)
   svg
     .append("rect")
-    .attr("x", 0)
-    .attr("y", 0)
-    .attr("width", halfRink ? rinkFtW / 2 : rinkFtW)
-    .attr("height", rinkFtH)
-    .attr("rx", cornerRadius)
-    .attr("ry", cornerRadius)
+    .attr("x", -1)
+    .attr("y", -1)
+    .attr("width", 202)
+    .attr("height", 87)
+    .attr("rx", 28)
+    .attr("ry", 28)
     .style("fill", "white")
     .style("stroke", "black")
     .style("stroke-width", 2);
 
-  // Center line
+  // Center line (full height)
   if (!halfRink) {
     svg
       .append("line")
       .attr("x1", 100)
       .attr("y1", 0)
       .attr("x2", 100)
-      .attr("y2", rinkFtH)
+      .attr("y2", 85)
       .style("stroke", "#C8102E")
       .style("stroke-width", 1);
   }
 
-  // Blue lines
+  // Blue lines (full height)
   svg
     .append("line")
     .attr("x1", 75)
     .attr("y1", 0)
     .attr("x2", 75)
-    .attr("y2", rinkFtH)
+    .attr("y2", 85)
     .style("stroke", "#0033A0")
     .style("stroke-width", 1);
   if (!halfRink) {
@@ -88,30 +85,27 @@ export function drawHockeyRink(
       .attr("x1", 125)
       .attr("y1", 0)
       .attr("x2", 125)
-      .attr("y2", rinkFtH)
+      .attr("y2", 85)
       .style("stroke", "#0033A0")
       .style("stroke-width", 1);
   }
 
-  // Goal lines (draw only within the straight part of the rink, not into the rounded corners)
-  const outlineStroke = 2; // matches .style("stroke-width", 2)
-  const goalLineY1 = 0 + outlineStroke * 2.5;
-  const goalLineY2 = rinkFtH - outlineStroke * 2.5;
+  // Goal lines (full height)
   svg
     .append("line")
     .attr("x1", 11)
-    .attr("y1", goalLineY1)
+    .attr("y1", 5)
     .attr("x2", 11)
-    .attr("y2", goalLineY2)
+    .attr("y2", 80)
     .style("stroke", "#C8102E")
     .style("stroke-width", 0.1667);
   if (!halfRink) {
     svg
       .append("line")
       .attr("x1", 189)
-      .attr("y1", goalLineY1)
+      .attr("y1", 5)
       .attr("x2", 189)
-      .attr("y2", goalLineY2)
+      .attr("y2", 80)
       .style("stroke", "#C8102E")
       .style("stroke-width", 0.1667);
   }
@@ -261,21 +255,43 @@ export function drawHockeyRink(
       .style("stroke-width", 0.1667);
   }
 
-  // Trapezoids behind the goals
+  // Trapezoids behind the goals (touching the edge)
   // Left
+  // Draw trapezoid with three sides (omit long vertical side)
   svg
-    .append("polygon")
-    .attr("points", "11,31.5 11,53.5 0,57 0,28")
+    .append("polyline")
+    .attr("points", "0,28 11,31.5 11,53.5 0,57")
     .style("fill", "transparent")
     .style("stroke", "#C8102E")
+    .style("stroke-width", 0.1667)
+    .style("stroke-linejoin", "miter");
+  // Overlay the long vertical side as a transparent line
+  svg
+    .append("line")
+    .attr("x1", 0)
+    .attr("y1", 28)
+    .attr("x2", 0)
+    .attr("y2", 57)
+    .style("stroke", "transparent")
     .style("stroke-width", 0.1667);
   // Right
   if (!halfRink) {
+    // Draw trapezoid with three sides (omit long vertical side)
     svg
-      .append("polygon")
-      .attr("points", "189,31.5 189,53.5 200,57 200,28")
+      .append("polyline")
+      .attr("points", "200,28 189,31.5 189,53.5 200,57 ")
       .style("fill", "transparent")
       .style("stroke", "#C8102E")
+      .style("stroke-width", 0.1667)
+      .style("stroke-linejoin", "miter");
+    // Overlay the long vertical side as a transparent line
+    svg
+      .append("line")
+      .attr("x1", 200)
+      .attr("y1", 28)
+      .attr("x2", 200)
+      .attr("y2", 57)
+      .style("stroke", "transparent")
       .style("stroke-width", 0.1667);
   }
 
@@ -287,16 +303,19 @@ export function drawHockeyRink(
     .style("stroke", "#C8102E")
     .style("stroke-width", 0.1667);
 
-  // Rink outline (draw last, transparent fill, black border only)
+  // ClipPath for heatmap and plotting (matches ice surface)
   svg
+    .append("defs")
+    .append("clipPath")
+    .attr("id", "rink-clip")
     .append("rect")
     .attr("x", 0)
     .attr("y", 0)
-    .attr("width", halfRink ? rinkFtW / 2 : rinkFtW)
-    .attr("height", rinkFtH)
-    .attr("rx", cornerRadius)
-    .attr("ry", cornerRadius)
-    .style("fill", "transparent")
-    .style("stroke", "black")
-    .style("stroke-width", 2);
+    .attr("width", 200)
+    .attr("height", 85)
+    .attr("rx", 27)
+    .attr("ry", 27);
+
+  svg.append("g").attr("clip-path", "url(#rink-clip)");
+  // ... heatmap polygons ...
 }

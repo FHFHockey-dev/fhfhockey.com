@@ -8,6 +8,7 @@ import Image from "next/image";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import { useShotData, ShotDataFilters } from "hooks/useShotData";
 import { ShotVisualization } from "components/ShotVisualization/ShotVisualization";
+import { teamsInfo } from "lib/teamsInfo";
 
 // Shot data interface
 interface ShotData {
@@ -69,7 +70,7 @@ export default function TeamStatsPage({
   });
 
   // Use our custom hook to fetch shot data with filters
-  const { shotData, isLoading, error } = useShotData(
+  const { shotData, opponentShotData, isLoading, error } = useShotData(
     teamId,
     currentSeason?.seasonId.toString(),
     filters
@@ -169,9 +170,11 @@ export default function TeamStatsPage({
       <div className={styles.shotVisualizationContainer}>
         <ShotVisualization
           shotData={shotData}
+          opponentShotData={opponentShotData}
           isLoading={isLoading}
           onFilterChange={handleFilterChange}
           filters={filters}
+          teamAbbreviation={teamAbbreviation}
         />
       </div>
       {error && (
@@ -184,11 +187,16 @@ export default function TeamStatsPage({
 }
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
-  const { teamId } = context.query;
-  if (!teamId || Array.isArray(teamId)) {
+  const { teamAbbreviation } = context.query;
+  if (!teamAbbreviation || Array.isArray(teamAbbreviation)) {
     return { notFound: true };
   }
-  const teamIdNum = Number(teamId);
+  // Look up team info by abbreviation
+  const teamInfo = teamsInfo[teamAbbreviation as string];
+  if (!teamInfo) {
+    return { notFound: true };
+  }
+  const teamIdNum = teamInfo.id;
   const { data } = await supabase
     .from("team_summary_years")
     .select("*")
@@ -198,10 +206,6 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   if (!data || data.length === 0) {
     return { notFound: true };
   }
-
-  // Get abbreviation
-  const teamAbbreviation = getTeamAbbreviationById(teamIdNum) || "";
-  const teamInfo = getTeamInfoById(teamIdNum);
 
   return {
     props: {

@@ -53,10 +53,12 @@ export function useShotData(
   }
 ) {
   const [shotData, setShotData] = useState<ShotData[]>([]);
+  const [opponentShotData, setOpponentShotData] = useState<ShotData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    console.log("useShotData called with teamId:", teamId, "season:", season);
     if (!teamId || !season) {
       setIsLoading(false);
       return;
@@ -67,44 +69,35 @@ export function useShotData(
         setIsLoading(true);
 
         // First get all games for this team and season using pagination
-        let allGames: { id: number }[] = [];
+        let allGames: { id: number; hometeamid: number; awayteamid: number }[] =
+          [];
         let hasMoreGames = true;
         let gamesPage = 0;
 
         // Initialize game type filter condition
         const gameTypeFilters =
           filters.gameTypes?.map((gameType) => {
-            // Handle potentially undefined season (though we've already checked above)
             const seasonStart = season!.substring(0, 4);
             return `id.like.${seasonStart}${gameType}%`;
           }) || [];
 
         while (hasMoreGames) {
-          // Fix 2: Fix the OR query format for Supabase
-          // `.or()` needs to receive a proper string with comma-separated conditions
           let gamesQuery = supabase
             .from("pbp_games")
-            .select("id")
-            .eq("season", season as string); // Type assertion since we've checked above that season is not null/undefined
+            .select("id, hometeamid, awayteamid")
+            .eq("season", season as string);
 
-          // Add team filter (home or away team)
           gamesQuery = gamesQuery.or(
             `hometeamid.eq.${teamId},awayteamid.eq.${teamId}`
           );
 
-          // Add pagination
           gamesQuery = gamesQuery.range(
             gamesPage * PAGE_SIZE,
             (gamesPage + 1) * PAGE_SIZE - 1
           );
 
-          // Add game type filter if specified
-          if (gameTypeFilters.length > 0) {
-            const gameTypeFilterQuery = gameTypeFilters.join(",");
-            // We'll filter the results after fetching since the format of supabase OR queries is tricky
-          }
-
           const { data: games, error: gamesError } = await gamesQuery;
+          console.log("Fetched games for team", teamId, ":", games);
 
           if (gamesError) {
             throw new Error(`Error fetching games: ${gamesError.message}`);
@@ -113,25 +106,16 @@ export function useShotData(
           if (!games || games.length === 0) {
             hasMoreGames = false;
           } else {
-            // Apply game type filtering here if needed
-            let filteredGames = games;
-            if (gameTypeFilters.length > 0) {
-              filteredGames = games.filter((game) => {
-                const gameId = String(game.id);
-                // Check if the game ID matches any of our game type filters
-                return (
-                  filters.gameTypes?.some((gameType) => {
-                    const seasonStart = season?.substring(0, 4) || "";
-                    const pattern = `${seasonStart}${gameType}`;
-                    return gameId.startsWith(pattern);
-                  }) || false
-                );
-              });
-            }
-
-            allGames = allGames.concat(filteredGames);
-
-            // Check if we need to fetch more pages
+            // Only keep games with non-null hometeamid and awayteamid, and cast to number
+            allGames = allGames.concat(
+              games
+                .filter((g) => g.hometeamid !== null && g.awayteamid !== null)
+                .map((g) => ({
+                  id: g.id,
+                  hometeamid: g.hometeamid as number,
+                  awayteamid: g.awayteamid as number
+                }))
+            );
             hasMoreGames = games.length === PAGE_SIZE;
             gamesPage++;
           }
@@ -139,6 +123,7 @@ export function useShotData(
 
         if (allGames.length === 0) {
           setShotData([]);
+          setOpponentShotData([]);
           setIsLoading(false);
           return;
         }
@@ -147,64 +132,79 @@ export function useShotData(
 
         // Now fetch shot data from pbp_plays for these games with pagination
         let allShots: ShotData[] = [];
+        let allOpponentShots: ShotData[] = [];
 
-        // Due to the large number of games and potential shots, we'll process in batches
         // Split gameIds into smaller chunks to avoid query parameter limits
-        const GAME_CHUNK_SIZE = 50; // Process 50 games at a time
+        const GAME_CHUNK_SIZE = 50;
         const gameIdChunks = [];
-
         for (let i = 0; i < gameIds.length; i += GAME_CHUNK_SIZE) {
           gameIdChunks.push(gameIds.slice(i, i + GAME_CHUNK_SIZE));
         }
 
+        // Build a map of gameId to opponentId for quick lookup
+        const gameIdToOpponentId: Record<number, number> = {};
+        allGames.forEach((game) => {
+          if (game.hometeamid === teamId) {
+            gameIdToOpponentId[game.id] = game.awayteamid;
+          } else {
+            gameIdToOpponentId[game.id] = game.hometeamid;
+          }
+        });
+
         // Process each chunk of game IDs
         for (const gameIdChunk of gameIdChunks) {
-          let hasMoreShots = true;
-          let shotsPage = 0;
-
-          while (hasMoreShots) {
-            // Base query for plays
-            let playsQuery = supabase
+          let hasMoreEvents = true;
+          let eventsPage = 0;
+          while (hasMoreEvents) {
+            let eventsQuery = supabase
               .from("pbp_plays")
               .select(
-                "xcoord, ycoord, typedesckey, hometeamdefendingside, eventownerteamid"
+                "xcoord, ycoord, typedesckey, hometeamdefendingside, eventownerteamid, gameid"
               )
               .in("gameid", gameIdChunk)
               .not("xcoord", "is", null)
               .not("ycoord", "is", null);
-
-            // Add event type filter if specified
             if (filters.eventTypes && filters.eventTypes.length > 0) {
-              playsQuery = playsQuery.in("typedesckey", filters.eventTypes);
+              eventsQuery = eventsQuery.in("typedesckey", filters.eventTypes);
             }
-
-            // Add team filter
-            playsQuery = playsQuery.eq("eventownerteamid", teamId);
-
-            // Add pagination
-            playsQuery = playsQuery.range(
-              shotsPage * PAGE_SIZE,
-              (shotsPage + 1) * PAGE_SIZE - 1
+            eventsQuery = eventsQuery.range(
+              eventsPage * PAGE_SIZE,
+              (eventsPage + 1) * PAGE_SIZE - 1
             );
-
-            // Execute the query
-            const { data: shots, error: shotsError } = await playsQuery;
-
-            if (shotsError) {
-              throw new Error(`Error fetching shots: ${shotsError.message}`);
+            const { data: events, error: eventsError } = await eventsQuery;
+            if (eventsError) {
+              throw new Error(`Error fetching events: ${eventsError.message}`);
             }
-
-            if (!shots || shots.length === 0) {
-              hasMoreShots = false;
+            if (!events || events.length === 0) {
+              hasMoreEvents = false;
             } else {
-              // Fix 3: Type casting to ensure Supabase returned data matches our ShotData interface
-              // Filter out any records with null coordinates that may have slipped through
-              const validShots: ShotData[] = shots
+              console.log("Sample event:", events[0]);
+              console.log("All events count:", events.length);
+              console.log("gameIdToOpponentId:", gameIdToOpponentId);
+
+              // Check how many events would match as opponent
+              const testOpponentMatches = events.filter(
+                (shot) =>
+                  shot.xcoord !== null &&
+                  shot.ycoord !== null &&
+                  shot.typedesckey !== null &&
+                  gameIdToOpponentId[Number(shot.gameid)] !== undefined &&
+                  shot.eventownerteamid ===
+                    gameIdToOpponentId[Number(shot.gameid)]
+              );
+              console.log(
+                "Matching opponent events in this chunk:",
+                testOpponentMatches.length
+              );
+
+              // Split into team and opponent events
+              const validTeamShots: ShotData[] = events
                 .filter(
                   (shot) =>
                     shot.xcoord !== null &&
                     shot.ycoord !== null &&
-                    shot.typedesckey !== null
+                    shot.typedesckey !== null &&
+                    shot.eventownerteamid === teamId
                 )
                 .map((shot) => ({
                   xcoord: shot.xcoord as number,
@@ -213,17 +213,33 @@ export function useShotData(
                   hometeamdefendingside: shot.hometeamdefendingside,
                   eventownerteamid: shot.eventownerteamid
                 }));
-
-              allShots = allShots.concat(validShots);
-
-              // Check if we need to fetch more pages
-              hasMoreShots = shots.length === PAGE_SIZE;
-              shotsPage++;
+              const validOpponentShots: ShotData[] = events
+                .filter(
+                  (shot) =>
+                    shot.xcoord !== null &&
+                    shot.ycoord !== null &&
+                    shot.typedesckey !== null &&
+                    gameIdToOpponentId[Number(shot.gameid)] !== undefined &&
+                    shot.eventownerteamid ===
+                      gameIdToOpponentId[Number(shot.gameid)]
+                )
+                .map((shot) => ({
+                  xcoord: shot.xcoord as number,
+                  ycoord: shot.ycoord as number,
+                  typedesckey: shot.typedesckey as string,
+                  hometeamdefendingside: shot.hometeamdefendingside,
+                  eventownerteamid: shot.eventownerteamid
+                }));
+              allShots = allShots.concat(validTeamShots);
+              allOpponentShots = allOpponentShots.concat(validOpponentShots);
+              hasMoreEvents = events.length === PAGE_SIZE;
+              eventsPage++;
             }
           }
         }
 
         setShotData(allShots);
+        setOpponentShotData(allOpponentShots);
       } catch (err) {
         setError(err instanceof Error ? err : new Error(String(err)));
         console.error("Error fetching shot data:", err);
@@ -235,5 +251,5 @@ export function useShotData(
     fetchTeamShotData();
   }, [teamId, season, filters.eventTypes, filters.gameTypes]);
 
-  return { shotData, isLoading, error };
+  return { shotData, opponentShotData, isLoading, error };
 }
