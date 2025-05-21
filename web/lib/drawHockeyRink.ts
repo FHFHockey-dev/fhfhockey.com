@@ -93,16 +93,14 @@ export function drawHockeyRink(
     .style("stroke-width", 2);
 
   // Center line (full height)
-  if (!halfRink) {
-    rinkGroup
-      .append("line")
-      .attr("x1", 100)
-      .attr("y1", 0)
-      .attr("x2", 100)
-      .attr("y2", 85)
-      .style("stroke", "#C8102E")
-      .style("stroke-width", 1);
-  }
+  rinkGroup
+    .append("line")
+    .attr("x1", 100)
+    .attr("y1", 0)
+    .attr("x2", 100)
+    .attr("y2", 85)
+    .style("stroke", "#C8102E")
+    .style("stroke-width", 1);
 
   // Blue lines (full height)
   rinkGroup
