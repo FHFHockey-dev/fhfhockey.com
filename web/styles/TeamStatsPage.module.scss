@@ -196,10 +196,13 @@
 
 // Legend container to style the legends
 .legendContainer {
-  margin: 1rem 0;
-
+  margin: 1.2rem 0 0.5rem 0;
+  padding: 0.5rem 0.5rem 0.2rem 0.5rem;
+  background: v.$background-dark;
+  border-radius: 0.5rem;
+  border: 1px solid v.$border-color-secondary;
   svg {
-    margin: 0.25rem 0 !important; // Override the auto margins
+    margin: 0.25rem 0 !important;
     width: 100% !important;
   }
 }
@@ -253,4 +256,37 @@
 .filterSelect {
   height: 150px;
   overflow-y: auto;
+}
+
+// Add a container for side-by-side rinks
+.rinksSideBySide {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 2.5rem;
+  width: 100%;
+}
+
+// Container for each half rink and its label
+.halfRinkContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: v.$background-dark;
+  border-radius: 0.75rem;
+  padding: 1.2rem 1.2rem 0.5rem 1.2rem;
+  min-width: 320px;
+}
+
+// Label above each rink
+.rinkLabel {
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: v.$color-white;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  text-transform: uppercase;
 }

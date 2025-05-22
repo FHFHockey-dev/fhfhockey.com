@@ -53,23 +53,32 @@ export function drawHockeyRink(
   container.selectAll<SVGSVGElement, unknown>("svg").remove();
 
   // Set up SVG with viewBox to include the border
-  const svg = container
-    .append<SVGSVGElement>("svg")
-    .attr(
-      "width",
-      vertical ? (halfRink ? pxW / 2 : pxW) : halfRink ? pxW / 2 : pxW
-    )
-    .attr("height", vertical ? (halfRink ? pxH / 2 : pxH) : pxH)
-    .attr(
-      "viewBox",
-      vertical
-        ? halfRink
-          ? `-2 -2 ${rinkFtH + 4} ${rinkFtW / 2 + 4}`
-          : `-2 -2 ${rinkFtH + 4} ${rinkFtW + 4}`
-        : halfRink
-          ? `-2 -2 ${rinkFtW / 2 + 4} ${rinkFtH + 4}`
-          : `-2 -2 ${rinkFtW + 4} ${rinkFtH + 4}`
-    );
+  let svg;
+  if (vertical && halfRink) {
+    svg = container
+      .append("svg")
+      .attr("width", pxW)
+      .attr("height", pxH * (107 / 200)) // scale height to match new viewBox
+      .attr("viewBox", "-2 -2 89 107"); // show only top half + just below red line
+  } else {
+    svg = container
+      .append("svg")
+      .attr(
+        "width",
+        vertical ? (halfRink ? pxW / 2 : pxW) : halfRink ? pxW / 2 : pxW
+      )
+      .attr("height", vertical ? (halfRink ? pxH / 2 : pxH) : pxH)
+      .attr(
+        "viewBox",
+        vertical
+          ? halfRink
+            ? `-2 -2 ${rinkFtH + 4} ${rinkFtW / 2 + 4}`
+            : `-2 -2 ${rinkFtH + 4} ${rinkFtW + 4}`
+          : halfRink
+            ? `-2 -2 ${rinkFtW / 2 + 4} ${rinkFtH + 4}`
+            : `-2 -2 ${rinkFtW + 4} ${rinkFtH + 4}`
+      );
+  }
 
   // Create a group for all elements that will be rotated in vertical orientation
   const rinkGroup = svg.append("g");

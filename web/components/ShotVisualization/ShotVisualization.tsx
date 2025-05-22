@@ -218,21 +218,10 @@ export function ShotVisualization({
           </div>
 
           {/* Right side: Rink visualization */}
-          <div
-            className={styles.rinkContainer}
-            style={{ display: "flex", flexDirection: "column", gap: 32 }}
-          >
+          <div className={styles.rinksSideBySide}>
             {/* My Team Half Rink */}
-            <div style={{ width: "100%", marginBottom: 16 }}>
-              <div
-                style={{
-                  textAlign: "center",
-                  fontWeight: 600,
-                  marginBottom: 4
-                }}
-              >
-                My Team
-              </div>
+            <div className={styles.halfRinkContainer}>
+              <div className={styles.rinkLabel}>My Team</div>
               <InnerShotVisualization
                 key={`rink-myteam-${key}`}
                 shotData={shotData}
@@ -241,18 +230,16 @@ export function ShotVisualization({
                 halfRink={true}
                 side="team"
               />
+              <InnerShotVisualizationControls
+                shotData={shotData}
+                opponentShotData={[]}
+                scaleValues={scaleValues}
+                legendsReady={legendsReady}
+              />
             </div>
             {/* Opponent Half Rink */}
-            <div style={{ width: "100%" }}>
-              <div
-                style={{
-                  textAlign: "center",
-                  fontWeight: 600,
-                  marginBottom: 4
-                }}
-              >
-                Opponent
-              </div>
+            <div className={styles.halfRinkContainer}>
+              <div className={styles.rinkLabel}>Opponent</div>
               <InnerShotVisualization
                 key={`rink-opponent-${key}`}
                 shotData={opponentShotData}
@@ -260,6 +247,12 @@ export function ShotVisualization({
                 onScaleValuesChange={() => {}}
                 halfRink={true}
                 side="opponent"
+              />
+              <InnerShotVisualizationControls
+                shotData={opponentShotData}
+                opponentShotData={[]}
+                scaleValues={scaleValues}
+                legendsReady={legendsReady}
               />
             </div>
           </div>
