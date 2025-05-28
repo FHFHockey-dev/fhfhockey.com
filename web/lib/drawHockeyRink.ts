@@ -152,7 +152,7 @@ export function drawHockeyRink(
   }
 
   // Center circle and dot
-  if (!halfRink) {
+  if ((vertical && halfRink) || !halfRink) {
     rinkGroup
       .append("circle")
       .attr("cx", 100)

@@ -22,6 +22,7 @@ interface ShotVisualizationProps {
   onFilterChange?: (filters: ShotDataFilters) => void;
   filters?: ShotDataFilters;
   teamAbbreviation?: string;
+  alwaysShowOpponentLegend?: boolean;
 }
 
 /**
@@ -37,14 +38,21 @@ export function ShotVisualization({
     eventTypes: ["goal", "shot-on-goal"],
     gameTypes: [GAME_TYPES.REGULAR_SEASON]
   },
-  teamAbbreviation
+  teamAbbreviation,
+  alwaysShowOpponentLegend = false
 }: ShotVisualizationProps) {
   // Use component key approach - whenever shotData changes, we'll remount the component
   // This avoids React DOM manipulation conflicts
   const [key, setKey] = useState(0);
-  const [scaleValues, setScaleValues] = useState({
-    team: { min: 0, mid: 0, max: 0 },
-    opponent: { min: 0, mid: 0, max: 0 }
+  const [teamScaleValues, setTeamScaleValues] = useState({
+    min: 0,
+    mid: 0,
+    max: 0
+  });
+  const [opponentScaleValues, setOpponentScaleValues] = useState({
+    min: 0,
+    mid: 0,
+    max: 0
   });
   const [legendsReady, setLegendsReady] = useState(false);
 
@@ -61,13 +69,17 @@ export function ShotVisualization({
     setLegendsReady(false);
   }, [key]);
 
-  // Update scaleValues handler with callback to set legendsReady
-  const handleScaleValuesChange = useCallback(
-    (values: {
-      team: { min: number; mid: number; max: number };
-      opponent: { min: number; mid: number; max: number };
-    }) => {
-      setScaleValues(values);
+  // Separate handlers for team and opponent scale values
+  const handleTeamScaleValuesChange = useCallback(
+    (values: { min: number; mid: number; max: number }) => {
+      setTeamScaleValues(values);
+      setLegendsReady(true);
+    },
+    []
+  );
+  const handleOpponentScaleValuesChange = useCallback(
+    (values: { min: number; mid: number; max: number }) => {
+      setOpponentScaleValues(values);
       setLegendsReady(true);
     },
     []
@@ -212,8 +224,12 @@ export function ShotVisualization({
               key={`controls-${key}`}
               shotData={shotData}
               opponentShotData={opponentShotData}
-              scaleValues={scaleValues}
+              scaleValues={{
+                team: teamScaleValues,
+                opponent: { min: 0, mid: 0, max: 0 }
+              }}
               legendsReady={legendsReady}
+              alwaysShowLegend={alwaysShowOpponentLegend}
             />
           </div>
 
@@ -226,15 +242,9 @@ export function ShotVisualization({
                 key={`rink-myteam-${key}`}
                 shotData={shotData}
                 teamAbbreviation={teamAbbreviation}
-                onScaleValuesChange={handleScaleValuesChange}
+                onScaleValuesChange={handleTeamScaleValuesChange}
                 halfRink={true}
                 side="team"
-              />
-              <InnerShotVisualizationControls
-                shotData={shotData}
-                opponentShotData={[]}
-                scaleValues={scaleValues}
-                legendsReady={legendsReady}
               />
             </div>
             {/* Opponent Half Rink */}
@@ -244,15 +254,9 @@ export function ShotVisualization({
                 key={`rink-opponent-${key}`}
                 shotData={opponentShotData}
                 teamAbbreviation={teamAbbreviation}
-                onScaleValuesChange={() => {}}
+                onScaleValuesChange={handleOpponentScaleValuesChange}
                 halfRink={true}
                 side="opponent"
-              />
-              <InnerShotVisualizationControls
-                shotData={opponentShotData}
-                opponentShotData={[]}
-                scaleValues={scaleValues}
-                legendsReady={legendsReady}
               />
             </div>
           </div>
@@ -276,8 +280,9 @@ function InnerShotVisualization({
   shotData: ShotData[];
   teamAbbreviation?: string;
   onScaleValuesChange: (values: {
-    team: { min: number; mid: number; max: number };
-    opponent: { min: number; mid: number; max: number };
+    min: number;
+    mid: number;
+    max: number;
   }) => void;
   halfRink: boolean;
   side: string;
@@ -412,6 +417,14 @@ function InnerShotVisualization({
     const newMaxBin =
       d3.max(bins, (d: HexbinBin<[number, number]>) => d.length) || 1;
 
+    if (side === "opponent") {
+      console.log(
+        "[Opponent Half] bins:",
+        bins.map((b) => b.length)
+      );
+      console.log("[Opponent Half] newMaxBin:", newMaxBin);
+    }
+
     // Color scale: use team color for team, opponent color for opponent
     const colorScale = d3
       .scaleLinear<string>()
@@ -438,18 +451,13 @@ function InnerShotVisualization({
       })
       .attr("stroke", "#dcdcdc")
       .attr("stroke-width", 0.2)
-      .attr("opacity", side === "team" ? 0.7 : 0.4);
+      .attr("opacity", side === "team" ? 0.5 : 0.4);
 
     // Call this only once per render with all the calculated values
     onScaleValuesChange({
-      team:
-        side === "team"
-          ? { min: 0, mid: Math.round(newMaxBin / 2), max: newMaxBin }
-          : { min: 0, mid: 0, max: 0 },
-      opponent:
-        side === "opponent"
-          ? { min: 0, mid: Math.round(newMaxBin / 2), max: newMaxBin }
-          : { min: 0, mid: 0, max: 0 }
+      min: 0,
+      mid: Math.round(newMaxBin / 2),
+      max: newMaxBin
     });
 
     setBinMap(newBinMap);
@@ -502,7 +510,8 @@ function InnerShotVisualizationControls({
   shotData,
   opponentShotData = [],
   scaleValues,
-  legendsReady
+  legendsReady,
+  alwaysShowLegend = false
 }: {
   shotData: ShotData[];
   opponentShotData?: ShotData[];
@@ -511,6 +520,7 @@ function InnerShotVisualizationControls({
     opponent: { min: number; mid: number; max: number };
   };
   legendsReady: boolean;
+  alwaysShowLegend?: boolean;
 }) {
   const [stats, setStats] = useState({
     eventCount: 0,
@@ -642,18 +652,22 @@ function InnerShotVisualizationControls({
   useEffect(() => {
     if (
       !oppLegendRef.current ||
-      opponentShotData.length === 0 ||
-      !scaleValues.opponent.max
+      (!alwaysShowLegend && opponentShotData.length === 0)
     )
       return;
 
     // Clear previous content
     oppLegendRef.current.innerHTML = "";
 
-    // Use the same scale values as the main visualization
+    // Use the same scale values as the main visualization, or fallback to team max if no opponent data
     const minVal = 0;
-    const maxVal = scaleValues.opponent.max;
-    const midVal = scaleValues.opponent.mid;
+    const fallbackMax = scaleValues.team.max > 0 ? scaleValues.team.max : 1;
+    const maxVal =
+      scaleValues.opponent.max > 0 ? scaleValues.opponent.max : fallbackMax;
+    const midVal =
+      scaleValues.opponent.max > 0
+        ? scaleValues.opponent.mid
+        : Math.round(fallbackMax / 2);
 
     // Apply logarithmic scale exactly as in the main viz
     const logMin = Math.log1p(minVal);
@@ -737,7 +751,7 @@ function InnerShotVisualizationControls({
       .attr("font-size", 12)
       .attr("fill", "#fff")
       .text("Opponent Event Frequency");
-  }, [opponentShotData, oppLegendRef, scaleValues.opponent]);
+  }, [opponentShotData, oppLegendRef, scaleValues.opponent, alwaysShowLegend]);
 
   if (!legendsReady) {
     return null; // or a loading spinner/component
@@ -762,8 +776,8 @@ function InnerShotVisualizationControls({
         <div ref={teamLegendRef} style={{ width: "100%" }}></div>
       </div>
 
-      {/* Opponent legend (only if there's opponent data) */}
-      {opponentShotData.length > 0 && (
+      {/* Opponent legend (always show if alwaysShowLegend, or if there's opponent data) */}
+      {(alwaysShowLegend || opponentShotData.length > 0) && (
         <div className={styles.legendContainer}>
           <div ref={oppLegendRef} style={{ width: "100%" }}></div>
         </div>
