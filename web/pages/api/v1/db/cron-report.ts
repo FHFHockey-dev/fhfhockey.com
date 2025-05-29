@@ -18,7 +18,7 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const emailRecipient = "timBranson515@gmail.com"; // Define recipient
+  const emailRecipient = process.env.CRON_REPORT_EMAIL_RECIPIENT!;
 
   let jobRunDetailsEmailResult: any = null;
   let auditEmailResult: any = null;

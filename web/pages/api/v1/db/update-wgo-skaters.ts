@@ -52,7 +52,7 @@ interface NHLApiResponse {
     | WGOToiSkaterStat[];
 }
 
-// Fetch all skater data for a specific date with a limit on the number of records
+// I need to fetch all skater data for a specific date with a limit on the number of records
 async function fetchAllDataForDate(
   formattedDate: string,
   limit: number
@@ -74,7 +74,7 @@ async function fetchAllDataForDate(
   shotTypeStats: WGOShotTypeSkaterStat[];
   timeOnIceStats: WGOToiSkaterStat[];
 }> {
-  // Helper function to fetch data for a specific game type (regular season or playoffs)
+  // I'll create a helper function to fetch data for a specific game type (regular season or playoffs)
   async function fetchDataForGameType(gameTypeId: number) {
     let start = 0;
     let moreDataAvailable = true;
@@ -95,9 +95,9 @@ async function fetchAllDataForDate(
     let shotTypeStats: WGOShotTypeSkaterStat[] = [];
     let timeOnIceStats: WGOToiSkaterStat[] = [];
 
-    // Loop to fetch all pages of data from the API
+    // I need to loop to fetch all pages of data from the API
     while (moreDataAvailable) {
-      // Construct the URL for fetching skater stats
+      // I'll construct the URL for fetching skater stats
       const skaterStatsUrl = `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goals%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22assists%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=${gameTypeId}`;
       const skaterBioUrl = `https://api.nhle.com/stats/rest/en/skater/bios?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22lastName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22skaterFullName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=${gameTypeId}`;
       const miscSkaterStatsUrl = `https://api.nhle.com/stats/rest/en/skater/realtime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22hits%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=${gameTypeId}`;
@@ -115,7 +115,7 @@ async function fetchAllDataForDate(
       const shotTypeUrl = `https://api.nhle.com/stats/rest/en/skater/shottype?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22shootingPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22shootingPctBat%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=${gameTypeId}`;
       const timeOnIceUrl = `https://api.nhle.com/stats/rest/en/skater/timeonice?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIce%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=${gameTypeId}`;
 
-      // Fetch data from the URL in parallel using Promise.all
+      // I'll fetch data from the URLs in parallel using Promise.all
       const [
         skaterStatsResponse,
         bioStatsResponse,
@@ -172,7 +172,7 @@ async function fetchAllDataForDate(
         Fetch(timeOnIceUrl).then((res) => res.json() as Promise<NHLApiResponse>)
       ]);
 
-      // Concatenate the fetched data to the accumulated array
+      // I need to concatenate the fetched data to the accumulated array
       skaterStats = skaterStats.concat(
         skaterStatsResponse.data as WGOSummarySkaterStat[]
       );
@@ -220,7 +220,7 @@ async function fetchAllDataForDate(
         timeOnIceResponse.data as WGOToiSkaterStat[]
       );
 
-      // Determine if more data is available to fetch in the next iteration
+      // I need to determine if more data is available to fetch in the next iteration
       moreDataAvailable =
         skaterStatsResponse.data.length === limit ||
         bioStatsResponse.data.length === limit ||
@@ -238,7 +238,7 @@ async function fetchAllDataForDate(
         scoringPerGameResponse.data.length === limit ||
         shotTypeResponse.data.length === limit ||
         timeOnIceResponse.data.length === limit;
-      start += limit; // Increment the start index for the next fetch
+      start += limit; // I'll increment the start index for the next fetch
     }
 
     return {
@@ -261,25 +261,25 @@ async function fetchAllDataForDate(
     };
   }
 
-  // Helper function to merge stats by player ID
+  // I'll create a helper function to merge stats by player ID
   function mergeStatsByPlayerId<T extends { playerId: string | number }>(
     regularSeasonStats: T[],
     playoffStats: T[]
   ): T[] {
     const merged = new Map<string, T>();
     
-    // Add regular season stats
+    // I'll add regular season stats
     regularSeasonStats.forEach(stat => {
       merged.set(stat.playerId.toString(), stat);
     });
     
-    // Merge playoff stats - if player exists, combine the stats
+    // I need to merge playoff stats - if player exists, I'll combine the stats
     playoffStats.forEach(playoffStat => {
       const playerId = playoffStat.playerId.toString();
       const existingStat = merged.get(playerId);
       
       if (existingStat) {
-        // Merge numeric stats by adding them together
+        // I'll merge numeric stats by adding them together
         const mergedStat = { ...existingStat };
         Object.keys(playoffStat).forEach(key => {
           if (key !== 'playerId' && typeof (playoffStat as any)[key] === 'number' && typeof (existingStat as any)[key] === 'number') {
@@ -296,14 +296,14 @@ async function fetchAllDataForDate(
     return Array.from(merged.values());
   }
 
-  // Fetch data for both regular season and playoffs
+  // I'll fetch data for both regular season and playoffs
   console.log(`Fetching regular season data for ${formattedDate}...`);
   const regularSeasonData = await fetchDataForGameType(2); // Regular season
   
   console.log(`Fetching playoff data for ${formattedDate}...`);
   const playoffData = await fetchDataForGameType(3); // Playoffs
 
-  // Merge the data from both game types
+  // I'll merge the data from both game types
   console.log(`Merging regular season and playoff data for ${formattedDate}...`);
   return {
     skaterStats: mergeStatsByPlayerId(regularSeasonData.skaterStats, playoffData.skaterStats),
@@ -325,7 +325,7 @@ async function fetchAllDataForDate(
   };
 }
 
-// Function to fetch data for a specific skater across multiple dates
+// I need a function to fetch data for a specific skater across multiple dates
 async function fetchDataForPlayer(
   playerId: string,
   playerName: string
@@ -347,7 +347,7 @@ async function fetchDataForPlayer(
   shotTypeStats: WGOShotTypeSkaterStat[];
   timeOnIceStats: WGOToiSkaterStat[];
 }> {
-  // Helper function to fetch data for a specific game type (regular season or playoffs)
+  // I'll create a helper function to fetch data for a specific game type (regular season or playoffs)
   async function fetchPlayerDataForGameType(gameTypeId: number) {
     let start = 0;
     let moreDataAvailable = true;
@@ -496,6 +496,7 @@ async function fetchDataForPlayer(
         timeOnIceResponse.data as WGOToiSkaterStat[]
       );
 
+      // I need to determine if more data is available to fetch in the next iteration
       moreDataAvailable =
         skaterStatsResponse.data.length === 100 ||
         skatersBioResponse.data.length === 100 ||
@@ -536,25 +537,25 @@ async function fetchDataForPlayer(
     };
   }
 
-  // Helper function to merge stats by player ID (same as in fetchAllDataForDate)
+  // I'll create a helper function to merge stats by player ID (same as in fetchAllDataForDate)
   function mergeStatsByPlayerId<T extends { playerId: string | number }>(
     regularSeasonStats: T[],
     playoffStats: T[]
   ): T[] {
     const merged = new Map<string, T>();
     
-    // Add regular season stats
+    // I'll add regular season stats
     regularSeasonStats.forEach(stat => {
       merged.set(stat.playerId.toString(), stat);
     });
     
-    // Merge playoff stats - if player exists, combine the stats
+    // I need to merge playoff stats - if player exists, I'll combine the stats
     playoffStats.forEach(playoffStat => {
       const playerId = playoffStat.playerId.toString();
       const existingStat = merged.get(playerId);
       
       if (existingStat) {
-        // Merge numeric stats by adding them together
+        // I'll merge numeric stats by adding them together
         const mergedStat = { ...existingStat };
         Object.keys(playoffStat).forEach(key => {
           if (key !== 'playerId' && typeof (playoffStat as any)[key] === 'number' && typeof (existingStat as any)[key] === 'number') {
@@ -571,14 +572,14 @@ async function fetchDataForPlayer(
     return Array.from(merged.values());
   }
 
-  // Fetch data for both regular season and playoffs
+  // I'll fetch data for both regular season and playoffs
   console.log(`Fetching regular season data for player ${playerName}...`);
   const regularSeasonData = await fetchPlayerDataForGameType(2); // Regular season
   
   console.log(`Fetching playoff data for player ${playerName}...`);
   const playoffData = await fetchPlayerDataForGameType(3); // Playoffs
 
-  // Merge the data from both game types
+  // I'll merge the data from both game types
   console.log(`Merging regular season and playoff data for player ${playerName}...`);
   return {
     skaterStats: mergeStatsByPlayerId(regularSeasonData.skaterStats, playoffData.skaterStats),
@@ -600,7 +601,7 @@ async function fetchDataForPlayer(
   };
 }
 
-// Function to update skater stats for a specific date
+// I need a function to update skater stats for a specific date
 async function updateSkaterStats(date: string) {
   const formattedDate = format(parseISO(date), "yyyy-MM-dd");
   console.log(`Updating skater stats for ${formattedDate}`);
@@ -937,7 +938,7 @@ async function updateSkaterStats(date: string) {
   };
 }
 
-// Function to update skater stats for the entire season
+// I need a function to update skater stats for the entire season
 async function updateSkaterStatsForSeason() {
   const currentSeason = await getCurrentSeason();
   let currentDate = parseISO(currentSeason.regularSeasonStartDate);
@@ -961,7 +962,7 @@ async function updateSkaterStatsForSeason() {
   };
 }
 
-// Function to get the most recent date from the database
+// I need a function to get the most recent date from the database
 async function getMostRecentDateFromDB(): Promise<string | null> {
   const { data, error } = await supabase
     .from("wgo_skater_stats")
@@ -977,7 +978,7 @@ async function getMostRecentDateFromDB(): Promise<string | null> {
   return data && data.length > 0 ? data[0].date : null;
 }
 
-// Function to update all skaters for all dates from most recent to today
+// I need a function to update all skaters for all dates from most recent to today
 async function updateAllSkatersFromMostRecentDate(fullRefresh: boolean = false): Promise<{
   message: string;
   success: boolean;
@@ -1012,7 +1013,7 @@ async function updateAllSkatersFromMostRecentDate(fullRefresh: boolean = false):
   const datesProcessed: string[] = [];
   let currentDate = startDate;
 
-  // Don't process future dates
+  // I won't process future dates
   if (isBefore(endDate, startDate)) {
     return {
       message: "No dates to process - database is already up to date.",
@@ -1035,7 +1036,7 @@ async function updateAllSkatersFromMostRecentDate(fullRefresh: boolean = false):
       console.log(`Completed ${formattedDate}: ${result.totalUpdates} updates`);
     } catch (error: any) {
       console.error(`Error processing ${formattedDate}:`, error.message);
-      // Continue with next date even if one fails
+      // I'll continue with next date even if one fails
     }
 
     currentDate = addDays(currentDate, 1);
@@ -1067,7 +1068,7 @@ export default async function handler(
       ? req.query.playerFullName[0]
       : req.query.playerFullName || "Unknown Player";
 
-    // Handle action=all parameter
+    // I'll handle action=all parameter
     if (action === 'all') {
       const result = await updateAllSkatersFromMostRecentDate(fullRefresh);
       return res.json({
@@ -1081,7 +1082,7 @@ export default async function handler(
       });
     }
 
-    // Handle specific date
+    // I'll handle specific date
     if (date) {
       const result = await updateSkaterStats(date);
       return res.json({
@@ -1091,7 +1092,7 @@ export default async function handler(
       });
     }
     
-    // Handle specific player data fetch
+    // I'll handle specific player data fetch
     if (playerId && playerFullName) {
       const result = await fetchDataForPlayer(playerId, playerFullName);
       return res.json({
@@ -1101,7 +1102,7 @@ export default async function handler(
       });
     }
     
-    // Handle season update for specific player
+    // I'll handle season update for specific player
     if (playerId) {
       const result = await updateSkaterStatsForSeason();
       return res.json({
