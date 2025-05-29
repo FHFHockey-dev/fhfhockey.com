@@ -59,9 +59,9 @@ export default async function handler(
 
     try {
       const { data, error } = await resend.emails.send({
-        from: "audit-report@fhfhockey.com", // Can be a different 'from' address
+        from: "audit-report@fhfhockey.com",
         to: emailRecipient,
-        subject: "⚙️ Daily Cron Job Audit Data",
+        subject: "✅ Cron Job Audit",
         react: CronAuditEmail({ audits: formattedAudits, sinceDate: since })
       });
 
@@ -107,7 +107,7 @@ export default async function handler(
       const { data, error } = await resend.emails.send({
         from: "job-status@fhfhockey.com", // Can be a different 'from' address
         to: emailRecipient,
-        subject: "✅ Daily Job Run Details",
+        subject: "🥅 Daily Job Runs",
         react: CronReportEmail({ rows: jobRunDetailsRows }) // Using your existing component
       });
 
