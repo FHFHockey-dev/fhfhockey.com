@@ -494,7 +494,7 @@ async function fetchAndParseData(
           `No data received from URL: ${url} on attempt ${attempt}.`
         );
         if (attempt === retries) return { success: false, data: [] }; // Final attempt failed
-        await delay(5000); // Wait before retrying
+        await delay(REQUEST_INTERVAL_MS); // Wait before retrying
         continue;
       }
 
@@ -510,7 +510,7 @@ async function fetchAndParseData(
           return { success: true, data: [] }; // Legitimate empty result
         }
         if (attempt === retries) return { success: false, data: [] }; // Final attempt failed
-        await delay(5000);
+        await delay(REQUEST_INTERVAL_MS);
         continue;
       }
 
@@ -525,7 +525,7 @@ async function fetchAndParseData(
           `Table found, but missing expected 'Player' header at ${url}. Attempt ${attempt}.`
         );
         if (attempt === retries) return { success: false, data: [] };
-        await delay(5000);
+        await delay(REQUEST_INTERVAL_MS);
         continue;
       }
 
@@ -702,7 +702,7 @@ async function fetchAndParseData(
         );
         return { success: false, data: [] }; // Final attempt failed
       }
-      await delay(7000); // Longer delay after error
+      await delay(REQUEST_INTERVAL_MS); // Longer delay after error
     }
   } // End retry loop
 
