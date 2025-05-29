@@ -25,7 +25,7 @@ import {
 
 // --------------------------
 // Helper: Concurrently fetch all pages for one endpoint.
-// My urlBuilder function receives a start value and returns the URL.
+// The urlBuilder function receives a start value and returns the URL.
 async function fetchAllDataForEndpoint<T>(
   urlBuilder: (start: number) => string,
   concurrency: number = 4
@@ -34,11 +34,11 @@ async function fetchAllDataForEndpoint<T>(
   let page = 0;
   let allData: T[] = [];
 
-  // I'll use a concurrency limiter for the "count" phase.
+  // We'll use a concurrency limiter for the "count" phase.
   const limiter = pLimit(concurrency);
   let done = false;
   while (!done) {
-    // I'll fire off a batch of requests concurrently.
+    // Fire off a batch of requests concurrently.
     const batchPromises = [];
     for (let i = 0; i < concurrency; i++) {
       batchPromises.push(
@@ -53,7 +53,7 @@ async function fetchAllDataForEndpoint<T>(
     const batchResults = await Promise.all(batchPromises);
     for (const result of batchResults) {
       allData.push(...result.data);
-      // If this page returned fewer than limit items, I have reached the end.
+      // If this page returned fewer than limit items, we have reached the end.
       if (result.data.length < limit) {
         done = true;
         break;
@@ -64,16 +64,18 @@ async function fetchAllDataForEndpoint<T>(
   return allData;
 }
 
-// I need a helper function to get the earliest season ID from the NHL season endpoint.
+// ==============================
+// NEW: Helper function to get the earliest season ID from the NHL season endpoint.
 async function getEarliestSeasonID(): Promise<string> {
   const response = await Fetch(
     "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22ASC%22%7D%5D"
   ).then((res) => res.json());
-  // I assume that response.data is an array and that the first item's "id" property holds the earliest season id.
+  // Assumes that response.data is an array and that the first item's "id" property holds the earliest season id.
   return response.data[0].id.toString();
 }
 
-// My full fetchAllTotalsForSeason() function with concurrent endpoint fetching.
+// --------------------------
+// Full fetchAllTotalsForSeason() function with concurrent endpoint fetching.
 async function fetchAllTotalsForSeason(season: string): Promise<{
   skaterTotalStats: WGOSummarySkaterTotal[];
   skatersBio: WGOSkatersBio[];
@@ -94,7 +96,7 @@ async function fetchAllTotalsForSeason(season: string): Promise<{
 }> {
   console.log(`Fetching data for season ${season}...`);
 
-  // I'll define URL builders for each endpoint.
+  // Define URL builders for each endpoint.
   const gameTypeExp = "(gameTypeId=2%20or%20gameTypeId=3)";
   const buildSkaterTotalStatsUrl = (start: number) =>
     `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goals%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22assists%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
@@ -144,7 +146,7 @@ async function fetchAllTotalsForSeason(season: string): Promise<{
   const buildTimeOnIceTotalsUrl = (start: number) =>
     `https://api.nhle.com/stats/rest/en/skater/timeonice?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIce%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
-  // I'll fire off concurrent requests for each endpoint.
+  // Fire off concurrent requests for each endpoint.
   const [
     skaterTotalStats,
     skatersBio,
@@ -215,7 +217,8 @@ async function fetchAllTotalsForSeason(season: string): Promise<{
   };
 }
 
-// My batch upsert helper: I'll split records into smaller chunks and upsert concurrently.
+// --------------------------
+// Batch upsert helper: split records into smaller chunks and upsert concurrently.
 async function batchUpsert(
   dataArray: any[],
   batchSize: number = 500,
@@ -237,7 +240,8 @@ async function batchUpsert(
   );
 }
 
-// My modified processSeasons() to decide the starting season based on table data.
+// ==============================
+// Modified processSeasons() to decide the starting season based on table data.
 async function processSeasons(): Promise<{
   seasonsProcessed: string[];
   totalTimeInSeconds: number;
@@ -246,17 +250,17 @@ async function processSeasons(): Promise<{
   const currentSeason = await getCurrentSeason();
   const currentSeasonId = currentSeason.seasonId.toString();
 
-  // I'll get the most recent season in the database.
+  // Get the most recent season in the database.
   let dbSeason = await getMostRecentSeasonInDB();
   if (!dbSeason) {
-    // CASE 1: Table is empty – I'll use earliest season from the endpoint.
+    // CASE 1: Table is empty – use earliest season from the endpoint.
     dbSeason = await getEarliestSeasonID();
     console.log(`No data in DB. Starting from earliest season: ${dbSeason}`);
   } else {
     console.log(`Most recent season in DB: ${dbSeason}`);
   }
 
-  // I'll build an array of season IDs to process from dbSeason to currentSeasonId (inclusive).
+  // Build an array of season IDs to process from dbSeason to currentSeasonId (inclusive).
   const seasons: string[] = [];
   let seasonToProcess = dbSeason;
   while (parseInt(seasonToProcess) <= parseInt(currentSeasonId)) {
@@ -265,7 +269,7 @@ async function processSeasons(): Promise<{
   }
   console.log(`Seasons to update: ${seasons.join(", ")}`);
 
-  // I'll use pLimit to update multiple seasons concurrently (e.g., limit to 2 concurrent updates)
+  // Use pLimit to update multiple seasons concurrently (e.g., limit to 2 concurrent updates)
   const seasonLimit = pLimit(2);
   const updateTasks = seasons.map((season) =>
     seasonLimit(() => {
@@ -286,7 +290,8 @@ async function processSeasons(): Promise<{
   };
 }
 
-// My getMostRecentSeasonInDB() and getNextSeason() remain unchanged.
+// ==============================
+// getMostRecentSeasonInDB() and getNextSeason() remain unchanged.
 async function getMostRecentSeasonInDB(): Promise<string | null> {
   const { data, error } = await supabase
     .from("wgo_skater_stats_totals")
@@ -306,7 +311,8 @@ function getNextSeason(currentSeason: string): string {
   return `${startYear + 1}${endYear + 1}`;
 }
 
-// My updateSkaterTotals: I'll process fetched data, then perform a batch upsert.
+// --------------------------
+// updateSkaterTotals: process fetched data, then perform a batch upsert.
 async function updateSkaterTotals(
   season: string
 ): Promise<{ updated: boolean; playersUpdated: number; totalErrors: number }> {
@@ -316,7 +322,7 @@ async function updateSkaterTotals(
   let totalErrors = 0;
 
   try {
-    // I'll fetch all totals for the season using my concurrent method.
+    // Fetch all totals for the season using our concurrent method.
     const {
       skaterTotalStats,
       skatersBio,
@@ -340,7 +346,7 @@ async function updateSkaterTotals(
       `Data fetched for ${skaterTotalStats.length} players, beginning processing`
     );
 
-    // I'll create lookup maps
+    // Create lookup maps
     const skatersBioMap = new Map<number, WGOSkatersBio>();
     skatersBio.forEach((s) => skatersBioMap.set(s.playerId, s));
 
@@ -386,7 +392,7 @@ async function updateSkaterTotals(
     const toiMap = new Map<number, WGOToiSkaterTotal>();
     timeOnIceTotalStats.forEach((s) => toiMap.set(s.playerId, s));
 
-    // I'll prepare data array
+    // Prepare data array
     const dataArray: any[] = [];
     const now = new Date().toISOString();
 
@@ -628,14 +634,14 @@ async function updateSkaterTotals(
         shifts: toiStats?.shifts,
         shifts_per_game: toiStats?.shiftsPerGame,
         time_on_ice_per_shift: toiStats?.timeOnIcePerShift,
-        // I'll include the updated_at timestamp
+        // Include the updated_at timestamp
         updated_at: now
       };
 
       dataArray.push(skatersData);
     }
 
-    // I'll batch upsert
+    // Batch upsert
     try {
       await batchUpsert(dataArray, 500, 4);
       playersUpdated = dataArray.length;
@@ -660,7 +666,8 @@ async function updateSkaterTotals(
   };
 }
 
-// My API handler
+// ==============================
+// API handler
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -673,12 +680,12 @@ export default async function handler(
   let details: any = {};
 
   try {
-    // I need to decide "all" vs single season
+    // ─── decide "all" vs single season ─────────────────────
     const seasonParam = Array.isArray(req.query.season)
       ? req.query.season[0]
       : req.query.season;
 
-    // If no season param or season=current, I'll process current season
+    // If no season param or season=current, process current season
     if (!seasonParam || seasonParam.toLowerCase() === "current") {
       const currentSeason = await getCurrentSeason();
       const seasonValue = currentSeason.seasonId.toString();
@@ -698,7 +705,7 @@ export default async function handler(
       });
     }
 
-    // I'll handle single season
+    // ─── single season ───────────────────────────────────────
     const seasonValue = seasonParam!;
     console.log(`Processing season ${seasonValue}`);
     const result = await updateSkaterTotals(seasonValue);
@@ -724,7 +731,7 @@ export default async function handler(
     const processingTimeMs = Date.now() - startTime;
     details = { ...details, processingTimeMs };
 
-    // I'll write a single audit row no matter what
+    // write a single audit row no matter what
     try {
       await supabase.from("cron_job_audit").insert([
         {

@@ -40,7 +40,7 @@ async function fetchAllDataForDate(
   let advancedGoalieStats: WGOAdvancedGoalieStat[] = [];
   let daysRestStats: WGODaysLeftStat[] = [];
 
-  // Loop to fetch all pages of data from the API
+  // Loop through pages of data from the API
   while (moreDataAvailable) {
     // Include both regular season (gameTypeId=2) and playoff games (gameTypeId=3)
     const goalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=0&cayenneExp=gameDate%3C%3D%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E%3D%22${formattedDate}%22%20and%20(gameTypeId%3D2%20or%20gameTypeId%3D3)`;
@@ -72,7 +72,7 @@ async function fetchAllDataForDate(
         daysRestResponse.data as WGODaysLeftStat[]
       );
 
-      // Check if the length of *any* response data equals the limit
+      // Check if the length of any response data equals the limit
       const gsLen = goalieStatsResponse.data?.length ?? 0;
       const agsLen = advancedGoalieStatsResponse.data?.length ?? 0;
       const drLen = daysRestResponse.data?.length ?? 0;
@@ -108,7 +108,7 @@ export async function updateAllGoaliesStats(): Promise<UpdateResult> {
     // Determine the final end date: today or regularSeasonEndDate, whichever is earlier
     const finalEndDate = isBefore(today, endDate) ? today : endDate;
 
-    // **Preliminary Check: Get the most recent date from wgo_goalie_stats**
+    // Preliminary Check: Get the most recent date from wgo_goalie_stats
     const { data: latestData, error: latestError } = await supabase
       .from("wgo_goalie_stats")
       .select("date")

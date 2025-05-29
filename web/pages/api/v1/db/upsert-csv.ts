@@ -4,20 +4,20 @@ import adminOnly from "utils/adminOnlyMiddleware";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { standardizePlayerName } from "lib/standardization/nameStandardization";
 
-// Player Master Type (reflects what we use from your existing table)
+// Player Master Type (reflects what is used from the existing table)
 type PlayerMasterLookup = {
   id: number; // bigint corresponds to number in JS/TS
   fullName: string;
-  position?: string; // Add position, assuming it exists in your 'players' table
+  position?: string; // Add position, assuming it exists in the 'players' table
 };
 
-// Modified helper function: Tries to get player ID by fullName.
+// Modified helper function: Gets player ID by fullName.
 // If multiple matches, attempts to disambiguate using position.
 async function getPlayerIdByFullName(
   supabase: SupabaseClient,
   standardizedFullName: string,
   csvRow: Record<string, any> // Pass the current CSV row data
-  // We'll assume the standardized column name for position in csvRow is "Position"
+  // The standardized column name for position in csvRow is assumed to be "Position"
 ): Promise<number | null> {
   if (!standardizedFullName || standardizedFullName.trim() === "") {
     console.warn(
@@ -27,7 +27,7 @@ async function getPlayerIdByFullName(
   }
 
   // Query for players by fullName, also selecting their position from the database
-  // Ensure your 'players' table has a 'position' column.
+  // Ensure the 'players' table has a 'position' column.
   let { data: existingPlayers, error: selectError } = await supabase
     .from("players")
     .select("id, position") // Select id and position
@@ -52,7 +52,7 @@ async function getPlayerIdByFullName(
     return existingPlayers[0].id as number;
   }
 
-  // Multiple players found with the same name, try to disambiguate by position
+  // Multiple players found with the same name, attempt to disambiguate by position
   console.warn(
     `Ambiguous player name: '${standardizedFullName}'. Found ${existingPlayers.length} players. Attempting to disambiguate by position.`
   );
