@@ -25,7 +25,7 @@ export default adminOnly(async function handler(req, res) {
         weightInKilograms: player.weight,
         team_id: player.teamId,
         sweater_number: player.sweaterNumber,
-        image_url: player.image,
+        image_url: player.image
       }))
     );
     if (players_error) throw players_error;
@@ -33,26 +33,26 @@ export default adminOnly(async function handler(req, res) {
     console.log(`Updating the 'rosters' table.`);
     // remove the players who play for multiple teams in a given season. aka. exists in multiple rosters.
     await supabase.rpc("delete_duplicate_players_in_rosters", {
-      _seasonid: season.seasonId,
+      _seasonid: season.seasonId
     });
     const { error: rosters_error } = await supabase.from("rosters").upsert(
       players.map((player) => ({
         playerId: player.id,
         seasonId: season.seasonId,
         teamId: player.teamId,
-        sweaterNumber: player.sweaterNumber ?? 0,
+        sweaterNumber: player.sweaterNumber ?? 0
       }))
     );
     if (rosters_error) throw rosters_error;
 
     res.json({
       message: "Successfully updated the players & rosters tables.",
-      success: true,
+      success: true
     });
   } catch (e: any) {
     res.status(400).json({
       message: "Failed to update " + e.message,
-      success: false,
+      success: false
     });
 
     console.table(e);
@@ -93,7 +93,7 @@ async function getAllPlayers(seasonId?: number) {
         teamId: team.id,
         teamName: team.name,
         teamAbbreviation: team.abbreviation,
-        teamLogo: team.logo,
+        teamLogo: team.logo
       }));
       return array;
     } catch (e: any) {
@@ -122,7 +122,7 @@ async function getAllPlayers(seasonId?: number) {
     age: differenceInYears(new Date(), new Date(item.birthDate)),
     height: item.heightInCentimeters,
     weight: item.weightInKilograms,
-    image: item.headshot,
+    image: item.headshot
   }));
 
   // remove duplicate players

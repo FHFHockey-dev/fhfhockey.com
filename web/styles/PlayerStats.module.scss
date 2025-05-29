@@ -1,0 +1,106 @@
+@use "sass:color";
+@use "styles/vars" as v;
+@use "sass:math";
+
+.playerStatsPageContainer {
+  width: 95%;
+  margin: 2rem auto;
+}
+
+.playerStatsTableContainer {
+  width: 100%;
+  margin: 2rem 0;
+}
+
+.playerStatsSearchBar {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.playerStatsTable {
+  @include v.table-base;
+  width: 100%;
+  border-collapse: collapse;
+  background: #232323;
+  color: #fefefe;
+  font-size: 1rem;
+  border: 5px solid v.$border-color-secondary;
+  outline: 5px solid v.$border-color-primary;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  margin-top: 1.5rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.playerStatsTable th,
+.playerStatsTable td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #444;
+  text-align: center;
+  height: 35px;
+}
+
+.playerStatsTable th {
+  background: #181818;
+  color: #07aae2;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.playerStatsTable tr:nth-of-type(even) {
+  background: v.$background-dark;
+}
+
+.playerStatsTable tr:last-child td {
+  border-bottom: none;
+}
+
+.playerStatsTable tbody tr {
+  &:nth-child(even) td {
+    background-color: v.$background-dark; // Darker for even rows
+  }
+  &:nth-child(odd) td {
+    background-color: color.adjust(
+      v.$background-dark,
+      $lightness: 2%
+    ); // Slightly lighter for odd rows
+  }
+
+  &:hover td {
+    background-color: color.change(
+      color.adjust(v.$focus-color, $lightness: -20%),
+      $alpha: 0.4
+    );
+    color: v.$focus-color;
+    font-weight: 600;
+    border-bottom: 2px solid v.$focus-color;
+    border-top: 2px solid v.$focus-color !important;
+  }
+
+  &:last-child td {
+    border-bottom: none;
+  }
+}
+
+.spanColorBlue {
+  color: #07aae2;
+  font-weight: 700;
+}
+
+.playerName {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.1em;
+  color: v.$color-white !important;
+}
+
+.tableLabel {
+  color: v.$color-white !important;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 2.5rem 0 1rem 0;
+  letter-spacing: 0.2em;
+}

@@ -7,7 +7,7 @@ import { teamsInfo } from "lib/NHL/teamsInfo";
 import PoissonDistributionChart from "components/PoissonDistributionChart";
 import Image from "next/image";
 import { awayTeamColors, homeTeamColors } from "lib/NHL/teamColors";
-import styles from "styles/GamePage.module.scss";
+import styles from "./GamePage.scss";
 
 export default function Page() {
   const router = useRouter();
@@ -115,8 +115,8 @@ export default function Page() {
         ? "home"
         : "away"
       : homeStat > awayStat
-      ? "home"
-      : "away";
+        ? "home"
+        : "away";
 
     // Determine the team colors based on which team has the advantage
     let teamColors = advantageTeam === "home" ? homeTeamColors : awayTeamColors;
@@ -192,8 +192,8 @@ export default function Page() {
         ? "home"
         : "away"
       : homeStat > awayStat
-      ? "home"
-      : "away";
+        ? "home"
+        : "away";
 
     const advantage = getAdvantage(
       homeStat,
@@ -700,10 +700,12 @@ export default function Page() {
                       <div className="playerCompDetails" key={index}>
                         {/* Home player side */}
                         <div className="playerDetail homePlayer">
-                          <img
+                          <Image
                             src={leader.homeLeader.headshot}
                             alt="Home player headshot"
                             className="playerHeadshot"
+                            width={50} // Add appropriate width
+                            height={50} // Add appropriate height
                           />
 
                           <div className="playerStats">
@@ -740,10 +742,12 @@ export default function Page() {
                               {leader.awayLeader.positionCode} • #
                               {leader.awayLeader.sweaterNumber}
                             </span>
-                            <img
+                            <Image
                               src={leader.awayLeader.headshot}
                               alt="Away player headshot"
                               className="playerHeadshot"
+                              width={50} // Add appropriate width
+                              height={50} // Add appropriate height
                             />
                           </div>
                         </div>
@@ -774,20 +778,24 @@ export default function Page() {
                   {/* Add some margin for spacing */}
                   <div className="goalieCompHeader">
                     <div className="goalieCompHeaderLeft">
-                      <img
+                      <Image
                         className="teamLogoHomePC"
                         src={gameDetails.homeTeam.logo}
                         alt={`${gameDetails.homeTeam.commonName.default} logo`}
                         style={{ width: "75px" }}
+                        width={75}
+                        height={75}
                       />
                     </div>
                     <div className="goalieCompHeaderMiddle">Goalies</div>
                     <div className="goalieCompHeaderRight">
-                      <img
+                      <Image
                         className="teamLogoAwayPC"
                         src={gameDetails.awayTeam.logo}
                         alt={`${gameDetails.awayTeam.commonName.default} logo`}
                         style={{ width: "75px" }}
+                        width={75}
+                        height={75}
                       />
                     </div>
                   </div>
@@ -797,9 +805,11 @@ export default function Page() {
                         (goalie) => (
                           <div key={goalie.playerId} className="goalieStatRow">
                             <div className="goalieImage">
-                              <img
+                              <Image
                                 src={goalie.headshot}
                                 alt={`Headshot of ${goalie.name.default}`}
+                                width={60} // Add appropriate width
+                                height={60} // Add appropriate height
                               />
                             </div>
                             <div className="goalieName">
@@ -897,9 +907,11 @@ export default function Page() {
                             </div>
 
                             <div className="goalieImage">
-                              <img
+                              <Image
                                 src={goalie.headshot}
                                 alt={`Headshot of ${goalie.name.default}`}
+                                width={60} // Add appropriate width
+                                height={60} // Add appropriate height
                               />
                             </div>
                           </div>
@@ -950,10 +962,12 @@ export default function Page() {
             >
               <div className="gameOverCard">
                 <div className="gamePageCardLeft">
-                  <img
+                  <Image
                     className="teamLogoHome"
                     src={gameDetails.homeTeam.logo}
                     alt={`${gameDetails.homeTeam.commonName.default} logo`}
+                    width={75} // Add appropriate width
+                    height={75} // Add appropriate height
                   />
                   <span className="team-nameGPvs home-team">
                     {gameDetails.homeTeam.commonName.default} <br />
@@ -970,10 +984,12 @@ export default function Page() {
                       {gameDetails.awayTeam.score}
                     </span>
                   </span>
-                  <img
+                  <Image
                     className="teamLogoAway"
                     src={gameDetails.awayTeam.logo}
                     alt={`${gameDetails.awayTeam.commonName.default} logo`}
+                    width={75} // Add appropriate width
+                    height={75} // Add appropriate height
                   />
                 </div>
               </div>
@@ -1001,20 +1017,24 @@ export default function Page() {
                       <thead className="gameOverHeader">
                         <tr>
                           <th className="GOTLHcell">
-                            <img
+                            <Image
                               className="GOteamLogoHome"
                               src={gameDetails.homeTeam.logo}
                               alt={`${gameDetails.homeTeam.commonName.default} logo`}
                               style={{ width: "75px" }}
+                              width={75}
+                              height={75}
                             />
                           </th>
                           <th className="GOgameDetailsCell">Game Details</th>
                           <th className="GOTLAcell">
-                            <img
+                            <Image
                               className="GOteamLogoAway"
                               src={gameDetails.awayTeam.logo}
                               alt={`${gameDetails.awayTeam.commonName.default} logo`}
                               style={{ width: "75px" }}
+                              width={75}
+                              height={75}
                             />
                           </th>
                         </tr>
@@ -1121,10 +1141,12 @@ export default function Page() {
                   </div>
                   {gameLandingDetails.summary.threeStars.map((star, index) => (
                     <div className="starRow" key={index}>
-                      <img
+                      <Image
                         src={star.headshot}
-                        alt={`${star.name}'s headshot`}
+                        alt={`${star.name}\'s headshot`}
                         style={{ height: "75px" }}
+                        width={75}
+                        height={75}
                       />
                       <div className="starStats">
                         <span>{`${star.goals}G, ${star.assists}A, ${star.points}P`}</span>
@@ -1214,7 +1236,7 @@ const getAdvantage = (
       >
         <div className="gamePageAdvantageDecider__wrapper">
           <div className="statName">{statName}</div>
-          <div>{homeAbbreviation}</div>
+          <div className="">{homeAbbreviation}</div>
         </div>
       </td>
     );

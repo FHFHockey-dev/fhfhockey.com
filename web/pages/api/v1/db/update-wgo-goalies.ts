@@ -35,6 +35,7 @@ interface SeasonInfo {
 
 /**
  * Fetches season details from Supabase based on a specific date.
+ * Enhanced to handle offseason periods by using NHL API logic.
  * @param dateString - The date string in 'YYYY-MM-DD' format.
  * @returns A Promise resolving to the SeasonInfo object or null if not found/error.
  */
@@ -42,38 +43,103 @@ async function getSeasonFromDate(
   dateString: string
 ): Promise<SeasonInfo | null> {
   try {
-    const { data, error } = await supabase
+    // First, try the direct approach - look for a season that contains this date
+    const { data: directMatch, error: directError } = await supabase
       .from("seasons")
       .select("id, startDate, regularSeasonEndDate") // Select needed columns
       .lte("startDate", dateString) // Date is on or after season start
       .gte("regularSeasonEndDate", dateString) // Date is on or before regular season end
       .single(); // Expect only one season for a given regular season date
 
-    if (error) {
-      // Handle cases where a date might fall outside any defined season (e.g., offseason)
-      if (error.code === "PGRST116") {
-        // PGRST116 = 'The result contains 0 rows'
-        console.warn(
-          `No season found in 'seasons' table for date: ${dateString}`
-        );
-        return null;
-      }
-      // Log other errors
+    if (directMatch && !directError) {
+      // Found a direct match - date falls within a regular season
+      return {
+        ...directMatch,
+        id: Number(directMatch.id)
+      };
+    }
+
+    // If no direct match (likely offseason), use smart logic similar to fetchCurrentSeason
+    console.log(
+      `Date ${dateString} falls outside regular season periods. Using smart season detection...`
+    );
+
+    // Fetch all seasons to determine which one this date most likely belongs to
+    const { data: allSeasons, error: seasonsError } = await supabase
+      .from("seasons")
+      .select("id, startDate, regularSeasonEndDate")
+      .order("id", { ascending: false }); // Most recent first
+
+    if (seasonsError || !allSeasons || allSeasons.length === 0) {
       console.error(
-        `Error fetching season for date ${dateString}:`,
-        error.message
+        "Could not fetch seasons for smart detection:",
+        seasonsError?.message
       );
       return null;
     }
 
-    if (data) {
-      // Ensure the id is treated as a number if it comes back differently
-      return {
-        ...data,
-        id: Number(data.id)
-      };
+    const targetDate = new Date(dateString);
+
+    // Check each season to find the most appropriate one
+    for (let i = 0; i < allSeasons.length; i++) {
+      const currentSeason = allSeasons[i];
+      const nextSeason = allSeasons[i - 1]; // Next season (more recent)
+
+      const seasonStart = new Date(currentSeason.startDate);
+      const seasonEnd = new Date(currentSeason.regularSeasonEndDate);
+
+      // If date is before this season starts, continue to older seasons
+      if (targetDate < seasonStart) {
+        continue;
+      }
+
+      // If date is during regular season, return this season
+      if (targetDate >= seasonStart && targetDate <= seasonEnd) {
+        return {
+          ...currentSeason,
+          id: Number(currentSeason.id)
+        };
+      }
+
+      // If date is after this season ends, check if it's in the offseason
+      if (targetDate > seasonEnd) {
+        // If there's a next season, check if date is before next season starts
+        if (nextSeason) {
+          const nextSeasonStart = new Date(nextSeason.startDate);
+          if (targetDate < nextSeasonStart) {
+            // Date is in offseason between this season and next season
+            // Use the more recent season (next season) for context
+            console.log(
+              `Date ${dateString} is in offseason. Using upcoming season ${nextSeason.id} for context.`
+            );
+            return {
+              ...nextSeason,
+              id: Number(nextSeason.id)
+            };
+          }
+        } else {
+          // No next season defined, this might be the current/future season
+          // Check if we're in a reasonable offseason period (within ~6 months after season end)
+          const monthsAfterSeason =
+            (targetDate.getTime() - seasonEnd.getTime()) /
+            (1000 * 60 * 60 * 24 * 30.44);
+          if (monthsAfterSeason <= 6) {
+            console.log(
+              `Date ${dateString} is in recent offseason. Using completed season ${currentSeason.id} for context.`
+            );
+            return {
+              ...currentSeason,
+              id: Number(currentSeason.id)
+            };
+          }
+        }
+      }
     }
 
+    // If we get here, we couldn't determine an appropriate season
+    console.warn(
+      `Could not determine appropriate season for date: ${dateString}`
+    );
     return null;
   } catch (err: any) {
     console.error(
@@ -163,10 +229,11 @@ export async function fetchDataForPlayer(
     const encodedPlayerName = encodeURIComponent(`%${playerName}%`);
 
     // Update the URL to fetch aggregate data up to the specified date within the determined season
-    const goalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=false&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedSeasonStartDate}%22%20and%20gameTypeId=2%20and%20playerId=%22${playerId}%22`;
-    const advancedGoalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=false&sort=%5B%7B%22property%22:%22qualityStart%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsAgainstAverage%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedSeasonStartDate}%22%20and%20gameTypeId=2%20and%20playerId=%22${playerId}%22`;
+    // Include both regular season (gameTypeId=2) and playoff games (gameTypeId=3)
+    const goalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=false&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedSeasonStartDate}%22%20and%20(gameTypeId%3D2%20or%20gameTypeId%3D3)%20and%20playerId=%22${playerId}%22`;
+    const advancedGoalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=false&sort=%5B%7B%22property%22:%22qualityStart%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsAgainstAverage%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedSeasonStartDate}%22%20and%20(gameTypeId%3D2%20or%20gameTypeId%3D3)%20and%20playerId=%22${playerId}%22`;
     // Note: The daysRestUrl logic might need adjustment depending on its intended use (single date vs aggregate)
-    const daysRestUrl = `https://api.nhle.com/stats/rest/en/goalie/daysrest?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedEndDate}%22`; // This still looks like single date
+    const daysRestUrl = `https://api.nhle.com/stats/rest/en/goalie/daysrest?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&cayenneExp=gameDate%3C=%22${formattedEndDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedEndDate}%22%20and%20(gameTypeId%3D2%20or%20gameTypeId%3D3)`;
 
     try {
       const [
@@ -227,6 +294,7 @@ async function updateGoalieStats(date: string): Promise<{
   advancedGoalieStats: WGOAdvancedGoalieStat[];
   daysRestStats: WGODaysLeftStat[];
   processedDate: string;
+  actualUpsertCount: number; // Add this field to track actual upserts
 }> {
   const formattedDate = date; // Assume input is 'YYYY-MM-DD'
   let updateCount = 0;
@@ -242,7 +310,8 @@ async function updateGoalieStats(date: string): Promise<{
       goalieStats: [],
       advancedGoalieStats: [],
       daysRestStats: [],
-      processedDate: formattedDate
+      processedDate: formattedDate,
+      actualUpsertCount: 0
     };
   }
   const seasonId = season.id; // Use the ID from the 'seasons' table
@@ -320,7 +389,8 @@ async function updateGoalieStats(date: string): Promise<{
     goalieStats,
     advancedGoalieStats,
     daysRestStats,
-    processedDate: formattedDate
+    processedDate: formattedDate,
+    actualUpsertCount: updateCount // Return the actual upsert count
   };
 }
 
@@ -348,9 +418,10 @@ async function fetchAllDataForDate(
 
   // Loop to fetch all pages of data from the API
   while (moreDataAvailable) {
-    const goalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=0&cayenneExp=gameDate%3C%3D%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E%3D%22${formattedDate}%22%20and%20gameTypeId%3D2`; // isAggregate=false, gamesPlayed >= 0 for single day
-    const advancedGoalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22qualityStart%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsAgainstAverage%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=0&cayenneExp=gameDate%3C%3D%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E%3D%22${formattedDate}%22%20and%20gameTypeId%3D2`; // isAggregate=false, gamesPlayed >= 0
-    const daysRestUrl = `https://api.nhle.com/stats/rest/en/goalie/daysrest?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&cayenneExp=gameDate%3C%3D%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E%3D%22${formattedDate}%22`; // isAggregate=false
+    // Include both regular season (gameTypeId=2) and playoff games (gameTypeId=3)
+    const goalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=0&cayenneExp=gameDate%3C%3D%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E%3D%22${formattedDate}%22%20and%20(gameTypeId%3D2%20or%20gameTypeId%3D3)`; // Include both regular season and playoffs
+    const advancedGoalieStatsUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22qualityStart%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsAgainstAverage%22,%22direction%22:%22ASC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&factCayenneExp=gamesPlayed%3E=0&cayenneExp=gameDate%3C%3D%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E%3D%22${formattedDate}%22%20and%20(gameTypeId%3D2%20or%20gameTypeId%3D3)`; // Include both regular season and playoffs
+    const daysRestUrl = `https://api.nhle.com/stats/rest/en/goalie/daysrest?isAggregate=false&isGame=true&sort=%5B%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22savePct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=${limit}&cayenneExp=gameDate%3C%3D%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E%3D%22${formattedDate}%22%20and%20(gameTypeId%3D2%20or%20gameTypeId%3D3)`; // Include both regular season and playoffs
 
     try {
       const [
@@ -442,9 +513,8 @@ async function updateAllGoalieStatsForSeason(targetSeasonId: number) {
       // Use the already refactored updateGoalieStats which handles fetching and upserting for a single date
       const dailyResult = await updateGoalieStats(formattedDate);
       if (dailyResult.updated) {
-        // Count updates based on how many were actually performed in updateGoalieStats
-        // Note: updateGoalieStats doesn't return count, so we estimate based on goalieStats length. Refine if needed.
-        totalUpdates += dailyResult.goalieStats.length;
+        // Use the actual upsert count instead of estimating
+        totalUpdates += dailyResult.actualUpsertCount;
       } else if (
         !dailyResult.updated &&
         dailyResult.goalieStats.length === 0 &&
@@ -683,8 +753,8 @@ async function updateRecentGoalieStats(): Promise<{
       // Use the existing updateGoalieStats for single-day processing
       const dailyResult = await updateGoalieStats(formattedDate);
       if (dailyResult.updated) {
-        // Estimate updates based on stats length - refine if updateGoalieStats returns actual count
-        totalUpdates += dailyResult.goalieStats.length;
+        // Use the actual upsert count instead of estimating
+        totalUpdates += dailyResult.actualUpsertCount;
       } else if (!dailyResult.updated && dailyResult.goalieStats.length === 0) {
         // Don't count as error if no data for the day or outside season definition
         // console.log(`No data or season found for ${formattedDate}. Skipping.`);
@@ -740,12 +810,18 @@ export default async function handler(
     // --- Action: all (Incremental Update) ---
     if (actionParam === "all") {
       details.action = "incremental_update";
-      const result = await updateRecentGoalieStats();
-      rowsAffected = result.totalUpdates; // Aggregate
+      // Use the more efficient updateAllGoaliesStats function
+      const result = await updateAllGoaliesStats();
+      rowsAffected = result.totalUpdates;
       totalErrors = result.totalErrors;
-      status = result.success ? "success" : "error";
-      responseMessage = result.message;
-      details = { ...details, ...result }; // Merge result details
+      status = result.totalErrors === 0 ? "success" : "error";
+      responseMessage = `Incremental update finished. Updated ${result.totalUpdates} goalie stats with ${result.totalErrors} errors.`;
+      details = {
+        ...details,
+        totalUpdates: result.totalUpdates,
+        totalErrors: result.totalErrors,
+        success: result.totalErrors === 0
+      };
       responseData = result;
     }
 
@@ -797,7 +873,7 @@ export default async function handler(
         );
       }
       const result = await updateGoalieStats(dateParam);
-      rowsAffected = result.goalieStats.length; // Estimate for the day
+      rowsAffected = result.actualUpsertCount; // Use actual upsert count instead of fetched count
       // We consider the API call successful even if no stats found, unless underlying fetch fails
       status = "success"; // Assume success unless updateGoalieStats throws
       responseMessage = `Processed goalie stats update request for date ${dateParam}.`;
@@ -805,7 +881,8 @@ export default async function handler(
         ...details,
         processedDate: result.processedDate,
         updated: result.updated,
-        statsFetched: rowsAffected
+        statsFetched: result.goalieStats.length,
+        actualUpserts: result.actualUpsertCount
       };
       responseData = result;
     }

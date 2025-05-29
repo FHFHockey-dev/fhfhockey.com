@@ -715,7 +715,8 @@ async function fetchAndParseData(
 
 function constructUrlsForDate(
   date: string,
-  seasonId: string
+  seasonId: string,
+  isPlayoffs: boolean = false // Add parameter to distinguish regular season vs playoffs
 ): Record<string, string> {
   const fromSeason = seasonId;
   const thruSeason = seasonId;
@@ -726,7 +727,9 @@ function constructUrlsForDate(
   );
 
   // Define parameters - using 'S' for Skaters. NST also supports 'G' for Goalies, 'F'/'D' for positions.
-  const commonParams = `fromseason=${fromSeason}&thruseason=${thruSeason}&stype=2&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=${formattedDate}&td=${formattedDate}&lines=single&draftteam=ALL`;
+  // stype=2 for regular season, stype=3 for playoffs
+  const seasonType = isPlayoffs ? "3" : "2";
+  const commonParams = `fromseason=${fromSeason}&thruseason=${thruSeason}&stype=${seasonType}&pos=S&loc=B&toi=0&gpfilt=gpdate&fd=${formattedDate}&td=${formattedDate}&lines=single&draftteam=ALL`;
 
   // Define the matrix of options
   const strengths: Record<string, string> = {
@@ -779,13 +782,12 @@ async function processUrls(
   isFullRefresh: boolean,
   processedPlayerIds: Set<number>, // Collect player IDs processed in this run
   failedUrls: UrlQueueItem[] // Collect URLs that failed processing
-): Promise<void> {
-  // No return value needed, modifies sets/arrays directly
-
+): Promise<{ totalRowsProcessed: number }> {
   console.log(
     `Starting processing for ${urlsQueue.length} URLs. Full Refresh: ${isFullRefresh}`
   );
   let totalProcessed = 0;
+  let totalRowsProcessed = 0;
 
   for (let i = 0; i < urlsQueue.length; i++) {
     const item = urlsQueue[i];
@@ -868,16 +870,8 @@ async function processUrls(
       upsertSuccess = true;
     }
 
-    // ──────────────────── AUDIT ROW  ────────────────────────
-    await supabase.from("cron_job_audit").insert([
-      {
-        job_name: "update-nst-gamelog",
-        status: upsertSuccess ? "success" : "error",
-        rows_affected: upsertedCount,
-        details: { datasetType, date }
-      }
-    ]);
-    // ────────────────────────────────────────────────────────
+    // Add to total rows processed
+    totalRowsProcessed += upsertedCount;
 
     // --- Logging and Failure Tracking ---
     totalProcessed++;
@@ -906,6 +900,8 @@ async function processUrls(
   console.log(
     `\n--- Initial URL processing complete. ${failedUrls.length} failures recorded. ---`
   );
+
+  return { totalRowsProcessed };
 }
 
 // --- NHL API Cross-Referencing ---
@@ -969,31 +965,39 @@ async function crossReferenceWithNhlApi(
     let supaDates = new Set<string>();
     let supaCount = 0;
 
-    // 1. Fetch NHL Game Log
-    const nhlApiUrl = `${NHL_API_BASE_URL}/player/${playerId}/game-log/${seasonId}/2`; // 2 = Regular Season
-    try {
-      const response = await axios.get<NhlGameLogResponse>(nhlApiUrl, {
-        timeout: 15000
-      });
-      if (response.data && response.data.gameLog) {
-        nhlCount = response.data.gameLog.length;
-        response.data.gameLog.forEach((game) =>
-          nhlGameDates.add(game.gameDate)
-        ); // gameDate is YYYY-MM-DD
-        console.log(`  NHL API: Found ${nhlCount} games.`);
-      } else {
-        console.log(
-          `  NHL API: No game log data found for player ${playerId}.`
+    // 1. Fetch NHL Game Log - Check both regular season (2) and playoffs (3)
+    for (const seasonType of ["2", "3"]) {
+      // 2 = Regular Season, 3 = Playoffs
+      const nhlApiUrl = `${NHL_API_BASE_URL}/player/${playerId}/game-log/${seasonId}/${seasonType}`;
+      try {
+        const response = await axios.get<NhlGameLogResponse>(nhlApiUrl, {
+          timeout: 15000
+        });
+        if (response.data && response.data.gameLog) {
+          const gameCount = response.data.gameLog.length;
+          nhlCount += gameCount;
+          response.data.gameLog.forEach((game) =>
+            nhlGameDates.add(game.gameDate)
+          ); // gameDate is YYYY-MM-DD
+          console.log(
+            `  NHL API (${seasonType === "2" ? "Regular Season" : "Playoffs"}): Found ${gameCount} games.`
+          );
+        } else {
+          console.log(
+            `  NHL API (${seasonType === "2" ? "Regular Season" : "Playoffs"}): No game log data found for player ${playerId}.`
+          );
+        }
+      } catch (error: any) {
+        console.error(
+          `  Error fetching NHL ${seasonType === "2" ? "regular season" : "playoff"} data for player ${playerId}: ${error.message}`
         );
-        nhlCount = 0;
+        // Continue to next season type even if one fails
       }
-    } catch (error: any) {
-      console.error(
-        `  Error fetching NHL data for player ${playerId}: ${error.message}`
-      );
-      // Optionally decide if this constitutes a failure preventing comparison
-      continue; // Skip this player if NHL data fails
     }
+
+    console.log(
+      `  NHL API Total: Found ${nhlCount} games (regular season + playoffs).`
+    );
 
     // Add small delay between NHL API calls if hitting rate limits
     // await delay(200);
@@ -1083,6 +1087,49 @@ async function crossReferenceWithNhlApi(
   return { missingPlayerData, uniqueMissingDates };
 }
 
+// --- Utility Functions (printInfoBlock, printTotalProgress) ---
+
+function printInfoBlock(params: {
+  date: string;
+  url: string;
+  datasetType: string;
+  tableName: string;
+  dateUrlCount: { current: number; total: number };
+  totalUrlCount: { current: number; total: number };
+  rowsProcessed: number;
+  rowsPrepared: number;
+  rowsUpserted: number;
+}) {
+  const {
+    date,
+    datasetType,
+    tableName,
+    totalUrlCount,
+    rowsProcessed,
+    rowsPrepared,
+    rowsUpserted
+  } = params;
+
+  console.log(
+    `|--- INFO [${totalUrlCount.current}/${totalUrlCount.total}] ---`
+  );
+  console.log(`| Date: ${date}, Type: ${datasetType}`);
+  console.log(`| Table: ${tableName}`);
+  console.log(
+    `| Processed: ${rowsProcessed}, Prepared: ${rowsPrepared}, Upserted: ${rowsUpserted}`
+  );
+  console.log(`|--------------------------`);
+}
+
+function printTotalProgress(current: number, total: number) {
+  if (total === 0) return; // Avoid division by zero
+  const percentage = (current / total) * 100;
+  const filled = Math.floor((percentage / 100) * 20); // 20-char progress bar
+  const bar =
+    "Progress: [" + "#".repeat(filled) + ".".repeat(20 - filled) + "]";
+  console.log(`${bar} ${percentage.toFixed(1)}% (${current}/${total})`);
+}
+
 // --- Main Orchestration Function ---
 async function main(isFullRefresh: boolean) {
   console.log(
@@ -1091,7 +1138,21 @@ async function main(isFullRefresh: boolean) {
   const startTime = Date.now();
   troublesomePlayers.length = 0; // Clear troublesome list for this run
 
+  // Track total rows affected for audit
+  let totalRowsAffected = 0;
+
   try {
+    // ──────────────────── AUDIT START ────────────────────────
+    await supabase.from("cron_job_audit").insert([
+      {
+        job_name: "update-nst-gamelog",
+        status: "started",
+        rows_affected: 0,
+        details: { isFullRefresh, startTime: new Date().toISOString() }
+      }
+    ]);
+    // ────────────────────────────────────────────────────────
+
     const seasonInfo = await fetchCurrentSeason();
     if (
       !seasonInfo ||
@@ -1111,15 +1172,34 @@ async function main(isFullRefresh: boolean) {
       new Date(seasonInfo.startDate),
       timeZone
     );
-    const todayEST = toZonedTime(new Date(), timeZone); // Use current execution time
-    const officialSeasonEndDate = toZonedTime(
-      new Date(seasonInfo.endDate),
+    const regularSeasonEndDate = toZonedTime(
+      new Date(seasonInfo.regularSeasonEndDate),
       timeZone
     );
+    // Calculate actual playoff end date from the playoff timestamps
+    const playoffsEndDate = toZonedTime(
+      new Date(seasonInfo.playoffsEndDate),
+      timeZone
+    );
+    const todayEST = toZonedTime(new Date(), timeZone); // Use current execution time
+
+    // Use the actual playoff end date instead of the limited endDate from fetchCurrentSeason
+    const officialSeasonEndDate = playoffsEndDate;
+
     // Scrape up to 'today' or the official end date, whichever is earlier
     const scrapingEndDate = isAfter(todayEST, officialSeasonEndDate)
       ? officialSeasonEndDate
       : todayEST;
+
+    console.log(
+      `Regular season end date: ${tzFormat(regularSeasonEndDate, "yyyy-MM-dd", { timeZone })}`
+    );
+    console.log(
+      `Playoffs end date: ${tzFormat(playoffsEndDate, "yyyy-MM-dd", { timeZone })}`
+    );
+    console.log(
+      `Season end date (including playoffs): ${tzFormat(officialSeasonEndDate, "yyyy-MM-dd", { timeZone })}`
+    );
 
     let startDate: Date;
     if (isFullRefresh) {
@@ -1162,70 +1242,129 @@ async function main(isFullRefresh: boolean) {
       })}`
     );
 
-    const datesToScrape = getDatesBetween(startDate, scrapingEndDate);
+    // Split dates into regular season and playoff periods
+    const allDatesToScrape = getDatesBetween(startDate, scrapingEndDate);
+    const regularSeasonDates = allDatesToScrape.filter((dateStr) => {
+      const date = parse(dateStr, "yyyy-MM-dd", new Date());
+      return !isAfter(date, regularSeasonEndDate);
+    });
+    const playoffDates = allDatesToScrape.filter((dateStr) => {
+      const date = parse(dateStr, "yyyy-MM-dd", new Date());
+      return isAfter(date, regularSeasonEndDate);
+    });
 
-    if (datesToScrape.length === 0) {
+    if (allDatesToScrape.length === 0) {
       console.log("No new dates to scrape based on the determined range.");
       // ──────────────────── AUDIT ROW  ────────────────────────
       await supabase.from("cron_job_audit").insert([
         {
           job_name: "update-nst-gamelog",
-          status: "success", // it ran, just nothing new
+          status: "completed",
           rows_affected: 0,
-          details: { message: "no new dates to scrape" }
+          details: {
+            message: "no new dates to scrape",
+            duration: (Date.now() - startTime) / 1000
+          }
         }
       ]);
       // ────────────────────────────────────────────────────────
-      // If full refresh, maybe still proceed to cross-reference? No, because no players were processed.
       console.log(
         "--- Script execution finished early: No dates to process. ---"
       );
       return; // Exit if no dates
     }
 
+    console.log(`Planning to scrape ${allDatesToScrape.length} total dates:`);
     console.log(
-      `Planning to scrape ${datesToScrape.length} dates: [${
-        datesToScrape[0]
-      }...${datesToScrape[datesToScrape.length - 1]}]`
+      `Regular season: ${regularSeasonDates.length} dates [${regularSeasonDates[0] || "none"}...${regularSeasonDates[regularSeasonDates.length - 1] || "none"}]`
+    );
+    console.log(
+      `Playoffs: ${playoffDates.length} dates [${playoffDates[0] || "none"}...${playoffDates[playoffDates.length - 1] || "none"}]`
     );
 
-    // --- Generate Initial URL Queue ---
+    // --- Generate Initial URL Queue (Regular Season + Playoffs) ---
     const initialUrlsQueue: UrlQueueItem[] = [];
-    for (const date of datesToScrape) {
-      const urls = constructUrlsForDate(date, seasonId);
+
+    // Add regular season URLs
+    for (const date of regularSeasonDates) {
+      const urls = constructUrlsForDate(date, seasonId, false); // false = regular season
       for (const [datasetType, url] of Object.entries(urls)) {
         initialUrlsQueue.push({ datasetType, url, date, seasonId });
       }
     }
+
+    // Add playoff URLs
+    for (const date of playoffDates) {
+      const urls = constructUrlsForDate(date, seasonId, true); // true = playoffs
+      for (const [datasetType, url] of Object.entries(urls)) {
+        initialUrlsQueue.push({ datasetType, url, date, seasonId });
+      }
+    }
+
     console.log(
-      `Generated ${initialUrlsQueue.length} initial URLs to process.`
+      `Generated ${initialUrlsQueue.length} initial URLs to process (${regularSeasonDates.length * 16} regular season + ${playoffDates.length * 16} playoff URLs).`
     );
 
     // --- Process URLs (Initial Pass) ---
     const processedPlayerIds = new Set<number>();
     const failedUrls: UrlQueueItem[] = [];
-    await processUrls(
+    const initialProcessResult = await processUrls(
       initialUrlsQueue,
       isFullRefresh,
       processedPlayerIds,
       failedUrls
     );
 
+    // Add rows from initial processing to total
+    totalRowsAffected += initialProcessResult.totalRowsProcessed || 0;
+
+    // ──────────────────── AUDIT INITIAL PASS ────────────────────────
+    await supabase.from("cron_job_audit").insert([
+      {
+        job_name: "update-nst-gamelog",
+        status: failedUrls.length > 0 ? "partial_success" : "success",
+        rows_affected: initialProcessResult.totalRowsProcessed || 0,
+        details: {
+          phase: "initial_processing",
+          urlsProcessed: initialUrlsQueue.length,
+          failedUrls: failedUrls.length,
+          playersProcessed: processedPlayerIds.size
+        }
+      }
+    ]);
+    // ────────────────────────────────────────────────────────
+
     // --- Retry Failed URLs ---
     if (failedUrls.length > 0) {
       console.log(`\n--- Retrying ${failedUrls.length} failed URLs ---`);
       const failedUrlsRetryCopy = [...failedUrls]; // Work on a copy
       failedUrls.length = 0; // Clear original array to track retry failures
-      // Note: Retries DON'T collect player IDs or add to failedUrls again to avoid loops
-      // We could enhance this if needed, but simple retry is often sufficient.
       const retryProcessedIds = new Set<number>(); // Discard after retry
       const retryFailedUrls: UrlQueueItem[] = []; // Capture failures during retry
-      await processUrls(
+      const retryResult = await processUrls(
         failedUrlsRetryCopy,
         true,
         retryProcessedIds,
         retryFailedUrls
       ); // Force fetch on retry
+
+      totalRowsAffected += retryResult.totalRowsProcessed || 0;
+
+      // ──────────────────── AUDIT RETRY PASS ────────────────────────
+      await supabase.from("cron_job_audit").insert([
+        {
+          job_name: "update-nst-gamelog",
+          status: retryFailedUrls.length > 0 ? "partial_success" : "success",
+          rows_affected: retryResult.totalRowsProcessed || 0,
+          details: {
+            phase: "retry_processing",
+            urlsRetried: failedUrlsRetryCopy.length,
+            stillFailed: retryFailedUrls.length
+          }
+        }
+      ]);
+      // ────────────────────────────────────────────────────────
+
       if (retryFailedUrls.length > 0) {
         console.error(
           `!!! ${retryFailedUrls.length} URLs failed even after retry:`
@@ -1248,7 +1387,22 @@ async function main(isFullRefresh: boolean) {
         scrapingEndDate // Check up to the date we scraped
       );
       uniqueMissingDates = crossRefResult.uniqueMissingDates;
-      // missingPlayerData contains detailed info if needed for logging/reporting
+
+      // ──────────────────── AUDIT CROSS-REFERENCE ────────────────────────
+      await supabase.from("cron_job_audit").insert([
+        {
+          job_name: "update-nst-gamelog",
+          status: "success",
+          rows_affected: 0,
+          details: {
+            phase: "cross_reference",
+            playersChecked: processedPlayerIds.size,
+            missingDatesFound: uniqueMissingDates.size,
+            playersWithMissingData: crossRefResult.missingPlayerData.length
+          }
+        }
+      ]);
+      // ────────────────────────────────────────────────────────
 
       // --- Retry Missing Dates Found Via Cross-Reference ---
       if (uniqueMissingDates.size > 0) {
@@ -1264,7 +1418,16 @@ async function main(isFullRefresh: boolean) {
               parse(date, "yyyy-MM-dd", new Date()),
               "yyyy-MM-dd"
             );
-            const urls = constructUrlsForDate(validDate, seasonId);
+
+            // Determine if this date is in playoffs or regular season
+            const dateObj = parse(validDate, "yyyy-MM-dd", new Date());
+            const isPlayoffDate = isAfter(dateObj, regularSeasonEndDate);
+
+            const urls = constructUrlsForDate(
+              validDate,
+              seasonId,
+              isPlayoffDate
+            );
             for (const [datasetType, url] of Object.entries(urls)) {
               retryMissingDatesQueue.push({
                 datasetType,
@@ -1286,12 +1449,33 @@ async function main(isFullRefresh: boolean) {
           );
           const retryMissingDatesIds = new Set<number>(); // Discard
           const retryMissingDatesFailed: UrlQueueItem[] = []; // Track final failures
-          await processUrls(
+          const missingDatesResult = await processUrls(
             retryMissingDatesQueue,
             true,
             retryMissingDatesIds,
             retryMissingDatesFailed
           ); // Force fetch
+
+          totalRowsAffected += missingDatesResult.totalRowsProcessed || 0;
+
+          // ──────────────────── AUDIT MISSING DATES RETRY ────────────────────────
+          await supabase.from("cron_job_audit").insert([
+            {
+              job_name: "update-nst-gamelog",
+              status:
+                retryMissingDatesFailed.length > 0
+                  ? "partial_success"
+                  : "success",
+              rows_affected: missingDatesResult.totalRowsProcessed || 0,
+              details: {
+                phase: "missing_dates_retry",
+                urlsProcessed: retryMissingDatesQueue.length,
+                stillFailed: retryMissingDatesFailed.length
+              }
+            }
+          ]);
+          // ────────────────────────────────────────────────────────────
+
           if (retryMissingDatesFailed.length > 0) {
             console.error(
               `!!! ${retryMissingDatesFailed.length} URLs failed during cross-reference retry pass:`
@@ -1313,113 +1497,92 @@ async function main(isFullRefresh: boolean) {
     // --- Final Summary ---
     const endTime = Date.now();
     const duration = ((endTime - startTime) / 1000 / 60).toFixed(2); // Duration in minutes
+
+    // ──────────────────── AUDIT COMPLETION ────────────────────────
+    await supabase.from("cron_job_audit").insert([
+      {
+        job_name: "update-nst-gamelog",
+        status: "completed",
+        rows_affected: totalRowsAffected,
+        details: {
+          totalDuration: duration,
+          troublesomePlayersCount: troublesomePlayers.length,
+          isFullRefresh,
+          endTime: new Date().toISOString()
+        }
+      }
+    ]);
+    // ────────────────────────────────────────────────────────
+
     console.log(`\n--- Script execution finished in ${duration} minutes. ---`);
+    console.log(`Total rows affected: ${totalRowsAffected}`);
     if (troublesomePlayers.length > 0) {
-      console.warn(
-        "--- Troublesome Players (Manual Mapping Might Be Required) ---"
+      console.log(
+        `Troublesome players encountered (ID lookup issues): ${troublesomePlayers.join(
+          ", "
+        )}`
       );
-      // Log unique troublesome players
-      [...new Set(troublesomePlayers)].forEach((p) => console.warn(`  - ${p}`));
-    } else {
-      console.log("No troublesome players encountered needing ID mapping.");
     }
   } catch (error: any) {
-    console.error("\n--- FATAL ERROR in main execution ---");
-    console.error(error.message);
-    if (error.stack) {
-      console.error(error.stack);
-    }
-    // Rethrow or handle as needed for the API response
-    throw error; // Make sure handler catches this
+    console.error("Unexpected error in main orchestration:", error.message);
+    // Consider partial success if some URLs were processed before the error
+    await supabase.from("cron_job_audit").insert([
+      {
+        job_name: "update-nst-gamelog",
+        status: "error",
+        rows_affected: totalRowsAffected,
+        details: { error: error.message, stack: error.stack }
+      }
+    ]);
+  } finally {
+    // Optional: Final cleanup or logging
+    console.log(`--- Script execution block completed. ---`);
   }
 }
 
-// --- API Route Handler ---
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== "GET") {
-    console.log(`Method ${req.method} not allowed.`);
-    res.setHeader("Allow", ["GET"]);
-    return res.status(405).json({ message: "Method Not Allowed" });
+  // Allow both GET and POST methods
+  if (req.method !== "GET" && req.method !== "POST") {
+    return res
+      .status(405)
+      .json({ error: "Method not allowed. GET and POST are supported." });
   }
 
-  // Check for query parameter
-  const fullRefreshParam = req.query.fullRefresh;
-  const isFullRefresh = fullRefreshParam === "true"; // Strict check for 'true' string
+  let fullRefresh = false; // Default to incremental update
 
-  console.log(
-    `API Request received: ${req.url}. Full Refresh Parameter: ${fullRefreshParam} -> ${isFullRefresh}`
-  );
+  // Handle different request methods
+  if (req.method === "POST") {
+    // POST request: expect fullRefresh in body
+    const bodyFullRefresh = req.body?.fullRefresh;
+    if (bodyFullRefresh !== undefined && typeof bodyFullRefresh !== "boolean") {
+      return res.status(400).json({
+        error:
+          'Invalid request body. Expected format: { "fullRefresh": boolean }'
+      });
+    }
+    fullRefresh = bodyFullRefresh || false;
+  } else if (req.method === "GET") {
+    // GET request: check query parameter for fullRefresh
+    const queryFullRefresh = req.query.fullRefresh;
+    if (queryFullRefresh === "true" || queryFullRefresh === "1") {
+      fullRefresh = true;
+    }
+    // For GET requests, also provide helpful response about usage
+    console.log(`GET request received. fullRefresh=${fullRefresh}`);
+  }
 
   try {
-    // Intentionally DO NOT await main() here if it's a long process.
-    // Start the process but return response immediately.
-    main(isFullRefresh).catch((error) => {
-      // Log errors that occur *after* the response has been sent
-      console.error("Unhandled error during background main execution:", error);
-      // Potentially add more robust background error tracking (e.g., logging service)
-    });
-
-    // Return a response quickly to avoid timeout
-    res.status(202).json({
-      message: `Data processing ${
-        isFullRefresh ? "(Full Refresh) " : ""
-      }initiated in background. Check server logs for progress.`
+    await main(fullRefresh);
+    return res.status(200).json({
+      message: "Processing complete.",
+      fullRefresh,
+      method: req.method
     });
   } catch (error: any) {
-    // Catch errors during the *initiation* of main() or if main() throws synchronously
-    // (although the async nature means most errors are caught by the .catch above)
-    console.error("Error initiating API handler:", error.message);
-    res
-      .status(500)
-      .json({ message: "Internal Server Error during initiation." });
+    console.error("Error in API handler:", error.message);
+    return res.status(500).json({ error: "Internal server error." });
   }
-}
-
-// --- Utility Functions (printInfoBlock, printTotalProgress) ---
-// Make sure these are defined somewhere or add them here if needed
-
-function printInfoBlock(params: {
-  date: string;
-  url: string;
-  datasetType: string;
-  tableName: string;
-  dateUrlCount: { current: number; total: number }; // Less relevant now
-  totalUrlCount: { current: number; total: number };
-  rowsProcessed: number;
-  rowsPrepared: number;
-  rowsUpserted: number;
-}) {
-  const {
-    date,
-    url,
-    datasetType,
-    tableName,
-    totalUrlCount,
-    rowsProcessed,
-    rowsPrepared,
-    rowsUpserted
-  } = params;
-  // Simplified log block
-  console.log(
-    `|--- INFO [${totalUrlCount.current}/${totalUrlCount.total}] ---`
-  );
-  console.log(`| Date: ${date}, Type: ${datasetType}`);
-  // console.log(`| URL: ${url}`); // Can be verbose
-  console.log(`| Table: ${tableName}`);
-  console.log(
-    `| Processed: ${rowsProcessed}, Prepared: ${rowsPrepared}, Upserted: ${rowsUpserted}`
-  );
-  console.log(`|--------------------------`);
-}
-
-function printTotalProgress(current: number, total: number) {
-  if (total === 0) return; // Avoid division by zero
-  const percentage = (current / total) * 100;
-  const filled = Math.floor((percentage / 100) * 20); // 20-char bar
-  const bar =
-    "Progress: [" + "#".repeat(filled) + ".".repeat(20 - filled) + "]";
-  console.log(`${bar} ${percentage.toFixed(1)}% (${current}/${total})`);
 }

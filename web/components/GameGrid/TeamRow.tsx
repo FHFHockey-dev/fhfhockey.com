@@ -16,6 +16,7 @@ import Tooltip from "./PDHC/Tooltip";
 import PoissonHeatmap from "./PDHC/PoissonHeatMap";
 import styles from "./GameGrid.module.scss";
 import clsx from "clsx";
+import { useEffect, useState } from "react";
 
 export type MatchUpCellData = {
   home: boolean;
@@ -38,7 +39,7 @@ export type MatchUpCellData = {
   winOdds: number;
   /**
    * if the total # of games played that day was <=8
-   * to signify what I call an “Off-Night”
+   * to signify what I call an "Off-Night"
    */
   offNight: boolean;
 };
@@ -85,6 +86,18 @@ function getOffNightsIntensity(totalOffNights: number): string {
   return "high";
 }
 
+// Simple hook to detect mobile (<=480px)
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 480);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isMobile;
+}
+
 function TeamRow(props: TeamRowProps) {
   const team = useTeam(props.teamId);
   const days = props.extended ? EXTENDED_DAYS : DAYS;
@@ -107,10 +120,17 @@ function TeamRow(props: TeamRowProps) {
           <Image
             objectFit="contain"
             alt={`${team.name} logo`}
-            width={30}
-            height={30}
+            width={24}
+            height={24}
             src={team.logo}
             title={team.name}
+            style={{
+              minWidth: 24,
+              minHeight: 24,
+              width: 24,
+              height: 24,
+              display: "block"
+            }}
           />
         </span>
       </td>
@@ -124,16 +144,34 @@ function TeamRow(props: TeamRowProps) {
         const numGamesThatDay = props.games[index] || 0;
         // Determine cell classes for inner border styling
         let dayIntensityClass = "";
-        if (hasMatchUp) {
-          if (numGamesThatDay >= 9) {
-            dayIntensityClass = styles["heavy-day"]; // Red border for heavy day matchup
-          } else if (numGamesThatDay <= 8) {
-            dayIntensityClass = styles["off-night-day"]; // Green border for off-night matchup
-          }
+        // if (hasMatchUp) {
+        if (numGamesThatDay >= 9) {
+          dayIntensityClass = styles["heavy-day"]; // Red border for heavy day matchup
+        } else if (numGamesThatDay === 7) {
+          dayIntensityClass = styles["medium-heavy-day"]; // Red border for heavy day matchup
+        } else if (numGamesThatDay === 8) {
+          dayIntensityClass = styles["medium-heavy-day"]; // Red border for heavy day matchup
+        } else if (numGamesThatDay < 7) {
+          dayIntensityClass = styles["off-night-day"]; // Green border for off-night matchup
         }
 
-        // Always apply the base class for padding/positioning the pseudo-element
-        const cellClasses = clsx(styles.cellInnerBorder, dayIntensityClass);
+        let offNightTypeClass = "";
+        // if (hasMatchUp) {
+        //   offNightTypeClass =
+        //     matchUp.homeTeam.id === props.teamId
+        //       ? styles["off-night-home"]
+        //       : styles["off-night-away"];
+        // }
+
+        // if (numGamesThatDay <= 8) {
+        //   offNightTypeClass = styles["off-night-day"];
+        // }
+
+        const cellClasses = clsx(
+          styles.cellInnerBorder,
+          dayIntensityClass,
+          offNightTypeClass
+        );
 
         return (
           <td key={day} className={cellClasses}>
@@ -149,6 +187,7 @@ function TeamRow(props: TeamRowProps) {
                 home={matchUp.homeTeam.id === props.teamId}
                 homeTeam={matchUp.homeTeam}
                 awayTeam={matchUp.awayTeam}
+                excluded={excluded}
               />
             ) : (
               "-"
@@ -187,15 +226,23 @@ type MatchUpCellProps = {
   home: boolean;
   homeTeam: GameData["homeTeam"];
   awayTeam: GameData["awayTeam"];
+  excluded?: boolean;
 };
 
-function MatchUpCell({ home, homeTeam, awayTeam, gameId }: MatchUpCellProps) {
+function MatchUpCell({
+  home,
+  homeTeam,
+  awayTeam,
+  gameId,
+  excluded
+}: MatchUpCellProps) {
   const us = home ? homeTeam : awayTeam;
   const opponent = home ? awayTeam : homeTeam;
 
-  // Fetch combined team data from context
+  // Always call hooks at the top
   const usTeam = useTeam(us.id);
   const opponentTeam = useTeam(opponent.id);
+  const isMobile = useIsMobile();
 
   // Handle cases where team data might not be found
   if (!usTeam || !opponentTeam) {
@@ -236,52 +283,66 @@ function MatchUpCell({ home, homeTeam, awayTeam, gameId }: MatchUpCellProps) {
       <div
         style={{
           display: "flex",
-          padding: "4px",
-          justifyContent: "space-between"
+          justifyContent: "space-evenly",
+          width: "100%"
         }}
       >
-        {/* Apply conditional classes to the opponent's logo Image */}
-        <Image
-          // Use clsx to combine the base class and the conditional shadow class
-          className={clsx(
-            styles.mobileLogoSize, // Always apply the base class
-            home ? styles["home-shadow"] : styles["away-shadow"] // Apply green if home, red if away
-          )}
-          objectFit="contain"
-          alt={`${opponentTeam.name} logo`}
-          width={35} // Consider if this should also be in mobileLogoSize class
-          height={35} // Consider if this should also be in mobileLogoSize class
-          src={opponentTeam.logo}
-          title={opponentTeam.name}
-        />
-        <div
-          className={styles.hideOnMobile}
-          style={{
-            paddingLeft: "15px",
-            paddingRight: "10px",
-            margin: "auto",
-            fontSize: "0.75rem",
-            opacity: 0.7,
-            zIndex: 0
-          }}
-        >
-          {/* This icon indicates home/away, the shadow is now on the opponent logo */}
-          {home ? (
+        {isMobile ? (
+          <div className={styles.logoWithIconWrapper}>
+            <span className={styles.homeAwayIconBehind}>
+              <Image
+                src={home ? "/pictures/homeIcon.png" : "/pictures/awayIcon.png"}
+                alt={home ? "Home" : "Away"}
+                width={28}
+                height={28}
+                style={{ opacity: 0.75 }}
+              />
+            </span>
             <Image
-              src="/pictures/homeIcon.png"
-              alt="Home"
-              width={20}
-              height={20}
+              className={clsx(
+                styles.mobileLogoSize,
+                home ? styles["home-shadow"] : styles["away-shadow"]
+              )}
+              objectFit="contain"
+              alt={`${opponentTeam.name} logo`}
+              width={24}
+              height={24}
+              src={opponentTeam.logo}
+              title={opponentTeam.name}
+              style={{
+                position: "absolute",
+                zIndex: 1,
+                padding: "0px",
+                overflow: "visible",
+                opacity: excluded ? 0.5 : 1
+              }}
             />
-          ) : (
+          </div>
+        ) : (
+          <>
             <Image
-              src="/pictures/awayIcon.png"
-              alt="Away"
-              width={20}
-              height={20}
+              className={clsx(
+                home ? styles["home-shadow"] : styles["away-shadow"]
+              )}
+              objectFit="contain"
+              alt={`${opponentTeam.name} logo`}
+              width={28}
+              height={28}
+              src={opponentTeam.logo}
+              title={opponentTeam.name}
+              style={{ opacity: excluded ? 0.5 : 1 }}
             />
-          )}
-        </div>
+            <span className={styles.homeAwayIconDesktop}>
+              <Image
+                src={home ? "/pictures/homeIcon.png" : "/pictures/awayIcon.png"}
+                alt={home ? "Home" : "Away"}
+                width={18}
+                height={18}
+                style={{ opacity: 0.85 }}
+              />
+            </span>
+          </>
+        )}
       </div>
     </Tooltip>
   );

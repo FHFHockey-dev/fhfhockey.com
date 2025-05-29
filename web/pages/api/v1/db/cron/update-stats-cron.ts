@@ -1,6 +1,5 @@
 import adminOnly from "utils/adminOnlyMiddleware";
 import { updateStats } from "../update-stats/[gameId]";
-import { processGameIDs } from "lib/supabase/Upserts/fetchPbPData";
 
 export default adminOnly(async (req, res) => {
   const { supabase } = req;
@@ -19,7 +18,7 @@ export default adminOnly(async (req, res) => {
     if (ids.length === 0) {
       return res.json({
         success: true,
-        message: "All game statistics have been successfully updated.",
+        message: "All game statistics have been successfully updated."
       });
     }
     console.log(ids);
@@ -49,7 +48,7 @@ export default adminOnly(async (req, res) => {
       }
     }
     const failedGameIds = [
-      ...setDifference(new Set(ids), new Set(updatedGameIds)),
+      ...setDifference(new Set(ids), new Set(updatedGameIds))
     ];
     if (failedGameIds.length !== 0) {
       console.log(results);
@@ -59,7 +58,7 @@ export default adminOnly(async (req, res) => {
       message:
         `Successfully updated the stats for these games` +
         JSON.stringify(updatedGameIds) +
-        `\n Failed games: ${JSON.stringify(failedGameIds)}`,
+        `\n Failed games: ${JSON.stringify(failedGameIds)}`
     });
   } catch (e: any) {
     res.status(400).json({ message: e.message, success: false });

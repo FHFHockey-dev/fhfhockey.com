@@ -15,7 +15,7 @@ export default adminOnly(async (req, res) => {
   if (!gameId) {
     return res.status(400).json({
       message: "Invalid game id",
-      success: false,
+      success: false
     });
   }
 
@@ -24,12 +24,12 @@ export default adminOnly(async (req, res) => {
     res.json({
       message:
         "Successfully updated the power play combinations for game " + gameId,
-      success: true,
+      success: true
     });
   } catch (e: any) {
     res.status(400).json({
       message: "Failed to update the power play combinations. " + e.message,
-      success: false,
+      success: false
     });
   }
 });
@@ -74,7 +74,7 @@ async function updatePowerPlayCombinations(
           unit: unitId,
           PPTOI: toi,
           percentageOfPP,
-          playerId: player.id,
+          playerId: player.id
         });
       });
     });

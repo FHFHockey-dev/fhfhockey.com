@@ -58,12 +58,7 @@ function TotalGamesPerDayRow({
         const intensity = getIntensity(numGames);
         const isExcluded = !extended && excludedDaysIdx.includes(i);
         return (
-          <td
-            key={i}
-            // *** ADDED: data-intensity attribute ***
-            data-intensity={intensity}
-            // Removed old className logic, relying on data-attribute + SCSS
-          >
+          <td key={i} data-intensity={intensity}>
             {/* gray overlay for excluded days */}
             {isExcluded && <div className={styles.excludedOverlay} />}
             {numGames}

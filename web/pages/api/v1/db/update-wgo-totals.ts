@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase";
 import Fetch from "lib/cors-fetch";
 import { getCurrentSeason } from "lib/NHL/server";
+import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import pLimit from "p-limit";
 import {
   WGOSummarySkaterTotal,
@@ -24,7 +25,7 @@ import {
 
 // --------------------------
 // Helper: Concurrently fetch all pages for one endpoint.
-// The urlBuilder function receives a start value and returns the URL.
+// My urlBuilder function receives a start value and returns the URL.
 async function fetchAllDataForEndpoint<T>(
   urlBuilder: (start: number) => string,
   concurrency: number = 4
@@ -33,11 +34,11 @@ async function fetchAllDataForEndpoint<T>(
   let page = 0;
   let allData: T[] = [];
 
-  // We'll use a concurrency limiter for the "count" phase.
+  // I'll use a concurrency limiter for the "count" phase.
   const limiter = pLimit(concurrency);
   let done = false;
   while (!done) {
-    // Fire off a batch of requests concurrently.
+    // I'll fire off a batch of requests concurrently.
     const batchPromises = [];
     for (let i = 0; i < concurrency; i++) {
       batchPromises.push(
@@ -52,7 +53,7 @@ async function fetchAllDataForEndpoint<T>(
     const batchResults = await Promise.all(batchPromises);
     for (const result of batchResults) {
       allData.push(...result.data);
-      // If this page returned fewer than limit items, we have reached the end.
+      // If this page returned fewer than limit items, I have reached the end.
       if (result.data.length < limit) {
         done = true;
         break;
@@ -63,18 +64,16 @@ async function fetchAllDataForEndpoint<T>(
   return allData;
 }
 
-// ==============================
-// NEW: Helper function to get the earliest season ID from the NHL season endpoint.
+// I need a helper function to get the earliest season ID from the NHL season endpoint.
 async function getEarliestSeasonID(): Promise<string> {
   const response = await Fetch(
     "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22ASC%22%7D%5D"
   ).then((res) => res.json());
-  // Assumes that response.data is an array and that the first item’s "id" property holds the earliest season id.
+  // I assume that response.data is an array and that the first item's "id" property holds the earliest season id.
   return response.data[0].id.toString();
 }
 
-// --------------------------
-// Full fetchAllTotalsForSeason() function with concurrent endpoint fetching.
+// My full fetchAllTotalsForSeason() function with concurrent endpoint fetching.
 async function fetchAllTotalsForSeason(season: string): Promise<{
   skaterTotalStats: WGOSummarySkaterTotal[];
   skatersBio: WGOSkatersBio[];
@@ -95,56 +94,57 @@ async function fetchAllTotalsForSeason(season: string): Promise<{
 }> {
   console.log(`Fetching data for season ${season}...`);
 
-  // Define URL builders for each endpoint.
+  // I'll define URL builders for each endpoint.
+  const gameTypeExp = "(gameTypeId=2%20or%20gameTypeId=3)";
   const buildSkaterTotalStatsUrl = (start: number) =>
-    `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goals%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22assists%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+    `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goals%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22assists%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
   const buildSkatersBioUrl = (start: number) =>
-    `https://api.nhle.com/stats/rest/en/skater/bios?isAggregate=false&isGame=false&sort=%5B%7B%22property%22:%22lastName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22skaterFullName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+    `https://api.nhle.com/stats/rest/en/skater/bios?isAggregate=false&isGame=false&sort=%5B%7B%22property%22:%22lastName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22skaterFullName%22,%22direction%22:%22ASC_CI%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
   const buildMiscSkaterTotalsUrl = (start: number) =>
-    `https://api.nhle.com/stats/rest/en/skater/realtime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22hits%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+    `https://api.nhle.com/stats/rest/en/skater/realtime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22hits%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
   const buildFaceOffTotalsUrl = (start: number) =>
-    `https://api.nhle.com/stats/rest/en/skater/faceoffpercentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22totalFaceoffs%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+    `https://api.nhle.com/stats/rest/en/skater/faceoffpercentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22totalFaceoffs%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
   const buildFaceoffWinLossTotalsUrl = (start: number) =>
-    `https://api.nhle.com/stats/rest/en/skater/faceoffwins?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22totalFaceoffWins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+    `https://api.nhle.com/stats/rest/en/skater/faceoffwins?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22totalFaceoffWins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
   const buildGoalsForAgainstTotalsUrl = (start: number) =>
-    `https://api.nhle.com/stats/rest/en/skater/goalsForAgainst?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22evenStrengthGoalDifference%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+    `https://api.nhle.com/stats/rest/en/skater/goalsForAgainst?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22evenStrengthGoalDifference%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
   const buildPenaltiesTotalsUrl = (start: number) =>
-    `https://api.nhle.com/stats/rest/en/skater/penalties?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22penaltyMinutes%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+    `https://api.nhle.com/stats/rest/en/skater/penalties?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22penaltyMinutes%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
   const buildPenaltyKillTotalsUrl = (start: number) =>
-    `https://api.nhle.com/stats/rest/en/skater/penaltykill?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22shTimeOnIce%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+    `https://api.nhle.com/stats/rest/en/skater/penaltykill?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22shTimeOnIce%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
   const buildPowerPlayTotalsUrl = (start: number) =>
-    `https://api.nhle.com/stats/rest/en/skater/powerplay?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22ppTimeOnIce%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+    `https://api.nhle.com/stats/rest/en/skater/powerplay?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22ppTimeOnIce%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
   const buildPuckPossessionTotalsUrl = (start: number) =>
-    `https://api.nhle.com/stats/rest/en/skater/puckPossessions?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+    `https://api.nhle.com/stats/rest/en/skater/puckPossessions?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
   const buildSatCountsTotalsUrl = (start: number) =>
-    `https://api.nhle.com/stats/rest/en/skater/summaryshooting?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satTotal%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22usatTotal%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+    `https://api.nhle.com/stats/rest/en/skater/summaryshooting?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satTotal%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22usatTotal%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
   const buildSatPercentagesTotalsUrl = (start: number) =>
-    `https://api.nhle.com/stats/rest/en/skater/percentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satPercentage%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+    `https://api.nhle.com/stats/rest/en/skater/percentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satPercentage%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
   const buildScoringRatesTotalsUrl = (start: number) =>
-    `https://api.nhle.com/stats/rest/en/skater/scoringRates?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22pointsPer605v5%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsPer605v5%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+    `https://api.nhle.com/stats/rest/en/skater/scoringRates?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22pointsPer605v5%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsPer605v5%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
   const buildScoringPerGameTotalsUrl = (start: number) =>
-    `https://api.nhle.com/stats/rest/en/skater/scoringpergame?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22pointsPerGame%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsPerGame%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+    `https://api.nhle.com/stats/rest/en/skater/scoringpergame?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22pointsPerGame%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22goalsPerGame%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
   const buildShotTypeTotalsUrl = (start: number) =>
-    `https://api.nhle.com/stats/rest/en/skater/shottype?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22shootingPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22shootingPctBat%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+    `https://api.nhle.com/stats/rest/en/skater/shottype?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22shootingPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22shootingPctBat%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
   const buildTimeOnIceTotalsUrl = (start: number) =>
-    `https://api.nhle.com/stats/rest/en/skater/timeonice?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIce%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameTypeId=2%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
+    `https://api.nhle.com/stats/rest/en/skater/timeonice?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIce%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22playerId%22,%22direction%22:%22ASC%22%7D%5D&start=${start}&limit=100&factCayenneExp=gamesPlayed%3E=1&cayenneExp=${gameTypeExp}%20and%20seasonId%3C=${season}%20and%20seasonId%3E=${season}`;
 
-  // Fire off concurrent requests for each endpoint.
+  // I'll fire off concurrent requests for each endpoint.
   const [
     skaterTotalStats,
     skatersBio,
@@ -215,8 +215,7 @@ async function fetchAllTotalsForSeason(season: string): Promise<{
   };
 }
 
-// --------------------------
-// Batch upsert helper: split records into smaller chunks and upsert concurrently.
+// My batch upsert helper: I'll split records into smaller chunks and upsert concurrently.
 async function batchUpsert(
   dataArray: any[],
   batchSize: number = 500,
@@ -238,8 +237,7 @@ async function batchUpsert(
   );
 }
 
-// ==============================
-// Modified processSeasons() to decide the starting season based on table data.
+// My modified processSeasons() to decide the starting season based on table data.
 async function processSeasons(): Promise<{
   seasonsProcessed: string[];
   totalTimeInSeconds: number;
@@ -248,17 +246,17 @@ async function processSeasons(): Promise<{
   const currentSeason = await getCurrentSeason();
   const currentSeasonId = currentSeason.seasonId.toString();
 
-  // Get the most recent season in the database.
+  // I'll get the most recent season in the database.
   let dbSeason = await getMostRecentSeasonInDB();
   if (!dbSeason) {
-    // CASE 1: Table is empty – use earliest season from the endpoint.
+    // CASE 1: Table is empty – I'll use earliest season from the endpoint.
     dbSeason = await getEarliestSeasonID();
     console.log(`No data in DB. Starting from earliest season: ${dbSeason}`);
   } else {
     console.log(`Most recent season in DB: ${dbSeason}`);
   }
 
-  // Build an array of season IDs to process from dbSeason to currentSeasonId (inclusive).
+  // I'll build an array of season IDs to process from dbSeason to currentSeasonId (inclusive).
   const seasons: string[] = [];
   let seasonToProcess = dbSeason;
   while (parseInt(seasonToProcess) <= parseInt(currentSeasonId)) {
@@ -267,7 +265,7 @@ async function processSeasons(): Promise<{
   }
   console.log(`Seasons to update: ${seasons.join(", ")}`);
 
-  // Use pLimit to update multiple seasons concurrently (e.g., limit to 2 concurrent updates)
+  // I'll use pLimit to update multiple seasons concurrently (e.g., limit to 2 concurrent updates)
   const seasonLimit = pLimit(2);
   const updateTasks = seasons.map((season) =>
     seasonLimit(() => {
@@ -288,8 +286,7 @@ async function processSeasons(): Promise<{
   };
 }
 
-// ==============================
-// getMostRecentSeasonInDB() and getNextSeason() remain unchanged.
+// My getMostRecentSeasonInDB() and getNextSeason() remain unchanged.
 async function getMostRecentSeasonInDB(): Promise<string | null> {
   const { data, error } = await supabase
     .from("wgo_skater_stats_totals")
@@ -309,8 +306,7 @@ function getNextSeason(currentSeason: string): string {
   return `${startYear + 1}${endYear + 1}`;
 }
 
-// --------------------------
-// updateSkaterTotals: process fetched data, then perform a batch upsert.
+// My updateSkaterTotals: I'll process fetched data, then perform a batch upsert.
 async function updateSkaterTotals(
   season: string
 ): Promise<{ updated: boolean; playersUpdated: number; totalErrors: number }> {
@@ -320,7 +316,7 @@ async function updateSkaterTotals(
   let totalErrors = 0;
 
   try {
-    // Fetch all totals for the season using our concurrent method.
+    // I'll fetch all totals for the season using my concurrent method.
     const {
       skaterTotalStats,
       skatersBio,
@@ -344,7 +340,7 @@ async function updateSkaterTotals(
       `Data fetched for ${skaterTotalStats.length} players, beginning processing`
     );
 
-    // Create lookup maps
+    // I'll create lookup maps
     const skatersBioMap = new Map<number, WGOSkatersBio>();
     skatersBio.forEach((s) => skatersBioMap.set(s.playerId, s));
 
@@ -390,7 +386,7 @@ async function updateSkaterTotals(
     const toiMap = new Map<number, WGOToiSkaterTotal>();
     timeOnIceTotalStats.forEach((s) => toiMap.set(s.playerId, s));
 
-    // Prepare data array
+    // I'll prepare data array
     const dataArray: any[] = [];
     const now = new Date().toISOString();
 
@@ -632,14 +628,14 @@ async function updateSkaterTotals(
         shifts: toiStats?.shifts,
         shifts_per_game: toiStats?.shiftsPerGame,
         time_on_ice_per_shift: toiStats?.timeOnIcePerShift,
-        // Include the updated_at timestamp
+        // I'll include the updated_at timestamp
         updated_at: now
       };
 
       dataArray.push(skatersData);
     }
 
-    // Batch upsert
+    // I'll batch upsert
     try {
       await batchUpsert(dataArray, 500, 4);
       playersUpdated = dataArray.length;
@@ -664,8 +660,7 @@ async function updateSkaterTotals(
   };
 }
 
-// ==============================
-// API handler
+// My API handler
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -678,24 +673,32 @@ export default async function handler(
   let details: any = {};
 
   try {
-    // ─── decide “all” vs single season ─────────────────────
+    // I need to decide "all" vs single season
     const seasonParam = Array.isArray(req.query.season)
       ? req.query.season[0]
       : req.query.season;
 
-    if (seasonParam?.toLowerCase() === "all") {
-      console.log("Processing all seasons…");
-      const { seasonsProcessed, totalTimeInSeconds } = await processSeasons();
-      rowsAffected = seasonsProcessed.length;
-      details = { seasonsProcessed, totalTimeInSeconds };
+    // If no season param or season=current, I'll process current season
+    if (!seasonParam || seasonParam.toLowerCase() === "current") {
+      const currentSeason = await getCurrentSeason();
+      const seasonValue = currentSeason.seasonId.toString();
+      console.log(`Processing current season ${seasonValue}`);
+      const result = await updateSkaterTotals(seasonValue);
+      rowsAffected = result.playersUpdated;
+      totalErrors = result.totalErrors;
+      details = {
+        playersUpdated: result.playersUpdated,
+        totalErrors: result.totalErrors,
+        season: seasonValue
+      };
       return res.json({
-        message: `Updated ${rowsAffected} season(s).`,
-        success: true,
+        message: `Updated ${rowsAffected} players for current season ${seasonValue}.`,
+        success: result.updated,
         ...details
       });
     }
 
-    // ─── single season ───────────────────────────────────────
+    // I'll handle single season
     const seasonValue = seasonParam!;
     console.log(`Processing season ${seasonValue}`);
     const result = await updateSkaterTotals(seasonValue);
@@ -721,7 +724,7 @@ export default async function handler(
     const processingTimeMs = Date.now() - startTime;
     details = { ...details, processingTimeMs };
 
-    // write a single audit row no matter what
+    // I'll write a single audit row no matter what
     try {
       await supabase.from("cron_job_audit").insert([
         {

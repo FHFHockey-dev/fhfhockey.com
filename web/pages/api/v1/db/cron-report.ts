@@ -18,7 +18,7 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const emailRecipient = "timBranson515@gmail.com"; // Define recipient
+  const emailRecipient = process.env.CRON_REPORT_EMAIL_RECIPIENT!;
 
   let jobRunDetailsEmailResult: any = null;
   let auditEmailResult: any = null;
@@ -59,9 +59,9 @@ export default async function handler(
 
     try {
       const { data, error } = await resend.emails.send({
-        from: "audit-report@fhfhockey.com", // Can be a different 'from' address
+        from: "audit-report@fhfhockey.com",
         to: emailRecipient,
-        subject: "⚙️ Daily Cron Job Audit Data",
+        subject: "✅ Cron Job Audit",
         react: CronAuditEmail({ audits: formattedAudits, sinceDate: since })
       });
 
@@ -107,7 +107,7 @@ export default async function handler(
       const { data, error } = await resend.emails.send({
         from: "job-status@fhfhockey.com", // Can be a different 'from' address
         to: emailRecipient,
-        subject: "✅ Daily Job Run Details",
+        subject: "🥅 Daily Job Runs",
         react: CronReportEmail({ rows: jobRunDetailsRows }) // Using your existing component
       });
 

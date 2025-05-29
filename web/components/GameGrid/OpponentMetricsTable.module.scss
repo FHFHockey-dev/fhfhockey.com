@@ -50,6 +50,9 @@
   flex-shrink: 0; // Prevent shrinking
   border-bottom: 2px solid transparent; // *** Default border transparent ***
   transition: border-bottom-color v.$transition-duration v.$transition-easing; // Transition color
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 
   // *** Show border only when container is NOT minimized (Applies to Desk & Mob initially) ***
   .container:not(.minimized) & {
@@ -64,11 +67,12 @@
 }
 
 .titleText {
-  font-family: v.$font-family-primary;
-  font-size: clamp(1.5rem, 4vw, 1.8rem);
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: clamp(1.2rem, 4vw, 1.5rem);
   font-weight: 100; // Lighter weight
   color: v.$text-color-primary;
-  letter-spacing: 1.5px; // Match letter spacing
   flex-grow: 1;
   text-align: left;
   padding-right: 30px; // Make space for the icon like in PlayerPickupTable
@@ -99,8 +103,10 @@
 .tableWrapper {
   width: 100%;
   overflow: hidden;
-  transition: max-height 0.4s v.$transition-easing,
-    opacity 0.3s v.$transition-easing, visibility 0.3s v.$transition-easing;
+  transition:
+    max-height 0.4s v.$transition-easing,
+    opacity 0.3s v.$transition-easing,
+    visibility 0.3s v.$transition-easing;
   max-height: 5000px;
   opacity: 1;
   visibility: visible;

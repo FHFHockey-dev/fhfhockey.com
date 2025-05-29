@@ -552,9 +552,9 @@ function GameGridInternal({
                 <button
                   className={styles.dateButtonPrev}
                   onClick={handleClick("PREV")}
-                  aria-label="Previous Week"
+                  aria-label="PREV"
                 >
-                  Previous Week
+                  PREV
                 </button>
                 <button
                   className={styles.dateButtonMode}
@@ -577,9 +577,9 @@ function GameGridInternal({
                 <button
                   className={styles.dateButtonNext}
                   onClick={handleClick("NEXT")}
-                  aria-label="Next Week"
+                  aria-label="NEXT"
                 >
-                  Next Week
+                  NEXT
                 </button>
               </div>
               {(currentLoading || fourWeekLoading) && (
@@ -612,8 +612,8 @@ function GameGridInternal({
                     const highlightClass = top10TeamIds.has(teamId)
                       ? styles.teamRowGreen
                       : bottom10TeamIds.has(teamId)
-                      ? styles.teamRowRed
-                      : "";
+                        ? styles.teamRowRed
+                        : "";
                     const rank = scoreRankMap.get(teamId) ?? 16;
                     return (
                       <TeamRow
@@ -631,7 +631,6 @@ function GameGridInternal({
                 </tbody>
               </table>
             </div>{" "}
-            {/* End scheduleGridContainer */}
           </div>{" "}
           {/* End navAndGrid */}
           {/* Container for the REST of the mobile content, now OUTSIDE navAndGrid */}
@@ -683,153 +682,108 @@ function GameGridInternal({
 
   return (
     <>
-      <div className={styles.actions}>
-        <div className={styles.gameGridHeader}>
-          <div className={styles.gameGridHeaderContent}>
-            <h1 className={styles.gameGridTitle}>
-              Game <span className={styles.spanColorBlue}>Grid</span>
-            </h1>
-            <div className={styles.prevNextButtons}>
-              <button
-                className={styles.dateButtonMode}
-                onClick={() => {
-                  setMode(
-                    mode === "7-Day-Forecast"
-                      ? "10-Day-Forecast"
-                      : "7-Day-Forecast"
-                  );
-                }}
-              >
-                {MODE_TO_LABEL[mode]}
-              </button>
+      <div className={styles.mainGridContainer}>
+        <div className={styles.gridWrapper}>
+          <div className={styles.scheduleGridContainer}>
+            {/* Header content moved here */}
+            <div className={styles.gameGridHeaderContent}>
+              <h1 className={styles.gameGridTitle}>
+                Game <span className={styles.spanColorBlue}>Grid</span>
+              </h1>
+              {(currentLoading || fourWeekLoading) && (
+                <Spinner className={styles.spinner} center />
+              )}
+              <div className={styles.prevNextButtons}>
+                <button
+                  className={styles.dateButtonMode}
+                  onClick={() => {
+                    setMode(
+                      mode === "7-Day-Forecast"
+                        ? "10-Day-Forecast"
+                        : "7-Day-Forecast"
+                    );
+                  }}
+                >
+                  {MODE_TO_LABEL[mode]}
+                </button>
 
-              <button
-                className={styles.orientationToggleButton}
-                onClick={handleOrientationToggle}
-              >
-                {orientation === "horizontal"
-                  ? "Vertical View"
-                  : "Horizontal View"}
-              </button>
+                <button
+                  className={styles.orientationToggleButton}
+                  onClick={handleOrientationToggle}
+                >
+                  {orientation === "horizontal"
+                    ? "Vertical View"
+                    : "Horizontal View"}
+                </button>
 
-              <button
-                className={styles.dateButtonPrev}
-                onClick={handleClick("PREV")}
-              >
-                Prev
-              </button>
+                <button
+                  className={styles.dateButtonPrev}
+                  onClick={handleClick("PREV")}
+                >
+                  Prev
+                </button>
 
-              <button
-                className={styles.dateButtonNext}
-                onClick={handleClick("NEXT")}
-              >
-                Next
-                {(currentLoading || fourWeekLoading) && (
-                  <Spinner className={styles.spinner} center />
-                )}
-              </button>
+                <button
+                  className={styles.dateButtonNext}
+                  onClick={handleClick("NEXT")}
+                >
+                  Next
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {orientation === "horizontal" ? (
-        // Horizontal layout: schedule grid on top; lower section with FourWeekGrid and PlayerPickupTable side by side
-        <div className={styles.mainGridContainer}>
-          <div className={styles.gridWrapper}>
-            <div className={styles.scheduleGridContainer}>
-              <table className={styles.scheduleGrid}>
-                <Header
-                  start={dates[0]}
-                  end={dates[1]}
-                  extended={mode === "10-Day-Forecast"}
-                  setSortKeys={setSortKeys}
+            <table className={styles.scheduleGrid}>
+              <Header
+                start={dates[0]}
+                end={dates[1]}
+                extended={mode === "10-Day-Forecast"}
+                setSortKeys={setSortKeys}
+                excludedDays={excludedDays}
+                setExcludedDays={setExcludedDays}
+                weekData={teamDataWithAverages}
+                gamesPerDay={currentNumGamesPerDay}
+              />
+              <tbody>
+                <TotalGamesPerDayRow
+                  games={currentNumGamesPerDay}
                   excludedDays={excludedDays}
-                  setExcludedDays={setExcludedDays}
+                  extended={mode === "10-Day-Forecast"}
                   weekData={teamDataWithAverages}
-                  gamesPerDay={currentNumGamesPerDay}
                 />
-                <tbody>
-                  <TotalGamesPerDayRow
-                    games={currentNumGamesPerDay}
-                    excludedDays={excludedDays}
-                    extended={mode === "10-Day-Forecast"}
-                    weekData={teamDataWithAverages}
-                  />
-                  {sortedTeams.map(({ teamId, ...rest }) => {
-                    const highlightClass = top10TeamIds.has(teamId)
-                      ? styles.teamRowGreen // Keep these general highlight classes for now
-                      : bottom10TeamIds.has(teamId)
+                {sortedTeams.map(({ teamId, ...rest }) => {
+                  const highlightClass = top10TeamIds.has(teamId)
+                    ? styles.teamRowGreen // Keep these general highlight classes for now
+                    : bottom10TeamIds.has(teamId)
                       ? styles.teamRowRed
                       : "";
-                    const rank = scoreRankMap.get(teamId) ?? 16;
+                  const rank = scoreRankMap.get(teamId) ?? 16;
 
-                    return (
-                      <TeamRow
-                        key={teamId}
-                        teamId={teamId}
-                        extended={mode === "10-Day-Forecast"}
-                        excludedDays={excludedDays}
-                        rowHighlightClass={highlightClass}
-                        games={currentNumGamesPerDay}
-                        rank={rank}
-                        {...rest}
-                      />
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <div className={styles.opponentStatsContainer}>
-              <OpponentMetricsTable teamData={teamDataWithAverages} />
-            </div>
+                  return (
+                    <TeamRow
+                      key={teamId}
+                      teamId={teamId}
+                      extended={mode === "10-Day-Forecast"}
+                      excludedDays={excludedDays}
+                      rowHighlightClass={highlightClass}
+                      games={currentNumGamesPerDay}
+                      rank={rank}
+                      {...rest}
+                    />
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-          {/* New lower grid container for FourWeekGrid and PlayerPickupTable */}
-          <div className={styles.fourWeekAndBPAtableContainer}>
-            <div className={styles.lowerGridHorizontal}>
-              <div className={styles.fourWeekGridContainerAll}>
-                <FourWeekGrid teamDataArray={teamDataWithAverages} />
-              </div>
-              <div className={styles.bpaAndOppContainer}>
-                <div className={styles.playerPickupContainer}>
-                  <PlayerPickupTable
-                    teamWeekData={teamDataWithAverages.map((team) => {
-                      // Only take week1 data
-                      const week1 = team.weeks.find((w) => w.weekNumber === 1);
-                      return {
-                        teamAbbreviation: team.teamAbbreviation,
-                        gamesPlayed: week1
-                          ? week1.gamesPlayed
-                          : team.totals.gamesPlayed,
-                        offNights: week1
-                          ? week1.offNights
-                          : team.totals.offNights,
-                        avgOpponentPointPct: team.avgOpponentPointPct
-                      };
-                    })}
-                  />
-                </div>
-              </div>
-            </div>
+          <div className={styles.opponentStatsContainer}>
+            <OpponentMetricsTable teamData={teamDataWithAverages} />
           </div>
         </div>
-      ) : (
-        // Vertical layout: TransposedGrid on top; lower section with FourWeekGrid stacked above PlayerPickupTable
-        <div className={styles.verticalContainer}>
-          <TransposedGrid
-            sortedTeams={sortedTeams}
-            games={currentNumGamesPerDay}
-            excludedDays={excludedDays}
-            setExcludedDays={setExcludedDays}
-            extended={mode === "10-Day-Forecast"}
-            start={dates[0]}
-            mode={mode === "7-Day-Forecast" ? "7-Day" : "10-Day-Forecast"}
-          />
-          <div className={styles.fourWeekAndBPAtableContainer}>
-            <div className={styles.lowerGridVertical}>
-              <div className={styles.fourWeekGridContainerAll}>
-                <FourWeekGrid teamDataArray={teamDataWithAverages} />
-              </div>
+        {/* New lower grid container for FourWeekGrid and PlayerPickupTable */}
+        <div className={styles.fourWeekAndBPAtableContainer}>
+          <div className={styles.lowerGridHorizontal}>
+            <div className={styles.fourWeekGridContainerAll}>
+              <FourWeekGrid teamDataArray={teamDataWithAverages} />
+            </div>
+            <div className={styles.bpaAndOppContainer}>
               <div className={styles.playerPickupContainer}>
                 <PlayerPickupTable
                   teamWeekData={teamDataWithAverages.map((team) => {
@@ -851,7 +805,7 @@ function GameGridInternal({
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Loading and error states */}
       {(summaryLoading || fourWeekLoading) && (

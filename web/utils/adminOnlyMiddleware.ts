@@ -27,7 +27,7 @@ export default function adminOnly(handler: Handler): Handler {
       if (userError) {
         return res.status(401).json({
           message: userError.message,
-          success: false,
+          success: false
         });
       }
 
@@ -35,7 +35,7 @@ export default function adminOnly(handler: Handler): Handler {
       if (data?.role !== "admin") {
         return res.status(403).json({
           message: "You are not an Admin.",
-          success: false,
+          success: false
         });
       }
     }

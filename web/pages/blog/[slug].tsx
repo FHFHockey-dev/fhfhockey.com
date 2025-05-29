@@ -286,7 +286,7 @@ function User({ user }: { user: UserData }) {
             flexShrink: 0
           }}
         >
-          <img src={image} width={32} height={32} alt={name} />
+          <Image src={image} width={32} height={32} alt={name} />
         </div>
         <div>{name}</div>
       </div>

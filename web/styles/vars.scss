@@ -50,7 +50,7 @@ $border-color-secondary: #505050; // Definition 1
 $focus-color: rgb(255, 193, 8); // Definition 1
 $warning-color: #ffcc00; // Definition 1
 $success-color: #00ff99; // Definition 1
-$danger-color: #ff6384; // Definition 1
+$danger-color: #ff6384; // Definition 1 #
 
 // --- Base Colors Block ---
 $color-green: #00ff99;
@@ -139,14 +139,14 @@ $error-color: $color-red; // Definition 2 (Implicitly overrides Def 1)
 // =============================================
 $font-family-primary: "Roboto Condensed", sans-serif; // Definition 1
 $font-family-secondary: "Arial", sans-serif; // Definition 1
+$font-family-accent:
+  "Train One", sans-serif; // Add or ensure this is present for accent font
 $font-size-base: 16px; // Definition 1
 $font-size-small: 14px; // Definition 1
 $text-color-button: #ffffff; // Definition 1
 $font-size-small: 0.85rem; // Definition 2 (From Chart Specific block, overrides 14px)
 $font-family-condensed:
   "Roboto Condensed", sans-serif; // Definition 1 (From Chart Specific block)
-$font-family-accent:
-  "Train One", sans-serif; // Definition 1 (From Structured Section 4)
 $font-size-base: 1rem; // Definition 2 (From Structured Section 4, overrides 16px)
 $font-size-sm: 0.875rem; // Definition 1 (From Structured Section 4, new name)
 $font-size-xs: 0.75rem; // Definition 1 (From Structured Section 4)
@@ -273,20 +273,23 @@ $chart-tooltip-border: $border-secondary; // Definition 2 (Uses $border-secondar
 $chart-tooltip-text: $text-primary; // Definition 2 (Uses $text-primary)
 
 // =============================================
-// Functions (Only one unique definition found)
+// Functions
 // =============================================
-@function get-rank-color($rank, $max-rank: 32, $opacity: 0.45) {
+@function get-rank-color($rank, $max-rank: 32, $opacity: 0.25) {
   // Ensure rank is within bounds for calculation
   $clamped-rank: math.max(1, math.min($rank, $max-rank));
   // Prevent division by zero if max-rank is 1
   $denominator: math.max(1, ($max-rank - 1));
-  $percentage: ($clamped-rank - 1) / $denominator; // 0 for rank 1, 1 for rank max-rank
+  $percentage: math.div(
+    $clamped-rank - 1,
+    $denominator
+  ); // 0 for rank 1, 1 for rank max-rank
   $hue: (1 - $percentage) * 120; // 120 (green) down to 0 (red)
-  @return rgba(hsl($hue, 100%, 50%), $opacity);
+  @return rgba(hsl($hue, 100%, 40%), $opacity);
 }
 
 // =============================================
-// Mixins (All definitions preserved)
+// Mixins
 // =============================================
 
 // --- Initial Mixins ---
