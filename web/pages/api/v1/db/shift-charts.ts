@@ -158,7 +158,7 @@ const teamsInfo: Record<string, TeamInfo> = {
   ARI: { name: "Arizona Coyotes", franchiseId: 28, id: 53 },
   VGK: { name: "Vegas Golden Knights", franchiseId: 38, id: 54 },
   SEA: { name: "Seattle Kraken", franchiseId: 39, id: 55 },
-  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 },
+  UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 }
 };
 
 // Helper Functions
@@ -427,7 +427,7 @@ function generateTeamLogs(
       forwards: [],
       defensemen: [],
       lines: {},
-      pairs: {},
+      pairs: {}
     };
 
     players.forEach((player) => {
@@ -437,7 +437,7 @@ function generateTeamLogs(
         toi: player.game_toi,
         shared_toi: player.percent_toi_with,
         line_combination: player.line_combination,
-        pairing_combination: player.pairing_combination,
+        pairing_combination: player.pairing_combination
       };
 
       if (isForward(player.primary_position)) {
@@ -706,13 +706,13 @@ async function fetchGameLength(gameId: number): Promise<string> {
  * @param shiftChartData - Shift chart data.
  * @param gameInfo - Information about the game.
  * @param playerPositions - Array of player position objects.
- * @returns Array of unmatched player names.
+ * @returns Array of unmatched player names and upsert count.
  */
 async function upsertShiftChartData(
   shiftChartData: ShiftChartData,
   gameInfo: GameInfo,
   playerPositions: PlayerPosition[]
-): Promise<string[]> {
+): Promise<{ unmatchedNames: string[]; upsertCount: number }> {
   const unmatchedNamesSet = new Set<string>();
   const consolidatedData: Record<string, ConsolidatedPlayerData> = {};
 
@@ -788,7 +788,7 @@ async function upsertShiftChartData(
           )
         : null,
       line_combination: null,
-      pairing_combination: null,
+      pairing_combination: null
     };
 
     // Process each shift for the player
@@ -798,7 +798,7 @@ async function upsertShiftChartData(
       // Update game_toi
       consolidatedData[playerKey].game_toi = sumDurations([
         consolidatedData[playerKey].game_toi,
-        duration,
+        duration
       ]);
 
       // Add shift details
@@ -808,7 +808,7 @@ async function upsertShiftChartData(
         start_time: shift.startTime,
         end_time: shift.endTime,
         duration: duration,
-        playerId: shift.playerId,
+        playerId: shift.playerId
       });
 
       // Split shift into pp_shifts and es_shifts based on power plays
@@ -830,14 +830,14 @@ async function upsertShiftChartData(
         )
         .map((pp: any) => ({
           start: parseTime(pp.powerPlayStartTime),
-          end: parseTime(pp.powerPlayEndTime),
+          end: parseTime(pp.powerPlayEndTime)
         }));
 
       // Calculate overlapping intervals with shift
       const overlappingIntervals = overlappingPPs
         .map((pp: any) => ({
           start: Math.max(shiftStartSeconds, pp.start),
-          end: Math.min(shiftEndSeconds, pp.end),
+          end: Math.min(shiftEndSeconds, pp.end)
         }))
         .filter(
           (interval: { start: number; end: number }) =>
@@ -854,7 +854,7 @@ async function upsertShiftChartData(
           duration: formatDuration(interval.end - interval.start),
           start_time: formatTime(interval.start),
           end_time: formatTime(interval.end),
-          shift_number: shift.shiftNumber,
+          shift_number: shift.shiftNumber
         });
       });
 
@@ -882,7 +882,7 @@ async function upsertShiftChartData(
               duration: formatDuration(esDurationSeconds),
               start_time: formatTime(interval.start),
               end_time: formatTime(interval.end),
-              shift_number: shift.shiftNumber,
+              shift_number: shift.shiftNumber
             });
           }
         });
@@ -906,7 +906,7 @@ async function upsertShiftChartData(
       endTime: shift.end_time,
       duration: shift.duration,
       period: shift.period,
-      playerId: shift.playerId,
+      playerId: shift.playerId
     }));
 
     for (const otherPlayerKey in consolidatedData) {
@@ -925,7 +925,7 @@ async function upsertShiftChartData(
         startTime: shift.start_time,
         endTime: shift.end_time,
         duration: shift.duration,
-        period: shift.period,
+        period: shift.period
       }));
 
       let totalTimeSpent = 0;
@@ -979,7 +979,7 @@ async function upsertShiftChartData(
           playerData.shifts,
           playerData.player_id,
           otherPlayerData.player_id
-        ),
+        )
       };
     });
   });
@@ -1038,25 +1038,27 @@ async function upsertShiftChartData(
       time_spent_with_mixed: data.time_spent_with_mixed, // Include `time_spent_with_mixed`
       percent_toi_with_mixed: data.percent_toi_with_mixed, // Include `percent_toi_with_mixed`
       line_combination: data.line_combination, // Include `line_combination`
-      pairing_combination: data.pairing_combination, // Include `pairing_combination`
+      pairing_combination: data.pairing_combination // Include `pairing_combination`
     };
   });
 
+  let upsertCount = 0;
   if (batchData.length > 0) {
     const { data: upsertedData, error } = await supabase
       .from("shift_charts")
       .upsert(batchData, {
-        onConflict: "game_id,player_id",
+        onConflict: "game_id,player_id"
       });
 
     if (error) {
       console.error("Error upserting shift chart data:", error);
     } else {
       console.log("Successfully upserted shift chart records.");
+      upsertCount = batchData.length;
     }
   }
 
-  return Array.from(unmatchedNamesSet);
+  return { unmatchedNames: Array.from(unmatchedNamesSet), upsertCount };
 }
 
 /**
@@ -1069,7 +1071,11 @@ async function fetchAndStoreShiftCharts(): Promise<{
   success: boolean;
   message: string;
   unmatchedNames: string[];
+  totalRowsUpserted: number;
+  error?: any;
 }> {
+  let totalRowsUpserted = 0;
+  let error: any = null;
   try {
     // Step 1: Get the latest processed game_date from shift_charts
     const latestGameDate = await getLatestProcessedGameDate();
@@ -1124,7 +1130,7 @@ async function fetchAndStoreShiftCharts(): Promise<{
           homeTeam: game.homeTeam,
           awayTeam: game.awayTeam,
           game_id: game.id,
-          season_id: seasonId,
+          season_id: seasonId
         });
       }
     }
@@ -1145,17 +1151,16 @@ async function fetchAndStoreShiftCharts(): Promise<{
           continue;
         }
 
-        const unmatched = await upsertShiftChartData(
-          shiftChartData,
-          gameInfo,
-          playerPositions
-        );
+        const { unmatchedNames: unmatched, upsertCount } =
+          await upsertShiftChartData(shiftChartData, gameInfo, playerPositions);
         unmatchedNames.push(...unmatched);
+        totalRowsUpserted += upsertCount;
 
         // Optional: Delay between requests to avoid rate limiting
         await new Promise((resolve) => setTimeout(resolve, 100));
-      } catch (error) {
-        console.error(`Error processing game ID ${gameId}:`, error);
+      } catch (err) {
+        console.error(`Error processing game ID ${gameId}:`, err);
+        error = err;
       }
     }
 
@@ -1210,16 +1215,22 @@ async function fetchAndStoreShiftCharts(): Promise<{
     }
 
     return {
-      success: true,
-      message: "Successfully processed all shift charts.",
+      success: !error,
+      message: error
+        ? error.message || "An error occurred."
+        : "Successfully processed all shift charts.",
       unmatchedNames: Array.from(new Set(unmatchedNames)),
+      totalRowsUpserted,
+      error
     };
-  } catch (error: any) {
-    console.error("An error occurred in fetchAndStoreShiftCharts:", error);
+  } catch (err: any) {
+    console.error("An error occurred in fetchAndStoreShiftCharts:", err);
     return {
       success: false,
-      message: error.message || "An unexpected error occurred.",
+      message: err.message || "An unexpected error occurred.",
       unmatchedNames: [],
+      totalRowsUpserted,
+      error: err
     };
   }
 }
@@ -1227,35 +1238,58 @@ async function fetchAndStoreShiftCharts(): Promise<{
 // API Handler
 
 export default adminOnly(async (req: NextApiRequest, res: NextApiResponse) => {
+  const jobName = "update-shift-charts";
+  const startTime = Date.now();
+  let status: "success" | "error" = "success";
+  let rowsAffected = 0;
+  let details: any = {};
   try {
-    // You can add request method checks here if needed
     if (req.method !== "POST") {
       return res.status(405).json({
         message: "Method not allowed. Use POST.",
-        success: false,
+        success: false
       });
     }
-
     const result = await fetchAndStoreShiftCharts();
-
+    rowsAffected = result.totalRowsUpserted;
+    details = {
+      unmatchedNames: result.unmatchedNames,
+      durationMs: Date.now() - startTime
+    };
     if (result.success) {
       res.status(200).json({
         message: result.message,
         success: true,
-        unmatchedNames: result.unmatchedNames,
+        unmatchedNames: result.unmatchedNames
       });
     } else {
+      status = "error";
+      details.error = result.error?.message || result.message;
       res.status(500).json({
         message: result.message,
         success: false,
-        unmatchedNames: result.unmatchedNames,
+        unmatchedNames: result.unmatchedNames
       });
     }
   } catch (error: any) {
-    console.error("API Handler Error:", error);
+    status = "error";
+    details = { ...details, error: error.message };
     res.status(500).json({
       message: error.message || "An unexpected error occurred.",
-      success: false,
+      success: false
     });
+  } finally {
+    try {
+      await supabase.from("cron_job_audit").insert([
+        {
+          job_name: jobName,
+          status,
+          rows_affected: rowsAffected,
+          details
+        }
+      ]);
+    } catch (auditErr) {
+      console.error("Failed to write audit row:", auditErr);
+    }
   }
 });

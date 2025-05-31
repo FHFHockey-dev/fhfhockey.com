@@ -13,25 +13,13 @@ import LinemateMatrix, {
 } from "components/LinemateMatrix/index";
 import { queryTypes, useQueryState } from "next-usequerystate";
 import supabase from "lib/supabase";
-import { motion } from "framer-motion"; // *** 1. Import motion ***
+import { motion } from "framer-motion";
 
-// TODO
-
-// modularize the project
-
-// create components that log play by play data for power play start times, goals, penalties, etc.
-// Get play by play api info
-// loop through events to get penalties and duration
-// log a goal, or end of penalty by way of duration
-// highlight every player row during that time span to create a massive highlight
-// log goals
-
-// create components that log line combos for each team, ES/PP/PK
-// Still need timestamp numbers in the timestamp bar
-// 6) Create dynamic time animations. Use the game clock to animate the shift blocks to show who is on/off the ice
-// 7) Add a play-by-play timeline to the bottom of the chart
-// 8) Add a legend to the chart
-// 11) Create more todo list items
+// The following features are planned for future development:
+// - Refactor to TypeScript
+// - Add dynamic time animations using the game clock
+// - Add a play-by-play timeline to the bottom of the chart
+// - Add a legend to the chart
 
 // Initializes the timestamps state with keys for each period and an empty array for each
 const initialTimestamps = {
@@ -42,7 +30,7 @@ const initialTimestamps = {
 };
 
 /**
- * Get games that played the same date as input game or the date
+ * Retrieves games played on the same date as the input game or the specified date.
  */
 async function getGames({ gameId, date }) {
   let finalDate = date;
@@ -94,15 +82,19 @@ function ShiftChart() {
   const [playerData, setPlayerData] = useState({ home: [], away: [] });
   const [totalGameTime, setTotalGameTime] = useState(0);
   const [totalGameTimeInSeconds, setTotalGameTimeInSeconds] = useState(0);
-  const [totalGameWidth, setTotalGameWidth] = useState(1000); // State for the dynamic width of the game canvas
+  const [totalGameWidth, setTotalGameWidth] = useState(1000); // Dynamic width of the game canvas
   const [isOvertime, setIsOvertime] = useState(false);
   const [timestamps, setTimestamps] = useState(initialTimestamps);
   const [homeTeamAbbrev, setHomeTeamAbbrev] = useState("");
   const [awayTeamAbbrev, setAwayTeamAbbrev] = useState("");
   const [gameScores, setGameScores] = useState({ homeScore: 0, awayScore: 0 });
   const [selectedTime, setSelectedTime] = useState(null);
-  const [seasonStartDate, setSeasonStartDate] = useState(""); // New state for season start date
+  const [seasonStartDate, setSeasonStartDate] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const playIntervalRef = useRef(null);
+  const [playbackSpeed, setPlaybackSpeed] = useState(1); // 1x by default
+  const speedOptions = [0.5, 1, 2, 4];
 
   // Ref hook for direct DOM access to the game canvas for width calculations
   const gameCanvasRef = useRef(null);
@@ -757,14 +749,11 @@ function ShiftChart() {
       const shiftColor = team === "home" ? "#FDE74C" : "#5BC0EB";
 
       // Define the inline style for the shift block
-      const shiftStyle = {
-        backgroundColor: lightenHexColor(teamPrimaryColor, 10),
-        width: `${widthPercent}%`,
-        left: `${leftPercent}%`,
-        border: `1px solid #FFFFFF90`,
-        // border: `1px solid ${lightenHexColor(teamPrimaryColor, 35)}`,
-        position: "absolute",
-        borderRadius: "0px"
+      const shiftStyleVars = {
+        "--shift-bg": lightenHexColor(teamPrimaryColor, 10),
+        "--shift-width": `${widthPercent}%`,
+        "--shift-left": `${leftPercent}%`,
+        "--shift-border": `1px solid ${lightenHexColor(teamPrimaryColor, 35)}`
       };
 
       const tooltipText = `Start: ${shift.startTime}, \nDuration: ${shift.duration}`;
@@ -774,7 +763,7 @@ function ShiftChart() {
         <div
           key={`shift-${index}`}
           className={styles.shiftBlock}
-          style={shiftStyle}
+          style={shiftStyleVars}
           title={tooltipText}
         ></div>
       );
@@ -1008,620 +997,979 @@ function ShiftChart() {
     })();
   }, [gameId, games, selectedDate, enqueueSnackbar]);
 
+  // Update the playback interval logic:
+  useEffect(() => {
+    if (playing) {
+      const intervalMs = 100;
+      playIntervalRef.current = setInterval(() => {
+        setSelectedTime((prev) => {
+          const next = (prev == null ? 0 : prev) + playbackSpeed * 0.1;
+          if (next >= totalGameTimeInSeconds) {
+            setPlaying(false);
+            return totalGameTimeInSeconds;
+          }
+          // Round to 2 decimals for smoothness
+          return Math.round(next * 100) / 100;
+        });
+      }, intervalMs);
+    } else if (playIntervalRef.current) {
+      clearInterval(playIntervalRef.current);
+    }
+    return () => clearInterval(playIntervalRef.current);
+  }, [playing, totalGameTimeInSeconds, playbackSpeed]);
+
+  // Reset playback on game change
+  useEffect(() => {
+    setPlaying(false);
+    setSelectedTime(null);
+  }, [gameId]);
+
+  // Add a useEffect to always call sortPlayersByTimeAndPosition when selectedTime changes
+  useEffect(() => {
+    if (selectedTime != null) {
+      sortPlayersByTimeAndPosition(selectedTime);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTime]);
+
   //////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////
   //////////////////////////////////////////////////////////////////////////////////////
 
   // console.log("Rendering player data:", playerData);
 
-  return (
-    <div className={styles.shiftChartPageContainer}>
-      <div className={styles.controlsContainer}>
-        <div className={styles.shiftChartDropdown}>
-          <label htmlFor="date-selector">Select Date: </label>
-          <input
-            type="date"
-            id="date-selector"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-          />
-        </div>
-        <div className={styles.shiftChartDropdown}>
-          <label htmlFor="game-selector">Select Game: </label>
-          <select
-            id="game-selector"
-            value={gameId ?? ""}
-            onChange={handleGameChange}
-          >
-            <option value="">Select a game</option>
-            {games.map((game) => (
-              <option key={game.id} value={game.id}>
-                {`${game.homeTeam.abbreviation} vs ${game.awayTeam.abbreviation}`}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-      {/* Shift Chart Table Section */}
-      <div className={styles.shiftChartTableContainer}>
-        {" "}
-        {/* Wrapper for table section */}
-        <div className={styles.tableScrollWrapper}>
-          {" "}
-          {/* Wrapper for horizontal scrolling */}
-          <table className={styles.shiftChartTable}>
-            <thead>
-              <tr>
-                <th className={styles.gameInfoHeader} colSpan="2">
-                  {/* {homeTeamAbbrev && awayTeamAbbrev
-                    ? `${homeTeamAbbrev} vs ${awayTeamAbbrev}`
-                    : "Player / Pos"} */}
-                </th>
-                <th className={styles.timestampPeriod}>Period 1</th>
-                <th className={styles.timestampPeriod}>Period 2</th>
-                <th className={styles.timestampPeriod}>Period 3</th>
-                {isOvertime && <th className={styles.timestampOvertime}>OT</th>}
-              </tr>
-            </thead>
-            <tbody>
-              <tr className={styles.timeStampRow}>
-                <td className={styles.gameScoreCell} colSpan="2">
-                  {homeTeamAbbrev && awayTeamAbbrev
-                    ? `${homeTeamAbbrev} vs ${awayTeamAbbrev}`
-                    : "Player / Pos"}{" "}
-                  {`${gameScores.homeScore} - ${gameScores.awayScore}`}
-                </td>
-                <td
-                  className={styles.timestampsBar}
-                  colSpan={isOvertime ? "4" : "3"}
-                  onClick={onTimestampClick}
-                >
-                  {Object.keys(timestamps).map((periodKey) =>
-                    timestamps[periodKey].map((timestamp, index) => (
-                      <div
-                        key={index}
-                        className={styles.timestampLabel}
-                        style={{ left: `${timestamp.positionPercent}%` }}
-                      >
-                        {timestamp.label}
-                      </div>
-                    ))
-                  )}
-                  <div
-                    className={styles.yellowLine}
-                    style={{
-                      left: `${
-                        (selectedTime /
-                          (isOvertime
-                            ? OVERTIME_LENGTH_SECONDS
-                            : REGULAR_PERIOD_LENGTH_SECONDS * 3)) *
-                        100
-                      }%`
-                    }}
-                  ></div>
-                  <GoalIndicators
-                    id={gameId}
-                    totalGameTimeInSeconds={totalGameTimeInSeconds}
-                    isOvertime={isOvertime}
-                    totalPlayerRows={
-                      playerData.home.length + playerData.away.length
-                    }
-                  />
-                  <div
-                    style={{
-                      position: "absolute",
-                      left: 0,
-                      top: "100%",
-                      width: "100%",
-                      height: `${
-                        (playerData.home.length + playerData.away.length) * 100
-                      }%`,
-                      zIndex: 1
-                    }}
-                  >
-                    <PowerPlayAreaIndicators
-                      id={gameId}
-                      // 65 minutes = OT games total time
-                      // 60 minutes = REG games total time
-                      totalGameTimeInSeconds={isOvertime ? 65 * 60 : 60 * 60}
-                    />
-                  </div>
-                </td>
-              </tr>
+  // Helper to get starting players
+  const getStartingPlayers = (players) =>
+    players.filter(
+      (player) =>
+        player.shifts &&
+        player.shifts.period1 &&
+        player.shifts.period1.some((shift) => shift.startTime === "00:00")
+    );
 
-              {/* Team Header for Home Team */}
-              <tr
-                className={styles.teamHeaderRowHome}
+  // Helper to group active players by position
+  const groupActivePlayersByPosition = (players) => {
+    const fwd = [];
+    const d = [];
+    const g = [];
+    players.forEach((p) => {
+      if (p.position === "G") g.push(p);
+      else if (p.position === "D") d.push(p);
+      else fwd.push(p);
+    });
+    return { fwd, d, g };
+  };
+
+  return (
+    <div className={styles.shiftChartPageOuterGrid}>
+      {/* Left: Shift Chart Table & Controls (66%) */}
+      <div className={styles.shiftChartMainColumn}>
+        <div className={styles.controlsContainerModernCard}>
+          <div className={styles.controlsRow}>
+            <div className={styles.dropdownGroup}>
+              <div className={styles.shiftChartDropdown}>
+                <label htmlFor="date-selector">Select Date: </label>
+                <input
+                  type="date"
+                  id="date-selector"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                />
+              </div>
+              <div className={styles.shiftChartDropdown}>
+                <label htmlFor="game-selector">Select Game: </label>
+                <select
+                  id="game-selector"
+                  value={gameId ?? ""}
+                  onChange={handleGameChange}
+                >
+                  <option value="">Select a game</option>
+                  {games.map((game) => (
+                    <option key={game.id} value={game.id}>
+                      {`${game.homeTeam.abbreviation} vs ${game.awayTeam.abbreviation}`}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className={styles.playbackControls}>
+              <button
+                className={styles.skipButton}
+                aria-label="Skip back 30 seconds"
+                onClick={() =>
+                  setSelectedTime((t) => Math.max(0, (t ?? 0) - 30))
+                }
+              >
+                {/* Skip Back SVG */}
+                <svg
+                  width="28"
+                  height="28"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <polygon points="22,6 10,16 22,26" fill="#07aae2" />
+                  <rect
+                    x="6"
+                    y="6"
+                    width="3"
+                    height="20"
+                    rx="1.5"
+                    fill="#07aae2"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={() => setPlaying((p) => !p)}
+                className={styles.playPauseButton}
+                aria-label={playing ? "Pause" : "Play"}
                 style={{
-                  "--team-header-bg-color":
-                    teamsInfo[homeTeamAbbrev]?.primaryColor || "#000000",
-                  "--team-header-text-color":
-                    teamsInfo[homeTeamAbbrev]?.secondaryColor || "#FFFFFF",
-                  "--team-header-border-color":
-                    teamsInfo[homeTeamAbbrev]?.jersey || "#FFFFFF"
+                  margin: "0 8px",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0
                 }}
               >
-                <td
-                  className={styles.teamHeaderCellHome}
-                  colSpan={isOvertime ? "6" : "5"}
-                  style={{
-                    borderRight: "1px solid #FFFFFF",
-                    backgroundColor:
-                      lightenHexColor(
-                        teamsInfo[homeTeamAbbrev]?.primaryColor,
-                        15
-                      ) || "#000000"
-                  }}
-                >
-                  {homeTeamAbbrev}
-                </td>
-              </tr>
-
-              {playerData.home.map((player, index) => {
-                // Check if the player is a backup goalie with no shifts
-                const isBackupGoalie =
-                  player.position === "G" &&
-                  (!Array.isArray(player.shifts.period1) ||
-                    player.shifts.period1.length === 0) &&
-                  (!Array.isArray(player.shifts.period2) ||
-                    player.shifts.period2.length === 0) &&
-                  (!Array.isArray(player.shifts.period3) ||
-                    player.shifts.period3.length === 0) &&
-                  (!isOvertime ||
-                    !Array.isArray(player.shifts.overtime) ||
-                    player.shifts.overtime.length === 0);
-
-                // Flatten all period shifts into a single array
-                const allShifts = [].concat(
-                  player.shifts.period1,
-                  player.shifts.period2,
-                  player.shifts.period3,
-                  player.shifts.overtime
-                );
-
-                // console.log(allShifts);
-
-                // Determine if the player is currently active based on the selectedTime
-                const isActive = allShifts.some((shift) => {
-                  // Check if shift is undefined or null
-                  if (!shift || typeof shift.startTime === "undefined") {
-                    console.error(
-                      "Shift is undefined or does not have a startTime property:",
-                      shift,
-                      player
-                    );
-                    return false; // or handle this case as appropriate for your application
-                  }
-
-                  const shiftStart = convertTimeToSeconds(shift.startTime);
-                  const shiftEnd =
-                    shiftStart + convertTimeToSeconds(shift.duration);
-                  return selectedTime >= shiftStart && selectedTime < shiftEnd;
-                });
-
-                const teamColors = player.teamColors; // Access team colors from player object
-
-                const shiftBlockBackgroundColor =
-                  index % 2 === 0 ? "#404040" : "#202020";
-
-                const indexedColors = [
-                  "#202020",
-                  "#404040",
-                  "#808080",
-                  "#606060"
-                ];
-
-                // const playerNameBackgroundColor = player.team
-                //   ? player.team === homeTeamAbbrev
-                //     ? index % 2 === 0
-                //       ? indexedColors[0]
-                //       : indexedColors[1]
-                //     : index % 2 === 0
-                //     ? indexedColors[2]
-                //     : indexedColors[3]
-                //   : "#000000"; // Default color if secondaryColor is undefined
-
-                const playerNameBackgroundColor = teamColors.primaryColor
-                  ? index % 2 === 0
-                    ? lightenHexColor(teamColors.primaryColor, 20)
-                    : lightenHexColor(teamColors.primaryColor, 15)
-                  : "#000000"; // Default color if secondaryColor is undefined
-
-                const playerPositionBackgroundColor = teamColors.primaryColor
-                  ? index % 2 === 0
-                    ? lightenHexColor(teamColors.primaryColor, 15)
-                    : lightenHexColor(teamColors.primaryColor, 3)
-                  : "#000000"; // Default color if secondaryColor is undefined
-
-                // const textColor = player.team
-                //   ? player.team === homeTeamAbbrev
-                //     ? index % 2 === 0
-                //       ? lightenHexColor(indexedColors[0], 70)
-                //       : lightenHexColor(indexedColors[1], 70)
-                //     : index % 2 === 0
-                //     ? darkenHexColor(indexedColors[2], 70)
-                //     : darkenHexColor(indexedColors[3], 70)
-                //   : "#FFFFFF"; // Default color if secondaryColor is undefined
-
-                const textColor = teamColors.secondaryColor
-                  ? lightenHexColor(teamColors.secondaryColor, 50)
-                    ? index % 2 === 0
-                      ? lightenHexColor(teamColors.secondaryColor, 50)
-                      : lightenHexColor(teamColors.secondaryColor, 50)
-                    : index % 2 === 0
-                    ? darkenHexColor(teamColors.secondaryColor, 70)
-                    : darkenHexColor(teamColors.secondaryColor, 70)
-                  : "#FFFFFF"; // Default color if secondaryColor is undefined
-
-                return (
-                  <motion.tr
-                    layout // Animate layout changes (position)
-                    initial={{ opacity: 0 }} // Optional: fade in initially
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }} // Optional: fade out on removal
-                    transition={{ duration: 0.4, ease: "easeInOut" }} // Customize animation
-                    className={`${styles.playerRow} ${
-                      player.playerClass || ""
-                    }`}
-                    key={player.id} // IMPORTANT: Key must be stable
+                {playing ? (
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 32 32"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
                   >
-                    <td
-                      className={styles.playerNameCell}
+                    <rect
+                      x="7"
+                      y="6"
+                      width="6"
+                      height="20"
+                      rx="2"
+                      fill="#e67e22"
+                    />
+                    <rect
+                      x="19"
+                      y="6"
+                      width="6"
+                      height="20"
+                      rx="2"
+                      fill="#e67e22"
+                    />
+                  </svg>
+                ) : (
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 32 32"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <polygon points="8,6 26,16 8,26" fill="#07aae2" />
+                  </svg>
+                )}
+              </button>
+              <button
+                className={styles.skipButton}
+                aria-label="Skip forward 30 seconds"
+                onClick={() =>
+                  setSelectedTime((t) =>
+                    Math.min(totalGameTimeInSeconds, (t ?? 0) + 30)
+                  )
+                }
+              >
+                {/* Skip Forward SVG */}
+                <svg
+                  width="28"
+                  height="28"
+                  viewBox="0 0 32 32"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <polygon points="10,6 22,16 10,26" fill="#07aae2" />
+                  <rect
+                    x="23"
+                    y="6"
+                    width="3"
+                    height="20"
+                    rx="1.5"
+                    fill="#07aae2"
+                  />
+                </svg>
+              </button>
+              <label
+                className={styles.speedLabel}
+                htmlFor="playback-speed"
+                style={{
+                  marginLeft: 16,
+                  marginRight: 4,
+                  color: "#aaa",
+                  fontWeight: 600,
+                  fontSize: 14
+                }}
+              >
+                Speed:
+              </label>
+              <select
+                id="playback-speed"
+                className={styles.speedSelect}
+                value={playbackSpeed}
+                onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
+                style={{
+                  fontWeight: 600,
+                  fontSize: 14,
+                  borderRadius: 4,
+                  padding: "2px 8px",
+                  border: "1px solid #07aae2",
+                  background: "#181818",
+                  color: "#07aae2"
+                }}
+              >
+                {speedOptions.map((speed) => (
+                  <option key={speed} value={speed}>
+                    {speed}x
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className={styles.activePlayersListCard}>
+              <h4>Active Players On Ice</h4>
+              <div className={styles.activePlayersListGrid}>
+                {[
+                  {
+                    team: homeTeamAbbrev,
+                    players:
+                      selectedTime == null
+                        ? getStartingPlayers(playerData.home)
+                        : playerData.home.filter((player) => player.isActive)
+                  },
+                  {
+                    team: awayTeamAbbrev,
+                    players:
+                      selectedTime == null
+                        ? getStartingPlayers(playerData.away)
+                        : playerData.away.filter((player) => player.isActive)
+                  }
+                ]
+                  .filter(
+                    ({ team, players }) => team && players && players.length > 0
+                  )
+                  .map(({ team, players }) => {
+                    const { fwd, d, g } = groupActivePlayersByPosition(players);
+                    // FWD rows: if 4, split 2+2; if 3, one row; if 2, one row; if >4, chunk by 3
+                    let fwdRows = [];
+                    if (fwd.length === 4) {
+                      fwdRows = [fwd.slice(0, 2), fwd.slice(2, 4)];
+                    } else if (fwd.length > 4) {
+                      for (let i = 0; i < fwd.length; i += 3) {
+                        fwdRows.push(fwd.slice(i, i + 3));
+                      }
+                    } else if (fwd.length > 0) {
+                      fwdRows = [fwd];
+                    }
+                    // D row: all defensemen in one row
+                    // G row: all goalies in one row
+                    return (
+                      <div
+                        key={team}
+                        className={styles.activePlayersTeamSection}
+                      >
+                        <fieldset className={styles.activePlayersTeamFieldset}>
+                          <legend className={styles.activePlayersTeamLegend}>
+                            {team}
+                          </legend>
+                          <div className={styles.activePlayersFormation}>
+                            {fwdRows.map((row, i) => (
+                              <div
+                                key={`fwd-row-${i}`}
+                                className={
+                                  styles.formationRow + " " + styles.fwdRow
+                                }
+                              >
+                                {row.map((player) => (
+                                  <span
+                                    key={player.id}
+                                    className={styles.highlight}
+                                  >
+                                    {player.name}
+                                    {player.sweaterNumber
+                                      ? ` #${player.sweaterNumber}`
+                                      : ""}
+                                  </span>
+                                ))}
+                              </div>
+                            ))}
+                            {d.length > 0 && (
+                              <div
+                                className={
+                                  styles.formationRow + " " + styles.dRow
+                                }
+                              >
+                                {d.map((player) => (
+                                  <span
+                                    key={player.id}
+                                    className={styles.highlight}
+                                  >
+                                    {player.name}
+                                    {player.sweaterNumber
+                                      ? ` #${player.sweaterNumber}`
+                                      : ""}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                            {g.length > 0 && (
+                              <div
+                                className={
+                                  styles.formationRow + " " + styles.gRow
+                                }
+                              >
+                                {g.map((player) => (
+                                  <span
+                                    key={player.id}
+                                    className={styles.highlight}
+                                  >
+                                    {player.name}
+                                    {player.sweaterNumber
+                                      ? ` #${player.sweaterNumber}`
+                                      : ""}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </fieldset>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+        </div>
+        {/* Shift Chart Table Section */}
+        <div className={styles.shiftChartTableContainer}>
+          {" "}
+          {/* Wrapper for table section */}
+          <div className={styles.tableScrollWrapper}>
+            {" "}
+            {/* Wrapper for horizontal scrolling */}
+            <table className={styles.shiftChartTable}>
+              <colgroup>
+                <col className={styles.colPlayerName} />
+                <col className={styles.colPlayerPosition} />
+                <col className={styles.colPeriod1} />
+                <col className={styles.colPeriod2} />
+                <col className={styles.colPeriod3} />
+                {isOvertime && <col className={styles.colOvertime} />}
+              </colgroup>
+              <thead>
+                <tr>
+                  <th className={styles.gameInfoHeader} colSpan="2">
+                    {/* {homeTeamAbbrev && awayTeamAbbrev
+                      ? `${homeTeamAbbrev} vs ${awayTeamAbbrev}`
+                      : "Player / Pos"} */}
+                  </th>
+                  <th className={styles.timestampPeriod}>Period 1</th>
+                  <th className={styles.timestampPeriod}>Period 2</th>
+                  <th className={styles.timestampPeriod}>Period 3</th>
+                  {isOvertime && (
+                    <th className={styles.timestampOvertime}>OT</th>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                <tr className={styles.timeStampRow}>
+                  <td className={styles.gameScoreCell} colSpan="2">
+                    {homeTeamAbbrev && awayTeamAbbrev
+                      ? `${homeTeamAbbrev} vs ${awayTeamAbbrev}`
+                      : "Player / Pos"}{" "}
+                    {`${gameScores.homeScore} - ${gameScores.awayScore}`}
+                  </td>
+                  <td
+                    className={styles.timestampsBar}
+                    colSpan={isOvertime ? "4" : "3"}
+                    onClick={onTimestampClick}
+                  >
+                    {Object.keys(timestamps).map((periodKey) =>
+                      timestamps[periodKey].map((timestamp, index) => (
+                        <div
+                          key={index}
+                          className={styles.timestampLabel}
+                          style={{ "--left": `${timestamp.positionPercent}%` }}
+                        >
+                          {timestamp.label}
+                        </div>
+                      ))
+                    )}
+                    <div
+                      className={styles.yellowLine}
                       style={{
-                        color: lightenHexColor(textColor, 10),
-                        backgroundColor: playerNameBackgroundColor,
-                        fontWeight: player.isActive ? "900" : "200",
-                        fontStretch: player.isActive ? "expanded" : "normal",
-                        letterSpacing: player.isActive ? "0.1em" : "normal"
+                        "--left": `${
+                          (selectedTime /
+                            (isOvertime
+                              ? OVERTIME_LENGTH_SECONDS
+                              : REGULAR_PERIOD_LENGTH_SECONDS * 3)) *
+                          100
+                        }%`
+                      }}
+                    ></div>
+                    <GoalIndicators
+                      id={gameId}
+                      totalGameTimeInSeconds={totalGameTimeInSeconds}
+                      isOvertime={isOvertime}
+                      totalPlayerRows={
+                        playerData.home.length + playerData.away.length
+                      }
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        left: 0,
+                        top: "100%",
+                        width: "100%",
+                        height: `${
+                          (playerData.home.length + playerData.away.length) *
+                          100
+                        }%`,
+                        zIndex: 1
                       }}
                     >
-                      <span
-                        className={`${styles.playerNameText} ${
-                          !player.isActive ? styles.inactivePlayerText : ""
-                        }`}
-                      >
-                        {player.name}
-                      </span>
-                    </td>
-                    <td
-                      className={styles.playerPositionCell}
-                      style={{ backgroundColor: playerPositionBackgroundColor }}
-                    >
-                      {player.position}
-                    </td>
-                    {/* Render shifts only if the player is not a backup goalie with no shifts */}
-                    {!isBackupGoalie && (
-                      <>
-                        {/* Period 1 */}
-                        <td
-                          className={styles.shiftBlocksCell}
-                          style={{
-                            backgroundColor: darkenHexColor(
-                              shiftBlockBackgroundColor,
-                              20
-                            )
-                          }}
-                        >
-                          {renderShiftBlocks(
-                            player.shifts.period1,
-                            "period1",
-                            REGULAR_PERIOD_LENGTH_SECONDS,
-                            player.team === homeTeamAbbrev ? "home" : "away"
-                          )}
-                        </td>
-                        {/* Period 2 */}
-                        <td
-                          className={styles.shiftBlocksCell}
-                          style={{
-                            backgroundColor: darkenHexColor(
-                              shiftBlockBackgroundColor,
-                              50
-                            )
-                          }}
-                        >
-                          {renderShiftBlocks(
-                            player.shifts.period2,
-                            "period2",
-                            REGULAR_PERIOD_LENGTH_SECONDS,
-                            player.team === homeTeamAbbrev ? "home" : "away"
-                          )}
-                        </td>
-                        {/* Period 3 */}
-                        <td
-                          className={styles.shiftBlocksCell}
-                          style={{
-                            backgroundColor: darkenHexColor(
-                              shiftBlockBackgroundColor,
-                              20
-                            )
-                          }}
-                        >
-                          {renderShiftBlocks(
-                            player.shifts.period3,
-                            "period3",
-                            REGULAR_PERIOD_LENGTH_SECONDS,
-                            player.team === homeTeamAbbrev ? "home" : "away"
-                          )}
-                        </td>
-                        {isOvertime && (
-                          <td
-                            className={`${styles.shiftBlocksCell} ${styles.overtimeCell}`}
-                            style={{
-                              backgroundColor: shiftBlockBackgroundColor
-                            }}
-                          >
-                            {renderShiftBlocks(
-                              player.shifts.overtime,
-                              "overtime",
-                              OVERTIME_LENGTH_SECONDS,
-                              player.team === homeTeamAbbrev ? "home" : "away"
-                            )}
-                          </td>
-                        )}
-                      </>
-                    )}
-                    {/* Show empty cells for backup goalies with no shifts */}
-                    {isBackupGoalie && (
-                      <>
-                        <td className={styles.shiftBlocksCell}></td>
-                        <td className={styles.shiftBlocksCell}></td>
-                        <td className={styles.shiftBlocksCell}></td>
-                        {isOvertime && (
-                          <td
-                            className={`${styles.shiftBlocksCell} ${styles.overtimeCell}`}
-                          ></td>
-                        )}
-                      </>
-                    )}
-                  </motion.tr>
-                );
-              })}
+                      <PowerPlayAreaIndicators
+                        id={gameId}
+                        // 65 minutes = OT games total time
+                        // 60 minutes = REG games total time
+                        totalGameTimeInSeconds={isOvertime ? 65 * 60 : 60 * 60}
+                      />
+                    </div>
+                  </td>
+                </tr>
 
-              {/* Team Header for Away Team */}
-              <tr
-                className={styles.teamHeaderRowAway}
-                style={{
-                  "--team-header-bg-color":
-                    teamsInfo[awayTeamAbbrev]?.primaryColor || "#000000",
-                  "--team-header-text-color":
-                    teamsInfo[awayTeamAbbrev]?.secondaryColor || "#FFFFFF",
-                  "--team-header-border-color":
-                    teamsInfo[awayTeamAbbrev]?.jersey || "#FFFFFF"
-                }}
-              >
-                <td
-                  className={styles.teamHeaderCellAway}
-                  colSpan={isOvertime ? "6" : "5"}
+                {/* Team Header for Home Team */}
+                <tr
+                  className={styles.teamHeaderRowHome}
                   style={{
-                    borderRight: "1px solid #FFFFFF",
-                    backgroundColor:
-                      lightenHexColor(
-                        teamsInfo[awayTeamAbbrev]?.primaryColor,
-                        15
-                      ) || "#000000"
+                    "--team-header-bg":
+                      teamsInfo[homeTeamAbbrev]?.primaryColor || "#000000",
+                    "--team-header-text":
+                      teamsInfo[homeTeamAbbrev]?.secondaryColor || "#FFFFFF",
+                    "--team-header-border":
+                      teamsInfo[homeTeamAbbrev]?.jersey || "#FFFFFF"
                   }}
                 >
-                  <span className={styles.teamHeaderText}>
-                    {awayTeamAbbrev}
-                  </span>
-                </td>
-              </tr>
+                  <td
+                    className={styles.teamHeaderCellHome}
+                    colSpan={isOvertime ? "6" : "5"}
+                    style={{
+                      "--team-header-cell-bg":
+                        lightenHexColor(
+                          teamsInfo[homeTeamAbbrev]?.primaryColor,
+                          15
+                        ) || "#000000",
+                      "--team-header-cell-border": "1px solid #FFFFFF"
+                    }}
+                  >
+                    {homeTeamAbbrev}
+                  </td>
+                </tr>
 
-              {playerData.away.map((player, index) => {
-                // Check if the player is a backup goalie with no shifts
-                const isBackupGoalie =
-                  player.position === "G" &&
-                  (!Array.isArray(player.shifts.period1) ||
-                    player.shifts.period1.length === 0) &&
-                  (!Array.isArray(player.shifts.period2) ||
-                    player.shifts.period2.length === 0) &&
-                  (!Array.isArray(player.shifts.period3) ||
-                    player.shifts.period3.length === 0) &&
-                  (!isOvertime ||
-                    !Array.isArray(player.shifts.overtime) ||
-                    player.shifts.overtime.length === 0);
+                {playerData.home.map((player, index) => {
+                  // Check if the player is a backup goalie with no shifts
+                  const isBackupGoalie =
+                    player.position === "G" &&
+                    (!Array.isArray(player.shifts.period1) ||
+                      player.shifts.period1.length === 0) &&
+                    (!Array.isArray(player.shifts.period2) ||
+                      player.shifts.period2.length === 0) &&
+                    (!Array.isArray(player.shifts.period3) ||
+                      player.shifts.period3.length === 0) &&
+                    (!isOvertime ||
+                      !Array.isArray(player.shifts.overtime) ||
+                      player.shifts.overtime.length === 0);
 
-                // Flatten all period shifts into a single array
-                const allShifts = [].concat(
-                  player.shifts.period1,
-                  player.shifts.period2,
-                  player.shifts.period3,
-                  player.shifts.overtime
-                );
+                  // Flatten all period shifts into a single array
+                  const allShifts = [].concat(
+                    player.shifts.period1,
+                    player.shifts.period2,
+                    player.shifts.period3,
+                    player.shifts.overtime
+                  );
 
-                // Determine if the player is currently active based on the selectedTime
-                const isActive = allShifts.some((shift) => {
-                  // Check if shift is undefined or null
-                  if (!shift || typeof shift.startTime === "undefined") {
-                    console.error(
-                      "Shift is undefined or does not have a startTime property:",
-                      shift,
-                      player
+                  // console.log(allShifts);
+
+                  // Determine if the player is currently active based on the selectedTime
+                  const isActive = allShifts.some((shift) => {
+                    // Check if shift is undefined or null
+                    if (!shift || typeof shift.startTime === "undefined") {
+                      console.error(
+                        "Shift is undefined or does not have a startTime property:",
+                        shift,
+                        player
+                      );
+                      return false; // or handle this case as appropriate for your application
+                    }
+
+                    const shiftStart = convertTimeToSeconds(shift.startTime);
+                    const shiftEnd =
+                      shiftStart + convertTimeToSeconds(shift.duration);
+                    return (
+                      selectedTime >= shiftStart && selectedTime < shiftEnd
                     );
-                    return false; // or handle this case as appropriate for your application
-                  }
+                  });
 
-                  const shiftStart = convertTimeToSeconds(shift.startTime);
-                  const shiftEnd =
-                    shiftStart + convertTimeToSeconds(shift.duration);
-                  return selectedTime >= shiftStart && selectedTime < shiftEnd;
-                });
+                  const teamColors = player.teamColors; // Access team colors from player object
 
-                const teamColors = player.teamColors; // Access team colors from player object
+                  const shiftBlockBackgroundColor =
+                    index % 2 === 0 ? "#404040" : "#202020";
 
-                const shiftBlockBackgroundColor =
-                  index % 2 === 0 ? "#404040" : "#202020";
+                  const indexedColors = [
+                    "#202020",
+                    "#404040",
+                    "#808080",
+                    "#606060"
+                  ];
 
-                const indexedColors = [
-                  "#202020",
-                  "#404040",
-                  "#808080",
-                  "#606060"
-                ];
+                  // const playerNameBackgroundColor = player.team
+                  //   ? player.team === homeTeamAbbrev
+                  //     ? index % 2 === 0
+                  //       ? indexedColors[0]
+                  //       : indexedColors[1]
+                  //     : index % 2 === 0
+                  //     ? indexedColors[2]
+                  //     : indexedColors[3]
+                  //   : "#000000"; // Default color if secondaryColor is undefined
 
-                // const playerNameBackgroundColor = player.team
-                //   ? player.team === homeTeamAbbrev
-                //     ? index % 2 === 0
-                //       ? indexedColors[0]
-                //       : indexedColors[1]
-                //     : index % 2 === 0
-                //     ? indexedColors[2]
-                //     : indexedColors[3]
-                //   : "#000000"; // Default color if secondaryColor is undefined
-
-                const playerNameBackgroundColor = teamColors.primaryColor
-                  ? player.team === awayTeamAbbrev
+                  const playerNameBackgroundColor = teamColors.primaryColor
                     ? index % 2 === 0
                       ? lightenHexColor(teamColors.primaryColor, 20)
                       : lightenHexColor(teamColors.primaryColor, 15)
-                    : index % 2 === 0
-                    ? lightenHexColor(teamColors.primaryColor, 15)
-                    : lightenHexColor(teamColors.primaryColor, 30)
-                  : "#000000"; // Default color if secondaryColor is undefined
+                    : "#000000"; // Default color if secondaryColor is undefined
 
-                const playerPositionBackgroundColor = teamColors.primaryColor
-                  ? index % 2 === 0
-                    ? lightenHexColor(teamColors.primaryColor, 15)
-                    : lightenHexColor(teamColors.primaryColor, 3)
-                  : "#000000"; // Default color if secondaryColor is undefined
-
-                // const textColor = player.team
-                //   ? player.team === homeTeamAbbrev
-                //     ? index % 2 === 0
-                //       ? lightenHexColor(indexedColors[0], 70)
-                //       : lightenHexColor(indexedColors[1], 70)
-                //     : index % 2 === 0
-                //     ? darkenHexColor(indexedColors[2], 70)
-                //     : darkenHexColor(indexedColors[3], 70)
-                //   : "#FFFFFF"; // Default color if secondaryColor is undefined
-
-                const textColor = player.team
-                  ? player.team === awayTeamAbbrev
+                  const playerPositionBackgroundColor = teamColors.primaryColor
                     ? index % 2 === 0
-                      ? lightenHexColor(teamColors.secondaryColor, 10)
-                      : lightenHexColor(teamColors.secondaryColor, 10)
-                    : index % 2 === 0
-                    ? darkenHexColor(teamColors.secondaryColor, 10)
-                    : darkenHexColor(teamColors.secondaryColor, 10)
-                  : "#FFFFFF"; // Default color if secondaryColor is undefined
+                      ? lightenHexColor(teamColors.primaryColor, 15)
+                      : lightenHexColor(teamColors.primaryColor, 3)
+                    : "#000000"; // Default color if secondaryColor is undefined
 
-                return (
-                  <motion.tr
-                    layout // Animate layout changes (position)
-                    initial={{ opacity: 0 }} // Optional: fade in initially
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }} // Optional: fade out on removal
-                    transition={{ duration: 0.4, ease: "easeInOut" }} // Customize animation
-                    className={`${styles.playerRow} ${
-                      player.playerClass || ""
-                    }`}
-                    key={player.id} // IMPORTANT: Key must be stable
-                  >
-                    <td
-                      className={styles.playerNameCell}
+                  // const textColor = player.team
+                  //   ? player.team === homeTeamAbbrev
+                  //     ? index % 2 === 0
+                  //       ? lightenHexColor(indexedColors[0], 70)
+                  //       : lightenHexColor(indexedColors[1], 70)
+                  //     : index % 2 === 0
+                  //     ? darkenHexColor(indexedColors[2], 70)
+                  //     : darkenHexColor(indexedColors[3], 70)
+                  //   : "#FFFFFF"; // Default color if secondaryColor is undefined
+
+                  const textColor = teamColors.secondaryColor
+                    ? lightenHexColor(teamColors.secondaryColor, 50)
+                      ? index % 2 === 0
+                        ? lightenHexColor(teamColors.secondaryColor, 50)
+                        : lightenHexColor(teamColors.secondaryColor, 50)
+                      : index % 2 === 0
+                        ? darkenHexColor(teamColors.secondaryColor, 70)
+                        : darkenHexColor(teamColors.secondaryColor, 70)
+                    : "#FFFFFF"; // Default color if secondaryColor is undefined
+
+                  return (
+                    <motion.tr
+                      layout="position"
+                      initial={{ opacity: 0 }} // Optional: fade in initially
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }} // Optional: fade out on removal
+                      transition={{ duration: 0.4, ease: "easeInOut" }} // Customize animation
+                      className={`${styles.playerRow} ${
+                        player.playerClass || ""
+                      }`}
+                      key={player.id} // IMPORTANT: Key must be stable
                       style={{
-                        color: lightenHexColor(textColor, 30),
-                        backgroundColor: playerNameBackgroundColor,
-                        fontWeight: player.isActive ? "900" : "200",
-                        fontStretch: player.isActive ? "expanded" : "normal",
-                        letterSpacing: player.isActive ? "0.1em" : "normal"
+                        "--player-color": lightenHexColor(textColor, 10),
+                        "--player-bg": playerNameBackgroundColor,
+                        "--player-weight": player.isActive ? "900" : "200",
+                        "--player-stretch": player.isActive
+                          ? "expanded"
+                          : "normal",
+                        "--player-spacing": player.isActive ? "0.1em" : "normal"
                       }}
                     >
-                      <span
-                        className={`${styles.playerNameText} ${
-                          !player.isActive ? styles.inactivePlayerText : ""
-                        }`}
+                      <td
+                        className={styles.playerNameCell}
+                        // No inline style
                       >
-                        {player.name}
-                      </span>
-                    </td>
-                    <td
-                      className={styles.playerPositionCell}
-                      style={{ backgroundColor: playerPositionBackgroundColor }}
-                    >
-                      {player.position}
-                    </td>
-                    {/* Render shifts only if the player is not a backup goalie with no shifts */}
-                    {!isBackupGoalie && (
-                      <>
-                        <td
-                          className={styles.shiftBlocksCell}
-                          style={{ backgroundColor: shiftBlockBackgroundColor }}
+                        <span
+                          className={`${styles.playerNameText} ${!player.isActive ? styles.inactivePlayerText : ""}`}
                         >
-                          {renderShiftBlocks(
-                            player.shifts.period1,
-                            "period1",
-                            REGULAR_PERIOD_LENGTH_SECONDS,
-                            player.team === homeTeamAbbrev ? "home" : "away"
-                          )}
-                        </td>
-                        <td
-                          className={styles.shiftBlocksCell}
-                          style={{ backgroundColor: shiftBlockBackgroundColor }}
-                        >
-                          {renderShiftBlocks(
-                            player.shifts.period2,
-                            "period2",
-                            REGULAR_PERIOD_LENGTH_SECONDS,
-                            player.team === homeTeamAbbrev ? "home" : "away"
-                          )}
-                        </td>
-                        <td
-                          className={styles.shiftBlocksCell}
-                          style={{ backgroundColor: shiftBlockBackgroundColor }}
-                        >
-                          {renderShiftBlocks(
-                            player.shifts.period3,
-                            "period3",
-                            REGULAR_PERIOD_LENGTH_SECONDS,
-                            player.team === homeTeamAbbrev ? "home" : "away"
-                          )}
-                        </td>
-                        {isOvertime && (
+                          {player.name}
+                        </span>
+                      </td>
+                      <td
+                        className={styles.playerPositionCell}
+                        style={{
+                          "--player-position-bg": playerPositionBackgroundColor
+                        }}
+                      >
+                        {player.position}
+                      </td>
+                      {/* Render shifts only if the player is not a backup goalie with no shifts */}
+                      {!isBackupGoalie && (
+                        <>
+                          {/* Period 1 */}
                           <td
-                            className={`${styles.shiftBlocksCell} ${styles.overtimeCell}`}
+                            className={styles.shiftBlocksCell}
                             style={{
-                              backgroundColor: shiftBlockBackgroundColor
+                              "--shift-block-bg": darkenHexColor(
+                                shiftBlockBackgroundColor,
+                                20
+                              )
                             }}
                           >
                             {renderShiftBlocks(
-                              player.shifts.overtime,
-                              "overtime",
-                              OVERTIME_LENGTH_SECONDS,
+                              player.shifts.period1,
+                              "period1",
+                              REGULAR_PERIOD_LENGTH_SECONDS,
                               player.team === homeTeamAbbrev ? "home" : "away"
                             )}
                           </td>
-                        )}
-                      </>
-                    )}
-                    {/* Show empty cells for backup goalies with no shifts */}
-                    {isBackupGoalie && (
-                      <>
-                        <td className={styles.shiftBlocksCell}></td>
-                        <td className={styles.shiftBlocksCell}></td>
-                        <td className={styles.shiftBlocksCell}></td>
-                        {isOvertime && (
+                          {/* Period 2 */}
                           <td
-                            className={`${styles.shiftBlocksCell} ${styles.overtimeCell}`}
-                          ></td>
-                        )}
-                      </>
-                    )}
-                  </motion.tr>
-                );
-              })}
-            </tbody>
-          </table>
+                            className={styles.shiftBlocksCell}
+                            style={{
+                              "--shift-block-bg": darkenHexColor(
+                                shiftBlockBackgroundColor,
+                                50
+                              )
+                            }}
+                          >
+                            {renderShiftBlocks(
+                              player.shifts.period2,
+                              "period2",
+                              REGULAR_PERIOD_LENGTH_SECONDS,
+                              player.team === homeTeamAbbrev ? "home" : "away"
+                            )}
+                          </td>
+                          {/* Period 3 */}
+                          <td
+                            className={styles.shiftBlocksCell}
+                            style={{
+                              "--shift-block-bg": darkenHexColor(
+                                shiftBlockBackgroundColor,
+                                20
+                              )
+                            }}
+                          >
+                            {renderShiftBlocks(
+                              player.shifts.period3,
+                              "period3",
+                              REGULAR_PERIOD_LENGTH_SECONDS,
+                              player.team === homeTeamAbbrev ? "home" : "away"
+                            )}
+                          </td>
+                          {isOvertime && (
+                            <td
+                              className={`${styles.shiftBlocksCell} ${styles.overtimeCell}`}
+                              style={{
+                                "--shift-block-bg": shiftBlockBackgroundColor
+                              }}
+                            >
+                              {renderShiftBlocks(
+                                player.shifts.overtime,
+                                "overtime",
+                                OVERTIME_LENGTH_SECONDS,
+                                player.team === homeTeamAbbrev ? "home" : "away"
+                              )}
+                            </td>
+                          )}
+                        </>
+                      )}
+                      {/* Show empty cells for backup goalies with no shifts */}
+                      {isBackupGoalie && (
+                        <>
+                          <td className={styles.shiftBlocksCell}></td>
+                          <td className={styles.shiftBlocksCell}></td>
+                          <td className={styles.shiftBlocksCell}></td>
+                          {isOvertime && (
+                            <td
+                              className={`${styles.shiftBlocksCell} ${styles.overtimeCell}`}
+                            ></td>
+                          )}
+                        </>
+                      )}
+                    </motion.tr>
+                  );
+                })}
+
+                {/* Team Header for Away Team */}
+                <tr
+                  className={styles.teamHeaderRowAway}
+                  style={{
+                    "--team-header-bg":
+                      teamsInfo[awayTeamAbbrev]?.primaryColor || "#000000",
+                    "--team-header-text":
+                      teamsInfo[awayTeamAbbrev]?.secondaryColor || "#FFFFFF",
+                    "--team-header-border":
+                      teamsInfo[awayTeamAbbrev]?.jersey || "#FFFFFF"
+                  }}
+                >
+                  <td
+                    className={styles.teamHeaderCellAway}
+                    colSpan={isOvertime ? "6" : "5"}
+                    style={{
+                      "--team-header-cell-bg":
+                        lightenHexColor(
+                          teamsInfo[awayTeamAbbrev]?.primaryColor,
+                          15
+                        ) || "#000000",
+                      "--team-header-cell-border": "1px solid #FFFFFF"
+                    }}
+                  >
+                    <span className={styles.teamHeaderText}>
+                      {awayTeamAbbrev}
+                    </span>
+                  </td>
+                </tr>
+
+                {playerData.away.map((player, index) => {
+                  // Check if the player is a backup goalie with no shifts
+                  const isBackupGoalie =
+                    player.position === "G" &&
+                    (!Array.isArray(player.shifts.period1) ||
+                      player.shifts.period1.length === 0) &&
+                    (!Array.isArray(player.shifts.period2) ||
+                      player.shifts.period2.length === 0) &&
+                    (!Array.isArray(player.shifts.period3) ||
+                      player.shifts.period3.length === 0) &&
+                    (!isOvertime ||
+                      !Array.isArray(player.shifts.overtime) ||
+                      player.shifts.overtime.length === 0);
+
+                  // Flatten all period shifts into a single array
+                  const allShifts = [].concat(
+                    player.shifts.period1,
+                    player.shifts.period2,
+                    player.shifts.period3,
+                    player.shifts.overtime
+                  );
+
+                  // Determine if the player is currently active based on the selectedTime
+                  const isActive = allShifts.some((shift) => {
+                    // Check if shift is undefined or null
+                    if (!shift || typeof shift.startTime === "undefined") {
+                      console.error(
+                        "Shift is undefined or does not have a startTime property:",
+                        shift,
+                        player
+                      );
+                      return false; // or handle this case as appropriate for your application
+                    }
+
+                    const shiftStart = convertTimeToSeconds(shift.startTime);
+                    const shiftEnd =
+                      shiftStart + convertTimeToSeconds(shift.duration);
+                    return (
+                      selectedTime >= shiftStart && selectedTime < shiftEnd
+                    );
+                  });
+
+                  const teamColors = player.teamColors; // Access team colors from player object
+
+                  const shiftBlockBackgroundColor =
+                    index % 2 === 0 ? "#404040" : "#202020";
+
+                  const indexedColors = [
+                    "#202020",
+                    "#404040",
+                    "#808080",
+                    "#606060"
+                  ];
+
+                  // const playerNameBackgroundColor = player.team
+                  //   ? player.team === homeTeamAbbrev
+                  //     ? index % 2 === 0
+                  //       ? indexedColors[0]
+                  //       : indexedColors[1]
+                  //     : index % 2 === 0
+                  //     ? indexedColors[2]
+                  //     : indexedColors[3]
+                  //   : "#000000"; // Default color if secondaryColor is undefined
+
+                  const playerNameBackgroundColor = teamColors.primaryColor
+                    ? player.team === awayTeamAbbrev
+                      ? index % 2 === 0
+                        ? lightenHexColor(teamColors.primaryColor, 20)
+                        : lightenHexColor(teamColors.primaryColor, 15)
+                      : index % 2 === 0
+                        ? lightenHexColor(teamColors.primaryColor, 15)
+                        : lightenHexColor(teamColors.primaryColor, 30)
+                    : "#000000"; // Default color if secondaryColor is undefined
+
+                  const playerPositionBackgroundColor = teamColors.primaryColor
+                    ? index % 2 === 0
+                      ? lightenHexColor(teamColors.primaryColor, 15)
+                      : lightenHexColor(teamColors.primaryColor, 3)
+                    : "#000000"; // Default color if secondaryColor is undefined
+
+                  // const textColor = player.team
+                  //   ? player.team === homeTeamAbbrev
+                  //     ? index % 2 === 0
+                  //       ? lightenHexColor(indexedColors[0], 70)
+                  //       : lightenHexColor(indexedColors[1], 70)
+                  //     : index % 2 === 0
+                  //     ? darkenHexColor(indexedColors[2], 70)
+                  //     : darkenHexColor(indexedColors[3], 70)
+                  //   : "#FFFFFF"; // Default color if secondaryColor is undefined
+
+                  const textColor = player.team
+                    ? player.team === awayTeamAbbrev
+                      ? index % 2 === 0
+                        ? lightenHexColor(teamColors.secondaryColor, 10)
+                        : lightenHexColor(teamColors.secondaryColor, 10)
+                      : index % 2 === 0
+                        ? darkenHexColor(teamColors.secondaryColor, 10)
+                        : darkenHexColor(teamColors.secondaryColor, 10)
+                    : "#FFFFFF"; // Default color if secondaryColor is undefined
+
+                  return (
+                    <motion.tr
+                      layout="position"
+                      initial={{ opacity: 0 }} // Optional: fade in initially
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }} // Optional: fade out on removal
+                      transition={{ duration: 0.4, ease: "easeInOut" }} // Customize animation
+                      className={`${styles.playerRow} ${
+                        player.playerClass || ""
+                      }`}
+                      key={player.id} // IMPORTANT: Key must be stable
+                      style={{
+                        "--player-color": lightenHexColor(textColor, 30),
+                        "--player-bg": playerNameBackgroundColor,
+                        "--player-weight": player.isActive ? "900" : "200",
+                        "--player-stretch": player.isActive
+                          ? "expanded"
+                          : "normal",
+                        "--player-spacing": player.isActive ? "0.1em" : "normal"
+                      }}
+                    >
+                      <td
+                        className={styles.playerNameCell}
+                        // No inline style
+                      >
+                        <span
+                          className={`${styles.playerNameText} ${!player.isActive ? styles.inactivePlayerText : ""}`}
+                        >
+                          {player.name}
+                        </span>
+                      </td>
+                      <td
+                        className={styles.playerPositionCell}
+                        style={{
+                          "--player-position-bg": playerPositionBackgroundColor
+                        }}
+                      >
+                        {player.position}
+                      </td>
+                      {/* Render shifts only if the player is not a backup goalie with no shifts */}
+                      {!isBackupGoalie && (
+                        <>
+                          <td
+                            className={styles.shiftBlocksCell}
+                            style={{
+                              "--shift-block-bg": darkenHexColor(
+                                shiftBlockBackgroundColor,
+                                20
+                              )
+                            }}
+                          >
+                            {renderShiftBlocks(
+                              player.shifts.period1,
+                              "period1",
+                              REGULAR_PERIOD_LENGTH_SECONDS,
+                              player.team === homeTeamAbbrev ? "home" : "away"
+                            )}
+                          </td>
+                          <td
+                            className={styles.shiftBlocksCell}
+                            style={{
+                              "--shift-block-bg": darkenHexColor(
+                                shiftBlockBackgroundColor,
+                                50
+                              )
+                            }}
+                          >
+                            {renderShiftBlocks(
+                              player.shifts.period2,
+                              "period2",
+                              REGULAR_PERIOD_LENGTH_SECONDS,
+                              player.team === homeTeamAbbrev ? "home" : "away"
+                            )}
+                          </td>
+                          <td
+                            className={styles.shiftBlocksCell}
+                            style={{
+                              "--shift-block-bg": darkenHexColor(
+                                shiftBlockBackgroundColor,
+                                20
+                              )
+                            }}
+                          >
+                            {renderShiftBlocks(
+                              player.shifts.period3,
+                              "period3",
+                              REGULAR_PERIOD_LENGTH_SECONDS,
+                              player.team === homeTeamAbbrev ? "home" : "away"
+                            )}
+                          </td>
+                          {isOvertime && (
+                            <td
+                              className={`${styles.shiftBlocksCell} ${styles.overtimeCell}`}
+                              style={{
+                                "--shift-block-bg": shiftBlockBackgroundColor
+                              }}
+                            >
+                              {renderShiftBlocks(
+                                player.shifts.overtime,
+                                "overtime",
+                                OVERTIME_LENGTH_SECONDS,
+                                player.team === homeTeamAbbrev ? "home" : "away"
+                              )}
+                            </td>
+                          )}
+                        </>
+                      )}
+                      {/* Show empty cells for backup goalies with no shifts */}
+                      {isBackupGoalie && (
+                        <>
+                          <td className={styles.shiftBlocksCell}></td>
+                          <td className={styles.shiftBlocksCell}></td>
+                          <td className={styles.shiftBlocksCell}></td>
+                          {isOvertime && (
+                            <td
+                              className={`${styles.shiftBlocksCell} ${styles.overtimeCell}`}
+                            ></td>
+                          )}
+                        </>
+                      )}
+                    </motion.tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
-      <div className={styles.linemateMatrixContainer} id="linemate-matrix">
-        <LinemateMatrix
-          id={gameId}
-          mode={linemateMatrixMode}
-          onModeChanged={(newMode) => {
-            setLinemateMatrixMode(newMode, { scroll: false });
-          }}
-        />
+      {/* Right: Linemate Matrix (33%) */}
+      <div className={styles.linemateMatrixSidebarColumn}>
+        <div className={styles.linemateMatrixSidebarCard}>
+          <div className={styles.linemateMatrixStacked}>
+            <LinemateMatrix
+              id={gameId}
+              mode={linemateMatrixMode}
+              onModeChanged={(newMode) => {
+                setLinemateMatrixMode(newMode, { scroll: false });
+              }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

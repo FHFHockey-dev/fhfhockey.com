@@ -287,7 +287,8 @@ function GoalIndicator({
           top: "100%", // Start line at the bottom edge of the timestampsBar
           left: leftPercentageStr, // Align horizontally with the indicator
           transform: "translateX(-50%)", // Center the 1px line
-          width: "2px", // Line width
+          width: "1px", // Line width
+          opacity: 0.5,
           height: `${totalBodyHeight}px`, // Dynamic height calculated above
           backgroundColor: teamColors.primaryColor, // Use indicator's border color for the line
           outline: `1px solid ${teamColors.secondaryColor}`, // Use indicator's background color for the line
