@@ -558,7 +558,7 @@ $ot-units: 5;
   display: flex;
   flex-direction: row;
   gap: v.$space-lg;
-  justify-content: space-between;
+  width: 100%;
 }
 
 .activePlayersTeamBorderedRow {
@@ -637,12 +637,21 @@ $ot-units: 5;
 .controlsRow {
   display: flex;
   flex-direction: row;
+  align-items: flex-start;
   gap: v.$space-xl;
-  align-items: center;
-  justify-content: space-between;
   width: 100%;
   min-height: 260px;
   max-height: 260px;
+}
+
+.centerControlsColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 220px;
+  flex: 1 1 0;
+  gap: 12px;
 }
 
 .dropdownGroup {
@@ -782,22 +791,25 @@ $ot-units: 5;
 .formationRow {
   display: flex;
   justify-content: center;
-  gap: 1.2em;
+  gap: 1em;
   margin-bottom: 0.1em;
 }
 
 .fwdRow {
   font-weight: 700;
-  font-size: 1.1em;
+  font-size: 1.2em;
+  font-variant: all-small-caps;
 }
 .dRow {
   font-weight: 600;
-  font-size: 1em;
+  font-size: 1.2em;
+  font-variant: all-small-caps;
   margin-top: 0.1em;
 }
 .gRow {
   font-weight: 500;
-  font-size: 0.95em;
+  font-size: 1.2em;
+  font-variant: all-small-caps;
   margin-top: 0.1em;
 }
 
@@ -809,8 +821,10 @@ $ot-units: 5;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  min-width: 220px;
-  max-width: 340px;
+  flex: 1 1 0;
+  width: 50%;
+  min-width: 0;
+  max-width: 50%;
   box-shadow: none;
   position: relative;
 }
@@ -818,7 +832,7 @@ $ot-units: 5;
 .activePlayersTeamFieldset {
   border: 2.5px solid v.$primary-color;
   border-radius: 18px;
-  padding: 1.2em 1.2em 1em 1.2em;
+  padding: 1em 1em 1em 1em;
   margin: 0;
   background: v.$background-dark;
   min-width: 220px;
@@ -840,3 +854,32 @@ $ot-units: 5;
 }
 
 // .activePlayersTeamBorderedRow, .teamBorderLine { display: none; }
+
+.scoreAtTime {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #ffe066;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 2px 12px;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.scoreAtTimeAboveControls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.3em;
+  font-weight: bold;
+  color: #ffe066;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 6px 18px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  margin-top: 4px;
+}

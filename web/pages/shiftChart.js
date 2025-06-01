@@ -14,6 +14,7 @@ import LinemateMatrix, {
 import { queryTypes, useQueryState } from "next-usequerystate";
 import supabase from "lib/supabase";
 import { motion } from "framer-motion";
+import useGoals from "hooks/useGoals";
 
 // The following features are planned for future development:
 // - Refactor to TypeScript
@@ -94,7 +95,11 @@ function ShiftChart() {
   const [playing, setPlaying] = useState(false);
   const playIntervalRef = useRef(null);
   const [playbackSpeed, setPlaybackSpeed] = useState(1); // 1x by default
-  const speedOptions = [0.5, 1, 2, 4];
+  const BASE_SPEED = 4; // Old 4x speed is now the new 1x
+  const speedOptions = [1, 2, 4, 8]; // UI: 1x, 2x, 4x, 8x
+  const goals = useGoals(gameId);
+  // --- Play-by-play based goals array ---
+  const [pbpGoals, setPbpGoals] = useState([]);
 
   // Ref hook for direct DOM access to the game canvas for width calculations
   const gameCanvasRef = useRef(null);
@@ -481,6 +486,56 @@ function ShiftChart() {
       setIsLoading(false);
     }
   };
+
+  // Automatically load the most recent finished game on first mount
+  const fetchMostRecentGame = useCallback(async () => {
+    try {
+      const today = new Date();
+      let daysBack = 0;
+      let found = false;
+      let mostRecentGame = null;
+      let mostRecentDate = null;
+      while (!found && daysBack < 14) {
+        // Look back up to 2 weeks
+        const date = new Date(today);
+        date.setDate(today.getDate() - daysBack);
+        const yyyy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+        const response = await Fetch(
+          `https://api-web.nhle.com/v1/schedule/${dateStr}`
+        ).then((res) => res.json());
+        const gameWeeks = response.gameWeek || [];
+        for (const week of gameWeeks) {
+          for (const game of week.games) {
+            // Only consider finished games
+            if (game.gameState === "OFF" || game.gameState === "FINAL") {
+              if (!mostRecentGame || week.date > mostRecentDate) {
+                mostRecentGame = game;
+                mostRecentDate = week.date;
+                found = true;
+              }
+            }
+          }
+        }
+        daysBack++;
+      }
+      if (mostRecentGame && mostRecentDate) {
+        setSelectedDate(mostRecentDate);
+        setGameId(mostRecentGame.id);
+      }
+    } catch (e) {
+      console.error("Failed to fetch most recent game", e);
+    }
+  }, [setSelectedDate, setGameId]);
+
+  useEffect(() => {
+    if (!selectedDate && !gameId) {
+      fetchMostRecentGame();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Fetch the season start date when the component mounts
   useEffect(() => {
@@ -928,6 +983,68 @@ function ShiftChart() {
     setPlayerData({ home: homePlayers, away: awayPlayers });
   };
 
+  // Fetch play-by-play data when gameId changes
+  useEffect(() => {
+    if (!gameId) {
+      setPbpGoals([]);
+      return;
+    }
+    Fetch(`https://api-web.nhle.com/v1/gamecenter/${gameId}/play-by-play`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data || !Array.isArray(data.plays)) {
+          setPbpGoals([]);
+          return;
+        }
+        // Filter for all goal events (including shootout-goal)
+        const goals = data.plays
+          .filter(
+            (play) =>
+              play.typeDescKey === "goal" ||
+              play.typeDescKey === "shootout-goal"
+          )
+          .map((play) => {
+            // Parse timeInPeriod (MM:SS) to seconds
+            const [min, sec] = play.timeInPeriod.split(":").map(Number);
+            return {
+              period: { number: play.period },
+              timeInPeriod: min * 60 + sec,
+              scoreTeamAbbreviation: play.teamAbbrev
+            };
+          });
+        // Sort by absolute time in game
+        goals.sort((a, b) => {
+          const aTime = (a.period.number - 1) * 20 * 60 + a.timeInPeriod;
+          const bTime = (b.period.number - 1) * 20 * 60 + b.timeInPeriod;
+          return aTime - bTime;
+        });
+        setPbpGoals(goals);
+      })
+      .catch(() => setPbpGoals([]));
+  }, [gameId]);
+
+  function getScoreAtSelectedTime(goals, selectedTime, homeAbbrev, awayAbbrev) {
+    let home = 0,
+      away = 0;
+    if (!Array.isArray(goals) || !homeAbbrev || !awayAbbrev)
+      return { home, away };
+    for (const goal of goals) {
+      // Calculate absolute time in game for this goal (matches GoalIndicators)
+      const goalTime = (goal.period.number - 1) * 20 * 60 + goal.timeInPeriod;
+      if (goalTime > (selectedTime ?? 0)) break;
+      if (goal.scoreTeamAbbreviation === homeAbbrev) home++;
+      if (goal.scoreTeamAbbreviation === awayAbbrev) away++;
+    }
+    return { home, away };
+  }
+
+  const scoreAtSelectedTime = getScoreAtSelectedTime(
+    goals,
+    selectedTime,
+    homeTeamAbbrev,
+    awayTeamAbbrev
+  );
+
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   // useEffect to fetch games whenever the selected date changes
@@ -1003,7 +1120,8 @@ function ShiftChart() {
       const intervalMs = 100;
       playIntervalRef.current = setInterval(() => {
         setSelectedTime((prev) => {
-          const next = (prev == null ? 0 : prev) + playbackSpeed * 0.1;
+          const next =
+            (prev == null ? 0 : prev) + BASE_SPEED * playbackSpeed * 0.1;
           if (next >= totalGameTimeInSeconds) {
             setPlaying(false);
             return totalGameTimeInSeconds;
@@ -1066,6 +1184,7 @@ function ShiftChart() {
       <div className={styles.shiftChartMainColumn}>
         <div className={styles.controlsContainerModernCard}>
           <div className={styles.controlsRow}>
+            {/* Dropdowns */}
             <div className={styles.dropdownGroup}>
               <div className={styles.shiftChartDropdown}>
                 <label htmlFor="date-selector">Select Date: </label>
@@ -1092,148 +1211,157 @@ function ShiftChart() {
                 </select>
               </div>
             </div>
-            <div className={styles.playbackControls}>
-              <button
-                className={styles.skipButton}
-                aria-label="Skip back 30 seconds"
-                onClick={() =>
-                  setSelectedTime((t) => Math.max(0, (t ?? 0) - 30))
-                }
-              >
-                {/* Skip Back SVG */}
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 32 32"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+            {/* Center column: Score above playback controls */}
+            <div className={styles.centerControlsColumn}>
+              <div className={styles.scoreAtTimeAboveControls}>
+                {homeTeamAbbrev} {scoreAtSelectedTime.home} -{" "}
+                {scoreAtSelectedTime.away} {awayTeamAbbrev}
+              </div>
+              <div className={styles.playbackControls}>
+                {/* ...existing playback controls code... */}
+                <button
+                  className={styles.skipButton}
+                  aria-label="Skip back 30 seconds"
+                  onClick={() =>
+                    setSelectedTime((t) => Math.max(0, (t ?? 0) - 30))
+                  }
                 >
-                  <polygon points="22,6 10,16 22,26" fill="#07aae2" />
-                  <rect
-                    x="6"
-                    y="6"
-                    width="3"
-                    height="20"
-                    rx="1.5"
-                    fill="#07aae2"
-                  />
-                </svg>
-              </button>
-              <button
-                onClick={() => setPlaying((p) => !p)}
-                className={styles.playPauseButton}
-                aria-label={playing ? "Pause" : "Play"}
-                style={{
-                  margin: "0 8px",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  padding: 0
-                }}
-              >
-                {playing ? (
+                  {/* Skip Back SVG */}
                   <svg
-                    width="32"
-                    height="32"
+                    width="28"
+                    height="28"
                     viewBox="0 0 32 32"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                   >
+                    <polygon points="22,6 10,16 22,26" fill="#07aae2" />
                     <rect
-                      x="7"
+                      x="6"
                       y="6"
-                      width="6"
+                      width="3"
                       height="20"
-                      rx="2"
-                      fill="#e67e22"
-                    />
-                    <rect
-                      x="19"
-                      y="6"
-                      width="6"
-                      height="20"
-                      rx="2"
-                      fill="#e67e22"
+                      rx="1.5"
+                      fill="#07aae2"
                     />
                   </svg>
-                ) : (
+                </button>
+                <button
+                  onClick={() => setPlaying((p) => !p)}
+                  className={styles.playPauseButton}
+                  aria-label={playing ? "Pause" : "Play"}
+                  style={{
+                    margin: "0 8px",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: 0
+                  }}
+                >
+                  {playing ? (
+                    <svg
+                      width="32"
+                      height="32"
+                      viewBox="0 0 32 32"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <rect
+                        x="7"
+                        y="6"
+                        width="6"
+                        height="20"
+                        rx="2"
+                        fill="#e67e22"
+                      />
+                      <rect
+                        x="19"
+                        y="6"
+                        width="6"
+                        height="20"
+                        rx="2"
+                        fill="#e67e22"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      width="32"
+                      height="32"
+                      viewBox="0 0 32 32"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <polygon points="8,6 26,16 8,26" fill="#07aae2" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  className={styles.skipButton}
+                  aria-label="Skip forward 30 seconds"
+                  onClick={() =>
+                    setSelectedTime((t) =>
+                      Math.min(totalGameTimeInSeconds, (t ?? 0) + 30)
+                    )
+                  }
+                >
+                  {/* Skip Forward SVG */}
                   <svg
-                    width="32"
-                    height="32"
+                    width="28"
+                    height="28"
                     viewBox="0 0 32 32"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                   >
-                    <polygon points="8,6 26,16 8,26" fill="#07aae2" />
+                    <polygon points="10,6 22,16 10,26" fill="#07aae2" />
+                    <rect
+                      x="23"
+                      y="6"
+                      width="3"
+                      height="20"
+                      rx="1.5"
+                      fill="#07aae2"
+                    />
                   </svg>
-                )}
-              </button>
-              <button
-                className={styles.skipButton}
-                aria-label="Skip forward 30 seconds"
-                onClick={() =>
-                  setSelectedTime((t) =>
-                    Math.min(totalGameTimeInSeconds, (t ?? 0) + 30)
-                  )
-                }
-              >
-                {/* Skip Forward SVG */}
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 32 32"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+                </button>
+                <label
+                  className={styles.speedLabel}
+                  htmlFor="playback-speed"
+                  style={{
+                    marginLeft: 16,
+                    marginRight: 4,
+                    color: "#aaa",
+                    fontWeight: 600,
+                    fontSize: 14
+                  }}
                 >
-                  <polygon points="10,6 22,16 10,26" fill="#07aae2" />
-                  <rect
-                    x="23"
-                    y="6"
-                    width="3"
-                    height="20"
-                    rx="1.5"
-                    fill="#07aae2"
-                  />
-                </svg>
-              </button>
-              <label
-                className={styles.speedLabel}
-                htmlFor="playback-speed"
-                style={{
-                  marginLeft: 16,
-                  marginRight: 4,
-                  color: "#aaa",
-                  fontWeight: 600,
-                  fontSize: 14
-                }}
-              >
-                Speed:
-              </label>
-              <select
-                id="playback-speed"
-                className={styles.speedSelect}
-                value={playbackSpeed}
-                onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
-                style={{
-                  fontWeight: 600,
-                  fontSize: 14,
-                  borderRadius: 4,
-                  padding: "2px 8px",
-                  border: "1px solid #07aae2",
-                  background: "#181818",
-                  color: "#07aae2"
-                }}
-              >
-                {speedOptions.map((speed) => (
-                  <option key={speed} value={speed}>
-                    {speed}x
-                  </option>
-                ))}
-              </select>
+                  Speed:
+                </label>
+                <select
+                  id="playback-speed"
+                  className={styles.speedSelect}
+                  value={playbackSpeed}
+                  onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
+                  style={{
+                    fontWeight: 600,
+                    fontSize: 14,
+                    borderRadius: 4,
+                    padding: "2px 8px",
+                    border: "1px solid #07aae2",
+                    background: "#181818",
+                    color: "#07aae2"
+                  }}
+                >
+                  {speedOptions.map((speed) => (
+                    <option key={speed} value={speed}>
+                      {speed}x
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
+            {/* Active player list */}
             <div className={styles.activePlayersListCard}>
               <h4>Active Players On Ice</h4>
               <div className={styles.activePlayersListGrid}>
@@ -1391,6 +1519,7 @@ function ShiftChart() {
                     className={styles.timestampsBar}
                     colSpan={isOvertime ? "4" : "3"}
                     onClick={onTimestampClick}
+                    style={{ position: "relative" }}
                   >
                     {Object.keys(timestamps).map((periodKey) =>
                       timestamps[periodKey].map((timestamp, index) => (
