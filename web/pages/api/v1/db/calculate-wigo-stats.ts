@@ -1,12 +1,11 @@
-// pages/api/v1/db/calculate-wigo-stats.ts
-
+// API endpoint for calculating WIGO statistics
 import { NextApiRequest, NextApiResponse } from "next";
-import supabase from "lib/supabase"; // Your Supabase client instance
-import { getCurrentSeason } from "lib/NHL/server"; // Import your helper
-import { Database } from "lib/supabase/database-generated.types"; // Import your generated types
+import supabase from "lib/supabase"; // Supabase client instance
+import { getCurrentSeason } from "lib/NHL/server"; // NHL season helper function
+import { Database } from "lib/supabase/database-generated.types"; // Database schema types
 import { SupabaseClient } from "@supabase/supabase-js";
 
-// --- Base Types (Assuming types generated from DB schema) ---
+// Database table type definitions
 type WgoSkaterTotals =
   Database["public"]["Tables"]["wgo_skater_stats_totals"]["Row"];
 type NstIndCounts =
@@ -22,7 +21,7 @@ type NstOiGamelogCounts =
 type WigoRecentData = Database["public"]["Tables"]["wigo_recent"]["Row"];
 type WigoCareerData = Database["public"]["Tables"]["wigo_career"]["Row"];
 
-// --- Selected Column Types (For data shape after SELECT) ---
+// Column subset types for specific data selections
 type SelectedNstIndCounts = Pick<
   NstIndCounts,
   "season" | "strength" | "toi" | "ixg" | "icf" | "ihdcf" | "iscfs" | "gp"
@@ -64,7 +63,7 @@ type SelectedNstOiGamelog = Pick<
   "date_scraped" | "gf" | "sf" | "off_zone_starts" | "def_zone_starts"
 >;
 
-// --- Aggregated Data Interfaces ---
+// Aggregated data interfaces for seasonal and game data
 interface AggregatedSeasonData {
   season: number;
   gp: number;
@@ -118,7 +117,7 @@ interface CombinedGameData {
   nst_oi_def_zs: number | null;
 }
 
-// --- Helper Functions ---
+// Helper functions for calculations
 const safeDivide = (
   numerator?: number | null,
   denominator?: number | null
@@ -152,7 +151,7 @@ const safeAverage = (values: (number | null | undefined)[]): number | null => {
   return sum / validValues.length;
 };
 
-// --- PAGINATION HELPER ---
+// Pagination helper for fetching player IDs
 const PAGE_SIZE = 1000;
 async function fetchAllPlayerIds(
   client: SupabaseClient<Database>
@@ -240,7 +239,7 @@ export default async function handler(
     );
 
     let processedCount = 0;
-    // FIX: Define batch arrays with non-partial types
+    // Define batch arrays with non-partial types
     const allCareerUpsertData: WigoCareerData[] = [];
     const allRecentUpsertData: WigoRecentData[] = [];
     const UPSERT_BATCH_SIZE = 200;

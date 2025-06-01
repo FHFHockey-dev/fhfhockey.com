@@ -2,13 +2,18 @@
 
 .gridWrapper {
   display: flex;
-  flex-direction: row;
-  justify-content: space-around;
-  padding: vars.$space-xxl;
+  flex-direction: column;
+  align-items: center;
+  gap: vars.$space-md;
+  width: 100%;
+  padding-bottom: vars.$space-md;
+}
 
-  @media only screen and (max-width: vars.$screen-medium-max) {
-    flex-direction: column;
-  }
+.selectWrapper {
+  width: 100%;
+  max-width: 250px;
+  padding-top: vars.$space-md;
+  margin: 0 auto;
 }
 
 // single matrix container
@@ -17,33 +22,43 @@
   flex-direction: column;
   align-items: center;
   flex: 1;
+  max-width: 520px;
+  width: 100%;
+  min-width: 320px;
+  margin: 0 auto;
 
   --spacing: 6px;
-  --player-info-size: 120px;
-  font-size: 0.875rem;
+  --player-info-size: 100px;
+  font-size: 0.85rem;
   @media only screen and (max-width: vars.$screen-small-max) {
     --player-info-size: 80px;
+    font-size: 0.7rem;
+  }
+
+  @media only screen and (max-width: vars.$screen-medium-max) {
+    max-width: 100vw;
+    min-width: 180px;
     font-size: 0.7rem;
   }
 
   // #__next > div > div.ShiftChart_shiftChartContainer__CgnMf > div:nth-child(3) > div > div.LinemateMatrix_gridWrapper__d0Bm9 > section:nth-child(2) > h4
 
   h4 {
-    font-family: montesserat, sans-serif;
+    font-family: vars.$font-family-accent;
+    color: vars.$color-white;
     font-size: 1.5rem;
     padding: 0;
 
     font-weight: 900;
     text-transform: uppercase;
     letter-spacing: -0.075em;
-    font-style: italic;
   }
 
   .grid {
     background-color: #202020;
     color: #fff;
     display: grid;
-    width: 85%;
+    width: 95%;
     aspect-ratio: 1 / 1;
     padding: var(--spacing);
     border: 2px solid #07aae2;

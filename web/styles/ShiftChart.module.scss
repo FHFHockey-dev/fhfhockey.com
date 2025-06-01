@@ -1,6 +1,7 @@
 // styles/ShiftChart.module.scss
 @use "styles/vars" as v; // Use the alias
 @use "sass:color";
+@use "sass:math";
 
 /* Main container for the shift chart page */
 .shiftChartPageContainer {
@@ -15,17 +16,12 @@
 
 /* Container for the top controls (dropdowns) */
 .controlsContainer {
-  @include v.component-wrapper; // Apply standard wrapper
+  @include v.component-wrapper;
   padding: v.$space-lg;
   display: flex;
-  flex-direction: column; // Stack vertically on mobile
+  flex-direction: column; // Always stack vertically
   gap: v.$space-lg;
-  align-items: center; // Center items on mobile
-
-  @media (min-width: v.$breakpoint-tablet) {
-    flex-direction: row; // Side-by-side on larger screens
-    justify-content: center; // Center dropdown groups horizontally
-  }
+  align-items: center; // Center items
 }
 
 /* Style for individual dropdown groups */
@@ -91,42 +87,54 @@
 
 /* Container specifically for the table and its related elements */
 .shiftChartTableContainer {
-  @include v.component-wrapper; // Wrap the table section
+  background: v.$background-medium;
+  padding: v.$space-sm;
   width: 100%;
+  height: 100%;
+  min-height: 900px;
+  max-height: 900px;
   display: flex; // Use flex to manage internal structure
   flex-direction: column; // Stack header and scrolling table area
   // height: 70vh; // Example: Set a max height for vertical scrolling if needed
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  overflow-x: auto;
 }
 
 .tableScrollWrapper {
-  // New wrapper for horizontal scrolling of the table itself
+  border: 2px solid v.$border-color-primary;
+  border-radius: v.$border-radius-md;
   width: 100%;
   overflow-x: auto;
-  flex-grow: 1; // Allow this wrapper to take available vertical space
-  position: relative; // For positioning sticky elements relative to this
-
+  flex-grow: 1;
+  position: relative;
   // Hide scrollbar visually
   &::-webkit-scrollbar {
     display: none;
   }
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .shiftChartTable {
   border-collapse: collapse;
   color: v.$text-color-primary;
   font-family: v.$font-family-primary;
-  width: 100%; // Start with a base width wider than container to force scroll
-  min-width: 1200px; // Ensure a minimum sensible width
-  table-layout: fixed; // Use fixed layout for performance and column control
-  overflow: hidden; // Prevent overflow from affecting layout
+  width: 100%;
+  height: 100%;
+  min-width: 1200px;
+  min-height: 880px;
+  table-layout: fixed;
+  overflow: hidden;
+  border-spacing: 0;
 }
 
 /* --- Table Header --- */
 .shiftChartTable thead {
   position: sticky;
-  top: 0; // Stick to the top of .tableScrollWrapper
+  // top: 0; // Stick to the top of .tableScrollWrapper
+  border-top-left-radius: v.$border-radius-md;
+  border-top-right-radius: v.$border-radius-md;
 }
 
 .shiftChartTable th {
@@ -196,6 +204,11 @@ $ot-units: 5;
     filter v.$transition-duration v.$transition-easing,
     background-color v.$transition-duration v.$transition-easing; // Add filter to transition
   border-bottom: v.$border-subtle; // Row separator
+  color: var(--player-color, inherit);
+  background: var(--player-bg, inherit);
+  font-weight: var(--player-weight, 400);
+  font-stretch: var(--player-stretch, normal);
+  letter-spacing: var(--player-spacing, normal);
 
   &:last-child {
     border-bottom: none;
@@ -243,11 +256,12 @@ $ot-units: 5;
 }
 
 .shiftChartTable td {
-  padding: 0; // Remove default padding, shift blocks control height/spacing
+  table-layout: fixed;
+  width: 100%;
+  padding: v.$space-xxs v.$space-xxs * 0.5;
   vertical-align: middle;
   border-right: v.$border-subtle;
-  height: 24px; // Define consistent row height
-
+  height: 16px;
   &:last-child {
     border-right: none;
   }
@@ -257,31 +271,33 @@ $ot-units: 5;
 .playerNameCell,
 .playerPositionCell {
   position: sticky;
-  left: 0; // Base sticky position
-  padding: v.$space-xs v.$space-sm; // Restore padding
+  left: 0;
+  padding: v.$space-xxs v.$space-xs;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  background-color: inherit; // Inherit row background
+  background-color: inherit;
+  color: var(--player-color, inherit);
+  background: var(--player-bg, inherit);
 }
 
 .playerNameCell {
-  width: 10%; // Adjust width split
+  width: 100%;
   min-width: 120px;
-  border-right: v.$border-subtle; // Separator between name and pos
+  border-right: v.$border-subtle;
   font-weight: 500;
   text-align: left;
 }
 
 .playerPositionCell {
-  width: 5%; // Adjust width split
+  width: 5%;
   min-width: 60px;
   text-align: center;
   font-weight: 300;
   color: v.$text-color-secondary;
-  // Offset this sticky column by the width of the first
-  left: 120px; // Match min-width of playerNameCell (Adjust if needed)
-  border-right: v.$border-separator; // Prominent separator after position
+  left: 120px;
+  border-right: v.$border-separator;
+  background: var(--player-position-bg, inherit);
 }
 
 .playerNameText {
@@ -294,8 +310,9 @@ $ot-units: 5;
 
 // Shift Blocks Cell
 .shiftBlocksCell {
-  padding: 2px 0; // Small vertical padding for the block container
-  position: relative; // Ensure it's a positioning context for blocks
+  padding: 1px 0;
+  position: relative;
+  background: var(--shift-block-bg, inherit);
 
   // Central white line (visual guide)
   &::before {
@@ -316,14 +333,18 @@ $ot-units: 5;
 
 .shiftBlock {
   position: absolute;
-  top: 2px; // Position relative to cell padding top
-  bottom: 2px; // Position relative to cell padding bottom
-  height: auto; // Let top/bottom define height
+  background: var(--shift-bg, #000);
+  width: var(--shift-width, 0);
+  left: var(--shift-left, 0);
+  border: var(--shift-border, none);
+  border-radius: 0px;
+  top: 1px;
+  bottom: 1px;
+  height: auto;
   min-width: 1px;
-  border-radius: 2px; // Slightly rounded ends
-  z-index: 1; // Above the center line
-  cursor: help; // Indicate tooltip availability
-  box-shadow: inset 0 0 1px rgba(0, 0, 0, 0.5); // Subtle inset shadow
+  z-index: 1;
+  cursor: help;
+  box-shadow: inset 0 0 1px rgba(0, 0, 0, 0.5);
 }
 
 /* --- Timestamp Bar / Game Score --- */
@@ -369,26 +390,26 @@ $ot-units: 5;
 
 .timestampLabel {
   position: absolute;
-  bottom: 2px; // Position near the bottom
-  transform: translateX(-50%); // Center align
+  left: var(--left, 0);
+  bottom: 2px;
+  transform: translateX(-50%);
   white-space: nowrap;
-  font-size: 9px; // Smaller labels
+  font-size: 9px;
   color: v.$text-color-secondary;
-  z-index: 2; // Above the overlay
+  z-index: 2;
 }
 
 .yellowLine {
-  // Represents the selected time
   position: absolute;
+  left: var(--left, 0);
   top: 0;
   bottom: 0;
-  background-color: v.$focus-color; // Use focus color
+  background-color: v.$focus-color;
   width: 2px;
   height: 100%;
-  // transform: translateX(-50%); // Center the line on the position
-  pointer-events: none; // Don't interfere with clicks
-  z-index: 3; // Above labels and overlay
-  box-shadow: 0 0 3px v.$focus-color; // Add a glow
+  pointer-events: none;
+  z-index: 3;
+  box-shadow: 0 0 3px v.$focus-color;
 }
 
 // --- Team Header Rows ---
@@ -397,16 +418,21 @@ $ot-units: 5;
   position: sticky;
   left: 0; // Stick the entire row conceptually
   z-index: 1; // Below player name/pos sticky but above regular cells
+  background: var(--team-header-bg, inherit);
+  color: var(--team-header-text, inherit);
+  border-color: var(--team-header-border, inherit);
 }
 
 .teamHeaderCellHome,
 .teamHeaderCellAway {
-  color: var(--team-header-text-color, v.$text-color-primary);
-  background-color: var(--team-header-bg-color, v.$background-medium);
+  background: var(--team-header-cell-bg, inherit);
+  border-right: var(--team-header-cell-border, none);
+  color: var(--team-header-text-color);
+  font-family: v.$font-family-accent;
   font-weight: 900;
-  font-size: 1.1rem; // Slightly smaller than before
+  font-size: 1rem; // Slightly smaller than before
   text-align: left;
-  padding: v.$space-xs v.$space-lg; // Consistent padding
+  padding: v.$space-xxs v.$space-lg !important; // Consistent padding
   // Remove borders set inline, use classes or td borders
   border-top: none;
   border-bottom: 1px solid v.$border-color-primary; // Bottom separator
@@ -474,357 +500,386 @@ $ot-units: 5;
   }
 }
 
-// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////// Animated Player Row Slider //////////////////////////////////////////////////////////////
+.shiftChartPageOuterGrid {
+  display: grid;
+  grid-template-columns: 11fr 4fr;
+  gap: v.$space-xl;
+  width: 95vw;
+  margin: 0 auto;
+  margin-top: v.$space-xl;
+  margin-bottom: v.$space-xl;
+  min-height: 100vh;
+  // background: v.$background-dark;
+  @media only screen and (max-width: v.$screen-medium-max) {
+    grid-template-columns: 1fr;
+  }
+}
 
-// /* Fade Transition for Player Names and Positions */
-// .fade-enter {
-//   opacity: 0;
-//   transform: translateX(-20px);
-// }
-// .fade-enter-active {
-//   opacity: 1;
-//   transform: translateX(0);
-//   transition: opacity 300ms ease-in, transform 300ms ease-in;
-// }
-// .fade-exit {
-//   opacity: 1;
-//   transform: translateX(0);
-// }
-// .fade-exit-active {
-//   opacity: 0;
-//   transform: translateX(20px);
-//   transition: opacity 300ms ease-in, transform 300ms ease-in;
-// }
+.shiftChartMainColumn {
+  border: 5px solid v.$border-color-primary;
+  border-radius: v.$border-radius * 2;
+  outline: 5px solid color.adjust(v.$background-dark, $lightness: -2%);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 1232px;
+  max-height: 1232px;
+}
 
-// /* Slide Transition for Shift Blocks */
-// .slide-enter {
-//   opacity: 0;
-//   transform: translateY(-20px);
-// }
-// .slide-enter-active {
-//   opacity: 1;
-//   transform: translateY(0);
-//   transition: opacity 300ms ease-in, transform 300ms ease-in;
-// }
-// .slide-exit {
-//   opacity: 1;
-//   transform: translateY(0);
-// }
-// .slide-exit-active {
-//   opacity: 0;
-//   transform: translateY(20px);
-//   transition: opacity 300ms ease-in, transform 300ms ease-in;
-// }
+.controlsContainerModernCard {
+  background: v.$background-medium;
+  border-radius: v.$border-radius;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  padding: v.$space-xl;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-lg;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 0;
+}
 
-// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+.activePlayersListCard {
+  border: 5px solid v.$border-color-primary;
+  border-radius: v.$border-radius * 2;
+  outline: 5px solid color.adjust(v.$background-dark, $lightness: 0%);
+  overflow: hidden;
+  background: v.$background-dark;
+  border-radius: v.$border-radius-md;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+  padding: v.$space-lg;
 
-// .shiftBlocksCell {
-//   position: relative;
-//   border-right: 1px solid white; // Add a white border to the right of each cell
+  h4 {
+    margin-bottom: v.$space-xs;
+    margin-top: 0;
+  }
+}
 
-//   &::before {
-//     content: "";
-//     position: absolute;
-//     left: 0;
-//     right: 0;
-//     height: 1px; // Set the height of the white line
-//     background-color: white; // White color for the line
-//     top: 50%; // Center the line vertically in the row
-//     transform: translateY(-50%); // Ensure it's perfectly centered
-//     z-index: 1; // Lower z-index to be behind the shift blocks
-//   }
+.activePlayersListGrid {
+  display: flex;
+  flex-direction: row;
+  gap: v.$space-lg;
+  width: 100%;
+}
 
-//   // Applies to period cells (1st, 2nd, 3rd period)
-//   &:nth-child(n + 3):nth-child(-n + 5) {
-//     width: calc(
-//       (90% * 4 / 13)
-//     ); // Each regular period takes up 4 parts of the 13-part space
-//   }
+.activePlayersTeamBorderedRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 0.5em;
+  position: relative;
+  height: 1.6em; // match header height
+}
+.teamBorderLine {
+  flex: 1;
+  height: 1.2px;
+  background: linear-gradient(
+    90deg,
+    transparent 10%,
+    v.$primary-color 50%,
+    transparent 90%
+  );
+  opacity: 0.5;
+  margin: 0 0.5em;
+  position: relative;
+  top: 0;
+}
+.activePlayersTeamHeader {
+  font-size: 1.1rem;
+  font-weight: 700;
+  background: v.$background-dark;
+  padding: 0 0.75em;
+  z-index: 2;
+  position: relative;
+  text-align: center;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  height: 1.6em;
+  margin: 0;
+}
 
-//   // Applies to overtime cells
-//   &.overtimeCell {
-//     width: calc(
-//       (90% * 1 / 13)
-//     ); // Overtime takes up 1 part of the 13-part space
-//   }
-// }
+.activePlayersList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 1rem;
+}
 
-// .timestampPeriod {
-//   width: calc(
-//     (90% * 4 / 13)
-//   ); // Each regular period takes up 4 parts of the 13-part space
-//   position: unset !important;
-// }
+.linemateMatrixSidebarColumn {
+  border: 5px solid v.$border-color-primary;
+  border-radius: v.$border-radius * 2;
+  outline: 5px solid color.adjust(v.$background-dark, $lightness: -2%);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+}
 
-// .timestampOvertime {
-//   width: calc((85% * 1 / 13)); // Overtime takes up 1 part of the 13-part space
-// }
+.linemateMatrixSidebarCard {
+  background: v.$background-medium;
+  border-radius: v.$border-radius;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+  padding: v.$space-sm;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-lg;
+}
 
-// .timestampLabel {
-//   position: absolute;
-//   bottom: 0%;
-//   transform: translateX(-50%); // Center align
-//   white-space: nowrap; // Keep the label on a single line
-// }
+.linemateMatrixStacked {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-lg;
+}
 
-// /* Main container for the shift chart */
-// .shiftChartContainer {
-//   display: flex;
-//   flex-direction: column;
-//   align-items: center;
-//   margin: 20px;
-//   padding-top: 20px;
-//   border: 1px solid white;
-//   border-radius: 10px;
-//   background-color: #101010;
-//   outline: 10px solid #292929; // Add a blue outline around the container
-// }
+.controlsRow {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: v.$space-xl;
+  width: 100%;
+  min-height: 260px;
+  max-height: 260px;
+}
 
-// // Container for dropdown elements
-// .dropdownContainer {
-//   display: flex;
-//   justify-content: center;
-//   width: 100%;
-//   margin-bottom: 30px; // Add space below dropdowns
-// }
+.centerControlsColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 220px;
+  flex: 1 1 0;
+  gap: 12px;
+}
 
-// // Style for individual dropdowns
-// .shiftChartDropdown {
-//   margin: 0 10px;
-//   display: flex;
-//   flex-direction: column;
-//   align-items: center;
-// }
+.dropdownGroup {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-lg;
+}
 
-// // Label styling within dropdowns
-// .shiftChartDropdown label {
-//   margin-bottom: 5px;
-// }
+// Colgroup column widths for Shift Chart Table
+.colPlayerName {
+  width: 110px;
+  height: 100%;
+  min-width: 110px;
+  max-width: 120px;
+}
+.colPlayerPosition {
+  width: 40px;
+  height: 100%;
+  min-width: 40px;
+  max-width: 60px;
+}
+.colPeriod1,
+.colPeriod2,
+.colPeriod3 {
+  width: 250px;
+  height: 100%;
+  min-width: 120px;
+}
+.colOvertime {
+  width: 80px;
+  height: 100%;
+  min-width: 80px;
+}
 
-// // Input and select elements within dropdowns
-// .shiftChartDropdown select,
-// .shiftChartDropdown input {
-//   background-color: #292929;
-//   color: antiquewhite;
-//   font-family: roboto condensed, sans-serif;
-//   padding: 5px;
-//   font-size: 16px;
-//   border-radius: 4px;
-//   border: 1px solid #ccc;
-//   width: 150px; // Set a fixed width for consistency
-// }
+.playPauseButton {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: v.$background-dark;
+  border: 2px solid v.$primary-color;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
+  cursor: pointer;
+  margin: 0 24px;
+  padding: 0;
+  &:hover,
+  &:focus {
+    background: v.$primary-color;
+    border-color: v.$secondary-color;
+    box-shadow: 0 4px 16px rgba(7, 170, 226, 0.18);
+    outline: none;
+    svg rect,
+    svg polygon {
+      filter: brightness(1.2);
+    }
+  }
+  svg {
+    display: block;
+  }
+}
 
-// .shiftChartTableContainer {
-//   @media only screen and (min-width: vars.$screen-medium-max) {
-//     display: flex;
-//     justify-content: center;
-//     align-items: center;
-//   }
+.playbackControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border-radius: 24px;
+  padding: 4px 12px;
+  box-shadow: none;
+}
 
-//   & {
-//     width: 100%;
-//     overflow-x: auto; // Add horizontal scroll for smaller screens
-//     overflow-y: hidden;
-//   }
-// }
+.skipButton {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: v.$background-dark;
+  border: 2px solid v.$primary-color;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition:
+    background 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
+  cursor: pointer;
+  margin: 0 4px;
+  padding: 0;
+  &:hover,
+  &:focus {
+    background: v.$primary-color;
+    border-color: v.$secondary-color;
+    box-shadow: 0 4px 16px rgba(7, 170, 226, 0.14);
+    outline: none;
+    svg polygon,
+    svg rect {
+      filter: brightness(1.2);
+    }
+  }
+  svg {
+    display: block;
+  }
+}
 
-// .shiftChartTable {
-//   margin-top: 35px;
-//   width: 300%;
-//   border-collapse: collapse;
-//   color: white;
-//   background-color: #202020;
-// }
+.speedLabel {
+  margin-left: 16px;
+  margin-right: 4px;
+  color: #aaa;
+  font-weight: 600;
+  font-size: 14px;
+}
 
-// .shiftChartTable th,
-// .shiftChartTable td {
-//   padding: 1.5px;
-//   font-family: roboto condensed, sans-serif;
-//   padding-left: 10px;
-// }
+.speedSelect {
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 4px;
+  padding: 2px 8px;
+  border: 1px solid #07aae2;
+  background: #181818;
+  color: #07aae2;
+}
 
-// .shiftchartTable th {
-//   text-align: left;
-//   font-size: 12px;
-//   font-weight: bold;
-//   text-transform: uppercase;
-// }
+.activePlayersFormation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25em;
+  margin-top: 0.5em;
+}
 
-// .gameInfoHeader {
-//   width: 10%; // Adjust as needed
-// }
+.formationRow {
+  display: flex;
+  justify-content: center;
+  gap: 1em;
+  margin-bottom: 0.1em;
+}
 
-// .shiftChartTable tbody {
-//   font-stretch: extra-expanded;
-//   font-size: 12px;
-//   text-transform: uppercase;
-// }
+.fwdRow {
+  font-weight: 700;
+  font-size: 1.2em;
+  font-variant: all-small-caps;
+}
+.dRow {
+  font-weight: 600;
+  font-size: 1.2em;
+  font-variant: all-small-caps;
+  margin-top: 0.1em;
+}
+.gRow {
+  font-weight: 500;
+  font-size: 1.2em;
+  font-variant: all-small-caps;
+  margin-top: 0.1em;
+}
 
-// .playerPositionCell {
-//   border-right: 1px solid white; // Add a white border to the right of each cell
-// }
+.activePlayersTeamSection {
+  border: none;
+  padding: 0;
+  margin-bottom: 1.2em;
+  background: none;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 1 1 0;
+  width: 50%;
+  min-width: 0;
+  max-width: 50%;
+  box-shadow: none;
+  position: relative;
+}
 
-// .playerRow {
-//   &:hover {
-//     background-color: rgba(
-//       255,
-//       165,
-//       0,
-//       0.2
-//     ) !important; // Orange background for hover effect
-//     outline: 1px solid orange !important; // Border for the hovered row
-//   }
-// }
+.activePlayersTeamFieldset {
+  border: 2.5px solid v.$primary-color;
+  border-radius: 18px;
+  padding: 1em 1em 1em 1em;
+  margin: 0;
+  background: v.$background-dark;
+  min-width: 220px;
+  max-width: 340px;
+  position: relative;
+}
 
-// .shiftBlock {
-//   position: absolute;
-//   bottom: 0;
-//   height: 85%;
-//   min-width: 2px;
-//   border: 1px solid black;
-//   left: 50%;
-//   transform: translateY(
-//     -10%
-//   ); /* Adjusts the block to be centered based on its width */
-//   z-index: 2; // Shift blocks should be above the white line
-// }
+.activePlayersTeamLegend {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: v.$text-color-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+  padding: 0 0.8em;
+  margin-left: 0.5em;
+  background: v.$background-dark;
+  line-height: 1.1;
+}
 
-// .gameScoreCell {
-//   text-align: center;
-//   font-weight: bold;
-//   // Add more styles as needed
-// }
+// .activePlayersTeamBorderedRow, .teamBorderLine { display: none; }
 
-// .timestampsBar {
-//   cursor: pointer;
-//   background: #444; // Default darker background
-//   position: relative;
-// }
+.scoreAtTime {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #ffe066;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 2px 12px;
+  border-radius: 8px;
+  pointer-events: none;
+}
 
-// .timestampsBar::before {
-//   content: "";
-//   position: absolute;
-//   left: 0;
-//   top: 0;
-//   width: 0%; // Initial width
-//   height: 100%;
-//   background: #656565; // Brighter color
-//   transition: width 0.3s ease;
-// }
-
-// .timestampsBar::before {
-//   width: var(--bright-width, 0%);
-// }
-
-// .yellowLine {
-//   position: absolute;
-//   background-color: #e08e45;
-//   width: 2px;
-//   height: 100%; // This assumes the parent element spans the full chart height
-//   transform: translateY(-50%);
-//   left: 0; // Initialize at 0, will be set dynamically
-// }
-
-// .activePlayer {
-//   // Styles for active players
-//   font-weight: bold;
-//   color: black;
-// }
-
-// .inactivePlayer {
-//   // Styles for inactive players, such as a greyed-out look
-//   opacity: 0.5;
-// }
-
-// .timestamp {
-//   display: flex; // Display timestamps in a row
-//   justify-content: space-between;
-//   margin: 0; // Ensure there's no extra space around timestamps
-//   padding: 0; // Reset any default padding
-// }
-
-// .teamHeaderRowAway {
-//   color: white;
-//   font-weight: bold;
-//   text-align: center;
-//   padding: 5px;
-//   z-index: 15; // Ensure the team header is above the shift blocks
-// }
-
-// .teamHeaderCellAway {
-//   color: var(
-//     --team-header-text-color
-//   ); // Use a custom color if needed (default is white
-//   font-weight: 900;
-//   font-size: 1.5em;
-//   text-align: left;
-//   padding: 5px;
-//   position: relative; // Position relative for pseudo-element
-//   z-index: 1; // Ensure the team header is above the shift blocks
-//   border-top: 2px solid var(--team-header-border-color, white); // Add a border to the top of the cell (customizable color
-//   border-bottom: 2px solid var(--team-header-border-color, white); // Add a border to the bottom of the cell (customizable color
-// }
-
-// .teamHeaderCellAway::before {
-//   content: "";
-//   position: absolute;
-//   top: 0;
-//   left: 0;
-//   right: 0;
-//   bottom: 0;
-//   // background-color: var(
-//   //   --team-header-bg-color
-//   // ); // Or use a specific color if needed
-//   z-index: -1; // High value to stack above
-// }
-
-// .teamHeaderRowHome {
-//   color: white;
-//   font-weight: bold;
-//   text-align: center;
-//   padding: 5px;
-//   z-index: 15; // Ensure the team header is above the shift blocks
-//   background-color: var(--team-header-bg-color);
-// }
-
-// .teamHeaderCellHome {
-//   color: var(
-//     --team-header-text-color
-//   ); // Use a custom color if needed (default is white
-//   font-weight: 900;
-//   font-size: 1.5em;
-//   text-align: left;
-//   padding: 5px;
-
-//   position: sticky; // Position relative for pseudo-element
-//   z-index: 1; // Ensure the team header is above the shift blocks
-//   border-top: 2px solid var(--team-header-border-color, white); // Add a border to the top of the cell (customizable color
-//   border-bottom: 2px solid var(--team-header-border-color, white); // Add a border to the bottom of the cell (customizable color
-// }
-
-// /* Apply sticky positioning and styling to the first cell of each row, starting from the second row */
-// .shiftChartTable tr:nth-child(n + 3) th:first-child,
-// .shiftChartTable tr:nth-child(n + 3) td:first-child {
-//   position: sticky;
-//   left: 0;
-//   // background-color: inherit;
-//   background-color: var(--team-header-bg-color);
-//   color: var(--team-header-text-color);
-//   z-index: 3; /* Higher than the table's other cells to ensure it stacks on top */
-//   box-shadow: 2px 0px 5px rgba(0, 0, 0, 0.2); /* Slight box shadow to the right */
-// }
-
-// /* Optional: Add a slight box shadow or border to the sticky column to distinguish it */
-// .shiftChartTable th:first-child,
-// .shiftChartTable td:first-child {
-//   box-shadow: 2px 0px 5px rgba(0, 0, 0, 0.2);
-// }
-
-// .shiftChartTable th:nth-child(2),
-// .shiftChartTable td:nth-child(2) {
-//   position: sticky;
-//   background-color: inherit; /* Ensure the background is not transparent */
-//   z-index: 3; /* Higher than the table's other cells to ensure it stacks on top */
-// }
+.scoreAtTimeAboveControls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.3em;
+  font-weight: bold;
+  color: #ffe066;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 6px 18px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  margin-top: 4px;
+}
