@@ -5,6 +5,7 @@ import Head from "next/head";
 import { NextSeo } from "next-seo";
 import { useMemo, useState, useEffect } from "react";
 import moment from "moment";
+import "moment-timezone"; // Import moment-timezone
 import Link from "next/link";
 
 import Banner from "../components/Banner";
@@ -29,17 +30,28 @@ const Home: NextPage = ({
   initialStandings,
   nextGameDate
 }) => {
-  const [currentDate, setCurrentDate] = useState(
-    moment().utcOffset(-8).format("YYYY-MM-DD")
+  // Debug logging
+  console.log("Server passed nextGameDate:", nextGameDate);
+  console.log(
+    "Client moment().format('YYYY-MM-DD'):",
+    moment().format("YYYY-MM-DD")
   );
-  const [games, setGames] = useState(initialGames);
+
+  // Always start with today's date, regardless of whether there are games
+  const todayDate = moment().format("YYYY-MM-DD");
+  const [currentDate, setCurrentDate] = useState(todayDate);
+  console.log("Client currentDate initialized to:", todayDate);
+
+  // If server found games for a different date, we'll use initialGames only if currentDate matches nextGameDate
+  const [games, setGames] = useState(
+    currentDate === nextGameDate ? initialGames : []
+  );
   const [injuries, setInjuries] = useState(initialInjuries);
   const [standings, setStandings] = useState(initialStandings);
   const [injuryPage, setInjuryPage] = useState(0);
   const injuryRowsPerPage = 32;
 
   const [isOffseason, setIsOffseason] = useState(false);
-  const [nextAvailableGames, setNextAvailableGames] = useState([]);
 
   useEffect(() => {
     const checkSeason = async () => {
@@ -59,86 +71,44 @@ const Home: NextPage = ({
     checkSeason();
   }, []);
 
-  // useEffect(() => {
-  //   const fetchStandings = async () => {
-  //     try {
-  //       const response = await Fetch(
-  //         `https://api-web.nhle.com/v1/standings/2024-10-04`
-  //       );
-  //       const data = await response.json();
-  //       console.log({ standings: data }); // Debug: Log data to check the response format
-
-  //       if (!data || !data.standings) {
-  //         throw new Error("Invalid standings data");
-  //       }
-
-  //       setStandings(data.standings);
-  //     } catch (error) {
-  //       console.error("Error fetching standings:", error);
-  //     }
-  //   };
-
-  //   fetchStandings();
-  // }, []);
-
   useEffect(() => {
     const fetchGames = async () => {
       const res = await fetch(`/api/v1/games?date=${currentDate}`);
       const data = await res.json();
 
-      // If no games are scheduled for today, fetch the next day's games
-      if (data.length === 0 && isOffseason) {
-        let nextDayWithGames = null;
-        let nextDay = moment(currentDate).add(1, "days");
-
-        while (!nextDayWithGames) {
-          const res = await fetch(
-            `/api/v1/games?date=${nextDay.format("YYYY-MM-DD")}`
+      // Fetch period and time remaining for LIVE games
+      const liveGamePromises = data
+        .filter((game) => game.gameState === "LIVE")
+        .map(async (game) => {
+          const liveDataResponse = await Fetch(
+            `https://api-web.nhle.com/v1/gamecenter/${game.id}/landing`
           );
-          const dayData = await res.json();
+          const liveData = await liveDataResponse.json();
 
-          if (dayData.length > 0) {
-            nextDayWithGames = dayData;
-            setNextAvailableGames(dayData);
-          } else {
-            nextDay = nextDay.add(1, "days");
-          }
-        }
-      } else {
-        // Fetch period and time remaining for LIVE games
-        const liveGamePromises = data
-          .filter((game) => game.gameState === "LIVE")
-          .map(async (game) => {
-            const liveDataResponse = await Fetch(
-              `https://api-web.nhle.com/v1/gamecenter/${game.id}/landing`
-            );
-            const liveData = await liveDataResponse.json();
-
-            return {
-              ...game,
-              period: liveData.periodDescriptor.number,
-              periodType: liveData.periodDescriptor.periodType,
-              timeRemaining: liveData.clock.timeRemaining,
-              inIntermission: liveData.clock.inIntermission
-            };
-          });
-
-        const liveGamesData = await Promise.all(liveGamePromises);
-
-        // Combine live games data with other games data
-        const updatedGames = data.map((game) => {
-          const liveGameData = liveGamesData.find(
-            (liveGame) => liveGame.id === game.id
-          );
-          return liveGameData || game;
+          return {
+            ...game,
+            period: liveData.periodDescriptor.number,
+            periodType: liveData.periodDescriptor.periodType,
+            timeRemaining: liveData.clock.timeRemaining,
+            inIntermission: liveData.clock.inIntermission
+          };
         });
 
-        setGames(updatedGames);
-      }
+      const liveGamesData = await Promise.all(liveGamePromises);
+
+      // Combine live games data with other games data
+      const updatedGames = data.map((game) => {
+        const liveGameData = liveGamesData.find(
+          (liveGame) => liveGame.id === game.id
+        );
+        return liveGameData || game;
+      });
+
+      setGames(updatedGames);
     };
 
     fetchGames();
-  }, [currentDate, isOffseason]);
+  }, [currentDate]);
 
   const changeDate = async (days) => {
     const newDate = moment(currentDate).add(days, "days").format("YYYY-MM-DD");
@@ -302,19 +272,17 @@ const Home: NextPage = ({
     return gameStateMapping[gameState] || gameState;
   };
 
-  const gamesToDisplay = games.length > 0 ? games : nextAvailableGames;
-  const displayDate = games.length > 0 ? currentDate : nextGameDate;
-
+  // Simplified display logic - always use currentDate and games
   const today = moment().format("YYYY-MM-DD");
   const yesterday = moment().subtract(1, "days").format("YYYY-MM-DD");
   const tomorrow = moment().add(1, "days").format("YYYY-MM-DD");
 
   let gamesHeaderText = "Upcoming";
-  if (displayDate === today) {
+  if (currentDate === today) {
     gamesHeaderText = "Today's";
-  } else if (displayDate === yesterday) {
+  } else if (currentDate === yesterday) {
     gamesHeaderText = "Yesterday's";
-  } else if (displayDate === tomorrow) {
+  } else if (currentDate === tomorrow) {
     gamesHeaderText = "Tomorrow's";
   }
 
@@ -362,7 +330,7 @@ const Home: NextPage = ({
                 {gamesHeaderText} <span>Games</span>
               </h1>
               <p className={styles.dateDisplay}>
-                {moment(displayDate).format("M/DD/YYYY")}
+                {moment(currentDate).format("M/DD/YYYY")}
               </p>
             </div>
             <button
@@ -371,8 +339,8 @@ const Home: NextPage = ({
             ></button>
           </div>
           <div className={styles.gamesContainer}>
-            {gamesToDisplay.length > 0 ? (
-              gamesToDisplay.map((game) => {
+            {games.length > 0 ? (
+              games.map((game) => {
                 const homeTeam = game.homeTeam;
                 const homeTeamInfo = teamsInfo[homeTeam.abbrev] || {};
                 const awayTeam = game.awayTeam;
@@ -468,7 +436,7 @@ const Home: NextPage = ({
                 }}
               >
                 No games scheduled for{" "}
-                {moment(displayDate).format("MM/DD/YYYY")}.
+                {moment(currentDate).format("MM/DD/YYYY")}.
               </p>
             )}
           </div>
@@ -645,7 +613,7 @@ export async function getServerSideProps({ req, res }) {
     try {
       const currentSeason = await fetchCurrentSeason(); // Assuming this returns valid start/end dates
       const now = new Date();
-      let dateForStandings = moment().utcOffset(-8).format("YYYY-MM-DD"); // Default to today PST
+      let dateForStandings = moment().utc().format("YYYY-MM-DD"); // Use UTC for server
 
       if (currentSeason && currentSeason.startDate && currentSeason.endDate) {
         const seasonStart = new Date(currentSeason.startDate);
@@ -703,9 +671,9 @@ export async function getServerSideProps({ req, res }) {
     }
   };
 
-  const today = moment().utcOffset(-8).format("YYYY-MM-DD");
+  const today = moment().format("YYYY-MM-DD"); // Use local timezone for consistency with client
   let gamesToday = await fetchGames(today);
-  let nextGameDateFound = today;
+  let nextGameDateFound = today; // Always start with today
 
   if (gamesToday.length === 0) {
     console.log(
@@ -720,7 +688,7 @@ export async function getServerSideProps({ req, res }) {
       console.log(`Checking for games on ${dateStr}...`);
       gamesToday = await fetchGames(dateStr);
       if (gamesToday.length > 0) {
-        nextGameDateFound = dateStr;
+        nextGameDateFound = dateStr; // Only change the date if we found games on a different day
         console.log(`Found next games on ${nextGameDateFound}`);
         break;
       }
@@ -730,6 +698,10 @@ export async function getServerSideProps({ req, res }) {
     if (gamesToday.length === 0) {
       console.warn(`Could not find games within the next ${maxAttempts} days.`);
     }
+  } else {
+    // If we found games today, make sure nextGameDateFound stays as today
+    nextGameDateFound = today;
+    console.log(`Found games for today (${today})`);
   }
 
   const injuries = await fetchInjuries();
