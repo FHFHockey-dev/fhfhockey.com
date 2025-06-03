@@ -14,6 +14,7 @@ import {
 import styles from "styles/TeamStatsPage.module.scss";
 import * as d3 from "d3";
 import { hexbin as d3Hexbin, HexbinBin } from "d3-hexbin";
+import { teamsInfo } from "lib/teamsInfo";
 
 interface ShotVisualizationProps {
   shotData: ShotData[];
@@ -237,7 +238,11 @@ export function ShotVisualization({
           <div className={styles.rinksSideBySide}>
             {/* My Team Half Rink */}
             <div className={styles.halfRinkContainer}>
-              <div className={styles.rinkLabel}>My Team</div>
+              <div className={styles.rinkLabel}>
+                {teamAbbreviation
+                  ? teamsInfo[teamAbbreviation]?.name || teamAbbreviation
+                  : "Your Team"}
+              </div>
               <InnerShotVisualization
                 key={`rink-myteam-${key}`}
                 shotData={shotData}

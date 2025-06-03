@@ -810,8 +810,8 @@ export default async function handler(
     // --- Action: all (Incremental Update) ---
     if (actionParam === "all") {
       details.action = "incremental_update";
-      // Use the more efficient updateAllGoaliesStats function
-      const result = await updateAllGoaliesStats();
+      // Use the updateRecentGoalieStats function for incremental updates
+      const result = await updateRecentGoalieStats();
       rowsAffected = result.totalUpdates;
       totalErrors = result.totalErrors;
       status = result.totalErrors === 0 ? "success" : "error";
