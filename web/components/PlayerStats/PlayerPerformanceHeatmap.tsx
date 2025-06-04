@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import styles from "./PlayerPerformanceHeatmap.module.scss";
+import styles from "./PlayerStats.module.scss";
 
 interface GameLogEntry {
   date: string;

@@ -11,7 +11,7 @@ import {
   Legend,
   Filler
 } from "chart.js";
-import styles from "./PlayerStatsChart.module.scss";
+import styles from "./PlayerStats.module.scss";
 
 ChartJS.register(
   CategoryScale,

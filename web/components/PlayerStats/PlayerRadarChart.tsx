@@ -9,7 +9,7 @@ import {
   Tooltip,
   Legend
 } from "chart.js";
-import styles from "./PlayerRadarChart.module.scss";
+import styles from "./PlayerStats.module.scss";
 
 ChartJS.register(
   RadialLinearScale,
