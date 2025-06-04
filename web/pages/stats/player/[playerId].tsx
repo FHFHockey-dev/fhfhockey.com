@@ -238,8 +238,8 @@ export default function PlayerStatsPage({
       </div>
 
       {/* Player Header */}
-      <div className={styles.playerHeader || ""}>
-        <div className={styles.playerImageContainer || ""}>
+      <div className={styles.playerHeader}>
+        <div className={styles.playerImageContainer}>
           {player.image_url && (
             <img
               src={player.image_url}
@@ -254,9 +254,9 @@ export default function PlayerStatsPage({
             />
           )}
         </div>
-        <div className={styles.playerInfo || ""}>
+        <div className={styles.playerInfo}>
           <h1 className={styles.playerName}>{splitLabel(player.fullName)}</h1>
-          <div className={styles.playerDetails || ""}>
+          <div className={styles.playerDetails}>
             <div style={{ color: "#888", fontWeight: 600, marginBottom: 8 }}>
               #{player.sweater_number || "-"} | {player.position}
               {player.team_id && ` | Team ID: ${player.team_id}`}
@@ -278,13 +278,13 @@ export default function PlayerStatsPage({
       </div>
 
       {/* Navigation Tabs */}
-      <div className={styles.tabNavigation || ""}>
+      <div className={styles.tabNavigation}>
         {(
           ["overview", "season-stats", "gamelog", "trends", "advanced"] as const
         ).map((tab) => (
           <button
             key={tab}
-            className={`${styles.tabButton || ""} ${selectedView === tab ? styles.active || "active" : ""}`}
+            className={`${styles.tabButton} ${selectedView === tab ? styles.active : ""}`}
             onClick={() => setSelectedView(tab)}
           >
             {tab === "season-stats"
@@ -298,13 +298,13 @@ export default function PlayerStatsPage({
       {(selectedView === "overview" ||
         selectedView === "gamelog" ||
         selectedView === "trends") && (
-        <div className={styles.controlsSection || ""}>
-          <div className={styles.timeframeSelector || ""}>
+        <div className={styles.controlsSection}>
+          <div className={styles.timeframeSelector}>
             <label>Timeframe:</label>
             {(["season", "l10", "l20"] as const).map((timeframe) => (
               <button
                 key={timeframe}
-                className={`${styles.timeframeButton || ""} ${selectedTimeframe === timeframe ? styles.active || "active" : ""}`}
+                className={`${styles.timeframeButton} ${selectedTimeframe === timeframe ? styles.active : ""}`}
                 onClick={() => setSelectedTimeframe(timeframe)}
               >
                 {timeframe === "season" ? "Season" : timeframe.toUpperCase()}
@@ -312,13 +312,13 @@ export default function PlayerStatsPage({
             ))}
           </div>
 
-          <div className={styles.statSelector || ""}>
+          <div className={styles.statSelector}>
             <label>Stats to Display:</label>
-            <div className={styles.statCategories || ""}>
-              <div className={styles.statCategory || ""}>
+            <div className={styles.statCategories}>
+              <div className={styles.statCategory}>
                 <h4>Primary</h4>
                 {positionConfig.primary.map((stat) => (
-                  <label key={stat} className={styles.statCheckbox || ""}>
+                  <label key={stat} className={styles.statCheckbox}>
                     <input
                       type="checkbox"
                       checked={selectedStats.includes(stat)}
@@ -328,10 +328,10 @@ export default function PlayerStatsPage({
                   </label>
                 ))}
               </div>
-              <div className={styles.statCategory || ""}>
+              <div className={styles.statCategory}>
                 <h4>Secondary</h4>
                 {positionConfig.secondary.map((stat) => (
-                  <label key={stat} className={styles.statCheckbox || ""}>
+                  <label key={stat} className={styles.statCheckbox}>
                     <input
                       type="checkbox"
                       checked={selectedStats.includes(stat)}
@@ -376,30 +376,34 @@ export default function PlayerStatsPage({
       </div>
 
       {/* Content Area */}
-      <div className={styles.contentArea || ""}>
+      <div className={styles.contentArea}>
         {selectedView === "overview" && (
-          <div className={styles.overviewGrid || ""}>
-            <div className={styles.statsOverview || ""}>
-              <PlayerRadarChart
-                player={player}
-                gameLog={filteredGameLog}
-                selectedStats={selectedStats}
-                isGoalie={isGoalie}
-              />
+          <div className={styles.overviewGrid}>
+            <div className={styles.leftColumn}>
+              <div className={styles.radarSection}>
+                <PlayerRadarChart
+                  player={player}
+                  gameLog={filteredGameLog}
+                  selectedStats={selectedStats}
+                  isGoalie={isGoalie}
+                />
+              </div>
+              <div className={styles.insightsSection}>
+                <PlayerContextualStats
+                  player={player}
+                  gameLog={filteredGameLog}
+                  seasonTotals={seasonTotals}
+                  isGoalie={isGoalie}
+                />
+              </div>
             </div>
-            <div className={styles.performanceHeatmap || ""}>
-              <PlayerPerformanceHeatmap
-                gameLog={filteredGameLog}
-                selectedStats={selectedStats}
-              />
-            </div>
-            <div className={styles.contextualStats || ""}>
-              <PlayerContextualStats
-                player={player}
-                gameLog={filteredGameLog}
-                seasonTotals={seasonTotals}
-                isGoalie={isGoalie}
-              />
+            <div className={styles.rightColumn}>
+              <div className={styles.calendarSection}>
+                <PlayerPerformanceHeatmap
+                  gameLog={filteredGameLog}
+                  selectedStats={selectedStats}
+                />
+              </div>
             </div>
           </div>
         )}
@@ -622,13 +626,13 @@ export default function PlayerStatsPage({
         )}
 
         {selectedView === "advanced" && (
-          <div className={styles.advancedGrid || ""}>
+          <div className={styles.advancedGrid}>
             <PlayerStatsChart
               gameLog={filteredGameLog}
               selectedStats={positionConfig.advanced}
               title="Advanced Metrics"
             />
-            <div className={styles.advancedTable || ""}>
+            <div className={styles.advancedTable}>
               <PlayerStatsTable
                 gameLog={filteredGameLog}
                 selectedStats={positionConfig.advanced}

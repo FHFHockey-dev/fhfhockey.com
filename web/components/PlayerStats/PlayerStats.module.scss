@@ -1,3 +1,5 @@
+@use "styles/vars" as v;
+
 // Player Stats Table Styles
 .playerStatsContainer {
   background: var(--surface-color, #1a1a1a);
@@ -568,42 +570,323 @@
   font-weight: 600;
 }
 
-// Responsive Design
-@media (max-width: 768px) {
-  .tableHeader,
-  .trendHeader {
+// Performance Calendar Styles
+.performanceCalendar {
+  @include v.component-wrapper;
+  padding: v.$space-xl;
+  margin-bottom: v.$space-xl;
+}
+
+.calendarHeader {
+  margin-bottom: v.$space-xl;
+
+  h3 {
+    font-size: v.$font-size-xl;
+    font-weight: 600;
+    color: v.$text-primary;
+    margin: 0 0 v.$space-lg 0;
+    font-family: v.$font-family-primary;
+  }
+}
+
+.calendarLegend {
+  display: flex;
+  align-items: center;
+  gap: v.$space-lg;
+  flex-wrap: wrap;
+  padding: v.$space-md;
+  background: v.$background-medium;
+  border-radius: v.$border-radius-md;
+  border: v.$border-subtle;
+
+  .legendLabel {
+    font-size: v.$font-size-sm;
+    font-weight: 600;
+    color: v.$text-primary;
+    margin-right: v.$space-sm;
+  }
+
+  .legendItems {
+    display: flex;
+    gap: v.$space-lg;
+    flex-wrap: wrap;
+  }
+
+  .legendItem {
+    display: flex;
+    align-items: center;
+    gap: v.$space-xs;
+  }
+
+  .legendColorSwatch {
+    width: 16px;
+    height: 16px;
+    border-radius: v.$border-radius-sm;
+    border: 1px solid v.$border-primary;
+    flex-shrink: 0;
+  }
+
+  .legendText {
+    font-size: v.$font-size-xs;
+    color: v.$text-secondary;
+    white-space: nowrap;
+  }
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: v.$space-xl;
+  margin-bottom: v.$space-xl;
+}
+
+.calendarMonth {
+  background: v.$background-medium;
+  border-radius: v.$border-radius-lg;
+  border: v.$border-default;
+  overflow: hidden;
+  min-width: 380px;
+  transition:
+    transform v.$transition-duration v.$transition-easing,
+    box-shadow v.$transition-duration v.$transition-easing;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: v.$box-shadow-default;
+  }
+}
+
+.monthHeader {
+  background: v.$background-header;
+  padding: v.$space-md v.$space-lg;
+  border-bottom: v.$border-separator;
+
+  .monthTitle {
+    font-size: v.$font-size-lg;
+    font-weight: 600;
+    color: v.$text-primary;
+    margin: 0;
+    text-align: center;
+    font-family: v.$font-family-primary;
+  }
+}
+
+.calendarTable {
+  padding: v.$space-md v.$space-lg;
+}
+
+.weekdaysHeader {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  margin-bottom: v.$space-sm;
+
+  .weekdayLabel {
+    text-align: center;
+    font-size: v.$font-size-xs;
+    font-weight: 700;
+    color: v.$text-link;
+    padding: v.$space-xs 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-family: v.$font-family-condensed;
+    min-width: 45px;
+  }
+}
+
+.daysGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.calendarDay {
+  aspect-ratio: 1;
+  min-height: 50px;
+  min-width: 45px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid v.$border-primary;
+  transition: all v.$transition-duration v.$transition-easing;
+  cursor: pointer;
+
+  &:hover:not(.emptyDay) {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(v.$color-black, 0.3);
+    z-index: 10;
+    border-color: v.$border-accent;
+  }
+
+  &.emptyDay {
+    border: none;
+    cursor: default;
+
+    &:hover {
+      transform: none;
+      box-shadow: none;
+    }
+  }
+
+  &.noGameDay {
+    background: v.$background-dark;
+    border-color: v.$border-secondary;
+
+    .dayNumber {
+      color: v.$text-secondary;
+      font-weight: 400;
+    }
+  }
+
+  &.gameDay {
+    border-width: 2px;
+    border-color: v.$border-accent;
+
+    .dayNumber {
+      color: v.$text-primary;
+      font-weight: 700;
+    }
+
+    .gameIndicator {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+    }
+
+    .performanceScore {
+      background: rgba(v.$color-black, 0.8);
+      color: v.$text-primary;
+      font-size: v.$font-size-xxs;
+      font-weight: 700;
+      padding: 1px 3px;
+      border-radius: 3px;
+      min-width: 18px;
+      text-align: center;
+    }
+  }
+}
+
+.dayNumber {
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+  font-family: v.$font-family-condensed;
+  line-height: 1;
+}
+
+.calendarFooter {
+  border-top: v.$border-separator;
+  padding-top: v.$space-lg;
+
+  .calendarStats {
+    display: flex;
+    justify-content: space-around;
+    gap: v.$space-lg;
+    margin-bottom: v.$space-md;
+    flex-wrap: wrap;
+
+    .statItem {
+      text-align: center;
+
+      .statLabel {
+        display: block;
+        font-size: v.$font-size-xs;
+        color: v.$text-secondary;
+        margin-bottom: v.$space-xxs;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+      }
+
+      .statValue {
+        display: block;
+        font-size: v.$font-size-lg;
+        font-weight: 700;
+        color: v.$text-link;
+        font-family: v.$font-family-condensed;
+      }
+    }
+  }
+
+  .calendarNote {
+    p {
+      font-size: v.$font-size-sm;
+      color: v.$text-secondary;
+      text-align: center;
+      margin: 0;
+      line-height: 1.5;
+      font-style: italic;
+    }
+  }
+}
+
+// Responsive design for calendar
+@media (max-width: v.$breakpoint-md-max) {
+  .calendarGrid {
+    grid-template-columns: 1fr;
+    gap: v.$space-lg;
+  }
+
+  .calendarMonth {
+    min-width: 340px;
+  }
+
+  .calendarLegend {
     flex-direction: column;
     align-items: flex-start;
+
+    .legendItems {
+      gap: v.$space-md;
+    }
   }
 
-  .tableControls,
-  .trendControls {
-    width: 100%;
-    justify-content: flex-start;
+  .calendarDay {
+    min-height: 45px;
+    min-width: 40px;
+
+    .dayNumber {
+      font-size: v.$font-size-xs;
+    }
+
+    .performanceScore {
+      font-size: 8px;
+      padding: 1px 2px;
+      min-width: 14px;
+    }
   }
 
-  .statSelector {
-    min-width: 120px;
+  .weekdayLabel {
+    min-width: 40px;
   }
 
-  .insightsGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .skaterStreaks {
+  .calendarStats {
     justify-content: center;
+    gap: v.$space-md;
+
+    .statItem {
+      min-width: 80px;
+    }
+  }
+}
+
+@media (max-width: v.$screen-small-max) {
+  .performanceCalendar {
+    padding: v.$space-md;
   }
 
-  .comparisonStats {
-    grid-template-columns: 1fr;
+  .calendarMonth {
+    min-width: 300px;
   }
 
-  .heatmapCalendar {
-    grid-template-columns: repeat(auto-fill, minmax(15px, 1fr));
+  .calendarDay {
+    min-height: 40px;
+    min-width: 35px;
   }
 
-  .heatmapDay {
-    width: 15px;
-    height: 15px;
+  .weekdayLabel {
+    font-size: 10px;
+    min-width: 35px;
   }
 }

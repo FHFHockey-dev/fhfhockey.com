@@ -104,3 +104,247 @@
   margin: 2.5rem 0 1rem 0;
   letter-spacing: 0.2em;
 }
+
+.overviewGrid {
+  display: flex;
+  gap: v.$space-lg;
+  margin: v.$space-xl 0;
+  min-height: 500px;
+}
+
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  width: 40%;
+  gap: v.$space-md;
+}
+
+.rightColumn {
+  width: 60%;
+  height: 100%;
+}
+
+.radarSection {
+  flex: 1;
+  min-height: 250px;
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+  box-sizing: border-box;
+}
+
+.insightsSection {
+  flex: 1;
+  min-height: 250px;
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+  box-sizing: border-box;
+}
+
+.calendarSection {
+  height: 100%;
+  min-height: 500px;
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+  box-sizing: border-box;
+}
+
+.playerHeader {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xl;
+  margin: v.$space-xl 0;
+  padding: v.$space-lg;
+  @include v.component-wrapper;
+}
+
+.playerImageContainer {
+  flex-shrink: 0;
+}
+
+.playerInfo {
+  flex: 1;
+}
+
+.playerDetails {
+  margin-top: v.$space-md;
+}
+
+.tabNavigation {
+  display: flex;
+  gap: v.$space-sm;
+  margin: v.$space-lg 0;
+  border-bottom: 2px solid v.$border-primary;
+  padding-bottom: v.$space-sm;
+}
+
+.tabButton {
+  @include v.button-style;
+  background-color: transparent;
+  border: 1px solid v.$border-secondary;
+  color: v.$text-secondary;
+
+  &:hover {
+    background-color: v.$background-medium;
+    color: v.$text-primary;
+  }
+
+  &.active {
+    background-color: v.$primary-color;
+    color: v.$text-button;
+    border-color: v.$primary-color;
+  }
+}
+
+.controlsSection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xl;
+  margin: v.$space-lg 0;
+  padding: v.$space-lg;
+  @include v.component-wrapper;
+}
+
+.timeframeSelector {
+  display: flex;
+  align-items: center;
+  gap: v.$space-md;
+
+  label {
+    font-weight: 600;
+    color: v.$text-primary;
+  }
+}
+
+.timeframeButton {
+  @include v.button-style;
+  background-color: transparent;
+  border: 1px solid v.$border-secondary;
+  color: v.$text-secondary;
+  padding: v.$space-xs v.$space-md;
+
+  &:hover {
+    background-color: v.$background-medium;
+    color: v.$text-primary;
+  }
+
+  &.active {
+    background-color: v.$secondary-color;
+    color: v.$text-button;
+    border-color: v.$secondary-color;
+  }
+}
+
+.statSelector {
+  flex: 1;
+  min-width: 300px;
+
+  label {
+    font-weight: 600;
+    color: v.$text-primary;
+    margin-bottom: v.$space-sm;
+    display: block;
+  }
+}
+
+.statCategories {
+  display: flex;
+  gap: v.$space-xl;
+  flex-wrap: wrap;
+}
+
+.statCategory {
+  flex: 1;
+  min-width: 200px;
+
+  h4 {
+    color: v.$secondary-color;
+    margin-bottom: v.$space-sm;
+    font-size: v.$font-size-sm;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+.statCheckbox {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+  margin-bottom: v.$space-xs;
+  cursor: pointer;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+
+  input[type="checkbox"] {
+    margin: 0;
+    accent-color: v.$primary-color;
+  }
+
+  &:hover {
+    color: v.$text-primary;
+  }
+}
+
+.contentArea {
+  margin: v.$space-xl 0;
+}
+
+.statsOverview {
+  // Legacy class for backward compatibility
+  width: 100%;
+}
+
+.performanceHeatmap {
+  // Legacy class for backward compatibility
+  width: 100%;
+}
+
+.contextualStats {
+  // Legacy class for backward compatibility
+  width: 100%;
+}
+
+.advancedGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-xl;
+  margin: v.$space-xl 0;
+}
+
+.advancedTable {
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+}
+
+// Responsive design
+@media (max-width: v.$breakpoint-lg-min) {
+  .overviewGrid {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .leftColumn {
+    width: 100%;
+  }
+
+  .rightColumn {
+    width: 100%;
+    min-height: 400px;
+  }
+
+  .playerHeader {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .controlsSection {
+    flex-direction: column;
+  }
+
+  .statCategories {
+    flex-direction: column;
+  }
+
+  .advancedGrid {
+    grid-template-columns: 1fr;
+  }
+}
