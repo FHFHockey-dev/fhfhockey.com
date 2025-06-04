@@ -1,0 +1,609 @@
+// Player Stats Table Styles
+.playerStatsContainer {
+  background: var(--surface-color, #1a1a1a);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.tableHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.tableTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-primary, #ffffff);
+  margin: 0;
+}
+
+.tableControls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.statSelector {
+  padding: 8px 12px;
+  background: var(--surface-secondary, #2a2a2a);
+  border: 1px solid var(--border-color, #404040);
+  border-radius: 6px;
+  color: var(--text-primary, #ffffff);
+  font-size: 0.9rem;
+  min-width: 150px;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color, #0ea5e9);
+    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+  }
+}
+
+.gameRangeSelector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--text-secondary, #b0b0b0);
+
+  input {
+    padding: 6px 8px;
+    background: var(--surface-secondary, #2a2a2a);
+    border: 1px solid var(--border-color, #404040);
+    border-radius: 4px;
+    color: var(--text-primary, #ffffff);
+    width: 80px;
+    text-align: center;
+
+    &:focus {
+      outline: none;
+      border-color: var(--primary-color, #0ea5e9);
+    }
+  }
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border-color, #404040);
+}
+
+.statsTable {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface-color, #1a1a1a);
+
+  th,
+  td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color, #404040);
+    font-size: 0.9rem;
+  }
+
+  th {
+    background: var(--surface-secondary, #2a2a2a);
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background: var(--surface-hover, #3a3a3a);
+    }
+
+    &.sortable {
+      &::after {
+        content: "↕";
+        margin-left: 8px;
+        opacity: 0.5;
+      }
+    }
+
+    &.sorted-asc::after {
+      content: "↑";
+      opacity: 1;
+    }
+
+    &.sorted-desc::after {
+      content: "↓";
+      opacity: 1;
+    }
+  }
+
+  td {
+    color: var(--text-secondary, #b0b0b0);
+
+    &.numeric {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    &.date {
+      font-size: 0.85rem;
+    }
+
+    &.highlight {
+      background: rgba(14, 165, 233, 0.1);
+      color: var(--text-primary, #ffffff);
+    }
+  }
+
+  tbody tr {
+    transition: background-color 0.2s;
+
+    &:hover {
+      background: var(--surface-hover, rgba(255, 255, 255, 0.05));
+    }
+
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+}
+
+.noData {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-secondary, #b0b0b0);
+  font-size: 1.1rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-secondary, #b0b0b0);
+  font-size: 1.1rem;
+}
+
+// Player Trend Chart Styles
+.trendContainer {
+  background: var(--surface-color, #1a1a1a);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.trendHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+    margin: 0;
+  }
+}
+
+.trendControls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.rollingAverageToggle {
+  display: flex;
+  gap: 8px;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    color: var(--text-secondary, #b0b0b0);
+    cursor: pointer;
+
+    input[type="checkbox"] {
+      accent-color: var(--primary-color, #0ea5e9);
+    }
+  }
+}
+
+.chartWrapper {
+  height: 400px;
+  position: relative;
+}
+
+// Performance Heatmap Styles
+.heatmapContainer {
+  background: var(--surface-color, #1a1a1a);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.heatmapHeader {
+  margin-bottom: 20px;
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+    margin: 0 0 8px 0;
+  }
+
+  p {
+    color: var(--text-secondary, #b0b0b0);
+    margin: 0;
+    font-size: 0.9rem;
+  }
+}
+
+.heatmapCalendar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20px, 1fr));
+  gap: 2px;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.heatmapDay {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+
+  &:hover {
+    transform: scale(1.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+  }
+
+  &.level-0 {
+    background: var(--surface-secondary, #2a2a2a);
+  }
+
+  &.level-1 {
+    background: rgba(14, 165, 233, 0.3);
+  }
+
+  &.level-2 {
+    background: rgba(14, 165, 233, 0.5);
+  }
+
+  &.level-3 {
+    background: rgba(14, 165, 233, 0.7);
+  }
+
+  &.level-4 {
+    background: rgba(14, 165, 233, 0.9);
+  }
+
+  &.level-5 {
+    background: rgba(14, 165, 233, 1);
+  }
+}
+
+.heatmapLegend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #b0b0b0);
+
+  .legendScale {
+    display: flex;
+    gap: 2px;
+  }
+
+  .legendDay {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+  }
+}
+
+// Radar Chart Styles
+.radarContainer {
+  background: var(--surface-color, #1a1a1a);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.radarHeader {
+  margin-bottom: 20px;
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary, #ffffff);
+    margin: 0 0 8px 0;
+  }
+
+  p {
+    color: var(--text-secondary, #b0b0b0);
+    margin: 0;
+    font-size: 0.9rem;
+  }
+}
+
+.radarWrapper {
+  height: 400px;
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.radarLegend {
+  margin-bottom: 20px;
+}
+
+.percentileGuide {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #b0b0b0);
+}
+
+.percentileItem {
+  white-space: nowrap;
+}
+
+.radarStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.statBreakdown {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--surface-secondary, #2a2a2a);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.statName {
+  color: var(--text-secondary, #b0b0b0);
+}
+
+.statValue {
+  color: var(--text-primary, #ffffff);
+  font-weight: 600;
+}
+
+.percentile {
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+
+  &.good {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+  }
+
+  &.average {
+    background: rgba(234, 179, 8, 0.2);
+    color: #eab308;
+  }
+
+  &.poor {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+  }
+}
+
+// Contextual Stats Styles
+.contextualContainer {
+  background: var(--surface-color, #1a1a1a);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+
+  h3,
+  h4 {
+    color: var(--text-primary, #ffffff);
+    margin: 0 0 16px 0;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  h4 {
+    font-size: 1.2rem;
+    font-weight: 500;
+  }
+}
+
+.insightsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.insightCard {
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid transparent;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  &.positive {
+    background: rgba(34, 197, 94, 0.1);
+    border-left-color: #22c55e;
+  }
+
+  &.negative {
+    background: rgba(239, 68, 68, 0.1);
+    border-left-color: #ef4444;
+  }
+
+  &.neutral {
+    background: rgba(156, 163, 175, 0.1);
+    border-left-color: #9ca3af;
+  }
+}
+
+.insightLabel {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #b0b0b0);
+  margin-bottom: 4px;
+}
+
+.insightValue {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary, #ffffff);
+  margin-bottom: 4px;
+}
+
+.insightDescription {
+  font-size: 0.8rem;
+  color: var(--text-secondary, #b0b0b0);
+}
+
+.streakSection {
+  margin-bottom: 24px;
+}
+
+.streakCard {
+  background: var(--surface-secondary, #2a2a2a);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.skaterStreaks {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.streak {
+  text-align: center;
+  padding: 12px 16px;
+  border-radius: 6px;
+  min-width: 80px;
+
+  &.positive {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+  }
+
+  &.negative {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+  }
+
+  &.neutral {
+    background: rgba(156, 163, 175, 0.2);
+    color: #9ca3af;
+  }
+}
+
+.streakValue {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.streakLabel {
+  display: block;
+  font-size: 0.8rem;
+  margin-top: 4px;
+  opacity: 0.8;
+}
+
+.seasonComparison {
+  background: var(--surface-secondary, #2a2a2a);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.comparisonStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.comparisonItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.comparisonLabel {
+  color: var(--text-secondary, #b0b0b0);
+}
+
+.comparisonValue {
+  color: var(--text-primary, #ffffff);
+  font-weight: 600;
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .tableHeader,
+  .trendHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tableControls,
+  .trendControls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .statSelector {
+    min-width: 120px;
+  }
+
+  .insightsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .skaterStreaks {
+    justify-content: center;
+  }
+
+  .comparisonStats {
+    grid-template-columns: 1fr;
+  }
+
+  .heatmapCalendar {
+    grid-template-columns: repeat(auto-fill, minmax(15px, 1fr));
+  }
+
+  .heatmapDay {
+    width: 15px;
+    height: 15px;
+  }
+}
