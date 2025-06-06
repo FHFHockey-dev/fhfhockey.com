@@ -64,7 +64,57 @@ const STAT_DISPLAY_NAMES: { [key: string]: string } = {
   blocked_shots: "Blocks",
   fow_percentage: "FO%",
   sat_pct: "CF%",
-  zone_start_pct: "ZS%"
+  zone_start_pct: "ZS%",
+
+  // NST Advanced Stats - Possession Metrics
+  cf_pct: "CF%",
+  ff_pct: "FF%",
+  sf_pct: "SF%",
+  gf_pct: "GF%",
+  xgf_pct: "xGF%",
+  scf_pct: "SCF%",
+  hdcf_pct: "HDCF%",
+  mdcf_pct: "MDCF%",
+  ldcf_pct: "LDCF%",
+
+  // NST Advanced Stats - Individual Per 60
+  ixg_per_60: "ixG/60",
+  icf_per_60: "iCF/60",
+  iff_per_60: "iFF/60",
+  iscfs_per_60: "iSCF/60",
+  hdcf_per_60: "HDCF/60",
+  shots_per_60: "SOG/60",
+  goals_per_60: "G/60",
+  total_assists_per_60: "A/60",
+  total_points_per_60: "P/60",
+  rush_attempts_per_60: "Rush/60",
+  rebounds_created_per_60: "Reb/60",
+
+  // NST Advanced Stats - Defensive Per 60
+  hdca_per_60: "HDCA/60",
+  sca_per_60: "SCA/60",
+  shots_blocked_per_60: "BLK/60",
+  xga_per_60: "xGA/60",
+  ga_per_60: "GA/60",
+
+  // NST Advanced Stats - Zone Usage
+  off_zone_start_pct: "OZ Start%",
+  def_zone_start_pct: "DZ Start%",
+  neu_zone_start_pct: "NZ Start%",
+  off_zone_faceoff_pct: "OZ FO%",
+
+  // NST Advanced Stats - On-Ice Impact
+  on_ice_sh_pct: "oiSH%",
+  on_ice_sv_pct: "oiSV%",
+  pdo: "PDO",
+
+  // NST Advanced Stats - Discipline Per 60
+  pim_per_60: "PIM/60",
+  total_penalties_per_60: "Pen/60",
+  penalties_drawn_per_60: "PenD/60",
+  giveaways_per_60: "GV/60",
+  takeaways_per_60: "TK/60",
+  hits_per_60: "HIT/60"
 };
 
 export function PlayerStatsChart({

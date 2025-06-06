@@ -967,7 +967,6 @@
         border-top-right-radius: v.$border-radius-sm;
         border-top-left-radius: v.$border-radius-sm;
         border: 1px solid v.$border-primary;
-        margin-bottom: v.$space-xxs;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
       }
 
@@ -981,7 +980,6 @@
           font-size: v.$font-size-xs;
           color: v.$text-secondary;
           background: v.$background-dark;
-          border-radius: v.$border-radius-sm;
           border: 1px solid v.$border-secondary;
         }
       }
@@ -1028,7 +1026,7 @@
         }
 
         &.playoffGame {
-          border-color: v.$primary-color !important;
+          border-color: v.$warning-color !important;
           border-width: 2px !important;
           box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
 

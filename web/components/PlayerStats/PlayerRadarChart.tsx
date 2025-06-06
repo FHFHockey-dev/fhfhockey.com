@@ -53,6 +53,56 @@ const PERCENTILE_THRESHOLDS = {
   toi_per_game: { elite: 22, good: 18, average: 14 },
   sat_pct: { elite: 55, good: 52, average: 48 },
 
+  // NST Advanced Stats - Possession Metrics (percentages)
+  cf_pct: { elite: 55, good: 52, average: 48 },
+  ff_pct: { elite: 55, good: 52, average: 48 },
+  sf_pct: { elite: 55, good: 52, average: 48 },
+  gf_pct: { elite: 60, good: 55, average: 45 },
+  xgf_pct: { elite: 55, good: 52, average: 48 },
+  scf_pct: { elite: 55, good: 52, average: 48 },
+  hdcf_pct: { elite: 55, good: 52, average: 48 },
+  mdcf_pct: { elite: 55, good: 52, average: 48 },
+  ldcf_pct: { elite: 55, good: 52, average: 48 },
+
+  // NST Advanced Stats - Per 60 Individual Production
+  ixg_per_60: { elite: 2.5, good: 2.0, average: 1.2 },
+  icf_per_60: { elite: 12, good: 9, average: 6 },
+  iff_per_60: { elite: 10, good: 8, average: 5 },
+  iscfs_per_60: { elite: 8, good: 6, average: 4 },
+  hdcf_per_60: { elite: 6, good: 4, average: 2.5 },
+  shots_per_60: { elite: 12, good: 9, average: 6 },
+  goals_per_60: { elite: 2.0, good: 1.5, average: 0.8 },
+  total_assists_per_60: { elite: 2.5, good: 1.8, average: 1.0 },
+  total_points_per_60: { elite: 4.0, good: 3.0, average: 1.8 },
+  rush_attempts_per_60: { elite: 3.0, good: 2.0, average: 1.0 },
+  rebounds_created_per_60: { elite: 1.5, good: 1.0, average: 0.5 },
+
+  // NST Advanced Stats - Per 60 Defensive/Against
+  hdca_per_60: { elite: 4.0, good: 5.5, average: 7.0 }, // Lower is better
+  sca_per_60: { elite: 8.0, good: 10.0, average: 12.0 }, // Lower is better
+  shots_blocked_per_60: { elite: 4.0, good: 3.0, average: 2.0 },
+  xga_per_60: { elite: 2.0, good: 2.5, average: 3.0 }, // Lower is better
+  ga_per_60: { elite: 2.0, good: 2.5, average: 3.0 }, // Lower is better
+
+  // NST Advanced Stats - Zone Usage (percentages)
+  off_zone_start_pct: { elite: 65, good: 55, average: 45 },
+  def_zone_start_pct: { elite: 65, good: 55, average: 45 }, // For defensemen, higher is better
+  neu_zone_start_pct: { elite: 40, good: 30, average: 20 },
+  off_zone_faceoff_pct: { elite: 60, good: 55, average: 45 },
+
+  // NST Advanced Stats - On-Ice Impact
+  on_ice_sh_pct: { elite: 10.5, good: 9.0, average: 7.5 },
+  on_ice_sv_pct: { elite: 92.5, good: 91.0, average: 89.5 },
+  pdo: { elite: 102, good: 100.5, average: 99.0 },
+
+  // NST Advanced Stats - Discipline Per 60
+  pim_per_60: { elite: 0.5, good: 1.0, average: 1.8 }, // Lower is better
+  total_penalties_per_60: { elite: 0.3, good: 0.6, average: 1.0 }, // Lower is better
+  penalties_drawn_per_60: { elite: 1.5, good: 1.0, average: 0.6 },
+  giveaways_per_60: { elite: 1.5, good: 2.5, average: 4.0 }, // Lower is better
+  takeaways_per_60: { elite: 2.0, good: 1.5, average: 1.0 },
+  hits_per_60: { elite: 6.0, good: 4.0, average: 2.5 },
+
   // Goalie thresholds
   save_pct: { elite: 0.925, good: 0.915, average: 0.9 },
   goals_against_avg: { elite: 2.2, good: 2.7, average: 3.2 }, // Inverted: lower is better
@@ -75,7 +125,52 @@ const STAT_DISPLAY_NAMES: { [key: string]: string } = {
   save_pct: "SV%",
   goals_against_avg: "GAA",
   wins: "W",
-  shutouts: "SO"
+  shutouts: "SO",
+
+  // NST Advanced Stats Display Names
+  cf_pct: "CF%",
+  ff_pct: "FF%",
+  sf_pct: "SF%",
+  gf_pct: "GF%",
+  xgf_pct: "xGF%",
+  scf_pct: "SCF%",
+  hdcf_pct: "HDCF%",
+  mdcf_pct: "MDCF%",
+  ldcf_pct: "LDCF%",
+
+  ixg_per_60: "ixG/60",
+  icf_per_60: "iCF/60",
+  iff_per_60: "iFF/60",
+  iscfs_per_60: "iSCF/60",
+  hdcf_per_60: "HDCF/60",
+  shots_per_60: "SOG/60",
+  goals_per_60: "G/60",
+  total_assists_per_60: "A/60",
+  total_points_per_60: "P/60",
+  rush_attempts_per_60: "Rush/60",
+  rebounds_created_per_60: "Reb/60",
+
+  hdca_per_60: "HDCA/60",
+  sca_per_60: "SCA/60",
+  shots_blocked_per_60: "BLK/60",
+  xga_per_60: "xGA/60",
+  ga_per_60: "GA/60",
+
+  off_zone_start_pct: "OZS%",
+  def_zone_start_pct: "DZS%",
+  neu_zone_start_pct: "NZS%",
+  off_zone_faceoff_pct: "OZFO%",
+
+  on_ice_sh_pct: "oiSH%",
+  on_ice_sv_pct: "oiSV%",
+  pdo: "PDO",
+
+  pim_per_60: "PIM/60",
+  total_penalties_per_60: "Pen/60",
+  penalties_drawn_per_60: "PenD/60",
+  giveaways_per_60: "GV/60",
+  takeaways_per_60: "TK/60",
+  hits_per_60: "HIT/60"
 };
 
 export function PlayerRadarChart({

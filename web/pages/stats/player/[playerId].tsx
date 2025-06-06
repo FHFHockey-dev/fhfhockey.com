@@ -147,10 +147,25 @@ const POSITION_STAT_CONFIGS = {
       "blocked_shots"
     ],
     advanced: [
-      "sat_pct",
-      "zone_start_pct",
-      "individual_sat_for_per_60",
-      "on_ice_shooting_pct"
+      // Possession & Shot Metrics
+      "cf_pct",
+      "ff_pct",
+      "sf_pct",
+      "xgf_pct",
+      "hdcf_pct",
+      // Individual Production
+      "ixg_per_60",
+      "icf_per_60",
+      "shots_per_60",
+      "goals_per_60",
+      "total_points_per_60",
+      // Zone Usage
+      "off_zone_start_pct",
+      "off_zone_faceoff_pct",
+      // On-Ice Impact
+      "on_ice_sh_pct",
+      "on_ice_sv_pct",
+      "pdo"
     ]
   },
   // Wingers
@@ -158,27 +173,73 @@ const POSITION_STAT_CONFIGS = {
     primary: ["points", "goals", "assists", "shots", "shooting_percentage"],
     secondary: ["pp_points", "hits", "takeaways", "toi_per_game"],
     advanced: [
-      "sat_pct",
-      "zone_start_pct",
-      "individual_sat_for_per_60",
-      "on_ice_shooting_pct"
+      // Possession & Shot Metrics
+      "cf_pct",
+      "ff_pct",
+      "sf_pct",
+      "xgf_pct",
+      "hdcf_pct",
+      // Individual Production
+      "ixg_per_60",
+      "icf_per_60",
+      "shots_per_60",
+      "goals_per_60",
+      "rush_attempts_per_60",
+      // Zone Usage
+      "off_zone_start_pct",
+      // On-Ice Impact
+      "on_ice_sh_pct",
+      "pdo"
     ]
   },
   RW: {
     primary: ["points", "goals", "assists", "shots", "shooting_percentage"],
     secondary: ["pp_points", "hits", "takeaways", "toi_per_game"],
     advanced: [
-      "sat_pct",
-      "zone_start_pct",
-      "individual_sat_for_per_60",
-      "on_ice_shooting_pct"
+      // Possession & Shot Metrics
+      "cf_pct",
+      "ff_pct",
+      "sf_pct",
+      "xgf_pct",
+      "hdcf_pct",
+      // Individual Production
+      "ixg_per_60",
+      "icf_per_60",
+      "shots_per_60",
+      "goals_per_60",
+      "rush_attempts_per_60",
+      // Zone Usage
+      "off_zone_start_pct",
+      // On-Ice Impact
+      "on_ice_sh_pct",
+      "pdo"
     ]
   },
   // Defensemen
   D: {
     primary: ["points", "assists", "blocked_shots", "hits", "toi_per_game"],
     secondary: ["goals", "pp_points", "plus_minus", "takeaways", "giveaways"],
-    advanced: ["sat_pct", "zone_start_pct", "sat_relative", "usat_pct"]
+    advanced: [
+      // Defensive Metrics
+      "hdca_per_60",
+      "sca_per_60",
+      "shots_blocked_per_60",
+      "xga_per_60",
+      // Possession & Transition
+      "cf_pct",
+      "ff_pct",
+      "sf_pct",
+      "xgf_pct",
+      // Individual Contributions
+      "icf_per_60",
+      "total_points_per_60",
+      // Zone Usage & Deployment
+      "def_zone_start_pct",
+      "off_zone_start_pct",
+      // On-Ice Impact
+      "on_ice_sv_pct",
+      "pdo"
+    ]
   },
   // Goalies
   G: {
@@ -198,6 +259,7 @@ const POSITION_STAT_CONFIGS = {
 };
 
 const STAT_DISPLAY_NAMES: { [key: string]: string } = {
+  // Basic Stats
   points: "Points",
   goals: "Goals",
   assists: "Assists",
@@ -218,7 +280,59 @@ const STAT_DISPLAY_NAMES: { [key: string]: string } = {
   plus_minus: "+/-",
   gw_goals: "GWG",
   takeaways: "Takeaways",
-  giveaways: "Giveaways"
+  giveaways: "Giveaways",
+
+  // NST Advanced Stats - Possession Metrics
+  cf_pct: "CF%",
+  ff_pct: "FF%",
+  sf_pct: "SF%",
+  gf_pct: "GF%",
+  xgf_pct: "xGF%",
+  scf_pct: "SCF%",
+  hdcf_pct: "HDCF%",
+  mdcf_pct: "MDCF%",
+  ldcf_pct: "LDCF%",
+
+  // NST Advanced Stats - Per 60 Individual
+  ixg_per_60: "ixG/60",
+  icf_per_60: "iCF/60",
+  iff_per_60: "iFF/60",
+  iscfs_per_60: "iSCF/60",
+  hdcf_per_60: "HDCF/60",
+  shots_per_60: "SOG/60",
+  goals_per_60: "G/60",
+  total_assists_per_60: "A/60",
+  total_points_per_60: "P/60",
+  rush_attempts_per_60: "Rush/60",
+  rebounds_created_per_60: "Reb/60",
+
+  // NST Advanced Stats - Per 60 On-Ice Against
+  hdca_per_60: "HDCA/60",
+  sca_per_60: "SCA/60",
+  shots_blocked_per_60: "BLK/60",
+  xga_per_60: "xGA/60",
+  ga_per_60: "GA/60",
+
+  // NST Advanced Stats - Zone Usage
+  off_zone_start_pct: "OZ Start%",
+  def_zone_start_pct: "DZ Start%",
+  neu_zone_start_pct: "NZ Start%",
+  off_zone_faceoff_pct: "OZ FO%",
+
+  // NST Advanced Stats - On-Ice Impact
+  on_ice_sh_pct: "oiSH%",
+  on_ice_sv_pct: "oiSV%",
+  pdo: "PDO",
+
+  // NST Advanced Stats - Penalties
+  pim_per_60: "PIM/60",
+  total_penalties_per_60: "Pen/60",
+  penalties_drawn_per_60: "PenD/60",
+
+  // NST Advanced Stats - Discipline
+  giveaways_per_60: "GV/60",
+  takeaways_per_60: "TK/60",
+  hits_per_60: "HIT/60"
 };
 
 function splitLabel(label: string) {

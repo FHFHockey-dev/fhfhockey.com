@@ -17,6 +17,7 @@ interface PlayerPerformanceHeatmapProps {
 
 // Performance thresholds based on NHL averages (per game)
 const PERFORMANCE_THRESHOLDS = {
+  // Basic counting stats
   goals: { elite: 0.75, good: 0.55, average: 0.35, poor: 0.15 },
   assists: { elite: 1.2, good: 0.85, average: 0.55, poor: 0.25 },
   points: { elite: 1.9, good: 1.35, average: 0.85, poor: 0.4 },
@@ -25,7 +26,50 @@ const PERFORMANCE_THRESHOLDS = {
   blocked_shots: { elite: 2.2, good: 1.5, average: 0.9, poor: 0.4 },
   takeaways: { elite: 1.8, good: 1.2, average: 0.7, poor: 0.3 },
   giveaways: { elite: 0.8, good: 1.2, average: 1.8, poor: 2.5 }, // Inverted - lower is better
-  toi_per_game: { elite: 22, good: 18, average: 14, poor: 10 }
+  toi_per_game: { elite: 22, good: 18, average: 14, poor: 10 },
+
+  // NST Advanced Stats - Possession Metrics (percentages)
+  cf_pct: { elite: 55, good: 52, average: 48, poor: 45 },
+  ff_pct: { elite: 55, good: 52, average: 48, poor: 45 },
+  sf_pct: { elite: 55, good: 52, average: 48, poor: 45 },
+  gf_pct: { elite: 60, good: 55, average: 45, poor: 40 },
+  xgf_pct: { elite: 55, good: 52, average: 48, poor: 45 },
+  scf_pct: { elite: 55, good: 52, average: 48, poor: 45 },
+  hdcf_pct: { elite: 55, good: 52, average: 48, poor: 45 },
+
+  // NST Advanced Stats - Individual Per 60
+  ixg_per_60: { elite: 2.5, good: 2.0, average: 1.2, poor: 0.6 },
+  icf_per_60: { elite: 12, good: 9, average: 6, poor: 3 },
+  iff_per_60: { elite: 10, good: 8, average: 5, poor: 2.5 },
+  hdcf_per_60: { elite: 6, good: 4, average: 2.5, poor: 1 },
+  shots_per_60: { elite: 12, good: 9, average: 6, poor: 3 },
+  goals_per_60: { elite: 2.0, good: 1.5, average: 0.8, poor: 0.3 },
+  total_assists_per_60: { elite: 2.5, good: 1.8, average: 1.0, poor: 0.4 },
+  total_points_per_60: { elite: 4.0, good: 3.0, average: 1.8, poor: 0.8 },
+  rush_attempts_per_60: { elite: 3.0, good: 2.0, average: 1.0, poor: 0.4 },
+
+  // NST Advanced Stats - Defensive Per 60 (lower is better for most)
+  hdca_per_60: { elite: 4.0, good: 5.5, average: 7.0, poor: 9.0 }, // Inverted
+  sca_per_60: { elite: 8.0, good: 10.0, average: 12.0, poor: 15.0 }, // Inverted
+  shots_blocked_per_60: { elite: 4.0, good: 3.0, average: 2.0, poor: 1.0 },
+  xga_per_60: { elite: 2.0, good: 2.5, average: 3.0, poor: 4.0 }, // Inverted
+
+  // NST Advanced Stats - Zone Usage (context-dependent)
+  off_zone_start_pct: { elite: 65, good: 55, average: 45, poor: 35 },
+  def_zone_start_pct: { elite: 35, good: 45, average: 55, poor: 65 }, // Inverted for forwards
+
+  // NST Advanced Stats - On-Ice Impact
+  on_ice_sh_pct: { elite: 10.5, good: 9.0, average: 7.5, poor: 6.0 },
+  on_ice_sv_pct: { elite: 92.5, good: 91.0, average: 89.5, poor: 88.0 },
+  pdo: { elite: 102, good: 100.5, average: 99.0, poor: 97.5 },
+
+  // NST Advanced Stats - Discipline Per 60
+  pim_per_60: { elite: 0.5, good: 1.0, average: 1.8, poor: 3.0 }, // Inverted
+  total_penalties_per_60: { elite: 0.3, good: 0.6, average: 1.0, poor: 1.5 }, // Inverted
+  penalties_drawn_per_60: { elite: 1.5, good: 1.0, average: 0.6, poor: 0.3 },
+  giveaways_per_60: { elite: 1.5, good: 2.5, average: 4.0, poor: 6.0 }, // Inverted
+  takeaways_per_60: { elite: 2.0, good: 1.5, average: 1.0, poor: 0.5 },
+  hits_per_60: { elite: 6.0, good: 4.0, average: 2.5, poor: 1.0 }
 };
 
 type PerformanceLevel =
@@ -501,7 +545,7 @@ export function PlayerPerformanceHeatmap({
                 className={styles.legendColorSwatch}
                 style={{
                   // backgroundColor: none,
-                  border: "2px solid #07aae2",
+                  border: "2px solid #ffcc00",
                   borderRadius: "3px"
                 }}
               />

@@ -118,7 +118,7 @@ export function PlayerContextualStats({
         });
       }
     } else {
-      // Skater insights
+      // Skater insights - Basic stats
       const points = combinedGameLog.reduce(
         (sum, game) => sum + (Number(game.points) || 0),
         0
@@ -180,6 +180,130 @@ export function PlayerContextualStats({
         });
       }
 
+      // NST Advanced Stats - Possession Metrics
+      const cfPct =
+        combinedGameLog.reduce(
+          (sum, game) => sum + (Number(game.cf_pct) || 0),
+          0
+        ) / combinedGameLog.length;
+
+      const xgfPct =
+        combinedGameLog.reduce(
+          (sum, game) => sum + (Number(game.xgf_pct) || 0),
+          0
+        ) / combinedGameLog.length;
+
+      const hdcfPct =
+        combinedGameLog.reduce(
+          (sum, game) => sum + (Number(game.hdcf_pct) || 0),
+          0
+        ) / combinedGameLog.length;
+
+      if (cfPct > 0) {
+        insights.push({
+          label: "Possession Impact",
+          value: `${cfPct.toFixed(1)}% CF`,
+          trend:
+            cfPct >= 52 ? "positive" : cfPct >= 48 ? "neutral" : "negative",
+          description:
+            cfPct >= 52 ? "Drives Play" : cfPct >= 48 ? "Neutral" : "Struggles"
+        });
+      }
+
+      if (xgfPct > 0) {
+        insights.push({
+          label: "Scoring Chance Quality",
+          value: `${xgfPct.toFixed(1)}% xGF`,
+          trend:
+            xgfPct >= 52 ? "positive" : xgfPct >= 48 ? "neutral" : "negative",
+          description:
+            xgfPct >= 52
+              ? "Creates Quality"
+              : xgfPct >= 48
+                ? "Average"
+                : "Limited Quality"
+        });
+      }
+
+      // NST Advanced Stats - Individual Production Per 60
+      const ixgPer60 =
+        combinedGameLog.reduce(
+          (sum, game) => sum + (Number(game.ixg_per_60) || 0),
+          0
+        ) / combinedGameLog.length;
+
+      const icfPer60 =
+        combinedGameLog.reduce(
+          (sum, game) => sum + (Number(game.icf_per_60) || 0),
+          0
+        ) / combinedGameLog.length;
+
+      if (ixgPer60 > 0) {
+        insights.push({
+          label: "Expected Goals",
+          value: `${ixgPer60.toFixed(1)} ixG/60`,
+          trend:
+            ixgPer60 >= 2.0
+              ? "positive"
+              : ixgPer60 >= 1.2
+                ? "neutral"
+                : "negative",
+          description:
+            ixgPer60 >= 2.0
+              ? "Elite Chances"
+              : ixgPer60 >= 1.2
+                ? "Average"
+                : "Limited Chances"
+        });
+      }
+
+      // NST Advanced Stats - Zone Usage
+      const ozStartPct =
+        combinedGameLog.reduce(
+          (sum, game) => sum + (Number(game.off_zone_start_pct) || 0),
+          0
+        ) / combinedGameLog.length;
+
+      if (ozStartPct > 0) {
+        const deployment =
+          ozStartPct >= 60
+            ? "Offensive Role"
+            : ozStartPct >= 55
+              ? "Balanced Role"
+              : ozStartPct >= 45
+                ? "Defensive Role"
+                : "Shutdown Role";
+
+        insights.push({
+          label: "Deployment",
+          value: `${ozStartPct.toFixed(1)}% OZ`,
+          trend: "neutral", // Deployment is context-dependent
+          description: deployment
+        });
+      }
+
+      // NST Advanced Stats - PDO (Luck indicator)
+      const pdo =
+        combinedGameLog.reduce(
+          (sum, game) => sum + (Number(game.pdo) || 0),
+          0
+        ) / combinedGameLog.length;
+
+      if (pdo > 0) {
+        insights.push({
+          label: "PDO (Luck Factor)",
+          value: pdo.toFixed(1),
+          trend:
+            pdo >= 101.5 ? "positive" : pdo >= 98.5 ? "neutral" : "negative",
+          description:
+            pdo >= 101.5
+              ? "Unsustainably High"
+              : pdo >= 98.5
+                ? "Normal Range"
+                : "Unlucky"
+        });
+      }
+
       if (ppPoints > 0) {
         insights.push({
           label: "PP Production",
@@ -199,7 +323,7 @@ export function PlayerContextualStats({
         });
       }
 
-      // Position-specific insights
+      // Position-specific insights with NST stats
       if (player.position === "C") {
         const faceoffData = combinedGameLog.filter(
           (game) => Number(game.total_faceoffs) > 0
@@ -248,6 +372,13 @@ export function PlayerContextualStats({
         const blocksPerGame = gamesPlayed > 0 ? blocks / gamesPlayed : 0;
         const hitsPerGame = gamesPlayed > 0 ? hits / gamesPlayed : 0;
 
+        // NST Advanced defensive stats for defensemen
+        const hdcaPer60 =
+          combinedGameLog.reduce(
+            (sum, game) => sum + (Number(game.hdca_per_60) || 0),
+            0
+          ) / combinedGameLog.length;
+
         insights.push({
           label: "Defensive Impact",
           value: `${blocksPerGame.toFixed(1)} BLK, ${hitsPerGame.toFixed(1)} HIT/game`,
@@ -262,6 +393,25 @@ export function PlayerContextualStats({
               ? "Physical Presence"
               : "Skill-Based"
         });
+
+        if (hdcaPer60 > 0) {
+          insights.push({
+            label: "High Danger Defense",
+            value: `${hdcaPer60.toFixed(1)} HDCA/60`,
+            trend:
+              hdcaPer60 <= 5.5
+                ? "positive"
+                : hdcaPer60 <= 7.0
+                  ? "neutral"
+                  : "negative",
+            description:
+              hdcaPer60 <= 5.5
+                ? "Elite Defense"
+                : hdcaPer60 <= 7.0
+                  ? "Average"
+                  : "Struggles"
+          });
+        }
       }
     }
 

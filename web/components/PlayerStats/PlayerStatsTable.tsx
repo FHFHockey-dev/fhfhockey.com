@@ -20,6 +20,28 @@ const STAT_FORMATTERS = {
   zone_start_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
   on_ice_shooting_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
 
+  // NST Advanced Stats - Possession Percentages
+  cf_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
+  ff_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
+  sf_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
+  gf_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
+  xgf_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
+  scf_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
+  hdcf_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
+  mdcf_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
+  ldcf_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
+
+  // NST Advanced Stats - Zone Usage Percentages
+  off_zone_start_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
+  def_zone_start_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
+  neu_zone_start_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
+  off_zone_faceoff_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
+
+  // NST Advanced Stats - On-Ice Impact
+  on_ice_sh_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
+  on_ice_sv_pct: (value: number) => `${(value || 0).toFixed(1)}%`,
+  pdo: (value: number) => (value || 0).toFixed(1),
+
   // Decimal stats
   goals_against_avg: (value: number) => (value || 0).toFixed(2),
   toi_per_game: (value: number) => {
@@ -29,9 +51,36 @@ const STAT_FORMATTERS = {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   },
 
-  // Per-60 stats
-  individual_sat_for_per_60: (value: number) => (value || 0).toFixed(1),
+  // NST Advanced Stats - Per 60 stats (1 decimal place)
+  ixg_per_60: (value: number) => (value || 0).toFixed(1),
+  icf_per_60: (value: number) => (value || 0).toFixed(1),
+  iff_per_60: (value: number) => (value || 0).toFixed(1),
+  iscfs_per_60: (value: number) => (value || 0).toFixed(1),
+  hdcf_per_60: (value: number) => (value || 0).toFixed(1),
+  shots_per_60: (value: number) => (value || 0).toFixed(1),
+  goals_per_60: (value: number) => (value || 0).toFixed(1),
+  total_assists_per_60: (value: number) => (value || 0).toFixed(1),
+  total_points_per_60: (value: number) => (value || 0).toFixed(1),
+  rush_attempts_per_60: (value: number) => (value || 0).toFixed(1),
+  rebounds_created_per_60: (value: number) => (value || 0).toFixed(1),
+
+  // NST Advanced Stats - Defensive Per 60
+  hdca_per_60: (value: number) => (value || 0).toFixed(1),
+  sca_per_60: (value: number) => (value || 0).toFixed(1),
+  shots_blocked_per_60: (value: number) => (value || 0).toFixed(1),
+  xga_per_60: (value: number) => (value || 0).toFixed(1),
+  ga_per_60: (value: number) => (value || 0).toFixed(1),
+
+  // NST Advanced Stats - Discipline Per 60
+  pim_per_60: (value: number) => (value || 0).toFixed(1),
+  total_penalties_per_60: (value: number) => (value || 0).toFixed(1),
+  penalties_drawn_per_60: (value: number) => (value || 0).toFixed(1),
+  giveaways_per_60: (value: number) => (value || 0).toFixed(1),
+  takeaways_per_60: (value: number) => (value || 0).toFixed(1),
   hits_per_60: (value: number) => (value || 0).toFixed(1),
+
+  // Individual_sat_for_per_60 - legacy stat
+  individual_sat_for_per_60: (value: number) => (value || 0).toFixed(1),
   blocks_per_60: (value: number) => (value || 0).toFixed(1),
 
   // Default integer formatting
@@ -70,7 +119,57 @@ const STAT_DISPLAY_NAMES: { [key: string]: string } = {
   time_on_ice: "TOI",
   quality_start: "QS",
 
-  // Advanced stats
+  // NST Advanced Stats - Possession Metrics
+  cf_pct: "CF%",
+  ff_pct: "FF%",
+  sf_pct: "SF%",
+  gf_pct: "GF%",
+  xgf_pct: "xGF%",
+  scf_pct: "SCF%",
+  hdcf_pct: "HDCF%",
+  mdcf_pct: "MDCF%",
+  ldcf_pct: "LDCF%",
+
+  // NST Advanced Stats - Individual Per 60
+  ixg_per_60: "ixG/60",
+  icf_per_60: "iCF/60",
+  iff_per_60: "iFF/60",
+  iscfs_per_60: "iSCF/60",
+  hdcf_per_60: "HDCF/60",
+  shots_per_60: "SOG/60",
+  goals_per_60: "G/60",
+  total_assists_per_60: "A/60",
+  total_points_per_60: "P/60",
+  rush_attempts_per_60: "Rush/60",
+  rebounds_created_per_60: "Reb/60",
+
+  // NST Advanced Stats - Defensive Per 60
+  hdca_per_60: "HDCA/60",
+  sca_per_60: "SCA/60",
+  shots_blocked_per_60: "BLK/60",
+  xga_per_60: "xGA/60",
+  ga_per_60: "GA/60",
+
+  // NST Advanced Stats - Zone Usage
+  off_zone_start_pct: "OZ Start%",
+  def_zone_start_pct: "DZ Start%",
+  neu_zone_start_pct: "NZ Start%",
+  off_zone_faceoff_pct: "OZ FO%",
+
+  // NST Advanced Stats - On-Ice Impact
+  on_ice_sh_pct: "oiSH%",
+  on_ice_sv_pct: "oiSV%",
+  pdo: "PDO",
+
+  // NST Advanced Stats - Discipline Per 60
+  pim_per_60: "PIM/60",
+  total_penalties_per_60: "Pen/60",
+  penalties_drawn_per_60: "PenD/60",
+  giveaways_per_60: "GV/60",
+  takeaways_per_60: "TK/60",
+  hits_per_60: "HIT/60",
+
+  // Advanced stats (legacy)
   individual_sat_for_per_60: "iCF/60",
   on_ice_shooting_pct: "oiSH%",
   sat_relative: "CF% Rel",
@@ -129,68 +228,59 @@ export function PlayerStatsTable({
   }, [gameLog, playoffGameLog, selectedStats, showPlayoffData]);
 
   const formatStatValue = (value: any, stat: string): string => {
-    if (value == null || value === "") return "-";
-
-    if (stat === "date") {
-      return new Date(value).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric"
-      });
-    }
+    if (value === null || value === undefined) return "-";
 
     const numValue = Number(value);
     if (isNaN(numValue)) return "-";
 
-    const formatter =
-      STAT_FORMATTERS[stat as keyof typeof STAT_FORMATTERS] ||
-      STAT_FORMATTERS.default;
-    return formatter(numValue);
+    const formatter = STAT_FORMATTERS[stat as keyof typeof STAT_FORMATTERS];
+    if (formatter) {
+      return formatter(numValue);
+    }
+    return STAT_FORMATTERS.default(numValue);
   };
 
-  const getStatClass = (value: any, stat: string): string => {
-    const numValue = Number(value);
-    if (isNaN(numValue)) return "";
-
-    // Color coding for key stats
-    if (stat === "goals" && numValue > 0) return styles.positive;
-    if (stat === "assists" && numValue >= 2) return styles.positive;
-    if (stat === "points" && numValue >= 2) return styles.positive;
-    if (stat === "save_pct" && numValue >= 0.92) return styles.positive;
-    if (stat === "save_pct" && numValue < 0.9) return styles.negative;
-    if (stat === "goals_against_avg" && numValue <= 2.5) return styles.positive;
-    if (stat === "goals_against_avg" && numValue >= 3.5) return styles.negative;
-    if (stat === "shooting_percentage" && numValue >= 15)
-      return styles.positive;
-    if (stat === "plus_minus" && numValue > 0) return styles.positive;
-    if (stat === "plus_minus" && numValue < 0) return styles.negative;
-
-    return "";
-  };
-
-  const displayStats = ["date", "games_played", ...selectedStats].filter(
-    (stat) => !(stat === "games_played" && isGoalie) // Hide GP for goalies in individual games
-  );
+  if (gameLog.length === 0) {
+    return (
+      <div className={styles.playerStatsContainer}>
+        <div className={styles.tableHeader}>
+          <h3>Game Statistics</h3>
+        </div>
+        <div className={styles.noData}>No game data available</div>
+      </div>
+    );
+  }
 
   return (
-    <div className={styles.tableContainer}>
+    <div className={styles.playerStatsContainer}>
+      <div className={styles.tableHeader}>
+        <h3>
+          {showAdvanced ? "Advanced Statistics" : "Game Statistics"}
+          {showPlayoffData ? " (Playoffs)" : " (Regular Season)"}
+        </h3>
+        <div className={styles.tableControls}>
+          <div className={styles.gameRangeSelector}>
+            <span>Games: {gameLog.length}</span>
+          </div>
+        </div>
+      </div>
+
       {summary && (
-        <div className={styles.summaryRow}>
-          <h3>
-            {gameLog.length} Games Summary
-            {summary.gamesPlayed !== gameLog.length &&
-              ` (${summary.gamesPlayed} GP)`}
-          </h3>
+        <div className={styles.summarySection}>
+          <h4>Summary ({summary.gamesPlayed} GP)</h4>
           <div className={styles.summaryStats}>
-            {selectedStats.map((stat) => (
-              <div key={stat} className={styles.summaryStat}>
-                <span className={styles.statLabel}>
-                  {STAT_DISPLAY_NAMES[stat] || stat}:
-                </span>
-                <span className={styles.statValue}>
-                  {formatStatValue(summary.totals[stat], stat)}
-                </span>
-              </div>
-            ))}
+            {selectedStats
+              .filter((stat) => stat !== "date" && stat !== "games_played")
+              .map((stat) => (
+                <div key={stat} className={styles.summaryStat}>
+                  <span className={styles.statLabel}>
+                    {STAT_DISPLAY_NAMES[stat] || stat}:
+                  </span>
+                  <span className={styles.statValue}>
+                    {formatStatValue(summary.totals[stat], stat)}
+                  </span>
+                </div>
+              ))}
           </div>
         </div>
       )}
@@ -199,34 +289,29 @@ export function PlayerStatsTable({
         <table className={styles.statsTable}>
           <thead>
             <tr>
-              {displayStats.map((stat) => (
-                <th key={stat} className={styles.statHeader}>
-                  {STAT_DISPLAY_NAMES[stat] || stat}
-                </th>
-              ))}
+              <th>Date</th>
+              <th>GP</th>
+              {selectedStats
+                .filter((stat) => stat !== "date" && stat !== "games_played")
+                .map((stat) => (
+                  <th key={stat} title={stat}>
+                    {STAT_DISPLAY_NAMES[stat] || stat}
+                  </th>
+                ))}
             </tr>
           </thead>
           <tbody>
-            {gameLog.length === 0 ? (
-              <tr>
-                <td colSpan={displayStats.length} className={styles.noData}>
-                  No games found for selected timeframe
-                </td>
-              </tr>
-            ) : (
-              gameLog.map((game, index) => (
-                <tr key={`${game.date}-${index}`} className={styles.gameRow}>
-                  {displayStats.map((stat) => (
-                    <td
-                      key={stat}
-                      className={`${styles.statCell} ${getStatClass(game[stat], stat)}`}
-                    >
-                      {formatStatValue(game[stat], stat)}
-                    </td>
+            {gameLog.map((game, index) => (
+              <tr key={index}>
+                <td>{new Date(game.date).toLocaleDateString()}</td>
+                <td>{game.games_played || 0}</td>
+                {selectedStats
+                  .filter((stat) => stat !== "date" && stat !== "games_played")
+                  .map((stat) => (
+                    <td key={stat}>{formatStatValue(game[stat], stat)}</td>
                   ))}
-                </tr>
-              ))
-            )}
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -234,10 +319,33 @@ export function PlayerStatsTable({
       {showAdvanced && (
         <div className={styles.advancedNote}>
           <p>
-            <strong>Advanced Stats:</strong> CF% = Corsi For %, ZS% = Zone Start
-            %, iCF/60 = Individual Corsi For per 60 minutes, oiSH% = On-Ice
-            Shooting %
+            <strong>Advanced Stats Guide:</strong>
           </p>
+          <ul>
+            <li>
+              <strong>CF%:</strong> Corsi For Percentage - Shot attempt
+              differential
+            </li>
+            <li>
+              <strong>xGF%:</strong> Expected Goals For Percentage - Quality
+              scoring chance differential
+            </li>
+            <li>
+              <strong>HDCF%:</strong> High Danger Corsi For Percentage - High
+              danger area shot attempts
+            </li>
+            <li>
+              <strong>ixG/60:</strong> Individual Expected Goals per 60 minutes
+            </li>
+            <li>
+              <strong>OZ Start%:</strong> Offensive Zone Start Percentage -
+              Deployment metric
+            </li>
+            <li>
+              <strong>PDO:</strong> On-ice shooting% + on-ice save% -
+              Luck/variance indicator
+            </li>
+          </ul>
         </div>
       )}
     </div>
