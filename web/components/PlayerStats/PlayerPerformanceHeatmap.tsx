@@ -7,26 +7,11 @@ import {
   getDay
 } from "date-fns";
 import styles from "./PlayerStats.module.scss";
-
-interface GameLogEntry {
-  date: string;
-  games_played: number;
-  goals?: number;
-  assists?: number;
-  points?: number;
-  shots?: number;
-  hits?: number;
-  blocked_shots?: number;
-  takeaways?: number;
-  giveaways?: number;
-  toi_per_game?: number;
-  isPlayoff?: boolean; // Add isPlayoff flag
-  [key: string]: any;
-}
+import { GameLogEntry } from "pages/stats/player/[playerId]";
 
 interface PlayerPerformanceHeatmapProps {
   gameLog: GameLogEntry[];
-  playoffGameLog?: GameLogEntry[]; // Add optional playoff game log
+  playoffGameLog?: GameLogEntry[];
   selectedStats: string[];
 }
 
@@ -291,7 +276,9 @@ export function PlayerPerformanceHeatmap({
 
   // Calculate calendar stats
   const calendarStats = useMemo(() => {
-    const gamesWithData = gameLog.filter((game) => game.games_played > 0);
+    const gamesWithData = gameLog.filter(
+      (game) => game.games_played !== null && game.games_played > 0
+    );
     if (gamesWithData.length === 0) return null;
 
     const performanceLevels = gamesWithData.map((game) =>

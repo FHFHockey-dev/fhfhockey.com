@@ -1,19 +1,14 @@
 import React, { useMemo } from "react";
 import styles from "./PlayerStats.module.scss";
-
-interface GameLogEntry {
-  date: string;
-  games_played: number;
-  [key: string]: any;
-}
+import { GameLogEntry } from "pages/stats/player/[playerId]";
 
 interface PlayerStatsTableProps {
-  gameLog: GameLogEntry[];
-  playoffGameLog?: GameLogEntry[]; // Add optional playoff game log
+  gameLog: GameLogEntry[]; // This now uses the correct type
+  playoffGameLog?: GameLogEntry[];
   selectedStats: string[];
   isGoalie: boolean;
   showAdvanced?: boolean;
-  showPlayoffData?: boolean; // Add flag to show playoff vs regular season
+  showPlayoffData?: boolean;
 }
 
 const STAT_FORMATTERS = {

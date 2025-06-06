@@ -22385,22 +22385,27 @@ export type Database = {
           assists: number | null
           assists_5v5: number | null
           assists_per_60_5v5: number | null
+          assists_per_game: number | null
           birth_city: string | null
           birth_country: string | null
           birth_date: string | null
           blocked_shots: number | null
           blocks_per_60: number | null
+          blocks_per_game: number | null
           current_team_abbreviation: string | null
           current_team_name: string | null
           d_zone_faceoffs: number | null
           d_zone_fo_percentage: number | null
           d_zone_fol: number | null
           d_zone_fow: number | null
+          date: string
           draft_overall: number | null
           draft_round: number | null
           draft_year: number | null
+          empty_net_assists: number | null
           empty_net_goals: number | null
           empty_net_points: number | null
+          es_goal_diff: number | null
           es_goals_against: number | null
           es_goals_for: number | null
           es_goals_for_percentage: number | null
@@ -22412,6 +22417,7 @@ export type Database = {
           ev_time_on_ice: string | null
           ev_time_on_ice_per_game: string | null
           faceoff_pct_5v5: number | null
+          first_goals: number | null
           first_season_for_game_type: number | null
           fow_percentage: number | null
           game_misconduct_penalties: number | null
@@ -22427,6 +22433,7 @@ export type Database = {
           goals_deflected: number | null
           goals_pct: number | null
           goals_per_60_5v5: number | null
+          goals_per_game: number | null
           goals_poke: number | null
           goals_slap: number | null
           goals_snap: number | null
@@ -22437,18 +22444,27 @@ export type Database = {
           height: number | null
           hits: number | null
           hits_per_60: number | null
+          hits_per_game: number | null
           individual_sat_for_per_60: number | null
           individual_shots_for_per_60: number | null
           major_penalties: number | null
           match_penalties: number | null
           minor_penalties: number | null
           misconduct_penalties: number | null
+          missed_shot_crossbar: number | null
+          missed_shot_goal_post: number | null
+          missed_shot_over_net: number | null
+          missed_shot_short_side: number | null
+          missed_shot_wide_of_net: number | null
           missed_shots: number | null
           n_zone_faceoffs: number | null
           n_zone_fo_percentage: number | null
           n_zone_fol: number | null
           n_zone_fow: number | null
           nationality_code: string | null
+          net_minor_penalties_per_60: number | null
+          net_penalties: number | null
+          net_penalties_per_60: number | null
           o_zone_faceoffs: number | null
           o_zone_fo_percentage: number | null
           o_zone_fol: number | null
@@ -22464,6 +22480,8 @@ export type Database = {
           penalties_drawn_per_60: number | null
           penalties_taken_per_60: number | null
           penalty_minutes: number | null
+          penalty_minutes_per_game: number | null
+          penalty_minutes_per_toi: number | null
           penalty_seconds_per_game: number | null
           player_id: number
           player_name: string | null
@@ -22500,6 +22518,7 @@ export type Database = {
           pp_toi_per_game: string | null
           primary_assists_5v5: number | null
           primary_assists_per_60_5v5: number | null
+          primary_assists_per_game: number | null
           sat_against: number | null
           sat_ahead: number | null
           sat_behind: number | null
@@ -22515,9 +22534,9 @@ export type Database = {
           sat_relative_5v5: number | null
           sat_tied: number | null
           sat_total: number | null
-          season: string
           secondary_assists_5v5: number | null
           secondary_assists_per_60_5v5: number | null
+          secondary_assists_per_game: number | null
           sh_assists: number | null
           sh_faceoff_percentage: number | null
           sh_faceoffs: number | null
@@ -22543,6 +22562,17 @@ export type Database = {
           sh_toi_per_game: string | null
           shifts: number | null
           shifts_per_game: number | null
+          shooting_pct_backhand: number | null
+          shooting_pct_bat: number | null
+          shooting_pct_between_legs: number | null
+          shooting_pct_cradle: number | null
+          shooting_pct_deflected: number | null
+          shooting_pct_poke: number | null
+          shooting_pct_slap: number | null
+          shooting_pct_snap: number | null
+          shooting_pct_tip_in: number | null
+          shooting_pct_wrap_around: number | null
+          shooting_pct_wrist: number | null
           shooting_percentage: number | null
           shooting_percentage_5v5: number | null
           shoots_catches: string | null
@@ -22558,12 +22588,13 @@ export type Database = {
           shots_on_net_tip_in: number | null
           shots_on_net_wrap_around: number | null
           shots_on_net_wrist: number | null
+          shots_per_game: number | null
           skater_save_pct_5v5: number | null
           skater_shooting_plus_save_pct_5v5: number | null
           takeaways: number | null
           takeaways_per_60: number | null
           time_on_ice_per_shift: string | null
-          toi_per_game: string | null
+          toi_per_game: number | null
           toi_per_game_5v5: string | null
           total_faceoffs: number | null
           total_fol: number | null
@@ -22593,22 +22624,27 @@ export type Database = {
           assists?: number | null
           assists_5v5?: number | null
           assists_per_60_5v5?: number | null
+          assists_per_game?: number | null
           birth_city?: string | null
           birth_country?: string | null
           birth_date?: string | null
           blocked_shots?: number | null
           blocks_per_60?: number | null
+          blocks_per_game?: number | null
           current_team_abbreviation?: string | null
           current_team_name?: string | null
           d_zone_faceoffs?: number | null
           d_zone_fo_percentage?: number | null
           d_zone_fol?: number | null
           d_zone_fow?: number | null
+          date: string
           draft_overall?: number | null
           draft_round?: number | null
           draft_year?: number | null
+          empty_net_assists?: number | null
           empty_net_goals?: number | null
           empty_net_points?: number | null
+          es_goal_diff?: number | null
           es_goals_against?: number | null
           es_goals_for?: number | null
           es_goals_for_percentage?: number | null
@@ -22620,6 +22656,7 @@ export type Database = {
           ev_time_on_ice?: string | null
           ev_time_on_ice_per_game?: string | null
           faceoff_pct_5v5?: number | null
+          first_goals?: number | null
           first_season_for_game_type?: number | null
           fow_percentage?: number | null
           game_misconduct_penalties?: number | null
@@ -22635,6 +22672,7 @@ export type Database = {
           goals_deflected?: number | null
           goals_pct?: number | null
           goals_per_60_5v5?: number | null
+          goals_per_game?: number | null
           goals_poke?: number | null
           goals_slap?: number | null
           goals_snap?: number | null
@@ -22645,18 +22683,27 @@ export type Database = {
           height?: number | null
           hits?: number | null
           hits_per_60?: number | null
+          hits_per_game?: number | null
           individual_sat_for_per_60?: number | null
           individual_shots_for_per_60?: number | null
           major_penalties?: number | null
           match_penalties?: number | null
           minor_penalties?: number | null
           misconduct_penalties?: number | null
+          missed_shot_crossbar?: number | null
+          missed_shot_goal_post?: number | null
+          missed_shot_over_net?: number | null
+          missed_shot_short_side?: number | null
+          missed_shot_wide_of_net?: number | null
           missed_shots?: number | null
           n_zone_faceoffs?: number | null
           n_zone_fo_percentage?: number | null
           n_zone_fol?: number | null
           n_zone_fow?: number | null
           nationality_code?: string | null
+          net_minor_penalties_per_60?: number | null
+          net_penalties?: number | null
+          net_penalties_per_60?: number | null
           o_zone_faceoffs?: number | null
           o_zone_fo_percentage?: number | null
           o_zone_fol?: number | null
@@ -22672,6 +22719,8 @@ export type Database = {
           penalties_drawn_per_60?: number | null
           penalties_taken_per_60?: number | null
           penalty_minutes?: number | null
+          penalty_minutes_per_game?: number | null
+          penalty_minutes_per_toi?: number | null
           penalty_seconds_per_game?: number | null
           player_id: number
           player_name?: string | null
@@ -22708,6 +22757,7 @@ export type Database = {
           pp_toi_per_game?: string | null
           primary_assists_5v5?: number | null
           primary_assists_per_60_5v5?: number | null
+          primary_assists_per_game?: number | null
           sat_against?: number | null
           sat_ahead?: number | null
           sat_behind?: number | null
@@ -22723,9 +22773,9 @@ export type Database = {
           sat_relative_5v5?: number | null
           sat_tied?: number | null
           sat_total?: number | null
-          season: string
           secondary_assists_5v5?: number | null
           secondary_assists_per_60_5v5?: number | null
+          secondary_assists_per_game?: number | null
           sh_assists?: number | null
           sh_faceoff_percentage?: number | null
           sh_faceoffs?: number | null
@@ -22751,6 +22801,17 @@ export type Database = {
           sh_toi_per_game?: string | null
           shifts?: number | null
           shifts_per_game?: number | null
+          shooting_pct_backhand?: number | null
+          shooting_pct_bat?: number | null
+          shooting_pct_between_legs?: number | null
+          shooting_pct_cradle?: number | null
+          shooting_pct_deflected?: number | null
+          shooting_pct_poke?: number | null
+          shooting_pct_slap?: number | null
+          shooting_pct_snap?: number | null
+          shooting_pct_tip_in?: number | null
+          shooting_pct_wrap_around?: number | null
+          shooting_pct_wrist?: number | null
           shooting_percentage?: number | null
           shooting_percentage_5v5?: number | null
           shoots_catches?: string | null
@@ -22766,12 +22827,13 @@ export type Database = {
           shots_on_net_tip_in?: number | null
           shots_on_net_wrap_around?: number | null
           shots_on_net_wrist?: number | null
+          shots_per_game?: number | null
           skater_save_pct_5v5?: number | null
           skater_shooting_plus_save_pct_5v5?: number | null
           takeaways?: number | null
           takeaways_per_60?: number | null
           time_on_ice_per_shift?: string | null
-          toi_per_game?: string | null
+          toi_per_game?: number | null
           toi_per_game_5v5?: string | null
           total_faceoffs?: number | null
           total_fol?: number | null
@@ -22801,22 +22863,27 @@ export type Database = {
           assists?: number | null
           assists_5v5?: number | null
           assists_per_60_5v5?: number | null
+          assists_per_game?: number | null
           birth_city?: string | null
           birth_country?: string | null
           birth_date?: string | null
           blocked_shots?: number | null
           blocks_per_60?: number | null
+          blocks_per_game?: number | null
           current_team_abbreviation?: string | null
           current_team_name?: string | null
           d_zone_faceoffs?: number | null
           d_zone_fo_percentage?: number | null
           d_zone_fol?: number | null
           d_zone_fow?: number | null
+          date?: string
           draft_overall?: number | null
           draft_round?: number | null
           draft_year?: number | null
+          empty_net_assists?: number | null
           empty_net_goals?: number | null
           empty_net_points?: number | null
+          es_goal_diff?: number | null
           es_goals_against?: number | null
           es_goals_for?: number | null
           es_goals_for_percentage?: number | null
@@ -22828,6 +22895,7 @@ export type Database = {
           ev_time_on_ice?: string | null
           ev_time_on_ice_per_game?: string | null
           faceoff_pct_5v5?: number | null
+          first_goals?: number | null
           first_season_for_game_type?: number | null
           fow_percentage?: number | null
           game_misconduct_penalties?: number | null
@@ -22843,6 +22911,7 @@ export type Database = {
           goals_deflected?: number | null
           goals_pct?: number | null
           goals_per_60_5v5?: number | null
+          goals_per_game?: number | null
           goals_poke?: number | null
           goals_slap?: number | null
           goals_snap?: number | null
@@ -22853,18 +22922,27 @@ export type Database = {
           height?: number | null
           hits?: number | null
           hits_per_60?: number | null
+          hits_per_game?: number | null
           individual_sat_for_per_60?: number | null
           individual_shots_for_per_60?: number | null
           major_penalties?: number | null
           match_penalties?: number | null
           minor_penalties?: number | null
           misconduct_penalties?: number | null
+          missed_shot_crossbar?: number | null
+          missed_shot_goal_post?: number | null
+          missed_shot_over_net?: number | null
+          missed_shot_short_side?: number | null
+          missed_shot_wide_of_net?: number | null
           missed_shots?: number | null
           n_zone_faceoffs?: number | null
           n_zone_fo_percentage?: number | null
           n_zone_fol?: number | null
           n_zone_fow?: number | null
           nationality_code?: string | null
+          net_minor_penalties_per_60?: number | null
+          net_penalties?: number | null
+          net_penalties_per_60?: number | null
           o_zone_faceoffs?: number | null
           o_zone_fo_percentage?: number | null
           o_zone_fol?: number | null
@@ -22880,6 +22958,8 @@ export type Database = {
           penalties_drawn_per_60?: number | null
           penalties_taken_per_60?: number | null
           penalty_minutes?: number | null
+          penalty_minutes_per_game?: number | null
+          penalty_minutes_per_toi?: number | null
           penalty_seconds_per_game?: number | null
           player_id?: number
           player_name?: string | null
@@ -22916,6 +22996,7 @@ export type Database = {
           pp_toi_per_game?: string | null
           primary_assists_5v5?: number | null
           primary_assists_per_60_5v5?: number | null
+          primary_assists_per_game?: number | null
           sat_against?: number | null
           sat_ahead?: number | null
           sat_behind?: number | null
@@ -22931,9 +23012,9 @@ export type Database = {
           sat_relative_5v5?: number | null
           sat_tied?: number | null
           sat_total?: number | null
-          season?: string
           secondary_assists_5v5?: number | null
           secondary_assists_per_60_5v5?: number | null
+          secondary_assists_per_game?: number | null
           sh_assists?: number | null
           sh_faceoff_percentage?: number | null
           sh_faceoffs?: number | null
@@ -22959,6 +23040,17 @@ export type Database = {
           sh_toi_per_game?: string | null
           shifts?: number | null
           shifts_per_game?: number | null
+          shooting_pct_backhand?: number | null
+          shooting_pct_bat?: number | null
+          shooting_pct_between_legs?: number | null
+          shooting_pct_cradle?: number | null
+          shooting_pct_deflected?: number | null
+          shooting_pct_poke?: number | null
+          shooting_pct_slap?: number | null
+          shooting_pct_snap?: number | null
+          shooting_pct_tip_in?: number | null
+          shooting_pct_wrap_around?: number | null
+          shooting_pct_wrist?: number | null
           shooting_percentage?: number | null
           shooting_percentage_5v5?: number | null
           shoots_catches?: string | null
@@ -22974,12 +23066,13 @@ export type Database = {
           shots_on_net_tip_in?: number | null
           shots_on_net_wrap_around?: number | null
           shots_on_net_wrist?: number | null
+          shots_per_game?: number | null
           skater_save_pct_5v5?: number | null
           skater_shooting_plus_save_pct_5v5?: number | null
           takeaways?: number | null
           takeaways_per_60?: number | null
           time_on_ice_per_shift?: string | null
-          toi_per_game?: string | null
+          toi_per_game?: number | null
           toi_per_game_5v5?: string | null
           total_faceoffs?: number | null
           total_fol?: number | null
