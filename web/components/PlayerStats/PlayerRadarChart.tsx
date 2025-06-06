@@ -34,8 +34,10 @@ interface PlayerInfo {
 interface PlayerRadarChartProps {
   player: PlayerInfo;
   gameLog: GameLogEntry[];
+  playoffGameLog?: GameLogEntry[]; // Add optional playoff game log
   selectedStats: string[];
   isGoalie: boolean;
+  showPlayoffData?: boolean; // Add flag to show playoff vs regular season
 }
 
 const PERCENTILE_THRESHOLDS = {
@@ -79,14 +81,18 @@ const STAT_DISPLAY_NAMES: { [key: string]: string } = {
 export function PlayerRadarChart({
   player,
   gameLog,
+  playoffGameLog,
   selectedStats,
-  isGoalie
+  isGoalie,
+  showPlayoffData
 }: PlayerRadarChartProps) {
   const radarData = useMemo(() => {
-    if (gameLog.length === 0 || selectedStats.length === 0) return null;
+    const log = showPlayoffData && playoffGameLog ? playoffGameLog : gameLog;
+
+    if (log.length === 0 || selectedStats.length === 0) return null;
 
     // Calculate averages for selected stats
-    const gamesPlayed = gameLog.reduce(
+    const gamesPlayed = log.reduce(
       (sum, game) => sum + (game.games_played || 0),
       0
     );
@@ -95,7 +101,7 @@ export function PlayerRadarChart({
     const percentiles: { [key: string]: number } = {};
 
     selectedStats.forEach((stat) => {
-      const values = gameLog.map((game) => Number(game[stat]) || 0);
+      const values = log.map((game) => Number(game[stat]) || 0);
 
       if (stat === "wins" && isGoalie) {
         // Special handling for goalie win percentage
@@ -114,7 +120,7 @@ export function PlayerRadarChart({
         ].includes(stat)
       ) {
         // Weighted average for percentages
-        const weights = gameLog.map((game) => game.games_played || 1);
+        const weights = log.map((game) => game.games_played || 1);
         const weightedSum = values.reduce(
           (sum, val, idx) => sum + val * weights[idx],
           0
@@ -188,7 +194,14 @@ export function PlayerRadarChart({
       averages,
       percentiles
     };
-  }, [gameLog, selectedStats, isGoalie, player.fullName]);
+  }, [
+    gameLog,
+    playoffGameLog,
+    selectedStats,
+    isGoalie,
+    player.fullName,
+    showPlayoffData
+  ]);
 
   const options = {
     responsive: true,

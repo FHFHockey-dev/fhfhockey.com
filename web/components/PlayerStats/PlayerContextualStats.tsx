@@ -15,6 +15,7 @@ interface PlayerInfo {
 interface PlayerContextualStatsProps {
   player: PlayerInfo;
   gameLog: GameLogEntry[];
+  playoffGameLog?: GameLogEntry[]; // Add optional playoff game log
   seasonTotals: any[];
   isGoalie: boolean;
 }
@@ -22,13 +23,17 @@ interface PlayerContextualStatsProps {
 export function PlayerContextualStats({
   player,
   gameLog,
+  playoffGameLog,
   seasonTotals,
   isGoalie
 }: PlayerContextualStatsProps) {
   const insights = useMemo(() => {
-    if (gameLog.length === 0) return null;
+    const combinedGameLog =
+      playoffGameLog && playoffGameLog.length > 0 ? playoffGameLog : gameLog;
 
-    const gamesPlayed = gameLog.reduce(
+    if (combinedGameLog.length === 0) return null;
+
+    const gamesPlayed = combinedGameLog.reduce(
       (sum, game) => sum + (game.games_played || 0),
       0
     );
@@ -36,23 +41,23 @@ export function PlayerContextualStats({
 
     if (isGoalie) {
       // Goalie-specific insights
-      const wins = gameLog.reduce(
+      const wins = combinedGameLog.reduce(
         (sum, game) => sum + (Number(game.wins) || 0),
         0
       );
-      const saves = gameLog.reduce(
+      const saves = combinedGameLog.reduce(
         (sum, game) => sum + (Number(game.saves) || 0),
         0
       );
-      const shotsAgainst = gameLog.reduce(
+      const shotsAgainst = combinedGameLog.reduce(
         (sum, game) => sum + (Number(game.shots_against) || 0),
         0
       );
-      const shutouts = gameLog.reduce(
+      const shutouts = combinedGameLog.reduce(
         (sum, game) => sum + (Number(game.shutouts) || 0),
         0
       );
-      const qualityStarts = gameLog.reduce(
+      const qualityStarts = combinedGameLog.reduce(
         (sum, game) => sum + (Number(game.quality_start) || 0),
         0
       );
@@ -114,23 +119,23 @@ export function PlayerContextualStats({
       }
     } else {
       // Skater insights
-      const points = gameLog.reduce(
+      const points = combinedGameLog.reduce(
         (sum, game) => sum + (Number(game.points) || 0),
         0
       );
-      const goals = gameLog.reduce(
+      const goals = combinedGameLog.reduce(
         (sum, game) => sum + (Number(game.goals) || 0),
         0
       );
-      const assists = gameLog.reduce(
+      const assists = combinedGameLog.reduce(
         (sum, game) => sum + (Number(game.assists) || 0),
         0
       );
-      const shots = gameLog.reduce(
+      const shots = combinedGameLog.reduce(
         (sum, game) => sum + (Number(game.shots) || 0),
         0
       );
-      const ppPoints = gameLog.reduce(
+      const ppPoints = combinedGameLog.reduce(
         (sum, game) => sum + (Number(game.pp_points) || 0),
         0
       );
@@ -196,7 +201,7 @@ export function PlayerContextualStats({
 
       // Position-specific insights
       if (player.position === "C") {
-        const faceoffData = gameLog.filter(
+        const faceoffData = combinedGameLog.filter(
           (game) => Number(game.total_faceoffs) > 0
         );
         if (faceoffData.length > 0) {
@@ -231,11 +236,11 @@ export function PlayerContextualStats({
       }
 
       if (player.position === "D") {
-        const blocks = gameLog.reduce(
+        const blocks = combinedGameLog.reduce(
           (sum, game) => sum + (Number(game.blocked_shots) || 0),
           0
         );
-        const hits = gameLog.reduce(
+        const hits = combinedGameLog.reduce(
           (sum, game) => sum + (Number(game.hits) || 0),
           0
         );
@@ -261,8 +266,8 @@ export function PlayerContextualStats({
     }
 
     // Recent form analysis
-    if (gameLog.length >= 5) {
-      const recentGames = gameLog.slice(-5);
+    if (combinedGameLog.length >= 5) {
+      const recentGames = combinedGameLog.slice(-5);
       const recentPerformance = isGoalie
         ? recentGames.reduce((sum, game) => sum + (Number(game.wins) || 0), 0) /
           recentGames.length
@@ -272,10 +277,14 @@ export function PlayerContextualStats({
           ) / recentGames.length;
 
       const fullPerformance = isGoalie
-        ? gameLog.reduce((sum, game) => sum + (Number(game.wins) || 0), 0) /
-          gameLog.length
-        : gameLog.reduce((sum, game) => sum + (Number(game.points) || 0), 0) /
-          gameLog.length;
+        ? combinedGameLog.reduce(
+            (sum, game) => sum + (Number(game.wins) || 0),
+            0
+          ) / combinedGameLog.length
+        : combinedGameLog.reduce(
+            (sum, game) => sum + (Number(game.points) || 0),
+            0
+          ) / combinedGameLog.length;
 
       const formTrend =
         recentPerformance > fullPerformance * 1.2
@@ -283,6 +292,14 @@ export function PlayerContextualStats({
           : recentPerformance < fullPerformance * 0.8
             ? "Cold"
             : "Steady";
+
+      const recentValue = isGoalie
+        ? `${(recentPerformance * 100).toFixed(1)}% Win Rate`
+        : `${recentPerformance.toFixed(2)} PPG`;
+
+      const seasonValue = isGoalie
+        ? `${(fullPerformance * 100).toFixed(1)}% Win Rate`
+        : `${fullPerformance.toFixed(2)} PPG`;
 
       insights.push({
         label: "Recent Form",
@@ -293,18 +310,21 @@ export function PlayerContextualStats({
             : formTrend === "Cold"
               ? "negative"
               : "neutral",
-        description: `Last 5 games vs season average`
+        description: `L5: ${recentValue} vs Season: ${seasonValue}`
       });
     }
 
     return insights;
-  }, [gameLog, player, isGoalie]);
+  }, [gameLog, playoffGameLog, player, isGoalie]);
 
   const streakAnalysis = useMemo(() => {
-    if (gameLog.length === 0) return null;
+    const combinedGameLog =
+      playoffGameLog && playoffGameLog.length > 0 ? playoffGameLog : gameLog;
+
+    if (combinedGameLog.length === 0) return null;
 
     // Sort games by date
-    const sortedGames = [...gameLog].sort(
+    const sortedGames = [...combinedGameLog].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
@@ -364,11 +384,11 @@ export function PlayerContextualStats({
         goalStreak: currentGoalStreak,
         description:
           currentPointStreak > 0
-            ? `${currentPointStreak} game point streak`
+            ? `${currentPointStreak} GM Point Streak`
             : "No active point streak"
       };
     }
-  }, [gameLog, isGoalie]);
+  }, [gameLog, playoffGameLog, isGoalie]);
 
   if (!insights) {
     return (
@@ -419,14 +439,14 @@ export function PlayerContextualStats({
                   className={`${styles.streak} ${(streakAnalysis.pointStreak || 0) > 0 ? styles.positive : styles.neutral}`}
                 >
                   <span className={styles.streakValue}>
-                    {streakAnalysis.pointStreak || 0}
+                    {streakAnalysis.pointStreak || 0} GM
                   </span>
                   <span className={styles.streakLabel}>Point Streak</span>
                 </div>
                 {(streakAnalysis.goalStreak || 0) > 0 && (
                   <div className={`${styles.streak} ${styles.positive}`}>
                     <span className={styles.streakValue}>
-                      {streakAnalysis.goalStreak}
+                      {streakAnalysis.goalStreak} GM
                     </span>
                     <span className={styles.streakLabel}>Goal Streak</span>
                   </div>

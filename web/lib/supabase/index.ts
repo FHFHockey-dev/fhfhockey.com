@@ -25,13 +25,13 @@ export function createClientWithToken(...args: any) {
   const client = createClient<Database>(supabaseUrl, supabaseKey, {
     auth: {
       persistSession: false,
-      autoRefreshToken: false,
+      autoRefreshToken: false
     },
     global: {
       headers: {
-        Authorization: `Bearer ${access_token}`,
-      },
-    },
+        Authorization: `Bearer ${access_token}`
+      }
+    }
   });
 
   return client;
@@ -52,9 +52,9 @@ export async function doPOST(url: string, body?: any) {
   const result = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${session.access_token}`,
+      Authorization: `Bearer ${session.access_token}`
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(body)
   }).then((res) => res.json());
 
   return result;

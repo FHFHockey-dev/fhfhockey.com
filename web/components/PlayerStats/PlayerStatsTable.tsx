@@ -9,9 +9,11 @@ interface GameLogEntry {
 
 interface PlayerStatsTableProps {
   gameLog: GameLogEntry[];
+  playoffGameLog?: GameLogEntry[]; // Add optional playoff game log
   selectedStats: string[];
   isGoalie: boolean;
   showAdvanced?: boolean;
+  showPlayoffData?: boolean; // Add flag to show playoff vs regular season
 }
 
 const STAT_FORMATTERS = {
@@ -82,16 +84,20 @@ const STAT_DISPLAY_NAMES: { [key: string]: string } = {
 
 export function PlayerStatsTable({
   gameLog,
+  playoffGameLog,
   selectedStats,
   isGoalie,
-  showAdvanced = false
+  showAdvanced = false,
+  showPlayoffData = false
 }: PlayerStatsTableProps) {
   // Calculate totals and averages for the timeframe
   const summary = useMemo(() => {
-    if (gameLog.length === 0) return null;
+    const log = showPlayoffData && playoffGameLog ? playoffGameLog : gameLog;
+
+    if (log.length === 0) return null;
 
     const totals: { [key: string]: number } = {};
-    const gamesPlayed = gameLog.reduce(
+    const gamesPlayed = log.reduce(
       (sum, game) => sum + (game.games_played || 0),
       0
     );
@@ -99,7 +105,7 @@ export function PlayerStatsTable({
     selectedStats.forEach((stat) => {
       if (stat === "date" || stat === "games_played") return;
 
-      const values = gameLog.map((game) => Number(game[stat]) || 0);
+      const values = log.map((game) => Number(game[stat]) || 0);
 
       // For percentages, calculate weighted average
       if (
@@ -111,7 +117,7 @@ export function PlayerStatsTable({
           "zone_start_pct"
         ].includes(stat)
       ) {
-        const weights = gameLog.map((game) => game.games_played || 1);
+        const weights = log.map((game) => game.games_played || 1);
         const weightedSum = values.reduce(
           (sum, val, idx) => sum + val * weights[idx],
           0
@@ -125,7 +131,7 @@ export function PlayerStatsTable({
     });
 
     return { totals, gamesPlayed };
-  }, [gameLog, selectedStats]);
+  }, [gameLog, playoffGameLog, selectedStats, showPlayoffData]);
 
   const formatStatValue = (value: any, stat: string): string => {
     if (value == null || value === "") return "-";

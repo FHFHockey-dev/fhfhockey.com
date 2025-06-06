@@ -31,9 +31,11 @@ interface GameLogEntry {
 
 interface PlayerStatsChartProps {
   gameLog: GameLogEntry[];
+  playoffGameLog?: GameLogEntry[]; // Add optional playoff game log
   selectedStats: string[];
   showRollingAverage?: boolean;
   title?: string;
+  showPlayoffData?: boolean; // Add flag to show playoff vs regular season
 }
 
 const CHART_COLORS = [
@@ -67,15 +69,19 @@ const STAT_DISPLAY_NAMES: { [key: string]: string } = {
 
 export function PlayerStatsChart({
   gameLog,
+  playoffGameLog,
   selectedStats,
   showRollingAverage = false,
-  title = "Performance Trends"
+  title = "Performance Trends",
+  showPlayoffData = false
 }: PlayerStatsChartProps) {
   const chartData = useMemo(() => {
-    if (gameLog.length === 0) return null;
+    const log = showPlayoffData && playoffGameLog ? playoffGameLog : gameLog;
+
+    if (log.length === 0) return null;
 
     // Sort games by date
-    const sortedGames = [...gameLog].sort(
+    const sortedGames = [...log].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
@@ -137,7 +143,13 @@ export function PlayerStatsChart({
       labels,
       datasets
     };
-  }, [gameLog, selectedStats, showRollingAverage]);
+  }, [
+    gameLog,
+    playoffGameLog,
+    selectedStats,
+    showRollingAverage,
+    showPlayoffData
+  ]);
 
   const options = useMemo(
     () => ({

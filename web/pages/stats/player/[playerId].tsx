@@ -2,7 +2,7 @@ import PlayerSearchBar from "components/StatsPage/PlayerSearchBar";
 import { GetServerSidePropsContext } from "next";
 import supabase from "lib/supabase";
 import React, { useState, useMemo } from "react";
-import styles from "styles/PlayerStats.module.scss";
+import styles from "components/PlayerStats/PlayerStats.module.scss";
 import { getCurrentSeason } from "lib/NHL/server";
 import {
   formatPercent,
@@ -18,6 +18,99 @@ import { PlayerRadarChart } from "components/PlayerStats/PlayerRadarChart";
 import { PlayerContextualStats } from "components/PlayerStats/PlayerContextualStats";
 import useCurrentSeason from "hooks/useCurrentSeason";
 
+// Base interface for common game log properties
+interface BaseGameLogEntry {
+  date: string;
+  games_played: number;
+  isPlayoff?: boolean;
+}
+
+// Skater-specific game log entry
+interface SkaterGameLogEntry extends BaseGameLogEntry {
+  goals?: number;
+  assists?: number;
+  points?: number;
+  plus_minus?: number;
+  shots?: number;
+  shooting_percentage?: number;
+  pp_points?: number;
+  gw_goals?: number;
+  fow_percentage?: number;
+  toi_per_game?: number;
+  blocked_shots?: number;
+  hits?: number;
+  takeaways?: number;
+  giveaways?: number;
+  sat_pct?: number;
+  zone_start_pct?: number;
+  // Advanced stats
+  individual_sat_for_per_60?: number;
+  on_ice_shooting_pct?: number;
+  sat_relative?: number;
+  usat_pct?: number;
+  // Rolling averages (dynamically added)
+  [key: `${string}_5game_avg`]: number;
+}
+
+// Goalie-specific game log entry
+interface GoalieGameLogEntry extends BaseGameLogEntry {
+  opponent_abbr?: string;
+  games_started?: number;
+  wins?: number;
+  losses?: number;
+  ot_losses?: number;
+  save_pct?: number;
+  goals_against_avg?: number;
+  shutouts?: number;
+  saves?: number;
+  shots_against?: number;
+  goals_against?: number;
+  time_on_ice?: string;
+  quality_start?: number;
+  // Advanced stats
+  goals_saved_above_average?: number;
+  high_danger_save_pct?: number;
+  medium_danger_save_pct?: number;
+}
+
+// Union type for game log entries
+type GameLogEntry = SkaterGameLogEntry | GoalieGameLogEntry;
+
+// Season totals interfaces
+interface SkaterSeasonTotals {
+  season: number;
+  games_played?: number;
+  goals?: number;
+  assists?: number;
+  points?: number;
+  plus_minus?: number;
+  shots?: number;
+  shooting_percentage?: number;
+  pp_points?: number;
+  gw_goals?: number;
+  fow_percentage?: number;
+  toi_per_game?: number;
+  blocked_shots?: number;
+  hits?: number;
+  takeaways?: number;
+  giveaways?: number;
+  sat_pct?: number;
+  zone_start_pct?: number;
+}
+
+interface GoalieSeasonTotals {
+  season_id: number;
+  games_played?: number;
+  wins?: number;
+  losses?: number;
+  ot_losses?: number;
+  goals_against_avg?: number;
+  save_pct?: number;
+  shutouts?: number;
+}
+
+type SeasonTotals = SkaterSeasonTotals | GoalieSeasonTotals;
+
 interface PlayerInfo {
   id: number;
   fullName: string;
@@ -32,16 +125,11 @@ interface PlayerInfo {
   image_url?: string;
 }
 
-interface GameLogEntry {
-  date: string;
-  games_played: number;
-  [key: string]: any; // Allow for dynamic stat properties
-}
-
 interface PlayerStatsPageProps {
   player: PlayerInfo | null;
   gameLog: GameLogEntry[];
-  seasonTotals: any[];
+  playoffGameLog: GameLogEntry[];
+  seasonTotals: SeasonTotals[];
   isGoalie: boolean;
   availableSeasons: (string | number)[];
   mostRecentSeason?: string | number | null;
@@ -149,6 +237,7 @@ function splitLabel(label: string) {
 export default function PlayerStatsPage({
   player,
   gameLog,
+  playoffGameLog,
   seasonTotals,
   isGoalie,
   availableSeasons,
@@ -162,6 +251,7 @@ export default function PlayerStatsPage({
     "season" | "l10" | "l20"
   >("season");
   const [selectedStats, setSelectedStats] = useState<string[]>([]);
+  const [showPlayoffData, setShowPlayoffData] = useState<boolean>(false); // Add state to toggle between regular season and playoffs
 
   // Get position-specific stat configuration
   const positionConfig = useMemo(() => {
@@ -299,47 +389,57 @@ export default function PlayerStatsPage({
         selectedView === "gamelog" ||
         selectedView === "trends") && (
         <div className={styles.controlsSection}>
-          <div className={styles.timeframeSelector}>
-            <label>Timeframe:</label>
-            {(["season", "l10", "l20"] as const).map((timeframe) => (
-              <button
-                key={timeframe}
-                className={`${styles.timeframeButton} ${selectedTimeframe === timeframe ? styles.active : ""}`}
-                onClick={() => setSelectedTimeframe(timeframe)}
-              >
-                {timeframe === "season" ? "Season" : timeframe.toUpperCase()}
-              </button>
-            ))}
-          </div>
-
-          <div className={styles.statSelector}>
-            <label>Stats to Display:</label>
-            <div className={styles.statCategories}>
-              <div className={styles.statCategory}>
-                <h4>Primary</h4>
-                {positionConfig.primary.map((stat) => (
-                  <label key={stat} className={styles.statCheckbox}>
-                    <input
-                      type="checkbox"
-                      checked={selectedStats.includes(stat)}
-                      onChange={() => handleStatToggle(stat)}
-                    />
-                    {STAT_DISPLAY_NAMES[stat] || stat}
-                  </label>
+          <div className={styles.controlsGrid}>
+            <div className={styles.timeframeSelector}>
+              <h3 className={styles.controlHeader}>Timeframe</h3>
+              <div className={styles.timeframeButtons}>
+                {(["season", "l10", "l20"] as const).map((timeframe) => (
+                  <button
+                    key={timeframe}
+                    className={`${styles.timeframeButton} ${selectedTimeframe === timeframe ? styles.active : ""}`}
+                    onClick={() => setSelectedTimeframe(timeframe)}
+                  >
+                    {timeframe === "season"
+                      ? "Season"
+                      : timeframe.toUpperCase()}
+                  </button>
                 ))}
               </div>
-              <div className={styles.statCategory}>
-                <h4>Secondary</h4>
-                {positionConfig.secondary.map((stat) => (
-                  <label key={stat} className={styles.statCheckbox}>
-                    <input
-                      type="checkbox"
-                      checked={selectedStats.includes(stat)}
-                      onChange={() => handleStatToggle(stat)}
-                    />
-                    {STAT_DISPLAY_NAMES[stat] || stat}
-                  </label>
-                ))}
+            </div>
+
+            <div className={styles.statSelector}>
+              <h3 className={styles.controlHeader}>Stats to Display</h3>
+              <div className={styles.statCategories}>
+                <div className={styles.statCategory}>
+                  <h4>Primary</h4>
+                  <div className={styles.statCheckboxContainer}>
+                    {positionConfig.primary.map((stat) => (
+                      <label key={stat} className={styles.statCheckbox}>
+                        <input
+                          type="checkbox"
+                          checked={selectedStats.includes(stat)}
+                          onChange={() => handleStatToggle(stat)}
+                        />
+                        {STAT_DISPLAY_NAMES[stat] || stat}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                <div className={styles.statCategory}>
+                  <h4>Secondary</h4>
+                  <div className={styles.statCheckboxContainer}>
+                    {positionConfig.secondary.map((stat) => (
+                      <label key={stat} className={styles.statCheckbox}>
+                        <input
+                          type="checkbox"
+                          checked={selectedStats.includes(stat)}
+                          onChange={() => handleStatToggle(stat)}
+                        />
+                        {STAT_DISPLAY_NAMES[stat] || stat}
+                      </label>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -392,6 +492,7 @@ export default function PlayerStatsPage({
                 <PlayerContextualStats
                   player={player}
                   gameLog={filteredGameLog}
+                  playoffGameLog={playoffGameLog}
                   seasonTotals={seasonTotals}
                   isGoalie={isGoalie}
                 />
@@ -401,6 +502,7 @@ export default function PlayerStatsPage({
               <div className={styles.calendarSection}>
                 <PlayerPerformanceHeatmap
                   gameLog={filteredGameLog}
+                  playoffGameLog={playoffGameLog}
                   selectedStats={selectedStats}
                 />
               </div>
@@ -451,7 +553,7 @@ export default function PlayerStatsPage({
                   </tr>
                 </thead>
                 <tbody>
-                  {seasonTotals.map((row: any, idx: number) => (
+                  {seasonTotals.map((row: SeasonTotals, idx: number) => (
                     <tr key={idx}>
                       <td>
                         {formatSeason(isGoalie ? row.season_id : row.season)}
@@ -656,6 +758,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         seasonTotals: [],
         isGoalie: false,
         gameLog: [],
+        playoffGameLog: [],
         mostRecentSeason: null,
         usedGameLogFallback: false,
         availableSeasons: []
@@ -671,6 +774,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         seasonTotals: [],
         isGoalie: false,
         gameLog: [],
+        playoffGameLog: [],
         mostRecentSeason: null,
         usedGameLogFallback: false,
         availableSeasons: []
@@ -693,6 +797,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         seasonTotals: [],
         isGoalie: false,
         gameLog: [],
+        playoffGameLog: [],
         mostRecentSeason: null,
         usedGameLogFallback: false,
         availableSeasons: []
@@ -704,7 +809,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   const isGoalie =
     player.position && player.position.toUpperCase().startsWith("G");
 
-  let seasonTotals: any[] = [];
+  let seasonTotals: SeasonTotals[] = [];
   let mostRecentSeason: string | number | null = null;
   // Fetch current season info for game log
   const currentSeason = await getCurrentSeason();
@@ -761,9 +866,12 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   );
 
   // Fetch all game log rows for selected season
-  let gameLog: any[] = [];
+  let gameLog: GameLogEntry[] = [];
+  let playoffGameLog: GameLogEntry[] = [];
   let usedGameLogFallback = false;
+
   if (isGoalie) {
+    // Regular season goalie stats
     gameLog = await fetchAllGameLogRows(
       supabase,
       "wgo_goalie_stats",
@@ -773,6 +881,10 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       selectedSeason,
       `date, opponent_abbr, games_started, wins, losses, ot_losses, save_pct, goals_against_avg, shutouts, saves, shots_against, goals_against`
     );
+
+    // Playoff goalie stats - need to check if wgo_goalie_stats_playoffs table exists
+    // For now, we'll skip playoff goalies since the table wasn't provided in the schema
+
     // Fallback: fetch 10 most recent games if empty
     if (!gameLog.length) {
       const { data: fallbackData } = await supabase
@@ -789,6 +901,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       }
     }
   } else {
+    // Regular season skater stats
     gameLog = await fetchAllGameLogRows(
       supabase,
       "wgo_skater_stats",
@@ -798,6 +911,29 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       selectedSeason,
       `date, games_played, goals, assists, points, plus_minus, shots, shooting_percentage, pp_points, gw_goals, fow_percentage, toi_per_game, blocked_shots, hits, takeaways, giveaways, sat_pct, zone_start_pct`
     );
+
+    // Playoff skater stats from wgo_skater_stats_playoffs
+    try {
+      const { data: playoffData, error: playoffError } = await supabase
+        .from("wgo_skater_stats_playoffs")
+        .select(
+          `date, games_played, goals, assists, points, plus_minus, shots, shooting_percentage, pp_points, gw_goals, fow_percentage, toi_per_game, blocked_shots, hits, takeaways, giveaways, sat_pct, zone_start_pct`
+        )
+        .eq("player_id", playerIdNum)
+        .order("date", { ascending: false });
+
+      if (playoffData && !playoffError) {
+        // Add isPlayoff flag to playoff games
+        playoffGameLog = playoffData.map((game: any) => ({
+          ...game,
+          isPlayoff: true
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching playoff data:", error);
+      playoffGameLog = [];
+    }
+
     // Fallback: fetch 10 most recent games if empty
     if (!gameLog.length) {
       const { data: fallbackData } = await supabase
@@ -834,6 +970,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       seasonTotals,
       isGoalie,
       gameLog,
+      playoffGameLog, // Use the actual playoff data instead of empty array
       mostRecentSeason: selectedSeason,
       usedGameLogFallback,
       availableSeasons: isGoalie
