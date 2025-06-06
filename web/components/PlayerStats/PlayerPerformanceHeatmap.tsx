@@ -500,8 +500,8 @@ export function PlayerPerformanceHeatmap({
               <div
                 className={styles.legendColorSwatch}
                 style={{
-                  backgroundColor: getPerformanceColor("good"),
-                  border: "3px solid #FFD700",
+                  // backgroundColor: none,
+                  border: "2px solid #07aae2",
                   borderRadius: "3px"
                 }}
               />
@@ -547,7 +547,7 @@ export function PlayerPerformanceHeatmap({
                   style={{
                     backgroundColor: getPerformanceColor(day.performanceLevel),
                     borderColor: day.isPlayoff
-                      ? "#FFD700"
+                      ? "#07aae2"
                       : getPerformanceColor(day.performanceLevel),
                     borderWidth: day.isPlayoff ? "3px" : "2px"
                   }}

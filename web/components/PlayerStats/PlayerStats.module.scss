@@ -1028,8 +1028,8 @@
         }
 
         &.playoffGame {
-          border-color: #ffd700 !important;
-          border-width: 3px !important;
+          border-color: v.$primary-color !important;
+          border-width: 2px !important;
           box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
 
           &:hover {
