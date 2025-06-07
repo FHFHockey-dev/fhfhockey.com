@@ -8,11 +8,15 @@ import {
 } from "date-fns";
 import styles from "./PlayerStats.module.scss";
 import { GameLogEntry } from "pages/stats/player/[playerId]";
+import { useMissedGames } from "hooks/useMissedGames";
 
 interface PlayerPerformanceHeatmapProps {
   gameLog: GameLogEntry[];
   playoffGameLog?: GameLogEntry[];
   selectedStats: string[];
+  playerId?: string | number;
+  playerTeamId?: number;
+  seasonId?: string | number | null;
 }
 
 // Performance thresholds based on NHL averages (per game)
@@ -214,13 +218,24 @@ const getPerformanceLevelLabel = (level: PerformanceLevel): string => {
 export function PlayerPerformanceHeatmap({
   gameLog,
   playoffGameLog = [], // Add default empty array
-  selectedStats
+  selectedStats,
+  playerId,
+  playerTeamId,
+  seasonId
 }: PlayerPerformanceHeatmapProps) {
   const [showInfo, setShowInfo] = useState(false);
   const [hoveredGame, setHoveredGame] = useState<GameLogEntry | null>(null);
+  const [hoveredMissedGame, setHoveredMissedGame] = useState<any>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
-  // Create calendar data combining regular season and playoff games
+  // Fetch missed games using the new hook
+  const {
+    missedGames,
+    isLoading: missedGamesLoading,
+    error: missedGamesError
+  } = useMissedGames(playerId, playerTeamId, seasonId, gameLog, playoffGameLog);
+
+  // Create calendar data combining regular season, playoff games, and missed games
   const calendarData = useMemo(() => {
     if (gameLog.length === 0 && playoffGameLog.length === 0) return [];
 
@@ -232,6 +247,13 @@ export function PlayerPerformanceHeatmap({
     allGames.forEach((game) => {
       const dateKey = format(new Date(game.date), "yyyy-MM-dd");
       gamesByDate.set(dateKey, game);
+    });
+
+    // Create missed games map by date
+    const missedGamesByDate = new Map<string, any>();
+    missedGames.forEach((missedGame) => {
+      const dateKey = format(new Date(missedGame.date), "yyyy-MM-dd");
+      missedGamesByDate.set(dateKey, missedGame);
     });
 
     // Get date range - ensure we cover the full hockey season including playoffs
@@ -278,8 +300,10 @@ export function PlayerPerformanceHeatmap({
       days: Array<{
         date: Date;
         game: GameLogEntry | null;
+        missedGame: any | null;
         performanceLevel: PerformanceLevel;
         isPlayoff: boolean;
+        isMissedGame: boolean;
       }>;
     }> = [];
 
@@ -294,16 +318,20 @@ export function PlayerPerformanceHeatmap({
       const days = monthDays.map((day) => {
         const dateKey = format(day, "yyyy-MM-dd");
         const game = gamesByDate.get(dateKey) || null;
+        const missedGame = missedGamesByDate.get(dateKey) || null;
         const performanceLevel = game
           ? calculatePerformanceLevel(game, selectedStats)
           : "no-data";
         const isPlayoff = game ? Boolean(game.isPlayoff) : false;
+        const isMissedGame = Boolean(missedGame);
 
         return {
           date: day,
           game,
+          missedGame,
           performanceLevel,
-          isPlayoff
+          isPlayoff,
+          isMissedGame
         };
       });
 
@@ -316,7 +344,7 @@ export function PlayerPerformanceHeatmap({
     }
 
     return months;
-  }, [gameLog, playoffGameLog, selectedStats]);
+  }, [gameLog, playoffGameLog, selectedStats, missedGames]);
 
   // Calculate calendar stats
   const calendarStats = useMemo(() => {
@@ -349,16 +377,23 @@ export function PlayerPerformanceHeatmap({
 
   const handleMouseEnter = (
     game: GameLogEntry | null,
+    missedGame: any | null,
     event: React.MouseEvent
   ) => {
     if (game) {
       setHoveredGame(game);
+      setHoveredMissedGame(null);
+      setTooltipPosition({ x: event.clientX, y: event.clientY });
+    } else if (missedGame) {
+      setHoveredMissedGame(missedGame);
+      setHoveredGame(null);
       setTooltipPosition({ x: event.clientX, y: event.clientY });
     }
   };
 
   const handleMouseLeave = () => {
     setHoveredGame(null);
+    setHoveredMissedGame(null);
   };
 
   const renderInfoTooltip = () => (
@@ -415,6 +450,43 @@ export function PlayerPerformanceHeatmap({
       <em>* Giveaways are inverted (lower values = better performance)</em>
     </div>
   );
+
+  const renderMissedGameTooltip = (missedGame: any) => {
+    return (
+      <div
+        className={styles.gameTooltip}
+        style={{
+          position: "fixed",
+          left: tooltipPosition.x + 10,
+          top: tooltipPosition.y - 10,
+          zIndex: 1000
+        }}
+      >
+        <div className={styles.tooltipHeader}>
+          <strong>{format(new Date(missedGame.date), "MMM d, yyyy")}</strong>
+          <span className={styles.missedGameLabel}>
+            Missed Game{" "}
+            {missedGame.isPlayoff ? "(Playoff)" : "(Regular Season)"}
+          </span>
+        </div>
+
+        <div className={styles.tooltipStats}>
+          <div className={styles.tooltipStat}>
+            <span className={styles.statLabel}>Status:</span>
+            <span className={styles.statValue}>Did not play</span>
+          </div>
+          <div className={styles.tooltipStat}>
+            <span className={styles.statLabel}>Game ID:</span>
+            <span className={styles.statValue}>{missedGame.gameId}</span>
+          </div>
+        </div>
+
+        <div className={styles.tooltipFooter}>
+          <em>Player was inactive - possible injury or healthy scratch</em>
+        </div>
+      </div>
+    );
+  };
 
   const renderGameTooltip = (game: GameLogEntry) => {
     const performanceLevel = calculatePerformanceLevel(game, selectedStats);
@@ -534,22 +606,32 @@ export function PlayerPerformanceHeatmap({
             {legendItems.map((item) => (
               <div key={item.level} className={styles.legendItem}>
                 <div
-                  className={styles.legendColorSwatch}
+                  className={styles.legendColor}
                   style={{ backgroundColor: item.color }}
                 />
-                <span className={styles.legendText}>{item.label}</span>
+                <span>{item.label}</span>
               </div>
             ))}
             <div className={styles.legendItem}>
+              <img
+                src="/pictures/injured.png"
+                alt="Missed Game"
+                className={styles.injuredIcon}
+                style={{ width: 12, height: 12 }}
+              />
+              <span>Missed Game</span>
+            </div>
+            <div className={styles.legendItem}>
               <div
-                className={styles.legendColorSwatch}
+                className={styles.legendColor}
                 style={{
-                  // backgroundColor: none,
-                  border: "2px solid #ffcc00",
-                  borderRadius: "3px"
+                  backgroundColor: "#4fb84f",
+                  border: "2px solid #eab308",
+                  width: 12,
+                  height: 12
                 }}
               />
-              <span className={styles.legendText}>Playoff Game</span>
+              <span>Playoff Game</span>
             </div>
           </div>
         </div>
@@ -558,66 +640,63 @@ export function PlayerPerformanceHeatmap({
       <div className={styles.calendarGrid}>
         {calendarData.map((month) => (
           <div key={month.date.toISOString()} className={styles.calendarMonth}>
-            <div className={styles.calendarTable}>
-              {/* Month header as part of the grid */}
-              <div className={styles.monthHeader}>
-                {format(month.date, "MMMM yyyy")}
-              </div>
-
-              {/* Weekdays header */}
-              <div className={styles.weekdaysHeader}>
+            <div className={styles.monthHeader}>
+              {format(month.date, "MMM yyyy")}
+            </div>
+            <div className={styles.daysGrid}>
+              <div className={styles.dayLabels}>
                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
                   (day) => (
-                    <div key={day} className={styles.weekdayLabel}>
+                    <div key={day} className={styles.dayLabel}>
                       {day}
                     </div>
                   )
                 )}
               </div>
+              <div className={styles.daysContainer}>
+                {month.days.map((day) => {
+                  const isCurrentMonth =
+                    day.date.getMonth() === month.date.getMonth();
 
-              {/* Empty cells for days before month starts */}
-              {Array.from({ length: getDay(month.date) }).map((_, index) => (
-                <div
-                  key={`empty-${index}`}
-                  className={`${styles.calendarDay} ${styles.emptyDay}`}
-                />
-              ))}
-
-              {/* Actual month days */}
-              {month.days.map((day) => (
-                <div
-                  key={day.date.toISOString()}
-                  className={`${styles.calendarDay} ${day.game ? styles.gameDay : styles.noGameDay} ${day.isPlayoff ? styles.playoffGame : ""}`}
-                  style={{
-                    backgroundColor: getPerformanceColor(day.performanceLevel),
-                    borderColor: day.isPlayoff
-                      ? "#07aae2"
-                      : getPerformanceColor(day.performanceLevel),
-                    borderWidth: day.isPlayoff ? "3px" : "2px"
-                  }}
-                  onMouseEnter={(e) => handleMouseEnter(day.game, e)}
-                  onMouseLeave={handleMouseLeave}
-                >
-                  <span className={styles.dayNumber}>
-                    {format(day.date, "d")}
-                  </span>
-                  {day.game && (
-                    <div className={styles.gameIndicator}>
-                      <div className={styles.performanceScore}>
-                        {day.isPlayoff
-                          ? "P"
-                          : day.performanceLevel.charAt(0).toUpperCase()}
-                      </div>
+                  return (
+                    <div
+                      key={day.date.toISOString()}
+                      className={`${styles.dayCell} ${!isCurrentMonth ? styles.otherMonth : ""} ${day.isMissedGame ? styles.missedGameDay : ""} ${day.isPlayoff && day.game ? styles.playoffGame : ""}`}
+                      style={{
+                        backgroundColor: day.isMissedGame
+                          ? "#333"
+                          : day.game
+                            ? getPerformanceColor(day.performanceLevel)
+                            : "transparent"
+                      }}
+                      onMouseEnter={(e) =>
+                        handleMouseEnter(day.game, day.missedGame, e)
+                      }
+                      onMouseLeave={handleMouseLeave}
+                    >
+                      <span className={styles.dayNumber}>
+                        {day.date.getDate()}
+                      </span>
+                      {day.isMissedGame && (
+                        <div className={styles.missedGameIndicator}>
+                          <img
+                            src="/pictures/injured.png"
+                            alt="Missed Game"
+                            className={styles.injuredIcon}
+                          />
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              ))}
+                  );
+                })}
+              </div>
             </div>
           </div>
         ))}
       </div>
 
       {hoveredGame && renderGameTooltip(hoveredGame)}
+      {hoveredMissedGame && renderMissedGameTooltip(hoveredMissedGame)}
 
       {calendarStats && (
         <div className={styles.calendarFooter}>
@@ -649,6 +728,12 @@ export function PlayerPerformanceHeatmap({
               compared to NHL averages.
             </p>
           </div>
+        </div>
+      )}
+
+      {missedGamesError && (
+        <div className={styles.errorMessage}>
+          Error loading missed games: {missedGamesError}
         </div>
       )}
     </div>

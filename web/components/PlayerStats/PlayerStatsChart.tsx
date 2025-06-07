@@ -39,14 +39,14 @@ interface PlayerStatsChartProps {
 }
 
 const CHART_COLORS = [
-  "#3B82F6", // Blue
-  "#EF4444", // Red
-  "#10B981", // Green
-  "#F59E0B", // Amber
-  "#8B5CF6", // Purple
-  "#EC4899", // Pink
-  "#06B6D4", // Cyan
-  "#84CC16" // Lime
+  "#14a2d2", // Primary blue
+  "#07aae2", // Secondary blue
+  "#00ff99", // Success green
+  "#ffcc00", // Warning yellow
+  "#ff6384", // Danger red
+  "#9b59b6", // Purple
+  "#4bc0c0", // Teal
+  "#ff9f40" // Orange
 ];
 
 const STAT_DISPLAY_NAMES: { [key: string]: string } = {
@@ -151,11 +151,17 @@ export function PlayerStatsChart({
           label: STAT_DISPLAY_NAMES[stat] || stat,
           data,
           borderColor: color,
-          backgroundColor: `${color}20`,
-          borderWidth: 2,
-          pointRadius: 3,
-          pointHoverRadius: 5,
-          tension: 0.1,
+          backgroundColor: `${color}15`,
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: color,
+          pointBorderColor: "#1a1d21",
+          pointBorderWidth: 2,
+          pointHoverBackgroundColor: color,
+          pointHoverBorderColor: "#ffffff",
+          pointHoverBorderWidth: 2,
+          tension: 0.15,
           fill: false
         };
 
@@ -174,12 +180,15 @@ export function PlayerStatsChart({
               label: `${STAT_DISPLAY_NAMES[stat] || stat} (5-game avg)`,
               data: rollingData,
               borderColor: `${color}80`,
-              backgroundColor: `${color}10`,
-              borderWidth: 1,
-              borderDash: [5, 5],
-              pointRadius: 1,
-              pointHoverRadius: 3,
-              tension: 0.3,
+              backgroundColor: `${color}08`,
+              borderWidth: 2,
+              borderDash: [8, 4],
+              pointRadius: 2,
+              pointHoverRadius: 4,
+              pointBackgroundColor: `${color}80`,
+              pointBorderColor: "#1a1d21",
+              pointBorderWidth: 1,
+              tension: 0.25,
               fill: false
             }
           ];
@@ -208,38 +217,65 @@ export function PlayerStatsChart({
       plugins: {
         legend: {
           position: "top" as const,
+          align: "start" as const,
           labels: {
-            boxWidth: 12,
-            padding: 15,
+            boxWidth: 14,
+            boxHeight: 14,
+            padding: 16,
+            usePointStyle: true,
+            pointStyle: "circle",
             font: {
-              size: 12
+              size: 13,
+              family: "'Roboto Condensed', sans-serif",
+              weight: 500
+            },
+            color: "#cccccc",
+            generateLabels: (chart: any) => {
+              const original =
+                ChartJS.defaults.plugins.legend.labels.generateLabels;
+              const labels = original(chart);
+
+              labels.forEach((label: any) => {
+                label.borderRadius = 2;
+              });
+
+              return labels;
             }
           }
         },
         title: {
-          display: true,
-          text: title,
-          font: {
-            size: 16,
-            weight: "bold" as const
-          },
-          padding: 20
+          display: false // We'll handle title in component wrapper
         },
         tooltip: {
           mode: "index" as const,
           intersect: false,
-          backgroundColor: "rgba(17, 24, 39, 0.95)",
-          titleColor: "#F9FAFB",
-          bodyColor: "#F9FAFB",
-          borderColor: "#374151",
+          backgroundColor: "rgba(26, 29, 33, 0.95)",
+          titleColor: "#ffffff",
+          bodyColor: "#cccccc",
+          borderColor: "#404040",
           borderWidth: 1,
           cornerRadius: 8,
-          padding: 12,
+          padding: 16,
+          titleFont: {
+            size: 14,
+            weight: 600,
+            family: "'Roboto Condensed', sans-serif"
+          },
+          bodyFont: {
+            size: 13,
+            family: "'Roboto Condensed', sans-serif"
+          },
+          displayColors: true,
+          boxWidth: 12,
+          boxHeight: 12,
+          usePointStyle: true,
           callbacks: {
             title: (context: any) => {
               const gameIndex = context[0].dataIndex;
-              const game = gameLog[gameIndex];
-              return `${context[0].label} ${game ? `(Game ${gameIndex + 1})` : ""}`;
+              const game = (
+                showPlayoffData && playoffGameLog ? playoffGameLog : gameLog
+              )[gameIndex];
+              return `${context[0].label}${game ? ` (Game ${gameIndex + 1})` : ""}`;
             },
             label: (context: any) => {
               const stat = selectedStats.find((s) =>
@@ -254,99 +290,120 @@ export function PlayerStatsChart({
                 value = value.toFixed(2);
               } else if (stat === "save_pct") {
                 value = value.toFixed(3);
+              } else if (stat === "toi_per_game") {
+                const minutes = Math.floor(value);
+                const seconds = Math.round((value - minutes) * 60);
+                value = `${minutes}:${seconds.toString().padStart(2, "0")}`;
               } else {
                 value = Math.round(value * 100) / 100;
               }
 
               return `${context.dataset.label}: ${value}`;
-            }
+            },
+            labelColor: (context: any) => ({
+              borderColor: context.dataset.borderColor,
+              backgroundColor: context.dataset.borderColor,
+              borderWidth: 2,
+              borderRadius: 2
+            })
           }
         }
       },
       scales: {
         x: {
           grid: {
-            color: "rgba(156, 163, 175, 0.2)"
+            color: "rgba(156, 163, 175, 0.15)",
+            drawBorder: false
           },
           ticks: {
-            maxTicksLimit: 12,
+            maxTicksLimit: 15,
             font: {
-              size: 11
-            }
+              size: 11,
+              family: "'Roboto Condensed', sans-serif"
+            },
+            color: "#9ca3af",
+            padding: 8
+          },
+          border: {
+            display: false
           }
         },
         y: {
           beginAtZero: true,
           grid: {
-            color: "rgba(156, 163, 175, 0.2)"
+            color: "rgba(156, 163, 175, 0.15)",
+            drawBorder: false
           },
           ticks: {
             font: {
-              size: 11
+              size: 11,
+              family: "'Roboto Condensed', sans-serif"
             },
+            color: "#9ca3af",
+            padding: 12,
             callback: function (value: any) {
               // Format y-axis labels based on the data range
               if (typeof value === "number") {
-                if (value < 1 && value > 0) {
-                  return value.toFixed(2);
-                } else if (value < 10) {
-                  return value.toFixed(1);
+                if (value >= 1000) {
+                  return `${(value / 1000).toFixed(1)}k`;
                 }
+                if (value % 1 === 0) {
+                  return value.toString();
+                }
+                return value.toFixed(value < 10 ? 1 : 0);
               }
               return value;
             }
+          },
+          border: {
+            display: false
           }
         }
       },
       interaction: {
-        mode: "nearest" as const,
-        axis: "x" as const,
+        mode: "index" as const,
         intersect: false
       },
       elements: {
         point: {
-          hoverBackgroundColor: "#FFFFFF",
-          hoverBorderWidth: 2
+          hoverBorderWidth: 3
+        },
+        line: {
+          borderJoinStyle: "round" as const,
+          borderCapStyle: "round" as const
         }
       }
     }),
-    [title, gameLog, selectedStats]
+    [selectedStats, gameLog, playoffGameLog, showPlayoffData]
   );
 
-  if (!chartData || gameLog.length === 0) {
+  if (!chartData) {
     return (
-      <div className={styles.chartContainer}>
-        <div className={styles.noData}>
+      <div className={styles.trendContainer}>
+        <div className={styles.trendHeader}>
           <h3>{title}</h3>
-          <p>No data available for selected timeframe</p>
+          <p>Track performance metrics over time</p>
+        </div>
+        <div className={styles.chartWrapper}>
+          <div className={styles.noData}>No data available for chart</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={styles.chartContainer}>
+    <div className={styles.trendContainer}>
+      <div className={styles.trendHeader}>
+        <h3>{title}</h3>
+        <p>
+          {showPlayoffData ? "Playoff" : "Regular Season"} performance trends
+          {selectedStats.length > 0 &&
+            ` for ${selectedStats.map((stat) => STAT_DISPLAY_NAMES[stat] || stat).join(", ")}`}
+        </p>
+      </div>
       <div className={styles.chartWrapper}>
         <Line data={chartData} options={options} />
       </div>
-
-      {selectedStats.length > 4 && (
-        <div className={styles.chartNote}>
-          <p>
-            <strong>Tip:</strong> Click legend items to hide/show specific stats
-            for better visualization
-          </p>
-        </div>
-      )}
-
-      {showRollingAverage && (
-        <div className={styles.chartNote}>
-          <p>
-            <strong>Rolling Average:</strong> Dashed lines show 5-game moving
-            averages to identify trends
-          </p>
-        </div>
-      )}
     </div>
   );
 }

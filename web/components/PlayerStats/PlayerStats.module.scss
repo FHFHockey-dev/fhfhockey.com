@@ -131,8 +131,9 @@
 .calendarSection {
   height: 100%;
   min-height: 500px;
-  @include v.component-wrapper;
-  padding: v.$space-lg;
+  padding: v.$space-sm;
+  outline: 5px solid v.$border-color-primary;
+  border-radius: v.$border-radius-lg * 1.5;
   box-sizing: border-box;
 }
 
@@ -403,6 +404,16 @@
   border: 1px solid v.$border-secondary;
 }
 
+// New scrollable table wrapper for consistent height with charts
+.scrollableTableWrapper {
+  height: 400px; // Match chart height
+  overflow-y: auto;
+  overflow-x: auto;
+  border-radius: v.$border-radius-md;
+  border: 1px solid v.$border-secondary;
+  background: v.$background-dark;
+}
+
 .statsTable {
   width: 100%;
   border-collapse: collapse;
@@ -419,7 +430,7 @@
   th {
     background: v.$background-medium;
     font-weight: 600;
-    color: v.$text-primary;
+    color: v.$primary-color;
     position: sticky;
     top: 0;
     z-index: 10;
@@ -645,6 +656,151 @@
 }
 
 // Insights and Statistics
+.summarySection {
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+  margin-bottom: v.$space-xl;
+
+  h3 {
+    font-size: v.$font-size-xl;
+    font-weight: 600;
+    color: v.$text-primary;
+    margin: 0 0 v.$space-lg 0;
+  }
+
+  .summaryGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: v.$space-md;
+  }
+
+  .summaryCard {
+    padding: v.$space-md;
+    background: v.$background-medium;
+    border-radius: v.$border-radius-md;
+    border-left: 4px solid v.$secondary-color;
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    // Percentile-based color coding for summary cards too
+    &.elite {
+      border-left-color: #10b981;
+      background: rgba(16, 185, 129, 0.08);
+
+      .summaryValue {
+        color: #10b981;
+      }
+    }
+
+    &.excellent {
+      border-left-color: #22c55e;
+      background: rgba(34, 197, 94, 0.08);
+
+      .summaryValue {
+        color: #22c55e;
+      }
+    }
+
+    &.good {
+      border-left-color: #84cc16;
+      background: rgba(132, 204, 22, 0.08);
+
+      .summaryValue {
+        color: #84cc16;
+      }
+    }
+
+    &.average {
+      border-left-color: #eab308;
+      background: rgba(234, 179, 8, 0.08);
+
+      .summaryValue {
+        color: #eab308;
+      }
+    }
+
+    &.below-average {
+      border-left-color: #f97316;
+      background: rgba(249, 115, 22, 0.08);
+
+      .summaryValue {
+        color: #f97316;
+      }
+    }
+
+    &.poor {
+      border-left-color: #ef4444;
+      background: rgba(239, 68, 68, 0.08);
+
+      .summaryValue {
+        color: #ef4444;
+      }
+    }
+
+    .summaryLabel {
+      font-size: v.$font-size-sm;
+      color: v.$text-secondary;
+      margin-bottom: v.$space-xs;
+    }
+
+    .summaryValue {
+      font-size: v.$font-size-xl;
+      font-weight: 700;
+      color: v.$text-primary;
+      margin-bottom: v.$space-xs;
+    }
+
+    .summaryDescription {
+      font-size: v.$font-size-xs;
+      color: v.$text-secondary;
+    }
+  }
+}
+
+.advancedNote {
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-md;
+  margin: v.$space-lg 0;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+  line-height: 1.5;
+
+  p {
+    margin: 0 0 v.$space-sm 0;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  strong {
+    color: v.$text-primary;
+    font-weight: 600;
+  }
+
+  em {
+    font-style: italic;
+    color: v.$text-secondary;
+  }
+
+  a {
+    color: v.$primary-color;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
 .insightsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -665,6 +821,62 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 
+  // Percentile-based color coding
+  &.elite {
+    background: rgba(16, 185, 129, 0.15); // Emerald green
+    border-left-color: #10b981;
+
+    .insightValue {
+      color: #10b981;
+    }
+  }
+
+  &.excellent {
+    background: rgba(34, 197, 94, 0.12); // Green
+    border-left-color: #22c55e;
+
+    .insightValue {
+      color: #22c55e;
+    }
+  }
+
+  &.good {
+    background: rgba(132, 204, 22, 0.12); // Lime green
+    border-left-color: #84cc16;
+
+    .insightValue {
+      color: #84cc16;
+    }
+  }
+
+  &.average {
+    background: rgba(234, 179, 8, 0.12); // Yellow
+    border-left-color: #eab308;
+
+    .insightValue {
+      color: #eab308;
+    }
+  }
+
+  &.below-average {
+    background: rgba(249, 115, 22, 0.12); // Orange
+    border-left-color: #f97316;
+
+    .insightValue {
+      color: #f97316;
+    }
+  }
+
+  &.poor {
+    background: rgba(239, 68, 68, 0.12); // Red
+    border-left-color: #ef4444;
+
+    .insightValue {
+      color: #ef4444;
+    }
+  }
+
+  // Legacy trend-based classes (keeping for backward compatibility)
   &.positive {
     background: rgba(34, 197, 94, 0.1);
     border-left-color: #22c55e;
@@ -720,20 +932,32 @@
   padding: v.$space-sm v.$space-md;
   border-radius: v.$border-radius-sm;
   min-width: 80px;
+  border-left: 4px solid transparent;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
 
   &.positive {
     background: rgba(34, 197, 94, 0.2);
     color: #22c55e;
+    border-left-color: #22c55e;
   }
 
   &.negative {
     background: rgba(239, 68, 68, 0.2);
     color: #ef4444;
+    border-left-color: #ef4444;
   }
 
   &.neutral {
     background: rgba(156, 163, 175, 0.2);
     color: #9ca3af;
+    border-left-color: #9ca3af;
   }
 }
 
@@ -782,14 +1006,14 @@
 // Performance Calendar
 .performanceCalendar {
   @include v.component-wrapper;
-  padding: v.$space-xl;
+  padding: v.$space-lg;
   margin-bottom: v.$space-xl;
 
   .calendarHeader {
     display: flex;
     flex-direction: column;
     gap: v.$space-lg;
-    margin-bottom: v.$space-md;
+    margin-bottom: v.$space-xl;
 
     .titleWithInfo {
       display: flex;
@@ -884,6 +1108,39 @@
           color: v.$text-secondary;
           font-style: italic;
         }
+
+        .thresholdBreakdown {
+          background: v.$background-medium;
+          border-radius: v.$border-radius-sm;
+          padding: v.$space-sm;
+          margin: v.$space-sm 0;
+          max-height: 200px;
+          overflow-y: auto;
+
+          .thresholdStat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: v.$space-xs;
+            font-size: v.$font-size-xs;
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+
+            strong {
+              color: v.$text-primary;
+              font-weight: 600;
+              min-width: 80px;
+            }
+
+            span {
+              color: v.$text-secondary;
+              font-family: monospace;
+              font-size: v.$font-size-xxs;
+            }
+          }
+        }
       }
     }
 
@@ -914,14 +1171,14 @@
         align-items: center;
         gap: v.$space-xs;
 
-        .legendColorSwatch {
+        .legendColor {
           width: 14px;
           height: 14px;
           border-radius: 3px;
           border: 1px solid v.$border-secondary;
         }
 
-        .legendText {
+        span {
           font-size: v.$font-size-xs;
           color: v.$text-secondary;
           white-space: nowrap;
@@ -933,7 +1190,7 @@
   .calendarGrid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: v.$space-md;
+    gap: v.$space-lg;
     margin-bottom: v.$space-xl;
 
     @media (max-width: v.$breakpoint-lg-min) {
@@ -943,117 +1200,117 @@
   }
 
   .calendarMonth {
+    background: v.$background-medium;
+    border-radius: v.$border-radius-md;
+    padding: v.$space-md;
+    border: 1px solid v.$border-secondary;
     display: flex;
     flex-direction: column;
-    height: 100%;
+    min-height: 300px;
 
-    .calendarTable {
+    .monthHeader {
+      text-align: center;
+      font-size: v.$font-size-md;
+      font-weight: 600;
+      color: v.$text-primary;
+      padding: v.$space-md;
+      background: v.$background-dark;
+      border-radius: v.$border-radius-sm;
+      margin-bottom: v.$space-md;
+      border: 1px solid v.$border-primary;
+    }
+
+    .daysGrid {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .dayLabels {
       display: grid;
       grid-template-columns: repeat(7, 1fr);
       gap: 2px;
-      background: v.$background-medium;
-      border-radius: v.$border-radius-md;
-      padding: v.$space-sm;
+      margin-bottom: v.$space-xs;
+    }
+
+    .dayLabel {
+      text-align: center;
+      font-size: v.$font-size-xs;
+      font-weight: 600;
+      color: v.$text-secondary;
+      padding: v.$space-xs;
+      background: v.$background-dark;
+      border-radius: v.$border-radius-sm;
+    }
+
+    .daysContainer {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+
+    .dayCell {
+      position: relative;
+      min-height: 35px;
+      min-width: 35px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: v.$border-radius-sm;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: v.$background-dark;
       border: 1px solid v.$border-secondary;
 
-      .monthHeader {
-        grid-column: 1 / -1;
-        text-align: center;
-        font-size: v.$font-size-lg;
+      &:hover {
+        transform: scale(1.05);
+        z-index: 10;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      &.otherMonth {
+        opacity: 0.3;
+        background: transparent;
+      }
+
+      &.missedGameDay {
+        background: #333 !important;
+        border: 2px solid #ef4444 !important;
+        opacity: 0.8;
+
+        &:hover {
+          opacity: 1;
+          border-color: #dc2626 !important;
+        }
+      }
+
+      &.playoffGame {
+        border: 2px solid v.$warning-color !important;
+
+        &:hover {
+          border-color: v.$warning-color !important;
+          box-shadow: 0 2px 8px rgba(234, 179, 8, 0.3);
+        }
+      }
+
+      .dayNumber {
+        font-size: v.$font-size-xs;
         font-weight: 600;
         color: v.$text-primary;
-        padding: v.$space-sm v.$space-sm;
-        background: v.$background-dark;
-        border-top-right-radius: v.$border-radius-sm;
-        border-top-left-radius: v.$border-radius-sm;
-        border: 1px solid v.$border-primary;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        margin-bottom: 2px;
       }
 
-      .weekdaysHeader {
-        display: contents;
+      .missedGameIndicator {
+        position: absolute;
+        top: 2px;
+        right: 2px;
 
-        .weekdayLabel {
-          padding: v.$space-xs;
-          text-align: center;
-          font-weight: 600;
-          font-size: v.$font-size-xs;
-          color: v.$text-secondary;
-          background: v.$background-dark;
-          border: 1px solid v.$border-secondary;
-        }
-      }
-
-      .calendarDay {
-        width: 100%;
-        aspect-ratio: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        font-size: v.$font-size-xs;
-        border-radius: v.$border-radius-sm;
-        background-color: v.$background-dark;
-        color: v.$text-primary;
-        cursor: pointer;
-        transition: transform 0.2s;
-        border: 1px solid v.$border-secondary;
-        position: relative;
-
-        &.emptyDay {
-          background: transparent;
-          border: none;
-          cursor: default;
-        }
-
-        &.gameDay {
-          border-width: 2px;
-
-          &:hover {
-            transform: scale(1.05);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-            z-index: 10;
-          }
-        }
-
-        &.noGameDay {
-          background: v.$background-medium;
-          opacity: 0.6;
-
-          &:hover {
-            opacity: 0.8;
-          }
-        }
-
-        &.playoffGame {
-          border-color: v.$warning-color !important;
-          border-width: 2px !important;
-          box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
-
-          &:hover {
-            box-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
-          }
-        }
-
-        .dayNumber {
-          font-size: v.$font-size-xs;
-          font-weight: 600;
-          color: v.$text-primary;
-          margin-bottom: 2px;
-        }
-
-        .gameIndicator {
-          .performanceScore {
-            font-size: v.$font-size-xxs;
-            font-weight: bold;
-            color: white;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 1px 3px;
-            border-radius: 2px;
-            min-width: 16px;
-            text-align: center;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-          }
+        .injuredIcon {
+          width: 8px;
+          height: 8px;
+          margin-left: v.$space-xs;
+          opacity: 0.8;
         }
       }
     }
@@ -1087,6 +1344,14 @@
         font-size: v.$font-size-xs;
         font-weight: 600;
       }
+
+      .missedGameLabel {
+        color: #ef4444;
+        font-size: v.$font-size-xs;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
     }
 
     .tooltipStats {
@@ -1113,33 +1378,12 @@
           text-align: right;
           color: v.$text-primary;
           font-weight: 600;
-
-          .percentileIndicator {
-            display: block;
-            color: v.$text-secondary;
-            font-weight: 400;
-            font-size: v.$font-size-xxs;
-            margin-top: 2px;
-          }
         }
       }
 
-      .thresholdContext {
-        font-size: v.$font-size-xxs;
+      .statLabel {
         color: v.$text-secondary;
-        margin-left: v.$space-sm;
-
-        .thresholdLabel {
-          font-weight: 600;
-          margin-right: v.$space-xs;
-        }
-
-        .thresholdValues {
-          font-family: monospace;
-          background: v.$background-medium;
-          padding: 2px v.$space-xs;
-          border-radius: v.$border-radius-sm;
-        }
+        font-size: v.$font-size-xs;
       }
     }
 
@@ -1194,36 +1438,157 @@
       }
     }
   }
-}
 
-.thresholdBreakdown {
-  background: v.$background-medium;
-  border-radius: v.$border-radius-sm;
-  padding: v.$space-sm;
-  margin: v.$space-sm 0;
-}
-
-.thresholdStat {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: v.$space-xs;
-  font-size: v.$font-size-xs;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  strong {
-    color: v.$text-primary;
-    font-weight: 600;
-    min-width: 80px;
-  }
-
-  span {
+  .noData {
+    text-align: center;
+    padding: v.$space-xxl;
     color: v.$text-secondary;
-    font-family: monospace;
-    font-size: v.$font-size-xxs;
+    font-size: v.$font-size-lg;
+    background: v.$background-medium;
+    border-radius: v.$border-radius-md;
+    border: 1px solid v.$border-secondary;
+  }
+
+  .errorMessage {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid #ef4444;
+    border-radius: v.$border-radius-md;
+    padding: v.$space-md;
+    margin-top: v.$space-md;
+    color: #ef4444;
+    font-size: v.$font-size-sm;
+  }
+}
+
+// Missed games and injury icon styles
+.missedGameRow {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  border-left: 3px solid #ef4444;
+
+  td {
+    color: v.$text-secondary;
+    opacity: 0.7;
+  }
+}
+
+.missedGamesCount {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.injuredIcon {
+  width: 8px;
+  height: 8px;
+  margin-left: v.$space-xs;
+  opacity: 0.8;
+}
+
+.injuredIconTable {
+  width: 10px;
+  height: 10px;
+  margin-left: v.$space-xs;
+  vertical-align: middle;
+  opacity: 0.9;
+}
+
+.dateCell {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+}
+
+// Performance Calendar specific styles
+.performanceCalendar {
+  .calendarDay {
+    &.missedGameDay {
+      background: #333;
+      border: 2px solid #ef4444;
+      opacity: 0.8;
+
+      &:hover {
+        opacity: 1;
+        border-color: #dc2626;
+      }
+    }
+  }
+
+  .dayCell {
+    position: relative;
+    min-height: 40px;
+    min-width: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: v.$border-radius-sm;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: scale(1.05);
+      z-index: 10;
+    }
+
+    &.otherMonth {
+      opacity: 0.3;
+    }
+  }
+
+  .dayNumber {
+    font-size: v.$font-size-xs;
+    font-weight: 600;
+    color: v.$text-primary;
+    margin-bottom: 2px;
+  }
+
+  .playoffIndicator {
+    display: none;
+  }
+
+  .daysGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .dayLabels {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: v.$space-xs;
+  }
+
+  .dayLabel {
+    text-align: center;
+    font-size: v.$font-size-xs;
+    font-weight: 600;
+    color: v.$text-secondary;
+    padding: v.$space-xs;
+  }
+
+  .daysContainer {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+
+  .monthHeader {
+    text-align: center;
+    font-size: v.$font-size-md;
+    font-weight: 600;
+    color: v.$text-primary;
+    padding: v.$space-md;
+    background: v.$background-dark;
+    border-radius: v.$border-radius-sm;
+    margin-bottom: v.$space-sm;
+    border: 1px solid v.$border-primary;
+  }
+
+  .legendColor {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    border: 1px solid v.$border-secondary;
   }
 }
 
@@ -1261,7 +1626,7 @@
   }
 
   .performanceCalendar {
-    padding: v.$space-lg;
+    padding: v.$space-md;
 
     .calendarHeader {
       .titleWithInfo {
@@ -1318,6 +1683,241 @@
     .calendarHeader .calendarLegend .legendItems {
       flex-direction: column;
       gap: v.$space-xs;
+    }
+  }
+}
+
+// Chart Container Styles
+.trendContainer,
+.radarContainer {
+  @include v.component-wrapper;
+  padding: v.$space-xl;
+  margin-bottom: v.$space-xl;
+  background-color: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$border-radius-lg;
+}
+
+.trendHeader,
+.radarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: v.$space-lg;
+  flex-wrap: wrap;
+  gap: v.$space-md;
+
+  h3 {
+    font-family: v.$font-family-accent; // Train One font
+    font-size: v.$font-size-xl;
+    font-weight: 400; // Train One is bold by default
+    color: v.$secondary-color;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  p {
+    color: v.$text-secondary;
+    margin: 0;
+    font-size: v.$font-size-sm;
+    font-family: v.$font-family-primary;
+    line-height: 1.4;
+  }
+}
+
+.chartWrapper,
+.radarWrapper {
+  position: relative;
+  height: 400px;
+  width: 100%;
+  padding: v.$space-md;
+  background: linear-gradient(
+    135deg,
+    rgba(v.$background-dark, 0.8) 0%,
+    rgba(v.$background-medium, 0.9) 100%
+  );
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  overflow: hidden;
+
+  canvas {
+    max-height: 100% !important;
+  }
+}
+
+.radarWrapper {
+  height: 350px;
+}
+
+.noData {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: v.$text-secondary;
+  font-size: v.$font-size-md;
+  font-style: italic;
+  background: rgba(v.$background-medium, 0.5);
+  border: 2px dashed v.$border-secondary;
+  border-radius: v.$border-radius-md;
+}
+
+// Radar Chart Specific Styles
+.radarLegend {
+  margin-top: v.$space-lg;
+  padding: v.$space-md;
+  background: rgba(v.$background-medium, 0.5);
+  border-radius: v.$border-radius-md;
+  border: 1px solid v.$border-secondary;
+}
+
+.percentileGuide {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-md;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.percentileItem {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+
+  strong {
+    color: v.$text-primary;
+    font-weight: 600;
+  }
+}
+
+.radarStats {
+  margin-top: v.$space-lg;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: v.$space-sm;
+}
+
+.statBreakdown {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: v.$space-sm v.$space-md;
+  background: rgba(v.$background-medium, 0.6);
+  border-radius: v.$border-radius-sm;
+  border: 1px solid v.$border-secondary;
+  transition: background-color v.$transition-duration v.$transition-easing;
+
+  &:hover {
+    background: rgba(v.$background-medium, 0.8);
+  }
+}
+
+.statName {
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.statValue {
+  font-size: v.$font-size-sm;
+  color: v.$text-primary;
+  font-weight: 600;
+  font-family: "Monaco", "Menlo", monospace;
+}
+
+.percentile {
+  font-size: v.$font-size-xs;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  min-width: 35px;
+  text-align: center;
+
+  &.good {
+    background-color: rgba(v.$success-color, 0.2);
+    color: v.$success-color;
+    border: 1px solid rgba(v.$success-color, 0.3);
+  }
+
+  &.average {
+    background-color: rgba(v.$warning-color, 0.2);
+    color: v.$warning-color;
+    border: 1px solid rgba(v.$warning-color, 0.3);
+  }
+
+  &.poor {
+    background-color: rgba(v.$danger-color, 0.2);
+    color: v.$danger-color;
+    border: 1px solid rgba(v.$danger-color, 0.3);
+  }
+}
+
+// Responsive Design for Charts
+@media (max-width: v.$breakpoint-md-max) {
+  .trendContainer,
+  .radarContainer {
+    padding: v.$space-lg;
+  }
+
+  .trendHeader,
+  .radarHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: v.$space-sm;
+
+    h3 {
+      font-size: v.$font-size-lg;
+    }
+  }
+
+  .chartWrapper,
+  .radarWrapper {
+    height: 300px;
+    padding: v.$space-sm;
+  }
+
+  .radarWrapper {
+    height: 280px;
+  }
+
+  .percentileGuide {
+    flex-direction: column;
+    gap: v.$space-xs;
+    text-align: center;
+  }
+
+  .radarStats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: v.$breakpoint-sm-max) {
+  .trendContainer,
+  .radarContainer {
+    padding: v.$space-md;
+    margin-bottom: v.$space-lg;
+  }
+
+  .chartWrapper,
+  .radarWrapper {
+    height: 250px;
+    padding: v.$space-xs;
+  }
+
+  .radarWrapper {
+    height: 220px;
+  }
+
+  .trendHeader,
+  .radarHeader {
+    h3 {
+      font-size: v.$font-size-md;
+    }
+
+    p {
+      font-size: v.$font-size-xs;
     }
   }
 }

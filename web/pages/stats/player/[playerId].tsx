@@ -13,9 +13,13 @@ import {
 import { fetchAllGameLogRows } from "utils/stats/nhlStatsFetch";
 import { PlayerStatsTable } from "components/PlayerStats/PlayerStatsTable";
 import { PlayerStatsChart } from "components/PlayerStats/PlayerStatsChart";
+import { PlayerStatsSummary } from "components/PlayerStats/PlayerStatsSummary";
+import { PlayerStatsAdvancedNote } from "components/PlayerStats/PlayerStatsAdvancedNote";
 import { PlayerPerformanceHeatmap } from "components/PlayerStats/PlayerPerformanceHeatmap";
 import { PlayerRadarChart } from "components/PlayerStats/PlayerRadarChart";
 import { PlayerContextualStats } from "components/PlayerStats/PlayerContextualStats";
+import { usePlayerStats } from "hooks/usePlayerStats";
+import { useRouter } from "next/router";
 
 // Base interface for common game log properties
 export interface BaseGameLogEntry {
@@ -107,7 +111,7 @@ interface GoalieSeasonTotals {
   shutouts: number | null;
 }
 
-type SeasonTotals = SkaterSeasonTotals | GoalieSeasonTotals;
+export type SeasonTotals = SkaterSeasonTotals | GoalieSeasonTotals;
 
 interface PlayerInfo {
   id: number;
@@ -348,14 +352,35 @@ function splitLabel(label: string) {
 
 export default function PlayerStatsPage({
   player,
-  gameLog,
-  playoffGameLog,
+  gameLog: ssrGameLog,
+  playoffGameLog: ssrPlayoffGameLog,
   seasonTotals,
   isGoalie,
   availableSeasons,
   mostRecentSeason,
   usedGameLogFallback = false
 }: PlayerStatsPageProps) {
+  const router = useRouter();
+  const { playerId, season } = router.query;
+
+  // Use the hook to get advanced stats data
+  const {
+    gameLog: hookGameLog,
+    seasonTotals: hookSeasonTotals,
+    playerInfo: hookPlayerInfo,
+    isGoalie: hookIsGoalie,
+    isLoading: hookIsLoading,
+    error: hookError
+  } = usePlayerStats(
+    typeof playerId === "string" ? playerId : undefined,
+    typeof season === "string" ? season : mostRecentSeason?.toString()
+  );
+
+  // Use hook data if available and not loading, otherwise fall back to SSR data
+  const gameLog =
+    !hookIsLoading && hookGameLog.length > 0 ? hookGameLog : ssrGameLog;
+  const playoffGameLog = ssrPlayoffGameLog; // Keep SSR playoff data for now
+
   const [selectedView, setSelectedView] = useState<
     "overview" | "gamelog" | "trends" | "advanced" | "season-stats"
   >("overview");
@@ -363,7 +388,32 @@ export default function PlayerStatsPage({
     "season" | "l10" | "l20"
   >("season");
   const [selectedStats, setSelectedStats] = useState<string[]>([]);
-  const [showPlayoffData, setShowPlayoffData] = useState<boolean>(false); // Add state to toggle between regular season and playoffs
+  const [showPlayoffData, setShowPlayoffData] = useState<boolean>(false);
+
+  // Debug logging for advanced stats
+  React.useEffect(() => {
+    if (hookGameLog.length > 0) {
+      console.log("[DEBUG] Hook game log sample:", hookGameLog[0]);
+      console.log(
+        "[DEBUG] Available advanced stats in hook data:",
+        Object.keys(hookGameLog[0]).filter(
+          (key) =>
+            key.includes("_per_60") ||
+            key.includes("_pct") ||
+            key.includes("cf_") ||
+            key.includes("ff_") ||
+            key.includes("xg")
+        )
+      );
+    }
+    if (ssrGameLog.length > 0) {
+      console.log("[DEBUG] SSR game log sample:", ssrGameLog[0]);
+      console.log(
+        "[DEBUG] Available stats in SSR data:",
+        Object.keys(ssrGameLog[0])
+      );
+    }
+  }, [hookGameLog, ssrGameLog]);
 
   // Get position-specific stat configuration
   const positionConfig = useMemo(() => {
@@ -616,6 +666,9 @@ export default function PlayerStatsPage({
                   gameLog={filteredGameLog}
                   playoffGameLog={playoffGameLog}
                   selectedStats={selectedStats}
+                  playerId={player.id}
+                  playerTeamId={player.team_id}
+                  seasonId={mostRecentSeason}
                 />
               </div>
             </div>
@@ -650,16 +703,16 @@ export default function PlayerStatsPage({
                         <th>+/-</th>
                         <th>SOG</th>
                         <th>SH%</th>
-                        <th>PP Pts</th>
+                        <th>PPP</th>
                         <th>GWG</th>
                         <th>FO%</th>
-                        <th>TOI/GP</th>
-                        <th>Blocks</th>
-                        <th>Hits</th>
-                        <th>Takeaways</th>
-                        <th>Giveaways</th>
-                        <th>Corsi%</th>
-                        <th>Zone Start%</th>
+                        <th>TOI</th>
+                        <th>HIT</th>
+                        <th>BLK</th>
+                        <th>TK</th>
+                        <th>GV</th>
+                        <th>CF%</th>
+                        <th>ZS%</th>
                       </>
                     )}
                   </tr>
@@ -670,55 +723,48 @@ export default function PlayerStatsPage({
                     return (
                       <tr key={idx}>
                         <td>
-                          {formatSeason(
-                            isGoalieRow
-                              ? (row as GoalieSeasonTotals).season_id
-                              : (row as SkaterSeasonTotals).season
-                          )}
+                          {isGoalieRow
+                            ? (row as GoalieSeasonTotals).season_id
+                            : (row as SkaterSeasonTotals).season}
                         </td>
-                        <td>{row.games_played ?? "-"}</td>
+                        <td>{row.games_played || 0}</td>
                         {isGoalie ? (
                           <>
-                            <td>{(row as GoalieSeasonTotals).wins ?? "-"}</td>
-                            <td>{(row as GoalieSeasonTotals).losses ?? "-"}</td>
+                            <td>{(row as GoalieSeasonTotals).wins || 0}</td>
+                            <td>{(row as GoalieSeasonTotals).losses || 0}</td>
                             <td>
-                              {(row as GoalieSeasonTotals).ot_losses ?? "-"}
+                              {(row as GoalieSeasonTotals).ot_losses || 0}
                             </td>
                             <td>
-                              {(row as GoalieSeasonTotals).goals_against_avg ??
-                                "-"}
+                              {formatPercent(
+                                (row as GoalieSeasonTotals).goals_against_avg
+                              )}
                             </td>
                             <td>
                               {formatPercent(
                                 (row as GoalieSeasonTotals).save_pct
                               )}
                             </td>
-                            <td>
-                              {(row as GoalieSeasonTotals).shutouts ?? "-"}
-                            </td>
+                            <td>{(row as GoalieSeasonTotals).shutouts || 0}</td>
                           </>
                         ) : (
                           <>
-                            <td>{(row as SkaterSeasonTotals).goals ?? "-"}</td>
+                            <td>{(row as SkaterSeasonTotals).goals || 0}</td>
+                            <td>{(row as SkaterSeasonTotals).assists || 0}</td>
+                            <td>{(row as SkaterSeasonTotals).points || 0}</td>
                             <td>
-                              {(row as SkaterSeasonTotals).assists ?? "-"}
+                              {(row as SkaterSeasonTotals).plus_minus || 0}
                             </td>
-                            <td>{(row as SkaterSeasonTotals).points ?? "-"}</td>
-                            <td>
-                              {(row as SkaterSeasonTotals).plus_minus ?? "-"}
-                            </td>
-                            <td>{(row as SkaterSeasonTotals).shots ?? "-"}</td>
+                            <td>{(row as SkaterSeasonTotals).shots || 0}</td>
                             <td>
                               {formatPercent(
                                 (row as SkaterSeasonTotals).shooting_percentage
                               )}
                             </td>
                             <td>
-                              {(row as SkaterSeasonTotals).pp_points ?? "-"}
+                              {(row as SkaterSeasonTotals).pp_points || 0}
                             </td>
-                            <td>
-                              {(row as SkaterSeasonTotals).gw_goals ?? "-"}
-                            </td>
+                            <td>{(row as SkaterSeasonTotals).gw_goals || 0}</td>
                             <td>
                               {formatPercent(
                                 (row as SkaterSeasonTotals).fow_percentage
@@ -729,15 +775,15 @@ export default function PlayerStatsPage({
                                 (row as SkaterSeasonTotals).toi_per_game
                               )}
                             </td>
+                            <td>{(row as SkaterSeasonTotals).hits || 0}</td>
                             <td>
-                              {(row as SkaterSeasonTotals).blocked_shots ?? "-"}
-                            </td>
-                            <td>{(row as SkaterSeasonTotals).hits ?? "-"}</td>
-                            <td>
-                              {(row as SkaterSeasonTotals).takeaways ?? "-"}
+                              {(row as SkaterSeasonTotals).blocked_shots || 0}
                             </td>
                             <td>
-                              {(row as SkaterSeasonTotals).giveaways ?? "-"}
+                              {(row as SkaterSeasonTotals).takeaways || 0}
+                            </td>
+                            <td>
+                              {(row as SkaterSeasonTotals).giveaways || 0}
                             </td>
                             <td>
                               {formatPercent(
@@ -779,149 +825,16 @@ export default function PlayerStatsPage({
               </div>
             )}
 
-            <div className={styles.playerStatsTableContainer}>
-              <table className={styles.playerStatsTable}>
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>GP</th>
-                    {isGoalie ? (
-                      <>
-                        <th>GS</th>
-                        <th>W</th>
-                        <th>L</th>
-                        <th>OTL</th>
-                        <th>SV%</th>
-                        <th>GAA</th>
-                        <th>SO</th>
-                        <th>Saves</th>
-                        <th>SA</th>
-                        <th>GA</th>
-                      </>
-                    ) : (
-                      <>
-                        <th>G</th>
-                        <th>A</th>
-                        <th>P</th>
-                        <th>+/-</th>
-                        <th>SOG</th>
-                        <th>SH%</th>
-                        <th>PP Pts</th>
-                        <th>GWG</th>
-                        <th>FO%</th>
-                        <th>TOI</th>
-                        <th>Blocks</th>
-                        <th>Hits</th>
-                        <th>Takeaways</th>
-                        <th>Giveaways</th>
-                        <th>Corsi%</th>
-                        <th>Zone Start%</th>
-                      </>
-                    )}
-                  </tr>
-                </thead>
-                <tbody>
-                  {gameLog.length === 0 ? (
-                    <tr>
-                      <td colSpan={isGoalie ? 13 : 18}>
-                        No games found for this season.
-                      </td>
-                    </tr>
-                  ) : (
-                    gameLog.map((row, idx) => (
-                      <tr key={idx}>
-                        <td>{formatDate(row.date)}</td>
-                        <td>{row.games_played ?? "-"}</td>
-                        {isGoalie ? (
-                          <>
-                            <td>
-                              {(row as GoalieGameLogEntry).games_started ?? "-"}
-                            </td>
-                            <td>{(row as GoalieGameLogEntry).wins ?? "-"}</td>
-                            <td>{(row as GoalieGameLogEntry).losses ?? "-"}</td>
-                            <td>
-                              {(row as GoalieGameLogEntry).ot_losses ?? "-"}
-                            </td>
-                            <td>
-                              {formatPercent(
-                                (row as GoalieGameLogEntry).save_pct
-                              )}
-                            </td>
-                            <td>
-                              {(row as GoalieGameLogEntry).goals_against_avg ??
-                                "-"}
-                            </td>
-                            <td>
-                              {(row as GoalieGameLogEntry).shutouts ?? "-"}
-                            </td>
-                            <td>{(row as GoalieGameLogEntry).saves ?? "-"}</td>
-                            <td>
-                              {(row as GoalieGameLogEntry).shots_against ?? "-"}
-                            </td>
-                            <td>
-                              {(row as GoalieGameLogEntry).goals_against ?? "-"}
-                            </td>
-                          </>
-                        ) : (
-                          <>
-                            <td>{(row as SkaterGameLogEntry).goals ?? "-"}</td>
-                            <td>
-                              {(row as SkaterGameLogEntry).assists ?? "-"}
-                            </td>
-                            <td>{(row as SkaterGameLogEntry).points ?? "-"}</td>
-                            <td>
-                              {(row as SkaterGameLogEntry).plus_minus ?? "-"}
-                            </td>
-                            <td>{(row as SkaterGameLogEntry).shots ?? "-"}</td>
-                            <td>
-                              {formatPercent(
-                                (row as SkaterGameLogEntry).shooting_percentage
-                              )}
-                            </td>
-                            <td>
-                              {(row as SkaterGameLogEntry).pp_points ?? "-"}
-                            </td>
-                            <td>
-                              {(row as SkaterGameLogEntry).gw_goals ?? "-"}
-                            </td>
-                            <td>
-                              {formatPercent(
-                                (row as SkaterGameLogEntry).fow_percentage
-                              )}
-                            </td>
-                            <td>
-                              {formatTOI(
-                                (row as SkaterGameLogEntry).toi_per_game
-                              )}
-                            </td>
-                            <td>
-                              {(row as SkaterGameLogEntry).blocked_shots ?? "-"}
-                            </td>
-                            <td>{(row as SkaterGameLogEntry).hits ?? "-"}</td>
-                            <td>
-                              {(row as SkaterGameLogEntry).takeaways ?? "-"}
-                            </td>
-                            <td>
-                              {(row as SkaterGameLogEntry).giveaways ?? "-"}
-                            </td>
-                            <td>
-                              {formatPercent(
-                                (row as SkaterGameLogEntry).sat_pct
-                              )}
-                            </td>
-                            <td>
-                              {formatPercent(
-                                (row as SkaterGameLogEntry).zone_start_pct
-                              )}
-                            </td>
-                          </>
-                        )}
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <PlayerStatsTable
+              gameLog={gameLog}
+              playoffGameLog={playoffGameLog}
+              selectedStats={["date", "games_played", ...selectedStats]}
+              isGoalie={isGoalie}
+              playerId={player.id}
+              playerTeamId={player.team_id}
+              seasonId={mostRecentSeason}
+            />
+
             {gameLog.length === 0 && (
               <div style={{ color: "#c00", marginTop: 16 }}>
                 <b>DEBUG:</b> No game log rows found.
@@ -943,21 +856,38 @@ export default function PlayerStatsPage({
         )}
 
         {selectedView === "advanced" && (
-          <div className={styles.advancedGrid}>
-            <PlayerStatsChart
+          <>
+            {/* Shared Summary Section */}
+            <PlayerStatsSummary
               gameLog={filteredGameLog}
+              playoffGameLog={playoffGameLog}
               selectedStats={positionConfig.advanced}
-              title="Advanced Metrics"
+              isGoalie={isGoalie}
+              showPlayoffData={showPlayoffData}
             />
-            <div className={styles.advancedTable}>
-              <PlayerStatsTable
+
+            {/* Shared Advanced Note */}
+            <PlayerStatsAdvancedNote showAdvanced={true} />
+
+            <div className={styles.advancedGrid}>
+              <PlayerStatsChart
                 gameLog={filteredGameLog}
                 selectedStats={positionConfig.advanced}
-                isGoalie={isGoalie}
-                showAdvanced={true}
+                title="Advanced Metrics"
               />
+              <div className={styles.advancedTable}>
+                <PlayerStatsTable
+                  gameLog={filteredGameLog}
+                  selectedStats={positionConfig.advanced}
+                  isGoalie={isGoalie}
+                  showAdvanced={true}
+                  playerId={player.id}
+                  playerTeamId={player.team_id}
+                  seasonId={mostRecentSeason}
+                />
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>

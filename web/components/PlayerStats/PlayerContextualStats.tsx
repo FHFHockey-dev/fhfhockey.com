@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import styles from "./PlayerStats.module.scss";
+import { SeasonTotals } from "../../pages/stats/player/[playerId]";
 
 interface GameLogEntry {
   date: string;
@@ -15,25 +16,21 @@ interface PlayerInfo {
 interface PlayerContextualStatsProps {
   player: PlayerInfo;
   gameLog: GameLogEntry[];
-  playoffGameLog?: GameLogEntry[]; // Add optional playoff game log
-  seasonTotals: any[];
+  playoffGameLog: GameLogEntry[];
+  seasonTotals: SeasonTotals[];
   isGoalie: boolean;
 }
 
 export function PlayerContextualStats({
   player,
   gameLog,
-  playoffGameLog,
   seasonTotals,
   isGoalie
 }: PlayerContextualStatsProps) {
   const insights = useMemo(() => {
-    const combinedGameLog =
-      playoffGameLog && playoffGameLog.length > 0 ? playoffGameLog : gameLog;
+    if (gameLog.length === 0) return null;
 
-    if (combinedGameLog.length === 0) return null;
-
-    const gamesPlayed = combinedGameLog.reduce(
+    const gamesPlayed = gameLog.reduce(
       (sum, game) => sum + (game.games_played || 0),
       0
     );
@@ -41,23 +38,23 @@ export function PlayerContextualStats({
 
     if (isGoalie) {
       // Goalie-specific insights
-      const wins = combinedGameLog.reduce(
+      const wins = gameLog.reduce(
         (sum, game) => sum + (Number(game.wins) || 0),
         0
       );
-      const saves = combinedGameLog.reduce(
+      const saves = gameLog.reduce(
         (sum, game) => sum + (Number(game.saves) || 0),
         0
       );
-      const shotsAgainst = combinedGameLog.reduce(
+      const shotsAgainst = gameLog.reduce(
         (sum, game) => sum + (Number(game.shots_against) || 0),
         0
       );
-      const shutouts = combinedGameLog.reduce(
+      const shutouts = gameLog.reduce(
         (sum, game) => sum + (Number(game.shutouts) || 0),
         0
       );
-      const qualityStarts = combinedGameLog.reduce(
+      const qualityStarts = gameLog.reduce(
         (sum, game) => sum + (Number(game.quality_start) || 0),
         0
       );
@@ -118,24 +115,24 @@ export function PlayerContextualStats({
         });
       }
     } else {
-      // Skater insights - Basic stats
-      const points = combinedGameLog.reduce(
+      // Skater insights
+      const points = gameLog.reduce(
         (sum, game) => sum + (Number(game.points) || 0),
         0
       );
-      const goals = combinedGameLog.reduce(
+      const goals = gameLog.reduce(
         (sum, game) => sum + (Number(game.goals) || 0),
         0
       );
-      const assists = combinedGameLog.reduce(
+      const assists = gameLog.reduce(
         (sum, game) => sum + (Number(game.assists) || 0),
         0
       );
-      const shots = combinedGameLog.reduce(
+      const shots = gameLog.reduce(
         (sum, game) => sum + (Number(game.shots) || 0),
         0
       );
-      const ppPoints = combinedGameLog.reduce(
+      const ppPoints = gameLog.reduce(
         (sum, game) => sum + (Number(game.pp_points) || 0),
         0
       );
@@ -180,130 +177,6 @@ export function PlayerContextualStats({
         });
       }
 
-      // NST Advanced Stats - Possession Metrics
-      const cfPct =
-        combinedGameLog.reduce(
-          (sum, game) => sum + (Number(game.cf_pct) || 0),
-          0
-        ) / combinedGameLog.length;
-
-      const xgfPct =
-        combinedGameLog.reduce(
-          (sum, game) => sum + (Number(game.xgf_pct) || 0),
-          0
-        ) / combinedGameLog.length;
-
-      const hdcfPct =
-        combinedGameLog.reduce(
-          (sum, game) => sum + (Number(game.hdcf_pct) || 0),
-          0
-        ) / combinedGameLog.length;
-
-      if (cfPct > 0) {
-        insights.push({
-          label: "Possession Impact",
-          value: `${cfPct.toFixed(1)}% CF`,
-          trend:
-            cfPct >= 52 ? "positive" : cfPct >= 48 ? "neutral" : "negative",
-          description:
-            cfPct >= 52 ? "Drives Play" : cfPct >= 48 ? "Neutral" : "Struggles"
-        });
-      }
-
-      if (xgfPct > 0) {
-        insights.push({
-          label: "Scoring Chance Quality",
-          value: `${xgfPct.toFixed(1)}% xGF`,
-          trend:
-            xgfPct >= 52 ? "positive" : xgfPct >= 48 ? "neutral" : "negative",
-          description:
-            xgfPct >= 52
-              ? "Creates Quality"
-              : xgfPct >= 48
-                ? "Average"
-                : "Limited Quality"
-        });
-      }
-
-      // NST Advanced Stats - Individual Production Per 60
-      const ixgPer60 =
-        combinedGameLog.reduce(
-          (sum, game) => sum + (Number(game.ixg_per_60) || 0),
-          0
-        ) / combinedGameLog.length;
-
-      const icfPer60 =
-        combinedGameLog.reduce(
-          (sum, game) => sum + (Number(game.icf_per_60) || 0),
-          0
-        ) / combinedGameLog.length;
-
-      if (ixgPer60 > 0) {
-        insights.push({
-          label: "Expected Goals",
-          value: `${ixgPer60.toFixed(1)} ixG/60`,
-          trend:
-            ixgPer60 >= 2.0
-              ? "positive"
-              : ixgPer60 >= 1.2
-                ? "neutral"
-                : "negative",
-          description:
-            ixgPer60 >= 2.0
-              ? "Elite Chances"
-              : ixgPer60 >= 1.2
-                ? "Average"
-                : "Limited Chances"
-        });
-      }
-
-      // NST Advanced Stats - Zone Usage
-      const ozStartPct =
-        combinedGameLog.reduce(
-          (sum, game) => sum + (Number(game.off_zone_start_pct) || 0),
-          0
-        ) / combinedGameLog.length;
-
-      if (ozStartPct > 0) {
-        const deployment =
-          ozStartPct >= 60
-            ? "Offensive Role"
-            : ozStartPct >= 55
-              ? "Balanced Role"
-              : ozStartPct >= 45
-                ? "Defensive Role"
-                : "Shutdown Role";
-
-        insights.push({
-          label: "Deployment",
-          value: `${ozStartPct.toFixed(1)}% OZ`,
-          trend: "neutral", // Deployment is context-dependent
-          description: deployment
-        });
-      }
-
-      // NST Advanced Stats - PDO (Luck indicator)
-      const pdo =
-        combinedGameLog.reduce(
-          (sum, game) => sum + (Number(game.pdo) || 0),
-          0
-        ) / combinedGameLog.length;
-
-      if (pdo > 0) {
-        insights.push({
-          label: "PDO (Luck Factor)",
-          value: pdo.toFixed(1),
-          trend:
-            pdo >= 101.5 ? "positive" : pdo >= 98.5 ? "neutral" : "negative",
-          description:
-            pdo >= 101.5
-              ? "Unsustainably High"
-              : pdo >= 98.5
-                ? "Normal Range"
-                : "Unlucky"
-        });
-      }
-
       if (ppPoints > 0) {
         insights.push({
           label: "PP Production",
@@ -323,9 +196,9 @@ export function PlayerContextualStats({
         });
       }
 
-      // Position-specific insights with NST stats
+      // Position-specific insights
       if (player.position === "C") {
-        const faceoffData = combinedGameLog.filter(
+        const faceoffData = gameLog.filter(
           (game) => Number(game.total_faceoffs) > 0
         );
         if (faceoffData.length > 0) {
@@ -360,24 +233,17 @@ export function PlayerContextualStats({
       }
 
       if (player.position === "D") {
-        const blocks = combinedGameLog.reduce(
+        const blocks = gameLog.reduce(
           (sum, game) => sum + (Number(game.blocked_shots) || 0),
           0
         );
-        const hits = combinedGameLog.reduce(
+        const hits = gameLog.reduce(
           (sum, game) => sum + (Number(game.hits) || 0),
           0
         );
 
         const blocksPerGame = gamesPlayed > 0 ? blocks / gamesPlayed : 0;
         const hitsPerGame = gamesPlayed > 0 ? hits / gamesPlayed : 0;
-
-        // NST Advanced defensive stats for defensemen
-        const hdcaPer60 =
-          combinedGameLog.reduce(
-            (sum, game) => sum + (Number(game.hdca_per_60) || 0),
-            0
-          ) / combinedGameLog.length;
 
         insights.push({
           label: "Defensive Impact",
@@ -393,31 +259,12 @@ export function PlayerContextualStats({
               ? "Physical Presence"
               : "Skill-Based"
         });
-
-        if (hdcaPer60 > 0) {
-          insights.push({
-            label: "High Danger Defense",
-            value: `${hdcaPer60.toFixed(1)} HDCA/60`,
-            trend:
-              hdcaPer60 <= 5.5
-                ? "positive"
-                : hdcaPer60 <= 7.0
-                  ? "neutral"
-                  : "negative",
-            description:
-              hdcaPer60 <= 5.5
-                ? "Elite Defense"
-                : hdcaPer60 <= 7.0
-                  ? "Average"
-                  : "Struggles"
-          });
-        }
       }
     }
 
     // Recent form analysis
-    if (combinedGameLog.length >= 5) {
-      const recentGames = combinedGameLog.slice(-5);
+    if (gameLog.length >= 5) {
+      const recentGames = gameLog.slice(-5);
       const recentPerformance = isGoalie
         ? recentGames.reduce((sum, game) => sum + (Number(game.wins) || 0), 0) /
           recentGames.length
@@ -427,14 +274,10 @@ export function PlayerContextualStats({
           ) / recentGames.length;
 
       const fullPerformance = isGoalie
-        ? combinedGameLog.reduce(
-            (sum, game) => sum + (Number(game.wins) || 0),
-            0
-          ) / combinedGameLog.length
-        : combinedGameLog.reduce(
-            (sum, game) => sum + (Number(game.points) || 0),
-            0
-          ) / combinedGameLog.length;
+        ? gameLog.reduce((sum, game) => sum + (Number(game.wins) || 0), 0) /
+          gameLog.length
+        : gameLog.reduce((sum, game) => sum + (Number(game.points) || 0), 0) /
+          gameLog.length;
 
       const formTrend =
         recentPerformance > fullPerformance * 1.2
@@ -465,16 +308,13 @@ export function PlayerContextualStats({
     }
 
     return insights;
-  }, [gameLog, playoffGameLog, player, isGoalie]);
+  }, [gameLog, player, isGoalie]);
 
   const streakAnalysis = useMemo(() => {
-    const combinedGameLog =
-      playoffGameLog && playoffGameLog.length > 0 ? playoffGameLog : gameLog;
-
-    if (combinedGameLog.length === 0) return null;
+    if (gameLog.length === 0) return null;
 
     // Sort games by date
-    const sortedGames = [...combinedGameLog].sort(
+    const sortedGames = [...gameLog].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
@@ -538,7 +378,7 @@ export function PlayerContextualStats({
             : "No active point streak"
       };
     }
-  }, [gameLog, playoffGameLog, isGoalie]);
+  }, [gameLog, isGoalie]);
 
   if (!insights) {
     return (
