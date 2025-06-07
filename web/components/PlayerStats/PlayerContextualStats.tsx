@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import styles from "./PlayerStats.module.scss";
-import { SeasonTotals } from "../../pages/stats/player/[playerId]";
+import { SeasonTotals } from "./types";
 
 interface GameLogEntry {
   date: string;

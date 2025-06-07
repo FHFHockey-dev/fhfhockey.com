@@ -3,13 +3,14 @@ import { PlayerStatsChart } from "./PlayerStatsChart";
 import { PlayerRadarChart } from "./PlayerRadarChart";
 import { PlayerContextualStats } from "./PlayerContextualStats";
 import { PlayerStatsTable } from "./PlayerStatsTable";
-import { GameLogEntry } from "pages/stats/player/[playerId]";
+import { GameLogEntry } from "./types";
 import styles from "./PlayerStats.module.scss";
 
 interface PlayerInfo {
   id: number;
   fullName: string;
   position: string;
+  team_id?: number;
 }
 
 interface PlayerAdvancedStatsProps {
@@ -19,6 +20,9 @@ interface PlayerAdvancedStatsProps {
   selectedStats: string[];
   isGoalie: boolean;
   showPlayoffData?: boolean;
+  seasonTotals?: any[];
+  playerId?: string | number;
+  seasonId?: string | number | null;
 }
 
 export function PlayerAdvancedStats({
@@ -27,7 +31,10 @@ export function PlayerAdvancedStats({
   playoffGameLog,
   selectedStats,
   isGoalie,
-  showPlayoffData = false
+  showPlayoffData = false,
+  seasonTotals = [],
+  playerId,
+  seasonId
 }: PlayerAdvancedStatsProps) {
   return (
     <div className={styles.contentArea}>
@@ -54,6 +61,9 @@ export function PlayerAdvancedStats({
             isGoalie={isGoalie}
             showAdvanced={true}
             showPlayoffData={showPlayoffData}
+            playerId={playerId}
+            playerTeamId={player.team_id}
+            seasonId={seasonId}
           />
         </div>
 
@@ -86,7 +96,7 @@ export function PlayerAdvancedStats({
             player={player}
             gameLog={gameLog}
             playoffGameLog={playoffGameLog || []}
-            seasonTotals={[]}
+            seasonTotals={seasonTotals}
             isGoalie={isGoalie}
           />
         </div>
