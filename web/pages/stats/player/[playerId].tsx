@@ -762,6 +762,12 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   let playoffGameLog: GameLogEntry[] = [];
   let usedGameLogFallback = false;
 
+  // NST advanced stats data
+  let nstCountsData: any[] = [];
+  let nstCountsOiData: any[] = [];
+  let nstRatesData: any[] = [];
+  let nstRatesOiData: any[] = [];
+
   if (isGoalie && selectedSeason) {
     // Regular season goalie stats
     gameLog = await fetchAllGameLogRows(
@@ -800,6 +806,235 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       selectedSeason,
       `date, games_played, goals, assists, points, plus_minus, shots, shooting_percentage, pp_points, gw_goals, fow_percentage, toi_per_game, blocked_shots, hits, takeaways, giveaways, sat_pct, zone_start_pct`
     );
+
+    // Fetch NST advanced stats for skaters
+    try {
+      console.log(`[SSR] Fetching NST data for player ${playerIdNum} in season ${selectedSeason}`);
+
+      // Fetch NST individual advanced stats (counts)
+      const { data: nstCounts, error: nstCountsError } = await supabase
+        .from("nst_gamelog_as_counts")
+        .select("*")
+        .eq("player_id", playerIdNum)
+        .eq("season", selectedSeason)
+        .order("date_scraped", { ascending: true });
+
+      if (nstCountsError) {
+        console.warn("[SSR] Error fetching NST counts:", nstCountsError.message);
+      } else {
+        nstCountsData = nstCounts || [];
+        console.log(`[SSR] Fetched ${nstCountsData.length} NST counts records`);
+      }
+
+      // Fetch NST on-ice advanced stats (counts)
+      const { data: nstCountsOi, error: nstCountsOiError } = await supabase
+        .from("nst_gamelog_as_counts_oi")
+        .select("*")
+        .eq("player_id", playerIdNum)
+        .eq("season", selectedSeason)
+        .order("date_scraped", { ascending: true });
+
+      if (nstCountsOiError) {
+        console.warn("[SSR] Error fetching NST counts OI:", nstCountsOiError.message);
+      } else {
+        nstCountsOiData = nstCountsOi || [];
+        console.log(`[SSR] Fetched ${nstCountsOiData.length} NST counts OI records`);
+      }
+
+      // Fetch NST individual rates (per 60)
+      const { data: nstRates, error: nstRatesError } = await supabase
+        .from("nst_gamelog_as_rates")
+        .select("*")
+        .eq("player_id", playerIdNum)
+        .eq("season", selectedSeason)
+        .order("date_scraped", { ascending: true });
+
+      if (nstRatesError) {
+        console.warn("[SSR] Error fetching NST rates:", nstRatesError.message);
+      } else {
+        nstRatesData = nstRates || [];
+        console.log(`[SSR] Fetched ${nstRatesData.length} NST rates records`);
+      }
+
+      // Fetch NST on-ice rates (per 60)
+      const { data: nstRatesOi, error: nstRatesOiError } = await supabase
+        .from("nst_gamelog_as_rates_oi")
+        .select("*")
+        .eq("player_id", playerIdNum)
+        .eq("season", selectedSeason)
+        .order("date_scraped", { ascending: true });
+
+      if (nstRatesOiError) {
+        console.warn("[SSR] Error fetching NST rates OI:", nstRatesOiError.message);
+      } else {
+        nstRatesOiData = nstRatesOi || [];
+        console.log(`[SSR] Fetched ${nstRatesOiData.length} NST rates OI records`);
+      }
+
+      // Create lookup maps for NST data by date
+      const nstCountsMap = new Map();
+      const nstCountsOiMap = new Map();
+      const nstRatesMap = new Map();
+      const nstRatesOiMap = new Map();
+
+      nstCountsData.forEach((game: any) => {
+        nstCountsMap.set(game.date_scraped, game);
+      });
+
+      nstCountsOiData.forEach((game: any) => {
+        nstCountsOiMap.set(game.date_scraped, game);
+      });
+
+      nstRatesData.forEach((game: any) => {
+        nstRatesMap.set(game.date_scraped, game);
+      });
+
+      nstRatesOiData.forEach((game: any) => {
+        nstRatesOiMap.set(game.date_scraped, game);
+      });
+
+      console.log("[SSR] NST lookup maps created. Sizes:", {
+        counts: nstCountsMap.size,
+        countsOi: nstCountsOiMap.size,
+        rates: nstRatesMap.size,
+        ratesOi: nstRatesOiMap.size
+      });
+
+      // Merge NST data with WGO game log
+      gameLog = gameLog.map((wgoGame: any) => {
+        const nstCounts = nstCountsMap.get(wgoGame.date) || {};
+        const nstCountsOi = nstCountsOiMap.get(wgoGame.date) || {};
+        const nstRates = nstRatesMap.get(wgoGame.date) || {};
+        const nstRatesOi = nstRatesOiMap.get(wgoGame.date) || {};
+
+        // Calculate zone usage percentages if we have the raw counts
+        let def_zone_start_pct = null;
+        let neu_zone_start_pct = null;
+
+        if (
+          nstCountsOi.off_zone_starts &&
+          nstCountsOi.neu_zone_starts &&
+          nstCountsOi.def_zone_starts
+        ) {
+          const totalStarts =
+            nstCountsOi.off_zone_starts +
+            nstCountsOi.neu_zone_starts +
+            nstCountsOi.def_zone_starts;
+          if (totalStarts > 0) {
+            def_zone_start_pct =
+              (nstCountsOi.def_zone_starts / totalStarts) * 100;
+            neu_zone_start_pct =
+              (nstCountsOi.neu_zone_starts / totalStarts) * 100;
+          }
+        }
+
+        return {
+          ...wgoGame,
+          // NST Individual Advanced Stats - Possession Percentages (from counts)
+          cf_pct: nstCounts.cf_pct || null,
+          ff_pct: nstCounts.ff_pct || null,
+          sf_pct: nstCounts.sf_pct || null,
+          gf_pct: nstCounts.gf_pct || null,
+          xgf_pct: nstCounts.xgf_pct || null,
+          scf_pct: nstCounts.scf_pct || null,
+          hdcf_pct: nstCounts.hdcf_pct || null,
+          mdcf_pct: nstCounts.mdcf_pct || null,
+          ldcf_pct: nstCounts.ldcf_pct || null,
+
+          // NST On-Ice Possession Percentages (from counts_oi)
+          on_ice_cf_pct: nstCountsOi.cf_pct || null,
+          on_ice_ff_pct: nstCountsOi.ff_pct || null,
+          on_ice_sf_pct: nstCountsOi.sf_pct || null,
+          on_ice_gf_pct: nstCountsOi.gf_pct || null,
+          on_ice_xgf_pct: nstCountsOi.xgf_pct || null,
+          on_ice_scf_pct: nstCountsOi.scf_pct || null,
+          on_ice_hdcf_pct: nstCountsOi.hdcf_pct || null,
+
+          // NST Individual Production Per 60 (from rates)
+          goals_per_60: nstRates.goals_per_60 || null,
+          total_assists_per_60: nstRates.total_assists_per_60 || null,
+          first_assists_per_60: nstRates.first_assists_per_60 || null,
+          second_assists_per_60: nstRates.second_assists_per_60 || null,
+          total_points_per_60: nstRates.total_points_per_60 || null,
+          shots_per_60: nstRates.shots_per_60 || null,
+          ixg_per_60: nstRates.ixg_per_60 || null,
+          icf_per_60: nstRates.icf_per_60 || null,
+          iff_per_60: nstRates.iff_per_60 || null,
+          iscfs_per_60: nstRates.iscfs_per_60 || null,
+          hdcf_per_60: nstRates.hdcf_per_60 || null,
+          rush_attempts_per_60: nstRates.rush_attempts_per_60 || null,
+          rebounds_created_per_60: nstRates.rebounds_created_per_60 || null,
+
+          // NST Defensive Per 60 (from rates)
+          hdca_per_60: nstRates.hdca_per_60 || null,
+          sca_per_60: nstRates.sca_per_60 || null,
+          shots_blocked_per_60: nstRates.shots_blocked_per_60 || null,
+          xga_per_60: nstRates.xga_per_60 || null,
+          ga_per_60: nstRates.ga_per_60 || null,
+
+          // NST Discipline Per 60 (from rates)
+          pim_per_60: nstRates.pim_per_60 || null,
+          total_penalties_per_60: nstRates.total_penalties_per_60 || null,
+          penalties_drawn_per_60: nstRates.penalties_drawn_per_60 || null,
+          penalty_differential_per_60: nstRates.penalty_differential_per_60 || null,
+          giveaways_per_60: nstRates.giveaways_per_60 || null,
+          takeaways_per_60: nstRates.takeaways_per_60 || null,
+          hits_per_60: nstRates.hits_per_60 || null,
+
+          // NST On-Ice Rates Per 60 (from rates_oi)
+          on_ice_goals_per_60: nstRatesOi.gf_per_60 || null,
+          on_ice_goals_against_per_60: nstRatesOi.ga_per_60 || null,
+          on_ice_shots_per_60: nstRatesOi.sf_per_60 || null,
+          on_ice_shots_against_per_60: nstRatesOi.sa_per_60 || null,
+          on_ice_cf_per_60: nstRatesOi.cf_per_60 || null,
+          on_ice_ca_per_60: nstRatesOi.ca_per_60 || null,
+          on_ice_ff_per_60: nstRatesOi.ff_per_60 || null,
+          on_ice_fa_per_60: nstRatesOi.fa_per_60 || null,
+          on_ice_xgf_per_60: nstRatesOi.xgf_per_60 || null,
+          on_ice_xga_per_60: nstRatesOi.xga_per_60 || null,
+
+          // NST Zone Usage Percentages (from counts_oi)
+          off_zone_start_pct: nstCountsOi.off_zone_start_pct || null,
+          def_zone_start_pct: def_zone_start_pct,
+          neu_zone_start_pct: neu_zone_start_pct,
+          off_zone_faceoff_pct: nstCountsOi.off_zone_faceoff_pct || null,
+
+          // NST On-Ice Impact (from counts_oi)
+          on_ice_sh_pct: nstCountsOi.on_ice_sh_pct || null,
+          on_ice_sv_pct: nstCountsOi.on_ice_sv_pct || null,
+          pdo: nstCountsOi.pdo || null,
+
+          // NST Raw Counts (from counts)
+          ixg: nstCounts.ixg || null,
+          icf: nstCounts.icf || null,
+          iff: nstCounts.iff || null,
+          hdcf: nstCounts.hdcf || null,
+          hdca: nstCounts.hdca || null,
+          rush_attempts: nstCounts.rush_attempts || null,
+          rebounds_created: nstCounts.rebounds_created || null,
+
+          // NST On-Ice Raw Counts (from counts_oi)
+          cf: nstCountsOi.cf || null,
+          ca: nstCountsOi.ca || null,
+          ff: nstCountsOi.ff || null,
+          fa: nstCountsOi.fa || null,
+          sf: nstCountsOi.sf || null,
+          sa: nstCountsOi.sa || null,
+          gf: nstCountsOi.gf || null,
+          ga: nstCountsOi.ga || null,
+          xgf: nstCountsOi.xgf || null,
+          xga: nstCountsOi.xga || null,
+          scf: nstCountsOi.scf || null,
+          sca: nstCountsOi.sca || null
+        };
+      });
+
+      console.log(`[SSR] Successfully merged NST data with ${gameLog.length} WGO games`);
+
+    } catch (nstError) {
+      console.warn("[SSR] Error fetching NST data:", nstError);
+      // Continue with WGO data only if NST fetch fails
+    }
 
     // FIXED: Fetch playoff skater stats using year-based filtering
     if (!isGoalie && playerIdNum) {
