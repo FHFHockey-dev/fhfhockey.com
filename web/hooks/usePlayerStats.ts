@@ -109,23 +109,28 @@ export function usePlayerStats(
             .eq("player_id", parseInt(playerId))
             .order("date", { ascending: true });
 
-          // Playoff data from wgo_skater_stats_playoffs
+          // Playoff data from wgo_skater_stats_playoffs (filter by year from season)
           playoffGameLogQuery = supabase
             .from("wgo_skater_stats_playoffs")
             .select("*")
             .eq("player_id", parseInt(playerId))
             .order("date", { ascending: true });
+
+          // Filter playoff data by year if we have a seasonId
+          if (seasonId) {
+            // Extract playoff year from season ID (e.g., 20242025 -> 2025)
+            const playoffYear = Math.floor(parseInt(seasonId) % 10000);
+            if (playoffYear >= 2020) {
+              playoffGameLogQuery = playoffGameLogQuery
+                .gte("date", `${playoffYear}-01-01`)
+                .lt("date", `${playoffYear + 1}-01-01`);
+            }
+          }
         }
 
-        // Add season filter if provided
-        if (seasonId) {
+        // Note: No season filter for playoff data since playoffs table has no season_id column
+        if (seasonId && gameLogQuery) {
           gameLogQuery = gameLogQuery.eq("season_id", parseInt(seasonId));
-          if (playoffGameLogQuery) {
-            playoffGameLogQuery = playoffGameLogQuery.eq(
-              "season_id",
-              parseInt(seasonId)
-            );
-          }
         }
 
         // Fetch both regular season and playoff data

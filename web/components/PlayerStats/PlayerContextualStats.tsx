@@ -24,56 +24,78 @@ interface PlayerContextualStatsProps {
 export function PlayerContextualStats({
   player,
   gameLog,
+  playoffGameLog,
   seasonTotals,
   isGoalie
 }: PlayerContextualStatsProps) {
   const insights = useMemo(() => {
-    if (gameLog.length === 0) return null;
+    if (gameLog.length === 0 && playoffGameLog.length === 0) return null;
 
-    const gamesPlayed = gameLog.reduce(
+    // Combine regular season and playoff games for comprehensive analysis
+    const allGames = [...gameLog, ...playoffGameLog];
+    const regularSeasonGames = gameLog.length;
+    const playoffGames = playoffGameLog.length;
+
+    const gamesPlayed = allGames.reduce(
       (sum, game) => sum + (game.games_played || 0),
       0
     );
     const insights = [];
 
     if (isGoalie) {
-      // Goalie-specific insights
-      const wins = gameLog.reduce(
+      // Goalie-specific insights with playoff data
+      const wins = allGames.reduce(
         (sum, game) => sum + (Number(game.wins) || 0),
         0
       );
-      const saves = gameLog.reduce(
+      const saves = allGames.reduce(
         (sum, game) => sum + (Number(game.saves) || 0),
         0
       );
-      const shotsAgainst = gameLog.reduce(
+      const shotsAgainst = allGames.reduce(
         (sum, game) => sum + (Number(game.shots_against) || 0),
         0
       );
-      const shutouts = gameLog.reduce(
+      const shutouts = allGames.reduce(
         (sum, game) => sum + (Number(game.shutouts) || 0),
         0
       );
-      const qualityStarts = gameLog.reduce(
+      const qualityStarts = allGames.reduce(
         (sum, game) => sum + (Number(game.quality_start) || 0),
+        0
+      );
+
+      // Separate playoff performance
+      const playoffWins = playoffGameLog.reduce(
+        (sum, game) => sum + (Number(game.wins) || 0),
+        0
+      );
+      const playoffSaves = playoffGameLog.reduce(
+        (sum, game) => sum + (Number(game.saves) || 0),
+        0
+      );
+      const playoffShotsAgainst = playoffGameLog.reduce(
+        (sum, game) => sum + (Number(game.shots_against) || 0),
         0
       );
 
       const savePct = shotsAgainst > 0 ? saves / shotsAgainst : 0;
       const winRate = gamesPlayed > 0 ? wins / gamesPlayed : 0;
       const qsRate = gamesPlayed > 0 ? qualityStarts / gamesPlayed : 0;
+      const playoffSavePct =
+        playoffShotsAgainst > 0 ? playoffSaves / playoffShotsAgainst : 0;
 
       insights.push({
-        label: "Win Rate",
+        label: "Overall Win Rate",
         value: `${(winRate * 100).toFixed(1)}%`,
         trend:
           winRate >= 0.6 ? "positive" : winRate >= 0.4 ? "neutral" : "negative",
         description:
           winRate >= 0.6
-            ? "Excellent"
+            ? "Excellent across all games"
             : winRate >= 0.4
-              ? "Average"
-              : "Below Average"
+              ? "Average performance"
+              : "Below average"
       });
 
       insights.push({
@@ -87,11 +109,25 @@ export function PlayerContextualStats({
               : "negative",
         description:
           savePct >= 0.92
-            ? "Elite"
+            ? "Elite level"
             : savePct >= 0.9
-              ? "Average"
-              : "Below Average"
+              ? "Solid performance"
+              : "Needs improvement"
       });
+
+      if (playoffGames > 0) {
+        insights.push({
+          label: "Playoff Performance",
+          value: `${playoffWins}W in ${playoffGames}GP`,
+          trend:
+            playoffSavePct >= 0.92
+              ? "positive"
+              : playoffSavePct >= 0.9
+                ? "neutral"
+                : "negative",
+          description: `${playoffSavePct.toFixed(3)} SV% in playoffs`
+        });
+      }
 
       insights.push({
         label: "Quality Start Rate",
@@ -100,10 +136,10 @@ export function PlayerContextualStats({
           qsRate >= 0.6 ? "positive" : qsRate >= 0.4 ? "neutral" : "negative",
         description:
           qsRate >= 0.6
-            ? "Consistent"
+            ? "Very consistent"
             : qsRate >= 0.4
-              ? "Average"
-              : "Inconsistent"
+              ? "Reasonably consistent"
+              : "Inconsistent starts"
       });
 
       if (shutouts > 0) {
@@ -111,38 +147,49 @@ export function PlayerContextualStats({
           label: "Shutouts",
           value: shutouts.toString(),
           trend: "positive",
-          description: `${shutouts} shutout${shutouts > 1 ? "s" : ""} this period`
+          description: `${shutouts} shutout${shutouts > 1 ? "s" : ""} across all games`
         });
       }
     } else {
-      // Skater insights
-      const points = gameLog.reduce(
+      // Skater insights with playoff data
+      const points = allGames.reduce(
         (sum, game) => sum + (Number(game.points) || 0),
         0
       );
-      const goals = gameLog.reduce(
+      const goals = allGames.reduce(
         (sum, game) => sum + (Number(game.goals) || 0),
         0
       );
-      const assists = gameLog.reduce(
+      const assists = allGames.reduce(
         (sum, game) => sum + (Number(game.assists) || 0),
         0
       );
-      const shots = gameLog.reduce(
+      const shots = allGames.reduce(
         (sum, game) => sum + (Number(game.shots) || 0),
         0
       );
-      const ppPoints = gameLog.reduce(
+      const ppPoints = allGames.reduce(
         (sum, game) => sum + (Number(game.pp_points) || 0),
+        0
+      );
+
+      // Separate playoff performance
+      const playoffPoints = playoffGameLog.reduce(
+        (sum, game) => sum + (Number(game.points) || 0),
+        0
+      );
+      const playoffGoals = playoffGameLog.reduce(
+        (sum, game) => sum + (Number(game.goals) || 0),
         0
       );
 
       const pointsPerGame = gamesPlayed > 0 ? points / gamesPlayed : 0;
       const shootingPct = shots > 0 ? (goals / shots) * 100 : 0;
       const ppContribution = points > 0 ? (ppPoints / points) * 100 : 0;
+      const playoffPPG = playoffGames > 0 ? playoffPoints / playoffGames : 0;
 
       insights.push({
-        label: "Points per Game",
+        label: "Overall Points/Game",
         value: pointsPerGame.toFixed(2),
         trend:
           pointsPerGame >= 1.0
@@ -152,11 +199,25 @@ export function PlayerContextualStats({
               : "negative",
         description:
           pointsPerGame >= 1.0
-            ? "Elite Producer"
+            ? "Elite offensive producer"
             : pointsPerGame >= 0.5
-              ? "Solid Contributor"
-              : "Depth Player"
+              ? "Solid contributor"
+              : "Depth/role player"
       });
+
+      if (playoffGames > 0) {
+        insights.push({
+          label: "Playoff Production",
+          value: `${playoffPPG.toFixed(2)} PPG`,
+          trend:
+            playoffPPG > pointsPerGame * 1.1
+              ? "positive"
+              : playoffPPG < pointsPerGame * 0.8
+                ? "negative"
+                : "neutral",
+          description: `${playoffPoints}pts in ${playoffGames} playoff games`
+        });
+      }
 
       if (shots > 0) {
         insights.push({
@@ -170,10 +231,10 @@ export function PlayerContextualStats({
                 : "negative",
           description:
             shootingPct >= 15
-              ? "Hot Streak"
+              ? "Hot shooting streak"
               : shootingPct >= 8
-                ? "Average"
-                : "Cold Streak"
+                ? "League average"
+                : "Due for positive regression"
         });
       }
 
@@ -189,16 +250,16 @@ export function PlayerContextualStats({
                 : "negative",
           description:
             ppContribution >= 40
-              ? "PP Specialist"
+              ? "PP specialist"
               : ppContribution >= 20
-                ? "Balanced"
-                : "Even Strength"
+                ? "Balanced scoring"
+                : "Even strength focus"
         });
       }
 
       // Position-specific insights
       if (player.position === "C") {
-        const faceoffData = gameLog.filter(
+        const faceoffData = allGames.filter(
           (game) => Number(game.total_faceoffs) > 0
         );
         if (faceoffData.length > 0) {
@@ -224,20 +285,20 @@ export function PlayerContextualStats({
                   : "negative",
             description:
               faceoffPct >= 55
-                ? "Dominant"
+                ? "Dominant in dot"
                 : faceoffPct >= 45
-                  ? "Average"
-                  : "Struggling"
+                  ? "Average faceoff ability"
+                  : "Struggles in faceoffs"
           });
         }
       }
 
       if (player.position === "D") {
-        const blocks = gameLog.reduce(
+        const blocks = allGames.reduce(
           (sum, game) => sum + (Number(game.blocked_shots) || 0),
           0
         );
-        const hits = gameLog.reduce(
+        const hits = allGames.reduce(
           (sum, game) => sum + (Number(game.hits) || 0),
           0
         );
@@ -256,15 +317,15 @@ export function PlayerContextualStats({
                 : "negative",
           description:
             blocksPerGame + hitsPerGame >= 3
-              ? "Physical Presence"
-              : "Skill-Based"
+              ? "Strong physical presence"
+              : "Skill-based defenseman"
         });
       }
     }
 
-    // Recent form analysis
-    if (gameLog.length >= 5) {
-      const recentGames = gameLog.slice(-5);
+    // Enhanced recent form analysis including playoff context
+    if (allGames.length >= 5) {
+      const recentGames = allGames.slice(-5);
       const recentPerformance = isGoalie
         ? recentGames.reduce((sum, game) => sum + (Number(game.wins) || 0), 0) /
           recentGames.length
@@ -274,10 +335,10 @@ export function PlayerContextualStats({
           ) / recentGames.length;
 
       const fullPerformance = isGoalie
-        ? gameLog.reduce((sum, game) => sum + (Number(game.wins) || 0), 0) /
-          gameLog.length
-        : gameLog.reduce((sum, game) => sum + (Number(game.points) || 0), 0) /
-          gameLog.length;
+        ? allGames.reduce((sum, game) => sum + (Number(game.wins) || 0), 0) /
+          allGames.length
+        : allGames.reduce((sum, game) => sum + (Number(game.points) || 0), 0) /
+          allGames.length;
 
       const formTrend =
         recentPerformance > fullPerformance * 1.2
@@ -303,31 +364,34 @@ export function PlayerContextualStats({
             : formTrend === "Cold"
               ? "negative"
               : "neutral",
-        description: `L5: ${recentValue} vs Season: ${seasonValue}`
+        description: `L5: ${recentValue} vs Overall: ${seasonValue}`
       });
     }
 
     return insights;
-  }, [gameLog, player, isGoalie]);
+  }, [gameLog, playoffGameLog, player, isGoalie]);
 
   const streakAnalysis = useMemo(() => {
-    if (gameLog.length === 0) return null;
+    if (gameLog.length === 0 && playoffGameLog.length === 0) return null;
 
-    // Sort games by date
-    const sortedGames = [...gameLog].sort(
+    // Combine and sort all games by date for proper streak analysis
+    const allGames = [...gameLog, ...playoffGameLog].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
     if (isGoalie) {
-      // Win/loss streaks for goalies
+      // Win/loss streaks for goalies across all games
       let currentStreak = 0;
       let streakType = "";
+      let longestWinStreak = 0;
+      let longestLossStreak = 0;
 
-      for (let i = sortedGames.length - 1; i >= 0; i--) {
-        const game = sortedGames[i];
+      // Calculate current streak
+      for (let i = allGames.length - 1; i >= 0; i--) {
+        const game = allGames[i];
         const won = Number(game.wins) > 0;
 
-        if (i === sortedGames.length - 1) {
+        if (i === allGames.length - 1) {
           streakType = won ? "wins" : "losses";
           currentStreak = 1;
         } else {
@@ -340,25 +404,48 @@ export function PlayerContextualStats({
         }
       }
 
+      // Calculate longest streaks
+      let tempWinStreak = 0;
+      let tempLossStreak = 0;
+
+      allGames.forEach((game) => {
+        const won = Number(game.wins) > 0;
+        if (won) {
+          tempWinStreak++;
+          tempLossStreak = 0;
+          longestWinStreak = Math.max(longestWinStreak, tempWinStreak);
+        } else {
+          tempLossStreak++;
+          tempWinStreak = 0;
+          longestLossStreak = Math.max(longestLossStreak, tempLossStreak);
+        }
+      });
+
       return {
         type: streakType,
         length: currentStreak,
-        description: `${currentStreak} ${streakType} in a row`
+        longestWinStreak,
+        longestLossStreak,
+        description: `${currentStreak} ${streakType} in a row`,
+        seasonBest: `Season best: ${longestWinStreak}W, ${longestLossStreak}L`
       };
     } else {
-      // Point streaks for skaters
+      // Point and goal streaks for skaters across all games
       let currentPointStreak = 0;
       let currentGoalStreak = 0;
+      let longestPointStreak = 0;
+      let longestGoalStreak = 0;
+      let currentGoallessStreak = 0;
 
-      for (let i = sortedGames.length - 1; i >= 0; i--) {
-        const game = sortedGames[i];
+      // Calculate current streaks
+      for (let i = allGames.length - 1; i >= 0; i--) {
+        const game = allGames[i];
         const points = Number(game.points) || 0;
         const goals = Number(game.goals) || 0;
 
         if (points > 0) {
           currentPointStreak++;
         } else if (currentPointStreak === 0) {
-          // Still looking for the start of a streak
           continue;
         } else {
           break;
@@ -369,16 +456,57 @@ export function PlayerContextualStats({
         }
       }
 
+      // Calculate goalless streak if no current goal streak
+      if (currentGoalStreak === 0) {
+        for (let i = allGames.length - 1; i >= 0; i--) {
+          const game = allGames[i];
+          const goals = Number(game.goals) || 0;
+
+          if (goals === 0) {
+            currentGoallessStreak++;
+          } else {
+            break;
+          }
+        }
+      }
+
+      // Calculate longest streaks
+      let tempPointStreak = 0;
+      let tempGoalStreak = 0;
+
+      allGames.forEach((game) => {
+        const points = Number(game.points) || 0;
+        const goals = Number(game.goals) || 0;
+
+        if (points > 0) {
+          tempPointStreak++;
+          longestPointStreak = Math.max(longestPointStreak, tempPointStreak);
+        } else {
+          tempPointStreak = 0;
+        }
+
+        if (goals > 0) {
+          tempGoalStreak++;
+          longestGoalStreak = Math.max(longestGoalStreak, tempGoalStreak);
+        } else {
+          tempGoalStreak = 0;
+        }
+      });
+
       return {
         pointStreak: currentPointStreak,
         goalStreak: currentGoalStreak,
+        goallessStreak: currentGoallessStreak,
+        longestPointStreak,
+        longestGoalStreak,
         description:
           currentPointStreak > 0
             ? `${currentPointStreak} GM Point Streak`
-            : "No active point streak"
+            : "No active point streak",
+        seasonBests: `Season best: ${longestPointStreak}GP points, ${longestGoalStreak}GP goals`
       };
     }
-  }, [gameLog, isGoalie]);
+  }, [gameLog, playoffGameLog, isGoalie]);
 
   if (!insights) {
     return (
@@ -413,35 +541,52 @@ export function PlayerContextualStats({
           <h4>Current Streaks</h4>
           <div className={styles.streakCard}>
             {isGoalie ? (
-              <div
-                className={`${styles.streak} ${streakAnalysis.type === "wins" ? styles.positive : styles.negative}`}
-              >
-                <span className={styles.streakValue}>
-                  {streakAnalysis.length}
-                </span>
-                <span className={styles.streakLabel}>
-                  {streakAnalysis.description}
-                </span>
-              </div>
-            ) : (
-              <div className={styles.skaterStreaks}>
+              <>
                 <div
-                  className={`${styles.streak} ${(streakAnalysis.pointStreak || 0) > 0 ? styles.positive : styles.neutral}`}
+                  className={`${styles.streak} ${streakAnalysis.type === "wins" ? styles.positive : styles.negative}`}
                 >
                   <span className={styles.streakValue}>
-                    {streakAnalysis.pointStreak || 0} GM
+                    {streakAnalysis.length}
                   </span>
-                  <span className={styles.streakLabel}>Point Streak</span>
+                  <span className={styles.streakLabel}>
+                    {streakAnalysis.description}
+                  </span>
                 </div>
-                {(streakAnalysis.goalStreak || 0) > 0 && (
-                  <div className={`${styles.streak} ${styles.positive}`}>
+                <div className={styles.seasonBest}>
+                  {streakAnalysis.seasonBest}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className={styles.skaterStreaks}>
+                  <div
+                    className={`${styles.streak} ${(streakAnalysis.pointStreak || 0) > 0 ? styles.positive : styles.neutral}`}
+                  >
                     <span className={styles.streakValue}>
-                      {streakAnalysis.goalStreak} GM
+                      {streakAnalysis.pointStreak || 0} GM
                     </span>
-                    <span className={styles.streakLabel}>Goal Streak</span>
+                    <span className={styles.streakLabel}>Point Streak</span>
                   </div>
-                )}
-              </div>
+                  {(streakAnalysis.goalStreak || 0) > 0 ? (
+                    <div className={`${styles.streak} ${styles.positive}`}>
+                      <span className={styles.streakValue}>
+                        {streakAnalysis.goalStreak} GM
+                      </span>
+                      <span className={styles.streakLabel}>Goal Streak</span>
+                    </div>
+                  ) : (
+                    <div className={`${styles.streak} ${styles.negative}`}>
+                      <span className={styles.streakValue}>
+                        {streakAnalysis.goallessStreak} GM
+                      </span>
+                      <span className={styles.streakLabel}>Goalless</span>
+                    </div>
+                  )}
+                </div>
+                <div className={styles.seasonBest}>
+                  {streakAnalysis.seasonBests}
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -451,8 +596,16 @@ export function PlayerContextualStats({
         <h4>Season Context</h4>
         <div className={styles.comparisonStats}>
           <div className={styles.comparisonItem}>
-            <span className={styles.comparisonLabel}>Games Analyzed:</span>
-            <span className={styles.comparisonValue}>{gameLog.length}</span>
+            <span className={styles.comparisonLabel}>Regular Season:</span>
+            <span className={styles.comparisonValue}>
+              {gameLog.length} games
+            </span>
+          </div>
+          <div className={styles.comparisonItem}>
+            <span className={styles.comparisonLabel}>Playoff Games:</span>
+            <span className={styles.comparisonValue}>
+              {playoffGameLog.length} games
+            </span>
           </div>
           <div className={styles.comparisonItem}>
             <span className={styles.comparisonLabel}>Position:</span>

@@ -801,307 +801,83 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       `date, games_played, goals, assists, points, plus_minus, shots, shooting_percentage, pp_points, gw_goals, fow_percentage, toi_per_game, blocked_shots, hits, takeaways, giveaways, sat_pct, zone_start_pct`
     );
 
-    // ADDED: Fetch playoff skater stats
-    playoffGameLog = await fetchAllGameLogRows(
-      supabase,
-      "wgo_skater_stats_playoffs",
-      "player_id",
-      playerIdNum,
-      "season_id",
-      selectedSeason,
-      `date, games_played, goals, assists, points, plus_minus, shots, shooting_percentage, pp_points, gw_goals, fow_percentage, toi_per_game, blocked_shots, hits, takeaways, giveaways, sat_pct, zone_start_pct`
-    );
-
-    // Mark playoff games explicitly
-    playoffGameLog = playoffGameLog.map((game: any) => ({
-      ...game,
-      isPlayoff: true
-    }));
-
-    // ADDED: NST advanced stats and merge with WGO data
-    if (gameLog && gameLog.length > 0) {
+    // FIXED: Fetch playoff skater stats using year-based filtering
+    if (!isGoalie && playerIdNum) {
       try {
         console.log(
-          "[SSR] Fetching NST data for player:",
-          playerIdNum,
-          "season:",
-          selectedSeason
+          `[SSR] Fetching playoff data for player ${playerIdNum} in season ${selectedSeason}`
         );
 
-        // FIXED: Use the rates table for individual per-60 stats (has actual values)
-        const { data: nstRatesData } = await supabase
-          .from("nst_gamelog_as_rates")
-          .select("*")
-          .eq("player_id", playerIdNum)
-          .eq("season", selectedSeason)
-          .order("date_scraped", { ascending: true });
-
-        // FIXED: Use the on-ice table for possession percentages (has actual values)
-        const { data: nstCountsOiData } = await supabase
-          .from("nst_gamelog_as_counts_oi")
-          .select("*")
-          .eq("player_id", playerIdNum)
-          .eq("season", selectedSeason)
-          .order("date_scraped", { ascending: true });
-
-        // ADDED: Also get basic counts for raw stats
-        const { data: nstCountsData } = await supabase
-          .from("nst_gamelog_as_counts")
-          .select("*")
-          .eq("player_id", playerIdNum)
-          .eq("season", selectedSeason)
-          .order("date_scraped", { ascending: true });
-
-        console.log("[SSR] NST data fetched:", {
-          ratesLength: nstRatesData?.length || 0,
-          countsOiLength: nstCountsOiData?.length || 0,
-          countsLength: nstCountsData?.length || 0
-        });
-
-        // Create lookup maps for NST data by date
-        const nstRatesMap = new Map<string, any>();
-        const nstCountsOiMap = new Map<string, any>();
-        const nstCountsMap = new Map<string, any>();
-
-        nstRatesData?.forEach((game: any) => {
-          nstRatesMap.set(game.date_scraped, game);
-        });
-
-        nstCountsOiData?.forEach((game: any) => {
-          nstCountsOiMap.set(game.date_scraped, game);
-        });
-
-        nstCountsData?.forEach((game: any) => {
-          nstCountsMap.set(game.date_scraped, game);
-        });
-
-        // Merge WGO and NST data for each game
-        gameLog = gameLog.map((wgoGame: any) => {
-          const nstRates: any = nstRatesMap.get(wgoGame.date) || {};
-          const nstCountsOi: any = nstCountsOiMap.get(wgoGame.date) || {};
-          const nstCounts: any = nstCountsMap.get(wgoGame.date) || {};
-
-          // Calculate zone usage percentages if we have the raw counts
-          let def_zone_start_pct = null;
-          let neu_zone_start_pct = null;
-
-          if (
-            nstCountsOi.off_zone_starts &&
-            nstCountsOi.neu_zone_starts &&
-            nstCountsOi.def_zone_starts
-          ) {
-            const totalStarts =
-              nstCountsOi.off_zone_starts +
-              nstCountsOi.neu_zone_starts +
-              nstCountsOi.def_zone_starts;
-            if (totalStarts > 0) {
-              def_zone_start_pct =
-                (nstCountsOi.def_zone_starts / totalStarts) * 100;
-              neu_zone_start_pct =
-                (nstCountsOi.neu_zone_starts / totalStarts) * 100;
-            }
-          }
-
-          return {
-            ...wgoGame,
-
-            // NST Possession Percentages (from on-ice table - has actual values!)
-            cf_pct: nstCountsOi.cf_pct || null,
-            ff_pct: nstCountsOi.ff_pct || null,
-            sf_pct: nstCountsOi.sf_pct || null,
-            gf_pct: nstCountsOi.gf_pct || null,
-            xgf_pct: nstCountsOi.xgf_pct || null,
-            scf_pct: nstCountsOi.scf_pct || null,
-            hdcf_pct: nstCountsOi.hdcf_pct || null,
-            mdcf_pct: nstCountsOi.mdcf_pct || null,
-            ldcf_pct: nstCountsOi.ldcf_pct || null,
-
-            // NST Individual Production Per 60 (from rates table - has actual values!)
-            ixg_per_60: nstRates.ixg_per_60 || null,
-            icf_per_60: nstRates.icf_per_60 || null,
-            iff_per_60: nstRates.iff_per_60 || null,
-            iscfs_per_60: nstRates.iscfs_per_60 || null,
-            hdcf_per_60: nstRates.hdcf_per_60 || null,
-            shots_per_60: nstRates.shots_per_60 || null,
-            goals_per_60: nstRates.goals_per_60 || null,
-            total_assists_per_60: nstRates.total_assists_per_60 || null,
-            total_points_per_60: nstRates.total_points_per_60 || null,
-            rush_attempts_per_60: nstRates.rush_attempts_per_60 || null,
-            rebounds_created_per_60: nstRates.rebounds_created_per_60 || null,
-
-            // NST Defensive Per 60 (from rates table)
-            hdca_per_60: nstRates.hdca_per_60 || null,
-            sca_per_60: nstRates.sca_per_60 || null,
-            shots_blocked_per_60: nstRates.shots_blocked_per_60 || null,
-            xga_per_60: nstRates.xga_per_60 || null,
-            ga_per_60: nstRates.ga_per_60 || null,
-
-            // NST Zone Usage Percentages (from on-ice table)
-            off_zone_start_pct: nstCountsOi.off_zone_start_pct || null,
-            def_zone_start_pct: def_zone_start_pct,
-            neu_zone_start_pct: neu_zone_start_pct,
-            off_zone_faceoff_pct: nstCountsOi.off_zone_faceoff_pct || null,
-
-            // NST On-Ice Impact (from on-ice table - has actual values!)
-            on_ice_sh_pct: nstCountsOi.on_ice_sh_pct || null,
-            on_ice_sv_pct: nstCountsOi.on_ice_sv_pct || null,
-            pdo: nstCountsOi.pdo || null,
-
-            // NST Discipline Per 60 (from rates table)
-            pim_per_60: nstRates.pim_per_60 || null,
-            total_penalties_per_60: nstRates.total_penalties_per_60 || null,
-            penalties_drawn_per_60: nstRates.penalties_drawn_per_60 || null,
-            giveaways_per_60: nstRates.giveaways_per_60 || null,
-            takeaways_per_60: nstRates.takeaways_per_60 || null,
-            hits_per_60: nstRates.hits_per_60 || null,
-
-            // NST Raw Counts (for reference, from basic counts table)
-            ixg: nstCounts.ixg || null,
-            icf: nstCounts.icf || null,
-            iff: nstCounts.iff || null,
-            hdcf: nstCounts.hdcf || null,
-            hdca: nstCounts.hdca || null,
-            rush_attempts: nstCounts.rush_attempts || null,
-            rebounds_created: nstCounts.rebounds_created || null,
-
-            // NST On-Ice Raw Counts (from on-ice table)
-            cf: nstCountsOi.cf || null,
-            ca: nstCountsOi.ca || null,
-            ff: nstCountsOi.ff || null,
-            fa: nstCountsOi.fa || null,
-            sf: nstCountsOi.sf || null,
-            sa: nstCountsOi.sa || null,
-            gf: nstCountsOi.gf || null,
-            ga: nstCountsOi.ga || null,
-            xgf: nstCountsOi.xgf || null,
-            xga: nstCountsOi.xga || null,
-            scf: nstCountsOi.scf || null,
-            sca: nstCountsOi.sca || null
-          };
-        });
-
-        // Also merge NST data with playoff games
-        playoffGameLog = playoffGameLog.map((wgoGame: any) => {
-          const nstRates: any = nstRatesMap.get(wgoGame.date) || {};
-          const nstCountsOi: any = nstCountsOiMap.get(wgoGame.date) || {};
-          const nstCounts: any = nstCountsMap.get(wgoGame.date) || {};
-
-          // Calculate zone usage percentages if we have the raw counts
-          let def_zone_start_pct = null;
-          let neu_zone_start_pct = null;
-
-          if (
-            nstCountsOi.off_zone_starts &&
-            nstCountsOi.neu_zone_starts &&
-            nstCountsOi.def_zone_starts
-          ) {
-            const totalStarts =
-              nstCountsOi.off_zone_starts +
-              nstCountsOi.neu_zone_starts +
-              nstCountsOi.def_zone_starts;
-            if (totalStarts > 0) {
-              def_zone_start_pct =
-                (nstCountsOi.def_zone_starts / totalStarts) * 100;
-              neu_zone_start_pct =
-                (nstCountsOi.neu_zone_starts / totalStarts) * 100;
-            }
-          }
-
-          return {
-            ...wgoGame,
-
-            // NST Possession Percentages
-            cf_pct: nstCountsOi.cf_pct || null,
-            ff_pct: nstCountsOi.ff_pct || null,
-            sf_pct: nstCountsOi.sf_pct || null,
-            gf_pct: nstCountsOi.gf_pct || null,
-            xgf_pct: nstCountsOi.xgf_pct || null,
-            scf_pct: nstCountsOi.scf_pct || null,
-            hdcf_pct: nstCountsOi.hdcf_pct || null,
-            mdcf_pct: nstCountsOi.mdcf_pct || null,
-            ldcf_pct: nstCountsOi.ldcf_pct || null,
-
-            // NST Individual Production Per 60
-            ixg_per_60: nstRates.ixg_per_60 || null,
-            icf_per_60: nstRates.icf_per_60 || null,
-            iff_per_60: nstRates.iff_per_60 || null,
-            iscfs_per_60: nstRates.iscfs_per_60 || null,
-            hdcf_per_60: nstRates.hdcf_per_60 || null,
-            shots_per_60: nstRates.shots_per_60 || null,
-            goals_per_60: nstRates.goals_per_60 || null,
-            total_assists_per_60: nstRates.total_assists_per_60 || null,
-            total_points_per_60: nstRates.total_points_per_60 || null,
-            rush_attempts_per_60: nstRates.rush_attempts_per_60 || null,
-            rebounds_created_per_60: nstRates.rebounds_created_per_60 || null,
-
-            // NST Defensive Per 60
-            hdca_per_60: nstRates.hdca_per_60 || null,
-            sca_per_60: nstRates.sca_per_60 || null,
-            shots_blocked_per_60: nstRates.shots_blocked_per_60 || null,
-            xga_per_60: nstRates.xga_per_60 || null,
-            ga_per_60: nstRates.ga_per_60 || null,
-
-            // NST Zone Usage Percentages
-            off_zone_start_pct: nstCountsOi.off_zone_start_pct || null,
-            def_zone_start_pct: def_zone_start_pct,
-            neu_zone_start_pct: neu_zone_start_pct,
-            off_zone_faceoff_pct: nstCountsOi.off_zone_faceoff_pct || null,
-
-            // NST On-Ice Impact
-            on_ice_sh_pct: nstCountsOi.on_ice_sh_pct || null,
-            on_ice_sv_pct: nstCountsOi.on_ice_sv_pct || null,
-            pdo: nstCountsOi.pdo || null,
-
-            // NST Discipline Per 60
-            pim_per_60: nstRates.pim_per_60 || null,
-            total_penalties_per_60: nstRates.total_penalties_per_60 || null,
-            penalties_drawn_per_60: nstRates.penalties_drawn_per_60 || null,
-            giveaways_per_60: nstRates.giveaways_per_60 || null,
-            takeaways_per_60: nstRates.takeaways_per_60 || null,
-            hits_per_60: nstRates.hits_per_60 || null,
-
-            // NST Raw Counts
-            ixg: nstCounts.ixg || null,
-            icf: nstCounts.icf || null,
-            iff: nstCounts.iff || null,
-            hdcf: nstCounts.hdcf || null,
-            hdca: nstCounts.hdca || null,
-            rush_attempts: nstCounts.rush_attempts || null,
-            rebounds_created: nstCounts.rebounds_created || null,
-
-            // NST On-Ice Raw Counts
-            cf: nstCountsOi.cf || null,
-            ca: nstCountsOi.ca || null,
-            ff: nstCountsOi.ff || null,
-            fa: nstCountsOi.fa || null,
-            sf: nstCountsOi.sf || null,
-            sa: nstCountsOi.sa || null,
-            gf: nstCountsOi.gf || null,
-            ga: nstCountsOi.ga || null,
-            xgf: nstCountsOi.xgf || null,
-            xga: nstCountsOi.xga || null,
-            scf: nstCountsOi.scf || null,
-            sca: nstCountsOi.sca || null
-          };
-        });
+        // Extract the playoff year from the season ID
+        // For season 20242025, playoff year is 2025
+        // For season 20232024, playoff year is 2024
+        const playoffYear = selectedSeason
+          ? Math.floor(selectedSeason % 10000)
+          : null;
 
         console.log(
-          "[SSR] Merged game log with NST data. Sample stats from first game:",
-          {
-            cf_pct: gameLog[0]?.cf_pct,
-            ixg_per_60: gameLog[0]?.ixg_per_60,
-            hdcf_pct: gameLog[0]?.hdcf_pct,
-            pdo: gameLog[0]?.pdo,
-            shots_per_60: gameLog[0]?.shots_per_60
-          }
+          `[SSR] Playoff year calculated: ${playoffYear} from season ${selectedSeason}`
         );
-        console.log("[SSR] Playoff games fetched and merged:", {
-          playoffGameCount: playoffGameLog.length,
-          firstPlayoffGame: playoffGameLog[0] || null
-        });
-      } catch (nstError) {
-        console.warn("[SSR] Error fetching NST data:", nstError);
-        // Continue with WGO data only if NST fetch fails
+
+        let playoffQuery = supabase
+          .from("wgo_skater_stats_playoffs")
+          .select(
+            `date, games_played, goals, assists, points, plus_minus, shots, shooting_percentage, pp_points, gw_goals, fow_percentage, toi_per_game, blocked_shots, hits, takeaways, giveaways, sat_pct, zone_start_pct`
+          )
+          .eq("player_id", playerIdNum)
+          .order("date", { ascending: true });
+
+        // Filter by playoff year if we have a valid season
+        if (playoffYear && playoffYear >= 2020) {
+          // Filter for dates that start with the playoff year (e.g., "2025-")
+          playoffQuery = playoffQuery
+            .gte("date", `${playoffYear}-01-01`)
+            .lt("date", `${playoffYear + 1}-01-01`);
+        }
+
+        const { data: playoffData, error: playoffError } = await playoffQuery;
+
+        if (playoffError) {
+          console.warn(
+            "[SSR] Error fetching playoff data:",
+            playoffError.message
+          );
+        } else if (playoffData && playoffData.length > 0) {
+          playoffGameLog = playoffData.map((game: any) => ({
+            ...game,
+            isPlayoff: true
+          }));
+          console.log(
+            `[SSR] Found ${playoffGameLog.length} playoff games for player ${playerIdNum} in year ${playoffYear}`
+          );
+          console.log(
+            `[SSR] Date range: ${playoffData[0].date} to ${playoffData[playoffData.length - 1].date}`
+          );
+        } else {
+          console.log(
+            `[SSR] No playoff data found for player ${playerIdNum} in year ${playoffYear}`
+          );
+
+          // Fallback: try to get any playoff data for this player to see what's available
+          const { data: allPlayoffData } = await supabase
+            .from("wgo_skater_stats_playoffs")
+            .select("date, goals, assists, points")
+            .eq("player_id", playerIdNum)
+            .order("date", { ascending: false })
+            .limit(3);
+
+          if (allPlayoffData && allPlayoffData.length > 0) {
+            console.log(
+              "[SSR] Available playoff data for this player:",
+              allPlayoffData.map((g) => ({
+                date: g.date,
+                points: g.points
+              }))
+            );
+          }
+        }
+      } catch (error) {
+        console.error("[SSR] Error in playoff data fetching:", error);
       }
     }
   }

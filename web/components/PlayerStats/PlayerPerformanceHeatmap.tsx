@@ -200,6 +200,16 @@ export function PlayerPerformanceHeatmap({
   const [hoveredMissedGame, setHoveredMissedGame] = useState<any>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
+  // DEBUG: Log the data being received
+  console.log("[PlayerPerformanceHeatmap] Debug data:", {
+    regularSeasonGames: gameLog.length,
+    playoffGames: playoffGameLog.length,
+    playerId,
+    seasonId,
+    firstRegularGame: gameLog[0],
+    firstPlayoffGame: playoffGameLog[0]
+  });
+
   // Fetch missed games using the existing hook
   const {
     missedGames,
@@ -317,12 +327,19 @@ export function PlayerPerformanceHeatmap({
 
   // Calculate calendar stats
   const calendarStats = useMemo(() => {
-    const gamesWithData = gameLog.filter(
-      (game) => game.games_played !== null && game.games_played > 0
-    );
-    if (gamesWithData.length === 0) return null;
+    // Include BOTH regular season and playoff games in stats calculation
+    const allGamesWithData = [
+      ...gameLog.filter(
+        (game) => game.games_played !== null && game.games_played > 0
+      ),
+      ...playoffGameLog.filter(
+        (game) => game.games_played !== null && game.games_played > 0
+      )
+    ];
 
-    const performanceLevels = gamesWithData.map((game) =>
+    if (allGamesWithData.length === 0) return null;
+
+    const performanceLevels = allGamesWithData.map((game) =>
       calculatePerformanceLevel(game, selectedStats)
     );
     const levelCounts = performanceLevels.reduce(
@@ -335,10 +352,18 @@ export function PlayerPerformanceHeatmap({
 
     const eliteGames = (levelCounts.elite || 0) + (levelCounts.excellent || 0);
     const goodOrBetterGames = eliteGames + (levelCounts.good || 0);
-    const totalGames = gamesWithData.length;
+    const totalGames = allGamesWithData.length;
+    const regularSeasonGames = gameLog.filter(
+      (game) => game.games_played !== null && game.games_played > 0
+    ).length;
+    const playoffGames = playoffGameLog.filter(
+      (game) => game.games_played !== null && game.games_played > 0
+    ).length;
 
     return {
       totalGames,
+      regularSeasonGames,
+      playoffGames,
       eliteGames,
       goodOrBetterGames,
       elitePercentage: totalGames > 0 ? (eliteGames / totalGames) * 100 : 0,
@@ -346,7 +371,7 @@ export function PlayerPerformanceHeatmap({
         totalGames > 0 ? (goodOrBetterGames / totalGames) * 100 : 0,
       levelCounts
     };
-  }, [gameLog, selectedStats]);
+  }, [gameLog, playoffGameLog, selectedStats]);
 
   // Event handlers
   const handleMouseEnter = (
@@ -433,6 +458,9 @@ export function PlayerPerformanceHeatmap({
       >
         <div className={styles.tooltipHeader}>
           <strong>{format(new Date(game.date), "MMM d, yyyy")}</strong>
+          {game.isPlayoff && (
+            <span className={styles.playoffLabel}>PLAYOFF GAME</span>
+          )}
           <span className={styles.performanceLevel}>
             {performanceLevelLabel}
           </span>
@@ -666,6 +694,18 @@ export function PlayerPerformanceHeatmap({
               </span>
             </div>
             <div className={styles.statItem}>
+              <span className={styles.statLabel}>Regular Season</span>
+              <span className={styles.statValue}>
+                {calendarStats.regularSeasonGames}
+              </span>
+            </div>
+            <div className={styles.statItem}>
+              <span className={styles.statLabel}>Playoff Games</span>
+              <span className={styles.statValue}>
+                {calendarStats.playoffGames}
+              </span>
+            </div>
+            <div className={styles.statItem}>
               <span className={styles.statLabel}>Elite+ Games</span>
               <span className={styles.statValue}>
                 {calendarStats.eliteGames}
@@ -689,7 +729,8 @@ export function PlayerPerformanceHeatmap({
             <p>
               Performance levels are calculated based on weighted analysis of
               selected statistics. Colors represent relative performance
-              compared to NHL averages using shared formatting standards.
+              compared to NHL averages using shared formatting standards. Yellow
+              borders indicate playoff games.
             </p>
           </div>
         </div>
