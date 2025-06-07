@@ -216,7 +216,13 @@ export const POSITION_STAT_CONFIGS = {
       "xgf_pct",
       "hdcf_pct",
       "ixg_per_60",
-      "total_points_per_60"
+      "total_points_per_60",
+      "ff_pct",
+      "sf_pct",
+      "pdo",
+      "on_ice_sh_pct",
+      "off_zone_start_pct",
+      "penalties_drawn_per_60"
     ] as string[]
   },
   LW: {
@@ -233,7 +239,13 @@ export const POSITION_STAT_CONFIGS = {
       "xgf_pct",
       "hdcf_pct",
       "ixg_per_60",
-      "goals_per_60"
+      "goals_per_60",
+      "ff_pct",
+      "sf_pct",
+      "pdo",
+      "rush_attempts_per_60",
+      "rebounds_created_per_60",
+      "hits_per_60"
     ] as string[]
   },
   RW: {
@@ -250,7 +262,13 @@ export const POSITION_STAT_CONFIGS = {
       "xgf_pct",
       "hdcf_pct",
       "ixg_per_60",
-      "goals_per_60"
+      "goals_per_60",
+      "ff_pct",
+      "sf_pct",
+      "pdo",
+      "rush_attempts_per_60",
+      "rebounds_created_per_60",
+      "hits_per_60"
     ] as string[]
   },
   D: {
@@ -267,7 +285,13 @@ export const POSITION_STAT_CONFIGS = {
       "xgf_pct",
       "hdcf_pct",
       "shots_blocked_per_60",
-      "def_zone_start_pct"
+      "def_zone_start_pct",
+      "hdca_per_60",
+      "xga_per_60",
+      "pdo",
+      "off_zone_start_pct",
+      "takeaways_per_60",
+      "giveaways_per_60"
     ] as string[]
   },
   G: {
@@ -564,7 +588,12 @@ export interface PerformanceLevel {
 export type TimeFrame = "season" | "last10" | "last20" | "last30" | "custom";
 
 // Tab options
-export type StatsTab = "overview" | "advanced" | "trends" | "calendar";
+export type StatsTab =
+  | "overview"
+  | "advanced"
+  | "trends"
+  | "calendar"
+  | "gamelog";
 
 // Export utility function types
 export type StatFormatter = (value: number) => string;

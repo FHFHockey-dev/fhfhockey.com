@@ -1,5 +1,12 @@
 import React, { useMemo, useState } from "react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval } from "date-fns";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  startOfWeek,
+  endOfWeek
+} from "date-fns";
 import styles from "./PlayerStats.module.scss";
 import { useMissedGames } from "hooks/useMissedGames";
 import {
@@ -204,7 +211,11 @@ export function PlayerPerformanceHeatmap({
   const calendarData = useMemo(() => {
     if (gameLog.length === 0 && playoffGameLog.length === 0) return [];
 
-    const allGames = [...gameLog, ...playoffGameLog];
+    // Combine all games and mark playoff games properly
+    const allGames = [
+      ...gameLog.map((game) => ({ ...game, isPlayoff: false })), // Mark regular season games
+      ...playoffGameLog.map((game) => ({ ...game, isPlayoff: true })) // Mark playoff games
+    ];
 
     // Create efficient maps for O(1) lookups
     const gamesByDate = new Map<string, GameLogEntry>();
@@ -256,9 +267,17 @@ export function PlayerPerformanceHeatmap({
     while (currentMonth <= lastMonth) {
       const monthStart = startOfMonth(currentMonth);
       const monthEnd = endOfMonth(currentMonth);
-      const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-      const days = monthDays.map((day) => {
+      // Create calendar grid starting from the actual first day of the month
+      const calendarDays = eachDayOfInterval({
+        start: monthStart,
+        end: monthEnd
+      });
+
+      // Calculate the starting day of the week for this month (0 = Sunday, 6 = Saturday)
+      const startDayOfWeek = monthStart.getDay();
+
+      const days = calendarDays.map((day, index) => {
         const dateKey = format(day, "yyyy-MM-dd");
         const game = gamesByDate.get(dateKey) || null;
         const missedGame = missedGamesByDate.get(dateKey) || null;
@@ -266,13 +285,22 @@ export function PlayerPerformanceHeatmap({
           ? calculatePerformanceLevel(game, selectedStats)
           : "no-data";
 
+        // Properly detect playoff games - use the isPlayoff property we set above
+        const isPlayoff = game
+          ? Boolean(game.isPlayoff)
+          : missedGame
+            ? Boolean(missedGame.isPlayoff)
+            : false;
+
         return {
           date: day,
           game,
           missedGame,
           performanceLevel,
-          isPlayoff: game ? Boolean(game.isPlayoff) : false,
-          isMissedGame: Boolean(missedGame)
+          isPlayoff,
+          isMissedGame: Boolean(missedGame),
+          isCurrentMonth: true,
+          gridPosition: index === 0 ? startDayOfWeek + 1 : undefined // CSS grid position for first day
         };
       });
 
@@ -585,19 +613,18 @@ export function PlayerPerformanceHeatmap({
               </div>
               <div className={styles.daysContainer}>
                 {month.days.map((day) => {
-                  const isCurrentMonth =
-                    day.date.getMonth() === month.date.getMonth();
-
                   return (
                     <div
                       key={day.date.toISOString()}
-                      className={`${styles.dayCell} ${!isCurrentMonth ? styles.otherMonth : ""} ${day.isMissedGame ? styles.missedGameDay : ""} ${day.isPlayoff && day.game ? styles.playoffGame : ""}`}
+                      className={`${styles.dayCell} ${!day.isCurrentMonth ? styles.otherMonth : ""} ${day.isMissedGame ? styles.missedGameDay : ""} ${day.isPlayoff && (day.game || day.missedGame) ? styles.playoffGame : ""}`}
                       style={{
                         backgroundColor: day.isMissedGame
                           ? "#333"
-                          : day.game
+                          : day.game && day.isCurrentMonth
                             ? getPerformanceColor(day.performanceLevel)
-                            : "transparent"
+                            : "transparent",
+                        opacity: day.isCurrentMonth ? 1 : 0.3, // Dim padding days
+                        gridColumnStart: day.gridPosition // Position first day in correct column
                       }}
                       onMouseEnter={(e) =>
                         handleMouseEnter(day.game, day.missedGame, e)
@@ -607,12 +634,13 @@ export function PlayerPerformanceHeatmap({
                       <span className={styles.dayNumber}>
                         {day.date.getDate()}
                       </span>
-                      {day.isMissedGame && (
+                      {day.isMissedGame && day.isCurrentMonth && (
                         <div className={styles.missedGameIndicator}>
                           <img
                             src="/pictures/injured.png"
                             alt="Missed Game"
                             className={styles.injuredIcon}
+                            style={{ width: 12, height: 12 }}
                           />
                         </div>
                       )}
