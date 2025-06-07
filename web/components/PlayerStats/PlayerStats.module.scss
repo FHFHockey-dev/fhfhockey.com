@@ -1,96 +1,436 @@
-// Player Stats Table Styles
-.playerStatsContainer {
-  background: var(--surface-color, #1a1a1a);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
+@use "sass:color";
+@use "styles/vars" as v;
+@use "sass:math";
+
+// Page-level layout styles
+.playerStatsPageContainer {
+  width: 95%;
+  margin: 2rem auto;
 }
 
-.tableHeader {
+.playerStatsTableContainer {
+  width: 100%;
+  margin: 2rem 0;
+}
+
+.playerStatsSearchBar {
+  width: 100%;
+  margin: 0 auto;
+}
+
+// Legacy table styles (consider migrating to modern table styles)
+.playerStatsTable {
+  @include v.table-base;
+  width: 100%;
+  border-collapse: collapse;
+  background: v.$background-dark;
+  color: v.$text-primary;
+  font-size: 1rem;
+  border: 5px solid v.$border-color-secondary;
+  outline: 5px solid v.$border-color-primary;
+  border-radius: 0.5rem;
+  margin: 1.5rem auto;
+
+  th,
+  td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid v.$border-secondary;
+    text-align: center;
+    height: 35px;
+  }
+
+  th {
+    background: v.$background-dark;
+    color: v.$secondary-color;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+
+  tbody tr {
+    &:nth-child(even) td {
+      background-color: v.$background-dark;
+    }
+    &:nth-child(odd) td {
+      background-color: color.adjust(v.$background-dark, $lightness: 2%);
+    }
+
+    &:hover td {
+      background-color: color.change(
+        color.adjust(v.$focus-color, $lightness: -20%),
+        $alpha: 0.4
+      );
+      color: v.$focus-color;
+      font-weight: 600;
+      border-bottom: 2px solid v.$focus-color;
+      border-top: 2px solid v.$focus-color !important;
+    }
+
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+}
+
+.spanColorBlue {
+  color: v.$secondary-color;
+  font-weight: 700;
+}
+
+.playerName {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: 0.1em;
+  color: v.$text-primary;
+}
+
+.tableLabel {
+  color: v.$text-primary;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 2.5rem 0 1rem 0;
+  letter-spacing: 0.2em;
+}
+
+// Layout Components
+.overviewGrid {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 16px;
+  gap: v.$space-lg;
+  margin: v.$space-xl 0;
+  min-height: 500px;
 }
 
-.tableTitle {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--text-primary, #ffffff);
-  margin: 0;
-}
-
-.tableControls {
+.leftColumn {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  width: 40%;
+  gap: v.$space-md;
+}
+
+.rightColumn {
+  width: 60%;
+  height: 100%;
+}
+
+.radarSection {
+  flex: 1;
+  min-height: 250px;
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+  box-sizing: border-box;
+}
+
+.insightsSection {
+  flex: 1;
+  min-height: 250px;
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+  box-sizing: border-box;
+}
+
+.calendarSection {
+  height: 100%;
+  min-height: 500px;
+  padding: v.$space-sm;
+  outline: 5px solid v.$border-color-primary;
+  border-radius: v.$border-radius-lg * 1.5;
+  box-sizing: border-box;
+}
+
+.playerHeader {
+  display: flex;
   align-items: center;
+  gap: v.$space-xl;
+  margin: v.$space-xl 0;
+  padding: v.$space-lg;
+  @include v.component-wrapper;
+}
+
+.playerImageContainer {
+  flex-shrink: 0;
+}
+
+.playerInfo {
+  flex: 1;
+}
+
+.playerDetails {
+  margin-top: v.$space-md;
+}
+
+// Navigation and Controls
+.tabNavigation {
+  display: flex;
+  gap: v.$space-sm;
+  margin: v.$space-lg 0;
+  border-bottom: 2px solid v.$border-primary;
+  padding-bottom: v.$space-sm;
+}
+
+.tabButton {
+  @include v.button-style;
+  background-color: transparent;
+  border: 1px solid v.$border-secondary;
+  color: v.$text-secondary;
+
+  &:hover {
+    background-color: v.$background-medium;
+    color: v.$text-primary;
+  }
+
+  &.active {
+    background-color: v.$primary-color;
+    color: v.$text-button;
+    border-color: v.$primary-color;
+  }
+}
+
+.controlsSection {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-lg;
+  margin: v.$space-lg 0;
+  padding: v.$space-lg;
+  @include v.component-wrapper;
+}
+
+.controlsGrid {
+  display: flex;
   flex-wrap: wrap;
+  gap: v.$space-xl;
+}
+
+.controlHeader {
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-lg;
+  font-weight: 700;
+  color: v.$secondary-color;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-bottom: 2px solid v.$secondary-color;
+  padding-bottom: v.$space-xs;
+  margin: 0 0 v.$space-md 0;
+}
+
+.timeframeSelector {
+  flex: 0 0 auto;
+  min-width: 300px;
+
+  .timeframeButtons {
+    display: flex;
+    align-items: center;
+    gap: v.$space-md;
+  }
+}
+
+.timeframeButton {
+  @include v.button-style;
+  background-color: transparent;
+  border: 1px solid v.$border-secondary;
+  color: v.$text-secondary;
+  padding: v.$space-xs v.$space-md;
+
+  &:hover {
+    background-color: v.$background-medium;
+    color: v.$text-primary;
+  }
+
+  &.active {
+    background-color: v.$secondary-color;
+    color: v.$text-button;
+    border-color: v.$secondary-color;
+  }
 }
 
 .statSelector {
-  padding: 8px 12px;
-  background: var(--surface-secondary, #2a2a2a);
-  border: 1px solid var(--border-color, #404040);
-  border-radius: 6px;
-  color: var(--text-primary, #ffffff);
-  font-size: 0.9rem;
-  min-width: 150px;
+  flex: 1;
+  min-width: 400px;
 
-  &:focus {
-    outline: none;
-    border-color: var(--primary-color, #0ea5e9);
-    box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+  // For form input styling
+  &.input {
+    padding: 8px 12px;
+    background: v.$background-medium;
+    border: 1px solid v.$border-secondary;
+    border-radius: 6px;
+    color: v.$text-primary;
+    font-size: 0.9rem;
+    min-width: 150px;
+
+    &:focus {
+      outline: none;
+      border-color: v.$primary-color;
+      box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.2);
+    }
   }
+}
+
+.statCategories {
+  display: flex;
+  gap: v.$space-xl;
+  flex-wrap: wrap;
+}
+
+.statCategory {
+  flex: 1;
+  min-width: 200px;
+
+  h4 {
+    color: v.$secondary-color;
+    margin-bottom: v.$space-sm;
+    font-size: v.$font-size-sm;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .statCheckboxContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: v.$space-xs;
+
+    .statCheckbox {
+      flex: 1 1 calc(33.333% - #{v.$space-xs});
+      min-width: 0;
+      max-width: calc(33.333% - #{v.$space-xs});
+    }
+  }
+}
+
+.statCheckbox {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+  margin-bottom: v.$space-xs;
+  cursor: pointer;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+
+  input[type="checkbox"] {
+    margin: 0;
+    accent-color: v.$primary-color;
+  }
+
+  &:hover {
+    color: v.$text-primary;
+  }
+}
+
+// Content Areas
+.contentArea {
+  margin: v.$space-xl 0;
+}
+
+.advancedGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-xl;
+  margin: v.$space-xl 0;
+}
+
+.advancedTable {
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+}
+
+// Modern Table Components
+.playerStatsContainer,
+.trendContainer,
+.heatmapContainer,
+.radarContainer,
+.contextualContainer {
+  @include v.component-wrapper;
+  padding: v.$space-xl;
+  margin-bottom: v.$space-xl;
+}
+
+.tableHeader,
+.trendHeader,
+.heatmapHeader,
+.radarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: v.$space-lg;
+  flex-wrap: wrap;
+  gap: v.$space-md;
+
+  h3 {
+    font-size: v.$font-size-xl;
+    font-weight: 600;
+    color: v.$text-primary;
+    margin: 0;
+  }
+
+  p {
+    color: v.$text-secondary;
+    margin: 0;
+    font-size: v.$font-size-sm;
+  }
+}
+
+.tableControls,
+.trendControls {
+  display: flex;
+  gap: v.$space-sm;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .gameRangeSelector {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-  color: var(--text-secondary, #b0b0b0);
+  gap: v.$space-xs;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
 
   input {
     padding: 6px 8px;
-    background: var(--surface-secondary, #2a2a2a);
-    border: 1px solid var(--border-color, #404040);
+    background: v.$background-medium;
+    border: 1px solid v.$border-secondary;
     border-radius: 4px;
-    color: var(--text-primary, #ffffff);
+    color: v.$text-primary;
     width: 80px;
     text-align: center;
 
     &:focus {
       outline: none;
-      border-color: var(--primary-color, #0ea5e9);
+      border-color: v.$primary-color;
     }
   }
 }
 
 .tableWrapper {
   overflow-x: auto;
-  border-radius: 8px;
-  border: 1px solid var(--border-color, #404040);
+  border-radius: v.$border-radius-md;
+  border: 1px solid v.$border-secondary;
+}
+
+// New scrollable table wrapper for consistent height with charts
+.scrollableTableWrapper {
+  height: 400px; // Match chart height
+  overflow-y: auto;
+  overflow-x: auto;
+  border-radius: v.$border-radius-md;
+  border: 1px solid v.$border-secondary;
+  background: v.$background-dark;
 }
 
 .statsTable {
   width: 100%;
   border-collapse: collapse;
-  background: var(--surface-color, #1a1a1a);
+  background: v.$background-dark;
 
   th,
   td {
-    padding: 12px 16px;
+    padding: v.$space-sm v.$space-md;
     text-align: left;
-    border-bottom: 1px solid var(--border-color, #404040);
-    font-size: 0.9rem;
+    border-bottom: 1px solid v.$border-secondary;
+    font-size: v.$font-size-sm;
   }
 
   th {
-    background: var(--surface-secondary, #2a2a2a);
+    background: v.$background-medium;
     font-weight: 600;
-    color: var(--text-primary, #ffffff);
+    color: v.$primary-color;
     position: sticky;
     top: 0;
     z-index: 10;
@@ -99,15 +439,13 @@
     transition: background-color 0.2s;
 
     &:hover {
-      background: var(--surface-hover, #3a3a3a);
+      background: v.$background-light;
     }
 
-    &.sortable {
-      &::after {
-        content: "↕";
-        margin-left: 8px;
-        opacity: 0.5;
-      }
+    &.sortable::after {
+      content: "↕";
+      margin-left: v.$space-xs;
+      opacity: 0.5;
     }
 
     &.sorted-asc::after {
@@ -122,7 +460,7 @@
   }
 
   td {
-    color: var(--text-secondary, #b0b0b0);
+    color: v.$text-secondary;
 
     &.numeric {
       text-align: right;
@@ -130,12 +468,12 @@
     }
 
     &.date {
-      font-size: 0.85rem;
+      font-size: v.$font-size-xs;
     }
 
     &.highlight {
       background: rgba(14, 165, 233, 0.1);
-      color: var(--text-primary, #ffffff);
+      color: v.$text-primary;
     }
   }
 
@@ -143,7 +481,7 @@
     transition: background-color 0.2s;
 
     &:hover {
-      background: var(--surface-hover, rgba(255, 255, 255, 0.05));
+      background: v.$background-light;
     }
 
     &:last-child td {
@@ -152,99 +490,41 @@
   }
 }
 
-.noData {
-  text-align: center;
-  padding: 48px 24px;
-  color: var(--text-secondary, #b0b0b0);
-  font-size: 1.1rem;
-}
-
+.noData,
 .loading {
   text-align: center;
-  padding: 48px 24px;
-  color: var(--text-secondary, #b0b0b0);
-  font-size: 1.1rem;
+  padding: v.$space-xxl v.$space-xl;
+  color: v.$text-secondary;
+  font-size: v.$font-size-lg;
 }
 
-// Player Trend Chart Styles
-.trendContainer {
-  background: var(--surface-color, #1a1a1a);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
-}
-
-.trendHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 16px;
-
-  h3 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-primary, #ffffff);
-    margin: 0;
-  }
-}
-
-.trendControls {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
+// Chart Components
 .rollingAverageToggle {
   display: flex;
-  gap: 8px;
+  gap: v.$space-xs;
 
   label {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.9rem;
-    color: var(--text-secondary, #b0b0b0);
+    gap: v.$space-xs;
+    font-size: v.$font-size-sm;
+    color: v.$text-secondary;
     cursor: pointer;
 
     input[type="checkbox"] {
-      accent-color: var(--primary-color, #0ea5e9);
+      accent-color: v.$primary-color;
     }
   }
 }
 
-.chartWrapper {
+.chartWrapper,
+.radarWrapper {
   height: 400px;
   position: relative;
+  margin-bottom: v.$space-lg;
 }
 
-// Performance Heatmap Styles
-.heatmapContainer {
-  background: var(--surface-color, #1a1a1a);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
-}
-
-.heatmapHeader {
-  margin-bottom: 20px;
-
-  h3 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-primary, #ffffff);
-    margin: 0 0 8px 0;
-  }
-
-  p {
-    color: var(--text-secondary, #b0b0b0);
-    margin: 0;
-    font-size: 0.9rem;
-  }
-}
-
+// Heatmap Components
 .heatmapCalendar {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(20px, 1fr));
@@ -270,25 +550,20 @@
   }
 
   &.level-0 {
-    background: var(--surface-secondary, #2a2a2a);
+    background: v.$background-medium;
   }
-
   &.level-1 {
     background: rgba(14, 165, 233, 0.3);
   }
-
   &.level-2 {
     background: rgba(14, 165, 233, 0.5);
   }
-
   &.level-3 {
     background: rgba(14, 165, 233, 0.7);
   }
-
   &.level-4 {
     background: rgba(14, 165, 233, 0.9);
   }
-
   &.level-5 {
     background: rgba(14, 165, 233, 1);
   }
@@ -298,10 +573,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin-top: 16px;
-  font-size: 0.8rem;
-  color: var(--text-secondary, #b0b0b0);
+  gap: v.$space-xs;
+  margin-top: v.$space-md;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
 
   .legendScale {
     display: flex;
@@ -315,48 +590,18 @@
   }
 }
 
-// Radar Chart Styles
-.radarContainer {
-  background: var(--surface-color, #1a1a1a);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
-}
-
-.radarHeader {
-  margin-bottom: 20px;
-
-  h3 {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-primary, #ffffff);
-    margin: 0 0 8px 0;
-  }
-
-  p {
-    color: var(--text-secondary, #b0b0b0);
-    margin: 0;
-    font-size: 0.9rem;
-  }
-}
-
-.radarWrapper {
-  height: 400px;
-  position: relative;
-  margin-bottom: 20px;
-}
-
+// Radar Chart Components
 .radarLegend {
-  margin-bottom: 20px;
+  margin-bottom: v.$space-lg;
 }
 
 .percentileGuide {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: v.$space-md;
   justify-content: center;
-  font-size: 0.8rem;
-  color: var(--text-secondary, #b0b0b0);
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
 }
 
 .percentileItem {
@@ -366,25 +611,25 @@
 .radarStats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
+  gap: v.$space-sm;
 }
 
 .statBreakdown {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
-  background: var(--surface-secondary, #2a2a2a);
-  border-radius: 6px;
-  font-size: 0.9rem;
+  padding: v.$space-xs v.$space-sm;
+  background: v.$background-medium;
+  border-radius: v.$border-radius-sm;
+  font-size: v.$font-size-sm;
 }
 
 .statName {
-  color: var(--text-secondary, #b0b0b0);
+  color: v.$text-secondary;
 }
 
 .statValue {
-  color: var(--text-primary, #ffffff);
+  color: v.$text-primary;
   font-weight: 600;
 }
 
@@ -392,7 +637,7 @@
   font-weight: 600;
   padding: 2px 6px;
   border-radius: 4px;
-  font-size: 0.8rem;
+  font-size: v.$font-size-xs;
 
   &.good {
     background: rgba(34, 197, 94, 0.2);
@@ -410,40 +655,162 @@
   }
 }
 
-// Contextual Stats Styles
-.contextualContainer {
-  background: var(--surface-color, #1a1a1a);
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 24px;
-
-  h3,
-  h4 {
-    color: var(--text-primary, #ffffff);
-    margin: 0 0 16px 0;
-  }
+// Insights and Statistics
+.summarySection {
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+  margin-bottom: v.$space-xl;
 
   h3 {
-    font-size: 1.5rem;
+    font-size: v.$font-size-xl;
+    font-weight: 600;
+    color: v.$text-primary;
+    margin: 0 0 v.$space-lg 0;
+  }
+
+  .summaryGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: v.$space-md;
+  }
+
+  .summaryCard {
+    padding: v.$space-md;
+    background: v.$background-medium;
+    border-radius: v.$border-radius-md;
+    border-left: 4px solid v.$secondary-color;
+    transition:
+      transform 0.2s,
+      box-shadow 0.2s;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    // Percentile-based color coding for summary cards too
+    &.elite {
+      border-left-color: #10b981;
+      background: rgba(16, 185, 129, 0.08);
+
+      .summaryValue {
+        color: #10b981;
+      }
+    }
+
+    &.excellent {
+      border-left-color: #22c55e;
+      background: rgba(34, 197, 94, 0.08);
+
+      .summaryValue {
+        color: #22c55e;
+      }
+    }
+
+    &.good {
+      border-left-color: #84cc16;
+      background: rgba(132, 204, 22, 0.08);
+
+      .summaryValue {
+        color: #84cc16;
+      }
+    }
+
+    &.average {
+      border-left-color: #eab308;
+      background: rgba(234, 179, 8, 0.08);
+
+      .summaryValue {
+        color: #eab308;
+      }
+    }
+
+    &.below-average {
+      border-left-color: #f97316;
+      background: rgba(249, 115, 22, 0.08);
+
+      .summaryValue {
+        color: #f97316;
+      }
+    }
+
+    &.poor {
+      border-left-color: #ef4444;
+      background: rgba(239, 68, 68, 0.08);
+
+      .summaryValue {
+        color: #ef4444;
+      }
+    }
+
+    .summaryLabel {
+      font-size: v.$font-size-sm;
+      color: v.$text-secondary;
+      margin-bottom: v.$space-xs;
+    }
+
+    .summaryValue {
+      font-size: v.$font-size-xl;
+      font-weight: 700;
+      color: v.$text-primary;
+      margin-bottom: v.$space-xs;
+    }
+
+    .summaryDescription {
+      font-size: v.$font-size-xs;
+      color: v.$text-secondary;
+    }
+  }
+}
+
+.advancedNote {
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-md;
+  margin: v.$space-lg 0;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+  line-height: 1.5;
+
+  p {
+    margin: 0 0 v.$space-sm 0;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  strong {
+    color: v.$text-primary;
     font-weight: 600;
   }
 
-  h4 {
-    font-size: 1.2rem;
-    font-weight: 500;
+  em {
+    font-style: italic;
+    color: v.$text-secondary;
+  }
+
+  a {
+    color: v.$primary-color;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }
 
 .insightsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  gap: v.$space-md;
+  margin-bottom: v.$space-xl;
 }
 
 .insightCard {
-  padding: 16px;
-  border-radius: 8px;
+  padding: v.$space-md;
+  border-radius: v.$border-radius-md;
   border-left: 4px solid transparent;
   transition:
     transform 0.2s,
@@ -454,6 +821,62 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 
+  // Percentile-based color coding
+  &.elite {
+    background: rgba(16, 185, 129, 0.15); // Emerald green
+    border-left-color: #10b981;
+
+    .insightValue {
+      color: #10b981;
+    }
+  }
+
+  &.excellent {
+    background: rgba(34, 197, 94, 0.12); // Green
+    border-left-color: #22c55e;
+
+    .insightValue {
+      color: #22c55e;
+    }
+  }
+
+  &.good {
+    background: rgba(132, 204, 22, 0.12); // Lime green
+    border-left-color: #84cc16;
+
+    .insightValue {
+      color: #84cc16;
+    }
+  }
+
+  &.average {
+    background: rgba(234, 179, 8, 0.12); // Yellow
+    border-left-color: #eab308;
+
+    .insightValue {
+      color: #eab308;
+    }
+  }
+
+  &.below-average {
+    background: rgba(249, 115, 22, 0.12); // Orange
+    border-left-color: #f97316;
+
+    .insightValue {
+      color: #f97316;
+    }
+  }
+
+  &.poor {
+    background: rgba(239, 68, 68, 0.12); // Red
+    border-left-color: #ef4444;
+
+    .insightValue {
+      color: #ef4444;
+    }
+  }
+
+  // Legacy trend-based classes (keeping for backward compatibility)
   &.positive {
     background: rgba(34, 197, 94, 0.1);
     border-left-color: #22c55e;
@@ -471,139 +894,1030 @@
 }
 
 .insightLabel {
-  font-size: 0.9rem;
-  color: var(--text-secondary, #b0b0b0);
-  margin-bottom: 4px;
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+  margin-bottom: v.$space-xs;
 }
 
 .insightValue {
-  font-size: 1.4rem;
+  font-size: v.$font-size-xl;
   font-weight: 700;
-  color: var(--text-primary, #ffffff);
-  margin-bottom: 4px;
+  color: v.$text-primary;
+  margin-bottom: v.$space-xs;
 }
 
 .insightDescription {
-  font-size: 0.8rem;
-  color: var(--text-secondary, #b0b0b0);
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
 }
 
 .streakSection {
-  margin-bottom: 24px;
+  margin-bottom: v.$space-xl;
 }
 
 .streakCard {
-  background: var(--surface-secondary, #2a2a2a);
-  border-radius: 8px;
-  padding: 16px;
+  background: v.$background-medium;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-md;
 }
 
 .skaterStreaks {
   display: flex;
-  gap: 16px;
+  gap: v.$space-md;
   flex-wrap: wrap;
 }
 
 .streak {
   text-align: center;
-  padding: 12px 16px;
-  border-radius: 6px;
+  padding: v.$space-sm v.$space-md;
+  border-radius: v.$border-radius-sm;
   min-width: 80px;
+  border-left: 4px solid transparent;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
 
   &.positive {
     background: rgba(34, 197, 94, 0.2);
     color: #22c55e;
+    border-left-color: #22c55e;
   }
 
   &.negative {
     background: rgba(239, 68, 68, 0.2);
     color: #ef4444;
+    border-left-color: #ef4444;
   }
 
   &.neutral {
     background: rgba(156, 163, 175, 0.2);
     color: #9ca3af;
+    border-left-color: #9ca3af;
   }
 }
 
 .streakValue {
   display: block;
-  font-size: 1.8rem;
+  font-size: v.$font-size-xl;
   font-weight: 700;
   line-height: 1;
 }
 
 .streakLabel {
   display: block;
-  font-size: 0.8rem;
-  margin-top: 4px;
+  font-size: v.$font-size-xs;
+  margin-top: v.$space-xs;
   opacity: 0.8;
 }
 
 .seasonComparison {
-  background: var(--surface-secondary, #2a2a2a);
-  border-radius: 8px;
-  padding: 16px;
+  background: v.$background-medium;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-md;
 }
 
 .comparisonStats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
+  gap: v.$space-sm;
 }
 
 .comparisonItem {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.9rem;
+  font-size: v.$font-size-sm;
 }
 
 .comparisonLabel {
-  color: var(--text-secondary, #b0b0b0);
+  color: v.$text-secondary;
 }
 
 .comparisonValue {
-  color: var(--text-primary, #ffffff);
+  color: v.$text-primary;
   font-weight: 600;
 }
 
+// Performance Calendar
+.performanceCalendar {
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+  margin-bottom: v.$space-xl;
+
+  .calendarHeader {
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-lg;
+    margin-bottom: v.$space-xl;
+
+    .titleWithInfo {
+      display: flex;
+      align-items: center;
+      position: relative;
+      gap: v.$space-sm;
+
+      h3 {
+        margin: 0;
+        font-size: v.$font-size-xl;
+        font-weight: 600;
+        color: v.$text-primary;
+      }
+
+      .infoButton {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 1px solid v.$border-secondary;
+        background: v.$background-medium;
+        color: v.$text-secondary;
+        cursor: help;
+        font-size: 12px;
+        font-weight: bold;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: v.$primary-color;
+          color: v.$text-button;
+          border-color: v.$primary-color;
+        }
+
+        &:focus {
+          outline: 1px solid v.$focus-color;
+          outline-offset: 2px;
+        }
+      }
+
+      .infoTooltip {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 1000;
+        width: 450px;
+        max-width: 90vw;
+        padding: v.$space-lg;
+        background: v.$background-dark;
+        border: 1px solid v.$border-primary;
+        border-radius: v.$border-radius-md;
+        box-shadow: v.$box-shadow-default;
+        font-size: v.$font-size-sm;
+        line-height: 1.4;
+
+        h4 {
+          margin: 0 0 v.$space-sm 0;
+          font-size: v.$font-size-md;
+          font-weight: 600;
+          color: v.$text-primary;
+        }
+
+        h5 {
+          margin: v.$space-md 0 v.$space-xs 0;
+          font-size: v.$font-size-sm;
+          font-weight: 600;
+          color: v.$text-primary;
+        }
+
+        p {
+          margin: 0 0 v.$space-sm 0;
+          color: v.$text-secondary;
+        }
+
+        ul {
+          margin: 0 0 v.$space-md 0;
+          padding-left: v.$space-lg;
+
+          li {
+            margin-bottom: v.$space-xs;
+            color: v.$text-secondary;
+
+            strong {
+              color: v.$text-primary;
+            }
+          }
+        }
+
+        em {
+          font-size: v.$font-size-xs;
+          color: v.$text-secondary;
+          font-style: italic;
+        }
+
+        .thresholdBreakdown {
+          background: v.$background-medium;
+          border-radius: v.$border-radius-sm;
+          padding: v.$space-sm;
+          margin: v.$space-sm 0;
+          max-height: 200px;
+          overflow-y: auto;
+
+          .thresholdStat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: v.$space-xs;
+            font-size: v.$font-size-xs;
+
+            &:last-child {
+              margin-bottom: 0;
+            }
+
+            strong {
+              color: v.$text-primary;
+              font-weight: 600;
+              min-width: 80px;
+            }
+
+            span {
+              color: v.$text-secondary;
+              font-family: monospace;
+              font-size: v.$font-size-xxs;
+            }
+          }
+        }
+      }
+    }
+
+    .calendarLegend {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: v.$space-md;
+      padding: v.$space-md;
+      background: v.$background-medium;
+      border-radius: v.$border-radius-md;
+
+      .legendLabel {
+        font-weight: 600;
+        color: v.$text-primary;
+        margin-right: v.$space-sm;
+        font-size: v.$font-size-sm;
+      }
+
+      .legendItems {
+        display: flex;
+        flex-wrap: wrap;
+        gap: v.$space-md;
+      }
+
+      .legendItem {
+        display: flex;
+        align-items: center;
+        gap: v.$space-xs;
+
+        .legendColor {
+          width: 14px;
+          height: 14px;
+          border-radius: 3px;
+          border: 1px solid v.$border-secondary;
+        }
+
+        span {
+          font-size: v.$font-size-xs;
+          color: v.$text-secondary;
+          white-space: nowrap;
+        }
+      }
+    }
+  }
+
+  .calendarGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: v.$space-lg;
+    margin-bottom: v.$space-xl;
+
+    @media (max-width: v.$breakpoint-lg-min) {
+      grid-template-columns: 1fr;
+      gap: v.$space-lg;
+    }
+  }
+
+  .calendarMonth {
+    background: v.$background-medium;
+    border-radius: v.$border-radius-md;
+    padding: v.$space-md;
+    border: 1px solid v.$border-secondary;
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
+
+    .monthHeader {
+      text-align: center;
+      font-size: v.$font-size-md;
+      font-weight: 600;
+      color: v.$text-primary;
+      padding: v.$space-md;
+      background: v.$background-dark;
+      border-radius: v.$border-radius-sm;
+      margin-bottom: v.$space-md;
+      border: 1px solid v.$border-primary;
+    }
+
+    .daysGrid {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .dayLabels {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+      margin-bottom: v.$space-xs;
+    }
+
+    .dayLabel {
+      text-align: center;
+      font-size: v.$font-size-xs;
+      font-weight: 600;
+      color: v.$text-secondary;
+      padding: v.$space-xs;
+      background: v.$background-dark;
+      border-radius: v.$border-radius-sm;
+    }
+
+    .daysContainer {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 2px;
+    }
+
+    .dayCell {
+      position: relative;
+      min-height: 35px;
+      min-width: 35px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: v.$border-radius-sm;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: v.$background-dark;
+      border: 1px solid v.$border-secondary;
+
+      &:hover {
+        transform: scale(1.05);
+        z-index: 10;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      }
+
+      &.otherMonth {
+        opacity: 0.3;
+        background: transparent;
+      }
+
+      &.missedGameDay {
+        background: #333 !important;
+        border: 2px solid #ef4444 !important;
+        opacity: 0.8;
+
+        &:hover {
+          opacity: 1;
+          border-color: #dc2626 !important;
+        }
+      }
+
+      &.playoffGame {
+        border: 2px solid v.$warning-color !important;
+
+        &:hover {
+          border-color: v.$warning-color !important;
+          box-shadow: 0 2px 8px rgba(234, 179, 8, 0.3);
+        }
+      }
+
+      .dayNumber {
+        font-size: v.$font-size-xs;
+        font-weight: 600;
+        color: v.$text-primary;
+        margin-bottom: 2px;
+      }
+
+      .missedGameIndicator {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+
+        .injuredIcon {
+          width: 8px;
+          height: 8px;
+          margin-left: v.$space-xs;
+          opacity: 0.8;
+        }
+      }
+    }
+  }
+
+  .gameTooltip {
+    background: v.$background-dark;
+    border: 1px solid v.$border-primary;
+    border-radius: v.$border-radius-md;
+    padding: v.$space-md;
+    max-width: 400px;
+    box-shadow: v.$box-shadow-default;
+    font-size: v.$font-size-sm;
+    line-height: 1.4;
+
+    .tooltipHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: v.$space-sm;
+      padding-bottom: v.$space-xs;
+      border-bottom: 1px solid v.$border-secondary;
+
+      strong {
+        color: v.$text-primary;
+        font-size: v.$font-size-md;
+      }
+
+      .performanceLevel {
+        color: v.$text-secondary;
+        font-size: v.$font-size-xs;
+        font-weight: 600;
+      }
+
+      .missedGameLabel {
+        color: #ef4444;
+        font-size: v.$font-size-xs;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+    }
+
+    .tooltipStats {
+      display: flex;
+      flex-direction: column;
+      gap: v.$space-sm;
+    }
+
+    .tooltipStat {
+      .statHeader {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: v.$space-xs;
+
+        .statName {
+          font-weight: 600;
+          color: v.$text-primary;
+          font-size: v.$font-size-xs;
+          text-transform: capitalize;
+        }
+
+        .statValue {
+          text-align: right;
+          color: v.$text-primary;
+          font-weight: 600;
+        }
+      }
+
+      .statLabel {
+        color: v.$text-secondary;
+        font-size: v.$font-size-xs;
+      }
+    }
+
+    .tooltipFooter {
+      margin-top: v.$space-sm;
+      padding-top: v.$space-xs;
+      border-top: 1px solid v.$border-secondary;
+
+      em {
+        color: v.$text-secondary;
+        font-size: v.$font-size-xxs;
+      }
+    }
+  }
+
+  .calendarFooter {
+    margin-top: v.$space-xl;
+    padding-top: v.$space-lg;
+    border-top: 1px solid v.$border-secondary;
+
+    .calendarStats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: v.$space-xl;
+      margin-bottom: v.$space-lg;
+
+      .statItem {
+        display: flex;
+        flex-direction: column;
+        gap: v.$space-xs;
+
+        .statLabel {
+          font-size: v.$font-size-xs;
+          color: v.$text-secondary;
+          font-weight: 500;
+        }
+
+        .statValue {
+          font-size: v.$font-size-lg;
+          color: v.$text-primary;
+          font-weight: 600;
+        }
+      }
+    }
+
+    .calendarNote {
+      p {
+        margin: 0;
+        font-size: v.$font-size-sm;
+        color: v.$text-secondary;
+        line-height: 1.5;
+      }
+    }
+  }
+
+  .noData {
+    text-align: center;
+    padding: v.$space-xxl;
+    color: v.$text-secondary;
+    font-size: v.$font-size-lg;
+    background: v.$background-medium;
+    border-radius: v.$border-radius-md;
+    border: 1px solid v.$border-secondary;
+  }
+
+  .errorMessage {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid #ef4444;
+    border-radius: v.$border-radius-md;
+    padding: v.$space-md;
+    margin-top: v.$space-md;
+    color: #ef4444;
+    font-size: v.$font-size-sm;
+  }
+}
+
+// Missed games and injury icon styles
+.missedGameRow {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  border-left: 3px solid #ef4444;
+
+  td {
+    color: v.$text-secondary;
+    opacity: 0.7;
+  }
+}
+
+.missedGamesCount {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.injuredIcon {
+  width: 8px;
+  height: 8px;
+  margin-left: v.$space-xs;
+  opacity: 0.8;
+}
+
+.injuredIconTable {
+  width: 10px;
+  height: 10px;
+  margin-left: v.$space-xs;
+  vertical-align: middle;
+  opacity: 0.9;
+}
+
+.dateCell {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+}
+
+// Performance Calendar specific styles
+.performanceCalendar {
+  .calendarDay {
+    &.missedGameDay {
+      background: #333;
+      border: 2px solid #ef4444;
+      opacity: 0.8;
+
+      &:hover {
+        opacity: 1;
+        border-color: #dc2626;
+      }
+    }
+  }
+
+  .dayCell {
+    position: relative;
+    min-height: 40px;
+    min-width: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: v.$border-radius-sm;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      transform: scale(1.05);
+      z-index: 10;
+    }
+
+    &.otherMonth {
+      opacity: 0.3;
+    }
+  }
+
+  .dayNumber {
+    font-size: v.$font-size-xs;
+    font-weight: 600;
+    color: v.$text-primary;
+    margin-bottom: 2px;
+  }
+
+  .playoffIndicator {
+    display: none;
+  }
+
+  .daysGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .dayLabels {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+    margin-bottom: v.$space-xs;
+  }
+
+  .dayLabel {
+    text-align: center;
+    font-size: v.$font-size-xs;
+    font-weight: 600;
+    color: v.$text-secondary;
+    padding: v.$space-xs;
+  }
+
+  .daysContainer {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+
+  .monthHeader {
+    text-align: center;
+    font-size: v.$font-size-md;
+    font-weight: 600;
+    color: v.$text-primary;
+    padding: v.$space-md;
+    background: v.$background-dark;
+    border-radius: v.$border-radius-sm;
+    margin-bottom: v.$space-sm;
+    border: 1px solid v.$border-primary;
+  }
+
+  .legendColor {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    border: 1px solid v.$border-secondary;
+  }
+}
+
 // Responsive Design
-@media (max-width: 768px) {
-  .tableHeader,
-  .trendHeader {
+@media (max-width: v.$breakpoint-lg-min) {
+  .overviewGrid {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .leftColumn,
+  .rightColumn {
+    width: 100%;
+  }
+
+  .rightColumn {
+    min-height: 400px;
+  }
+
+  .playerHeader {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .controlsSection {
+    flex-direction: column;
+  }
+
+  .statCategories {
+    flex-direction: column;
+  }
+
+  .advancedGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .performanceCalendar {
+    padding: v.$space-md;
+
+    .calendarHeader {
+      .titleWithInfo {
+        .infoTooltip {
+          width: 95vw;
+          left: 50%;
+          transform: translateX(-50%);
+        }
+      }
+
+      .calendarLegend {
+        .legendItems {
+          gap: v.$space-sm;
+        }
+
+        .legendItem .legendText {
+          font-size: v.$font-size-xxs;
+        }
+      }
+    }
+
+    .calendarMonth .calendarTable {
+      gap: 1px;
+
+      .calendarDay {
+        min-height: 35px;
+        font-size: v.$font-size-xxs;
+
+        .dayNumber {
+          font-size: v.$font-size-xxs;
+        }
+
+        .gameIndicator .performanceScore {
+          font-size: 8px;
+          padding: 1px 2px;
+          min-width: 12px;
+        }
+      }
+    }
+
+    .gameTooltip {
+      max-width: 90vw;
+      font-size: v.$font-size-xs;
+    }
+
+    .calendarFooter .calendarStats {
+      gap: v.$space-lg;
+    }
+  }
+}
+
+@media (max-width: v.$breakpoint-md-max) {
+  .performanceCalendar {
+    .calendarHeader .calendarLegend .legendItems {
+      flex-direction: column;
+      gap: v.$space-xs;
+    }
+  }
+}
+
+// Chart Container Styles
+.trendContainer,
+.radarContainer {
+  @include v.component-wrapper;
+  padding: v.$space-xl;
+  margin-bottom: v.$space-xl;
+  background-color: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$border-radius-lg;
+}
+
+.trendHeader,
+.radarHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: v.$space-lg;
+  flex-wrap: wrap;
+  gap: v.$space-md;
+
+  h3 {
+    font-family: v.$font-family-accent; // Train One font
+    font-size: v.$font-size-xl;
+    font-weight: 400; // Train One is bold by default
+    color: v.$secondary-color;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  p {
+    color: v.$text-secondary;
+    margin: 0;
+    font-size: v.$font-size-sm;
+    font-family: v.$font-family-primary;
+    line-height: 1.4;
+  }
+}
+
+.chartWrapper,
+.radarWrapper {
+  position: relative;
+  height: 400px;
+  width: 100%;
+  padding: v.$space-md;
+  background: linear-gradient(
+    135deg,
+    rgba(v.$background-dark, 0.8) 0%,
+    rgba(v.$background-medium, 0.9) 100%
+  );
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  overflow: hidden;
+
+  canvas {
+    max-height: 100% !important;
+  }
+}
+
+.radarWrapper {
+  height: 350px;
+}
+
+.noData {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: v.$text-secondary;
+  font-size: v.$font-size-md;
+  font-style: italic;
+  background: rgba(v.$background-medium, 0.5);
+  border: 2px dashed v.$border-secondary;
+  border-radius: v.$border-radius-md;
+}
+
+// Radar Chart Specific Styles
+.radarLegend {
+  margin-top: v.$space-lg;
+  padding: v.$space-md;
+  background: rgba(v.$background-medium, 0.5);
+  border-radius: v.$border-radius-md;
+  border: 1px solid v.$border-secondary;
+}
+
+.percentileGuide {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-md;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.percentileItem {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+
+  strong {
+    color: v.$text-primary;
+    font-weight: 600;
+  }
+}
+
+.radarStats {
+  margin-top: v.$space-lg;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: v.$space-sm;
+}
+
+.statBreakdown {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: v.$space-sm v.$space-md;
+  background: rgba(v.$background-medium, 0.6);
+  border-radius: v.$border-radius-sm;
+  border: 1px solid v.$border-secondary;
+  transition: background-color v.$transition-duration v.$transition-easing;
+
+  &:hover {
+    background: rgba(v.$background-medium, 0.8);
+  }
+}
+
+.statName {
+  font-size: v.$font-size-sm;
+  color: v.$text-secondary;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.statValue {
+  font-size: v.$font-size-sm;
+  color: v.$text-primary;
+  font-weight: 600;
+  font-family: "Monaco", "Menlo", monospace;
+}
+
+.percentile {
+  font-size: v.$font-size-xs;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  min-width: 35px;
+  text-align: center;
+
+  &.good {
+    background-color: rgba(v.$success-color, 0.2);
+    color: v.$success-color;
+    border: 1px solid rgba(v.$success-color, 0.3);
+  }
+
+  &.average {
+    background-color: rgba(v.$warning-color, 0.2);
+    color: v.$warning-color;
+    border: 1px solid rgba(v.$warning-color, 0.3);
+  }
+
+  &.poor {
+    background-color: rgba(v.$danger-color, 0.2);
+    color: v.$danger-color;
+    border: 1px solid rgba(v.$danger-color, 0.3);
+  }
+}
+
+// Responsive Design for Charts
+@media (max-width: v.$breakpoint-md-max) {
+  .trendContainer,
+  .radarContainer {
+    padding: v.$space-lg;
+  }
+
+  .trendHeader,
+  .radarHeader {
     flex-direction: column;
     align-items: flex-start;
+    gap: v.$space-sm;
+
+    h3 {
+      font-size: v.$font-size-lg;
+    }
   }
 
-  .tableControls,
-  .trendControls {
-    width: 100%;
-    justify-content: flex-start;
+  .chartWrapper,
+  .radarWrapper {
+    height: 300px;
+    padding: v.$space-sm;
   }
 
-  .statSelector {
-    min-width: 120px;
+  .radarWrapper {
+    height: 280px;
   }
 
-  .insightsGrid {
+  .percentileGuide {
+    flex-direction: column;
+    gap: v.$space-xs;
+    text-align: center;
+  }
+
+  .radarStats {
     grid-template-columns: 1fr;
   }
+}
 
-  .skaterStreaks {
-    justify-content: center;
+@media (max-width: v.$breakpoint-sm-max) {
+  .trendContainer,
+  .radarContainer {
+    padding: v.$space-md;
+    margin-bottom: v.$space-lg;
   }
 
-  .comparisonStats {
-    grid-template-columns: 1fr;
+  .chartWrapper,
+  .radarWrapper {
+    height: 250px;
+    padding: v.$space-xs;
   }
 
-  .heatmapCalendar {
-    grid-template-columns: repeat(auto-fill, minmax(15px, 1fr));
+  .radarWrapper {
+    height: 220px;
   }
 
-  .heatmapDay {
-    width: 15px;
-    height: 15px;
+  .trendHeader,
+  .radarHeader {
+    h3 {
+      font-size: v.$font-size-md;
+    }
+
+    p {
+      font-size: v.$font-size-xs;
+    }
   }
 }

@@ -34,8 +34,10 @@ interface PlayerInfo {
 interface PlayerRadarChartProps {
   player: PlayerInfo;
   gameLog: GameLogEntry[];
+  playoffGameLog?: GameLogEntry[]; // Add optional playoff game log
   selectedStats: string[];
   isGoalie: boolean;
+  showPlayoffData?: boolean; // Add flag to show playoff vs regular season
 }
 
 const PERCENTILE_THRESHOLDS = {
@@ -50,6 +52,56 @@ const PERCENTILE_THRESHOLDS = {
   fow_percentage: { elite: 55, good: 50, average: 45 },
   toi_per_game: { elite: 22, good: 18, average: 14 },
   sat_pct: { elite: 55, good: 52, average: 48 },
+
+  // NST Advanced Stats - Possession Metrics (percentages)
+  cf_pct: { elite: 55, good: 52, average: 48 },
+  ff_pct: { elite: 55, good: 52, average: 48 },
+  sf_pct: { elite: 55, good: 52, average: 48 },
+  gf_pct: { elite: 60, good: 55, average: 45 },
+  xgf_pct: { elite: 55, good: 52, average: 48 },
+  scf_pct: { elite: 55, good: 52, average: 48 },
+  hdcf_pct: { elite: 55, good: 52, average: 48 },
+  mdcf_pct: { elite: 55, good: 52, average: 48 },
+  ldcf_pct: { elite: 55, good: 52, average: 48 },
+
+  // NST Advanced Stats - Per 60 Individual Production
+  ixg_per_60: { elite: 2.5, good: 2.0, average: 1.2 },
+  icf_per_60: { elite: 12, good: 9, average: 6 },
+  iff_per_60: { elite: 10, good: 8, average: 5 },
+  iscfs_per_60: { elite: 8, good: 6, average: 4 },
+  hdcf_per_60: { elite: 6, good: 4, average: 2.5 },
+  shots_per_60: { elite: 12, good: 9, average: 6 },
+  goals_per_60: { elite: 2.0, good: 1.5, average: 0.8 },
+  total_assists_per_60: { elite: 2.5, good: 1.8, average: 1.0 },
+  total_points_per_60: { elite: 4.0, good: 3.0, average: 1.8 },
+  rush_attempts_per_60: { elite: 3.0, good: 2.0, average: 1.0 },
+  rebounds_created_per_60: { elite: 1.5, good: 1.0, average: 0.5 },
+
+  // NST Advanced Stats - Per 60 Defensive/Against
+  hdca_per_60: { elite: 4.0, good: 5.5, average: 7.0 }, // Lower is better
+  sca_per_60: { elite: 8.0, good: 10.0, average: 12.0 }, // Lower is better
+  shots_blocked_per_60: { elite: 4.0, good: 3.0, average: 2.0 },
+  xga_per_60: { elite: 2.0, good: 2.5, average: 3.0 }, // Lower is better
+  ga_per_60: { elite: 2.0, good: 2.5, average: 3.0 }, // Lower is better
+
+  // NST Advanced Stats - Zone Usage (percentages)
+  off_zone_start_pct: { elite: 65, good: 55, average: 45 },
+  def_zone_start_pct: { elite: 65, good: 55, average: 45 }, // For defensemen, higher is better
+  neu_zone_start_pct: { elite: 40, good: 30, average: 20 },
+  off_zone_faceoff_pct: { elite: 60, good: 55, average: 45 },
+
+  // NST Advanced Stats - On-Ice Impact
+  on_ice_sh_pct: { elite: 10.5, good: 9.0, average: 7.5 },
+  on_ice_sv_pct: { elite: 92.5, good: 91.0, average: 89.5 },
+  pdo: { elite: 102, good: 100.5, average: 99.0 },
+
+  // NST Advanced Stats - Discipline Per 60
+  pim_per_60: { elite: 0.5, good: 1.0, average: 1.8 }, // Lower is better
+  total_penalties_per_60: { elite: 0.3, good: 0.6, average: 1.0 }, // Lower is better
+  penalties_drawn_per_60: { elite: 1.5, good: 1.0, average: 0.6 },
+  giveaways_per_60: { elite: 1.5, good: 2.5, average: 4.0 }, // Lower is better
+  takeaways_per_60: { elite: 2.0, good: 1.5, average: 1.0 },
+  hits_per_60: { elite: 6.0, good: 4.0, average: 2.5 },
 
   // Goalie thresholds
   save_pct: { elite: 0.925, good: 0.915, average: 0.9 },
@@ -73,20 +125,69 @@ const STAT_DISPLAY_NAMES: { [key: string]: string } = {
   save_pct: "SV%",
   goals_against_avg: "GAA",
   wins: "W",
-  shutouts: "SO"
+  shutouts: "SO",
+
+  // NST Advanced Stats Display Names
+  cf_pct: "CF%",
+  ff_pct: "FF%",
+  sf_pct: "SF%",
+  gf_pct: "GF%",
+  xgf_pct: "xGF%",
+  scf_pct: "SCF%",
+  hdcf_pct: "HDCF%",
+  mdcf_pct: "MDCF%",
+  ldcf_pct: "LDCF%",
+
+  ixg_per_60: "ixG/60",
+  icf_per_60: "iCF/60",
+  iff_per_60: "iFF/60",
+  iscfs_per_60: "iSCF/60",
+  hdcf_per_60: "HDCF/60",
+  shots_per_60: "SOG/60",
+  goals_per_60: "G/60",
+  total_assists_per_60: "A/60",
+  total_points_per_60: "P/60",
+  rush_attempts_per_60: "Rush/60",
+  rebounds_created_per_60: "Reb/60",
+
+  hdca_per_60: "HDCA/60",
+  sca_per_60: "SCA/60",
+  shots_blocked_per_60: "BLK/60",
+  xga_per_60: "xGA/60",
+  ga_per_60: "GA/60",
+
+  off_zone_start_pct: "OZS%",
+  def_zone_start_pct: "DZS%",
+  neu_zone_start_pct: "NZS%",
+  off_zone_faceoff_pct: "OZFO%",
+
+  on_ice_sh_pct: "oiSH%",
+  on_ice_sv_pct: "oiSV%",
+  pdo: "PDO",
+
+  pim_per_60: "PIM/60",
+  total_penalties_per_60: "Pen/60",
+  penalties_drawn_per_60: "PenD/60",
+  giveaways_per_60: "GV/60",
+  takeaways_per_60: "TK/60",
+  hits_per_60: "HIT/60"
 };
 
 export function PlayerRadarChart({
   player,
   gameLog,
+  playoffGameLog,
   selectedStats,
-  isGoalie
+  isGoalie,
+  showPlayoffData
 }: PlayerRadarChartProps) {
   const radarData = useMemo(() => {
-    if (gameLog.length === 0 || selectedStats.length === 0) return null;
+    const log = showPlayoffData && playoffGameLog ? playoffGameLog : gameLog;
+
+    if (log.length === 0 || selectedStats.length === 0) return null;
 
     // Calculate averages for selected stats
-    const gamesPlayed = gameLog.reduce(
+    const gamesPlayed = log.reduce(
       (sum, game) => sum + (game.games_played || 0),
       0
     );
@@ -95,7 +196,7 @@ export function PlayerRadarChart({
     const percentiles: { [key: string]: number } = {};
 
     selectedStats.forEach((stat) => {
-      const values = gameLog.map((game) => Number(game[stat]) || 0);
+      const values = log.map((game) => Number(game[stat]) || 0);
 
       if (stat === "wins" && isGoalie) {
         // Special handling for goalie win percentage
@@ -114,7 +215,7 @@ export function PlayerRadarChart({
         ].includes(stat)
       ) {
         // Weighted average for percentages
-        const weights = gameLog.map((game) => game.games_played || 1);
+        const weights = log.map((game) => game.games_played || 1);
         const weightedSum = values.reduce(
           (sum, val, idx) => sum + val * weights[idx],
           0
@@ -167,28 +268,31 @@ export function PlayerRadarChart({
           label: player.fullName,
           data,
           backgroundColor: isGoalie
-            ? "rgba(239, 68, 68, 0.2)"
-            : "rgba(59, 130, 246, 0.2)",
-          borderColor: isGoalie
-            ? "rgba(239, 68, 68, 0.8)"
-            : "rgba(59, 130, 246, 0.8)",
-          borderWidth: 2,
-          pointBackgroundColor: isGoalie
-            ? "rgba(239, 68, 68, 1)"
-            : "rgba(59, 130, 246, 1)",
-          pointBorderColor: "#fff",
-          pointHoverBackgroundColor: "#fff",
-          pointHoverBorderColor: isGoalie
-            ? "rgba(239, 68, 68, 1)"
-            : "rgba(59, 130, 246, 1)",
-          pointRadius: 4,
-          pointHoverRadius: 6
+            ? "rgba(239, 68, 68, 0.15)"
+            : "rgba(20, 162, 210, 0.15)",
+          borderColor: isGoalie ? "#ef4444" : "#14a2d2",
+          borderWidth: 2.5,
+          pointBackgroundColor: isGoalie ? "#ef4444" : "#14a2d2",
+          pointBorderColor: "#1a1d21",
+          pointBorderWidth: 2,
+          pointHoverBackgroundColor: "#ffffff",
+          pointHoverBorderColor: isGoalie ? "#ef4444" : "#14a2d2",
+          pointHoverBorderWidth: 3,
+          pointRadius: 5,
+          pointHoverRadius: 7
         }
       ],
       averages,
       percentiles
     };
-  }, [gameLog, selectedStats, isGoalie, player.fullName]);
+  }, [
+    gameLog,
+    playoffGameLog,
+    selectedStats,
+    isGoalie,
+    player.fullName,
+    showPlayoffData
+  ]);
 
   const options = {
     responsive: true,
@@ -198,17 +302,71 @@ export function PlayerRadarChart({
         display: false
       },
       tooltip: {
-        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        backgroundColor: "rgba(26, 29, 33, 0.95)",
         titleColor: "#ffffff",
-        bodyColor: "#ffffff",
-        borderColor: "#333333",
+        bodyColor: "#cccccc",
+        borderColor: "#404040",
         borderWidth: 1,
-        cornerRadius: 4,
-        padding: 8,
+        cornerRadius: 8,
+        padding: 16,
+        titleFont: {
+          size: 14,
+          weight: 600,
+          family: "'Roboto Condensed', sans-serif"
+        },
+        bodyFont: {
+          size: 13,
+          family: "'Roboto Condensed', sans-serif"
+        },
+        displayColors: true,
+        boxWidth: 12,
+        boxHeight: 12,
+        usePointStyle: true,
         callbacks: {
+          title: (context: any) => {
+            const statIndex = context[0].dataIndex;
+            return (
+              STAT_DISPLAY_NAMES[selectedStats[statIndex]] ||
+              selectedStats[statIndex]
+            );
+          },
           label: (context: any) => {
-            return `${STAT_DISPLAY_NAMES[selectedStats[context.dataIndex]] || selectedStats[context.dataIndex]}: ${context.formattedValue}`;
-          }
+            const statIndex = context.dataIndex;
+            const stat = selectedStats[statIndex];
+            const percentile = context.parsed.r;
+            const average = radarData?.averages[stat];
+
+            let formattedValue = "";
+            if (average !== undefined) {
+              if (
+                stat === "shooting_percentage" ||
+                stat === "save_pct" ||
+                stat === "fow_percentage" ||
+                stat === "sat_pct"
+              ) {
+                formattedValue = `${average.toFixed(1)}%`;
+              } else if (stat === "goals_against_avg") {
+                formattedValue = average.toFixed(2);
+              } else if (stat === "toi_per_game") {
+                const minutes = Math.floor(average);
+                const seconds = Math.round((average - minutes) * 60);
+                formattedValue = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+              } else {
+                formattedValue = average.toFixed(2);
+              }
+            }
+
+            return [
+              `Value: ${formattedValue}`,
+              `Percentile: ${percentile.toFixed(0)}%`
+            ];
+          },
+          labelColor: (context: any) => ({
+            borderColor: isGoalie ? "#ef4444" : "#14a2d2",
+            backgroundColor: isGoalie ? "#ef4444" : "#14a2d2",
+            borderWidth: 2,
+            borderRadius: 2
+          })
         }
       }
     },
@@ -220,32 +378,44 @@ export function PlayerRadarChart({
         ticks: {
           stepSize: 20,
           font: {
-            size: 10
+            size: 11,
+            family: "'Roboto Condensed', sans-serif"
           },
-          color: "#888888"
+          color: "#9ca3af",
+          backdropColor: "transparent",
+          callback: function (value: any) {
+            return `${value}%`;
+          }
         },
         grid: {
-          color: "#333333"
+          color: "rgba(156, 163, 175, 0.2)",
+          lineWidth: 1
         },
         angleLines: {
-          color: "#333333"
+          color: "rgba(156, 163, 175, 0.25)",
+          lineWidth: 1
         },
         pointLabels: {
           font: {
-            size: 11,
-            weight: "bold" as const
+            size: 12,
+            weight: 600,
+            family: "'Roboto Condensed', sans-serif"
           },
-          color: "#ffffff"
+          color: "#cccccc",
+          padding: 8
         }
       }
     },
     elements: {
       point: {
-        radius: 3,
-        hoverRadius: 5
+        radius: 4,
+        hoverRadius: 6,
+        borderWidth: 2,
+        hoverBorderWidth: 3
       },
       line: {
-        borderWidth: 2
+        borderWidth: 2.5,
+        tension: 0.1
       }
     }
   };
@@ -253,8 +423,13 @@ export function PlayerRadarChart({
   if (!radarData || gameLog.length === 0) {
     return (
       <div className={styles.radarContainer}>
-        <h3>Performance Profile</h3>
-        <div className={styles.noData}>No data available for radar chart</div>
+        <div className={styles.radarHeader}>
+          <h3>Performance Profile</h3>
+          <p>Percentile rankings vs league peers</p>
+        </div>
+        <div className={styles.radarWrapper}>
+          <div className={styles.noData}>No data available for radar chart</div>
+        </div>
       </div>
     );
   }
@@ -265,6 +440,7 @@ export function PlayerRadarChart({
         <h3>Performance Profile</h3>
         <p>
           Percentile rankings vs {isGoalie ? "goalies" : `${player.position}s`}
+          {showPlayoffData ? " (Playoffs)" : " (Regular Season)"}
         </p>
       </div>
 
@@ -284,7 +460,7 @@ export function PlayerRadarChart({
             <strong>50th percentile:</strong> League Average
           </span>
           <span className={styles.percentileItem}>
-            <strong>25th percentile:</strong> Below Average
+            <strong>Below 50th:</strong> Below Average
           </span>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import styles from "./PlayerStats.module.scss";
+import { SeasonTotals } from "../../pages/stats/player/[playerId]";
 
 interface GameLogEntry {
   date: string;
@@ -15,7 +16,8 @@ interface PlayerInfo {
 interface PlayerContextualStatsProps {
   player: PlayerInfo;
   gameLog: GameLogEntry[];
-  seasonTotals: any[];
+  playoffGameLog: GameLogEntry[];
+  seasonTotals: SeasonTotals[];
   isGoalie: boolean;
 }
 
@@ -284,6 +286,14 @@ export function PlayerContextualStats({
             ? "Cold"
             : "Steady";
 
+      const recentValue = isGoalie
+        ? `${(recentPerformance * 100).toFixed(1)}% Win Rate`
+        : `${recentPerformance.toFixed(2)} PPG`;
+
+      const seasonValue = isGoalie
+        ? `${(fullPerformance * 100).toFixed(1)}% Win Rate`
+        : `${fullPerformance.toFixed(2)} PPG`;
+
       insights.push({
         label: "Recent Form",
         value: formTrend,
@@ -293,7 +303,7 @@ export function PlayerContextualStats({
             : formTrend === "Cold"
               ? "negative"
               : "neutral",
-        description: `Last 5 games vs season average`
+        description: `L5: ${recentValue} vs Season: ${seasonValue}`
       });
     }
 
@@ -364,7 +374,7 @@ export function PlayerContextualStats({
         goalStreak: currentGoalStreak,
         description:
           currentPointStreak > 0
-            ? `${currentPointStreak} game point streak`
+            ? `${currentPointStreak} GM Point Streak`
             : "No active point streak"
       };
     }
@@ -419,14 +429,14 @@ export function PlayerContextualStats({
                   className={`${styles.streak} ${(streakAnalysis.pointStreak || 0) > 0 ? styles.positive : styles.neutral}`}
                 >
                   <span className={styles.streakValue}>
-                    {streakAnalysis.pointStreak || 0}
+                    {streakAnalysis.pointStreak || 0} GM
                   </span>
                   <span className={styles.streakLabel}>Point Streak</span>
                 </div>
                 {(streakAnalysis.goalStreak || 0) > 0 && (
                   <div className={`${styles.streak} ${styles.positive}`}>
                     <span className={styles.streakValue}>
-                      {streakAnalysis.goalStreak}
+                      {streakAnalysis.goalStreak} GM
                     </span>
                     <span className={styles.streakLabel}>Goal Streak</span>
                   </div>
