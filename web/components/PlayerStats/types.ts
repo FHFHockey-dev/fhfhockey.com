@@ -6,6 +6,16 @@ export interface BaseGameLogEntry {
   [key: string]: any; // Allow dynamic stat access
 }
 
+// Missed game interface
+export interface MissedGame {
+  date: string;
+  gameId: number;
+  homeTeamId: number;
+  awayTeamId: number;
+  isPlayoff: boolean;
+  seasonId: number;
+}
+
 export interface SkaterGameLogEntry extends BaseGameLogEntry {
   goals: number | null;
   assists: number | null;

@@ -3,12 +3,29 @@ import styles from "./PlayerStats.module.scss";
 import { useMissedGames } from "hooks/useMissedGames";
 import {
   PlayerStatsTableProps,
+  GameLogEntry,
   formatStatValue,
   STAT_DISPLAY_NAMES,
-  PERCENTAGE_STATS,
-  PER_60_STATS,
-  PER_GAME_STATS
+  MissedGame
 } from "./types";
+
+const PERCENTAGE_STATS = [
+  'shooting_percentage', 'save_pct', 'fow_percentage', 'sat_pct', 'zone_start_pct',
+  'cf_pct', 'ff_pct', 'sf_pct', 'gf_pct', 'xgf_pct', 'scf_pct', 'hdcf_pct',
+  'on_ice_cf_pct', 'on_ice_ff_pct', 'on_ice_sf_pct', 'on_ice_gf_pct', 'on_ice_xgf_pct',
+  'on_ice_sh_pct', 'on_ice_sv_pct', 'off_zone_start_pct', 'def_zone_start_pct'
+];
+
+const PER_60_STATS = [
+  'goals_per_60', 'total_assists_per_60', 'total_points_per_60', 'shots_per_60',
+  'ixg_per_60', 'icf_per_60', 'iff_per_60', 'hdcf_per_60', 'hdca_per_60',
+  'pim_per_60', 'hits_per_60', 'takeaways_per_60', 'giveaways_per_60',
+  'on_ice_goals_per_60', 'on_ice_goals_against_per_60', 'on_ice_shots_per_60'
+];
+
+const PER_GAME_STATS = [
+  'toi_per_game', 'goals_against_avg'
+];
 
 export function PlayerStatsTable({
   gameLog,

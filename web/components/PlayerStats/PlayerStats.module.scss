@@ -1452,7 +1452,6 @@
 }
 
 .noData {
-  // This combines the two .noData definitions
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1469,12 +1468,48 @@
   font-weight: 700;
 }
 
+// Missed games styling
 .missedGameRow {
   background-color: rgba(239, 68, 68, 0.1) !important;
   border-left: 3px solid #ef4444;
+
   td {
-    color: v.$text-secondary;
-    opacity: 0.7;
+    color: #ef4444 !important;
+    opacity: 0.8;
+    font-style: italic;
+
+    &.dateCell {
+      display: flex;
+      align-items: center;
+      gap: v.$space-xs;
+    }
+  }
+
+  &:hover td {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    color: #dc2626 !important;
+    opacity: 1;
+  }
+}
+
+.missedGamesSection {
+  margin-top: v.$space-lg;
+  padding: v.$space-md;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: v.$border-radius-md;
+
+  h4 {
+    color: #ef4444;
+    margin: 0 0 v.$space-sm 0;
+    font-size: v.$font-size-md;
+    font-weight: 600;
+  }
+
+  .missedGamesCount {
+    color: #ef4444;
+    font-weight: 600;
+    font-size: v.$font-size-lg;
   }
 }
 
@@ -1482,12 +1517,14 @@
   color: #ef4444;
   font-weight: 600;
 }
+
 .injuredIcon {
   width: 8px;
   height: 8px;
   margin-left: v.$space-xs;
   opacity: 0.8;
 }
+
 .injuredIconTable {
   width: 10px;
   height: 10px;
@@ -1500,175 +1537,4 @@
   display: flex;
   align-items: center;
   gap: v.$space-xs;
-}
-
-.advancedNote {
-  background: v.$background-medium;
-  border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-md;
-  padding: v.$space-md;
-  margin: v.$space-lg 0;
-  font-size: v.$font-size-sm;
-  color: v.$text-secondary;
-  line-height: 1.5;
-  p {
-    margin: 0 0 v.$space-sm 0;
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-  strong {
-    color: v.$text-primary;
-    font-weight: 600;
-  }
-  em {
-    font-style: italic;
-    color: v.$text-secondary;
-  }
-  a {
-    color: v.$primary-color;
-    text-decoration: none;
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-}
-
-// =============================================================================
-// RESPONSIVE DESIGN
-// =============================================================================
-
-@media (max-width: v.$breakpoint-lg-min) {
-  .overviewGrid {
-    flex-direction: column;
-    min-height: auto;
-  }
-  .leftColumn,
-  .rightColumn {
-    width: 100%;
-  }
-  .rightColumn {
-    min-height: 400px;
-  }
-  .playerHeader {
-    flex-direction: column;
-    text-align: center;
-  }
-  .controlsSection {
-    flex-direction: column;
-  }
-  .statCategories {
-    flex-direction: column;
-  }
-  .advancedGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .trendContainer,
-  .radarContainer {
-    padding: v.$space-lg;
-  }
-  .trendHeader,
-  .radarHeader {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: v.$space-sm;
-    h3 {
-      font-size: v.$font-size-lg;
-    }
-  }
-  .chartWrapper,
-  .radarWrapper {
-    height: 300px;
-    padding: v.$space-sm;
-  }
-  .radarWrapper {
-    height: 280px;
-  }
-  .percentileGuide {
-    flex-direction: column;
-    gap: v.$space-xs;
-    text-align: center;
-  }
-  .radarStats {
-    grid-template-columns: 1fr;
-  }
-
-  .performanceCalendar {
-    padding: v.$space-md;
-    .calendarGrid {
-      grid-template-columns: 1fr;
-      gap: v.$space-lg;
-    }
-    .calendarHeader {
-      .titleWithInfo .infoTooltip {
-        width: 95vw;
-        left: 50%;
-        transform: translateX(-50%);
-      }
-      .calendarLegend {
-        .legendItems {
-          gap: v.$space-sm;
-        }
-        .legendItem .legendText {
-          font-size: v.$font-size-xxs;
-        }
-      }
-    }
-    .calendarMonth .calendarTable {
-      gap: 1px;
-      .calendarDay {
-        min-height: 35px;
-        font-size: v.$font-size-xxs;
-        .dayNumber {
-          font-size: v.$font-size-xxs;
-        }
-        .gameIndicator .performanceScore {
-          font-size: 8px;
-          padding: 1px 2px;
-          min-width: 12px;
-        }
-      }
-    }
-    .gameTooltip {
-      max-width: 90vw;
-      font-size: v.$font-size-xs;
-    }
-    .calendarFooter .calendarStats {
-      gap: v.$space-lg;
-    }
-  }
-}
-
-@media (max-width: v.$breakpoint-md-max) {
-  .performanceCalendar .calendarHeader .calendarLegend .legendItems {
-    flex-direction: column;
-    gap: v.$space-xs;
-  }
-}
-
-@media (max-width: v.$breakpoint-sm-max) {
-  .trendContainer,
-  .radarContainer {
-    padding: v.$space-md;
-    margin-bottom: v.$space-lg;
-  }
-  .chartWrapper,
-  .radarWrapper {
-    height: 250px;
-    padding: v.$space-xs;
-  }
-  .radarWrapper {
-    height: 220px;
-  }
-
-  .trendHeader,
-  .radarHeader {
-    h3 {
-      font-size: v.$font-size-md;
-    }
-    p {
-      font-size: v.$font-size-xs;
-    }
-  }
 }

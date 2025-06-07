@@ -1,6 +1,7 @@
 import React, { useMemo } from "react";
 import styles from "./PlayerStats.module.scss";
-import { SeasonTotals } from "./types";
+import { SeasonTotals, MissedGame } from "./types";
+import { useMissedGames } from "hooks/useMissedGames";
 
 interface GameLogEntry {
   date: string;
@@ -11,6 +12,7 @@ interface PlayerInfo {
   id: number;
   fullName: string;
   position: string;
+  team_id?: number;
 }
 
 interface PlayerContextualStatsProps {
@@ -19,6 +21,8 @@ interface PlayerContextualStatsProps {
   playoffGameLog: GameLogEntry[];
   seasonTotals: SeasonTotals[];
   isGoalie: boolean;
+  playerId?: number;
+  seasonId?: string | number | null;
 }
 
 export function PlayerContextualStats({
@@ -26,8 +30,23 @@ export function PlayerContextualStats({
   gameLog,
   playoffGameLog,
   seasonTotals,
-  isGoalie
+  isGoalie,
+  playerId,
+  seasonId
 }: PlayerContextualStatsProps) {
+  // Fetch missed games data for availability calculation
+  const {
+    missedGames,
+    isLoading: missedGamesLoading,
+    error: missedGamesError
+  } = useMissedGames(
+    playerId || player.id,
+    player.team_id,
+    seasonId,
+    gameLog,
+    playoffGameLog || []
+  );
+
   const insights = useMemo(() => {
     if (gameLog.length === 0 && playoffGameLog.length === 0) return null;
 
@@ -41,6 +60,34 @@ export function PlayerContextualStats({
       0
     );
     const insights = [];
+
+    // Calculate games played percentage - NHL regular season is typically 82 games
+    const totalRegularSeasonGames = 82;
+    const regularSeasonGamesPlayed = gameLog.reduce(
+      (sum, game) => sum + (game.games_played || 0),
+      0
+    );
+    const regularSeasonMissedGames = missedGames.filter(mg => !mg.isPlayoff).length;
+    const totalPossibleGames = regularSeasonGamesPlayed + regularSeasonMissedGames;
+    
+    // Calculate availability percentage
+    const availabilityPercentage = totalPossibleGames > 0 
+      ? (regularSeasonGamesPlayed / totalPossibleGames) * 100 
+      : regularSeasonGamesPlayed > 0 
+        ? (regularSeasonGamesPlayed / totalRegularSeasonGames) * 100
+        : 0;
+
+    // Add availability insight as the first card
+    insights.push({
+      label: "Games Played %",
+      value: `${availabilityPercentage.toFixed(1)}%`,
+      trend: availabilityPercentage >= 90 
+        ? "positive" 
+        : availabilityPercentage >= 75 
+          ? "neutral" 
+          : "negative",
+      description: `${regularSeasonGamesPlayed}/${totalPossibleGames > 0 ? totalPossibleGames : totalRegularSeasonGames} games${regularSeasonMissedGames > 0 ? ` (${regularSeasonMissedGames} missed)` : ""}`
+    });
 
     if (isGoalie) {
       // Goalie-specific insights with playoff data
