@@ -15,7 +15,8 @@ import styles from "./PlayerStats.module.scss";
 import {
   PlayerStatsChartProps,
   CHART_COLORS,
-  STAT_DISPLAY_NAMES
+  STAT_DISPLAY_NAMES,
+  formatStatValue
 } from "./types";
 
 ChartJS.register(
@@ -197,7 +198,14 @@ export function PlayerStatsChart({
             label: (context: any) => {
               const label = context.dataset.label || "";
               const value = context.parsed.y;
-              return `${label}: ${value}`;
+              
+              // Extract the stat name from the dataset label to get proper formatting
+              const statName = selectedStats.find(stat => 
+                (STAT_DISPLAY_NAMES[stat] || stat) === label.replace(" (5-game avg)", "")
+              ) || label;
+              
+              const formattedValue = formatStatValue(value, statName);
+              return `${label}: ${formattedValue}`;
             },
             labelColor: (context: any) => ({
               borderColor: context.dataset.borderColor,

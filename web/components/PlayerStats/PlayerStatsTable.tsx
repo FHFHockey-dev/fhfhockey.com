@@ -10,21 +10,53 @@ import {
 } from "./types";
 
 const PERCENTAGE_STATS = [
-  'shooting_percentage', 'save_pct', 'fow_percentage', 'sat_pct', 'zone_start_pct',
-  'cf_pct', 'ff_pct', 'sf_pct', 'gf_pct', 'xgf_pct', 'scf_pct', 'hdcf_pct',
-  'on_ice_cf_pct', 'on_ice_ff_pct', 'on_ice_sf_pct', 'on_ice_gf_pct', 'on_ice_xgf_pct',
-  'on_ice_sh_pct', 'on_ice_sv_pct', 'off_zone_start_pct', 'def_zone_start_pct'
+  "shooting_percentage",
+  "save_pct",
+  "fow_percentage",
+  "sat_pct",
+  "zone_start_pct",
+  "cf_pct",
+  "ff_pct",
+  "sf_pct",
+  "gf_pct",
+  "xgf_pct",
+  "scf_pct",
+  "hdcf_pct",
+  "on_ice_cf_pct",
+  "on_ice_ff_pct",
+  "on_ice_sf_pct",
+  "on_ice_gf_pct",
+  "on_ice_xgf_pct",
+  "on_ice_sh_pct",
+  "on_ice_sv_pct",
+  "off_zone_start_pct",
+  "def_zone_start_pct"
 ];
 
 const PER_60_STATS = [
-  'goals_per_60', 'total_assists_per_60', 'total_points_per_60', 'shots_per_60',
-  'ixg_per_60', 'icf_per_60', 'iff_per_60', 'hdcf_per_60', 'hdca_per_60',
-  'pim_per_60', 'hits_per_60', 'takeaways_per_60', 'giveaways_per_60',
-  'on_ice_goals_per_60', 'on_ice_goals_against_per_60', 'on_ice_shots_per_60'
+  "goals_per_60",
+  "total_assists_per_60",
+  "total_points_per_60",
+  "shots_per_60",
+  "ixg_per_60",
+  "icf_per_60",
+  "iff_per_60",
+  "hdcf_per_60",
+  "hdca_per_60",
+  "pim_per_60",
+  "hits_per_60",
+  "takeaways_per_60",
+  "giveaways_per_60",
+  "on_ice_goals_per_60",
+  "on_ice_goals_against_per_60",
+  "on_ice_shots_per_60"
 ];
 
 const PER_GAME_STATS = [
-  'toi_per_game', 'goals_against_avg'
+  "toi_per_game",
+  "pp_toi_per_game",
+  "time_on_ice",
+  "goals_against_avg"
 ];
 
 export function PlayerStatsTable({
@@ -36,8 +68,9 @@ export function PlayerStatsTable({
   showPlayoffData = false,
   playerId,
   playerTeamId,
-  seasonId
-}: PlayerStatsTableProps) {
+  seasonId,
+  missedGames = [] // Accept missed games from props (server-side data)
+}: PlayerStatsTableProps & { missedGames?: MissedGame[] }) {
   // Debug: Log available stats in the first game
   React.useEffect(() => {
     if (gameLog.length > 0) {
@@ -66,9 +99,10 @@ export function PlayerStatsTable({
     }
   }, [gameLog]);
 
-  // Fetch missed games using the new hook
+  // Use server-side missed games data instead of client-side hook
+  // Still keep the hook for backward compatibility but prioritize props
   const {
-    missedGames,
+    missedGames: hookMissedGames,
     isLoading: missedGamesLoading,
     error: missedGamesError
   } = useMissedGames(
@@ -79,17 +113,42 @@ export function PlayerStatsTable({
     playoffGameLog || []
   );
 
+  // Use server-side data if available, otherwise fall back to hook
+  const activeMissedGames =
+    missedGames.length > 0 ? missedGames : hookMissedGames;
+
+  console.log("[PlayerStatsTable] Missed games debug:", {
+    source: missedGames.length > 0 ? "server-side" : "client-hook",
+    propsCount: missedGames.length,
+    hookCount: hookMissedGames.length,
+    activeCount: activeMissedGames.length,
+    loading: missedGamesLoading,
+    error: missedGamesError
+  });
+
   // Combine game log with missed games, sorted by date
   const combinedGameLog = useMemo(() => {
     const log = showPlayoffData && playoffGameLog ? playoffGameLog : gameLog;
 
+    console.log("[PlayerStatsTable] Combining games:", {
+      gameLogLength: log.length,
+      missedGamesLength: activeMissedGames.length,
+      showPlayoffData
+    });
+
     // Create missed game entries that match the structure of regular game log entries
-    const missedGameEntries = missedGames
+    const missedGameEntries = activeMissedGames
       .filter((missedGame) => {
         // Filter missed games based on showPlayoffData flag
         return showPlayoffData ? missedGame.isPlayoff : !missedGame.isPlayoff;
       })
       .map((missedGame) => {
+        console.log("[PlayerStatsTable] Processing missed game:", {
+          date: missedGame.date,
+          isPlayoff: missedGame.isPlayoff,
+          gameId: missedGame.gameId
+        });
+
         // Create a game log entry structure with null/0 values and missed game flag
         const missedEntry: any = {
           date: missedGame.date,
@@ -108,12 +167,31 @@ export function PlayerStatsTable({
         return missedEntry;
       });
 
+    console.log(
+      "[PlayerStatsTable] Created missed game entries:",
+      missedGameEntries.length
+    );
+
     // Combine regular games and missed games, then sort by date
     const combined = [...log, ...missedGameEntries];
-    return combined.sort(
+    const sorted = combined.sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
-  }, [gameLog, playoffGameLog, selectedStats, showPlayoffData, missedGames]);
+
+    console.log("[PlayerStatsTable] Final combined log:", {
+      totalEntries: sorted.length,
+      regularGames: log.length,
+      missedGames: missedGameEntries.length
+    });
+
+    return sorted;
+  }, [
+    gameLog,
+    playoffGameLog,
+    selectedStats,
+    showPlayoffData,
+    activeMissedGames
+  ]);
 
   // Calculate totals and averages for the timeframe (excluding missed games)
   const summary = useMemo(() => {

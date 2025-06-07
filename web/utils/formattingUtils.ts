@@ -76,6 +76,67 @@ export const formatSecondsToMMSS = (
 };
 
 /**
+ * Formats time on ice from seconds to MM:SS format.
+ * This is specifically for hockey TOI data that comes from the database as seconds.
+ * Example: 1125 seconds => "18:45"
+ * Example: 330 seconds => "05:30"
+ */
+export const formatTOIFromSeconds = (
+  totalSecondsInput: number | null | undefined
+): string => {
+  if (
+    totalSecondsInput === null ||
+    totalSecondsInput === undefined ||
+    isNaN(totalSecondsInput) ||
+    totalSecondsInput < 0
+  ) {
+    return "0:00";
+  }
+
+  // Input is already seconds. Round it in case it's a double precision value representing seconds.
+  const totalSeconds = Math.round(totalSecondsInput);
+
+  // Calculate minutes and remaining seconds
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  // Format as M:SS (no leading zero for minutes, but leading zero for seconds)
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+};
+
+/**
+ * Formats time on ice from seconds to MM:SS format with leading zeros for minutes.
+ * This ensures consistent MM:SS formatting for display purposes.
+ * Example: 1125 seconds => "18:45"
+ * Example: 330 seconds => "05:30"
+ */
+export const formatTOIFromSecondsWithLeadingZero = (
+  totalSecondsInput: number | null | undefined
+): string => {
+  if (
+    totalSecondsInput === null ||
+    totalSecondsInput === undefined ||
+    isNaN(totalSecondsInput) ||
+    totalSecondsInput < 0
+  ) {
+    return "00:00";
+  }
+
+  // Input is already seconds. Round it in case it's a double precision value representing seconds.
+  const totalSeconds = Math.round(totalSecondsInput);
+
+  // Calculate minutes and remaining seconds
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  // Format as MM:SS with leading zeros
+  const paddedMinutes = String(minutes).padStart(2, "0");
+  const paddedSeconds = String(seconds).padStart(2, "0");
+
+  return `${paddedMinutes}:${paddedSeconds}`;
+};
+
+/**
  * Calculates rolling average for a dataset.
  * @param data Array of data points.
  * @param windowSize The number of data points to include in the average.

@@ -1232,7 +1232,7 @@
         background: transparent;
       }
       &.missedGameDay {
-        background: #333 !important;
+        background: rgba(239, 68, 68, 0.15) !important;
         border: 2px solid #ef4444 !important;
         opacity: 0.8;
         &:hover {
@@ -1240,10 +1240,34 @@
           border-color: #dc2626 !important;
         }
       }
+      &.futureGameDay {
+        background: rgba(v.$primary-color, 0.08) !important;
+        border: 2px solid v.$primary-color !important;
+        opacity: 0.9;
+        &:hover {
+          opacity: 1;
+          background: rgba(v.$primary-color, 0.15) !important;
+          border-color: v.$secondary-color !important;
+          box-shadow: 0 2px 8px rgba(v.$primary-color, 0.3);
+        }
+      }
       &.playoffGame {
         border: 2px solid v.$warning-color !important;
         &:hover {
           border-color: v.$warning-color !important;
+          box-shadow: 0 2px 8px rgba(v.$warning-color, 0.3);
+        }
+      }
+
+      // Combined future game + playoff game styling
+      &.futureGameDay.playoffGame {
+        background: rgba(v.$primary-color, 0.08) !important;
+        border: 2px solid v.$primary-color !important;
+        opacity: 0.9;
+        &:hover {
+          opacity: 1;
+          background: rgba(v.$primary-color, 0.15) !important;
+          border-color: v.$primary-color !important;
           box-shadow: 0 2px 8px rgba(v.$warning-color, 0.3);
         }
       }

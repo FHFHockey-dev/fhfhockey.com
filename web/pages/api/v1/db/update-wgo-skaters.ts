@@ -3,7 +3,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase";
 import Fetch from "lib/cors-fetch";
-import { format, parseISO, addDays, isBefore } from "date-fns";
+import { format, parseISO, addDays, isBefore, formatISO } from "date-fns";
 import { getCurrentSeason } from "lib/NHL/server";
 import {
   WGOSummarySkaterStat,
@@ -557,26 +557,28 @@ async function processAndUpsertGameTypeData(
 }
 
 async function updateSkaterStats(date: string) {
-  const formattedDate = format(parseISO(date), "yyyy-MM-dd");
-  console.log(`Updating skater stats for ${formattedDate}`);
+  console.log(`Updating skater stats for ${date}`);
+
   const currentSeason = await getCurrentSeason();
   const seasonId = currentSeason.seasonId;
-  const regularSeasonData = await fetchDataForGameType(2, formattedDate);
+
+  // Use the 'date' parameter directly as it is already correctly formatted
+  const regularSeasonData = await fetchDataForGameType(2, date);
   const regularSeasonUpdates = await processAndUpsertGameTypeData(
     regularSeasonData,
     "wgo_skater_stats",
-    formattedDate,
+    date,
     seasonId
   );
-  const playoffData = await fetchDataForGameType(3, formattedDate);
+  const playoffData = await fetchDataForGameType(3, date);
   const playoffUpdates = await processAndUpsertGameTypeData(
     playoffData,
     "wgo_skater_stats_playoffs",
-    formattedDate
+    date
   );
   const totalUpdates = regularSeasonUpdates + playoffUpdates;
   return {
-    message: `Skater stats updated for ${formattedDate}. Regular Season: ${regularSeasonUpdates}, Playoffs: ${playoffUpdates}.`,
+    message: `Skater stats updated for ${date}. Regular Season: ${regularSeasonUpdates}, Playoffs: ${playoffUpdates}.`,
     success: true,
     totalUpdates
   };
@@ -605,7 +607,7 @@ async function updateAllSkatersFromMostRecentDate(
     startDate = parseISO(currentSeason.regularSeasonStartDate);
     console.log(
       "Full refresh: Starting from season start date:",
-      format(startDate, "yyyy-MM-dd")
+      formatISO(startDate, { representation: "date" }) // <-- Corrected
     );
   } else {
     const mostRecentDate = await getMostRecentDateFromDB();
@@ -613,13 +615,13 @@ async function updateAllSkatersFromMostRecentDate(
       startDate = addDays(parseISO(mostRecentDate), 1);
       console.log(
         "Incremental update: Starting from",
-        format(startDate, "yyyy-MM-dd")
+        formatISO(startDate, { representation: "date" })
       );
     } else {
       startDate = parseISO(currentSeason.regularSeasonStartDate);
       console.log(
         "No existing data: Starting from season start date:",
-        format(startDate, "yyyy-MM-dd")
+        formatISO(startDate, { representation: "date" }) // <-- Corrected
       );
     }
   }
@@ -636,16 +638,15 @@ async function updateAllSkatersFromMostRecentDate(
     };
   }
   console.log(
-    `Processing dates from ${format(startDate, "yyyy-MM-dd")} to ${format(
-      endDate,
-      "yyyy-MM-dd"
-    )}`
+    `Processing dates from ${formatISO(startDate, {
+      representation: "date"
+    })} to ${formatISO(endDate, { representation: "date" })}`
   );
   while (
     isBefore(currentDate, endDate) ||
     currentDate.toDateString() === endDate.toDateString()
   ) {
-    const formattedDate = format(currentDate, "yyyy-MM-dd");
+    const formattedDate = formatISO(currentDate, { representation: "date" });
     console.log(`Processing skater stats for ${formattedDate}`);
     try {
       const result = await updateSkaterStats(formattedDate);
@@ -665,15 +666,121 @@ async function updateAllSkatersFromMostRecentDate(
   };
 }
 
+async function getAllSeasonsFromDB(): Promise<
+  { seasonId: number; startDate: string; endDate: string }[]
+> {
+  console.log("Fetching all seasons from the 'seasons' database table...");
+
+  const { data, error } = await supabase
+    .from("seasons")
+    .select("id, startDate, endDate")
+    .order("startDate", { ascending: true }); // Process seasons chronologically
+
+  if (error) {
+    console.error("Error fetching seasons from database:", error);
+    throw new Error(`Failed to fetch seasons from Supabase: ${error.message}`);
+  }
+
+  if (!data || data.length === 0) {
+    console.warn("No seasons found in the 'seasons' table.");
+    return [];
+  }
+
+  console.log(`Found ${data.length} seasons to process.`);
+
+  // Map the database columns to the structure our script expects
+  return data.map((season) => ({
+    seasonId: season.id,
+    startDate: season.startDate,
+    endDate: season.endDate
+  }));
+}
+
+async function updateAllStatsForAllSeasons() {
+  // Use the new function to get seasons from your DB
+  const allSeasons = await getAllSeasonsFromDB();
+  let totalUpdates = 0;
+
+  if (allSeasons.length === 0) {
+    return {
+      message: "No seasons found in the database to refresh.",
+      success: true,
+      totalUpdates: 0
+    };
+  }
+
+  console.log(`Starting full refresh for ${allSeasons.length} seasons.`);
+
+  console.log(
+    "Clearing all records from wgo_skater_stats and wgo_skater_stats_playoffs..."
+  );
+  // Use TRUNCATE for a fast table wipe, see Step 4 in the plan below.
+  // For now, we assume the tables are cleared manually or via the SQL editor.
+
+  for (const season of allSeasons) {
+    console.log(
+      `--- Processing Season: ${season.seasonId} (${season.startDate} to ${season.endDate}) ---`
+    );
+    let currentDate = parseISO(season.startDate);
+    const endDate = parseISO(season.endDate);
+
+    while (
+      isBefore(currentDate, endDate) ||
+      currentDate.toDateString() === endDate.toDateString()
+    ) {
+      const formattedDate = formatISO(currentDate, { representation: "date" });
+      try {
+        console.log(`Processing date: ${formattedDate}`);
+
+        const regularSeasonData = await fetchDataForGameType(2, formattedDate);
+        const regularSeasonUpdates = await processAndUpsertGameTypeData(
+          regularSeasonData,
+          "wgo_skater_stats",
+          formattedDate,
+          season.seasonId
+        );
+
+        const playoffData = await fetchDataForGameType(3, formattedDate);
+        const playoffUpdates = await processAndUpsertGameTypeData(
+          playoffData,
+          "wgo_skater_stats_playoffs",
+          formattedDate
+        );
+
+        const dailyUpdates = regularSeasonUpdates + playoffUpdates;
+        if (dailyUpdates > 0) {
+          console.log(
+            `Completed ${formattedDate}: ${dailyUpdates} player records updated.`
+          );
+        }
+        totalUpdates += dailyUpdates;
+      } catch (error: any) {
+        console.error(
+          `Error processing ${formattedDate} for season ${season.seasonId}:`,
+          error.message
+        );
+      }
+      currentDate = addDays(currentDate, 1);
+    }
+  }
+
+  const message = `All-time refresh complete. Processed ${allSeasons.length} seasons with a total of ${totalUpdates} updates.`;
+  console.log(message);
+  return { message, success: true, totalUpdates };
+}
+
 async function fetchDataForPlayer(playerId: string, playerName: string) {
   console.log(`Fetching data for player ${playerName} (${playerId})`);
   const today = new Date();
-  const formattedDate = format(today, "yyyy-MM-dd");
+  const formattedDate = formatISO(today, { representation: "date" });
   const currentSeason = await getCurrentSeason();
-  const seasonStartDate = format(
+
+  // Corrected this line
+  const seasonStartDate = formatISO(
     parseISO(currentSeason.regularSeasonStartDate),
-    "yyyy-MM-dd"
+    { representation: "date" }
   );
+
   const fetchPlayerDataForGameType = async (gameTypeId: number) => {
     const cayenneExp = `gameDate<="${formattedDate} 23:59:59" and gameDate>="${seasonStartDate}" and gameTypeId=${gameTypeId} and playerId=${playerId}`;
     const url = `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=true&isGame=false&sort=[{"property":"points","direction":"DESC"}]&factCayenneExp=gamesPlayed>=1&cayenneExp=${cayenneExp}`;
@@ -709,8 +816,14 @@ export default async function handler(
       ? rawPlayerFullName[0]
       : rawPlayerFullName;
     let result: any;
-
-    if (action === "all") {
+    if (action === "all_seasons_full_refresh") {
+      // [+] Ensure this action exists
+      console.log("Action 'all_seasons_full_refresh' triggered.");
+      result = await updateAllStatsForAllSeasons();
+      totalUpdates = result.totalUpdates;
+      details = { message: result.message };
+      res.status(200).json(result);
+    } else if (action === "all") {
       console.log(`Action 'all' triggered. Full refresh: ${fullRefresh}`);
       result = await updateAllSkatersFromMostRecentDate(fullRefresh);
       totalUpdates = result.totalUpdates;
@@ -741,7 +854,7 @@ export default async function handler(
       status = "failure";
       details = {
         message:
-          "Missing or invalid parameters. Provide 'action=all', 'date', or 'playerId'."
+          "Missing or invalid parameters. Provide 'action=all', 'date', 'playerId', or 'action=all_seasons_full_refresh'." // <-- Corrected
       };
       res.status(400).json(details);
     }

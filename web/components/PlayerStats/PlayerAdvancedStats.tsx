@@ -24,6 +24,7 @@ interface PlayerAdvancedStatsProps {
   seasonTotals?: any[];
   playerId?: string | number;
   seasonId?: string | number | null;
+  missedGames?: any[]; // Add missedGames prop
 }
 
 export function PlayerAdvancedStats({
@@ -35,7 +36,8 @@ export function PlayerAdvancedStats({
   showPlayoffData = false,
   seasonTotals = [],
   playerId,
-  seasonId
+  seasonId,
+  missedGames = [] // Add missedGames to destructured props
 }: PlayerAdvancedStatsProps) {
   // Get position-specific advanced stats
   const positionConfig = React.useMemo(() => {
@@ -103,6 +105,11 @@ export function PlayerAdvancedStats({
             playoffGameLog={playoffGameLog || []}
             seasonTotals={seasonTotals}
             isGoalie={isGoalie}
+            playerId={
+              typeof playerId === "string" ? Number(playerId) : playerId
+            } // Convert string to number
+            seasonId={seasonId} // Pass seasonId to PlayerContextualStats
+            missedGames={missedGames} // Pass missedGames to PlayerContextualStats
           />
         </div>
       </div>

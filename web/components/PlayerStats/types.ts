@@ -1,3 +1,5 @@
+import { formatTOIFromSeconds } from "../../utils/formattingUtils";
+
 // Core game log interfaces
 export interface BaseGameLogEntry {
   date: string;
@@ -14,6 +16,7 @@ export interface MissedGame {
   awayTeamId: number;
   isPlayoff: boolean;
   seasonId: number;
+  isFuture?: boolean; // Flag to distinguish future scheduled games
 }
 
 export interface SkaterGameLogEntry extends BaseGameLogEntry {
@@ -27,6 +30,7 @@ export interface SkaterGameLogEntry extends BaseGameLogEntry {
   gw_goals: number | null;
   fow_percentage: number | null;
   toi_per_game: number | null;
+  pp_toi_per_game: number | null; // Add power play TOI field
   blocked_shots: number | null;
   hits: number | null;
   takeaways: number | null;
@@ -361,12 +365,15 @@ export const STAT_FORMATTERS = {
 
   // Decimal stats
   goals_against_avg: (value: number) => (value || 0).toFixed(2),
-  toi_per_game: (value: number) => {
-    const totalMinutes = value || 0;
-    const minutes = Math.floor(totalMinutes);
-    const seconds = Math.round((totalMinutes - minutes) * 60);
-    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-  },
+
+  // Time on Ice formatting - handles seconds input
+  toi_per_game: (value: number) => formatTOIFromSeconds(value),
+
+  // Power play time on ice (also in seconds)
+  pp_toi_per_game: (value: number) => formatTOIFromSeconds(value),
+
+  // General time formatter for any TOI fields
+  time_on_ice: (value: number) => formatTOIFromSeconds(value),
 
   // Per 60 stats (1 decimal place)
   ixg_per_60: (value: number) => (value || 0).toFixed(1),
@@ -418,6 +425,7 @@ export const STAT_DISPLAY_NAMES: { [key: string]: string } = {
   pp_points: "PPP",
   fow_percentage: "FO%",
   toi_per_game: "TOI",
+  pp_toi_per_game: "PPTOI",
   hits: "HIT",
   blocked_shots: "BLK",
   takeaways: "TK",
@@ -541,7 +549,12 @@ export const PERCENTAGE_STATS = [
   "usat_pct"
 ] as const;
 
-export const PER_GAME_STATS = ["goals_against_avg", "toi_per_game"] as const;
+export const PER_GAME_STATS = [
+  "goals_against_avg",
+  "toi_per_game",
+  "pp_toi_per_game",
+  "time_on_ice"
+] as const;
 
 export const PER_60_STATS = [
   "ixg_per_60",

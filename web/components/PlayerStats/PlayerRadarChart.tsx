@@ -10,6 +10,7 @@ import {
   Legend
 } from "chart.js";
 import styles from "./PlayerStats.module.scss";
+import { formatStatValue, STAT_DISPLAY_NAMES as SHARED_STAT_DISPLAY_NAMES } from "./types";
 
 ChartJS.register(
   RadialLinearScale,
@@ -50,7 +51,7 @@ const PERCENTILE_THRESHOLDS = {
   hits: { elite: 2.5, good: 1.8, average: 1.0 },
   blocked_shots: { elite: 1.5, good: 1.0, average: 0.6 },
   fow_percentage: { elite: 55, good: 50, average: 45 },
-  toi_per_game: { elite: 22, good: 18, average: 14 },
+  toi_per_game: { elite: 1320, good: 1080, average: 840 }, // Updated to seconds (22min=1320s, 18min=1080s, 14min=840s)
   sat_pct: { elite: 55, good: 52, average: 48 },
 
   // NST Advanced Stats - Possession Metrics (percentages)
@@ -109,68 +110,6 @@ const PERCENTILE_THRESHOLDS = {
   wins: { elite: 0.7, good: 0.5, average: 0.3 }, // Win rate
   saves: { elite: 30, good: 25, average: 20 },
   shutouts: { elite: 0.15, good: 0.08, average: 0.03 } // Per game
-};
-
-const STAT_DISPLAY_NAMES: { [key: string]: string } = {
-  points: "PTS",
-  goals: "G",
-  assists: "A",
-  shots: "SOG",
-  shooting_percentage: "SH%",
-  hits: "HIT",
-  blocked_shots: "BLK",
-  fow_percentage: "FO%",
-  toi_per_game: "TOI/GP",
-  sat_pct: "CF%",
-  save_pct: "SV%",
-  goals_against_avg: "GAA",
-  wins: "W",
-  shutouts: "SO",
-
-  // NST Advanced Stats Display Names
-  cf_pct: "CF%",
-  ff_pct: "FF%",
-  sf_pct: "SF%",
-  gf_pct: "GF%",
-  xgf_pct: "xGF%",
-  scf_pct: "SCF%",
-  hdcf_pct: "HDCF%",
-  mdcf_pct: "MDCF%",
-  ldcf_pct: "LDCF%",
-
-  ixg_per_60: "ixG/60",
-  icf_per_60: "iCF/60",
-  iff_per_60: "iFF/60",
-  iscfs_per_60: "iSCF/60",
-  hdcf_per_60: "HDCF/60",
-  shots_per_60: "SOG/60",
-  goals_per_60: "G/60",
-  total_assists_per_60: "A/60",
-  total_points_per_60: "P/60",
-  rush_attempts_per_60: "Rush/60",
-  rebounds_created_per_60: "Reb/60",
-
-  hdca_per_60: "HDCA/60",
-  sca_per_60: "SCA/60",
-  shots_blocked_per_60: "BLK/60",
-  xga_per_60: "xGA/60",
-  ga_per_60: "GA/60",
-
-  off_zone_start_pct: "OZS%",
-  def_zone_start_pct: "DZS%",
-  neu_zone_start_pct: "NZS%",
-  off_zone_faceoff_pct: "OZFO%",
-
-  on_ice_sh_pct: "oiSH%",
-  on_ice_sv_pct: "oiSV%",
-  pdo: "PDO",
-
-  pim_per_60: "PIM/60",
-  total_penalties_per_60: "Pen/60",
-  penalties_drawn_per_60: "PenD/60",
-  giveaways_per_60: "GV/60",
-  takeaways_per_60: "TK/60",
-  hits_per_60: "HIT/60"
 };
 
 export function PlayerRadarChart({
@@ -257,7 +196,7 @@ export function PlayerRadarChart({
     });
 
     const labels = selectedStats.map(
-      (stat) => STAT_DISPLAY_NAMES[stat] || stat
+      (stat) => SHARED_STAT_DISPLAY_NAMES[stat] || stat
     );
     const data = selectedStats.map((stat) => percentiles[stat] || 0);
 
@@ -326,7 +265,7 @@ export function PlayerRadarChart({
           title: (context: any) => {
             const statIndex = context[0].dataIndex;
             return (
-              STAT_DISPLAY_NAMES[selectedStats[statIndex]] ||
+              SHARED_STAT_DISPLAY_NAMES[selectedStats[statIndex]] ||
               selectedStats[statIndex]
             );
           },
@@ -336,25 +275,7 @@ export function PlayerRadarChart({
             const percentile = context.parsed.r;
             const average = radarData?.averages[stat];
 
-            let formattedValue = "";
-            if (average !== undefined) {
-              if (
-                stat === "shooting_percentage" ||
-                stat === "save_pct" ||
-                stat === "fow_percentage" ||
-                stat === "sat_pct"
-              ) {
-                formattedValue = `${average.toFixed(1)}%`;
-              } else if (stat === "goals_against_avg") {
-                formattedValue = average.toFixed(2);
-              } else if (stat === "toi_per_game") {
-                const minutes = Math.floor(average);
-                const seconds = Math.round((average - minutes) * 60);
-                formattedValue = `${minutes}:${seconds.toString().padStart(2, "0")}`;
-              } else {
-                formattedValue = average.toFixed(2);
-              }
-            }
+            const formattedValue = average !== undefined ? formatStatValue(average, stat) : "-";
 
             return [
               `Value: ${formattedValue}`,
@@ -469,28 +390,10 @@ export function PlayerRadarChart({
         {selectedStats.map((stat) => (
           <div key={stat} className={styles.statBreakdown}>
             <span className={styles.statName}>
-              {STAT_DISPLAY_NAMES[stat] || stat}:
+              {SHARED_STAT_DISPLAY_NAMES[stat] || stat}:
             </span>
             <span className={styles.statValue}>
-              {(() => {
-                const average = radarData.averages[stat];
-                if (
-                  stat === "shooting_percentage" ||
-                  stat === "save_pct" ||
-                  stat === "fow_percentage" ||
-                  stat === "sat_pct"
-                ) {
-                  return `${average.toFixed(1)}%`;
-                } else if (stat === "goals_against_avg") {
-                  return average.toFixed(2);
-                } else if (stat === "toi_per_game") {
-                  const minutes = Math.floor(average);
-                  const seconds = Math.round((average - minutes) * 60);
-                  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
-                } else {
-                  return average.toFixed(2);
-                }
-              })()}
+              {formatStatValue(radarData.averages[stat], stat)}
             </span>
             <span
               className={`${styles.percentile} ${

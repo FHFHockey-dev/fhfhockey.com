@@ -331,6 +331,7 @@ export default function PlayerStatsPage({
                       isGoalie={isGoalie}
                       playerId={Number(playerId)}
                       seasonId={seasonValue}
+                      missedGames={missedGames}
                     />
                   </div>
                 </div>
@@ -346,6 +347,7 @@ export default function PlayerStatsPage({
                       playerId={Number(playerId)}
                       playerTeamId={player.team_id}
                       seasonId={seasonValue}
+                      missedGames={missedGames}
                     />
                   </div>
                 </div>
@@ -598,81 +600,179 @@ export default function PlayerStatsPage({
 // Add this function before the main component export
 async function fetchMissedGames(
   playerId: number,
-  seasonId: string | number | undefined
+  seasonId: string | number | undefined,
+  teamId: number | undefined
 ): Promise<MissedGame[]> {
-  if (!playerId || !seasonId) return [];
+  if (!playerId || !seasonId || !teamId) {
+    console.log("[SSR] Missing required data for missed games:", {
+      playerId,
+      seasonId,
+      teamId
+    });
+    return [];
+  }
 
   try {
     // Convert seasonId to number if it's a string
     const seasonIdNum =
       typeof seasonId === "string" ? Number(seasonId) : seasonId;
 
-    // Since there's no direct missed_games table, we'll calculate missed games
-    // by comparing team games with player game log
-    const { data: player } = await supabase
-      .from("players")
-      .select("team_id")
-      .eq("id", playerId)
-      .single();
+    console.log(
+      `[SSR] Fetching missed games for player ${playerId}, team ${teamId}, season ${seasonIdNum}`
+    );
 
-    if (!player || !player.team_id) return [];
+    // Extract playoff year from season ID (e.g., 20242025 -> 2025)
+    const playoffYear = Math.floor(seasonIdNum % 10000);
 
-    // Get all team games for the season
-    const { data: teamGames } = await supabase
+    // Get current date
+    const currentDate = new Date();
+    currentDate.setHours(23, 59, 59, 999); // Set to end of today for accurate comparison
+
+    // Get all team games for the season (both past and future)
+    const { data: teamGames, error: teamGamesError } = await supabase
       .from("games")
       .select("id, date, seasonId, type, homeTeamId, awayTeamId")
       .eq("seasonId", seasonIdNum)
-      .or(`homeTeamId.eq.${player.team_id},awayTeamId.eq.${player.team_id}`)
-      .eq("type", 2) // Regular season games only
+      .or(`homeTeamId.eq.${teamId},awayTeamId.eq.${teamId}`)
       .order("date", { ascending: true });
 
-    if (!teamGames) return [];
+    if (teamGamesError) {
+      console.error("[SSR] Error fetching team games:", teamGamesError.message);
+      return [];
+    }
 
-    // Get player's game log for the season
-    const { data: playerGames } = await supabase
+    if (!teamGames || teamGames.length === 0) {
+      console.log("[SSR] No team games found for season");
+      return [];
+    }
+
+    console.log(
+      `[SSR] Found ${teamGames.length} total team games for season ${seasonIdNum}`
+    );
+
+    // Fetch player's actual games from database tables
+    const playerGameDates = new Set<string>();
+
+    // Fetch regular season games from wgo_skater_stats
+    const { data: regularSeasonGames, error: regularError } = await supabase
       .from("wgo_skater_stats")
       .select("date, games_played")
       .eq("player_id", playerId)
       .eq("season_id", seasonIdNum)
       .gt("games_played", 0);
 
-    // Create set of dates when player actually played
-    const playerGameDates = new Set(
-      playerGames?.map((game) => game.date) || []
+    if (regularError) {
+      console.warn(
+        "[SSR] Error fetching regular season games:",
+        regularError.message
+      );
+    } else if (regularSeasonGames) {
+      regularSeasonGames.forEach((game) => {
+        playerGameDates.add(game.date);
+      });
+      console.log(
+        `[SSR] Player played ${regularSeasonGames.length} regular season games`
+      );
+    }
+
+    // Fetch playoff games from wgo_skater_stats_playoffs (filter by year)
+    const { data: playoffGames, error: playoffError } = await supabase
+      .from("wgo_skater_stats_playoffs")
+      .select("date, games_played")
+      .eq("player_id", playerId)
+      .gte("date", `${playoffYear}-01-01`)
+      .lt("date", `${playoffYear + 1}-01-01`)
+      .gt("games_played", 0);
+
+    if (playoffError) {
+      console.warn("[SSR] Error fetching playoff games:", playoffError.message);
+    } else if (playoffGames) {
+      playoffGames.forEach((game) => {
+        playerGameDates.add(game.date);
+      });
+      console.log(`[SSR] Player played ${playoffGames.length} playoff games`);
+    }
+
+    console.log(
+      `[SSR] Total unique dates player played: ${playerGameDates.size}`
     );
+    console.log(`[SSR] Player game dates:`, Array.from(playerGameDates).sort());
 
-    // Get current date to only count missed games before today
-    const currentDate = new Date();
-    currentDate.setHours(0, 0, 0, 0);
-
-    // Find missed games
+    // For each team game, check if player has a corresponding game log entry
     const missedGames: MissedGame[] = [];
+    const futureGames: MissedGame[] = [];
+
     for (const teamGame of teamGames) {
-      const gameDate = new Date(teamGame.date);
-      gameDate.setHours(0, 0, 0, 0);
+      const gameDate = teamGame.date;
+      const gameDateObj = new Date(gameDate);
+      const isPlayoff = teamGame.type === 3;
+      const isRegularSeason = teamGame.type === 2;
 
-      // Only check games before today
-      if (gameDate >= currentDate) continue;
+      // Only check regular season (type 2) and playoff (type 3) games
+      if (!isRegularSeason && !isPlayoff) {
+        continue;
+      }
 
-      // If player didn't play on this date, it's a missed game
-      if (!playerGameDates.has(teamGame.date)) {
+      // Check if this is a future game
+      const isFutureGame = gameDateObj > currentDate;
+
+      // Check if player played on this date (only for past games)
+      if (!isFutureGame && !playerGameDates.has(gameDate)) {
+        // Player missed this past game
         missedGames.push({
-          date: teamGame.date,
+          date: gameDate,
           gameId: teamGame.id,
           homeTeamId: teamGame.homeTeamId,
           awayTeamId: teamGame.awayTeamId,
-          isPlayoff: false,
+          isPlayoff: isPlayoff,
           seasonId: teamGame.seasonId
         });
+
+        console.log(
+          `[SSR] Missed game found: ${gameDate} (${isPlayoff ? "playoff" : "regular season"})`
+        );
+      } else if (isFutureGame) {
+        // This is a future scheduled game
+        futureGames.push({
+          date: gameDate,
+          gameId: teamGame.id,
+          homeTeamId: teamGame.homeTeamId,
+          awayTeamId: teamGame.awayTeamId,
+          isPlayoff: isPlayoff,
+          seasonId: teamGame.seasonId,
+          isFuture: true // Add flag to distinguish future games
+        });
+
+        console.log(
+          `[SSR] Future scheduled game found: ${gameDate} (${isPlayoff ? "playoff" : "regular season"})`
+        );
       }
     }
 
-    return missedGames;
+    // Combine missed games and future games
+    const allMissedGames = [...missedGames, ...futureGames];
+
+    console.log(`[SSR] Total games found:`, {
+      missedPast: missedGames.length,
+      futureScheduled: futureGames.length,
+      total: allMissedGames.length
+    });
+
+    console.log(`[SSR] Breakdown:`, {
+      missedRegular: missedGames.filter((g) => !g.isPlayoff).length,
+      missedPlayoff: missedGames.filter((g) => g.isPlayoff).length,
+      futureRegular: futureGames.filter((g) => !g.isPlayoff).length,
+      futurePlayoff: futureGames.filter((g) => g.isPlayoff).length
+    });
+
+    return allMissedGames;
   } catch (error) {
-    console.warn("Error fetching missed games:", error);
+    console.error("[SSR] Error fetching missed games:", error);
     return [];
   }
 }
+
+// ...existing code...
 
 export async function getServerSideProps(context: GetServerSidePropsContext) {
   const { playerId, season } = context.query;
@@ -1325,8 +1425,14 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
   // Fetch missed games data
   const missedGamesData = await fetchMissedGames(
     Number(playerId),
-    selectedSeason
+    selectedSeason,
+    player.team_id ?? undefined
   );
+
+  console.log(`[SSR] Final missed games data:`, {
+    count: missedGamesData.length,
+    games: missedGamesData
+  });
 
   return {
     props: {

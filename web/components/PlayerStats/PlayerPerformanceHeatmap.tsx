@@ -5,7 +5,9 @@ import {
   endOfMonth,
   eachDayOfInterval,
   startOfWeek,
-  endOfWeek
+  endOfWeek,
+  isAfter,
+  startOfDay
 } from "date-fns";
 import styles from "./PlayerStats.module.scss";
 import { useMissedGames } from "hooks/useMissedGames";
@@ -13,7 +15,8 @@ import {
   PlayerPerformanceHeatmapProps,
   GameLogEntry,
   formatStatValue,
-  STAT_DISPLAY_NAMES
+  STAT_DISPLAY_NAMES,
+  MissedGame
 } from "./types";
 
 type PerformanceLevel =
@@ -193,33 +196,77 @@ export function PlayerPerformanceHeatmap({
   selectedStats,
   playerId,
   playerTeamId,
-  seasonId
-}: PlayerPerformanceHeatmapProps) {
+  seasonId,
+  missedGames = [], // Accept missed games from props (server-side data)
+  futureGames = [] // Accept future scheduled games
+}: PlayerPerformanceHeatmapProps & {
+  missedGames?: MissedGame[];
+  futureGames?: any[];
+}) {
   const [showInfo, setShowInfo] = useState(false);
   const [hoveredGame, setHoveredGame] = useState<GameLogEntry | null>(null);
   const [hoveredMissedGame, setHoveredMissedGame] = useState<any>(null);
+  const [hoveredFutureGame, setHoveredFutureGame] = useState<any>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
-  // DEBUG: Log the data being received
-  console.log("[PlayerPerformanceHeatmap] Debug data:", {
+  // Get today's date for filtering future games
+  const today = startOfDay(new Date());
+
+  // DEBUG: Enhanced logging
+  console.log("[PlayerPerformanceHeatmap] Enhanced Debug data:", {
     regularSeasonGames: gameLog.length,
     playoffGames: playoffGameLog.length,
+    missedGamesFromProps: missedGames.length,
     playerId,
+    playerTeamId,
     seasonId,
     firstRegularGame: gameLog[0],
-    firstPlayoffGame: playoffGameLog[0]
+    firstPlayoffGame: playoffGameLog[0],
+    missedGamesBreakdown: {
+      regular: missedGames.filter((mg) => !mg.isPlayoff).length,
+      playoff: missedGames.filter((mg) => mg.isPlayoff).length
+    },
+    sampleMissedGames: missedGames.slice(0, 3)
   });
 
-  // Fetch missed games using the existing hook
+  // Use server-side missed games data instead of client-side hook
+  // Still keep the hook for backward compatibility but prioritize props
   const {
-    missedGames,
+    missedGames: hookMissedGames,
     isLoading: missedGamesLoading,
     error: missedGamesError
   } = useMissedGames(playerId, playerTeamId, seasonId, gameLog, playoffGameLog);
 
-  // Create calendar data combining regular season, playoff games, and missed games
+  // Get all games data (both missed and future) from either props or hook
+  const allMissedGamesData =
+    missedGames.length > 0 ? missedGames : hookMissedGames;
+
+  // Separate past missed games from future scheduled games
+  const filteredMissedGames = allMissedGamesData.filter((game) => {
+    const gameDate = startOfDay(new Date(game.date));
+    return !isAfter(gameDate, today) && !game.isFuture;
+  });
+
+  const futureScheduledGames = allMissedGamesData.filter((game) => {
+    const gameDate = startOfDay(new Date(game.date));
+    return isAfter(gameDate, today) || game.isFuture;
+  });
+
+  console.log("[PlayerPerformanceHeatmap] Active missed games:", {
+    source: missedGames.length > 0 ? "server-side" : "client-hook",
+    total: allMissedGamesData.length,
+    missedCount: filteredMissedGames.length,
+    futureCount: futureScheduledGames.length,
+    loading: missedGamesLoading,
+    error: missedGamesError
+  });
+
+  // Create calendar data combining regular season, playoff games, missed games, and future games
   const calendarData = useMemo(() => {
-    if (gameLog.length === 0 && playoffGameLog.length === 0) return [];
+    if (gameLog.length === 0 && playoffGameLog.length === 0) {
+      console.log("[PlayerPerformanceHeatmap] No game data available");
+      return [];
+    }
 
     // Combine all games and mark playoff games properly
     const allGames = [
@@ -227,18 +274,45 @@ export function PlayerPerformanceHeatmap({
       ...playoffGameLog.map((game) => ({ ...game, isPlayoff: true })) // Mark playoff games
     ];
 
+    console.log("[PlayerPerformanceHeatmap] Combined games:", {
+      totalGames: allGames.length,
+      regularSeason: gameLog.length,
+      playoffs: playoffGameLog.length,
+      futureScheduledCount: futureScheduledGames.length
+    });
+
     // Create efficient maps for O(1) lookups
     const gamesByDate = new Map<string, GameLogEntry>();
     const missedGamesByDate = new Map<string, any>();
+    const futureGamesByDate = new Map<string, any>();
 
     allGames.forEach((game) => {
       const dateKey = format(new Date(game.date), "yyyy-MM-dd");
       gamesByDate.set(dateKey, game);
     });
 
-    missedGames.forEach((missedGame) => {
+    // Only include missed games that are not in the future
+    filteredMissedGames.forEach((missedGame) => {
       const dateKey = format(new Date(missedGame.date), "yyyy-MM-dd");
       missedGamesByDate.set(dateKey, missedGame);
+      console.log(
+        `[PlayerPerformanceHeatmap] Added missed game: ${dateKey} (${missedGame.isPlayoff ? "playoff" : "regular"})`
+      );
+    });
+
+    // Add future scheduled games from the hook data (not the unused futureGames prop)
+    futureScheduledGames.forEach((futureGame) => {
+      const dateKey = format(new Date(futureGame.date), "yyyy-MM-dd");
+      futureGamesByDate.set(dateKey, futureGame);
+      console.log(
+        `[PlayerPerformanceHeatmap] Added future game: ${dateKey} (${futureGame.isPlayoff ? "playoff" : "regular"})`
+      );
+    });
+
+    console.log("[PlayerPerformanceHeatmap] Maps created:", {
+      games: gamesByDate.size,
+      missedGames: missedGamesByDate.size,
+      futureGames: futureGamesByDate.size
     });
 
     // Optimized date range calculation
@@ -247,6 +321,11 @@ export function PlayerPerformanceHeatmap({
 
     const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
     const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+
+    console.log("[PlayerPerformanceHeatmap] Date range:", {
+      minDate: format(minDate, "yyyy-MM-dd"),
+      maxDate: format(maxDate, "yyyy-MM-dd")
+    });
 
     // Hockey season boundaries (October to June)
     const seasonStartYear =
@@ -268,6 +347,11 @@ export function PlayerPerformanceHeatmap({
     if (endDate > oneMonthAfterLastGame) {
       endDate = oneMonthAfterLastGame;
     }
+
+    console.log("[PlayerPerformanceHeatmap] Season boundaries:", {
+      seasonStart: format(startDate, "yyyy-MM-dd"),
+      seasonEnd: format(endDate, "yyyy-MM-dd")
+    });
 
     // Generate calendar months efficiently
     const months = [];
@@ -291,6 +375,7 @@ export function PlayerPerformanceHeatmap({
         const dateKey = format(day, "yyyy-MM-dd");
         const game = gamesByDate.get(dateKey) || null;
         const missedGame = missedGamesByDate.get(dateKey) || null;
+        const futureGame = futureGamesByDate.get(dateKey) || null;
         const performanceLevel = game
           ? calculatePerformanceLevel(game, selectedStats)
           : "no-data";
@@ -300,18 +385,24 @@ export function PlayerPerformanceHeatmap({
           ? Boolean(game.isPlayoff)
           : missedGame
             ? Boolean(missedGame.isPlayoff)
-            : false;
+            : futureGame
+              ? Boolean(futureGame.isPlayoff)
+              : false;
 
-        return {
+        const dayData = {
           date: day,
           game,
           missedGame,
+          futureGame,
           performanceLevel,
           isPlayoff,
           isMissedGame: Boolean(missedGame),
+          isFutureGame: Boolean(futureGame),
           isCurrentMonth: true,
           gridPosition: index === 0 ? startDayOfWeek + 1 : undefined // CSS grid position for first day
         };
+
+        return dayData;
       });
 
       months.push({ date: currentMonth, days });
@@ -322,8 +413,27 @@ export function PlayerPerformanceHeatmap({
       );
     }
 
+    console.log(
+      "[PlayerPerformanceHeatmap] Generated calendar months:",
+      months.length
+    );
+    console.log(
+      "[PlayerPerformanceHeatmap] Days with missed games:",
+      months.reduce(
+        (total, month) =>
+          total + month.days.filter((day) => day.isMissedGame).length,
+        0
+      )
+    );
+
     return months;
-  }, [gameLog, playoffGameLog, selectedStats, missedGames]);
+  }, [
+    gameLog,
+    playoffGameLog,
+    selectedStats,
+    filteredMissedGames,
+    futureScheduledGames
+  ]);
 
   // Calculate calendar stats
   const calendarStats = useMemo(() => {
@@ -377,14 +487,21 @@ export function PlayerPerformanceHeatmap({
   const handleMouseEnter = (
     game: GameLogEntry | null,
     missedGame: any | null,
+    futureGame: any | null,
     event: React.MouseEvent
   ) => {
     if (game) {
       setHoveredGame(game);
       setHoveredMissedGame(null);
+      setHoveredFutureGame(null);
     } else if (missedGame) {
       setHoveredMissedGame(missedGame);
       setHoveredGame(null);
+      setHoveredFutureGame(null);
+    } else if (futureGame) {
+      setHoveredFutureGame(futureGame);
+      setHoveredGame(null);
+      setHoveredMissedGame(null);
     }
     setTooltipPosition({ x: event.clientX, y: event.clientY });
   };
@@ -392,6 +509,7 @@ export function PlayerPerformanceHeatmap({
   const handleMouseLeave = () => {
     setHoveredGame(null);
     setHoveredMissedGame(null);
+    setHoveredFutureGame(null);
   };
 
   // Enhanced tooltip renderers using shared constants
@@ -530,6 +648,45 @@ export function PlayerPerformanceHeatmap({
     );
   };
 
+  const renderFutureGameTooltip = (futureGame: any) => {
+    return (
+      <div
+        className={styles.gameTooltip}
+        style={{
+          position: "fixed",
+          left: tooltipPosition.x + 10,
+          top: tooltipPosition.y - 10,
+          zIndex: 1000
+        }}
+      >
+        <div className={styles.tooltipHeader}>
+          <strong>{format(new Date(futureGame.date), "MMM d, yyyy")}</strong>
+          {futureGame.isPlayoff && (
+            <span className={styles.playoffLabel}>PLAYOFF GAME</span>
+          )}
+          <span className={styles.performanceLevel}>Scheduled Game</span>
+        </div>
+
+        <div className={styles.tooltipStats}>
+          <div className={styles.tooltipStat}>
+            <span className={styles.statLabel}>Status:</span>
+            <span className={styles.statValue}>Upcoming</span>
+          </div>
+          {futureGame.opponent && (
+            <div className={styles.tooltipStat}>
+              <span className={styles.statLabel}>Opponent:</span>
+              <span className={styles.statValue}>{futureGame.opponent}</span>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.tooltipFooter}>
+          <em>Future scheduled game</em>
+        </div>
+      </div>
+    );
+  };
+
   const legendItems = [
     { level: "elite", label: "Elite", color: getPerformanceColor("elite") },
     {
@@ -611,6 +768,18 @@ export function PlayerPerformanceHeatmap({
               <div
                 className={styles.legendColor}
                 style={{
+                  backgroundColor: "transparent",
+                  border: "2px solid #14a2d2",
+                  width: 12,
+                  height: 12
+                }}
+              />
+              <span>Future Game</span>
+            </div>
+            <div className={styles.legendItem}>
+              <div
+                className={styles.legendColor}
+                style={{
                   backgroundColor: "#4fb84f",
                   border: "2px solid #eab308",
                   width: 12,
@@ -621,6 +790,30 @@ export function PlayerPerformanceHeatmap({
             </div>
           </div>
         </div>
+
+        {/* Debug info panel */}
+        {process.env.NODE_ENV === "development" && (
+          <div
+            style={{
+              background: "#333",
+              padding: "10px",
+              borderRadius: "4px",
+              fontSize: "12px",
+              marginTop: "10px"
+            }}
+          >
+            <strong>Debug Info:</strong>
+            <br />
+            Games: {gameLog.length} regular, {playoffGameLog.length} playoff
+            <br />
+            Missed: {filteredMissedGames.length} total (filtered from{" "}
+            {allMissedGamesData.length})
+            <br />
+            Future: {futureScheduledGames.length} scheduled
+            <br />
+            Source: {missedGames.length > 0 ? "Server-side" : "Client hook"}
+          </div>
+        )}
       </div>
 
       <div className={styles.calendarGrid}>
@@ -641,21 +834,47 @@ export function PlayerPerformanceHeatmap({
               </div>
               <div className={styles.daysContainer}>
                 {month.days.map((day) => {
+                  const dayClasses = [
+                    styles.dayCell,
+                    !day.isCurrentMonth && styles.otherMonth,
+                    day.isMissedGame && styles.missedGameDay,
+                    day.isFutureGame && styles.futureGameDay,
+                    day.isPlayoff &&
+                      (day.game || day.missedGame || day.futureGame) &&
+                      styles.playoffGame
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
+
                   return (
                     <div
                       key={day.date.toISOString()}
-                      className={`${styles.dayCell} ${!day.isCurrentMonth ? styles.otherMonth : ""} ${day.isMissedGame ? styles.missedGameDay : ""} ${day.isPlayoff && (day.game || day.missedGame) ? styles.playoffGame : ""}`}
+                      className={dayClasses}
                       style={{
                         backgroundColor: day.isMissedGame
-                          ? "#333"
-                          : day.game && day.isCurrentMonth
-                            ? getPerformanceColor(day.performanceLevel)
-                            : "transparent",
-                        opacity: day.isCurrentMonth ? 1 : 0.3, // Dim padding days
-                        gridColumnStart: day.gridPosition // Position first day in correct column
+                          ? "rgba(239, 68, 68, 0.15)"
+                          : day.isFutureGame
+                            ? "transparent"
+                            : day.game && day.isCurrentMonth
+                              ? getPerformanceColor(day.performanceLevel)
+                              : "transparent",
+                        opacity: day.isCurrentMonth ? 1 : 0.3,
+                        gridColumnStart: day.gridPosition,
+                        border: day.isMissedGame
+                          ? "2px solid #ef4444"
+                          : day.isFutureGame
+                            ? "2px solid #14a2d2" // Using the actual primary color value
+                            : day.isPlayoff && (day.game || day.missedGame)
+                              ? "2px solid #eab308"
+                              : "1px solid #505050" // Using border-secondary color value
                       }}
                       onMouseEnter={(e) =>
-                        handleMouseEnter(day.game, day.missedGame, e)
+                        handleMouseEnter(
+                          day.game,
+                          day.missedGame,
+                          day.futureGame,
+                          e
+                        )
                       }
                       onMouseLeave={handleMouseLeave}
                     >
@@ -683,6 +902,7 @@ export function PlayerPerformanceHeatmap({
 
       {hoveredGame && renderGameTooltip(hoveredGame)}
       {hoveredMissedGame && renderMissedGameTooltip(hoveredMissedGame)}
+      {hoveredFutureGame && renderFutureGameTooltip(hoveredFutureGame)}
 
       {calendarStats && (
         <div className={styles.calendarFooter}>
