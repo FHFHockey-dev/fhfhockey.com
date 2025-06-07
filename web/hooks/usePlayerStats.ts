@@ -239,7 +239,10 @@ export function usePlayerStats(
               .order("date_scraped", { ascending: true });
 
             if (seasonId) {
-              nstRatesOiQuery = nstRatesOiQuery.eq("season", parseInt(seasonId));
+              nstRatesOiQuery = nstRatesOiQuery.eq(
+                "season",
+                parseInt(seasonId)
+              );
             }
 
             const { data: nstRatesOiData } = await nstRatesOiQuery;
@@ -346,7 +349,8 @@ export function usePlayerStats(
                 iscfs_per_60: nstRates.iscfs_per_60 || null,
                 hdcf_per_60: nstRates.hdcf_per_60 || null,
                 rush_attempts_per_60: nstRates.rush_attempts_per_60 || null,
-                rebounds_created_per_60: nstRates.rebounds_created_per_60 || null,
+                rebounds_created_per_60:
+                  nstRates.rebounds_created_per_60 || null,
 
                 // NST Defensive Per 60 (from rates)
                 hdca_per_60: nstRates.hdca_per_60 || null,
@@ -359,7 +363,8 @@ export function usePlayerStats(
                 pim_per_60: nstRates.pim_per_60 || null,
                 total_penalties_per_60: nstRates.total_penalties_per_60 || null,
                 penalties_drawn_per_60: nstRates.penalties_drawn_per_60 || null,
-                penalty_differential_per_60: nstRates.penalty_differential_per_60 || null,
+                penalty_differential_per_60:
+                  nstRates.penalty_differential_per_60 || null,
                 giveaways_per_60: nstRates.giveaways_per_60 || null,
                 takeaways_per_60: nstRates.takeaways_per_60 || null,
                 hits_per_60: nstRates.hits_per_60 || null,

@@ -809,7 +809,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
 
     // Fetch NST advanced stats for skaters
     try {
-      console.log(`[SSR] Fetching NST data for player ${playerIdNum} in season ${selectedSeason}`);
+      console.log(
+        `[SSR] Fetching NST data for player ${playerIdNum} in season ${selectedSeason}`
+      );
 
       // Fetch NST individual advanced stats (counts)
       const { data: nstCounts, error: nstCountsError } = await supabase
@@ -820,7 +822,10 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         .order("date_scraped", { ascending: true });
 
       if (nstCountsError) {
-        console.warn("[SSR] Error fetching NST counts:", nstCountsError.message);
+        console.warn(
+          "[SSR] Error fetching NST counts:",
+          nstCountsError.message
+        );
       } else {
         nstCountsData = nstCounts || [];
         console.log(`[SSR] Fetched ${nstCountsData.length} NST counts records`);
@@ -835,10 +840,15 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         .order("date_scraped", { ascending: true });
 
       if (nstCountsOiError) {
-        console.warn("[SSR] Error fetching NST counts OI:", nstCountsOiError.message);
+        console.warn(
+          "[SSR] Error fetching NST counts OI:",
+          nstCountsOiError.message
+        );
       } else {
         nstCountsOiData = nstCountsOi || [];
-        console.log(`[SSR] Fetched ${nstCountsOiData.length} NST counts OI records`);
+        console.log(
+          `[SSR] Fetched ${nstCountsOiData.length} NST counts OI records`
+        );
       }
 
       // Fetch NST individual rates (per 60)
@@ -865,10 +875,15 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         .order("date_scraped", { ascending: true });
 
       if (nstRatesOiError) {
-        console.warn("[SSR] Error fetching NST rates OI:", nstRatesOiError.message);
+        console.warn(
+          "[SSR] Error fetching NST rates OI:",
+          nstRatesOiError.message
+        );
       } else {
         nstRatesOiData = nstRatesOi || [];
-        console.log(`[SSR] Fetched ${nstRatesOiData.length} NST rates OI records`);
+        console.log(
+          `[SSR] Fetched ${nstRatesOiData.length} NST rates OI records`
+        );
       }
 
       // Create lookup maps for NST data by date
@@ -931,15 +946,15 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         return {
           ...wgoGame,
           // NST Individual Advanced Stats - Possession Percentages (from counts)
-          cf_pct: nstCounts.cf_pct || null,
-          ff_pct: nstCounts.ff_pct || null,
-          sf_pct: nstCounts.sf_pct || null,
-          gf_pct: nstCounts.gf_pct || null,
-          xgf_pct: nstCounts.xgf_pct || null,
-          scf_pct: nstCounts.scf_pct || null,
-          hdcf_pct: nstCounts.hdcf_pct || null,
-          mdcf_pct: nstCounts.mdcf_pct || null,
-          ldcf_pct: nstCounts.ldcf_pct || null,
+          cf_pct: nstCountsOi.cf_pct || null,
+          ff_pct: nstCountsOi.ff_pct || null,
+          sf_pct: nstCountsOi.sf_pct || null,
+          gf_pct: nstCountsOi.gf_pct || null,
+          xgf_pct: nstCountsOi.xgf_pct || null,
+          scf_pct: nstCountsOi.scf_pct || null,
+          hdcf_pct: nstCountsOi.hdcf_pct || null,
+          mdcf_pct: nstCountsOi.mdcf_pct || null,
+          ldcf_pct: nstCountsOi.ldcf_pct || null,
 
           // NST On-Ice Possession Percentages (from counts_oi)
           on_ice_cf_pct: nstCountsOi.cf_pct || null,
@@ -976,7 +991,8 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
           pim_per_60: nstRates.pim_per_60 || null,
           total_penalties_per_60: nstRates.total_penalties_per_60 || null,
           penalties_drawn_per_60: nstRates.penalties_drawn_per_60 || null,
-          penalty_differential_per_60: nstRates.penalty_differential_per_60 || null,
+          penalty_differential_per_60:
+            nstRates.penalty_differential_per_60 || null,
           giveaways_per_60: nstRates.giveaways_per_60 || null,
           takeaways_per_60: nstRates.takeaways_per_60 || null,
           hits_per_60: nstRates.hits_per_60 || null,
@@ -1029,8 +1045,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         };
       });
 
-      console.log(`[SSR] Successfully merged NST data with ${gameLog.length} WGO games`);
-
+      console.log(
+        `[SSR] Successfully merged NST data with ${gameLog.length} WGO games`
+      );
     } catch (nstError) {
       console.warn("[SSR] Error fetching NST data:", nstError);
       // Continue with WGO data only if NST fetch fails
