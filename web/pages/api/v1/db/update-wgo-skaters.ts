@@ -346,7 +346,8 @@ function mapApiDataToDbRecord(
 async function fetchDataForGameType(
   gameTypeId: number,
   formattedDate: string,
-  limit: number = 100
+  limit: number = 100,
+  seasonId?: number
 ): Promise<AllSkaterStats> {
   let start = 0;
   let moreDataAvailable = true;
@@ -372,8 +373,22 @@ async function fetchDataForGameType(
     reportName: string,
     sort: string,
     factCayenneExp: string = "gamesPlayed>=1"
-  ) =>
-    `https://api.nhle.com/stats/rest/en/skater/${reportName}?isAggregate=true&isGame=true&sort=${encodeURIComponent(sort)}&start=${start}&limit=${limit}&factCayenneExp=${factCayenneExp}&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=${gameTypeId}`;
+  ) => {
+    // Build the cayenneExp based on whether seasonId or formattedDate is provided
+    let cayenneExp;
+    if (seasonId) {
+      // Filter by season
+      cayenneExp = `seasonId=${seasonId} and gameTypeId=${gameTypeId}`;
+    } else {
+      // Original filter by a single date
+      cayenneExp = `gameDate<="${formattedDate} 23:59:59" and gameDate>="${formattedDate}" and gameTypeId=${gameTypeId}`;
+    }
+
+    return `https://api.nhle.com/stats/rest/en/skater/${reportName}?isAggregate=true&isGame=false&sort=${encodeURIComponent(
+      sort
+    )}&start=${start}&limit=${limit}&factCayenneExp=${factCayenneExp}&cayenneExp=${cayenneExp}`;
+  };
+
   while (moreDataAvailable) {
     const urls = {
       skaterStats: getUrl(
@@ -809,14 +824,53 @@ export default async function handler(
       playerId,
       action,
       fullRefresh: fullRefreshParam,
-      playerFullName: rawPlayerFullName
+      playerFullName: rawPlayerFullName,
+      season
     } = req.query;
+
     const fullRefresh = fullRefreshParam === "true" || fullRefreshParam === "1";
     const playerFullName = Array.isArray(rawPlayerFullName)
       ? rawPlayerFullName[0]
       : rawPlayerFullName;
     let result: any;
-    if (action === "all_seasons_full_refresh") {
+
+    if (season && typeof season === "string") {
+      const seasonId = parseInt(season, 10);
+      console.log(`Season parameter found: ${seasonId}`);
+
+      // We need a date for the database records, let's use the last day of the year for simplicity
+      // Or you can create a more sophisticated logic to get the season-end date
+      const arbitraryDateForDB = `${season.substring(0, 4)}-12-31`;
+
+      const regularSeasonData = await fetchDataForGameType(
+        2,
+        "",
+        100,
+        seasonId
+      );
+      const regularSeasonUpdates = await processAndUpsertGameTypeData(
+        regularSeasonData,
+        "wgo_skater_stats",
+        arbitraryDateForDB, // This date is for the DB record, not the API query
+        seasonId
+      );
+
+      const playoffData = await fetchDataForGameType(3, "", 100, seasonId);
+      const playoffUpdates = await processAndUpsertGameTypeData(
+        playoffData,
+        "wgo_skater_stats_playoffs",
+        arbitraryDateForDB // This date is for the DB record, not the API query
+      );
+
+      totalUpdates = regularSeasonUpdates + playoffUpdates;
+      const result = {
+        message: `Skater stats updated for season ${seasonId}. Regular Season: ${regularSeasonUpdates}, Playoffs: ${playoffUpdates}.`,
+        success: true,
+        totalUpdates
+      };
+      details = { message: result.message };
+      res.status(200).json(result);
+    } else if (action === "all_seasons_full_refresh") {
       // [+] Ensure this action exists
       console.log("Action 'all_seasons_full_refresh' triggered.");
       result = await updateAllStatsForAllSeasons();

@@ -3,7 +3,7 @@
 require("dotenv").config({ path: "../../../.env.local" });
 const { createClient } = require("@supabase/supabase-js");
 const fetch = require("node-fetch");
-import { parseISO, format, addDays, isBefore } from "date-fns";
+const { parseISO, format, addDays, isBefore } = require("date-fns");
 const ProgressBar = require("progress");
 
 // Initialize Supabase client
@@ -134,37 +134,37 @@ async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
 
     // Fetch NHL API data for this date.
     const statsResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=true&isGame=true&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"franchiseId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=gameDate<='${formattedDate}' and gameDate>='${formattedDate}' and gameTypeId=2`
+      `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=true&isGame=true&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"franchiseId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=gameDate<='${formattedDate}' and gameDate>='${formattedDate}'`
     );
     const miscStatsResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/realtime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22hits%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`
+      `https://api.nhle.com/stats/rest/en/team/realtime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22hits%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
     );
     const penaltyResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/penalties?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22penaltyMinutes%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`
+      `https://api.nhle.com/stats/rest/en/team/penalties?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22penaltyMinutes%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
     );
     const penaltyKillResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/penaltykill?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22penaltyKillPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`
+      `https://api.nhle.com/stats/rest/en/team/penaltykill?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22penaltyKillPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
     );
     const powerPlayResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22powerPlayPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`
+      `https://api.nhle.com/stats/rest/en/team/powerplay?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22powerPlayPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
     );
     const ppToiResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/powerplaytime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIcePp%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`
+      `https://api.nhle.com/stats/rest/en/team/powerplaytime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIcePp%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
     );
     const pkToiResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/penaltykilltime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIceShorthanded%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`
+      `https://api.nhle.com/stats/rest/en/team/penaltykilltime?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22timeOnIceShorthanded%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
     );
     const shootingResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/summaryshooting?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satTotal%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`
+      `https://api.nhle.com/stats/rest/en/team/summaryshooting?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satTotal%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
     );
     const shPercentageResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/percentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`
+      `https://api.nhle.com/stats/rest/en/team/percentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22satPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
     );
     const faceOffResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/faceoffpercentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`
+      `https://api.nhle.com/stats/rest/en/team/faceoffpercentages?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
     );
     const faceOffWinLossResponse = await Fetch(
-      `https://api.nhle.com/stats/rest/en/team/faceoffwins?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22faceoffsWon%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=2`
+      `https://api.nhle.com/stats/rest/en/team/faceoffwins?isAggregate=true&isGame=true&sort=%5B%7B%22property%22:%22faceoffsWon%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22faceoffWinPct%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22franchiseId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&factCayenneExp=gamesPlayed%3E=1&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20`
     );
 
     if (
@@ -463,129 +463,174 @@ async function main(options = {}) {
     processOneDay = false,
     processAllSeasons = false
   } = options;
+
+  console.log("=== STARTING MAIN FUNCTION ===");
+  console.log("Options received:", options);
+  console.log("Parsed options:", {
+    processAllDates,
+    processRecentDates,
+    processOneDay,
+    processAllSeasons
+  });
+
   console.time("Total Process Time");
 
-  // ***** MANUAL SEASON OVERRIDE BLOCK *****
-  // Uncomment the block below if you want to hardcode specific seasons.
-  /*
-  const seasons = [
-    {
-      id: 20242025,
-      formattedSeasonId: "2024-25",
-      startDate: "2024-10-04T13:00:00",
-      regularSeasonEndDate: "2025-04-17T21:30:00"
-    },
-    {
-      id: 20232024,
-      formattedSeasonId: "2023-24",
-      startDate: "2023-10-10T17:30:00",
-      regularSeasonEndDate: "2024-04-18T22:30:00"
+  try {
+    console.log("Fetching NHL seasons...");
+    const seasons = await fetchNHLSeasons();
+    console.log(`Fetched ${seasons?.length || 0} seasons from NHL API`);
+
+    if (!seasons || seasons.length === 0) {
+      console.error("No seasons data available from NHL API");
+      throw new Error("No seasons data available.");
     }
-    // Add more season objects if needed.
-  ];
-  console.log("Using manually defined seasons:", seasons);
-  */
-  // ***** END MANUAL OVERRIDE BLOCK *****
 
-  // If the manual block is commented out, use dynamic fetching:
-  const seasons = await fetchNHLSeasons();
+    // Process all seasons when processAllDates=true, not just a subset
+    let seasonsToProcess;
+    if (processAllDates) {
+      seasonsToProcess = seasons;
+      console.log(
+        `Processing ALL ${seasons.length} seasons because processAllDates=true`
+      );
+    } else {
+      const numberOfSeasonsToFetch = 15;
+      seasonsToProcess = seasons.slice(0, numberOfSeasonsToFetch).reverse();
+      console.log(
+        `Processing subset of ${seasonsToProcess.length} seasons (limited to ${numberOfSeasonsToFetch})`
+      );
+    }
 
-  // ***** OPTIONAL: Process only a subset of seasons *****
-  // For example, to process only the first 15 seasons in the fetched list:
-  const numberOfSeasonsToFetch = 15;
-  const seasonsToProcess = seasons.slice(0, numberOfSeasonsToFetch).reverse();
-  // To process all seasons, comment out the two lines above and uncomment the following:
-  // const seasonsToProcess = seasons;
-  // ***** END SUBSET BLOCK *****
+    console.log(
+      "Seasons to process:",
+      seasonsToProcess.map((s) => s.formattedSeasonId)
+    );
 
-  if (!seasonsToProcess || seasonsToProcess.length === 0) {
-    throw new Error("No seasons data available.");
-  }
+    // Loop through each season to process.
+    for (let i = 0; i < seasonsToProcess.length; i++) {
+      const season = seasonsToProcess[i];
+      console.log(
+        `\n=== PROCESSING SEASON ${i + 1}/${seasonsToProcess.length}: ${season.formattedSeasonId} ===`
+      );
 
-  // Loop through each season to process.
-  for (const season of seasonsToProcess) {
-    const currentDate = new Date();
-    const todayStr = format(currentDate, "yyyy-MM-dd");
+      const currentDate = new Date();
+      const todayStr = format(currentDate, "yyyy-MM-dd");
+      console.log(`Today's date: ${todayStr}`);
+      console.log(`Season start: ${season.startDate}`);
+      console.log(`Season regular end: ${season.regularSeasonEndDate}`);
 
-    // Only process seasons that have started (or that are active if processAllSeasons is false)
-    if (
-      isBefore(parseISO(season.startDate), currentDate) &&
-      (processAllSeasons ||
-        parseISO(season.regularSeasonEndDate.split("T")[0]) >=
-          parseISO(todayStr))
-    ) {
-      console.log(`Processing season: ${season.formattedSeasonId}`);
+      const seasonStarted = isBefore(parseISO(season.startDate), currentDate);
+      const seasonEndDate = parseISO(season.endDate.split("T")[0]);
+      const isSeasonActive = seasonEndDate >= parseISO(todayStr);
 
-      // Determine the starting date.
-      let newStartDate;
-      if (processAllDates) {
-        newStartDate = season.startDate.split("T")[0];
-        console.log(
-          `Processing all dates for season ${season.formattedSeasonId} from ${newStartDate} onward.`
-        );
-      } else if (processRecentDates) {
-        // Look up the most recent date from wgo_team_stats for this season.
-        const { data: processedDates, error } = await supabase
-          .from("wgo_team_stats")
-          .select("date")
-          .eq("season_id", season.id)
-          .order("date", { ascending: false })
-          .limit(1);
-        if (error) {
-          console.error(
-            `Error fetching processed dates for season ${season.formattedSeasonId}:`,
-            error
-          );
+      console.log(`Season started: ${seasonStarted}`);
+      console.log(`Season active: ${isSeasonActive}`);
+      console.log(`Process all seasons: ${processAllSeasons}`);
+
+      // Only process seasons that have started (or that are active if processAllSeasons is false)
+      if (seasonStarted && (processAllSeasons || isSeasonActive)) {
+        console.log(`✓ Season ${season.formattedSeasonId} will be processed`);
+
+        // Determine the starting date.
+        let newStartDate;
+        if (processAllDates) {
           newStartDate = season.startDate.split("T")[0];
-        } else if (processedDates && processedDates.length > 0) {
-          newStartDate = processedDates[0].date;
           console.log(
-            `Latest processed date for season ${season.formattedSeasonId} is ${newStartDate}. Fetching from that date until today.`
+            `Processing all dates for season ${season.formattedSeasonId} from ${newStartDate} onward.`
+          );
+        } else if (processRecentDates) {
+          console.log(
+            `Looking up most recent processed date for season ${season.id}...`
+          );
+          // Look up the most recent date from wgo_team_stats for this season.
+          const { data: processedDates, error } = await supabase
+            .from("wgo_team_stats")
+            .select("date")
+            .eq("season_id", season.id)
+            .order("date", { ascending: false })
+            .limit(1);
+
+          if (error) {
+            console.error(
+              `Error fetching processed dates for season ${season.formattedSeasonId}:`,
+              error
+            );
+            newStartDate = season.startDate.split("T")[0];
+          } else if (processedDates && processedDates.length > 0) {
+            newStartDate = processedDates[0].date;
+            console.log(
+              `Latest processed date for season ${season.formattedSeasonId} is ${newStartDate}. Fetching from that date until today.`
+            );
+          } else {
+            newStartDate = season.startDate.split("T")[0];
+            console.log(
+              `No processed dates found for season ${season.formattedSeasonId}. Starting from season start date: ${newStartDate}`
+            );
+          }
+        } else {
+          // Default fallback.
+          newStartDate = season.startDate.split("T")[0];
+          console.log(`Using default start date: ${newStartDate}`);
+        }
+
+        // Determine the effective end date.
+        const seasonEndStr = season.regularSeasonEndDate.split("T")[0];
+        const effectiveEndDate = processAllDates
+          ? seasonEndStr
+          : processRecentDates
+            ? todayStr
+            : isBefore(parseISO(todayStr), parseISO(seasonEndStr))
+              ? todayStr
+              : seasonEndStr;
+
+        console.log(`Date range: ${newStartDate} to ${effectiveEndDate}`);
+
+        // Calculate the total number of days to process (for the progress bar).
+        let totalDays = 0;
+        let tempDate = parseISO(newStartDate);
+        while (format(tempDate, "yyyy-MM-dd") <= effectiveEndDate) {
+          totalDays++;
+          tempDate = addDays(tempDate, 1);
+        }
+
+        console.log(`Total days to process: ${totalDays}`);
+
+        if (totalDays > 0) {
+          // Create a progress bar instance.
+          const bar = new ProgressBar(
+            `Fetching data for season ${season.formattedSeasonId} [:bar] :percent :etas`,
+            { total: totalDays, width: 40 }
+          );
+
+          // Process dates from newStartDate up until (and including) effectiveEndDate.
+          await fetchNHLData(
+            newStartDate,
+            effectiveEndDate,
+            season.id.toString(),
+            bar
+          );
+
+          console.log(
+            `✓ Completed processing season ${season.formattedSeasonId}`
           );
         } else {
-          newStartDate = season.startDate.split("T")[0];
           console.log(
-            `No processed dates found for season ${season.formattedSeasonId}. Starting from season start date: ${newStartDate}`
+            `⚠ No days to process for season ${season.formattedSeasonId} (start: ${newStartDate}, end: ${effectiveEndDate})`
           );
         }
       } else {
-        // Default fallback.
-        newStartDate = season.startDate.split("T")[0];
+        console.log(
+          `✗ Skipping season ${season.formattedSeasonId} (started: ${seasonStarted}, active: ${isSeasonActive}, processAllSeasons: ${processAllSeasons})`
+        );
       }
-
-      // Determine the effective end date.
-      const seasonEndStr = season.regularSeasonEndDate.split("T")[0];
-      const effectiveEndDate = processRecentDates
-        ? todayStr
-        : isBefore(parseISO(todayStr), parseISO(seasonEndStr))
-        ? todayStr
-        : seasonEndStr;
-
-      // Calculate the total number of days to process (for the progress bar).
-      let totalDays = 0;
-      let tempDate = parseISO(newStartDate);
-      while (format(tempDate, "yyyy-MM-dd") < effectiveEndDate) {
-        totalDays++;
-        tempDate = addDays(tempDate, 1);
-      }
-
-      // Create a progress bar instance.
-      const bar = new ProgressBar(
-        `Fetching data for season ${season.formattedSeasonId} [:bar] :percent :etas`,
-        { total: totalDays * Object.keys(teamsInfo).length, width: 40 }
-      );
-
-      // Process dates from newStartDate up until (but not including) effectiveEndDate.
-      await fetchNHLData(
-        newStartDate,
-        effectiveEndDate,
-        season.id.toString(),
-        bar
-      );
-    } else {
-      console.log(`Skipping past season: ${season.formattedSeasonId}`);
     }
+
+    console.log("\n=== MAIN FUNCTION COMPLETED SUCCESSFULLY ===");
+  } catch (error) {
+    console.error("=== ERROR IN MAIN FUNCTION ===");
+    console.error("Error:", error);
+    throw error;
   }
+
   console.timeEnd("Total Process Time");
 }
 

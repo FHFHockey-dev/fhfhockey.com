@@ -10,7 +10,10 @@ import {
   Legend
 } from "chart.js";
 import styles from "./PlayerStats.module.scss";
-import { formatStatValue, STAT_DISPLAY_NAMES as SHARED_STAT_DISPLAY_NAMES } from "./types";
+import {
+  formatStatValue,
+  STAT_DISPLAY_NAMES as SHARED_STAT_DISPLAY_NAMES
+} from "./types";
 
 ChartJS.register(
   RadialLinearScale,
@@ -275,7 +278,8 @@ export function PlayerRadarChart({
             const percentile = context.parsed.r;
             const average = radarData?.averages[stat];
 
-            const formattedValue = average !== undefined ? formatStatValue(average, stat) : "-";
+            const formattedValue =
+              average !== undefined ? formatStatValue(average, stat) : "-";
 
             return [
               `Value: ${formattedValue}`,

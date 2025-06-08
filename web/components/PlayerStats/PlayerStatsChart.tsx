@@ -198,12 +198,15 @@ export function PlayerStatsChart({
             label: (context: any) => {
               const label = context.dataset.label || "";
               const value = context.parsed.y;
-              
+
               // Extract the stat name from the dataset label to get proper formatting
-              const statName = selectedStats.find(stat => 
-                (STAT_DISPLAY_NAMES[stat] || stat) === label.replace(" (5-game avg)", "")
-              ) || label;
-              
+              const statName =
+                selectedStats.find(
+                  (stat) =>
+                    (STAT_DISPLAY_NAMES[stat] || stat) ===
+                    label.replace(" (5-game avg)", "")
+                ) || label;
+
               const formattedValue = formatStatValue(value, statName);
               return `${label}: ${formattedValue}`;
             },
