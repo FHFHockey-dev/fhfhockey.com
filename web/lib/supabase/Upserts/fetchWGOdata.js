@@ -3,7 +3,7 @@
 require("dotenv").config({ path: "../../../.env.local" });
 const { createClient } = require("@supabase/supabase-js");
 const fetch = require("node-fetch");
-const { parseISO, format, addDays, isBefore } = require("date-fns");
+const { parseISO, format, addDays, isBefore, isValid } = require("date-fns");
 const ProgressBar = require("progress");
 
 // Initialize Supabase client
@@ -11,10 +11,37 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Helper fetch function
-async function Fetch(url) {
-  const response = await fetch(url);
-  return response.json();
+/**
+ * QUERY PARAMETERS:
+ *
+ * ?allDates=true          - Process all dates from season start to end (including playoffs)
+ * ?recent=true            - Process only recent dates (from last processed date to today) - DEFAULT
+ * ?date=YYYY-MM-DD        - Process only a specific date (e.g., ?date=2024-01-15)
+ * ?allSeasons=true        - Process all historical seasons, not just recent ones
+ * ?allDates=true&allSeasons=true - Process ALL dates for ALL seasons
+ *
+ * NO QUERY PARAMETERS     - Defaults to recent=true (incremental processing from last processed date)
+ */
+
+// Parse command line arguments for query parameters
+function parseQueryParams() {
+  const args = process.argv.slice(2);
+  const params = {};
+
+  // Parse query string style arguments
+  args.forEach((arg) => {
+    if (arg.startsWith("?")) {
+      const queryString = arg.substring(1);
+      const pairs = queryString.split("&");
+      pairs.forEach((pair) => {
+        const [key, value] = pair.split("=");
+        params[key] =
+          value === "true" ? true : value === "false" ? false : value;
+      });
+    }
+  });
+
+  return params;
 }
 
 // Teams mapping – please ensure this is complete as needed
@@ -443,30 +470,54 @@ async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
 }
 
 /**
- * Main processing function.
- * Options:
- *   - processAllDates (default false): if true, ignore any processed dates and start at the season start.
- *   - processRecentDates (default true): if true, fetch only dates between the most recent date in the table and today.
- *   - processOneDay (default false): if true, process only one day for each season.
- *   - processAllSeasons (default false): if true, process all seasons (past and present).
+ * Main processing function with updated query parameter support.
  *
- * @param {Object} options
- * @param {boolean} [options.processAllDates=false]
- * @param {boolean} [options.processRecentDates=true]
- * @param {boolean} [options.processOneDay=false]
- * @param {boolean} [options.processAllSeasons=false]
+ * NEW QUERY PARAMETERS:
+ * - allDates: Process all dates from season start to end (including playoffs)
+ * - recent: Process only recent dates (from last processed date to today) - DEFAULT
+ * - date: Process only a specific date (YYYY-MM-DD format)
+ * - allSeasons: Process all historical seasons, not just recent ones
+ *
+ * @param {Object} options - Processing options
  */
 async function main(options = {}) {
+  // Parse command line query parameters if running directly
+  const queryParams = parseQueryParams();
+
+  // Merge query parameters with passed options (query params take precedence)
   const {
-    processAllDates = false,
-    processRecentDates = true,
-    processOneDay = false,
-    processAllSeasons = false
-  } = options;
+    allDates = queryParams.allDates || false,
+    recent = queryParams.recent !== false, // Default to true unless explicitly set to false
+    date = queryParams.date || null,
+    allSeasons = queryParams.allSeasons || false
+  } = { ...options, ...queryParams };
+
+  // Validate date parameter if provided
+  let specificDate = null;
+  if (date) {
+    const parsedDate = parseISO(date);
+    if (!isValid(parsedDate)) {
+      throw new Error(
+        `Invalid date format: ${date}. Please use YYYY-MM-DD format.`
+      );
+    }
+    specificDate = format(parsedDate, "yyyy-MM-dd");
+    console.log(`Processing specific date: ${specificDate}`);
+  }
+
+  // Determine processing mode
+  let processAllDates = allDates;
+  let processRecentDates = recent && !date && !allDates;
+  let processOneDay = !!date;
+  let processAllSeasons = allSeasons;
 
   console.log("=== STARTING MAIN FUNCTION ===");
-  console.log("Options received:", options);
-  console.log("Parsed options:", {
+  console.log("Query parameters:", queryParams);
+  console.log("Final options:", {
+    allDates,
+    recent,
+    date: specificDate,
+    allSeasons,
     processAllDates,
     processRecentDates,
     processOneDay,
@@ -485,12 +536,12 @@ async function main(options = {}) {
       throw new Error("No seasons data available.");
     }
 
-    // Process all seasons when processAllDates=true, not just a subset
+    // Process all seasons when allDates=true or allSeasons=true, not just a subset
     let seasonsToProcess;
-    if (processAllDates) {
+    if (processAllDates || processAllSeasons) {
       seasonsToProcess = seasons;
       console.log(
-        `Processing ALL ${seasons.length} seasons because processAllDates=true`
+        `Processing ALL ${seasons.length} seasons because ${processAllDates ? "allDates" : "allSeasons"}=true`
       );
     } else {
       const numberOfSeasonsToFetch = 15;
@@ -517,6 +568,7 @@ async function main(options = {}) {
       console.log(`Today's date: ${todayStr}`);
       console.log(`Season start: ${season.startDate}`);
       console.log(`Season regular end: ${season.regularSeasonEndDate}`);
+      console.log(`Season full end (including playoffs): ${season.endDate}`);
 
       const seasonStarted = isBefore(parseISO(season.startDate), currentDate);
       const seasonEndDate = parseISO(season.endDate.split("T")[0]);
@@ -530,12 +582,36 @@ async function main(options = {}) {
       if (seasonStarted && (processAllSeasons || isSeasonActive)) {
         console.log(`✓ Season ${season.formattedSeasonId} will be processed`);
 
-        // Determine the starting date.
+        // Determine the starting date based on processing mode
         let newStartDate;
-        if (processAllDates) {
+        let effectiveEndDate;
+
+        if (processOneDay) {
+          // Process only the specific date
+          const seasonStartStr = season.startDate.split("T")[0];
+          const seasonFullEndStr = season.endDate.split("T")[0];
+
+          // Check if the specific date falls within this season
+          if (
+            specificDate >= seasonStartStr &&
+            specificDate <= seasonFullEndStr
+          ) {
+            newStartDate = specificDate;
+            effectiveEndDate = specificDate;
+            console.log(
+              `Processing specific date ${specificDate} for season ${season.formattedSeasonId}`
+            );
+          } else {
+            console.log(
+              `Skipping season ${season.formattedSeasonId} - date ${specificDate} not in range (${seasonStartStr} to ${seasonFullEndStr})`
+            );
+            continue;
+          }
+        } else if (processAllDates) {
           newStartDate = season.startDate.split("T")[0];
+          effectiveEndDate = season.endDate.split("T")[0]; // Include playoffs
           console.log(
-            `Processing all dates for season ${season.formattedSeasonId} from ${newStartDate} onward.`
+            `Processing all dates for season ${season.formattedSeasonId} from ${newStartDate} to ${effectiveEndDate} (including playoffs).`
           );
         } else if (processRecentDates) {
           console.log(
@@ -566,23 +642,34 @@ async function main(options = {}) {
               `No processed dates found for season ${season.formattedSeasonId}. Starting from season start date: ${newStartDate}`
             );
           }
+
+          // For recent dates, use today or full season end, whichever is earlier
+          const seasonFullEndStr = season.endDate.split("T")[0];
+          effectiveEndDate = isBefore(
+            parseISO(todayStr),
+            parseISO(seasonFullEndStr)
+          )
+            ? todayStr
+            : seasonFullEndStr;
         } else {
           // Default fallback.
           newStartDate = season.startDate.split("T")[0];
-          console.log(`Using default start date: ${newStartDate}`);
+          effectiveEndDate = season.endDate.split("T")[0];
+          console.log(
+            `Using default date range: ${newStartDate} to ${effectiveEndDate}`
+          );
         }
 
-        // Determine the effective end date.
-        const seasonEndStr = season.regularSeasonEndDate.split("T")[0];
-        const effectiveEndDate = processAllDates
-          ? seasonEndStr
-          : processRecentDates
-            ? todayStr
-            : isBefore(parseISO(todayStr), parseISO(seasonEndStr))
-              ? todayStr
-              : seasonEndStr;
-
         console.log(`Date range: ${newStartDate} to ${effectiveEndDate}`);
+
+        // Log playoff inclusion info
+        const seasonRegularEndStr = season.regularSeasonEndDate.split("T")[0];
+        const seasonFullEndStr = season.endDate.split("T")[0];
+        if (effectiveEndDate > seasonRegularEndStr) {
+          console.log(
+            `Note: Including playoff data - processing beyond regular season end (${seasonRegularEndStr}) up to ${effectiveEndDate}`
+          );
+        }
 
         // Calculate the total number of days to process (for the progress bar).
         let totalDays = 0;
@@ -632,6 +719,12 @@ async function main(options = {}) {
   }
 
   console.timeEnd("Total Process Time");
+}
+
+// Helper fetch function
+async function Fetch(url) {
+  const response = await fetch(url);
+  return response.json();
 }
 
 module.exports = { main };

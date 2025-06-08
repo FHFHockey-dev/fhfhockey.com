@@ -4,7 +4,6 @@ import supabase from "lib/supabase";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
-import Layout from "components/Layout";
 import { PlayerStatsChart } from "components/PlayerStats/PlayerStatsChart";
 import { PlayerStatsTable } from "components/PlayerStats/PlayerStatsTable";
 import { PlayerStatsSummary } from "components/PlayerStats/PlayerStatsSummary";
@@ -161,7 +160,7 @@ export default function PlayerStatsPage({
   }
 
   return (
-    <Layout>
+    <>
       <NextSeo
         title={`${player.fullName} Stats - ${process.env.NEXT_PUBLIC_SITE_NAME}`}
         description={`Detailed hockey statistics for ${player.fullName}`}
@@ -593,7 +592,7 @@ export default function PlayerStatsPage({
           )}
         </div>
       </div>
-    </Layout>
+    </>
   );
 }
 

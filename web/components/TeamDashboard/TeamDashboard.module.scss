@@ -1,0 +1,709 @@
+@use "sass:color";
+@use "styles/vars" as v;
+
+.teamDashboard {
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.card {
+  background: v.$background-dark;
+  border: 2px solid v.$border-color-secondary;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: v.$border-color-primary;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.cardHeader {
+  background: v.$background-light;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid v.$border-color-secondary;
+
+  h3 {
+    margin: 0;
+    font-family: v.$font-family-accent, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #07aae2;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+.cardContent {
+  padding: 1.25rem;
+
+  .noData {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+    font-style: italic;
+  }
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.statLabel {
+  font-family: v.$font-family-primary, sans-serif;
+  font-size: 0.95rem;
+  color: v.$text-secondary;
+  font-weight: 500;
+}
+
+.statValue {
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: v.$color-white;
+
+  &.positive {
+    color: #00ff87;
+  }
+
+  &.negative {
+    color: #ff6b6b;
+  }
+
+  &.streakValue {
+    padding: 0.2rem 0.6rem;
+    background: rgba(7, 170, 226, 0.2);
+    border-radius: 0.4rem;
+    border: 1px solid #07aae2;
+    color: #07aae2;
+    font-size: 1rem;
+  }
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(7, 170, 226, 0.3);
+    border-top: 4px solid #07aae2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+
+  span {
+    color: #ccc;
+    font-size: 1rem;
+  }
+}
+
+.error {
+  text-align: center;
+  padding: 40px 20px;
+
+  h3 {
+    color: #ff6b6b;
+    margin-bottom: 12px;
+  }
+
+  p {
+    color: #ccc;
+  }
+}
+
+.noData {
+  color: v.$text-secondary;
+  font-style: italic;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.container {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  border-radius: 12px;
+  padding: 24px;
+  color: #ffffff;
+  min-height: 100vh;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid #333;
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+}
+
+.teamInfo {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+.teamLogo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px;
+
+  @media (max-width: 768px) {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+.teamDetails {
+  .teamName {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    background: linear-gradient(45deg, #07aae2, #00ff87);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+
+    @media (max-width: 768px) {
+      font-size: 2rem;
+    }
+  }
+
+  .seasonInfo {
+    font-size: 1rem;
+    color: #aaa;
+    margin: 8px 0 0 0;
+  }
+}
+
+.quickStats {
+  display: flex;
+  gap: 24px;
+
+  @media (max-width: 768px) {
+    gap: 16px;
+    justify-content: center;
+  }
+}
+
+.quickStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  .quickStatValue {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #07aae2;
+  }
+
+  .quickStatLabel {
+    font-size: 0.875rem;
+    color: #ccc;
+    margin-top: 4px;
+  }
+}
+
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+.card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(7, 170, 226, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    color: #ffffff;
+  }
+
+  .cardIcon {
+    font-size: 1.5rem;
+    opacity: 0.7;
+  }
+}
+
+.cardContent {
+  .noData {
+    text-align: center;
+    color: #666;
+    padding: 20px;
+    font-style: italic;
+  }
+}
+
+.primaryStat {
+  text-align: center;
+  margin-bottom: 24px;
+
+  .statValue {
+    display: block;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #07aae2;
+    margin-bottom: 8px;
+
+    &.winStreak {
+      color: #00ff87;
+    }
+
+    &.lossStreak {
+      color: #ff6b6b;
+    }
+  }
+
+  .statLabel {
+    font-size: 1rem;
+    color: #ccc;
+  }
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.stat {
+  text-align: center;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+
+  .statValue {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 4px;
+
+    &.positive {
+      color: #00ff87;
+    }
+
+    &.negative {
+      color: #ff6b6b;
+    }
+  }
+
+  .statLabel {
+    font-size: 0.875rem;
+    color: #aaa;
+  }
+}
+
+.recentRecords {
+  .recordSection {
+    margin-bottom: 16px;
+
+    h4 {
+      font-size: 1rem;
+      color: #ccc;
+      margin: 0 0 8px 0;
+    }
+
+    .recordDisplay {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .recordValue {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #ffffff;
+      }
+
+      .recordPoints {
+        font-size: 0.875rem;
+        color: #aaa;
+      }
+    }
+  }
+}
+
+.trendIndicators {
+  display: flex;
+  justify-content: space-around;
+  gap: 16px;
+}
+
+.trendStat {
+  text-align: center;
+
+  .trendValue {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #07aae2;
+  }
+
+  .trendLabel {
+    font-size: 0.75rem;
+    color: #aaa;
+    margin-top: 4px;
+  }
+}
+
+.analyticsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.analyticsStat {
+  text-align: center;
+  padding: 16px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  position: relative;
+
+  .statValue {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+
+    &.excellent {
+      color: #00ff87;
+    }
+
+    &.average {
+      color: #ffb347;
+    }
+
+    &.poor {
+      color: #ff6b6b;
+    }
+  }
+
+  .statLabel {
+    font-size: 0.875rem;
+    color: #ccc;
+  }
+
+  .statIndicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+
+    &.positive {
+      background: #00ff87;
+    }
+
+    &.negative {
+      background: #ff6b6b;
+    }
+  }
+}
+
+.analyticsNote {
+  text-align: center;
+
+  small {
+    color: #666;
+    font-size: 0.75rem;
+  }
+}
+
+.specialTeamsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.specialTeamsStat {
+  text-align: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  position: relative;
+
+  .powerPlayHeader,
+  .penaltyKillHeader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 12px;
+
+    .specialTeamsIcon {
+      font-size: 1.25rem;
+    }
+
+    .specialTeamsLabel {
+      font-size: 0.875rem;
+      color: #ccc;
+      font-weight: 500;
+    }
+  }
+
+  .statValue {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .subStats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .subStat {
+      font-size: 0.75rem;
+      color: #aaa;
+    }
+  }
+
+  .statIndicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+
+    &.positive {
+      background: #00ff87;
+    }
+
+    &.negative {
+      background: #ff6b6b;
+    }
+  }
+}
+
+.goaltendingGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.goaltendingStat {
+  text-align: center;
+  padding: 16px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+
+  .statValue {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #ffffff;
+
+    &.excellent {
+      color: #00ff87;
+    }
+
+    &.average {
+      color: #ffb347;
+    }
+
+    &.poor {
+      color: #ff6b6b;
+    }
+
+    &.positive {
+      color: #00ff87;
+    }
+
+    &.negative {
+      color: #ff6b6b;
+    }
+  }
+
+  .statLabel {
+    font-size: 0.875rem;
+    color: #ccc;
+  }
+}
+
+.injuryList {
+  max-height: 200px;
+  overflow-y: auto;
+
+  .injuryItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .injuryPlayer {
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .injuryDetails {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+
+      .injuryType {
+        color: #ff6b6b;
+        font-size: 0.875rem;
+        font-weight: 500;
+      }
+
+      .injuryStatus {
+        color: #ffb347;
+        font-size: 0.75rem;
+      }
+
+      .injuryReturn {
+        color: #aaa;
+        font-size: 0.75rem;
+      }
+    }
+  }
+
+  .injuryMore {
+    text-align: center;
+    color: #666;
+    font-size: 0.875rem;
+    padding: 8px 0;
+    font-style: italic;
+  }
+}
+
+.noInjuries {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  color: #00ff87;
+
+  .healthyIcon {
+    font-size: 1.5rem;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// Responsive Design Enhancements
+@media (max-width: 1200px) {
+  .cardsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .cardsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .analyticsGrid,
+  .goaltendingGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .specialTeamsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,5 +1,3 @@
-// C:\Users\timbr\Desktop\FHFH\fhfhockey.com-3\web\pages\api\v1\db\update-team-summary.ts
-
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase";
 import Fetch from "lib/cors-fetch";
@@ -31,18 +29,20 @@ export default async function handler(
       console.log(`Fetching team summary for season ${seasonId}`);
 
       // 3. Build the team summary URL using the season id.
-      // The URL filters for records where seasonId equals the current season.
       const url = `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=false&isGame=false&sort=%5B%7B%22property%22:%22points%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22wins%22,%22direction%22:%22DESC%22%7D,%7B%22property%22:%22teamId%22,%22direction%22:%22ASC%22%7D%5D&start=0&limit=50&cayenneExp=gameTypeId=2%20and%20seasonId%3C%3D${seasonId}%20and%20seasonId%3E%3D${seasonId}`;
       console.log(`Requesting URL: ${url}`);
       const response = await Fetch(url);
       const json = await response.json();
 
-      // 4. Extract the data array (each object represents a team’s summary stats).
+      // 4. Extract the data array.
       const teamData = json.data;
+      if (!teamData) {
+        console.log(`No data returned for season ${seasonId}, skipping.`);
+        continue; // Skip to the next season if no data is found
+      }
       console.log(`Fetched ${teamData.length} records for season ${seasonId}`);
 
       // 5. Map the data to the shape of your Supabase table.
-      // Adjust the field names to match your table schema.
       const records = teamData.map((team: any) => ({
         season_id: seasonId,
         team_id: team.teamId,
@@ -69,10 +69,14 @@ export default async function handler(
       }));
 
       // 6. Upsert the team records into the Supabase table.
-      // (Assumes your table is named "team_summary_stats".)
+      // The `onConflict` option tells Supabase which columns to check for a conflict.
+      // If a row with the same `season_id` and `team_id` exists, it will be updated.
+      // Otherwise, a new row will be inserted.
       const { error: upsertError } = await supabase
         .from("team_summary_years")
-        .upsert(records);
+        .upsert(records, {
+          onConflict: "season_id,team_id"
+        });
 
       if (upsertError) {
         console.error(`Error upserting season ${seasonId}:`, upsertError);

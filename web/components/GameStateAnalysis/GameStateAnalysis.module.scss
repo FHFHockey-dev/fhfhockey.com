@@ -1,0 +1,342 @@
+// Game State Analysis Styles
+.container {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  border-radius: 12px;
+  padding: 24px;
+  color: #ffffff;
+  min-height: 100vh;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+
+  h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    background: linear-gradient(45deg, #07aae2, #00ff87);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+
+    @media (max-width: 768px) {
+      font-size: 2rem;
+    }
+  }
+
+  p {
+    font-size: 1.1rem;
+    color: #aaa;
+    margin: 0;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+}
+
+.tabNavigation {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 4px;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+.tabButton {
+  background: transparent;
+  border: none;
+  color: #ccc;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+  }
+
+  &.active {
+    background: linear-gradient(45deg, #07aae2, #00ff87);
+    color: #000000;
+    font-weight: 600;
+  }
+
+  @media (max-width: 768px) {
+    padding: 10px 16px;
+  }
+}
+
+.tabContent {
+  min-height: 500px;
+}
+
+.overviewContent {
+  .chartsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 32px;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .situationCards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+.chartCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 24px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(7, 170, 226, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+
+  h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 20px 0;
+    color: #ffffff;
+    text-align: center;
+  }
+}
+
+.situationCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(7, 170, 226, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.situationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+
+  h4 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0;
+    color: #ffffff;
+  }
+}
+
+.toiDisplay {
+  background: rgba(7, 170, 226, 0.2);
+  color: #07aae2;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: "Monaco", monospace;
+}
+
+.situationStats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 400px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.situationStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 12px 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.statValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 4px;
+
+  &.excellent {
+    color: #00ff87;
+  }
+
+  &.average {
+    color: #ffb347;
+  }
+
+  &.poor {
+    color: #ff6b6b;
+  }
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  color: #aaa;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.trendsContent {
+  .chartCard {
+    margin-bottom: 0;
+
+    h4 {
+      margin-bottom: 24px;
+    }
+  }
+}
+
+.comingSoon {
+  text-align: center;
+  padding: 80px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+
+  h4 {
+    font-size: 1.5rem;
+    color: #07aae2;
+    margin-bottom: 16px;
+  }
+
+  p {
+    color: #aaa;
+    font-size: 1rem;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(7, 170, 226, 0.3);
+    border-top: 5px solid #07aae2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+  }
+
+  span {
+    color: #ccc;
+    font-size: 1.1rem;
+  }
+}
+
+.error {
+  text-align: center;
+  padding: 60px 20px;
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 12px;
+
+  h3 {
+    color: #ff6b6b;
+    margin-bottom: 12px;
+    font-size: 1.5rem;
+  }
+
+  p {
+    color: #ccc;
+    font-size: 1rem;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// Responsive Design Adjustments
+@media (max-width: 1200px) {
+  .situationCards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .situationCards {
+    grid-template-columns: 1fr;
+  }
+
+  .situationStats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .tabNavigation {
+    margin-bottom: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .situationStats {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .situationStat {
+    padding: 10px 6px;
+  }
+
+  .statValue {
+    font-size: 1.1rem;
+  }
+
+  .statLabel {
+    font-size: 0.7rem;
+  }
+}

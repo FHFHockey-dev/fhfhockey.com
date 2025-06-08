@@ -8,6 +8,10 @@ import { useShotData, ShotDataFilters } from "hooks/useShotData";
 import { ShotVisualization } from "components/ShotVisualization/ShotVisualization";
 import { teamsInfo } from "lib/teamsInfo";
 import { LineCombinationsGrid } from "components/LineCombinations/LineCombinationsGrid";
+import { TeamDashboard } from "components/TeamDashboard/TeamDashboard";
+import { GameStateAnalysis } from "components/GameStateAnalysis/GameStateAnalysis";
+import RosterMatrixWrapper from "components/RosterMatrix/RosterMatrixWrapper";
+import MetricsTimeline from "components/MetricsTimeline/MetricsTimeline";
 
 // Shot data interface
 interface ShotData {
@@ -313,6 +317,38 @@ export default function TeamStatsPage({
               !lineCombos && <div>No line combinations found.</div>}
           </div>
         </div>
+      </div>
+
+      {/* Team Dashboard Section */}
+      <TeamDashboard
+        teamId={teamId?.toString() || ""}
+        teamAbbrev={teamAbbreviation}
+        seasonId={currentSeason?.seasonId?.toString() || ""}
+      />
+
+      {/* Game State Analysis Section */}
+      <GameStateAnalysis
+        teamId={teamId?.toString() || ""}
+        teamAbbrev={teamAbbreviation}
+        seasonId={currentSeason?.seasonId?.toString() || ""}
+      />
+
+      {/* Performance Timeline Section */}
+      <MetricsTimeline
+        teamId={teamId?.toString() || ""}
+        teamAbbrev={teamAbbreviation}
+        seasonId={currentSeason?.seasonId?.toString() || ""}
+      />
+
+      {/* Roster Matrix Section */}
+      <div className={styles.sectionTitleContainer}>
+        <div className={styles.sectionTitle}>
+          <h3>Roster Matrix</h3>
+          <p>Player roster data for the {currentSeason?.seasonId} season.</p>
+        </div>
+      </div>
+      <div className={styles.rosterMatrixContainer}>
+        <RosterMatrixWrapper />
       </div>
 
       {/* Add Event Visualization section with filtering */}
