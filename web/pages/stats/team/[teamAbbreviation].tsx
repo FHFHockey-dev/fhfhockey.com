@@ -5,13 +5,9 @@ import styles from "styles/TeamStatsPage.module.scss";
 import React, { useEffect, useState, useRef } from "react";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import { useShotData, ShotDataFilters } from "hooks/useShotData";
-import { ShotVisualization } from "components/ShotVisualization/ShotVisualization";
 import { teamsInfo } from "lib/teamsInfo";
 import { LineCombinationsGrid } from "components/LineCombinations/LineCombinationsGrid";
-import { TeamDashboard } from "components/TeamDashboard/TeamDashboard";
-import { GameStateAnalysis } from "components/GameStateAnalysis/GameStateAnalysis";
-import RosterMatrixWrapper from "components/RosterMatrix/RosterMatrixWrapper";
-import MetricsTimeline from "components/MetricsTimeline/MetricsTimeline";
+import { TeamTabNavigation } from "components/TeamTabNavigation/TeamTabNavigation";
 
 // Shot data interface
 interface ShotData {
@@ -208,175 +204,30 @@ export default function TeamStatsPage({
           />
           <h2 className={styles.teamName}>{teamName}</h2>
         </div>
-      </div>
-      <div className={styles.teamStatsTopRow}>
-        <div className={styles.seasonStatsColumn}>
-          <div className={styles.seasonStatsHeaderLeft}>Season Stats</div>
-          <div className={styles.teamStatsTableContainer}>
-            <table className={styles.teamStatsTable} ref={tableRef}>
-              <thead>
-                <tr>
-                  <th>Season</th>
-                  <th>GP</th>
-                  <th>W</th>
-                  <th>L</th>
-                  <th>OTL</th>
-                  <th>PTS</th>
-                  <th>PTS%</th>
-                  <th>ROW</th>
-                  <th>GF</th>
-                  <th>GA</th>
-                  <th>GF/GP</th>
-                  <th>GA/GP</th>
-                  <th>SF/GP</th>
-                  <th>SA/GP</th>
-                  <th>FO%</th>
-                  <th>PP%</th>
-                  <th>PK%</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayedSummaries.map((row, idx) => (
-                  <tr key={idx}>
-                    <td>{formatSeason(row.season_id)}</td>
-                    <td>{row.games_played ?? "-"}</td>
-                    <td>{row.wins ?? "-"}</td>
-                    <td>{row.losses ?? "-"}</td>
-                    <td>{row.ot_losses ?? "-"}</td>
-                    <td>{row.points ?? "-"}</td>
-                    <td>{formatPercent(row.point_pct)}</td>
-                    <td>{row.regulation_and_ot_wins ?? "-"}</td>
-                    <td>{row.goals_for ?? "-"}</td>
-                    <td>{row.goals_against ?? "-"}</td>
-                    <td>{row.goals_for_per_game?.toFixed(2) ?? "-"}</td>
-                    <td>{row.goals_against_per_game?.toFixed(2) ?? "-"}</td>
-                    <td>{row.shots_for_per_game?.toFixed(1) ?? "-"}</td>
-                    <td>{row.shots_against_per_game?.toFixed(1) ?? "-"}</td>
-                    <td>{formatPercent(row.faceoff_win_pct)}</td>
-                    <td>{formatPercent(row.power_play_pct)}</td>
-                    <td>{formatPercent(row.penalty_kill_pct)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {summaries.length > 10 && (
-              <div className={styles.showMoreSeasonsButtonContainer}>
-                <button
-                  className={styles.showMoreSeasonsButton}
-                  onClick={() => setShowAllSeasons((v) => !v)}
-                >
-                  {showAllSeasons
-                    ? "Show Fewer Seasons"
-                    : `Show All (${summaries.length}) Seasons`}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className={styles.lineCombinationsColumn}>
-          <div className={styles.seasonStatsHeaderRight}>Line Combinations</div>
-          <div
-            className={
-              styles.lineCombinations + " " + styles.lineCombinationsFixedHeight
-            }
-            ref={lineCombinationsRef}
-            style={
-              fixedLineCombosHeight
-                ? ({
-                    ["--line-combos-height"]: `${fixedLineCombosHeight}px`
-                  } as React.CSSProperties)
-                : undefined
-            }
-          >
-            {lineCombosLoading || playerMapLoading ? (
-              <div>Loading...</div>
-            ) : null}
-            {lineCombosError && (
-              <div style={{ color: "red" }}>{lineCombosError}</div>
-            )}
-            {playerMapError && (
-              <div style={{ color: "red" }}>{playerMapError}</div>
-            )}
-            {!lineCombosLoading &&
-              !playerMapLoading &&
-              !lineCombosError &&
-              !playerMapError &&
-              lineCombos && (
-                <LineCombinationsGrid
-                  forwards={lineCombos.forwards}
-                  defensemen={lineCombos.defensemen}
-                  goalies={lineCombos.goalies}
-                  playerMap={playerMap}
-                  cardClassName={styles.lineCombinationsCard}
-                />
-              )}
-            {!lineCombosLoading &&
-              !playerMapLoading &&
-              !lineCombosError &&
-              !playerMapError &&
-              !lineCombos && <div>No line combinations found.</div>}
-          </div>
-        </div>
-      </div>
 
-      {/* Team Dashboard Section */}
-      <TeamDashboard
-        teamId={teamId?.toString() || ""}
-        teamAbbrev={teamAbbreviation}
-        seasonId={currentSeason?.seasonId?.toString() || ""}
-      />
-
-      {/* Game State Analysis Section */}
-      <GameStateAnalysis
-        teamId={teamId?.toString() || ""}
-        teamAbbrev={teamAbbreviation}
-        seasonId={currentSeason?.seasonId?.toString() || ""}
-      />
-
-      {/* Performance Timeline Section */}
-      <MetricsTimeline
-        teamId={teamId?.toString() || ""}
-        teamAbbrev={teamAbbreviation}
-        seasonId={currentSeason?.seasonId?.toString() || ""}
-      />
-
-      {/* Roster Matrix Section */}
-      <div className={styles.sectionTitleContainer}>
-        <div className={styles.sectionTitle}>
-          <h3>Roster Matrix</h3>
-          <p>Player roster data for the {currentSeason?.seasonId} season.</p>
-        </div>
-      </div>
-      <div className={styles.rosterMatrixContainer}>
-        <RosterMatrixWrapper />
-      </div>
-
-      {/* Add Event Visualization section with filtering */}
-      <div className={styles.sectionTitleContainer}>
-        <div className={styles.sectionTitle}>
-          <h3>Event Visualization</h3>
-          <p>
-            Event data for the {currentSeason?.seasonId} season. Use the filters
-            to select event types and game types to display.
-          </p>
-        </div>
-      </div>
-      <div className={styles.shotVisualizationContainer}>
-        <ShotVisualization
+        {/* Integrated Tab Navigation */}
+        <TeamTabNavigation
+          teamId={teamId?.toString() || ""}
+          teamAbbrev={teamAbbreviation}
+          seasonId={currentSeason?.seasonId?.toString() || ""}
+          currentSeason={currentSeason}
           shotData={shotData}
           opponentShotData={opponentShotData}
-          isLoading={isLoading}
-          onFilterChange={handleFilterChange}
+          isLoadingShotData={isLoading}
+          shotError={error}
           filters={filters}
-          teamAbbreviation={teamAbbreviation}
-          alwaysShowOpponentLegend={true}
+          onFilterChange={handleFilterChange}
+          summaries={summaries}
+          lineCombos={lineCombos}
+          lineCombosLoading={lineCombosLoading}
+          lineCombosError={lineCombosError}
+          playerMap={playerMap}
+          playerMapLoading={playerMapLoading}
+          playerMapError={playerMapError}
+          showAllSeasons={showAllSeasons}
+          onToggleAllSeasons={() => setShowAllSeasons((v) => !v)}
         />
       </div>
-      {error && (
-        <div className={styles.errorMessage}>
-          Error loading event data: {error.message}
-        </div>
-      )}
     </div>
   );
 }

@@ -13,7 +13,7 @@ export default function TeamStats() {
   // Filter and transform players for the current team
   const teamPlayers = useMemo(() => {
     if (!allPlayers.length || !teamId) return [];
-    
+
     return allPlayers
       .filter((player) => player.teamId === teamId)
       .map((player) => ({
@@ -22,7 +22,9 @@ export default function TeamStats() {
         mapped_position: player.position,
         age: player.age,
         sweater_number: player.sweaterNumber,
-        height: player.heightInCentimeters ? `${player.heightInCentimeters} cm` : undefined,
+        height: player.heightInCentimeters
+          ? `${player.heightInCentimeters} cm`
+          : undefined,
         weight: player.weightInKilograms,
         // Add other optional fields as null/undefined since we don't have this data
         eligible_positions: undefined,
@@ -49,14 +51,14 @@ export default function TeamStats() {
         losses: undefined,
         save_pct: undefined,
         goals_against_avg: undefined,
-        shutouts: undefined,
+        shutouts: undefined
       }));
   }, [allPlayers, teamId]);
 
   // Determine team abbreviation from the first player
   const teamAbbreviation = useMemo(() => {
     if (teamPlayers.length > 0) {
-      const firstPlayer = allPlayers.find(p => p.teamId === teamId);
+      const firstPlayer = allPlayers.find((p) => p.teamId === teamId);
       return firstPlayer?.teamAbbreviation || "";
     }
     return "";
@@ -69,8 +71,8 @@ export default function TeamStats() {
       {/* Add RosterMatrix section */}
       <div className="mt-8">
         <h2 className="text-2xl font-bold mb-4">Team Roster</h2>
-        <RosterMatrix 
-          players={teamPlayers} 
+        <RosterMatrix
+          players={teamPlayers}
           teamAbbreviation={teamAbbreviation}
           isLoading={false}
           error={null}

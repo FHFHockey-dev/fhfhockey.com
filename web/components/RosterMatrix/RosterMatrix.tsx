@@ -41,6 +41,13 @@ interface RosterPlayer {
   save_pct?: number;
   goals_against_avg?: number;
   shutouts?: number;
+
+  // Advanced goalie stats
+  gsaa?: number;
+  hd_save_pct?: number;
+  md_save_pct?: number;
+  ld_save_pct?: number;
+  xg_against?: number;
 }
 
 interface RosterMatrixProps {
@@ -53,7 +60,7 @@ interface RosterMatrixProps {
 type SortField = keyof RosterPlayer;
 type SortDirection = "asc" | "desc";
 
-const SKATER_COLUMNS = [
+const SKATER_COLUMNS_BASIC = [
   { key: "sweater_number" as SortField, label: "#", width: "50px" },
   {
     key: "nhl_player_name" as SortField,
@@ -71,15 +78,32 @@ const SKATER_COLUMNS = [
   { key: "pim" as SortField, label: "PIM", width: "60px" },
   { key: "shots" as SortField, label: "SOG", width: "60px" },
   { key: "shooting_percentage" as SortField, label: "SH%", width: "60px" },
-  { key: "toi_per_game" as SortField, label: "TOI", width: "80px" },
+  { key: "toi_per_game" as SortField, label: "TOI", width: "80px" }
+];
+
+const SKATER_COLUMNS_ADVANCED = [
+  { key: "sweater_number" as SortField, label: "#", width: "50px" },
+  {
+    key: "nhl_player_name" as SortField,
+    label: "Player",
+    width: "200px",
+    sticky: true
+  },
+  { key: "mapped_position" as SortField, label: "Pos", width: "50px" },
+  { key: "age" as SortField, label: "Age", width: "50px" },
+  { key: "games_played" as SortField, label: "GP", width: "60px" },
+  { key: "goals" as SortField, label: "G", width: "50px" },
+  { key: "assists" as SortField, label: "A", width: "50px" },
+  { key: "points" as SortField, label: "P", width: "50px" },
   { key: "cf_pct" as SortField, label: "CF%", width: "60px" },
   { key: "xgf_pct" as SortField, label: "xGF%", width: "70px" },
+  { key: "hdcf_pct" as SortField, label: "HDCF%", width: "70px" },
   { key: "total_points_per_60" as SortField, label: "P/60", width: "70px" },
   { key: "ixg_per_60" as SortField, label: "ixG/60", width: "70px" },
   { key: "pdo" as SortField, label: "PDO", width: "60px" }
 ];
 
-const GOALIE_COLUMNS = [
+const GOALIE_COLUMNS_BASIC = [
   { key: "sweater_number" as SortField, label: "#", width: "50px" },
   {
     key: "nhl_player_name" as SortField,
@@ -94,6 +118,27 @@ const GOALIE_COLUMNS = [
   { key: "save_pct" as SortField, label: "SV%", width: "70px" },
   { key: "goals_against_avg" as SortField, label: "GAA", width: "70px" },
   { key: "shutouts" as SortField, label: "SO", width: "50px" }
+];
+
+const GOALIE_COLUMNS_ADVANCED = [
+  { key: "sweater_number" as SortField, label: "#", width: "50px" },
+  {
+    key: "nhl_player_name" as SortField,
+    label: "Player",
+    width: "200px",
+    sticky: true
+  },
+  { key: "age" as SortField, label: "Age", width: "50px" },
+  { key: "games_played" as SortField, label: "GP", width: "60px" },
+  { key: "wins" as SortField, label: "W", width: "50px" },
+  { key: "losses" as SortField, label: "L", width: "50px" },
+  { key: "save_pct" as SortField, label: "SV%", width: "70px" },
+  { key: "goals_against_avg" as SortField, label: "GAA", width: "70px" },
+  { key: "gsaa" as SortField, label: "GSAA", width: "70px" },
+  { key: "hd_save_pct" as SortField, label: "HD SV%", width: "70px" },
+  { key: "md_save_pct" as SortField, label: "MD SV%", width: "70px" },
+  { key: "ld_save_pct" as SortField, label: "LD SV%", width: "70px" },
+  { key: "xg_against" as SortField, label: "xGA", width: "70px" }
 ];
 
 export function RosterMatrix({
@@ -219,7 +264,7 @@ export function RosterMatrix({
   };
 
   // Render table header
-  const renderTableHeader = (columns: typeof SKATER_COLUMNS) => (
+  const renderTableHeader = (columns: typeof SKATER_COLUMNS_BASIC) => (
     <thead>
       <tr>
         {columns.map((col) => (
@@ -248,7 +293,7 @@ export function RosterMatrix({
   // Render table row
   const renderTableRow = (
     player: RosterPlayer,
-    columns: typeof SKATER_COLUMNS
+    columns: typeof SKATER_COLUMNS_BASIC
   ) => (
     <tr
       key={player.id}
@@ -416,11 +461,22 @@ export function RosterMatrix({
           <h3>Skaters ({skaters.length})</h3>
           <div className={styles.tableContainer}>
             <table className={styles.rosterTable}>
-              {renderTableHeader(SKATER_COLUMNS)}
+              {renderTableHeader(
+                viewMode === "basic"
+                  ? SKATER_COLUMNS_BASIC
+                  : SKATER_COLUMNS_ADVANCED
+              )}
               <tbody>
                 {filteredPlayers
                   .filter((p) => p.mapped_position !== "G")
-                  .map((player) => renderTableRow(player, SKATER_COLUMNS))}
+                  .map((player) =>
+                    renderTableRow(
+                      player,
+                      viewMode === "basic"
+                        ? SKATER_COLUMNS_BASIC
+                        : SKATER_COLUMNS_ADVANCED
+                    )
+                  )}
               </tbody>
             </table>
           </div>
@@ -433,11 +489,22 @@ export function RosterMatrix({
           <h3>Goalies ({goalies.length})</h3>
           <div className={styles.tableContainer}>
             <table className={styles.rosterTable}>
-              {renderTableHeader(GOALIE_COLUMNS)}
+              {renderTableHeader(
+                viewMode === "basic"
+                  ? GOALIE_COLUMNS_BASIC
+                  : GOALIE_COLUMNS_ADVANCED
+              )}
               <tbody>
                 {filteredPlayers
                   .filter((p) => p.mapped_position === "G")
-                  .map((player) => renderTableRow(player, GOALIE_COLUMNS))}
+                  .map((player) =>
+                    renderTableRow(
+                      player,
+                      viewMode === "basic"
+                        ? GOALIE_COLUMNS_BASIC
+                        : GOALIE_COLUMNS_ADVANCED
+                    )
+                  )}
               </tbody>
             </table>
           </div>

@@ -8,39 +8,59 @@
 
 .teamHeader {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  margin-bottom: 0;
+  border-bottom: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 
-  margin-bottom: 2rem;
-  border-bottom: 1px solid v.$border-color-secondary;
-
-  background: linear-gradient(
-    180deg,
-    var(--primary-color) 0%,
-    var(--primary-color) 60%,
-    var(--jersey) 60%,
-    var(--jersey) 65%,
-    var(--secondary-color) 65%,
-    var(--secondary-color) 73%,
-    var(--accent) 73%,
-    var(--accent) 81%,
-    var(--jersey) 81%,
-    var(--jersey) 100%
-  );
+  // background: linear-gradient(
+  //   180deg,
+  //   var(--primary-color) 0%,
+  //   var(--primary-color) 55%,
+  //   var(--jersey) 55%,
+  //   var(--jersey) 62%,  7
+  //   var(--secondary-color) 62%,
+  //   var(--secondary-color) 69%, 7
+  //   var(--accent) 69%,
+  //   var(--accent) 76%, 7
+  //   var(--jersey) 76%,
+  //   var(--jersey) 100% 4
+  // );
 }
 
 .teamLogoContainer {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 1rem;
   padding: 0.2rem 3rem;
+  height: 120px;
+
+  background: linear-gradient(
+    180deg,
+    var(--primary-color) 0%,
+    var(--primary-color) 85%,
+    var(--jersey) 85%,
+    var(--jersey) 89%,
+    var(--secondary-color) 89%,
+    var(--secondary-color) 93%,
+    var(--accent) 93%,
+    var(--accent) 100%
+  );
 }
 
 .teamLogo {
-  width: 130px;
-  height: 130px;
+  width: 80px;
+  height: 80px;
   object-fit: contain;
+  background: #ffffff1a;
+  border-radius: 12px;
+  padding: 8px;
+  margin-bottom: 20px;
 }
 
 .teamName {
@@ -48,7 +68,7 @@
   font-weight: 900;
   margin: 0;
   margin-left: 2rem;
-  margin-bottom: 3rem;
+  margin-bottom: 1.5rem;
   letter-spacing: 0.1em;
   color: v.$color-white !important;
 }

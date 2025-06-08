@@ -1,0 +1,509 @@
+@use "sass:color";
+@use "styles/vars" as v;
+
+.tabContainer {
+  width: 100%;
+  margin: 2rem 0;
+}
+
+.tabNavigation {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: none;
+  border-top: 2px solid rgba(255, 255, 255, 0.1);
+  padding: 0;
+  overflow-x: auto;
+  width: 100%;
+
+  &::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: v.$primary-color;
+    border-radius: 2px;
+  }
+}
+
+.tabList {
+  display: flex;
+  min-width: max-content;
+  gap: 0;
+  justify-content: space-evenly;
+  background-color: var(--team-primary-color);
+}
+
+.tabButton {
+  background: transparent;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-bottom: 3px solid transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font-family: v.$font-family-primary;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 100px;
+  width: 100%;
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 1);
+    transform: translateY(-1px);
+  }
+
+  &.active {
+    background: rgba(255, 255, 255, 0.15);
+    border-bottom-color: #ffffff;
+    color: #ffffff;
+    font-weight: 700;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #ffffff, rgba(255, 255, 255, 0.7));
+    }
+  }
+
+  &:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+  }
+}
+
+.tabLabel {
+  font-size: 0.85rem;
+  font-weight: inherit;
+  letter-spacing: 0.05em;
+}
+
+.tabDescription {
+  font-size: 0.7rem;
+  opacity: 0.7;
+  text-align: center;
+  line-height: 1.2;
+  max-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: none;
+  letter-spacing: 0;
+
+  @media (max-width: 768px) {
+    display: none;
+  }
+}
+
+.tabContent {
+  background: v.$background-light;
+  min-height: calc(100vh - 200px);
+  position: relative;
+  overflow: hidden;
+  padding: 2rem 0;
+}
+
+// Visualization tab specific styles
+.visualizationContent {
+  padding: 2rem;
+}
+
+.sectionHeader {
+  margin-bottom: 2rem;
+  text-align: center;
+
+  h3 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: v.$text-primary;
+    background: linear-gradient(45deg, #07aae2, #00ff87);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  p {
+    font-size: 1rem;
+    color: v.$text-secondary;
+    margin: 0;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.5;
+  }
+}
+
+.shotVisualizationContainer {
+  background: v.$background-dark;
+  border: 2px solid v.$border-color-secondary;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  min-height: 500px;
+}
+
+.errorMessage {
+  background: rgba(255, 107, 107, 0.1);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 8px;
+  padding: 1rem;
+  color: #ff6b6b;
+  text-align: center;
+  font-weight: 500;
+}
+
+// Stats tab specific styles
+.statsContent {
+  .teamStatsTopRow {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    width: 95%;
+    margin: 0 auto;
+    min-width: 0;
+
+    @media (max-width: 900px) {
+      flex-direction: column;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      align-items: stretch;
+    }
+  }
+
+  .seasonStatsColumn {
+    flex: 0 1 60%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+  }
+
+  .lineCombinationsColumn {
+    flex: 0 1 40%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+  }
+
+  .seasonStatsHeaderLeft,
+  .seasonStatsHeaderRight {
+    font-family: var(--font-family-accent, sans-serif);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #07aae2;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    flex: 0 0 auto;
+    min-width: 320px;
+    padding-left: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .teamStatsTableContainer {
+    margin-left: 0;
+    margin-right: 2rem;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+    max-width: 100%;
+    padding-left: 10px;
+    padding-right: 10px;
+
+    @media (max-width: 900px) {
+      margin-right: 0;
+    }
+  }
+
+  .teamStatsTable {
+    width: 100%;
+    border-collapse: collapse;
+    background: #232323;
+    color: #fefefe;
+    font-size: 1rem;
+    border: 5px solid rgba(255, 255, 255, 0.1);
+    outline: 5px solid rgba(7, 170, 226, 0.3);
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+    margin-top: 1.5rem;
+    margin-left: auto;
+    margin-right: auto;
+    min-width: 900px;
+
+    tr {
+      height: 40px;
+    }
+
+    th,
+    td {
+      padding: 0.4rem 0.5rem;
+      border-bottom: 1px solid #444;
+      text-align: center;
+      height: 35px;
+    }
+
+    th {
+      background: #181818;
+      color: #07aae2;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    tr:nth-of-type(even) {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr {
+      &:nth-child(even) td {
+        background-color: rgba(255, 255, 255, 0.05);
+      }
+      &:nth-child(odd) td {
+        background-color: rgba(255, 255, 255, 0.08);
+      }
+
+      &:hover td {
+        background-color: rgba(7, 170, 226, 0.2);
+        color: #07aae2;
+        font-weight: 600;
+        border-bottom: 2px solid #07aae2;
+        border-top: 2px solid #07aae2 !important;
+      }
+
+      &:last-child td {
+        border-bottom: none;
+      }
+    }
+  }
+
+  .showMoreSeasonsButtonContainer {
+    text-align: center;
+    margin-top: -0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .showMoreSeasonsButton {
+    font-family: var(--font-family-accent, sans-serif);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.9rem;
+    font-weight: 700;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    min-width: 130px;
+    text-align: center;
+    margin: 0.5rem auto 1.5rem auto;
+    display: inline-block;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background-color: rgba(7, 170, 226, 0.2);
+      color: #07aae2;
+      border-color: #07aae2;
+    }
+
+    &:focus-visible {
+      outline: 2px solid #07aae2;
+      outline-offset: 2px;
+      z-index: 2;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  .lineCombinations {
+    background: #232323;
+    color: #fefefe;
+    border: 5px solid rgba(255, 255, 255, 0.1);
+    outline: 5px solid rgba(7, 170, 226, 0.3);
+    border-radius: 0.5rem;
+    padding: 0.5rem 1.5rem 1.5rem 1.5rem;
+    min-width: 320px;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+    margin-top: 1.5rem;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .lineCombinationsFixedHeight {
+    overflow: auto;
+    height: var(--line-combos-height, 600px);
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+  }
+
+  .lineCombinationsCard {
+    background: #181818;
+    font-family: var(--font-family-primary, sans-serif);
+    font-variant: all-small-caps;
+    border: 1.5px solid #07aae2;
+    border-radius: 0.5rem;
+    min-height: unset;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    font-weight: 700;
+    color: #fff;
+    flex-direction: column;
+    text-align: left;
+    box-sizing: border-box;
+    padding-left: 0.5rem;
+    padding-top: 0.1rem;
+    padding-bottom: 0.3rem;
+  }
+}
+
+// Responsive design
+@media (max-width: 1024px) {
+  .tabButton {
+    min-width: 100px;
+    padding: 0.875rem 1.25rem;
+    font-size: 0.9rem;
+  }
+
+  .tabLabel {
+    font-size: 0.95rem;
+  }
+
+  .visualizationContent {
+    padding: 1.5rem;
+  }
+
+  .shotVisualizationContainer {
+    padding: 1rem;
+  }
+
+  .teamStatsTopRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .seasonStatsColumn,
+  .lineCombinationsColumn {
+    flex: 0 1 100%;
+    max-width: 100%;
+  }
+
+  .seasonStatsHeaderLeft,
+  .seasonStatsHeaderRight {
+    min-width: 100%;
+    padding-left: 0;
+    text-align: center;
+  }
+
+  .teamStatsTable {
+    min-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .tabButton {
+    min-width: 80px;
+    padding: 0.75rem 1rem;
+  }
+
+  .tabLabel {
+    font-size: 0.875rem;
+  }
+
+  .visualizationContent {
+    padding: 1rem;
+  }
+
+  .sectionHeader h3 {
+    font-size: 1.5rem;
+  }
+
+  .sectionHeader p {
+    font-size: 0.9rem;
+  }
+
+  .teamStatsTopRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .seasonStatsColumn,
+  .lineCombinationsColumn {
+    flex: 0 1 100%;
+    max-width: 100%;
+  }
+
+  .seasonStatsHeaderLeft,
+  .seasonStatsHeaderRight {
+    min-width: 100%;
+    padding-left: 0;
+    text-align: center;
+  }
+
+  .teamStatsTable {
+    min-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .tabButton {
+    min-width: 70px;
+    padding: 0.625rem 0.75rem;
+  }
+
+  .tabLabel {
+    font-size: 0.8rem;
+  }
+
+  .visualizationContent {
+    padding: 0.75rem;
+  }
+
+  .shotVisualizationContainer {
+    padding: 0.75rem;
+  }
+
+  .teamStatsTopRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .seasonStatsColumn,
+  .lineCombinationsColumn {
+    flex: 0 1 100%;
+    max-width: 100%;
+  }
+
+  .seasonStatsHeaderLeft,
+  .seasonStatsHeaderRight {
+    min-width: 100%;
+    padding-left: 0;
+    text-align: center;
+  }
+
+  .teamStatsTable {
+    min-width: 100%;
+  }
+}
