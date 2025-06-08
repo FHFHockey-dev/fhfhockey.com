@@ -423,60 +423,6 @@ export function TeamDashboard({
         } as React.CSSProperties
       }
     >
-      <div className={styles.header}>
-        <div className={styles.teamInfo}>
-          {teamInfo && (
-            <img
-              src={`/teamLogos/${teamAbbrev}.png`}
-              alt={`${teamInfo.name} logo`}
-              className={styles.teamLogo}
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-              }}
-            />
-          )}
-          <div className={styles.teamDetails}>
-            <h1 className={styles.teamName}>{teamInfo?.name || teamAbbrev}</h1>
-            <p className={styles.seasonInfo}>
-              2024-25 Season • Last Updated: {new Date().toLocaleDateString()}
-            </p>
-          </div>
-        </div>
-
-        {standingsData && (
-          <div className={styles.quickStats}>
-            <div className={styles.quickStat}>
-              <span className={styles.quickStatValue}>
-                {standingsData.points}
-              </span>
-              <span className={styles.quickStatLabel}>Points</span>
-            </div>
-            <div className={styles.quickStat}>
-              <span className={styles.quickStatValue}>
-                {standingsData.wins}-{standingsData.losses}-
-                {standingsData.ot_losses}
-              </span>
-              <span className={styles.quickStatLabel}>Record</span>
-            </div>
-            <div className={styles.quickStat}>
-              <span className={styles.quickStatValue}>
-                {standingsData.division_sequence}
-                {standingsData.division_sequence === 1
-                  ? "st"
-                  : standingsData.division_sequence === 2
-                    ? "nd"
-                    : standingsData.division_sequence === 3
-                      ? "rd"
-                      : "th"}
-              </span>
-              <span className={styles.quickStatLabel}>
-                {standingsData.division_name}
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
-
       <div className={styles.cardsGrid}>
         {/* Enhanced Standings Card */}
         <div className={styles.card}>
