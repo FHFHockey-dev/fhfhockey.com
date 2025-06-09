@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import supabase from "lib/supabase";
 import { teamsInfo } from "lib/teamsInfo";
 import useCurrentSeason from "hooks/useCurrentSeason";
+import fetchWithCache from "lib/fetchWithCache";
 import styles from "./TeamDashboard.module.scss";
 
 interface TeamDashboardProps {
@@ -58,6 +59,25 @@ interface GoaltendingStats {
   shutouts: number;
   quality_starts: number;
   goals_saved_above_expected: number;
+  goalies: IndividualGoalie[];
+  totalGames: number;
+}
+
+interface IndividualGoalie {
+  playerId: number;
+  goalieFullName: string;
+  lastName: string;
+  gamesPlayed: number;
+  gamesStarted: number;
+  wins: number;
+  losses: number;
+  otLosses: number;
+  savePct: number;
+  gaa: number;
+  shutouts: number;
+  workloadShare: number;
+  qualityStarts?: number;
+  qualityStartsPct?: number;
 }
 
 interface InjuryReport {
@@ -321,8 +341,130 @@ export function TeamDashboard({
           });
         }
 
-        // Remove goaltending stats aggregation since we don't have wgo_goalie_stats table
-        setGoaltendingStats(null);
+        // Fetch goaltending data using NHL API and process team goalie statistics
+        const franchiseId = teamInfo?.franchiseId;
+        if (franchiseId) {
+          try {
+            // Calculate date range for current season
+            const today = new Date().toISOString().split("T")[0];
+            const seasonStart =
+              currentSeason?.regularSeasonStartDate?.split("T")[0] ||
+              "2024-10-04";
+
+            // Fetch team schedule to get total games played
+            const scheduleUrl = `https://api-web.nhle.com/v1/club-schedule-season/${teamAbbrev}/${effectiveSeasonId}`;
+            const scheduleResponse = await fetchWithCache(scheduleUrl);
+            const completedGames = scheduleResponse.games.filter(
+              (game: any) =>
+                game.gameType === 2 && game.gameDate.split("T")[0] <= today
+            ).length;
+
+            // Fetch goalie data from NHL API
+            const goalieUrl = `https://api.nhle.com/stats/rest/en/goalie/summary?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameDate<='${today}' and gameDate>='${seasonStart}' and gameTypeId=2`;
+            const goalieResponse = await fetchWithCache(goalieUrl);
+
+            // Also fetch advanced goalie stats for quality starts
+            const advancedGoalieUrl = `https://api.nhle.com/stats/rest/en/goalie/advanced?isAggregate=true&isGame=true&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=franchiseId=${franchiseId} and gameDate<='${today}' and gameDate>='${seasonStart}' and gameTypeId=2`;
+            const advancedGoalieResponse =
+              await fetchWithCache(advancedGoalieUrl);
+
+            if (goalieResponse.data && goalieResponse.data.length > 0) {
+              const goalieData = goalieResponse.data;
+              const advancedGoalieData = advancedGoalieResponse.data || [];
+
+              // Create a map of advanced stats by player ID
+              const advancedStatsMap = advancedGoalieData.reduce(
+                (acc: any, goalie: any) => {
+                  acc[goalie.playerId] = goalie;
+                  return acc;
+                },
+                {}
+              );
+
+              // Process individual goalie stats
+              const processedGoalies: IndividualGoalie[] = goalieData.map(
+                (goalie: any) => {
+                  const advancedStats = advancedStatsMap[goalie.playerId];
+                  return {
+                    playerId: goalie.playerId,
+                    goalieFullName: goalie.goalieFullName,
+                    lastName: goalie.lastName,
+                    gamesPlayed: goalie.gamesPlayed,
+                    gamesStarted: goalie.gamesStarted,
+                    wins: goalie.wins,
+                    losses: goalie.losses,
+                    otLosses: goalie.otLosses,
+                    savePct: goalie.savePct,
+                    gaa: goalie.goalsAgainstAverage,
+                    shutouts: goalie.shutouts,
+                    workloadShare: (goalie.gamesStarted / completedGames) * 100,
+                    qualityStarts: advancedStats?.qualityStart || 0,
+                    qualityStartsPct: advancedStats?.qualityStartsPct || 0
+                  };
+                }
+              );
+
+              // Calculate team totals (including quality starts from advanced data)
+              const teamTotals = goalieData.reduce(
+                (acc: any, goalie: any) => {
+                  const advancedStats = advancedStatsMap[goalie.playerId];
+                  return {
+                    gamesPlayed: acc.gamesPlayed + goalie.gamesPlayed,
+                    wins: acc.wins + goalie.wins,
+                    losses: acc.losses + goalie.losses,
+                    otLosses: acc.otLosses + goalie.otLosses,
+                    saves: acc.saves + goalie.saves,
+                    shotsAgainst: acc.shotsAgainst + goalie.shotsAgainst,
+                    goalsAgainst: acc.goalsAgainst + goalie.goalsAgainst,
+                    shutouts: acc.shutouts + goalie.shutouts,
+                    qualityStarts:
+                      acc.qualityStarts + (advancedStats?.qualityStart || 0),
+                    timeOnIce: acc.timeOnIce + goalie.timeOnIce
+                  };
+                },
+                {
+                  gamesPlayed: 0,
+                  wins: 0,
+                  losses: 0,
+                  otLosses: 0,
+                  saves: 0,
+                  shotsAgainst: 0,
+                  goalsAgainst: 0,
+                  shutouts: 0,
+                  qualityStarts: 0,
+                  timeOnIce: 0
+                }
+              );
+
+              // Calculate team averages
+              const teamSavePct =
+                teamTotals.shotsAgainst > 0
+                  ? teamTotals.saves / teamTotals.shotsAgainst
+                  : 0;
+              const teamGAA =
+                teamTotals.timeOnIce > 0
+                  ? (teamTotals.goalsAgainst * 3600) / teamTotals.timeOnIce
+                  : 0;
+
+              setGoaltendingStats({
+                save_pct: teamSavePct,
+                gaa: teamGAA,
+                wins: teamTotals.wins,
+                losses: teamTotals.losses + teamTotals.otLosses,
+                shutouts: teamTotals.shutouts,
+                quality_starts: teamTotals.qualityStarts,
+                goals_saved_above_expected: 0, // Would need advanced stats for this
+                goalies: processedGoalies.sort(
+                  (a, b) => b.gamesStarted - a.gamesStarted
+                ),
+                totalGames: completedGames
+              });
+            }
+          } catch (error) {
+            console.error("Error fetching goaltending data:", error);
+            setGoaltendingStats(null);
+          }
+        }
 
         // Remove injury reports since the table doesn't exist
         setInjuries([]);
@@ -743,69 +885,248 @@ export function TeamDashboard({
           </div>
         </div>
 
-        {/* New Goaltending Card */}
+        {/* Enhanced Goaltending Card */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
-            <h3>Goaltending</h3>
+            <h3>Goaltending Performance</h3>
             <div className={styles.cardIcon}></div>
           </div>
           <div className={styles.cardContent}>
             {goaltendingStats ? (
               <>
-                <div className={styles.goaltendingGrid}>
-                  <div className={styles.goaltendingStat}>
-                    <span
-                      className={`${styles.statValue} ${getRankColor((goaltendingStats.save_pct || 0) * 100, { good: 91.5, poor: 89.5 })}`}
-                    >
-                      {formatPercentage(goaltendingStats.save_pct)}
-                    </span>
-                    <span className={styles.statLabel}>Save %</span>
+                <div className={styles.goaltendingOverview}>
+                  <div className={styles.goaltendingGrid}>
+                    <div className={styles.goaltendingStat}>
+                      <span
+                        className={`${styles.statValue} ${getRankColor((goaltendingStats.save_pct || 0) * 100, { good: 91.5, poor: 89.5 })}`}
+                      >
+                        {formatPercentage(goaltendingStats.save_pct)}
+                      </span>
+                      <span className={styles.statLabel}>Team SV%</span>
+                    </div>
+                    <div className={styles.goaltendingStat}>
+                      <span
+                        className={`${styles.statValue} ${getRankColor(goaltendingStats.gaa || 0, { good: 2.75, poor: 3.25 }, false)}`}
+                      >
+                        {formatDecimal(goaltendingStats.gaa, 2)}
+                      </span>
+                      <span className={styles.statLabel}>Team GAA</span>
+                    </div>
+                    <div className={styles.goaltendingStat}>
+                      <span className={styles.statValue}>
+                        {goaltendingStats.wins}-{goaltendingStats.losses}
+                      </span>
+                      <span className={styles.statLabel}>W-L Record</span>
+                    </div>
+                    <div className={styles.goaltendingStat}>
+                      <span className={styles.statValue}>
+                        {goaltendingStats.shutouts}
+                      </span>
+                      <span className={styles.statLabel}>Shutouts</span>
+                    </div>
+                    <div className={styles.goaltendingStat}>
+                      <span className={styles.statValue}>
+                        {goaltendingStats.quality_starts}
+                      </span>
+                      <span className={styles.statLabel}>Quality Starts</span>
+                    </div>
+                    <div className={styles.goaltendingStat}>
+                      <span className={styles.statValue}>
+                        {goaltendingStats.goalies.length}
+                      </span>
+                      <span className={styles.statLabel}>Goalies Used</span>
+                    </div>
                   </div>
-                  <div className={styles.goaltendingStat}>
-                    <span
-                      className={`${styles.statValue} ${getRankColor(goaltendingStats.gaa || 0, { good: 2.75, poor: 3.25 }, false)}`}
-                    >
-                      {formatDecimal(goaltendingStats.gaa, 2)}
-                    </span>
-                    <span className={styles.statLabel}>GAA</span>
+                </div>
+
+                {/* Individual Goalie Cards */}
+                <div className={styles.individualGoalies}>
+                  <h4 className={styles.sectionTitle}>
+                    Individual Performance
+                  </h4>
+                  <div className={styles.goalieCardsGrid}>
+                    {goaltendingStats.goalies
+                      .slice(0, 4)
+                      .map((goalie, index) => (
+                        <div
+                          key={goalie.playerId}
+                          className={styles.goalieCard}
+                        >
+                          <div className={styles.goalieCardHeader}>
+                            <span className={styles.goalieName}>
+                              {goalie.goalieFullName}
+                            </span>
+                            <span
+                              className={`${styles.goalieRole} ${index === 0 ? styles.starter : index === 1 ? styles.backup : styles.reserve}`}
+                            >
+                              {index === 0
+                                ? "STARTER"
+                                : index === 1
+                                  ? "BACKUP"
+                                  : index === 2
+                                    ? "THIRD"
+                                    : "R"}
+                            </span>
+                          </div>
+
+                          {/* Workload Distribution Bar */}
+                          <div className={styles.workloadSection}>
+                            <div className={styles.workloadBar}>
+                              <div
+                                className={styles.workloadFill}
+                                style={{
+                                  width: `${Math.min(goalie.workloadShare, 100)}%`,
+                                  backgroundColor:
+                                    index === 0
+                                      ? teamInfo?.primaryColor
+                                      : index === 1
+                                        ? teamInfo?.secondaryColor
+                                        : teamInfo?.accent ||
+                                          teamInfo?.primaryColor
+                                }}
+                              />
+                            </div>
+                            <div className={styles.workloadLabel}>
+                              {formatDecimal(goalie.workloadShare, 1)}% of
+                              starts
+                            </div>
+                          </div>
+
+                          <div className={styles.goalieStatsGrid}>
+                            <div className={styles.goalieStatItem}>
+                              <span
+                                className={`${styles.goalieStatValue} ${getRankColor((goalie.savePct || 0) * 100, { good: 91.5, poor: 89.5 })}`}
+                              >
+                                {formatPercentage(goalie.savePct)}
+                              </span>
+                              <span className={styles.goalieStatLabel}>
+                                SV%
+                              </span>
+                            </div>
+                            <div className={styles.goalieStatItem}>
+                              <span
+                                className={`${styles.goalieStatValue} ${getRankColor(goalie.gaa || 0, { good: 2.75, poor: 3.25 }, false)}`}
+                              >
+                                {formatDecimal(goalie.gaa, 2)}
+                              </span>
+                              <span className={styles.goalieStatLabel}>
+                                GAA
+                              </span>
+                            </div>
+                            <div className={styles.goalieStatItem}>
+                              <span className={styles.goalieStatValue}>
+                                {goalie.gamesPlayed}
+                              </span>
+                              <span className={styles.goalieStatLabel}>GP</span>
+                            </div>
+                            <div className={styles.goalieStatItem}>
+                              <span className={styles.goalieStatValue}>
+                                {goalie.gamesStarted}
+                              </span>
+                              <span className={styles.goalieStatLabel}>GS</span>
+                            </div>
+                            <div className={styles.goalieStatItem}>
+                              <span className={styles.goalieStatValue}>
+                                {goalie.qualityStarts || 0}
+                              </span>
+                              <span className={styles.goalieStatLabel}>QS</span>
+                            </div>
+                            <div className={styles.goalieStatItem}>
+                              <span className={styles.goalieStatValue}>
+                                {goalie.qualityStartsPct
+                                  ? formatPercentage(goalie.qualityStartsPct)
+                                  : "N/A"}
+                              </span>
+                              <span className={styles.goalieStatLabel}>
+                                QS%
+                              </span>
+                            </div>
+                            <div className={styles.goalieStatItem}>
+                              <span className={styles.goalieStatValue}>
+                                {goalie.wins}-{goalie.losses}
+                              </span>
+                              <span className={styles.goalieStatLabel}>
+                                W-L
+                              </span>
+                            </div>
+                            <div className={styles.goalieStatItem}>
+                              <span className={styles.goalieStatValue}>
+                                {goalie.shutouts}
+                              </span>
+                              <span className={styles.goalieStatLabel}>SO</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                   </div>
-                  <div className={styles.goaltendingStat}>
-                    <span className={styles.statValue}>
-                      {goaltendingStats.wins}-{goaltendingStats.losses}
-                    </span>
-                    <span className={styles.statLabel}>W-L</span>
+                </div>
+
+                {/* Team Workload Distribution */}
+                <div className={styles.workloadDistribution}>
+                  <h4 className={styles.sectionTitle}>
+                    Workload Distribution ({goaltendingStats.totalGames} games)
+                  </h4>
+                  <div className={styles.workloadDistributionBar}>
+                    {goaltendingStats.goalies.map((goalie, index) => {
+                      const goalieColors = [
+                        "var(--team-primary-color)",
+                        "var(--team-secondary-color)",
+                        "var(--team-accent-color)",
+                        "#6c757d",
+                        "#dc3545",
+                        "#28a745"
+                      ];
+
+                      return (
+                        <div
+                          key={goalie.playerId}
+                          className={styles.workloadSegment}
+                          style={{
+                            width: `${goalie.workloadShare}%`,
+                            backgroundColor: goalieColors[index] || "#6c757d"
+                          }}
+                          title={`${goalie.goalieFullName}: ${formatDecimal(goalie.workloadShare, 1)}% (${goalie.gamesStarted} starts)`}
+                        />
+                      );
+                    })}
                   </div>
-                  <div className={styles.goaltendingStat}>
-                    <span className={styles.statValue}>
-                      {goaltendingStats.shutouts}
-                    </span>
-                    <span className={styles.statLabel}>SO</span>
-                  </div>
-                  <div className={styles.goaltendingStat}>
-                    <span className={styles.statValue}>
-                      {goaltendingStats.quality_starts}
-                    </span>
-                    <span className={styles.statLabel}>QS</span>
-                  </div>
-                  <div className={styles.goaltendingStat}>
-                    <span
-                      className={`${styles.statValue} ${
-                        (goaltendingStats.goals_saved_above_expected || 0) > 0
-                          ? styles.positive
-                          : styles.negative
-                      }`}
-                    >
-                      {formatDecimal(
-                        goaltendingStats.goals_saved_above_expected,
-                        1
-                      )}
-                    </span>
-                    <span className={styles.statLabel}>GSAx</span>
+                  <div className={styles.workloadLegend}>
+                    {goaltendingStats.goalies.map((goalie, index) => {
+                      const goalieColors = [
+                        "var(--team-primary-color)",
+                        "var(--team-secondary-color)",
+                        "var(--team-accent-color)",
+                        "#6c757d",
+                        "#dc3545",
+                        "#28a745"
+                      ];
+
+                      return (
+                        <div
+                          key={goalie.playerId}
+                          className={styles.legendItem}
+                        >
+                          <div
+                            className={styles.legendColor}
+                            style={{
+                              backgroundColor: goalieColors[index] || "#6c757d"
+                            }}
+                          />
+                          <span className={styles.legendText}>
+                            {goalie.lastName} (
+                            {formatDecimal(goalie.workloadShare, 1)}%)
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               </>
             ) : (
-              <div className={styles.noData}>No goaltending data available</div>
+              <div className={styles.loadingState}>
+                <div className={styles.loadingSpinner}></div>
+                <span>Loading goaltending data...</span>
+              </div>
             )}
           </div>
         </div>

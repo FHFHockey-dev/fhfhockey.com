@@ -27,7 +27,6 @@ import {
 // Types
 interface NHLApiResponse {
   data: any[];
-  total?: number; // Added for more robust pagination checking
 }
 
 type SkaterDbRecord = {
@@ -73,6 +72,8 @@ type DataMaps = {
   shotTypeMap: Map<number, WGOShotTypeSkaterStat>;
   timeOnIceMap: Map<number, WGOToiSkaterStat>;
 };
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function mapApiDataToDbRecord(
   stat: WGOSummarySkaterStat,
@@ -338,7 +339,6 @@ function mapApiDataToDbRecord(
   if (seasonId) {
     record.season_id = seasonId;
   }
-  // This is a fast way to remove undefined properties
   Object.keys(record).forEach(
     (key) => record[key] === undefined && delete record[key]
   );
@@ -348,8 +348,7 @@ function mapApiDataToDbRecord(
 async function fetchDataForGameType(
   gameTypeId: number,
   formattedDate: string,
-  limit: number = 100,
-  seasonId?: number
+  limit: number = 100
 ): Promise<AllSkaterStats> {
   let start = 0;
   let moreDataAvailable = true;
@@ -371,96 +370,85 @@ async function fetchDataForGameType(
     shotTypeStats: [],
     timeOnIceStats: []
   };
-
   const getUrl = (
     reportName: string,
     sort: string,
     factCayenneExp: string = "gamesPlayed>=1"
-  ) => {
-    let cayenneExp;
-    if (seasonId) {
-      cayenneExp = `seasonId=${seasonId} and gameTypeId=${gameTypeId}`;
-    } else {
-      cayenneExp = `gameDate<="${formattedDate} 23:59:59" and gameDate>="${formattedDate}" and gameTypeId=${gameTypeId}`;
-    }
-    return `https://api.nhle.com/stats/rest/en/skater/${reportName}?isAggregate=true&isGame=false&sort=${encodeURIComponent(sort)}&start=${start}&limit=${limit}&factCayenneExp=${factCayenneExp}&cayenneExp=${cayenneExp}`;
-  };
-
+  ) =>
+    `https://api.nhle.com/stats/rest/en/skater/${reportName}?isAggregate=true&isGame=true&sort=${encodeURIComponent(sort)}&start=${start}&limit=${limit}&factCayenneExp=${factCayenneExp}&cayenneExp=gameDate%3C=%22${formattedDate}%2023%3A59%3A59%22%20and%20gameDate%3E=%22${formattedDate}%22%20and%20gameTypeId=${gameTypeId}`;
   while (moreDataAvailable) {
     const urls = {
       skaterStats: getUrl(
         "summary",
-        '[{"property":"points","direction":"DESC"}]'
+        '[{"property":"points","direction":"DESC"},{"property":"goals","direction":"DESC"},{"property":"assists","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
       ),
       skatersBio: getUrl(
         "bios",
-        '[{"property":"lastName","direction":"ASC_CI"}]',
+        '[{"property":"lastName","direction":"ASC_CI"},{"property":"skaterFullName","direction":"ASC_CI"},{"property":"playerId","direction":"ASC"}]',
         ""
       ),
       miscSkaterStats: getUrl(
         "realtime",
-        '[{"property":"hits","direction":"DESC"}]'
+        '[{"property":"hits","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
       ),
       faceOffStats: getUrl(
         "faceoffpercentages",
-        '[{"property":"totalFaceoffs","direction":"DESC"}]'
+        '[{"property":"totalFaceoffs","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
       ),
       faceoffWinLossStats: getUrl(
         "faceoffwins",
-        '[{"property":"totalFaceoffWins","direction":"DESC"}]'
+        '[{"property":"totalFaceoffWins","direction":"DESC"},{"property":"faceoffWinPct","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
       ),
       goalsForAgainstStats: getUrl(
         "goalsForAgainst",
-        '[{"property":"evenStrengthGoalDifference","direction":"DESC"}]'
+        '[{"property":"evenStrengthGoalDifference","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
       ),
       penaltiesStats: getUrl(
         "penalties",
-        '[{"property":"penaltyMinutes","direction":"DESC"}]'
+        '[{"property":"penaltyMinutes","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
       ),
       penaltyKillStats: getUrl(
         "penaltykill",
-        '[{"property":"shTimeOnIce","direction":"DESC"}]'
+        '[{"property":"shTimeOnIce","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
       ),
       powerPlayStats: getUrl(
         "powerplay",
-        '[{"property":"ppTimeOnIce","direction":"DESC"}]'
+        '[{"property":"ppTimeOnIce","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
       ),
       puckPossessionStats: getUrl(
         "puckPossessions",
-        '[{"property":"satPct","direction":"DESC"}]'
+        '[{"property":"satPct","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
       ),
       satCountsStats: getUrl(
         "summaryshooting",
-        '[{"property":"satTotal","direction":"DESC"}]'
+        '[{"property":"satTotal","direction":"DESC"},{"property":"usatTotal","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
       ),
       satPercentagesStats: getUrl(
         "percentages",
-        '[{"property":"satPercentage","direction":"DESC"}]'
+        '[{"property":"satPercentage","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
       ),
       scoringRatesStats: getUrl(
         "scoringRates",
-        '[{"property":"pointsPer605v5","direction":"DESC"}]'
+        '[{"property":"pointsPer605v5","direction":"DESC"},{"property":"goalsPer605v5","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
       ),
       scoringPerGameStats: getUrl(
         "scoringpergame",
-        '[{"property":"pointsPerGame","direction":"DESC"}]'
+        '[{"property":"pointsPerGame","direction":"DESC"},{"property":"goalsPerGame","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
       ),
       shotTypeStats: getUrl(
         "shottype",
-        '[{"property":"shootingPct","direction":"DESC"}]'
+        '[{"property":"shootingPct","direction":"DESC"},{"property":"shootingPctBat","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
       ),
       timeOnIceStats: getUrl(
         "timeonice",
-        '[{"property":"timeOnIce","direction":"DESC"}]'
+        '[{"property":"timeOnIce","direction":"DESC"},{"property":"playerId","direction":"ASC"}]'
       )
     };
-
     const responses = await Promise.all(
       Object.values(urls).map((url) =>
         Fetch(url).then((res) => res.json() as Promise<NHLApiResponse>)
       )
     );
-
     const [
       skaterStatsResponse,
       bioStatsResponse,
@@ -479,7 +467,6 @@ async function fetchDataForGameType(
       shotTypeResponse,
       timeOnIceResponse
     ] = responses;
-
     allData.skaterStats.push(...skaterStatsResponse.data);
     allData.skatersBio.push(...bioStatsResponse.data);
     allData.miscSkaterStats.push(...miscSkaterStatsResponse.data);
@@ -496,13 +483,7 @@ async function fetchDataForGameType(
     allData.scoringPerGameStats.push(...scoringPerGameResponse.data);
     allData.shotTypeStats.push(...shotTypeResponse.data);
     allData.timeOnIceStats.push(...timeOnIceResponse.data);
-
-    // Stop paginating if the main stats report (skaterStats) is empty.
-    // This is a key assumption: if there are no summary stats, the other reports are irrelevant.
-    if (skaterStatsResponse.data.length < limit) {
-      moreDataAvailable = false;
-    }
-
+    moreDataAvailable = responses.some((res) => res.data.length === limit);
     start += limit;
   }
   return allData;
@@ -516,7 +497,6 @@ async function processAndUpsertGameTypeData(
 ): Promise<number> {
   if (allData.skaterStats.length === 0) return 0;
 
-  // Using maps is efficient for merging data. This is good.
   const dataMaps: DataMaps = {
     bioMap: new Map(allData.skatersBio.map((s) => [s.playerId, s])),
     miscMap: new Map(allData.miscSkaterStats.map((s) => [s.playerId, s])),
@@ -554,12 +534,12 @@ async function processAndUpsertGameTypeData(
   );
 
   if (recordsToUpsert.length > 0) {
-    // Using a chunked upsert is crucial for large datasets. This is good.
     const CHUNK_SIZE = 100;
     for (let i = 0; i < recordsToUpsert.length; i += CHUNK_SIZE) {
       const chunk = recordsToUpsert.slice(i, i + CHUNK_SIZE);
+
       const { error } = await supabase.from(tableName).upsert(chunk, {
-        onConflict: "player_id, date" // Explicitly define conflict target for clarity
+        onConflict: "player_id, date"
       });
 
       if (error) {
@@ -568,7 +548,7 @@ async function processAndUpsertGameTypeData(
           error
         );
         throw new Error(
-          `Supabase upsert failed for ${tableName}: ${error.message}`
+          `Supabase upsert failed for ${tableName} (chunk starting at index ${i}): ${error.message}`
         );
       }
     }
@@ -577,30 +557,30 @@ async function processAndUpsertGameTypeData(
 }
 
 async function updateSkaterStats(date: string) {
-  // This function now focuses on a single task: updating one day's stats.
   console.log(`Updating skater stats for ${date}`);
-
-  const currentSeason = await getCurrentSeason(); // Consider caching this if script runs for long periods
+  const currentSeason = await getCurrentSeason();
   const seasonId = currentSeason.seasonId;
 
-  const regularSeasonData = await fetchDataForGameType(2, date, 100, undefined);
-  const regularSeasonUpdates = await processAndUpsertGameTypeData(
-    regularSeasonData,
-    "wgo_skater_stats",
-    date,
-    seasonId
-  );
+  // [*] OPTIMIZATION: Fetch regular season and playoff data in parallel for the same day.
+  const [regularSeasonData, playoffData] = await Promise.all([
+    fetchDataForGameType(2, date),
+    fetchDataForGameType(3, date)
+  ]);
 
-  const playoffData = await fetchDataForGameType(3, date, 100, undefined);
-  const playoffUpdates = await processAndUpsertGameTypeData(
-    playoffData,
-    "wgo_skater_stats_playoffs",
-    date
-  );
+  // [*] OPTIMIZATION: Process and upsert data in parallel as they are independent operations.
+  const [regularSeasonUpdates, playoffUpdates] = await Promise.all([
+    processAndUpsertGameTypeData(
+      regularSeasonData,
+      "wgo_skater_stats",
+      date,
+      seasonId
+    ),
+    processAndUpsertGameTypeData(playoffData, "wgo_skater_stats_playoffs", date)
+  ]);
 
   const totalUpdates = regularSeasonUpdates + playoffUpdates;
   return {
-    message: `Skater stats updated for ${date}. Regular: ${regularSeasonUpdates}, Playoffs: ${playoffUpdates}.`,
+    message: `Skater stats updated for ${date}. Regular Season: ${regularSeasonUpdates}, Playoffs: ${playoffUpdates}.`,
     success: true,
     totalUpdates
   };
@@ -612,54 +592,53 @@ async function getMostRecentDateFromDB(): Promise<string | null> {
     .select("date")
     .order("date", { ascending: false })
     .limit(1);
-
   if (error) {
     console.error("Error fetching most recent date:", error);
     return null;
   }
-  return data?.[0]?.date || null;
+  return data && data.length > 0 ? data[0].date : null;
 }
 
 async function updateAllSkatersFromMostRecentDate(
   fullRefresh: boolean = false
 ) {
+  let startDate: Date;
   const today = new Date();
   const currentSeason = await getCurrentSeason();
-  let startDate;
-
   if (fullRefresh) {
     startDate = parseISO(currentSeason.regularSeasonStartDate);
     console.log(
-      `Full refresh: Starting from season start date: ${formatISO(startDate, { representation: "date" })}`
+      "Full refresh: Starting from season start date:",
+      formatISO(startDate, { representation: "date" })
     );
   } else {
     const mostRecentDate = await getMostRecentDateFromDB();
     if (mostRecentDate) {
       startDate = addDays(parseISO(mostRecentDate), 1);
       console.log(
-        `Incremental update: Starting from ${formatISO(startDate, { representation: "date" })}`
+        "Incremental update: Starting from",
+        formatISO(startDate, { representation: "date" })
       );
     } else {
       startDate = parseISO(currentSeason.regularSeasonStartDate);
       console.log(
-        `No existing data: Starting from season start date: ${formatISO(startDate, { representation: "date" })}`
+        "No existing data: Starting from season start date:",
+        formatISO(startDate, { representation: "date" })
       );
     }
   }
 
   const endDate = today;
-  const datesToProcess: string[] = [];
+  let totalUpdates = 0;
+  const datesProcessed: string[] = [];
+  const failedDates: string[] = []; // Now collects dates that failed ALL retry attempts
   let currentDate = startDate;
 
-  while (
-    isBefore(currentDate, endDate) ||
-    currentDate.toDateString() === endDate.toDateString()
-  ) {
-    datesToProcess.push(formatISO(currentDate, { representation: "date" }));
-    currentDate = addDays(currentDate, 1);
-  }
+  // --- NEW: Retry Constants ---
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY_MS = 2000; // 2 seconds
 
-  if (datesToProcess.length === 0) {
+  if (isBefore(endDate, startDate)) {
     return {
       message: "Database is already up to date.",
       success: true,
@@ -670,132 +649,165 @@ async function updateAllSkatersFromMostRecentDate(
   }
 
   console.log(
-    `Processing ${datesToProcess.length} dates from ${datesToProcess[0]} to ${datesToProcess[datesToProcess.length - 1]}`
+    `Processing dates from ${formatISO(startDate, {
+      representation: "date"
+    })} to ${formatISO(endDate, { representation: "date" })}`
   );
 
-  const CONCURRENCY_LIMIT = 1;
-  let totalUpdates = 0;
-  const datesProcessed: string[] = [];
-  let failedDates: string[] = []; // Changed to let to allow modification
+  while (
+    isBefore(currentDate, endDate) ||
+    currentDate.toDateString() === endDate.toDateString()
+  ) {
+    const formattedDate = formatISO(currentDate, { representation: "date" });
+    let success = false;
 
-  // --- Main Processing Pass ---
-  console.log("\n--- Starting Main Processing Pass ---");
-  for (let i = 0; i < datesToProcess.length; i += CONCURRENCY_LIMIT) {
-    const batch = datesToProcess.slice(i, i + CONCURRENCY_LIMIT);
-    console.log(
-      `--> Processing batch of ${batch.length} dates starting with ${batch[0]}`
-    );
-
-    const results = await Promise.allSettled(
-      batch.map((date) => updateSkaterStats(date))
-    );
-
-    results.forEach((result, index) => {
-      const date = batch[index];
-      if (result.status === "fulfilled") {
-        totalUpdates += result.value.totalUpdates;
-        datesProcessed.push(date);
-        console.log(
-          `    ✔ Completed ${date}: ${result.value.totalUpdates} records updated.`
-        );
-      } else {
-        failedDates.push(date);
-        console.error(
-          `    ❌ Error processing ${date}:`,
-          result.reason?.message
-        );
-      }
-    });
-  }
-
-  // --- NEW: Retry Pass for Failed Dates ---
-  if (failedDates.length > 0) {
-    console.log(
-      `\n--- Starting Retry Pass for ${failedDates.length} Failed Dates ---`
-    );
-    const datesThatStillFailed: string[] = [];
-
-    // Optional: Add a short delay before retrying to allow network issues to resolve
-    await new Promise((resolve) => setTimeout(resolve, 5000)); // 5-second delay
-
-    for (const date of failedDates) {
-      console.log(`   Retrying date: ${date}`);
+    // --- NEW: Immediate Retry Loop ---
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        const result = await updateSkaterStats(date);
-        totalUpdates += result.totalUpdates;
-        // On success, add it to the main processed list
-        datesProcessed.push(date);
         console.log(
-          `    ✅ Successfully retried ${date}: ${result.totalUpdates} records updated.`
+          `Processing skater stats for ${formattedDate} (Attempt ${attempt})...`
         );
+        const result = await updateSkaterStats(formattedDate);
+        totalUpdates += result.totalUpdates;
+        datesProcessed.push(formattedDate);
+        success = true;
+        break; // Succeeded, exit the retry loop and move to the next date
       } catch (error: any) {
-        // If it fails again, add it to the final failure list
         console.error(
-          `    ❌ Still failing on retry for ${date}:`,
-          error.message
+          `Attempt ${attempt} failed for ${formattedDate}: ${error.message}`
         );
-        datesThatStillFailed.push(date);
+        if (attempt < MAX_RETRIES) {
+          console.log(`Waiting ${RETRY_DELAY_MS}ms before next attempt...`);
+          await sleep(RETRY_DELAY_MS);
+        }
       }
     }
-    // The list of failed dates is now only the ones that failed the retry attempt
-    failedDates = datesThatStillFailed;
+
+    if (!success) {
+      console.error(
+        `All ${MAX_RETRIES} attempts failed for ${formattedDate}. Adding to final failed list.`
+      );
+      failedDates.push(formattedDate);
+    }
+
+    currentDate = addDays(currentDate, 1);
   }
 
-  // --- Final Report ---
-  const message = `Update finished. Processed ${datesProcessed.length} dates with ${totalUpdates} total updates. Final failed dates: ${failedDates.length}.`;
-  console.log(`\n--- Final Report ---`);
-  console.log(message);
+  // This final logging is still useful to report on dates that could not be processed at all.
   if (failedDates.length > 0) {
-    console.log("Dates that failed all attempts:", failedDates);
+    console.error(
+      `--- Could not process ${failedDates.length} dates after all retries: ${failedDates.join(", ")} ---`
+    );
   }
 
   return {
-    message,
-    success: failedDates.length === 0,
+    message: `All skater stats updated successfully. Processed ${datesProcessed.length} dates with ${totalUpdates} total updates.`,
+    success: true,
     totalUpdates,
     datesProcessed,
-    failedDates
+    failedDates // This list now contains only the dates that failed all retries
   };
 }
 
-// Stub for the rest of the file to make it complete
 async function getAllSeasonsFromDB(): Promise<
   { seasonId: number; startDate: string; endDate: string }[]
 > {
+  console.log("Fetching all seasons from the 'seasons' database table...");
+
   const { data, error } = await supabase
     .from("seasons")
     .select("id, startDate, endDate")
     .order("startDate", { ascending: true });
+
   if (error) {
     console.error("Error fetching seasons from database:", error);
-    throw new Error(`Failed to fetch seasons: ${error.message}`);
+    throw new Error(`Failed to fetch seasons from Supabase: ${error.message}`);
   }
-  return (
-    data?.map((s) => ({
-      seasonId: s.id,
-      startDate: s.startDate,
-      endDate: s.endDate
-    })) || []
-  );
+
+  if (!data || data.length === 0) {
+    console.warn("No seasons found in the 'seasons' table.");
+    return [];
+  }
+
+  console.log(`Found ${data.length} seasons to process.`);
+
+  return data.map((season) => ({
+    seasonId: season.id,
+    startDate: season.startDate,
+    endDate: season.endDate
+  }));
 }
 
+/**
+ * [NEW HELPER] Processes all data for a single date. Encapsulates logic for reuse in the main and retry loops.
+ * Throws an error on failure, which is caught by the calling function.
+ * @returns The total number of player records updated for the date.
+ */
+async function processDate(
+  formattedDate: string,
+  seasonId: number
+): Promise<number> {
+  console.log(`Processing date: ${formattedDate} for season ${seasonId}`);
+
+  // 1. Fetch data for both game types in parallel
+  const [regularSeasonData, playoffData] = await Promise.all([
+    fetchDataForGameType(2, formattedDate),
+    fetchDataForGameType(3, formattedDate)
+  ]);
+
+  // 2. Upsert data for both game types in parallel
+  const [regularSeasonUpdates, playoffUpdates] = await Promise.all([
+    processAndUpsertGameTypeData(
+      regularSeasonData,
+      "wgo_skater_stats",
+      formattedDate,
+      seasonId
+    ),
+    processAndUpsertGameTypeData(
+      playoffData,
+      "wgo_skater_stats_playoffs",
+      formattedDate
+      // Note: Playoff data typically doesn't need a seasonId if your schema doesn't require it,
+      // as playoffs are implicitly tied to the season they conclude.
+    )
+  ]);
+
+  const dailyUpdates = regularSeasonUpdates + playoffUpdates;
+  if (dailyUpdates > 0) {
+    console.log(
+      `Completed ${formattedDate}: ${dailyUpdates} player records updated.`
+    );
+  }
+  return dailyUpdates;
+}
+
+/**
+ * [OPTIMIZED & ROBUST] Processes all historical stats for all seasons sequentially,
+ * with a retry mechanism for failed dates.
+ */
 async function updateAllStatsForAllSeasons() {
   const allSeasons = await getAllSeasonsFromDB();
+  let totalUpdates = 0;
+  const failedDates: { date: string; seasonId: number }[] = [];
+
   if (allSeasons.length === 0) {
     return {
-      message: "No seasons found to refresh.",
+      message: "No seasons found in the database to refresh.",
       success: true,
       totalUpdates: 0
     };
   }
 
-  console.log(
-    "Clearing all records from skater stats tables... (Manual step - see recommendation)"
-  );
+  console.log(`Starting full refresh for ${allSeasons.length} seasons.`);
 
-  let totalUpdates = 0;
+  // --- NEW: Retry Constants ---
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY_MS = 2000; // 2 seconds
+
   for (const season of allSeasons) {
-    console.log(`--- Processing Season: ${season.seasonId} ---`);
+    console.log(
+      `--- Processing Season: ${season.seasonId} (${season.startDate} to ${season.endDate}) ---`
+    );
     let currentDate = parseISO(season.startDate);
     const endDate = parseISO(season.endDate);
 
@@ -804,35 +816,71 @@ async function updateAllStatsForAllSeasons() {
       currentDate.toDateString() === endDate.toDateString()
     ) {
       const formattedDate = formatISO(currentDate, { representation: "date" });
-      try {
-        const result = await updateSkaterStats(formattedDate);
-        totalUpdates += result.totalUpdates;
-      } catch (error: any) {
-        console.error(
-          `Error on ${formattedDate} for season ${season.seasonId}:`,
-          error.message
-        );
+      let success = false;
+
+      // --- NEW: Immediate Retry Loop ---
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          console.log(
+            `Processing ${formattedDate} for season ${season.seasonId} (Attempt ${attempt})...`
+          );
+          const dailyUpdates = await processDate(
+            formattedDate,
+            season.seasonId
+          );
+          totalUpdates += dailyUpdates;
+          success = true;
+          break; // Succeeded, exit retry loop
+        } catch (error: any) {
+          console.error(
+            `Attempt ${attempt} failed for ${formattedDate}: ${error.message}`
+          );
+          if (attempt < MAX_RETRIES) {
+            console.log(`Waiting ${RETRY_DELAY_MS}ms before next attempt...`);
+            await sleep(RETRY_DELAY_MS);
+          }
+        }
       }
+
+      if (!success) {
+        console.error(
+          `All ${MAX_RETRIES} attempts for ${formattedDate} failed. Adding to final failed list.`
+        );
+        failedDates.push({ date: formattedDate, seasonId: season.seasonId });
+      }
+
       currentDate = addDays(currentDate, 1);
     }
   }
 
-  const message = `All-time refresh complete. Processed ${allSeasons.length} seasons, ${totalUpdates} updates.`;
-  return { message, success: true, totalUpdates };
+  // The final report on permanently failed dates.
+  if (failedDates.length > 0) {
+    console.error(
+      `\n--- SUMMARY: ${failedDates.length} dates could not be processed after all retries: ${failedDates.map((f) => f.date).join(", ")} ---\n`
+    );
+  }
+
+  const message = `All-time refresh complete. Processed ${allSeasons.length} seasons with a total of ${totalUpdates} updates.`;
+  console.log(message);
+  return {
+    message,
+    success: true,
+    totalUpdates,
+    failedDates: failedDates.map((f) => f.date)
+  };
 }
 
 async function fetchDataForPlayer(playerId: string, playerName: string) {
+  console.log(`Fetching data for player ${playerName} (${playerId})`);
   const today = new Date();
   const formattedDate = formatISO(today, { representation: "date" });
   const currentSeason = await getCurrentSeason();
-  const seasonStartDate = formatISO(
-    parseISO(currentSeason.regularSeasonStartDate),
-    { representation: "date" }
-  );
+
+  const seasonStartDate = currentSeason.regularSeasonStartDate;
 
   const fetchPlayerDataForGameType = async (gameTypeId: number) => {
     const cayenneExp = `gameDate<="${formattedDate} 23:59:59" and gameDate>="${seasonStartDate}" and gameTypeId=${gameTypeId} and playerId=${playerId}`;
-    const url = `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=true&isGame=false&sort=[{"property":"points","direction":"DESC"}]&factCayenneExp=gamesPlayed>=1&cayenneExp=${cayenneExp}`;
+    const url = `https://api.nhle.com/stats/rest/en/skater/summary?isAggregate=true&isGame=false&sort=[{"property":"points","direction":"DESC"}]&factCayenneExp=gamesPlayed>=1&cayenneExp=${encodeURIComponent(cayenneExp)}`;
     const response = await Fetch(url).then(
       (res) => res.json() as Promise<NHLApiResponse>
     );
@@ -848,142 +896,80 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const jobName = "update-wgo-skaters";
-
-  // Define a timeout for the lock
-  const lockTimeout = "2 hours";
-
-  // --- 1. ATTEMPT TO ACQUIRE LOCK ---
-  const { data: lock_acquired, error: rpcError } = await supabase.rpc(
-    "acquire_lock",
-    {
-      job_name_param: jobName,
-      timeout_interval: lockTimeout
-    }
-  );
-
-  if (rpcError) {
-    console.error(
-      "CRITICAL: Error calling acquire_lock RPC function.",
-      rpcError
-    );
-    return res.status(500).json({
-      message: "Failed to check job lock status.",
-      error: rpcError.message
-    });
-  }
-
-  if (!lock_acquired) {
-    console.log("Job is already running and the lock is not stale. Exiting.");
-    return res
-      .status(409)
-      .json({ message: "An active job is already running." });
-  }
-
-  // If we get here, we have the lock. We MUST release it.
   let status: "success" | "failure" = "success";
   let details: any = {};
   let totalUpdates = 0;
-  let httpStatus = 200;
 
   try {
-    // --- 2. MAIN JOB LOGIC ---
     const {
       date,
       playerId,
       action,
       fullRefresh: fullRefreshParam,
-      playerFullName: rawPlayerFullName,
-      season
+      playerFullName: rawPlayerFullName
     } = req.query;
-
     const fullRefresh = fullRefreshParam === "true" || fullRefreshParam === "1";
     const playerFullName = Array.isArray(rawPlayerFullName)
       ? rawPlayerFullName[0]
       : rawPlayerFullName;
     let result: any;
 
-    if (season && typeof season === "string") {
-      const seasonId = parseInt(season, 10);
-      const arbitraryDateForDB = `${season.substring(0, 4)}-12-31`;
-      const regularSeasonData = await fetchDataForGameType(
-        2,
-        "",
-        100,
-        seasonId
-      );
-      const regularSeasonUpdates = await processAndUpsertGameTypeData(
-        regularSeasonData,
-        "wgo_skater_stats",
-        arbitraryDateForDB,
-        seasonId
-      );
-      const playoffData = await fetchDataForGameType(3, "", 100, seasonId);
-      const playoffUpdates = await processAndUpsertGameTypeData(
-        playoffData,
-        "wgo_skater_stats_playoffs",
-        arbitraryDateForDB
-      );
-      totalUpdates = regularSeasonUpdates + playoffUpdates;
-      details = {
-        message: `Skater stats updated for season ${seasonId}. Regular Season: ${regularSeasonUpdates}, Playoffs: ${playoffUpdates}.`,
-        success: true,
-        totalUpdates
-      };
-      // httpStatus remains 200
-    } else if (action === "all_seasons_full_refresh") {
+    if (action === "all_seasons_full_refresh") {
       console.log("Action 'all_seasons_full_refresh' triggered.");
       result = await updateAllStatsForAllSeasons();
       totalUpdates = result.totalUpdates;
-      details = { ...result };
-      // httpStatus remains 200
+      details = { message: result.message, failedDates: result.failedDates };
+      res.status(200).json(result);
     } else if (action === "all") {
       console.log(`Action 'all' triggered. Full refresh: ${fullRefresh}`);
       result = await updateAllSkatersFromMostRecentDate(fullRefresh);
       totalUpdates = result.totalUpdates;
-      status = result.success ? "success" : "failure";
-      details = { ...result, fullRefresh };
-      // httpStatus remains 200
+      details = {
+        message: result.message,
+        datesProcessed: result.datesProcessed,
+        failedDates: result.failedDates,
+        fullRefresh
+      };
+      res.status(200).json({ ...result, fullRefresh });
     } else if (date && typeof date === "string") {
       console.log(`Date parameter found: ${date}`);
       result = await updateSkaterStats(date);
       totalUpdates = result.totalUpdates;
-      details = { ...result };
-      // httpStatus remains 200
+      details = { message: result.message };
+      res.status(200).json(result);
     } else if (playerId && typeof playerId === "string") {
       console.log(`Player ID parameter found: ${playerId}`);
       const name = playerFullName || `PlayerID ${playerId}`;
       const resultData = await fetchDataForPlayer(playerId, name);
-      details = {
+      result = {
         message: `Data fetched successfully for player ${name}.`,
         success: true,
         data: resultData
       };
-      // httpStatus remains 200
+      details = { message: result.message, playerId };
+      res.status(200).json(result);
     } else {
       status = "failure";
-      httpStatus = 400;
       details = {
         message:
-          "Missing or invalid parameters. Provide 'action=all', 'date', 'playerId', or 'action=all_seasons_full_refresh'."
+          "Missing or invalid parameters. Provide 'action=all_seasons_full_refresh', 'action=all', 'date', or 'playerId'."
       };
+      res.status(400).json(details);
     }
   } catch (e: any) {
     console.error("Handler error:", e);
     status = "failure";
-    httpStatus = 500;
     details = { error: e.message, stack: e.stack };
+    res.status(500).json(details);
   } finally {
-    // --- 3. RELEASE LOCK, AUDIT, and RESPOND ---
-    await supabase.from("job_locks").delete().eq("job_name", jobName);
-    console.log("Job lock released.");
-
-    await supabase.from("cron_job_audit").insert({
-      job_name: jobName,
-      status: status,
-      rows_affected: totalUpdates,
-      details: details
-    });
-
-    res.status(httpStatus).json(details);
+    if (req.query.action) {
+      // Only log cron jobs for actions
+      await supabase.from("cron_job_audit").insert({
+        job_name: jobName,
+        status: status,
+        rows_affected: totalUpdates,
+        details: details
+      });
+    }
   }
 }

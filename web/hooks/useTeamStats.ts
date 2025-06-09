@@ -1,55 +1,154 @@
 // hooks/useTeamStats.ts
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import supabase from "lib/supabase";
 
-type TeamStatsMap = {
-  [teamAbbrev: string]: {
-    xgf_per_game: number;
-    xga_per_game: number;
-    sf_per_game: number;
-    sa_per_game: number;
-    goal_for_per_game: number;
-    goal_against_per_game: number;
-    win_pctg: number;
-  };
-};
+export interface TeamStats {
+  id: number;
+  team_id: number;
+  franchise_name: string;
+  date: string;
+  games_played: number;
+  wins: number;
+  losses: number;
+  ot_losses: number;
+  points: number;
+  goals_for: number;
+  goals_against: number;
+  season_id: number;
+  game_id?: number; // Changed from bigint to number for consistency
+  opponent_id?: number;
+}
 
-export default function useTeamStats(): TeamStatsMap {
-  const [statsMap, setStatsMap] = useState<TeamStatsMap>({});
+export interface TeamGameStats {
+  gameId: number; // Changed from bigint to number for consistency
+  teamId: number;
+  score: number;
+  sog: number;
+  faceoffPctg: number;
+  pim: number;
+  powerPlayConversion: string;
+  hits: number;
+  blockedShots: number;
+  giveaways: number;
+  takeaways: number;
+  powerPlay: string;
+  powerPlayToi: string;
+}
 
-  useEffect(() => {
-    async function fetchStats() {
-      const { data, error } = await supabase
-        .from("nhl_team_data")
-        .select(
-          "team_abbrev, win_pctg, xgf_per_game, goal_for_per_game, goal_against_per_game, xga_per_game, sf_per_game, sa_per_game"
-        );
+interface UseTeamStatsReturn {
+  teamStats: TeamStats[];
+  gameStats: { [gameId: string]: TeamGameStats[] };
+  loading: boolean;
+  error: string | null;
+  fetchGameStats: (gameId: number) => Promise<TeamGameStats[]>; // Changed from bigint to number
+  refetch: () => Promise<void>; // Added refetch function
+}
 
-      if (error) {
-        console.error("Error fetching team stats:", error);
-        return;
+export default function useTeamStats(
+  teamId: number,
+  seasonId?: number
+): UseTeamStatsReturn {
+  const [teamStats, setTeamStats] = useState<TeamStats[]>([]);
+  const [gameStats, setGameStats] = useState<{
+    [gameId: string]: TeamGameStats[];
+  }>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchTeamStats = useCallback(async () => {
+    if (!teamId) {
+      setError("Team ID is required");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      let query = supabase
+        .from("wgo_team_stats")
+        .select("*")
+        .eq("team_id", teamId)
+        .order("date", { ascending: true });
+
+      if (seasonId) {
+        query = query.eq("season_id", seasonId);
       }
 
-      console.log("Fetched team stats data:", data);
+      const { data, error: supabaseError } = await query;
 
-      const map: TeamStatsMap = {};
-      data?.forEach((row: any) => {
-        const key = row.team_abbrev.toUpperCase();
-        map[key] = {
-          xgf_per_game: parseFloat(row.xgf_per_game),
-          xga_per_game: parseFloat(row.xga_per_game),
-          sf_per_game: parseFloat(row.sf_per_game),
-          sa_per_game: parseFloat(row.sa_per_game),
-          goal_for_per_game: parseFloat(row.goal_for_per_game),
-          goal_against_per_game: parseFloat(row.goal_against_per_game),
-          win_pctg: parseFloat(row.win_pctg)
-        };
-      });
-      console.log("Built team stats map:", map);
-      setStatsMap(map);
+      if (supabaseError) {
+        throw new Error(`Failed to fetch team stats: ${supabaseError.message}`);
+      }
+
+      setTeamStats(data || []);
+    } catch (err) {
+      console.error("Error fetching team stats:", err);
+      setError(err instanceof Error ? err.message : "Unknown error occurred");
+    } finally {
+      setLoading(false);
     }
-    fetchStats();
-  }, []);
+  }, [teamId, seasonId]);
 
-  return statsMap;
+  const fetchGameStats = useCallback(
+    async (gameId: number): Promise<TeamGameStats[]> => { // Changed from bigint to number
+      if (!gameId) {
+        throw new Error("Game ID is required");
+      }
+
+      const gameIdStr = gameId.toString();
+
+      // Return cached data if available
+      if (gameStats[gameIdStr]) {
+        return gameStats[gameIdStr];
+      }
+
+      try {
+        const { data, error: supabaseError } = await supabase
+          .from("teamGameStats")
+          .select("*")
+          .eq("gameId", gameId);
+
+        if (supabaseError) {
+          throw new Error(
+            `Failed to fetch game stats: ${supabaseError.message}`
+          );
+        }
+
+        const stats = data || [];
+
+        // Cache the results
+        setGameStats((prev) => ({
+          ...prev,
+          [gameIdStr]: stats
+        }));
+
+        return stats;
+      } catch (err) {
+        console.error("Error fetching game stats:", err);
+        throw err;
+      }
+    },
+    [gameStats]
+  );
+
+  const refetch = useCallback(async () => {
+    await fetchTeamStats();
+  }, [fetchTeamStats]);
+
+  useEffect(() => {
+    if (teamId) {
+      fetchTeamStats();
+    }
+  }, [fetchTeamStats, teamId]);
+
+  return {
+    teamStats,
+    gameStats,
+    loading,
+    error,
+    fetchGameStats,
+    refetch
+  };
 }

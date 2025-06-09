@@ -7,6 +7,7 @@ import Fetch from "lib/cors-fetch";
 import styles from "styles/GoalieTrends.module.scss";
 import fetchWithCache from "lib/fetchWithCache"; // Adjust the path as necessary
 import DoughnutChart from "./DoughnutChart";
+import GoalieWorkloadBars from "./GoalieWorkloadBars";
 
 const GoalieTrends = () => {
   const [currentSeasonInfo, setCurrentSeasonInfo] = useState({});
@@ -15,6 +16,7 @@ const GoalieTrends = () => {
   const [selectedGameSpan, setSelectedGameSpan] = useState("SZN");
   const [goalieStats, setGoalieStats] = useState({});
   const [showNewChart, setShowNewChart] = useState(false); // state for toggle
+  const [showWorkloadBars, setShowWorkloadBars] = useState(false); // New state for chart type toggle
 
   // state for selected team in mobile view
   const [selectedTeam, setSelectedTeam] = useState(() => {
@@ -103,7 +105,7 @@ const GoalieTrends = () => {
           const response = await fetchWithCache(url);
           return {
             teamAbbrev,
-            data: processGoalieData(response.data, totalGames),
+            data: processGoalieData(response.data, totalGames)
           };
         } catch (error) {
           // console.error(
@@ -170,14 +172,14 @@ const GoalieTrends = () => {
         savePercentage,
         shutouts,
         goalsAgainstAverage,
-        percentage,
+        percentage
       };
     }
     console.log("Processed Goalie Stats:", processedData);
 
     return {
       totalGames,
-      goalies: Object.values(processedData),
+      goalies: Object.values(processedData)
     };
   };
 
@@ -209,6 +211,10 @@ const GoalieTrends = () => {
   // Handle change for the selected team in the dropdown
   const handleTeamChange = (event) => {
     setSelectedTeam(event.target.value);
+  };
+
+  const handleChartTypeToggle = () => {
+    setShowWorkloadBars(!showWorkloadBars);
   };
 
   // Call this function after your goalieStats state is updated
@@ -262,27 +268,42 @@ const GoalieTrends = () => {
   }
 
   return (
-    (<div className={styles.container}>
+    <div className={styles.container}>
       <div
         className={styles.selectors}
         style={{ flexDirection: isMobile ? "column" : "row" }}
       >
         <div className={styles.titleContainer}>
           <h1 style={{ marginTop: "0", marginBottom: "0", textAlign: "left" }}>
-            Goalie Net Share <span className="spanColorBlue">Trends</span>
+            Goalie {showWorkloadBars ? "Workload" : "Net Share"}{" "}
+            <span className="spanColorBlue">Trends</span>
           </h1>
           <div className={styles.toggleSwitch}>
-            {/* Game Span Selectors */}
-            {/* Dropdown for team selection on mobile */}
-            <div className={styles.teamSelector}>
-              <select value={selectedTeam} onChange={handleTeamChange}>
-                {sortedTeams.map(([teamAbbrev, teamInfo]) => (
-                  <option key={teamAbbrev} value={teamAbbrev}>
-                    {teamAbbrev}
-                  </option>
-                ))}
-              </select>
+            {/* Chart Type Toggle */}
+            <div className={styles.chartToggle}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={showWorkloadBars}
+                  onChange={handleChartTypeToggle}
+                />
+                <span className={styles.toggleLabel}>
+                  {showWorkloadBars ? "Workload Bars" : "Pie Chart"}
+                </span>
+              </label>
             </div>
+            {/* Team Selector for mobile */}
+            {isMobile && (
+              <div className={styles.teamSelector}>
+                <select value={selectedTeam} onChange={handleTeamChange}>
+                  {sortedTeams.map(([teamAbbrev, teamInfo]) => (
+                    <option key={teamAbbrev} value={teamAbbrev}>
+                      {teamAbbrev}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         </div>
         <div className={styles.controlsContainer}>
@@ -326,7 +347,8 @@ const GoalieTrends = () => {
           </div>
         </div>
       </div>
-      {/* Conditional Rendering */}
+
+      {/* Updated table with conditional chart rendering */}
       <table className={styles.goalieShareTable}>
         <tbody>
           {rows.map((row, rowIndex) => (
@@ -339,9 +361,9 @@ const GoalieTrends = () => {
                       teamsInfo[teamAbbrev].secondaryColor,
                       teamsInfo[teamAbbrev].jersey,
                       teamsInfo[teamAbbrev].accent,
-                      teamsInfo[teamAbbrev].alt,
+                      teamsInfo[teamAbbrev].alt
                     ]
-                  : ["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"]; // Default colors if teamInfo is missing
+                  : ["#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF", "#FFFFFF"];
 
                 const chartData = {
                   labels: goalieData.map((goalie) => goalie.lastName),
@@ -350,9 +372,9 @@ const GoalieTrends = () => {
                       data: goalieData.map((goalie) => goalie.percentage),
                       backgroundColor: goalieData.map(
                         (_, index) => teamColors[index % teamColors.length]
-                      ), // Cycle through team colors
-                    },
-                  ],
+                      )
+                    }
+                  ]
                 };
 
                 return (
@@ -365,7 +387,7 @@ const GoalieTrends = () => {
                           teamsInfo[teamAbbrev].secondaryColor,
                         "--jersey-color": teamsInfo[teamAbbrev].jersey,
                         "--accent-color": teamsInfo[teamAbbrev].accent,
-                        "--alt-color": teamsInfo[teamAbbrev].alt,
+                        "--alt-color": teamsInfo[teamAbbrev].alt
                       }}
                     >
                       <div
@@ -397,10 +419,20 @@ const GoalieTrends = () => {
                         </div>
                         <div className={styles.goalieChart}>
                           {goalieData.length > 0 && (
-                            <DoughnutChart
-                              data={chartData}
-                              mobileView={isMobile}
-                            />
+                            <>
+                              {showWorkloadBars ? (
+                                <GoalieWorkloadBars
+                                  goalieData={goalieData}
+                                  teamColors={teamColors}
+                                  mobileView={isMobile}
+                                />
+                              ) : (
+                                <DoughnutChart
+                                  data={chartData}
+                                  mobileView={isMobile}
+                                />
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
@@ -410,13 +442,13 @@ const GoalieTrends = () => {
               })}
               {!isMobile &&
                 [...Array(3 - row.length)].map((_, index) => (
-                  (<td key={`empty-${index}`}>&nbsp;</td>) // Fill in empty cells if row has less than 3 teams
+                  <td key={`empty-${index}`}>&nbsp;</td>
                 ))}
             </tr>
           ))}
         </tbody>
       </table>
-    </div>)
+    </div>
   );
 };
 

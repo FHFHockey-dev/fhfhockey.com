@@ -70,6 +70,7 @@
   justify-content: space-between;
   flex: 1;
   gap: 2rem;
+  margin-bottom: 20px;
 }
 
 .teamInfo {
@@ -82,7 +83,7 @@
   font-size: 2.2rem;
   font-weight: 700;
   margin: 0;
-  background: linear-gradient(45deg, #07aae2, #00ff87);
+  background: var(--secondary-color);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

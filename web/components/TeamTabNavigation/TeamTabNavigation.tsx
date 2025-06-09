@@ -8,6 +8,8 @@ import { ShotVisualization } from "../ShotVisualization/ShotVisualization";
 import { ShotDataFilters } from "../../hooks/useShotData";
 import { LineCombinationsGrid } from "../LineCombinations/LineCombinationsGrid";
 import { teamsInfo } from "../../lib/teamsInfo";
+import { TeamScheduleCalendar } from "../TeamScheduleCalendar/TeamScheduleCalendar";
+import { useTeamSchedule } from "hooks/useTeamSchedule";
 
 // Define ShotData interface
 interface ShotData {
@@ -49,7 +51,8 @@ type TabKey =
   | "analysis"
   | "timeline"
   | "roster"
-  | "visualization";
+  | "visualization"
+  | "schedule";
 
 interface Tab {
   key: TabKey;
@@ -62,6 +65,11 @@ const TABS: Tab[] = [
     key: "dashboard",
     label: "Dashboard",
     description: "Team overview and key metrics"
+  },
+  {
+    key: "schedule",
+    label: "Schedule",
+    description: "Team schedule and upcoming games"
   },
   {
     key: "stats",
@@ -115,6 +123,14 @@ export function TeamTabNavigation({
 
   const teamInfo = teamsInfo[teamAbbrev];
 
+  // Fetch team schedule data with corrected parameters
+  const {
+    games,
+    loading: scheduleLoading,
+    error: scheduleError,
+    record
+  } = useTeamSchedule(teamAbbrev, seasonId, teamId);
+
   const renderTabContent = () => {
     switch (activeTab) {
       case "dashboard":
@@ -123,6 +139,19 @@ export function TeamTabNavigation({
             teamId={teamId}
             teamAbbrev={teamAbbrev}
             seasonId={seasonId}
+          />
+        );
+
+      case "schedule":
+        return (
+          <TeamScheduleCalendar
+            games={games}
+            teamId={parseInt(teamId, 10)}
+            teamAbbreviation={teamAbbrev}
+            seasonId={seasonId}
+            loading={scheduleLoading}
+            error={scheduleError}
+            record={record}
           />
         );
 
