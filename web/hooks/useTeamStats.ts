@@ -4,23 +4,34 @@ import supabase from "lib/supabase";
 
 export interface TeamStats {
   id: number;
-  team_id: number;
+  team_id: number | null;
   franchise_name: string;
   date: string;
-  games_played: number;
-  wins: number;
-  losses: number;
-  ot_losses: number;
-  points: number;
-  goals_for: number;
-  goals_against: number;
-  season_id: number;
-  game_id?: number; // Changed from bigint to number for consistency
-  opponent_id?: number;
+  games_played: number | null;
+  wins: number | null;
+  losses: number | null;
+  ot_losses: number | null;
+  points: number | null;
+  goals_for: number | null;
+  goals_against: number | null;
+  goals_for_per_game: number | null;
+  goals_against_per_game: number | null;
+  point_pct: number | null;
+  regulation_and_ot_wins: number | null;
+  wins_in_regulation: number | null;
+  wins_in_shootout: number | null;
+  faceoff_win_pct: number | null;
+  power_play_pct: number | null;
+  penalty_kill_pct: number | null;
+  shots_for_per_game: number | null;
+  shots_against_per_game: number | null;
+  season_id: number | null;
+  game_id: number | null; // Changed from bigint to number for consistency
+  opponent_id: number | null;
 }
 
 export interface TeamGameStats {
-  gameId: number; // Changed from bigint to number for consistency
+  gameId: number;
   teamId: number;
   score: number;
   sog: number;
@@ -40,13 +51,13 @@ interface UseTeamStatsReturn {
   gameStats: { [gameId: string]: TeamGameStats[] };
   loading: boolean;
   error: string | null;
-  fetchGameStats: (gameId: number) => Promise<TeamGameStats[]>; // Changed from bigint to number
-  refetch: () => Promise<void>; // Added refetch function
+  fetchGameStats: (gameId: number) => Promise<TeamGameStats[]>;
+  refetch: () => Promise<void>;
 }
 
 export default function useTeamStats(
-  teamId: number,
-  seasonId?: number
+  teamId: number | string, // Allow string input
+  seasonId?: number | string // Allow string input
 ): UseTeamStatsReturn {
   const [teamStats, setTeamStats] = useState<TeamStats[]>([]);
   const [gameStats, setGameStats] = useState<{
@@ -69,11 +80,11 @@ export default function useTeamStats(
       let query = supabase
         .from("wgo_team_stats")
         .select("*")
-        .eq("team_id", teamId)
+        .eq("team_id", Number(teamId)) // Convert to number
         .order("date", { ascending: true });
 
       if (seasonId) {
-        query = query.eq("season_id", seasonId);
+        query = query.eq("season_id", Number(seasonId)); // Convert to number
       }
 
       const { data, error: supabaseError } = await query;
@@ -92,7 +103,7 @@ export default function useTeamStats(
   }, [teamId, seasonId]);
 
   const fetchGameStats = useCallback(
-    async (gameId: number): Promise<TeamGameStats[]> => { // Changed from bigint to number
+    async (gameId: number): Promise<TeamGameStats[]> => {
       if (!gameId) {
         throw new Error("Game ID is required");
       }

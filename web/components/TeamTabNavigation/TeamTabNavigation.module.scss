@@ -10,7 +10,7 @@
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
   border: none;
-  border-top: 2px solid rgba(255, 255, 255, 0.1);
+  border-top: 5px solid rgba(255, 255, 255);
   padding: 0;
   overflow-x: auto;
   width: 100%;
@@ -111,11 +111,12 @@
 }
 
 .tabContent {
+  border-top: 5px solid;
   background: v.$background-light;
   min-height: calc(100vh - 200px);
   position: relative;
   overflow: hidden;
-  padding: 2rem 0;
+  padding: 1.5rem 0;
 }
 
 // Visualization tab specific styles

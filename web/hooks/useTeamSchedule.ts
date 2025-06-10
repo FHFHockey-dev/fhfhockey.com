@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import useCurrentSeason from "hooks/useCurrentSeason";
-import Fetch from "lib/cors-fetch";
+import supabase from "lib/supabase";
+import { getTeamAbbreviationById, getTeamInfoById } from "lib/teamsInfo";
 
 export interface ScheduleGame {
   id: number;
@@ -48,12 +49,6 @@ export interface ScheduleGame {
   };
 }
 
-export interface TeamScheduleResponse {
-  games: ScheduleGame[];
-  clubTimezone: string;
-  clubUTCOffset: string;
-}
-
 export interface TeamRecord {
   wins: number;
   losses: number;
@@ -76,71 +71,159 @@ export const useTeamSchedule = (
   const currentSeason = useCurrentSeason();
 
   useEffect(() => {
-    if (!teamAbbr || !currentSeason) return;
+    if (!teamId || !currentSeason) return;
 
-    const fetchSchedule = async () => {
+    const fetchScheduleFromDb = async () => {
       try {
         setLoading(true);
         setError(null);
 
         const seasonToUse = seasonId || currentSeason.toString();
-        const response = await Fetch(
-          `https://api-web.nhle.com/v1/club-schedule-season/${teamAbbr}/${seasonToUse}`
+
+        console.log("🔍 Fetching schedule from database:", {
+          teamId: Number(teamId),
+          seasonId: Number(seasonToUse)
+        });
+
+        // Fetch games where the team is either home or away
+        const { data: gamesData, error: gamesError } = await supabase
+          .from("games")
+          .select("*")
+          .eq("seasonId", Number(seasonToUse))
+          .or(`homeTeamId.eq.${Number(teamId)},awayTeamId.eq.${Number(teamId)}`)
+          .order("date", { ascending: true });
+
+        if (gamesError) {
+          console.error("❌ Error fetching games:", gamesError);
+          throw gamesError;
+        }
+
+        console.log("✅ Fetched games from DB:", gamesData?.length || 0);
+
+        // Transform database games to match the expected interface
+        const transformedGames: ScheduleGame[] = (gamesData || []).map(
+          (game) => {
+            const isHomeTeam = game.homeTeamId === Number(teamId);
+
+            // Get proper team info using the teamsInfo functions
+            const homeTeamInfo = getTeamInfoById(game.homeTeamId);
+            const awayTeamInfo = getTeamInfoById(game.awayTeamId);
+            const homeTeamAbbrev =
+              getTeamAbbreviationById(game.homeTeamId) || `T${game.homeTeamId}`;
+            const awayTeamAbbrev =
+              getTeamAbbreviationById(game.awayTeamId) || `T${game.awayTeamId}`;
+
+            return {
+              id: Number(game.id),
+              season: Number(game.seasonId),
+              gameType: game.type || 2, // Regular season default
+              gameDate: game.date,
+              venue: {
+                default: "TBD" // Would need venue lookup
+              },
+              startTimeUTC: game.startTime,
+              easternUTCOffset: "-05:00",
+              venueUTCOffset: "-05:00",
+              tvBroadcasts: [],
+              gameState: "UNKNOWN", // We'll determine this from date and scores
+              gameScheduleState: "OK",
+              homeTeam: {
+                id: game.homeTeamId,
+                placeName: {
+                  default: homeTeamInfo?.name || `Team ${game.homeTeamId}`
+                },
+                abbrev: homeTeamAbbrev,
+                logo: "",
+                darkLogo: ""
+              },
+              awayTeam: {
+                id: game.awayTeamId,
+                placeName: {
+                  default: awayTeamInfo?.name || `Team ${game.awayTeamId}`
+                },
+                abbrev: awayTeamAbbrev,
+                logo: "",
+                darkLogo: ""
+              }
+            };
+          }
         );
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch schedule: ${response.statusText}`);
+        // Fetch game scores from teamGameStats
+        const gameIds = transformedGames.map((g) => g.id);
+        if (gameIds.length > 0) {
+          const { data: gameStatsData, error: gameStatsError } = await supabase
+            .from("teamGameStats")
+            .select("*")
+            .in("gameId", gameIds);
+
+          if (gameStatsError) {
+            console.warn("⚠️ Error fetching game stats:", gameStatsError);
+          } else {
+            // Add scores to games
+            transformedGames.forEach((game) => {
+              const homeStats = gameStatsData?.find(
+                (stat) =>
+                  stat.gameId === game.id && stat.teamId === game.homeTeam.id
+              );
+              const awayStats = gameStatsData?.find(
+                (stat) =>
+                  stat.gameId === game.id && stat.teamId === game.awayTeam.id
+              );
+
+              if (homeStats && awayStats) {
+                game.homeTeamScore = homeStats.score;
+                game.awayTeamScore = awayStats.score;
+                game.gameState = "FINAL";
+              } else {
+                // Check if game is in the future
+                const gameDate = new Date(game.gameDate);
+                const today = new Date();
+                game.gameState = gameDate > today ? "FUT" : "UNKNOWN";
+              }
+            });
+          }
         }
 
-        const data: TeamScheduleResponse = await response.json();
-        const scheduleGames = data.games || [];
-        setGames(scheduleGames);
+        setGames(transformedGames);
 
-        // Calculate team record from completed games
-        if (scheduleGames.length > 0 && teamId) {
-          const completedGames = scheduleGames.filter(
-            (game) =>
-              game.gameState === "OFF" ||
-              game.gameState === "FINAL" ||
-              (game.homeTeamScore !== undefined &&
-                game.awayTeamScore !== undefined)
-          );
+        // Calculate record from team stats instead of game results
+        // This will be more accurate as it comes from the database
+        if (teamId && seasonToUse) {
+          const { data: teamStatsData, error: teamStatsError } = await supabase
+            .from("wgo_team_stats")
+            .select("*")
+            .eq("team_id", Number(teamId))
+            .eq("season_id", Number(seasonToUse))
+            .order("date", { ascending: false })
+            .limit(1);
 
-          let wins = 0;
-          let losses = 0;
-          let otLosses = 0;
-
-          completedGames.forEach((game) => {
-            const isHomeTeam = game.homeTeam.id.toString() === teamId;
-            const teamScore = isHomeTeam
-              ? game.homeTeamScore
-              : game.awayTeamScore;
-            const opponentScore = isHomeTeam
-              ? game.awayTeamScore
-              : game.homeTeamScore;
-
-            if (teamScore !== undefined && opponentScore !== undefined) {
-              if (teamScore > opponentScore) {
-                wins++;
-              } else {
-                // For now, treat all losses the same - would need additional data to detect OT/SO losses
-                losses++;
-              }
-            }
-          });
-
-          const points = wins * 2 + otLosses;
-
-          setRecord({
-            wins,
-            losses,
-            otLosses,
-            points
-          });
+          if (teamStatsError) {
+            console.warn(
+              "⚠️ Error fetching team stats for record:",
+              teamStatsError
+            );
+          } else if (teamStatsData && teamStatsData.length > 0) {
+            const latestStats = teamStatsData[0];
+            setRecord({
+              wins: latestStats.wins || 0,
+              losses: latestStats.losses || 0,
+              otLosses: latestStats.ot_losses || 0,
+              points: latestStats.points || 0,
+              regulationWins: latestStats.wins_in_regulation || 0,
+              overtimeWins:
+                (latestStats.regulation_and_ot_wins || 0) -
+                (latestStats.wins_in_regulation || 0),
+              shootoutWins: latestStats.wins_in_shootout || 0
+            });
+          }
         }
       } catch (err) {
+        console.error("❌ Error in fetchScheduleFromDb:", err);
         setError(
-          err instanceof Error ? err.message : "Failed to fetch schedule"
+          err instanceof Error
+            ? err.message
+            : "Failed to fetch schedule from database"
         );
         setGames([]);
         setRecord(null);
@@ -149,7 +232,7 @@ export const useTeamSchedule = (
       }
     };
 
-    fetchSchedule();
+    fetchScheduleFromDb();
   }, [teamAbbr, currentSeason, seasonId, teamId]);
 
   return { games, loading, error, record };
