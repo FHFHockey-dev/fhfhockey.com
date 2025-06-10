@@ -6,21 +6,12 @@
 // =============================================================================
 
 .container {
-  width: 100%;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 1rem;
-  background: linear-gradient(
-    135deg,
-    rgba(17, 24, 39, 0.95) 0%,
-    rgba(31, 41, 55, 0.95) 100%
-  );
-  border-radius: 16px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(75, 85, 99, 0.2);
+  @include v.component-wrapper;
+  padding: v.$space-xl;
+  margin-bottom: v.$space-xl;
   position: relative;
-  overflow: hidden;
+  width: 95%;
+  margin: 0 auto;
 
   &::before {
     content: "";
@@ -28,16 +19,17 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 6px;
-    background: var(--team-secondary-color);
-    opacity: 0.6;
+    height: 4px;
+    background: var(--team-primary-color, v.$primary-color);
+    border-top-left-radius: v.$border-radius-lg;
+    border-top-right-radius: v.$border-radius-lg;
   }
 }
 
 .calendarContent {
   display: grid;
   grid-template-columns: 1fr auto;
-  gap: 2rem;
+  gap: v.$space-xl;
   height: 100%;
 
   // When sidebar is not present, ensure proper single column layout
@@ -51,7 +43,7 @@
   min-width: 0; // Prevent grid overflow
   max-width: 100%; // Ensure it doesn't exceed container
   overflow: hidden; // Prevent content overflow
-  padding: 0.5rem 0;
+  padding: v.$space-sm 0;
 }
 
 .sidebarContainer {
@@ -65,21 +57,24 @@
 // =============================================================================
 
 .calendarHeader {
-  margin-bottom: 1rem;
-  color: #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-lg;
+  margin-bottom: v.$space-xl;
 }
 
 .titleWithInfo {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  position: relative;
+  gap: v.$space-sm;
 
   h3 {
     margin: 0;
-    font-size: 1.875rem;
-    font-weight: 700;
-    background: var(--team-secondary-color);
+    font-size: v.$font-size-xl;
+    font-weight: 600;
+    color: v.$text-primary;
+    background: var(--team-secondary-color, v.$primary-color);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -87,25 +82,29 @@
 }
 
 .infoButton {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 2px solid #6b7280;
-  background: rgba(55, 65, 81, 0.8);
-  color: #d1d5db;
-  font-size: 0.875rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid v.$border-secondary;
+  background: v.$background-medium;
+  color: v.$text-secondary;
+  cursor: help;
+  font-size: 12px;
+  font-weight: bold;
+  transition: all 0.2s ease;
 
   &:hover {
-    border-color: #60a5fa;
-    background: rgba(59, 130, 246, 0.2);
-    color: #60a5fa;
-    transform: scale(1.1);
+    background: v.$primary-color;
+    color: v.$text-button;
+    border-color: v.$primary-color;
+  }
+
+  &:focus {
+    outline: 1px solid v.$focus-color;
+    outline-offset: 2px;
   }
 }
 
@@ -113,49 +112,48 @@
   position: absolute;
   top: 100%;
   left: 0;
-  background: rgba(17, 24, 39, 0.98);
-  border: 1px solid #374151;
-  border-radius: 12px;
-  padding: 1.5rem;
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-lg;
   width: 400px;
   max-width: 90vw;
   z-index: 1000;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(16px);
+  box-shadow: v.$box-shadow-default;
 
   h4 {
-    margin: 0 0 0.75rem;
-    color: #60a5fa;
-    font-size: 1.125rem;
+    margin: 0 0 v.$space-sm;
+    color: v.$primary-color;
+    font-size: v.$font-size-md;
     font-weight: 600;
   }
 
   h5 {
-    margin: 1rem 0 0.5rem;
-    color: #a78bfa;
-    font-size: 0.95rem;
+    margin: v.$space-md 0 v.$space-xs;
+    color: var(--team-primary-color, v.$secondary-color);
+    font-size: v.$font-size-sm;
     font-weight: 600;
   }
 
   p {
-    margin: 0 0 0.5rem;
-    color: #d1d5db;
-    font-size: 0.875rem;
+    margin: 0 0 v.$space-sm;
+    color: v.$text-secondary;
+    font-size: v.$font-size-sm;
     line-height: 1.5;
   }
 
   ul {
     margin: 0;
-    padding-left: 1.25rem;
-    color: #9ca3af;
-    font-size: 0.825rem;
+    padding-left: v.$space-lg;
+    color: v.$text-secondary;
+    font-size: v.$font-size-sm;
 
     li {
-      margin: 0.25rem 0;
+      margin: v.$space-xs 0;
       line-height: 1.4;
 
       strong {
-        color: #e5e7eb;
+        color: v.$text-primary;
       }
     }
   }
@@ -168,65 +166,65 @@
 .teamSummary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: v.$space-md;
+  margin-bottom: v.$space-lg;
 }
 
 .summaryCard {
-  background: rgba(31, 41, 55, 0.8);
-  border: 1px solid rgba(75, 85, 99, 0.3);
-  border-radius: 12px;
-  padding: 1rem;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-md;
   text-align: center;
   transition: all 0.3s ease;
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-    border-color: rgba(96, 165, 250, 0.4);
+    border-color: rgba(var(--team-primary-color, 20, 162, 210), 0.4);
   }
 
   h4 {
-    margin: 0 0 0.5rem;
-    font-size: 0.875rem;
+    margin: 0 0 v.$space-xs;
+    font-size: v.$font-size-xs;
     font-weight: 600;
-    color: #9ca3af;
+    color: v.$text-secondary;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
 
   .record {
-    font-size: 1.5rem;
+    font-size: v.$font-size-lg;
     font-weight: 700;
-    color: #f3f4f6;
-    margin-bottom: 0.25rem;
+    color: v.$text-primary;
+    margin-bottom: v.$space-xs;
   }
 
   .points,
   .percentage,
   .recentForm {
-    font-size: 0.8rem;
-    color: #6b7280;
+    font-size: v.$font-size-sm;
+    color: v.$text-secondary;
     margin: 0;
   }
 }
 
 .streakCard {
   .streak {
-    font-size: 1.5rem;
+    font-size: v.$font-size-lg;
     font-weight: 700;
-    margin-bottom: 0.25rem;
+    margin-bottom: v.$space-xs;
 
     &.win {
-      color: #10b981;
+      color: v.$success-color;
     }
 
     &.loss {
-      color: #ef4444;
+      color: v.$danger-color;
     }
 
     &.neutral {
-      color: #6b7280;
+      color: v.$text-secondary;
     }
   }
 }
@@ -238,109 +236,121 @@
 .calendarLegend {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
   align-items: center;
-  padding: 1rem;
-  background: rgba(31, 41, 55, 0.6);
-  border-radius: 8px;
-  border: 1px solid rgba(75, 85, 99, 0.2);
+  gap: v.$space-md;
+  padding: v.$space-md;
+  background: v.$background-medium;
+  border-radius: v.$border-radius-md;
+  border: 1px solid v.$border-secondary;
 
   .legendLabel {
-    font-size: 0.875rem;
     font-weight: 600;
-    color: #9ca3af;
-    margin-right: 0.5rem;
+    color: v.$text-primary;
+    margin-right: v.$space-sm;
+    font-size: v.$font-size-sm;
   }
 
   .legendItems {
     display: flex;
-    gap: 1rem;
     flex-wrap: wrap;
+    gap: v.$space-md;
   }
 
   .legendItem {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.8rem;
-    color: #d1d5db;
+    gap: v.$space-xs;
+
+    span {
+      font-size: v.$font-size-xs;
+      color: v.$text-secondary;
+      white-space: nowrap;
+    }
   }
 
   .legendColor {
-    width: 16px;
-    height: 16px;
-    border-radius: 4px;
-    border: 1px solid rgba(156, 163, 175, 0.3);
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid v.$border-secondary;
 
     &.win {
       background: linear-gradient(
         135deg,
-        rgba(16, 185, 129, 0.8),
-        rgba(5, 150, 105, 0.6)
+        rgba(v.$success-color, 0.8),
+        rgba(v.$success-color, 0.6)
       );
-      border-color: #10b981;
+      border-color: v.$success-color;
     }
 
     &.loss {
       background: linear-gradient(
         135deg,
-        rgba(239, 68, 68, 0.8),
-        rgba(220, 38, 38, 0.6)
+        rgba(v.$danger-color, 0.8),
+        rgba(v.$danger-color, 0.6)
       );
-      border-color: #ef4444;
+      border-color: v.$danger-color;
     }
 
     &.otLoss {
       background: linear-gradient(
         135deg,
-        rgba(245, 158, 11, 0.8),
-        rgba(217, 119, 6, 0.6)
+        rgba(v.$warning-color, 0.8),
+        rgba(v.$warning-color, 0.6)
       );
-      border-color: #f59e0b;
+      border-color: v.$warning-color;
     }
 
     &.future {
       background: linear-gradient(
         135deg,
-        rgba(59, 130, 246, 0.8),
-        rgba(37, 99, 235, 0.6)
+        rgba(v.$primary-color, 0.8),
+        rgba(v.$primary-color, 0.6)
       );
-      border-color: #3b82f6;
+      border-color: v.$primary-color;
     }
 
     &.playoff {
       background: linear-gradient(
         135deg,
-        rgba(251, 191, 36, 0.8),
-        rgba(245, 158, 11, 0.6)
+        rgba(v.$warning-color, 0.8),
+        rgba(v.$warning-color, 0.6)
       );
-      border-color: #fbbf24;
+      border-color: v.$warning-color;
       border-width: 2px;
     }
 
     &.winStreak {
-      background: linear-gradient(135deg, #10b981, #059669);
-      border-color: #10b981;
+      background: linear-gradient(
+        135deg,
+        v.$success-color,
+        color.adjust(v.$success-color, $lightness: -10%)
+      );
+      border-color: v.$success-color;
       border-width: 2px;
-      box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+      box-shadow: 0 0 8px rgba(v.$success-color, 0.6);
       animation: winStreakGlow 2s ease-in-out infinite alternate;
     }
 
     &.lossStreak {
-      background: linear-gradient(135deg, #ef4444, #dc2626);
-      border-color: #ef4444;
+      background: linear-gradient(
+        135deg,
+        v.$danger-color,
+        color.adjust(v.$danger-color, $lightness: -10%)
+      );
+      border-color: v.$danger-color;
       border-width: 2px;
-      box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+      box-shadow: 0 0 8px rgba(v.$danger-color, 0.6);
       animation: lossStreakGlow 2s ease-in-out infinite alternate;
     }
 
     &.strongOpponent {
       background: linear-gradient(
         135deg,
-        rgba(251, 191, 36, 0.6),
-        rgba(245, 158, 11, 0.4)
+        rgba(v.$warning-color, 0.6),
+        rgba(v.$warning-color, 0.4)
       );
-      border-color: #fbbf24;
+      border-color: v.$warning-color;
       position: relative;
 
       &::after {
@@ -349,7 +359,7 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        color: #fbbf24;
+        color: v.$warning-color;
         font-size: 10px;
         line-height: 1;
       }
@@ -363,31 +373,16 @@
 
 .calendarGrid {
   display: grid;
-  gap: 1rem;
-  width: 100%;
-  max-width: 100%;
-  height: 100%;
-  padding: 0.5rem 0;
+  grid-template-columns: repeat(3, 1fr);
+  gap: v.$space-lg;
+  margin-bottom: v.$space-xl;
 
-  // Use percentage-based responsive columns
-  @media (min-width: 1400px) {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1.5%;
-  }
-
-  @media (min-width: 1100px) and (max-width: 1399px) {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1.25%;
-  }
-
-  @media (min-width: 800px) and (max-width: 1099px) {
+  @media (max-width: 1200px) {
     grid-template-columns: repeat(2, 1fr);
-    gap: 2%;
   }
 
-  @media (max-width: 799px) {
+  @media (max-width: 800px) {
     grid-template-columns: 1fr;
-    gap: 1rem;
   }
 }
 
@@ -396,59 +391,55 @@
 // =============================================================================
 
 .calendarMonth {
-  background: rgba(31, 41, 55, 0.4);
-  border: 1px solid rgba(75, 85, 99, 0.2);
-  border-radius: 12px;
-  padding: 3%;
-  transition: all 0.3s ease;
-  width: 100%;
-  min-width: 0; // Prevent overflow
-  box-sizing: border-box;
+  background: v.$background-medium;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-sm;
+  border: 1px solid v.$border-secondary;
   display: flex;
   flex-direction: column;
-  min-height: 380px; // Increased from 320px to accommodate 6 rows + header
-  height: auto; // Allow natural height expansion
+  transition: all 0.3s ease;
 
   &:hover {
-    border-color: rgba(96, 165, 250, 0.3);
+    border-color: rgba(var(--team-primary-color, 20, 162, 210), 0.3);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 }
 
 .monthHeader {
-  font-size: clamp(1rem, 2.5vw, 1.25rem);
-  font-weight: 600;
-  color: #f3f4f6;
-  margin-bottom: 4%;
   text-align: center;
-  padding-bottom: 3%;
-  border-bottom: 1px solid rgba(75, 85, 99, 0.3);
-  flex-shrink: 0; // Prevent header from shrinking
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+  color: v.$primary-color;
+  padding: v.$space-md;
+  background: v.$background-dark;
+  border-top-left-radius: v.$border-radius-sm;
+  border-top-right-radius: v.$border-radius-sm;
+  margin-bottom: v.$space-xxs;
+  border: 1px solid v.$border-primary;
 }
 
 .daysGrid {
   display: flex;
   flex-direction: column;
-  gap: 2%;
-  width: 100%;
-  flex: 1; // Take up remaining space
-  min-height: 280px; // Ensure minimum space for 6 rows of days
+  gap: 2px;
 }
 
 .dayLabels {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 1%;
-  margin-bottom: 2%;
-  flex-shrink: 0; // Keep day labels fixed
+  gap: 2px;
+  margin-bottom: v.$space-xs;
 }
 
 .dayLabel {
   text-align: center;
-  font-size: clamp(0.625rem, 1.5vw, 0.75rem);
+  font-size: v.$font-size-xs;
   font-weight: 600;
-  color: #9ca3af;
-  padding: 2%;
+  color: v.$text-secondary;
+  padding: v.$space-xs;
+  background: v.$background-dark;
+  border-radius: v.$border-radius-sm;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -456,12 +447,8 @@
 .daysContainer {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-template-rows: repeat(6, 1fr); // Fixed 6 rows for all months
-  gap: 1%;
-  width: 100%;
-  flex: 1; // Take up all available space in the parent
-  min-height: 240px; // Minimum height for 6 rows
-  height: auto; // Allow natural height expansion
+  gap: 2px;
+  position: relative; // Enable absolute positioning for streak overlays
 }
 
 // =============================================================================
@@ -470,34 +457,24 @@
 
 .dayCell {
   position: relative;
-  width: 100%;
-  height: 0;
-  padding-bottom: 100%; // Creates a perfect square (1:1 aspect ratio)
-  border: 1px solid rgba(75, 85, 99, 0.2);
-  border-radius: 6px;
-  background: rgba(55, 65, 81, 0.3);
+  min-height: 35px;
+  min-width: 35px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  border-radius: v.$border-radius-sm;
   cursor: pointer;
   transition: all 0.2s ease;
-  overflow: hidden;
-
-  // Inner content container
-  > * {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    padding: 3px;
-    box-sizing: border-box;
-  }
+  background: v.$background-dark;
+  border: 1px solid v.$border-secondary;
+  padding: v.$space-xxs;
 
   &:hover {
     transform: scale(1.05);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    border-color: rgba(96, 165, 250, 0.4);
     z-index: 10;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    border-color: rgba(var(--team-primary-color, 20, 162, 210), 0.4);
   }
 
   &.otherMonth {
@@ -506,96 +483,176 @@
   }
 
   &.today {
-    border-color: #fbbf24;
-    box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.2);
+    border-color: v.$warning-color;
+    box-shadow: 0 0 0 1px rgba(v.$warning-color, 0.2);
 
     .dayNumber {
-      color: #fbbf24;
+      color: v.$warning-color;
       font-weight: 700;
     }
   }
 
   &.selectedGame {
-    border-color: #60a5fa;
-    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3);
-    background: rgba(59, 130, 246, 0.1);
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.3);
+    background: rgba(v.$primary-color, 0.1);
+  }
+
+  &.streakWin {
+    background: linear-gradient(
+      135deg,
+      rgba(v.$success-color, 0.15),
+      rgba(v.$success-color, 0.08)
+    );
+    border-color: rgba(v.$success-color, 0.3);
+  }
+
+  &.streakLoss {
+    background: linear-gradient(
+      135deg,
+      rgba(v.$danger-color, 0.15),
+      rgba(v.$danger-color, 0.08)
+    );
+    border-color: rgba(v.$danger-color, 0.3);
   }
 }
 
-.dayNumber {
-  font-size: clamp(0.6rem, 1.8vw, 0.75rem);
-  font-weight: 600;
-  color: #e5e7eb;
-  margin-bottom: 2px;
-  line-height: 1;
-  flex-shrink: 0;
+// =============================================================================
+// SEAMLESS STREAK BORDERS
+// =============================================================================
+
+// Container for the month grid to enable absolute positioning of streak overlays
+.daysContainer {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  position: relative; // Enable absolute positioning for streak overlays
+}
+
+// Win streak seamless border overlay
+.streakOverlay {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  border-radius: v.$border-radius-sm;
+
+  &.winStreak {
+    border: 3px solid v.$success-color;
+    background: rgba(v.$success-color, 0.1);
+    box-shadow:
+      0 0 0 1px rgba(v.$success-color, 0.2),
+      0 0 12px rgba(v.$success-color, 0.4),
+      inset 0 0 0 1px rgba(v.$success-color, 0.1);
+    animation: winStreakGlow 2s ease-in-out infinite alternate;
+  }
+
+  &.lossStreak {
+    border: 3px solid v.$danger-color;
+    background: rgba(v.$danger-color, 0.1);
+    box-shadow:
+      0 0 0 1px rgba(v.$danger-color, 0.2),
+      0 0 12px rgba(v.$danger-color, 0.4),
+      inset 0 0 0 1px rgba(v.$danger-color, 0.1);
+    animation: lossStreakGlow 2s ease-in-out infinite alternate;
+  }
+}
+
+// Enhanced glow animations for the seamless borders
+@keyframes winStreakGlow {
+  0% {
+    box-shadow:
+      0 0 0 1px rgba(v.$success-color, 0.2),
+      0 0 8px rgba(v.$success-color, 0.3),
+      inset 0 0 0 1px rgba(v.$success-color, 0.05);
+  }
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(v.$success-color, 0.4),
+      0 0 16px rgba(v.$success-color, 0.6),
+      inset 0 0 0 1px rgba(v.$success-color, 0.15);
+  }
+}
+
+@keyframes lossStreakGlow {
+  0% {
+    box-shadow:
+      0 0 0 1px rgba(v.$danger-color, 0.2),
+      0 0 8px rgba(v.$danger-color, 0.3),
+      inset 0 0 0 1px rgba(v.$danger-color, 0.05);
+  }
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(v.$danger-color, 0.4),
+      0 0 16px rgba(v.$danger-color, 0.6),
+      inset 0 0 0 1px rgba(v.$danger-color, 0.15);
+  }
 }
 
 // Game Result Styling
 .gameWin {
   background: linear-gradient(
     135deg,
-    rgba(16, 185, 129, 0.2),
-    rgba(5, 150, 105, 0.1)
+    rgba(v.$success-color, 0.2),
+    rgba(v.$success-color, 0.1)
   );
-  border-color: rgba(16, 185, 129, 0.4);
+  border-color: rgba(v.$success-color, 0.4);
 
   &:hover {
-    border-color: #10b981;
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    border-color: v.$success-color;
+    box-shadow: 0 2px 8px rgba(v.$success-color, 0.3);
   }
 }
 
 .gameLoss {
   background: linear-gradient(
     135deg,
-    rgba(239, 68, 68, 0.2),
-    rgba(220, 38, 38, 0.1)
+    rgba(v.$danger-color, 0.2),
+    rgba(v.$danger-color, 0.1)
   );
-  border-color: rgba(239, 68, 68, 0.4);
+  border-color: rgba(v.$danger-color, 0.4);
 
   &:hover {
-    border-color: #ef4444;
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    border-color: v.$danger-color;
+    box-shadow: 0 2px 8px rgba(v.$danger-color, 0.3);
   }
 }
 
 .gameOtLoss {
   background: linear-gradient(
     135deg,
-    rgba(245, 158, 11, 0.2),
-    rgba(217, 119, 6, 0.1)
+    rgba(v.$warning-color, 0.2),
+    rgba(v.$warning-color, 0.1)
   );
-  border-color: rgba(245, 158, 11, 0.4);
+  border-color: rgba(v.$warning-color, 0.4);
 
   &:hover {
-    border-color: #f59e0b;
-    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+    border-color: v.$warning-color;
+    box-shadow: 0 2px 8px rgba(v.$warning-color, 0.3);
   }
 }
 
 .gameFuture {
   background: linear-gradient(
     135deg,
-    rgba(59, 130, 246, 0.2),
-    rgba(37, 99, 235, 0.1)
+    rgba(v.$primary-color, 0.2),
+    rgba(v.$primary-color, 0.1)
   );
-  border-color: rgba(59, 130, 246, 0.4);
+  border-color: rgba(v.$primary-color, 0.4);
 
   &:hover {
-    border-color: #3b82f6;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    border-color: v.$primary-color;
+    box-shadow: 0 2px 8px rgba(v.$primary-color, 0.3);
   }
 }
 
 // Special Game Types
 .playoffGame {
   border-width: 2px;
-  border-color: #fbbf24 !important;
+  border-color: v.$warning-color !important;
   background: linear-gradient(
     135deg,
-    rgba(251, 191, 36, 0.2),
-    rgba(245, 158, 11, 0.1)
+    rgba(v.$warning-color, 0.2),
+    rgba(v.$warning-color, 0.1)
   );
 
   &::before {
@@ -603,7 +660,7 @@
     position: absolute;
     top: 2px;
     right: 2px;
-    font-size: clamp(0.5rem, 1.5vw, 0.65rem);
+    font-size: v.$font-size-xxs;
     z-index: 1;
   }
 }
@@ -614,8 +671,8 @@
     position: absolute;
     top: 2px;
     left: 2px;
-    color: #fbbf24;
-    font-size: clamp(0.5rem, 1.5vw, 0.65rem);
+    color: v.$warning-color;
+    font-size: v.$font-size-xxs;
     z-index: 1;
   }
 }
@@ -623,42 +680,99 @@
 // Streak Highlighting
 .winStreak {
   border-width: 2px;
-  border-color: #10b981 !important;
-  box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+  border-color: v.$success-color !important;
+  box-shadow: 0 0 8px rgba(v.$success-color, 0.4);
   animation: winStreakGlow 2s ease-in-out infinite alternate;
+
+  &.streakStart {
+    border-top: 2px solid v.$success-color;
+    border-right: 2px solid v.$success-color;
+    border-bottom: 2px solid v.$success-color;
+    border-top-right-radius: v.$border-radius-sm;
+    border-bottom-right-radius: v.$border-radius-sm;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: -2px; // Compensate for border overlap
+  }
+
+  &.streakMiddle {
+    border-top: 2px solid v.$success-color;
+    border-right: 2px solid v.$success-color;
+    border-bottom: 2px solid v.$success-color;
+    border-radius: 0;
+    margin-left: -2px; // Compensate for border overlap
+  }
+
+  &.streakEnd {
+    border-top: 2px solid v.$success-color;
+    border-right: 2px solid v.$success-color;
+    border-bottom: 2px solid v.$success-color;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-right-radius: v.$border-radius-sm;
+    border-bottom-right-radius: v.$border-radius-sm;
+    margin-left: -2px; // Compensate for border overlap
+  }
 }
 
 .lossStreak {
   border-width: 2px;
-  border-color: #ef4444 !important;
-  box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+  border-color: v.$danger-color !important;
+  box-shadow: 0 0 8px rgba(v.$danger-color, 0.4);
   animation: lossStreakGlow 2s ease-in-out infinite alternate;
+
+  &.streakStart {
+    border-top: 2px solid v.$danger-color;
+    border-right: 2px solid v.$danger-color;
+    border-bottom: 2px solid v.$danger-color;
+    border-top-right-radius: v.$border-radius-sm;
+    border-bottom-right-radius: v.$border-radius-sm;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: -2px; // Compensate for border overlap
+  }
+
+  &.streakMiddle {
+    border-top: 2px solid v.$danger-color;
+    border-right: 2px solid v.$danger-color;
+    border-bottom: 2px solid v.$danger-color;
+    border-radius: 0;
+    margin-left: -2px; // Compensate for border overlap
+  }
+
+  &.streakEnd {
+    border-top: 2px solid v.$danger-color;
+    border-right: 2px solid v.$danger-color;
+    border-bottom: 2px solid v.$danger-color;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-right-radius: v.$border-radius-sm;
+    border-bottom-right-radius: v.$border-radius-sm;
+    margin-left: -2px; // Compensate for border overlap
+  }
 }
 
-@keyframes winStreakGlow {
-  0% {
-    box-shadow:
-      0 0 0 1px rgba(16, 185, 129, 0.3),
-      0 0 8px rgba(16, 185, 129, 0.4);
-  }
-  100% {
-    box-shadow:
-      0 0 0 2px rgba(16, 185, 129, 0.5),
-      0 0 12px rgba(16, 185, 129, 0.6);
-  }
+// Remove the old streak border styles that were causing conflicts
+.dayCell {
+  // ...existing code...
+
+  // Remove these old streak styles as they're now handled above
+  // &.streakStart { ... }
+  // &.streakMiddle { ... }
+  // &.streakEnd { ... }
+  // &.winStreak { ... }
+  // &.lossStreak { ... }
 }
 
-@keyframes lossStreakGlow {
-  0% {
-    box-shadow:
-      0 0 0 1px rgba(239, 68, 68, 0.3),
-      0 0 8px rgba(239, 68, 68, 0.4);
-  }
-  100% {
-    box-shadow:
-      0 0 0 2px rgba(239, 68, 68, 0.5),
-      0 0 12px rgba(239, 68, 68, 0.6);
-  }
+.dayNumber {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  color: v.$text-primary;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 // Game Info
@@ -668,13 +782,13 @@
   flex-direction: column;
   justify-content: center;
   text-align: center;
-  font-size: clamp(0.5rem, 1.4vw, 0.65rem);
+  font-size: v.$font-size-xxs;
   line-height: 1.1;
   overflow: hidden;
 }
 
 .opponent {
-  color: #d1d5db;
+  color: v.$text-secondary;
   font-weight: 600;
   margin-bottom: 2px;
   overflow: hidden;
@@ -683,9 +797,9 @@
 }
 
 .score {
-  color: #f3f4f6;
+  color: v.$text-primary;
   font-weight: 700;
-  font-size: clamp(0.55rem, 1.6vw, 0.7rem);
+  font-size: v.$font-size-xs;
   line-height: 1;
 }
 
@@ -693,174 +807,180 @@
   position: absolute;
   top: 2px;
   left: 2px;
-  color: #fbbf24;
-  font-size: clamp(0.5rem, 1.5vw, 0.65rem);
+  color: v.$warning-color;
+  font-size: v.$font-size-xxs;
   z-index: 1;
 }
 
-// Game Tooltip
+// =============================================================================
+// GAME TOOLTIP
+// =============================================================================
+
 .gameTooltip {
-  background: rgba(17, 24, 39, 0.98);
-  border: 1px solid #374151;
-  border-radius: 12px;
-  padding: 1rem;
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-md;
   min-width: 280px;
   max-width: 400px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(16px);
-  color: #f3f4f6;
-  font-size: 0.875rem;
+  box-shadow: v.$box-shadow-default;
+  color: v.$text-primary;
+  font-size: v.$font-size-sm;
   z-index: 1000;
-}
 
-.tooltipHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+  .tooltipHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: v.$space-sm;
+    padding-bottom: v.$space-xs;
+    border-bottom: 1px solid v.$border-secondary;
 
-  strong {
-    color: #60a5fa;
-    font-size: 0.95rem;
-  }
-}
-
-.playoffLabel {
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
-  color: #000;
-  padding: 0.125rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-}
-
-.resultLabel {
-  padding: 0.25rem 0.5rem;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-
-  &.win {
-    background: rgba(16, 185, 129, 0.2);
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.3);
+    strong {
+      color: v.$primary-color;
+      font-size: v.$font-size-md;
+    }
   }
 
-  &.loss {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.3);
+  .playoffLabel {
+    background: linear-gradient(
+      135deg,
+      v.$warning-color,
+      color.adjust(v.$warning-color, $lightness: -10%)
+    );
+    color: v.$color-black;
+    padding: v.$space-xxs v.$space-xs;
+    border-radius: v.$border-radius-sm;
+    font-size: v.$font-size-xxs;
+    font-weight: 700;
+    text-transform: uppercase;
   }
 
-  &.otLoss {
-    background: rgba(245, 158, 11, 0.2);
-    color: #f59e0b;
-    border: 1px solid rgba(245, 158, 11, 0.3);
+  .resultLabel {
+    padding: v.$space-xxs v.$space-xs;
+    border-radius: v.$border-radius-sm;
+    font-size: v.$font-size-xxs;
+    font-weight: 600;
+    text-transform: uppercase;
+
+    &.win {
+      background: rgba(v.$success-color, 0.2);
+      color: v.$success-color;
+      border: 1px solid rgba(v.$success-color, 0.3);
+    }
+
+    &.loss {
+      background: rgba(v.$danger-color, 0.2);
+      color: v.$danger-color;
+      border: 1px solid rgba(v.$danger-color, 0.3);
+    }
+
+    &.otLoss {
+      background: rgba(v.$warning-color, 0.2);
+      color: v.$warning-color;
+      border: 1px solid rgba(v.$warning-color, 0.3);
+    }
+
+    &.future {
+      background: rgba(v.$primary-color, 0.2);
+      color: v.$primary-color;
+      border: 1px solid rgba(v.$primary-color, 0.3);
+    }
   }
 
-  &.future {
-    background: rgba(59, 130, 246, 0.2);
-    color: #3b82f6;
-    border: 1px solid rgba(59, 130, 246, 0.3);
-  }
-}
-
-.tooltipContent {
-  margin-bottom: 0.75rem;
-}
-
-.matchupInfo {
-  margin-bottom: 0.75rem;
-}
-
-.matchup {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #e5e7eb;
-  margin-bottom: 0.25rem;
-}
-
-.score {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #60a5fa;
-}
-
-.gameAnalytics {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.analyticItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.label {
-  color: #9ca3af;
-  font-size: 0.8rem;
-}
-
-.value {
-  font-weight: 600;
-  padding: 0.125rem 0.375rem;
-  border-radius: 4px;
-  font-size: 0.75rem;
-
-  &.strong {
-    background: rgba(239, 68, 68, 0.2);
-    color: #fca5a5;
+  .tooltipContent {
+    margin-bottom: v.$space-sm;
   }
 
-  &.average {
-    background: rgba(156, 163, 175, 0.2);
-    color: #d1d5db;
+  .matchupInfo {
+    margin-bottom: v.$space-sm;
+
+    .matchup {
+      font-size: v.$font-size-md;
+      font-weight: 600;
+      color: v.$text-primary;
+      margin-bottom: v.$space-xs;
+    }
+
+    .score {
+      font-size: v.$font-size-lg;
+      font-weight: 700;
+      color: v.$primary-color;
+    }
   }
 
-  &.weak {
-    background: rgba(16, 185, 129, 0.2);
-    color: #6ee7b7;
+  .gameAnalytics {
+    display: grid;
+    gap: v.$space-xs;
+
+    .analyticItem {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .label {
+        color: v.$text-secondary;
+        font-size: v.$font-size-xs;
+      }
+
+      .value {
+        font-weight: 600;
+        padding: v.$space-xxs v.$space-xs;
+        border-radius: v.$border-radius-sm;
+        font-size: v.$font-size-xxs;
+
+        &.strong {
+          background: rgba(v.$danger-color, 0.2);
+          color: v.$danger-color;
+        }
+
+        &.average {
+          background: rgba(v.$text-secondary, 0.2);
+          color: v.$text-secondary;
+        }
+
+        &.weak {
+          background: rgba(v.$success-color, 0.2);
+          color: v.$success-color;
+        }
+
+        &.positive {
+          background: rgba(v.$success-color, 0.2);
+          color: v.$success-color;
+        }
+
+        &.negative {
+          background: rgba(v.$danger-color, 0.2);
+          color: v.$danger-color;
+        }
+
+        &.excellent {
+          background: rgba(v.$success-color, 0.3);
+          color: v.$success-color;
+        }
+
+        &.good {
+          background: rgba(v.$primary-color, 0.2);
+          color: v.$primary-color;
+        }
+
+        &.poor {
+          background: rgba(v.$danger-color, 0.2);
+          color: v.$danger-color;
+        }
+      }
+    }
   }
 
-  &.positive {
-    background: rgba(16, 185, 129, 0.2);
-    color: #10b981;
-  }
+  .tooltipFooter {
+    padding-top: v.$space-xs;
+    border-top: 1px solid v.$border-secondary;
+    text-align: center;
 
-  &.negative {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
-  }
-
-  &.excellent {
-    background: rgba(16, 185, 129, 0.3);
-    color: #10b981;
-  }
-
-  &.good {
-    background: rgba(59, 130, 246, 0.2);
-    color: #60a5fa;
-  }
-
-  &.poor {
-    background: rgba(239, 68, 68, 0.2);
-    color: #ef4444;
-  }
-}
-
-.tooltipFooter {
-  padding-top: 0.5rem;
-  border-top: 1px solid rgba(75, 85, 99, 0.3);
-  text-align: center;
-
-  em {
-    color: #6b7280;
-    font-size: 0.8rem;
+    em {
+      color: v.$text-secondary;
+      font-size: v.$font-size-xs;
+    }
   }
 }
 
@@ -869,26 +989,25 @@
 // =============================================================================
 
 .gameStatsSidebar {
-  background: rgba(31, 41, 55, 0.8);
-  border: 1px solid rgba(75, 85, 99, 0.3);
-  border-radius: 12px;
-  padding: 1.5rem;
-  backdrop-filter: blur(8px);
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-lg;
   position: sticky;
-  top: 1rem;
+  top: v.$space-md;
 
   .sidebarHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+    margin-bottom: v.$space-lg;
+    padding-bottom: v.$space-sm;
+    border-bottom: 1px solid v.$border-secondary;
 
     h3 {
       margin: 0;
-      color: #f3f4f6;
-      font-size: 1.25rem;
+      color: v.$text-primary;
+      font-size: v.$font-size-lg;
       font-weight: 600;
     }
   }
@@ -896,88 +1015,92 @@
   .closeSidebar {
     background: none;
     border: none;
-    color: #9ca3af;
-    font-size: 1.5rem;
+    color: v.$text-secondary;
+    font-size: v.$font-size-lg;
     cursor: pointer;
-    padding: 0.25rem;
-    border-radius: 4px;
+    padding: v.$space-xs;
+    border-radius: v.$border-radius-sm;
     transition: all 0.2s ease;
 
     &:hover {
-      color: #ef4444;
-      background: rgba(239, 68, 68, 0.1);
+      color: v.$danger-color;
+      background: rgba(v.$danger-color, 0.1);
     }
   }
 
   .gameOverview {
-    color: #f3f4f6;
+    color: v.$text-primary;
 
     .matchupHeader {
-      margin-bottom: 1rem;
+      margin-bottom: v.$space-md;
     }
 
     .teams {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 1rem;
-      margin-bottom: 0.75rem;
+      gap: v.$space-md;
+      margin-bottom: v.$space-sm;
     }
 
     .team {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 0.5rem;
+      gap: v.$space-xs;
     }
 
     .teamAbbr {
-      font-size: 1.125rem;
+      font-size: v.$font-size-md;
       font-weight: 700;
-      color: #e5e7eb;
+      color: v.$text-primary;
     }
 
     .teamScore {
-      font-size: 1.5rem;
+      font-size: v.$font-size-xl;
       font-weight: 700;
-      color: #60a5fa;
+      color: v.$primary-color;
     }
 
     .vs {
-      font-size: 0.875rem;
-      color: #9ca3af;
+      font-size: v.$font-size-sm;
+      color: v.$text-secondary;
       font-weight: 600;
     }
 
     .gameDate {
       text-align: center;
-      color: #d1d5db;
-      font-size: 0.95rem;
-      margin-bottom: 1rem;
+      color: v.$text-secondary;
+      font-size: v.$font-size-sm;
+      margin-bottom: v.$space-md;
 
       small {
-        color: #9ca3af;
-        font-size: 0.8rem;
+        color: v.$text-secondary;
+        font-size: v.$font-size-xs;
       }
     }
 
     .playoffBadge {
-      background: linear-gradient(135deg, #fbbf24, #f59e0b);
-      color: #000;
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
+      background: linear-gradient(
+        135deg,
+        v.$warning-color,
+        color.adjust(v.$warning-color, $lightness: -10%)
+      );
+      color: v.$color-black;
+      padding: v.$space-xs v.$space-md;
+      border-radius: v.$border-radius-md;
       text-align: center;
       font-weight: 600;
-      margin-bottom: 1rem;
+      margin-bottom: v.$space-md;
     }
 
     .gameAnalytics {
-      margin-top: 1.5rem;
+      margin-top: v.$space-lg;
 
       h4 {
-        margin: 0 0 1rem;
-        color: #a78bfa;
-        font-size: 1rem;
+        margin: 0 0 v.$space-md;
+        color: var(--team-primary-color, v.$secondary-color);
+        font-size: v.$font-size-md;
         font-weight: 600;
       }
     }
@@ -986,53 +1109,53 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 0.75rem;
+      margin-bottom: v.$space-sm;
     }
 
     .streakInfo {
-      margin-top: 1rem;
+      margin-top: v.$space-md;
       text-align: center;
     }
 
     .streakBadge {
       display: inline-block;
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      font-size: 0.875rem;
+      padding: v.$space-xs v.$space-md;
+      border-radius: v.$border-radius-md;
+      font-size: v.$font-size-sm;
       font-weight: 600;
       text-transform: uppercase;
 
       &.win {
-        background: rgba(16, 185, 129, 0.2);
-        color: #10b981;
-        border: 1px solid rgba(16, 185, 129, 0.3);
+        background: rgba(v.$success-color, 0.2);
+        color: v.$success-color;
+        border: 1px solid rgba(v.$success-color, 0.3);
       }
 
       &.loss {
-        background: rgba(239, 68, 68, 0.2);
-        color: #ef4444;
-        border: 1px solid rgba(239, 68, 68, 0.3);
+        background: rgba(v.$danger-color, 0.2);
+        color: v.$danger-color;
+        border: 1px solid rgba(v.$danger-color, 0.3);
       }
     }
 
     .upcomingInfo {
-      margin-top: 1.5rem;
-      padding: 1rem;
-      background: rgba(59, 130, 246, 0.1);
-      border: 1px solid rgba(59, 130, 246, 0.2);
-      border-radius: 8px;
+      margin-top: v.$space-lg;
+      padding: v.$space-md;
+      background: rgba(v.$primary-color, 0.1);
+      border: 1px solid rgba(v.$primary-color, 0.2);
+      border-radius: v.$border-radius-md;
 
       h4 {
-        margin: 0 0 0.5rem;
-        color: #60a5fa;
-        font-size: 1rem;
+        margin: 0 0 v.$space-xs;
+        color: v.$primary-color;
+        font-size: v.$font-size-md;
         font-weight: 600;
       }
 
       p {
         margin: 0;
-        color: #d1d5db;
-        font-size: 0.875rem;
+        color: v.$text-secondary;
+        font-size: v.$font-size-sm;
         line-height: 1.4;
       }
     }
@@ -1049,31 +1172,31 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 4rem 2rem;
+  padding: v.$space-xxxl v.$space-xl;
   text-align: center;
-  color: #e5e7eb;
+  color: v.$text-primary;
 
   h3 {
-    margin: 0 0 0.5rem;
-    font-size: 1.5rem;
+    margin: 0 0 v.$space-xs;
+    font-size: v.$font-size-xl;
     font-weight: 600;
   }
 
   p {
     margin: 0;
-    color: #9ca3af;
-    font-size: 0.95rem;
+    color: v.$text-secondary;
+    font-size: v.$font-size-sm;
   }
 }
 
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid rgba(59, 130, 246, 0.2);
-  border-top: 4px solid #3b82f6;
+  border: 4px solid rgba(v.$primary-color, 0.2);
+  border-top: 4px solid v.$primary-color;
   border-radius: 50%;
   animation: spin 1s linear infinite;
-  margin-bottom: 1rem;
+  margin-bottom: v.$space-md;
 }
 
 @keyframes spin {
@@ -1087,45 +1210,82 @@
 
 .error {
   h3 {
-    color: #ef4444;
+    color: v.$danger-color;
+  }
+}
+
+// =============================================================================
+// CALENDAR FOOTER
+// =============================================================================
+
+.calendarFooter {
+  margin-top: v.$space-xl;
+  padding-top: v.$space-lg;
+  border-top: 1px solid v.$border-secondary;
+
+  .calendarStats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: v.$space-xl;
+    margin-bottom: v.$space-lg;
+
+    .statGroup {
+      h4 {
+        margin: 0 0 v.$space-md;
+        color: v.$text-primary;
+        font-size: v.$font-size-md;
+        font-weight: 600;
+      }
+
+      .statItems {
+        display: flex;
+        flex-wrap: wrap;
+        gap: v.$space-lg;
+      }
+
+      .statItem {
+        display: flex;
+        flex-direction: column;
+        gap: v.$space-xs;
+
+        .statLabel {
+          font-size: v.$font-size-xs;
+          color: v.$text-secondary;
+          font-weight: 500;
+        }
+
+        .statValue {
+          font-size: v.$font-size-lg;
+          color: v.$text-primary;
+          font-weight: 600;
+        }
+      }
+    }
   }
 }
 
 // Debug Panel
 .debugPanel {
-  background: rgba(17, 24, 39, 0.8);
-  border: 1px solid #374151;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-bottom: 1rem;
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-md;
+  margin-bottom: v.$space-md;
   font-family: "Monaco", "Menlo", monospace;
-  font-size: 0.8rem;
-  color: #d1d5db;
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
 
   h4 {
-    margin: 0 0 0.5rem;
-    color: #fbbf24;
+    margin: 0 0 v.$space-xs;
+    color: v.$warning-color;
   }
 
   p {
-    margin: 0.25rem 0;
+    margin: v.$space-xxs 0;
   }
 
   strong {
-    color: #60a5fa;
-  }
-}
-
-// =============================================================================
-// ANIMATIONS
-// =============================================================================
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
+    color: v.$primary-color;
   }
 }
 
@@ -1136,58 +1296,62 @@
 @media (max-width: 1200px) {
   .calendarContent {
     grid-template-columns: 1fr;
-    gap: 1.5rem;
+    gap: v.$space-lg;
   }
 
   .sidebarContainer {
     min-width: auto;
     max-width: none;
   }
+
+  .calendarGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (max-width: 768px) {
   .container {
-    padding: 0.75rem;
+    padding: v.$space-lg;
   }
 
   .titleWithInfo h3 {
-    font-size: 1.5rem;
+    font-size: v.$font-size-lg;
   }
 
   .teamSummary {
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 0.75rem;
+    gap: v.$space-sm;
   }
 
   .summaryCard {
-    padding: 0.75rem;
+    padding: v.$space-sm;
 
     .record {
-      font-size: 1.25rem;
+      font-size: v.$font-size-md;
     }
+  }
+
+  .calendarGrid {
+    grid-template-columns: 1fr;
   }
 
   .calendarLegend {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .legendItems {
-    gap: 0.75rem;
+    gap: v.$space-sm;
   }
 
   .dayCell {
-    min-height: 60px;
-    padding: 0.375rem;
+    min-height: 50px;
+    padding: v.$space-xxs;
   }
 
   .dayNumber {
-    font-size: 0.8rem;
+    font-size: v.$font-size-xxs;
   }
 
   .gameInfo {
-    font-size: 0.65rem;
+    font-size: v.$font-size-xxs;
   }
 
   .gameTooltip {
@@ -1196,45 +1360,45 @@
   }
 
   .gameStatsSidebar {
-    padding: 1rem;
+    padding: v.$space-md;
   }
 
   .teams {
-    gap: 0.75rem;
+    gap: v.$space-sm;
   }
 
   .teamAbbr {
-    font-size: 1rem;
+    font-size: v.$font-size-sm;
   }
 
   .teamScore {
-    font-size: 1.25rem;
+    font-size: v.$font-size-lg;
   }
 }
 
 @media (max-width: 480px) {
   .daysContainer {
-    gap: 0.25rem;
+    gap: 1px;
   }
 
   .dayCell {
-    min-height: 50px;
-    padding: 0.25rem;
+    min-height: 40px;
+    padding: 1px;
   }
 
   .dayNumber {
-    font-size: 0.7rem;
+    font-size: v.$font-size-xxs;
   }
 
   .gameInfo {
-    font-size: 0.6rem;
+    font-size: v.$font-size-xxs;
   }
 
   .opponent {
-    font-size: 0.6rem;
+    font-size: v.$font-size-xxs;
   }
 
   .score {
-    font-size: 0.65rem;
+    font-size: v.$font-size-xxs;
   }
 }

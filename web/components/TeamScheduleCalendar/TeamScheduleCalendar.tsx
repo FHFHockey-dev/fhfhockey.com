@@ -36,6 +36,7 @@ interface EnhancedGameData {
   isPlayoff: boolean;
   isPartOfStreak?: boolean;
   streakType?: "win" | "loss";
+  streakPosition?: "start" | "middle" | "end" | "single";
   opponentStrength?: "strong" | "average" | "weak";
   xGDifferential?: number;
   gameRating?: "excellent" | "good" | "average" | "poor";
@@ -84,7 +85,7 @@ export function TeamScheduleCalendar({
   const [selectedGame, setSelectedGame] = useState<ScheduleGame | null>(null);
   const [hoveredGame, setHoveredGame] = useState<EnhancedGameData | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const [debug] = useState(false);
+  const [debug] = useState(false); // Disable debug mode now that positioning is fixed
 
   // Get team abbreviation from ID if not provided
   const teamAbbr =
@@ -235,57 +236,98 @@ export function TeamScheduleCalendar({
       };
     });
 
-    // Calculate current streak for highlighting
+    // Enhanced streak detection for ALL streaks of 3+ consecutive games
     const completedGames = results
       .filter(({ result }) => result && result !== "future")
       .sort(
         (a, b) =>
-          new Date(b.game.gameDate).getTime() -
-          new Date(a.game.gameDate).getTime()
+          new Date(a.game.gameDate).getTime() -
+          new Date(b.game.gameDate).getTime()
       );
 
-    if (completedGames.length > 0) {
-      let currentStreak = 0;
-      let streakType: "win" | "loss" | null = null;
+    // Find all streaks of 3+ consecutive wins or losses
+    const streaks: Array<{
+      type: "win" | "loss";
+      games: EnhancedGameData[];
+      startIndex: number;
+      endIndex: number;
+    }> = [];
 
-      const mostRecentResult = completedGames[0]?.result;
-      if (mostRecentResult === "win") {
-        streakType = "win";
-      } else if (mostRecentResult === "loss" || mostRecentResult === "otLoss") {
-        streakType = "loss";
-      }
+    let currentStreakGames: EnhancedGameData[] = [];
+    let currentStreakType: "win" | "loss" | null = null;
 
-      if (streakType) {
-        for (const { result } of completedGames) {
-          if (streakType === "win" && result === "win") {
-            currentStreak++;
-          } else if (
-            streakType === "loss" &&
-            (result === "loss" || result === "otLoss")
-          ) {
-            currentStreak++;
-          } else {
-            break;
-          }
+    completedGames.forEach((gameData, index) => {
+      const { result } = gameData;
+      const isWin = result === "win";
+      const isLoss = result === "loss" || result === "otLoss";
+
+      if (isWin && currentStreakType === "win") {
+        // Continue win streak
+        currentStreakGames.push(gameData);
+      } else if (isLoss && currentStreakType === "loss") {
+        // Continue loss streak
+        currentStreakGames.push(gameData);
+      } else {
+        // End current streak if it's 3+ games
+        if (currentStreakGames.length >= 3 && currentStreakType) {
+          streaks.push({
+            type: currentStreakType,
+            games: [...currentStreakGames],
+            startIndex: index - currentStreakGames.length,
+            endIndex: index - 1
+          });
+        }
+
+        // Start new streak
+        if (isWin) {
+          currentStreakType = "win";
+          currentStreakGames = [gameData];
+        } else if (isLoss) {
+          currentStreakType = "loss";
+          currentStreakGames = [gameData];
+        } else {
+          currentStreakType = null;
+          currentStreakGames = [];
         }
       }
+    });
 
-      // Apply streak highlighting to recent games (3+ games)
-      if (currentStreak >= 3 && streakType) {
-        completedGames.slice(0, currentStreak).forEach(({ game }) => {
-          const gameIndex = results.findIndex(
-            ({ game: g }) => g.id === game.id
-          );
-          if (gameIndex !== -1) {
-            results[gameIndex] = {
-              ...results[gameIndex],
-              isPartOfStreak: true,
-              streakType
-            };
-          }
-        });
-      }
+    // Check final streak
+    if (currentStreakGames.length >= 3 && currentStreakType) {
+      streaks.push({
+        type: currentStreakType,
+        games: [...currentStreakGames],
+        startIndex: completedGames.length - currentStreakGames.length,
+        endIndex: completedGames.length - 1
+      });
     }
+
+    // Apply streak information to games
+    streaks.forEach((streak) => {
+      streak.games.forEach((streakGame, gameIndex) => {
+        const resultIndex = results.findIndex(
+          ({ game }) => game.id === streakGame.game.id
+        );
+        if (resultIndex !== -1) {
+          let streakPosition: "start" | "middle" | "end" | "single" = "middle";
+
+          if (streak.games.length === 1) {
+            streakPosition = "single";
+          } else if (gameIndex === 0) {
+            streakPosition = "start";
+          } else if (gameIndex === streak.games.length - 1) {
+            streakPosition = "end";
+          }
+
+          results[resultIndex] = {
+            ...results[resultIndex],
+            isPartOfStreak: true,
+            streakType: streak.type,
+            streakPosition
+          };
+        }
+      });
+    });
 
     return results;
   }, [games, teamStats, teamId, today]);
@@ -431,6 +473,170 @@ export function TeamScheduleCalendar({
 
     return { months, stats };
   }, [gamesWithResults]);
+
+  // Create seamless overlay style for a streak
+  const createStreakOverlay = (
+    streakGames: EnhancedGameData[],
+    streakType: "win" | "loss",
+    monthDays: CalendarDay[]
+  ) => {
+    if (streakGames.length < 3) return null;
+
+    // Find positions of streak games in the calendar grid
+    const positions = streakGames
+      .map((gameData) => {
+        const dayIndex = monthDays.findIndex(
+          (day) => day.game?.game.id === gameData.game.id
+        );
+        if (dayIndex === -1) return null;
+
+        // Calculate the actual grid position accounting for the starting day of the month
+        const firstDayOfMonth = monthDays[0].date;
+        const startDayOfWeek = firstDayOfMonth.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+        // The actual grid position includes the offset for days before the month starts
+        const actualGridIndex = dayIndex + startDayOfWeek;
+        const row = Math.floor(actualGridIndex / 7);
+        const col = actualGridIndex % 7;
+
+        return { row, col, dayIndex, actualGridIndex, gameData };
+      })
+      .filter((pos) => pos !== null);
+
+    if (positions.length === 0) return null;
+
+    // Calculate the total number of rows needed for this month
+    const totalDays = monthDays.length;
+    const firstDayOfMonth = monthDays[0].date;
+    const startDayOfWeek = firstDayOfMonth.getDay();
+    const totalGridCells = totalDays + startDayOfWeek;
+    const totalRows = Math.ceil(totalGridCells / 7);
+
+    // Group positions by week row to create separate overlays for each row
+    const positionsByRow = positions.reduce(
+      (acc, pos) => {
+        if (!acc[pos!.row]) {
+          acc[pos!.row] = [];
+        }
+        acc[pos!.row].push(pos!);
+        return acc;
+      },
+      {} as Record<number, (typeof positions)[0][]>
+    );
+
+    // Create overlays for each row
+    const overlays: Array<{
+      type: "winStreak" | "lossStreak";
+      style: React.CSSProperties;
+      games: EnhancedGameData[];
+    }> = [];
+
+    Object.entries(positionsByRow).forEach(([rowStr, rowPositions]) => {
+      if (!rowPositions || rowPositions.length === 0) return;
+
+      const row = parseInt(rowStr);
+
+      // Sort positions by column to ensure proper left-to-right order
+      const sortedPositions = rowPositions.sort((a, b) => a!.col - b!.col);
+
+      const firstPos = sortedPositions[0]!;
+      const lastPos = sortedPositions[sortedPositions.length - 1]!;
+
+      // Use CSS Grid fractional units and calc() for responsive positioning
+      // This ensures the overlay matches the actual grid cell dimensions
+      const style: React.CSSProperties = {
+        position: "absolute",
+        left: `calc(${firstPos.col} * (100% / 7))`,
+        top: `calc(${row} * (100% / ${totalRows}))`,
+        width: `calc(${lastPos.col - firstPos.col + 1} * (100% / 7) - 2px)`,
+        height: `calc(100% / ${totalRows} - 2px)`,
+        zIndex: 5,
+        pointerEvents: "none"
+      };
+
+      overlays.push({
+        type:
+          streakType === "win"
+            ? ("winStreak" as const)
+            : ("lossStreak" as const),
+        style,
+        games: sortedPositions.map((pos) => pos!.gameData)
+      });
+    });
+
+    return overlays;
+  };
+
+  // Calculate streak overlays for seamless borders
+  const calculateStreakOverlays = (monthDays: CalendarDay[]) => {
+    const overlays: Array<{
+      type: "winStreak" | "lossStreak";
+      style: React.CSSProperties;
+      games: EnhancedGameData[];
+    }> = [];
+
+    // Find streaks within this month
+    const streakGames = monthDays
+      .filter((day) => day.game?.isPartOfStreak)
+      .map((day) => day.game!)
+      .sort(
+        (a, b) =>
+          new Date(a.game.gameDate).getTime() -
+          new Date(b.game.gameDate).getTime()
+      );
+
+    if (streakGames.length === 0) return overlays;
+
+    // Group consecutive streak games by streak type and consecutive dates
+    let currentStreak: EnhancedGameData[] = [];
+    let currentStreakType: "win" | "loss" | null = null;
+
+    streakGames.forEach((gameData, index) => {
+      const { streakType } = gameData;
+
+      if (streakType === currentStreakType) {
+        currentStreak.push(gameData);
+      } else {
+        // Process previous streak
+        if (currentStreak.length >= 3 && currentStreakType) {
+          const streakOverlays = createStreakOverlay(
+            currentStreak,
+            currentStreakType,
+            monthDays
+          );
+          if (streakOverlays && Array.isArray(streakOverlays)) {
+            overlays.push(...streakOverlays);
+          } else if (streakOverlays) {
+            overlays.push(streakOverlays);
+          }
+        }
+
+        // Start new streak
+        currentStreakType = streakType ?? null;
+        currentStreak = [gameData];
+      }
+
+      // Process final streak
+      if (
+        index === streakGames.length - 1 &&
+        currentStreak.length >= 3 &&
+        currentStreakType
+      ) {
+        const streakOverlays = createStreakOverlay(
+          currentStreak,
+          currentStreakType,
+          monthDays
+        );
+        if (streakOverlays && Array.isArray(streakOverlays)) {
+          overlays.push(...streakOverlays);
+        } else if (streakOverlays) {
+          overlays.push(streakOverlays);
+        }
+      }
+    });
+
+    return overlays;
+  };
 
   // Enhanced tooltip handlers
   const handleMouseEnter = (
@@ -664,6 +870,37 @@ export function TeamScheduleCalendar({
               ? `${calendarData.stats.wins}W ${calendarData.stats.losses}L ${calendarData.stats.otLosses}OT ${calendarData.stats.future}F`
               : "N/A"}
           </p>
+          <p>
+            <strong>Streak Games Found:</strong>{" "}
+            {gamesWithResults.filter((game) => game.isPartOfStreak).length}
+          </p>
+          <p>
+            <strong>Win Streak Games:</strong>{" "}
+            {
+              gamesWithResults.filter(
+                (game) => game.isPartOfStreak && game.streakType === "win"
+              ).length
+            }
+          </p>
+          <p>
+            <strong>Loss Streak Games:</strong>{" "}
+            {
+              gamesWithResults.filter(
+                (game) => game.isPartOfStreak && game.streakType === "loss"
+              ).length
+            }
+          </p>
+          <p>
+            <strong>Game Results:</strong>{" "}
+            {gamesWithResults
+              .slice(0, 10)
+              .map(
+                (game) =>
+                  `${game.result}${game.isPartOfStreak ? `(${game.streakType?.charAt(0).toUpperCase()})` : ""}`
+              )
+              .join(", ")}
+            {gamesWithResults.length > 10 ? "..." : ""}
+          </p>
         </div>
       )}
 
@@ -871,6 +1108,18 @@ export function TeamScheduleCalendar({
                     )}
                   </div>
                   <div className={styles.daysContainer}>
+                    {/* Render streak overlays first (behind the cells) */}
+                    {calculateStreakOverlays(month.days).map(
+                      (overlay, overlayIndex) => (
+                        <div
+                          key={`overlay-${overlayIndex}`}
+                          className={`${styles.streakOverlay} ${styles[overlay.type]}`}
+                          style={overlay.style}
+                          title={`${overlay.type === "winStreak" ? "Win" : "Loss"} Streak: ${overlay.games.length} games`}
+                        />
+                      )
+                    )}
+
                     {month.days.map((day, dayIndex) => {
                       const gameData = day.game;
 
@@ -915,12 +1164,13 @@ export function TeamScheduleCalendar({
                           if (opponentStrength === "strong")
                             classes.push(styles.strongOpponent);
 
-                          // Streak highlighting - this was missing proper implementation
+                          // Streak highlighting - now just subtle background tinting
                           if (isPartOfStreak && streakType) {
-                            if (streakType === "win")
-                              classes.push(styles.winStreak);
-                            else if (streakType === "loss")
-                              classes.push(styles.lossStreak);
+                            if (streakType === "win") {
+                              classes.push(styles.streakWin);
+                            } else if (streakType === "loss") {
+                              classes.push(styles.streakLoss);
+                            }
                           }
                         }
 
