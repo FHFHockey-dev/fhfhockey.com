@@ -556,34 +556,76 @@ async function processAndUpsertGameTypeData(
   return recordsToUpsert.length;
 }
 
-async function updateSkaterStats(date: string) {
+async function updateSkaterStats(
+  date: string,
+  seasonData?: { seasonId: number; regularSeasonEndDate: string }
+) {
   console.log(`Updating skater stats for ${date}`);
-  const currentSeason = await getCurrentSeason();
+  const currentSeason = seasonData || (await getCurrentSeason());
   const seasonId = currentSeason.seasonId;
 
-  // [*] OPTIMIZATION: Fetch regular season and playoff data in parallel for the same day.
-  const [regularSeasonData, playoffData] = await Promise.all([
-    fetchDataForGameType(2, date),
-    fetchDataForGameType(3, date)
-  ]);
+  // Determine if this date is during regular season or playoffs
+  const isPlayoffDate =
+    new Date(date) > new Date(currentSeason.regularSeasonEndDate);
 
-  // [*] OPTIMIZATION: Process and upsert data in parallel as they are independent operations.
-  const [regularSeasonUpdates, playoffUpdates] = await Promise.all([
-    processAndUpsertGameTypeData(
+  if (isPlayoffDate) {
+    // Only fetch playoff data for playoff dates
+    console.log(`Processing playoff date: ${date}`);
+    const playoffData = await fetchDataForGameType(3, date);
+
+    // Early exit if no playoff data
+    if (!playoffData.skaterStats || playoffData.skaterStats.length === 0) {
+      console.log(`No playoff data found for ${date}, skipping...`);
+      return {
+        message: `No playoff data found for ${date}`,
+        success: true,
+        totalUpdates: 0
+      };
+    }
+
+    const playoffUpdates = await processAndUpsertGameTypeData(
+      playoffData,
+      "wgo_skater_stats_playoffs",
+      date,
+      seasonId
+    );
+
+    return {
+      message: `Playoff stats updated for ${date}. Playoffs: ${playoffUpdates}.`,
+      success: true,
+      totalUpdates: playoffUpdates
+    };
+  } else {
+    // Only fetch regular season data for regular season dates
+    console.log(`Processing regular season date: ${date}`);
+    const regularSeasonData = await fetchDataForGameType(2, date);
+
+    // Early exit if no regular season data
+    if (
+      !regularSeasonData.skaterStats ||
+      regularSeasonData.skaterStats.length === 0
+    ) {
+      console.log(`No regular season data found for ${date}, skipping...`);
+      return {
+        message: `No regular season data found for ${date}`,
+        success: true,
+        totalUpdates: 0
+      };
+    }
+
+    const regularSeasonUpdates = await processAndUpsertGameTypeData(
       regularSeasonData,
       "wgo_skater_stats",
       date,
       seasonId
-    ),
-    processAndUpsertGameTypeData(playoffData, "wgo_skater_stats_playoffs", date)
-  ]);
+    );
 
-  const totalUpdates = regularSeasonUpdates + playoffUpdates;
-  return {
-    message: `Skater stats updated for ${date}. Regular Season: ${regularSeasonUpdates}, Playoffs: ${playoffUpdates}.`,
-    success: true,
-    totalUpdates
-  };
+    return {
+      message: `Regular season stats updated for ${date}. Regular Season: ${regularSeasonUpdates}.`,
+      success: true,
+      totalUpdates: regularSeasonUpdates
+    };
+  }
 }
 
 async function getMostRecentDateFromDB(): Promise<string | null> {
