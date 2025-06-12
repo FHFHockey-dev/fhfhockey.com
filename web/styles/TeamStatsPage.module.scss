@@ -37,30 +37,29 @@
   align-items: center;
   justify-content: flex-start;
   gap: 1rem;
-  padding: 0.2rem 3rem;
+  padding: 1rem 3rem 1.5rem 3rem;
   height: 120px;
 
   background: linear-gradient(
     180deg,
     var(--primary-color) 0%,
-    var(--primary-color) 85%,
-    var(--jersey) 85%,
-    var(--jersey) 89%,
-    var(--secondary-color) 89%,
-    var(--secondary-color) 93%,
-    var(--accent) 93%,
-    var(--accent) 100%
+    var(--primary-color) 73%,
+    var(--jersey) 73%,
+    var(--jersey) 82%,
+    var(--accent) 82%,
+    var(--accent) 91%,
+    var(--secondary-color) 91%,
+    var(--secondary-color) 100%
   );
 }
 
 .teamLogo {
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   object-fit: contain;
-  background: #ffffff1a;
+  // background: rgba(from var(--primary-color) r g b / 0.2);
   border-radius: 12px;
-  padding: 8px;
-  margin-bottom: 20px;
+  padding-top: 10px;
 }
 
 .teamDetails {
@@ -76,14 +75,13 @@
 .teamInfo {
   display: flex;
   flex-direction: column;
-  gap: 8px;
 }
 
 .teamName {
   font-size: 2.2rem;
   font-weight: 700;
   margin: 0;
-  background: var(--secondary-color);
+  background: var(--accent);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -115,15 +113,16 @@
   flex-direction: column;
   align-items: center;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--primary-color) 70%, #000);
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid color-mix(in srgb, var(--primary-color) 70%, #fff);
   min-width: 80px;
 
   .quickStatValue {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #07aae2;
+    color: color-mix(in srgb, var(--primary-color) 70%, #fff);
+    font-family: v.$font-family-secondary, sans-serif;
     margin-bottom: 2px;
   }
 

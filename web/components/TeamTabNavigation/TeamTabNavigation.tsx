@@ -359,6 +359,7 @@ export function TeamTabNavigation({
           {
             "--team-primary-color": teamInfo?.primaryColor || "#1976d2",
             "--team-secondary-color": teamInfo?.secondaryColor || "#424242",
+            "--team-jersey-color": teamInfo?.jersey || "#ffffff",
             "--team-accent-color": teamInfo?.accent || "#ff9800"
           } as React.CSSProperties
         }

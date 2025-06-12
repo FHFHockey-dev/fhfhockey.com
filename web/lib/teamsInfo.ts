@@ -339,9 +339,9 @@ export const teamsInfo: {
   ANA: {
     name: "Anaheim Ducks",
     shortName: "Ducks",
-    primaryColor: "#010101", // Black
+    primaryColor: "#af4d35", // Orange
     secondaryColor: "#89734C", // Gold
-    jersey: "#CF4520", // Orange
+    jersey: "#010101", // black
     accent: "#ffffff", // White
     alt: "#FFFFFF", // White
     lightColor: "#ec623c", // Lighter orange

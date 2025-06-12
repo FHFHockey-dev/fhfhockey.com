@@ -1,10 +1,53 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/update-wgo-skaters.ts
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// URL Paths and Query Parameters:
+///////////////////
+//// Full refresh of all seasons:
+////    Path: /api/v1/db/update-wgo-skaters?action=all_seasons_full_refresh
+////
+////    Parameters:
+////      - action: "all_seasons_full_refresh" (string, required) - Triggers a full re-fetch and upsert for all dates across all seasons present in the 'seasons' table.
+////
+///////////////////
+//// Incremental or full refresh from most recent date:
+////    Path: /api/v1/db/update-wgo-skaters?action=all&fullRefresh=true|false
+////    Path: /api/v1/db/update-wgo-skaters?action=all will simply start from the most recent date found in `wgo_skater_stats` or `wgo_skater_stats_playoffs`
+////
+////    Parameters:
+////      - action: "all" (string, required) - Triggers an update from the most recent date found in `wgo_skater_stats` or `wgo_skater_stats_playoffs`.
+////      - fullRefresh: "true" | "1" (string, optional) - If "true" or "1", forces the update to start from the current season's `regularSeasonStartDate`.
+////          Otherwise, it starts from the day after the most recent date in the database.
+////
+///////////////////
+//// Update for a specific date:
+////    Path: /api/v1/db/update-wgo-skaters?date=YYYY-MM-DD
+///
+////    Parameters:
+////      - date: "YYYY-MM-DD" (string, required) - Specifies a single date for which skater statistics should be fetched and upserted.
+////
+///////////////////
+//// Fetch data for a specific player:
+////    Path: /api/v1/db/update-wgo-skaters?playerId=XXX&playerFullName=YYY
+////
+////    Parameters:
+////      - playerId: "XXX" (string, required) - The unique ID of the player whose data needs to be fetched.
+////      - playerFullName: "YYY" (string, optional) - The full name of the player, used for logging and context.
+////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 import { NextApiRequest, NextApiResponse } from "next";
 import supabase from "lib/supabase";
 import Fetch from "lib/cors-fetch";
-import { format, parseISO, addDays, isBefore, formatISO } from "date-fns";
-import { getCurrentSeason } from "lib/NHL/server";
+import {
+  format,
+  parseISO,
+  addDays,
+  isBefore,
+  formatISO,
+  differenceInDays
+} from "date-fns"; // Added differenceInDays
+import { getCurrentSeason } from "lib/NHL/server"; // Assuming this is your helper
 import {
   WGOSummarySkaterStat,
   WGOSkatersBio,
@@ -77,7 +120,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
  * Fetches season details from Supabase based on a specific date.
- * Enhanced to handle offseason periods by using smart logic.
+ * Correctly identifies if a date falls within regular season or playoffs of a given season.
  * @param dateString - The date string in 'YYYY-MM-DD' format.
  * @returns A Promise resolving to the season info object or null if not found/error.
  */
@@ -88,27 +131,30 @@ async function getSeasonFromDate(dateString: string): Promise<{
   regularSeasonEndDate: string;
 } | null> {
   try {
-    // First, try the direct approach - look for a season that contains this date
-    const { data: directMatch, error: directError } = await supabase
-      .from("seasons")
-      .select("id, startDate, endDate, regularSeasonEndDate")
-      .lte("startDate", dateString) // Date is on or after season start
-      .gte("regularSeasonEndDate", dateString) // Date is on or before regular season end
-      .single(); // Expect only one season for a given regular season date
+    const targetDate = parseISO(dateString);
 
-    if (directMatch && !directError) {
-      // Found a direct match - date falls within a regular season
+    // First, try to find a season where the targetDate falls within its overall period (start to end, including playoffs)
+    const { data: containingSeason, error: containingSeasonError } =
+      await supabase
+        .from("seasons")
+        .select("id, startDate, endDate, regularSeasonEndDate")
+        .lte("startDate", dateString)
+        .gte("endDate", dateString) // Check against season's actual end date (includes playoffs)
+        .single();
+
+    if (containingSeason && !containingSeasonError) {
+      // Found a direct match - date falls within a season's full duration (regular or playoffs)
       return {
-        seasonId: Number(directMatch.id),
-        startDate: directMatch.startDate,
-        endDate: directMatch.endDate,
-        regularSeasonEndDate: directMatch.regularSeasonEndDate
+        seasonId: Number(containingSeason.id),
+        startDate: containingSeason.startDate,
+        endDate: containingSeason.endDate,
+        regularSeasonEndDate: containingSeason.regularSeasonEndDate
       };
     }
 
-    // If no direct match (likely offseason), use smart logic
+    // If no direct match (likely offseason or date before first season/after last season), use smart logic
     console.log(
-      `Date ${dateString} falls outside regular season periods. Using smart season detection...`
+      `Date ${dateString} does not directly fall within a known season's active period. Using smart season detection...`
     );
 
     // Fetch all seasons to determine which one this date most likely belongs to
@@ -125,23 +171,29 @@ async function getSeasonFromDate(dateString: string): Promise<{
       return null;
     }
 
-    const targetDate = new Date(dateString);
-
-    // Check each season to find the most appropriate one
     for (let i = 0; i < allSeasons.length; i++) {
       const currentSeason = allSeasons[i];
-      const nextSeason = allSeasons[i - 1]; // Next season (more recent)
+      const nextSeason = allSeasons[i - 1]; // Next season (more recent) if exists
 
-      const seasonStart = new Date(currentSeason.startDate);
-      const seasonEnd = new Date(currentSeason.regularSeasonEndDate);
+      const seasonStart = parseISO(currentSeason.startDate);
+      const seasonEnd = parseISO(currentSeason.endDate); // Use seasonEndDate for overall season boundary
 
-      // If date is before this season starts, continue to older seasons
-      if (targetDate < seasonStart) {
+      // If targetDate is after the current season's overall end date, it might be in the offseason before this season
+      // or we need to consider the next season.
+      if (isBefore(targetDate, seasonStart)) {
+        // If the date is before this season starts, it must belong to an earlier period. Continue iterating.
+        // Unless it's before the *first* season we have, in which case there's no data.
         continue;
       }
 
-      // If date is during regular season, return this season
-      if (targetDate >= seasonStart && targetDate <= seasonEnd) {
+      // If targetDate is within the bounds of this season (including playoffs)
+      if (
+        isBefore(targetDate, seasonEnd) ||
+        targetDate.toDateString() === seasonEnd.toDateString()
+      ) {
+        console.log(
+          `Smart detection: Date ${dateString} falls within season ${currentSeason.id} (including playoffs).`
+        );
         return {
           seasonId: Number(currentSeason.id),
           startDate: currentSeason.startDate,
@@ -150,16 +202,14 @@ async function getSeasonFromDate(dateString: string): Promise<{
         };
       }
 
-      // If date is after this season ends, check if it's in the offseason
-      if (targetDate > seasonEnd) {
-        // If there's a next season, check if date is before next season starts
+      // If targetDate is after the current season's overall end date (seasonEnd)
+      if (isBefore(seasonEnd, targetDate)) {
         if (nextSeason) {
-          const nextSeasonStart = new Date(nextSeason.startDate);
-          if (targetDate < nextSeasonStart) {
-            // Date is in offseason between this season and next season
-            // Use the more recent season (next season) for context
+          const nextSeasonStart = parseISO(nextSeason.startDate);
+          // If date is between current season's end and next season's start (true offseason)
+          if (isBefore(targetDate, nextSeasonStart)) {
             console.log(
-              `Date ${dateString} is in offseason. Using upcoming season ${nextSeason.id} for context.`
+              `Smart detection: Date ${dateString} is in offseason between season ${currentSeason.id} and ${nextSeason.id}. Using upcoming season ${nextSeason.id} for context.`
             );
             return {
               seasonId: Number(nextSeason.id),
@@ -169,14 +219,13 @@ async function getSeasonFromDate(dateString: string): Promise<{
             };
           }
         } else {
-          // No next season defined, this might be the current/future season
-          // Check if we're in a reasonable offseason period (within ~6 months after season end)
           const monthsAfterSeason =
             (targetDate.getTime() - seasonEnd.getTime()) /
             (1000 * 60 * 60 * 24 * 30.44);
           if (monthsAfterSeason <= 6) {
+            // Within 6 months after the last season ended
             console.log(
-              `Date ${dateString} is in recent offseason. Using completed season ${currentSeason.id} for context.`
+              `Smart detection: Date ${dateString} is in recent offseason after latest season ${currentSeason.id}. Using completed season ${currentSeason.id} for context.`
             );
             return {
               seasonId: Number(currentSeason.id),
@@ -440,7 +489,7 @@ function mapApiDataToDbRecord(
     shooting_pct_cradle: shotTypeStat?.shootingPctCradle,
     shooting_pct_deflected: shotTypeStat?.shootingPctDeflected,
     shooting_pct_poke: shotTypeStat?.shootingPctPoke,
-    shooting_pct_slap: shotTypeStat?.shootingPctSlap,
+    shooting_pct_slap: shotTypeStat?.goalsSlap,
     shooting_pct_snap: shotTypeStat?.shootingPctSnap,
     shooting_pct_tip_in: shotTypeStat?.shootingPctTipIn,
     shooting_pct_wrap_around: shotTypeStat?.shootingPctWrapAround,
@@ -625,7 +674,9 @@ async function processAndUpsertGameTypeData(
 ): Promise<number> {
   // Early exit if no skater stats data
   if (allData.skaterStats.length === 0) {
-    console.log(`No skater stats data found for ${formattedDate}, skipping...`);
+    console.log(
+      `No skater stats data found for ${formattedDate} in ${tableName}, skipping...`
+    );
     return 0;
   }
 
@@ -693,104 +744,116 @@ async function processAndUpsertGameTypeData(
 
 /**
  * Determine which game type(s) to fetch based on the date and season info
+ * Now uses regularSeasonEndDate and seasonEndDate to correctly identify playoffs.
  */
 function determineGameTypesToFetch(
   date: string,
-  regularSeasonEndDate: string
+  regularSeasonEndDate: string,
+  seasonEndDate: string
 ): { fetchRegularSeason: boolean; fetchPlayoffs: boolean } {
   const dateObj = parseISO(date);
   const regularSeasonEnd = parseISO(regularSeasonEndDate);
+  const seasonEnd = parseISO(seasonEndDate);
 
-  // If date is before or equal to regular season end, fetch regular season
-  // If date is after regular season end, fetch playoffs
+  // If date is during the regular season
   if (
     isBefore(dateObj, regularSeasonEnd) ||
     dateObj.toDateString() === regularSeasonEnd.toDateString()
   ) {
     return { fetchRegularSeason: true, fetchPlayoffs: false };
-  } else {
+  }
+  // If date is after regular season end but on or before the overall season end (playoffs)
+  else if (
+    isBefore(regularSeasonEnd, dateObj) &&
+    (isBefore(dateObj, seasonEnd) ||
+      dateObj.toDateString() === seasonEnd.toDateString())
+  ) {
     return { fetchRegularSeason: false, fetchPlayoffs: true };
+  }
+  // If date is outside both regular season and playoffs of the identified season
+  else {
+    return { fetchRegularSeason: false, fetchPlayoffs: false };
   }
 }
 
-/**
- * Updated function to intelligently fetch only the relevant game type based on date
- */
-async function updateSkaterStatsIntelligent(
+async function updateSkaterStats(
   date: string,
   seasonId: number,
-  regularSeasonEndDate: string
-): Promise<{ message: string; success: boolean; totalUpdates: number }> {
-  console.log(`Updating skater stats for ${date} (Season ${seasonId})`);
+  regularSeasonEndDate: string,
+  seasonEndDate: string // Pass the overall season end date
+): Promise<{
+  message: string;
+  success: boolean;
+  totalUpdates: number;
+  rowsFetched: number;
+  errors: number;
+}> {
+  // Add rowsFetched and errors to return type
+  // No direct console.log here, as processDate will handle the detailed logging
+  // for individual dates. This function primarily orchestrates fetching and upserting.
 
   const { fetchRegularSeason, fetchPlayoffs } = determineGameTypesToFetch(
     date,
-    regularSeasonEndDate
+    regularSeasonEndDate,
+    seasonEndDate // Pass to determineGameTypesToFetch
   );
 
   let regularSeasonUpdates = 0;
   let playoffUpdates = 0;
+  let regularSeasonFetched = 0;
+  let playoffFetched = 0;
+  let errorsEncountered = 0;
+  let gameTypeMessage = "None"; // Default in case no relevant game type is found
 
-  if (fetchRegularSeason) {
-    console.log(`Fetching regular season data for ${date}`);
-    const regularSeasonData = await fetchDataForGameType(2, date);
-    regularSeasonUpdates = await processAndUpsertGameTypeData(
-      regularSeasonData,
-      "wgo_skater_stats",
-      date,
-      seasonId
-    );
-  }
+  try {
+    if (fetchRegularSeason) {
+      console.log(`  > Fetching Regular Season data...`);
+      const regularSeasonData = await fetchDataForGameType(2, date);
+      regularSeasonFetched = regularSeasonData.skaterStats.length;
+      regularSeasonUpdates = await processAndUpsertGameTypeData(
+        regularSeasonData,
+        "wgo_skater_stats",
+        date,
+        seasonId
+      );
+      gameTypeMessage = "Regular Season";
+    }
 
-  if (fetchPlayoffs) {
-    console.log(`Fetching playoff data for ${date}`);
-    const playoffData = await fetchDataForGameType(3, date);
-    playoffUpdates = await processAndUpsertGameTypeData(
-      playoffData,
-      "wgo_skater_stats_playoffs",
-      date,
-      seasonId
+    if (fetchPlayoffs) {
+      console.log(`  > Fetching Playoff data...`);
+      const playoffData = await fetchDataForGameType(3, date);
+      playoffFetched = playoffData.skaterStats.length;
+      playoffUpdates = await processAndUpsertGameTypeData(
+        playoffData,
+        "wgo_skater_stats_playoffs",
+        date,
+        seasonId
+      );
+      if (gameTypeMessage === "Regular Season") {
+        // Should not happen with current logic, but for robustness
+        gameTypeMessage += " & Playoffs";
+      } else {
+        gameTypeMessage = "Playoffs";
+      }
+    }
+  } catch (error: any) {
+    console.error(
+      `  > Error during data fetching/upserting for ${date}: ${error.message}`
     );
+    errorsEncountered = 1; // Mark as having encountered an error for the date
+    // Re-throw if it's a critical error that should stop the overall process
+    // For now, let it be caught by the calling function's retry logic.
   }
 
   const totalUpdates = regularSeasonUpdates + playoffUpdates;
-  const gameType = fetchRegularSeason ? "Regular Season" : "Playoffs";
+  const totalFetched = regularSeasonFetched + playoffFetched;
 
   return {
-    message: `Skater stats updated for ${date} (${gameType}): ${totalUpdates} records.`,
-    success: true,
-    totalUpdates
-  };
-}
-
-// Keep the original updateSkaterStats for backward compatibility
-async function updateSkaterStats(date: string) {
-  console.log(`Updating skater stats for ${date}`);
-  const currentSeason = await getCurrentSeason();
-  const seasonId = currentSeason.seasonId;
-
-  // [*] OPTIMIZATION: Fetch regular season and playoff data in parallel for the same day.
-  const [regularSeasonData, playoffData] = await Promise.all([
-    fetchDataForGameType(2, date),
-    fetchDataForGameType(3, date)
-  ]);
-
-  // [*] OPTIMIZATION: Process and upsert data in parallel as they are independent operations.
-  const [regularSeasonUpdates, playoffUpdates] = await Promise.all([
-    processAndUpsertGameTypeData(
-      regularSeasonData,
-      "wgo_skater_stats",
-      date,
-      seasonId
-    ),
-    processAndUpsertGameTypeData(playoffData, "wgo_skater_stats_playoffs", date)
-  ]);
-
-  const totalUpdates = regularSeasonUpdates + playoffUpdates;
-  return {
-    message: `Skater stats updated for ${date}. Regular Season: ${regularSeasonUpdates}, Playoffs: ${playoffUpdates}.`,
-    success: true,
-    totalUpdates
+    message: `Skater stats processed for ${date} (${gameTypeMessage}).`,
+    success: errorsEncountered === 0, // Success if no errors encountered during this date's processing
+    totalUpdates,
+    rowsFetched: totalFetched,
+    errors: errorsEncountered
   };
 }
 
@@ -836,11 +899,8 @@ async function updateAllSkatersFromMostRecentDate(
   let startDate: Date;
   const currentSeason = await getCurrentSeason();
 
-  // Use seasonEndDate instead of today to process through playoffs
   const endDate = parseISO(currentSeason.seasonEndDate);
   const today = new Date();
-
-  // Don't process beyond today
   const finalEndDate = isBefore(endDate, today) ? endDate : today;
 
   if (fullRefresh) {
@@ -871,11 +931,13 @@ async function updateAllSkatersFromMostRecentDate(
   const failedDates: string[] = [];
   let currentDate = startDate;
 
-  // Retry Constants
   const MAX_RETRIES = 3;
-  const RETRY_DELAY_MS = 2000; // 2 seconds
+  const RETRY_DELAY_MS = 2000;
 
   if (isBefore(finalEndDate, startDate)) {
+    console.log(
+      "Database is already up to date, or target date is before start date."
+    );
     return {
       message: "Database is already up to date.",
       success: true,
@@ -885,10 +947,13 @@ async function updateAllSkatersFromMostRecentDate(
     };
   }
 
+  const totalDaysToProcess = differenceInDays(finalEndDate, startDate) + 1; // +1 to include the end date
+  let daysProcessedCount = 0; // Initialize counter for progress
+
   console.log(
-    `Processing dates from ${formatISO(startDate, {
+    `Initiating update for dates from ${formatISO(startDate, {
       representation: "date"
-    })} to ${formatISO(finalEndDate, { representation: "date" })} (Season end: ${formatISO(endDate, { representation: "date" })})`
+    })} to ${formatISO(finalEndDate, { representation: "date" })} (Current Season End: ${formatISO(currentSeason.seasonEndDate, { representation: "date" })})`
   );
 
   while (
@@ -897,112 +962,141 @@ async function updateAllSkatersFromMostRecentDate(
   ) {
     const formattedDate = formatISO(currentDate, { representation: "date" });
     let success = false;
+    let currentTotalUpdates = 0; // Track updates for the current date's attempts
+    let currentRowsFetched = 0; // Track fetched rows for current date
+    let currentErrors = 0; // Track errors for current date
 
-    // Determine the correct season for this date
     const seasonInfo = await getSeasonFromDate(formattedDate);
     if (!seasonInfo) {
       console.error(
+        `|------------------------------------------------------------|`
+      );
+      console.error(
         `Could not determine season for date ${formattedDate}, skipping...`
       );
+      console.error(
+        `|------------------------------------------------------------|`
+      );
+      failedDates.push(formattedDate);
       currentDate = addDays(currentDate, 1);
+      daysProcessedCount++; // Increment counter even if skipped
       continue;
     }
 
-    // Immediate Retry Loop
+    // Calculate progress for the current date
+    const progressPercent =
+      totalDaysToProcess > 0
+        ? Math.min(
+            100,
+            Math.round((daysProcessedCount / totalDaysToProcess) * 100)
+          )
+        : 100; // Handle division by zero if start and end are the same or range is invalid
+
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        console.log(
-          `Processing skater stats for ${formattedDate} (Season ${seasonInfo.seasonId}) (Attempt ${attempt})...`
-        );
-        const result = await updateSkaterStatsIntelligent(
+        // CORRECTED The call to processDate now passes the actual progress count
+        const result = await processDate(
           formattedDate,
-          seasonInfo.seasonId,
-          seasonInfo.regularSeasonEndDate
+          seasonInfo,
+          attempt,
+          `${daysProcessedCount + 1}/${totalDaysToProcess}`, // Pass calculated progress
+          `${progressPercent}%` // Pass percentage
         );
+        currentTotalUpdates = result.totalUpdates;
+        currentRowsFetched = result.rowsFetched;
+        currentErrors = result.errors;
 
-        // Only count as success if we actually updated some records
-        if (result.totalUpdates > 0) {
-          totalUpdates += result.totalUpdates;
-          datesProcessed.push(formattedDate);
-        } else {
-          console.log(`No data found for ${formattedDate}, continuing...`);
-          datesProcessed.push(formattedDate); // Still count as processed
+        if (currentErrors === 0) {
+          // Only consider successful if no errors occurred in processDate
+          totalUpdates += currentTotalUpdates;
+          if (!datesProcessed.includes(formattedDate)) {
+            // Prevent duplicates if retried successfully
+            datesProcessed.push(formattedDate);
+          }
+          success = true;
+          break;
         }
-        success = true;
-        break; // Succeeded, exit the retry loop and move to the next date
       } catch (error: any) {
-        console.error(
-          `Attempt ${attempt} failed for ${formattedDate}: ${error.message}`
-        );
-        if (attempt < MAX_RETRIES) {
-          console.log(`Waiting ${RETRY_DELAY_MS}ms before next attempt...`);
-          await sleep(RETRY_DELAY_MS);
-        }
+        // Error already logged by processDate, just indicate failure for retry loop
+        currentErrors = 1;
       }
     }
 
     if (!success) {
-      console.error(
-        `All ${MAX_RETRIES} attempts failed for ${formattedDate}. Adding to failed list.`
-      );
-      failedDates.push(formattedDate);
+      // This means all attempts for this date failed or resulted in errors
+      if (!failedDates.includes(formattedDate)) {
+        // Prevent duplicates
+        failedDates.push(formattedDate);
+      }
     }
-
+    daysProcessedCount++; // Increment counter after processing a date
     currentDate = addDays(currentDate, 1);
   }
 
-  // Retry failed dates once more at the end
   if (failedDates.length > 0) {
     console.log(`\n--- RETRYING ${failedDates.length} FAILED DATES ---`);
     const retryFailedDates: string[] = [];
+    const totalRetries = failedDates.length;
+    let retriesCompleted = 0;
 
     for (const failedDate of failedDates) {
       let retrySuccess = false;
+      const seasonInfo = await getSeasonFromDate(failedDate);
+      if (!seasonInfo) {
+        console.error(
+          `Could not determine season for failed date ${failedDate} during retry, skipping.`
+        );
+        retryFailedDates.push(failedDate);
+        retriesCompleted++;
+        continue;
+      }
+
+      const progressPercent =
+        totalRetries > 0
+          ? Math.min(100, Math.round((retriesCompleted / totalRetries) * 100))
+          : 100;
+
       for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         try {
-          console.log(`Retrying ${failedDate} (Attempt ${attempt})...`);
-          const result = await updateSkaterStatsIntelligent(
+          const result = await processDate(
             failedDate,
-            currentSeason.seasonId,
-            currentSeason.regularSeasonEndDate
+            seasonInfo,
+            attempt,
+            `RETRY ${retriesCompleted + 1}/${totalRetries}`, // Updated X/Y for retries
+            `${progressPercent}%`
           );
-
-          if (result.totalUpdates > 0) {
+          if (result.errors === 0) {
             totalUpdates += result.totalUpdates;
+            if (!datesProcessed.includes(failedDate)) {
+              datesProcessed.push(failedDate);
+            }
+            retrySuccess = true;
+            break;
           }
-          datesProcessed.push(failedDate);
-          retrySuccess = true;
-          console.log(`Retry successful for ${failedDate}`);
-          break;
         } catch (error: any) {
-          console.error(
-            `Retry attempt ${attempt} failed for ${failedDate}: ${error.message}`
-          );
-          if (attempt < MAX_RETRIES) {
-            await sleep(RETRY_DELAY_MS);
-          }
+          // Error already logged by processDate
         }
       }
 
       if (!retrySuccess) {
         retryFailedDates.push(failedDate);
       }
+      retriesCompleted++;
     }
 
-    // Update failedDates to only include those that failed all retry attempts
     failedDates.length = 0;
     failedDates.push(...retryFailedDates);
   }
 
   if (failedDates.length > 0) {
     console.error(
-      `--- FINAL RESULT: ${failedDates.length} dates could not be processed after all retries: ${failedDates.join(", ")} ---`
+      `\n--- FINAL RESULT: ${failedDates.length} dates could not be processed after all retries: ${failedDates.join(", ")} ---`
     );
   }
 
   return {
-    message: `All skater stats updated successfully. Processed ${datesProcessed.length} dates with ${totalUpdates} total updates.`,
-    success: true,
+    message: `All skater stats updated successfully. Processed ${datesProcessed.length} distinct dates with ${totalUpdates} total updates.`,
+    success: failedDates.length === 0,
     totalUpdates,
     datesProcessed,
     failedDates
@@ -1045,97 +1139,159 @@ async function getAllSeasonsFromDB(): Promise<
 }
 
 /**
- * [UPDATED] Processes all data for a single date with intelligent game type fetching.
+ * Processes all data for a single date with intelligent game type fetching.
  * Throws an error on failure, which is caught by the calling function.
  * @returns The total number of player records updated for the date.
  */
-async function processDateIntelligent(
-  formattedDate: string,
-  seasonId: number,
-  regularSeasonEndDate: string
-): Promise<number> {
-  console.log(`Processing date: ${formattedDate} for season ${seasonId}`);
+// /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/api/v1/db/update-wgo-skaters.ts
 
-  const { fetchRegularSeason, fetchPlayoffs } = determineGameTypesToFetch(
-    formattedDate,
-    regularSeasonEndDate
-  );
-
-  let totalUpdates = 0;
-
-  if (fetchRegularSeason) {
-    console.log(`Fetching regular season data for ${formattedDate}`);
-    const regularSeasonData = await fetchDataForGameType(2, formattedDate);
-    const updates = await processAndUpsertGameTypeData(
-      regularSeasonData,
-      "wgo_skater_stats",
-      formattedDate,
-      seasonId
-    );
-    totalUpdates += updates;
-  }
-
-  if (fetchPlayoffs) {
-    console.log(`Fetching playoff data for ${formattedDate}`);
-    const playoffData = await fetchDataForGameType(3, formattedDate);
-    const updates = await processAndUpsertGameTypeData(
-      playoffData,
-      "wgo_skater_stats_playoffs",
-      formattedDate,
-      seasonId
-    );
-    totalUpdates += updates;
-  }
-
-  if (totalUpdates > 0) {
-    console.log(
-      `Completed ${formattedDate}: ${totalUpdates} player records updated.`
-    );
-  }
-  return totalUpdates;
-}
-
-// Keep the original processDate for backward compatibility
 async function processDate(
   formattedDate: string,
-  seasonId: number
-): Promise<number> {
-  console.log(`Processing date: ${formattedDate} for season ${seasonId}`);
+  seasonInfo: {
+    seasonId: number;
+    startDate: string; // Season start date
+    endDate: string; // Season end date (including playoffs)
+    regularSeasonEndDate: string;
+  },
+  attempt: number, // Add attempt parameter for logging
+  progressXY: string = "", // New parameter for X/Y progress
+  progressPercent: string = "" // New parameter for % progress
+): Promise<{ totalUpdates: number; rowsFetched: number; errors: number }> {
+  // Return object with more details
+  const { seasonId, startDate, endDate, regularSeasonEndDate } = seasonInfo;
 
-  // 1. Fetch data for both game types in parallel
-  const [regularSeasonData, playoffData] = await Promise.all([
-    fetchDataForGameType(2, formattedDate),
-    fetchDataForGameType(3, formattedDate)
-  ]);
+  // Use a consistent padding length for labels
+  const LABEL_PAD = 30; // Padding for the first column of the log
+  const VALUE_PAD = 15; // Padding for values
 
-  // 2. Upsert data for both game types in parallel
-  const [regularSeasonUpdates, playoffUpdates] = await Promise.all([
-    processAndUpsertGameTypeData(
-      regularSeasonData,
-      "wgo_skater_stats",
-      formattedDate,
-      seasonId
-    ),
-    processAndUpsertGameTypeData(
-      playoffData,
-      "wgo_skater_stats_playoffs",
-      formattedDate
-    )
-  ]);
+  console.log(`|------------------------------------------------------------|`);
 
-  const dailyUpdates = regularSeasonUpdates + playoffUpdates;
-  if (dailyUpdates > 0) {
-    console.log(
-      `Completed ${formattedDate}: ${dailyUpdates} player records updated.`
-    );
+  // CORRECTED PADDING LOGIC
+  if (progressXY && progressPercent) {
+    const urlLabel = `URL: ${progressXY}`;
+    console.log(`${urlLabel.padEnd(LABEL_PAD)} % Complete: ${progressPercent}`);
   }
-  return dailyUpdates;
-}
+  const processingLabel = `Processing ${formattedDate}`;
+  console.log(`${processingLabel.padEnd(LABEL_PAD)}ATTEMPT ${attempt}`);
 
-/**
- * [OPTIMIZED & ROBUST] Processes all historical stats for all seasons sequentially,
- * with intelligent game type fetching and retry mechanism for failed dates.
- */
+  console.log(``); // Blank line for spacing
+  console.log(
+    `Date:`.padEnd(LABEL_PAD) + `${formattedDate}`.padStart(VALUE_PAD)
+  );
+  console.log(
+    `Season ID:`.padEnd(LABEL_PAD) + `${seasonId}`.padStart(VALUE_PAD)
+  );
+
+  const dateObj = parseISO(formattedDate);
+  const regularSeasonEnd = parseISO(regularSeasonEndDate);
+  const seasonEnd = parseISO(endDate); // Overall season end
+  const seasonStart = parseISO(startDate); // Overall season start
+
+  // Determine playoff start date for display
+  const playoffsStartDate = addDays(regularSeasonEnd, 1);
+
+  let seasonTypeMessage = "Offseason"; // Default
+  if (
+    isBefore(dateObj, regularSeasonEnd) ||
+    dateObj.toDateString() === regularSeasonEnd.toDateString()
+  ) {
+    seasonTypeMessage = "Regular Season";
+  } else if (
+    isBefore(regularSeasonEnd, dateObj) &&
+    (isBefore(dateObj, seasonEnd) ||
+      dateObj.toDateString() === seasonEnd.toDateString())
+  ) {
+    seasonTypeMessage = "Playoffs";
+  }
+  console.log(
+    `Season Type:`.padEnd(LABEL_PAD) +
+      `${seasonTypeMessage}`.padStart(VALUE_PAD)
+  );
+  console.log(``); // Blank line for spacing
+
+  console.log(
+    `Season Start Date:`.padEnd(LABEL_PAD) +
+      `${formatISO(seasonStart, { representation: "date" })}`.padStart(
+        VALUE_PAD
+      )
+  );
+  console.log(
+    `Regular Season End Date:`.padEnd(LABEL_PAD) +
+      `${formatISO(regularSeasonEnd, { representation: "date" })}`.padStart(
+        VALUE_PAD
+      )
+  );
+  console.log(
+    `Playoffs Start Date:`.padEnd(LABEL_PAD) +
+      `${formatISO(playoffsStartDate, { representation: "date" })}`.padStart(
+        VALUE_PAD
+      )
+  );
+  console.log(
+    `Season End Date:`.padEnd(LABEL_PAD) +
+      `${formatISO(seasonEnd, { representation: "date" })}`.padStart(VALUE_PAD)
+  );
+  console.log(``); // Blank line for spacing
+
+  let totalUpdates = 0;
+  let rowsFetched = 0;
+  let errors = 0;
+
+  try {
+    const result = await updateSkaterStats(
+      formattedDate,
+      seasonId,
+      regularSeasonEndDate,
+      endDate // Pass the overall season end date
+    );
+
+    totalUpdates = result.totalUpdates;
+    rowsFetched = result.rowsFetched;
+    errors = result.errors;
+
+    console.log(
+      `Rows Fetched:`.padEnd(LABEL_PAD) +
+        `${String(rowsFetched)}`.padStart(VALUE_PAD)
+    );
+    console.log(
+      `Rows Upserted:`.padEnd(LABEL_PAD) +
+        `${String(totalUpdates)}`.padStart(VALUE_PAD)
+    );
+    console.log(
+      `Errors:`.padEnd(LABEL_PAD) + `${String(errors)}`.padStart(VALUE_PAD)
+    );
+  } catch (error: any) {
+    console.error(
+      `Error during processDate for ${formattedDate}: ${error.message}`
+    );
+    errors = 1; // Mark as error
+    console.log(
+      `Rows Fetched:`.padEnd(LABEL_PAD) +
+        `${String(rowsFetched)}`.padStart(VALUE_PAD)
+    );
+    console.log(
+      `Rows Upserted:`.padEnd(LABEL_PAD) +
+        `${String(totalUpdates)}`.padStart(VALUE_PAD)
+    );
+    console.log(
+      `Errors:`.padEnd(LABEL_PAD) + `${String(errors)}`.padStart(VALUE_PAD)
+    );
+    throw error; // Re-throw to be caught by the retry logic in calling function
+  } finally {
+    console.log(``); // Blank line for spacing
+    console.log(
+      `Finished processing Date:`.padEnd(LABEL_PAD) +
+        `${formattedDate}`.padStart(VALUE_PAD)
+    );
+    console.log(
+      `|------------------------------------------------------------|`
+    );
+    console.log(`\n`); // New line to differentiate dates
+  }
+
+  return { totalUpdates, rowsFetched, errors };
+}
+// Affected portion: updateAllStatsForAllSeasons function
 async function updateAllStatsForAllSeasons() {
   const allSeasons = await getAllSeasonsFromDB();
   let totalUpdates = 0;
@@ -1151,16 +1307,25 @@ async function updateAllStatsForAllSeasons() {
 
   console.log(`Starting full refresh for ${allSeasons.length} seasons.`);
 
-  // Retry Constants
   const MAX_RETRIES = 3;
-  const RETRY_DELAY_MS = 2000; // 2 seconds
+  const RETRY_DELAY_MS = 2000;
+
+  let totalDaysAcrossAllSeasons = 0;
+  for (const season of allSeasons) {
+    totalDaysAcrossAllSeasons +=
+      differenceInDays(parseISO(season.endDate), parseISO(season.startDate)) +
+      1;
+  }
+  let globalDaysProcessedCount = 0;
 
   for (const season of allSeasons) {
     console.log(
-      `--- Processing Season: ${season.seasonId} (${season.startDate} to ${season.endDate}) ---`
+      `\n--- Processing Season: ${season.seasonId} (${season.startDate} to ${season.endDate}) ---`
     );
     let currentDate = parseISO(season.startDate);
     const endDate = parseISO(season.endDate);
+    const seasonDaysToProcess = differenceInDays(endDate, currentDate) + 1;
+    let seasonDaysProcessedCount = 0;
 
     while (
       isBefore(currentDate, endDate) ||
@@ -1168,88 +1333,114 @@ async function updateAllStatsForAllSeasons() {
     ) {
       const formattedDate = formatISO(currentDate, { representation: "date" });
       let success = false;
+      let currentErrors = 0;
 
-      // Immediate Retry Loop
+      // Use the seasonInfo directly as it's iterated per season
+      const seasonInfoForDate = {
+        seasonId: season.seasonId,
+        startDate: season.startDate,
+        endDate: season.endDate,
+        regularSeasonEndDate: season.regularSeasonEndDate
+      };
+
+      const globalProgressPercent =
+        totalDaysAcrossAllSeasons > 0
+          ? Math.min(
+              100,
+              Math.round(
+                (globalDaysProcessedCount / totalDaysAcrossAllSeasons) * 100
+              )
+            )
+          : 100;
+
       for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         try {
-          console.log(
-            `Processing ${formattedDate} for season ${season.seasonId} (Attempt ${attempt})...`
-          );
-          const dailyUpdates = await processDateIntelligent(
+          const result = await processDate(
             formattedDate,
-            season.seasonId,
-            season.regularSeasonEndDate
+            seasonInfoForDate, // Pass the season info object
+            attempt, // Pass the attempt number
+            `${globalDaysProcessedCount + 1}/${totalDaysAcrossAllSeasons}`, // X/Y for global progress
+            `${globalProgressPercent}%` // % for global progress
           );
-          totalUpdates += dailyUpdates;
-          success = true;
-          break; // Succeeded, exit retry loop
-        } catch (error: any) {
-          console.error(
-            `Attempt ${attempt} failed for ${formattedDate}: ${error.message}`
-          );
-          if (attempt < MAX_RETRIES) {
-            console.log(`Waiting ${RETRY_DELAY_MS}ms before next attempt...`);
-            await sleep(RETRY_DELAY_MS);
+          currentErrors = result.errors;
+          if (currentErrors === 0) {
+            totalUpdates += result.totalUpdates;
+            success = true;
+            break;
           }
+        } catch (error: any) {
+          currentErrors = 1; // Mark as error
         }
       }
 
       if (!success) {
-        console.error(
-          `All ${MAX_RETRIES} attempts for ${formattedDate} failed. Adding to failed list.`
-        );
         failedDates.push({ date: formattedDate, seasonId: season.seasonId });
       }
-
+      globalDaysProcessedCount++;
+      seasonDaysProcessedCount++;
       currentDate = addDays(currentDate, 1);
     }
   }
 
-  // Retry failed dates once more at the end
   if (failedDates.length > 0) {
     console.log(`\n--- RETRYING ${failedDates.length} FAILED DATES ---`);
     const retryFailedDates: { date: string; seasonId: number }[] = [];
+    const totalRetries = failedDates.length;
+    let retriesCompleted = 0;
 
     for (const { date: failedDate, seasonId } of failedDates) {
       const season = allSeasons.find((s) => s.seasonId === seasonId);
-      if (!season) continue;
+      if (!season) {
+        console.error(
+          `Season ${seasonId} not found for failed date ${failedDate} during retry, skipping.`
+        );
+        retryFailedDates.push({ date: failedDate, seasonId });
+        retriesCompleted++;
+        continue;
+      }
 
       let retrySuccess = false;
+      const seasonInfoForFailedDate = {
+        seasonId: season.seasonId,
+        startDate: season.startDate,
+        endDate: season.endDate,
+        regularSeasonEndDate: season.regularSeasonEndDate
+      };
+
+      const retryProgressPercent =
+        totalRetries > 0
+          ? Math.min(100, Math.round((retriesCompleted / totalRetries) * 100))
+          : 100;
+
       for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
         try {
-          console.log(
-            `Retrying ${failedDate} for season ${seasonId} (Attempt ${attempt})...`
-          );
-          const dailyUpdates = await processDateIntelligent(
+          const result = await processDate(
             failedDate,
-            seasonId,
-            season.regularSeasonEndDate
+            seasonInfoForFailedDate, // Pass the season info object
+            attempt, // Pass the attempt number
+            `RETRY ${retriesCompleted + 1}/${totalRetries}`, // Updated X/Y for retries
+            `${retryProgressPercent}%`
           );
-          totalUpdates += dailyUpdates;
-          retrySuccess = true;
-          console.log(`Retry successful for ${failedDate}`);
-          break;
-        } catch (error: any) {
-          console.error(
-            `Retry attempt ${attempt} failed for ${failedDate}: ${error.message}`
-          );
-          if (attempt < MAX_RETRIES) {
-            await sleep(RETRY_DELAY_MS);
+          if (result.errors === 0) {
+            totalUpdates += result.totalUpdates;
+            retrySuccess = true;
+            break;
           }
+        } catch (error: any) {
+          // Error already logged by processDate
         }
       }
 
       if (!retrySuccess) {
         retryFailedDates.push({ date: failedDate, seasonId });
       }
+      retriesCompleted++;
     }
 
-    // Update failedDates to only include those that failed all retry attempts
     failedDates.length = 0;
     failedDates.push(...retryFailedDates);
   }
 
-  // The final report on permanently failed dates.
   if (failedDates.length > 0) {
     console.error(
       `\n--- FINAL RESULT: ${failedDates.length} dates could not be processed after all retries: ${failedDates.map((f) => f.date).join(", ")} ---\n`
@@ -1260,7 +1451,7 @@ async function updateAllStatsForAllSeasons() {
   console.log(message);
   return {
     message,
-    success: true,
+    success: failedDates.length === 0,
     totalUpdates,
     failedDates: failedDates.map((f) => f.date)
   };
@@ -1272,7 +1463,10 @@ async function fetchDataForPlayer(playerId: string, playerName: string) {
   const formattedDate = formatISO(today, { representation: "date" });
   const currentSeason = await getCurrentSeason();
 
-  const seasonStartDate = currentSeason.regularSeasonStartDate;
+  // Use the earliest date from the current season and its last season to cover potentially long player careers or trades
+  const seasonStartDate = currentSeason.lastRegularSeasonStartDate
+    ? currentSeason.lastRegularSeasonStartDate
+    : currentSeason.regularSeasonStartDate;
 
   const fetchPlayerDataForGameType = async (gameTypeId: number) => {
     const cayenneExp = `gameDate<="${formattedDate} 23:59:59" and gameDate>="${seasonStartDate}" and gameTypeId=${gameTypeId} and playerId=${playerId}`;
@@ -1329,11 +1523,20 @@ export default async function handler(
       res.status(200).json({ ...result, fullRefresh });
     } else if (date && typeof date === "string") {
       console.log(`Date parameter found: ${date}`);
-      const currentSeason = await getCurrentSeason();
-      result = await updateSkaterStatsIntelligent(
+      const seasonInfo = await getSeasonFromDate(date);
+      if (!seasonInfo) {
+        status = "failure";
+        details = { message: `Could not determine season for date: ${date}` };
+        res.status(400).json(details);
+        return;
+      }
+      // Note: For a single date, progress doesn't make as much sense,
+      // but passing empty strings to maintain function signature.
+      result = await updateSkaterStats(
         date,
-        currentSeason.seasonId,
-        currentSeason.regularSeasonEndDate
+        seasonInfo.seasonId,
+        seasonInfo.regularSeasonEndDate,
+        seasonInfo.endDate // Pass season's actual end date
       );
       totalUpdates = result.totalUpdates;
       details = { message: result.message };

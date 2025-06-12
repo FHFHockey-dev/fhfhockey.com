@@ -58,6 +58,7 @@ export function useTeamStatsFromDb(teamId: number | string, seasonId: string) {
           seasonId: Number(seasonId)
         });
 
+        // Fetch daily team stats from wgo_team_stats (for calendar analysis)
         const { data, error: fetchError } = await supabase
           .from("wgo_team_stats")
           .select("*")
@@ -78,26 +79,61 @@ export function useTeamStatsFromDb(teamId: number | string, seasonId: string) {
 
         setTeamStats(data || []);
 
-        // Calculate current record from the latest entry
-        if (data && data.length > 0) {
-          const latestStats = data[data.length - 1];
-          console.log("📊 Latest stats entry:", latestStats);
+        // Fetch official record from team_summary_years (same as team page header)
+        const { data: summaryData, error: summaryError } = await supabase
+          .from("team_summary_years")
+          .select(
+            `
+            games_played,
+            wins,
+            losses,
+            ot_losses,
+            points,
+            regulation_and_ot_wins
+          `
+          )
+          .eq("team_id", Number(teamId))
+          .eq("season_id", Number(seasonId))
+          .single();
 
-          const calculatedRecord = {
-            wins: latestStats.wins,
-            losses: latestStats.losses,
-            otLosses: latestStats.ot_losses,
-            points: latestStats.points,
-            gamesPlayed: latestStats.games_played,
-            regulationWins: latestStats.wins_in_regulation,
-            overtimeWins:
-              (latestStats.regulation_and_ot_wins || 0) -
-              (latestStats.wins_in_regulation || 0),
-            shootoutWins: latestStats.wins_in_shootout
+        if (summaryError) {
+          console.warn(
+            "⚠️ Error fetching team summary (falling back to wgo_team_stats):",
+            summaryError
+          );
+          // Fallback to wgo_team_stats if team_summary_years fails
+          if (data && data.length > 0) {
+            const latestStats = data[data.length - 1];
+            const calculatedRecord = {
+              wins: latestStats.wins,
+              losses: latestStats.losses,
+              otLosses: latestStats.ot_losses,
+              points: latestStats.points,
+              gamesPlayed: latestStats.games_played,
+              regulationWins: latestStats.wins_in_regulation,
+              overtimeWins:
+                (latestStats.regulation_and_ot_wins || 0) -
+                (latestStats.wins_in_regulation || 0),
+              shootoutWins: latestStats.wins_in_shootout
+            };
+            setRecord(calculatedRecord);
+          }
+        } else if (summaryData) {
+          // Use official team summary data (same as team page header)
+          const officialRecord = {
+            wins: summaryData.wins,
+            losses: summaryData.losses,
+            otLosses: summaryData.ot_losses,
+            points: summaryData.points,
+            gamesPlayed: summaryData.games_played,
+            regulationWins: summaryData.regulation_and_ot_wins
           };
 
-          console.log("📈 Calculated record:", calculatedRecord);
-          setRecord(calculatedRecord);
+          console.log(
+            "📈 Official record from team_summary_years:",
+            officialRecord
+          );
+          setRecord(officialRecord);
         }
       } catch (err) {
         console.error("❌ Error fetching team stats:", err);

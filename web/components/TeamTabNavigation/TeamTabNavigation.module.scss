@@ -6,11 +6,45 @@
   margin: 2rem 0;
 }
 
+// background: linear-gradient(
+//   180deg,
+//   var(--primary-color) 0%,
+//   var(--primary-color) 85%,
+//   var(--jersey) 85%,
+//   var(--jersey) 89%,
+//   var(--secondary-color) 89%,
+//   var(--secondary-color) 93%,
+//   var(--accent) 93%,
+//   var(--accent) 100%
+// );
+
+// background: linear-gradient(
+//   180deg,
+//   var(--primary-color) 0%,
+//   var(--primary-color) 55%,
+//   var(--jersey) 55%,
+//   var(--jersey) 62%,  7
+//   var(--secondary-color) 62%,
+//   var(--secondary-color) 69%, 7
+//   var(--accent) 69%,
+//   var(--accent) 76%, 7
+//   var(--jersey) 76%,
+//   var(--jersey) 100% 4
+// );
+
 .tabNavigation {
-  background: rgba(0, 0, 0, 0.3);
+  // background: linear-gradient(
+  //   180deg,
+  //   var(--team-primary-color) 0%,
+  //   var(--team-primary-color) 80%,
+  //   var(--team-accent-color) 80%,
+  //   var(--team-accent-color) 90%,
+  //   var(--team-secondary-color) 90%,
+  //   var(--team-secondary-color) 100%
+  // );
+  background: var(--jersey);
+
   backdrop-filter: blur(10px);
-  border: none;
-  border-top: 5px solid rgba(255, 255, 255);
   padding: 0;
   overflow-x: auto;
   width: 100%;
@@ -34,13 +68,13 @@
   min-width: max-content;
   gap: 0;
   justify-content: space-evenly;
-  background-color: var(--team-primary-color);
+  // background-color: var(--team-primary-color);
 }
 
 .tabButton {
   background: transparent;
   border: none;
-  padding: 0.75rem 1.25rem;
+  padding: 0.5rem 1.25rem;
   cursor: pointer;
   transition: all 0.3s ease;
   border-bottom: 3px solid transparent;
@@ -91,6 +125,9 @@
   font-size: 0.85rem;
   font-weight: inherit;
   letter-spacing: 0.05em;
+  color: var(--team-accent-color);
+  font-weight: 900;
+  font-family: v.$font-family-accent;
 }
 
 .tabDescription {
@@ -111,9 +148,9 @@
 }
 
 .tabContent {
-  border-top: 5px solid;
   background: v.$background-light;
   min-height: calc(100vh - 200px);
+  border-top: 10px solid var(--secondary-color);
   position: relative;
   overflow: hidden;
   padding: 1.5rem 0;
