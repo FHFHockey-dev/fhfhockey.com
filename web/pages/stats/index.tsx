@@ -83,7 +83,7 @@ export default function StatsPage({
 
     setHoveredTeam(teamAbbreviation);
 
-    // Add delay before updating colors to prevent chaos
+    // Reduced delay for more responsive feel and smoother transitions
     hoverTimeoutRef.current = setTimeout(() => {
       const teamInfo = teamsInfo[teamAbbreviation];
       if (!teamInfo) return;
@@ -109,7 +109,7 @@ export default function StatsPage({
         accent: teamInfo.accent,
         alt: teamInfo.alt
       });
-    }, 200); // Shorter delay for more responsive feel
+    }, 100); // Reduced from 200ms to 100ms for faster response
   };
 
   const handleTeamMouseLeave = () => {
@@ -120,10 +120,10 @@ export default function StatsPage({
 
     setHoveredTeam(null);
 
-    // Wait a bit before clearing colors to allow for quick re-hovers
+    // Reduced delay for smoother transitions
     mouseLeaveTimeoutRef.current = setTimeout(() => {
       setActiveTeamColors(null);
-    }, 500); // Delay before removing colors
+    }, 300); // Reduced from 500ms to 300ms
   };
 
   // Clean up timeouts on unmount

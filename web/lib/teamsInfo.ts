@@ -37,7 +37,7 @@ export const teamsInfo: {
     accent: "#154734", // Green
     lightColor: "#f03554", // Lighter Red
     darkColor: "#670919", // Darker Red
-    alt: "#FFFFFF", // White
+    alt: "#670919", // White
     franchiseId: 23,
     nstAbbr: "N.J",
     id: 1
@@ -51,7 +51,7 @@ export const teamsInfo: {
     accent: "#FFFFFF", // Black
     lightColor: "#1f5fd5", // Lighter Blue
     darkColor: "#08265f", // Darker Blue
-    alt: "#FFFFFF",
+    alt: "#08265f",
     franchiseId: 22,
     nstAbbr: "NYI",
     id: 2
@@ -65,7 +65,7 @@ export const teamsInfo: {
     accent: "#A2AAAD", // Silver
     lightColor: "#255ed0", // Lighter Blue
     darkColor: "#001d5c", // Darker Blue
-    alt: "#FFFFFF",
+    alt: "#255ed0",
     franchiseId: 10,
     nstAbbr: "NYR",
     id: 3
@@ -79,7 +79,7 @@ export const teamsInfo: {
     accent: "#FFFFFF",
     lightColor: "#ef794b", // Lighter Orange
     darkColor: "#b7340d", // Darker Orange
-    alt: "#FFFFFF",
+    alt: "#b7340d",
     franchiseId: 16,
     nstAbbr: "PHI",
     id: 4
@@ -90,7 +90,7 @@ export const teamsInfo: {
     primaryColor: "#000000", // Black
     secondaryColor: "#FFB81C", // Gold
     jersey: "#FFFFFF", // White
-    accent: "#FFB81C", // Gold
+    accent: "#ffa200", // Gold
     lightColor: "#ffc852", // Lighter Yellow
     darkColor: "#ffa200", // Darker
     alt: "#FFFFFF",
@@ -107,7 +107,7 @@ export const teamsInfo: {
     accent: "#FFB81C", // gold
     lightColor: "#dfc16c", // Lighter Yellow
     darkColor: "#e19a01", // Darker Yellow
-    alt: "#FFFFFF", // white
+    alt: "#202020", // charcoal
     franchiseId: 6,
     nstAbbr: "BOS",
     id: 6
@@ -121,7 +121,7 @@ export const teamsInfo: {
     accent: "#ADAFAA", // silver
     lightColor: "#2762c7", // Lighter Blue
     darkColor: "#072f6f", // Darker Blue
-    alt: "#FFFFFF",
+    alt: "#2762c7",
     franchiseId: 19,
     nstAbbr: "BUF",
     id: 7
@@ -135,7 +135,7 @@ export const teamsInfo: {
     accent: "#FFFFFF", // White
     lightColor: "#1f5fd5", // Lighter Blue
     darkColor: "#08265f", // Darker Blue
-    alt: "#FFFFFF", // White
+    alt: "#1f5fd5", // White
     franchiseId: 1,
     nstAbbr: "MTL",
     id: 8
@@ -161,7 +161,7 @@ export const teamsInfo: {
     secondaryColor: "#FFFFFF", // White
     jersey: "#A2AAAD", // Silver
     accent: "#ffffff", // White
-    alt: "#FFFFFF", // White
+    alt: "#080a91", // White
     lightColor: "#3478f6", // Lighter Blue
     darkColor: "#080a91", // Darker Blue
     franchiseId: 5,
@@ -175,7 +175,7 @@ export const teamsInfo: {
     secondaryColor: "#b10018", // Red
     jersey: "#A4A9AD", // Silver
     accent: "#FFFFFF", // White
-    alt: "#FFFFFF", // White
+    alt: "#e92549", // White
     lightColor: "#e92549", // Lighter Red
     darkColor: "#8a0113", // Darker Red
     franchiseId: 26,
@@ -261,7 +261,7 @@ export const teamsInfo: {
     accent: "#A2AAAD", // Silver
     lightColor: "#efbe53", // Lighter gold
     darkColor: "#da9501", // Darker gold
-    alt: "#efbe53",
+    alt: "#da9501",
     franchiseId: 34,
     nstAbbr: "NSH",
     id: 18
@@ -287,7 +287,7 @@ export const teamsInfo: {
     secondaryColor: "#FAAF19", // Yellow
     jersey: "#FFFFFF", // White
     accent: "#000000", // Black
-    alt: "#ffffff", // White
+    alt: "#d72d49", // White
     lightColor: "#d72d49", // Lighter Red
     darkColor: "#6c0415", // Darker Red
     franchiseId: 21,
@@ -343,7 +343,7 @@ export const teamsInfo: {
     secondaryColor: "#89734C", // Gold
     jersey: "#010101", // black
     accent: "#ffffff", // White
-    alt: "#FFFFFF", // White
+    alt: "#ec623c", // White
     lightColor: "#ec623c", // Lighter orange
     darkColor: "#992809", // Darker orange
     franchiseId: 32,
@@ -370,7 +370,7 @@ export const teamsInfo: {
     primaryColor: "#000000", // Black
     secondaryColor: "#A2AAAD", // Silver
     jersey: "#FFFFFF", // White
-    accent: "#A2AAAD", // Silver
+    accent: "#bac8cd", // Silver
     lightColor: "#bac8cd", // Lighter silver
     darkColor: "#656768", // Darker Black
     alt: "#656768",
@@ -482,10 +482,10 @@ export const teamsInfo: {
     primaryColor: "#010101", // Black
     secondaryColor: "#69B3E7", // Light Blue
     jersey: "#FFFFFF", // White
-    accent: "#69b3e7", // Light Blue
+    accent: "#47a4c9", // Light Blue
     lightColor: "#67bdfb", // Lighter Blue
     darkColor: "#47a4c9", // Darker Blue
-    alt: "#FFFFFF",
+    alt: "#67bdfb",
     franchiseId: 40,
     nstAbbr: "UTA",
     id: 59
