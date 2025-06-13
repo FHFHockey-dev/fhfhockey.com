@@ -254,9 +254,6 @@
   position: relative;
   overflow: hidden;
 
-  // Add smooth transitions for CSS custom properties
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-
   // Sliding diagonal background layers - CRISP LINES at -115deg
   &::before,
   &::after {
@@ -268,8 +265,7 @@
     right: -100%;
     z-index: 0;
     opacity: 0;
-    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-                transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.6s ease-in-out;
     transform: translateX(-10%) translateY(-15%); // Default resting position for second layer
   }
 
@@ -277,71 +273,63 @@
   &::before {
     background-image: linear-gradient(
       -115deg,
-      var(--team-primary, transparent) 0%,
-      var(--team-primary, transparent) 22%,
-      var(--team-secondary, transparent) 22%,
-      var(--team-secondary, transparent) 24%,
-      var(--team-jersey, transparent) 24%,
-      var(--team-jersey, transparent) 26%,
-      var(--team-alt, transparent) 26%,
-      var(--team-alt, transparent) 28%,
-      var(--team-accent, transparent) 28%,
-      var(--team-accent, transparent) 30%,
-      var(--team-primary, transparent) 30%,
-      var(--team-primary, transparent) 62%,
-      var(--team-alt, transparent) 62%,
-      var(--team-alt, transparent) 64%,
-      var(--team-accent, transparent) 64%,
-      var(--team-accent, transparent) 66%,
-      var(--team-secondary, transparent) 66%,
-      var(--team-secondary, transparent) 68%,
-      var(--team-jersey, transparent) 68%,
-      var(--team-jersey, transparent) 70%,
-      var(--team-primary, transparent) 70%,
-      var(--team-primary, transparent) 98%,
-      var(--team-secondary, transparent) 98%,
-      var(--team-secondary, transparent) 100%
+      var(--team-primary) 0%,
+      var(--team-primary) 22%,
+      var(--team-secondary) 22%,
+      var(--team-secondary) 24%,
+      var(--team-jersey) 24%,
+      var(--team-jersey) 26%,
+      var(--team-alt) 26%,
+      var(--team-alt) 28%,
+      var(--team-accent) 28%,
+      var(--team-accent) 30%,
+      var(--team-primary) 30%,
+      var(--team-primary) 62%,
+      var(--team-alt) 62%,
+      var(--team-alt) 64%,
+      var(--team-accent) 64%,
+      var(--team-accent) 66%,
+      var(--team-secondary) 66%,
+      var(--team-secondary) 68%,
+      var(--team-jersey) 68%,
+      var(--team-jersey) 70%,
+      var(--team-primary) 70%,
+      var(--team-primary) 98%,
+      var(--team-secondary) 98%,
+      var(--team-secondary) 100%
     );
-    // Add transition for smooth color changes
-    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-                transform 1.2s cubic-bezier(0.4, 0, 0.2, 1),
-                background-image 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   // Second diagonal layer - SECONDARY GRADIENT
   &::after {
     background-image: linear-gradient(
       -115deg,
-      var(--team-primary, transparent) 0%,
-      var(--team-primary, transparent) 22%,
-      var(--team-secondary, transparent) 22%,
-      var(--team-secondary, transparent) 24%,
-      var(--team-jersey, transparent) 24%,
-      var(--team-jersey, transparent) 26%,
-      var(--team-alt, transparent) 26%,
-      var(--team-alt, transparent) 28%,
-      var(--team-accent, transparent) 28%,
-      var(--team-accent, transparent) 30%,
-      var(--team-primary, transparent) 30%,
-      var(--team-primary, transparent) 62%,
-      var(--team-alt, transparent) 62%,
-      var(--team-alt, transparent) 64%,
-      var(--team-accent, transparent) 64%,
-      var(--team-accent, transparent) 66%,
-      var(--team-secondary, transparent) 66%,
-      var(--team-secondary, transparent) 68%,
-      var(--team-jersey, transparent) 68%,
-      var(--team-jersey, transparent) 70%,
-      var(--team-primary, transparent) 70%,
-      var(--team-primary, transparent) 98%,
-      var(--team-secondary, transparent) 98%,
-      var(--team-secondary, transparent) 100%
+      var(--team-primary) 0%,
+      var(--team-primary) 22%,
+      var(--team-secondary) 22%,
+      var(--team-secondary) 24%,
+      var(--team-jersey) 24%,
+      var(--team-jersey) 26%,
+      var(--team-alt) 26%,
+      var(--team-alt) 28%,
+      var(--team-accent) 28%,
+      var(--team-accent) 30%,
+      var(--team-primary) 30%,
+      var(--team-primary) 62%,
+      var(--team-alt) 62%,
+      var(--team-alt) 64%,
+      var(--team-accent) 64%,
+      var(--team-accent) 66%,
+      var(--team-secondary) 66%,
+      var(--team-secondary) 68%,
+      var(--team-jersey) 68%,
+      var(--team-jersey) 70%,
+      var(--team-primary) 70%,
+      var(--team-primary) 98%,
+      var(--team-secondary) 98%,
+      var(--team-secondary) 100%
     );
     transform: translateX(-10%) translateY(-15%); // Default resting position for second layer
-    // Add transition for smooth color changes
-    transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1),
-                transform 1.2s cubic-bezier(0.4, 0, 0.2, 1),
-                background-image 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   // Show background when team colors are active
