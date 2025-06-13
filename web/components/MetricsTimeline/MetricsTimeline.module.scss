@@ -1,0 +1,287 @@
+@use "sass:color";
+@use "styles/vars" as v;
+
+// MetricsTimeline Component Styles
+.container {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  border-radius: 12px;
+  padding: 24px;
+  color: #ffffff;
+  margin-bottom: 32px;
+
+  @media (max-width: 768px) {
+    padding: 16px;
+  }
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 24px;
+
+  h3 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    background: linear-gradient(45deg, #07aae2, #00ff87);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+
+    @media (max-width: 768px) {
+      font-size: 1.5rem;
+    }
+  }
+
+  p {
+    font-size: 1rem;
+    color: #aaa;
+    margin: 0;
+  }
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  justify-content: center;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ccc;
+  }
+}
+
+.metricSelect {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #ffffff;
+  padding: 8px 12px;
+  font-size: 0.95rem;
+  min-width: 200px;
+
+  &:focus {
+    outline: none;
+    border-color: #07aae2;
+    box-shadow: 0 0 0 2px rgba(7, 170, 226, 0.2);
+  }
+
+  option {
+    background: #2d2d2d;
+    color: #ffffff;
+  }
+}
+
+.timeline {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  min-height: 300px;
+}
+
+.timelineHeader {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.metricLabel {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #07aae2;
+}
+
+.timelineChart {
+  position: relative;
+  height: 200px;
+}
+
+.chartContainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.chartArea {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(7, 170, 226, 0.05) 50%,
+    transparent 100%
+  );
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dataPoint {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+
+  &:hover {
+    transform: translate(-50%, -50%) scale(1.5);
+    z-index: 10;
+
+    .pointValue {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+}
+
+.pointValue {
+  position: absolute;
+  top: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  z-index: 10;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+  }
+}
+
+.timelineAxis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding: 0 6px;
+
+  span {
+    font-size: 0.85rem;
+    color: #aaa;
+    font-weight: 500;
+  }
+}
+
+.noData {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #666;
+  font-style: italic;
+  font-size: 1rem;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(7, 170, 226, 0.3);
+    border-top: 4px solid #07aae2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+
+  span {
+    color: #ccc;
+    font-size: 1rem;
+  }
+}
+
+.error {
+  text-align: center;
+  padding: 40px 20px;
+
+  h3 {
+    color: #ff6b6b;
+    margin-bottom: 12px;
+    font-size: 1.5rem;
+  }
+
+  p {
+    color: #ccc;
+    font-size: 1rem;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .timeline {
+    padding: 16px;
+  }
+
+  .timelineChart {
+    height: 150px;
+  }
+
+  .chartArea {
+    height: 120px;
+  }
+
+  .dataPoint {
+    width: 10px;
+    height: 10px;
+  }
+
+  .pointValue {
+    font-size: 0.7rem;
+    top: -30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .controls {
+    label {
+      font-size: 0.9rem;
+    }
+  }
+
+  .metricSelect {
+    min-width: 180px;
+    font-size: 0.9rem;
+  }
+
+  .metricLabel {
+    font-size: 1rem;
+  }
+}

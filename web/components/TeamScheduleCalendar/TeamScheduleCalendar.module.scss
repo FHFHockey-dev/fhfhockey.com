@@ -1,0 +1,2282 @@
+@use "sass:color";
+@use "styles/vars" as v;
+
+// =============================================================================
+// CONTAINER & LAYOUT
+// =============================================================================
+
+.container {
+  @include v.component-wrapper;
+  padding: v.$space-xl;
+  margin-bottom: v.$space-xl;
+  position: relative;
+  width: 95%;
+  margin: 0 auto;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--team-primary-color, v.$primary-color);
+    border-top-left-radius: v.$border-radius-lg;
+    border-top-right-radius: v.$border-radius-lg;
+  }
+}
+
+.calendarContent {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: v.$space-xl;
+  height: 100%;
+
+  // When sidebar is not present, ensure proper single column layout
+  &:not(:has(.sidebarContainer)) {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+}
+
+.calendarMain {
+  min-width: 0; // Prevent grid overflow
+  max-width: 100%; // Ensure it doesn't exceed container
+  overflow: hidden; // Prevent content overflow
+  padding: v.$space-sm 0;
+}
+
+// =============================================================================
+// SIDEBAR CONTAINER AND LAYOUT
+// =============================================================================
+
+.sidebarContainer {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+  min-width: 350px;
+  max-width: 400px;
+  height: fit-content;
+  position: sticky;
+  top: v.$space-md;
+}
+
+// =============================================================================
+// CALENDAR SIDEBAR (ALWAYS PRESENT IN SIDEBAR CONTAINER)
+// =============================================================================
+
+.calendarSidebar {
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-lg;
+  transition: all 0.3s ease;
+  min-height: fit-content;
+  order: 2; // Ensures it comes after gameStatsSidebar when both are present
+
+  // When game stats sidebar is present, add spacing and visual separation
+  &.withGameStats {
+    margin-top: v.$space-md;
+    border-top: 3px solid var(--team-primary-color);
+    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .calendarStats {
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-xl;
+
+    .statGroup {
+      h4 {
+        margin: 0 0 v.$space-md;
+        color: v.$text-primary;
+        font-size: v.$font-size-md;
+        font-weight: 600;
+        padding-bottom: v.$space-xs;
+        border-bottom: 1px solid v.$border-secondary;
+      }
+
+      .statItems {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: v.$space-md;
+      }
+
+      .statItem {
+        display: flex;
+        flex-direction: column;
+        gap: v.$space-xs;
+
+        .statLabel {
+          font-size: v.$font-size-xs;
+          color: v.$text-secondary;
+          font-weight: 500;
+        }
+
+        .statValue {
+          font-size: v.$font-size-lg;
+          color: v.$text-primary;
+          font-weight: 600;
+          padding: v.$space-xxs v.$space-xs;
+          border-radius: v.$border-radius-sm;
+          display: inline-block;
+
+          &.positive {
+            background: rgba(v.$success-color, 0.2);
+            color: v.$success-color;
+            border: 1px solid rgba(v.$success-color, 0.3);
+          }
+
+          &.negative {
+            background: rgba(v.$danger-color, 0.2);
+            color: v.$danger-color;
+            border: 1px solid rgba(v.$danger-color, 0.3);
+          }
+
+          &.neutral {
+            background: rgba(v.$warning-color, 0.2);
+            color: v.$warning-color;
+            border: 1px solid rgba(v.$warning-color, 0.3);
+          }
+
+          // League ranking color coding
+          &.excellent {
+            background: rgba(v.$success-color, 0.25);
+            color: v.$success-color;
+            border: 1px solid rgba(v.$success-color, 0.4);
+          }
+
+          &.good {
+            background: rgba(v.$primary-color, 0.2);
+            color: v.$primary-color;
+            border: 1px solid rgba(v.$primary-color, 0.3);
+          }
+
+          &.average {
+            background: rgba(v.$warning-color, 0.15);
+            color: v.$warning-color;
+            border: 1px solid rgba(v.$warning-color, 0.25);
+          }
+
+          &.poor {
+            background: rgba(v.$danger-color, 0.15);
+            color: v.$danger-color;
+            border: 1px solid rgba(v.$danger-color, 0.25);
+          }
+        }
+      }
+    }
+  }
+}
+
+// =============================================================================
+// GAME STATS SIDEBAR (SHOWS AT TOP WHEN GAME SELECTED)
+// =============================================================================
+
+.gameStatsSidebar {
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-lg;
+  min-height: fit-content;
+  order: 1; // Ensures it appears at the top of the sidebar container
+  border-left: 4px solid var(--team-primary-color, v.$primary-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+  // Animation for sliding in
+  animation: slideInFromTop 0.3s ease-out;
+
+  .sidebarHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: v.$space-lg;
+    padding-bottom: v.$space-md;
+    border-bottom: 1px solid v.$border-secondary;
+
+    h3 {
+      margin: 0;
+      color: v.$text-primary;
+      font-size: v.$font-size-lg;
+      font-weight: 700;
+    }
+
+    .closeSidebar {
+      background: none;
+      border: none;
+      font-size: v.$font-size-xl;
+      color: v.$text-secondary;
+      cursor: pointer;
+      padding: v.$space-xs;
+      border-radius: v.$border-radius-sm;
+      transition: all 0.2s ease;
+      line-height: 1;
+
+      &:hover {
+        background: rgba(v.$danger-color, 0.1);
+        color: v.$danger-color;
+        transform: scale(1.1);
+      }
+    }
+  }
+
+  .gameOverview {
+    .matchupHeader {
+      margin-bottom: v.$space-lg;
+
+      .teams {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: v.$space-md;
+        margin-bottom: v.$space-md;
+
+        .team {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: v.$space-xs;
+          padding: v.$space-md;
+          border-radius: v.$border-radius-md;
+          background: v.$background-dark;
+          border: 2px solid transparent;
+          transition: all 0.2s ease;
+
+          &.homeTeam {
+            border-color: rgba(var(--team-primary-color, 20, 162, 210), 0.5);
+          }
+
+          .teamAbbr {
+            font-size: v.$font-size-lg;
+            font-weight: 700;
+            color: v.$text-primary;
+          }
+
+          .teamScore {
+            font-size: v.$font-size-xl;
+            font-weight: 800;
+            color: var(--team-primary-color, v.$primary-color);
+          }
+        }
+
+        .vs {
+          font-size: v.$font-size-sm;
+          color: v.$text-secondary;
+          font-weight: 600;
+        }
+      }
+    }
+
+    .gameDate {
+      text-align: center;
+      margin-bottom: v.$space-lg;
+      color: v.$text-secondary;
+      font-size: v.$font-size-sm;
+
+      small {
+        color: v.$text-secondary; // Changed from v.$text-tertiary (doesn't exist)
+        font-size: v.$font-size-xs;
+      }
+    }
+
+    .playoffBadge {
+      background: linear-gradient(135deg, #ffd700, #ffa500);
+      color: #000;
+      padding: v.$space-xs v.$space-md;
+      border-radius: v.$border-radius-lg;
+      text-align: center;
+      font-weight: 700;
+      font-size: v.$font-size-sm;
+      margin-bottom: v.$space-lg;
+      box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+    }
+
+    .gameAnalytics {
+      h4 {
+        margin: 0 0 v.$space-md;
+        color: v.$text-primary;
+        font-size: v.$font-size-md;
+        font-weight: 600;
+        padding-bottom: v.$space-xs;
+        border-bottom: 1px solid v.$border-secondary;
+      }
+
+      .analyticRow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: v.$space-sm 0;
+        border-bottom: 1px solid rgba(v.$border-secondary, 0.3);
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        .label {
+          font-size: v.$font-size-sm;
+          color: v.$text-secondary;
+          font-weight: 500;
+        }
+
+        .value {
+          font-size: v.$font-size-sm;
+          font-weight: 600;
+          padding: v.$space-xxs v.$space-xs;
+          border-radius: v.$border-radius-sm;
+
+          &.win,
+          &.positive {
+            background: rgba(v.$success-color, 0.2);
+            color: v.$success-color;
+          }
+
+          &.loss,
+          &.negative {
+            background: rgba(v.$danger-color, 0.2);
+            color: v.$danger-color;
+          }
+
+          &.excellent {
+            background: rgba(v.$success-color, 0.25);
+            color: v.$success-color;
+          }
+
+          &.good {
+            background: rgba(v.$primary-color, 0.2);
+            color: v.$primary-color;
+          }
+
+          &.average {
+            background: rgba(v.$warning-color, 0.15);
+            color: v.$warning-color;
+          }
+
+          &.poor {
+            background: rgba(v.$danger-color, 0.15);
+            color: v.$danger-color;
+          }
+
+          &.strong {
+            background: rgba(v.$danger-color, 0.2);
+            color: v.$danger-color;
+            font-weight: 700;
+          }
+        }
+      }
+
+      .streakInfo {
+        margin-top: v.$space-md;
+        text-align: center;
+
+        .streakBadge {
+          display: inline-block;
+          padding: v.$space-xs v.$space-md;
+          border-radius: v.$border-radius-lg;
+          font-size: v.$font-size-xs;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+
+          &.win {
+            background: rgba(v.$success-color, 0.2);
+            color: v.$success-color;
+            border: 1px solid rgba(v.$success-color, 0.4);
+          }
+
+          &.loss {
+            background: rgba(v.$danger-color, 0.2);
+            color: v.$danger-color;
+            border: 1px solid rgba(v.$danger-color, 0.4);
+          }
+        }
+      }
+    }
+
+    .upcomingInfo {
+      h4 {
+        margin: 0 0 v.$space-md;
+        color: v.$text-primary;
+        font-size: v.$font-size-md;
+        font-weight: 600;
+      }
+
+      p {
+        color: v.$text-secondary;
+        font-size: v.$font-size-sm;
+        line-height: 1.5;
+      }
+    }
+  }
+}
+
+// Animation for game stats sidebar
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// =============================================================================
+// CALENDAR HEADER
+// =============================================================================
+
+.calendarHeader {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-lg;
+  margin-bottom: v.$space-xl;
+}
+
+.titleWithInfo {
+  display: flex;
+  align-items: center;
+  position: relative;
+  gap: v.$space-sm;
+
+  h3 {
+    margin: 0;
+    font-size: v.$font-size-xl;
+    font-weight: 600;
+    color: v.$text-primary;
+    background: var(--team-primary-color, v.$primary-color);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+.infoButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid v.$border-secondary;
+  background: v.$background-medium;
+  color: v.$text-secondary;
+  cursor: help;
+  font-size: 12px;
+  font-weight: bold;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: v.$primary-color;
+    color: v.$text-button;
+    border-color: v.$primary-color;
+  }
+
+  &:focus {
+    outline: 1px solid v.$focus-color;
+    outline-offset: 2px;
+  }
+}
+
+.infoTooltip {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-lg;
+  width: 400px;
+  max-width: 90vw;
+  z-index: 1000;
+  box-shadow: v.$box-shadow-default;
+
+  h4 {
+    margin: 0 0 v.$space-sm;
+    color: v.$primary-color;
+    font-size: v.$font-size-md;
+    font-weight: 600;
+  }
+
+  h5 {
+    margin: v.$space-md 0 v.$space-xs;
+    color: var(--team-primary-color, v.$secondary-color);
+    font-size: v.$font-size-sm;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0 0 v.$space-sm;
+    color: v.$text-secondary;
+    font-size: v.$font-size-sm;
+    line-height: 1.5;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: v.$space-lg;
+    color: v.$text-secondary;
+    font-size: v.$font-size-sm;
+
+    li {
+      margin: v.$space-xs 0;
+      line-height: 1.4;
+
+      strong {
+        color: v.$text-primary;
+      }
+    }
+  }
+}
+
+// =============================================================================
+// TEAM SUMMARY CARDS
+// =============================================================================
+
+.teamSummary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: v.$space-md;
+  margin-bottom: v.$space-lg;
+}
+
+.summaryCard {
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-md;
+  text-align: center;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    border-color: rgba(var(--team-primary-color, 20, 162, 210), 0.4);
+  }
+
+  h4 {
+    margin: 0 0 v.$space-xs;
+    font-size: v.$font-size-xs;
+    font-weight: 600;
+    color: v.$text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .record {
+    font-size: v.$font-size-lg;
+    font-weight: 700;
+    color: v.$text-primary;
+    margin-bottom: v.$space-xs;
+  }
+
+  // Enhanced subtext styling with league ranking indicators
+  .points,
+  .percentage,
+  .recentForm {
+    font-size: v.$font-size-sm;
+    margin: v.$space-xxs 0;
+    padding: v.$space-xxs v.$space-xs;
+    border-radius: v.$border-radius-sm;
+    font-weight: 500;
+    display: inline-block;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+
+    // League performance rankings (top 10, top 20, bottom 10, etc.)
+    &.topTier {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$success-color, 0.25),
+        rgba(v.$success-color, 0.15)
+      );
+      color: v.$success-color;
+      border-color: rgba(v.$success-color, 0.4);
+      box-shadow: 0 2px 4px rgba(v.$success-color, 0.2);
+    }
+
+    &.upperTier {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$primary-color, 0.2),
+        rgba(v.$primary-color, 0.1)
+      );
+      color: v.$primary-color;
+      border-color: rgba(v.$primary-color, 0.3);
+    }
+
+    &.middleTier {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$warning-color, 0.15),
+        rgba(v.$warning-color, 0.08)
+      );
+      color: v.$warning-color;
+      border-color: rgba(v.$warning-color, 0.25);
+    }
+
+    &.lowerTier {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$danger-color, 0.15),
+        rgba(v.$danger-color, 0.08)
+      );
+      color: v.$danger-color;
+      border-color: rgba(v.$danger-color, 0.25);
+    }
+
+    &.bottomTier {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$danger-color, 0.25),
+        rgba(v.$danger-color, 0.15)
+      );
+      color: v.$danger-color;
+      border-color: rgba(v.$danger-color, 0.4);
+      box-shadow: 0 2px 4px rgba(v.$danger-color, 0.2);
+    }
+
+    // Differential indicators for goal differential
+    &.strongPositive {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$success-color, 0.3),
+        rgba(v.$success-color, 0.2)
+      );
+      color: color.adjust(v.$success-color, $lightness: -10%);
+      border-color: rgba(v.$success-color, 0.5);
+      font-weight: 600;
+    }
+
+    &.positive {
+      background: rgba(v.$success-color, 0.2);
+      color: v.$success-color;
+      border-color: rgba(v.$success-color, 0.3);
+    }
+
+    &.slightlyPositive {
+      background: rgba(v.$success-color, 0.1);
+      color: color.adjust(v.$success-color, $lightness: -5%);
+      border-color: rgba(v.$success-color, 0.2);
+    }
+
+    &.neutral {
+      background: rgba(v.$warning-color, 0.15);
+      color: v.$warning-color;
+      border-color: rgba(v.$warning-color, 0.25);
+    }
+
+    &.slightlyNegative {
+      background: rgba(v.$danger-color, 0.1);
+      color: color.adjust(v.$danger-color, $lightness: -5%);
+      border-color: rgba(v.$danger-color, 0.2);
+    }
+
+    &.negative {
+      background: rgba(v.$danger-color, 0.2);
+      color: v.$danger-color;
+      border-color: rgba(v.$danger-color, 0.3);
+    }
+
+    &.strongNegative {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$danger-color, 0.3),
+        rgba(v.$danger-color, 0.2)
+      );
+      color: color.adjust(v.$danger-color, $lightness: -10%);
+      border-color: rgba(v.$danger-color, 0.5);
+      font-weight: 600;
+    }
+
+    // Hover effects
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  // Special styling for different summary card types
+  &.seasonRecord {
+    .points {
+      position: relative;
+
+      &::after {
+        content: attr(data-rank);
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: var(--team-secondary-color, v.$secondary-color);
+        color: v.$text-button;
+        font-size: v.$font-size-xxs;
+        padding: 2px 4px;
+        border-radius: 50%;
+        min-width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+      }
+    }
+  }
+
+  &.currentStreak {
+    .recentForm {
+      position: relative;
+
+      &.hotStreak {
+        animation: hotStreakPulse 2s ease-in-out infinite;
+      }
+
+      &.coldStreak {
+        animation: coldStreakPulse 2s ease-in-out infinite;
+      }
+    }
+  }
+
+  &.goalDifferential {
+    .points {
+      font-family: v.$font-family-condensed;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+
+      &.positive::before {
+        content: "↗";
+        margin-right: 4px;
+        color: v.$success-color;
+      }
+
+      &.negative::before {
+        content: "↘";
+        margin-right: 4px;
+        color: v.$danger-color;
+      }
+    }
+  }
+}
+
+// Animations for streak indicators
+@keyframes hotStreakPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(v.$success-color, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(v.$success-color, 0.8);
+  }
+}
+
+@keyframes coldStreakPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(v.$danger-color, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(v.$danger-color, 0.8);
+  }
+}
+
+// =============================================================================
+// LEGEND
+// =============================================================================
+
+.calendarLegend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: v.$space-md;
+  padding: v.$space-md;
+  background: v.$background-medium;
+  border-radius: v.$border-radius-md;
+  border: 1px solid v.$border-secondary;
+
+  .legendLabel {
+    font-weight: 600;
+    color: v.$text-primary;
+    margin-right: v.$space-sm;
+    font-size: v.$font-size-sm;
+  }
+
+  .legendItems {
+    display: flex;
+    flex-wrap: wrap;
+    gap: v.$space-md;
+  }
+
+  .legendItem {
+    display: flex;
+    align-items: center;
+    gap: v.$space-xs;
+
+    span {
+      font-size: v.$font-size-xs;
+      color: v.$text-secondary;
+      white-space: nowrap;
+    }
+  }
+
+  .legendColor {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid v.$border-secondary;
+
+    &.win {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$success-color, 0.8),
+        rgba(v.$success-color, 0.6)
+      );
+      border-color: v.$success-color;
+    }
+
+    &.loss {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$danger-color, 0.8),
+        rgba(v.$danger-color, 0.6)
+      );
+      border-color: v.$danger-color;
+    }
+
+    &.otLoss {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$warning-color, 0.8),
+        rgba(v.$warning-color, 0.6)
+      );
+      border-color: v.$warning-color;
+    }
+
+    &.future {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$primary-color, 0.8),
+        rgba(v.$primary-color, 0.6)
+      );
+      border-color: v.$primary-color;
+    }
+
+    &.playoff {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$warning-color, 0.8),
+        rgba(v.$warning-color, 0.6)
+      );
+      border-color: v.$warning-color;
+      border-width: 2px;
+    }
+
+    &.winStreak {
+      background: linear-gradient(
+        135deg,
+        v.$success-color,
+        color.adjust(v.$success-color, $lightness: -10%)
+      );
+      border-color: v.$success-color;
+      border-width: 2px;
+      box-shadow: 0 0 8px rgba(v.$success-color, 0.6);
+      animation: winStreakGlow 2s ease-in-out infinite alternate;
+    }
+
+    &.lossStreak {
+      background: linear-gradient(
+        135deg,
+        v.$danger-color,
+        color.adjust(v.$danger-color, $lightness: -10%)
+      );
+      border-color: v.$danger-color;
+      border-width: 2px;
+      box-shadow: 0 0 8px rgba(v.$danger-color, 0.6);
+      animation: lossStreakGlow 2s ease-in-out infinite alternate;
+    }
+
+    &.strongOpponent {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$warning-color, 0.6),
+        rgba(v.$warning-color, 0.4)
+      );
+      border-color: v.$warning-color;
+      position: relative;
+
+      &::after {
+        content: "★";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: v.$warning-color;
+        font-size: 10px;
+        line-height: 1;
+      }
+    }
+  }
+}
+
+// =============================================================================
+// CALENDAR GRID
+// =============================================================================
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: v.$space-lg;
+  margin-bottom: v.$space-xl;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 800px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+// =============================================================================
+// CALENDAR MONTH
+// =============================================================================
+
+.calendarMonth {
+  background: v.$background-medium;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-sm;
+  border: 1px solid v.$border-secondary;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: rgba(var(--team-primary-color, 20, 162, 210), 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.monthHeader {
+  text-align: center;
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+  color: v.$primary-color;
+  padding: v.$space-md;
+  background: v.$background-dark;
+  border-top-left-radius: v.$border-radius-sm;
+  border-top-right-radius: v.$border-radius-sm;
+  margin-bottom: v.$space-xxs;
+  border: 1px solid v.$border-primary;
+}
+
+.daysGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dayLabels {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: v.$space-xs;
+}
+
+.dayLabel {
+  text-align: center;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  color: v.$text-secondary;
+  padding: v.$space-xs;
+  background: v.$background-dark;
+  border-radius: v.$border-radius-sm;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.daysContainer {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  position: relative; // Enable absolute positioning for streak overlays
+}
+
+// =============================================================================
+// CALENDAR DAY CELLS
+// =============================================================================
+
+.dayCell {
+  position: relative;
+  min-height: 35px;
+  min-width: 35px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  border-radius: v.$border-radius-sm;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: v.$background-dark;
+  border: 1px solid v.$border-secondary;
+  padding: v.$space-xxs;
+
+  &:hover {
+    transform: scale(1.05);
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    border-color: rgba(var(--team-primary-color, 20, 162, 210), 0.4);
+  }
+
+  &.otherMonth {
+    opacity: 0.3;
+    background: transparent;
+  }
+
+  &.today {
+    border-color: v.$warning-color;
+    box-shadow: 0 0 0 1px rgba(v.$warning-color, 0.2);
+
+    .dayNumber {
+      color: v.$warning-color;
+      font-weight: 700;
+    }
+  }
+
+  &.selectedGame {
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.3);
+    background: rgba(v.$primary-color, 0.1);
+  }
+
+  &.streakWin {
+    background: linear-gradient(
+      135deg,
+      rgba(v.$success-color, 0.15),
+      rgba(v.$success-color, 0.08)
+    );
+    border-color: rgba(v.$success-color, 0.3);
+  }
+
+  &.streakLoss {
+    background: linear-gradient(
+      135deg,
+      rgba(v.$danger-color, 0.15),
+      rgba(v.$danger-color, 0.08)
+    );
+    border-color: rgba(v.$danger-color, 0.3);
+  }
+}
+
+// =============================================================================
+// SEAMLESS STREAK BORDERS
+// =============================================================================
+
+// Container for the month grid to enable absolute positioning of streak overlays
+.daysContainer {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  position: relative; // Enable absolute positioning for streak overlays
+}
+
+// Win streak seamless border overlay
+.streakOverlay {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  border-radius: v.$border-radius-sm;
+
+  &.winStreak {
+    border: 2px solid v.$success-color; // Made consistent with lossStreak
+    background: rgba(v.$success-color, 0.1);
+    box-shadow:
+      0 0 0 1px rgba(v.$success-color, 0.2),
+      0 0 12px rgba(v.$success-color, 0.4),
+      inset 0 0 0 1px rgba(v.$success-color, 0.1);
+    animation: winStreakGlow 2s ease-in-out infinite alternate;
+  }
+
+  &.lossStreak {
+    border: 2px solid v.$danger-color;
+    background: rgba(v.$danger-color, 0.1);
+    box-shadow:
+      0 0 0 1px rgba(v.$danger-color, 0.2),
+      0 0 12px rgba(v.$danger-color, 0.4),
+      inset 0 0 0 1px rgba(v.$danger-color, 0.1);
+    animation: lossStreakGlow 2s ease-in-out infinite alternate;
+  }
+
+  // Enhanced styling for extended/truncated streaks
+  &.streakExtended {
+    // Reduce opacity for extended portions to show they're not actual games
+    &::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(v.$background-dark, 0.3);
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 1;
+    }
+  }
+
+  // Truncated left border - dashed/dotted to show continuation
+  &.streakTruncatedLeft {
+    border-left-width: 2px;
+    border-left-color: v.$danger-color-dark !important;
+
+    &.winStreak::before {
+      color: v.$success-color;
+      text-shadow: 0 0 4px rgba(v.$success-color, 0.8);
+    }
+
+    &.lossStreak::before {
+      color: v.$danger-color;
+      text-shadow: 0 0 4px rgba(v.$danger-color, 0.8);
+    }
+  }
+
+  // Truncated right border - dashed/dotted to show continuation
+  &.streakTruncatedRight {
+    border-right-width: 3px;
+    border-right-color: v.$danger-color-dark !important;
+
+    &.winStreak::after {
+      color: v.$success-color;
+      text-shadow: 0 0 4px rgba(v.$success-color, 0.8);
+    }
+
+    &.lossStreak::after {
+      color: v.$danger-color;
+      text-shadow: 0 0 4px rgba(v.$danger-color, 0.8);
+    }
+  }
+
+  // When both truncated, adjust arrow positioning to avoid overlap
+  &.streakTruncatedLeft.streakTruncatedRight {
+    &::before {
+      left: 6px;
+    }
+
+    &::after {
+      right: 6px;
+    }
+  }
+}
+
+// Enhanced glow animations for the seamless borders
+@keyframes winStreakGlow {
+  0% {
+    box-shadow:
+      0 0 0 1px rgba(v.$success-color, 0.2),
+      0 0 8px rgba(v.$success-color, 0.3),
+      inset 0 0 0 1px rgba(v.$success-color, 0.05);
+  }
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(v.$success-color, 0.4),
+      0 0 16px rgba(v.$success-color, 0.6),
+      inset 0 0 0 1px rgba(v.$success-color, 0.15);
+  }
+}
+
+@keyframes lossStreakGlow {
+  0% {
+    box-shadow:
+      0 0 0 1px rgba(v.$danger-color, 0.2),
+      0 0 8px rgba(v.$danger-color, 0.3),
+      inset 0 0 0 1px rgba(v.$danger-color, 0.05);
+  }
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(v.$danger-color, 0.4),
+      0 0 16px rgba(v.$danger-color, 0.6),
+      inset 0 0 0 1px rgba(v.$danger-color, 0.15);
+  }
+}
+
+// Game Result Styling
+.gameWin {
+  background: linear-gradient(
+    135deg,
+    rgba(v.$success-color, 0.2),
+    rgba(v.$success-color, 0.1)
+  );
+  border-color: rgba(v.$success-color, 0.4);
+
+  &:hover {
+    border-color: v.$success-color;
+    box-shadow: 0 2px 8px rgba(v.$success-color, 0.3);
+  }
+}
+
+.gameLoss {
+  background: linear-gradient(
+    135deg,
+    rgba(v.$danger-color, 0.2),
+    rgba(v.$danger-color, 0.1)
+  );
+  border-color: rgba(v.$danger-color, 0.4);
+
+  &:hover {
+    border-color: v.$danger-color;
+    box-shadow: 0 2px 8px rgba(v.$danger-color, 0.3);
+  }
+}
+
+.gameOtLoss {
+  background: linear-gradient(
+    135deg,
+    rgba(v.$warning-color, 0.2),
+    rgba(v.$warning-color, 0.1)
+  );
+  border-color: rgba(v.$warning-color, 0.4);
+
+  &:hover {
+    border-color: v.$warning-color;
+    box-shadow: 0 2px 8px rgba(v.$warning-color, 0.3);
+  }
+}
+
+.gameFuture {
+  background: linear-gradient(
+    135deg,
+    rgba(v.$primary-color, 0.2),
+    rgba(v.$primary-color, 0.1)
+  );
+  border-color: rgba(v.$primary-color, 0.4);
+
+  &:hover {
+    border-color: v.$primary-color;
+    box-shadow: 0 2px 8px rgba(v.$primary-color, 0.3);
+  }
+}
+
+// Special Game Types
+.playoffGame {
+  border-width: 2px;
+  border-color: v.$warning-color !important;
+  background: linear-gradient(
+    135deg,
+    rgba(v.$warning-color, 0.2),
+    rgba(v.$warning-color, 0.1)
+  );
+
+  &::before {
+    content: "🏆";
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: v.$font-size-xxs;
+    z-index: 1;
+  }
+}
+
+.strongOpponent {
+  &::after {
+    content: "★";
+    position: absolute;
+    top: 0;
+    left: 2px;
+    color: v.$warning-color;
+    font-size: v.$font-size-xxs;
+    z-index: 1;
+  }
+}
+
+// Streak Highlighting
+.winStreak {
+  border-width: 2px;
+  border-color: v.$success-color !important;
+  box-shadow: 0 0 8px rgba(v.$success-color, 0.4);
+  animation: winStreakGlow 2s ease-in-out infinite alternate;
+
+  &.streakStart {
+    border-top: 2px solid v.$success-color;
+    border-right: 2px solid v.$success-color;
+    border-bottom: 2px solid v.$success-color;
+    border-top-right-radius: v.$border-radius-sm;
+    border-bottom-right-radius: v.$border-radius-sm;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: -2px; // Compensate for border overlap
+  }
+
+  &.streakMiddle {
+    border-top: 2px solid v.$success-color;
+    border-right: 2px solid v.$success-color;
+    border-bottom: 2px solid v.$success-color;
+    border-radius: 0;
+    margin-left: -2px; // Compensate for border overlap
+  }
+
+  &.streakEnd {
+    border-top: 2px solid v.$success-color;
+    border-right: 2px solid v.$success-color;
+    border-bottom: 2px solid v.$success-color;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-right-radius: v.$border-radius-sm;
+    border-bottom-right-radius: v.$border-radius-sm;
+    margin-left: -2px; // Compensate for border overlap
+  }
+}
+
+.lossStreak {
+  border-width: 2px;
+  border-color: v.$danger-color !important;
+  box-shadow: 0 0 8px rgba(v.$danger-color, 0.4);
+  animation: lossStreakGlow 2s ease-in-out infinite alternate;
+
+  &.streakStart {
+    border-top: 2px solid v.$danger-color;
+    border-right: 2px solid v.$danger-color;
+    border-bottom: 2px solid v.$danger-color;
+    border-top-right-radius: v.$border-radius-sm;
+    border-bottom-right-radius: v.$border-radius-sm;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    margin-left: -2px; // Compensate for border overlap
+  }
+
+  &.streakMiddle {
+    border-top: 2px solid v.$danger-color;
+    border-right: 2px solid v.$danger-color;
+    border-bottom: 2px solid v.$danger-color;
+    border-radius: 0;
+    margin-left: -2px; // Compensate for border overlap
+  }
+
+  &.streakEnd {
+    border-top: 2px solid v.$danger-color;
+    border-right: 2px solid v.$danger-color;
+    border-bottom: 2px solid v.$danger-color;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-right-radius: v.$border-radius-sm;
+    border-bottom-right-radius: v.$border-radius-sm;
+    margin-left: -2px; // Compensate for border overlap
+  }
+}
+
+.dayNumber {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  color: v.$text-primary;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+// Game Info
+.gameInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  font-size: v.$font-size-xxs;
+  line-height: 1.1;
+  overflow: hidden;
+}
+
+.opponent {
+  color: v.$text-secondary;
+  font-weight: 600;
+  margin-bottom: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.score {
+  color: v.$text-primary;
+  font-weight: 700;
+  font-size: v.$font-size-xs;
+  line-height: 1;
+}
+
+.strengthIndicator {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  color: v.$warning-color;
+  font-size: v.$font-size-xxs;
+  z-index: 1;
+}
+
+// =============================================================================
+// GAME TOOLTIP
+// =============================================================================
+
+.gameTooltip {
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-md;
+  min-width: 280px;
+  max-width: 400px;
+  box-shadow: v.$box-shadow-default;
+  color: v.$text-primary;
+  font-size: v.$font-size-sm;
+  z-index: 1000;
+
+  .tooltipHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: v.$space-sm;
+    padding-bottom: v.$space-xs;
+    border-bottom: 1px solid v.$border-secondary;
+
+    strong {
+      color: v.$primary-color;
+      font-size: v.$font-size-md;
+    }
+  }
+
+  .playoffLabel {
+    background: linear-gradient(
+      135deg,
+      v.$warning-color,
+      color.adjust(v.$warning-color, $lightness: -10%)
+    );
+    color: v.$color-black;
+    padding: v.$space-xxs v.$space-xs;
+    border-radius: v.$border-radius-sm;
+    font-size: v.$font-size-xxs;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .resultLabel {
+    padding: v.$space-xxs v.$space-xs;
+    border-radius: v.$border-radius-sm;
+    font-size: v.$font-size-xxs;
+    font-weight: 600;
+    text-transform: uppercase;
+
+    &.win {
+      background: rgba(v.$success-color, 0.2);
+      color: v.$success-color;
+      border: 1px solid rgba(v.$success-color, 0.3);
+    }
+
+    &.loss {
+      background: rgba(v.$danger-color, 0.2);
+      color: v.$danger-color;
+      border: 1px solid rgba(v.$danger-color, 0.3);
+    }
+
+    &.otLoss {
+      background: rgba(v.$warning-color, 0.2);
+      color: v.$warning-color;
+      border: 1px solid rgba(v.$warning-color, 0.3);
+    }
+
+    &.future {
+      background: rgba(v.$primary-color, 0.2);
+      color: v.$primary-color;
+      border: 1px solid rgba(v.$primary-color, 0.3);
+    }
+  }
+
+  .tooltipContent {
+    margin-bottom: v.$space-sm;
+  }
+
+  .matchupInfo {
+    margin-bottom: v.$space-sm;
+
+    .matchup {
+      font-size: v.$font-size-md;
+      font-weight: 600;
+      color: v.$text-primary;
+      margin-bottom: v.$space-xs;
+    }
+
+    .score {
+      font-size: v.$font-size-lg;
+      font-weight: 700;
+      color: v.$primary-color;
+    }
+  }
+
+  .gameAnalytics {
+    display: grid;
+    gap: v.$space-xs;
+
+    .analyticItem {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .label {
+        color: v.$text-secondary;
+        font-size: v.$font-size-xs;
+      }
+
+      .value {
+        font-weight: 600;
+        padding: v.$space-xxs v.$space-xs;
+        border-radius: v.$border-radius-sm;
+        font-size: v.$font-size-xxs;
+
+        &.strong {
+          background: rgba(v.$danger-color, 0.2);
+          color: v.$danger-color;
+        }
+
+        &.average {
+          background: rgba(v.$text-secondary, 0.2);
+          color: v.$text-secondary;
+        }
+
+        &.weak {
+          background: rgba(v.$success-color, 0.2);
+          color: v.$success-color;
+        }
+
+        &.positive {
+          background: rgba(v.$success-color, 0.2);
+          color: v.$success-color;
+        }
+
+        &.negative {
+          background: rgba(v.$danger-color, 0.2);
+          color: v.$danger-color;
+        }
+
+        &.excellent {
+          background: rgba(v.$success-color, 0.3);
+          color: v.$success-color;
+        }
+
+        &.good {
+          background: rgba(v.$primary-color, 0.2);
+          color: v.$primary-color;
+        }
+
+        &.poor {
+          background: rgba(v.$danger-color, 0.2);
+          color: v.$danger-color;
+        }
+      }
+    }
+  }
+
+  .tooltipFooter {
+    padding-top: v.$space-xs;
+    border-top: 1px solid v.$border-secondary;
+    text-align: center;
+
+    em {
+      color: v.$text-secondary;
+      font-size: v.$font-size-xs;
+    }
+  }
+}
+
+// =============================================================================
+// GAME STATS SIDEBAR
+// =============================================================================
+
+.gameStatsSidebar {
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-lg;
+  position: sticky;
+  top: v.$space-md;
+
+  .sidebarHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: v.$space-lg;
+    padding-bottom: v.$space-sm;
+    border-bottom: 1px solid v.$border-secondary;
+
+    h3 {
+      margin: 0;
+      color: v.$text-primary;
+      font-size: v.$font-size-lg;
+      font-weight: 600;
+    }
+  }
+
+  .closeSidebar {
+    background: none;
+    border: none;
+    color: v.$text-secondary;
+    font-size: v.$font-size-lg;
+    cursor: pointer;
+    padding: v.$space-xs;
+    border-radius: v.$border-radius-sm;
+    transition: all 0.2s ease;
+
+    &:hover {
+      color: v.$danger-color;
+      background: rgba(v.$danger-color, 0.1);
+    }
+  }
+
+  .gameOverview {
+    color: v.$text-primary;
+
+    .matchupHeader {
+      margin-bottom: v.$space-md;
+    }
+
+    .teams {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: v.$space-md;
+      margin-bottom: v.$space-sm;
+    }
+
+    .team {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: v.$space-xs;
+    }
+
+    .teamAbbr {
+      font-size: v.$font-size-md;
+      font-weight: 700;
+      color: v.$text-primary;
+    }
+
+    .teamScore {
+      font-size: v.$font-size-xl;
+      font-weight: 700;
+      color: v.$primary-color;
+    }
+
+    .vs {
+      font-size: v.$font-size-sm;
+      color: v.$text-secondary;
+      font-weight: 600;
+    }
+
+    .gameDate {
+      text-align: center;
+      color: v.$text-secondary;
+      font-size: v.$font-size-sm;
+      margin-bottom: v.$space-md;
+
+      small {
+        color: v.$text-secondary;
+        font-size: v.$font-size-xs;
+      }
+    }
+
+    .playoffBadge {
+      background: linear-gradient(
+        135deg,
+        v.$warning-color,
+        color.adjust(v.$warning-color, $lightness: -10%)
+      );
+      color: v.$color-black;
+      padding: v.$space-xs v.$space-md;
+      border-radius: v.$border-radius-md;
+      text-align: center;
+      font-weight: 600;
+      margin-bottom: v.$space-md;
+    }
+
+    .gameAnalytics {
+      margin-top: v.$space-lg;
+
+      h4 {
+        margin: 0 0 v.$space-md;
+        color: var(--team-primary-color, v.$secondary-color);
+        font-size: v.$font-size-md;
+        font-weight: 600;
+      }
+    }
+
+    .analyticRow {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: v.$space-sm;
+    }
+
+    .streakInfo {
+      margin-top: v.$space-md;
+      text-align: center;
+    }
+
+    .streakBadge {
+      display: inline-block;
+      padding: v.$space-xs v.$space-md;
+      border-radius: v.$border-radius-md;
+      font-size: v.$font-size-sm;
+      font-weight: 600;
+      text-transform: uppercase;
+
+      &.win {
+        background: rgba(v.$success-color, 0.2);
+        color: v.$success-color;
+        border: 1px solid rgba(v.$success-color, 0.3);
+      }
+
+      &.loss {
+        background: rgba(v.$danger-color, 0.2);
+        color: v.$danger-color;
+        border: 1px solid rgba(v.$danger-color, 0.3);
+      }
+    }
+
+    .upcomingInfo {
+      margin-top: v.$space-lg;
+      padding: v.$space-md;
+      background: rgba(v.$primary-color, 0.1);
+      border: 1px solid rgba(v.$primary-color, 0.2);
+      border-radius: v.$border-radius-md;
+
+      h4 {
+        margin: 0 0 v.$space-xs;
+        color: v.$primary-color;
+        font-size: v.$font-size-md;
+        font-weight: 600;
+      }
+
+      p {
+        margin: 0;
+        color: v.$text-secondary;
+        font-size: v.$font-size-sm;
+        line-height: 1.4;
+      }
+    }
+  }
+}
+
+// =============================================================================
+// LOADING & ERROR STATES
+// =============================================================================
+
+.loading,
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: v.$space-xxxl v.$space-xl;
+  text-align: center;
+  color: v.$text-primary;
+
+  h3 {
+    margin: 0 0 v.$space-xs;
+    font-size: v.$font-size-xl;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0;
+    color: v.$text-secondary;
+    font-size: v.$font-size-sm;
+  }
+}
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(v.$primary-color, 0.2);
+  border-top: 4px solid v.$primary-color;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: v.$space-md;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  h3 {
+    color: v.$danger-color;
+  }
+}
+
+// =============================================================================
+// CALENDAR SIDEBAR (formerly CALENDAR FOOTER)
+// =============================================================================
+
+.calendarSidebar {
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-lg;
+  position: sticky;
+  top: v.$space-md;
+  transition: all 0.3s ease;
+  min-height: fit-content;
+
+  // Enhanced positioning when game stats sidebar is present
+  &.withGameStats {
+    margin-top: calc(v.$space-sm); // Push down to make room for game stats
+  }
+
+  .calendarStats {
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-xl;
+
+    .statGroup {
+      h4 {
+        margin: 0 0 v.$space-md;
+        color: v.$text-primary;
+        font-size: v.$font-size-md;
+        font-weight: 600;
+        padding-bottom: v.$space-xs;
+        border-bottom: 1px solid v.$border-secondary;
+      }
+
+      .statItems {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: v.$space-md;
+      }
+
+      .statItem {
+        display: flex;
+        flex-direction: column;
+        gap: v.$space-xs;
+
+        .statLabel {
+          font-size: v.$font-size-xs;
+          color: v.$text-secondary;
+          font-weight: 500;
+        }
+
+        .statValue {
+          font-size: v.$font-size-lg;
+          color: v.$text-primary;
+          font-weight: 600;
+          padding: v.$space-xxs v.$space-xs;
+          border-radius: v.$border-radius-sm;
+          display: inline-block;
+
+          &.positive {
+            background: rgba(v.$success-color, 0.2);
+            color: v.$success-color;
+            border: 1px solid rgba(v.$success-color, 0.3);
+          }
+
+          &.negative {
+            background: rgba(v.$danger-color, 0.2);
+            color: v.$danger-color;
+            border: 1px solid rgba(v.$danger-color, 0.3);
+          }
+
+          &.neutral {
+            background: rgba(v.$warning-color, 0.2);
+            color: v.$warning-color;
+            border: 1px solid rgba(v.$warning-color, 0.3);
+          }
+
+          // League ranking color coding
+          &.excellent {
+            background: rgba(v.$success-color, 0.25);
+            color: v.$success-color;
+            border: 1px solid rgba(v.$success-color, 0.4);
+          }
+
+          &.good {
+            background: rgba(v.$primary-color, 0.2);
+            color: v.$primary-color;
+            border: 1px solid rgba(v.$primary-color, 0.3);
+          }
+
+          &.average {
+            background: rgba(v.$warning-color, 0.15);
+            color: v.$warning-color;
+            border: 1px solid rgba(v.$warning-color, 0.25);
+          }
+
+          &.poor {
+            background: rgba(v.$danger-color, 0.15);
+            color: v.$danger-color;
+            border: 1px solid rgba(v.$danger-color, 0.25);
+          }
+        }
+      }
+    }
+  }
+}
+
+// Enhanced summary card styling with color-coded subtext
+.summaryCard {
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-md;
+  text-align: center;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    border-color: rgba(var(--team-primary-color, 20, 162, 210), 0.4);
+  }
+
+  h4 {
+    margin: 0 0 v.$space-xs;
+    font-size: v.$font-size-xs;
+    font-weight: 600;
+    color: v.$text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .record {
+    font-size: v.$font-size-lg;
+    font-weight: 700;
+    color: v.$text-primary;
+    margin-bottom: v.$space-xs;
+  }
+
+  // Enhanced subtext styling with league ranking indicators
+  .points,
+  .percentage,
+  .recentForm {
+    font-size: v.$font-size-sm;
+    margin: v.$space-xxs 0;
+    padding: v.$space-xxs v.$space-xs;
+    border-radius: v.$border-radius-sm;
+    font-weight: 500;
+    display: inline-block;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+
+    // League performance rankings (top 10, top 20, bottom 10, etc.)
+    &.topTier {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$success-color, 0.25),
+        rgba(v.$success-color, 0.15)
+      );
+      color: v.$success-color;
+      border-color: rgba(v.$success-color, 0.4);
+      box-shadow: 0 2px 4px rgba(v.$success-color, 0.2);
+    }
+
+    &.upperTier {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$primary-color, 0.2),
+        rgba(v.$primary-color, 0.1)
+      );
+      color: v.$primary-color;
+      border-color: rgba(v.$primary-color, 0.3);
+    }
+
+    &.middleTier {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$warning-color, 0.15),
+        rgba(v.$warning-color, 0.08)
+      );
+      color: v.$warning-color;
+      border-color: rgba(v.$warning-color, 0.25);
+    }
+
+    &.lowerTier {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$danger-color, 0.15),
+        rgba(v.$danger-color, 0.08)
+      );
+      color: v.$danger-color;
+      border-color: rgba(v.$danger-color, 0.25);
+    }
+
+    &.bottomTier {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$danger-color, 0.25),
+        rgba(v.$danger-color, 0.15)
+      );
+      color: v.$danger-color;
+      border-color: rgba(v.$danger-color, 0.4);
+      box-shadow: 0 2px 4px rgba(v.$danger-color, 0.2);
+    }
+
+    // Differential indicators for goal differential
+    &.strongPositive {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$success-color, 0.3),
+        rgba(v.$success-color, 0.2)
+      );
+      color: color.adjust(v.$success-color, $lightness: -10%);
+      border-color: rgba(v.$success-color, 0.5);
+      font-weight: 600;
+    }
+
+    &.positive {
+      background: rgba(v.$success-color, 0.2);
+      color: v.$success-color;
+      border-color: rgba(v.$success-color, 0.3);
+    }
+
+    &.slightlyPositive {
+      background: rgba(v.$success-color, 0.1);
+      color: color.adjust(v.$success-color, $lightness: -5%);
+      border-color: rgba(v.$success-color, 0.2);
+    }
+
+    &.neutral {
+      background: rgba(v.$warning-color, 0.15);
+      color: v.$warning-color;
+      border-color: rgba(v.$warning-color, 0.25);
+    }
+
+    &.slightlyNegative {
+      background: rgba(v.$danger-color, 0.1);
+      color: color.adjust(v.$danger-color, $lightness: -5%);
+      border-color: rgba(v.$danger-color, 0.2);
+    }
+
+    &.negative {
+      background: rgba(v.$danger-color, 0.2);
+      color: v.$danger-color;
+      border-color: rgba(v.$danger-color, 0.3);
+    }
+
+    &.strongNegative {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$danger-color, 0.3),
+        rgba(v.$danger-color, 0.2)
+      );
+      color: color.adjust(v.$danger-color, $lightness: -10%);
+      border-color: rgba(v.$danger-color, 0.5);
+      font-weight: 600;
+    }
+
+    // Hover effects
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+  }
+
+  // Special styling for different summary card types
+  &.seasonRecord {
+    .points {
+      position: relative;
+
+      &::after {
+        content: attr(data-rank);
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: var(--team-secondary-color, v.$secondary-color);
+        color: v.$text-button;
+        font-size: v.$font-size-xxs;
+        padding: 2px 4px;
+        border-radius: 50%;
+        min-width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+      }
+    }
+  }
+
+  &.currentStreak {
+    .recentForm {
+      position: relative;
+
+      &.hotStreak {
+        animation: hotStreakPulse 2s ease-in-out infinite;
+      }
+
+      &.coldStreak {
+        animation: coldStreakPulse 2s ease-in-out infinite;
+      }
+    }
+  }
+
+  &.goalDifferential {
+    .points {
+      font-family: v.$font-family-condensed;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+
+      &.positive::before {
+        content: "↗";
+        margin-right: 4px;
+        color: v.$success-color;
+      }
+
+      &.negative::before {
+        content: "↘";
+        margin-right: 4px;
+        color: v.$danger-color;
+      }
+    }
+  }
+}
+
+// Animations for streak indicators
+@keyframes hotStreakPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(v.$success-color, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(v.$success-color, 0.8);
+  }
+}
+
+@keyframes coldStreakPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(v.$danger-color, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 15px rgba(v.$danger-color, 0.8);
+  }
+}
+
+// =============================================================================
+// RESPONSIVE DESIGN UPDATES
+// =============================================================================
+
+@media (max-width: 1200px) {
+  .calendarContent {
+    grid-template-columns: 1fr;
+    gap: v.$space-lg;
+  }
+
+  .sidebarContainer {
+    min-width: auto;
+    max-width: none;
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-lg;
+  }
+
+  .calendarSidebar {
+    position: relative;
+    top: 0;
+    margin-top: 0;
+
+    &.withGameStats {
+      margin-top: v.$space-lg;
+    }
+  }
+
+  .calendarGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: v.$space-lg;
+  }
+
+  .titleWithInfo h3 {
+    font-size: v.$font-size-lg;
+  }
+
+  .teamSummary {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: v.$space-sm;
+  }
+
+  .summaryCard {
+    padding: v.$space-sm;
+
+    .record {
+      font-size: v.$font-size-md;
+    }
+  }
+
+  .calendarGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .calendarLegend {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: v.$space-sm;
+  }
+
+  .dayCell {
+    min-height: 50px;
+    padding: v.$space-xxs;
+  }
+
+  .dayNumber {
+    font-size: v.$font-size-xxs;
+  }
+
+  .gameInfo {
+    font-size: v.$font-size-xxs;
+  }
+
+  .gameTooltip {
+    min-width: 250px;
+    max-width: 90vw;
+  }
+
+  .gameStatsSidebar {
+    padding: v.$space-md;
+  }
+
+  .teams {
+    gap: v.$space-sm;
+  }
+
+  .teamAbbr {
+    font-size: v.$font-size-sm;
+  }
+
+  .teamScore {
+    font-size: v.$font-size-lg;
+  }
+}
+
+@media (max-width: 480px) {
+  .daysContainer {
+    gap: 1px;
+  }
+
+  .dayCell {
+    min-height: 40px;
+    padding: 1px;
+  }
+
+  .dayNumber {
+    font-size: v.$font-size-xxs;
+  }
+
+  .gameInfo {
+    font-size: v.$font-size-xxs;
+  }
+
+  .opponent {
+    font-size: v.$font-size-xxs;
+  }
+
+  .score {
+    font-size: v.$font-size-xxs;
+  }
+}

@@ -365,6 +365,21 @@ export type Database = {
           },
         ]
       }
+      job_locks: {
+        Row: {
+          job_name: string
+          locked_at: string | null
+        }
+        Insert: {
+          job_name: string
+          locked_at?: string | null
+        }
+        Update: {
+          job_name?: string
+          locked_at?: string | null
+        }
+        Relationships: []
+      }
       league_averages_goalies: {
         Row: {
           games_played: number | null
@@ -31593,6 +31608,10 @@ export type Database = {
       }
     }
     Functions: {
+      acquire_lock: {
+        Args: { job_name_param: string; timeout_interval: unknown }
+        Returns: boolean
+      }
       delete_duplicate_players_in_rosters: {
         Args: { _seasonid: number }
         Returns: undefined

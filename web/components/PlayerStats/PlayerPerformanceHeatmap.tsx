@@ -4,77 +4,20 @@ import {
   startOfMonth,
   endOfMonth,
   eachDayOfInterval,
-  getDay
+  startOfWeek,
+  endOfWeek,
+  isAfter,
+  startOfDay
 } from "date-fns";
 import styles from "./PlayerStats.module.scss";
-import { GameLogEntry } from "pages/stats/player/[playerId]";
 import { useMissedGames } from "hooks/useMissedGames";
-
-interface PlayerPerformanceHeatmapProps {
-  gameLog: GameLogEntry[];
-  playoffGameLog?: GameLogEntry[];
-  selectedStats: string[];
-  playerId?: string | number;
-  playerTeamId?: number;
-  seasonId?: string | number | null;
-}
-
-// Performance thresholds based on NHL averages (per game)
-const PERFORMANCE_THRESHOLDS = {
-  // Basic counting stats
-  goals: { elite: 0.75, good: 0.55, average: 0.35, poor: 0.15 },
-  assists: { elite: 1.2, good: 0.85, average: 0.55, poor: 0.25 },
-  points: { elite: 1.9, good: 1.35, average: 0.85, poor: 0.4 },
-  shots: { elite: 4.5, good: 3.2, average: 2.2, poor: 1.2 },
-  hits: { elite: 3.8, good: 2.5, average: 1.5, poor: 0.8 },
-  blocked_shots: { elite: 2.2, good: 1.5, average: 0.9, poor: 0.4 },
-  takeaways: { elite: 1.8, good: 1.2, average: 0.7, poor: 0.3 },
-  giveaways: { elite: 0.8, good: 1.2, average: 1.8, poor: 2.5 }, // Inverted - lower is better
-  toi_per_game: { elite: 22, good: 18, average: 14, poor: 10 },
-
-  // NST Advanced Stats - Possession Metrics (percentages)
-  cf_pct: { elite: 55, good: 52, average: 48, poor: 45 },
-  ff_pct: { elite: 55, good: 52, average: 48, poor: 45 },
-  sf_pct: { elite: 55, good: 52, average: 48, poor: 45 },
-  gf_pct: { elite: 60, good: 55, average: 45, poor: 40 },
-  xgf_pct: { elite: 55, good: 52, average: 48, poor: 45 },
-  scf_pct: { elite: 55, good: 52, average: 48, poor: 45 },
-  hdcf_pct: { elite: 55, good: 52, average: 48, poor: 45 },
-
-  // NST Advanced Stats - Individual Per 60
-  ixg_per_60: { elite: 2.5, good: 2.0, average: 1.2, poor: 0.6 },
-  icf_per_60: { elite: 12, good: 9, average: 6, poor: 3 },
-  iff_per_60: { elite: 10, good: 8, average: 5, poor: 2.5 },
-  hdcf_per_60: { elite: 6, good: 4, average: 2.5, poor: 1 },
-  shots_per_60: { elite: 12, good: 9, average: 6, poor: 3 },
-  goals_per_60: { elite: 2.0, good: 1.5, average: 0.8, poor: 0.3 },
-  total_assists_per_60: { elite: 2.5, good: 1.8, average: 1.0, poor: 0.4 },
-  total_points_per_60: { elite: 4.0, good: 3.0, average: 1.8, poor: 0.8 },
-  rush_attempts_per_60: { elite: 3.0, good: 2.0, average: 1.0, poor: 0.4 },
-
-  // NST Advanced Stats - Defensive Per 60 (lower is better for most)
-  hdca_per_60: { elite: 4.0, good: 5.5, average: 7.0, poor: 9.0 }, // Inverted
-  sca_per_60: { elite: 8.0, good: 10.0, average: 12.0, poor: 15.0 }, // Inverted
-  shots_blocked_per_60: { elite: 4.0, good: 3.0, average: 2.0, poor: 1.0 },
-  xga_per_60: { elite: 2.0, good: 2.5, average: 3.0, poor: 4.0 }, // Inverted
-
-  // NST Advanced Stats - Zone Usage (context-dependent)
-  off_zone_start_pct: { elite: 65, good: 55, average: 45, poor: 35 },
-  def_zone_start_pct: { elite: 35, good: 45, average: 55, poor: 65 }, // Inverted for forwards
-
-  // NST Advanced Stats - On-Ice Impact
-  on_ice_sh_pct: { elite: 10.5, good: 9.0, average: 7.5, poor: 6.0 },
-  on_ice_sv_pct: { elite: 92.5, good: 91.0, average: 89.5, poor: 88.0 },
-  pdo: { elite: 102, good: 100.5, average: 99.0, poor: 97.5 },
-
-  // NST Advanced Stats - Discipline Per 60
-  pim_per_60: { elite: 0.5, good: 1.0, average: 1.8, poor: 3.0 }, // Inverted
-  total_penalties_per_60: { elite: 0.3, good: 0.6, average: 1.0, poor: 1.5 }, // Inverted
-  penalties_drawn_per_60: { elite: 1.5, good: 1.0, average: 0.6, poor: 0.3 },
-  giveaways_per_60: { elite: 1.5, good: 2.5, average: 4.0, poor: 6.0 }, // Inverted
-  takeaways_per_60: { elite: 2.0, good: 1.5, average: 1.0, poor: 0.5 },
-  hits_per_60: { elite: 6.0, good: 4.0, average: 2.5, poor: 1.0 }
-};
+import {
+  PlayerPerformanceHeatmapProps,
+  GameLogEntry,
+  formatStatValue,
+  STAT_DISPLAY_NAMES,
+  MissedGame
+} from "./types";
 
 type PerformanceLevel =
   | "elite"
@@ -86,23 +29,109 @@ type PerformanceLevel =
   | "very-poor"
   | "no-data";
 
-// Calculate performance level based on weighted stats
+// Enhanced performance calculation using percentile-based approach
+const calculatePercentile = (value: number, stat: string): number => {
+  // Enhanced thresholds based on NHL data
+  const thresholds: {
+    [key: string]: {
+      p90: number;
+      p75: number;
+      p50: number;
+      p25: number;
+      p10: number;
+      isInverted?: boolean;
+    };
+  } = {
+    // Basic offensive stats
+    points: { p90: 1.4, p75: 1.0, p50: 0.6, p25: 0.35, p10: 0.2 },
+    goals: { p90: 0.7, p75: 0.5, p50: 0.3, p25: 0.2, p10: 0.1 },
+    assists: { p90: 1.0, p75: 0.7, p50: 0.4, p25: 0.25, p10: 0.15 },
+
+    // Shot metrics
+    shots: { p90: 4.0, p75: 3.2, p50: 2.4, p25: 1.8, p10: 1.2 },
+    shooting_percentage: { p90: 16, p75: 13, p50: 10, p25: 8, p10: 6 },
+
+    // Advanced metrics
+    cf_pct: { p90: 56, p75: 53, p50: 50, p25: 47, p10: 44 },
+    xgf_pct: { p90: 56, p75: 53, p50: 50, p25: 47, p10: 44 },
+    hdcf_pct: { p90: 56, p75: 53, p50: 50, p25: 47, p10: 44 },
+
+    // Per-60 stats
+    ixg_per_60: { p90: 2.8, p75: 2.2, p50: 1.5, p25: 1.0, p10: 0.6 },
+    shots_per_60: { p90: 14, p75: 11, p50: 8, p25: 6, p10: 4 },
+    goals_per_60: { p90: 2.2, p75: 1.7, p50: 1.0, p25: 0.6, p10: 0.3 },
+    total_points_per_60: { p90: 4.5, p75: 3.5, p50: 2.2, p25: 1.4, p10: 0.8 },
+
+    // Two-way play
+    hits: { p90: 4.5, p75: 3.0, p50: 1.8, p25: 1.0, p10: 0.5 },
+    blocked_shots: { p90: 2.5, p75: 1.8, p50: 1.1, p25: 0.7, p10: 0.3 },
+    takeaways: { p90: 2.0, p75: 1.4, p50: 0.9, p25: 0.5, p10: 0.2 },
+    giveaways: {
+      p90: 0.8,
+      p75: 1.2,
+      p50: 1.8,
+      p25: 2.5,
+      p10: 3.5,
+      isInverted: true
+    },
+
+    // Ice time
+    toi_per_game: { p90: 22, p75: 19, p50: 16, p25: 13, p10: 10 },
+
+    // Faceoffs
+    fow_percentage: { p90: 58, p75: 54, p50: 50, p25: 46, p10: 42 }
+  };
+
+  const threshold = thresholds[stat];
+  if (!threshold) return 50; // Default to 50th percentile if no threshold
+
+  const { p90, p75, p50, p25, p10, isInverted = false } = threshold;
+
+  if (isInverted) {
+    // For stats where lower is better (like giveaways)
+    if (value <= p90) return 95;
+    if (value <= p75) return 85;
+    if (value <= p50) return 60;
+    if (value <= p25) return 35;
+    if (value <= p10) return 15;
+    return 5;
+  } else {
+    // For stats where higher is better
+    if (value >= p90) return 95;
+    if (value >= p75) return 85;
+    if (value >= p50) return 60;
+    if (value >= p25) return 35;
+    if (value >= p10) return 15;
+    return 5;
+  }
+};
+
 const calculatePerformanceLevel = (
   game: GameLogEntry,
   selectedStats: string[]
 ): PerformanceLevel => {
   if (!game.games_played || game.games_played === 0) return "no-data";
 
+  // Enhanced weighting system
   const weights = {
-    goals: 1.5,
-    assists: 1.3,
-    points: 1.8, // Highest weight for overall offensive production
-    shots: 1.0,
-    hits: 0.8,
-    blocked_shots: 0.9,
-    takeaways: 1.1,
-    giveaways: 1.2, // Higher weight for turnovers (negative impact)
-    toi_per_game: 1.4 // High weight for ice time
+    points: 2.0,
+    goals: 1.8,
+    assists: 1.6,
+    shots: 1.2,
+    shooting_percentage: 1.4,
+    toi_per_game: 1.6,
+    hits: 1.0,
+    blocked_shots: 1.1,
+    takeaways: 1.3,
+    giveaways: 1.5,
+    fow_percentage: 1.4,
+    cf_pct: 1.3,
+    xgf_pct: 1.4,
+    hdcf_pct: 1.3,
+    ixg_per_60: 1.5,
+    shots_per_60: 1.2,
+    goals_per_60: 1.7,
+    total_points_per_60: 1.8
   };
 
   let totalScore = 0;
@@ -110,82 +139,29 @@ const calculatePerformanceLevel = (
 
   selectedStats.forEach((stat) => {
     const value = game[stat];
-    if (
-      value === null ||
-      value === undefined ||
-      !PERFORMANCE_THRESHOLDS[stat as keyof typeof PERFORMANCE_THRESHOLDS]
-    )
-      return;
+    if (value === null || value === undefined) return;
 
-    const thresholds =
-      PERFORMANCE_THRESHOLDS[stat as keyof typeof PERFORMANCE_THRESHOLDS];
     const weight = weights[stat as keyof typeof weights] || 1;
-    const isInverted = stat === "giveaways";
+    const percentile = calculatePercentile(Number(value), stat);
 
-    let score = 0;
-
-    if (isInverted) {
-      // For inverted stats (lower is better)
-      if (value <= thresholds.elite) score = 100;
-      else if (value <= thresholds.good)
-        score =
-          75 +
-          (25 * (thresholds.good - value)) /
-            (thresholds.good - thresholds.elite);
-      else if (value <= thresholds.average)
-        score =
-          50 +
-          (25 * (thresholds.average - value)) /
-            (thresholds.average - thresholds.good);
-      else if (value <= thresholds.poor)
-        score =
-          25 +
-          (25 * (thresholds.poor - value)) /
-            (thresholds.poor - thresholds.average);
-      else
-        score = Math.max(
-          0,
-          25 * (1 - (value - thresholds.poor) / thresholds.poor)
-        );
-    } else {
-      // For normal stats (higher is better)
-      if (value >= thresholds.elite) score = 100;
-      else if (value >= thresholds.good)
-        score =
-          75 +
-          (25 * (value - thresholds.good)) /
-            (thresholds.elite - thresholds.good);
-      else if (value >= thresholds.average)
-        score =
-          50 +
-          (25 * (value - thresholds.average)) /
-            (thresholds.good - thresholds.average);
-      else if (value >= thresholds.poor)
-        score =
-          25 +
-          (25 * (value - thresholds.poor)) /
-            (thresholds.average - thresholds.poor);
-      else score = Math.max(0, (25 * value) / thresholds.poor);
-    }
-
-    totalScore += score * weight;
+    totalScore += percentile * weight;
     totalWeight += weight;
   });
 
   if (totalWeight === 0) return "no-data";
 
-  const averageScore = totalScore / totalWeight;
+  const averagePercentile = totalScore / totalWeight;
 
-  if (averageScore >= 85) return "elite";
-  if (averageScore >= 70) return "excellent";
-  if (averageScore >= 55) return "good";
-  if (averageScore >= 40) return "average";
-  if (averageScore >= 25) return "below-average";
-  if (averageScore >= 10) return "poor";
+  if (averagePercentile >= 90) return "elite";
+  if (averagePercentile >= 75) return "excellent";
+  if (averagePercentile >= 60) return "good";
+  if (averagePercentile >= 40) return "average";
+  if (averagePercentile >= 25) return "below-average";
+  if (averagePercentile >= 10) return "poor";
   return "very-poor";
 };
 
-// Get color for performance level
+// Keep existing color and label functions (they work well)
 const getPerformanceColor = (level: PerformanceLevel): string => {
   const colorMap = {
     elite: "#1a5d1a",
@@ -200,7 +176,6 @@ const getPerformanceColor = (level: PerformanceLevel): string => {
   return colorMap[level];
 };
 
-// Get performance level label
 const getPerformanceLevelLabel = (level: PerformanceLevel): string => {
   const labelMap = {
     elite: "Elite (90th+ percentile)",
@@ -217,122 +192,217 @@ const getPerformanceLevelLabel = (level: PerformanceLevel): string => {
 
 export function PlayerPerformanceHeatmap({
   gameLog,
-  playoffGameLog = [], // Add default empty array
+  playoffGameLog = [],
   selectedStats,
   playerId,
   playerTeamId,
-  seasonId
-}: PlayerPerformanceHeatmapProps) {
+  seasonId,
+  missedGames = [], // Accept missed games from props (server-side data)
+  futureGames = [] // Accept future scheduled games
+}: PlayerPerformanceHeatmapProps & {
+  missedGames?: MissedGame[];
+  futureGames?: any[];
+}) {
   const [showInfo, setShowInfo] = useState(false);
   const [hoveredGame, setHoveredGame] = useState<GameLogEntry | null>(null);
   const [hoveredMissedGame, setHoveredMissedGame] = useState<any>(null);
+  const [hoveredFutureGame, setHoveredFutureGame] = useState<any>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
-  // Fetch missed games using the new hook
+  // Get today's date for filtering future games
+  const today = startOfDay(new Date());
+
+  // DEBUG: Enhanced logging
+  console.log("[PlayerPerformanceHeatmap] Enhanced Debug data:", {
+    regularSeasonGames: gameLog.length,
+    playoffGames: playoffGameLog.length,
+    missedGamesFromProps: missedGames.length,
+    playerId,
+    playerTeamId,
+    seasonId,
+    firstRegularGame: gameLog[0],
+    firstPlayoffGame: playoffGameLog[0],
+    missedGamesBreakdown: {
+      regular: missedGames.filter((mg) => !mg.isPlayoff).length,
+      playoff: missedGames.filter((mg) => mg.isPlayoff).length
+    },
+    sampleMissedGames: missedGames.slice(0, 3)
+  });
+
+  // Use server-side missed games data instead of client-side hook
+  // Still keep the hook for backward compatibility but prioritize props
   const {
-    missedGames,
+    missedGames: hookMissedGames,
     isLoading: missedGamesLoading,
     error: missedGamesError
   } = useMissedGames(playerId, playerTeamId, seasonId, gameLog, playoffGameLog);
 
-  // Create calendar data combining regular season, playoff games, and missed games
+  // Get all games data (both missed and future) from either props or hook
+  const allMissedGamesData =
+    missedGames.length > 0 ? missedGames : hookMissedGames;
+
+  // Separate past missed games from future scheduled games
+  const filteredMissedGames = allMissedGamesData.filter((game) => {
+    const gameDate = startOfDay(new Date(game.date));
+    return !isAfter(gameDate, today) && !game.isFuture;
+  });
+
+  const futureScheduledGames = allMissedGamesData.filter((game) => {
+    const gameDate = startOfDay(new Date(game.date));
+    return isAfter(gameDate, today) || game.isFuture;
+  });
+
+  console.log("[PlayerPerformanceHeatmap] Active missed games:", {
+    source: missedGames.length > 0 ? "server-side" : "client-hook",
+    total: allMissedGamesData.length,
+    missedCount: filteredMissedGames.length,
+    futureCount: futureScheduledGames.length,
+    loading: missedGamesLoading,
+    error: missedGamesError
+  });
+
+  // Create calendar data combining regular season, playoff games, missed games, and future games
   const calendarData = useMemo(() => {
-    if (gameLog.length === 0 && playoffGameLog.length === 0) return [];
+    if (gameLog.length === 0 && playoffGameLog.length === 0) {
+      console.log("[PlayerPerformanceHeatmap] No game data available");
+      return [];
+    }
 
-    // Combine regular season and playoff games
-    const allGames = [...gameLog, ...playoffGameLog];
+    // Combine all games and mark playoff games properly
+    const allGames = [
+      ...gameLog.map((game) => ({ ...game, isPlayoff: false })), // Mark regular season games
+      ...playoffGameLog.map((game) => ({ ...game, isPlayoff: true })) // Mark playoff games
+    ];
 
-    // Group games by date
+    console.log("[PlayerPerformanceHeatmap] Combined games:", {
+      totalGames: allGames.length,
+      regularSeason: gameLog.length,
+      playoffs: playoffGameLog.length,
+      futureScheduledCount: futureScheduledGames.length
+    });
+
+    // Create efficient maps for O(1) lookups
     const gamesByDate = new Map<string, GameLogEntry>();
+    const missedGamesByDate = new Map<string, any>();
+    const futureGamesByDate = new Map<string, any>();
+
     allGames.forEach((game) => {
       const dateKey = format(new Date(game.date), "yyyy-MM-dd");
       gamesByDate.set(dateKey, game);
     });
 
-    // Create missed games map by date
-    const missedGamesByDate = new Map<string, any>();
-    missedGames.forEach((missedGame) => {
+    // Only include missed games that are not in the future
+    filteredMissedGames.forEach((missedGame) => {
       const dateKey = format(new Date(missedGame.date), "yyyy-MM-dd");
       missedGamesByDate.set(dateKey, missedGame);
+      console.log(
+        `[PlayerPerformanceHeatmap] Added missed game: ${dateKey} (${missedGame.isPlayoff ? "playoff" : "regular"})`
+      );
     });
 
-    // Get date range - ensure we cover the full hockey season including playoffs
-    const dates = allGames.map((game) => new Date(game.date));
-    let startDate: Date;
-    let endDate: Date;
-
-    if (dates.length > 0) {
-      const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
-      const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
-
-      // For hockey seasons, ensure we start from October and go through June
-      // to capture the full season including playoffs
-      const seasonStartYear =
-        minDate.getMonth() >= 6
-          ? minDate.getFullYear()
-          : minDate.getFullYear() - 1;
-      startDate = new Date(seasonStartYear, 9, 1); // October 1st
-
-      // Ensure we go at least through June for playoffs
-      const seasonEndYear =
-        maxDate.getMonth() >= 6
-          ? maxDate.getFullYear() + 1
-          : maxDate.getFullYear();
-      endDate = new Date(seasonEndYear, 5, 30); // June 30th
-
-      // But don't go past the actual latest game date by more than a month
-      const oneMonthAfterLastGame = new Date(
-        maxDate.getTime() + 30 * 24 * 60 * 60 * 1000
+    // Add future scheduled games from the hook data (not the unused futureGames prop)
+    futureScheduledGames.forEach((futureGame) => {
+      const dateKey = format(new Date(futureGame.date), "yyyy-MM-dd");
+      futureGamesByDate.set(dateKey, futureGame);
+      console.log(
+        `[PlayerPerformanceHeatmap] Added future game: ${dateKey} (${futureGame.isPlayoff ? "playoff" : "regular"})`
       );
-      if (endDate > oneMonthAfterLastGame) {
-        endDate = oneMonthAfterLastGame;
-      }
-    } else {
-      // Fallback if no games
-      const currentDate = new Date();
-      startDate = new Date(currentDate.getFullYear(), 9, 1);
-      endDate = new Date(currentDate.getFullYear() + 1, 5, 30);
+    });
+
+    console.log("[PlayerPerformanceHeatmap] Maps created:", {
+      games: gamesByDate.size,
+      missedGames: missedGamesByDate.size,
+      futureGames: futureGamesByDate.size
+    });
+
+    // Optimized date range calculation
+    const dates = allGames.map((game) => new Date(game.date));
+    if (dates.length === 0) return [];
+
+    const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
+    const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+
+    console.log("[PlayerPerformanceHeatmap] Date range:", {
+      minDate: format(minDate, "yyyy-MM-dd"),
+      maxDate: format(maxDate, "yyyy-MM-dd")
+    });
+
+    // Hockey season boundaries (October to June)
+    const seasonStartYear =
+      minDate.getMonth() >= 6
+        ? minDate.getFullYear()
+        : minDate.getFullYear() - 1;
+    const startDate = new Date(seasonStartYear, 9, 1); // October 1st
+
+    const seasonEndYear =
+      maxDate.getMonth() >= 6
+        ? maxDate.getFullYear() + 1
+        : maxDate.getFullYear();
+    let endDate = new Date(seasonEndYear, 5, 30); // June 30th
+
+    // Don't extend too far past actual data
+    const oneMonthAfterLastGame = new Date(
+      maxDate.getTime() + 30 * 24 * 60 * 60 * 1000
+    );
+    if (endDate > oneMonthAfterLastGame) {
+      endDate = oneMonthAfterLastGame;
     }
 
-    // Create months array
-    const months: Array<{
-      date: Date;
-      days: Array<{
-        date: Date;
-        game: GameLogEntry | null;
-        missedGame: any | null;
-        performanceLevel: PerformanceLevel;
-        isPlayoff: boolean;
-        isMissedGame: boolean;
-      }>;
-    }> = [];
+    console.log("[PlayerPerformanceHeatmap] Season boundaries:", {
+      seasonStart: format(startDate, "yyyy-MM-dd"),
+      seasonEnd: format(endDate, "yyyy-MM-dd")
+    });
 
+    // Generate calendar months efficiently
+    const months = [];
     let currentMonth = startOfMonth(startDate);
     const lastMonth = endOfMonth(endDate);
 
     while (currentMonth <= lastMonth) {
       const monthStart = startOfMonth(currentMonth);
       const monthEnd = endOfMonth(currentMonth);
-      const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-      const days = monthDays.map((day) => {
+      // Create calendar grid starting from the actual first day of the month
+      const calendarDays = eachDayOfInterval({
+        start: monthStart,
+        end: monthEnd
+      });
+
+      // Calculate the starting day of the week for this month (0 = Sunday, 6 = Saturday)
+      const startDayOfWeek = monthStart.getDay();
+
+      const days = calendarDays.map((day, index) => {
         const dateKey = format(day, "yyyy-MM-dd");
         const game = gamesByDate.get(dateKey) || null;
         const missedGame = missedGamesByDate.get(dateKey) || null;
+        const futureGame = futureGamesByDate.get(dateKey) || null;
         const performanceLevel = game
           ? calculatePerformanceLevel(game, selectedStats)
           : "no-data";
-        const isPlayoff = game ? Boolean(game.isPlayoff) : false;
-        const isMissedGame = Boolean(missedGame);
 
-        return {
+        // Properly detect playoff games - use the isPlayoff property we set above
+        const isPlayoff = game
+          ? Boolean(game.isPlayoff)
+          : missedGame
+            ? Boolean(missedGame.isPlayoff)
+            : futureGame
+              ? Boolean(futureGame.isPlayoff)
+              : false;
+
+        const dayData = {
           date: day,
           game,
           missedGame,
+          futureGame,
           performanceLevel,
           isPlayoff,
-          isMissedGame
+          isMissedGame: Boolean(missedGame),
+          isFutureGame: Boolean(futureGame),
+          isCurrentMonth: true,
+          gridPosition: index === 0 ? startDayOfWeek + 1 : undefined // CSS grid position for first day
         };
+
+        return dayData;
       });
 
       months.push({ date: currentMonth, days });
@@ -343,17 +413,43 @@ export function PlayerPerformanceHeatmap({
       );
     }
 
+    console.log(
+      "[PlayerPerformanceHeatmap] Generated calendar months:",
+      months.length
+    );
+    console.log(
+      "[PlayerPerformanceHeatmap] Days with missed games:",
+      months.reduce(
+        (total, month) =>
+          total + month.days.filter((day) => day.isMissedGame).length,
+        0
+      )
+    );
+
     return months;
-  }, [gameLog, playoffGameLog, selectedStats, missedGames]);
+  }, [
+    gameLog,
+    playoffGameLog,
+    selectedStats,
+    filteredMissedGames,
+    futureScheduledGames
+  ]);
 
   // Calculate calendar stats
   const calendarStats = useMemo(() => {
-    const gamesWithData = gameLog.filter(
-      (game) => game.games_played !== null && game.games_played > 0
-    );
-    if (gamesWithData.length === 0) return null;
+    // Include BOTH regular season and playoff games in stats calculation
+    const allGamesWithData = [
+      ...gameLog.filter(
+        (game) => game.games_played !== null && game.games_played > 0
+      ),
+      ...playoffGameLog.filter(
+        (game) => game.games_played !== null && game.games_played > 0
+      )
+    ];
 
-    const performanceLevels = gamesWithData.map((game) =>
+    if (allGamesWithData.length === 0) return null;
+
+    const performanceLevels = allGamesWithData.map((game) =>
       calculatePerformanceLevel(game, selectedStats)
     );
     const levelCounts = performanceLevels.reduce(
@@ -365,37 +461,58 @@ export function PlayerPerformanceHeatmap({
     );
 
     const eliteGames = (levelCounts.elite || 0) + (levelCounts.excellent || 0);
-    const totalGames = gamesWithData.length;
+    const goodOrBetterGames = eliteGames + (levelCounts.good || 0);
+    const totalGames = allGamesWithData.length;
+    const regularSeasonGames = gameLog.filter(
+      (game) => game.games_played !== null && game.games_played > 0
+    ).length;
+    const playoffGames = playoffGameLog.filter(
+      (game) => game.games_played !== null && game.games_played > 0
+    ).length;
 
     return {
       totalGames,
+      regularSeasonGames,
+      playoffGames,
       eliteGames,
+      goodOrBetterGames,
       elitePercentage: totalGames > 0 ? (eliteGames / totalGames) * 100 : 0,
+      goodOrBetterPercentage:
+        totalGames > 0 ? (goodOrBetterGames / totalGames) * 100 : 0,
       levelCounts
     };
-  }, [gameLog, selectedStats]);
+  }, [gameLog, playoffGameLog, selectedStats]);
 
+  // Event handlers
   const handleMouseEnter = (
     game: GameLogEntry | null,
     missedGame: any | null,
+    futureGame: any | null,
     event: React.MouseEvent
   ) => {
     if (game) {
       setHoveredGame(game);
       setHoveredMissedGame(null);
-      setTooltipPosition({ x: event.clientX, y: event.clientY });
+      setHoveredFutureGame(null);
     } else if (missedGame) {
       setHoveredMissedGame(missedGame);
       setHoveredGame(null);
-      setTooltipPosition({ x: event.clientX, y: event.clientY });
+      setHoveredFutureGame(null);
+    } else if (futureGame) {
+      setHoveredFutureGame(futureGame);
+      setHoveredGame(null);
+      setHoveredMissedGame(null);
     }
+    setTooltipPosition({ x: event.clientX, y: event.clientY });
   };
 
   const handleMouseLeave = () => {
     setHoveredGame(null);
     setHoveredMissedGame(null);
+    setHoveredFutureGame(null);
   };
 
+  // Enhanced tooltip renderers using shared constants
   const renderInfoTooltip = () => (
     <div className={styles.infoTooltip}>
       <h4>Performance Calendar Explanation</h4>
@@ -431,25 +548,68 @@ export function PlayerPerformanceHeatmap({
 
       <h5>Scoring System:</h5>
       <p>
-        Each game is scored based on weighted performance across selected
-        statistics:
+        Each game is scored using weighted percentile analysis across selected
+        statistics, with higher weights for more impactful metrics like points,
+        goals, and advanced possession stats.
       </p>
 
-      <div className={styles.thresholdBreakdown}>
-        {Object.entries(PERFORMANCE_THRESHOLDS).map(([stat, thresholds]) => (
-          <div key={stat} className={styles.thresholdStat}>
-            <strong>{stat.replace(/_/g, " ")}:</strong>
-            <span>
-              Elite: {thresholds.elite} | Good: {thresholds.good} | Average:{" "}
-              {thresholds.average} | Poor: {thresholds.poor}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <em>* Giveaways are inverted (lower values = better performance)</em>
+      <em>
+        Performance is calculated relative to NHL averages and position-specific
+        expectations.
+      </em>
     </div>
   );
+
+  const renderGameTooltip = (game: GameLogEntry) => {
+    const performanceLevel = calculatePerformanceLevel(game, selectedStats);
+    const performanceLevelLabel = getPerformanceLevelLabel(performanceLevel);
+
+    return (
+      <div
+        className={styles.gameTooltip}
+        style={{
+          position: "fixed",
+          left: tooltipPosition.x + 10,
+          top: tooltipPosition.y - 10,
+          zIndex: 1000
+        }}
+      >
+        <div className={styles.tooltipHeader}>
+          <strong>{format(new Date(game.date), "MMM d, yyyy")}</strong>
+          {game.isPlayoff && (
+            <span className={styles.playoffLabel}>PLAYOFF GAME</span>
+          )}
+          <span className={styles.performanceLevel}>
+            {performanceLevelLabel}
+          </span>
+        </div>
+
+        <div className={styles.tooltipStats}>
+          {selectedStats.slice(0, 6).map((stat) => {
+            const value = game[stat];
+            if (value === null || value === undefined) return null;
+
+            return (
+              <div key={stat} className={styles.tooltipStat}>
+                <div className={styles.statHeader}>
+                  <span className={styles.statName}>
+                    {STAT_DISPLAY_NAMES[stat] || stat}
+                  </span>
+                  <span className={styles.statValue}>
+                    {formatStatValue(value, stat)}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className={styles.tooltipFooter}>
+          <em>Performance based on weighted multi-stat analysis</em>
+        </div>
+      </div>
+    );
+  };
 
   const renderMissedGameTooltip = (missedGame: any) => {
     return (
@@ -488,10 +648,7 @@ export function PlayerPerformanceHeatmap({
     );
   };
 
-  const renderGameTooltip = (game: GameLogEntry) => {
-    const performanceLevel = calculatePerformanceLevel(game, selectedStats);
-    const performanceLevelLabel = getPerformanceLevelLabel(performanceLevel);
-
+  const renderFutureGameTooltip = (futureGame: any) => {
     return (
       <div
         className={styles.gameTooltip}
@@ -503,42 +660,28 @@ export function PlayerPerformanceHeatmap({
         }}
       >
         <div className={styles.tooltipHeader}>
-          <strong>{format(new Date(game.date), "MMM d, yyyy")}</strong>
-          <span className={styles.performanceLevel}>
-            {performanceLevelLabel}
-          </span>
+          <strong>{format(new Date(futureGame.date), "MMM d, yyyy")}</strong>
+          {futureGame.isPlayoff && (
+            <span className={styles.playoffLabel}>PLAYOFF GAME</span>
+          )}
+          <span className={styles.performanceLevel}>Scheduled Game</span>
         </div>
 
         <div className={styles.tooltipStats}>
-          {selectedStats.map((stat) => {
-            const value = game[stat];
-            if (value === null || value === undefined) return null;
-
-            const thresholds =
-              PERFORMANCE_THRESHOLDS[
-                stat as keyof typeof PERFORMANCE_THRESHOLDS
-              ];
-            if (!thresholds) return null;
-
-            return (
-              <div key={stat} className={styles.tooltipStat}>
-                <div className={styles.statHeader}>
-                  <span className={styles.statName}>
-                    {stat.replace(/_/g, " ")}
-                  </span>
-                  <span className={styles.statValue}>
-                    {typeof value === "number"
-                      ? value.toFixed(stat === "toi_per_game" ? 1 : 0)
-                      : value}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
+          <div className={styles.tooltipStat}>
+            <span className={styles.statLabel}>Status:</span>
+            <span className={styles.statValue}>Upcoming</span>
+          </div>
+          {futureGame.opponent && (
+            <div className={styles.tooltipStat}>
+              <span className={styles.statLabel}>Opponent:</span>
+              <span className={styles.statValue}>{futureGame.opponent}</span>
+            </div>
+          )}
         </div>
 
         <div className={styles.tooltipFooter}>
-          <em>Performance based on weighted multi-stat analysis</em>
+          <em>Future scheduled game</em>
         </div>
       </div>
     );
@@ -625,6 +768,18 @@ export function PlayerPerformanceHeatmap({
               <div
                 className={styles.legendColor}
                 style={{
+                  backgroundColor: "transparent",
+                  border: "2px solid #14a2d2",
+                  width: 12,
+                  height: 12
+                }}
+              />
+              <span>Future Game</span>
+            </div>
+            <div className={styles.legendItem}>
+              <div
+                className={styles.legendColor}
+                style={{
                   backgroundColor: "#4fb84f",
                   border: "2px solid #eab308",
                   width: 12,
@@ -635,6 +790,30 @@ export function PlayerPerformanceHeatmap({
             </div>
           </div>
         </div>
+
+        {/* Debug info panel */}
+        {process.env.NODE_ENV === "development" && (
+          <div
+            style={{
+              background: "#333",
+              padding: "10px",
+              borderRadius: "4px",
+              fontSize: "12px",
+              marginTop: "10px"
+            }}
+          >
+            <strong>Debug Info:</strong>
+            <br />
+            Games: {gameLog.length} regular, {playoffGameLog.length} playoff
+            <br />
+            Missed: {filteredMissedGames.length} total (filtered from{" "}
+            {allMissedGamesData.length})
+            <br />
+            Future: {futureScheduledGames.length} scheduled
+            <br />
+            Source: {missedGames.length > 0 ? "Server-side" : "Client hook"}
+          </div>
+        )}
       </div>
 
       <div className={styles.calendarGrid}>
@@ -655,34 +834,60 @@ export function PlayerPerformanceHeatmap({
               </div>
               <div className={styles.daysContainer}>
                 {month.days.map((day) => {
-                  const isCurrentMonth =
-                    day.date.getMonth() === month.date.getMonth();
+                  const dayClasses = [
+                    styles.dayCell,
+                    !day.isCurrentMonth && styles.otherMonth,
+                    day.isMissedGame && styles.missedGameDay,
+                    day.isFutureGame && styles.futureGameDay,
+                    day.isPlayoff &&
+                      (day.game || day.missedGame || day.futureGame) &&
+                      styles.playoffGame
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
 
                   return (
                     <div
                       key={day.date.toISOString()}
-                      className={`${styles.dayCell} ${!isCurrentMonth ? styles.otherMonth : ""} ${day.isMissedGame ? styles.missedGameDay : ""} ${day.isPlayoff && day.game ? styles.playoffGame : ""}`}
+                      className={dayClasses}
                       style={{
                         backgroundColor: day.isMissedGame
-                          ? "#333"
-                          : day.game
-                            ? getPerformanceColor(day.performanceLevel)
-                            : "transparent"
+                          ? "rgba(239, 68, 68, 0.15)"
+                          : day.isFutureGame
+                            ? "transparent"
+                            : day.game && day.isCurrentMonth
+                              ? getPerformanceColor(day.performanceLevel)
+                              : "transparent",
+                        opacity: day.isCurrentMonth ? 1 : 0.3,
+                        gridColumnStart: day.gridPosition,
+                        border: day.isMissedGame
+                          ? "2px solid #ef4444"
+                          : day.isFutureGame
+                            ? "2px solid #14a2d2" // Using the actual primary color value
+                            : day.isPlayoff && (day.game || day.missedGame)
+                              ? "2px solid #eab308"
+                              : "1px solid #505050" // Using border-secondary color value
                       }}
                       onMouseEnter={(e) =>
-                        handleMouseEnter(day.game, day.missedGame, e)
+                        handleMouseEnter(
+                          day.game,
+                          day.missedGame,
+                          day.futureGame,
+                          e
+                        )
                       }
                       onMouseLeave={handleMouseLeave}
                     >
                       <span className={styles.dayNumber}>
                         {day.date.getDate()}
                       </span>
-                      {day.isMissedGame && (
+                      {day.isMissedGame && day.isCurrentMonth && (
                         <div className={styles.missedGameIndicator}>
                           <img
                             src="/pictures/injured.png"
                             alt="Missed Game"
                             className={styles.injuredIcon}
+                            style={{ width: 12, height: 12 }}
                           />
                         </div>
                       )}
@@ -697,6 +902,7 @@ export function PlayerPerformanceHeatmap({
 
       {hoveredGame && renderGameTooltip(hoveredGame)}
       {hoveredMissedGame && renderMissedGameTooltip(hoveredMissedGame)}
+      {hoveredFutureGame && renderFutureGameTooltip(hoveredFutureGame)}
 
       {calendarStats && (
         <div className={styles.calendarFooter}>
@@ -705,6 +911,18 @@ export function PlayerPerformanceHeatmap({
               <span className={styles.statLabel}>Total Games</span>
               <span className={styles.statValue}>
                 {calendarStats.totalGames}
+              </span>
+            </div>
+            <div className={styles.statItem}>
+              <span className={styles.statLabel}>Regular Season</span>
+              <span className={styles.statValue}>
+                {calendarStats.regularSeasonGames}
+              </span>
+            </div>
+            <div className={styles.statItem}>
+              <span className={styles.statLabel}>Playoff Games</span>
+              <span className={styles.statValue}>
+                {calendarStats.playoffGames}
               </span>
             </div>
             <div className={styles.statItem}>
@@ -719,13 +937,20 @@ export function PlayerPerformanceHeatmap({
                 {calendarStats.elitePercentage.toFixed(1)}%
               </span>
             </div>
+            <div className={styles.statItem}>
+              <span className={styles.statLabel}>Good+ Rate</span>
+              <span className={styles.statValue}>
+                {calendarStats.goodOrBetterPercentage.toFixed(1)}%
+              </span>
+            </div>
           </div>
 
           <div className={styles.calendarNote}>
             <p>
               Performance levels are calculated based on weighted analysis of
               selected statistics. Colors represent relative performance
-              compared to NHL averages.
+              compared to NHL averages using shared formatting standards. Yellow
+              borders indicate playoff games.
             </p>
           </div>
         </div>

@@ -83,7 +83,10 @@ const LeaderboardCategory: React.FC<LeaderboardCategoryProps> = ({
               />
             </div>
           );
-        } else if (title === "PPP" && player.pp_points > 0) {
+        } else if (
+          (title === "Power Play Points" || title === "PPP") &&
+          player.pp_points > 0
+        ) {
           const totalPPP = player.pp_points;
           const pppGoals = player.pp_goals;
           const remainingAssists = totalPPP - pppGoals;

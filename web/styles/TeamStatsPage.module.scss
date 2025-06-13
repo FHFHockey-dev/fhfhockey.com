@@ -8,49 +8,145 @@
 
 .teamHeader {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  margin-bottom: 0;
+  border-bottom: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 
-  margin-bottom: 2rem;
-  border-bottom: 1px solid v.$border-color-secondary;
-
-  background: linear-gradient(
-    180deg,
-    var(--primary-color) 0%,
-    var(--primary-color) 60%,
-    var(--jersey) 60%,
-    var(--jersey) 65%,
-    var(--secondary-color) 65%,
-    var(--secondary-color) 73%,
-    var(--accent) 73%,
-    var(--accent) 81%,
-    var(--jersey) 81%,
-    var(--jersey) 100%
-  );
+  // background: linear-gradient(
+  //   180deg,
+  //   var(--primary-color) 0%,
+  //   var(--primary-color) 55%,
+  //   var(--jersey) 55%,
+  //   var(--jersey) 62%,  7
+  //   var(--secondary-color) 62%,
+  //   var(--secondary-color) 69%, 7
+  //   var(--accent) 69%,
+  //   var(--accent) 76%, 7
+  //   var(--jersey) 76%,
+  //   var(--jersey) 100% 4
+  // );
 }
 
 .teamLogoContainer {
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 1rem;
-  padding: 0.2rem 3rem;
+  padding: 1rem 3rem 1.5rem 3rem;
+  height: 120px;
+
+  background: linear-gradient(
+    180deg,
+    var(--primary-color) 0%,
+    var(--primary-color) 73%,
+    var(--jersey) 73%,
+    var(--jersey) 82%,
+    var(--accent) 82%,
+    var(--accent) 91%,
+    var(--secondary-color) 91%,
+    var(--secondary-color) 100%
+  );
 }
 
 .teamLogo {
-  width: 130px;
-  height: 130px;
+  width: 120px;
+  height: 120px;
   object-fit: contain;
+  // background: rgba(from var(--primary-color) r g b / 0.2);
+  border-radius: 12px;
+  padding-top: 10px;
+}
+
+.teamDetails {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  gap: 2rem;
+  margin-bottom: 20px;
+}
+
+.teamInfo {
+  display: flex;
+  flex-direction: column;
 }
 
 .teamName {
   font-size: 2.2rem;
-  font-weight: 900;
+  font-weight: 700;
+  font-family: v.$font-family-accent, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
   margin: 0;
-  margin-left: 2rem;
-  margin-bottom: 3rem;
-  letter-spacing: 0.1em;
-  color: v.$color-white !important;
+  background: var(--accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+
+  @media (max-width: 768px) {
+    font-size: 1.8rem;
+  }
+}
+
+.seasonInfo {
+  font-size: 1rem;
+  color: #aaa;
+  margin: 0;
+}
+
+.quickStats {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+
+  @media (max-width: 768px) {
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+}
+
+.quickStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--primary-color) 70%, #000);
+  border-radius: 8px;
+  border: 2px solid color-mix(in srgb, var(--primary-color) 70%, #fff);
+  min-width: 80px;
+
+  .quickStatValue {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: color-mix(in srgb, var(--primary-color) 70%, #fff);
+    font-family: v.$font-family-secondary, sans-serif;
+    margin-bottom: 2px;
+  }
+
+  .quickStatLabel {
+    font-size: 0.75rem;
+    color: #ccc;
+    text-align: center;
+    line-height: 1.2;
+  }
+}
+
+.quickStatsLoading {
+  color: #aaa;
+  font-size: 0.875rem;
+  margin-top: 8px;
+}
+
+.quickStatsError {
+  color: #ff6b6b;
+  font-size: 0.875rem;
+  margin-top: 8px;
 }
 
 .teamStatsTopRow {

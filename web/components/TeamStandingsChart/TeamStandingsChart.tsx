@@ -4,8 +4,9 @@ import { format, isAfter } from "date-fns";
 import useCurrentSeason from "hooks/useCurrentSeason";
 import useResizeObserver from "hooks/useResizeObserver";
 import { teamsInfo, teamNameToAbbreviationMap } from "lib/teamsInfo";
-import supabase from "lib/supabase/client";
+import supabase from "lib/supabase";
 import styles from "./TeamStandingsChart.module.scss";
+import Fetch from "lib/cors-fetch";
 
 // -------------------------------
 // TYPE DEFINITIONS
@@ -603,8 +604,8 @@ const TeamStandingsChart: React.FC = () => {
             metric === "pointPct"
               ? yScale(getMetricValue(d, metric) - 50)
               : metric === "points"
-              ? yScale(d.points - d.gamesPlayed)
-              : yScale(getMetricValue(d, metric))
+                ? yScale(d.points - d.gamesPlayed)
+                : yScale(getMetricValue(d, metric))
           )
           .attr("r", 3)
           .attr("fill", color)
@@ -618,8 +619,8 @@ const TeamStandingsChart: React.FC = () => {
                   metric === "pointPct"
                     ? (getMetricValue(d, metric) - 50).toFixed(2)
                     : metric === "points"
-                    ? (d.points - d.gamesPlayed).toFixed(2)
-                    : getMetricValue(d, metric).toFixed(2)
+                      ? (d.points - d.gamesPlayed).toFixed(2)
+                      : getMetricValue(d, metric).toFixed(2)
                 }
               `);
           })
@@ -644,8 +645,8 @@ const TeamStandingsChart: React.FC = () => {
             metric === "pointPct"
               ? yScale(getMetricValue(lastPoint, metric) - 50) - 10
               : metric === "points"
-              ? yScale(lastPoint.points - lastPoint.gamesPlayed) - 10
-              : yScale(getMetricValue(lastPoint, metric)) - 10
+                ? yScale(lastPoint.points - lastPoint.gamesPlayed) - 10
+                : yScale(getMetricValue(lastPoint, metric)) - 10
           )
           .attr("width", 20)
           .attr("height", 20);

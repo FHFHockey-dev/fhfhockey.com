@@ -1,10 +1,40 @@
 // components/GameGrid/OpponentMetricsTable.tsx
-import React, { useState, useEffect, useMemo } from "react"; // Added useState, useEffect
+import React, { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { TeamDataWithTotals } from "lib/NHL/types";
-import useTeamStats from "hooks/useTeamStats";
+import supabase from "lib/supabase"; // Import the Supabase client
 import styles from "./OpponentMetricsTable.module.scss";
-import clsx from "clsx"; // Import clsx
+import clsx from "clsx";
+
+// It's best practice to move this interface to a shared types file (e.g., lib/NHL/types.ts)
+// to avoid duplication. It is included here for completeness.
+export interface TeamStats {
+  id: number;
+  team_id: number | null;
+  franchise_name: string;
+  date: string;
+  games_played: number | null;
+  wins: number | null;
+  losses: number | null;
+  ot_losses: number | null;
+  points: number | null;
+  goals_for: number | null;
+  goals_against: number | null;
+  goals_for_per_game: number | null;
+  goals_against_per_game: number | null;
+  point_pct: number | null;
+  regulation_and_ot_wins: number | null;
+  wins_in_regulation: number | null;
+  wins_in_shootout: number | null;
+  faceoff_win_pct: number | null;
+  power_play_pct: number | null;
+  penalty_kill_pct: number | null;
+  shots_for_per_game: number | null;
+  shots_against_per_game: number | null;
+  season_id: number | null;
+  game_id: number | null;
+  opponent_id: number | null;
+}
 
 // --- Re-add useIsMobile hook ---
 function useIsMobile() {
@@ -38,18 +68,77 @@ type Averages = {
 export default function OpponentMetricsTable({
   teamData
 }: OpponentMetricsTableProps) {
-  const teamStats = useTeamStats();
-  const isMobile = useIsMobile(); // Use the hook
-  const [isMobileMinimized, setIsMobileMinimized] = useState(false); // State for minimizing
+  // State for storing stats for ALL teams, keyed by abbreviation
+  const [allTeamStats, setAllTeamStats] = useState<{
+    [key: string]: TeamStats;
+  }>({});
+  const [statsLoading, setStatsLoading] = useState(true);
 
-  // --- Handlers ---
+  const isMobile = useIsMobile();
+  const [isMobileMinimized, setIsMobileMinimized] = useState(false);
+
+  // Effect to fetch and process stats for all teams on component mount
+  useEffect(() => {
+    const fetchAndProcessAllStats = async () => {
+      setStatsLoading(true);
+
+      const { data: allStatsData, error } = await supabase
+        .from("wgo_team_stats")
+        .select("*");
+
+      if (error) {
+        console.error("Failed to fetch all team stats:", error);
+        setStatsLoading(false);
+        return;
+      }
+
+      if (allStatsData) {
+        // Create a map from team_id to abbreviation using the teamData prop.
+        // NOTE: This assumes the `teamData` prop contains every team that might
+        // appear as an opponent. A more robust solution involves having a
+        // dedicated 'teams' table in your database that maps IDs to abbreviations.
+        const teamIdToAbbrMap = new Map<number, string>();
+        teamData.forEach((team) => {
+          if (team.teamId && team.teamAbbreviation) {
+            teamIdToAbbrMap.set(
+              team.teamId,
+              team.teamAbbreviation.toUpperCase()
+            );
+          }
+        });
+
+        const statsByAbbr = allStatsData.reduce<{ [key: string]: TeamStats }>(
+          (acc, stat) => {
+            const abbr = teamIdToAbbrMap.get(stat.team_id!);
+            if (abbr) {
+              // This will overwrite, keeping the last fetched stat for a team.
+              // If your table has multiple entries per team, you may need to
+              // add logic here to select the most recent one.
+              acc[abbr] = stat;
+            }
+            return acc;
+          },
+          {}
+        );
+
+        setAllTeamStats(statsByAbbr);
+      }
+      setStatsLoading(false);
+    };
+
+    if (teamData && teamData.length > 0) {
+      fetchAndProcessAllStats();
+    } else {
+      setStatsLoading(false);
+    }
+  }, [teamData]); // Rerun if teamData changes
+
   const toggleMobileMinimize = () => {
     if (isMobile) {
       setIsMobileMinimized((prev) => !prev);
     }
   };
 
-  // --- Computations (Memoized) ---
   const teamsAverages = useMemo(() => {
     const computeAverages = (team: TeamDataWithTotals): Averages => {
       const week1 = team.weeks.find((w) => w.weekNumber === 1);
@@ -68,15 +157,17 @@ export default function OpponentMetricsTable({
       const totals = week1.opponents.reduce(
         (acc, opp) => {
           const key = opp.abbreviation.toUpperCase();
-          const stats = teamStats[key];
-          // Add checks for stats existence to avoid summing undefined/NaN
-          acc.xgf += stats?.xgf_per_game ?? 0;
-          acc.xga += stats?.xga_per_game ?? 0;
-          acc.sf += stats?.sf_per_game ?? 0;
-          acc.sa += stats?.sa_per_game ?? 0;
-          acc.gf += stats?.goal_for_per_game ?? 0;
-          acc.ga += stats?.goal_against_per_game ?? 0;
-          acc.winPct += stats?.win_pctg ?? 0;
+          const stats = allTeamStats[key]; // Use the new state object
+          if (stats) {
+            // Ensure stats exist before summing
+            acc.xgf += stats.shots_for_per_game ?? 0; // Assuming xgf maps to this
+            acc.xga += stats.shots_against_per_game ?? 0; // Assuming xga maps to this
+            acc.sf += stats.shots_for_per_game ?? 0;
+            acc.sa += stats.shots_against_per_game ?? 0;
+            acc.gf += stats.goals_for_per_game ?? 0;
+            acc.ga += stats.goals_against_per_game ?? 0;
+            acc.winPct += stats.point_pct ?? 0; // Assuming win_pctg is point_pct
+          }
           return acc;
         },
         { xgf: 0, xga: 0, sf: 0, sa: 0, gf: 0, ga: 0, winPct: 0 }
@@ -91,20 +182,17 @@ export default function OpponentMetricsTable({
         avgWinPct: count > 0 ? totals.winPct / count : null
       };
     };
-    // Compute averages only if teamData is available
     return teamData
       ? teamData.map((team) => ({ team, averages: computeAverages(team) }))
       : [];
-  }, [teamData, teamStats]); // Dependencies
+  }, [teamData, allTeamStats]); // Use allTeamStats as a dependency
 
   const sortedTeamsAverages = useMemo(() => {
-    // Sort the computed averages
     return [...teamsAverages].sort((a, b) =>
       a.team.teamAbbreviation.localeCompare(b.team.teamAbbreviation)
     );
-  }, [teamsAverages]); // Dependency
+  }, [teamsAverages]);
 
-  // Define the metrics for the header (order matters)
   const metricColumns: { label: string; key: keyof Averages }[] = [
     { label: "xGF", key: "avgXgf" },
     { label: "xGA", key: "avgXga" },
@@ -115,29 +203,23 @@ export default function OpponentMetricsTable({
     { label: "W%", key: "avgWinPct" }
   ];
 
-  // Handler for title click, only works on mobile
   const handleTitleClick = isMobile ? toggleMobileMinimize : undefined;
-
-  // Loading/No Data State Check
-  const isLoading = Object.keys(teamStats).length === 0; // Simple check if stats are loaded
   const hasData = sortedTeamsAverages.length > 0;
 
   return (
-    // Add minimized class to main container conditionally
     <div
       className={clsx(
         styles.container,
         isMobile && isMobileMinimized && styles.minimized
       )}
     >
-      {/* Clickable Title Header */}
       <div
         className={styles.titleHeader}
         onClick={handleTitleClick}
         role={isMobile ? "button" : undefined}
         tabIndex={isMobile ? 0 : undefined}
         aria-expanded={isMobile ? !isMobileMinimized : undefined}
-        aria-controls={isMobile ? "opponent-metrics-content" : undefined}
+        aria-controls="opponent-metrics-content"
       >
         <span className={styles.titleText}>
           AVG OPPONENT <span className={styles.spanColorBlue}>STATS</span>
@@ -154,21 +236,14 @@ export default function OpponentMetricsTable({
           </span>
         )}
       </div>
-
-      {/* Collapsible Content Wrapper */}
-      <div
-        id="opponent-metrics-content"
-        className={styles.tableWrapper} // This div handles the collapse transition & visuals
-      >
-        {isLoading ? (
+      <div id="opponent-metrics-content" className={styles.tableWrapper}>
+        {statsLoading ? (
           <div className={styles.message}>Loading opponent stats...</div>
         ) : !hasData ? (
           <div className={styles.message}>No opponent data available.</div>
         ) : (
-          // Scroll Container for the Table
           <table className={styles.table}>
             <thead>
-              {/* Second header row: Team + Metric Labels */}
               <tr>
                 <th>Team</th>
                 {metricColumns.map((metric) => (
@@ -188,15 +263,14 @@ export default function OpponentMetricsTable({
                     />
                   </td>
                   {metricColumns.map((metric) => {
-                    const value = averages[metric.key]; // Access directly using keyof
+                    const value = averages[metric.key];
                     return (
                       <td key={metric.key}>
                         {value != null
                           ? metric.key === "avgWinPct"
-                            ? (value * 100).toFixed(1) // Format percentage
-                            : value.toFixed(1) // Format other metrics
-                          : "-"}{" "}
-                        {/* Placeholder for null */}
+                            ? (value * 100).toFixed(1)
+                            : value.toFixed(1)
+                          : "-"}
                       </td>
                     );
                   })}
