@@ -46,9 +46,9 @@ export const teamsInfo: {
     name: "New York Islanders",
     shortName: "Islanders",
     primaryColor: "#003087", // Blue
-    secondaryColor: "#FFFFFF", // White
+    secondaryColor: "#000000", // White
     jersey: "#FC4C02", // Orange
-    accent: "#000000", // Black
+    accent: "#FFFFFF", // Black
     lightColor: "#1f5fd5", // Lighter Blue
     darkColor: "#08265f", // Darker Blue
     alt: "#FFFFFF",
@@ -205,7 +205,7 @@ export const teamsInfo: {
     accent: "#000000",
     lightColor: "#3478f6", // Lighter Blue
     darkColor: "#1b1d7e", // Darker Blue
-    alt: "#",
+    alt: "#3478f6",
     franchiseId: 31,
     nstAbbr: "T.B",
     id: 14
@@ -219,7 +219,7 @@ export const teamsInfo: {
     accent: "#A2AAAD", // Silver
     lightColor: "#103a75", // Lighter Blue
     darkColor: "#011f4a", // Darker Blue
-    alt: "#",
+    alt: "#103a75",
     franchiseId: 24,
     nstAbbr: "WSH",
     id: 15
@@ -245,7 +245,7 @@ export const teamsInfo: {
     secondaryColor: "#FFFFFF", // White
     jersey: "#8D9093", // Silver
     accent: "#DDCBA4", // Tan
-    alt: "#",
+    alt: "#d72d49",
     lightColor: "#d72d49", // Lighter Red
     darkColor: "#6c0415", // Darker Red
     franchiseId: 12,
@@ -261,7 +261,7 @@ export const teamsInfo: {
     accent: "#A2AAAD", // Silver
     lightColor: "#efbe53", // Lighter gold
     darkColor: "#da9501", // Darker gold
-    alt: "#",
+    alt: "#efbe53",
     franchiseId: 34,
     nstAbbr: "NSH",
     id: 18
@@ -275,7 +275,7 @@ export const teamsInfo: {
     accent: "#FFFFFF", // White
     lightColor: "#3478f6", // Lighter Blue
     darkColor: "#1b1d7e", // Darker Blue
-    alt: "#",
+    alt: "#3478f6",
     franchiseId: 18,
     nstAbbr: "STL",
     id: 19
@@ -303,7 +303,7 @@ export const teamsInfo: {
     accent: "#FFFFFF", // White
     lightColor: "#3478f6", // Lighter Blue
     darkColor: "#1b1d7e", // Darker Blue
-    alt: "#",
+    alt: "#3478f6",
     franchiseId: 27,
     nstAbbr: "COL",
     id: 21
@@ -315,7 +315,7 @@ export const teamsInfo: {
     secondaryColor: "#FC4C02", // Orange
     jersey: "#FFFFFF", // White
     accent: "#A2AAAD", // Silver
-    alt: "#",
+    alt: "#1953bf",
     lightColor: "#1953bf", // Lighter Blue
     darkColor: "#1b1d7e", // Darker Blue
     franchiseId: 25,
@@ -329,7 +329,7 @@ export const teamsInfo: {
     secondaryColor: "#00843D", // Green
     jersey: "#ffffff", // White
     accent: "#041C2C", // Navy
-    alt: "#", // White
+    alt: "#259358", // White
     lightColor: "#259358", // Lighter green
     darkColor: "#024421", // Darker green
     franchiseId: 20,
@@ -359,7 +359,7 @@ export const teamsInfo: {
     accent: "#FFFFFF", // White
     lightColor: "#65ed50", // Lighter green
     darkColor: "#116704", // Darker green
-    alt: "#",
+    alt: "#65ed50",
     franchiseId: 15,
     nstAbbr: "DAL",
     id: 25
@@ -373,7 +373,7 @@ export const teamsInfo: {
     accent: "#A2AAAD", // Silver
     lightColor: "#bac8cd", // Lighter silver
     darkColor: "#656768", // Darker Black
-    alt: "#",
+    alt: "#656768",
     franchiseId: 14,
     nstAbbr: "L.A",
     id: 26
@@ -387,7 +387,7 @@ export const teamsInfo: {
     accent: "#EA7200", // Orange
     lightColor: "#1a8d96", // Lighter teal
     darkColor: "#015156", // Darker teal
-    alt: "#",
+    alt: "#1a8d96",
     franchiseId: 29,
     nstAbbr: "S.J",
     id: 28
@@ -401,7 +401,7 @@ export const teamsInfo: {
     accent: "#c8102e", // Red
     lightColor: "#1756a3", // Lighter Blue
     darkColor: "#001835", // Darker Blue
-    alt: "#",
+    alt: "#1756a3",
     franchiseId: 36,
     nstAbbr: "CBJ",
     id: 29
@@ -413,7 +413,7 @@ export const teamsInfo: {
     secondaryColor: "#DDCBA4", // Tan
     jersey: "#A6192E", // Red
     accent: "#FFFFFF", // White
-    alt: "#",
+    alt: "#24694f",
     lightColor: "#24694f", // Lighter green
     darkColor: "#0b2e21", // Darker green
     franchiseId: 37,
@@ -429,7 +429,7 @@ export const teamsInfo: {
     accent: "#55565A", // Grey
     lightColor: "#1953bf", // Lighter Blue
     darkColor: "#1b1d7e", // Darker Blue
-    alt: "#",
+    alt: "#1953bf",
     franchiseId: 35,
     nstAbbr: "WPG",
     id: 52
@@ -457,7 +457,7 @@ export const teamsInfo: {
     accent: "#000000", // Black
     lightColor: "#696e72", // Lighter Grey
     darkColor: "#0f1112", // Darker Grey
-    alt: "#",
+    alt: "#696e72",
     franchiseId: 38,
     nstAbbr: "VGK",
     id: 54
@@ -471,7 +471,7 @@ export const teamsInfo: {
     accent: "#E9072B", // Red
     lightColor: "#6bcdf4", // Lighter Blue
     darkColor: "#4592b0", // Darker Blue
-    alt: "#",
+    alt: "#6bcdf4",
     franchiseId: 39,
     nstAbbr: "SEA",
     id: 55

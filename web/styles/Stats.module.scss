@@ -2,250 +2,1289 @@
 @use "styles/vars" as v;
 @use "sass:math";
 
-/* Container & Layout */
+// =============================================================================
+// BASE LAYOUT & CONTAINER
+// =============================================================================
+
 .container {
-  padding: 1rem;
-  width: 90%;
-  height: 90%;
+  width: 95%;
+  max-width: none;
+  margin: 0 auto;
+  padding: v.$space-md;
+  background: v.$background-light;
+  min-height: 100vh;
+}
+
+// =============================================================================
+// HERO SECTION - COMPACT
+// =============================================================================
+
+.heroSection {
+  @include v.component-wrapper;
+  padding: v.$space-lg v.$space-md;
+  margin-bottom: v.$space-lg;
+  text-align: center;
+  background: v.$background-medium;
+  border: 1px solid v.$border-primary;
+}
+
+.heroContent {
+  max-width: 1200px;
   margin: 0 auto;
 }
 
-.teamList {
-  display: grid;
-  width: 100%;
-  grid-template-columns: repeat(16, 1fr);
-  grid-row-gap: 1.5rem;
-  margin: auto;
+.heroTitle {
+  font-size: v.$font-size-xl;
+  font-weight: 700;
+  color: v.$text-primary;
+  margin-bottom: v.$space-sm;
+  font-family: v.$font-family-accent;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
+
+.heroSubtitle {
+  font-size: v.$font-size-md;
+  color: v.$text-secondary;
+  margin-bottom: v.$space-lg;
+  font-weight: 400;
+  line-height: 1.3;
+}
+
+// =============================================================================
+// COMPACT GRID SYSTEM
+// =============================================================================
+
+.quickStatsSection {
+  margin-bottom: v.$space-lg;
+}
+
+.sectionTitle {
+  color: v.$text-primary;
+  font-size: v.$font-size-lg;
+  font-weight: 600;
+  margin-bottom: v.$space-md;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: v.$space-xs;
+    left: 0;
+    width: 40px;
+    height: 2px;
+    background: v.$primary-color;
+  }
+}
+
+.quickStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: v.$space-md;
+  margin-bottom: v.$space-lg;
+}
+
+.quickStatCard {
+  @include v.component-wrapper;
+  padding: v.$space-md;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: v.$border-accent;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  &.scoring::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: v.$primary-color;
+  }
+
+  &.goaltending::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: v.$secondary-color;
+  }
+
+  &.league::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: v.$warning-color;
+  }
+}
+
+.quickStatIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: v.$border-radius-sm;
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  .iconInner {
+    width: 12px;
+    height: 12px;
+    background: v.$primary-color;
+    border-radius: 50%;
+  }
+}
+
+.quickStatContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.quickStatValue {
+  font-size: v.$font-size-lg;
+  font-weight: 700;
+  color: v.$text-primary;
+  line-height: 1;
+  margin-bottom: v.$space-xxs;
+  font-family: "SF Mono", "Monaco", "Cascadia Code", monospace;
+}
+
+.quickStatLabel {
+  font-size: v.$font-size-xs;
+  color: v.$text-primary;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: v.$space-xxs;
+}
+
+.quickStatSubtitle {
+  font-size: v.$font-size-xxs;
+  color: v.$text-secondary;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// =============================================================================
+// COMPACT FILTER SECTION
+// =============================================================================
+
+.filterSection {
+  @include v.component-wrapper;
+  padding: v.$space-md;
+  margin-bottom: v.$space-lg;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  display: flex;
+  align-items: center;
+  gap: v.$space-lg;
+}
+
+.filterTitle {
+  color: v.$text-primary;
+  font-size: v.$font-size-sm;
+  margin: 0;
+  font-weight: 600;
+  font-family: v.$font-family-accent;
+  white-space: nowrap;
+}
+
+.filterButtons {
+  display: flex;
+  gap: v.$space-xs;
+  flex-wrap: wrap;
+}
+
+.filterButton {
+  @include v.button-style;
+  background: v.$background-dark;
+  color: v.$text-secondary;
+  border: 1px solid v.$border-primary;
+  padding: v.$space-xs v.$space-sm;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  font-size: v.$font-size-xs;
+
+  &:hover:not(.filterButtonActive) {
+    background: v.$background-light;
+    color: v.$text-primary;
+    border-color: v.$border-secondary;
+  }
+}
+
+.filterButtonActive {
+  background: v.$primary-color;
+  color: v.$text-button;
+  border-color: v.$primary-color;
+  font-weight: 600;
+}
+
+// =============================================================================
+// COMPACT TEAMS GRID WITH DYNAMIC GRADIENT BACKGROUND
+// =============================================================================
+
+.teamsSection {
+  @include v.component-wrapper;
+  padding: v.$space-md;
+  margin-bottom: v.$space-lg;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  position: relative;
+  overflow: hidden;
+
+  // Sliding diagonal background layers - CRISP LINES at -115deg
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: -100%;
+    bottom: -100%;
+    left: -100%;
+    right: -100%;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.6s ease-in-out;
+    transform: translateX(-10%) translateY(-15%); // Default resting position for second layer
+  }
+
+  // First diagonal layer - PRIMARY GRADIENT
+  &::before {
+    background-image: linear-gradient(
+      -115deg,
+      var(--team-primary) 0%,
+      var(--team-primary) 22%,
+      var(--team-secondary) 22%,
+      var(--team-secondary) 24%,
+      var(--team-jersey) 24%,
+      var(--team-jersey) 26%,
+      var(--team-alt) 26%,
+      var(--team-alt) 28%,
+      var(--team-accent) 28%,
+      var(--team-accent) 30%,
+      var(--team-primary) 30%,
+      var(--team-primary) 62%,
+      var(--team-alt) 62%,
+      var(--team-alt) 64%,
+      var(--team-accent) 64%,
+      var(--team-accent) 66%,
+      var(--team-secondary) 66%,
+      var(--team-secondary) 68%,
+      var(--team-jersey) 68%,
+      var(--team-jersey) 70%,
+      var(--team-primary) 70%,
+      var(--team-primary) 98%,
+      var(--team-secondary) 98%,
+      var(--team-secondary) 100%
+    );
+  }
+
+  // Second diagonal layer - SECONDARY GRADIENT
+  &::after {
+    background-image: linear-gradient(
+      -115deg,
+      var(--team-primary) 0%,
+      var(--team-primary) 22%,
+      var(--team-secondary) 22%,
+      var(--team-secondary) 24%,
+      var(--team-jersey) 24%,
+      var(--team-jersey) 26%,
+      var(--team-alt) 26%,
+      var(--team-alt) 28%,
+      var(--team-accent) 28%,
+      var(--team-accent) 30%,
+      var(--team-primary) 30%,
+      var(--team-primary) 62%,
+      var(--team-alt) 62%,
+      var(--team-alt) 64%,
+      var(--team-accent) 64%,
+      var(--team-accent) 66%,
+      var(--team-secondary) 66%,
+      var(--team-secondary) 68%,
+      var(--team-jersey) 68%,
+      var(--team-jersey) 70%,
+      var(--team-primary) 70%,
+      var(--team-primary) 98%,
+      var(--team-secondary) 98%,
+      var(--team-secondary) 100%
+    );
+    transform: translateX(-10%) translateY(-15%); // Default resting position for second layer
+  }
+
+  // Show background when team colors are active
+  &.teamsSectionActive {
+    &::before {
+      opacity: 1;
+    }
+
+    &::after {
+      opacity: 1;
+    }
+  }
+
+  // First triggered state - moves to right position and stays
+  &.teamsSectionTriggered {
+    &::before {
+      animation: slideToRight 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    &::after {
+      animation: slideToRightAlt 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+  }
+
+  // Alternative triggered state - moves to left position and stays
+  &.teamsSectionTriggeredAlt {
+    &::before {
+      animation: slideToLeft 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    &::after {
+      animation: slideToLeftAlt 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+  }
+
+  // Ensure content is above the gradient background
+  > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+// Enhanced keyframe animations - move once and stay in position
+@keyframes slideToRight {
+  0% {
+    transform: translateX(-15%) translateY(-10%);
+  }
+  100% {
+    transform: translateX(20%) translateY(12%);
+  }
+}
+
+@keyframes slideToRightAlt {
+  0% {
+    transform: translateX(-20%) translateY(-15%);
+  }
+  100% {
+    transform: translateX(25%) translateY(17%);
+  }
+}
+
+@keyframes slideToLeft {
+  0% {
+    transform: translateX(15%) translateY(12%);
+  }
+  100% {
+    transform: translateX(-20%) translateY(-12%);
+  }
+}
+
+@keyframes slideToLeftAlt {
+  0% {
+    transform: translateX(25%) translateY(12%);
+  }
+  100% {
+    transform: translateX(-20%) translateY(-12%);
+  }
+}
+
+// =============================================================================
+// COMPACT LEADERBOARDS
+// =============================================================================
 
 .leaderboardsContainer {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: v.$space-lg;
+}
+
+.leaderboardHeader {
+  @include v.component-wrapper;
+  padding: v.$space-md v.$space-lg;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: v.$space-md;
 }
 
 .title {
-  text-align: center;
-  font-family: "Roboto Condensed", sans-serif;
-  margin-bottom: 2rem;
+  font-family: v.$font-family-accent;
+  margin: 0;
+  font-size: v.$font-size-lg;
+  font-weight: 600;
+  color: v.$text-primary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.seasonBadge {
+  background: v.$background-dark;
+  color: v.$primary-color;
+  padding: v.$space-xs v.$space-md;
+  border-radius: v.$border-radius-md;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  border: 1px solid v.$border-accent;
+  font-family: v.$font-family-accent;
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-top: 1.5rem;
-  justify-items: center;
+  gap: v.$space-md;
 }
 
-/* Card & Title */
+// =============================================================================
+// COMPACT CARD STYLING
+// =============================================================================
+
 .card {
-  background: #404040;
-  outline: 10px solid #303030;
-  font-family: "Roboto Condensed", sans-serif;
-  border-radius: 12px;
-  padding: 1rem;
-  width: 90%;
-  height: 100%;
-  margin: 0 auto;
+  @include v.component-wrapper;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  padding: v.$space-md;
+  transition: all 0.2s ease;
+  position: relative;
+  height: fit-content;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: v.$border-accent;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
 }
 
 .cardTitle {
-  margin: 0;
-  margin-bottom: 0.75rem;
-  font-size: 1.2rem;
-  text-align: center;
-  border-bottom: 1px solid #808080;
-  padding-bottom: 0.5rem;
-  color: #07aae2;
-  letter-spacing: 0.5em;
+  margin: 0 0 v.$space-md 0;
+  font-size: v.$font-size-md;
+  color: v.$text-primary;
+  font-weight: 600;
+  font-family: v.$font-family-accent;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: v.$space-xs;
+  border-bottom: 1px solid v.$border-primary;
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 30px;
+    height: 2px;
+    background: v.$primary-color;
+  }
 }
 
-/* The top row (index===0) also has this class, so it's always expanded. */
-.leaderRowExpanded {
-  align-items: flex-start; /* shift content to top alignment */
-}
+// =============================================================================
+// COMPACT LEADER ROWS
+// =============================================================================
 
-/* The main content area to the right of the headshot */
-.leaderMain {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Row with name/details on the left, the stat value on the right */
-.nameValueRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-/* Headshot styling */
-.playerHeadshot {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  object-fit: cover;
-  background-color: #202020;
-}
-
-/* Make the top row's headshot bigger, or any row that becomes expanded on hover */
-.leaderRowExpanded .playerHeadshot {
-  width: 80px;
-  height: 80px;
-}
-
-/* Name & value & details */
-.leaderName {
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.playerDetails {
-  font-size: 0.85rem;
-  font-weight: 900;
-  color: #909090;
-  margin-top: 0.1rem;
-  margin-bottom: 0.25rem;
-}
-
-.leaderValue {
-  font-size: 1.4rem;
-  font-weight: bold;
-  color: #07aae2;
-}
-
-/* Make each leader row a column so the bar is a full-width sibling */
 .leaderRow {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #808080;
+  gap: v.$space-xs;
+  padding: v.$space-sm;
+  margin-bottom: v.$space-xs;
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$border-radius-sm;
+  transition: all 0.2s ease;
+  position: relative;
+
+  &:first-child {
+    border-left: 3px solid #10b981;
+  }
+
+  &:nth-child(2) {
+    border-left: 3px solid #22c55e;
+  }
+
+  &:nth-child(3) {
+    border-left: 3px solid #84cc16;
+  }
+
+  &:nth-child(4),
+  &:nth-child(5) {
+    border-left: 3px solid v.$warning-color;
+  }
+
+  &:hover {
+    background: v.$background-light;
+    border-color: v.$border-accent;
+    transform: translateX(2px);
+  }
 }
 
-/* The container for the headshot + name/value row side by side */
+.leaderRowExpanded {
+  border-left-width: 4px;
+}
+
 .topRow {
   display: flex;
-  gap: 1rem;
-  align-items: center; /* or flex-start, if you prefer */
-  justify-content: space-between;
-  width: 100%;
+  align-items: center;
+  gap: v.$space-sm;
 }
 
-/* The bar should automatically stretch full width as a block element in a column layout */
+.playerHeadshot {
+  width: 32px;
+  height: 32px;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid v.$border-primary;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.leaderMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.nameValueRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: v.$space-sm;
+}
+
+.leaderName {
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+  color: v.$text-primary;
+  margin-bottom: v.$space-xxs;
+  font-family: v.$font-family-primary;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playerDetails {
+  font-size: v.$font-size-xxs;
+  color: v.$text-secondary;
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderValue {
+  font-size: v.$font-size-lg;
+  font-weight: 700;
+  color: v.$primary-color;
+  font-family: "SF Mono", "Monaco", "Cascadia Code", monospace;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+// =============================================================================
+// COMPACT LEADER BAR
+// =============================================================================
+
 .leaderBar {
   width: 100%;
-  margin-top: 0.25rem;
+  margin-top: v.$space-xs;
 }
 
-/* angledBarContainer + segments = same as before */
 .angledBarContainer {
   display: flex;
   width: 100%;
-  height: 1rem;
-  background: #fff;
-  align-items: flex-end;
+  height: 12px;
+  background: v.$background-dark;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid v.$border-primary;
   overflow: hidden;
-  border-radius: 6px;
-  margin-top: 0.15rem;
-  outline: #fefefe 1px solid;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: v.$border-accent;
+  }
 }
 
 .segmentContainer {
   flex: 0;
   position: relative;
-  height: 1rem;
+  height: 12px;
   display: flex;
+  transition: all 0.2s ease;
+
+  &:hover {
+    filter: brightness(1.1);
+    z-index: 2;
+  }
 }
 
 .segmentCore {
   flex: 1;
-  height: 1rem;
+  height: 12px;
   position: relative;
+  border-right: 1px solid rgba(0, 0, 0, 0.2);
+
+  &:last-child {
+    border-right: none;
+  }
 }
 
 .leftTriangle {
   position: absolute;
   bottom: 0;
-  left: -8px;
+  left: -4px;
   width: 0;
   height: 0;
-  border-bottom: 16px solid #ccc;
-  border-left: 8px solid transparent;
+  border-bottom: 12px solid #ccc;
+  border-left: 4px solid transparent;
 }
 
 .rightTriangle {
   position: absolute;
   top: 0;
-  right: -8px;
+  right: -4px;
   width: 0;
   height: 0;
-  border-top: 16px solid #ccc;
-  border-right: 8px solid transparent;
+  border-top: 12px solid #ccc;
+  border-right: 4px solid transparent;
 }
 
 .segmentLabel {
   position: absolute;
-  top: 0;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
-  color: #fefefe;
-  font-size: 0.9rem;
-  font-weight: 900;
-  pointer-events: none;
-  white-space: nowrap;
+  transform: translate(-50%, -50%);
+  color: v.$text-button;
+  font-size: v.$font-size-xxs;
+  font-weight: 700;
+  font-family: v.$font-family-accent;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  z-index: 1;
 }
 
-/* Responsive tweak */
-@media (max-width: 768px) {
+// =============================================================================
+// RESPONSIVE DESIGN
+// =============================================================================
+
+@media (max-width: v.$breakpoint-tablet) {
+  .container {
+    width: 98%;
+    padding: v.$space-sm;
+  }
+
+  .heroTitle {
+    font-size: v.$font-size-lg;
+  }
+
+  .heroSubtitle {
+    font-size: v.$font-size-sm;
+  }
+
+  .quickStatsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: v.$space-sm;
+  }
+
   .grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .teamList {
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+  }
+
+  .leaderboardHeader {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .heroSection {
+    padding: v.$space-md;
+  }
+
+  .filterSection {
+    flex-direction: column;
+    align-items: stretch;
+    gap: v.$space-sm;
+  }
+
+  .filterButtons {
+    justify-content: center;
+  }
 }
 
-.teamsSection {
-  width: 90%;
-  margin: 0;
+@media (max-width: 480px) {
+  .quickStatsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroTitle {
+    font-size: v.$font-size-md;
+  }
+
+  .heroSection {
+    padding: v.$space-sm;
+  }
+
+  .quickStatCard {
+    padding: v.$space-sm;
+  }
 }
 
 .teamsTitle {
-  color: #07aae2;
-  font-weight: 700;
-  font-size: 22px;
-  margin-bottom: 8px;
+  color: v.$text-primary;
+  font-weight: 600;
+  font-size: v.$font-size-lg;
+  margin-bottom: v.$space-md;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: v.$space-xs;
+    left: 0;
+    width: 40px;
+    height: 2px;
+    background: v.$primary-color;
+  }
+}
+
+.titleAccent {
+  color: v.$text-primary;
+}
+
+.teamList {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: v.$space-sm;
+  max-width: 100%;
+  position: relative;
+  z-index: 2;
 }
 
 .teamListItem {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-family: v.$font-family-accent;
   text-decoration: none;
-  color: v.$color-white;
-  width: auto;
-  font-weight: 600;
-  margin: auto;
+  color: v.$text-secondary;
+  transition: all 0.2s ease;
+  padding: v.$space-xs;
+  border-radius: v.$border-radius-sm;
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  position: relative;
+  z-index: 3;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: v.$border-accent;
+    background: v.$background-light;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+    .teamAbbreviation {
+      color: v.$text-primary;
+    }
+
+    .teamLogoContainer {
+      transform: scale(1.05);
+    }
+  }
+}
+
+.teamLogoContainer {
+  width: 32px;
+  height: 32px;
+  margin-bottom: v.$space-xxs;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: v.$border-radius-sm;
+  background: v.$background-medium;
+  border: 1px solid v.$border-primary;
+  transition: all 0.2s ease;
 }
 
 .teamLogo {
-  width: 48px;
-  height: 48px;
+  width: 24px;
+  height: 24px;
   object-fit: contain;
 }
 
 .teamAbbreviation {
-  font-size: 13px;
+  font-size: v.$font-size-xxs;
+  font-weight: 600;
   text-align: center;
-  color: #fff;
+  color: v.$text-secondary;
+  letter-spacing: 0.05em;
+  font-family: v.$font-family-accent;
+  transition: color 0.2s ease;
 }
 
-.teamName {
-  font-size: 12px;
+// =============================================================================
+// COMPACT LEADERBOARDS
+// =============================================================================
+
+.leaderboardsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-lg;
+}
+
+.leaderboardHeader {
+  @include v.component-wrapper;
+  padding: v.$space-md v.$space-lg;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: v.$space-md;
+}
+
+.title {
+  font-family: v.$font-family-accent;
+  margin: 0;
+  font-size: v.$font-size-lg;
+  font-weight: 600;
+  color: v.$text-primary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.seasonBadge {
+  background: v.$background-dark;
+  color: v.$primary-color;
+  padding: v.$space-xs v.$space-md;
+  border-radius: v.$border-radius-md;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  border: 1px solid v.$border-accent;
+  font-family: v.$font-family-accent;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: v.$space-md;
+}
+
+// =============================================================================
+// COMPACT CARD STYLING
+// =============================================================================
+
+.card {
+  @include v.component-wrapper;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  padding: v.$space-md;
+  transition: all 0.2s ease;
+  position: relative;
+  height: fit-content;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: v.$border-accent;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.cardTitle {
+  margin: 0 0 v.$space-md 0;
+  font-size: v.$font-size-md;
+  color: v.$text-primary;
+  font-weight: 600;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: v.$space-xs;
+  border-bottom: 1px solid v.$border-primary;
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    width: 30px;
+    height: 2px;
+    background: v.$primary-color;
+  }
+}
+
+// =============================================================================
+// COMPACT LEADER ROWS
+// =============================================================================
+
+.leaderRow {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+  padding: v.$space-sm;
+  margin-bottom: v.$space-xs;
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$border-radius-sm;
+  transition: all 0.2s ease;
+  position: relative;
+
+  &:first-child {
+    border-left: 3px solid #10b981;
+  }
+
+  &:nth-child(2) {
+    border-left: 3px solid #22c55e;
+  }
+
+  &:nth-child(3) {
+    border-left: 3px solid #84cc16;
+  }
+
+  &:nth-child(4),
+  &:nth-child(5) {
+    border-left: 3px solid v.$warning-color;
+  }
+
+  &:hover {
+    background: v.$background-light;
+    border-color: v.$border-accent;
+    transform: translateX(2px);
+  }
+}
+
+.leaderRowExpanded {
+  border-left-width: 4px;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+}
+
+.playerHeadshot {
+  width: 32px;
+  height: 32px;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid v.$border-primary;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.leaderMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.nameValueRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: v.$space-sm;
+}
+
+.leaderName {
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+  color: v.$text-primary;
+  margin-bottom: v.$space-xxs;
+  font-family: v.$font-family-primary;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playerDetails {
+  font-size: v.$font-size-xxs;
+  color: v.$text-secondary;
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderValue {
+  font-size: v.$font-size-lg;
+  font-weight: 700;
+  color: v.$primary-color;
+  font-family: "SF Mono", "Monaco", "Cascadia Code", monospace;
+  letter-spacing: -0.02em;
+  flex-shrink: 0;
+}
+
+// =============================================================================
+// COMPACT LEADER BAR
+// =============================================================================
+
+.leaderBar {
+  width: 100%;
+  margin-top: v.$space-xs;
+}
+
+.angledBarContainer {
+  display: flex;
+  width: 100%;
+  height: 12px;
+  background: v.$background-dark;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid v.$border-primary;
+  overflow: hidden;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: v.$border-accent;
+  }
+}
+
+.segmentContainer {
+  flex: 0;
+  position: relative;
+  height: 12px;
+  display: flex;
+  transition: all 0.2s ease;
+
+  &:hover {
+    filter: brightness(1.1);
+    z-index: 2;
+  }
+}
+
+.segmentCore {
+  flex: 1;
+  height: 12px;
+  position: relative;
+  border-right: 1px solid rgba(0, 0, 0, 0.2);
+
+  &:last-child {
+    border-right: none;
+  }
+}
+
+.leftTriangle {
+  position: absolute;
+  bottom: 0;
+  left: -4px;
+  width: 0;
+  height: 0;
+  border-bottom: 12px solid #ccc;
+  border-left: 4px solid transparent;
+}
+
+.rightTriangle {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 0;
+  height: 0;
+  border-top: 12px solid #ccc;
+  border-right: 4px solid transparent;
+}
+
+.segmentLabel {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: v.$text-button;
+  font-size: v.$font-size-xxs;
+  font-weight: 700;
+  font-family: v.$font-family-accent;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  z-index: 1;
+}
+
+// =============================================================================
+// RESPONSIVE DESIGN
+// =============================================================================
+
+@media (max-width: v.$breakpoint-tablet) {
+  .container {
+    width: 98%;
+    padding: v.$space-sm;
+  }
+
+  .heroTitle {
+    font-size: v.$font-size-lg;
+  }
+
+  .heroSubtitle {
+    font-size: v.$font-size-sm;
+  }
+
+  .quickStatsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: v.$space-sm;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .teamList {
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+  }
+
+  .leaderboardHeader {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .heroSection {
+    padding: v.$space-md;
+  }
+
+  .filterSection {
+    flex-direction: column;
+    align-items: stretch;
+    gap: v.$space-sm;
+  }
+
+  .filterButtons {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .quickStatsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .heroTitle {
+    font-size: v.$font-size-md;
+  }
+
+  .heroSection {
+    padding: v.$space-sm;
+  }
+
+  .quickStatCard {
+    padding: v.$space-sm;
+  }
+}
+
+.teamsTitle {
+  color: v.$text-primary;
+  font-weight: 600;
+  font-size: v.$font-size-lg;
+  margin-bottom: v.$space-md;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: v.$space-xs;
+    left: 0;
+    width: 40px;
+    height: 2px;
+    background: v.$primary-color;
+  }
+}
+
+.titleAccent {
+  color: v.$text-primary;
+}
+
+.teamList {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: v.$space-sm;
+  max-width: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+.teamListItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: v.$text-secondary;
+  transition: all 0.2s ease;
+  padding: v.$space-xs;
+  border-radius: v.$border-radius-sm;
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  position: relative;
+  z-index: 3;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: v.$border-accent;
+    background: v.$background-light;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+
+    .teamAbbreviation {
+      color: v.$text-primary;
+    }
+
+    .teamLogoContainer {
+      transform: scale(1.05);
+    }
+  }
+}
+
+.teamLogoContainer {
+  width: 32px;
+  height: 32px;
+  margin-bottom: v.$space-xxs;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: v.$border-radius-sm;
+  background: v.$background-medium;
+  border: 1px solid v.$border-primary;
+  transition: all 0.2s ease;
+}
+
+.teamLogo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.teamAbbreviation {
+  font-size: v.$font-size-xxs;
+  font-weight: 600;
   text-align: center;
-  color: #aaa;
-  margin-top: 2px;
+  color: v.$text-secondary;
+  letter-spacing: 0.05em;
+  font-family: v.$font-family-accent;
+  transition: color 0.2s ease;
 }

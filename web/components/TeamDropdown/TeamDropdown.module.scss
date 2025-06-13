@@ -1,0 +1,71 @@
+.teamDropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  font-size: inherit;
+  cursor: pointer;
+  outline: none;
+  min-width: 0;
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  &:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.3);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+.teamDropdown::after {
+  content: "";
+  position: absolute !important;
+  left: 10% !important;
+  top: 60% !important;
+  transform: translateY(-50%) !important;
+  width: 0px;
+  height: 0px;
+  border-left: 8px solid transparent !important;
+  border-right: 8px solid transparent !important;
+  border-top: 12px solid white !important;
+  opacity: 0.3 !important;
+  pointer-events: none !important;
+  z-index: 10 !important;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease !important;
+}
+
+.teamDropdown:hover::after {
+  opacity: 0.8 !important;
+  //   transform: translateY(-50%) scale(1.1) !important;
+}
+
+/* Remove the old dropdownIcon styles since we're using ::after now */
+.dropdownIcon {
+  display: none !important;
+}
+
+/* Remove default select styling across browsers */
+.select::-ms-expand {
+  display: none;
+}
+
+.select option {
+  background: #181818;
+  color: #ffffff;
+  padding: 0.5rem;
+}

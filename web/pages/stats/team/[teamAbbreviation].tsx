@@ -8,6 +8,9 @@ import { useShotData, ShotDataFilters } from "hooks/useShotData";
 import { teamsInfo } from "lib/teamsInfo";
 import { LineCombinationsGrid } from "components/LineCombinations/LineCombinationsGrid";
 import { TeamTabNavigation } from "components/TeamTabNavigation/TeamTabNavigation";
+import TeamDropdown from "components/TeamDropdown";
+import { getTeams } from "lib/NHL/server";
+import { getTeamAbbreviationById } from "lib/teamsInfo";
 
 // Shot data interface
 interface ShotData {
@@ -73,12 +76,14 @@ export default function TeamStatsPage({
   teamName,
   summaries,
   teamAbbreviation,
-  teamColors
+  teamColors,
+  teams = []
 }: {
   teamName: string;
   summaries: TeamSeasonSummary[];
   teamAbbreviation: string;
   teamColors: TeamColors | null;
+  teams: { team_id: number; name: string; abbreviation: string }[];
 }) {
   const currentSeason = useCurrentSeason();
   const teamId = summaries[0]?.team_id;
@@ -327,7 +332,12 @@ export default function TeamStatsPage({
           />
           <div className={styles.teamDetails}>
             <div className={styles.teamInfo}>
-              <h2 className={styles.teamName}>{teamName}</h2>
+              <div className={styles.teamName}>
+                {teamName}
+                {teams.length > 0 && (
+                  <TeamDropdown teams={teams} currentTeam={teamAbbreviation} />
+                )}
+              </div>
               <p className={styles.seasonInfo}>
                 2024-25 Season • Last Updated: {new Date().toLocaleDateString()}
               </p>
@@ -455,11 +465,33 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     return { notFound: true };
   }
 
+  // Get teams for the dropdown
+  let teams: { team_id: number; name: string; abbreviation: string }[] = [];
+  try {
+    const allTeams = await getTeams();
+    teams = allTeams.map((team) => ({
+      team_id: team.id,
+      name: team.name,
+      abbreviation:
+        team.abbreviation?.trim() ||
+        getTeamAbbreviationById(team.id) ||
+        team.name
+    }));
+    // Sort alphabetically by abbreviation
+    teams.sort((a, b) =>
+      (a?.abbreviation ?? "").localeCompare(b?.abbreviation ?? "")
+    );
+  } catch (error) {
+    console.error("Error fetching teams:", error);
+    // Continue without teams data if there's an error
+  }
+
   return {
     props: {
       teamName: data[0].team_full_name,
       summaries: data,
       teamAbbreviation,
+      teams,
       teamColors: teamInfo
         ? {
             primary: teamInfo.primaryColor,
