@@ -1,10 +1,9 @@
-// /Users/tim/Desktop/FHFH/fhfhockey.com/web/lib/supabase/Upserts/fetchWGOdata.js
+// /lib/supabase/Upserts/fetchWGOdata.js
 
-require("dotenv").config({ path: "../../../.env.local" });
-const { createClient } = require("@supabase/supabase-js");
-const fetch = require("node-fetch");
-const { parseISO, format, addDays, isBefore, isValid } = require("date-fns");
-const ProgressBar = require("progress");
+import { createClient } from "@supabase/supabase-js";
+import fetch from "node-fetch";
+import { parseISO, format, addDays, isBefore, isValid } from "date-fns";
+import ProgressBar from "progress";
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -81,6 +80,12 @@ const teamsInfo = {
   UTA: { name: "Utah Hockey Club", franchiseId: 40, id: 59 }
 };
 
+// Helper fetch function
+async function Fetch(url) {
+  const response = await fetch(url);
+  return response.json();
+}
+
 async function fetchNHLSeasons() {
   const url =
     "https://api.nhle.com/stats/rest/en/season?sort=%5B%7B%22property%22:%22id%22,%22direction%22:%22DESC%22%7D%5D";
@@ -88,7 +93,6 @@ async function fetchNHLSeasons() {
   return response.data;
 }
 
-// Helper function to paginate through games for a given date and team.
 async function fetchAllGamesForTeamOnDate(formattedDate, teamId) {
   const pageSize = 1000;
   let allGames = [];
@@ -111,7 +115,6 @@ async function fetchAllGamesForTeamOnDate(formattedDate, teamId) {
     }
 
     allGames = allGames.concat(data);
-    // If fewer than pageSize rows were returned, we're at the last page.
     if (data.length < pageSize) {
       break;
     }
@@ -121,20 +124,12 @@ async function fetchAllGamesForTeamOnDate(formattedDate, teamId) {
   return allGames;
 }
 
-/**
- * Processes one day at a time.
- * It processes dates from the provided startDate up until (but not including) the effectiveEndDate.
- * For each day, it checks if that date is already processed in the "wgo_team_stats" table.
- * If not processed, it fetches NHL stats for that day and upserts the data.
- * It logs the processing time for each day.
- */
 async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
   let currentDate = parseISO(startDate);
 
   while (format(currentDate, "yyyy-MM-dd") <= effectiveEndDate) {
     const formattedDate = format(currentDate, "yyyy-MM-dd");
 
-    // Check if this date has already been processed for the given season.
     const { data: existing, error: existErr } = await supabase
       .from("wgo_team_stats")
       .select("date")
@@ -159,7 +154,6 @@ async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
 
     console.time(`Processing ${formattedDate}`);
 
-    // Fetch NHL API data for this date.
     const statsResponse = await Fetch(
       `https://api.nhle.com/stats/rest/en/team/summary?isAggregate=true&isGame=true&sort=[{"property":"points","direction":"DESC"},{"property":"wins","direction":"DESC"},{"property":"franchiseId","direction":"ASC"}]&start=0&limit=50&factCayenneExp=gamesPlayed>=1&cayenneExp=gameDate<='${formattedDate}' and gameDate>='${formattedDate}'`
     );
@@ -195,28 +189,17 @@ async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
     );
 
     if (
-      statsResponse &&
-      statsResponse.data &&
-      miscStatsResponse &&
-      miscStatsResponse.data &&
-      penaltyResponse &&
-      penaltyResponse.data &&
-      penaltyKillResponse &&
-      penaltyKillResponse.data &&
-      powerPlayResponse &&
-      powerPlayResponse.data &&
-      ppToiResponse &&
-      ppToiResponse.data &&
-      pkToiResponse &&
-      pkToiResponse.data &&
-      shootingResponse &&
-      shootingResponse.data &&
-      shPercentageResponse &&
-      shPercentageResponse.data &&
-      faceOffResponse &&
-      faceOffResponse.data &&
-      faceOffWinLossResponse &&
-      faceOffWinLossResponse.data
+      statsResponse?.data &&
+      miscStatsResponse?.data &&
+      penaltyResponse?.data &&
+      penaltyKillResponse?.data &&
+      powerPlayResponse?.data &&
+      ppToiResponse?.data &&
+      pkToiResponse?.data &&
+      shootingResponse?.data &&
+      shPercentageResponse?.data &&
+      faceOffResponse?.data &&
+      faceOffWinLossResponse?.data
     ) {
       for (const stat of statsResponse.data) {
         const additionalStats = miscStatsResponse.data.find(
@@ -261,14 +244,6 @@ async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
           continue;
         }
 
-        // Query the games table for a matching game on the same date
-        const { data: gameRecord, error: gameError } = await supabase
-          .from("games")
-          .select("id, homeTeamId, awayTeamId")
-          .eq("date", formattedDate)
-          .or(`homeTeamId.eq.${team.id},awayTeamId.eq.${team.id}`)
-          .limit(1);
-
         const allGames = await fetchAllGamesForTeamOnDate(
           formattedDate,
           team.id
@@ -276,8 +251,6 @@ async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
         let gameId = null;
         let opponentId = null;
         if (allGames.length > 0) {
-          // If there is more than one game (which might be rare for a single date),
-          // you can choose the first one or add additional logic to decide.
           const game = allGames[0];
           gameId = game.id;
           opponentId =
@@ -469,30 +442,19 @@ async function fetchNHLData(startDate, effectiveEndDate, seasonId, bar) {
   }
 }
 
-/**
- * Main processing function with updated query parameter support.
- *
- * NEW QUERY PARAMETERS:
- * - allDates: Process all dates from season start to end (including playoffs)
- * - recent: Process only recent dates (from last processed date to today) - DEFAULT
- * - date: Process only a specific date (YYYY-MM-DD format)
- * - allSeasons: Process all historical seasons, not just recent ones
- *
- * @param {Object} options - Processing options
- */
 async function main(options = {}) {
-  // Parse command line query parameters if running directly
-  const queryParams = parseQueryParams();
+  // This script can be run from the command line or an API route.
+  // We check for command-line args first.
+  const queryParams =
+    typeof process !== "undefined" && process.argv ? parseQueryParams() : {};
 
-  // Merge query parameters with passed options (query params take precedence)
   const {
     allDates = queryParams.allDates || false,
-    recent = queryParams.recent !== false, // Default to true unless explicitly set to false
+    recent = queryParams.recent !== undefined ? queryParams.recent : true,
     date = queryParams.date || null,
     allSeasons = queryParams.allSeasons || false
   } = { ...options, ...queryParams };
 
-  // Validate date parameter if provided
   let specificDate = null;
   if (date) {
     const parsedDate = parseISO(date);
@@ -505,11 +467,10 @@ async function main(options = {}) {
     console.log(`Processing specific date: ${specificDate}`);
   }
 
-  // Determine processing mode
-  let processAllDates = allDates;
-  let processRecentDates = recent && !date && !allDates;
-  let processOneDay = !!date;
-  let processAllSeasons = allSeasons;
+  const processAllDates = allDates;
+  const processRecentDates = recent && !date && !allDates;
+  const processOneDay = !!date;
+  const processAllSeasons = allSeasons;
 
   console.log("=== STARTING MAIN FUNCTION ===");
   console.log("Query parameters:", queryParams);
@@ -523,7 +484,6 @@ async function main(options = {}) {
     processOneDay,
     processAllSeasons
   });
-
   console.time("Total Process Time");
 
   try {
@@ -536,12 +496,13 @@ async function main(options = {}) {
       throw new Error("No seasons data available.");
     }
 
-    // Process all seasons when allDates=true or allSeasons=true, not just a subset
     let seasonsToProcess;
     if (processAllDates || processAllSeasons) {
       seasonsToProcess = seasons;
       console.log(
-        `Processing ALL ${seasons.length} seasons because ${processAllDates ? "allDates" : "allSeasons"}=true`
+        `Processing ALL ${seasons.length} seasons because ${
+          processAllDates ? "allDates" : "allSeasons"
+        }=true`
       );
     } else {
       const numberOfSeasonsToFetch = 15;
@@ -556,11 +517,12 @@ async function main(options = {}) {
       seasonsToProcess.map((s) => s.formattedSeasonId)
     );
 
-    // Loop through each season to process.
     for (let i = 0; i < seasonsToProcess.length; i++) {
       const season = seasonsToProcess[i];
       console.log(
-        `\n=== PROCESSING SEASON ${i + 1}/${seasonsToProcess.length}: ${season.formattedSeasonId} ===`
+        `\n=== PROCESSING SEASON ${i + 1}/${seasonsToProcess.length}: ${
+          season.formattedSeasonId
+        } ===`
       );
 
       const currentDate = new Date();
@@ -578,20 +540,16 @@ async function main(options = {}) {
       console.log(`Season active: ${isSeasonActive}`);
       console.log(`Process all seasons: ${processAllSeasons}`);
 
-      // Only process seasons that have started (or that are active if processAllSeasons is false)
       if (seasonStarted && (processAllSeasons || isSeasonActive)) {
         console.log(`✓ Season ${season.formattedSeasonId} will be processed`);
 
-        // Determine the starting date based on processing mode
         let newStartDate;
         let effectiveEndDate;
 
         if (processOneDay) {
-          // Process only the specific date
           const seasonStartStr = season.startDate.split("T")[0];
           const seasonFullEndStr = season.endDate.split("T")[0];
 
-          // Check if the specific date falls within this season
           if (
             specificDate >= seasonStartStr &&
             specificDate <= seasonFullEndStr
@@ -609,7 +567,7 @@ async function main(options = {}) {
           }
         } else if (processAllDates) {
           newStartDate = season.startDate.split("T")[0];
-          effectiveEndDate = season.endDate.split("T")[0]; // Include playoffs
+          effectiveEndDate = season.endDate.split("T")[0];
           console.log(
             `Processing all dates for season ${season.formattedSeasonId} from ${newStartDate} to ${effectiveEndDate} (including playoffs).`
           );
@@ -617,7 +575,6 @@ async function main(options = {}) {
           console.log(
             `Looking up most recent processed date for season ${season.id}...`
           );
-          // Look up the most recent date from wgo_team_stats for this season.
           const { data: processedDates, error } = await supabase
             .from("wgo_team_stats")
             .select("date")
@@ -643,7 +600,6 @@ async function main(options = {}) {
             );
           }
 
-          // For recent dates, use today or full season end, whichever is earlier
           const seasonFullEndStr = season.endDate.split("T")[0];
           effectiveEndDate = isBefore(
             parseISO(todayStr),
@@ -652,7 +608,6 @@ async function main(options = {}) {
             ? todayStr
             : seasonFullEndStr;
         } else {
-          // Default fallback.
           newStartDate = season.startDate.split("T")[0];
           effectiveEndDate = season.endDate.split("T")[0];
           console.log(
@@ -662,16 +617,13 @@ async function main(options = {}) {
 
         console.log(`Date range: ${newStartDate} to ${effectiveEndDate}`);
 
-        // Log playoff inclusion info
         const seasonRegularEndStr = season.regularSeasonEndDate.split("T")[0];
-        const seasonFullEndStr = season.endDate.split("T")[0];
         if (effectiveEndDate > seasonRegularEndStr) {
           console.log(
             `Note: Including playoff data - processing beyond regular season end (${seasonRegularEndStr}) up to ${effectiveEndDate}`
           );
         }
 
-        // Calculate the total number of days to process (for the progress bar).
         let totalDays = 0;
         let tempDate = parseISO(newStartDate);
         while (format(tempDate, "yyyy-MM-dd") <= effectiveEndDate) {
@@ -682,13 +634,11 @@ async function main(options = {}) {
         console.log(`Total days to process: ${totalDays}`);
 
         if (totalDays > 0) {
-          // Create a progress bar instance.
           const bar = new ProgressBar(
             `Fetching data for season ${season.formattedSeasonId} [:bar] :percent :etas`,
             { total: totalDays, width: 40 }
           );
 
-          // Process dates from newStartDate up until (and including) effectiveEndDate.
           await fetchNHLData(
             newStartDate,
             effectiveEndDate,
@@ -721,16 +671,5 @@ async function main(options = {}) {
   console.timeEnd("Total Process Time");
 }
 
-// Helper fetch function
-async function Fetch(url) {
-  const response = await fetch(url);
-  return response.json();
-}
-
-module.exports = { main };
-
-if (require.main === module) {
-  main().catch(console.error);
-} else {
-  module.exports = { main };
-}
+// Export the main function for use in API routes.
+export { main };
