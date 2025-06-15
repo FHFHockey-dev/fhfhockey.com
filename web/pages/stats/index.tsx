@@ -73,7 +73,6 @@ export default function StatsPage({
   const mouseLeaveTimeoutRef = useRef<NodeJS.Timeout>();
 
   const handleTeamMouseEnter = (teamAbbreviation: string) => {
-    // Clear any existing timeouts
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
@@ -83,17 +82,14 @@ export default function StatsPage({
 
     setHoveredTeam(teamAbbreviation);
 
-    // Add delay before updating colors to prevent chaos
     hoverTimeoutRef.current = setTimeout(() => {
       const teamInfo = teamsInfo[teamAbbreviation];
       if (!teamInfo) return;
 
-      // Only trigger animation if it's a different team or we're in resting state
       if (
         teamAbbreviation !== lastTriggeredTeam ||
         animationState === "resting"
       ) {
-        // Alternate between triggered and triggeredAlt states
         if (animationState === "resting" || animationState === "triggeredAlt") {
           setAnimationState("triggered");
         } else {
@@ -109,24 +105,21 @@ export default function StatsPage({
         accent: teamInfo.accent,
         alt: teamInfo.alt
       });
-    }, 200); // Shorter delay for more responsive feel
+    }, 200);
   };
 
   const handleTeamMouseLeave = () => {
-    // Clear hover timeout if leaving before delay completes
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
 
     setHoveredTeam(null);
 
-    // Wait a bit before clearing colors to allow for quick re-hovers
     mouseLeaveTimeoutRef.current = setTimeout(() => {
       setActiveTeamColors(null);
-    }, 500); // Delay before removing colors
+    }, 500);
   };
 
-  // Clean up timeouts on unmount
   useEffect(() => {
     return () => {
       if (hoverTimeoutRef.current) {
@@ -138,7 +131,6 @@ export default function StatsPage({
     };
   }, []);
 
-  // Generate CSS custom properties for active team colors
   const generateTeamColorStyles = (): React.CSSProperties => {
     if (!activeTeamColors) {
       return {};
@@ -153,7 +145,6 @@ export default function StatsPage({
     } as React.CSSProperties;
   };
 
-  // Clean, analytical quick stats - no emojis, focused on data
   const quickStats: QuickStat[] = [
     {
       label: "Points Leader",
@@ -195,6 +186,64 @@ export default function StatsPage({
           <PlayerSearchBar />
         </div>
       </section>
+
+      {/* Teams Grid with Sliding Diagonal Background */}
+      <div className={styles.teamsGridContainer}>
+        <h2 className={styles.teamsTitle}>
+          <span className={styles.titleAccent}>NHL Teams</span>
+        </h2>
+
+        <div
+          className={`${styles.teamsSection} ${
+            activeTeamColors ? styles.teamsSectionActive : ""
+          } ${
+            animationState === "triggered"
+              ? styles.teamsSectionTriggered
+              : animationState === "triggeredAlt"
+                ? styles.teamsSectionTriggeredAlt
+                : ""
+          }`}
+          style={generateTeamColorStyles()}
+          onMouseLeave={handleTeamMouseLeave}
+        >
+          <div className={styles.teamNameHeader}>
+            <span className={styles.teamNameText}>
+              {hoveredTeam
+                ? teams.find((team) => team.abbreviation === hoveredTeam)
+                    ?.name || hoveredTeam
+                : ""}
+            </span>
+          </div>
+          {/* team grid */}
+          <div className={styles.teamList}>
+            {teams.map((team) => (
+              <Link
+                key={team.team_id}
+                href={`/stats/team/${team.abbreviation}`}
+                className={`${styles.teamListItem} ${
+                  hoveredTeam && hoveredTeam !== team.abbreviation
+                    ? styles.teamListItemBlurred
+                    : ""
+                }`}
+                title={team.name}
+                onMouseEnter={() => handleTeamMouseEnter(team.abbreviation)}
+              >
+                <div className={styles.teamLogoContainer}>
+                  <span className={styles.teamAbbreviation}>
+                    {team.abbreviation}
+                  </span>
+                  <img
+                    src={`/teamLogos/${team.abbreviation}.png`}
+                    alt={team.name}
+                    className={styles.teamLogo}
+                    loading="lazy"
+                  />
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Quick Stats - Bento Box Layout */}
       <section className={styles.quickStatsSection}>
@@ -243,53 +292,6 @@ export default function StatsPage({
             >
               {filter.label}
             </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Teams Grid with Sliding Diagonal Background */}
-      <section
-        className={`${styles.teamsSection} ${
-          activeTeamColors ? styles.teamsSectionActive : ""
-        } ${
-          animationState === "triggered"
-            ? styles.teamsSectionTriggered
-            : animationState === "triggeredAlt"
-              ? styles.teamsSectionTriggeredAlt
-              : ""
-        }`}
-        style={generateTeamColorStyles()}
-        onMouseLeave={handleTeamMouseLeave}
-      >
-        {/* Additional background layers */}
-        <div className={styles.teamsSectionBg3}></div>
-        <div className={styles.teamsSectionBg4}></div>
-        <div className={styles.teamsSectionBg5}></div>
-
-        <h2 className={styles.teamsTitle}>
-          <span className={styles.titleAccent}>NHL Teams</span>
-        </h2>
-        <div className={styles.teamList}>
-          {teams.map((team) => (
-            <Link
-              key={team.team_id}
-              href={`/stats/team/${team.abbreviation}`}
-              className={styles.teamListItem}
-              title={team.name}
-              onMouseEnter={() => handleTeamMouseEnter(team.abbreviation)}
-            >
-              <div className={styles.teamLogoContainer}>
-                <img
-                  src={`/teamLogos/${team.abbreviation}.png`}
-                  alt={team.name}
-                  className={styles.teamLogo}
-                  loading="lazy"
-                />
-              </div>
-              <span className={styles.teamAbbreviation}>
-                {team.abbreviation}
-              </span>
-            </Link>
           ))}
         </div>
       </section>
@@ -356,10 +358,8 @@ export default function StatsPage({
 export async function getServerSideProps() {
   const data = await fetchStatsData();
 
-  // Get teams for the current season using the existing getTeams function
   try {
     const teams = await getTeams();
-    // Map to the expected format
     const formattedTeams = teams.map((team) => ({
       team_id: team.id,
       name: team.name,
@@ -369,7 +369,6 @@ export async function getServerSideProps() {
         team.name
     }));
 
-    // Sort alphabetically by abbreviation
     formattedTeams.sort((a, b) =>
       (a?.abbreviation ?? "").localeCompare(b?.abbreviation ?? "")
     );
