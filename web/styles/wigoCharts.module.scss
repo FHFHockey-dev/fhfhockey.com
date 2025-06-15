@@ -7,7 +7,6 @@
 
 /* Main Dashboard Layout */
 .wigoDashHeader {
-  margin-top: 25px;
   margin-bottom: 25px;
   display: flex;
   flex-direction: column;
@@ -24,30 +23,26 @@
 }
 
 .wigoDashboardContainer {
-  @include v.component-wrapper;
-  width: 90%;
+  width: 100%;
   max-width: 2200px;
   min-width: 1300px;
-  min-height: 140vh;
-  max-height: 140vh;
-  margin: v.$space-lg auto v.$space-xxl auto;
+  min-height: 100vh;
+  max-height: 100vh;
+  margin: 0 auto;
   display: flex;
-  border: 10px solid v.$border-color-primary;
   border-radius: v.$border-radius * 2;
-  outline: 15px solid color.adjust(v.$background-dark, $lightness: -2%);
 }
 
 .wigoDashboardContent {
   flex-grow: 1;
-  background-color: color.adjust(v.$background-dark, $lightness: -2%);
+  background-color: color.adjust(v.$background-dark, $lightness: -3%);
   border-radius: v.$border-radius;
-  overflow: hidden; // Hidden overflow on main grid container
+  // overflow: hidden; // Hidden overflow on main grid container
 
   // Grid Definition
   display: grid;
   grid-template-columns: repeat(36, 1fr);
   grid-template-rows: repeat(44, 1fr); // 44 rows spanning grid lines 1 to 45
-  padding: v.$space-lg;
   column-gap: v.$space-xl; // Horizontal gap between columns
   row-gap: v.$space-lg; // Vertical gap between rows
   margin-bottom: v.$space-sm; // Bottom margin spacing
@@ -78,13 +73,12 @@
   overflow: hidden; // Prevents wrapper overflow while children handle internal scroll/overflow
   outline: 10px solid color.adjust(v.$background-dark, $lightness: 3%);
   border-radius: v.$border-radius * 0.25;
-  margin-top: v.$space-sm;
 }
 
 // Grid areas for wrapper elements
 // Format: DOWN / LEFT / RIGHT / DOWN
 .leftColumnWrapper {
-  grid-area: 4 / 1 / 45 / 8; // Rows 3-44, Cols 1-8
+  grid-area: 4 / 2 / 45 / 8; // Rows 3-44, Cols 1-8
 }
 
 .middleColumnWrapper {
@@ -92,7 +86,7 @@
 }
 
 .rightColumnWrapper {
-  grid-area: 4 / 23 / 45 / 37; // Rows 3-44, Cols 25-36
+  grid-area: 4 / 23 / 45 / 36; // Rows 3-44, Cols 25-36
 }
 
 /* Specific Container Styles & Grid Areas (BENTO BOX LAYOUT) */
@@ -103,13 +97,15 @@
   align-items: center; // Children fill the height of wrapper
   justify-content: space-between; // Space distribution between children
   column-gap: 0; // No gap between flex children (search bar and header)
-  padding-bottom: v.$space-md;
+  padding-bottom: v.$space-xl;
+  padding-top: v.$space-xl;
+  padding-left: v.$space-xxl;
+  padding-right: v.$space-lg;
   height: 100%;
   width: 100%;
 
   // Border styling applied to wrapper instead of individual items
   border-bottom: 8px double v.$primary-color;
-  margin-bottom: 10px;
 }
 
 // Top Row Items (Direct Grid Children)
@@ -139,7 +135,7 @@
 .wigoHeader {
   // Grid-area removed - positioned by flex wrapper
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   align-items: center;
   padding: v.$space-md;
   overflow: hidden;
@@ -154,7 +150,7 @@
 
   .headerText {
     font-family: "Train One", sans-serif;
-    letter-spacing: 1em;
+    letter-spacing: 0.75em;
     font-size: v.$font-size-base * 1.8;
     line-height: 1.5em;
     font-weight: 100;
@@ -485,7 +481,7 @@
   th,
   td {
     padding: 0 v.$space-sm * 0.5;
-    font-size: v.$font-size-small;
+    font-size: v.$font-size-small * 0.95;
     height: 34px;
     font-weight: 100;
     font-family: "roboto condensed", sans-serif;
@@ -500,7 +496,7 @@
   }
 
   td {
-    height: 28px;
+    height: 24px;
   }
 
   // Base Header Styles
@@ -650,7 +646,7 @@
   }
 
   tr {
-    height: 28px;
+    height: 24px;
 
     // Other Styles within .statsTable
     // (Row striping, hover, stat label cell, expand button, chart row, etc.)
@@ -693,16 +689,16 @@
     width: 100%;
   }
   button.expandButton {
-    background: v.$border-color-primary;
+    background: color.adjust(v.$border-color-primary, $lightness: -10%);
     color: v.$primary-color;
-    border: 2px solid v.$border-color-secondary;
+    border: 2px solid color.adjust(v.$border-color-primary, $lightness: -2%);
     border-radius: 4px; // Button radius maintained
     cursor: pointer;
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 900;
-    line-height: 1.2;
-    padding: 1px 4px;
-    min-width: 21px;
+    line-height: 1;
+    padding: 1px 2px;
+    min-width: 16px;
     flex-shrink: 0;
     margin-right: 5px;
     &:hover {

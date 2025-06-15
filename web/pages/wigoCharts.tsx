@@ -1,6 +1,7 @@
 // /pages/wigoCharts.tsx
 import React, { useState, useEffect, useCallback, useMemo } from "react"; // Added useMemo
 import dynamic from "next/dynamic";
+import { useRouter } from "next/router";
 
 import styles from "styles/wigoCharts.module.scss"; // Main styles
 import {
@@ -75,42 +76,89 @@ const WigoCharts: React.FC = () => {
 
   const currentSeasonData = useCurrentSeason();
   const currentSeasonId = currentSeasonData?.seasonId ?? null;
+  const router = useRouter();
 
   // Handle player selection (remains the same)
-  const handlePlayerSelect = useCallback((player: Player, headshot: string) => {
-    setSelectedPlayer(player);
-    setHeadshotUrl(headshot);
-    setTeamIdForLog(player.team_id ?? null);
+  const handlePlayerSelect = useCallback(
+    (player: Player, headshot: string) => {
+      setSelectedPlayer(player);
+      setHeadshotUrl(headshot);
+      setTeamIdForLog(player.team_id ?? null);
 
-    if (player.team_id) {
-      const teamInfo = getTeamInfoById(player.team_id);
-      if (teamInfo) {
-        const abbr = teamNameToAbbreviationMap[teamInfo.name] ?? null;
-        setTeamName(teamInfo.name);
-        setTeamAbbreviation(abbr);
-        setTeamColors({
-          primaryColor: teamInfo.primaryColor,
-          secondaryColor: teamInfo.secondaryColor,
-          accentColor: teamInfo.accent,
-          altColor: teamInfo.alt,
-          jerseyColor: teamInfo.jersey
-        });
+      if (player.team_id) {
+        const teamInfo = getTeamInfoById(player.team_id);
+        if (teamInfo) {
+          const abbr = teamNameToAbbreviationMap[teamInfo.name] ?? null;
+          setTeamName(teamInfo.name);
+          setTeamAbbreviation(abbr);
+          setTeamColors({
+            primaryColor: teamInfo.primaryColor,
+            secondaryColor: teamInfo.secondaryColor,
+            accentColor: teamInfo.accent,
+            altColor: teamInfo.alt,
+            jerseyColor: teamInfo.jersey
+          });
+        } else {
+          setTeamName("");
+          setTeamAbbreviation(null);
+          setTeamColors(defaultColors);
+        }
       } else {
         setTeamName("");
         setTeamAbbreviation(null);
         setTeamColors(defaultColors);
       }
-    } else {
-      setTeamName("");
-      setTeamAbbreviation(null);
-      setTeamColors(defaultColors);
-    }
-    setLeftTimeframe("STD");
-    setRightTimeframe("CA");
-    setRawCombinedData([]); // Clear combined raw data
+      setLeftTimeframe("STD");
+      setRightTimeframe("CA");
+      setRawCombinedData([]); // Clear combined raw data
 
-    setAggDataError(null); // Clear error
-  }, []);
+      setAggDataError(null); // Clear error
+      // Update the URL with the playerId as a query parameter
+      router.replace(
+        {
+          pathname: router.pathname,
+          query: { ...router.query, playerId: player.id }
+        },
+        undefined,
+        { shallow: true }
+      );
+    },
+    [router]
+  );
+
+  // Auto-select player if playerId is present in the query
+  useEffect(() => {
+    const playerIdParam = router.query.playerId;
+    if (!playerIdParam || selectedPlayer) return;
+    // Only proceed if playerIdParam is a string and a valid number
+    const playerId = Array.isArray(playerIdParam)
+      ? playerIdParam[0]
+      : playerIdParam;
+    if (!playerId || isNaN(Number(playerId))) return;
+    (async () => {
+      try {
+        const { data, error } = await (await import("lib/supabase")).default
+          .from("players")
+          .select("*")
+          .eq("id", Number(playerId))
+          .single();
+        if (error || !data) return;
+        let headshotUrl = data.image_url || "";
+        if (!data.image_url) {
+          try {
+            const response = await fetch(
+              `https://api-web.nhle.com/v1/player/${data.id}/landing`
+            );
+            if (response.ok) {
+              const nhlData = await response.json();
+              headshotUrl = nhlData.headshot || "";
+            }
+          } catch {}
+        }
+        handlePlayerSelect(data as Player, headshotUrl);
+      } catch {}
+    })();
+  }, [router.query.playerId, selectedPlayer, handlePlayerSelect]);
 
   // Fetch aggregated data effect (Counts/Rates)
   useEffect(() => {

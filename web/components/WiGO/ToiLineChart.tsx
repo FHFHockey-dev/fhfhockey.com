@@ -26,6 +26,7 @@ import styles from "styles/wigoCharts.module.scss";
 import zoomPlugin from "chartjs-plugin-zoom";
 import Spinner from "components/Spinner";
 import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors"; // Adjust path
+import useCurrentSeason from "hooks/useCurrentSeason";
 
 ChartJS.register(
   CategoryScale,
@@ -65,9 +66,11 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
   const chartRef = useRef<ChartJS<"line">>(null);
   // --- State to control which chart is displayed ---
   const [chartView, setChartView] = useState<ChartView>("toi"); // Default to 'toi'
+  const currentSeasonData = useCurrentSeason();
+  const currentSeasonId = currentSeasonData?.seasonId;
 
   useEffect(() => {
-    if (!playerId) {
+    if (!playerId || !currentSeasonId) {
       // Clear data, reset loading/error for empty state
       setGameLogData([]);
       setAverageToi(null);
@@ -85,20 +88,17 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
       setAveragePpToiPct(null);
 
       try {
-        // 1. Fetch totals (still needed for season and average total TOI)
+        // Fetch totals for averages (but not for season selection)
         const totals: SkaterTotalsData | null =
-          await fetchPlayerPerGameTotals(playerId); // Use updated type
+          await fetchPlayerPerGameTotals(playerId);
+        setAverageToi(totals?.toi_per_game ?? null);
+        setAveragePpToiPct(totals?.pp_toi_pct_per_game ?? null);
 
-        if (!totals || !totals.season) {
-          throw new Error("Missing required totals data (season).");
-        }
-        // Set average total TOI if available
-        setAverageToi(totals.toi_per_game ?? null);
-        setAveragePpToiPct(totals.pp_toi_pct_per_game ?? null);
-        const currentSeason = totals.season;
-
-        // 2. Fetch *all* relevant game log stats for that season
-        const gameLogs = await fetchPlayerGameLogStats(playerId, currentSeason);
+        // Use currentSeasonId from hook for fetching game log
+        const gameLogs = await fetchPlayerGameLogStats(
+          playerId,
+          String(currentSeasonId)
+        );
         setGameLogData(gameLogs);
       } catch (err: any) {
         console.error("Failed to load chart data:", err);
@@ -112,7 +112,7 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId }) => {
     };
 
     loadChartData();
-  }, [playerId]);
+  }, [playerId, currentSeasonId]);
 
   // --- Prepare Chart Data based on the selected view ---
   const getChartData = (): ChartData<"line", (number | null)[], string> => {
