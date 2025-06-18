@@ -237,6 +237,9 @@ export default function TeamStatsPage({
             l10_wins,
             l10_losses,
             l10_ot_losses,
+            l10_goals_for,
+            l10_goals_against,
+            l10_goal_differential,
             division_name,
             conference_name
           `

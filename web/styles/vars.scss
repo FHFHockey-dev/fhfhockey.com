@@ -114,6 +114,7 @@ $color-focus: rgb(255, 193, 8); // New name (value = $focus-color Def 1)
 // Only variables with names not seen before, OR same name but different value/definition
 $primary-color: $color-primary-blue; // Definition 2 (Implicitly overrides Def 1)
 $secondary-color: $color-brand-blue; // Definition 2 (Implicitly overrides Def 1)
+
 $background-dark: $color-bg-dark-2; // Definition 3 (Implicitly overrides Def 2)
 $background-medium: color.adjust(
   $background-dark,
@@ -124,6 +125,11 @@ $background-header: color.adjust(
   $background-dark,
   $lightness: -5%
 ); // Definition 2 (Uses $background-dark Def 3)
+
+$background-lighter: color.adjust(
+  $background-light,
+  $lightness: 10%
+); // Definition 2 (Uses $background-light Def 2)
 $text-primary: $color-grey-text; // New name
 $text-secondary: $color-grey-text-sec; // New name
 $text-button: $color-white; // New name

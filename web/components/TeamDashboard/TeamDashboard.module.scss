@@ -1,149 +1,26 @@
 @use "sass:color";
 @use "styles/vars" as v;
 
+/* ==========================================================================
+   MAIN LAYOUT COMPONENTS
+   ========================================================================== */
+
 .teamDashboard {
   width: 100%;
-  margin-bottom: 2rem;
+  margin-bottom: v.$space-xl;
 }
 
 .dashboardGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: v.$space-md;
   width: 100%;
-}
-
-.card {
-  background: v.$background-dark;
-  border: 2px solid v.$border-color-secondary;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: v.$border-color-primary;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-}
-
-.cardHeader {
-  background: v.$background-light;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid v.$border-color-secondary;
-
-  h3 {
-    margin: 0;
-    font-family: v.$font-family-accent, sans-serif;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #07aae2;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-}
-
-.cardContent {
-  padding: 1.25rem;
-
-  .noData {
-    text-align: center;
-    color: #666;
-    padding: 20px;
-    font-style: italic;
-  }
-}
-
-.statRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
-
-.statLabel {
-  font-family: v.$font-family-primary, sans-serif;
-  font-size: 0.95rem;
-  color: v.$text-secondary;
-  font-weight: 500;
-}
-
-.statValue {
-  font-family: v.$font-family-accent, sans-serif;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: v.$color-white;
-
-  &.positive {
-    color: #00ff87;
-  }
-
-  &.negative {
-    color: #ff6b6b;
-  }
-
-  &.streakValue {
-    padding: 0.2rem 0.6rem;
-    background: rgba(7, 170, 226, 0.2);
-    border-radius: 0.4rem;
-    border: 1px solid #07aae2;
-    color: #07aae2;
-    font-size: 1rem;
-  }
-}
-
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid rgba(7, 170, 226, 0.3);
-    border-top: 4px solid #07aae2;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 16px;
-  }
-
-  span {
-    color: #ccc;
-    font-size: 1rem;
-  }
-}
-
-.error {
-  text-align: center;
-  padding: 40px 20px;
-
-  h3 {
-    color: #ff6b6b;
-    margin-bottom: 12px;
-  }
-
-  p {
-    color: #ccc;
-  }
-}
-
-.noData {
-  color: v.$text-secondary;
-  font-style: italic;
-  text-align: center;
-  padding: 1rem 0;
 }
 
 .container {
   background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
   border-radius: 12px;
-  padding: 24px;
+  padding: v.$space-lg;
   color: #ffffff;
   min-height: 100vh;
 
@@ -151,6 +28,10 @@
     padding: 16px;
   }
 }
+
+/* ==========================================================================
+   HEADER COMPONENTS
+   ========================================================================== */
 
 .header {
   display: flex;
@@ -229,7 +110,7 @@
   flex-direction: column;
   align-items: center;
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.05);
+  background: v.$background-lighter;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 
@@ -246,43 +127,78 @@
   }
 }
 
-.cardsGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+/* ==========================================================================
+   CARD COMPONENTS (Consolidated)
+   ========================================================================== */
 
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-}
-
-.card {
+.card,
+.teamStatisticsCard {
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  padding: 24px;
-  transition: all 0.3s ease;
+  border-radius: v.$border-radius-lg;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  margin-bottom: v.$space-md;
+  padding: v.$space-sm;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.05);
     border-color: rgba(7, 170, 226, 0.3);
     transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: v.$background-lighter;
+  }
+
+  &.goaltendingCard {
+    grid-row: 1 / 3;
+    grid-column: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 1rem;
+
+    @media (max-width: 1200px) {
+      grid-row: 1;
+      grid-column: 1 / 3;
+    }
+
+    @media (max-width: 768px) {
+      grid-row: auto;
+      grid-column: auto;
+    }
   }
 }
 
-.cardHeader {
+.cardHeader,
+.tsCardHeader {
+  background: v.$background-dark;
+  padding: v.$space-md v.$space-lg;
+  border-bottom: 1px solid v.$border-color-secondary;
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: v.$space-sm;
+  border-top-right-radius: v.$border-radius-md;
+  border-top-left-radius: v.$border-radius-md;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    padding: v.$space-sm v.$space-md;
+  }
 
   h3 {
     font-size: 1.25rem;
-    font-weight: 600;
+    font-weight: 700;
     margin: 0;
     color: #ffffff;
+    font-family: v.$font-family-accent;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+
+    @media (max-width: v.$breakpoint-tablet) {
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
   }
 
   .cardIcon {
@@ -291,291 +207,600 @@
   }
 }
 
-.cardContent {
-  .noData {
-    text-align: center;
-    color: #666;
-    padding: 20px;
-    font-style: italic;
+.cardContent,
+.tsCardContent {
+  width: 95%;
+  margin: 0 auto;
+  height: 100%;
+
+  .tsCardContent & {
+    width: 100%;
+    margin: 0;
   }
 }
+
+.cardsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 24px;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto auto;
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: v.$space-md;
+  }
+}
+
+/* ==========================================================================
+   STATISTICS COMPONENTS (Consolidated)
+   ========================================================================== */
+
+.statsGrid,
+.tsStatsGrid {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  margin-bottom: 0.5rem;
+
+  @media (max-width: 1024px) {
+    display: grid;
+    width: 100%;
+    margin: 0 auto;
+    grid-template-columns: repeat(3, 1fr);
+    justify-content: space-around;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  @media (max-width: v.$breakpoint-tablet) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  // Advanced Analytics card specific styling - 4 columns instead of 3
+  .card:first-child & {
+    @media (max-width: 1024px) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    @media (max-width: v.$breakpoint-tablet) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+}
+
+.statItem,
+.tsStatItem {
+  background: v.$background-lighter;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
+  width: calc(100% / 6 - 1rem);
+  margin: 0.5rem;
+
+  .tsStatItem & {
+    padding: 0.5rem;
+    width: calc(100% / 6 - 1rem);
+  }
+
+  @media (max-width: 1024px) {
+    width: 100%;
+    height: 100%;
+    margin: 0.5rem;
+  }
+
+  @media (max-width: v.$breakpoint-tablet) {
+    width: 100%;
+    margin: 0 !important;
+    padding: 0.5rem 0.25rem !important;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(7, 170, 226, 0.3);
+  }
+}
+
+.statValue,
+.tsStatValue {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+  font-family: v.$font-family-accent, sans-serif;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    font-size: 0.85rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  &.excellent {
+    color: #00ff87;
+  }
+
+  &.average {
+    color: #ffb347;
+  }
+
+  &.poor {
+    color: #ff6b6b;
+  }
+
+  &.positive {
+    color: #00ff87;
+  }
+
+  &.negative {
+    color: #ff6b6b;
+  }
+
+  &.winStreak {
+    color: #00ff87;
+    text-shadow: 0 0 10px rgba(0, 255, 135, 0.3);
+  }
+
+  &.lossStreak {
+    color: #ff6b6b;
+    text-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
+  }
+
+  &.streakValue {
+    padding: 0.2rem 0.6rem;
+    background: rgba(7, 170, 226, 0.2);
+    border-radius: 0.4rem;
+    border: 1px solid #07aae2;
+    color: #07aae2;
+    font-size: 1rem;
+  }
+}
+
+.statLabel,
+.tsStatLabel {
+  display: block;
+  font-size: 0.8rem;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 500;
+  line-height: 1.2;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    font-size: 0.6rem;
+  }
+}
+
+/* ==========================================================================
+   SPECIALIZED STAT COMPONENTS
+   ========================================================================== */
 
 .primaryStat {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 
   .statValue {
-    display: block;
-    font-size: 2.5rem;
+    font-size: 2rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  .statLabel {
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    font-weight: 600;
+  }
+}
+
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* ==========================================================================
+   RECORD AND MOMENTUM COMPONENTS
+   ========================================================================== */
+
+.quickL10Summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: v.$background-lighter;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+}
+
+.recordDisplay {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+
+  @media (max-width: 768px) {
+    align-items: center;
+  }
+}
+
+.recordValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+.recordPoints {
+  font-size: 0.8rem;
+  color: #aaa;
+  font-weight: 500;
+}
+
+.goalDifferential {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+
+  @media (max-width: 768px) {
+    gap: 0.5rem;
+  }
+}
+
+.trendValue {
+  color: #ffffff;
+
+  &.positive {
+    color: #00ff87;
+  }
+
+  &.negative {
+    color: #ff6b6b;
+  }
+}
+
+.trendSeparator {
+  color: #666;
+  font-weight: 400;
+}
+
+.streakInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: v.$background-lighter;
+  border-radius: 6px;
+
+  .streakValue {
+    font-size: 1.25rem;
     font-weight: 700;
-    color: #07aae2;
-    margin-bottom: 8px;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
 
     &.winStreak {
+      background: rgba(0, 255, 135, 0.2);
       color: #00ff87;
+      border: 1px solid #00ff87;
     }
 
     &.lossStreak {
+      background: rgba(255, 107, 107, 0.2);
       color: #ff6b6b;
+      border: 1px solid #ff6b6b;
     }
   }
 
-  .statLabel {
-    font-size: 1rem;
-    color: #ccc;
-  }
-}
-
-.statsGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-
-  @media (max-width: 600px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.stat {
-  text-align: center;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-
-  .statValue {
-    display: block;
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 4px;
-
-    &.positive {
-      color: #00ff87;
-    }
-
-    &.negative {
-      color: #ff6b6b;
-    }
-  }
-
-  .statLabel {
-    font-size: 0.875rem;
-    color: #aaa;
-  }
-}
-
-.recentRecords {
-  .recordSection {
-    margin-bottom: 16px;
-
-    h4 {
-      font-size: 1rem;
-      color: #ccc;
-      margin: 0 0 8px 0;
-    }
-
-    .recordDisplay {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-
-      .recordValue {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #ffffff;
-      }
-
-      .recordPoints {
-        font-size: 0.875rem;
-        color: #aaa;
-      }
-    }
-  }
-}
-
-.trendIndicators {
-  display: flex;
-  justify-content: space-around;
-  gap: 16px;
-}
-
-.trendStat {
-  text-align: center;
-
-  .trendValue {
-    display: block;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #07aae2;
-  }
-
-  .trendLabel {
-    font-size: 0.75rem;
-    color: #aaa;
-    margin-top: 4px;
-  }
-}
-
-.analyticsGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 16px;
-
-  @media (max-width: 600px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-.analyticsStat {
-  text-align: center;
-  padding: 16px 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  position: relative;
-
-  .statValue {
-    display: block;
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 8px;
-
-    &.excellent {
-      color: #00ff87;
-    }
-
-    &.average {
-      color: #ffb347;
-    }
-
-    &.poor {
-      color: #ff6b6b;
-    }
-  }
-
-  .statLabel {
+  .streakLabel {
     font-size: 0.875rem;
     color: #ccc;
   }
+}
 
-  .statIndicator {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+/* ==========================================================================
+   ENHANCED MOMENTUM CARD
+   ========================================================================== */
 
-    &.positive {
-      background: #00ff87;
-    }
+.enhancedMomentumCard {
+  grid-column: span 2;
+  max-width: none;
 
-    &.negative {
-      background: #ff6b6b;
-    }
+  @media (max-width: 1200px) {
+    grid-column: span 2;
+  }
+
+  @media (max-width: 768px) {
+    grid-column: span 1;
   }
 }
 
-.analyticsNote {
-  text-align: center;
-
-  small {
-    color: #666;
-    font-size: 0.75rem;
-  }
-}
-
-.specialTeamsGrid {
+.condensedMomentumHeader {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding: 1rem;
+  background: v.$background-lighter;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 
-  @media (max-width: 600px) {
+  @media (max-width: 768px) {
     grid-template-columns: 1fr;
+    gap: 1rem;
+    text-align: center;
   }
 }
 
-.specialTeamsStat {
-  text-align: center;
-  padding: 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  position: relative;
+.compactStreak {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
 
-  .powerPlayHeader,
-  .penaltyKillHeader {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 12px;
-
-    .specialTeamsIcon {
-      font-size: 1.25rem;
-    }
-
-    .specialTeamsLabel {
-      font-size: 0.875rem;
-      color: #ccc;
-      font-weight: 500;
-    }
-  }
-
-  .statValue {
-    display: block;
-    font-size: 2rem;
+  .streakValue {
+    font-size: 1.5rem;
     font-weight: 700;
-    margin-bottom: 8px;
-  }
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
 
-  .subStats {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    &.winStreak {
+      background: rgba(0, 255, 135, 0.2);
+      color: #00ff87;
+      border: 1px solid #00ff87;
+    }
 
-    .subStat {
-      font-size: 0.75rem;
-      color: #aaa;
+    &.lossStreak {
+      background: rgba(255, 107, 107, 0.2);
+      color: #ff6b6b;
+      border: 1px solid #ff6b6b;
     }
   }
 
-  .statIndicator {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
+  .streakLabel {
+    font-size: 0.75rem;
+    color: #ccc;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+.compactRecord {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+
+  .recordValue {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 1px;
+  }
+
+  .recordPoints {
+    font-size: 0.75rem;
+    color: #aaa;
+    font-weight: 500;
+  }
+}
+
+.compactGoals {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+
+  @media (max-width: 768px) {
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  .goalValue {
+    color: #ffffff;
 
     &.positive {
-      background: #00ff87;
+      color: #00ff87;
     }
 
     &.negative {
-      background: #ff6b6b;
+      color: #ff6b6b;
+    }
+  }
+
+  .goalSeparator {
+    color: #666;
+    font-weight: 400;
+  }
+}
+
+/* ==========================================================================
+   GAME COMPONENTS
+   ========================================================================== */
+
+.gameGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 0.4rem;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+  }
+}
+
+.gameCard {
+  background: v.$background-lighter;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  padding: 0.5rem 0.3rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  &:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  &.selected {
+    border-color: #07aae2;
+    background: rgba(7, 170, 226, 0.1);
+  }
+
+  &.win {
+    border-left: 3px solid #00ff87;
+
+    .gameResult {
+      color: #00ff87;
+      background: rgba(0, 255, 135, 0.1);
+    }
+  }
+
+  &.loss {
+    border-left: 3px solid #ff6b6b;
+
+    .gameResult {
+      color: #ff6b6b;
+      background: rgba(255, 107, 107, 0.1);
+    }
+  }
+
+  &.otLoss {
+    border-left: 3px solid #ffb347;
+
+    .gameResult {
+      color: #ffb347;
+      background: rgba(255, 179, 71, 0.1);
     }
   }
 }
 
-/* Enhanced Goaltending Styles */
+.gameHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.3rem;
+}
+
+.gameResult {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 4px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+.gameDate {
+  font-size: 0.65rem;
+  color: #aaa;
+  font-weight: 500;
+}
+
+.gameMatchup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  margin-bottom: 0.3rem;
+}
+
+.homeAway {
+  font-size: 0.65rem;
+  color: #ccc;
+  font-weight: 500;
+}
+
+.opponent {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.gameScore {
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.3rem;
+}
+
+/* ==========================================================================
+   GOALTENDING COMPONENTS
+   ========================================================================== */
+
 .goaltendingOverview {
   margin-bottom: 1rem;
 }
 
 .goaltendingGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.75rem;
-  margin-bottom: 1rem;
+  height: 100%;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .goaltendingStat {
-  background: rgba(255, 255, 255, 0.05);
+  background: v.$background-lighter;
   padding: 0.75rem;
   border-radius: 6px;
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.2s ease;
+
+  @media (max-width: 1024px) {
+    width: 100%;
+    height: 100%;
+    margin: 0.5rem;
+  }
+
+  @media (max-width: v.$breakpoint-tablet) {
+    width: 100%;
+    margin: 0 !important;
+  }
 
   &:hover {
     transform: translateY(-1px);
@@ -583,31 +808,12 @@
   }
 
   .statValue {
-    display: block;
     font-size: 1.2rem;
-    font-weight: 700;
     margin-bottom: 0.2rem;
-    color: #ffffff;
-
-    &.excellent {
-      color: #00ff87;
-    }
-
-    &.average {
-      color: #ffb347;
-    }
-
-    &.poor {
-      color: #ff6b6b;
-    }
   }
 
   .statLabel {
-    display: block;
     font-size: 0.7rem;
-    color: #aaa;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
   }
 }
 
@@ -628,12 +834,16 @@
 
 .goalieCardsGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr;
+  }
 }
 
 .goalieCard {
-  background: rgba(255, 255, 255, 0.05);
+  background: v.$background-lighter;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 0.75rem;
@@ -650,18 +860,21 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
 }
 
 .goalieName {
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 1rem;
+  font-family: v.$font-family-accent;
+  font-variant: small-caps;
+  letter-spacing: 0.25em;
   color: #ffffff;
   line-height: 1.2;
 }
 
 .goalieRole {
-  font-size: 10px;
+  font-size: v.$font-size-small;
   font-weight: 700;
   padding: 2px 6px;
   border-radius: 4px;
@@ -686,19 +899,36 @@
 
 .goalieStatsGrid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 0.5rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
 }
 
 .goalieStatItem {
   text-align: center;
+  background: v.$background-lighter;
+  padding: 0.5rem 0.75rem;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.2s ease;
 
+  &:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(7, 170, 226, 0.3);
+  }
+
+  .statValue,
   .goalieStatValue {
     display: block;
-    font-size: 0.9rem;
+    font-size: 1.25rem;
     font-weight: 700;
-    margin-bottom: 0.2rem;
+    margin-bottom: 0.25rem;
     color: #ffffff;
+
+    .goalieStatValue & {
+      font-size: v.$font-size-md;
+      margin-bottom: 0.2rem;
+    }
 
     &.excellent {
       color: #00ff87;
@@ -709,6 +939,14 @@
     }
 
     &.poor {
+      color: #ff6b6b;
+    }
+
+    &.positive {
+      color: #00ff87;
+    }
+
+    &.negative {
       color: #ff6b6b;
     }
   }
@@ -723,36 +961,20 @@
   }
 }
 
-.loadingState {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  color: #aaa;
+/* ==========================================================================
+   WORKLOAD COMPONENTS
+   ========================================================================== */
 
-  .loadingSpinner {
-    width: 20px;
-    height: 20px;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-top: 2px solid #07aae2;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 0.75rem;
-  }
-}
-
-/* Workload distribution bars */
 .workloadSection {
-  margin: 8px 0;
+  margin: 12px 0;
   padding: 0 4px;
 }
 
 .workloadBar {
   width: 100%;
-  height: 6px;
+  height: 12px;
   background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  border-radius: 6px;
   overflow: hidden;
   margin-bottom: 4px;
   position: relative;
@@ -760,27 +982,21 @@
 
 .workloadFill {
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    var(--team-primary-color, #1976d2),
-    var(--team-accent-color, #ff9800)
-  );
   border-radius: 3px;
   transition: width 0.3s ease;
   min-width: 2px;
 }
 
 .workloadLabel {
-  font-size: 10px;
+  font-size: v.$font-size-small;
   color: rgba(255, 255, 255, 0.8);
   text-align: center;
   font-weight: 500;
+  margin-top: 8px;
 }
 
-/* Team Workload Distribution Styles */
 .workloadDistribution {
   margin-top: 1.5rem;
-  padding-top: 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -819,10 +1035,10 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
-  justify-content: center;
+  justify-content: space-evenly;
 
   @media (max-width: 600px) {
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     gap: 0.5rem;
   }
@@ -833,7 +1049,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.25rem 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: v.$background-lighter;
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.2s ease;
@@ -857,4 +1073,410 @@
   color: #ffffff;
   font-weight: 500;
   white-space: nowrap;
+}
+
+/* ==========================================================================
+   TEAM IDENTITY COMPONENTS
+   ========================================================================== */
+
+.teamIdentity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-sm;
+  padding: 1rem;
+  background: v.$background-lighter;
+  border-radius: v.$border-radius-md;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: 1rem;
+
+  @media (max-width: 768px) {
+    gap: 0.5rem;
+  }
+}
+
+.positionSummary {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  font-family: v.$font-family-accent;
+  padding-bottom: v.$space-sm;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.positionStat {
+  text-align: center;
+  flex: 1;
+
+  .positionValue {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #07aae2;
+  }
+
+  .positionLabel {
+    font-size: 0.75rem;
+    color: #e1e1e1;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+}
+
+.quickStatsSummary {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+
+  @media (max-width: 768px) {
+    flex-wrap: wrap;
+    gap: v.$space-xs;
+  }
+}
+
+.summaryItem {
+  text-align: center;
+  flex: 1;
+
+  @media (max-width: 768px) {
+    flex: 0 0 calc(50% - v.$space-xxs);
+  }
+
+  .summaryValue {
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 2px;
+
+    &.positive {
+      color: #00ff87;
+    }
+
+    &.negative {
+      color: #ff6b6b;
+    }
+  }
+
+  .summaryLabel {
+    font-size: 0.6rem;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+}
+
+/* ==========================================================================
+   LEAGUE RANKINGS COMPONENTS
+   ========================================================================== */
+
+.leagueRankings {
+  margin: 1rem 0 0.5rem 0;
+  padding: 0.5rem 0.5rem 0 0.5rem;
+  background: v.$background-lighter;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.rankingsTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.5rem 0.5rem 0 0.5rem;
+  color: #ffffff;
+  text-align: center;
+}
+
+.rankingsGrid {
+  width: 95%;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 25%);
+
+  @media (max-width: 1400px) {
+    grid-template-columns: repeat(2, calc(50% - v.$space-sm));
+  }
+
+  @media (max-width: 600px) {
+    grid-template-columns: 100%;
+  }
+}
+
+.rankingCategory {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 0 0.5rem 0;
+
+  .rankingTitle {
+    padding: 0.25rem;
+  }
+
+  .categoryTitle {
+    font-size: 0.7rem;
+    font-weight: 900;
+    font-family: v.$font-family-primary;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #07aae2;
+    margin-bottom: 0rem;
+    margin-top: 0.25rem;
+    text-align: center;
+    border-bottom: 2px solid rgba(7, 170, 226, 0.3);
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.2;
+    white-space: normal;
+  }
+
+  &:last-child .rankingItemList {
+    border-right: none;
+  }
+}
+
+.rankingItemList {
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.rankingItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+  min-height: 1.8rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  .rankingLabel {
+    font-size: 0.75rem;
+    color: #ccc;
+    line-height: 1.2;
+  }
+
+  .rankingValue {
+    font-size: 0.875rem;
+    font-weight: 700;
+    text-align: right;
+    flex-shrink: 0;
+
+    &.excellent {
+      color: #00ff87;
+    }
+
+    &.average {
+      color: #ffb347;
+    }
+
+    &.poor {
+      color: #ff6b6b;
+    }
+  }
+}
+
+.rankingsLoading {
+  text-align: center;
+  color: #aaa;
+  font-style: italic;
+  padding: 1rem;
+}
+
+/* ==========================================================================
+   OVERVIEW AND METRICS COMPONENTS
+   ========================================================================== */
+
+.overviewGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(6, 1fr);
+  }
+}
+
+.xgContainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  gap: 0.5rem;
+  width: 100%;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    gap: 0.25rem;
+    justify-content: space-between;
+  }
+}
+
+.xgStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.timelineSection {
+  margin: 0.5rem 0 0 0;
+  padding: 0.5rem 0 0 0;
+}
+
+.metricsSection {
+  margin: 0;
+  padding: 0;
+}
+
+/* ==========================================================================
+   UTILITY COMPONENTS
+   ========================================================================== */
+
+.infoIcon {
+  display: inline-block;
+  margin-left: 0.25rem;
+  font-size: 0.7rem;
+  opacity: 0.7;
+  cursor: help;
+  transition: opacity 0.2s ease;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.cardToggle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: row;
+  gap: 0.5rem;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}
+
+.toggleButton {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ccc;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(7, 170, 226, 0.5);
+  }
+
+  &.active {
+    background: rgba(7, 170, 226, 0.2);
+    border-color: #07aae2;
+    color: #07aae2;
+    font-weight: 600;
+  }
+
+  @media (max-width: v.$breakpoint-tablet) {
+    width: 100%;
+    margin-bottom: 0.5rem;
+    padding: 0.4rem;
+  }
+}
+
+.noData {
+  color: v.$text-secondary;
+  font-style: italic;
+  text-align: center;
+  padding: 1rem 0;
+}
+
+/* ==========================================================================
+   LOADING AND ERROR STATES
+   ========================================================================== */
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(7, 170, 226, 0.3);
+    border-top: 4px solid #07aae2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+  }
+
+  span {
+    color: #ccc;
+    font-size: 1rem;
+  }
+}
+
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #aaa;
+
+  .loadingSpinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-top: 2px solid #07aae2;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 0.75rem;
+  }
+}
+
+.error {
+  text-align: center;
+  padding: 40px 20px;
+
+  h3 {
+    color: #ff6b6b;
+    margin-bottom: 12px;
+  }
+
+  p {
+    color: #ccc;
+  }
+}
+
+/* ==========================================================================
+   KEYFRAME ANIMATIONS
+   ========================================================================== */
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }

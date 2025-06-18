@@ -40,6 +40,11 @@
   padding: 1rem 3rem 1.5rem 3rem;
   height: 120px;
 
+  @media (max-width: v.$breakpoint-tablet) {
+    padding: v.$space-xxs v.$space-sm;
+    height: auto; // Allow height to adjust based on content
+  }
+
   background: linear-gradient(
     180deg,
     var(--primary-color) 0%,
@@ -57,9 +62,22 @@
   width: 120px;
   height: 120px;
   object-fit: contain;
-  // background: rgba(from var(--primary-color) r g b / 0.2);
   border-radius: 12px;
   padding-top: 10px;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    width: 80px;
+    height: 80px;
+    padding-top: 0; // Remove top padding on smaller screens
+  }
+  @media (max-width: v.$screen-small-max) {
+    display: flex;
+    width: 80px;
+    height: 80px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    padding-top: 0; // Remove top padding on smaller screens
+  }
 }
 
 .teamDetails {
@@ -70,11 +88,24 @@
   flex: 1;
   gap: 2rem;
   margin-bottom: 20px;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    flex-direction: column;
+    align-items: flex-start; // Center align when stacked
+    gap: v.$space-xxs;
+    margin-bottom: v.$space-md;
+    width: 100%; // Full width when stacked
+  }
 }
 
 .teamInfo {
   display: flex;
   flex-direction: column;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    align-items: center; // Center align text when stacked
+    text-align: center; // Center align text when stacked
+  }
 }
 
 .teamName {
@@ -90,7 +121,13 @@
   background-clip: text;
 
   @media (max-width: 768px) {
-    font-size: 1.8rem;
+    font-size: 1.5rem; // Already good
+    text-align: center; // Center align on smaller screens
+    margin: 0 auto; // Center align on smaller screens
+  }
+  @media (max-width: v.$screen-small-max) {
+    font-size: 1.2rem;
+    text-align: center;
   }
 }
 
@@ -98,6 +135,11 @@
   font-size: 1rem;
   color: #aaa;
   margin: 0;
+  @media (max-width: v.$screen-small-max) {
+    font-size: 0.75rem;
+    text-align: left; // Align left on smaller screens
+    width: 100%; // Full width on smaller screens
+  }
 }
 
 .quickStats {
@@ -106,8 +148,10 @@
   align-items: center;
 
   @media (max-width: 768px) {
-    gap: 16px;
-    flex-wrap: wrap;
+    gap: 0;
+    display: flex;
+    width: 100%;
+    justify-content: space-between; // Center quick stats on mobile
   }
 }
 
@@ -121,12 +165,30 @@
   border: 2px solid color-mix(in srgb, var(--primary-color) 70%, #fff);
   min-width: 80px;
 
+  @media (max-width: v.$screen-small-max) {
+    padding: v.$space-xs v.$space-sm;
+    min-width: 50px;
+    border: none;
+    background: transparent;
+    padding: 0 v.$space-xs 0 0;
+    justify-content: flex-start;
+  }
+
   .quickStatValue {
     font-size: 1.25rem;
     font-weight: 700;
     color: color-mix(in srgb, var(--primary-color) 70%, #fff);
     font-family: v.$font-family-secondary, sans-serif;
     margin-bottom: 2px;
+
+    @media (max-width: v.$screen-small-max) {
+      color: color-mix(in srgb, var(--primary-color) 20%, #fff);
+      font-size: 0.65rem;
+      font-weight: 600;
+      margin-bottom: 0;
+      width: 100%;
+      text-align: left;
+    }
   }
 
   .quickStatLabel {
@@ -134,6 +196,14 @@
     color: #ccc;
     text-align: center;
     line-height: 1.2;
+
+    @media (max-width: v.$screen-small-max) {
+      font-size: 0.5rem;
+      font-weight: 100;
+      color: color-mix(in srgb, var(--primary-color) 20%, #fff);
+      text-align: left;
+      width: 100%;
+    }
   }
 }
 
@@ -156,6 +226,12 @@
   width: 95%;
   margin: 0 auto;
   min-width: 0;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    // Stack columns earlier
+    flex-direction: column;
+    gap: v.$space-lg;
+  }
 }
 
 .teamStatsTableContainer {
@@ -167,6 +243,10 @@
   max-width: 100%;
   padding-left: 10px;
   padding-right: 10px;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    margin-right: 0; // Remove right margin when stacked
+  }
 }
 
 .teamStatsTable {
@@ -185,6 +265,10 @@
   margin-left: auto;
   margin-right: auto;
   min-width: 900px;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    min-width: 100%; // Allow table to shrink on smaller screens (overflow handles scrolling)
+  }
 }
 
 .teamStatsTable tr {
@@ -197,6 +281,11 @@
   border-bottom: 1px solid #444;
   text-align: center;
   height: 35px;
+
+  @media (max-width: v.$screen-small-max) {
+    padding: v.$space-xxs v.$space-xs; // Reduce padding on very small screens
+    font-size: 0.8rem; // Smaller font for table content
+  }
 }
 
 .teamStatsTable th {
@@ -204,6 +293,10 @@
   color: #07aae2;
   font-weight: 700;
   letter-spacing: 0.05em;
+
+  @media (max-width: v.$screen-small-max) {
+    font-size: 0.85rem; // Smaller font for table headers
+  }
 }
 
 .teamStatsTable tr:nth-of-type(even) {
@@ -260,12 +353,18 @@
     font-weight: 700;
     margin-bottom: 0.5rem;
     color: v.$color-white;
+    @media (max-width: v.$screen-small-max) {
+      font-size: 1.25rem;
+    }
   }
 
   p {
     font-size: 1rem;
     color: v.$color-grey-dark;
     margin: 0;
+  }
+  @media (max-width: v.$screen-small-max) {
+    margin: v.$space-md 0 v.$space-sm 0;
   }
 }
 
@@ -279,6 +378,15 @@
   display: flex;
   flex-direction: row; // Changed to row for side-by-side layout
   min-height: 550px;
+
+  @media (max-width: v.$breakpoint-desktop) {
+    // Stack earlier for tablets
+    flex-direction: column;
+    min-height: auto; // Adjust height when stacked
+  }
+  @media (max-width: v.$screen-small-max) {
+    padding: v.$space-sm;
+  }
 }
 
 // New class for the control panel (left side container)
@@ -287,6 +395,12 @@
   flex-direction: column;
   width: 280px;
   padding-right: 1rem;
+
+  @media (max-width: v.$breakpoint-desktop) {
+    width: 100%; // Full width when stacked
+    padding-right: 0;
+    margin-bottom: v.$space-md;
+  }
 }
 
 // New class for the rink visualization (right side container)
@@ -304,6 +418,10 @@
   border-radius: 0.5rem;
   border: 1px solid v.$border-color-secondary;
 
+  @media (max-width: v.$screen-small-max) {
+    padding: v.$space-xs;
+  }
+
   p {
     margin: 0.5rem 0;
     font-weight: bold;
@@ -318,6 +436,11 @@
   background: v.$background-dark;
   border-radius: 0.5rem;
   border: 1px solid v.$border-color-secondary;
+
+  @media (max-width: v.$screen-small-max) {
+    margin: v.$space-sm 0 v.$space-xs 0;
+    padding: v.$space-xs;
+  }
   svg {
     margin: 0.25rem 0 !important;
     width: 100% !important;
@@ -334,6 +457,10 @@
   border-radius: 0.5rem;
   border: 1px solid v.$border-color-secondary;
   margin-bottom: 1rem;
+
+  @media (max-width: v.$screen-small-max) {
+    padding: v.$space-xs;
+  }
 }
 
 .filterGroup {
@@ -343,6 +470,11 @@
   flex-direction: column;
   gap: 0.25rem;
   margin-bottom: 0.5rem;
+
+  @media (max-width: v.$screen-small-max) {
+    gap: v.$space-xxs;
+    margin-bottom: v.$space-xs;
+  }
 
   label {
     font-weight: 600;
@@ -370,6 +502,10 @@
     option {
       padding: 0.25rem;
     }
+    @media (max-width: v.$screen-small-max) {
+      padding: v.$space-xs;
+      font-size: 0.85rem;
+    }
   }
 
   small {
@@ -378,6 +514,10 @@
     color: v.$color-grey-dark;
     margin-bottom: 0;
     line-height: 1.2;
+    @media (max-width: v.$screen-small-max) {
+      font-size: 0.7rem;
+      margin-top: 0;
+    }
   }
 }
 
@@ -399,6 +539,12 @@
   gap: 2.5rem;
   width: 100%;
   flex-wrap: wrap;
+
+  @media (max-width: v.$breakpoint-desktop) {
+    // When control panel stacks, rinks should too
+    flex-direction: column;
+    gap: v.$space-md;
+  }
 }
 
 // Container for each half rink and its label
@@ -414,6 +560,12 @@
   max-width: 600px;
   box-sizing: border-box;
   margin-bottom: 1.5rem;
+
+  @media (max-width: v.$breakpoint-desktop) {
+    // Full width when stacked
+    min-width: 100%;
+    max-width: 100%;
+  }
 }
 
 // Label above each rink
@@ -426,20 +578,10 @@
   margin-bottom: 0.5rem;
   text-align: center;
   text-transform: uppercase;
-}
 
-@media (max-width: 900px) {
-  .teamStatsTopRow {
-    flex-direction: column;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    align-items: stretch;
-  }
-  .halfRinkContainer {
-    min-width: 0;
-    width: 100%;
-    max-width: 100%;
-    margin-bottom: 1.5rem;
+  @media (max-width: v.$screen-small-max) {
+    font-size: 1.1rem;
+    margin-bottom: v.$space-xs;
   }
 }
 
@@ -489,6 +631,11 @@
   margin-top: 1.5rem;
   margin-left: auto;
   margin-right: auto;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    min-width: 100%; // Allow to shrink
+    padding: v.$space-sm;
+  }
   // Do NOT use flex/min-height here; height is set inline from JS to match stats table
 }
 
@@ -498,6 +645,11 @@
   align-items: flex-end;
   width: 95%;
   margin: 0 auto 1.2rem auto;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    flex-direction: column;
+    align-items: center; // Center headers when stacked
+  }
 }
 
 .seasonStatsHeaderLeft {
@@ -510,6 +662,11 @@
   flex: 0 0 auto;
   min-width: 320px;
   padding-left: 0.5rem;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    text-align: center;
+    padding-left: 0;
+  }
   /* Match .teamStatsTableContainer min width if needed */
 }
 
@@ -522,6 +679,11 @@
   text-transform: uppercase;
   flex: 0 0 auto;
   min-width: 320px;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    text-align: center;
+    margin-top: v.$space-md; // Add space when stacked
+  }
   /* Match .lineCombinations min width and margin */
 }
 
@@ -537,6 +699,10 @@
   height: 100%;
   align-content: stretch;
   position: relative;
+
+  @media (max-width: v.$screen-small-max) {
+    gap: v.$space-sm v.$space-xs;
+  }
 }
 
 .lineCombinationsCard {
@@ -557,6 +723,11 @@
   padding-left: 0.5rem;
   padding-top: 0.1rem;
   padding-bottom: 0.3rem;
+
+  @media (max-width: v.$screen-small-max) {
+    padding: v.$space-xs;
+    font-size: 0.9rem; // Slightly smaller text in cards
+  }
 }
 
 .lineCombinationsPlayerName {
@@ -564,6 +735,10 @@
   font-weight: 900;
   color: #fff;
   margin-bottom: 0.08rem;
+
+  @media (max-width: v.$screen-small-max) {
+    font-size: 0.85rem;
+  }
 }
 
 .lineCombinationsPosition {
@@ -572,6 +747,10 @@
   font-weight: 700;
   margin-bottom: 0.08rem;
   letter-spacing: 0.03em;
+
+  @media (max-width: v.$screen-small-max) {
+    font-size: 0.9rem;
+  }
 }
 
 .lineCombinationsEligiblePositions {
@@ -579,6 +758,10 @@
   color: #888;
   font-weight: 400;
   margin-bottom: 0.1rem;
+
+  @media (max-width: v.$screen-small-max) {
+    font-size: 0.7rem;
+  }
 }
 
 .showMoreSeasonsButtonContainer {
@@ -593,6 +776,10 @@
   display: flex;
   flex-direction: column;
   max-width: 100%;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    flex-basis: 100%; // Take full width when stacked
+  }
 }
 
 .lineCombinationsColumn {
@@ -601,17 +788,10 @@
   display: flex;
   flex-direction: column;
   max-width: 100%;
-  // Do NOT use flex/min-height here; height is set inline from JS to match stats table
-}
-
-.hasTeamColors {
-  /* This class is just a marker for dynamic theming, no static styles needed */
-}
-
-@media (max-width: 900px) {
-  .teamStatsTableContainer {
-    margin-right: 0;
+  @media (max-width: v.$breakpoint-tablet) {
+    flex-basis: 100%; // Take full width when stacked
   }
+  // Do NOT use flex/min-height here; height is set inline from JS to match stats table
 }
 
 .lineCombinationsGridLabel {
@@ -623,6 +803,10 @@
   pointer-events: none;
   user-select: none;
   z-index: 3;
+
+  @media (max-width: v.$screen-small-max) {
+    font-size: 0.95rem;
+  }
 }
 .lineCombinationsForwardsLabel {
   font-size: 1.25rem;
@@ -630,6 +814,10 @@
   color: #07aae2;
   margin-bottom: 0.2rem;
   letter-spacing: 0.08em;
+
+  @media (max-width: v.$screen-small-max) {
+    font-size: 1.1rem;
+  }
 }
 .lineCombinationsDefenseLabel {
   font-size: 1.05rem;
@@ -637,6 +825,10 @@
   color: #ffe066;
   margin-top: 0.1rem;
   letter-spacing: 0.06em;
+
+  @media (max-width: v.$screen-small-max) {
+    font-size: 0.9rem;
+  }
 }
 .lineCombinationsGoaliesLabel {
   font-size: 1.05rem;
@@ -644,6 +836,10 @@
   color: #ffe066;
   margin-top: 0.1rem;
   letter-spacing: 0.06em;
+
+  @media (max-width: v.$screen-small-max) {
+    font-size: 0.9rem;
+  }
 }
 .lineCombinationsGridDivider {
   width: 2px;
@@ -666,6 +862,12 @@
   align-items: flex-start;
   flex-wrap: wrap;
   height: 100%;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    // Stack sections earlier
+    flex-direction: column;
+    align-items: stretch; // Make sections full width
+  }
 }
 
 .lineCombinationsSection {
@@ -675,6 +877,10 @@
   min-width: 0;
   flex: 1 1 0;
   max-width: 400px;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    max-width: 100%; // Full width when stacked
+  }
 }
 
 .lineCombinationsSectionLabel {
@@ -687,6 +893,11 @@
   text-align: center;
   margin-bottom: 0.5rem;
   margin-top: 0.5rem;
+
+  @media (max-width: v.$screen-small-max) {
+    font-size: 0.9rem;
+    margin-bottom: v.$space-xs;
+  }
 }
 
 .lineCombinationsSectionGrid {
@@ -694,23 +905,34 @@
   gap: 0.75rem 0.4rem;
   width: 100%;
 }
-
 .forwardsGrid {
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(4, 1fr);
   height: 100%;
+
+  @media (max-width: v.$screen-small-max) {
+    gap: v.$space-xs v.$space-xxs;
+  }
 }
 
 .defenseGrid {
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(3, 1fr);
   height: 100%;
+
+  @media (max-width: v.$screen-small-max) {
+    gap: v.$space-xs v.$space-xxs;
+  }
 }
 
 .goaliesGrid {
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: 1fr;
   height: 100%;
+
+  @media (max-width: v.$screen-small-max) {
+    gap: v.$space-xs v.$space-xxs;
+  }
 }
 
 .lineCombinationsCard {
@@ -729,23 +951,18 @@
   padding: 0.5rem;
 }
 
-@media (max-width: 1100px) {
-  .lineCombinationsFlexContainer {
-    flex-direction: column;
-    gap: 1.5rem;
-    align-items: stretch;
-  }
-  .lineCombinationsSection {
-    max-width: 100%;
-  }
-}
-
 .lineCombinationsFixedHeight {
   overflow: auto;
   height: var(--line-combos-height, 600px);
   width: 100%;
   display: flex;
   flex-direction: row;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    flex-direction: column; // Stack line combo sections on mobile
+    height: auto; // Let height adjust
+    overflow: visible; // No need to scroll inner container if sections stack
+  }
 }
 
 .defenseGoaliesStack {
@@ -753,6 +970,10 @@
   flex-direction: column;
   height: 100%;
   flex: 2 1 0;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    flex: 1 1 auto; // Adjust flex basis for stacked layout
+  }
 }
 
 .forwardsSection {
@@ -760,16 +981,25 @@
   flex-direction: column;
   height: 100%;
   flex: 3 2 0;
+  @media (max-width: v.$breakpoint-tablet) {
+    flex: 1 1 auto; // Adjust flex basis for stacked layout
+  }
 }
 .defenseSection {
   display: flex;
   flex-direction: column;
   height: 100%;
   flex: 3 1 0;
+  @media (max-width: v.$breakpoint-tablet) {
+    flex: 1 1 auto; // Adjust flex basis for stacked layout
+  }
 }
 .goaliesSection {
   display: flex;
   flex-direction: column;
   height: 100%;
   flex: 1 1 0%;
+  @media (max-width: v.$breakpoint-tablet) {
+    flex: 1 1 auto; // Adjust flex basis for stacked layout
+  }
 }

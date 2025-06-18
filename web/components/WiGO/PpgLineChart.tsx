@@ -29,6 +29,7 @@ import styles from "styles/wigoCharts.module.scss";
 import Spinner from "components/Spinner";
 import Zoom from "chartjs-plugin-zoom";
 import { WIGO_COLORS, CHART_COLORS, addAlpha } from "styles/wigoColors";
+import useCurrentSeason from "hooks/useCurrentSeason";
 
 ChartJS.register(
   CategoryScale,
@@ -57,10 +58,11 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const chartRef = useRef<ChartJS<"bar" | "line"> | null>(null);
+  const currentSeasonData = useCurrentSeason();
+  const currentSeasonId = currentSeasonData?.seasonId;
 
   useEffect(() => {
-    // Reset logic when playerId is null/undefined
-    if (!playerId) {
+    if (!playerId || !currentSeasonId) {
       setGameLogData([]);
       setAveragePpg(null);
       setError(null);
@@ -75,23 +77,14 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
       setAveragePpg(null);
 
       try {
-        // 1. Fetch totals for average PPG and season
+        // Fetch totals for averages (but not for season selection)
         const totals = await fetchPlayerPerGameTotals(playerId);
-        const avgPoints = totals?.points_per_game ?? null;
-        const currentSeason = totals?.season;
+        setAveragePpg(totals?.points_per_game ?? null);
 
-        if (!currentSeason || avgPoints === null) {
-          // Check if essential data is missing
-          // Decide how to handle: Throw error or allow chart with missing avg?
-          // Let's throw an error for consistency
-          throw new Error("Missing required totals data (season or avg PPG).");
-        }
-        setAveragePpg(avgPoints);
-
-        // 2. Fetch game log points for that season
+        // Use currentSeasonId from hook for fetching game log
         const gameLogs = await fetchPlayerGameLogPoints(
           playerId,
-          currentSeason
+          String(currentSeasonId)
         );
         setGameLogData(gameLogs);
       } catch (err: any) {
@@ -100,12 +93,12 @@ const PpgLineChart: React.FC<PpgLineChartProps> = ({ playerId }) => {
         setGameLogData([]);
         setAveragePpg(null);
       } finally {
-        setIsLoading(false); // Set loading false in finally block
+        setIsLoading(false);
       }
     };
 
     loadChartData();
-  }, [playerId]);
+  }, [playerId, currentSeasonId]);
 
   // --- Prepare Chart Data ---
   const getChartData = (): ChartData<

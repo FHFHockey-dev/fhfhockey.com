@@ -19,7 +19,7 @@ export default function usePercentileRank(
 
   useEffect(() => {
     let mount = true;
-    if (!playerId) return;
+    if (!playerId || !season?.seasonId) return;
     (async () => {
       setLoading(true);
       const { StartTime, EndTime } = getTimes(timeOption);
@@ -32,7 +32,7 @@ export default function usePercentileRank(
           body: JSON.stringify({
             StartTime,
             EndTime,
-            Season: season ? season.seasonId : ""
+            Season: season.seasonId
           })
         }
       )
