@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import styles from "../../styles/TeamStatsPage.module.scss";
 
 interface LineCombinationsGridProps {
@@ -99,24 +100,26 @@ export function LineCombinationsGrid({
         const info = playerMap[idStr] || {};
         cells.push(
           <div key={i} className={cardClassName}>
-            <div className={styles.lineCombinationsPlayerName}>
-              {(() => {
-                const name = info.nhl_player_name || idStr;
-                // Split on the last space to keep hyphenated names together
-                const match = name.match(/^(.*)\s([^\s]+)$/);
-                if (match) {
-                  return (
-                    <>
-                      {match[1]}
-                      <br />
-                      {match[2]}
-                    </>
-                  );
-                } else {
-                  return name;
-                }
-              })()}
-            </div>
+            <Link href={`/stats/player/${playerId}`}>
+              <div className={styles.lineCombinationsPlayerName}>
+                {(() => {
+                  const name = info.nhl_player_name || idStr;
+                  // Split on the last space to keep hyphenated names together
+                  const match = name.match(/^(.*)\s([^\s]+)$/);
+                  if (match) {
+                    return (
+                      <>
+                        {match[1]}
+                        <br />
+                        {match[2]}
+                      </>
+                    );
+                  } else {
+                    return name;
+                  }
+                })()}
+              </div>
+            </Link>
             {info.eligible_positions && (
               <div className={styles.lineCombinationsEligiblePositions}>
                 {(() => {

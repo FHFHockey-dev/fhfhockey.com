@@ -35,6 +35,9 @@ export function GameByGameTimeline({
   const [gameData, setGameData] = useState<GameData[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedGame, setSelectedGame] = useState<GameData | null>(null);
+  const [selectedView, setSelectedView] = useState<"overview" | "trends">(
+    "overview"
+  );
   const [last10Record, setLast10Record] = useState<{
     wins: number;
     losses: number;
@@ -272,6 +275,20 @@ export function GameByGameTimeline({
           {last10Record?.wins || 0}-{last10Record?.losses || 0}-
           {last10Record?.otLosses || 0}
         </span>
+        <div className={styles.viewTabs}>
+          <div
+            className={`${styles.viewTab} ${selectedView === "overview" ? styles.active : ""}`}
+            onClick={() => setSelectedView("overview")}
+          >
+            Overview
+          </div>
+          <div
+            className={`${styles.viewTab} ${selectedView === "trends" ? styles.active : ""}`}
+            onClick={() => setSelectedView("trends")}
+          >
+            Trends
+          </div>
+        </div>
       </div>
 
       <div className={styles.gameGrid}>

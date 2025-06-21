@@ -8,6 +8,7 @@ import PoissonDistributionChart from "components/PoissonDistributionChart";
 import Image from "next/image";
 import { awayTeamColors, homeTeamColors } from "lib/NHL/teamColors";
 import styles from "./GamePage.scss";
+import Link from "next/link";
 
 export default function Page() {
   const router = useRouter();
@@ -700,13 +701,18 @@ export default function Page() {
                       <div className="playerCompDetails" key={index}>
                         {/* Home player side */}
                         <div className="playerDetail homePlayer">
-                          <Image
-                            src={leader.homeLeader.headshot}
-                            alt="Home player headshot"
-                            className="playerHeadshot"
-                            width={50} // Add appropriate width
-                            height={50} // Add appropriate height
-                          />
+                          <Link
+                            href={`/stats/player/${leader.homeLeader.playerId}`}
+                          >
+                            <Image
+                              src={leader.homeLeader.headshot}
+                              alt="Home player headshot"
+                              className="playerHeadshot"
+                              width={50}
+                              height={50}
+                              style={{ cursor: "pointer" }}
+                            />
+                          </Link>
 
                           <div className="playerStats">
                             <span>{leader.homeLeader.firstName.default}</span>
@@ -742,13 +748,18 @@ export default function Page() {
                               {leader.awayLeader.positionCode} • #
                               {leader.awayLeader.sweaterNumber}
                             </span>
-                            <Image
-                              src={leader.awayLeader.headshot}
-                              alt="Away player headshot"
-                              className="playerHeadshot"
-                              width={50} // Add appropriate width
-                              height={50} // Add appropriate height
-                            />
+                            <Link
+                              href={`/stats/player/${leader.awayLeader.playerId}`}
+                            >
+                              <Image
+                                src={leader.awayLeader.headshot}
+                                alt="Away player headshot"
+                                className="playerHeadshot"
+                                width={50}
+                                height={50}
+                                style={{ cursor: "pointer" }}
+                              />
+                            </Link>
                           </div>
                         </div>
                       </div>

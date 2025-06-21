@@ -10,12 +10,12 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0.5rem;
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 
   h4 {
     margin: 0;
-    font-size: 1rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: #ffffff;
   }
@@ -27,12 +27,45 @@
   font-weight: 500;
 }
 
+.viewTabs {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: v.$space-xs;
+}
+
+.viewTab {
+  padding: 0.25rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  color: #ccc;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(7, 170, 226, 0.5);
+  }
+
+  &.active {
+    background: rgba(7, 170, 226, 0.2);
+    border-color: #07aae2;
+    color: #07aae2;
+    font-weight: 600;
+  }
+}
+
 .gameGrid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   grid-template-rows: repeat(2, 1fr);
   gap: 0.5rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.25rem;
 
   @media (max-width: 768px) {
     grid-template-columns: repeat(3, 1fr);

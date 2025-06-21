@@ -356,24 +356,6 @@ export function AdvancedL10Metrics({
 
   return (
     <div className={styles.metrics}>
-      <div className={styles.metricsHeader}>
-        <h4>Last 10 Games Analysis</h4>
-        <div className={styles.viewTabs}>
-          <button
-            className={`${styles.tab} ${selectedView === "overview" ? styles.active : ""}`}
-            onClick={() => setSelectedView("overview")}
-          >
-            Overview
-          </button>
-          <button
-            className={`${styles.tab} ${selectedView === "trends" ? styles.active : ""}`}
-            onClick={() => setSelectedView("trends")}
-          >
-            Trends
-          </button>
-        </div>
-      </div>
-
       {selectedView === "overview" && (
         <div className={styles.overviewGrid}>
           <div className={styles.metricGroup}>

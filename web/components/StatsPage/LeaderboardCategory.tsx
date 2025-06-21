@@ -1,6 +1,7 @@
 // /components/StatsPage/LeaderboardCategory.tsx
 
 import React from "react";
+import Link from "next/link";
 import styles from "styles/Stats.module.scss";
 import { SkaterStat } from "lib/NHL/statsPageTypes";
 import Segment from "./Segment";
@@ -129,17 +130,20 @@ const LeaderboardCategory: React.FC<LeaderboardCategoryProps> = ({
         return (
           <div key={player.player_id} className={rowClasses}>
             <div className={styles.topRow}>
-              <img
-                src={
-                  player.image_url ||
-                  `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${player.player_id}.jpg`
-                }
-                alt={player.fullName}
-                className={styles.playerHeadshot}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
+              <Link href={`/stats/player/${player.player_id}`}>
+                <img
+                  src={
+                    player.image_url ||
+                    `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${player.player_id}.jpg`
+                  }
+                  alt={player.fullName}
+                  className={styles.playerHeadshot}
+                  style={{ cursor: "pointer" }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              </Link>
               <div className={styles.leaderMain}>
                 <div className={styles.nameValueRow}>
                   <div>

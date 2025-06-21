@@ -1,6 +1,7 @@
 // /components/StatsPage/LeaderboardCategoryGoalie.tsx
 
 import React from "react";
+import Link from "next/link";
 import styles from "styles/Stats.module.scss";
 import { GoalieStat } from "lib/NHL/statsPageTypes";
 
@@ -40,17 +41,20 @@ const LeaderboardCategoryGoalie: React.FC<LeaderboardCategoryGoalieProps> = ({
         return (
           <div key={goalie.goalie_id} className={rowClasses}>
             <div className={styles.topRow}>
-              <img
-                src={
-                  goalie.image_url ||
-                  `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${goalie.goalie_id}.jpg`
-                }
-                alt={goalie.fullName}
-                className={styles.playerHeadshot}
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.display = "none";
-                }}
-              />
+              <Link href={`/stats/player/${goalie.goalie_id}`}>
+                <img
+                  src={
+                    goalie.image_url ||
+                    `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${goalie.goalie_id}.jpg`
+                  }
+                  alt={goalie.fullName}
+                  className={styles.playerHeadshot}
+                  style={{ cursor: "pointer" }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              </Link>
               <div className={styles.leaderMain}>
                 <div className={styles.nameValueRow}>
                   <div>

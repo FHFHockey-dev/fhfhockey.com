@@ -2,856 +2,813 @@
 @use "styles/vars" as v;
 
 /* ==========================================================================
-   MAIN LAYOUT COMPONENTS
+   MODERN DASHBOARD LAYOUT - COMPACT & ELEGANT
    ========================================================================== */
 
 .teamDashboard {
   width: 100%;
-  margin-bottom: v.$space-xl;
-}
-
-.dashboardGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: v.$space-md;
-  width: 100%;
+  margin-bottom: v.$space-lg;
 }
 
 .container {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-  border-radius: 12px;
-  padding: v.$space-lg;
-  color: #ffffff;
-  min-height: 100vh;
+  background: linear-gradient(
+    135deg,
+    v.$background-dark 0%,
+    color-mix(in srgb, v.$background-dark 90%, v.$primary-color 10%) 100%
+  );
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-md;
+  color: v.$text-primary;
+  min-height: 80vh;
+  max-height: 80vh;
 
-  @media (max-width: 768px) {
-    padding: 16px;
+  // 15-column grid layout as specified
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(6, 1fr);
+  grid-column-gap: v.$space-sm;
+  grid-row-gap: v.$space-sm;
+
+  @media (max-width: v.$breakpoint-desktop) {
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: v.$space-xs;
+    padding: v.$space-sm;
+  }
+
+  @media (max-width: v.$breakpoint-tablet) {
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-sm;
+    padding: v.$space-xs;
   }
 }
 
 /* ==========================================================================
-   HEADER COMPONENTS
-   ========================================================================== */
-
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
-  padding-bottom: 24px;
-  border-bottom: 2px solid #333;
-
-  @media (max-width: 1024px) {
-    flex-direction: column;
-    gap: 20px;
-    text-align: center;
-  }
-}
-
-.teamInfo {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 12px;
-  }
-}
-
-.teamLogo {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 8px;
-
-  @media (max-width: 768px) {
-    width: 60px;
-    height: 60px;
-  }
-}
-
-.teamDetails {
-  .teamName {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin: 0;
-    background: linear-gradient(45deg, #07aae2, #00ff87);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-
-    @media (max-width: 768px) {
-      font-size: 2rem;
-    }
-  }
-
-  .seasonInfo {
-    font-size: 1rem;
-    color: #aaa;
-    margin: 8px 0 0 0;
-  }
-}
-
-.quickStats {
-  display: flex;
-  gap: 24px;
-
-  @media (max-width: 768px) {
-    gap: 16px;
-    justify-content: center;
-  }
-}
-
-.quickStat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 12px 16px;
-  background: v.$background-lighter;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-
-  .quickStatValue {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #07aae2;
-  }
-
-  .quickStatLabel {
-    font-size: 0.875rem;
-    color: #ccc;
-    margin-top: 4px;
-  }
-}
-
-/* ==========================================================================
-   CARD COMPONENTS (Consolidated)
+   COMPACT CARD SYSTEM
    ========================================================================== */
 
 .card,
 .teamStatisticsCard {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: v.$border-radius-lg;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid color-mix(in srgb, v.$border-primary 30%, transparent 70%);
+  border-radius: v.$border-radius-md;
   overflow: hidden;
-  transition: all 0.2s ease;
-  margin-bottom: v.$space-md;
-  padding: v.$space-sm;
+  transition: all v.$transition-duration v.$transition-easing;
+  backdrop-filter: blur(8px);
+  position: relative;
 
-  &:hover {
-    border-color: rgba(7, 170, 226, 0.3);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    background: v.$background-lighter;
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      var(--team-primary-color, v.$primary-color),
+      var(--team-secondary-color, v.$secondary-color)
+    );
+    opacity: 0.6;
   }
 
-  &.goaltendingCard {
-    grid-row: 1 / 3;
-    grid-column: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 1rem;
+  &:hover {
+    border-color: color-mix(in srgb, v.$primary-color 50%, transparent 50%);
+    transform: translateY(-1px);
+    box-shadow:
+      0 4px 20px rgba(0, 0, 0, 0.1),
+      0 0 0 1px color-mix(in srgb, v.$primary-color 20%, transparent 80%);
+    background: rgba(255, 255, 255, 0.04);
+  }
 
-    @media (max-width: 1200px) {
-      grid-row: 1;
-      grid-column: 1 / 3;
+  // Grid positioning - div1: Team Leaders
+  &.teamStatisticsCard {
+    grid-area: 1 / 1 / 7 / 4;
+
+    @media (max-width: v.$breakpoint-desktop) {
+      grid-area: 1 / 1 / 5 / 5;
     }
 
-    @media (max-width: 768px) {
-      grid-row: auto;
-      grid-column: auto;
+    @media (max-width: v.$breakpoint-tablet) {
+      order: 1;
+    }
+  }
+
+  // div2: Goaltending Card (far right)
+  &.goaltendingCard {
+    grid-area: 1 / 12 / 7 / 16;
+    @media (max-width: v.$breakpoint-desktop) {
+      grid-area: 5 / 5 / 9 / 9;
+    }
+
+    @media (max-width: v.$breakpoint-tablet) {
+      order: 2;
+    }
+  }
+
+  // div3: Advanced Analytics
+  &.advancedAnalyticsCard {
+    grid-area: 1 / 9 / 4 / 12;
+
+    @media (max-width: v.$breakpoint-desktop) {
+      grid-area: 1 / 5 / 4 / 9;
+    }
+
+    @media (max-width: v.$breakpoint-tablet) {
+      order: 3;
+    }
+  }
+
+  // div4: Team Rankings
+  &.teamRankingsCard {
+    grid-area: 1 / 4 / 4 / 9;
+
+    @media (max-width: v.$breakpoint-desktop) {
+      grid-area: 5 / 1 / 8 / 5;
+    }
+
+    @media (max-width: v.$breakpoint-tablet) {
+      order: 4;
+    }
+  }
+
+  // div5: Enhanced Momentum Card
+  &.enhancedMomentumCard {
+    grid-area: 4 / 4 / 7 / 12;
+
+    @media (max-width: v.$breakpoint-desktop) {
+      grid-area: 1 / 1 / 5 / 5;
+    }
+
+    @media (max-width: v.$breakpoint-tablet) {
+      order: 5;
     }
   }
 }
 
+/* ==========================================================================
+   COMPACT CARD HEADERS
+   ========================================================================== */
+
 .cardHeader,
 .tsCardHeader {
-  background: v.$background-dark;
-  padding: v.$space-md v.$space-lg;
-  border-bottom: 1px solid v.$border-color-secondary;
-  width: 100%;
+  background: color-mix(in srgb, v.$background-header 80%, transparent 20%);
+  padding: v.$space-sm v.$space-md;
+  border-bottom: 1px solid
+    color-mix(in srgb, v.$border-primary 20%, transparent 80%);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: v.$space-sm;
-  border-top-right-radius: v.$border-radius-md;
-  border-top-left-radius: v.$border-radius-md;
-
-  @media (max-width: v.$breakpoint-tablet) {
-    padding: v.$space-sm v.$space-md;
-  }
+  min-height: 40px;
 
   h3 {
-    font-size: 1.25rem;
+    font-size: v.$font-size-md;
     font-weight: 700;
     margin: 0;
-    color: #ffffff;
+    color: v.$text-primary;
     font-family: v.$font-family-accent;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-
-    @media (max-width: v.$breakpoint-tablet) {
-      font-size: 1rem;
-      margin-bottom: 0.25rem;
-    }
+    line-height: 1.2;
   }
 
   .cardIcon {
-    font-size: 1.5rem;
-    opacity: 0.7;
+    font-size: v.$font-size-md;
+    opacity: 0.6;
+    color: var(--team-accent-color, v.$secondary-color);
+  }
+
+  .infoIcon {
+    background: color-mix(in srgb, v.$info-color 20%, transparent 80%);
+    color: v.$info-color;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    margin-left: v.$space-xs;
+    cursor: help;
+    transition: all v.$transition-duration;
+
+    &:hover {
+      background: color-mix(in srgb, v.$info-color 30%, transparent 70%);
+      transform: scale(1.1);
+    }
+  }
+
+  .cardToggle {
+    display: flex;
+    gap: 2px;
+    background: color-mix(in srgb, v.$background-dark 60%, transparent 40%);
+    border-radius: v.$border-radius-sm;
+    padding: 2px;
+  }
+
+  .toggleButton {
+    background: transparent;
+    border: none;
+    color: v.$text-secondary;
+    font-size: v.$font-size-xs;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: v.$border-radius-sm;
+    cursor: pointer;
+    transition: all v.$transition-duration;
+
+    &:hover {
+      background: color-mix(in srgb, v.$primary-color 20%, transparent 80%);
+      color: v.$text-primary;
+    }
+
+    &.active {
+      background: v.$primary-color;
+      color: v.$text-button;
+    }
   }
 }
 
 .cardContent,
 .tsCardContent {
-  width: 95%;
-  margin: 0 auto;
-  height: 100%;
-
-  .tsCardContent & {
-    width: 100%;
-    margin: 0;
-  }
-}
-
-.cardsGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  gap: 24px;
-
-  @media (max-width: 1200px) {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto auto auto;
-  }
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: v.$space-md;
-  }
+  padding: v.$space-sm;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ==========================================================================
-   STATISTICS COMPONENTS (Consolidated)
+   ENHANCED STATISTICS GRID SYSTEM
    ========================================================================== */
 
 .statsGrid,
 .tsStatsGrid {
-  display: flex;
-  justify-content: space-evenly;
-  align-items: center;
-  margin-bottom: 0.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: v.$space-xs;
+  margin-bottom: v.$space-sm;
 
-  @media (max-width: 1024px) {
-    display: grid;
-    width: 100%;
-    margin: 0 auto;
-    grid-template-columns: repeat(3, 1fr);
-    justify-content: space-around;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-  }
+  // Special handling for advanced analytics (2x4 grid)
+  .advancedAnalyticsCard & {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    height: 100%;
 
-  @media (max-width: v.$breakpoint-tablet) {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.5rem;
-    width: 100%;
-  }
-
-  // Advanced Analytics card specific styling - 4 columns instead of 3
-  .card:first-child & {
-    @media (max-width: 1024px) {
-      grid-template-columns: repeat(4, 1fr);
-    }
-
-    @media (max-width: v.$breakpoint-tablet) {
-      grid-template-columns: repeat(4, 1fr);
+    @media (max-width: v.$screen-small-max) {
+      grid-template-columns: 1fr;
+      grid-template-rows: repeat(8, 1fr);
     }
   }
 }
 
 .statItem,
 .tsStatItem {
-  background: v.$background-lighter;
-  padding: 1rem;
-  border-radius: 8px;
+  background: color-mix(in srgb, v.$background-lighter 60%, transparent 40%);
+  padding: v.$space-sm;
+  border-radius: v.$border-radius-sm;
   text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.2s ease;
-  width: calc(100% / 6 - 1rem);
-  margin: 0.5rem;
+  border: 1px solid color-mix(in srgb, v.$border-secondary 30%, transparent 70%);
+  transition: all v.$transition-duration v.$transition-easing;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
 
-  .tsStatItem & {
-    padding: 0.5rem;
-    width: calc(100% / 6 - 1rem);
-  }
-
-  @media (max-width: 1024px) {
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: 100%;
-    margin: 0.5rem;
-  }
-
-  @media (max-width: v.$breakpoint-tablet) {
-    width: 100%;
-    margin: 0 !important;
-    padding: 0.5rem 0.25rem !important;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      var(--team-primary-color, v.$primary-color) 0%,
+      var(--team-accent-color, v.$secondary-color) 100%
+    );
+    transform: scaleX(0);
+    transition: transform v.$transition-duration;
   }
 
   &:hover {
     transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(7, 170, 226, 0.3);
+    background: color-mix(in srgb, v.$background-lighter 80%, transparent 20%);
+    border-color: color-mix(in srgb, v.$primary-color 40%, transparent 60%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    &::before {
+      transform: scaleX(1);
+    }
   }
 }
 
 .statValue,
 .tsStatValue {
   display: block;
-  font-size: 1.25rem;
+  font-size: v.$font-size-sm;
   font-weight: 700;
-  margin-bottom: 0.5rem;
-  color: #ffffff;
-  font-family: v.$font-family-accent, sans-serif;
-
-  @media (max-width: v.$breakpoint-tablet) {
-    font-size: 0.85rem !important;
-    margin-bottom: 0.25rem !important;
-  }
+  margin-bottom: v.$space-xs;
+  color: v.$text-primary;
+  font-family: v.$font-family-accent;
+  line-height: 1.1;
 
   &.excellent {
-    color: #00ff87;
+    color: v.$success-color;
   }
-
   &.average {
-    color: #ffb347;
+    color: v.$warning-color;
   }
-
   &.poor {
-    color: #ff6b6b;
+    color: v.$danger-color;
   }
-
   &.positive {
-    color: #00ff87;
+    color: v.$success-color;
   }
-
   &.negative {
-    color: #ff6b6b;
+    color: v.$danger-color;
   }
 
   &.winStreak {
-    color: #00ff87;
-    text-shadow: 0 0 10px rgba(0, 255, 135, 0.3);
+    color: v.$success-color;
+    text-shadow: 0 0 8px
+      color-mix(in srgb, v.$success-color 30%, transparent 70%);
   }
 
   &.lossStreak {
-    color: #ff6b6b;
-    text-shadow: 0 0 10px rgba(255, 107, 107, 0.3);
-  }
-
-  &.streakValue {
-    padding: 0.2rem 0.6rem;
-    background: rgba(7, 170, 226, 0.2);
-    border-radius: 0.4rem;
-    border: 1px solid #07aae2;
-    color: #07aae2;
-    font-size: 1rem;
+    color: v.$danger-color;
+    text-shadow: 0 0 8px
+      color-mix(in srgb, v.$danger-color 30%, transparent 70%);
   }
 }
 
 .statLabel,
 .tsStatLabel {
   display: block;
-  font-size: 0.8rem;
-  color: #aaa;
+  font-size: v.$font-size-xxs;
+  color: v.$text-secondary;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-weight: 500;
   line-height: 1.2;
-
-  @media (max-width: v.$breakpoint-tablet) {
-    font-size: 0.6rem;
-  }
 }
 
 /* ==========================================================================
-   SPECIALIZED STAT COMPONENTS
+   TEAM LEADERS SECTION
    ========================================================================== */
 
-.primaryStat {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+.teamLeaders {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
 
-  .statValue {
-    font-size: 2rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 2px;
+.leadersGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: v.$space-md;
+  height: 100%;
+}
+
+.leaderCategory {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.categoryTitle {
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+  color: var(--team-accent-color, v.$secondary-color);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: 0 0 v.$space-sm 0;
+  padding-bottom: v.$space-xs;
+
+  border-bottom: 1px solid
+    color-mix(
+      in srgb,
+      var(--team-accent-color, v.$secondary-color) 30%,
+      transparent 70%
+    );
+}
+
+.leadersList {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+  flex: 1;
+}
+
+.leaderItem {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: v.$space-sm;
+  align-items: center;
+  padding: 0 1rem 0 0;
+  background: color-mix(in srgb, v.$background-lighter 40%, transparent 60%);
+  border-radius: v.$border-radius-sm;
+  border: 1px solid color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
+  transition: all v.$transition-duration;
+
+  &:hover {
+    background: color-mix(in srgb, v.$background-lighter 60%, transparent 40%);
+    border-color: color-mix(
+      in srgb,
+      var(--team-primary-color, v.$primary-color) 40%,
+      transparent 60%
+    );
+    transform: translateX(2px);
+
+    &:hover .playerHeadshot {
+      border: 1px solid var(--team-jersey-color, v.$primary-color);
+      border-radius: 3px 0 0 3px;
+    }
   }
 
-  .statLabel {
-    font-size: 0.9rem;
-    letter-spacing: 1px;
-    font-weight: 600;
+  .playerHeadshotContainer {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    background-color: var(--team-primary-color);
+    border-radius: v.$border-radius-sm 0 0 v.$border-radius-sm;
+  }
+
+  .playerHeadshot {
+    width: 100%;
+    height: 100%;
+    border-radius: v.$border-radius-sm 0 0 v.$border-radius-sm;
+    object-fit: cover;
+    border: 0 0 6px;
+    object-fit: cover;
+    border: 2px solid
+      color-mix(
+        in srgb,
+        var(--team-secondary-color, v.$primary-color) 50%,
+        transparent 50%
+      );
   }
 }
 
-.statRow {
+.leaderRank {
+  position: absolute;
+  bottom: 0px;
+  right: 0px;
+  background: var(--team-accent-color, v.$secondary-color);
+  color: v.$primary-color;
+  font-size: 10px;
+  font-weight: 700;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px 0 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid v.$background-dark;
+}
+
+.leaderInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.leaderName {
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+  color: v.$text-primary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leaderPosition {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  font-weight: 500;
+}
+
+.leaderStats {
+  display: flex;
+  flex-direction: column;
+  align-items: end;
+  gap: 2px;
+}
+
+.leaderValue {
+  font-size: v.$font-size-md;
+  font-weight: 700;
+  color: var(--team-secondary-color, v.$secondary-color);
+  font-family: v.$font-family-accent;
+}
+
+.leaderGames {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+}
+
+.noLeaders {
+  color: v.$text-secondary;
+  font-style: italic;
+  text-align: center;
+  padding: v.$space-lg;
+}
+
+/* ==========================================================================
+   RANKINGS SECTION WITH COMPACT LAYOUT
+   ========================================================================== */
+
+.combinedTeamStatsCard {
+  display: flex;
+  flex-direction: column;
+}
+
+.statsTitle {
+  font-size: v.$font-size-md;
+  font-weight: 700;
+  color: var(--team-accent-color, v.$secondary-color);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 v.$space-sm 0;
+  text-align: center;
+}
+
+.teamIdentity {
+  margin-bottom: v.$space-xxs;
+}
+
+.positionSummary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: v.$space-sm;
+  padding-bottom: v.$space-xs;
+}
+
+.positionStat {
+  text-align: center;
+  padding: v.$space-sm;
+  background: color-mix(in srgb, v.$background-lighter 40%, transparent 60%);
+  border-radius: v.$border-radius-sm;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--team-primary-color, v.$primary-color) 20%,
+      transparent 80%
+    );
+}
+
+.positionValue {
+  display: block;
+  font-size: v.$font-size-lg;
+  font-weight: 700;
+  color: v.$text-primary;
+  font-family: v.$font-family-accent;
+}
+
+.positionLabel {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: v.$space-xs;
+}
+
+.quickStatsSummary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: v.$space-xs;
+  margin-bottom: v.$space-sm;
+
+  @media (max-width: v.$screen-small-max) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.summaryItem {
+  text-align: center;
+  padding: v.$space-xs;
+  background: color-mix(in srgb, v.$background-lighter 40%, transparent 60%);
+  border-radius: v.$border-radius-sm;
+}
+
+.summaryValue {
+  display: block;
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+  color: v.$text-primary;
+  margin-bottom: 2px;
+
+  &.positive {
+    color: v.$success-color;
+  }
+  &.negative {
+    color: v.$danger-color;
+  }
+}
+
+.summaryLabel {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.teamStatsWithRankings {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.statsRankingsGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: v.$space-xs;
+}
+
+.statWithRank {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: v.$space-xs v.$space-sm;
+  background: color-mix(in srgb, v.$background-lighter 30%, transparent 70%);
+  border-radius: v.$border-radius-sm;
+  border: 1px solid color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
+  transition: all v.$transition-duration;
+
+  &:hover {
+    background: color-mix(in srgb, v.$background-lighter 50%, transparent 50%);
+    border-color: color-mix(
+      in srgb,
+      var(--team-primary-color, v.$primary-color) 30%,
+      transparent 70%
+    );
+  }
+}
+
+.statValueRank {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+}
+
+.rankValue {
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: v.$border-radius-sm;
+  min-width: 28px;
+  text-align: center;
+}
+
+/* ==========================================================================
+   LEAGUE RANKINGS COMPACT DISPLAY
+   ========================================================================== */
+
+.leagueRankings {
+  margin-top: v.$space-sm;
+  border-radius: v.$border-radius-sm;
+  height: 100%;
+}
+
+.rankingsTitle {
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+  margin: 0 0 v.$space-sm 0;
+  color: v.$text-primary;
+  text-align: center;
+}
+
+.rankingsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-column-gap: v.$space-md;
+  grid-row-gap: v.$space-sm;
+  height: 100%;
+
+  @media (max-width: v.$screen-small-max) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rankingCategory {
+  background: color-mix(in srgb, v.$background-middle 40%, transparent 60%);
+  border-radius: v.$border-radius-sm;
+  border: 1px solid color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
+  overflow: hidden;
+}
+
+.rankingTitle {
+  background: color-mix(in srgb, v.$background-header 60%, transparent 40%);
+  padding: v.$space-xs v.$space-sm;
+}
+
+.rankingItemList {
+  padding: v.$space-xs;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  // height: calc(100% - 40px); // Adjust for title height
+}
+
+.rankingItem {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
+  padding: 2px v.$space-xs;
+  margin-bottom: 2px;
 
   &:last-child {
     margin-bottom: 0;
   }
 }
 
-/* ==========================================================================
-   RECORD AND MOMENTUM COMPONENTS
-   ========================================================================== */
-
-.quickL10Summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding: 1rem;
-  background: v.$background-lighter;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-}
-
-.recordDisplay {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
-
-  @media (max-width: 768px) {
-    align-items: center;
-  }
-}
-
-.recordValue {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 1px;
-}
-
-.recordPoints {
-  font-size: 0.8rem;
-  color: #aaa;
+.rankingLabel {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
   font-weight: 500;
 }
 
-.goalDifferential {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-
-  @media (max-width: 768px) {
-    gap: 0.5rem;
-  }
-}
-
-.trendValue {
-  color: #ffffff;
-
-  &.positive {
-    color: #00ff87;
-  }
-
-  &.negative {
-    color: #ff6b6b;
-  }
-}
-
-.trendSeparator {
-  color: #666;
-  font-weight: 400;
-}
-
-.streakInfo {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  background: v.$background-lighter;
-  border-radius: 6px;
-
-  .streakValue {
-    font-size: 1.25rem;
-    font-weight: 700;
-    padding: 0.25rem 0.75rem;
-    border-radius: 4px;
-
-    &.winStreak {
-      background: rgba(0, 255, 135, 0.2);
-      color: #00ff87;
-      border: 1px solid #00ff87;
-    }
-
-    &.lossStreak {
-      background: rgba(255, 107, 107, 0.2);
-      color: #ff6b6b;
-      border: 1px solid #ff6b6b;
-    }
-  }
-
-  .streakLabel {
-    font-size: 0.875rem;
-    color: #ccc;
-  }
-}
-
-/* ==========================================================================
-   ENHANCED MOMENTUM CARD
-   ========================================================================== */
-
-.enhancedMomentumCard {
-  grid-column: span 2;
-  max-width: none;
-
-  @media (max-width: 1200px) {
-    grid-column: span 2;
-  }
-
-  @media (max-width: 768px) {
-    grid-column: span 1;
-  }
-}
-
-.condensedMomentumHeader {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 0.5rem;
-  align-items: center;
-  margin-bottom: 0.5rem;
-  padding: 1rem;
-  background: v.$background-lighter;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-    text-align: center;
-  }
-}
-
-.compactStreak {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-
-  .streakValue {
-    font-size: 1.5rem;
-    font-weight: 700;
-    padding: 0.25rem 0.75rem;
-    border-radius: 4px;
-
-    &.winStreak {
-      background: rgba(0, 255, 135, 0.2);
-      color: #00ff87;
-      border: 1px solid #00ff87;
-    }
-
-    &.lossStreak {
-      background: rgba(255, 107, 107, 0.2);
-      color: #ff6b6b;
-      border: 1px solid #ff6b6b;
-    }
-  }
-
-  .streakLabel {
-    font-size: 0.75rem;
-    color: #ccc;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-}
-
-.compactRecord {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-
-  .recordValue {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #ffffff;
-    letter-spacing: 1px;
-  }
-
-  .recordPoints {
-    font-size: 0.75rem;
-    color: #aaa;
-    font-weight: 500;
-  }
-}
-
-.compactGoals {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-
-  @media (max-width: 768px) {
-    gap: 0.5rem;
-    justify-content: center;
-  }
-
-  .goalValue {
-    color: #ffffff;
-
-    &.positive {
-      color: #00ff87;
-    }
-
-    &.negative {
-      color: #ff6b6b;
-    }
-  }
-
-  .goalSeparator {
-    color: #666;
-    font-weight: 400;
-  }
-}
-
-/* ==========================================================================
-   GAME COMPONENTS
-   ========================================================================== */
-
-.gameGrid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(3, 1fr);
-    grid-template-rows: repeat(4, 1fr);
-    gap: 0.4rem;
-  }
-
-  @media (max-width: 480px) {
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(5, 1fr);
-  }
-}
-
-.gameCard {
-  background: v.$background-lighter;
-  border: 2px solid transparent;
-  border-radius: 6px;
-  padding: 0.5rem 0.3rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  position: relative;
-  min-height: 90px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-
-  &:hover {
-    transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-  }
-
-  &.selected {
-    border-color: #07aae2;
-    background: rgba(7, 170, 226, 0.1);
-  }
-
-  &.win {
-    border-left: 3px solid #00ff87;
-
-    .gameResult {
-      color: #00ff87;
-      background: rgba(0, 255, 135, 0.1);
-    }
-  }
-
-  &.loss {
-    border-left: 3px solid #ff6b6b;
-
-    .gameResult {
-      color: #ff6b6b;
-      background: rgba(255, 107, 107, 0.1);
-    }
-  }
-
-  &.otLoss {
-    border-left: 3px solid #ffb347;
-
-    .gameResult {
-      color: #ffb347;
-      background: rgba(255, 179, 71, 0.1);
-    }
-  }
-}
-
-.gameHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.3rem;
-}
-
-.gameResult {
-  font-size: 0.7rem;
+.rankingValue {
+  font-size: v.$font-size-xs;
   font-weight: 700;
-  padding: 2px 4px;
-  border-radius: 3px;
-  letter-spacing: 0.5px;
-}
-
-.gameDate {
-  font-size: 0.65rem;
-  color: #aaa;
-  font-weight: 500;
-}
-
-.gameMatchup {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.2rem;
-  margin-bottom: 0.3rem;
-}
-
-.homeAway {
-  font-size: 0.65rem;
-  color: #ccc;
-  font-weight: 500;
-}
-
-.opponent {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #ffffff;
-  letter-spacing: 0.5px;
-}
-
-.gameScore {
+  padding: 1px 4px;
+  border-radius: v.$border-radius-sm;
+  min-width: 24px;
   text-align: center;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 0.3rem;
 }
 
 /* ==========================================================================
-   GOALTENDING COMPONENTS
+   GOALTENDING SECTION ENHANCED
    ========================================================================== */
 
 .goaltendingOverview {
-  margin-bottom: 1rem;
+  margin-bottom: v.$space-xs;
 }
 
 .goaltendingGrid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  height: 100%;
+  gap: v.$space-sm;
 
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-.goaltendingStat {
-  background: v.$background-lighter;
-  padding: 0.75rem;
-  border-radius: 6px;
-  text-align: center;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.2s ease;
-
-  @media (max-width: 1024px) {
-    width: 100%;
-    height: 100%;
-    margin: 0.5rem;
-  }
-
-  @media (max-width: v.$breakpoint-tablet) {
-    width: 100%;
-    margin: 0 !important;
-  }
-
-  &:hover {
-    transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.08);
-  }
-
-  .statValue {
-    font-size: 1.2rem;
-    margin-bottom: 0.2rem;
-  }
-
-  .statLabel {
-    font-size: 0.7rem;
-  }
-}
-
-.individualGoalies {
-  margin-top: 1rem;
-}
-
-.sectionTitle {
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
-  color: #ffffff;
-}
-
-.goalieCardsGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.25rem;
-
-  @media (max-width: 600px) {
+  @media (max-width: v.$screen-small-max) {
     grid-template-columns: 1fr;
   }
 }
 
-.goalieCard {
-  background: v.$background-lighter;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 0.75rem;
-  transition: all 0.2s ease;
+.goaltendingStat {
+  background: color-mix(in srgb, v.$background-lighter 40%, transparent 60%);
+  padding: v.$space-sm;
+  border-radius: v.$border-radius-sm;
+  text-align: center;
+  border: 1px solid color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
+  transition: all v.$transition-duration;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(7, 170, 226, 0.3);
+    transform: translateY(-1px);
+    background: color-mix(in srgb, v.$background-lighter 60%, transparent 40%);
+    border-color: color-mix(
+      in srgb,
+      var(--team-primary-color, v.$primary-color) 30%,
+      transparent 70%
+    );
+  }
+}
+
+.individualGoalies {
+  margin-top: v.$space-xs;
+}
+
+.sectionTitle {
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+  margin: 0 0 v.$space-sm 0;
+  color: v.$text-primary;
+  text-align: center;
+}
+
+.goalieCardsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: v.$space-sm;
+}
+
+.goalieCard {
+  background: color-mix(in srgb, v.$background-lighter 30%, transparent 70%);
+  border: 1px solid color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
+  border-radius: v.$border-radius-sm;
+  overflow: hidden;
+  transition: all v.$transition-duration;
+
+  &:hover {
+    background: color-mix(in srgb, v.$background-lighter 50%, transparent 50%);
+    border-color: color-mix(
+      in srgb,
+      var(--team-primary-color, v.$primary-color) 40%,
+      transparent 60%
+    );
     transform: translateY(-1px);
   }
 }
@@ -860,616 +817,320 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.25rem;
+  padding: v.$space-sm;
+  background: color-mix(in srgb, v.$background-header 40%, transparent 60%);
+  border-bottom: 1px solid
+    color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
 }
 
 .goalieName {
   font-weight: 600;
-  font-size: 1rem;
+  font-size: v.$font-size-sm;
   font-family: v.$font-family-accent;
-  font-variant: small-caps;
-  letter-spacing: 0.25em;
-  color: #ffffff;
-  line-height: 1.2;
+  color: v.$text-primary;
+  text-transform: capitalize;
 }
 
 .goalieRole {
-  font-size: v.$font-size-small;
+  font-size: v.$font-size-xs;
   font-weight: 700;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: v.$border-radius-sm;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
 
   &.starter {
-    background: linear-gradient(135deg, #4caf50, #45a049);
-    color: white;
+    background: v.$success-color;
+    color: v.$text-button;
   }
 
   &.backup {
-    background: linear-gradient(135deg, #ff9800, #f57c00);
-    color: white;
+    background: v.$warning-color;
+    color: v.$text-button;
   }
 
   &.reserve {
-    background: linear-gradient(135deg, #9e9e9e, #757575);
-    color: white;
+    background: v.$color-grey-medium;
+    color: v.$text-button;
   }
 }
 
 .goalieStatsGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
+  gap: v.$space-xs;
+  padding: v.$space-sm;
 }
 
 .goalieStatItem {
   text-align: center;
-  background: v.$background-lighter;
-  padding: 0.5rem 0.75rem;
-  border-radius: v.$border-radius-md;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.2s ease;
+  background: color-mix(in srgb, v.$background-lighter 60%, transparent 40%);
+  padding: v.$space-xs;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid color-mix(in srgb, v.$border-secondary 15%, transparent 85%);
+  transition: all v.$transition-duration;
 
   &:hover {
     transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(7, 170, 226, 0.3);
-  }
-
-  .statValue,
-  .goalieStatValue {
-    display: block;
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin-bottom: 0.25rem;
-    color: #ffffff;
-
-    .goalieStatValue & {
-      font-size: v.$font-size-md;
-      margin-bottom: 0.2rem;
-    }
-
-    &.excellent {
-      color: #00ff87;
-    }
-
-    &.average {
-      color: #ffb347;
-    }
-
-    &.poor {
-      color: #ff6b6b;
-    }
-
-    &.positive {
-      color: #00ff87;
-    }
-
-    &.negative {
-      color: #ff6b6b;
-    }
-  }
-
-  .goalieStatLabel {
-    display: block;
-    font-size: 0.6rem;
-    color: #aaa;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    line-height: 1;
+    background: color-mix(in srgb, v.$background-lighter 80%, transparent 20%);
   }
 }
 
+.goalieStatValue {
+  display: block;
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+  margin-bottom: 2px;
+  color: v.$text-primary;
+  font-family: v.$font-family-accent;
+
+  &.excellent {
+    color: v.$success-color;
+  }
+  &.average {
+    color: v.$warning-color;
+  }
+  &.poor {
+    color: v.$danger-color;
+  }
+}
+
+.goalieStatLabel {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 /* ==========================================================================
-   WORKLOAD COMPONENTS
+   WORKLOAD VISUALIZATION
    ========================================================================== */
 
 .workloadSection {
-  margin: 12px 0;
-  padding: 0 4px;
+  margin: v.$space-sm 0;
+  padding: 0 v.$space-sm;
 }
 
 .workloadBar {
   width: 100%;
-  height: 12px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  height: 6px;
+  background: color-mix(in srgb, v.$background-dark 60%, transparent 40%);
+  border-radius: v.$border-radius-sm;
   overflow: hidden;
-  margin-bottom: 4px;
-  position: relative;
+  margin-bottom: v.$space-xs;
 }
 
 .workloadFill {
   height: 100%;
-  border-radius: 3px;
-  transition: width 0.3s ease;
-  min-width: 2px;
+  border-radius: v.$border-radius-sm;
+  transition: width v.$transition-duration;
+  background: linear-gradient(
+    90deg,
+    var(--team-primary-color, v.$primary-color),
+    var(--team-secondary-color, v.$secondary-color)
+  );
 }
 
 .workloadLabel {
-  font-size: v.$font-size-small;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
   text-align: center;
   font-weight: 500;
-  margin-top: 8px;
 }
 
 .workloadDistribution {
-  margin-top: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: v.$space-md;
+  padding-top: v.$space-sm;
+  border-top: 1px solid
+    color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
 }
 
 .workloadDistributionBar {
   display: flex;
-  height: 24px;
-  border-radius: 12px;
+  height: 8px;
+  border-radius: v.$border-radius-sm;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  margin-bottom: 0.75rem;
+  background: color-mix(in srgb, v.$background-dark 40%, transparent 60%);
+  border: 1px solid color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
+  margin-bottom: v.$space-sm;
 }
 
 .workloadSegment {
   height: 100%;
-  transition: all 0.3s ease;
+  transition: all v.$transition-duration;
   cursor: pointer;
 
   &:hover {
     filter: brightness(1.2);
-    transform: scaleY(1.1);
-  }
-
-  &:first-child {
-    border-top-left-radius: 12px;
-    border-bottom-left-radius: 12px;
-  }
-
-  &:last-child {
-    border-top-right-radius: 12px;
-    border-bottom-right-radius: 12px;
   }
 }
 
 .workloadLegend {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: space-evenly;
-
-  @media (max-width: 600px) {
-    flex-direction: row;
-    align-items: center;
-    gap: 0.5rem;
-  }
+  gap: v.$space-sm;
+  justify-content: center;
 }
 
 .legendItem {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  background: v.$background-lighter;
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all 0.2s ease;
+  gap: v.$space-xs;
+  padding: v.$space-xs;
+  background: color-mix(in srgb, v.$background-lighter 30%, transparent 70%);
+  border-radius: v.$border-radius-sm;
+  border: 1px solid color-mix(in srgb, v.$border-secondary 15%, transparent 85%);
+  transition: all v.$transition-duration;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    transform: translateY(-1px);
+    background: color-mix(in srgb, v.$background-lighter 50%, transparent 50%);
   }
 }
 
 .legendColor {
   width: 12px;
   height: 12px;
-  border-radius: 2px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  flex-shrink: 0;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid color-mix(in srgb, v.$border-secondary 30%, transparent 70%);
 }
 
 .legendText {
-  font-size: 0.8rem;
-  color: #ffffff;
+  font-size: v.$font-size-xs;
+  color: v.$text-primary;
   font-weight: 500;
-  white-space: nowrap;
 }
 
 /* ==========================================================================
-   TEAM IDENTITY COMPONENTS
+   MOMENTUM CARD ENHANCEMENTS
    ========================================================================== */
 
-.teamIdentity {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: v.$space-sm;
-  padding: 1rem;
-  background: v.$background-lighter;
-  border-radius: v.$border-radius-md;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  margin-top: 1rem;
-
-  @media (max-width: 768px) {
-    gap: 0.5rem;
-  }
+.timelineSection {
+  margin-bottom: v.$space-xs;
 }
 
-.positionSummary {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  font-family: v.$font-family-accent;
-  padding-bottom: v.$space-sm;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.positionStat {
-  text-align: center;
-  flex: 1;
-
-  .positionValue {
-    display: block;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #07aae2;
-  }
-
-  .positionLabel {
-    font-size: 0.75rem;
-    color: #e1e1e1;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-  }
-}
-
-.quickStatsSummary {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-
-  @media (max-width: 768px) {
-    flex-wrap: wrap;
-    gap: v.$space-xs;
-  }
-}
-
-.summaryItem {
-  text-align: center;
-  flex: 1;
-
-  @media (max-width: 768px) {
-    flex: 0 0 calc(50% - v.$space-xxs);
-  }
-
-  .summaryValue {
-    display: block;
-    font-size: 1rem;
-    font-weight: 700;
-    color: #ffffff;
-    margin-bottom: 2px;
-
-    &.positive {
-      color: #00ff87;
-    }
-
-    &.negative {
-      color: #ff6b6b;
-    }
-  }
-
-  .summaryLabel {
-    font-size: 0.6rem;
-    color: #aaa;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
+.metricsSection {
+  padding: v.$space-sm 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* ==========================================================================
-   LEAGUE RANKINGS COMPONENTS
+   ADVANCED ANALYTICS SPECIFIC STYLES
    ========================================================================== */
-
-.leagueRankings {
-  margin: 1rem 0 0.5rem 0;
-  padding: 0.5rem 0.5rem 0 0.5rem;
-  background: v.$background-lighter;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-}
-
-.rankingsTitle {
-  font-size: 1rem;
-  font-weight: 600;
-  margin: 0.5rem 0.5rem 0 0.5rem;
-  color: #ffffff;
-  text-align: center;
-}
-
-.rankingsGrid {
-  width: 95%;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: repeat(4, 25%);
-
-  @media (max-width: 1400px) {
-    grid-template-columns: repeat(2, calc(50% - v.$space-sm));
-  }
-
-  @media (max-width: 600px) {
-    grid-template-columns: 100%;
-  }
-}
-
-.rankingCategory {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 0 0 0.5rem 0;
-
-  .rankingTitle {
-    padding: 0.25rem;
-  }
-
-  .categoryTitle {
-    font-size: 0.7rem;
-    font-weight: 900;
-    font-family: v.$font-family-primary;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #07aae2;
-    margin-bottom: 0rem;
-    margin-top: 0.25rem;
-    text-align: center;
-    border-bottom: 2px solid rgba(7, 170, 226, 0.3);
-    height: 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    line-height: 1.2;
-    white-space: normal;
-  }
-
-  &:last-child .rankingItemList {
-    border-right: none;
-  }
-}
-
-.rankingItemList {
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 0 0.5rem;
-  margin: 0.5rem 0;
-}
-
-.rankingItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.4rem;
-  min-height: 1.8rem;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  .rankingLabel {
-    font-size: 0.75rem;
-    color: #ccc;
-    line-height: 1.2;
-  }
-
-  .rankingValue {
-    font-size: 0.875rem;
-    font-weight: 700;
-    text-align: right;
-    flex-shrink: 0;
-
-    &.excellent {
-      color: #00ff87;
-    }
-
-    &.average {
-      color: #ffb347;
-    }
-
-    &.poor {
-      color: #ff6b6b;
-    }
-  }
-}
-
-.rankingsLoading {
-  text-align: center;
-  color: #aaa;
-  font-style: italic;
-  padding: 1rem;
-}
-
-/* ==========================================================================
-   OVERVIEW AND METRICS COMPONENTS
-   ========================================================================== */
-
-.overviewGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: repeat(2, 1fr);
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(3, 1fr);
-  }
-
-  @media (max-width: 480px) {
-    grid-template-columns: 1fr;
-    grid-template-rows: repeat(6, 1fr);
-  }
-}
 
 .xgContainer {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-evenly;
-  gap: 0.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-xs;
   width: 100%;
-
-  @media (max-width: v.$breakpoint-tablet) {
-    gap: 0.25rem;
-    justify-content: space-between;
-  }
 }
 
 .xgStat {
   display: flex;
   flex-direction: column;
   align-items: center;
-  text-align: center;
-}
-
-.timelineSection {
-  margin: 0.5rem 0 0 0;
-  padding: 0.5rem 0 0 0;
-}
-
-.metricsSection {
-  margin: 0;
-  padding: 0;
-}
-
-/* ==========================================================================
-   UTILITY COMPONENTS
-   ========================================================================== */
-
-.infoIcon {
-  display: inline-block;
-  margin-left: 0.25rem;
-  font-size: 0.7rem;
-  opacity: 0.7;
-  cursor: help;
-  transition: opacity 0.2s ease;
-
-  &:hover {
-    opacity: 1;
-  }
-}
-
-.cardToggle {
-  display: flex;
   justify-content: center;
-  align-items: center;
-  flex-direction: row;
-  gap: 0.5rem;
-
-  @media (max-width: v.$breakpoint-tablet) {
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-}
-
-.toggleButton {
-  padding: 0.2rem 0.6rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
-  color: #ccc;
-  border-radius: 4px;
-  font-size: 0.6rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(7, 170, 226, 0.5);
-  }
-
-  &.active {
-    background: rgba(7, 170, 226, 0.2);
-    border-color: #07aae2;
-    color: #07aae2;
-    font-weight: 600;
-  }
-
-  @media (max-width: v.$breakpoint-tablet) {
-    width: 100%;
-    margin-bottom: 0.5rem;
-    padding: 0.4rem;
-  }
-}
-
-.noData {
-  color: v.$text-secondary;
-  font-style: italic;
-  text-align: center;
-  padding: 1rem 0;
+  padding: v.$space-xs;
+  background: color-mix(in srgb, v.$background-darker 50%, transparent 50%);
+  border-radius: v.$border-radius-sm;
+  border: 1px solid color-mix(in srgb, v.$border-secondary 15%, transparent 85%);
 }
 
 /* ==========================================================================
    LOADING AND ERROR STATES
    ========================================================================== */
 
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid rgba(7, 170, 226, 0.3);
-    border-top: 4px solid #07aae2;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 16px;
-  }
-
-  span {
-    color: #ccc;
-    font-size: 1rem;
-  }
-}
-
+.loading,
 .loadingState {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
-  color: #aaa;
+  padding: v.$space-xl;
+  color: v.$text-secondary;
+  height: 100%;
+  min-height: 200px;
 
+  .spinner,
   .loadingSpinner {
-    width: 20px;
-    height: 20px;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-top: 2px solid #07aae2;
+    width: 32px;
+    height: 32px;
+    border: 3px solid color-mix(in srgb, v.$primary-color 20%, transparent 80%);
+    border-top: 3px solid v.$primary-color;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-bottom: 0.75rem;
+    margin-bottom: v.$space-md;
+  }
+
+  span {
+    font-size: v.$font-size-sm;
+    font-weight: 500;
   }
 }
 
 .error {
+  background: color-mix(in srgb, v.$danger-color 10%, transparent 90%);
+  border: 1px solid color-mix(in srgb, v.$danger-color 30%, transparent 70%);
+  border-radius: v.$border-radius-md;
+  padding: v.$space-lg;
+  color: v.$danger-color;
   text-align: center;
-  padding: 40px 20px;
+  margin: v.$space-lg;
 
   h3 {
-    color: #ff6b6b;
-    margin-bottom: 12px;
+    margin: 0 0 v.$space-sm 0;
+    font-size: v.$font-size-lg;
   }
 
   p {
-    color: #ccc;
+    margin: 0;
+    font-size: v.$font-size-sm;
+    opacity: 0.8;
+  }
+}
+
+.noData {
+  text-align: center;
+  color: v.$text-secondary;
+  padding: v.$space-xl;
+  font-style: italic;
+  font-size: v.$font-size-sm;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN OPTIMIZATIONS
+   ========================================================================== */
+
+@media (max-width: v.$screen-small-max) {
+  .statsGrid,
+  .tsStatsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .goaltendingGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .goalieStatsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .positionSummary,
+  .quickStatsSummary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cardHeader h3 {
+    font-size: v.$font-size-sm;
+  }
+
+  .cardContent,
+  .tsCardContent {
+    padding: v.$space-xxs v.$space-sm;
   }
 }
 
 /* ==========================================================================
-   KEYFRAME ANIMATIONS
+   ANIMATIONS
    ========================================================================== */
 
 @keyframes spin {
@@ -1478,5 +1139,75 @@
   }
   100% {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card,
+.teamStatisticsCard {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* ==========================================================================
+   UTILITY CLASSES
+   ========================================================================== */
+
+.excellent {
+  color: v.$success-color !important;
+}
+.average {
+  color: v.$warning-color !important;
+}
+.poor {
+  color: v.$danger-color !important;
+}
+.positive {
+  color: v.$success-color !important;
+}
+.negative {
+  color: v.$danger-color !important;
+}
+
+// Ranking-based colors for consistency
+@for $i from 1 through 10 {
+  .rank-#{$i} {
+    background: color-mix(
+      in srgb,
+      v.$success-color 20%,
+      transparent 80%
+    ) !important;
+    color: v.$success-color !important;
+  }
+}
+
+@for $i from 11 through 22 {
+  .rank-#{$i} {
+    background: color-mix(
+      in srgb,
+      v.$warning-color 20%,
+      transparent 80%
+    ) !important;
+    color: v.$warning-color !important;
+  }
+}
+
+@for $i from 23 through 32 {
+  .rank-#{$i} {
+    background: color-mix(
+      in srgb,
+      v.$danger-color 20%,
+      transparent 80%
+    ) !important;
+    color: v.$danger-color !important;
   }
 }

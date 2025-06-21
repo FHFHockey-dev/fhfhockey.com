@@ -33,33 +33,28 @@
 // );
 
 .tabNavigation {
-  // background: linear-gradient(
-  //   180deg,
-  //   var(--team-primary-color) 0%,
-  //   var(--team-primary-color) 80%,
-  //   var(--team-accent-color) 80%,
-  //   var(--team-accent-color) 90%,
-  //   var(--team-secondary-color) 90%,
-  //   var(--team-secondary-color) 100%
-  // );
   background: var(--jersey);
-
   backdrop-filter: blur(10px);
   padding: 0;
   overflow-x: auto;
   width: 100%;
 
   &::-webkit-scrollbar {
+    border-top: 1px solid #fff;
     height: 4px;
   }
 
   &::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.1);
+    background-color: color-mix(in srgb, var(--secondary-color) 20%, #000 50%);
   }
 
   &::-webkit-scrollbar-thumb {
-    background: v.$primary-color;
+    background-color: color-mix(in srgb, var(--secondary-color) 60%, #000 50%);
     border-radius: 2px;
+  }
+
+  @media (max-width: v.$breakpoint-tablet) {
+    padding: 0rem;
   }
 }
 
@@ -74,10 +69,10 @@
 .tabButton {
   background: transparent;
   border: none;
-  padding: 0.5rem 1.25rem;
+  padding: 0.25rem 1.25rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  border-bottom: 3px solid transparent;
+  border-bottom: 2px solid transparent;
   color: rgba(255, 255, 255, 0.8);
   font-family: v.$font-family-primary;
   font-size: 0.9rem;
@@ -122,7 +117,7 @@
 }
 
 .tabLabel {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: inherit;
   letter-spacing: 0.05em;
   color: var(--team-accent-color);
@@ -131,11 +126,10 @@
 }
 
 .tabDescription {
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   opacity: 0.7;
   text-align: center;
   line-height: 1.2;
-  max-width: 100px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -148,9 +142,13 @@
 }
 
 .tabContent {
-  background: v.$background-light;
+  background: linear-gradient(
+    135deg,
+    v.$background-dark 0%,
+    v.$background-light 100%
+  );
   min-height: calc(100vh - 200px);
-  border-top: 10px solid var(--secondary-color);
+  border-top: 5px solid var(--secondary-color);
   position: relative;
   overflow: hidden;
 }
@@ -507,11 +505,17 @@
 @media (max-width: 480px) {
   .tabButton {
     min-width: 70px;
-    padding: 0.625rem 0.75rem;
+    padding: 0 0.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    margin: 0.1rem 0;
   }
 
   .tabLabel {
-    font-size: 0.8rem;
+    font-size: 0.6rem;
+    font-family: v.$font-family-primary;
   }
 
   .visualizationContent {
