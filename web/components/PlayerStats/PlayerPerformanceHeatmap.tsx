@@ -228,62 +228,41 @@ function ContributionGraph({
 
     if (allGames.length === 0) return null;
 
-    // Create maps for efficient lookups
+    // Helper function to safely parse date strings as local dates
+    const parseLocalDate = (dateString: string): Date => {
+      // Split the date string and create a date in local timezone
+      const [year, month, day] = dateString.split("-").map(Number);
+      return new Date(year, month - 1, day); // month is 0-indexed in JavaScript
+    };
+
+    // Create maps for efficient lookups using the exact date strings from database
     const gamesByDate = new Map<string, GameLogEntry>();
     const missedGamesByDate = new Map<string, any>();
     const futureGamesByDate = new Map<string, any>();
 
     allGames.forEach((game) => {
-      const dateKey = format(new Date(game.date), "yyyy-MM-dd");
-      gamesByDate.set(dateKey, game);
+      // Use the date string directly as the key, no formatting needed
+      gamesByDate.set(game.date, game);
     });
 
     missedGames.forEach((missedGame) => {
-      const dateKey = format(new Date(missedGame.date), "yyyy-MM-dd");
-      missedGamesByDate.set(dateKey, missedGame);
+      // Use the date string directly as the key, no formatting needed
+      missedGamesByDate.set(missedGame.date, missedGame);
     });
 
     futureGames.forEach((futureGame) => {
-      const dateKey = format(new Date(futureGame.date), "yyyy-MM-dd");
-      futureGamesByDate.set(dateKey, futureGame);
+      // Use the date string directly as the key, no formatting needed
+      futureGamesByDate.set(futureGame.date, futureGame);
     });
 
-    // Calculate the season range
-    const dates = allGames.map((game) => new Date(game.date));
+    // Calculate the season range using local date parsing
+    const dates = allGames.map((game) => parseLocalDate(game.date));
     const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
     const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
 
-    // Start from the beginning of the season (Monday of the first week)
-    const seasonStartYear =
-      minDate.getMonth() >= 6
-        ? minDate.getFullYear()
-        : minDate.getFullYear() - 1;
-    let startDate = new Date(seasonStartYear, 9, 1); // October 1st
-
-    // Find the Monday of the week containing the start date
-    const startDayOfWeek = getDay(startDate);
-    const daysToMonday = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1; // 0 = Sunday
-    startDate = addDays(startDate, -daysToMonday);
-
-    // End at the Sunday of the last week
-    const seasonEndYear =
-      maxDate.getMonth() >= 6
-        ? maxDate.getFullYear() + 1
-        : maxDate.getFullYear();
-    let endDate = new Date(seasonEndYear, 5, 30); // June 30th
-
-    // Don't extend too far past actual data
-    const oneMonthAfterLastGame = new Date(
-      maxDate.getTime() + 30 * 24 * 60 * 60 * 1000
-    );
-    if (endDate > oneMonthAfterLastGame) {
-      endDate = oneMonthAfterLastGame;
-    }
-
-    // Find the Sunday of the week containing the end date
-    const endDayOfWeek = getDay(endDate);
-    const daysToSunday = endDayOfWeek === 0 ? 0 : 7 - endDayOfWeek;
-    endDate = addDays(endDate, daysToSunday);
+    // Use startOfWeek with Monday as the first day for proper alignment
+    const startDate = startOfWeek(minDate, { weekStartsOn: 1 }); // 1 = Monday
+    const endDate = endOfWeek(maxDate, { weekStartsOn: 1 }); // 1 = Monday
 
     // Generate all days in the range
     const allDays = eachDayOfInterval({ start: startDate, end: endDate });
@@ -300,37 +279,20 @@ function ContributionGraph({
         isMissedGame: boolean;
         isFutureGame: boolean;
         dayOfWeek: number; // 0 = Monday, 6 = Sunday
-        isEmpty?: boolean; // Add flag for empty cells
+        isEmpty?: boolean;
       }>;
       monthName?: string;
       isFirstWeekOfMonth?: boolean;
     }> = [];
 
-    // Process days into complete weeks (always 7 days each)
+    // Process days into complete weeks (always 7 days each, Monday to Sunday)
     for (let i = 0; i < allDays.length; i += 7) {
       const weekDays = allDays.slice(i, i + 7);
 
-      // Always create exactly 7 days for each week
+      // Always create exactly 7 days for each week (Monday = 0, Sunday = 6)
       const weekData = {
-        days: Array.from({ length: 7 }, (_, dayIndex) => {
-          const day = weekDays[dayIndex];
-
-          // If we don't have a day for this position, create an empty placeholder
-          if (!day) {
-            return {
-              date: new Date(), // Placeholder date
-              game: null,
-              missedGame: null,
-              futureGame: null,
-              performanceLevel: "no-data" as PerformanceLevel,
-              isPlayoff: false,
-              isMissedGame: false,
-              isFutureGame: false,
-              dayOfWeek: dayIndex, // Monday = 0, Sunday = 6
-              isEmpty: true
-            };
-          }
-
+        days: weekDays.map((day, dayIndex) => {
+          // Use the correct formatted date key for lookups
           const dateKey = format(day, "yyyy-MM-dd");
           const game = gamesByDate.get(dateKey) || null;
           const missedGame = missedGamesByDate.get(dateKey) || null;
@@ -347,8 +309,7 @@ function ContributionGraph({
                 ? Boolean(futureGame.isPlayoff)
                 : false;
 
-          // Calculate day of week where Monday = 0, Sunday = 6
-          const dayOfWeek = (getDay(day) + 6) % 7;
+          const dayOfWeek = dayIndex;
 
           return {
             date: day,
@@ -368,9 +329,10 @@ function ContributionGraph({
       };
 
       // Determine if this week should show a month name
-      const firstRealDay = weekDays.find((day) => day); // Find first non-empty day
-      if (firstRealDay) {
-        const monthName = format(firstRealDay, "MMM");
+      // Use the first day of the week (Monday) to determine the month
+      const weekStartDay = weekDays[0];
+      if (weekStartDay) {
+        const monthName = format(weekStartDay, "MMM");
 
         // Show month name if this is the first week or if the month changed
         if (
@@ -385,7 +347,10 @@ function ContributionGraph({
       weeks.push(weekData);
     }
 
-    return { weeks };
+    // Calculate total number of weeks for dynamic sizing
+    const totalWeeks = weeks.length;
+
+    return { weeks, totalWeeks };
   }, [gameLog, playoffGameLog, missedGames, futureGames, selectedStats]);
 
   if (!contributionData) {
@@ -396,8 +361,27 @@ function ContributionGraph({
     );
   }
 
+  // Calculate dynamic styles based on number of weeks
+  const { weeks, totalWeeks } = contributionData;
+
+  // Use a simpler approach that works with CSS custom properties
+  // Each week gets an equal fraction of 100%, and we account for gaps in CSS
+  const weekWidthPercentage = totalWeeks > 0 ? 100 / totalWeeks : 100;
+
+  // Create CSS custom properties for dynamic sizing
+  const dynamicStyles = {
+    "--total-weeks": totalWeeks,
+    "--week-width-percentage": `${weekWidthPercentage}%`,
+    "--gap-size": "2px"
+  } as React.CSSProperties;
+
+  console.log(`[ContributionGraph] Dynamic sizing calculation:`, {
+    totalWeeks,
+    weekWidthPercentage: `${weekWidthPercentage}%`
+  });
+
   return (
-    <div className={styles.contributionGrid}>
+    <div className={styles.contributionGrid} style={dynamicStyles}>
       {/* Day labels (Mon-Sun) */}
       <div className={styles.daysLabels}>
         <div className={styles.dayLabelContainer}></div>{" "}
@@ -405,7 +389,7 @@ function ContributionGraph({
         {["Mon", "", "Wed", "", "Fri", "", "Sun"].map((day, index) => (
           <div
             key={index}
-            className={`${styles.dayLabel} ${day === "" ? styles.hidden : ""}`}
+            className={`${styles.contributionDayLabel} ${day === "" ? styles.hidden : ""}`}
           >
             {day}
           </div>
@@ -414,7 +398,7 @@ function ContributionGraph({
 
       {/* Weeks container */}
       <div className={styles.weeksContainer}>
-        {contributionData.weeks.map((week, weekIndex) => (
+        {weeks.map((week, weekIndex) => (
           <div key={weekIndex} className={styles.weekColumn}>
             {/* Month header */}
             <div className={styles.monthHeader}>
@@ -423,13 +407,8 @@ function ContributionGraph({
               )}
             </div>
 
-            {/* Render exactly 7 days for each week */}
+            {/* Render exactly 7 days for each week (Monday to Sunday) */}
             {week.days.map((dayData, dayIndex) => {
-              // Handle empty placeholder cells
-              if (dayData.isEmpty) {
-                return <div key={dayIndex} className={styles.emptyDay} />;
-              }
-
               const {
                 date,
                 game,
@@ -465,7 +444,7 @@ function ContributionGraph({
                     onDayHover(game, missedGame, futureGame, e)
                   }
                   onMouseLeave={onDayLeave}
-                  title={format(date, "MMM d, yyyy")}
+                  title={`${format(date, "EEEE, MMM d, yyyy")} - Position: ${dayIndex} - Expected: ${["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][dayIndex]}`}
                 />
               );
             })}

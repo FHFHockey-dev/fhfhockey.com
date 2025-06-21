@@ -4,6 +4,7 @@ import supabase from "lib/supabase";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
+import Link from "next/link";
 import { PlayerStatsChart } from "components/PlayerStats/PlayerStatsChart";
 import { PlayerStatsTable } from "components/PlayerStats/PlayerStatsTable";
 import { PlayerStatsSummary } from "components/PlayerStats/PlayerStatsSummary";
@@ -173,6 +174,18 @@ export default function PlayerStatsPage({
       />
 
       <div className={styles.playerStatsPageContainer}>
+        {/* Navigation Header */}
+        <div className={styles.navigationHeader}>
+          <Link href="/stats" className={styles.backButton}>
+            <span className={styles.backIcon}>←</span>
+            Back to Stats
+          </Link>
+          <h1 className={styles.pageTitle}>Player Analytics</h1>
+          <div className={styles.searchContainer}>
+            <PlayerSearchBar />
+          </div>
+        </div>
+
         {/* Player Header */}
         <div className={styles.playerHeader}>
           <div className={styles.playerImageContainer}>

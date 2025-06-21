@@ -1925,16 +1925,19 @@
 
     .contributionGrid {
       display: flex;
-      gap: v.$space-sm;
       align-items: flex-start;
       overflow-x: auto;
       padding: v.$space-sm 0;
+      width: 100%;
+      gap: 0; // Keep no gap between main elements (labels and grid)
+      // CRITICAL: Set minimum height so child elements can calculate 100%
+      min-height: 160px;
 
       .monthLabels {
         display: flex;
         flex-direction: column;
         margin-right: v.$space-xs;
-        padding-top: 20px; // Align with day labels
+        padding-top: 20px; // Align with month headers
 
         .monthLabel {
           font-size: v.$font-size-xs;
@@ -1953,27 +1956,60 @@
       .daysLabels {
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 2px; // Match week column gap
         margin-right: v.$space-xs;
+        min-width: 20px;
+        // CRITICAL: Ensure the container takes full height of contributionGrid
+        height: 100%;
+        align-self: stretch; // Force the container to stretch to parent height
 
         .dayLabelContainer {
-          height: 20px; // Month header space
-          width: 20px; // Make it visible for debugging
+          height: 20px; // Match month header height exactly
+          width: 20px;
           background: transparent;
+          flex-shrink: 0;
         }
 
-        .dayLabel {
+        // RENAMED: Use unique class name for contribution graph day labels
+        .contributionDayLabel {
           font-size: v.$font-size-xs;
           color: v.$text-secondary;
           font-weight: 500;
           text-align: right;
-          padding: 2px v.$space-xs 2px 0;
-          height: 14px; // Match contributionDay height
+          padding: 0 v.$space-xs 0 0;
+          // CRITICAL: Use EXACT same height as contribution days for perfect alignment
+          height: 14px; // Match the fixed 14px height of contribution days
           width: 20px;
           display: flex;
           align-items: center;
           justify-content: flex-end;
           line-height: 1;
+          flex-shrink: 0;
+          margin: 0; // Remove any margins
+          box-sizing: border-box; // Ensure consistent box model
+
+          &.hidden {
+            visibility: hidden;
+          }
+        }
+
+        // Keep legacy .dayLabel for backward compatibility but with specific scoping
+        .dayLabel {
+          font-size: v.$font-size-xs;
+          color: v.$text-secondary;
+          font-weight: 500;
+          text-align: right;
+          padding: 0 v.$space-xs 0 0;
+          // CRITICAL: Use EXACT same height as contribution days for perfect alignment
+          height: 14px; // Match the fixed 14px height of contribution days
+          width: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          line-height: 1;
+          flex-shrink: 0;
+          margin: 0; // Remove any margins
+          box-sizing: border-box; // Ensure consistent box model
 
           &.hidden {
             visibility: hidden;
@@ -1983,23 +2019,32 @@
 
       .weeksContainer {
         display: flex;
-        gap: 2px;
+        gap: 2px; // SMALL GAP between week columns for readability
         flex: 1;
         min-width: 0;
+        width: 100%;
+        // Ensure container doesn't overflow - account for labels and gaps
+        max-width: calc(100% - 100px);
+        // CRITICAL: Set minimum height to match contributionGrid
+        min-height: 160px;
+        align-self: stretch; // Force the container to stretch to parent height
 
         .weekColumn {
           display: flex;
           flex-direction: column;
-          gap: 2px;
-          width: 14px; // Fixed width
-          flex-shrink: 0;
+          gap: 2px; // SMALL GAP between days for readability
+          // RESPONSIVE WIDTH: Equal distribution accounting for gaps
+          flex: 1;
+          min-width: 0; // Allow shrinking
+          max-width: none; // Remove constraints
 
           .monthHeader {
-            height: 20px;
+            width: 100%;
+            height: 20px; // Match dayLabelContainer height
             display: flex;
             align-items: center;
             justify-content: center;
-            flex-shrink: 0; // Prevent shrinking
+            flex-shrink: 0;
 
             .monthName {
               font-size: v.$font-size-xs;
@@ -2012,67 +2057,87 @@
             }
           }
 
-          .contributionDay {
-            width: 14px;
-            height: 14px;
-            border-radius: 3px;
+          // RESPONSIVE SQUARE CONTRIBUTION DAYS
+          .contributionDay,
+          .emptyDay {
+            // CRITICAL: Make days truly responsive to week column width
+            width: 100%;
+            // Calculate height accounting for gaps:
+            // Total available height = 100% - month header (20px) - gaps (6 * 2px = 12px)
+            // Divided by 7 days
+            height: calc((100% - 20px - 12px) / 7);
+
+            // Remove all fixed constraints
+            min-width: unset;
+            min-height: unset;
+            max-width: unset;
+            max-height: unset;
+
+            // Use aspect-ratio as backup for square shape
+            aspect-ratio: 1;
+
+            // Styling
+            border-radius: clamp(1px, 0.15vw, 2px); // Responsive border radius
             cursor: pointer;
             border: 1px solid rgba(v.$border-secondary, 0.3);
             transition: all 0.2s ease;
             position: relative;
-            flex-shrink: 0; // Prevent shrinking
+            flex-shrink: 0;
+            margin: 0;
+            display: block;
+            box-sizing: border-box; // Include border in width/height calculations
 
             &:hover {
-              transform: scale(1.2);
+              transform: scale(1.1);
               z-index: 10;
               box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
             }
 
-            // Performance level colors (same as calendar)
+            // Performance level colors
             &.elite {
-              background-color: #1a5d1a;
-              border-color: #10b981;
+              background-color: rgba(26, 93, 26, 0.45);
+              border-color: rgba(16, 185, 129, 0.45);
             }
 
             &.excellent {
-              background-color: #2d8f2d;
-              border-color: #22c55e;
+              background-color: rgba(45, 143, 45, 0.45);
+              border-color: rgba(34, 197, 94, 0.45);
             }
 
             &.good {
-              background-color: #4fb84f;
-              border-color: #84cc16;
+              background-color: rgba(79, 184, 79, 0.45);
+              border-color: rgba(131, 204, 22, 0.45);
             }
 
             &.average {
-              background-color: #85c985;
-              border-color: #eab308;
+              background-color: rgba(133, 201, 133, 0.45);
+              border-color: rgba(234, 179, 8, 0.45);
             }
 
             &.belowAverage {
-              background-color: #ffd700;
-              border-color: #f97316;
+              background-color: rgba(255, 215, 0, 0.45);
+              border-color: rgba(249, 115, 22, 0.45);
             }
 
             &.poor {
-              background-color: #ff8c42;
-              border-color: #ef4444;
+              background-color: rgba(255, 140, 66, 0.45);
+              border-color: rgba(239, 68, 68, 0.45);
             }
 
             &.veryPoor {
-              background-color: #d32f2f;
-              border-color: #dc2626;
+              background-color: rgba(211, 47, 47, 0.45);
+              border-color: rgba(220, 38, 38, 0.45);
             }
 
             &.noData {
-              background-color: #2a2a2a;
+              background-color: rgba(42, 42, 42, 0.45);
               border-color: rgba(v.$border-secondary, 0.5);
               opacity: 0.6;
             }
 
             &.missed {
               background-color: rgba(239, 68, 68, 0.15);
-              border: 2px solid #ef4444;
+              border: 1px solid rgba(239, 68, 68, 0.45);
               position: relative;
 
               &::after {
@@ -2081,8 +2146,8 @@
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                width: 6px;
-                height: 6px;
+                width: 40%;
+                height: 40%;
                 background-image: url("/pictures/injured.png");
                 background-size: contain;
                 background-repeat: no-repeat;
@@ -2092,21 +2157,21 @@
 
             &.future {
               background-color: transparent;
-              border: 2px solid v.$primary-color;
+              border: 1px solid v.$primary-color;
               opacity: 0.7;
             }
 
             &.playoff {
-              border: 2px solid v.$warning-color;
+              border: 1px solid rgba(v.$warning-color, 0.7);
               box-shadow: 0 0 0 1px rgba(v.$warning-color, 0.3);
 
               &::before {
                 content: "";
                 position: absolute;
-                top: -2px;
-                right: -2px;
-                width: 6px;
-                height: 6px;
+                top: -1px;
+                right: -1px;
+                width: 30%;
+                height: 30%;
                 background-color: v.$warning-color;
                 border-radius: 50%;
                 border: 1px solid v.$background-dark;
@@ -2115,25 +2180,20 @@
 
             // Combined states
             &.future.playoff {
-              border: 2px solid v.$primary-color;
+              border: 1px solid v.$primary-color;
               box-shadow: 0 0 0 1px rgba(v.$warning-color, 0.3);
             }
 
             &.missed.playoff {
-              border: 2px solid #ef4444;
+              border: 1px solid rgba(239, 68, 68, 0.45);
               box-shadow: 0 0 0 1px rgba(v.$warning-color, 0.3);
             }
           }
 
-          // Empty day placeholders - ensure they're the same size
           .emptyDay {
-            width: 14px;
-            height: 14px;
             background: transparent;
-            flex-shrink: 0;
-            border: 1px solid transparent; // Keep consistent sizing
-            border-radius: 3px; // Match the contributionDay border-radius
-            cursor: default; // No cursor change for empty days
+            border: 1px solid transparent;
+            cursor: default;
           }
         }
       }
@@ -2170,6 +2230,7 @@
             height: 12px;
             border-radius: 2px;
             border: 1px solid rgba(v.$border-secondary, 0.3);
+            flex-shrink: 0;
           }
         }
       }
@@ -2191,6 +2252,7 @@
             height: 12px;
             border-radius: 2px;
             position: relative;
+            flex-shrink: 0;
 
             &.missed {
               background-color: rgba(239, 68, 68, 0.15);
@@ -2273,40 +2335,459 @@
 }
 
 // =============================================================================
-// UTILITY & STATE INDICATORS
+// FULL-WIDTH CONTRIBUTION GRAPH EXPANSION
 // =============================================================================
 
-.noData,
-.loading {
-  text-align: center;
-  padding: v.$space-xxl v.$space-xl;
-  color: v.$text-secondary;
-  font-size: v.$font-size-lg;
+.contributionGraph {
+  .contributionGrid {
+    width: 100%;
+
+    .weeksContainer {
+      width: 100%;
+      display: flex;
+      gap: var(--gap-size, 2px);
+
+      .weekColumn {
+        // Calculate width accounting for gaps:
+        // (100% - total gap width) / number of weeks
+        width: calc(
+          (100% - (var(--total-weeks, 52) - 1) * var(--gap-size, 2px)) /
+            var(--total-weeks, 52)
+        );
+        flex: 0 0
+          calc(
+            (100% - (var(--total-weeks, 52) - 1) * var(--gap-size, 2px)) /
+              var(--total-weeks, 52)
+          );
+        min-width: 0; // Allow shrinking below content size
+
+        .monthHeader {
+          width: 100%;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          .monthName {
+            font-size: v.$font-size-xs;
+            color: v.$text-secondary;
+            font-weight: 500;
+            writing-mode: horizontal-tb;
+            text-align: center;
+            line-height: 1;
+            white-space: nowrap;
+          }
+        }
+
+        // PERFECT SQUARE CONTRIBUTION DAYS - Single consolidated definition
+        .contributionDay,
+        .emptyDay {
+          // CRITICAL: Perfect square sizing
+          width: 14px;
+          height: 14px;
+
+          // Remove all flex-based sizing that was causing rectangles
+          min-width: 14px;
+          min-height: 14px;
+          max-width: 14px;
+          max-height: 14px;
+
+          // Remove aspect-ratio as we're using fixed sizes
+          aspect-ratio: unset;
+
+          // Styling
+          border-radius: 2px; // Small radius for crisp squares
+          cursor: pointer;
+          border: 1px solid rgba(v.$border-secondary, 0.3);
+          transition: all 0.2s ease;
+          position: relative;
+          flex-shrink: 0;
+          margin: 0;
+          display: block;
+
+          &:hover {
+            transform: scale(1.15);
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          }
+
+          // Performance level colors
+          &.elite {
+            background-color: rgba(26, 93, 26, 0.45);
+            border-color: rgba(16, 185, 129, 0.45);
+          }
+
+          &.excellent {
+            background-color: rgba(45, 143, 45, 0.45);
+            border-color: rgba(34, 197, 94, 0.45);
+          }
+
+          &.good {
+            background-color: rgba(79, 184, 79, 0.45);
+            border-color: rgba(131, 204, 22, 0.45);
+          }
+
+          &.average {
+            background-color: rgba(133, 201, 133, 0.45);
+            border-color: rgba(234, 179, 8, 0.45);
+          }
+
+          &.belowAverage {
+            background-color: rgba(255, 215, 0, 0.45);
+            border-color: rgba(249, 115, 22, 0.45);
+          }
+
+          &.poor {
+            background-color: rgba(255, 140, 66, 0.45);
+            border-color: rgba(239, 68, 68, 0.45);
+          }
+
+          &.veryPoor {
+            background-color: rgba(211, 47, 47, 0.45);
+            border-color: rgba(220, 38, 38, 0.45);
+          }
+
+          &.noData {
+            background-color: rgba(42, 42, 42, 0.45);
+            border-color: rgba(v.$border-secondary, 0.5);
+            opacity: 0.6;
+          }
+
+          &.missed {
+            background-color: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.45);
+            position: relative;
+
+            &::after {
+              content: "";
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              width: 40%;
+              height: 40%;
+              background-image: url("/pictures/injured.png");
+              background-size: contain;
+              background-repeat: no-repeat;
+              background-position: center;
+            }
+          }
+
+          &.future {
+            background-color: transparent;
+            border: 1px solid v.$primary-color;
+            opacity: 0.7;
+          }
+
+          &.playoff {
+            border: 1px solid rgba(v.$warning-color, 0.7);
+            box-shadow: 0 0 0 1px rgba(v.$warning-color, 0.3);
+
+            &::before {
+              content: "";
+              position: absolute;
+              top: -1px;
+              right: -1px;
+              width: 30%;
+              height: 30%;
+              background-color: v.$warning-color;
+              border-radius: 50%;
+              border: 1px solid v.$background-dark;
+            }
+          }
+
+          // Combined states
+          &.future.playoff {
+            border: 1px solid v.$primary-color;
+            box-shadow: 0 0 0 1px rgba(v.$warning-color, 0.3);
+          }
+
+          &.missed.playoff {
+            border: 1px solid rgba(239, 68, 68, 0.45);
+            box-shadow: 0 0 0 1px rgba(v.$warning-color, 0.3);
+          }
+        }
+
+        .emptyDay {
+          background: transparent;
+          border: 1px solid transparent;
+          cursor: default;
+        }
+      }
+    }
+
+    .contributionLegend {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: v.$space-md;
+      padding-top: v.$space-md;
+      border-top: 1px solid v.$border-secondary;
+      flex-wrap: wrap;
+      gap: v.$space-md;
+
+      .legendSection {
+        display: flex;
+        align-items: center;
+        gap: v.$space-sm;
+
+        .legendLabel {
+          font-size: v.$font-size-xs;
+          color: v.$text-secondary;
+          font-weight: 500;
+        }
+
+        .legendScale {
+          display: flex;
+          align-items: center;
+          gap: 3px;
+
+          .scaleItem {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            border: 1px solid rgba(v.$border-secondary, 0.3);
+            flex-shrink: 0;
+          }
+        }
+      }
+
+      .legendSpecial {
+        display: flex;
+        align-items: center;
+        gap: v.$space-md;
+
+        .specialItem {
+          display: flex;
+          align-items: center;
+          gap: v.$space-xs;
+          font-size: v.$font-size-xs;
+          color: v.$text-secondary;
+
+          .specialIndicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            position: relative;
+            flex-shrink: 0;
+
+            &.missed {
+              background-color: rgba(239, 68, 68, 0.15);
+              border: 2px solid #ef4444;
+
+              &::after {
+                content: "";
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 6px;
+                height: 6px;
+                background-image: url("/pictures/injured.png");
+                background-size: contain;
+                background-repeat: no-repeat;
+                background-position: center;
+              }
+            }
+
+            &.future {
+              background-color: transparent;
+              border: 2px solid v.$primary-color;
+            }
+
+            &.playoff {
+              background-color: #4fb84f;
+              border: 2px solid v.$warning-color;
+
+              &::before {
+                content: "";
+                position: absolute;
+                top: -2px;
+                right: -2px;
+                width: 6px;
+                height: 6px;
+                background-color: v.$warning-color;
+                border-radius: 50%;
+                border: 1px solid v.$background-dark;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .contributionStats {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: v.$space-md;
+      padding: v.$space-md;
+      background: v.$background-dark;
+      border-radius: v.$border-radius-sm;
+      border: 1px solid v.$border-secondary;
+      flex-wrap: wrap;
+      gap: v.$space-md;
+
+      .statGroup {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: v.$space-xs;
+
+        .statValue {
+          font-size: v.$font-size-lg;
+          font-weight: 700;
+          color: v.$text-primary;
+        }
+
+        .statLabel {
+          font-size: v.$font-size-xs;
+          color: v.$text-secondary;
+          text-align: center;
+          line-height: 1.2;
+        }
+      }
+    }
+  }
 }
 
-.noData {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  font-size: v.$font-size-md;
-  font-style: italic;
-  background: rgba(v.$background-medium, 0.5);
-  border: 2px dashed v.$border-secondary;
-  border-radius: v.$border-radius-md;
+// =============================================================================
+// RESPONSIVE BREAKPOINTS FOR CONTRIBUTION GRAPH
+// =============================================================================
+
+// Set minimum practical size constraints for very small screens
+@media (max-width: v.$screen-small-max) {
+  .contributionGraph {
+    .contributionGrid {
+      // Reduce container padding to maximize space
+      padding: v.$space-xs 0;
+
+      .daysLabels {
+        min-width: 16px; // Slightly smaller on mobile
+        gap: 1px; // Smaller gap on mobile
+
+        .dayLabelContainer {
+          height: 16px;
+          width: 16px;
+        }
+
+        .contributionDayLabel {
+          // Adjust height calculation for mobile with smaller gaps
+          height: calc((100% - 16px - 6px) / 7); // 6 gaps * 1px each
+          min-height: 6px; // Ensure minimum readability
+        }
+      }
+
+      .weeksContainer {
+        max-width: calc(100% - 70px); // Less space for labels on mobile
+        gap: 1px; // Smaller gap on mobile
+        // Set a minimum height to ensure day labels can calculate properly
+        min-height: 100px;
+
+        .weekColumn {
+          gap: 1px; // Smaller gap on mobile
+
+          .monthHeader {
+            height: 16px; // Match smaller dayLabelContainer
+
+            .monthName {
+              font-size: v.$font-size-xxs;
+            }
+          }
+
+          .contributionDay,
+          .emptyDay {
+            // Adjust height calculation for mobile with smaller gaps
+            height: calc((100% - 16px - 6px) / 7); // 6 gaps * 1px each
+            // Ensure minimum touch-friendly size but keep responsive
+            min-width: 6px;
+            min-height: 6px;
+            border-radius: 1px;
+          }
+        }
+      }
+    }
+
+    .contributionLegend {
+      .legendSection {
+        .legendScale {
+          .scaleItem {
+            width: 10px;
+            height: 10px;
+          }
+        }
+      }
+
+      .legendSpecial {
+        .specialItem {
+          .specialIndicator {
+            width: 10px;
+            height: 10px;
+          }
+        }
+      }
+    }
+  }
 }
 
-// Specific no data styling for contribution graph (no padding to prevent layout issues)
-.noContributionData {
-  text-align: center;
-  color: v.$text-secondary;
-  font-size: v.$font-size-md;
-  font-style: italic;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  background: rgba(v.$background-medium, 0.5);
-  border: 2px dashed v.$border-secondary;
-  border-radius: v.$border-radius-md;
+// Tablet optimization - maintain responsive behavior with reasonable constraints
+@media (min-width: v.$screen-medium-min) and (max-width: v.$screen-medium-max) {
+  .contributionGraph {
+    .contributionGrid {
+      .daysLabels {
+        .dayLabel {
+          // Adjust for tablet sizes with 2px gaps
+          height: calc((100% - 20px - 12px) / 7);
+        }
+      }
+
+      .weeksContainer {
+        max-width: calc(100% - 85px); // Moderate space for labels
+        min-height: 140px; // Better minimum for tablet sizes
+
+        .weekColumn {
+          .contributionDay,
+          .emptyDay {
+            // Height calculation with 2px gaps
+            height: calc((100% - 20px - 12px) / 7);
+            // Slightly larger minimum for tablets
+            min-width: 8px;
+            min-height: 8px;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Large screen optimization - maintain responsive behavior with maximum constraints
+@media (min-width: v.$screen-large) {
+  .contributionGraph {
+    .contributionGrid {
+      .daysLabels {
+        .dayLabel {
+          // Adjust for large screens with 2px gaps
+          height: calc((100% - 20px - 12px) / 7);
+        }
+      }
+
+      .weeksContainer {
+        max-width: calc(100% - 100px); // More space for labels on large screens
+        min-height: 160px; // Comfortable minimum for large screens
+
+        .weekColumn {
+          .contributionDay,
+          .emptyDay {
+            // Height calculation with 2px gaps
+            height: calc((100% - 20px - 12px) / 7);
+            // Cap maximum size for visual balance but keep responsive
+            max-width: 20px;
+            max-height: 20px;
+            min-width: 10px;
+            min-height: 10px;
+          }
+        }
+      }
+    }
+  }
 }
