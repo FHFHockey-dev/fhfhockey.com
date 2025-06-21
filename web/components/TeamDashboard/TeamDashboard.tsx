@@ -5,6 +5,7 @@ import useCurrentSeason from "hooks/useCurrentSeason";
 import fetchWithCache from "lib/fetchWithCache";
 import { GameByGameTimeline } from "./GameByGameTimeline";
 import { AdvancedL10Metrics } from "./AdvancedL10Metrics";
+import { TeamLeaders } from "./TeamLeaders";
 import styles from "./TeamDashboard.module.scss";
 
 interface TeamDashboardProps {
@@ -114,6 +115,34 @@ interface LeagueRankings {
   hdcf_pct_rank: number;
   save_pct_5v5_rank: number;
   shooting_pct_5v5_rank: number;
+  // Enhanced rankings for all stats
+  points_rank: number;
+  point_pct_rank: number;
+  goal_diff_rank: number;
+  pp_opportunities_rank: number;
+  pp_goals_for_rank: number;
+  pp_goals_against_rank: number;
+  sh_goals_for_rank: number;
+  team_save_pct_rank: number;
+  team_gaa_rank: number;
+  team_shutouts_rank: number;
+  scf_pct_rank: number;
+  xgf_rank: number;
+  xga_rank: number;
+}
+
+interface PlayerLeader {
+  player_id: number;
+  player_name: string;
+  position_code: string;
+  value: number;
+  games_played: number;
+}
+
+interface TeamLeadersData {
+  pointsLeaders: PlayerLeader[];
+  goalsLeaders: PlayerLeader[];
+  bshLeaders: PlayerLeader[];
 }
 
 export function TeamDashboard({
@@ -137,6 +166,7 @@ export function TeamDashboard({
   const [leagueRankings, setLeagueRankings] = useState<LeagueRankings | null>(
     null
   );
+  const [teamLeaders, setTeamLeaders] = useState<TeamLeadersData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [gameRecordsCount, setGameRecordsCount] = useState<number>(0);
@@ -556,7 +586,8 @@ export function TeamDashboard({
               power_play_pct,
               penalty_kill_pct,
               faceoff_win_pct,
-              point_pct
+              point_pct,
+              points
             `
             )
             .eq("season_id", parseInt(effectiveSeasonId));
@@ -601,16 +632,37 @@ export function TeamDashboard({
               xgf_pct,
               pdo,
               hdcf_pct,
+              scf_pct,
               sv_pct,
               sh_pct,
               xga,
-              xgf
+              xgf,
+              date
             `
               )
-              .order("date", { ascending: false })
-              .limit(32); // Get latest for each team
+              .gte("date", startDate)
+              .lte("date", endDate)
+              .order("date", { ascending: false });
 
           if (allAdvancedError) throw allAdvancedError;
+
+          // Get all teams' special teams data
+          const { data: allTeamsSpecialTeams, error: allSpecialTeamsError } =
+            await supabase
+              .from("wgo_team_stats")
+              .select(
+                `
+              team_id,
+              pp_opportunities_per_game,
+              power_play_goals_for,
+              pp_goals_against,
+              sh_goals_for
+            `
+              )
+              .eq("season_id", parseInt(effectiveSeasonId))
+              .order("date", { ascending: false });
+
+          if (allSpecialTeamsError) throw allSpecialTeamsError;
 
           if (allTeamsSummary && summaryData) {
             // Calculate rankings
@@ -619,10 +671,18 @@ export function TeamDashboard({
               allValues: number[],
               higherIsBetter: boolean = true
             ) => {
-              const sortedValues = [...allValues].sort((a, b) =>
+              if (value === null || value === undefined || isNaN(value))
+                return 32;
+              const validValues = allValues.filter(
+                (v) => v !== null && v !== undefined && !isNaN(v)
+              );
+              if (validValues.length === 0) return 32;
+
+              const sortedValues = [...validValues].sort((a, b) =>
                 higherIsBetter ? b - a : a - b
               );
-              return sortedValues.indexOf(value) + 1;
+              const rank = sortedValues.findIndex((v) => v === value) + 1;
+              return rank || validValues.length + 1;
             };
 
             // Extract current team's values
@@ -632,8 +692,15 @@ export function TeamDashboard({
             const currentTeamStandings = allTeamsStandings?.find(
               (team) => team.team_abbrev === teamAbbrev
             );
+
+            // Get latest advanced stats for current team
             const currentTeamAdvanced = allTeamsAdvanced?.find(
               (team) => team.team_abbreviation === teamAbbrev
+            );
+
+            // Get special teams for current team
+            const currentTeamSpecialTeams = allTeamsSpecialTeams?.find(
+              (team) => team.team_id === parseInt(teamId)
             );
 
             if (currentTeamData) {
@@ -644,6 +711,7 @@ export function TeamDashboard({
 
               const goalsPerGame = goalsForSafe / gamesPlayedSafe;
               const goalsAgainstPerGame = goalsAgainstSafe / gamesPlayedSafe;
+              const goalDiff = goalsForSafe - goalsAgainstSafe;
 
               const allGoalsPerGame = allTeamsSummary
                 .filter((team) => team.games_played && team.games_played > 0)
@@ -656,6 +724,15 @@ export function TeamDashboard({
                 .map(
                   (team) => (team.goals_against || 0) / (team.games_played || 1)
                 );
+
+              const allGoalDiffs = allTeamsSummary.map(
+                (team) => (team.goals_for || 0) - (team.goals_against || 0)
+              );
+
+              const allPoints = allTeamsSummary.map((team) => team.points || 0);
+              const allPointPcts = allTeamsSummary.map(
+                (team) => team.point_pct || 0
+              );
 
               // Calculate special teams rankings with null safety
               const allPowerPlayPct = allTeamsSummary
@@ -678,6 +755,23 @@ export function TeamDashboard({
               const allShotsAgainstPerGame = allTeamsSummary
                 .map((team) => team.shots_against_per_game || 0)
                 .filter((shots) => shots > 0);
+
+              // Special teams additional stats
+              const allPpOpportunities =
+                allTeamsSpecialTeams?.map(
+                  (team) => team.pp_opportunities_per_game || 0
+                ) || [];
+              const allPpGoalsFor =
+                allTeamsSpecialTeams?.map(
+                  (team) => team.power_play_goals_for || 0
+                ) || [];
+              const allPpGoalsAgainst =
+                allTeamsSpecialTeams?.map(
+                  (team) => team.pp_goals_against || 0
+                ) || [];
+              const allShGoalsFor =
+                allTeamsSpecialTeams?.map((team) => team.sh_goals_for || 0) ||
+                [];
 
               // Calculate home/road/L10 rankings
               let homeRecordRank = 0;
@@ -717,126 +811,134 @@ export function TeamDashboard({
               let xgfPctRank = 0;
               let pdoRank = 0;
               let hdcfPctRank = 0;
+              let scfPctRank = 0;
               let savePct5v5Rank = 0;
               let shootingPct5v5Rank = 0;
+              let xgfRank = 0;
+              let xgaRank = 0;
 
               if (currentTeamAdvanced && allTeamsAdvanced) {
-                const allCfPct = allTeamsAdvanced
-                  .map((team) => team.cf_pct || 0)
-                  .filter((pct) => pct > 0);
-                const allXgfPct = allTeamsAdvanced
-                  .map((team) => team.xgf_pct || 0)
-                  .filter((pct) => pct > 0);
-                const allPdo = allTeamsAdvanced
-                  .map((team) => team.pdo || 0)
-                  .filter((pdo) => pdo > 0);
-                const allHdcfPct = allTeamsAdvanced
-                  .map((team) => team.hdcf_pct || 0)
-                  .filter((pct) => pct > 0);
-                const allSavePct = allTeamsAdvanced
-                  .map((team) => team.sv_pct || 0)
-                  .filter((pct) => pct > 0);
-                const allShootingPct = allTeamsAdvanced
-                  .map((team) => team.sh_pct || 0)
-                  .filter((pct) => pct > 0);
+                // Group advanced stats by team and get latest values
+                const teamAdvancedStats = new Map();
+                allTeamsAdvanced.forEach((stat) => {
+                  if (
+                    !teamAdvancedStats.has(stat.team_abbreviation) ||
+                    stat.date >
+                      teamAdvancedStats.get(stat.team_abbreviation).date
+                  ) {
+                    teamAdvancedStats.set(stat.team_abbreviation, stat);
+                  }
+                });
 
-                if (allCfPct.length > 0) {
-                  cfPctRank = calculateRank(
-                    currentTeamAdvanced.cf_pct || 0,
-                    allCfPct,
-                    true
-                  );
-                }
-                if (allXgfPct.length > 0) {
-                  xgfPctRank = calculateRank(
-                    currentTeamAdvanced.xgf_pct || 0,
-                    allXgfPct,
-                    true
-                  );
-                }
-                if (allPdo.length > 0) {
-                  pdoRank = calculateRank(
-                    currentTeamAdvanced.pdo || 0,
-                    allPdo,
-                    true
-                  );
-                }
-                if (allHdcfPct.length > 0) {
-                  hdcfPctRank = calculateRank(
-                    currentTeamAdvanced.hdcf_pct || 0,
-                    allHdcfPct,
-                    true
-                  );
-                }
-                if (allSavePct.length > 0) {
-                  savePct5v5Rank = calculateRank(
-                    currentTeamAdvanced.sv_pct || 0,
-                    allSavePct,
-                    true
-                  );
-                }
-                if (allShootingPct.length > 0) {
-                  shootingPct5v5Rank = calculateRank(
-                    currentTeamAdvanced.sh_pct || 0,
-                    allShootingPct,
-                    true
-                  );
-                }
+                const latestAdvancedStats = Array.from(
+                  teamAdvancedStats.values()
+                );
+
+                const allCfPct = latestAdvancedStats.map(
+                  (team) => team.cf_pct || 0
+                );
+                const allXgfPct = latestAdvancedStats.map(
+                  (team) => team.xgf_pct || 0
+                );
+                const allPdo = latestAdvancedStats.map((team) => team.pdo || 0);
+                const allHdcfPct = latestAdvancedStats.map(
+                  (team) => team.hdcf_pct || 0
+                );
+                const allScfPct = latestAdvancedStats.map(
+                  (team) => team.scf_pct || 0
+                );
+                const allSavePct = latestAdvancedStats.map(
+                  (team) => team.sv_pct || 0
+                );
+                const allShootingPct = latestAdvancedStats.map(
+                  (team) => team.sh_pct || 0
+                );
+                const allXgf = latestAdvancedStats.map((team) => team.xgf || 0);
+                const allXga = latestAdvancedStats.map((team) => team.xga || 0);
+
+                cfPctRank = calculateRank(
+                  currentTeamAdvanced.cf_pct || 0,
+                  allCfPct,
+                  true
+                );
+                xgfPctRank = calculateRank(
+                  currentTeamAdvanced.xgf_pct || 0,
+                  allXgfPct,
+                  true
+                );
+                pdoRank = calculateRank(
+                  currentTeamAdvanced.pdo || 0,
+                  allPdo,
+                  true
+                );
+                hdcfPctRank = calculateRank(
+                  currentTeamAdvanced.hdcf_pct || 0,
+                  allHdcfPct,
+                  true
+                );
+                scfPctRank = calculateRank(
+                  currentTeamAdvanced.scf_pct || 0,
+                  allScfPct,
+                  true
+                );
+                savePct5v5Rank = calculateRank(
+                  currentTeamAdvanced.sv_pct || 0,
+                  allSavePct,
+                  true
+                );
+                shootingPct5v5Rank = calculateRank(
+                  currentTeamAdvanced.sh_pct || 0,
+                  allShootingPct,
+                  true
+                );
+                xgfRank = calculateRank(
+                  currentTeamAdvanced.xgf || 0,
+                  allXgf,
+                  true
+                );
+                xgaRank = calculateRank(
+                  currentTeamAdvanced.xga || 0,
+                  allXga,
+                  false
+                ); // Lower is better for xGA
               }
 
               setLeagueRankings({
-                goals_per_game_rank:
-                  allGoalsPerGame.length > 0
-                    ? calculateRank(goalsPerGame, allGoalsPerGame, true)
-                    : 0,
-                goals_against_per_game_rank:
-                  allGoalsAgainstPerGame.length > 0
-                    ? calculateRank(
-                        goalsAgainstPerGame,
-                        allGoalsAgainstPerGame,
-                        false
-                      )
-                    : 0,
-                shots_per_game_rank:
-                  allShotsPerGame.length > 0
-                    ? calculateRank(
-                        currentTeamData.shots_for_per_game || 0,
-                        allShotsPerGame,
-                        true
-                      )
-                    : 0,
-                shots_against_per_game_rank:
-                  allShotsAgainstPerGame.length > 0
-                    ? calculateRank(
-                        currentTeamData.shots_against_per_game || 0,
-                        allShotsAgainstPerGame,
-                        false
-                      )
-                    : 0,
-                power_play_rank:
-                  allPowerPlayPct.length > 0
-                    ? calculateRank(
-                        currentTeamData.power_play_pct || 0,
-                        allPowerPlayPct,
-                        true
-                      )
-                    : 0,
-                penalty_kill_rank:
-                  allPenaltyKillPct.length > 0
-                    ? calculateRank(
-                        currentTeamData.penalty_kill_pct || 0,
-                        allPenaltyKillPct,
-                        true
-                      )
-                    : 0,
-                faceoff_win_rank:
-                  allFaceoffPct.length > 0
-                    ? calculateRank(
-                        currentTeamData.faceoff_win_pct || 0,
-                        allFaceoffPct,
-                        true
-                      )
-                    : 0,
+                goals_per_game_rank: calculateRank(
+                  goalsPerGame,
+                  allGoalsPerGame,
+                  true
+                ),
+                goals_against_per_game_rank: calculateRank(
+                  goalsAgainstPerGame,
+                  allGoalsAgainstPerGame,
+                  false
+                ),
+                shots_per_game_rank: calculateRank(
+                  currentTeamData.shots_for_per_game || 0,
+                  allShotsPerGame,
+                  true
+                ),
+                shots_against_per_game_rank: calculateRank(
+                  currentTeamData.shots_against_per_game || 0,
+                  allShotsAgainstPerGame,
+                  false
+                ),
+                power_play_rank: calculateRank(
+                  currentTeamData.power_play_pct || 0,
+                  allPowerPlayPct,
+                  true
+                ),
+                penalty_kill_rank: calculateRank(
+                  currentTeamData.penalty_kill_pct || 0,
+                  allPenaltyKillPct,
+                  true
+                ),
+                faceoff_win_rank: calculateRank(
+                  currentTeamData.faceoff_win_pct || 0,
+                  allFaceoffPct,
+                  true
+                ),
                 home_record_rank: homeRecordRank,
                 road_record_rank: roadRecordRank,
                 l10_rank: l10Rank,
@@ -845,13 +947,156 @@ export function TeamDashboard({
                 pdo_rank: pdoRank,
                 hdcf_pct_rank: hdcfPctRank,
                 save_pct_5v5_rank: savePct5v5Rank,
-                shooting_pct_5v5_rank: shootingPct5v5Rank
+                shooting_pct_5v5_rank: shootingPct5v5Rank,
+                // Enhanced rankings for all stats
+                points_rank: calculateRank(
+                  summaryData.points || 0,
+                  allPoints,
+                  true
+                ),
+                point_pct_rank: calculateRank(
+                  summaryData.point_pct || 0,
+                  allPointPcts,
+                  true
+                ),
+                goal_diff_rank: calculateRank(goalDiff, allGoalDiffs, true),
+                pp_opportunities_rank: calculateRank(
+                  currentTeamSpecialTeams?.pp_opportunities_per_game || 0,
+                  allPpOpportunities,
+                  true
+                ),
+                pp_goals_for_rank: calculateRank(
+                  currentTeamSpecialTeams?.power_play_goals_for || 0,
+                  allPpGoalsFor,
+                  true
+                ),
+                pp_goals_against_rank: calculateRank(
+                  currentTeamSpecialTeams?.pp_goals_against || 0,
+                  allPpGoalsAgainst,
+                  false
+                ),
+                sh_goals_for_rank: calculateRank(
+                  currentTeamSpecialTeams?.sh_goals_for || 0,
+                  allShGoalsFor,
+                  true
+                ),
+                team_save_pct_rank: calculateRank(
+                  (goaltendingStats?.save_pct || 0) * 100,
+                  [90, 91, 92, 93],
+                  true
+                ), // Placeholder - would need league goalie data
+                team_gaa_rank: calculateRank(
+                  goaltendingStats?.gaa || 0,
+                  [2.5, 2.7, 3.0, 3.2],
+                  false
+                ), // Placeholder - would need league goalie data
+                team_shutouts_rank: calculateRank(
+                  goaltendingStats?.shutouts || 0,
+                  [3, 4, 5, 6],
+                  true
+                ), // Placeholder - would need league goalie data
+                scf_pct_rank: scfPctRank,
+                xgf_rank: xgfRank,
+                xga_rank: xgaRank
               });
             }
           }
         } catch (rankingsError) {
           console.error("Error calculating league rankings:", rankingsError);
           setLeagueRankings(null);
+        }
+
+        // Fetch team leaders data
+        try {
+          // Convert season ID to the format used in wgo_skater_stats_totals (e.g., "20242025")
+          const formattedSeasonId =
+            effectiveSeasonId.length === 4
+              ? `${effectiveSeasonId}${(parseInt(effectiveSeasonId) + 1).toString()}`
+              : effectiveSeasonId;
+
+          const { data: skatersData, error: skatersError } = await supabase
+            .from("wgo_skater_stats_totals")
+            .select(
+              `
+              player_id,
+              player_name,
+              position_code,
+              games_played,
+              points,
+              goals,
+              blocked_shots,
+              shots,
+              hits
+            `
+            )
+            .eq("current_team_abbreviation", teamAbbrev)
+            .eq("season", formattedSeasonId)
+            .gte("games_played", 5); // Minimum 5 games played to qualify
+
+          if (skatersError) throw skatersError;
+
+          if (skatersData && skatersData.length > 0) {
+            // Calculate BSH (Blocked Shots + Shots + Hits) for each player
+            const playersWithBSH = skatersData.map((player) => ({
+              ...player,
+              bsh:
+                (player.blocked_shots || 0) +
+                (player.shots || 0) +
+                (player.hits || 0)
+            }));
+
+            // Get top 3 in each category
+            const pointsLeaders = [...playersWithBSH]
+              .filter((p) => p.player_name && p.position_code) // Filter out null names/positions
+              .sort((a, b) => (b.points || 0) - (a.points || 0))
+              .slice(0, 3)
+              .map((p) => ({
+                player_id: p.player_id,
+                player_name: p.player_name || "Unknown Player",
+                position_code: p.position_code || "N/A",
+                value: p.points || 0,
+                games_played: p.games_played || 0
+              }));
+
+            const goalsLeaders = [...playersWithBSH]
+              .filter((p) => p.player_name && p.position_code) // Filter out null names/positions
+              .sort((a, b) => (b.goals || 0) - (a.goals || 0))
+              .slice(0, 3)
+              .map((p) => ({
+                player_id: p.player_id,
+                player_name: p.player_name || "Unknown Player",
+                position_code: p.position_code || "N/A",
+                value: p.goals || 0,
+                games_played: p.games_played || 0
+              }));
+
+            const bshLeaders = [...playersWithBSH]
+              .filter((p) => p.player_name && p.position_code) // Filter out null names/positions
+              .sort((a, b) => b.bsh - a.bsh)
+              .slice(0, 3)
+              .map((p) => ({
+                player_id: p.player_id,
+                player_name: p.player_name || "Unknown Player",
+                position_code: p.position_code || "N/A",
+                value: p.bsh,
+                games_played: p.games_played || 0
+              }));
+
+            setTeamLeaders({
+              pointsLeaders,
+              goalsLeaders,
+              bshLeaders
+            });
+          } else {
+            setTeamLeaders({
+              pointsLeaders: [],
+              goalsLeaders: [],
+              bshLeaders: []
+            });
+          }
+        } catch (leadersFetchError) {
+          console.error("Error fetching team leaders data:", leadersFetchError);
+          setTeamLeaders(null);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "An error occurred");
@@ -907,6 +1152,46 @@ export function TeamDashboard({
     return styles.average;
   };
 
+  // Enhanced function to get ranking-based colors
+  const getRankingBasedColor = (rank: number) => {
+    if (rank <= 10) return styles.excellent; // Top 10 = Green
+    if (rank >= 23) return styles.poor; // Bottom 10 = Red
+    return styles.average; // Middle = Yellow
+  };
+
+  // Helper function to get ranking for a specific stat
+  const getStatRank = (statName: string): number => {
+    if (!leagueRankings) return 16; // Default to middle if rankings not available
+
+    const rankMap: { [key: string]: number } = {
+      points: leagueRankings.points_rank,
+      point_pct: leagueRankings.point_pct_rank,
+      goals_per_game: leagueRankings.goals_per_game_rank,
+      goals_against_per_game: leagueRankings.goals_against_per_game_rank,
+      goal_diff: leagueRankings.goal_diff_rank,
+      power_play_pct: leagueRankings.power_play_rank,
+      penalty_kill_pct: leagueRankings.penalty_kill_rank,
+      pp_opportunities: leagueRankings.pp_opportunities_rank,
+      pp_goals_for: leagueRankings.pp_goals_for_rank,
+      pp_goals_against: leagueRankings.pp_goals_against_rank,
+      sh_goals_for: leagueRankings.sh_goals_for_rank,
+      cf_pct: leagueRankings.cf_pct_rank,
+      xgf_pct: leagueRankings.xgf_pct_rank,
+      hdcf_pct: leagueRankings.hdcf_pct_rank,
+      pdo: leagueRankings.pdo_rank,
+      save_pct_5v5: leagueRankings.save_pct_5v5_rank,
+      shooting_pct_5v5: leagueRankings.shooting_pct_5v5_rank,
+      scf_pct: leagueRankings.scf_pct_rank,
+      xgf: leagueRankings.xgf_rank,
+      xga: leagueRankings.xga_rank,
+      team_save_pct: leagueRankings.team_save_pct_rank,
+      team_gaa: leagueRankings.team_gaa_rank,
+      team_shutouts: leagueRankings.team_shutouts_rank
+    };
+
+    return rankMap[statName] || 16; // Default to middle if stat not found
+  };
+
   if (isLoading) {
     return (
       <div className={styles.container}>
@@ -936,486 +1221,377 @@ export function TeamDashboard({
         {
           "--team-primary-color": teamInfo?.primaryColor || "#1976d2",
           "--team-secondary-color": teamInfo?.secondaryColor || "#424242",
-          "--team-accent-color": teamInfo?.accent || "#ff9800"
+          "--team-accent-color": teamInfo?.accent || "#ff9800",
+          "--team-jersey-color": teamInfo?.jersey || "#ffffff"
         } as React.CSSProperties
       }
     >
       {/* Team Stats Card */}
       <div className={styles.teamStatisticsCard}>
         <div className={styles.tsCardHeader}>
-          <h3>Team Statistics</h3>
+          <h3>Team Leaders</h3>
         </div>
         <div className={styles.tsCardContent}>
-          {standingsData ? (
-            <div className={styles.tsStatsGrid}>
-              <div className={styles.tsStatItem}>
-                <span className={styles.tsStatValue}>
-                  {standingsData.points}
-                </span>
-                <span className={styles.tsStatLabel}>Points</span>
-              </div>
-              <div className={styles.tsStatItem}>
-                <span className={styles.tsStatValue}>
-                  {standingsData.wins}-{standingsData.losses}-
-                  {standingsData.ot_losses}
-                </span>
-                <span className={styles.statLabel}>Record</span>
-              </div>
-              <div className={styles.tsStatItem}>
-                <span className={styles.tsStatValue}>
-                  {formatPercentage(standingsData.point_pctg)}
-                </span>
-                <span className={styles.statLabel}>Points %</span>
-              </div>
-              <div className={styles.tsStatItem}>
-                <span className={styles.tsStatValue}>
-                  {(
-                    standingsData.goal_for / standingsData.games_played
-                  ).toFixed(2)}
-                </span>
-                <span className={styles.statLabel}>Goals/Game</span>
-              </div>
-              <div className={styles.tsStatItem}>
-                <span className={styles.tsStatValue}>
-                  {(
-                    standingsData.goal_against / standingsData.games_played
-                  ).toFixed(2)}
-                </span>
-                <span className={styles.statLabel}>GA/Game</span>
-              </div>
-              <div className={styles.tsStatItem}>
+          {/* Team Leaders Section - Use separate component with headshots */}
+          <TeamLeaders teamAbbrev={teamAbbrev} seasonId={effectiveSeasonId} />
+        </div>
+      </div>
+
+      {/* Advanced Stats Card */}
+      <div className={`${styles.card} ${styles.advancedAnalyticsCard}`}>
+        <div className={styles.cardHeader}>
+          <h3>
+            Advanced Analytics
+            <span
+              className={styles.infoIcon}
+              title={`5v5 ${includePlayoffs ? "season + playoffs" : "regular season"} averages based on ${gameRecordsCount} game records. Data includes: Expected Goals For/Against, Corsi, HDCF, PDO, and shooting percentages at even strength.`}
+            >
+              &#9432;
+            </span>
+          </h3>
+          <div className={styles.cardToggle}>
+            <button
+              className={`${styles.toggleButton} ${!includePlayoffs ? styles.active : ""}`}
+              onClick={() => setIncludePlayoffs(false)}
+            >
+              Exhibition
+            </button>
+            <button
+              className={`${styles.toggleButton} ${includePlayoffs ? styles.active : ""}`}
+              onClick={() => setIncludePlayoffs(true)}
+            >
+              Playoffs
+            </button>
+          </div>
+        </div>
+        <div className={styles.cardContent}>
+          {teamStats ? (
+            <div className={styles.statsGrid}>
+              <div className={styles.statItem}>
                 <span
-                  className={`${styles.tsStatValue} ${standingsData.goal_for > standingsData.goal_against ? styles.positive : styles.negative}`}
+                  className={`${styles.statValue} ${getRankingBasedColor(getStatRank("cf_pct"))}`}
                 >
-                  {standingsData.goal_for > standingsData.goal_against
-                    ? "+"
-                    : ""}
-                  {standingsData.goal_for - standingsData.goal_against}
+                  {formatPercentage(teamStats.cf_pct)}
                 </span>
-                <span className={styles.statLabel}>Goal Diff</span>
+                <span className={styles.statLabel}>Corsi For %</span>
+              </div>
+              <div className={styles.statItem}>
+                <span
+                  className={`${styles.statValue} ${getRankingBasedColor(getStatRank("xgf_pct"))}`}
+                >
+                  {formatPercentage(teamStats.xgf_pct)}
+                </span>
+                <span className={styles.statLabel}>xGoals For %</span>
+              </div>
+              <div className={styles.statItem}>
+                <span
+                  className={`${styles.statValue} ${getRankingBasedColor(getStatRank("hdcf_pct"))}`}
+                >
+                  {formatPercentage(teamStats.hdcf_pct)}
+                </span>
+                <span className={styles.statLabel}>HDCF %</span>
+              </div>
+              <div className={styles.statItem}>
+                <span
+                  className={`${styles.statValue} ${getRankingBasedColor(getStatRank("pdo"))}`}
+                >
+                  {formatDecimal(teamStats.pdo, 3)}
+                </span>
+                <span className={styles.statLabel}>PDO</span>
+              </div>
+              <div className={styles.statItem}>
+                <span
+                  className={`${styles.statValue} ${getRankingBasedColor(getStatRank("save_pct_5v5"))}`}
+                >
+                  {formatPercentage(teamStats.save_pct_5v5)}
+                </span>
+                <span className={styles.statLabel}>5v5 Save %</span>
+              </div>
+              <div className={styles.statItem}>
+                <span
+                  className={`${styles.statValue} ${getRankingBasedColor(getStatRank("shooting_pct_5v5"))}`}
+                >
+                  {formatPercentage(teamStats.shooting_pct_5v5)}
+                </span>
+                <span className={styles.statLabel}>5v5 Shooting %</span>
+              </div>
+              <div className={styles.statItem}>
+                <span
+                  className={`${styles.statValue} ${getRankingBasedColor(getStatRank("scf_pct"))}`}
+                >
+                  {(teamStats.scf_pct * 100).toFixed(2) || 0}%
+                </span>
+                <span className={styles.statLabel}>SCF %</span>
+              </div>
+              <div className={styles.statItem}>
+                <div className={styles.xgContainer}>
+                  <div className={styles.xgStat}>
+                    <span
+                      className={`${styles.statValue} ${getRankingBasedColor(getStatRank("xgf"))}`}
+                    >
+                      {teamStats.xgf.toFixed(2)}
+                    </span>
+                    <span className={styles.statLabel}>AVG. xGF</span>
+                  </div>
+                  <div className={styles.xgStat}>
+                    <span
+                      className={`${styles.statValue} ${getRankingBasedColor(getStatRank("xga"))}`}
+                    >
+                      {teamStats.xga.toFixed(2)}
+                    </span>
+                    <span className={styles.statLabel}>AVG. xGA</span>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
-            <div className={styles.noData}>No team stats available</div>
-          )}
-          {specialTeamsStats ? (
-            <div className={styles.tsStatsGrid}>
-              <div className={styles.tsStatItem}>
-                <span
-                  className={`${styles.tsStatValue} ${getRankColor(specialTeamsStats.power_play_pct * 100, { good: 22, poor: 18 })}`}
-                >
-                  {formatPercentage(specialTeamsStats.power_play_pct)}
-                </span>
-                <span className={styles.tsStatLabel}>Power Play %</span>
-              </div>
-              <div className={styles.tsStatItem}>
-                <span
-                  className={`${styles.tsStatValue} ${getRankColor(specialTeamsStats.penalty_kill_pct * 100, { good: 82, poor: 78 })}`}
-                >
-                  {formatPercentage(specialTeamsStats.penalty_kill_pct)}
-                </span>
-                <span className={styles.tsStatLabel}>Penalty Kill %</span>
-              </div>
-              <div className={styles.tsStatItem}>
-                <span className={styles.tsStatValue}>
-                  {formatDecimal(
-                    specialTeamsStats.pp_opportunities_per_game,
-                    1
-                  )}
-                </span>
-                <span className={styles.tsStatLabel}>PP Opps/Game</span>
-              </div>
-              <div className={styles.tsStatItem}>
-                <span className={styles.tsStatValue}>
-                  {specialTeamsStats.pp_goals_for}
-                </span>
-                <span className={styles.tsStatLabel}>PP Goals For</span>
-              </div>
-              <div className={styles.tsStatItem}>
-                <span className={styles.tsStatValue}>
-                  {specialTeamsStats.pp_goals_against}
-                </span>
-                <span className={styles.tsStatLabel}>PP Goals Against</span>
-              </div>
-              <div className={styles.tsStatItem}>
-                <span className={styles.tsStatValue}>
-                  {specialTeamsStats.sh_goals_for}
-                </span>
-                <span className={styles.tsStatLabel}>SH Goals For</span>
-              </div>
-            </div>
-          ) : (
-            <div className={styles.noData}>No special teams data available</div>
+            <div className={styles.noData}>No advanced stats available</div>
           )}
         </div>
       </div>
-      <div className={styles.cardsGrid}>
-        {/* Advanced Stats Card */}
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h3>
-              Advanced Analytics
-              <span
-                className={styles.infoIcon}
-                title={`5v5 ${includePlayoffs ? "season + playoffs" : "regular season"} averages based on ${gameRecordsCount} game records. Data includes: Expected Goals For/Against, Corsi, HDCF, PDO, and shooting percentages at even strength.`}
-              >
-                &#9432;
-              </span>
-            </h3>
-            <div className={styles.cardToggle}>
-              <button
-                className={`${styles.toggleButton} ${!includePlayoffs ? styles.active : ""}`}
-                onClick={() => setIncludePlayoffs(false)}
-              >
-                Exhibition
-              </button>
-              <button
-                className={`${styles.toggleButton} ${includePlayoffs ? styles.active : ""}`}
-                onClick={() => setIncludePlayoffs(true)}
-              >
-                Playoffs
-              </button>
-            </div>
-          </div>
-          <div className={styles.cardContent}>
-            {teamStats ? (
-              <div className={styles.statsGrid}>
-                <div className={styles.statItem}>
-                  <span
-                    className={`${styles.statValue} ${getRankColor(teamStats.cf_pct * 100, { good: 52, poor: 48 })}`}
-                  >
-                    {formatPercentage(teamStats.cf_pct)}
-                  </span>
-                  <span className={styles.statLabel}>Corsi For %</span>
-                </div>
-                <div className={styles.statItem}>
-                  <span
-                    className={`${styles.statValue} ${getRankColor(teamStats.xgf_pct * 100, { good: 52, poor: 48 })}`}
-                  >
-                    {formatPercentage(teamStats.xgf_pct)}
-                  </span>
-                  <span className={styles.statLabel}>xGoals For %</span>
-                </div>
-                <div className={styles.statItem}>
-                  <span
-                    className={`${styles.statValue} ${getRankColor(teamStats.hdcf_pct * 100, { good: 52, poor: 48 })}`}
-                  >
-                    {formatPercentage(teamStats.hdcf_pct)}
-                  </span>
-                  <span className={styles.statLabel}>HDCF %</span>
-                </div>
-                <div className={styles.statItem}>
-                  <span
-                    className={`${styles.statValue} ${getRankColor(teamStats.pdo, { good: 1.005, poor: 0.995 })}`}
-                  >
-                    {formatDecimal(teamStats.pdo, 3)}
-                  </span>
-                  <span className={styles.statLabel}>PDO</span>
-                </div>
-                <div className={styles.statItem}>
-                  <span
-                    className={`${styles.statValue} ${getRankColor(teamStats.save_pct_5v5 * 100, { good: 91.5, poor: 89.5 })}`}
-                  >
-                    {formatPercentage(teamStats.save_pct_5v5)}
-                  </span>
-                  <span className={styles.statLabel}>5v5 Save %</span>
-                </div>
-                <div className={styles.statItem}>
-                  <span
-                    className={`${styles.statValue} ${getRankColor(teamStats.shooting_pct_5v5 * 100, { good: 10, poor: 8 })}`}
-                  >
-                    {formatPercentage(teamStats.shooting_pct_5v5)}
-                  </span>
-                  <span className={styles.statLabel}>5v5 Shooting %</span>
-                </div>
-                <div className={styles.statItem}>
-                  <span className={styles.statValue}>
-                    {(teamStats.scf_pct * 100).toFixed(2) || 0}%
-                  </span>
-                  <span className={styles.statLabel}>SCF %</span>
-                </div>
-                <div className={styles.statItem}>
-                  <div className={styles.xgContainer}>
-                    <div className={styles.xgStat}>
-                      <span className={styles.statValue}>
-                        {teamStats.xgf.toFixed(2)}
-                      </span>
-                      <span className={styles.statLabel}>AVG. xGF</span>
-                    </div>
-                    <div className={styles.xgStat}>
-                      <span className={styles.statValue}>
-                        {teamStats.xga.toFixed(2)}
-                      </span>
-                      <span className={styles.statLabel}>AVG. xGA</span>
-                    </div>
+
+      {/* Enhanced Goaltending Card */}
+      <div className={`${styles.card} ${styles.goaltendingCard}`}>
+        <div className={styles.cardHeader}>
+          <h3>Goaltending</h3>
+          <div className={styles.cardIcon}></div>
+        </div>
+        <div className={styles.cardContent}>
+          {goaltendingStats ? (
+            <>
+              <div className={styles.goaltendingOverview}>
+                <div className={styles.goaltendingGrid}>
+                  <div className={styles.goaltendingStat}>
+                    <span
+                      className={`${styles.statValue} ${getRankColor((goaltendingStats.save_pct || 0) * 100, { good: 91.5, poor: 89.5 })}`}
+                    >
+                      {formatPercentage(goaltendingStats.save_pct)}
+                    </span>
+                    <span className={styles.statLabel}>Team SV%</span>
+                  </div>
+                  <div className={styles.goaltendingStat}>
+                    <span
+                      className={`${styles.statValue} ${getRankColor(goaltendingStats.gaa || 0, { good: 2.75, poor: 3.25 }, false)}`}
+                    >
+                      {formatDecimal(goaltendingStats.gaa, 2)}
+                    </span>
+                    <span className={styles.statLabel}>Team GAA</span>
+                  </div>
+                  <div className={styles.goaltendingStat}>
+                    <span className={styles.statValue}>
+                      {goaltendingStats.wins}-{goaltendingStats.losses}
+                    </span>
+                    <span className={styles.statLabel}>W-L Record</span>
+                  </div>
+                  <div className={styles.goaltendingStat}>
+                    <span className={styles.statValue}>
+                      {goaltendingStats.shutouts}
+                    </span>
+                    <span className={styles.statLabel}>Shutouts</span>
+                  </div>
+                  <div className={styles.goaltendingStat}>
+                    <span className={styles.statValue}>
+                      {goaltendingStats.quality_starts}
+                    </span>
+                    <span className={styles.statLabel}>Quality Starts</span>
+                  </div>
+                  <div className={styles.goaltendingStat}>
+                    <span className={styles.statValue}>
+                      {goaltendingStats.goalies.length}
+                    </span>
+                    <span className={styles.statLabel}>Goalies Used</span>
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className={styles.noData}>No advanced stats available</div>
-            )}
-          </div>
-        </div>
 
-        {/* Enhanced Goaltending Card */}
-        <div className={`${styles.card} ${styles.goaltendingCard}`}>
-          <div className={styles.cardHeader}>
-            <h3>Goaltending</h3>
-            <div className={styles.cardIcon}></div>
-          </div>
-          <div className={styles.cardContent}>
-            {goaltendingStats ? (
-              <>
-                <div className={styles.goaltendingOverview}>
-                  <div className={styles.goaltendingGrid}>
-                    <div className={styles.goaltendingStat}>
-                      <span
-                        className={`${styles.statValue} ${getRankColor((goaltendingStats.save_pct || 0) * 100, { good: 91.5, poor: 89.5 })}`}
-                      >
-                        {formatPercentage(goaltendingStats.save_pct)}
-                      </span>
-                      <span className={styles.statLabel}>Team SV%</span>
-                    </div>
-                    <div className={styles.goaltendingStat}>
-                      <span
-                        className={`${styles.statValue} ${getRankColor(goaltendingStats.gaa || 0, { good: 2.75, poor: 3.25 }, false)}`}
-                      >
-                        {formatDecimal(goaltendingStats.gaa, 2)}
-                      </span>
-                      <span className={styles.statLabel}>Team GAA</span>
-                    </div>
-                    <div className={styles.goaltendingStat}>
-                      <span className={styles.statValue}>
-                        {goaltendingStats.wins}-{goaltendingStats.losses}
-                      </span>
-                      <span className={styles.statLabel}>W-L Record</span>
-                    </div>
-                    <div className={styles.goaltendingStat}>
-                      <span className={styles.statValue}>
-                        {goaltendingStats.shutouts}
-                      </span>
-                      <span className={styles.statLabel}>Shutouts</span>
-                    </div>
-                    <div className={styles.goaltendingStat}>
-                      <span className={styles.statValue}>
-                        {goaltendingStats.quality_starts}
-                      </span>
-                      <span className={styles.statLabel}>Quality Starts</span>
-                    </div>
-                    <div className={styles.goaltendingStat}>
-                      <span className={styles.statValue}>
-                        {goaltendingStats.goalies.length}
-                      </span>
-                      <span className={styles.statLabel}>Goalies Used</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Individual Goalie Cards */}
-                <div className={styles.individualGoalies}>
-                  <h4 className={styles.sectionTitle}>
-                    Individual Performance
-                  </h4>
-                  <div className={styles.goalieCardsGrid}>
-                    {goaltendingStats.goalies
-                      .slice(0, 4)
-                      .map((goalie, index) => (
-                        <div
-                          key={goalie.playerId}
-                          className={styles.goalieCard}
+              {/* Individual Goalie Cards */}
+              <div className={styles.individualGoalies}>
+                <h4 className={styles.sectionTitle}>Individual Performance</h4>
+                <div className={styles.goalieCardsGrid}>
+                  {goaltendingStats.goalies.slice(0, 4).map((goalie, index) => (
+                    <div key={goalie.playerId} className={styles.goalieCard}>
+                      <div className={styles.goalieCardHeader}>
+                        <span className={styles.goalieName}>
+                          {goalie.goalieFullName}
+                        </span>
+                        <span
+                          className={`${styles.goalieRole} ${index === 0 ? styles.starter : index === 1 ? styles.backup : styles.reserve}`}
                         >
-                          <div className={styles.goalieCardHeader}>
-                            <span className={styles.goalieName}>
-                              {goalie.goalieFullName}
-                            </span>
-                            <span
-                              className={`${styles.goalieRole} ${index === 0 ? styles.starter : index === 1 ? styles.backup : styles.reserve}`}
-                            >
-                              {index === 0
-                                ? "STARTER"
-                                : index === 1
-                                  ? "BACKUP"
-                                  : index === 2
-                                    ? "THIRD"
-                                    : "R"}
-                            </span>
-                          </div>
+                          {index === 0
+                            ? "STARTER"
+                            : index === 1
+                              ? "BACKUP"
+                              : index === 2
+                                ? "THIRD"
+                                : "R"}
+                        </span>
+                      </div>
 
-                          {/* Workload Distribution Bar */}
-                          <div className={styles.workloadSection}>
-                            <div className={styles.workloadBar}>
-                              <div
-                                className={styles.workloadFill}
-                                style={{
-                                  width: `${Math.min(goalie.workloadShare, 100)}%`,
-                                  backgroundColor: (() => {
-                                    const goalieColors = [
-                                      "var(--team-primary-color)",
-                                      "var(--team-secondary-color)",
-                                      "var(--team-accent-color)",
-                                      "#6c757d",
-                                      "#dc3545",
-                                      "#28a745"
-                                    ];
-                                    return goalieColors[index] || "#6c757d";
-                                  })()
-                                }}
-                              />
-                            </div>
-                            <div className={styles.workloadLabel}>
-                              {formatDecimal(goalie.workloadShare, 1)}% of
-                              starts
-                            </div>
-                          </div>
-
-                          <div className={styles.goalieStatsGrid}>
-                            <div className={styles.goalieStatItem}>
-                              <span
-                                className={`${styles.goalieStatValue} ${getRankColor((goalie.savePct || 0) * 100, { good: 91.5, poor: 89.5 })}`}
-                              >
-                                {formatPercentage(goalie.savePct)}
-                              </span>
-                              <span className={styles.goalieStatLabel}>
-                                SV%
-                              </span>
-                            </div>
-                            <div className={styles.goalieStatItem}>
-                              <span
-                                className={`${styles.goalieStatValue} ${getRankColor(goalie.gaa || 0, { good: 2.75, poor: 3.25 }, false)}`}
-                              >
-                                {formatDecimal(goalie.gaa, 2)}
-                              </span>
-                              <span className={styles.goalieStatLabel}>
-                                GAA
-                              </span>
-                            </div>
-                            <div className={styles.goalieStatItem}>
-                              <span className={styles.goalieStatValue}>
-                                {goalie.gamesPlayed}
-                              </span>
-                              <span className={styles.goalieStatLabel}>GP</span>
-                            </div>
-                            <div className={styles.goalieStatItem}>
-                              <span className={styles.goalieStatValue}>
-                                {goalie.gamesStarted}
-                              </span>
-                              <span className={styles.goalieStatLabel}>GS</span>
-                            </div>
-                            <div className={styles.goalieStatItem}>
-                              <span className={styles.goalieStatValue}>
-                                {goalie.qualityStarts || 0}
-                              </span>
-                              <span className={styles.goalieStatLabel}>QS</span>
-                            </div>
-                            <div className={styles.goalieStatItem}>
-                              <span className={styles.goalieStatValue}>
-                                {goalie.qualityStartsPct
-                                  ? formatPercentage(goalie.qualityStartsPct)
-                                  : "N/A"}
-                              </span>
-                              <span className={styles.goalieStatLabel}>
-                                QS%
-                              </span>
-                            </div>
-                            <div className={styles.goalieStatItem}>
-                              <span className={styles.goalieStatValue}>
-                                {goalie.wins}-{goalie.losses}
-                              </span>
-                              <span className={styles.goalieStatLabel}>
-                                W-L
-                              </span>
-                            </div>
-                            <div className={styles.goalieStatItem}>
-                              <span className={styles.goalieStatValue}>
-                                {goalie.shutouts}
-                              </span>
-                              <span className={styles.goalieStatLabel}>SO</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </div>
-
-                {/* Team Workload Distribution */}
-                <div className={styles.workloadDistribution}>
-                  <h4 className={styles.sectionTitle}>
-                    Workload Distribution ({goaltendingStats.totalGames} games)
-                  </h4>
-                  <div className={styles.workloadDistributionBar}>
-                    {goaltendingStats.goalies.map((goalie, index) => {
-                      const goalieColors = [
-                        "var(--team-primary-color)",
-                        "var(--team-secondary-color)",
-                        "var(--team-accent-color)",
-                        "#6c757d",
-                        "#dc3545",
-                        "#28a745"
-                      ];
-
-                      return (
-                        <div
-                          key={goalie.playerId}
-                          className={styles.workloadSegment}
-                          style={{
-                            width: `${goalie.workloadShare}%`,
-                            backgroundColor: goalieColors[index] || "#6c757d"
-                          }}
-                          title={`${goalie.goalieFullName}: ${formatDecimal(goalie.workloadShare, 1)}% (${goalie.gamesStarted} starts)`}
-                        />
-                      );
-                    })}
-                  </div>
-                  <div className={styles.workloadLegend}>
-                    {goaltendingStats.goalies.map((goalie, index) => {
-                      const goalieColors = [
-                        "var(--team-primary-color)",
-                        "var(--team-secondary-color)",
-                        "var(--team-accent-color)",
-                        "#6c757d",
-                        "#dc3545",
-                        "#28a745"
-                      ];
-
-                      return (
-                        <div
-                          key={goalie.playerId}
-                          className={styles.legendItem}
-                        >
+                      {/* Workload Distribution Bar */}
+                      <div className={styles.workloadSection}>
+                        <div className={styles.workloadBar}>
                           <div
-                            className={styles.legendColor}
+                            className={styles.workloadFill}
                             style={{
-                              backgroundColor: goalieColors[index] || "#6c757d"
+                              width: `${Math.min(goalie.workloadShare, 100)}%`,
+                              backgroundColor: (() => {
+                                const goalieColors = [
+                                  "var(--team-primary-color)",
+                                  "var(--team-secondary-color)",
+                                  "var(--team-accent-color)",
+                                  "#6c757d",
+                                  "#dc3545",
+                                  "#28a745"
+                                ];
+                                return goalieColors[index] || "#6c757d";
+                              })()
                             }}
                           />
-                          <span className={styles.legendText}>
-                            {goalie.lastName} (
-                            {formatDecimal(goalie.workloadShare, 1)}%)
-                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className={styles.loadingState}>
-                <div className={styles.loadingSpinner}></div>
-                <span>Loading goaltending data...</span>
-              </div>
-            )}
-          </div>
-        </div>
+                        <div className={styles.workloadLabel}>
+                          {formatDecimal(goalie.workloadShare, 1)}% of starts
+                        </div>
+                      </div>
 
-        {/* Enhanced Standings Card with League Rankings */}
-        <div className={styles.card}>
-          <div className={styles.cardHeader}>
-            <h3>Team Rankings</h3>
-            <div className={styles.cardIcon}></div>
-          </div>
-          <div className={styles.cardContent}>
-            {standingsData ? (
-              <>
+                      <div className={styles.goalieStatsGrid}>
+                        <div className={styles.goalieStatItem}>
+                          <span
+                            className={`${styles.goalieStatValue} ${getRankColor((goalie.savePct || 0) * 100, { good: 91.5, poor: 89.5 })}`}
+                          >
+                            {formatPercentage(goalie.savePct)}
+                          </span>
+                          <span className={styles.goalieStatLabel}>SV%</span>
+                        </div>
+                        <div className={styles.goalieStatItem}>
+                          <span
+                            className={`${styles.goalieStatValue} ${getRankColor(goalie.gaa || 0, { good: 2.75, poor: 3.25 }, false)}`}
+                          >
+                            {formatDecimal(goalie.gaa, 2)}
+                          </span>
+                          <span className={styles.goalieStatLabel}>GAA</span>
+                        </div>
+                        <div className={styles.goalieStatItem}>
+                          <span className={styles.goalieStatValue}>
+                            {goalie.gamesPlayed}
+                          </span>
+                          <span className={styles.goalieStatLabel}>GP</span>
+                        </div>
+                        <div className={styles.goalieStatItem}>
+                          <span className={styles.goalieStatValue}>
+                            {goalie.gamesStarted}
+                          </span>
+                          <span className={styles.goalieStatLabel}>GS</span>
+                        </div>
+                        <div className={styles.goalieStatItem}>
+                          <span className={styles.goalieStatValue}>
+                            {goalie.qualityStarts || 0}
+                          </span>
+                          <span className={styles.goalieStatLabel}>QS</span>
+                        </div>
+                        <div className={styles.goalieStatItem}>
+                          <span className={styles.goalieStatValue}>
+                            {goalie.qualityStartsPct
+                              ? formatPercentage(goalie.qualityStartsPct)
+                              : "N/A"}
+                          </span>
+                          <span className={styles.goalieStatLabel}>QS%</span>
+                        </div>
+                        <div className={styles.goalieStatItem}>
+                          <span className={styles.goalieStatValue}>
+                            {goalie.wins}-{goalie.losses}
+                          </span>
+                          <span className={styles.goalieStatLabel}>W-L</span>
+                        </div>
+                        <div className={styles.goalieStatItem}>
+                          <span className={styles.goalieStatValue}>
+                            {goalie.shutouts}
+                          </span>
+                          <span className={styles.goalieStatLabel}>SO</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Team Workload Distribution */}
+              <div className={styles.workloadDistribution}>
+                <h4 className={styles.sectionTitle}>
+                  Workload Distribution ({goaltendingStats.totalGames} games)
+                </h4>
+                <div className={styles.workloadDistributionBar}>
+                  {goaltendingStats.goalies.map((goalie, index) => {
+                    const goalieColors = [
+                      "var(--team-primary-color)",
+                      "var(--team-secondary-color)",
+                      "var(--team-accent-color)",
+                      "#6c757d",
+                      "#dc3545",
+                      "#28a745"
+                    ];
+
+                    return (
+                      <div
+                        key={goalie.playerId}
+                        className={styles.workloadSegment}
+                        style={{
+                          width: `${goalie.workloadShare}%`,
+                          backgroundColor: goalieColors[index] || "#6c757d"
+                        }}
+                        title={`${goalie.goalieFullName}: ${formatDecimal(goalie.workloadShare, 1)}% (${goalie.gamesStarted} starts)`}
+                      />
+                    );
+                  })}
+                </div>
+                <div className={styles.workloadLegend}>
+                  {goaltendingStats.goalies.map((goalie, index) => {
+                    const goalieColors = [
+                      "var(--team-primary-color)",
+                      "var(--team-secondary-color)",
+                      "var(--team-accent-color)",
+                      "#6c757d",
+                      "#dc3545",
+                      "#28a745"
+                    ];
+
+                    return (
+                      <div key={goalie.playerId} className={styles.legendItem}>
+                        <div
+                          className={styles.legendColor}
+                          style={{
+                            backgroundColor: goalieColors[index] || "#6c757d"
+                          }}
+                        />
+                        <span className={styles.legendText}>
+                          {goalie.lastName} (
+                          {formatDecimal(goalie.workloadShare, 1)}%)
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className={styles.loadingState}>
+              <div className={styles.loadingSpinner}></div>
+              <span>Loading goaltending data...</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Enhanced Standings Card with League Rankings */}
+      <div className={`${styles.card} ${styles.teamRankingsCard}`}>
+        <div className={styles.cardHeader}>
+          <h3> Team Statistics & Rankings</h3>
+          <div className={styles.cardIcon}></div>
+        </div>
+        <div className={styles.cardContent}>
+          {standingsData ? (
+            <>
+              {/* Combined Team Identity & Statistics with Rankings */}
+              <div className={styles.combinedTeamStatsCard}>
                 {/* Team Identity & Position */}
                 <div className={styles.teamIdentity}>
                   <div className={styles.positionSummary}>
@@ -1463,267 +1639,427 @@ export function TeamDashboard({
                       </span>
                     </div>
                   </div>
+                </div>
 
-                  {/* Quick Stats Summary */}
-                  <div className={styles.quickStatsSummary}>
-                    <div className={styles.summaryItem}>
-                      <span className={styles.summaryValue}>
-                        {standingsData.points}
-                      </span>
-                      <span className={styles.summaryLabel}>PTS</span>
+                {/* Team Statistics with Rankings */}
+                {standingsData && specialTeamsStats && leagueRankings ? (
+                  <div className={styles.teamStatsWithRankings}>
+                    <div className={styles.statsRankingsGrid}>
+                      {/* Core Team Stats */}
+                      <div className={styles.statWithRank}>
+                        <div className={styles.statValueRank}>
+                          <span
+                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("points"))}`}
+                          >
+                            {standingsData.points}
+                          </span>
+                          <span
+                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.points_rank)}`}
+                          >
+                            #{leagueRankings.points_rank}
+                          </span>
+                        </div>
+                        <span className={styles.statLabel}>Points</span>
+                      </div>
+
+                      <div className={styles.statWithRank}>
+                        <div className={styles.statValueRank}>
+                          <span
+                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("point_pct"))}`}
+                          >
+                            {formatPercentage(standingsData.point_pctg)}
+                          </span>
+                          <span
+                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.point_pct_rank)}`}
+                          >
+                            #{leagueRankings.point_pct_rank}
+                          </span>
+                        </div>
+                        <span className={styles.statLabel}>PT%</span>
+                      </div>
+
+                      <div className={styles.statWithRank}>
+                        <div className={styles.statValueRank}>
+                          <span
+                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("goals_per_game"))}`}
+                          >
+                            {(
+                              standingsData.goal_for /
+                              standingsData.games_played
+                            ).toFixed(2)}
+                          </span>
+                          <span
+                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.goals_per_game_rank)}`}
+                          >
+                            #{leagueRankings.goals_per_game_rank}
+                          </span>
+                        </div>
+                        <span className={styles.statLabel}>GF/GP</span>
+                      </div>
+
+                      <div className={styles.statWithRank}>
+                        <div className={styles.statValueRank}>
+                          <span
+                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("goals_against_per_game"))}`}
+                          >
+                            {(
+                              standingsData.goal_against /
+                              standingsData.games_played
+                            ).toFixed(2)}
+                          </span>
+                          <span
+                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.goals_against_per_game_rank)}`}
+                          >
+                            #{leagueRankings.goals_against_per_game_rank}
+                          </span>
+                        </div>
+                        <span className={styles.statLabel}>GA/GP</span>
+                      </div>
+
+                      <div className={styles.statWithRank}>
+                        <div className={styles.statValueRank}>
+                          <span
+                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("goal_diff"))}`}
+                          >
+                            {standingsData.goal_for > standingsData.goal_against
+                              ? "+"
+                              : ""}
+                            {standingsData.goal_for -
+                              standingsData.goal_against}
+                          </span>
+                          <span
+                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.goal_diff_rank)}`}
+                          >
+                            #{leagueRankings.goal_diff_rank}
+                          </span>
+                        </div>
+                        <span className={styles.statLabel}>Goal Diff</span>
+                      </div>
+
+                      <div className={styles.statWithRank}>
+                        <div className={styles.statValueRank}>
+                          <span className={styles.statValue}>
+                            {standingsData.wins}-{standingsData.losses}-
+                            {standingsData.ot_losses}
+                          </span>
+                        </div>
+                        <span className={styles.statLabel}>Record</span>
+                      </div>
+
+                      {/* Special Teams Stats */}
+                      <div className={styles.statWithRank}>
+                        <div className={styles.statValueRank}>
+                          <span
+                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("power_play_pct"))}`}
+                          >
+                            {formatPercentage(specialTeamsStats.power_play_pct)}
+                          </span>
+                          <span
+                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.power_play_rank)}`}
+                          >
+                            #{leagueRankings.power_play_rank}
+                          </span>
+                        </div>
+                        <span className={styles.statLabel}>Power Play %</span>
+                      </div>
+
+                      <div className={styles.statWithRank}>
+                        <div className={styles.statValueRank}>
+                          <span
+                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("penalty_kill_pct"))}`}
+                          >
+                            {formatPercentage(
+                              specialTeamsStats.penalty_kill_pct
+                            )}
+                          </span>
+                          <span
+                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.penalty_kill_rank)}`}
+                          >
+                            #{leagueRankings.penalty_kill_rank}
+                          </span>
+                        </div>
+                        <span className={styles.statLabel}>Penalty Kill %</span>
+                      </div>
+
+                      <div className={styles.statWithRank}>
+                        <div className={styles.statValueRank}>
+                          <span
+                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("pp_opportunities"))}`}
+                          >
+                            {formatDecimal(
+                              specialTeamsStats.pp_opportunities_per_game,
+                              1
+                            )}
+                          </span>
+                          <span
+                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.pp_opportunities_rank)}`}
+                          >
+                            #{leagueRankings.pp_opportunities_rank}
+                          </span>
+                        </div>
+                        <span className={styles.statLabel}>PP Opps/Game</span>
+                      </div>
+
+                      <div className={styles.statWithRank}>
+                        <div className={styles.statValueRank}>
+                          <span
+                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("pp_goals_for"))}`}
+                          >
+                            {specialTeamsStats.pp_goals_for}
+                          </span>
+                          <span
+                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.pp_goals_for_rank)}`}
+                          >
+                            #{leagueRankings.pp_goals_for_rank}
+                          </span>
+                        </div>
+                        <span className={styles.statLabel}>PP Goals For</span>
+                      </div>
+
+                      <div className={styles.statWithRank}>
+                        <div className={styles.statValueRank}>
+                          <span
+                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("pp_goals_against"))}`}
+                          >
+                            {specialTeamsStats.pp_goals_against}
+                          </span>
+                          <span
+                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.pp_goals_against_rank)}`}
+                          >
+                            #{leagueRankings.pp_goals_against_rank}
+                          </span>
+                        </div>
+                        <span className={styles.statLabel}>PPG Against</span>
+                      </div>
+
+                      <div className={styles.statWithRank}>
+                        <div className={styles.statValueRank}>
+                          <span
+                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("sh_goals_for"))}`}
+                          >
+                            {specialTeamsStats.sh_goals_for}
+                          </span>
+                          <span
+                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.sh_goals_for_rank)}`}
+                          >
+                            #{leagueRankings.sh_goals_for_rank}
+                          </span>
+                        </div>
+                        <span className={styles.statLabel}>SH Goals For</span>
+                      </div>
                     </div>
-                    <div className={styles.summaryItem}>
-                      <span className={styles.summaryValue}>
-                        {standingsData.wins}-{standingsData.losses}-
-                        {standingsData.ot_losses}
-                      </span>
-                      <span className={styles.summaryLabel}>Record</span>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* League Rankings Grid */}
+              {leagueRankings ? (
+                <div className={styles.leagueRankings}>
+                  <div className={styles.rankingsGrid}>
+                    <div className={styles.rankingCategory}>
+                      <div className={styles.rankingTitle}>
+                        <h5 className={styles.categoryTitle}>OFFENSIVE</h5>
+                      </div>
+                      <div className={styles.rankingItemList}>
+                        <div className={styles.rankingItem}>
+                          <span className={styles.rankingLabel}>G/GP</span>
+                          <span
+                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.goals_per_game_rank)}`}
+                          >
+                            #{leagueRankings.goals_per_game_rank}
+                          </span>
+                        </div>
+                        <div className={styles.rankingItem}>
+                          <span className={styles.rankingLabel}>SOG/GP</span>
+                          <span
+                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.shots_per_game_rank)}`}
+                          >
+                            #{leagueRankings.shots_per_game_rank}
+                          </span>
+                        </div>
+                        <div className={styles.rankingItem}>
+                          <span className={styles.rankingLabel}>5v5 S%</span>
+                          <span
+                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.shooting_pct_5v5_rank)}`}
+                          >
+                            #{leagueRankings.shooting_pct_5v5_rank}
+                          </span>
+                        </div>
+                        <div className={styles.rankingItem}>
+                          <span className={styles.rankingLabel}>xG%</span>
+                          <span
+                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.xgf_pct_rank)}`}
+                          >
+                            #{leagueRankings.xgf_pct_rank}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className={styles.summaryItem}>
-                      <span className={styles.summaryValue}>
-                        {formatPercentage(standingsData.point_pctg)}
-                      </span>
-                      <span className={styles.summaryLabel}>PT%</span>
+
+                    <div className={styles.rankingCategory}>
+                      <div className={styles.rankingTitle}>
+                        <h5 className={styles.categoryTitle}>DEFENSIVE</h5>
+                      </div>
+                      <div className={styles.rankingItemList}>
+                        <div className={styles.rankingItem}>
+                          <span className={styles.rankingLabel}>GA/GP</span>
+                          <span
+                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.goals_against_per_game_rank)}`}
+                          >
+                            #{leagueRankings.goals_against_per_game_rank}
+                          </span>
+                        </div>
+                        <div className={styles.rankingItem}>
+                          <span className={styles.rankingLabel}>SA/GP</span>
+                          <span
+                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.shots_against_per_game_rank)}`}
+                          >
+                            #{leagueRankings.shots_against_per_game_rank}
+                          </span>
+                        </div>
+                        <div className={styles.rankingItem}>
+                          <span className={styles.rankingLabel}>5v5 SV%</span>
+                          <span
+                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.save_pct_5v5_rank)}`}
+                          >
+                            #{leagueRankings.save_pct_5v5_rank}
+                          </span>
+                        </div>
+                        <div className={styles.rankingItem}>
+                          <span className={styles.rankingLabel}>HDCF%</span>
+                          <span
+                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.hdcf_pct_rank)}`}
+                          >
+                            #{leagueRankings.hdcf_pct_rank}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className={styles.summaryItem}>
-                      <span
-                        className={`${styles.summaryValue} ${standingsData.goal_for > standingsData.goal_against ? styles.positive : styles.negative}`}
-                      >
-                        {standingsData.goal_for > standingsData.goal_against
-                          ? "+"
-                          : ""}
-                        {standingsData.goal_for - standingsData.goal_against}
-                      </span>
-                      <span className={styles.summaryLabel}>DIFF</span>
+
+                    <div className={styles.rankingCategory}>
+                      <div className={styles.rankingTitle}>
+                        <h5 className={styles.categoryTitle}>SPECIAL TEAMS</h5>
+                      </div>
+                      <div className={styles.rankingItemList}>
+                        <div className={styles.rankingItem}>
+                          <span className={styles.rankingLabel}>PP%</span>
+                          <span
+                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.power_play_rank)}`}
+                          >
+                            #{leagueRankings.power_play_rank}
+                          </span>
+                        </div>
+                        <div className={styles.rankingItem}>
+                          <span className={styles.rankingLabel}>PK%</span>
+                          <span
+                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.penalty_kill_rank)}`}
+                          >
+                            #{leagueRankings.penalty_kill_rank}
+                          </span>
+                        </div>
+                        <div className={styles.rankingItem}>
+                          <span className={styles.rankingLabel}>FO%</span>
+                          <span
+                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.faceoff_win_rank)}`}
+                          >
+                            #{leagueRankings.faceoff_win_rank}
+                          </span>
+                        </div>
+                        <div className={styles.rankingItem}>
+                          <span className={styles.rankingLabel}>CF%</span>
+                          <span
+                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.cf_pct_rank)}`}
+                          >
+                            #{leagueRankings.cf_pct_rank}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className={styles.summaryItem}>
-                      <span className={styles.summaryValue}>
-                        {standingsData.regulation_wins}
-                      </span>
-                      <span className={styles.summaryLabel}>ROW</span>
-                    </div>
-                    <div className={styles.summaryItem}>
-                      <span className={styles.summaryValue}>
-                        {standingsData.games_played}
-                      </span>
-                      <span className={styles.summaryLabel}>GP</span>
+
+                    <div className={styles.rankingCategory}>
+                      <div className={styles.rankingTitle}>
+                        <h5 className={styles.categoryTitle}>SITUATIONAL</h5>
+                      </div>
+                      <div className={styles.rankingItemList}>
+                        <div className={styles.rankingItem}>
+                          <span className={styles.rankingLabel}>Home</span>
+                          <span
+                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.home_record_rank)}`}
+                          >
+                            #{leagueRankings.home_record_rank}
+                          </span>
+                        </div>
+                        <div className={styles.rankingItem}>
+                          <span className={styles.rankingLabel}>Road</span>
+                          <span
+                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.road_record_rank)}`}
+                          >
+                            #{leagueRankings.road_record_rank}
+                          </span>
+                        </div>
+                        <div className={styles.rankingItem}>
+                          <span className={styles.rankingLabel}>L10</span>
+                          <span
+                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.l10_rank)}`}
+                          >
+                            #{leagueRankings.l10_rank}
+                          </span>
+                        </div>
+                        <div className={styles.rankingItem}>
+                          <span className={styles.rankingLabel}>PDO</span>
+                          <span
+                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.pdo_rank)}`}
+                          >
+                            #{leagueRankings.pdo_rank}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
-
-                {/* League Rankings Grid */}
-                {leagueRankings ? (
-                  <div className={styles.leagueRankings}>
-                    <h4 className={styles.rankingsTitle}>League Rankings</h4>
-
-                    <div className={styles.rankingsGrid}>
-                      <div className={styles.rankingCategory}>
-                        <div className={styles.rankingTitle}>
-                          <h5 className={styles.categoryTitle}>OFFENSIVE</h5>
-                        </div>
-                        <div className={styles.rankingItemList}>
-                          <div className={styles.rankingItem}>
-                            <span className={styles.rankingLabel}>G/GP</span>
-                            <span
-                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.goals_per_game_rank)}`}
-                            >
-                              #{leagueRankings.goals_per_game_rank}
-                            </span>
-                          </div>
-                          <div className={styles.rankingItem}>
-                            <span className={styles.rankingLabel}>SOG/GP</span>
-                            <span
-                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.shots_per_game_rank)}`}
-                            >
-                              #{leagueRankings.shots_per_game_rank}
-                            </span>
-                          </div>
-                          <div className={styles.rankingItem}>
-                            <span className={styles.rankingLabel}>5v5 S%</span>
-                            <span
-                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.shooting_pct_5v5_rank)}`}
-                            >
-                              #{leagueRankings.shooting_pct_5v5_rank}
-                            </span>
-                          </div>
-                          <div className={styles.rankingItem}>
-                            <span className={styles.rankingLabel}>xG%</span>
-                            <span
-                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.xgf_pct_rank)}`}
-                            >
-                              #{leagueRankings.xgf_pct_rank}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className={styles.rankingCategory}>
-                        <div className={styles.rankingTitle}>
-                          <h5 className={styles.categoryTitle}>DEFENSIVE</h5>
-                        </div>
-                        <div className={styles.rankingItemList}>
-                          <div className={styles.rankingItem}>
-                            <span className={styles.rankingLabel}>GA/GP</span>
-                            <span
-                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.goals_against_per_game_rank)}`}
-                            >
-                              #{leagueRankings.goals_against_per_game_rank}
-                            </span>
-                          </div>
-                          <div className={styles.rankingItem}>
-                            <span className={styles.rankingLabel}>SA/GP</span>
-                            <span
-                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.shots_against_per_game_rank)}`}
-                            >
-                              #{leagueRankings.shots_against_per_game_rank}
-                            </span>
-                          </div>
-                          <div className={styles.rankingItem}>
-                            <span className={styles.rankingLabel}>5v5 SV%</span>
-                            <span
-                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.save_pct_5v5_rank)}`}
-                            >
-                              #{leagueRankings.save_pct_5v5_rank}
-                            </span>
-                          </div>
-                          <div className={styles.rankingItem}>
-                            <span className={styles.rankingLabel}>HDCF%</span>
-                            <span
-                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.hdcf_pct_rank)}`}
-                            >
-                              #{leagueRankings.hdcf_pct_rank}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className={styles.rankingCategory}>
-                        <div className={styles.rankingTitle}>
-                          <h5 className={styles.categoryTitle}>
-                            SPECIAL TEAMS
-                          </h5>
-                        </div>
-                        <div className={styles.rankingItemList}>
-                          <div className={styles.rankingItem}>
-                            <span className={styles.rankingLabel}>PP%</span>
-                            <span
-                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.power_play_rank)}`}
-                            >
-                              #{leagueRankings.power_play_rank}
-                            </span>
-                          </div>
-                          <div className={styles.rankingItem}>
-                            <span className={styles.rankingLabel}>PK%</span>
-                            <span
-                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.penalty_kill_rank)}`}
-                            >
-                              #{leagueRankings.penalty_kill_rank}
-                            </span>
-                          </div>
-                          <div className={styles.rankingItem}>
-                            <span className={styles.rankingLabel}>FO%</span>
-                            <span
-                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.faceoff_win_rank)}`}
-                            >
-                              #{leagueRankings.faceoff_win_rank}
-                            </span>
-                          </div>
-                          <div className={styles.rankingItem}>
-                            <span className={styles.rankingLabel}>CF%</span>
-                            <span
-                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.cf_pct_rank)}`}
-                            >
-                              #{leagueRankings.cf_pct_rank}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className={styles.rankingCategory}>
-                        <div className={styles.rankingTitle}>
-                          <h5 className={styles.categoryTitle}>SITUATIONAL</h5>
-                        </div>
-                        <div className={styles.rankingItemList}>
-                          <div className={styles.rankingItem}>
-                            <span className={styles.rankingLabel}>Home</span>
-                            <span
-                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.home_record_rank)}`}
-                            >
-                              #{leagueRankings.home_record_rank}
-                            </span>
-                          </div>
-                          <div className={styles.rankingItem}>
-                            <span className={styles.rankingLabel}>Road</span>
-                            <span
-                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.road_record_rank)}`}
-                            >
-                              #{leagueRankings.road_record_rank}
-                            </span>
-                          </div>
-                          <div className={styles.rankingItem}>
-                            <span className={styles.rankingLabel}>L10</span>
-                            <span
-                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.l10_rank)}`}
-                            >
-                              #{leagueRankings.l10_rank}
-                            </span>
-                          </div>
-                          <div className={styles.rankingItem}>
-                            <span className={styles.rankingLabel}>PDO</span>
-                            <span
-                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.pdo_rank)}`}
-                            >
-                              #{leagueRankings.pdo_rank}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className={styles.rankingsLoading}>
-                    Loading league rankings...
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className={styles.noData}>No standings data available</div>
-            )}
-          </div>
+              ) : (
+                <div className={styles.rankingsLoading}>
+                  Loading league rankings...
+                </div>
+              )}
+            </>
+          ) : (
+            <div className={styles.noData}>No standings data available</div>
+          )}
         </div>
+      </div>
 
-        {/* Enhanced Recent Form & Momentum Card with condensed layout */}
-        <div className={`${styles.card} ${styles.enhancedMomentumCard}`}>
-          <div className={styles.cardHeader}>
-            <h3>Recent Form & Momentum</h3>
-            <div className={styles.cardIcon}></div>
-          </div>
-          <div className={styles.cardContent}>
-            {standingsData && recentPerformance && effectiveSeasonId ? (
-              <>
-                {/* Game-by-Game Timeline */}
-                <div className={styles.timelineSection}>
-                  <GameByGameTimeline
-                    teamId={teamId}
-                    teamAbbrev={teamAbbrev}
-                    seasonId={effectiveSeasonId}
-                    maxGames={10}
-                  />
-                </div>
+      {/* Enhanced Recent Form & Momentum Card with condensed layout */}
+      <div className={`${styles.card} ${styles.enhancedMomentumCard}`}>
+        <div className={styles.cardHeader}>
+          <h3>Recent Form & Momentum</h3>
+          <div className={styles.cardIcon}></div>
+        </div>
+        <div className={styles.cardContent}>
+          {standingsData && recentPerformance && effectiveSeasonId ? (
+            <>
+              {/* Game-by-Game Timeline */}
+              <div className={styles.timelineSection}>
+                <GameByGameTimeline
+                  teamId={teamId}
+                  teamAbbrev={teamAbbrev}
+                  seasonId={effectiveSeasonId}
+                  maxGames={10}
+                />
+              </div>
 
-                {/* Advanced L10 Metrics Dashboard */}
-                <div className={styles.metricsSection}>
-                  <AdvancedL10Metrics
-                    teamId={teamId}
-                    teamAbbrev={teamAbbrev}
-                    seasonId={effectiveSeasonId}
-                  />
-                </div>
-              </>
-            ) : (
-              <div className={styles.noData}>No momentum data available</div>
-            )}
-          </div>
+              {/* Advanced L10 Metrics Dashboard */}
+              <div className={styles.metricsSection}>
+                <AdvancedL10Metrics
+                  teamId={teamId}
+                  teamAbbrev={teamAbbrev}
+                  seasonId={effectiveSeasonId}
+                />
+              </div>
+            </>
+          ) : (
+            <div className={styles.noData}>No momentum data available</div>
+          )}
         </div>
       </div>
     </div>

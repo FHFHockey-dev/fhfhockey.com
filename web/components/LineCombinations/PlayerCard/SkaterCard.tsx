@@ -20,7 +20,7 @@ const LARGE_STATS_CONFIG = [
   { key: "Shots", label: "SOG" },
   { key: "Hits", label: "HITS" },
   { key: "Blocks", label: "BLKS" },
-  { key: "PlusMinus", label: "+/-" },
+  { key: "PlusMinus", label: "+/-" }
 ] as const;
 
 // For small devices
@@ -32,7 +32,7 @@ const SMALL_STATS_CONFIG = [
   { key: "Shots", label: "SOG" },
   { key: "Hits", label: "HITS" },
   { key: "Blocks", label: "BLKS" },
-  { key: "PlusMinus", label: "+/-" },
+  { key: "PlusMinus", label: "+/-" }
 ] as const;
 
 export type LineChange = "promotion" | "demotion" | "static";
@@ -51,10 +51,10 @@ function SkaterCard({
   const color = useTeamColor();
 
   return (
-    (<article
+    <article
       className={styles.container}
       style={{
-        backgroundColor: color.primary,
+        backgroundColor: color.primary
       }}
     >
       <div className={styles.top}>
@@ -62,15 +62,7 @@ function SkaterCard({
           <span className={styles.firstName} style={{ color: color.secondary }}>
             {names[0]}
           </span>
-          <Link
-            href={{
-              pathname: "/charts",
-              query: {
-                playerId: rest.playerId,
-              },
-            }}
-          >
-
+          <Link href={`/stats/player/${rest.playerId}`}>
             <span className={styles.lastName}>
               {names.slice(1).join(" ")}
               {lineChange !== "static" && (
@@ -80,12 +72,11 @@ function SkaterCard({
                   style={{
                     width: 12,
                     height: 12,
-                    objectFit: "contain",
+                    objectFit: "contain"
                   }}
                 />
               )}
             </span>
-
           </Link>
         </h3>
 
@@ -95,7 +86,7 @@ function SkaterCard({
             className={styles.number}
             style={{
               color: color.jersey,
-              textShadow: `-1px 0 ${color.secondary}, 0 1px ${color.secondary}, 1px 0 ${color.secondary}, 0 -1px ${color.secondary}`,
+              textShadow: `-1px 0 ${color.secondary}, 0 1px ${color.secondary}, 1px 0 ${color.secondary}, 0 -1px ${color.secondary}`
             }}
           >
             {sweaterNumber}
@@ -115,7 +106,7 @@ function SkaterCard({
           ))}
         </section>
       </ClientOnly>
-    </article>)
+    </article>
   );
 }
 

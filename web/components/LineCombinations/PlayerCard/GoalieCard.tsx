@@ -18,9 +18,9 @@ const SEASON_STATS_CONFIG = [
     key: "SVPercentage",
     label: "SV%",
     format: (item: number) =>
-      item === 0 ? item.toFixed(3) : item.toFixed(3).slice(1),
+      item === 0 ? item.toFixed(3) : item.toFixed(3).slice(1)
   },
-  { key: "GAA", label: "GAA", format: (item: number) => item.toFixed(2) },
+  { key: "GAA", label: "GAA", format: (item: number) => item.toFixed(2) }
 ] as const;
 
 const LAST10_GP_STATS_CONFIG = [
@@ -30,9 +30,9 @@ const LAST10_GP_STATS_CONFIG = [
     key: "SVPercentage",
     label: "SV%",
     format: (item: number) =>
-      item === 0 ? item.toFixed(3) : item.toFixed(3).slice(1),
+      item === 0 ? item.toFixed(3) : item.toFixed(3).slice(1)
   },
-  { key: "GAA", label: "GAA", format: (item: number) => item.toFixed(2) },
+  { key: "GAA", label: "GAA", format: (item: number) => item.toFixed(2) }
 ] as const;
 
 export type LineChange = "promotion" | "demotion" | "static";
@@ -48,10 +48,10 @@ function GoalieCard({
   const color = useTeamColor();
 
   return (
-    (<article
+    <article
       className={classNames(styles.container, styles.goalie)}
       style={{
-        backgroundColor: color.primary,
+        backgroundColor: color.primary
       }}
     >
       <div className={styles.top}>
@@ -59,15 +59,7 @@ function GoalieCard({
           <span className={styles.firstName} style={{ color: color.secondary }}>
             {names[0]}
           </span>
-          <Link
-            href={{
-              pathname: "/charts",
-              query: {
-                playerId: rest.playerId,
-              },
-            }}
-          >
-
+          <Link href={`/stats/player/${rest.playerId}`}>
             <span className={styles.lastName}>
               {names.slice(1).join(" ")}
               {lineChange !== "static" && (
@@ -77,12 +69,11 @@ function GoalieCard({
                   style={{
                     width: 12,
                     height: 12,
-                    objectFit: "contain",
+                    objectFit: "contain"
                   }}
                 />
               )}
             </span>
-
           </Link>
         </h3>
 
@@ -92,7 +83,7 @@ function GoalieCard({
             className={styles.number}
             style={{
               color: color.jersey,
-              textShadow: `-1px 0 ${color.secondary}, 0 1px ${color.secondary}, 1px 0 ${color.secondary}, 0 -1px ${color.secondary}`,
+              textShadow: `-1px 0 ${color.secondary}, 0 1px ${color.secondary}, 1px 0 ${color.secondary}, 0 -1px ${color.secondary}`
             }}
           >
             {sweaterNumber}
@@ -129,7 +120,7 @@ function GoalieCard({
           ))}
         </section>
       </ClientOnly>
-    </article>)
+    </article>
   );
 }
 

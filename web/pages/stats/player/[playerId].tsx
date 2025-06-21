@@ -4,6 +4,7 @@ import supabase from "lib/supabase";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/router";
 import { NextSeo } from "next-seo";
+import Link from "next/link";
 import { PlayerStatsChart } from "components/PlayerStats/PlayerStatsChart";
 import { PlayerStatsTable } from "components/PlayerStats/PlayerStatsTable";
 import { PlayerStatsSummary } from "components/PlayerStats/PlayerStatsSummary";
@@ -40,6 +41,11 @@ interface PlayerStatsPageProps {
   seasonTotals: SeasonTotals[];
   isGoalie: boolean;
   availableSeasons: (string | number)[];
+  availableSeasonsFormatted: {
+    value: string | number;
+    label: string;
+    displayName: string;
+  }[]; // Add this
   mostRecentSeason?: string | number | null;
   usedGameLogFallback?: boolean;
   missedGames?: MissedGame[];
@@ -68,6 +74,7 @@ export default function PlayerStatsPage({
   seasonTotals,
   isGoalie,
   availableSeasons,
+  availableSeasonsFormatted, // Add this prop
   mostRecentSeason,
   usedGameLogFallback = false,
   missedGames = []
@@ -92,7 +99,7 @@ export default function PlayerStatsPage({
   const positionConfig = useMemo(() => {
     if (!player) return POSITION_STAT_CONFIGS.C;
     const pos = player.position?.toUpperCase();
-    if (pos === "LW" || pos === "RW") {
+    if (pos === "L" || pos === "R") {
       return POSITION_STAT_CONFIGS.LW; // Use same config for both wings
     }
     return (
@@ -167,6 +174,18 @@ export default function PlayerStatsPage({
       />
 
       <div className={styles.playerStatsPageContainer}>
+        {/* Navigation Header */}
+        <div className={styles.navigationHeader}>
+          <Link href="/stats" className={styles.backButton}>
+            <span className={styles.backIcon}>←</span>
+            Back to Stats
+          </Link>
+          <h1 className={styles.pageTitle}>Player Analytics</h1>
+          <div className={styles.searchContainer}>
+            <PlayerSearchBar />
+          </div>
+        </div>
+
         {/* Player Header */}
         <div className={styles.playerHeader}>
           <div className={styles.playerImageContainer}>
@@ -347,6 +366,7 @@ export default function PlayerStatsPage({
                       playerTeamId={player.team_id}
                       seasonId={seasonValue}
                       missedGames={missedGames}
+                      availableSeasonsFormatted={availableSeasonsFormatted} // Pass the formatted seasons
                     />
                   </div>
                 </div>
@@ -572,6 +592,7 @@ export default function PlayerStatsPage({
                 playerId={Number(playerId)}
                 playerTeamId={player.team_id}
                 seasonId={seasonValue}
+                availableSeasonsFormatted={availableSeasonsFormatted} // Pass the formatted seasons here too
               />
             </>
           )}
@@ -1433,6 +1454,24 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
     games: missedGamesData
   });
 
+  // Calculate available seasons from season totals data
+  const availableSeasons = seasonTotals.map((season) => {
+    const seasonId = isGoalie
+      ? (season as GoalieSeasonTotals).season_id
+      : (season as SkaterSeasonTotals).season_id;
+    const seasonStr = String(seasonId);
+
+    // Convert season ID like 20242025 to display format like "2024-25"
+    const startYear = seasonStr.slice(0, 4);
+    const endYear = seasonStr.slice(6, 8);
+
+    return {
+      value: seasonId,
+      label: `${startYear}-${endYear}`,
+      displayName: `${startYear}-${endYear} Season`
+    };
+  });
+
   return {
     props: {
       player,
@@ -1445,6 +1484,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       availableSeasons: isGoalie
         ? seasonTotals.map((s) => (s as GoalieSeasonTotals).season_id)
         : seasonTotals.map((s) => (s as SkaterSeasonTotals).season_id),
+      availableSeasonsFormatted: availableSeasons, // Add formatted seasons for the heatmap
       missedGames: missedGamesData || []
     }
   };

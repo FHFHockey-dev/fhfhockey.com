@@ -37,8 +37,8 @@
   align-items: center;
   justify-content: flex-start;
   gap: 1rem;
-  padding: 1rem 3rem 1.5rem 3rem;
-  height: 120px;
+  padding: 1rem 3rem 1rem 3rem;
+  height: 100px;
 
   @media (max-width: v.$breakpoint-tablet) {
     padding: v.$space-xxs v.$space-sm;
@@ -48,12 +48,12 @@
   background: linear-gradient(
     180deg,
     var(--primary-color) 0%,
-    var(--primary-color) 73%,
-    var(--jersey) 73%,
-    var(--jersey) 82%,
-    var(--accent) 82%,
-    var(--accent) 91%,
-    var(--secondary-color) 91%,
+    var(--primary-color) 70%,
+    var(--jersey) 70%,
+    var(--jersey) 80%,
+    var(--accent) 80%,
+    var(--accent) 90%,
+    var(--secondary-color) 90%,
     var(--secondary-color) 100%
   );
 }

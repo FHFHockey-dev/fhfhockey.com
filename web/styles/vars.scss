@@ -72,10 +72,15 @@ $color-transparent: transparent;
 
 // --- Semantic UI Colors Block ---
 $background-dark: #1a1d21; // Definition 2 (Implicitly overrides Def 1)
+$background-darker: color.adjust(
+  $background-dark,
+  $lightness: -5%
+); // Definition 1 (Uses $background-dark Def 2)
 $background-medium: color.adjust(
   $background-dark,
   $lightness: -3%
 ); // Definition 2 (Uses $background-dark Def 2)
+
 $background-header: color.adjust(
   $background-dark,
   $lightness: -5%
@@ -125,6 +130,8 @@ $background-header: color.adjust(
   $background-dark,
   $lightness: -5%
 ); // Definition 2 (Uses $background-dark Def 3)
+
+$background-middle: $color-bg-dark-4; // New name (value = $bg-light Def 1)
 
 $background-lighter: color.adjust(
   $background-light,

@@ -12,10 +12,11 @@ export async function fetchAllGameLogRows(
   const PAGE_SIZE = 1000;
   let allRows: any[] = [];
   let from = 0;
-  let to = PAGE_SIZE - 1;
   let keepFetching = true;
 
   while (keepFetching) {
+    const to = from + PAGE_SIZE - 1; // Calculate to value correctly for each iteration
+
     const { data, error } = await supabaseClient
       .from(table)
       .select(selectFields)
@@ -24,14 +25,17 @@ export async function fetchAllGameLogRows(
       .order("date", { ascending: false })
       .range(from, to);
 
-    if (error) break;
+    if (error) {
+      console.error(`Error fetching data from ${table}:`, error);
+      break;
+    }
+
     if (data && data.length > 0) {
       allRows = allRows.concat(data);
       if (data.length < PAGE_SIZE) {
         keepFetching = false;
       } else {
-        from += PAGE_SIZE;
-        to += PAGE_SIZE;
+        from += PAGE_SIZE; // Only increment from
       }
     } else {
       keepFetching = false;

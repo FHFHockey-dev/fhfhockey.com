@@ -7,7 +7,11 @@ import {
   startOfWeek,
   endOfWeek,
   isAfter,
-  startOfDay
+  startOfDay,
+  getDay,
+  addDays,
+  startOfYear,
+  endOfYear
 } from "date-fns";
 import styles from "./PlayerStats.module.scss";
 import { useMissedGames } from "hooks/useMissedGames";
@@ -190,6 +194,267 @@ const getPerformanceLevelLabel = (level: PerformanceLevel): string => {
   return labelMap[level];
 };
 
+// GitHub-style Contribution Graph Component
+interface ContributionGraphProps {
+  gameLog: GameLogEntry[];
+  playoffGameLog: GameLogEntry[];
+  missedGames: any[];
+  futureGames: any[];
+  selectedStats: string[];
+  onDayHover: (
+    game: GameLogEntry | null,
+    missedGame: any | null,
+    futureGame: any | null,
+    event: React.MouseEvent
+  ) => void;
+  onDayLeave: () => void;
+}
+
+function ContributionGraph({
+  gameLog,
+  playoffGameLog,
+  missedGames,
+  futureGames,
+  selectedStats,
+  onDayHover,
+  onDayLeave
+}: ContributionGraphProps) {
+  const contributionData = useMemo(() => {
+    // Combine all games
+    const allGames = [
+      ...gameLog.map((game) => ({ ...game, isPlayoff: false })),
+      ...playoffGameLog.map((game) => ({ ...game, isPlayoff: true }))
+    ];
+
+    if (allGames.length === 0) return null;
+
+    // Helper function to safely parse date strings as local dates
+    const parseLocalDate = (dateString: string): Date => {
+      // Split the date string and create a date in local timezone
+      const [year, month, day] = dateString.split("-").map(Number);
+      return new Date(year, month - 1, day); // month is 0-indexed in JavaScript
+    };
+
+    // Create maps for efficient lookups using the exact date strings from database
+    const gamesByDate = new Map<string, GameLogEntry>();
+    const missedGamesByDate = new Map<string, any>();
+    const futureGamesByDate = new Map<string, any>();
+
+    allGames.forEach((game) => {
+      // Use the date string directly as the key, no formatting needed
+      gamesByDate.set(game.date, game);
+    });
+
+    missedGames.forEach((missedGame) => {
+      // Use the date string directly as the key, no formatting needed
+      missedGamesByDate.set(missedGame.date, missedGame);
+    });
+
+    futureGames.forEach((futureGame) => {
+      // Use the date string directly as the key, no formatting needed
+      futureGamesByDate.set(futureGame.date, futureGame);
+    });
+
+    // Calculate the season range using local date parsing
+    const dates = allGames.map((game) => parseLocalDate(game.date));
+    const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
+    const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+
+    // Use startOfWeek with Monday as the first day for proper alignment
+    const startDate = startOfWeek(minDate, { weekStartsOn: 1 }); // 1 = Monday
+    const endDate = endOfWeek(maxDate, { weekStartsOn: 1 }); // 1 = Monday
+
+    // Generate all days in the range
+    const allDays = eachDayOfInterval({ start: startDate, end: endDate });
+
+    // Group days by weeks (Monday = start of week)
+    const weeks: Array<{
+      days: Array<{
+        date: Date;
+        game: GameLogEntry | null;
+        missedGame: any | null;
+        futureGame: any | null;
+        performanceLevel: PerformanceLevel;
+        isPlayoff: boolean;
+        isMissedGame: boolean;
+        isFutureGame: boolean;
+        dayOfWeek: number; // 0 = Monday, 6 = Sunday
+        isEmpty?: boolean;
+      }>;
+      monthName?: string;
+      isFirstWeekOfMonth?: boolean;
+    }> = [];
+
+    // Process days into complete weeks (always 7 days each, Monday to Sunday)
+    for (let i = 0; i < allDays.length; i += 7) {
+      const weekDays = allDays.slice(i, i + 7);
+
+      // Always create exactly 7 days for each week (Monday = 0, Sunday = 6)
+      const weekData = {
+        days: weekDays.map((day, dayIndex) => {
+          // Use the correct formatted date key for lookups
+          const dateKey = format(day, "yyyy-MM-dd");
+          const game = gamesByDate.get(dateKey) || null;
+          const missedGame = missedGamesByDate.get(dateKey) || null;
+          const futureGame = futureGamesByDate.get(dateKey) || null;
+
+          const performanceLevel = game
+            ? calculatePerformanceLevel(game, selectedStats)
+            : "no-data";
+          const isPlayoff = game
+            ? Boolean(game.isPlayoff)
+            : missedGame
+              ? Boolean(missedGame.isPlayoff)
+              : futureGame
+                ? Boolean(futureGame.isPlayoff)
+                : false;
+
+          const dayOfWeek = dayIndex;
+
+          return {
+            date: day,
+            game,
+            missedGame,
+            futureGame,
+            performanceLevel,
+            isPlayoff,
+            isMissedGame: Boolean(missedGame),
+            isFutureGame: Boolean(futureGame),
+            dayOfWeek,
+            isEmpty: false
+          };
+        }),
+        monthName: undefined as string | undefined,
+        isFirstWeekOfMonth: false
+      };
+
+      // Determine if this week should show a month name
+      // Use the first day of the week (Monday) to determine the month
+      const weekStartDay = weekDays[0];
+      if (weekStartDay) {
+        const monthName = format(weekStartDay, "MMM");
+
+        // Show month name if this is the first week or if the month changed
+        if (
+          weeks.length === 0 ||
+          (weeks.length > 0 && weeks[weeks.length - 1].monthName !== monthName)
+        ) {
+          weekData.monthName = monthName;
+          weekData.isFirstWeekOfMonth = true;
+        }
+      }
+
+      weeks.push(weekData);
+    }
+
+    // Calculate total number of weeks for dynamic sizing
+    const totalWeeks = weeks.length;
+
+    return { weeks, totalWeeks };
+  }, [gameLog, playoffGameLog, missedGames, futureGames, selectedStats]);
+
+  if (!contributionData) {
+    return (
+      <div className={styles.noContributionData}>
+        No data available for contribution graph
+      </div>
+    );
+  }
+
+  // Calculate dynamic styles based on number of weeks
+  const { weeks, totalWeeks } = contributionData;
+
+  // Use a simpler approach that works with CSS custom properties
+  // Each week gets an equal fraction of 100%, and we account for gaps in CSS
+  const weekWidthPercentage = totalWeeks > 0 ? 100 / totalWeeks : 100;
+
+  // Create CSS custom properties for dynamic sizing
+  const dynamicStyles = {
+    "--total-weeks": totalWeeks,
+    "--week-width-percentage": `${weekWidthPercentage}%`,
+    "--gap-size": "2px"
+  } as React.CSSProperties;
+
+  console.log(`[ContributionGraph] Dynamic sizing calculation:`, {
+    totalWeeks,
+    weekWidthPercentage: `${weekWidthPercentage}%`
+  });
+
+  return (
+    <div className={styles.contributionGrid} style={dynamicStyles}>
+      {/* Day labels (Mon-Sun) */}
+      <div className={styles.daysLabels}>
+        <div className={styles.dayLabelContainer}></div>{" "}
+        {/* Space for month headers */}
+        {["Mon", "", "Wed", "", "Fri", "", "Sun"].map((day, index) => (
+          <div
+            key={index}
+            className={`${styles.contributionDayLabel} ${day === "" ? styles.hidden : ""}`}
+          >
+            {day}
+          </div>
+        ))}
+      </div>
+
+      {/* Weeks container */}
+      <div className={styles.weeksContainer}>
+        {weeks.map((week, weekIndex) => (
+          <div key={weekIndex} className={styles.weekColumn}>
+            {/* Month header */}
+            <div className={styles.monthHeader}>
+              {week.monthName && (
+                <span className={styles.monthName}>{week.monthName}</span>
+              )}
+            </div>
+
+            {/* Render exactly 7 days for each week (Monday to Sunday) */}
+            {week.days.map((dayData, dayIndex) => {
+              const {
+                date,
+                game,
+                missedGame,
+                futureGame,
+                performanceLevel,
+                isPlayoff,
+                isMissedGame,
+                isFutureGame
+              } = dayData;
+
+              let dayClasses = [styles.contributionDay];
+
+              if (isMissedGame) {
+                dayClasses.push(styles.missed);
+              } else if (isFutureGame) {
+                dayClasses.push(styles.future);
+              } else if (game) {
+                dayClasses.push(styles[performanceLevel]);
+              } else {
+                dayClasses.push(styles.noContributionData);
+              }
+
+              if (isPlayoff) {
+                dayClasses.push(styles.playoff);
+              }
+
+              return (
+                <div
+                  key={dayIndex}
+                  className={dayClasses.join(" ")}
+                  onMouseEnter={(e) =>
+                    onDayHover(game, missedGame, futureGame, e)
+                  }
+                  onMouseLeave={onDayLeave}
+                  title={`${format(date, "EEEE, MMM d, yyyy")} - Position: ${dayIndex} - Expected: ${["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"][dayIndex]}`}
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function PlayerPerformanceHeatmap({
   gameLog,
   playoffGameLog = [],
@@ -198,10 +463,16 @@ export function PlayerPerformanceHeatmap({
   playerTeamId,
   seasonId,
   missedGames = [], // Accept missed games from props (server-side data)
-  futureGames = [] // Accept future scheduled games
+  futureGames = [], // Accept future scheduled games
+  availableSeasonsFormatted = [] // Add this prop
 }: PlayerPerformanceHeatmapProps & {
   missedGames?: MissedGame[];
   futureGames?: any[];
+  availableSeasonsFormatted?: {
+    value: string | number;
+    label: string;
+    displayName: string;
+  }[]; // Add this
 }) {
   const [showInfo, setShowInfo] = useState(false);
   const [hoveredGame, setHoveredGame] = useState<GameLogEntry | null>(null);
@@ -209,24 +480,137 @@ export function PlayerPerformanceHeatmap({
   const [hoveredFutureGame, setHoveredFutureGame] = useState<any>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
+  // Add season selection state
+  const [selectedSeason, setSelectedSeason] = useState<string | number>(
+    seasonId || "current"
+  );
+
   // Get today's date for filtering future games
   const today = startOfDay(new Date());
 
+  // Extract available seasons from props instead of calculating from game log
+  const availableSeasons = useMemo(() => {
+    // Use the formatted seasons passed from server-side props if available
+    if (availableSeasonsFormatted && availableSeasonsFormatted.length > 0) {
+      console.log(
+        "[PlayerPerformanceHeatmap] Using seasons from props:",
+        availableSeasonsFormatted
+      );
+      return availableSeasonsFormatted;
+    }
+
+    // Fallback: calculate from game log data (original logic)
+    console.log(
+      "[PlayerPerformanceHeatmap] Calculating seasons from game log data"
+    );
+    const seasons = new Set<string>();
+
+    // Add seasons from regular season games
+    gameLog.forEach((game) => {
+      if (game.date) {
+        const gameDate = new Date(game.date);
+        const year = gameDate.getFullYear();
+        // Hockey season spans two calendar years (e.g., 2024-25 season)
+        const seasonStart = gameDate.getMonth() >= 9 ? year : year - 1;
+        const seasonKey = `${seasonStart}${seasonStart + 1}`;
+        seasons.add(seasonKey);
+      }
+    });
+
+    // Add seasons from playoff games
+    playoffGameLog.forEach((game) => {
+      if (game.date) {
+        const gameDate = new Date(game.date);
+        const year = gameDate.getFullYear();
+        // Playoffs are typically in the spring, so the season would have started the previous year
+        const seasonStart = gameDate.getMonth() >= 9 ? year : year - 1;
+        const seasonKey = `${seasonStart}${seasonStart + 1}`;
+        seasons.add(seasonKey);
+      }
+    });
+
+    // Convert to array and sort, most recent first
+    const sortedSeasons = Array.from(seasons).sort((a, b) =>
+      b.localeCompare(a)
+    );
+
+    return sortedSeasons.map((season) => ({
+      value: season,
+      label: `${season.slice(0, 4)}-${season.slice(4, 6)}`,
+      displayName: `${season.slice(0, 4)}-${season.slice(6, 8)} Season`
+    }));
+  }, [gameLog, playoffGameLog, availableSeasonsFormatted]);
+
+  // Get the most recent season if no season is selected
+  const currentSeason = useMemo(() => {
+    if (selectedSeason === "current" || !selectedSeason) {
+      return availableSeasons[0]?.value || null;
+    }
+    return selectedSeason;
+  }, [selectedSeason, availableSeasons]);
+
+  // Filter game logs by selected season
+  const filteredGameLog = useMemo(() => {
+    if (!currentSeason) return gameLog;
+
+    // Convert currentSeason to string for comparison
+    const currentSeasonStr = String(currentSeason);
+
+    return gameLog.filter((game) => {
+      if (!game.date) return false;
+      const gameDate = new Date(game.date);
+      const year = gameDate.getFullYear();
+      const seasonStart = gameDate.getMonth() >= 9 ? year : year - 1;
+      const gameSeason = `${seasonStart}${seasonStart + 1}`;
+      return gameSeason === currentSeasonStr;
+    });
+  }, [gameLog, currentSeason]);
+
+  const filteredPlayoffGameLog = useMemo(() => {
+    if (!currentSeason) return playoffGameLog;
+
+    // Convert currentSeason to string for comparison
+    const currentSeasonStr = String(currentSeason);
+
+    return playoffGameLog.filter((game) => {
+      if (!game.date) return false;
+      const gameDate = new Date(game.date);
+      const year = gameDate.getFullYear();
+      const seasonStart = gameDate.getMonth() >= 9 ? year : year - 1;
+      const gameSeason = `${seasonStart}${seasonStart + 1}`;
+      return gameSeason === currentSeasonStr;
+    });
+  }, [playoffGameLog, currentSeason]);
+
+  // Filter missed games by selected season
+  const filteredMissedGamesForSeason = useMemo(() => {
+    if (!currentSeason) return missedGames;
+
+    // Convert currentSeason to string for comparison
+    const currentSeasonStr = String(currentSeason);
+
+    return missedGames.filter((game) => {
+      if (!game.date) return false;
+      const gameDate = new Date(game.date);
+      const year = gameDate.getFullYear();
+      const seasonStart = gameDate.getMonth() >= 9 ? year : year - 1;
+      const gameSeason = `${seasonStart}${seasonStart + 1}`;
+      return gameSeason === currentSeasonStr;
+    });
+  }, [missedGames, currentSeason]);
+
   // DEBUG: Enhanced logging
   console.log("[PlayerPerformanceHeatmap] Enhanced Debug data:", {
-    regularSeasonGames: gameLog.length,
-    playoffGames: playoffGameLog.length,
-    missedGamesFromProps: missedGames.length,
+    selectedSeason: currentSeason,
+    availableSeasons: availableSeasons.map((s) => s.label),
+    regularSeasonGames: filteredGameLog.length,
+    playoffGames: filteredPlayoffGameLog.length,
+    missedGamesFromProps: filteredMissedGamesForSeason.length,
     playerId,
     playerTeamId,
     seasonId,
-    firstRegularGame: gameLog[0],
-    firstPlayoffGame: playoffGameLog[0],
-    missedGamesBreakdown: {
-      regular: missedGames.filter((mg) => !mg.isPlayoff).length,
-      playoff: missedGames.filter((mg) => mg.isPlayoff).length
-    },
-    sampleMissedGames: missedGames.slice(0, 3)
+    firstRegularGame: filteredGameLog[0],
+    firstPlayoffGame: filteredPlayoffGameLog[0]
   });
 
   // Use server-side missed games data instead of client-side hook
@@ -235,11 +619,19 @@ export function PlayerPerformanceHeatmap({
     missedGames: hookMissedGames,
     isLoading: missedGamesLoading,
     error: missedGamesError
-  } = useMissedGames(playerId, playerTeamId, seasonId, gameLog, playoffGameLog);
+  } = useMissedGames(
+    playerId,
+    playerTeamId,
+    seasonId,
+    filteredGameLog,
+    filteredPlayoffGameLog
+  );
 
   // Get all games data (both missed and future) from either props or hook
   const allMissedGamesData =
-    missedGames.length > 0 ? missedGames : hookMissedGames;
+    filteredMissedGamesForSeason.length > 0
+      ? filteredMissedGamesForSeason
+      : hookMissedGames;
 
   // Separate past missed games from future scheduled games
   const filteredMissedGames = allMissedGamesData.filter((game) => {
@@ -252,32 +644,26 @@ export function PlayerPerformanceHeatmap({
     return isAfter(gameDate, today) || game.isFuture;
   });
 
-  console.log("[PlayerPerformanceHeatmap] Active missed games:", {
-    source: missedGames.length > 0 ? "server-side" : "client-hook",
-    total: allMissedGamesData.length,
-    missedCount: filteredMissedGames.length,
-    futureCount: futureScheduledGames.length,
-    loading: missedGamesLoading,
-    error: missedGamesError
-  });
-
   // Create calendar data combining regular season, playoff games, missed games, and future games
   const calendarData = useMemo(() => {
-    if (gameLog.length === 0 && playoffGameLog.length === 0) {
-      console.log("[PlayerPerformanceHeatmap] No game data available");
+    if (filteredGameLog.length === 0 && filteredPlayoffGameLog.length === 0) {
+      console.log(
+        "[PlayerPerformanceHeatmap] No game data available for selected season"
+      );
       return [];
     }
 
     // Combine all games and mark playoff games properly
     const allGames = [
-      ...gameLog.map((game) => ({ ...game, isPlayoff: false })), // Mark regular season games
-      ...playoffGameLog.map((game) => ({ ...game, isPlayoff: true })) // Mark playoff games
+      ...filteredGameLog.map((game) => ({ ...game, isPlayoff: false })), // Mark regular season games
+      ...filteredPlayoffGameLog.map((game) => ({ ...game, isPlayoff: true })) // Mark playoff games
     ];
 
-    console.log("[PlayerPerformanceHeatmap] Combined games:", {
+    console.log("[PlayerPerformanceHeatmap] Combined games for season:", {
+      season: currentSeason,
       totalGames: allGames.length,
-      regularSeason: gameLog.length,
-      playoffs: playoffGameLog.length,
+      regularSeason: filteredGameLog.length,
+      playoffs: filteredPlayoffGameLog.length,
       futureScheduledCount: futureScheduledGames.length
     });
 
@@ -428,21 +814,22 @@ export function PlayerPerformanceHeatmap({
 
     return months;
   }, [
-    gameLog,
-    playoffGameLog,
+    filteredGameLog,
+    filteredPlayoffGameLog,
     selectedStats,
     filteredMissedGames,
-    futureScheduledGames
+    futureScheduledGames,
+    currentSeason
   ]);
 
   // Calculate calendar stats
   const calendarStats = useMemo(() => {
     // Include BOTH regular season and playoff games in stats calculation
     const allGamesWithData = [
-      ...gameLog.filter(
+      ...filteredGameLog.filter(
         (game) => game.games_played !== null && game.games_played > 0
       ),
-      ...playoffGameLog.filter(
+      ...filteredPlayoffGameLog.filter(
         (game) => game.games_played !== null && game.games_played > 0
       )
     ];
@@ -463,10 +850,10 @@ export function PlayerPerformanceHeatmap({
     const eliteGames = (levelCounts.elite || 0) + (levelCounts.excellent || 0);
     const goodOrBetterGames = eliteGames + (levelCounts.good || 0);
     const totalGames = allGamesWithData.length;
-    const regularSeasonGames = gameLog.filter(
+    const regularSeasonGames = filteredGameLog.filter(
       (game) => game.games_played !== null && game.games_played > 0
     ).length;
-    const playoffGames = playoffGameLog.filter(
+    const playoffGames = filteredPlayoffGameLog.filter(
       (game) => game.games_played !== null && game.games_played > 0
     ).length;
 
@@ -481,7 +868,7 @@ export function PlayerPerformanceHeatmap({
         totalGames > 0 ? (goodOrBetterGames / totalGames) * 100 : 0,
       levelCounts
     };
-  }, [gameLog, playoffGameLog, selectedStats]);
+  }, [filteredGameLog, filteredPlayoffGameLog, selectedStats]);
 
   // Event handlers
   const handleMouseEnter = (
@@ -718,11 +1105,40 @@ export function PlayerPerformanceHeatmap({
     }
   ];
 
-  if (gameLog.length === 0) {
+  // Handle season selection change
+  const handleSeasonChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedSeason(event.target.value);
+  };
+
+  if (filteredGameLog.length === 0 && filteredPlayoffGameLog.length === 0) {
     return (
       <div className={styles.performanceCalendar}>
+        <div className={styles.calendarHeader}>
+          <div className={styles.titleWithControls}>
+            <h3>Performance Calendar</h3>
+            {availableSeasons.length > 1 && (
+              <div className={styles.seasonSelector}>
+                <label htmlFor="season-select">Season:</label>
+                <select
+                  id="season-select"
+                  value={selectedSeason}
+                  onChange={handleSeasonChange}
+                  className={styles.seasonDropdown}
+                >
+                  {availableSeasons.map((season) => (
+                    <option key={season.value} value={season.value}>
+                      {season.displayName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        </div>
         <div className={styles.noData}>
-          No games available for performance calendar
+          No games available for the{" "}
+          {availableSeasons.find((s) => s.value === currentSeason)
+            ?.displayName || "selected season"}
         </div>
       </div>
     );
@@ -731,16 +1147,152 @@ export function PlayerPerformanceHeatmap({
   return (
     <div className={styles.performanceCalendar}>
       <div className={styles.calendarHeader}>
-        <div className={styles.titleWithInfo}>
-          <h3>Performance Calendar</h3>
-          <button
-            className={styles.infoButton}
-            onMouseEnter={() => setShowInfo(true)}
-            onMouseLeave={() => setShowInfo(false)}
-          >
-            ?
-          </button>
-          {showInfo && renderInfoTooltip()}
+        <div className={styles.titleWithControls}>
+          <div className={styles.titleWithInfo}>
+            <h3>Performance Calendar</h3>
+            <button
+              className={styles.infoButton}
+              onMouseEnter={() => setShowInfo(true)}
+              onMouseLeave={() => setShowInfo(false)}
+            >
+              ?
+            </button>
+            {showInfo && renderInfoTooltip()}
+          </div>
+
+          {availableSeasons.length > 1 && (
+            <div className={styles.seasonSelector}>
+              <label htmlFor="season-select">Season:</label>
+              <select
+                id="season-select"
+                value={selectedSeason}
+                onChange={handleSeasonChange}
+                className={styles.seasonDropdown}
+              >
+                {availableSeasons.map((season) => (
+                  <option key={season.value} value={season.value}>
+                    {season.displayName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        {/* GitHub-style Contribution Graph */}
+        <div className={styles.contributionGraph}>
+          <div className={styles.contributionHeader}>
+            <h4>
+              Season Activity Overview
+              <span className={styles.contributionSubtitle}>
+                {availableSeasons.find((s) => s.value === currentSeason)
+                  ?.displayName || "Current Season"}{" "}
+              </span>
+            </h4>
+          </div>
+
+          <ContributionGraph
+            gameLog={filteredGameLog}
+            playoffGameLog={filteredPlayoffGameLog}
+            missedGames={filteredMissedGames}
+            futureGames={futureScheduledGames}
+            selectedStats={selectedStats}
+            onDayHover={handleMouseEnter}
+            onDayLeave={handleMouseLeave}
+          />
+
+          <div className={styles.contributionLegend}>
+            <div className={styles.legendSection}>
+              <span className={styles.legendLabel}>Less</span>
+              <div className={styles.legendScale}>
+                <div
+                  className={styles.scaleItem}
+                  style={{ backgroundColor: "#2a2a2a" }}
+                />
+                <div
+                  className={styles.scaleItem}
+                  style={{ backgroundColor: "#ff8c42" }}
+                />
+                <div
+                  className={styles.scaleItem}
+                  style={{ backgroundColor: "#ffd700" }}
+                />
+                <div
+                  className={styles.scaleItem}
+                  style={{ backgroundColor: "#85c985" }}
+                />
+                <div
+                  className={styles.scaleItem}
+                  style={{ backgroundColor: "#4fb84f" }}
+                />
+                <div
+                  className={styles.scaleItem}
+                  style={{ backgroundColor: "#2d8f2d" }}
+                />
+                <div
+                  className={styles.scaleItem}
+                  style={{ backgroundColor: "#1a5d1a" }}
+                />
+              </div>
+              <span className={styles.legendLabel}>More</span>
+            </div>
+
+            <div className={styles.legendSpecial}>
+              <div className={styles.specialItem}>
+                <div
+                  className={`${styles.specialIndicator} ${styles.missed}`}
+                />
+                <span>Missed</span>
+              </div>
+              <div className={styles.specialItem}>
+                <div
+                  className={`${styles.specialIndicator} ${styles.future}`}
+                />
+                <span>Upcoming</span>
+              </div>
+              <div className={styles.specialItem}>
+                <div
+                  className={`${styles.specialIndicator} ${styles.playoff}`}
+                />
+                <span>Playoff</span>
+              </div>
+            </div>
+          </div>
+
+          {calendarStats && (
+            <div className={styles.contributionStats}>
+              <div className={styles.statGroup}>
+                <div className={styles.statValue}>
+                  {calendarStats.totalGames}
+                </div>
+                <div className={styles.statLabel}>Games Played</div>
+              </div>
+              <div className={styles.statGroup}>
+                <div className={styles.statValue}>
+                  {calendarStats.eliteGames}
+                </div>
+                <div className={styles.statLabel}>Elite Performances</div>
+              </div>
+              <div className={styles.statGroup}>
+                <div className={styles.statValue}>
+                  {calendarStats.elitePercentage.toFixed(1)}%
+                </div>
+                <div className={styles.statLabel}>Elite Rate</div>
+              </div>
+              <div className={styles.statGroup}>
+                <div className={styles.statValue}>
+                  {filteredMissedGames.length}
+                </div>
+                <div className={styles.statLabel}>Missed Games</div>
+              </div>
+              <div className={styles.statGroup}>
+                <div className={styles.statValue}>
+                  {futureScheduledGames.length}
+                </div>
+                <div className={styles.statLabel}>Upcoming Games</div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className={styles.calendarLegend}>
@@ -790,30 +1342,6 @@ export function PlayerPerformanceHeatmap({
             </div>
           </div>
         </div>
-
-        {/* Debug info panel */}
-        {process.env.NODE_ENV === "development" && (
-          <div
-            style={{
-              background: "#333",
-              padding: "10px",
-              borderRadius: "4px",
-              fontSize: "12px",
-              marginTop: "10px"
-            }}
-          >
-            <strong>Debug Info:</strong>
-            <br />
-            Games: {gameLog.length} regular, {playoffGameLog.length} playoff
-            <br />
-            Missed: {filteredMissedGames.length} total (filtered from{" "}
-            {allMissedGamesData.length})
-            <br />
-            Future: {futureScheduledGames.length} scheduled
-            <br />
-            Source: {missedGames.length > 0 ? "Server-side" : "Client hook"}
-          </div>
-        )}
       </div>
 
       <div className={styles.calendarGrid}>

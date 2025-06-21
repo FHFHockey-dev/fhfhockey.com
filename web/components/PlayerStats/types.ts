@@ -309,8 +309,21 @@ export const POSITION_STAT_CONFIGS = {
     ] as string[]
   },
   G: {
-    primary: ["save_pct", "goals_against_avg", "wins", "shutouts"] as string[],
-    secondary: ["saves"] as string[],
+    primary: [
+      "save_pct",
+      "goals_against_avg",
+      "wins",
+      "shutouts",
+      "saves"
+    ] as string[],
+    secondary: [
+      "losses",
+      "ot_losses",
+      "shots_against",
+      "goals_against",
+      "games_started",
+      "quality_start"
+    ] as string[],
     advanced: [
       "high_danger_save_pct",
       "medium_danger_save_pct",
@@ -333,6 +346,11 @@ export const CHART_COLORS = [
 
 // Stat formatting functions
 export const STAT_FORMATTERS = {
+  // Basic stats with 2 decimal places
+  points: (value: number) => (value || 0).toFixed(2),
+  goals: (value: number) => (value || 0).toFixed(2),
+  assists: (value: number) => (value || 0).toFixed(2),
+
   // Percentages
   shooting_percentage: (value: number) => `${(value || 0).toFixed(1)}%`,
   save_pct: (value: number) => `${(value || 0).toFixed(3)}`,
@@ -407,8 +425,8 @@ export const STAT_FORMATTERS = {
   individual_sat_for_per_60: (value: number) => (value || 0).toFixed(1),
   blocks_per_60: (value: number) => (value || 0).toFixed(1),
 
-  // Default integer formatting
-  default: (value: number) => Math.round(value || 0).toString()
+  // Default integer formatting - changed to 2 decimal places for better precision
+  default: (value: number) => (value || 0).toFixed(2)
 } as const;
 
 // Comprehensive stat display names
