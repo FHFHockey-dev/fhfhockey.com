@@ -154,8 +154,10 @@ $error-color: $color-red; // Definition 2 (Implicitly overrides Def 1)
 // =============================================
 $font-family-primary: "Roboto Condensed", sans-serif; // Definition 1
 $font-family-secondary: "Arial", sans-serif; // Definition 1
-$font-family-accent:
-  "Train One", sans-serif; // Add or ensure this is present for accent font
+$font-family-accent: "Train One", sans-serif;
+$font-family-numbers: "Martian Mono", monospace;
+// $font-family-numbers: "Tourney", sans-serif;
+
 $font-size-base: 16px; // Definition 1
 $font-size-small: 14px; // Definition 1
 $text-color-button: #ffffff; // Definition 1
@@ -379,14 +381,14 @@ $chart-tooltip-text: $text-primary; // Definition 2 (Uses $text-primary)
   &::-webkit-scrollbar-thumb {
     background-color: $thumb-color;
     border-radius: math.div($width, 2); // Make thumb rounded
-    border: 1px solid color.adjust($track-color, $lightness: -5%); // Optional subtle border
+    // Use a simple fallback border instead of color.adjust on potentially mixed colors
+    border: 1px solid rgba(0, 0, 0, 0.1);
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background-color: color.adjust(
-      $thumb-color,
-      $lightness: 10%
-    ); // Slightly lighter on hover
+    // Use a simple opacity change instead of color.adjust for compatibility
+    background-color: $thumb-color;
+    opacity: 0.8;
   }
 
   // For Firefox

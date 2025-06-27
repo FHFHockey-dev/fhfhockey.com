@@ -17,7 +17,16 @@ export default function Document() {
           href="https://fonts.googleapis.com/css2?family=Train+One&family=Zen+Tokyo+Zoo&display=swap"
           rel="stylesheet"
         />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&display=swap"
+          rel="stylesheet"
+        ></link>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@100..800&family=Tourney:ital,wght@0,100..900;1,100..900&display=swap"
+          rel="stylesheet"
+        ></link>
       </Head>
+
       <body>
         <Main />
         <NextScript />

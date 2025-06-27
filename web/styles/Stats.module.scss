@@ -19,10 +19,18 @@
 // HERO SECTION - COMPACT
 // =============================================================================
 
+.topRowHero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: v.$space-lg;
+  padding: v.$space-md 0;
+}
+
 .heroSection {
   @include v.component-wrapper;
+  width: 50%;
   padding: v.$space-lg v.$space-md;
-  margin-bottom: v.$space-lg;
   text-align: center;
   background: v.$background-medium;
   border: 1px solid v.$border-primary;
@@ -56,7 +64,13 @@
 // =============================================================================
 
 .quickStatsSection {
-  margin-bottom: v.$space-lg;
+  @include v.component-wrapper;
+  width: 50%;
+  height: 100%;
+  margin: 0 auto;
+  padding: v.$space-md;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
 }
 
 .sectionTitle {
@@ -509,16 +523,34 @@
 // =============================================================================
 
 .leaderboardsContainer {
+  @include v.component-wrapper;
   display: flex;
   flex-direction: column;
-  gap: v.$space-lg;
+  gap: v.$space-xxs;
+}
+
+.leaderboards {
+  display: flex;
+  flex-direction: row;
+  gap: v.$space-md;
+  padding: v.$space-md;
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: v.$border-radius-md;
+    background: rgba(0, 0, 0, 0.1);
+    z-index: -1;
+  }
 }
 
 .leaderboardHeader {
-  @include v.component-wrapper;
   padding: v.$space-md v.$space-lg;
-  background: v.$background-medium;
-  border: 1px solid v.$border-secondary;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -549,8 +581,8 @@
 }
 
 .grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: v.$space-md;
 }
 
@@ -572,6 +604,52 @@
     border-color: v.$border-accent;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
+}
+
+.cardContainer {
+  display: flex;
+  flex-direction: row;
+  gap: v.$space-sm;
+}
+
+.cardLeft {
+  flex: 0 1 20%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  a {
+    transition: color 0.2s ease;
+
+    &:hover {
+      color: v.$text-primary;
+    }
+
+    img {
+      background-color: v.$background-medium;
+      width: 100%;
+      height: auto;
+      border-radius: v.$border-radius-sm;
+      border: 1px solid v.$border-primary;
+      object-fit: cover;
+    }
+  }
+}
+
+.cardRight {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.topRow {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-evenly;
+  gap: v.$space-xxs;
 }
 
 .cardTitle {
@@ -641,24 +719,12 @@
   border-left-width: 4px;
 }
 
-.topRow {
-  display: flex;
-  align-items: center;
-  gap: v.$space-sm;
-}
-
-.playerHeadshot {
-  width: 32px;
-  height: 32px;
-  border-radius: v.$border-radius-sm;
-  border: 1px solid v.$border-primary;
-  object-fit: cover;
-  flex-shrink: 0;
-}
-
 .leaderMain {
-  flex: 1;
   min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .nameValueRow {
@@ -668,19 +734,29 @@
   gap: v.$space-sm;
 }
 
+.leaderNameDetails {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  min-width: 0; // Prevent overflow
+  height: 100%;
+}
+
 .leaderName {
   font-size: v.$font-size-sm;
-  font-weight: 600;
-  color: v.$text-primary;
+  color: v.$primary-color;
   margin-bottom: v.$space-xxs;
-  font-family: v.$font-family-primary;
+  font-family: v.$font-family-condensed;
+  text-transform: uppercase;
+  letter-spacing: 0.1rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .playerDetails {
-  font-size: v.$font-size-xxs;
+  font-size: v.$font-size-xs;
   color: v.$text-secondary;
   font-weight: 400;
   overflow: hidden;

@@ -176,14 +176,43 @@ export default function StatsPage({
 
   return (
     <div className={styles.container}>
-      {/* Hero Section - Clean and Minimal */}
-      <section className={styles.heroSection}>
-        <div className={styles.heroContent}>
-          <h1 className={styles.heroTitle}>NHL Analytics Hub</h1>
-          <p className={styles.heroSubtitle}>
-            Advanced hockey statistics and player performance analysis
-          </p>
-          <PlayerSearchBar />
+      <div className={styles.topRowHero}>
+        {/* Hero Section - Clean and Minimal */}
+        <section className={styles.heroSection}>
+          <div className={styles.heroContent}>
+            <h1 className={styles.heroTitle}>Underlying Stats Hub</h1>
+
+            <p className={styles.heroSubtitle}>
+              Advanced hockey statistics and player performance analysis
+            </p>
+            <PlayerSearchBar />
+          </div>
+        </section>
+      </div>
+
+      {/* Quick Stats - Bento Box Layout */}
+      <section className={styles.quickStatsSection}>
+        <h2 className={styles.sectionTitle}>Key Metrics</h2>
+        <div className={styles.quickStatsGrid}>
+          {quickStats.map((stat, index) => (
+            <div
+              key={index}
+              className={`${styles.quickStatCard} ${stat.category ? styles[stat.category] : ""}`}
+            >
+              <div className={styles.quickStatIcon}>
+                <div className={styles.iconInner}></div>
+              </div>
+              <div className={styles.quickStatContent}>
+                <div className={styles.quickStatValue}>{stat.value}</div>
+                <div className={styles.quickStatLabel}>{stat.label}</div>
+                {stat.subtitle && (
+                  <div className={styles.quickStatSubtitle}>
+                    {stat.subtitle}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -245,32 +274,6 @@ export default function StatsPage({
         </div>
       </div>
 
-      {/* Quick Stats - Bento Box Layout */}
-      <section className={styles.quickStatsSection}>
-        <h2 className={styles.sectionTitle}>Key Metrics</h2>
-        <div className={styles.quickStatsGrid}>
-          {quickStats.map((stat, index) => (
-            <div
-              key={index}
-              className={`${styles.quickStatCard} ${stat.category ? styles[stat.category] : ""}`}
-            >
-              <div className={styles.quickStatIcon}>
-                <div className={styles.iconInner}></div>
-              </div>
-              <div className={styles.quickStatContent}>
-                <div className={styles.quickStatValue}>{stat.value}</div>
-                <div className={styles.quickStatLabel}>{stat.label}</div>
-                {stat.subtitle && (
-                  <div className={styles.quickStatSubtitle}>
-                    {stat.subtitle}
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* Position Filter */}
       <section className={styles.filterSection}>
         <h3 className={styles.filterTitle}>Filter by Position</h3>
@@ -298,57 +301,61 @@ export default function StatsPage({
 
       {/* Leaderboards - Analytical Layout */}
       <section className={styles.leaderboardsContainer}>
-        <header className={styles.leaderboardHeader}>
-          <h1 className={styles.title}>
-            <span className={styles.titleAccent}>Skater Statistics</span>
-          </h1>
-          <div className={styles.seasonBadge}>2024-25 Season</div>
-        </header>
         <div className={styles.grid}>
-          <LeaderboardCategory
-            title="Points"
-            leaders={pointsLeaders}
-            statKey="points"
-          />
-          <LeaderboardCategory
-            title="Goals"
-            leaders={goalsLeaders}
-            statKey="goals"
-          />
-          <LeaderboardCategory
-            title="Power Play Points"
-            leaders={pppLeaders}
-            statKey="pp_points"
-          />
-          <LeaderboardCategoryBSH title="BSH Index" leaders={bshLeaders} />
+          <header className={styles.leaderboardHeader}>
+            <h1 className={styles.title}>
+              <span className={styles.titleAccent}>Skater Statistics</span>
+            </h1>
+            <div className={styles.seasonBadge}>2024-25 Season</div>
+          </header>
+          <div className={styles.leaderboards}>
+            <LeaderboardCategory
+              title="Points"
+              leaders={pointsLeaders}
+              statKey="points"
+            />
+            <LeaderboardCategory
+              title="Goals"
+              leaders={goalsLeaders}
+              statKey="goals"
+            />
+            <LeaderboardCategory
+              title="Power Play Points"
+              leaders={pppLeaders}
+              statKey="pp_points"
+            />
+            <LeaderboardCategoryBSH title="BSH Index" leaders={bshLeaders} />
+          </div>
         </div>
 
-        <header className={styles.leaderboardHeader}>
-          <h1 className={styles.title}>
-            <span className={styles.titleAccent}>Goaltender Statistics</span>
-          </h1>
-        </header>
         <div className={styles.grid}>
-          <LeaderboardCategoryGoalie
-            title="Wins"
-            leaders={goalieLeadersWins}
-            statKey="wins"
-          />
-          <LeaderboardCategoryGoalie
-            title="Save Percentage"
-            leaders={goalieLeadersSavePct}
-            statKey="save_pct"
-          />
-          <LeaderboardCategoryGoalie
-            title="Goals Against Average"
-            leaders={goalieLeadersGAA}
-            statKey="goals_against_avg"
-          />
-          <LeaderboardCategoryGoalie
-            title="Quality Start Percentage"
-            leaders={goalieLeadersQS}
-            statKey="quality_starts_pct"
-          />
+          <header className={styles.leaderboardHeader}>
+            <h1 className={styles.title}>
+              <span className={styles.titleAccent}>Goaltender Statistics</span>
+            </h1>
+          </header>
+          <div className={styles.leaderboards}>
+            <LeaderboardCategoryGoalie
+              title="Wins"
+              leaders={goalieLeadersWins}
+              statKey="wins"
+            />
+            <LeaderboardCategoryGoalie
+              title="Save Percentage"
+              leaders={goalieLeadersSavePct}
+              statKey="save_pct"
+            />
+            <LeaderboardCategoryGoalie
+              title="Goals Against Average"
+              leaders={goalieLeadersGAA}
+              statKey="goals_against_avg"
+            />
+            <LeaderboardCategoryGoalie
+              title="Quality Start Percentage"
+              leaders={goalieLeadersQS}
+              statKey="quality_starts_pct"
+            />
+          </div>
         </div>
       </section>
     </div>
