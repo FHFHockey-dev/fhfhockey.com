@@ -1,0 +1,230 @@
+@use "sass:color";
+@use "styles/vars" as v;
+@use "sass:math";
+
+.goalieShareChart {
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  margin: 0; // Remove margin as it's handled by parent
+
+  .buttonContainer {
+    display: flex;
+    gap: v.$space-xs;
+    margin-bottom: v.$space-lg;
+    flex-wrap: wrap;
+
+    .spanButton {
+      @include v.button-style;
+      background: v.$background-dark;
+      color: v.$text-secondary;
+      border: 1px solid v.$border-primary;
+      padding: v.$space-xs v.$space-sm;
+      font-weight: 500;
+      transition: all v.$transition-duration v.$transition-easing;
+      font-size: v.$font-size-xs;
+      font-family: v.$font-family-accent;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+
+      &:hover:not(.active) {
+        background: v.$background-light;
+        color: v.$text-primary;
+        border-color: v.$border-secondary;
+      }
+
+      &.active {
+        background: v.$primary-color;
+        color: v.$text-button;
+        border-color: v.$primary-color;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .loadingMessage,
+  .noDataMessage {
+    text-align: center;
+    padding: v.$space-xxl;
+    color: v.$text-secondary;
+    font-style: italic;
+    font-size: v.$font-size-md;
+    background: v.$background-dark;
+    border: 1px solid v.$border-primary;
+    border-radius: v.$border-radius-md;
+  }
+
+  .chartsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: v.$space-md;
+    margin-top: v.$space-md;
+  }
+
+  .teamChartCard {
+    @include v.component-wrapper;
+    background: v.$background-dark;
+    border: 1px solid v.$border-primary;
+    padding: v.$space-md;
+    transition: all v.$transition-duration v.$transition-easing;
+    position: relative;
+    overflow: hidden;
+
+    &:hover {
+      transform: translateY(-1px);
+      border-color: v.$border-accent;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 100%;
+      background: v.$primary-color;
+    }
+
+    .teamName {
+      text-align: center;
+      margin: 0 0 v.$space-md 0;
+      font-size: v.$font-size-md;
+      font-weight: 600;
+      color: v.$text-primary;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-family: v.$font-family-accent;
+      padding-bottom: v.$space-xs;
+      border-bottom: 1px solid v.$border-primary;
+      position: relative;
+
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: -1px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 30%;
+        height: 2px;
+        background: v.$primary-color;
+      }
+    }
+
+    .chartContainer {
+      height: 200px;
+      position: relative;
+      background: v.$background-medium;
+      border-radius: v.$border-radius-sm;
+      padding: v.$space-md v.$space-md v.$space-md v.$space-xs;
+      border: 1px solid v.$border-primary;
+    }
+  }
+
+  .dataTable {
+    width: 100%;
+    border-collapse: collapse;
+    background: v.$background-medium;
+    border-radius: v.$border-radius-md;
+    overflow: hidden;
+    box-shadow: v.$box-shadow-default;
+    margin-top: v.$space-lg;
+    border: 1px solid v.$border-primary;
+
+    th,
+    td {
+      padding: v.$space-sm v.$space-md;
+      text-align: left;
+      border-bottom: 1px solid v.$border-primary;
+    }
+
+    th {
+      background: v.$background-dark;
+      font-weight: 600;
+      color: v.$text-primary;
+      font-family: v.$font-family-accent;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: v.$font-size-xs;
+    }
+
+    tbody tr {
+      transition: background-color v.$transition-duration v.$transition-easing;
+
+      &:hover {
+        background: v.$background-light;
+      }
+
+      &:last-child td {
+        border-bottom: none;
+      }
+    }
+
+    td {
+      color: v.$text-secondary;
+      font-size: v.$font-size-sm;
+    }
+  }
+}
+
+// Responsive design to match Stats.module.scss patterns
+@media (max-width: v.$breakpoint-tablet) {
+  .goalieShareChart {
+    padding: v.$space-md;
+
+    .buttonContainer {
+      gap: v.$space-xxs;
+
+      .spanButton {
+        padding: v.$space-xxs v.$space-xs;
+        font-size: v.$font-size-xxs;
+      }
+    }
+
+    .chartsGrid {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: v.$space-sm;
+    }
+
+    .teamChartCard {
+      padding: v.$space-sm;
+
+      .teamName {
+        font-size: v.$font-size-sm;
+        margin-bottom: v.$space-sm;
+      }
+
+      .chartContainer {
+        height: 150px;
+        padding: v.$space-xxs;
+      }
+    }
+
+    .dataTable {
+      font-size: v.$font-size-xs;
+
+      th,
+      td {
+        padding: v.$space-xs v.$space-sm;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .goalieShareChart {
+    padding: v.$space-sm;
+
+    .chartsGrid {
+      grid-template-columns: 1fr;
+      gap: v.$space-xs;
+    }
+
+    .teamChartCard {
+      .chartContainer {
+        height: 120px;
+      }
+    }
+  }
+}

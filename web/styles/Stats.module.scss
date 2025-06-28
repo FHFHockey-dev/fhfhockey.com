@@ -7,12 +7,43 @@
 // =============================================================================
 
 .container {
-  width: 95%;
+  width: 100%;
   max-width: none;
   margin: 0 auto;
-  padding: v.$space-md;
+  padding: v.$space-lg v.$space-md;
   background: v.$background-light;
   min-height: 100vh;
+}
+
+// =============================================================================
+// MAIN LAYOUT WITH SIDEBARS
+// =============================================================================
+
+.mainLayout {
+  display: grid;
+  grid-template-columns: 400px 1fr 400px;
+  gap: v.$space-lg;
+  margin-bottom: v.$space-lg;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.leftSidebar,
+.rightSidebar {
+  @include v.component-wrapper;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  height: fit-content;
+  position: sticky;
+  top: v.$space-md;
+  overflow-y: auto;
+}
+
+.middleContent {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-lg;
+  min-width: 0; // Prevent overflow
 }
 
 // =============================================================================
@@ -22,14 +53,14 @@
 .topRowHero {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: v.$space-lg;
-  padding: v.$space-md 0;
+  justify-content: center; // Changed from space-between to center
+  margin-bottom: 0; // Remove margin as it's handled by parent gap
+  padding: 0; // Remove padding
 }
 
 .heroSection {
   @include v.component-wrapper;
-  width: 50%;
+  width: 100%; // Changed from 50% to 100%
   padding: v.$space-lg v.$space-md;
   text-align: center;
   background: v.$background-medium;
@@ -64,13 +95,10 @@
 // =============================================================================
 
 .quickStatsSection {
-  @include v.component-wrapper;
-  width: 50%;
+  width: 100%; // Changed from 50% to 100%
   height: 100%;
   margin: 0 auto;
-  padding: v.$space-md;
   background: v.$background-medium;
-  border: 1px solid v.$border-secondary;
 }
 
 .sectionTitle {
@@ -248,17 +276,29 @@
 // =============================================================================
 // COMPACT TEAMS GRID WITH DYNAMIC GRADIENT BACKGROUND
 // =============================================================================
+
+.teamSelectheader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: v.$space-md;
+}
+
 .teamsGridContainer {
   display: block;
   margin-bottom: v.$space-lg;
   position: relative;
   box-sizing: border-box;
+  height: 100%;
+  width: 100%;
 }
 
 .teamsSection {
   border: 2px solid v.$border-secondary;
   border-radius: v.$border-radius-md;
   padding: v.$space-md;
+  height: 100%;
 
   background: v.$background-medium;
   margin: 0;
@@ -439,10 +479,11 @@
 .teamList {
   display: grid;
   grid-template-columns: repeat(16, 1fr);
-  gap: v.$space-sm;
+  gap: v.$space-md;
   max-width: 100%;
   position: relative;
   z-index: 2;
+  height: 100%;
 }
 
 .teamListItem {
@@ -522,40 +563,25 @@
 // COMPACT LEADERBOARDS
 // =============================================================================
 
-.leaderboardsContainer {
-  @include v.component-wrapper;
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-xxs;
-}
-
 .leaderboards {
   display: flex;
-  flex-direction: row;
-  gap: v.$space-md;
-  padding: v.$space-md;
+  flex-direction: column; // Changed from row to column for sidebar layout
+  padding: 0; // Remove padding as it's handled by sidebar
   position: relative;
+  width: 100%; // Ensure it takes full width in sidebar
 
   &::before {
-    content: "";
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    border-radius: v.$border-radius-md;
-    background: rgba(0, 0, 0, 0.1);
-    z-index: -1;
+    // Remove the before pseudo-element as it's not needed in sidebar
+    display: none;
   }
 }
 
 .leaderboardHeader {
   padding: v.$space-md v.$space-lg;
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: v.$space-md;
 }
 
 .title {
@@ -571,19 +597,17 @@
 .seasonBadge {
   background: v.$background-dark;
   color: v.$primary-color;
-  padding: v.$space-xs v.$space-md;
-  border-radius: v.$border-radius-md;
+  padding: v.$space-xxs v.$space-sm;
+  border-radius: v.$border-radius-sm;
   font-size: v.$font-size-xs;
   font-weight: 600;
   letter-spacing: 0.05em;
   border: 1px solid v.$border-accent;
-  font-family: v.$font-family-accent;
+  font-family: v.$font-family-condensed;
 }
 
 .grid {
-  display: flex;
-  flex-direction: column;
-  gap: v.$space-md;
+  // Remove this section as grids are now handled by sidebar classes
 }
 
 // =============================================================================
@@ -591,13 +615,13 @@
 // =============================================================================
 
 .card {
-  @include v.component-wrapper;
   background: v.$background-medium;
-  border: 1px solid v.$border-secondary;
-  padding: v.$space-md;
+  padding: v.$space-xxs v.$space-md v.$space-md v.$space-md;
   transition: all 0.2s ease;
   position: relative;
   height: fit-content;
+  width: 100%;
+  border-bottom: 1px solid v.$border-primary;
 
   &:hover {
     transform: translateY(-1px);
@@ -628,9 +652,9 @@
     img {
       background-color: v.$background-medium;
       width: 100%;
-      height: auto;
-      border-radius: v.$border-radius-sm;
-      border: 1px solid v.$border-primary;
+      height: 100%;
+      border-radius: 0;
+      border-right: 1px solid v.$border-primary;
       object-fit: cover;
     }
   }
@@ -641,6 +665,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  margin-right: v.$space-sm;
 }
 
 .topRow {
@@ -649,11 +674,10 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: space-evenly;
-  gap: v.$space-xxs;
 }
 
 .cardTitle {
-  margin: 0 0 v.$space-md 0;
+  margin: v.$space-sm 0 v.$space-xs 0;
   font-size: v.$font-size-md;
   color: v.$text-primary;
   font-weight: 600;
@@ -683,7 +707,7 @@
   display: flex;
   flex-direction: column;
   gap: v.$space-xs;
-  padding: v.$space-sm;
+  padding: 0;
   margin-bottom: v.$space-xs;
   background: v.$background-dark;
   border: 1px solid v.$border-primary;
@@ -855,10 +879,41 @@
 }
 
 // =============================================================================
-// RESPONSIVE DESIGN
+// GOALIE CHART SECTION
+// =============================================================================
+
+.goalieChartSection {
+  @include v.component-wrapper;
+  padding: v.$space-lg;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+
+  .sectionTitle {
+    margin-bottom: v.$space-md;
+  }
+}
+
+// =============================================================================
+// RESPONSIVE DESIGN UPDATES
 // =============================================================================
 
 @media (max-width: v.$breakpoint-tablet) {
+  .mainLayout {
+    grid-template-columns: 1fr;
+    gap: v.$space-md;
+  }
+
+  .leftSidebar,
+  .rightSidebar {
+    position: static;
+    max-height: none;
+    order: 2; // Place sidebars after middle content on mobile
+  }
+
+  .middleContent {
+    order: 1;
+  }
+
   .container {
     width: 98%;
     padding: v.$space-sm;
@@ -906,6 +961,10 @@
 }
 
 @media (max-width: 480px) {
+  .mainLayout {
+    gap: v.$space-sm;
+  }
+
   .quickStatsGrid {
     grid-template-columns: 1fr;
   }
