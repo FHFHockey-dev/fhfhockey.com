@@ -129,35 +129,45 @@ const LeaderboardCategory: React.FC<LeaderboardCategoryProps> = ({
             : styles.leaderRow;
         return (
           <div key={player.player_id} className={rowClasses}>
-            <div className={styles.topRow}>
-              <Link href={`/stats/player/${player.player_id}`}>
-                <img
-                  src={
-                    player.image_url ||
-                    `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${player.player_id}.jpg`
-                  }
-                  alt={player.fullName}
-                  className={styles.playerHeadshot}
-                  style={{ cursor: "pointer" }}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              </Link>
-              <div className={styles.leaderMain}>
-                <div className={styles.nameValueRow}>
-                  <div>
-                    <div className={styles.leaderName}>{player.fullName}</div>
-                    <div className={styles.playerDetails}>
-                      {player.current_team_abbreviation} &middot; #
-                      {player.sweater_number} &middot; {player.position}
+            <div className={styles.cardContainer}>
+              <div className={styles.cardLeft}>
+                <Link href={`/stats/player/${player.player_id}`}>
+                  <img
+                    src={
+                      player.image_url ||
+                      `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${player.player_id}.jpg`
+                    }
+                    alt={player.fullName}
+                    className={styles.playerHeadshot}
+                    style={{ cursor: "pointer" }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                </Link>
+              </div>
+              <div className={styles.cardRight}>
+                <div className={styles.topRow}>
+                  <div className={styles.leaderMain}>
+                    <div className={styles.nameValueRow}>
+                      <div className={styles.leaderNameDetails}>
+                        <div className={styles.leaderName}>
+                          {player.fullName}
+                        </div>
+                        <div className={styles.playerDetails}>
+                          {player.current_team_abbreviation} &middot; #
+                          {player.sweater_number} &middot; {player.position}
+                        </div>
+                      </div>
+                      <div className={styles.leaderValue}>
+                        {player[statKey]}
+                      </div>
                     </div>
                   </div>
-                  <div className={styles.leaderValue}>{player[statKey]}</div>
+                  {bar && <div className={styles.leaderBar}>{bar}</div>}
                 </div>
               </div>
             </div>
-            {bar && <div className={styles.leaderBar}>{bar}</div>}
           </div>
         );
       })}

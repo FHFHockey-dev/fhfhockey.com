@@ -238,18 +238,27 @@ export function TeamDashboard({
         if (standingsError) throw standingsError;
 
         // Fetch 5v5 advanced stats and calculate season averages weighted by games played
-        // Use current season date ranges for filtering since nst_team_5v5 doesn't have season_id
-        if (
-          !currentSeason?.regularSeasonStartDate ||
-          !currentSeason?.regularSeasonEndDate
-        ) {
-          throw new Error("Current season date information not available");
-        }
+        // Use fallback date ranges if current season dates are not available
+        let startDate: string;
+        let endDate: string;
 
-        const startDate = currentSeason.regularSeasonStartDate.split("T")[0];
-        const endDate = includePlayoffs
-          ? currentSeason.seasonEndDate.split("T")[0]
-          : currentSeason.regularSeasonEndDate.split("T")[0];
+        if (
+          currentSeason?.regularSeasonStartDate &&
+          currentSeason?.regularSeasonEndDate
+        ) {
+          startDate = currentSeason.regularSeasonStartDate.split("T")[0];
+          endDate =
+            includePlayoffs && currentSeason?.seasonEndDate
+              ? currentSeason.seasonEndDate.split("T")[0]
+              : currentSeason.regularSeasonEndDate.split("T")[0];
+        } else {
+          // Fallback date ranges based on season ID
+          const seasonYear = parseInt(effectiveSeasonId.slice(0, 4));
+          startDate = `${seasonYear}-10-01`; // Typical season start
+          endDate = includePlayoffs
+            ? `${seasonYear + 1}-06-30` // End of playoffs
+            : `${seasonYear + 1}-04-30`; // End of regular season
+        }
 
         const { data: stats5v5, error: stats5v5Error } = await supabase
           .from("nst_team_5v5")
@@ -433,11 +442,10 @@ export function TeamDashboard({
         const franchiseId = teamInfo?.franchiseId;
         if (franchiseId) {
           try {
-            // Calculate date range for current season
+            // Calculate date range for current season with fallbacks
             const today = new Date().toISOString().split("T")[0];
             const seasonStart =
-              currentSeason?.regularSeasonStartDate?.split("T")[0] ||
-              "2024-10-04";
+              currentSeason?.regularSeasonStartDate?.split("T")[0] || startDate;
 
             // Fetch team schedule to get total games played
             const scheduleUrl = `https://api-web.nhle.com/v1/club-schedule-season/${teamAbbrev}/${effectiveSeasonId}`;
@@ -621,7 +629,7 @@ export function TeamDashboard({
 
           if (allStandingsError) throw allStandingsError;
 
-          // Get all teams' advanced stats
+          // Get all teams' advanced stats using the same date range logic
           const { data: allTeamsAdvanced, error: allAdvancedError } =
             await supabase
               .from("nst_team_5v5")
@@ -1216,7 +1224,7 @@ export function TeamDashboard({
 
   return (
     <div
-      className={styles.container}
+      className={`${styles.teamDashboard} ${styles.container}`}
       style={
         {
           "--team-primary-color": teamInfo?.primaryColor || "#1976d2",
@@ -1226,840 +1234,874 @@ export function TeamDashboard({
         } as React.CSSProperties
       }
     >
-      {/* Team Stats Card */}
-      <div className={styles.teamStatisticsCard}>
-        <div className={styles.tsCardHeader}>
-          <h3>Team Leaders</h3>
-        </div>
-        <div className={styles.tsCardContent}>
-          {/* Team Leaders Section - Use separate component with headshots */}
-          <TeamLeaders teamAbbrev={teamAbbrev} seasonId={effectiveSeasonId} />
-        </div>
-      </div>
-
-      {/* Advanced Stats Card */}
-      <div className={`${styles.card} ${styles.advancedAnalyticsCard}`}>
-        <div className={styles.cardHeader}>
-          <h3>
-            Advanced Analytics
-            <span
-              className={styles.infoIcon}
-              title={`5v5 ${includePlayoffs ? "season + playoffs" : "regular season"} averages based on ${gameRecordsCount} game records. Data includes: Expected Goals For/Against, Corsi, HDCF, PDO, and shooting percentages at even strength.`}
-            >
-              &#9432;
-            </span>
-          </h3>
-          <div className={styles.cardToggle}>
-            <button
-              className={`${styles.toggleButton} ${!includePlayoffs ? styles.active : ""}`}
-              onClick={() => setIncludePlayoffs(false)}
-            >
-              Exhibition
-            </button>
-            <button
-              className={`${styles.toggleButton} ${includePlayoffs ? styles.active : ""}`}
-              onClick={() => setIncludePlayoffs(true)}
-            >
-              Playoffs
-            </button>
+      {/* Left Sidebar - Team Leaders */}
+      <div className={styles.leftSidebar}>
+        <div className={styles.teamStatisticsCard}>
+          <div className={styles.cardHeader}>
+            <h3>Team Leaders</h3>
+          </div>
+          <div className={styles.cardContent}>
+            {/* Team Leaders Section - Use separate component with headshots */}
+            <TeamLeaders teamAbbrev={teamAbbrev} seasonId={effectiveSeasonId} />
           </div>
         </div>
-        <div className={styles.cardContent}>
-          {teamStats ? (
-            <div className={styles.statsGrid}>
-              <div className={styles.statItem}>
-                <span
-                  className={`${styles.statValue} ${getRankingBasedColor(getStatRank("cf_pct"))}`}
-                >
-                  {formatPercentage(teamStats.cf_pct)}
-                </span>
-                <span className={styles.statLabel}>Corsi For %</span>
-              </div>
-              <div className={styles.statItem}>
-                <span
-                  className={`${styles.statValue} ${getRankingBasedColor(getStatRank("xgf_pct"))}`}
-                >
-                  {formatPercentage(teamStats.xgf_pct)}
-                </span>
-                <span className={styles.statLabel}>xGoals For %</span>
-              </div>
-              <div className={styles.statItem}>
-                <span
-                  className={`${styles.statValue} ${getRankingBasedColor(getStatRank("hdcf_pct"))}`}
-                >
-                  {formatPercentage(teamStats.hdcf_pct)}
-                </span>
-                <span className={styles.statLabel}>HDCF %</span>
-              </div>
-              <div className={styles.statItem}>
-                <span
-                  className={`${styles.statValue} ${getRankingBasedColor(getStatRank("pdo"))}`}
-                >
-                  {formatDecimal(teamStats.pdo, 3)}
-                </span>
-                <span className={styles.statLabel}>PDO</span>
-              </div>
-              <div className={styles.statItem}>
-                <span
-                  className={`${styles.statValue} ${getRankingBasedColor(getStatRank("save_pct_5v5"))}`}
-                >
-                  {formatPercentage(teamStats.save_pct_5v5)}
-                </span>
-                <span className={styles.statLabel}>5v5 Save %</span>
-              </div>
-              <div className={styles.statItem}>
-                <span
-                  className={`${styles.statValue} ${getRankingBasedColor(getStatRank("shooting_pct_5v5"))}`}
-                >
-                  {formatPercentage(teamStats.shooting_pct_5v5)}
-                </span>
-                <span className={styles.statLabel}>5v5 Shooting %</span>
-              </div>
-              <div className={styles.statItem}>
-                <span
-                  className={`${styles.statValue} ${getRankingBasedColor(getStatRank("scf_pct"))}`}
-                >
-                  {(teamStats.scf_pct * 100).toFixed(2) || 0}%
-                </span>
-                <span className={styles.statLabel}>SCF %</span>
-              </div>
-              <div className={styles.statItem}>
-                <div className={styles.xgContainer}>
-                  <div className={styles.xgStat}>
-                    <span
-                      className={`${styles.statValue} ${getRankingBasedColor(getStatRank("xgf"))}`}
-                    >
-                      {teamStats.xgf.toFixed(2)}
-                    </span>
-                    <span className={styles.statLabel}>AVG. xGF</span>
-                  </div>
-                  <div className={styles.xgStat}>
-                    <span
-                      className={`${styles.statValue} ${getRankingBasedColor(getStatRank("xga"))}`}
-                    >
-                      {teamStats.xga.toFixed(2)}
-                    </span>
-                    <span className={styles.statLabel}>AVG. xGA</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className={styles.noData}>No advanced stats available</div>
-          )}
-        </div>
       </div>
 
-      {/* Enhanced Goaltending Card */}
-      <div className={`${styles.card} ${styles.goaltendingCard}`}>
-        <div className={styles.cardHeader}>
-          <h3>Goaltending</h3>
-          <div className={styles.cardIcon}></div>
-        </div>
-        <div className={styles.cardContent}>
-          {goaltendingStats ? (
-            <>
-              <div className={styles.goaltendingOverview}>
-                <div className={styles.goaltendingGrid}>
-                  <div className={styles.goaltendingStat}>
-                    <span
-                      className={`${styles.statValue} ${getRankColor((goaltendingStats.save_pct || 0) * 100, { good: 91.5, poor: 89.5 })}`}
-                    >
-                      {formatPercentage(goaltendingStats.save_pct)}
-                    </span>
-                    <span className={styles.statLabel}>Team SV%</span>
-                  </div>
-                  <div className={styles.goaltendingStat}>
-                    <span
-                      className={`${styles.statValue} ${getRankColor(goaltendingStats.gaa || 0, { good: 2.75, poor: 3.25 }, false)}`}
-                    >
-                      {formatDecimal(goaltendingStats.gaa, 2)}
-                    </span>
-                    <span className={styles.statLabel}>Team GAA</span>
-                  </div>
-                  <div className={styles.goaltendingStat}>
-                    <span className={styles.statValue}>
-                      {goaltendingStats.wins}-{goaltendingStats.losses}
-                    </span>
-                    <span className={styles.statLabel}>W-L Record</span>
-                  </div>
-                  <div className={styles.goaltendingStat}>
-                    <span className={styles.statValue}>
-                      {goaltendingStats.shutouts}
-                    </span>
-                    <span className={styles.statLabel}>Shutouts</span>
-                  </div>
-                  <div className={styles.goaltendingStat}>
-                    <span className={styles.statValue}>
-                      {goaltendingStats.quality_starts}
-                    </span>
-                    <span className={styles.statLabel}>Quality Starts</span>
-                  </div>
-                  <div className={styles.goaltendingStat}>
-                    <span className={styles.statValue}>
-                      {goaltendingStats.goalies.length}
-                    </span>
-                    <span className={styles.statLabel}>Goalies Used</span>
-                  </div>
+      {/* Main Column - Analytics, Momentum, and Rankings stacked vertically */}
+      <div className={styles.mainColumn}>
+        {/* Enhanced Recent Form & Momentum Card - TOP */}
+        <div className={styles.enhancedMomentumCard}>
+          <div className={styles.cardHeader}>
+            <h3>Recent Form & Momentum</h3>
+            <div className={styles.cardIcon}></div>
+          </div>
+          <div className={styles.cardContent}>
+            {standingsData && recentPerformance && effectiveSeasonId ? (
+              <>
+                {/* Game-by-Game Timeline */}
+                <div className={styles.timelineSection}>
+                  <GameByGameTimeline
+                    teamId={teamId}
+                    teamAbbrev={teamAbbrev}
+                    seasonId={effectiveSeasonId}
+                    maxGames={10}
+                  />
                 </div>
-              </div>
 
-              {/* Individual Goalie Cards */}
-              <div className={styles.individualGoalies}>
-                <h4 className={styles.sectionTitle}>Individual Performance</h4>
-                <div className={styles.goalieCardsGrid}>
-                  {goaltendingStats.goalies.slice(0, 4).map((goalie, index) => (
-                    <div key={goalie.playerId} className={styles.goalieCard}>
-                      <div className={styles.goalieCardHeader}>
-                        <span className={styles.goalieName}>
-                          {goalie.goalieFullName}
+                {/* Advanced L10 Metrics Dashboard */}
+                <div className={styles.metricsSection}>
+                  <AdvancedL10Metrics
+                    teamId={teamId}
+                    teamAbbrev={teamAbbrev}
+                    seasonId={effectiveSeasonId}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className={styles.noData}>No momentum data available</div>
+            )}
+          </div>
+        </div>
+
+        {/* Enhanced Standings Card with League Rankings - MIDDLE */}
+        <div className={styles.teamRankingsCard}>
+          <div className={styles.cardHeader}>
+            <h3>Team Statistics & Rankings</h3>
+            <div className={styles.cardIcon}></div>
+          </div>
+          <div className={styles.cardContent}>
+            {standingsData ? (
+              <>
+                {/* Combined Team Identity & Statistics with Rankings */}
+                <div className={styles.combinedTeamStatsCard}>
+                  {/* Team Identity & Position */}
+                  <div className={styles.teamIdentity}>
+                    <div className={styles.positionSummary}>
+                      <div className={styles.positionStat}>
+                        <span className={styles.positionValue}>
+                          {standingsData.league_sequence}
+                          {standingsData.league_sequence === 1
+                            ? "st"
+                            : standingsData.league_sequence === 2
+                              ? "nd"
+                              : standingsData.league_sequence === 3
+                                ? "rd"
+                                : "th"}
                         </span>
-                        <span
-                          className={`${styles.goalieRole} ${index === 0 ? styles.starter : index === 1 ? styles.backup : styles.reserve}`}
-                        >
-                          {index === 0
-                            ? "STARTER"
-                            : index === 1
-                              ? "BACKUP"
-                              : index === 2
-                                ? "THIRD"
-                                : "R"}
+                        <span className={styles.positionLabel}>NHL</span>
+                      </div>
+                      <div className={styles.positionStat}>
+                        <span className={styles.positionValue}>
+                          {standingsData.conference_sequence}
+                          {standingsData.conference_sequence === 1
+                            ? "st"
+                            : standingsData.conference_sequence === 2
+                              ? "nd"
+                              : standingsData.conference_sequence === 3
+                                ? "rd"
+                                : "th"}
+                        </span>
+                        <span className={styles.positionLabel}>
+                          {standingsData.conference_name}
                         </span>
                       </div>
-
-                      {/* Workload Distribution Bar */}
-                      <div className={styles.workloadSection}>
-                        <div className={styles.workloadBar}>
-                          <div
-                            className={styles.workloadFill}
-                            style={{
-                              width: `${Math.min(goalie.workloadShare, 100)}%`,
-                              backgroundColor: (() => {
-                                const goalieColors = [
-                                  "var(--team-primary-color)",
-                                  "var(--team-secondary-color)",
-                                  "var(--team-accent-color)",
-                                  "#6c757d",
-                                  "#dc3545",
-                                  "#28a745"
-                                ];
-                                return goalieColors[index] || "#6c757d";
-                              })()
-                            }}
-                          />
-                        </div>
-                        <div className={styles.workloadLabel}>
-                          {formatDecimal(goalie.workloadShare, 1)}% of starts
-                        </div>
+                      <div className={styles.positionStat}>
+                        <span className={styles.positionValue}>
+                          {standingsData.division_sequence}
+                          {standingsData.division_sequence === 1
+                            ? "st"
+                            : standingsData.division_sequence === 2
+                              ? "nd"
+                              : standingsData.division_sequence === 3
+                                ? "rd"
+                                : "th"}
+                        </span>
+                        <span className={styles.positionLabel}>
+                          {standingsData.division_name}
+                        </span>
                       </div>
+                    </div>
+                  </div>
 
-                      <div className={styles.goalieStatsGrid}>
-                        <div className={styles.goalieStatItem}>
-                          <span
-                            className={`${styles.goalieStatValue} ${getRankColor((goalie.savePct || 0) * 100, { good: 91.5, poor: 89.5 })}`}
-                          >
-                            {formatPercentage(goalie.savePct)}
-                          </span>
-                          <span className={styles.goalieStatLabel}>SV%</span>
+                  {/* Team Statistics with Rankings */}
+                  {standingsData && specialTeamsStats && leagueRankings ? (
+                    <div className={styles.teamStatsWithRankings}>
+                      <div className={styles.statsRankingsGrid}>
+                        {/* Core Team Stats */}
+                        <div className={styles.statWithRank}>
+                          <div className={styles.statValueRank}>
+                            <span
+                              className={`${styles.statValue} ${getRankingBasedColor(getStatRank("points"))}`}
+                            >
+                              {standingsData.points}
+                            </span>
+                            <span
+                              className={`${styles.rankValue} ${getRankingColor(leagueRankings.points_rank)}`}
+                            >
+                              #{leagueRankings.points_rank}
+                            </span>
+                          </div>
+                          <span className={styles.statLabel}>Points</span>
                         </div>
-                        <div className={styles.goalieStatItem}>
-                          <span
-                            className={`${styles.goalieStatValue} ${getRankColor(goalie.gaa || 0, { good: 2.75, poor: 3.25 }, false)}`}
-                          >
-                            {formatDecimal(goalie.gaa, 2)}
-                          </span>
-                          <span className={styles.goalieStatLabel}>GAA</span>
+
+                        <div className={styles.statWithRank}>
+                          <div className={styles.statValueRank}>
+                            <span
+                              className={`${styles.statValue} ${getRankingBasedColor(getStatRank("point_pct"))}`}
+                            >
+                              {formatPercentage(standingsData.point_pctg)}
+                            </span>
+                            <span
+                              className={`${styles.rankValue} ${getRankingColor(leagueRankings.point_pct_rank)}`}
+                            >
+                              #{leagueRankings.point_pct_rank}
+                            </span>
+                          </div>
+                          <span className={styles.statLabel}>PT%</span>
                         </div>
-                        <div className={styles.goalieStatItem}>
-                          <span className={styles.goalieStatValue}>
-                            {goalie.gamesPlayed}
-                          </span>
-                          <span className={styles.goalieStatLabel}>GP</span>
+
+                        <div className={styles.statWithRank}>
+                          <div className={styles.statValueRank}>
+                            <span
+                              className={`${styles.statValue} ${getRankingBasedColor(getStatRank("goals_per_game"))}`}
+                            >
+                              {(
+                                standingsData.goal_for /
+                                standingsData.games_played
+                              ).toFixed(2)}
+                            </span>
+                            <span
+                              className={`${styles.rankValue} ${getRankingColor(leagueRankings.goals_per_game_rank)}`}
+                            >
+                              #{leagueRankings.goals_per_game_rank}
+                            </span>
+                          </div>
+                          <span className={styles.statLabel}>GF/GP</span>
                         </div>
-                        <div className={styles.goalieStatItem}>
-                          <span className={styles.goalieStatValue}>
-                            {goalie.gamesStarted}
-                          </span>
-                          <span className={styles.goalieStatLabel}>GS</span>
+
+                        <div className={styles.statWithRank}>
+                          <div className={styles.statValueRank}>
+                            <span
+                              className={`${styles.statValue} ${getRankingBasedColor(getStatRank("goals_against_per_game"))}`}
+                            >
+                              {(
+                                standingsData.goal_against /
+                                standingsData.games_played
+                              ).toFixed(2)}
+                            </span>
+                            <span
+                              className={`${styles.rankValue} ${getRankingColor(leagueRankings.goals_against_per_game_rank)}`}
+                            >
+                              #{leagueRankings.goals_against_per_game_rank}
+                            </span>
+                          </div>
+                          <span className={styles.statLabel}>GA/GP</span>
                         </div>
-                        <div className={styles.goalieStatItem}>
-                          <span className={styles.goalieStatValue}>
-                            {goalie.qualityStarts || 0}
-                          </span>
-                          <span className={styles.goalieStatLabel}>QS</span>
+
+                        <div className={styles.statWithRank}>
+                          <div className={styles.statValueRank}>
+                            <span
+                              className={`${styles.statValue} ${getRankingBasedColor(getStatRank("goal_diff"))}`}
+                            >
+                              {standingsData.goal_for >
+                              standingsData.goal_against
+                                ? "+"
+                                : ""}
+                              {standingsData.goal_for -
+                                standingsData.goal_against}
+                            </span>
+                            <span
+                              className={`${styles.rankValue} ${getRankingColor(leagueRankings.goal_diff_rank)}`}
+                            >
+                              #{leagueRankings.goal_diff_rank}
+                            </span>
+                          </div>
+                          <span className={styles.statLabel}>Goal Diff</span>
                         </div>
-                        <div className={styles.goalieStatItem}>
-                          <span className={styles.goalieStatValue}>
-                            {goalie.qualityStartsPct
-                              ? formatPercentage(goalie.qualityStartsPct)
-                              : "N/A"}
-                          </span>
-                          <span className={styles.goalieStatLabel}>QS%</span>
+
+                        <div className={styles.statWithRank}>
+                          <div className={styles.statValueRank}>
+                            <span className={styles.statValue}>
+                              {standingsData.wins}-{standingsData.losses}-
+                              {standingsData.ot_losses}
+                            </span>
+                          </div>
+                          <span className={styles.statLabel}>Record</span>
                         </div>
-                        <div className={styles.goalieStatItem}>
-                          <span className={styles.goalieStatValue}>
-                            {goalie.wins}-{goalie.losses}
-                          </span>
-                          <span className={styles.goalieStatLabel}>W-L</span>
+
+                        {/* Special Teams Stats */}
+                        <div className={styles.statWithRank}>
+                          <div className={styles.statValueRank}>
+                            <span
+                              className={`${styles.statValue} ${getRankingBasedColor(getStatRank("power_play_pct"))}`}
+                            >
+                              {formatPercentage(
+                                specialTeamsStats.power_play_pct
+                              )}
+                            </span>
+                            <span
+                              className={`${styles.rankValue} ${getRankingColor(leagueRankings.power_play_rank)}`}
+                            >
+                              #{leagueRankings.power_play_rank}
+                            </span>
+                          </div>
+                          <span className={styles.statLabel}>Power Play %</span>
                         </div>
-                        <div className={styles.goalieStatItem}>
-                          <span className={styles.goalieStatValue}>
-                            {goalie.shutouts}
+
+                        <div className={styles.statWithRank}>
+                          <div className={styles.statValueRank}>
+                            <span
+                              className={`${styles.statValue} ${getRankingBasedColor(getStatRank("penalty_kill_pct"))}`}
+                            >
+                              {formatPercentage(
+                                specialTeamsStats.penalty_kill_pct
+                              )}
+                            </span>
+                            <span
+                              className={`${styles.rankValue} ${getRankingColor(leagueRankings.penalty_kill_rank)}`}
+                            >
+                              #{leagueRankings.penalty_kill_rank}
+                            </span>
+                          </div>
+                          <span className={styles.statLabel}>
+                            Penalty Kill %
                           </span>
-                          <span className={styles.goalieStatLabel}>SO</span>
+                        </div>
+
+                        <div className={styles.statWithRank}>
+                          <div className={styles.statValueRank}>
+                            <span
+                              className={`${styles.statValue} ${getRankingBasedColor(getStatRank("pp_opportunities"))}`}
+                            >
+                              {formatDecimal(
+                                specialTeamsStats.pp_opportunities_per_game,
+                                1
+                              )}
+                            </span>
+                            <span
+                              className={`${styles.rankValue} ${getRankingColor(leagueRankings.pp_opportunities_rank)}`}
+                            >
+                              #{leagueRankings.pp_opportunities_rank}
+                            </span>
+                          </div>
+                          <span className={styles.statLabel}>PP Opps/Game</span>
+                        </div>
+
+                        <div className={styles.statWithRank}>
+                          <div className={styles.statValueRank}>
+                            <span
+                              className={`${styles.statValue} ${getRankingBasedColor(getStatRank("pp_goals_for"))}`}
+                            >
+                              {specialTeamsStats.pp_goals_for}
+                            </span>
+                            <span
+                              className={`${styles.rankValue} ${getRankingColor(leagueRankings.pp_goals_for_rank)}`}
+                            >
+                              #{leagueRankings.pp_goals_for_rank}
+                            </span>
+                          </div>
+                          <span className={styles.statLabel}>PP Goals For</span>
+                        </div>
+
+                        <div className={styles.statWithRank}>
+                          <div className={styles.statValueRank}>
+                            <span
+                              className={`${styles.statValue} ${getRankingBasedColor(getStatRank("pp_goals_against"))}`}
+                            >
+                              {specialTeamsStats.pp_goals_against}
+                            </span>
+                            <span
+                              className={`${styles.rankValue} ${getRankingColor(leagueRankings.pp_goals_against_rank)}`}
+                            >
+                              #{leagueRankings.pp_goals_against_rank}
+                            </span>
+                          </div>
+                          <span className={styles.statLabel}>PPG Against</span>
+                        </div>
+
+                        <div className={styles.statWithRank}>
+                          <div className={styles.statValueRank}>
+                            <span
+                              className={`${styles.statValue} ${getRankingBasedColor(getStatRank("sh_goals_for"))}`}
+                            >
+                              {specialTeamsStats.sh_goals_for}
+                            </span>
+                            <span
+                              className={`${styles.rankValue} ${getRankingColor(leagueRankings.sh_goals_for_rank)}`}
+                            >
+                              #{leagueRankings.sh_goals_for_rank}
+                            </span>
+                          </div>
+                          <span className={styles.statLabel}>SH Goals For</span>
                         </div>
                       </div>
                     </div>
-                  ))}
+                  ) : null}
+                </div>
+
+                {/* League Rankings Grid */}
+                {leagueRankings ? (
+                  <div className={styles.leagueRankings}>
+                    <div className={styles.rankingsGrid}>
+                      <div className={styles.rankingCategory}>
+                        <div className={styles.rankingTitle}>
+                          <h5 className={styles.categoryTitle}>OFFENSIVE</h5>
+                        </div>
+                        <div className={styles.rankingItemList}>
+                          <div className={styles.rankingItem}>
+                            <span className={styles.rankingLabel}>G/GP</span>
+                            <span
+                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.goals_per_game_rank)}`}
+                            >
+                              #{leagueRankings.goals_per_game_rank}
+                            </span>
+                          </div>
+                          <div className={styles.rankingItem}>
+                            <span className={styles.rankingLabel}>SOG/GP</span>
+                            <span
+                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.shots_per_game_rank)}`}
+                            >
+                              #{leagueRankings.shots_per_game_rank}
+                            </span>
+                          </div>
+                          <div className={styles.rankingItem}>
+                            <span className={styles.rankingLabel}>5v5 S%</span>
+                            <span
+                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.shooting_pct_5v5_rank)}`}
+                            >
+                              #{leagueRankings.shooting_pct_5v5_rank}
+                            </span>
+                          </div>
+                          <div className={styles.rankingItem}>
+                            <span className={styles.rankingLabel}>xG%</span>
+                            <span
+                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.xgf_pct_rank)}`}
+                            >
+                              #{leagueRankings.xgf_pct_rank}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={styles.rankingCategory}>
+                        <div className={styles.rankingTitle}>
+                          <h5 className={styles.categoryTitle}>DEFENSIVE</h5>
+                        </div>
+                        <div className={styles.rankingItemList}>
+                          <div className={styles.rankingItem}>
+                            <span className={styles.rankingLabel}>GA/GP</span>
+                            <span
+                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.goals_against_per_game_rank)}`}
+                            >
+                              #{leagueRankings.goals_against_per_game_rank}
+                            </span>
+                          </div>
+                          <div className={styles.rankingItem}>
+                            <span className={styles.rankingLabel}>SA/GP</span>
+                            <span
+                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.shots_against_per_game_rank)}`}
+                            >
+                              #{leagueRankings.shots_against_per_game_rank}
+                            </span>
+                          </div>
+                          <div className={styles.rankingItem}>
+                            <span className={styles.rankingLabel}>5v5 SV%</span>
+                            <span
+                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.save_pct_5v5_rank)}`}
+                            >
+                              #{leagueRankings.save_pct_5v5_rank}
+                            </span>
+                          </div>
+                          <div className={styles.rankingItem}>
+                            <span className={styles.rankingLabel}>HDCF%</span>
+                            <span
+                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.hdcf_pct_rank)}`}
+                            >
+                              #{leagueRankings.hdcf_pct_rank}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={styles.rankingCategory}>
+                        <div className={styles.rankingTitle}>
+                          <h5 className={styles.categoryTitle}>
+                            SPECIAL TEAMS
+                          </h5>
+                        </div>
+                        <div className={styles.rankingItemList}>
+                          <div className={styles.rankingItem}>
+                            <span className={styles.rankingLabel}>PP%</span>
+                            <span
+                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.power_play_rank)}`}
+                            >
+                              #{leagueRankings.power_play_rank}
+                            </span>
+                          </div>
+                          <div className={styles.rankingItem}>
+                            <span className={styles.rankingLabel}>PK%</span>
+                            <span
+                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.penalty_kill_rank)}`}
+                            >
+                              #{leagueRankings.penalty_kill_rank}
+                            </span>
+                          </div>
+                          <div className={styles.rankingItem}>
+                            <span className={styles.rankingLabel}>FO%</span>
+                            <span
+                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.faceoff_win_rank)}`}
+                            >
+                              #{leagueRankings.faceoff_win_rank}
+                            </span>
+                          </div>
+                          <div className={styles.rankingItem}>
+                            <span className={styles.rankingLabel}>CF%</span>
+                            <span
+                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.cf_pct_rank)}`}
+                            >
+                              #{leagueRankings.cf_pct_rank}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={styles.rankingCategory}>
+                        <div className={styles.rankingTitle}>
+                          <h5 className={styles.categoryTitle}>SITUATIONAL</h5>
+                        </div>
+                        <div className={styles.rankingItemList}>
+                          <div className={styles.rankingItem}>
+                            <span className={styles.rankingLabel}>Home</span>
+                            <span
+                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.home_record_rank)}`}
+                            >
+                              #{leagueRankings.home_record_rank}
+                            </span>
+                          </div>
+                          <div className={styles.rankingItem}>
+                            <span className={styles.rankingLabel}>Road</span>
+                            <span
+                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.road_record_rank)}`}
+                            >
+                              #{leagueRankings.road_record_rank}
+                            </span>
+                          </div>
+                          <div className={styles.rankingItem}>
+                            <span className={styles.rankingLabel}>L10</span>
+                            <span
+                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.l10_rank)}`}
+                            >
+                              #{leagueRankings.l10_rank}
+                            </span>
+                          </div>
+                          <div className={styles.rankingItem}>
+                            <span className={styles.rankingLabel}>PDO</span>
+                            <span
+                              className={`${styles.rankingValue} ${getRankingColor(leagueRankings.pdo_rank)}`}
+                            >
+                              #{leagueRankings.pdo_rank}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className={styles.rankingsLoading}>
+                    Loading league rankings...
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className={styles.noData}>No standings data available</div>
+            )}
+          </div>
+        </div>
+
+        {/* Advanced Analytics Card - BOTTOM */}
+        <div className={styles.advancedAnalyticsCard}>
+          <div className={styles.cardHeader}>
+            <h3>
+              Advanced Analytics
+              <span
+                className={styles.infoIcon}
+                title={`5v5 ${includePlayoffs ? "season + playoffs" : "regular season"} averages based on ${gameRecordsCount} game records. Data includes: Expected Goals For/Against, Corsi, HDCF, PDO, and shooting percentages at even strength.`}
+              >
+                &#9432;
+              </span>
+            </h3>
+            <div className={styles.cardToggle}>
+              <button
+                className={`${styles.toggleButton} ${!includePlayoffs ? styles.active : ""}`}
+                onClick={() => setIncludePlayoffs(false)}
+              >
+                Exhibition
+              </button>
+              <button
+                className={`${styles.toggleButton} ${includePlayoffs ? styles.active : ""}`}
+                onClick={() => setIncludePlayoffs(true)}
+              >
+                Playoffs
+              </button>
+            </div>
+          </div>
+          <div className={styles.cardContent}>
+            {teamStats ? (
+              <div className={styles.statsGrid}>
+                <div className={styles.statItem}>
+                  <span
+                    className={`${styles.statValue} ${getRankingBasedColor(getStatRank("cf_pct"))}`}
+                  >
+                    {formatPercentage(teamStats.cf_pct)}
+                  </span>
+                  <span className={styles.statLabel}>Corsi For %</span>
+                </div>
+                <div className={styles.statItem}>
+                  <span
+                    className={`${styles.statValue} ${getRankingBasedColor(getStatRank("xgf_pct"))}`}
+                  >
+                    {formatPercentage(teamStats.xgf_pct)}
+                  </span>
+                  <span className={styles.statLabel}>xGoals For %</span>
+                </div>
+                <div className={styles.statItem}>
+                  <span
+                    className={`${styles.statValue} ${getRankingBasedColor(getStatRank("hdcf_pct"))}`}
+                  >
+                    {formatPercentage(teamStats.hdcf_pct)}
+                  </span>
+                  <span className={styles.statLabel}>HDCF %</span>
+                </div>
+                <div className={styles.statItem}>
+                  <span
+                    className={`${styles.statValue} ${getRankingBasedColor(getStatRank("pdo"))}`}
+                  >
+                    {formatDecimal(teamStats.pdo, 3)}
+                  </span>
+                  <span className={styles.statLabel}>PDO</span>
+                </div>
+                <div className={styles.statItem}>
+                  <span
+                    className={`${styles.statValue} ${getRankingBasedColor(getStatRank("save_pct_5v5"))}`}
+                  >
+                    {formatPercentage(teamStats.save_pct_5v5)}
+                  </span>
+                  <span className={styles.statLabel}>5v5 Save %</span>
+                </div>
+                <div className={styles.statItem}>
+                  <span
+                    className={`${styles.statValue} ${getRankingBasedColor(getStatRank("shooting_pct_5v5"))}`}
+                  >
+                    {formatPercentage(teamStats.shooting_pct_5v5)}
+                  </span>
+                  <span className={styles.statLabel}>5v5 Shooting %</span>
+                </div>
+                <div className={styles.statItem}>
+                  <span
+                    className={`${styles.statValue} ${getRankingBasedColor(getStatRank("scf_pct"))}`}
+                  >
+                    {(teamStats.scf_pct * 100).toFixed(2) || 0}%
+                  </span>
+                  <span className={styles.statLabel}>SCF %</span>
+                </div>
+                <div className={styles.statItem}>
+                  <div className={styles.xgContainer}>
+                    <div className={styles.xgStat}>
+                      <span
+                        className={`${styles.statValue} ${getRankingBasedColor(getStatRank("xgf"))}`}
+                      >
+                        {teamStats.xgf.toFixed(2)}
+                      </span>
+                      <span className={styles.statLabel}>AVG. xGF</span>
+                    </div>
+                    <div className={styles.xgStat}>
+                      <span
+                        className={`${styles.statValue} ${getRankingBasedColor(getStatRank("xga"))}`}
+                      >
+                        {teamStats.xga.toFixed(2)}
+                      </span>
+                      <span className={styles.statLabel}>AVG. xGA</span>
+                    </div>
+                  </div>
                 </div>
               </div>
+            ) : (
+              <div className={styles.noData}>No advanced stats available</div>
+            )}
+          </div>
+        </div>
+      </div>
 
-              {/* Team Workload Distribution */}
-              <div className={styles.workloadDistribution}>
-                <h4 className={styles.sectionTitle}>
-                  Workload Distribution ({goaltendingStats.totalGames} games)
-                </h4>
-                <div className={styles.workloadDistributionBar}>
-                  {goaltendingStats.goalies.map((goalie, index) => {
-                    const goalieColors = [
-                      "var(--team-primary-color)",
-                      "var(--team-secondary-color)",
-                      "var(--team-accent-color)",
-                      "#6c757d",
-                      "#dc3545",
-                      "#28a745"
-                    ];
-
-                    return (
-                      <div
-                        key={goalie.playerId}
-                        className={styles.workloadSegment}
-                        style={{
-                          width: `${goalie.workloadShare}%`,
-                          backgroundColor: goalieColors[index] || "#6c757d"
-                        }}
-                        title={`${goalie.goalieFullName}: ${formatDecimal(goalie.workloadShare, 1)}% (${goalie.gamesStarted} starts)`}
-                      />
-                    );
-                  })}
+      {/* Right Sidebar - Goaltending */}
+      <div className={styles.rightSidebar}>
+        <div className={styles.goaltendingCard}>
+          <div className={styles.cardHeader}>
+            <h3>Goaltending</h3>
+            <div className={styles.cardIcon}></div>
+          </div>
+          <div className={styles.cardContent}>
+            {goaltendingStats ? (
+              <>
+                <div className={styles.goaltendingOverview}>
+                  <div className={styles.goaltendingGrid}>
+                    <div className={styles.goaltendingStat}>
+                      <span
+                        className={`${styles.statValue} ${getRankColor((goaltendingStats.save_pct || 0) * 100, { good: 91.5, poor: 89.5 })}`}
+                      >
+                        {formatPercentage(goaltendingStats.save_pct)}
+                      </span>
+                      <span className={styles.statLabel}>Team SV%</span>
+                    </div>
+                    <div className={styles.goaltendingStat}>
+                      <span
+                        className={`${styles.statValue} ${getRankColor(goaltendingStats.gaa || 0, { good: 2.75, poor: 3.25 }, false)}`}
+                      >
+                        {formatDecimal(goaltendingStats.gaa, 2)}
+                      </span>
+                      <span className={styles.statLabel}>Team GAA</span>
+                    </div>
+                    <div className={styles.goaltendingStat}>
+                      <span className={styles.statValue}>
+                        {goaltendingStats.wins}-{goaltendingStats.losses}
+                      </span>
+                      <span className={styles.statLabel}>W-L Record</span>
+                    </div>
+                    <div className={styles.goaltendingStat}>
+                      <span className={styles.statValue}>
+                        {goaltendingStats.shutouts}
+                      </span>
+                      <span className={styles.statLabel}>Shutouts</span>
+                    </div>
+                    <div className={styles.goaltendingStat}>
+                      <span className={styles.statValue}>
+                        {goaltendingStats.quality_starts}
+                      </span>
+                      <span className={styles.statLabel}>Quality Starts</span>
+                    </div>
+                    <div className={styles.goaltendingStat}>
+                      <span className={styles.statValue}>
+                        {goaltendingStats.goalies.length}
+                      </span>
+                      <span className={styles.statLabel}>Goalies Used</span>
+                    </div>
+                  </div>
                 </div>
-                <div className={styles.workloadLegend}>
-                  {goaltendingStats.goalies.map((goalie, index) => {
-                    const goalieColors = [
-                      "var(--team-primary-color)",
-                      "var(--team-secondary-color)",
-                      "var(--team-accent-color)",
-                      "#6c757d",
-                      "#dc3545",
-                      "#28a745"
-                    ];
 
-                    return (
-                      <div key={goalie.playerId} className={styles.legendItem}>
+                {/* Individual Goalie Cards */}
+                <div className={styles.individualGoalies}>
+                  <h4 className={styles.sectionTitle}>
+                    Individual Performance
+                  </h4>
+                  <div className={styles.goalieCardsGrid}>
+                    {goaltendingStats.goalies
+                      .slice(0, 4)
+                      .map((goalie, index) => (
                         <div
-                          className={styles.legendColor}
+                          key={goalie.playerId}
+                          className={styles.goalieCard}
+                        >
+                          <div className={styles.goalieCardHeader}>
+                            <span className={styles.goalieName}>
+                              {goalie.goalieFullName}
+                            </span>
+                            <span
+                              className={`${styles.goalieRole} ${index === 0 ? styles.starter : index === 1 ? styles.backup : styles.reserve}`}
+                            >
+                              {index === 0
+                                ? "STARTER"
+                                : index === 1
+                                  ? "BACKUP"
+                                  : index === 2
+                                    ? "THIRD"
+                                    : "R"}
+                            </span>
+                          </div>
+
+                          {/* Workload Distribution Bar */}
+                          <div className={styles.workloadSection}>
+                            <div className={styles.workloadBar}>
+                              <div
+                                className={styles.workloadFill}
+                                style={{
+                                  width: `${Math.min(goalie.workloadShare, 100)}%`,
+                                  backgroundColor: (() => {
+                                    const goalieColors = [
+                                      "var(--team-primary-color)",
+                                      "var(--team-secondary-color)",
+                                      "var(--team-accent-color)",
+                                      "#6c757d",
+                                      "#dc3545",
+                                      "#28a745"
+                                    ];
+                                    return goalieColors[index] || "#6c757d";
+                                  })()
+                                }}
+                              />
+                            </div>
+                            <div className={styles.workloadLabel}>
+                              {formatDecimal(goalie.workloadShare, 1)}% of
+                              starts
+                            </div>
+                          </div>
+
+                          <div className={styles.goalieStatsGrid}>
+                            <div className={styles.goalieStatItem}>
+                              <span
+                                className={`${styles.goalieStatValue} ${getRankColor((goalie.savePct || 0) * 100, { good: 91.5, poor: 89.5 })}`}
+                              >
+                                {formatPercentage(goalie.savePct)}
+                              </span>
+                              <span className={styles.goalieStatLabel}>
+                                SV%
+                              </span>
+                            </div>
+                            <div className={styles.goalieStatItem}>
+                              <span
+                                className={`${styles.goalieStatValue} ${getRankColor(goalie.gaa || 0, { good: 2.75, poor: 3.25 }, false)}`}
+                              >
+                                {formatDecimal(goalie.gaa, 2)}
+                              </span>
+                              <span className={styles.goalieStatLabel}>
+                                GAA
+                              </span>
+                            </div>
+                            <div className={styles.goalieStatItem}>
+                              <span className={styles.goalieStatValue}>
+                                {goalie.gamesPlayed}
+                              </span>
+                              <span className={styles.goalieStatLabel}>GP</span>
+                            </div>
+                            <div className={styles.goalieStatItem}>
+                              <span className={styles.goalieStatValue}>
+                                {goalie.gamesStarted}
+                              </span>
+                              <span className={styles.goalieStatLabel}>GS</span>
+                            </div>
+                            <div className={styles.goalieStatItem}>
+                              <span className={styles.goalieStatValue}>
+                                {goalie.qualityStarts || 0}
+                              </span>
+                              <span className={styles.goalieStatLabel}>QS</span>
+                            </div>
+                            <div className={styles.goalieStatItem}>
+                              <span className={styles.goalieStatValue}>
+                                {goalie.qualityStartsPct
+                                  ? formatPercentage(goalie.qualityStartsPct)
+                                  : "N/A"}
+                              </span>
+                              <span className={styles.goalieStatLabel}>
+                                QS%
+                              </span>
+                            </div>
+                            <div className={styles.goalieStatItem}>
+                              <span className={styles.goalieStatValue}>
+                                {goalie.wins}-{goalie.losses}
+                              </span>
+                              <span className={styles.goalieStatLabel}>
+                                W-L
+                              </span>
+                            </div>
+                            <div className={styles.goalieStatItem}>
+                              <span className={styles.goalieStatValue}>
+                                {goalie.shutouts}
+                              </span>
+                              <span className={styles.goalieStatLabel}>SO</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Team Workload Distribution */}
+                <div className={styles.workloadDistribution}>
+                  <h4 className={styles.sectionTitle}>
+                    Workload Distribution
+                    {/* ({goaltendingStats.totalGames} games) */}
+                  </h4>
+                  <div className={styles.workloadDistributionBar}>
+                    {goaltendingStats.goalies.map((goalie, index) => {
+                      const goalieColors = [
+                        "var(--team-primary-color)",
+                        "var(--team-secondary-color)",
+                        "var(--team-accent-color)",
+                        "#6c757d",
+                        "#dc3545",
+                        "#28a745"
+                      ];
+
+                      return (
+                        <div
+                          key={goalie.playerId}
+                          className={styles.workloadSegment}
                           style={{
+                            width: `${goalie.workloadShare}%`,
                             backgroundColor: goalieColors[index] || "#6c757d"
                           }}
+                          title={`${goalie.goalieFullName}: ${formatDecimal(goalie.workloadShare, 1)}% (${goalie.gamesStarted} starts)`}
                         />
-                        <span className={styles.legendText}>
-                          {goalie.lastName} (
-                          {formatDecimal(goalie.workloadShare, 1)}%)
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className={styles.loadingState}>
-              <div className={styles.loadingSpinner}></div>
-              <span>Loading goaltending data...</span>
-            </div>
-          )}
-        </div>
-      </div>
+                      );
+                    })}
+                  </div>
+                  <div className={styles.workloadLegend}>
+                    {goaltendingStats.goalies.map((goalie, index) => {
+                      const goalieColors = [
+                        "var(--team-primary-color)",
+                        "var(--team-secondary-color)",
+                        "var(--team-accent-color)",
+                        "#6c757d",
+                        "#dc3545",
+                        "#28a745"
+                      ];
 
-      {/* Enhanced Standings Card with League Rankings */}
-      <div className={`${styles.card} ${styles.teamRankingsCard}`}>
-        <div className={styles.cardHeader}>
-          <h3> Team Statistics & Rankings</h3>
-          <div className={styles.cardIcon}></div>
-        </div>
-        <div className={styles.cardContent}>
-          {standingsData ? (
-            <>
-              {/* Combined Team Identity & Statistics with Rankings */}
-              <div className={styles.combinedTeamStatsCard}>
-                {/* Team Identity & Position */}
-                <div className={styles.teamIdentity}>
-                  <div className={styles.positionSummary}>
-                    <div className={styles.positionStat}>
-                      <span className={styles.positionValue}>
-                        {standingsData.league_sequence}
-                        {standingsData.league_sequence === 1
-                          ? "st"
-                          : standingsData.league_sequence === 2
-                            ? "nd"
-                            : standingsData.league_sequence === 3
-                              ? "rd"
-                              : "th"}
-                      </span>
-                      <span className={styles.positionLabel}>NHL</span>
-                    </div>
-                    <div className={styles.positionStat}>
-                      <span className={styles.positionValue}>
-                        {standingsData.conference_sequence}
-                        {standingsData.conference_sequence === 1
-                          ? "st"
-                          : standingsData.conference_sequence === 2
-                            ? "nd"
-                            : standingsData.conference_sequence === 3
-                              ? "rd"
-                              : "th"}
-                      </span>
-                      <span className={styles.positionLabel}>
-                        {standingsData.conference_name}
-                      </span>
-                    </div>
-                    <div className={styles.positionStat}>
-                      <span className={styles.positionValue}>
-                        {standingsData.division_sequence}
-                        {standingsData.division_sequence === 1
-                          ? "st"
-                          : standingsData.division_sequence === 2
-                            ? "nd"
-                            : standingsData.division_sequence === 3
-                              ? "rd"
-                              : "th"}
-                      </span>
-                      <span className={styles.positionLabel}>
-                        {standingsData.division_name}
-                      </span>
-                    </div>
+                      return (
+                        <div
+                          key={goalie.playerId}
+                          className={styles.legendItem}
+                        >
+                          <div
+                            className={styles.legendColor}
+                            style={{
+                              backgroundColor: goalieColors[index] || "#6c757d"
+                            }}
+                          />
+                          <span className={styles.legendText}>
+                            {goalie.lastName} (
+                            {formatDecimal(goalie.workloadShare, 1)}%)
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-
-                {/* Team Statistics with Rankings */}
-                {standingsData && specialTeamsStats && leagueRankings ? (
-                  <div className={styles.teamStatsWithRankings}>
-                    <div className={styles.statsRankingsGrid}>
-                      {/* Core Team Stats */}
-                      <div className={styles.statWithRank}>
-                        <div className={styles.statValueRank}>
-                          <span
-                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("points"))}`}
-                          >
-                            {standingsData.points}
-                          </span>
-                          <span
-                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.points_rank)}`}
-                          >
-                            #{leagueRankings.points_rank}
-                          </span>
-                        </div>
-                        <span className={styles.statLabel}>Points</span>
-                      </div>
-
-                      <div className={styles.statWithRank}>
-                        <div className={styles.statValueRank}>
-                          <span
-                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("point_pct"))}`}
-                          >
-                            {formatPercentage(standingsData.point_pctg)}
-                          </span>
-                          <span
-                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.point_pct_rank)}`}
-                          >
-                            #{leagueRankings.point_pct_rank}
-                          </span>
-                        </div>
-                        <span className={styles.statLabel}>PT%</span>
-                      </div>
-
-                      <div className={styles.statWithRank}>
-                        <div className={styles.statValueRank}>
-                          <span
-                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("goals_per_game"))}`}
-                          >
-                            {(
-                              standingsData.goal_for /
-                              standingsData.games_played
-                            ).toFixed(2)}
-                          </span>
-                          <span
-                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.goals_per_game_rank)}`}
-                          >
-                            #{leagueRankings.goals_per_game_rank}
-                          </span>
-                        </div>
-                        <span className={styles.statLabel}>GF/GP</span>
-                      </div>
-
-                      <div className={styles.statWithRank}>
-                        <div className={styles.statValueRank}>
-                          <span
-                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("goals_against_per_game"))}`}
-                          >
-                            {(
-                              standingsData.goal_against /
-                              standingsData.games_played
-                            ).toFixed(2)}
-                          </span>
-                          <span
-                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.goals_against_per_game_rank)}`}
-                          >
-                            #{leagueRankings.goals_against_per_game_rank}
-                          </span>
-                        </div>
-                        <span className={styles.statLabel}>GA/GP</span>
-                      </div>
-
-                      <div className={styles.statWithRank}>
-                        <div className={styles.statValueRank}>
-                          <span
-                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("goal_diff"))}`}
-                          >
-                            {standingsData.goal_for > standingsData.goal_against
-                              ? "+"
-                              : ""}
-                            {standingsData.goal_for -
-                              standingsData.goal_against}
-                          </span>
-                          <span
-                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.goal_diff_rank)}`}
-                          >
-                            #{leagueRankings.goal_diff_rank}
-                          </span>
-                        </div>
-                        <span className={styles.statLabel}>Goal Diff</span>
-                      </div>
-
-                      <div className={styles.statWithRank}>
-                        <div className={styles.statValueRank}>
-                          <span className={styles.statValue}>
-                            {standingsData.wins}-{standingsData.losses}-
-                            {standingsData.ot_losses}
-                          </span>
-                        </div>
-                        <span className={styles.statLabel}>Record</span>
-                      </div>
-
-                      {/* Special Teams Stats */}
-                      <div className={styles.statWithRank}>
-                        <div className={styles.statValueRank}>
-                          <span
-                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("power_play_pct"))}`}
-                          >
-                            {formatPercentage(specialTeamsStats.power_play_pct)}
-                          </span>
-                          <span
-                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.power_play_rank)}`}
-                          >
-                            #{leagueRankings.power_play_rank}
-                          </span>
-                        </div>
-                        <span className={styles.statLabel}>Power Play %</span>
-                      </div>
-
-                      <div className={styles.statWithRank}>
-                        <div className={styles.statValueRank}>
-                          <span
-                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("penalty_kill_pct"))}`}
-                          >
-                            {formatPercentage(
-                              specialTeamsStats.penalty_kill_pct
-                            )}
-                          </span>
-                          <span
-                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.penalty_kill_rank)}`}
-                          >
-                            #{leagueRankings.penalty_kill_rank}
-                          </span>
-                        </div>
-                        <span className={styles.statLabel}>Penalty Kill %</span>
-                      </div>
-
-                      <div className={styles.statWithRank}>
-                        <div className={styles.statValueRank}>
-                          <span
-                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("pp_opportunities"))}`}
-                          >
-                            {formatDecimal(
-                              specialTeamsStats.pp_opportunities_per_game,
-                              1
-                            )}
-                          </span>
-                          <span
-                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.pp_opportunities_rank)}`}
-                          >
-                            #{leagueRankings.pp_opportunities_rank}
-                          </span>
-                        </div>
-                        <span className={styles.statLabel}>PP Opps/Game</span>
-                      </div>
-
-                      <div className={styles.statWithRank}>
-                        <div className={styles.statValueRank}>
-                          <span
-                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("pp_goals_for"))}`}
-                          >
-                            {specialTeamsStats.pp_goals_for}
-                          </span>
-                          <span
-                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.pp_goals_for_rank)}`}
-                          >
-                            #{leagueRankings.pp_goals_for_rank}
-                          </span>
-                        </div>
-                        <span className={styles.statLabel}>PP Goals For</span>
-                      </div>
-
-                      <div className={styles.statWithRank}>
-                        <div className={styles.statValueRank}>
-                          <span
-                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("pp_goals_against"))}`}
-                          >
-                            {specialTeamsStats.pp_goals_against}
-                          </span>
-                          <span
-                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.pp_goals_against_rank)}`}
-                          >
-                            #{leagueRankings.pp_goals_against_rank}
-                          </span>
-                        </div>
-                        <span className={styles.statLabel}>PPG Against</span>
-                      </div>
-
-                      <div className={styles.statWithRank}>
-                        <div className={styles.statValueRank}>
-                          <span
-                            className={`${styles.statValue} ${getRankingBasedColor(getStatRank("sh_goals_for"))}`}
-                          >
-                            {specialTeamsStats.sh_goals_for}
-                          </span>
-                          <span
-                            className={`${styles.rankValue} ${getRankingColor(leagueRankings.sh_goals_for_rank)}`}
-                          >
-                            #{leagueRankings.sh_goals_for_rank}
-                          </span>
-                        </div>
-                        <span className={styles.statLabel}>SH Goals For</span>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
+              </>
+            ) : (
+              <div className={styles.loadingState}>
+                <div className={styles.loadingSpinner}></div>
+                <span>Loading goaltending data...</span>
               </div>
-
-              {/* League Rankings Grid */}
-              {leagueRankings ? (
-                <div className={styles.leagueRankings}>
-                  <div className={styles.rankingsGrid}>
-                    <div className={styles.rankingCategory}>
-                      <div className={styles.rankingTitle}>
-                        <h5 className={styles.categoryTitle}>OFFENSIVE</h5>
-                      </div>
-                      <div className={styles.rankingItemList}>
-                        <div className={styles.rankingItem}>
-                          <span className={styles.rankingLabel}>G/GP</span>
-                          <span
-                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.goals_per_game_rank)}`}
-                          >
-                            #{leagueRankings.goals_per_game_rank}
-                          </span>
-                        </div>
-                        <div className={styles.rankingItem}>
-                          <span className={styles.rankingLabel}>SOG/GP</span>
-                          <span
-                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.shots_per_game_rank)}`}
-                          >
-                            #{leagueRankings.shots_per_game_rank}
-                          </span>
-                        </div>
-                        <div className={styles.rankingItem}>
-                          <span className={styles.rankingLabel}>5v5 S%</span>
-                          <span
-                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.shooting_pct_5v5_rank)}`}
-                          >
-                            #{leagueRankings.shooting_pct_5v5_rank}
-                          </span>
-                        </div>
-                        <div className={styles.rankingItem}>
-                          <span className={styles.rankingLabel}>xG%</span>
-                          <span
-                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.xgf_pct_rank)}`}
-                          >
-                            #{leagueRankings.xgf_pct_rank}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className={styles.rankingCategory}>
-                      <div className={styles.rankingTitle}>
-                        <h5 className={styles.categoryTitle}>DEFENSIVE</h5>
-                      </div>
-                      <div className={styles.rankingItemList}>
-                        <div className={styles.rankingItem}>
-                          <span className={styles.rankingLabel}>GA/GP</span>
-                          <span
-                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.goals_against_per_game_rank)}`}
-                          >
-                            #{leagueRankings.goals_against_per_game_rank}
-                          </span>
-                        </div>
-                        <div className={styles.rankingItem}>
-                          <span className={styles.rankingLabel}>SA/GP</span>
-                          <span
-                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.shots_against_per_game_rank)}`}
-                          >
-                            #{leagueRankings.shots_against_per_game_rank}
-                          </span>
-                        </div>
-                        <div className={styles.rankingItem}>
-                          <span className={styles.rankingLabel}>5v5 SV%</span>
-                          <span
-                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.save_pct_5v5_rank)}`}
-                          >
-                            #{leagueRankings.save_pct_5v5_rank}
-                          </span>
-                        </div>
-                        <div className={styles.rankingItem}>
-                          <span className={styles.rankingLabel}>HDCF%</span>
-                          <span
-                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.hdcf_pct_rank)}`}
-                          >
-                            #{leagueRankings.hdcf_pct_rank}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className={styles.rankingCategory}>
-                      <div className={styles.rankingTitle}>
-                        <h5 className={styles.categoryTitle}>SPECIAL TEAMS</h5>
-                      </div>
-                      <div className={styles.rankingItemList}>
-                        <div className={styles.rankingItem}>
-                          <span className={styles.rankingLabel}>PP%</span>
-                          <span
-                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.power_play_rank)}`}
-                          >
-                            #{leagueRankings.power_play_rank}
-                          </span>
-                        </div>
-                        <div className={styles.rankingItem}>
-                          <span className={styles.rankingLabel}>PK%</span>
-                          <span
-                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.penalty_kill_rank)}`}
-                          >
-                            #{leagueRankings.penalty_kill_rank}
-                          </span>
-                        </div>
-                        <div className={styles.rankingItem}>
-                          <span className={styles.rankingLabel}>FO%</span>
-                          <span
-                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.faceoff_win_rank)}`}
-                          >
-                            #{leagueRankings.faceoff_win_rank}
-                          </span>
-                        </div>
-                        <div className={styles.rankingItem}>
-                          <span className={styles.rankingLabel}>CF%</span>
-                          <span
-                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.cf_pct_rank)}`}
-                          >
-                            #{leagueRankings.cf_pct_rank}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className={styles.rankingCategory}>
-                      <div className={styles.rankingTitle}>
-                        <h5 className={styles.categoryTitle}>SITUATIONAL</h5>
-                      </div>
-                      <div className={styles.rankingItemList}>
-                        <div className={styles.rankingItem}>
-                          <span className={styles.rankingLabel}>Home</span>
-                          <span
-                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.home_record_rank)}`}
-                          >
-                            #{leagueRankings.home_record_rank}
-                          </span>
-                        </div>
-                        <div className={styles.rankingItem}>
-                          <span className={styles.rankingLabel}>Road</span>
-                          <span
-                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.road_record_rank)}`}
-                          >
-                            #{leagueRankings.road_record_rank}
-                          </span>
-                        </div>
-                        <div className={styles.rankingItem}>
-                          <span className={styles.rankingLabel}>L10</span>
-                          <span
-                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.l10_rank)}`}
-                          >
-                            #{leagueRankings.l10_rank}
-                          </span>
-                        </div>
-                        <div className={styles.rankingItem}>
-                          <span className={styles.rankingLabel}>PDO</span>
-                          <span
-                            className={`${styles.rankingValue} ${getRankingColor(leagueRankings.pdo_rank)}`}
-                          >
-                            #{leagueRankings.pdo_rank}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className={styles.rankingsLoading}>
-                  Loading league rankings...
-                </div>
-              )}
-            </>
-          ) : (
-            <div className={styles.noData}>No standings data available</div>
-          )}
-        </div>
-      </div>
-
-      {/* Enhanced Recent Form & Momentum Card with condensed layout */}
-      <div className={`${styles.card} ${styles.enhancedMomentumCard}`}>
-        <div className={styles.cardHeader}>
-          <h3>Recent Form & Momentum</h3>
-          <div className={styles.cardIcon}></div>
-        </div>
-        <div className={styles.cardContent}>
-          {standingsData && recentPerformance && effectiveSeasonId ? (
-            <>
-              {/* Game-by-Game Timeline */}
-              <div className={styles.timelineSection}>
-                <GameByGameTimeline
-                  teamId={teamId}
-                  teamAbbrev={teamAbbrev}
-                  seasonId={effectiveSeasonId}
-                  maxGames={10}
-                />
-              </div>
-
-              {/* Advanced L10 Metrics Dashboard */}
-              <div className={styles.metricsSection}>
-                <AdvancedL10Metrics
-                  teamId={teamId}
-                  teamAbbrev={teamAbbrev}
-                  seasonId={effectiveSeasonId}
-                />
-              </div>
-            </>
-          ) : (
-            <div className={styles.noData}>No momentum data available</div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>

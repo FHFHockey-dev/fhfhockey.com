@@ -2,7 +2,7 @@
 @use "styles/vars" as v;
 
 /* ==========================================================================
-   MODERN DASHBOARD LAYOUT - COMPACT & ELEGANT
+   MODERN DASHBOARD LAYOUT - FLEXBOX
    ========================================================================== */
 
 .teamDashboard {
@@ -17,27 +17,20 @@
     color-mix(in srgb, v.$background-dark 90%, v.$primary-color 10%) 100%
   );
   border-radius: v.$border-radius-lg;
-  padding: v.$space-md;
+  padding: v.$space-lg v.$space-xxl;
   color: v.$text-primary;
   min-height: 80vh;
-  max-height: 80vh;
 
-  // 15-column grid layout as specified
-  display: grid;
-  grid-template-columns: repeat(15, 1fr);
-  grid-template-rows: repeat(6, 1fr);
-  grid-column-gap: v.$space-sm;
-  grid-row-gap: v.$space-sm;
+  // New flexbox layout: Left sidebar, main column, right sidebar
+  display: flex;
+  gap: v.$space-md;
 
   @media (max-width: v.$breakpoint-desktop) {
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    gap: v.$space-xs;
+    gap: v.$space-md;
     padding: v.$space-sm;
   }
 
   @media (max-width: v.$breakpoint-tablet) {
-    display: flex;
     flex-direction: column;
     gap: v.$space-sm;
     padding: v.$space-xs;
@@ -45,12 +38,57 @@
 }
 
 /* ==========================================================================
-   COMPACT CARD SYSTEM
+   FLEXBOX COLUMN STRUCTURE
    ========================================================================== */
 
-.card,
-.teamStatisticsCard {
-  background: rgba(255, 255, 255, 0.02);
+.leftSidebar {
+  flex: 0 0 350px; // Fixed width left sidebar
+  display: flex;
+  flex-direction: column;
+
+  @media (max-width: v.$breakpoint-desktop) {
+    flex: 0 0 250px;
+  }
+
+  @media (max-width: v.$breakpoint-tablet) {
+    flex: 1;
+    order: 1;
+  }
+}
+
+.mainColumn {
+  flex: 1; // Take remaining space
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+
+  @media (max-width: v.$breakpoint-tablet) {
+    order: 2;
+  }
+}
+
+.rightSidebar {
+  flex: 0 0 350px; // Fixed width right sidebar
+  display: flex;
+  flex-direction: column;
+
+  @media (max-width: v.$breakpoint-desktop) {
+    flex: 0 0 250px;
+  }
+
+  @media (max-width: v.$breakpoint-tablet) {
+    flex: 1;
+    order: 3;
+  }
+}
+
+/* ==========================================================================
+   INDIVIDUAL CARD SYSTEM - GRANULAR CONTROL
+   ========================================================================== */
+
+// Base card styles (shared properties only)
+%baseCard {
+  background: rgba(0, 0, 0, 0.05);
   border: 1px solid color-mix(in srgb, v.$border-primary 30%, transparent 70%);
   border-radius: v.$border-radius-md;
   overflow: hidden;
@@ -79,71 +117,171 @@
     box-shadow:
       0 4px 20px rgba(0, 0, 0, 0.1),
       0 0 0 1px color-mix(in srgb, v.$primary-color 20%, transparent 80%);
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.02);
+  }
+}
+
+// Left Sidebar - Team Statistics Card (Team Leaders)
+.teamStatisticsCard {
+  @extend %baseCard;
+  height: 100%; // Fill sidebar height
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.05);
+  border-right: 2px solid
+    color-mix(
+      in srgb,
+      var(--team-primary-color, v.$primary-color) 30%,
+      transparent 70%
+    );
+
+  &::before {
+    height: 100%;
+    width: 3px;
+    right: auto;
+    background: linear-gradient(
+      180deg,
+      var(--team-primary-color, v.$primary-color),
+      var(--team-secondary-color, v.$secondary-color)
+    );
   }
 
-  // Grid positioning - div1: Team Leaders
-  &.teamStatisticsCard {
-    grid-area: 1 / 1 / 7 / 4;
-
-    @media (max-width: v.$breakpoint-desktop) {
-      grid-area: 1 / 1 / 5 / 5;
-    }
-
-    @media (max-width: v.$breakpoint-tablet) {
-      order: 1;
-    }
+  &:hover {
+    transform: none; // Remove translateY for sidebars
+    background: color-mix(in srgb, v.$background-lighter 25%, transparent 75%);
   }
 
-  // div2: Goaltending Card (far right)
-  &.goaltendingCard {
-    grid-area: 1 / 12 / 7 / 16;
-    @media (max-width: v.$breakpoint-desktop) {
-      grid-area: 5 / 5 / 9 / 9;
-    }
+  .cardContent {
+    flex: 1; // Take remaining space after header
+    overflow-y: auto; // Allow scrolling if needed
+    padding: v.$space-md;
+  }
+}
 
-    @media (max-width: v.$breakpoint-tablet) {
-      order: 2;
-    }
+// Right Sidebar - Goaltending Card
+.goaltendingCard {
+  @extend %baseCard;
+  height: 100%; // Fill sidebar height
+  display: flex;
+  flex-direction: column;
+  background: color-mix(in srgb, v.$background-lighter 15%, transparent 85%);
+  border-left: 2px solid
+    color-mix(
+      in srgb,
+      var(--team-secondary-color, v.$secondary-color) 30%,
+      transparent 70%
+    );
+
+  &::before {
+    height: 100%;
+    width: 3px;
+    left: 0;
+    right: auto;
+    background: linear-gradient(
+      180deg,
+      var(--team-secondary-color, v.$secondary-color),
+      var(--team-accent-color, v.$warning-color)
+    );
   }
 
-  // div3: Advanced Analytics
-  &.advancedAnalyticsCard {
-    grid-area: 1 / 9 / 4 / 12;
-
-    @media (max-width: v.$breakpoint-desktop) {
-      grid-area: 1 / 5 / 4 / 9;
-    }
-
-    @media (max-width: v.$breakpoint-tablet) {
-      order: 3;
-    }
+  &:hover {
+    transform: none; // Remove translateY for sidebars
+    background: color-mix(in srgb, v.$background-lighter 25%, transparent 75%);
   }
 
-  // div4: Team Rankings
-  &.teamRankingsCard {
-    grid-area: 1 / 4 / 4 / 9;
+  .cardContent {
+    flex: 1; // Take remaining space after header
+    overflow-y: auto; // Allow scrolling if needed
+    padding: v.$space-md;
+  }
+}
 
-    @media (max-width: v.$breakpoint-desktop) {
-      grid-area: 5 / 1 / 8 / 5;
-    }
+// Main Column Card 1 - Enhanced Momentum Card
+.enhancedMomentumCard {
+  @extend %baseCard;
+  flex: 0 0 auto; // Don't grow/shrink - natural content height
+  display: flex;
+  flex-direction: column;
+  min-height: 400px; // Minimum height to accommodate timeline + metrics
 
-    @media (max-width: v.$breakpoint-tablet) {
-      order: 4;
-    }
+  .cardContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: v.$space-sm v.$space-md;
+    // No height restrictions - let content determine height
   }
 
-  // div5: Enhanced Momentum Card
-  &.enhancedMomentumCard {
-    grid-area: 4 / 4 / 7 / 12;
+  .timelineSection {
+    flex: 0 0 auto; // Natural size for timeline
+    margin-bottom: v.$space-sm;
+  }
 
-    @media (max-width: v.$breakpoint-desktop) {
-      grid-area: 1 / 1 / 5 / 5;
-    }
+  .metricsSection {
+    flex: 0 0 auto; // Natural size for metrics
+    padding: v.$space-sm 0 v.$space-sm 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    // No overflow restrictions - let content expand naturally
+  }
+}
 
-    @media (max-width: v.$breakpoint-tablet) {
-      order: 5;
+// Main Column Card 2 - Team Rankings Card
+.teamRankingsCard {
+  @extend %baseCard;
+  flex: 0 0 auto; // Don't grow/shrink - natural content height
+  display: flex;
+  flex-direction: column;
+  min-height: 500px; // Minimum height for rankings content
+
+  .cardContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: v.$space-md;
+    // No height restrictions - let content determine height
+  }
+}
+
+// Main Column Card 3 - Advanced Analytics Card
+.advancedAnalyticsCard {
+  @extend %baseCard;
+  flex: 0 0 auto; // Don't grow/shrink - natural content height
+  display: flex;
+  flex-direction: column;
+
+  .cardContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: v.$space-md;
+    // No height restrictions - let content determine height
+  }
+
+  .statsGrid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: v.$space-xs;
+
+    @media (max-width: v.$screen-small-max) {
+      grid-template-columns: 1fr;
+      grid-template-rows: repeat(8, 1fr);
     }
+  }
+}
+
+// Legacy card class for backwards compatibility
+.card {
+  @extend %baseCard;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  .cardContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
   }
 }
 
@@ -250,8 +388,8 @@
 
   // Special handling for advanced analytics (2x4 grid)
   .advancedAnalyticsCard & {
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(4, 1fr);
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 1fr);
     height: 100%;
 
     @media (max-width: v.$screen-small-max) {
@@ -308,27 +446,39 @@
 .statValue,
 .tsStatValue {
   display: block;
-  font-size: v.$font-size-sm;
-  font-weight: 700;
+  font-size: v.$font-size-sm * 1.2; // Slightly larger for emphasis
+  font-weight: 900;
   margin-bottom: v.$space-xs;
   color: v.$text-primary;
-  font-family: v.$font-family-accent;
+  font-family: v.$font-family-numbers;
   line-height: 1.1;
+  flex: 3;
+  text-align: center;
 
   &.excellent {
     color: v.$success-color;
+    text-shadow: 0 0 8px
+      color-mix(in srgb, v.$success-color 30%, transparent 70%);
   }
   &.average {
     color: v.$warning-color;
+    text-shadow: 0 0 8px
+      color-mix(in srgb, v.$warning-color 30%, transparent 70%);
   }
   &.poor {
     color: v.$danger-color;
+    text-shadow: 0 0 8px
+      color-mix(in srgb, v.$danger-color 30%, transparent 70%);
   }
   &.positive {
     color: v.$success-color;
+    text-shadow: 0 0 8px
+      color-mix(in srgb, v.$success-color 30%, transparent 70%);
   }
   &.negative {
     color: v.$danger-color;
+    text-shadow: 0 0 8px
+      color-mix(in srgb, v.$danger-color 30%, transparent 70%);
   }
 
   &.winStreak {
@@ -502,7 +652,7 @@
   font-size: v.$font-size-md;
   font-weight: 700;
   color: var(--team-secondary-color, v.$secondary-color);
-  font-family: v.$font-family-accent;
+  font-family: v.$font-family-numbers;
 }
 
 .leaderGames {
@@ -565,7 +715,7 @@
   font-size: v.$font-size-lg;
   font-weight: 700;
   color: v.$text-primary;
-  font-family: v.$font-family-accent;
+  font-family: v.$font-family-numbers;
 }
 
 .positionLabel {
@@ -600,6 +750,7 @@
   font-weight: 700;
   color: v.$text-primary;
   margin-bottom: 2px;
+  font-family: v.$font-family-numbers;
 
   &.positive {
     color: v.$success-color;
@@ -624,7 +775,7 @@
 .statsRankingsGrid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  gap: v.$space-xs;
+  gap: v.$space-sm;
 }
 
 .statWithRank {
@@ -632,7 +783,7 @@
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  padding: v.$space-xs v.$space-sm;
+  padding: v.$space-sm;
   background: color-mix(in srgb, v.$background-lighter 30%, transparent 70%);
   border-radius: v.$border-radius-sm;
   border: 1px solid color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
@@ -651,16 +802,33 @@
 .statValueRank {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: v.$space-sm;
+  font-family: v.$font-family-numbers;
+  width: 100%;
 }
 
 .rankValue {
   font-size: v.$font-size-sm;
   font-weight: 600;
+  font-family: v.$font-family-numbers;
   padding: 2px 6px;
   border-radius: v.$border-radius-sm;
-  min-width: 28px;
   text-align: center;
+  flex: 1;
+
+  &.excellent {
+    background-color: color-mix(in srgb, v.$success-color 50%, transparent 50%);
+    border-color: color-mix(in srgb, v.$success-color 30%, transparent 70%);
+  }
+  &.average {
+    background-color: color-mix(in srgb, v.$warning-color 50%, transparent 50%);
+    border-color: color-mix(in srgb, v.$warning-color 30%, transparent 70%);
+  }
+  &.poor {
+    background-color: color-mix(in srgb, v.$danger-color 50%, transparent 50%);
+    border-color: color-mix(in srgb, v.$danger-color 30%, transparent 70%);
+  }
 }
 
 /* ==========================================================================
@@ -702,12 +870,13 @@
 
 .rankingTitle {
   background: color-mix(in srgb, v.$background-header 60%, transparent 40%);
-  padding: v.$space-xs v.$space-sm;
+  padding: v.$space-xs v.$space-md;
 }
 
 .rankingItemList {
-  padding: v.$space-xs;
+  padding: v.$space-xs v.$space-md v.$space-md v.$space-md;
   display: flex;
+  height: calc(100% - 40px); // Adjust for title height
   flex-direction: column;
   justify-content: space-between;
   // height: calc(100% - 40px); // Adjust for title height
@@ -717,8 +886,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2px v.$space-xs;
-  margin-bottom: 2px;
+  border-bottom: 2px solid
+    color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
+  padding: v.$space-sm 0;
 
   &:last-child {
     margin-bottom: 0;
@@ -726,18 +896,35 @@
 }
 
 .rankingLabel {
-  font-size: v.$font-size-xs;
+  font-size: v.$font-size-md;
   color: v.$text-secondary;
   font-weight: 500;
+  flex: 3;
 }
 
 .rankingValue {
-  font-size: v.$font-size-xs;
+  font-size: v.$font-size-sm;
+  font-family: v.$font-family-numbers;
   font-weight: 700;
-  padding: 1px 4px;
+  padding: v.$space-xs v.$space-sm;
   border-radius: v.$border-radius-sm;
+  border: 2px solid color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
   min-width: 24px;
   text-align: center;
+  flex: 1;
+
+  &.excellent {
+    background-color: color-mix(in srgb, v.$success-color 50%, transparent 50%);
+    border-color: color-mix(in srgb, v.$success-color 30%, transparent 70%);
+  }
+  &.average {
+    background-color: color-mix(in srgb, v.$warning-color 50%, transparent 50%);
+    border-color: color-mix(in srgb, v.$warning-color 30%, transparent 70%);
+  }
+  &.poor {
+    background-color: color-mix(in srgb, v.$danger-color 50%, transparent 50%);
+    border-color: color-mix(in srgb, v.$danger-color 30%, transparent 70%);
+  }
 }
 
 /* ==========================================================================
@@ -782,9 +969,9 @@
 }
 
 .sectionTitle {
-  font-size: v.$font-size-sm;
+  font-size: v.$font-size-md;
   font-weight: 600;
-  margin: 0 0 v.$space-sm 0;
+  margin: v.$space-sm 0;
   color: v.$text-primary;
   text-align: center;
 }
@@ -817,55 +1004,56 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: v.$space-sm;
+  padding: v.$space-md;
   background: color-mix(in srgb, v.$background-header 40%, transparent 60%);
   border-bottom: 1px solid
     color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
 }
 
 .goalieName {
-  font-weight: 600;
-  font-size: v.$font-size-sm;
-  font-family: v.$font-family-accent;
+  font-weight: 900;
+  font-size: v.$font-size-md;
+  font-family: v.$font-family-condensed;
+  font-variant: small-caps;
   color: v.$text-primary;
-  text-transform: capitalize;
+  letter-spacing: 0.15em;
 }
 
 .goalieRole {
-  font-size: v.$font-size-xs;
+  font-size: v.$font-size-sm;
   font-weight: 700;
-  padding: 2px 6px;
+  padding: v.$space-xs v.$space-sm;
   border-radius: v.$border-radius-sm;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 
   &.starter {
     background: v.$success-color;
-    color: v.$text-button;
+    color: v.$color-black;
   }
 
   &.backup {
     background: v.$warning-color;
-    color: v.$text-button;
+    color: v.$color-black;
   }
 
   &.reserve {
     background: v.$color-grey-medium;
-    color: v.$text-button;
+    color: v.$color-black;
   }
 }
 
 .goalieStatsGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: v.$space-xs;
+  gap: v.$space-sm;
   padding: v.$space-sm;
 }
 
 .goalieStatItem {
   text-align: center;
   background: color-mix(in srgb, v.$background-lighter 60%, transparent 40%);
-  padding: v.$space-xs;
+  padding: v.$space-xs v.$space-sm;
   border-radius: v.$border-radius-sm;
   border: 1px solid color-mix(in srgb, v.$border-secondary 15%, transparent 85%);
   transition: all v.$transition-duration;
@@ -882,7 +1070,7 @@
   font-weight: 700;
   margin-bottom: 2px;
   color: v.$text-primary;
-  font-family: v.$font-family-accent;
+  font-family: v.$font-family-numbers;
 
   &.excellent {
     color: v.$success-color;
@@ -907,39 +1095,40 @@
    ========================================================================== */
 
 .workloadSection {
-  margin: v.$space-sm 0;
+  margin: v.$space-md 0 v.$space-xs 0;
   padding: 0 v.$space-sm;
 }
 
 .workloadBar {
   width: 100%;
-  height: 6px;
-  background: color-mix(in srgb, v.$background-dark 60%, transparent 40%);
-  border-radius: v.$border-radius-sm;
+  height: 16px;
+  background: color-mix(in srgb, v.$background-dark 80%, transparent 20%);
+  border-radius: v.$border-radius-md;
   overflow: hidden;
   margin-bottom: v.$space-xs;
+  outline: 1px solid #8a8a8a;
+  outline-offset: -1px;
 }
 
 .workloadFill {
   height: 100%;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$border-radius-md;
+  outline: 1px solid #8a8a8a;
+  outline-offset: -1px;
   transition: width v.$transition-duration;
-  background: linear-gradient(
-    90deg,
-    var(--team-primary-color, v.$primary-color),
-    var(--team-secondary-color, v.$secondary-color)
-  );
+  // Remove fixed gradient - color will be set dynamically in TSX
 }
 
 .workloadLabel {
-  font-size: v.$font-size-xs;
+  font-size: v.$font-size-sm;
   color: v.$text-secondary;
   text-align: center;
-  font-weight: 500;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .workloadDistribution {
-  margin-top: v.$space-md;
   padding-top: v.$space-sm;
   border-top: 1px solid
     color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
@@ -947,12 +1136,14 @@
 
 .workloadDistributionBar {
   display: flex;
-  height: 8px;
-  border-radius: v.$border-radius-sm;
+  height: 20px;
+  border-radius: v.$border-radius-md;
   overflow: hidden;
   background: color-mix(in srgb, v.$background-dark 40%, transparent 60%);
-  border: 1px solid color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
+  // border: 1px solid color-mix(in srgb, v.$border-secondary 20%, transparent 80%);
+  outline: 1px solid #8a8a8a;
   margin-bottom: v.$space-sm;
+  margin: 0 v.$space-sm v.$space-sm v.$space-sm;
 }
 
 .workloadSegment {
@@ -967,6 +1158,9 @@
 
 .workloadLegend {
   display: flex;
+  flex-direction: column;
+  margin-top: v.$space-sm;
+  padding: v.$space-sm 0;
   flex-wrap: wrap;
   gap: v.$space-sm;
   justify-content: center;
@@ -988,16 +1182,22 @@
 }
 
 .legendColor {
-  width: 12px;
-  height: 12px;
+  width: 18px;
+  height: 18px;
   border-radius: v.$border-radius-sm;
-  border: 1px solid color-mix(in srgb, v.$border-secondary 30%, transparent 70%);
+  border: 1px solid #fff;
+  margin-right: v.$space-md;
+  margin-left: v.$space-sm;
 }
 
 .legendText {
-  font-size: v.$font-size-xs;
+  font-size: v.$font-size-lg;
   color: v.$text-primary;
+  font-variant: all-small-caps;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
   font-weight: 500;
+  padding-bottom: v.$space-xxs;
 }
 
 /* ==========================================================================
@@ -1209,5 +1409,55 @@
       transparent 80%
     ) !important;
     color: v.$danger-color !important;
+  }
+}
+
+// Enhanced sidebar-specific styling
+.teamStatisticsCard,
+.goaltendingCard {
+  // Add subtle inner shadow for depth
+  box-shadow:
+    inset 2px 0 4px rgba(0, 0, 0, 0.1),
+    0 4px 20px rgba(0, 0, 0, 0.05);
+
+  // Enhance hover effects for sidebars
+  &:hover {
+    transform: none; // Remove translateY for sidebars
+    background: color-mix(in srgb, v.$background-lighter 25%, transparent 75%);
+    box-shadow:
+      inset 2px 0 6px rgba(0, 0, 0, 0.15),
+      0 6px 25px rgba(0, 0, 0, 0.1);
+  }
+
+  // Sidebar-specific header styling
+  .cardHeader,
+  .tsCardHeader {
+    background: color-mix(in srgb, v.$background-header 60%, transparent 40%);
+    border-bottom: 2px solid
+      color-mix(
+        in srgb,
+        var(--team-primary-color, v.$primary-color) 20%,
+        transparent 80%
+      );
+
+    h3 {
+      font-size: v.$font-size-lg;
+      text-align: center;
+      letter-spacing: 0.1em;
+    }
+  }
+
+  // Enhanced content padding for sidebars
+  .cardContent,
+  .tsCardContent {
+    padding: v.$space-md;
+    height: calc(100% - 60px); // Account for header height
+    overflow-y: auto;
+    @include v.custom-scrollbar(
+      var(--team-primary-color, v.$primary-color),
+      v.$background-dark,
+      // Use solid color instead of color-mix
+      4px
+    );
   }
 }

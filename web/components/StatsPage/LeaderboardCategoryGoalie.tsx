@@ -40,31 +40,39 @@ const LeaderboardCategoryGoalie: React.FC<LeaderboardCategoryGoalieProps> = ({
         }
         return (
           <div key={goalie.goalie_id} className={rowClasses}>
-            <div className={styles.topRow}>
-              <Link href={`/stats/player/${goalie.goalie_id}`}>
-                <img
-                  src={
-                    goalie.image_url ||
-                    `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${goalie.goalie_id}.jpg`
-                  }
-                  alt={goalie.fullName}
-                  className={styles.playerHeadshot}
-                  style={{ cursor: "pointer" }}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              </Link>
-              <div className={styles.leaderMain}>
-                <div className={styles.nameValueRow}>
-                  <div>
-                    <div className={styles.leaderName}>{goalie.fullName}</div>
-                    <div className={styles.playerDetails}>
-                      {goalie.current_team_abbreviation} &middot; #
-                      {goalie.sweater_number}
+            <div className={styles.cardContainer}>
+              <div className={styles.cardLeft}>
+                <Link href={`/stats/player/${goalie.goalie_id}`}>
+                  <img
+                    src={
+                      goalie.image_url ||
+                      `https://cms.nhl.bamgrid.com/images/headshots/current/168x168/${goalie.goalie_id}.jpg`
+                    }
+                    alt={goalie.fullName}
+                    className={styles.playerHeadshot}
+                    style={{ cursor: "pointer" }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                </Link>
+              </div>
+              <div className={styles.cardRight}>
+                <div className={styles.topRow}>
+                  <div className={styles.leaderMain}>
+                    <div className={styles.nameValueRow}>
+                      <div>
+                        <div className={styles.leaderName}>
+                          {goalie.fullName}
+                        </div>
+                        <div className={styles.playerDetails}>
+                          {goalie.current_team_abbreviation} &middot; #
+                          {goalie.sweater_number}
+                        </div>
+                      </div>
+                      <div className={styles.leaderValue}>{statValue}</div>
                     </div>
                   </div>
-                  <div className={styles.leaderValue}>{statValue}</div>
                 </div>
               </div>
             </div>

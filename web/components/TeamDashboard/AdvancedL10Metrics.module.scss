@@ -105,14 +105,17 @@
 
 .metricLabel {
   font-size: 0.8rem;
-  color: #aaa;
+  color: #dbdada;
   font-weight: 500;
   line-height: 1.2;
+  text-align: center;
+  margin-bottom: 0.25rem;
 }
 
 .metricValue {
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: 0.8rem;
+  font-family: v.$font-family-numbers;
+  font-weight: 400;
   color: #ffffff;
   text-align: center;
   min-width: 60px;
