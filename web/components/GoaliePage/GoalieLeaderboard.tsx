@@ -38,6 +38,7 @@ const columnWidths: { [label: string]: string } = {
   "Week Over Week Variance": "6%", // Adjusted label from WoW Var
   "Game Over Game Variance": "6%", // Adjusted label from GoG Var
   "Avg fPts/G": "5%",
+  "Total fPts": "5%", // Added total fantasy points column
   "+/- Lg Avg fPts": "5%",
   "Percentile Rank": "5%", // Adjusted label from Avg %ile
   GP: "4%",
@@ -108,6 +109,7 @@ const GoalieLeaderboard: FC<Props> = ({
     "Week Over Week Variance": "wowVariance", // Adjusted label
     "Game Over Game Variance": "gogVariance", // Adjusted label
     "Avg fPts/G": "averageFantasyPointsPerGame",
+    "Total fPts": "totalGamesPlayed", // Use totalGamesPlayed as proxy for custom sort
     "+/- Lg Avg fPts": null, // Cannot sort easily
     "Percentile Rank": "averagePercentileRank", // Adjusted label
     GP: "totalGamesPlayed",
@@ -131,6 +133,7 @@ const GoalieLeaderboard: FC<Props> = ({
     "Week Over Week Variance", // Use full label
     "Game Over Game Variance", // Use full label
     "Avg fPts/G",
+    "Total fPts", // Added Total fPts
     "+/- Lg Avg fPts",
     "Percentile Rank", // Use full label
     "GP",
@@ -257,6 +260,12 @@ const GoalieLeaderboard: FC<Props> = ({
                   {goalie.averageFantasyPointsPerGame?.toFixed(2) ?? "N/A"}
                 </td>
                 {/* Avg fPts/G */}
+                <td>
+                  {(
+                    goalie.averageFantasyPointsPerGame * goalie.totalGamesPlayed
+                  )?.toFixed(1) ?? "N/A"}
+                </td>
+                {/* Total fPts */}
                 <td>
                   {" "}
                   {/* +/- Lg Avg fPts */}

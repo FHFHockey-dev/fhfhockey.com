@@ -351,6 +351,7 @@ async function updateGoalieStats(date: string): Promise<{
         shots_against: stat.shotsAgainst,
         time_on_ice: stat.timeOnIce,
         shutouts: stat.shutouts,
+        team_abbreviation: stat.teamAbbrevs,
         goals: stat.goals,
         assists: stat.assists,
         complete_game_pct: advStats?.completeGamePct,

@@ -223,24 +223,62 @@ const calculatePercentile = (
   return percentileRank;
 };
 
-// --- Main Calculation Function ---
+// --- OPTIMIZED CALCULATION CACHE ---
+const calculationCache = new Map<string, any>();
+
+// Generate cache key for goalie rankings calculation
+const generateRankingCacheKey = (
+  weeklyDataLength: number,
+  gameDataLength: number,
+  selectedStats: NumericGoalieStatKey[],
+  startWeek: number,
+  endWeek: number,
+  fantasySettings: FantasyPointSettings
+): string => {
+  return `rankings_${weeklyDataLength}_${gameDataLength}_${selectedStats.sort().join(",")}_${startWeek}_${endWeek}_${JSON.stringify(fantasySettings)}`;
+};
+
+// --- Main Calculation Function (Enhanced with Caching) ---
 export const calculateGoalieRankings = (
   goalieWeeklyData: GoalieWeeklyAggregate[],
-  leagueWeeklyAverages: LeagueWeeklyAverage[], // Still needed for WoW
-  goalieGameData: GoalieGameStat[], // Uses data from wgo_goalie_stats
-  selectedStatKeys: NumericGoalieStatKey[], // UI Keys for WoW ranking
+  leagueWeeklyAverages: LeagueWeeklyAverage[],
+  goalieGameData: GoalieGameStat[],
+  selectedStatKeys: NumericGoalieStatKey[],
   statColumns: StatColumn[],
   startWeek: number,
   endWeek: number,
-  fantasyPointSettings: FantasyPointSettings // Pass in the settings
+  fantasyPointSettings: FantasyPointSettings
 ): GoalieRanking[] => {
+  // Generate cache key
+  const cacheKey = generateRankingCacheKey(
+    goalieWeeklyData.length,
+    goalieGameData.length,
+    selectedStatKeys,
+    startWeek,
+    endWeek,
+    fantasyPointSettings
+  );
+
+  // Check cache first
+  if (calculationCache.has(cacheKey)) {
+    console.log(
+      `🚀 Cache hit for ranking calculation: ${cacheKey.substring(0, 50)}...`
+    );
+    return calculationCache.get(cacheKey);
+  }
+
+  console.log(
+    `🔄 Computing new ranking calculation: ${cacheKey.substring(0, 50)}...`
+  );
+  const startTime = performance.now();
+
+  // ...existing validation code...
   if (
     !goalieWeeklyData ||
     !leagueWeeklyAverages ||
     !goalieGameData ||
-    // goalieWeeklyData.length === 0 || // Allow processing even with no weekly data if game data exists
-    leagueWeeklyAverages.length === 0 || // Needed for WoW
-    goalieGameData.length === 0 // Need game data for fPts and GoG
+    leagueWeeklyAverages.length === 0 ||
+    goalieGameData.length === 0
   ) {
     return [];
   }
@@ -253,41 +291,43 @@ export const calculateGoalieRankings = (
     }
   });
 
-  // --- Prepare Game Data & Calculate Fantasy Points ---
+  // --- OPTIMIZED: Batch calculate fantasy points for all games ---
   const gamesByGoalie = new Map<number, GoalieGameStat[]>();
   let totalLeagueFantasyPoints = 0;
   let totalLeagueGames = 0;
 
-  goalieGameData.forEach((game) => {
+  // Process all game data in a single pass
+  const gamesWithFantasyPoints = goalieGameData.map((game) => {
+    const fPts = calculateGameFantasyPoints(game, fantasyPointSettings);
+    totalLeagueFantasyPoints += fPts;
+    totalLeagueGames++;
+
+    const gameWithFPts = { ...game, fantasyPoints: fPts };
+
     if (game.goalie_id !== null) {
-      // Calculate fantasy points for this game
-      const fPts = calculateGameFantasyPoints(game, fantasyPointSettings);
-      const gameWithFPts = { ...game, fantasyPoints: fPts }; // Add fPts to the game object
-
-      totalLeagueFantasyPoints += fPts;
-      totalLeagueGames++;
-
       if (!gamesByGoalie.has(game.goalie_id)) {
         gamesByGoalie.set(game.goalie_id, []);
       }
-      gamesByGoalie.get(game.goalie_id)!.push(gameWithFPts); // Store game with fPts
+      gamesByGoalie.get(game.goalie_id)!.push(gameWithFPts);
     }
+
+    return gameWithFPts;
   });
 
   // Calculate overall league average fPts per game for the period
   const leagueAvgFantasyPointsPerGame =
     totalLeagueGames > 0 ? totalLeagueFantasyPoints / totalLeagueGames : 0;
 
-  // --- Process Weekly Data & Initialize Results ---
+  // --- OPTIMIZED: Process Weekly Data & Initialize Results ---
   const goalieResults = new Map<
     number,
     {
       info: GoalieInfo;
       weekCounts: WeekCounts;
-      weeklyStatsList: GoalieWeeklyAggregate[]; // Keep for overall stats calc & WoW
-      weeklyPoints: number[]; // For WoW variance (based on weekly ranking vs league avg)
-      gameFantasyPoints: number[]; // For GoG variance (based on fPts per game)
-      gamesInPeriod: GoalieGameStat[]; // Store games (now including fPts)
+      weeklyStatsList: GoalieWeeklyAggregate[];
+      weeklyPoints: number[];
+      gameFantasyPoints: number[];
+      gamesInPeriod: GoalieGameStat[];
     }
   >();
 
@@ -298,42 +338,48 @@ export const calculateGoalieRankings = (
       info: {
         playerId: goalieId,
         goalieFullName: firstGame?.goalie_name ?? "Unknown Goalie",
-        team: undefined // Will get updated from weekly data if available
+        team: undefined
       },
       weekCounts: { Elite: 0, Quality: 0, Average: 0, Bad: 0, "Really Bad": 0 },
       weeklyStatsList: [],
       weeklyPoints: [],
-      gameFantasyPoints: games.map((g) => g.fantasyPoints ?? 0), // Store calculated fPts
-      gamesInPeriod: games // Store the games associated with this goalie
+      gameFantasyPoints: games.map((g) => g.fantasyPoints ?? 0),
+      gamesInPeriod: games
     });
   });
 
-  // Process weekly aggregates (for WoW variance and enriching goalie info like team)
+  // --- OPTIMIZED: Group weekly data by week for efficient processing ---
+  const weeklyDataByWeek = new Map<number, GoalieWeeklyAggregate[]>();
+  goalieWeeklyData.forEach((aggregate) => {
+    if (aggregate.week !== null) {
+      if (!weeklyDataByWeek.has(aggregate.week)) {
+        weeklyDataByWeek.set(aggregate.week, []);
+      }
+      weeklyDataByWeek.get(aggregate.week)!.push(aggregate);
+    }
+  });
+
+  // Process weekly aggregates efficiently
   for (let week = startWeek; week <= endWeek; week++) {
     const leagueAverage = averagesByWeek.get(week);
-    const weeklyAggregatesThisWeek = goalieWeeklyData.filter(
-      (agg) => agg.week === week
-    );
+    const weeklyAggregatesThisWeek = weeklyDataByWeek.get(week) || [];
 
     weeklyAggregatesThisWeek.forEach((goalieStat) => {
       const goalieId = goalieStat.goalie_id;
-      // Only process if the goalie exists in our results map (meaning they had games)
       if (goalieId !== null && goalieResults.has(goalieId)) {
         const currentResult = goalieResults.get(goalieId)!;
 
-        // Calculate weekly rank/points for WoW
         if (leagueAverage) {
           const { ranking, points } = calculateWeeklyRanking(
             goalieStat,
             leagueAverage,
-            selectedStatKeys, // Use UI selected stats for WoW ranking
+            selectedStatKeys,
             statColumns
           );
           currentResult.weekCounts[ranking]++;
           currentResult.weeklyPoints.push(points);
         }
 
-        // Store weekly stats & update info
         currentResult.weeklyStatsList.push(goalieStat);
         currentResult.info.team = goalieStat.team ?? currentResult.info.team;
         if (
@@ -344,27 +390,25 @@ export const calculateGoalieRankings = (
         }
       }
     });
-  } // End week loop
+  }
 
-  // --- Finalize GoalieRanking Output ---
+  // --- OPTIMIZED: Finalize GoalieRanking Output with batch processing ---
   let finalRankings: GoalieRanking[] = [];
+
   goalieResults.forEach((result, goalieId) => {
     const totalRankedWeeks = result.weeklyPoints.length;
     const totalGames = result.gamesInPeriod.length;
 
-    if (totalGames === 0) return; // Skip goalies with no games in the period
+    if (totalGames === 0) return;
 
-    // Calculate WoW Variance (based on weekly points vs league avg ranking)
+    // Calculate variances efficiently
     const wowVariance = calculateStandardDeviation(result.weeklyPoints);
-
-    // Calculate GoG Variance (based on game fantasy points)
-    // Requires at least 2 games to calculate StdDev
     const gogVariance =
       totalGames >= 2
         ? calculateStandardDeviation(result.gameFantasyPoints)
         : 0;
 
-    // Calculate percentage metrics (based on weekly points/ranks)
+    // Calculate percentage metrics
     const acceptableWeeks =
       result.weekCounts.Elite +
       result.weekCounts.Quality +
@@ -375,38 +419,46 @@ export const calculateGoalieRankings = (
     const percentGoodWeeks =
       totalRankedWeeks > 0 ? (goodWeeks / totalRankedWeeks) * 100 : 0;
 
-    // Aggregate overall stats (use game data for accuracy over the period)
-    let totalGP = 0,
-      totalGS = 0,
-      totalWins = 0,
-      totalLosses = 0,
-      totalOTL = 0,
-      totalSaves = 0,
-      totalSA = 0,
-      totalGA = 0,
-      totalSO = 0,
-      totalTOI = 0, // seconds
-      totalFPts = 0;
+    // --- OPTIMIZED: Aggregate overall stats efficiently ---
+    const aggregatedStats = result.gamesInPeriod.reduce(
+      (acc, game) => ({
+        GP: acc.GP + 1,
+        GS: acc.GS + (game.games_started ?? 0),
+        wins: acc.wins + (game.wins ?? 0),
+        losses: acc.losses + (game.losses ?? 0),
+        otLosses: acc.otLosses + (game.ot_losses ?? 0),
+        saves: acc.saves + (game.saves ?? 0),
+        shotsAgainst: acc.shotsAgainst + (game.shots_against ?? 0),
+        goalsAgainst: acc.goalsAgainst + (game.goals_against ?? 0),
+        shutouts: acc.shutouts + (game.shutouts ?? 0),
+        timeOnIce: acc.timeOnIce + (game.time_on_ice ?? 0),
+        fantasyPoints: acc.fantasyPoints + (game.fantasyPoints ?? 0)
+      }),
+      {
+        GP: 0,
+        GS: 0,
+        wins: 0,
+        losses: 0,
+        otLosses: 0,
+        saves: 0,
+        shotsAgainst: 0,
+        goalsAgainst: 0,
+        shutouts: 0,
+        timeOnIce: 0,
+        fantasyPoints: 0
+      }
+    );
 
-    result.gamesInPeriod.forEach((game) => {
-      totalGP++; // Each game row counts as 1 GP? Assuming wgo_goalie_stats is per game played.
-      totalGS += game.games_started ?? 0; // Sum GS if available
-      totalWins += game.wins ?? 0;
-      totalLosses += game.losses ?? 0;
-      totalOTL += game.ot_losses ?? 0;
-      totalSaves += game.saves ?? 0;
-      totalSA += game.shots_against ?? 0;
-      totalGA += game.goals_against ?? 0;
-      totalSO += game.shutouts ?? 0;
-      totalTOI += game.time_on_ice ?? 0; // Should be in seconds from DB
-      totalFPts += game.fantasyPoints ?? 0;
-    });
-
-    const overallSavePct = calculateOverallSavePct(totalSaves, totalSA);
-    const overallGaa = calculateOverallGAA(totalGA, totalTOI);
+    const overallSavePct = calculateOverallSavePct(
+      aggregatedStats.saves,
+      aggregatedStats.shotsAgainst
+    );
+    const overallGaa = calculateOverallGAA(
+      aggregatedStats.goalsAgainst,
+      aggregatedStats.timeOnIce
+    );
     const averageFantasyPointsPerGame =
-      totalGames > 0 ? totalFPts / totalGames : 0;
-
+      totalGames > 0 ? aggregatedStats.fantasyPoints / totalGames : 0;
     const totalWowPoints = result.weeklyPoints.reduce(
       (sum, pts) => sum + pts,
       0
@@ -416,47 +468,43 @@ export const calculateGoalieRankings = (
       playerId: result.info.playerId,
       goalieFullName: result.info.goalieFullName,
       team: result.info.team,
-      totalPoints: totalWowPoints, // Keep total points based on WoW ranking for now
+      totalPoints: totalWowPoints,
       weekCounts: result.weekCounts,
-      percentAcceptableWeeks: percentAcceptableWeeks,
-      percentGoodWeeks: percentGoodWeeks,
-      wowVariance: wowVariance, // WoW based on weekly ranking points
-      gogVariance: gogVariance, // GoG based on std dev of fantasy points per game
-      totalGamesPlayed: totalGP,
-      // totalGamesStarted: totalGS, // Can add if needed
-      totalWins: totalWins,
-      totalLosses: totalLosses,
-      totalOtLosses: totalOTL,
-      totalSaves: totalSaves,
-      totalShotsAgainst: totalSA,
-      totalGoalsAgainst: totalGA,
-      totalShutouts: totalSO,
-      totalTimeOnIce: totalTOI > 0 ? totalTOI / 60 : 0, // Convert seconds to minutes
-      overallSavePct: overallSavePct,
-      overallGaa: overallGaa,
-      // Add fPts averages
-      averageFantasyPointsPerGame: averageFantasyPointsPerGame,
-      leagueAverageFantasyPointsPerGame: leagueAvgFantasyPointsPerGame,
-      // Percentiles added later
+      percentAcceptableWeeks,
+      percentGoodWeeks,
+      wowVariance,
+      gogVariance,
+      totalGamesPlayed: aggregatedStats.GP,
+      totalWins: aggregatedStats.wins,
+      totalLosses: aggregatedStats.losses,
+      totalOtLosses: aggregatedStats.otLosses,
+      totalSaves: aggregatedStats.saves,
+      totalShotsAgainst: aggregatedStats.shotsAgainst,
+      totalGoalsAgainst: aggregatedStats.goalsAgainst,
+      totalShutouts: aggregatedStats.shutouts,
+      totalTimeOnIce:
+        aggregatedStats.timeOnIce > 0 ? aggregatedStats.timeOnIce / 60 : 0,
+      overallSavePct,
+      overallGaa,
+      averageFantasyPointsPerGame,
+      leagueAverageFantasyPointsPerGame: leagueAvgFantasyPointsPerGame, // Fix: use the correct variable name
       percentiles: {},
       averagePercentileRank: 0
     });
   });
 
-  // --- Calculate Percentile Ranks ---
-  // Only calculate if there are rankings to process
+  // --- OPTIMIZED: Batch calculate percentiles ---
   if (finalRankings.length > 0) {
-    // Get all available numeric stat keys from the StatColumn definition that have a defined direction
     const percentileStatKeys = statColumns
       .map((c) => c.value)
       .filter((key) => statMap[key] !== undefined) as NumericGoalieStatKey[];
 
+    // Pre-calculate all stat value arrays to avoid repeated mapping
+    const statValueMaps = new Map<NumericGoalieStatKey, number[]>();
+
     percentileStatKeys.forEach((key) => {
-      const direction = statMap[key];
-      // Extract all non-null, valid numeric values for this stat from the finalRankings
-      const values: number[] = finalRankings
+      const values = finalRankings
         .map((r) => {
-          // Map UI key to the calculated overall stat key in GoalieRanking
           switch (key) {
             case "gamesPlayed":
               return r.totalGamesPlayed;
@@ -475,71 +523,92 @@ export const calculateGoalieRankings = (
             case "shutouts":
               return r.totalShutouts;
             case "timeOnIce":
-              return r.totalTimeOnIce; // Minutes
+              return r.totalTimeOnIce;
             case "savePct":
               return r.overallSavePct;
             case "goalsAgainstAverage":
               return r.overallGaa;
-            // Add savesPer60, shotsAgainstPer60 if calculated and stored in GoalieRanking
-            // case "savesPer60": return r.overallSavesPer60 ?? null;
-            // case "shotsAgainstPer60": return r.overallShotsAgainstPer60 ?? null;
             default:
-              return null; // Ignore stats not directly available as overall numbers
+              return null;
           }
         })
-        .filter((v): v is number => v !== null && !isNaN(v)); // Ensure it's a valid number
+        .filter((v): v is number => v !== null && !isNaN(v));
 
       if (values.length > 0) {
-        const sortedValues = [...values].sort((a, b) => a - b);
-        // Calculate percentile for each goalie
-        finalRankings.forEach((goalie) => {
-          const goalieValue = ((): number | null => {
-            switch (key) {
-              case "gamesPlayed":
-                return goalie.totalGamesPlayed;
-              case "wins":
-                return goalie.totalWins;
-              // ... map other keys similarly ...
-              case "savePct":
-                return goalie.overallSavePct;
-              case "goalsAgainstAverage":
-                return goalie.overallGaa;
-              default:
-                return null;
-            }
-          })();
-
-          if (goalieValue !== null && !isNaN(goalieValue)) {
-            const percentile = calculatePercentile(
-              goalieValue,
-              sortedValues,
-              direction
-            );
-            if (!goalie.percentiles) goalie.percentiles = {};
-            goalie.percentiles[key] = percentile;
-          }
-        });
-      }
-    });
-
-    // Calculate Average Percentile Rank
-    finalRankings.forEach((goalie) => {
-      if (goalie.percentiles) {
-        const validPercentiles = Object.values(goalie.percentiles).filter(
-          (p): p is number => p !== undefined && !isNaN(p)
+        statValueMaps.set(
+          key,
+          [...values].sort((a, b) => a - b)
         );
-        goalie.averagePercentileRank =
-          validPercentiles.length > 0
-            ? validPercentiles.reduce((sum, p) => sum + p, 0) /
-              validPercentiles.length
-            : 0;
-      } else {
-        goalie.averagePercentileRank = 0;
       }
     });
-  } // End percentile calculation
 
-  // Sort by total WoW points (or maybe average percentile rank now?)
-  // Let's keep sorting by WoW points for now.
-  return finalRankings.sort((a, b) => b.totalPoints - a.totalPoints);
+    // Calculate percentiles for each goalie efficiently
+    finalRankings.forEach((goalie) => {
+      const percentiles: Partial<Record<NumericGoalieStatKey, number>> = {};
+      let validPercentileCount = 0;
+      let percentileSum = 0;
+
+      statValueMaps.forEach((sortedValues, key) => {
+        const direction = statMap[key];
+        const goalieValue = (() => {
+          switch (key) {
+            case "gamesPlayed":
+              return goalie.totalGamesPlayed;
+            case "wins":
+              return goalie.totalWins;
+            case "losses":
+              return goalie.totalLosses;
+            case "otLosses":
+              return goalie.totalOtLosses;
+            case "saves":
+              return goalie.totalSaves;
+            case "shotsAgainst":
+              return goalie.totalShotsAgainst;
+            case "goalsAgainst":
+              return goalie.totalGoalsAgainst;
+            case "shutouts":
+              return goalie.totalShutouts;
+            case "timeOnIce":
+              return goalie.totalTimeOnIce;
+            case "savePct":
+              return goalie.overallSavePct;
+            case "goalsAgainstAverage":
+              return goalie.overallGaa;
+            default:
+              return null;
+          }
+        })();
+
+        if (goalieValue !== null && !isNaN(goalieValue)) {
+          const percentile = calculatePercentile(
+            goalieValue,
+            sortedValues,
+            direction
+          );
+          percentiles[key] = percentile;
+          percentileSum += percentile;
+          validPercentileCount++;
+        }
+      });
+
+      goalie.percentiles = percentiles;
+      goalie.averagePercentileRank =
+        validPercentileCount > 0 ? percentileSum / validPercentileCount : 0;
+    });
+  }
+
+  // Sort by total WoW points
+  const sortedRankings = finalRankings.sort(
+    (a, b) => b.totalPoints - a.totalPoints
+  );
+
+  const endTime = performance.now();
+  console.log(
+    `✅ Ranking calculation completed in ${(endTime - startTime).toFixed(2)}ms`
+  );
+
+  // Cache the result
+  calculationCache.set(cacheKey, sortedRankings);
+
+  return sortedRankings;
 };

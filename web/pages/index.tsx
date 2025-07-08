@@ -557,6 +557,67 @@ const Home: NextPage = ({
   );
 };
 
+// Add this helper function near the top after imports
+const checkIfTrueOffseason = async () => {
+  try {
+    const currentSeason = await fetchCurrentSeason();
+    const now = new Date();
+    const seasonStart = new Date(currentSeason.startDate);
+    const seasonEnd = new Date(currentSeason.regularSeasonEndDate);
+    const preseasonStart = currentSeason.preseasonStartdate
+      ? new Date(currentSeason.preseasonStartdate)
+      : null;
+
+    console.log("Offseason check:", {
+      now: now.toISOString(),
+      seasonStart: seasonStart.toISOString(),
+      seasonEnd: seasonEnd.toISOString(),
+      preseasonStart: preseasonStart?.toISOString(),
+      beforeSeasonStart: now < seasonStart,
+      afterSeasonEnd: now > seasonEnd
+    });
+
+    // If we're before the current season starts OR after it ends
+    if (now < seasonStart || now > seasonEnd) {
+      // Check if preseason starts within the next 30 days
+      // If preseason is close (within 30 days), we should start looking for games
+      if (preseasonStart) {
+        const daysUntilPreseason = Math.ceil(
+          (preseasonStart.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        console.log("Days until preseason:", daysUntilPreseason);
+
+        // If preseason starts within 30 days, don't skip game search
+        if (daysUntilPreseason >= 0 && daysUntilPreseason <= 30) {
+          console.log("Preseason starts soon, will search for games");
+          return false;
+        }
+      }
+
+      // Check if regular season starts within the next 30 days
+      const daysUntilRegularSeason = Math.ceil(
+        (seasonStart.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      console.log("Days until regular season:", daysUntilRegularSeason);
+
+      // If regular season starts within 30 days, don't skip game search
+      if (daysUntilRegularSeason >= 0 && daysUntilRegularSeason <= 30) {
+        console.log("Regular season starts soon, will search for games");
+        return false;
+      }
+
+      // We're in true offseason - no games coming up soon
+      console.log("In true offseason - no games scheduled soon");
+      return true;
+    }
+
+    return false; // Not in offseason - we're in active season
+  } catch (error) {
+    console.error("Error checking offseason status:", error);
+    return false; // Default to checking games if error
+  }
+};
+
 export async function getServerSideProps({ req, res }) {
   res.setHeader(
     "Cache-Control",
@@ -671,9 +732,31 @@ export async function getServerSideProps({ req, res }) {
     }
   };
 
-  const today = moment().format("YYYY-MM-DD"); // Use local timezone for consistency with client
+  // Check if we're in true offseason before searching for games
+  const isTrueOffseason = await checkIfTrueOffseason();
+
+  if (isTrueOffseason) {
+    console.log(
+      "Detected true offseason - no future season exists. Skipping game search."
+    );
+
+    const injuries = await fetchInjuries();
+    const standings = await fetchStandings();
+
+    return {
+      props: {
+        initialGames: [], // No games in true offseason
+        initialInjuries: injuries,
+        initialStandings: standings,
+        nextGameDate: moment().format("YYYY-MM-DD") // Use today's date
+      }
+    };
+  }
+
+  // Original game searching logic for when we're not in true offseason
+  const today = moment().format("YYYY-MM-DD");
   let gamesToday = await fetchGames(today);
-  let nextGameDateFound = today; // Always start with today
+  let nextGameDateFound = today;
 
   if (gamesToday.length === 0) {
     console.log(
@@ -681,14 +764,14 @@ export async function getServerSideProps({ req, res }) {
     );
     let nextDay = moment(today).add(1, "days");
     let attempts = 0;
-    const maxAttempts = 30; // Limit search to 30 days to prevent infinite loop
+    const maxAttempts = 30; // Limit search to 30 days
 
     while (gamesToday.length === 0 && attempts < maxAttempts) {
       const dateStr = nextDay.format("YYYY-MM-DD");
       console.log(`Checking for games on ${dateStr}...`);
       gamesToday = await fetchGames(dateStr);
       if (gamesToday.length > 0) {
-        nextGameDateFound = dateStr; // Only change the date if we found games on a different day
+        nextGameDateFound = dateStr;
         console.log(`Found next games on ${nextGameDateFound}`);
         break;
       }
@@ -699,7 +782,6 @@ export async function getServerSideProps({ req, res }) {
       console.warn(`Could not find games within the next ${maxAttempts} days.`);
     }
   } else {
-    // If we found games today, make sure nextGameDateFound stays as today
     nextGameDateFound = today;
     console.log(`Found games for today (${today})`);
   }
@@ -712,7 +794,7 @@ export async function getServerSideProps({ req, res }) {
       initialGames: gamesToday,
       initialInjuries: injuries,
       initialStandings: standings,
-      nextGameDate: nextGameDateFound // Pass the date for which games were actually found
+      nextGameDate: nextGameDateFound
     }
   };
 }
