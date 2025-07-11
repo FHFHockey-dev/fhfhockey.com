@@ -1,13 +1,6 @@
 // /pages/StatsPage.tsx
 
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useReducer,
-  useCallback,
-  useMemo
-} from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styles from "styles/Stats.module.scss";
 import LeaderboardCategory from "components/StatsPage/LeaderboardCategory";
 import LeaderboardCategoryBSH from "components/StatsPage/LeaderboardCategoryBSH";
@@ -47,69 +40,13 @@ interface TeamColors {
   alt: string;
 }
 
-// Team color state management with useReducer
-interface TeamColorState {
-  activeTeamColors: TeamColors | null;
-  hoveredTeam: string | null;
-  animationState: "resting" | "triggered" | "triggeredAlt";
-  lastTriggeredTeam: string | null;
+interface ActiveGradient {
+  id: string;
+  colors: TeamColors;
+  opacity: number;
+  fadeState: "fadeIn" | "active" | "fadeOut";
+  createdAt: number;
 }
-
-type TeamColorAction =
-  | { type: "TEAM_HOVER"; payload: { teamAbbrev: string; colors: TeamColors } }
-  | { type: "TEAM_LEAVE" }
-  | { type: "CLEAR_COLORS" }
-  | { type: "SET_ANIMATION"; payload: "triggered" | "triggeredAlt" };
-
-const teamColorReducer = (
-  state: TeamColorState,
-  action: TeamColorAction
-): TeamColorState => {
-  switch (action.type) {
-    case "TEAM_HOVER":
-      const { teamAbbrev, colors } = action.payload;
-      const newAnimationState =
-        teamAbbrev !== state.lastTriggeredTeam ||
-        state.animationState === "resting"
-          ? state.animationState === "resting" ||
-            state.animationState === "triggeredAlt"
-            ? "triggered"
-            : "triggeredAlt"
-          : state.animationState;
-
-      return {
-        ...state,
-        hoveredTeam: teamAbbrev,
-        activeTeamColors: colors,
-        animationState: newAnimationState,
-        lastTriggeredTeam: teamAbbrev
-      };
-    case "TEAM_LEAVE":
-      return {
-        ...state,
-        hoveredTeam: null
-      };
-    case "CLEAR_COLORS":
-      return {
-        ...state,
-        activeTeamColors: null
-      };
-    case "SET_ANIMATION":
-      return {
-        ...state,
-        animationState: action.payload
-      };
-    default:
-      return state;
-  }
-};
-
-const initialTeamColorState: TeamColorState = {
-  activeTeamColors: null,
-  hoveredTeam: null,
-  animationState: "resting",
-  lastTriggeredTeam: null
-};
 
 export default function StatsPage({
   pointsLeaders,
@@ -123,29 +60,20 @@ export default function StatsPage({
   teams = []
 }: StatsProps & { teams: TeamListItem[] }) {
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
-  const [teamColorState, dispatch] = useReducer(
-    teamColorReducer,
-    initialTeamColorState
+  const [activeTeamColors, setActiveTeamColors] = useState<TeamColors | null>(
+    null
+  );
+  const [hoveredTeam, setHoveredTeam] = useState<string | null>(null);
+  const [animationState, setAnimationState] = useState<
+    "resting" | "triggered" | "triggeredAlt"
+  >("resting");
+  const [lastTriggeredTeam, setLastTriggeredTeam] = useState<string | null>(
+    null
   );
   const hoverTimeoutRef = useRef<NodeJS.Timeout>();
   const mouseLeaveTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Memoized team color generation function
-  const generateTeamColorStyles = useCallback((): React.CSSProperties => {
-    if (!teamColorState.activeTeamColors) {
-      return {};
-    }
-
-    return {
-      "--team-primary": teamColorState.activeTeamColors.primary,
-      "--team-secondary": teamColorState.activeTeamColors.secondary,
-      "--team-jersey": teamColorState.activeTeamColors.jersey,
-      "--team-accent": teamColorState.activeTeamColors.accent,
-      "--team-alt": teamColorState.activeTeamColors.alt
-    } as React.CSSProperties;
-  }, [teamColorState.activeTeamColors]);
-
-  const handleTeamMouseEnter = useCallback((teamAbbreviation: string) => {
+  const handleTeamMouseEnter = (teamAbbreviation: string) => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
@@ -153,38 +81,46 @@ export default function StatsPage({
       clearTimeout(mouseLeaveTimeoutRef.current);
     }
 
+    setHoveredTeam(teamAbbreviation);
+
     hoverTimeoutRef.current = setTimeout(() => {
       const teamInfo = teamsInfo[teamAbbreviation];
       if (!teamInfo) return;
 
-      const colors: TeamColors = {
+      if (
+        teamAbbreviation !== lastTriggeredTeam ||
+        animationState === "resting"
+      ) {
+        if (animationState === "resting" || animationState === "triggeredAlt") {
+          setAnimationState("triggered");
+        } else {
+          setAnimationState("triggeredAlt");
+        }
+        setLastTriggeredTeam(teamAbbreviation);
+      }
+
+      setActiveTeamColors({
         primary: teamInfo.primaryColor,
         secondary: teamInfo.secondaryColor,
         jersey: teamInfo.jersey,
         accent: teamInfo.accent,
         alt: teamInfo.alt
-      };
-
-      dispatch({
-        type: "TEAM_HOVER",
-        payload: { teamAbbrev: teamAbbreviation, colors }
       });
     }, 200);
-  }, []);
+  };
 
-  const handleTeamMouseLeave = useCallback(() => {
+  const handleTeamMouseLeave = () => {
     if (hoverTimeoutRef.current) {
       clearTimeout(hoverTimeoutRef.current);
     }
 
-    dispatch({ type: "TEAM_LEAVE" });
+    setHoveredTeam(null);
 
     mouseLeaveTimeoutRef.current = setTimeout(() => {
-      dispatch({ type: "CLEAR_COLORS" });
+      setActiveTeamColors(null);
     }, 500);
-  }, []);
+  };
 
-  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (hoverTimeoutRef.current) {
@@ -196,38 +132,48 @@ export default function StatsPage({
     };
   }, []);
 
-  // Memoized quick stats calculation
-  const quickStats: QuickStat[] = useMemo(
-    () => [
-      {
-        label: "Points Leader",
-        value: pointsLeaders[0]?.points || 0,
-        subtitle: `${pointsLeaders[0]?.fullName || "N/A"}`,
-        category: "scoring"
-      },
-      {
-        label: "Goals Leader",
-        value: goalsLeaders[0]?.goals || 0,
-        subtitle: `${goalsLeaders[0]?.fullName || "N/A"}`,
-        category: "scoring"
-      },
-      {
-        label: "Save Percentage",
-        value: goalieLeadersSavePct[0]?.save_pct
-          ? goalieLeadersSavePct[0].save_pct.toFixed(3).replace(/^0/, "")
-          : "-.---",
-        subtitle: `${goalieLeadersSavePct[0]?.fullName || "N/A"}`,
-        category: "goaltending"
-      },
-      {
-        label: "Active Teams",
-        value: teams.length,
-        subtitle: "NHL Organizations",
-        category: "league"
-      }
-    ],
-    [pointsLeaders, goalsLeaders, goalieLeadersSavePct, teams]
-  );
+  const generateTeamColorStyles = (): React.CSSProperties => {
+    if (!activeTeamColors) {
+      return {};
+    }
+
+    return {
+      "--team-primary": activeTeamColors.primary,
+      "--team-secondary": activeTeamColors.secondary,
+      "--team-jersey": activeTeamColors.jersey,
+      "--team-accent": activeTeamColors.accent,
+      "--team-alt": activeTeamColors.alt
+    } as React.CSSProperties;
+  };
+
+  const quickStats: QuickStat[] = [
+    {
+      label: "Points Leader",
+      value: pointsLeaders[0]?.points || 0,
+      subtitle: `${pointsLeaders[0]?.fullName || "N/A"}`,
+      category: "scoring"
+    },
+    {
+      label: "Goals Leader",
+      value: goalsLeaders[0]?.goals || 0,
+      subtitle: `${goalsLeaders[0]?.fullName || "N/A"}`,
+      category: "scoring"
+    },
+    {
+      label: "Save Percentage",
+      value: goalieLeadersSavePct[0]?.save_pct
+        ? goalieLeadersSavePct[0].save_pct.toFixed(3).replace(/^0/, "")
+        : "-.---",
+      subtitle: `${goalieLeadersSavePct[0]?.fullName || "N/A"}`,
+      category: "goaltending"
+    },
+    {
+      label: "Active Teams",
+      value: teams.length,
+      subtitle: "NHL Organizations",
+      category: "league"
+    }
+  ];
 
   return (
     <div className={styles.container}>
@@ -241,11 +187,11 @@ export default function StatsPage({
 
           <div
             className={`${styles.teamsSection} ${
-              teamColorState.activeTeamColors ? styles.teamsSectionActive : ""
+              activeTeamColors ? styles.teamsSectionActive : ""
             } ${
-              teamColorState.animationState === "triggered"
+              animationState === "triggered"
                 ? styles.teamsSectionTriggered
-                : teamColorState.animationState === "triggeredAlt"
+                : animationState === "triggeredAlt"
                   ? styles.teamsSectionTriggeredAlt
                   : ""
             }`}
@@ -254,10 +200,9 @@ export default function StatsPage({
           >
             <div className={styles.teamNameHeader}>
               <span className={styles.teamNameText}>
-                {teamColorState.hoveredTeam
-                  ? teams.find(
-                      (team) => team.abbreviation === teamColorState.hoveredTeam
-                    )?.name || teamColorState.hoveredTeam
+                {hoveredTeam
+                  ? teams.find((team) => team.abbreviation === hoveredTeam)
+                      ?.name || hoveredTeam
                   : ""}
               </span>
             </div>
@@ -268,8 +213,7 @@ export default function StatsPage({
                   key={team.team_id}
                   href={`/stats/team/${team.abbreviation}`}
                   className={`${styles.teamListItem} ${
-                    teamColorState.hoveredTeam &&
-                    teamColorState.hoveredTeam !== team.abbreviation
+                    hoveredTeam && hoveredTeam !== team.abbreviation
                       ? styles.teamListItemBlurred
                       : ""
                   }`}

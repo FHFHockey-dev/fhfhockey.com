@@ -12,9 +12,7 @@ import {
   Ranking,
   WeekOption,
   GoalieBaseStats,
-  GoalieAverages,
-  FantasyPointSettings,
-  FantasyCountStatKey
+  GoalieAverages
 } from "components/GoaliePage/goalieTypes";
 import { calculateWeeklyRanking } from "./goalieCalculations"; // Removed unused rankingPoints import
 
@@ -31,7 +29,6 @@ type DisplayGoalie = GoalieBaseStats & {
   team?: string;
   percentage?: number;
   ranking?: Ranking;
-  fantasyPoints?: number; // Add fantasy points property
 };
 
 interface GoalieWeeklyRank extends GoalieWeeklyAggregate {
@@ -49,8 +46,6 @@ interface Props {
   setView: React.Dispatch<React.SetStateAction<"leaderboard" | "week">>;
   loading?: boolean; // Optional loading state
   onBackToLeaderboard: () => void; // Function to go back to leaderboard
-  fantasySettings?: FantasyPointSettings; // Add fantasy settings prop
-  onFantasySettingsChange?: (settings: FantasyPointSettings) => void; // Add change handler
 }
 
 const GoalieList: FC<Props> = ({
@@ -61,8 +56,7 @@ const GoalieList: FC<Props> = ({
   statColumns,
   // setView, // Commented out if not used
   loading,
-  onBackToLeaderboard,
-  fantasySettings // Add fantasySettings to destructuring
+  onBackToLeaderboard
 }) => {
   // --- Start of Hook Declarations ---
 
@@ -124,49 +118,24 @@ const GoalieList: FC<Props> = ({
   // Step 2: Transform GoalieWeeklyRank[] into DisplayGoalie[] for GoalieTable
   const goaliesForTable = useMemo((): DisplayGoalie[] => {
     let transformedGoalies = rankedWeeklyData.map((rankData) => {
-      // Calculate fantasy points for this goalie based on their weekly stats
-      const calculateWeeklyFantasyPoints = (
-        data: GoalieWeeklyRank,
-        settings: FantasyPointSettings
-      ): number => {
-        let fPts = 0;
-        fPts += (data.weekly_ga ?? 0) * settings.goalAgainst;
-        fPts += (data.weekly_saves ?? 0) * settings.save;
-        fPts += (data.weekly_so ?? 0) * settings.shutout;
-        fPts += (data.weekly_wins ?? 0) * settings.win;
-        return fPts;
-      };
-
-      const fantasyPoints = fantasySettings
-        ? calculateWeeklyFantasyPoints(rankData, fantasySettings)
-        : 0;
-
       const displayGoalie: Partial<DisplayGoalie> = {
         playerId: rankData.goalie_id ?? -1,
         goalieFullName: rankData.goalie_name ?? "Unknown Goalie",
         team: rankData.team ?? undefined,
         ranking: rankData.weeklyRank,
-        percentage: rankData.weeklyRankPercentage,
-        // Map database field names to UI field names correctly
-        gamesPlayed: rankData.weekly_gp ?? 0,
-        gamesStarted: rankData.weekly_gs ?? 0,
-        wins: rankData.weekly_wins ?? 0,
-        losses: rankData.weekly_losses ?? 0,
-        otLosses: rankData.weekly_ot_losses ?? 0,
-        saves: rankData.weekly_saves ?? 0,
-        shotsAgainst: rankData.weekly_sa ?? 0,
-        goalsAgainst: rankData.weekly_ga ?? 0,
-        shutouts: rankData.weekly_so ?? 0,
-        timeOnIce: rankData.weekly_toi_seconds
-          ? rankData.weekly_toi_seconds / 60
-          : 0, // Convert seconds to minutes
-        savePct: rankData.weekly_sv_pct ?? 0,
-        goalsAgainstAverage: rankData.weekly_gaa ?? 0,
-        savesPer60: rankData.weekly_saves_per_60 ?? 0,
-        shotsAgainstPer60: rankData.weekly_sa_per_60 ?? 0,
-        fantasyPoints // Add fantasy points to the display goalie
+        percentage: rankData.weeklyRankPercentage
       };
-
+      // Add other GoalieBaseStats properties from rankData
+      Object.keys(GoalieBaseStatsExample).forEach((baseKey) => {
+        const key = baseKey as keyof GoalieBaseStats;
+        const value = (rankData as any)[key]; // Assuming GoalieWeeklyRank includes GoalieBaseStats fields
+        if (value !== undefined && value !== null) {
+          (displayGoalie as any)[key] = value;
+        } else {
+          // Assign default from GoalieBaseStatsExample if value is missing/null
+          (displayGoalie as any)[key] = GoalieBaseStatsExample[key];
+        }
+      });
       return displayGoalie as DisplayGoalie;
     });
 
@@ -211,17 +180,6 @@ const GoalieList: FC<Props> = ({
           if (effectiveARank < effectiveBRank)
             return listSortConfig.direction === "ascending" ? -1 : 1;
           if (effectiveARank > effectiveBRank)
-            return listSortConfig.direction === "ascending" ? 1 : -1;
-          return 0;
-        }
-
-        if (key === "fantasyPoints") {
-          // Special sort for fantasy points - they should be numbers
-          const aFpts = typeof aValue === "number" ? aValue : 0;
-          const bFpts = typeof bValue === "number" ? bValue : 0;
-          if (aFpts < bFpts)
-            return listSortConfig.direction === "ascending" ? -1 : 1;
-          if (aFpts > bFpts)
             return listSortConfig.direction === "ascending" ? 1 : -1;
           return 0;
         }
@@ -316,7 +274,6 @@ const GoalieList: FC<Props> = ({
         | "team"
         | "percentage"
         | "ranking"
-        | "fantasyPoints"
         | "gameDate" // Keep potential key from GoalieTable
     ) => {
       // Build list of valid keys *based on GoalieBaseStatsExample*
@@ -326,7 +283,6 @@ const GoalieList: FC<Props> = ({
         "team",
         "percentage",
         "ranking",
-        "fantasyPoints", // Add fantasyPoints as a valid sort key
         ...(Object.keys(GoalieBaseStatsExample) as Array<keyof GoalieBaseStats>)
       ];
 

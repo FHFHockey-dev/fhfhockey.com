@@ -6,8 +6,7 @@ import React, {
   ChangeEvent,
   FC,
   useCallback,
-  useMemo,
-  useReducer
+  useMemo
 } from "react";
 import GoalieList from "components/GoaliePage/GoalieList";
 import GoalieLeaderboard from "components/GoaliePage/GoalieLeaderboard";
@@ -114,48 +113,6 @@ export interface SortConfig<T> {
   direction: "ascending" | "descending";
 }
 
-// --- UNIFIED LOADING STATE MANAGER ---
-interface LoadingState {
-  isLoading: boolean;
-  stage: "idle" | "season" | "weeks" | "leaderboard" | "singleWeek";
-  message: string;
-  progress?: number; // 0-100 percentage for progress indicators
-}
-
-type LoadingAction =
-  | { type: "START_LOADING"; stage: LoadingState["stage"]; message: string }
-  | { type: "UPDATE_PROGRESS"; progress: number }
-  | { type: "UPDATE_MESSAGE"; message: string }
-  | { type: "STOP_LOADING" };
-
-const loadingReducer = (
-  state: LoadingState,
-  action: LoadingAction
-): LoadingState => {
-  switch (action.type) {
-    case "START_LOADING":
-      return {
-        isLoading: true,
-        stage: action.stage,
-        message: action.message,
-        progress: 0
-      };
-    case "UPDATE_PROGRESS":
-      return { ...state, progress: action.progress };
-    case "UPDATE_MESSAGE":
-      return { ...state, message: action.message };
-    case "STOP_LOADING":
-      return {
-        isLoading: false,
-        stage: "idle",
-        message: "",
-        progress: 0
-      };
-    default:
-      return state;
-  }
-};
-
 // --- Component Definition ---
 const GoalieTrends: FC = () => {
   const currentSeason = useCurrentSeason(); // Use the hook to get season data
@@ -178,13 +135,10 @@ const GoalieTrends: FC = () => {
     DEFAULT_FANTASY_SETTINGS
   );
 
-  const [loadingState, dispatchLoading] = useReducer(loadingReducer, {
-    isLoading: true,
-    stage: "season" as const,
-    message: "Loading current season...",
-    progress: undefined
-  });
-
+  const [loading, setLoading] = useState<boolean>(true);
+  const [loadingMessage, setLoadingMessage] = useState<string>(
+    "Loading week options..."
+  );
   const [error, setError] = useState<string | null>(null);
 
   // Data states (unchanged)
@@ -221,20 +175,14 @@ const GoalieTrends: FC = () => {
   useEffect(() => {
     // Don't run if the season hasn't been loaded yet
     if (!currentSeason) {
-      dispatchLoading({
-        type: "START_LOADING",
-        stage: "season",
-        message: "Loading current season..."
-      });
+      setLoading(true); // Keep loading indicator on
+      setLoadingMessage("Loading current season...");
       return;
     }
 
     const fetchOptions = async () => {
-      dispatchLoading({
-        type: "START_LOADING",
-        stage: "weeks",
-        message: "Loading week options for current season..."
-      });
+      setLoading(true);
+      setLoadingMessage("Loading week options for current season...");
       setError(null);
       setWeekOptions([]); // Clear previous options
       setSelectedRange({ start: 0, end: -1 }); // Reset range
@@ -302,7 +250,8 @@ const GoalieTrends: FC = () => {
         setError(err.message || "Failed to load week options.");
       } finally {
         // Set loading false ONLY after options (or error) are processed
-        dispatchLoading({ type: "STOP_LOADING" });
+        setLoading(false);
+        setLoadingMessage(""); // Clear message
       }
     };
 
@@ -327,10 +276,7 @@ const GoalieTrends: FC = () => {
         weekOptions.length > 0 &&
         selectedRange.end !== -1
       ) {
-        dispatchLoading({
-          type: "UPDATE_MESSAGE",
-          message: "Waiting for current season data..."
-        });
+        setLoadingMessage("Waiting for current season data...");
       } else if (weekOptions.length > 0 && selectedRange.end !== -1) {
         setGoalieWeeklyData(null);
         setLeagueWeeklyAverages(null);
@@ -340,11 +286,8 @@ const GoalieTrends: FC = () => {
     }
 
     const fetchRangeData = async () => {
-      dispatchLoading({
-        type: "START_LOADING",
-        stage: "leaderboard",
-        message: "Fetching leaderboard data (aggregates, games)..."
-      });
+      setLoading(true);
+      setLoadingMessage("Fetching leaderboard data (aggregates, games)...");
       setError(null); // Clear previous range errors
 
       const startWeekValue = weekOptions[selectedRange.start]?.value;
@@ -359,7 +302,7 @@ const GoalieTrends: FC = () => {
           weekOptions.length
         );
         setError("Invalid week range selected.");
-        dispatchLoading({ type: "STOP_LOADING" });
+        setLoading(false);
         return;
       }
 
@@ -400,35 +343,11 @@ const GoalieTrends: FC = () => {
           .lte("date", endDateString);
 
         console.log("Starting parallel fetchAllPages for range data...");
-
-        // Track progress across parallel fetches
-        let completedFetches = 0;
-        const updateOverallProgress = () => {
-          completedFetches++;
-          const progress = Math.round((completedFetches / 3) * 100);
-          dispatchLoading({
-            type: "UPDATE_MESSAGE",
-            message: `Loading leaderboard data... ${progress}%`
-          });
-        };
-
         const [allGoalieAggData, allAvgAggData, allGameData] =
           await Promise.all([
-            fetchAllPages<GoalieWeeklyAggregate>(goalieAggQuery, {
-              useCache: true,
-              cacheKey: `goalie_agg_${seasonForYahooAggregates}_${startWeekValue.week}_${endWeekValue.week}`,
-              onProgress: () => updateOverallProgress()
-            }),
-            fetchAllPages<LeagueWeeklyAverage>(avgAggQuery, {
-              useCache: true,
-              cacheKey: `league_avg_${seasonForYahooAggregates}_${startWeekValue.week}_${endWeekValue.week}`,
-              onProgress: () => updateOverallProgress()
-            }),
-            fetchAllPages<GoalieGameStat>(gameDataQuery, {
-              useCache: true,
-              cacheKey: `game_stats_${nhlSeasonId}_${startDateString}_${endDateString}`,
-              onProgress: () => updateOverallProgress()
-            })
+            fetchAllPages<GoalieWeeklyAggregate>(goalieAggQuery),
+            fetchAllPages<LeagueWeeklyAverage>(avgAggQuery),
+            fetchAllPages<GoalieGameStat>(gameDataQuery)
           ]);
         console.log("Finished parallel fetchAllPages.");
 
@@ -489,7 +408,8 @@ const GoalieTrends: FC = () => {
         setLeagueWeeklyAverages(null);
         setGoalieGameData(null);
       } finally {
-        dispatchLoading({ type: "STOP_LOADING" });
+        setLoading(false);
+        setLoadingMessage("");
       }
     };
 
@@ -519,11 +439,9 @@ const GoalieTrends: FC = () => {
 
     const fetchSingleWeekData = async () => {
       setSingleWeekLoading(true); // Use specific loading flag
-      dispatchLoading({
-        type: "START_LOADING",
-        stage: "singleWeek",
-        message: `Workspaceing data for Week ${selectedWeekOption.week}...`
-      }); // Update main message
+      setLoadingMessage(
+        `Workspaceing data for Week ${selectedWeekOption.week}...`
+      ); // Update main message
       setSingleWeekError(null); // Clear previous single week error
       setSingleWeekGoalieData(null); // Clear previous data
       setSingleWeekLeagueAverage(null);
@@ -575,7 +493,7 @@ const GoalieTrends: FC = () => {
         setSingleWeekLeagueAverage(null);
       } finally {
         setSingleWeekLoading(false);
-        dispatchLoading({ type: "STOP_LOADING" }); // Clear message
+        setLoadingMessage(""); // Clear message
       }
     };
 
@@ -628,26 +546,6 @@ const GoalieTrends: FC = () => {
     if (leaderboardSortConfig.key !== null) {
       sortableItems.sort((a, b) => {
         const key = leaderboardSortConfig.key!;
-
-        // Special handling for Total fPts calculation
-        if (
-          key === "totalGamesPlayed" &&
-          leaderboardSortConfig.key === "totalGamesPlayed"
-        ) {
-          // Check if we're actually trying to sort by Total fPts (when user clicks Total fPts column)
-          // We'll use a custom calculation for total fantasy points
-          const aTotalFpts = a.averageFantasyPointsPerGame * a.totalGamesPlayed;
-          const bTotalFpts = b.averageFantasyPointsPerGame * b.totalGamesPlayed;
-
-          if (aTotalFpts < bTotalFpts) {
-            return leaderboardSortConfig.direction === "ascending" ? -1 : 1;
-          }
-          if (aTotalFpts > bTotalFpts) {
-            return leaderboardSortConfig.direction === "ascending" ? 1 : -1;
-          }
-          return 0;
-        }
-
         // Type guard for properties that might not exist on all items (though GoalieRanking should be consistent)
         if (!(key in a) || !(key in b)) {
           return 0;
@@ -787,14 +685,12 @@ const GoalieTrends: FC = () => {
       </div>
 
       {/* --- Loading / Error --- */}
-      {loadingState.isLoading && (
-        <p className={styles.loadingMessage}>{loadingState.message}</p>
-      )}
+      {loading && <p className={styles.loadingMessage}>{loadingMessage}</p>}
       {error && <p className={styles.errorText}>Error: {error}</p>}
 
       {/* --- Controls --- */}
       {/* Only show controls if week options are loaded */}
-      {!loadingState.isLoading && weekOptions.length > 0 && (
+      {!loading && weekOptions.length > 0 && (
         <div className={styles.controlsWrapper}>
           {/* Mode Toggles Section */}
           <div className={styles.controlsSection}>
@@ -805,7 +701,7 @@ const GoalieTrends: FC = () => {
                   !useSingleWeek ? styles.active : ""
                 }`}
                 onClick={() => handleModeToggle("range")}
-                disabled={loadingState.isLoading && useSingleWeek} // Keep disabled logic if loading state applies here
+                disabled={loading && useSingleWeek} // Keep disabled logic if loading state applies here
               >
                 Date Range Leaderboard
               </button>
@@ -814,7 +710,7 @@ const GoalieTrends: FC = () => {
                   useSingleWeek ? styles.active : ""
                 }`}
                 onClick={() => handleModeToggle("single")}
-                disabled={loadingState.isLoading && !useSingleWeek} // Keep disabled logic if loading state applies here
+                disabled={loading && !useSingleWeek} // Keep disabled logic if loading state applies here
               >
                 Single Week Stats
               </button>
@@ -940,61 +836,48 @@ const GoalieTrends: FC = () => {
             </div>
           </div>
 
-          {/* Fantasy Settings Section - Show for BOTH modes */}
-          <div className={styles.controlsSection}>
-            <h2 className={styles.sectionTitle}>Fantasy Settings</h2>
-            <div className={styles.fantasyInputGrid}>
-              {selectedStats
-                .filter((stat) => {
-                  // Only show fantasy inputs for stats that have a corresponding fantasy key
-                  const statColumn = STAT_COLUMNS.find(
-                    (col) => col.value === stat
-                  );
-                  return statColumn?.fantasyStatKey;
-                })
-                .map((stat) => {
-                  const statColumn = STAT_COLUMNS.find(
-                    (col) => col.value === stat
-                  );
-                  const fantasyKey = statColumn?.fantasyStatKey;
-                  if (!fantasyKey) return null;
-
-                  return (
-                    <div key={fantasyKey} className={styles.fantasyInputItem}>
-                      <label htmlFor={`fantasy-${fantasyKey}`}>
-                        {fantasyKey === "goalAgainst"
-                          ? "GA"
-                          : fantasyKey === "save"
-                            ? "SV"
-                            : fantasyKey === "shutout"
-                              ? "SO"
-                              : "W"}
-                      </label>
-                      <input
-                        type="number"
-                        id={`fantasy-${fantasyKey}`}
-                        name={fantasyKey}
-                        value={fantasySettings[fantasyKey]}
-                        onChange={handleFantasySettingChange}
-                        step={fantasyKey === "save" ? 0.1 : 1}
-                        className={styles.fantasyInput}
-                      />
-                    </div>
-                  );
-                })}
+          {/* Fantasy Settings Section - Only show for leaderboard */}
+          {!useSingleWeek && (
+            <div className={styles.controlsSection}>
+              <h2 className={styles.sectionTitle}>Fantasy Settings</h2>
+              <div className={styles.fantasyInputGrid}>
+                {(
+                  Object.keys(DEFAULT_FANTASY_SETTINGS) as FantasyCountStatKey[]
+                ).map((key) => (
+                  <div key={key} className={styles.fantasyInputItem}>
+                    <label htmlFor={`fantasy-${key}`}>
+                      {key === "goalAgainst"
+                        ? "GA"
+                        : key === "save"
+                          ? "SV"
+                          : key === "shutout"
+                            ? "SO"
+                            : "W"}
+                    </label>
+                    <input
+                      type="number"
+                      id={`fantasy-${key}`}
+                      name={key}
+                      value={fantasySettings[key]}
+                      onChange={handleFantasySettingChange}
+                      step={key === "save" ? 0.1 : 1}
+                      className={styles.fantasyInput}
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className={styles.selectorNote}>
+                Adjust points per stat. GoG Variance recalculates based on these
+                values.
+              </p>
             </div>
-            <p className={styles.selectorNote}>
-              {useSingleWeek
-                ? "Adjust points per stat. Fantasy points will be calculated for each goalie in the table."
-                : "Adjust points per stat. GoG Variance recalculates based on these values."}
-            </p>
-          </div>
+          )}
         </div> // End controlsWrapper
       )}
 
       {/* --- Main Content Area (Leaderboard or List) --- */}
       {/* Only render content area if not loading initial options, OR if options are loaded */}
-      {(!loadingState.isLoading || weekOptions.length > 0) && (
+      {(!loading || weekOptions.length > 0) && (
         <div className={styles.contentWrapper}>
           {/* Optional: Add scroll container if tables might overflow */}
           {/* <div className={styles.tableScrollContainer}> */}
@@ -1019,13 +902,12 @@ const GoalieTrends: FC = () => {
               setView={setView} // Pass setView if GoalieList/Table needs it internally
               onBackToLeaderboard={handleBackToLeaderboard}
               loading={singleWeekLoading} // Pass correct loading state
-              fantasySettings={fantasySettings} // Pass fantasy settings
             />
           )}
           {/* </div> End tableScrollContainer */}
 
           {/* Placeholder if no weeks loaded after initial load */}
-          {!loadingState.isLoading && weekOptions.length === 0 && !error && (
+          {!loading && weekOptions.length === 0 && !error && (
             <p className={styles.loadingMessage}>No week data found.</p>
           )}
         </div> // End contentWrapper

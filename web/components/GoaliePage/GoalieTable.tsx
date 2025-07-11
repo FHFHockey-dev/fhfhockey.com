@@ -25,7 +25,6 @@ type DisplayGoalie = GoalieBaseStats & {
   // Add derived stats if calculated upstream
   savesPer60?: number;
   shotsAgainstPer60?: number;
-  fantasyPoints?: number; // Add fantasy points property
 };
 
 interface Props {
@@ -171,9 +170,6 @@ const GoalieTable: FC<Props> = ({
               </td>
             ))}
             {/* Spacers for optional columns */}
-            {goalies[0]?.fantasyPoints !== undefined && (
-              <td className={styles.averageHeader}>Total fPts</td>
-            )}
             {goalies[0]?.percentage !== undefined && (
               <td className={styles.averageHeader}></td>
             )}
@@ -209,13 +205,6 @@ const GoalieTable: FC<Props> = ({
                 {getSortIndicator(stat.value)}
               </th>
             ))}
-            {/* Conditionally show Fantasy Points header */}
-            {goalies[0]?.fantasyPoints !== undefined && (
-              <th onClick={() => requestSort("fantasyPoints")}>
-                Total fPts
-                {getSortIndicator("fantasyPoints")}
-              </th>
-            )}
             {/* Conditionally show Percentage/Ranking headers (add sorting if needed) */}
             {goalies[0]?.percentage !== undefined && (
               <th onClick={() => requestSort("percentage")}>
@@ -274,10 +263,6 @@ const GoalieTable: FC<Props> = ({
                     </td>
                   );
                 })}
-                {/* Fantasy Points cell */}
-                {goalie.fantasyPoints !== undefined && (
-                  <td>{goalie.fantasyPoints.toFixed(1)}</td>
-                )}
                 {/* Optional Percentage/Ranking cells */}
                 {goalie.percentage !== undefined && (
                   <td className={getPercentageClass(goalie.percentage)}>
