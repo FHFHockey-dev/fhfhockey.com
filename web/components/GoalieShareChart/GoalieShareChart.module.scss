@@ -7,81 +7,39 @@
   padding: v.$space-lg;
   background: v.$background-medium;
   border: 1px solid v.$border-secondary;
-  margin: 0;
-  max-width: 1200px;
-  width: 100%;
+  margin: 0; // Remove margin as it's handled by parent
 
   .buttonContainer {
     display: flex;
     gap: v.$space-xs;
     margin-bottom: v.$space-lg;
-    justify-content: center;
     flex-wrap: wrap;
 
     .spanButton {
       @include v.button-style;
-      background: v.$primary-color;
-      color: v.$text-button;
-      border: 1px solid v.$primary-color;
-      padding: v.$space-xs v.$space-md;
+      background: v.$background-dark;
+      color: v.$text-secondary;
+      border: 1px solid v.$border-primary;
+      padding: v.$space-xs v.$space-sm;
       font-weight: 500;
       transition: all v.$transition-duration v.$transition-easing;
       font-size: v.$font-size-xs;
       font-family: v.$font-family-accent;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      border-radius: 20px;
-      cursor: pointer;
 
       &:hover:not(.active) {
-        background: color.adjust(v.$primary-color, $lightness: -10%);
-        border-color: color.adjust(v.$primary-color, $lightness: -10%);
+        background: v.$background-light;
+        color: v.$text-primary;
+        border-color: v.$border-secondary;
       }
 
       &.active {
-        background: color.adjust(v.$primary-color, $lightness: -15%);
-        border-color: v.$text-primary;
-        border-width: 1px;
+        background: v.$primary-color;
+        color: v.$text-button;
+        border-color: v.$primary-color;
         font-weight: 600;
       }
-    }
-  }
-
-  .teamSelectorContainer {
-    display: none; // Hidden by default (desktop)
-    margin-bottom: v.$space-md;
-    padding: v.$space-sm;
-    background: v.$primary-color;
-    border-radius: v.$border-radius-sm;
-    border: 1px solid v.$border-accent;
-  }
-
-  .teamSelector {
-    width: 100%;
-    padding: v.$space-xs v.$space-sm;
-    background: v.$background-dark;
-    color: v.$text-primary;
-    border: 1px solid v.$border-primary;
-    border-radius: v.$border-radius-sm;
-    font-size: v.$font-size-sm;
-    font-family: v.$font-family-accent;
-    cursor: pointer;
-    transition: all v.$transition-duration v.$transition-easing;
-
-    &:hover {
-      border-color: v.$border-accent;
-      background: v.$background-light;
-    }
-
-    &:focus {
-      outline: 2px solid v.$primary-color;
-      outline-offset: 2px;
-    }
-
-    option {
-      background: v.$background-dark;
-      color: v.$text-primary;
-      padding: v.$space-xs;
     }
   }
 
@@ -98,159 +56,119 @@
   }
 
   .chartsGrid {
-    border: v.$primary-color 2px solid;
-    border-radius: 4px;
-    outline: v.$background-dark 10px solid;
-    background-color: v.$background-dark;
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .chartsTable {
-    width: 100%;
-    border-collapse: collapse;
-
-    tbody tr {
-      display: flex;
-      width: 100%;
-
-      td {
-        flex: 1;
-        border: v.$primary-color 1px solid;
-        padding: 0;
-
-        &:empty {
-          background: v.$background-dark;
-        }
-      }
-    }
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: v.$space-md;
+    margin-top: v.$space-md;
   }
 
   .teamChartCard {
-    display: flex;
-    flex-direction: column;
-    text-align: center;
-    height: 100%;
-    width: 100%;
-    position: relative;
+    @include v.component-wrapper;
+    background: v.$background-dark;
+    border: 1px solid v.$border-primary;
+    padding: v.$space-md;
     transition: all v.$transition-duration v.$transition-easing;
+    position: relative;
+    overflow: hidden;
 
     &:hover {
       transform: translateY(-1px);
-      z-index: 2;
-    }
-  }
-
-  .teamHeader {
-    width: 100%;
-    border-bottom: v.$primary-color 1px solid;
-    margin-bottom: v.$space-sm;
-    background: linear-gradient(
-      115deg,
-      var(--team-primary, #{v.$primary-color}) 0%,
-      var(--team-primary, #{v.$primary-color}) 22%,
-      var(--team-secondary, #{v.$secondary-color}) 22%,
-      var(--team-secondary, #{v.$secondary-color}) 25%,
-      var(--team-primary, #{v.$primary-color}) 25%,
-      var(--team-primary, #{v.$primary-color}) 28%,
-      var(--team-secondary, #{v.$secondary-color}) 28%,
-      var(--team-secondary, #{v.$secondary-color}) 31%,
-      var(--team-jersey, #{v.$warning-color}) 31%,
-      var(--team-jersey, #{v.$warning-color}) 34%,
-      var(--team-primary, #{v.$primary-color}) 34%,
-      var(--team-primary, #{v.$primary-color}) 100%
-    );
-    padding: v.$space-xs 0;
-  }
-
-  .logoAndInfo {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    gap: v.$space-xs;
-    padding: 0 v.$space-sm;
-  }
-
-  .teamLogo {
-    height: 32px;
-    width: auto;
-    padding: 2px;
-    margin-left: -8px;
-    filter: drop-shadow(0 0 5px var(--team-secondary, #{v.$secondary-color}));
-    object-fit: contain;
-  }
-
-  .teamName {
-    font-size: v.$font-size-sm;
-    font-weight: 600;
-    color: v.$text-primary;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-family: v.$font-family-accent;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-    margin: 0;
-    flex: 1;
-    text-align: center;
-  }
-
-  .teamStats {
-    font-size: v.$font-size-xs;
-    color: v.$text-primary;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-
-    .statsLabel {
-      opacity: 0.8;
+      border-color: v.$border-accent;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 
-    .statsValue {
-      font-family: v.$font-family-numbers;
-    }
-  }
-
-  .chartContainer {
-    padding: v.$space-sm;
-    width: 160px;
-    height: 120px;
-    margin: 0 auto v.$space-sm auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-  }
-
-  .mobileChartContainer {
-    width: 100%;
-
-    .chartsGrid {
-      width: 100%;
+    &::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 100%;
+      background: v.$primary-color;
     }
 
-    .chartsTable {
-      width: 100%;
-    }
+    .teamName {
+      text-align: center;
+      margin: 0 0 v.$space-md 0;
+      font-size: v.$font-size-md;
+      font-weight: 600;
+      color: v.$text-primary;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-family: v.$font-family-accent;
+      padding-bottom: v.$space-xs;
+      border-bottom: 1px solid v.$border-primary;
+      position: relative;
 
-    .teamChartCard {
-      width: 100%;
-      height: auto;
+      &::after {
+        content: "";
+        position: absolute;
+        bottom: -1px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 30%;
+        height: 2px;
+        background: v.$primary-color;
+      }
     }
 
     .chartContainer {
-      width: 100%;
-      height: 250px;
-      padding: v.$space-md;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      height: 200px;
+      position: relative;
+      background: v.$background-medium;
+      border-radius: v.$border-radius-sm;
+      padding: v.$space-md v.$space-md v.$space-md v.$space-xs;
+      border: 1px solid v.$border-primary;
+    }
+  }
+
+  .dataTable {
+    width: 100%;
+    border-collapse: collapse;
+    background: v.$background-medium;
+    border-radius: v.$border-radius-md;
+    overflow: hidden;
+    box-shadow: v.$box-shadow-default;
+    margin-top: v.$space-lg;
+    border: 1px solid v.$border-primary;
+
+    th,
+    td {
+      padding: v.$space-sm v.$space-md;
+      text-align: left;
+      border-bottom: 1px solid v.$border-primary;
+    }
+
+    th {
+      background: v.$background-dark;
+      font-weight: 600;
+      color: v.$text-primary;
+      font-family: v.$font-family-accent;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: v.$font-size-xs;
+    }
+
+    tbody tr {
+      transition: background-color v.$transition-duration v.$transition-easing;
+
+      &:hover {
+        background: v.$background-light;
+      }
+
+      &:last-child td {
+        border-bottom: none;
+      }
+    }
+
+    td {
+      color: v.$text-secondary;
+      font-size: v.$font-size-sm;
     }
   }
 }
 
-// Responsive design
+// Responsive design to match Stats.module.scss patterns
 @media (max-width: v.$breakpoint-tablet) {
   .goalieShareChart {
     padding: v.$space-md;
@@ -261,56 +179,34 @@
       .spanButton {
         padding: v.$space-xxs v.$space-xs;
         font-size: v.$font-size-xxs;
-        border-radius: 15px;
       }
     }
 
-    .teamSelectorContainer {
-      display: block; // Show team selector on mobile
+    .chartsGrid {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: v.$space-sm;
     }
 
-    .chartsTable tbody tr {
-      flex-direction: column;
+    .teamChartCard {
+      padding: v.$space-sm;
 
-      td {
-        width: 100%;
-        border-bottom: v.$primary-color 1px solid;
-
-        &:last-child {
-          border-bottom: none;
-        }
+      .teamName {
+        font-size: v.$font-size-sm;
+        margin-bottom: v.$space-sm;
       }
-    }
 
-    .teamHeader {
-      margin-bottom: v.$space-xs;
-    }
-
-    .logoAndInfo {
-      padding: 0 v.$space-xs;
-      gap: v.$space-xxs;
-    }
-
-    .teamLogo {
-      height: 28px;
-      margin-left: -4px;
-    }
-
-    .teamName {
-      font-size: v.$font-size-xs;
-    }
-
-    .chartContainer {
-      width: 140px;
-      height: 100px;
-      padding: v.$space-xs;
-    }
-
-    .mobileChartContainer {
       .chartContainer {
-        width: 100%;
-        height: 200px;
-        padding: v.$space-sm;
+        height: 150px;
+        padding: v.$space-xxs;
+      }
+    }
+
+    .dataTable {
+      font-size: v.$font-size-xs;
+
+      th,
+      td {
+        padding: v.$space-xs v.$space-sm;
       }
     }
   }
@@ -320,21 +216,15 @@
   .goalieShareChart {
     padding: v.$space-sm;
 
-    .chartsTable tbody tr td {
-      width: 100%;
+    .chartsGrid {
+      grid-template-columns: 1fr;
+      gap: v.$space-xs;
     }
 
-    .chartContainer {
-      width: 120px;
-      height: 80px;
-    }
-
-    .teamLogo {
-      height: 24px;
-    }
-
-    .teamName {
-      font-size: v.$font-size-xxs;
+    .teamChartCard {
+      .chartContainer {
+        height: 120px;
+      }
     }
   }
 }

@@ -427,7 +427,7 @@ const GoalieShareChart: React.FC = () => {
           boxWidth: 12,
           padding: 8,
           font: {
-            size: 14,
+            size: 11,
             family: "'Roboto Condensed', sans-serif"
           },
           color: "#ffffff"
@@ -460,160 +460,28 @@ const GoalieShareChart: React.FC = () => {
   });
 
   const renderTeamCharts = () => {
-    const teams = Object.keys(goalieStats);
-
-    // For mobile, show only selected team
-    if (isMobile) {
-      const teamsToShow = teams.filter((team) => team === selectedTeam);
-      if (teamsToShow.length === 0) return null;
-
-      return (
-        <div className={styles.chartsGrid}>
-          <table className={styles.chartsTable}>
-            <tbody>
-              <tr>
-                {teamsToShow.map((teamAbbrev) => {
-                  const chartData = generateChartData(teamAbbrev);
-                  if (!chartData) return <td key={teamAbbrev}></td>;
-
-                  const teamInfo =
-                    teamsInfo[teamAbbrev as keyof typeof teamsInfo];
-                  const teamStats = goalieStats[teamAbbrev];
-                  const totalGames = teamStats?.totalGames || 0;
-
-                  return (
-                    <td key={teamAbbrev}>
-                      <div
-                        className={styles.teamChartCard}
-                        style={
-                          {
-                            "--team-primary":
-                              teamInfo?.primaryColor || "#14a2d2",
-                            "--team-secondary":
-                              teamInfo?.secondaryColor || "#07aae2",
-                            "--team-jersey": teamInfo?.jersey || "#ffcc00",
-                            "--team-accent": teamInfo?.accent || "#ff6384",
-                            "--team-alt": teamInfo?.alt || "#4bc0c0"
-                          } as React.CSSProperties
-                        }
-                      >
-                        <div className={styles.teamHeader}>
-                          <div className={styles.logoAndInfo}>
-                            <img
-                              className={styles.teamLogo}
-                              src={`/teamLogos/${teamAbbrev}.png`}
-                              alt={`${teamAbbrev} logo`}
-                            />
-                            <h4 className={styles.teamName}>
-                              {teamInfo?.shortName || teamAbbrev}
-                            </h4>
-                            <div className={styles.teamStats}>
-                              <span className={styles.statsLabel}>Starts:</span>
-                              <span className={styles.statsValue}>
-                                {totalGames}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className={styles.chartContainer}>
-                          <Doughnut
-                            data={chartData}
-                            options={generateChartOptions(teamAbbrev)}
-                          />
-                        </div>
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      );
-    }
-
-    // Desktop view - show all teams in 4-column grid
-    const teamsPerRow = 4;
-    const rows = [];
-
-    for (let i = 0; i < teams.length; i += teamsPerRow) {
-      rows.push(teams.slice(i, i + teamsPerRow));
-    }
+    const teams = Object.keys(goalieStats); // Show all teams with data
 
     return (
       <div className={styles.chartsGrid}>
-        <table className={styles.chartsTable}>
-          <tbody>
-            {rows.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                {row.map((teamAbbrev) => {
-                  const chartData = generateChartData(teamAbbrev);
-                  if (!chartData) return <td key={teamAbbrev}></td>;
+        {teams.map((teamAbbrev) => {
+          const chartData = generateChartData(teamAbbrev);
+          if (!chartData) return null;
 
-                  const teamInfo =
-                    teamsInfo[teamAbbrev as keyof typeof teamsInfo];
-                  const teamStats = goalieStats[teamAbbrev];
-                  const totalGames = teamStats?.totalGames || 0;
-
-                  return (
-                    <td key={teamAbbrev}>
-                      <div
-                        className={styles.teamChartCard}
-                        style={
-                          {
-                            "--team-primary":
-                              teamInfo?.primaryColor || "#14a2d2",
-                            "--team-secondary":
-                              teamInfo?.secondaryColor || "#07aae2",
-                            "--team-jersey": teamInfo?.jersey || "#ffcc00",
-                            "--team-accent": teamInfo?.accent || "#ff6384",
-                            "--team-alt": teamInfo?.alt || "#4bc0c0"
-                          } as React.CSSProperties
-                        }
-                      >
-                        <div className={styles.teamHeader}>
-                          <div className={styles.logoAndInfo}>
-                            <img
-                              className={styles.teamLogo}
-                              src={`/teamLogos/${teamAbbrev}.png`}
-                              alt={`${teamAbbrev} logo`}
-                            />
-                            <h4 className={styles.teamName}>
-                              {teamInfo?.shortName || teamAbbrev}
-                            </h4>
-                            <div className={styles.teamStats}>
-                              <span className={styles.statsLabel}>Starts:</span>
-                              <span className={styles.statsValue}>
-                                {totalGames}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className={styles.chartContainer}>
-                          <Doughnut
-                            data={chartData}
-                            options={generateChartOptions(teamAbbrev)}
-                          />
-                        </div>
-                      </div>
-                    </td>
-                  );
-                })}
-                {/* Fill empty cells for incomplete rows */}
-                {[...Array(teamsPerRow - row.length)].map((_, index) => (
-                  <td key={`empty-${index}`}></td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+          return (
+            <div key={teamAbbrev} className={styles.teamChartCard}>
+              <h4 className={styles.teamName}>{teamAbbrev}</h4>
+              <div className={styles.chartContainer}>
+                <Doughnut
+                  data={chartData}
+                  options={generateChartOptions(teamAbbrev)}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
-  };
-
-  // Handle team dropdown change
-  const handleTeamChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedTeam(event.target.value);
   };
 
   return (
@@ -645,36 +513,12 @@ const GoalieShareChart: React.FC = () => {
         </button>
       </div>
 
-      {/* Team selector dropdown for mobile view */}
-      {isMobile && (
-        <div className={styles.teamSelectorContainer}>
-          <select
-            value={selectedTeam}
-            onChange={handleTeamChange}
-            className={styles.teamSelector}
-          >
-            {Object.keys(goalieStats).map((teamAbbrev) => (
-              <option key={teamAbbrev} value={teamAbbrev}>
-                {teamsInfo[teamAbbrev as keyof typeof teamsInfo]?.shortName ||
-                  teamAbbrev}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
       {loading ? (
         <div className={styles.loadingMessage}>Loading goalie data...</div>
       ) : (
         <>
           {Object.keys(goalieStats).length > 0 ? (
-            isMobile ? (
-              <div className={styles.mobileChartContainer}>
-                {renderTeamCharts()}
-              </div>
-            ) : (
-              renderTeamCharts()
-            )
+            renderTeamCharts()
           ) : (
             <div className={styles.noDataMessage}>
               No goalie data available for the selected timeframe.
