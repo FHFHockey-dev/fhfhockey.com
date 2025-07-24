@@ -50,6 +50,24 @@ const GoalieShareChart: React.FC = () => {
   const [selectedSpan, setSelectedSpan] = useState<SpanType>("Season");
   const [goalieStats, setGoalieStats] = useState<TeamGoalieStats>({});
   const [loading, setLoading] = useState<boolean>(true);
+  const [selectedTeam, setSelectedTeam] = useState<string>(() => {
+    // Default to first team alphabetically
+    const sortedTeamAbbrevs = Object.keys(teamsInfo).sort();
+    return sortedTeamAbbrevs[0];
+  });
+  const [isMobile, setIsMobile] = useState<boolean>(false);
+
+  // Check if mobile on mount and window resize
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     const fetchSeasonData = async () => {
@@ -257,7 +275,7 @@ const GoalieShareChart: React.FC = () => {
           boxWidth: 12,
           padding: 8,
           font: {
-            size: 11,
+            size: 14,
             family: "'Roboto Condensed', sans-serif"
           },
           color: "#ffffff"
@@ -291,28 +309,160 @@ const GoalieShareChart: React.FC = () => {
   });
 
   const renderTeamCharts = () => {
-    const teams = Object.keys(goalieStats); // Show all teams with data
+    const teams = Object.keys(goalieStats);
+
+    // For mobile, show only selected team
+    if (isMobile) {
+      const teamsToShow = teams.filter((team) => team === selectedTeam);
+      if (teamsToShow.length === 0) return null;
+
+      return (
+        <div className={styles.chartsGrid}>
+          <table className={styles.chartsTable}>
+            <tbody>
+              <tr>
+                {teamsToShow.map((teamAbbrev) => {
+                  const chartData = generateChartData(teamAbbrev);
+                  if (!chartData) return <td key={teamAbbrev}></td>;
+
+                  const teamInfo =
+                    teamsInfo[teamAbbrev as keyof typeof teamsInfo];
+                  const teamStats = goalieStats[teamAbbrev];
+                  const totalGames = teamStats?.totalGames || 0;
+
+                  return (
+                    <td key={teamAbbrev}>
+                      <div
+                        className={styles.teamChartCard}
+                        style={
+                          {
+                            "--team-primary":
+                              teamInfo?.primaryColor || "#14a2d2",
+                            "--team-secondary":
+                              teamInfo?.secondaryColor || "#07aae2",
+                            "--team-jersey": teamInfo?.jersey || "#ffcc00",
+                            "--team-accent": teamInfo?.accent || "#ff6384",
+                            "--team-alt": teamInfo?.alt || "#4bc0c0"
+                          } as React.CSSProperties
+                        }
+                      >
+                        <div className={styles.teamHeader}>
+                          <div className={styles.logoAndInfo}>
+                            <img
+                              className={styles.teamLogo}
+                              src={`/teamLogos/${teamAbbrev}.png`}
+                              alt={`${teamAbbrev} logo`}
+                            />
+                            <h4 className={styles.teamName}>
+                              {teamInfo?.shortName || teamAbbrev}
+                            </h4>
+                            <div className={styles.teamStats}>
+                              <span className={styles.statsLabel}>GP:</span>
+                              <span className={styles.statsValue}>
+                                {totalGames}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className={styles.chartContainer}>
+                          <Doughnut
+                            data={chartData}
+                            options={generateChartOptions(teamAbbrev)}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      );
+    }
+
+    // Desktop view - show all teams in 4-column grid
+    const teamsPerRow = 4;
+    const rows = [];
+
+    for (let i = 0; i < teams.length; i += teamsPerRow) {
+      rows.push(teams.slice(i, i + teamsPerRow));
+    }
 
     return (
       <div className={styles.chartsGrid}>
-        {teams.map((teamAbbrev) => {
-          const chartData = generateChartData(teamAbbrev);
-          if (!chartData) return null;
+        <table className={styles.chartsTable}>
+          <tbody>
+            {rows.map((row, rowIndex) => (
+              <tr key={rowIndex}>
+                {row.map((teamAbbrev) => {
+                  const chartData = generateChartData(teamAbbrev);
+                  if (!chartData) return <td key={teamAbbrev}></td>;
 
-          return (
-            <div key={teamAbbrev} className={styles.teamChartCard}>
-              <h4 className={styles.teamName}>{teamAbbrev}</h4>
-              <div className={styles.chartContainer}>
-                <Doughnut
-                  data={chartData}
-                  options={generateChartOptions(teamAbbrev)}
-                />
-              </div>
-            </div>
-          );
-        })}
+                  const teamInfo =
+                    teamsInfo[teamAbbrev as keyof typeof teamsInfo];
+                  const teamStats = goalieStats[teamAbbrev];
+                  const totalGames = teamStats?.totalGames || 0;
+
+                  return (
+                    <td key={teamAbbrev}>
+                      <div
+                        className={styles.teamChartCard}
+                        style={
+                          {
+                            "--team-primary":
+                              teamInfo?.primaryColor || "#14a2d2",
+                            "--team-secondary":
+                              teamInfo?.secondaryColor || "#07aae2",
+                            "--team-jersey": teamInfo?.jersey || "#ffcc00",
+                            "--team-accent": teamInfo?.accent || "#ff6384",
+                            "--team-alt": teamInfo?.alt || "#4bc0c0"
+                          } as React.CSSProperties
+                        }
+                      >
+                        <div className={styles.teamHeader}>
+                          <div className={styles.logoAndInfo}>
+                            <img
+                              className={styles.teamLogo}
+                              src={`/teamLogos/${teamAbbrev}.png`}
+                              alt={`${teamAbbrev} logo`}
+                            />
+                            <h4 className={styles.teamName}>
+                              {teamInfo?.shortName || teamAbbrev}
+                            </h4>
+                            <div className={styles.teamStats}>
+                              <span className={styles.statsLabel}>GP:</span>
+                              <span className={styles.statsValue}>
+                                {totalGames}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className={styles.chartContainer}>
+                          <Doughnut
+                            data={chartData}
+                            options={generateChartOptions(teamAbbrev)}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                  );
+                })}
+                {/* Fill empty cells for incomplete rows */}
+                {[...Array(teamsPerRow - row.length)].map((_, index) => (
+                  <td key={`empty-${index}`}></td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     );
+  };
+
+  // Handle team dropdown change
+  const handleTeamChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedTeam(event.target.value);
   };
 
   return (
@@ -344,12 +494,37 @@ const GoalieShareChart: React.FC = () => {
         </button>
       </div>
 
+      {/* Team selector dropdown for mobile view */}
+      {isMobile && (
+        <div className={styles.teamSelectorContainer}>
+          <select
+            value={selectedTeam}
+            onChange={handleTeamChange}
+            className={styles.teamSelector}
+          >
+            {Object.keys(goalieStats).map((teamAbbrev) => (
+              <option key={teamAbbrev} value={teamAbbrev}>
+                {teamsInfo[teamAbbrev as keyof typeof teamsInfo]?.shortName ||
+                  teamAbbrev}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {loading ? (
         <div className={styles.loadingMessage}>Loading goalie data...</div>
       ) : (
         <>
           {Object.keys(goalieStats).length > 0 ? (
-            renderTeamCharts()
+            isMobile ? (
+              // Render single chart for selected team in mobile view
+              <div className={styles.mobileChartContainer}>
+                {renderTeamCharts()}
+              </div>
+            ) : (
+              renderTeamCharts()
+            )
           ) : (
             <div className={styles.noDataMessage}>
               No goalie data available for the selected timeframe.

@@ -492,6 +492,38 @@ async def upsert_data(dataset_type: str, data_rows: List[Dict]):
     if table_name == "unknown_table":
         print(f"Unknown table for datasetType: {dataset_type}. Skipping upsert.")
         return 0
+    
+
+    # ─── strip out unwanted columns for rates_oi ──────────────────────
+    if table_name == "nst_gamelog_as_rates_oi":
+        drop_cols = [
+            # raw counts
+            "goals","total_assists","first_assists","second_assists","total_points",
+            "shots","icf","iff","iscfs","hdcf","rush_attempts","rebounds_created",
+            "pim","total_penalties","minor_penalties","major_penalties",
+            "misconduct_penalties","penalties_drawn","giveaways","takeaways",
+            "hits","hits_taken","shots_blocked","faceoffs_won","faceoffs_lost",
+            "cf","ca","ff","fa","sf","sa","gf","ga","scf","sca","hdca","hdgf",
+            "hdga","mdcf","mdca","mdgf","mdga","ldcf","ldca","ldgf","ldga",
+            "off_zone_starts","neu_zone_starts","def_zone_starts",
+            "off_zone_faceoffs","neu_zone_faceoffs","def_zone_faceoffs",
+            # per-60 rates & percentages
+            "goals_per_60","total_assists_per_60","first_assists_per_60",
+            "second_assists_per_60","total_points_per_60","ipp","shots_per_60",
+            "sh_percentage","ixg","ixg_per_60","iff_per_60","iscfs_per_60",
+            "rush_attempts_per_60","rebounds_created_per_60","pim_per_60",
+            "total_penalties_per_60","minor_penalties_per_60",
+            "major_penalties_per_60","misconduct_penalties_per_60",
+            "penalties_drawn_per_60","giveaways_per_60","takeaways_per_60",
+            "hits_per_60","hits_taken_per_60","shots_blocked_per_60",
+            "faceoffs_won_per_60","faceoffs_lost_per_60","faceoffs_percentage",
+            "xgf","xga","xga_pct","on_ice_sh_pct_per_60","on_ice_sv_pct_per_60",
+            "pdo_per_60","off_zone_start_pct_per_60"
+        ]
+        for row in data_rows:
+            for col in drop_cols:
+                row.pop(col, None)
+    # ────────────────────────────────────────────────────────────────
 
     try:
         response = supabase.table(table_name).upsert(data_rows, on_conflict=["player_id", "date_scraped"]).execute()
