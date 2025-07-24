@@ -21,6 +21,8 @@ import seaborn as sns
 from typing import List, Optional, Dict
 import requests
 import warnings
+import os
+from dotenv import load_dotenv
 warnings.filterwarnings('ignore')
 
 class FantasyPointsAnalyzer:
@@ -30,9 +32,22 @@ class FantasyPointsAnalyzer:
         self.correlation_results: Optional[pd.Series] = None
         self.percentiles: Optional[Dict] = None
         
-        # Supabase credentials
-        self.supabase_url = "https://fyhftlxokyjtpndbkfse.supabase.co"
-        self.supabase_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5aGZ0bHhva3lqdHBuZGJrZnNlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxMDM4Mjg5OCwiZXhwIjoyMDI1OTU4ODk4fQ.GzYkvgCMlydjuZdCYLML6SJr_Qznti2THSkG4luUvCc"
+        # Load environment variables from .env.local
+        load_dotenv('.env.local')
+        
+        # Supabase credentials from environment variables
+        self.supabase_url = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
+        self.supabase_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+        
+        # Validate that required environment variables are loaded
+        if not self.supabase_url or not self.supabase_key:
+            raise ValueError(
+                "Missing required environment variables. Please ensure NEXT_PUBLIC_SUPABASE_URL "
+                "and SUPABASE_SERVICE_ROLE_KEY are set in your .env.local file."
+            )
+        
+        print(f"Loaded Supabase URL: {self.supabase_url}")
+        print("Loaded Supabase service role key: [REDACTED]")
         
         # Fantasy scoring system (customizable)
         self.fantasy_scoring = {

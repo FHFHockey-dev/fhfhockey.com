@@ -16,6 +16,7 @@ import styles from "../styles/Home.module.scss";
 
 import { teamsInfo } from "lib/NHL/teamsInfo";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
+import { checkIsOffseason } from "../hooks/useOffseason";
 import Fetch from "lib/cors-fetch";
 
 // Import our chart component
@@ -671,37 +672,52 @@ export async function getServerSideProps({ req, res }) {
     }
   };
 
-  const today = moment().format("YYYY-MM-DD"); // Use local timezone for consistency with client
-  let gamesToday = await fetchGames(today);
-  let nextGameDateFound = today; // Always start with today
+  // Check if we're in the offseason first
+  const isOffseason = await checkIsOffseason();
 
-  if (gamesToday.length === 0) {
-    console.log(
-      `No games found for today (${today}), searching for next available date...`
-    );
-    let nextDay = moment(today).add(1, "days");
-    let attempts = 0;
-    const maxAttempts = 30; // Limit search to 30 days to prevent infinite loop
+  const today = moment().format("YYYY-MM-DD");
+  let gamesToday = [];
+  let nextGameDateFound = today;
 
-    while (gamesToday.length === 0 && attempts < maxAttempts) {
-      const dateStr = nextDay.format("YYYY-MM-DD");
-      console.log(`Checking for games on ${dateStr}...`);
-      gamesToday = await fetchGames(dateStr);
-      if (gamesToday.length > 0) {
-        nextGameDateFound = dateStr; // Only change the date if we found games on a different day
-        console.log(`Found next games on ${nextGameDateFound}`);
-        break;
-      }
-      nextDay.add(1, "days");
-      attempts++;
-    }
-    if (gamesToday.length === 0) {
-      console.warn(`Could not find games within the next ${maxAttempts} days.`);
-    }
-  } else {
-    // If we found games today, make sure nextGameDateFound stays as today
+  if (isOffseason) {
+    console.log("Currently in offseason - skipping game search");
+    // During offseason, don't search for games as there won't be any
+    // Just use empty array and today's date
+    gamesToday = [];
     nextGameDateFound = today;
-    console.log(`Found games for today (${today})`);
+  } else {
+    // Only search for games during the regular season or playoffs
+    gamesToday = await fetchGames(today);
+    nextGameDateFound = today;
+
+    if (gamesToday.length === 0) {
+      console.log(
+        `No games found for today (${today}), searching for next available date...`
+      );
+      let nextDay = moment(today).add(1, "days");
+      let attempts = 0;
+      const maxAttempts = 7; // Reduce from 30 to 7 days during season
+
+      while (gamesToday.length === 0 && attempts < maxAttempts) {
+        const dateStr = nextDay.format("YYYY-MM-DD");
+        console.log(`Checking for games on ${dateStr}...`);
+        gamesToday = await fetchGames(dateStr);
+        if (gamesToday.length > 0) {
+          nextGameDateFound = dateStr;
+          console.log(`Found next games on ${nextGameDateFound}`);
+          break;
+        }
+        nextDay.add(1, "days");
+        attempts++;
+      }
+      if (gamesToday.length === 0) {
+        console.warn(
+          `Could not find games within the next ${maxAttempts} days.`
+        );
+      }
+    } else {
+      console.log(`Found games for today (${today})`);
+    }
   }
 
   const injuries = await fetchInjuries();
@@ -712,7 +728,8 @@ export async function getServerSideProps({ req, res }) {
       initialGames: gamesToday,
       initialInjuries: injuries,
       initialStandings: standings,
-      nextGameDate: nextGameDateFound // Pass the date for which games were actually found
+      nextGameDate: nextGameDateFound,
+      isOffseason // Pass offseason status to client
     }
   };
 }
