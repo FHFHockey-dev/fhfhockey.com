@@ -9,7 +9,7 @@ Usage:
     python performance_prediction.py
 
 Requirements:
-    pip install matplotlib pandas seaborn numpy requests scikit-learn xgboost
+    pip install matplotlib pandas seaborn numpy requests scikit-learn xgboost python-dotenv
 """
 
 import pandas as pd
@@ -26,6 +26,8 @@ from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression, Ridge, Lasso
 import xgboost as xgb
+import os
+from dotenv import load_dotenv
 warnings.filterwarnings('ignore')
 
 class HockeyPerformancePredictor:
@@ -38,9 +40,22 @@ class HockeyPerformancePredictor:
         self.predictions: Dict = {}
         self.expand_season_range = expand_season_range
         
-        # Supabase credentials
-        self.supabase_url = "https://fyhftlxokyjtpndbkfse.supabase.co"
-        self.supabase_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ5aGZ0bHhva3lqdHBuZGJrZnNlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcxMDM4Mjg5OCwiZXhwIjoyMDI1OTU4ODk4fQ.GzYkvgCMlydjuZdCYLML6SJr_Qznti2THSkG4luUvCc"
+        # Load environment variables from .env.local
+        load_dotenv('.env.local')
+        
+        # Supabase credentials from environment variables
+        self.supabase_url = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
+        self.supabase_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+        
+        # Validate that required environment variables are loaded
+        if not self.supabase_url or not self.supabase_key:
+            raise ValueError(
+                "Missing required environment variables. Please ensure NEXT_PUBLIC_SUPABASE_URL "
+                "and SUPABASE_SERVICE_ROLE_KEY are set in your .env.local file."
+            )
+        
+        print(f"Loaded Supabase URL: {self.supabase_url}")
+        print("Loaded Supabase service role key: [REDACTED]")
         
         # Fantasy scoring system (from your league)
         self.fantasy_scoring = {
