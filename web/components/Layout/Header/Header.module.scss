@@ -1,83 +1,54 @@
 @use "styles/vars" as v;
+@use "sass:math";
 @import url("https://fonts.googleapis.com/css2?family=Train+One&display=swap");
 
 $mobile-header-height: 65px;
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: $mobile-header-height;
-  background-color: #181818;
-  border-bottom: double 5px white;
+// Desktop Header (hidden on mobile)
+.header.desktopHeader {
+  display: none;
 
-  button {
-    all: unset;
-    margin-right: 4%;
-    &:hover {
-      cursor: pointer;
-    }
-  }
-
-  // // two lines under the header
-  // &::before {
-  //   content: "";
-  //   background-color: $primary-color;
-  //   width: 100%;
-  //   height: 2.5px;
-  //   position: absolute;
-  //   left: 0;
-  //   bottom: 0;
-  // }
-  // &::after {
-  //   content: "";
-  //   background-color: $primary-color;
-  //   width: 100%;
-  //   height: 2.5px;
-  //   position: absolute;
-  //   left: 0;
-  //   bottom: 5px;
-  // }
-
-  // hideable nav bar
-  position: sticky;
-  top: 0;
-  transition: transform ease 0.5s;
-  z-index: 10;
-  &.hidden {
-    transform: translate3d(0, calc(-100% - 2px), 0);
-  }
-
-  .logo {
-    position: relative;
-    margin: 0 auto;
-    filter: drop-shadow(0px 1px 4px #07aae2);
-
-    // Disbale overflow hidden.
-    // This is designed for the Image component from Next.js 12
-    & > span {
-      overflow: visible !important;
-    }
-  }
-
-  .nav {
-    display: none;
-  }
-
-  .socials {
-    display: none;
-  }
-
-  .join {
-    display: none;
-  }
-
-  // PC
+  // PC - show desktop header
   @media only screen and (min-width: v.$screen-large) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: $mobile-header-height;
+    position: sticky;
+    top: 0;
+    bottom: auto;
+    border-bottom: double 5px white;
+    box-shadow: none;
+    background-color: #181818;
+    transition: transform ease 0.3s;
+    z-index: 1000;
+
+    button {
+      all: unset;
+      margin-right: 4%;
+      &:hover {
+        cursor: pointer;
+      }
+    }
+
+    &.hidden {
+      transform: translate3d(0, calc(-100% - 2px), 0);
+    }
+
     .logo {
       left: 0;
       margin-left: 5%;
+      filter: drop-shadow(0px 1px 4px #07aae2);
+      position: relative;
+      margin: 0;
+
+      // Disable overflow hidden.
+      // This is designed for the Image component from Next.js 12
+      & > span {
+        overflow: visible !important;
+      }
     }
+
     .nav {
       display: block;
       flex: 1;
@@ -87,13 +58,16 @@ $mobile-header-height: 65px;
         padding: 0;
       }
     }
+
     .socials {
       display: block;
       margin-right: 18px;
     }
+
     .burgerButton {
       display: none;
     }
+
     .join {
       all: unset;
       display: none;
@@ -113,24 +87,200 @@ $mobile-header-height: 65px;
       align-items: center;
     }
   }
+}
 
-  @media (max-width: 767px) {
-    .logo {
-      margin: 0; // Remove the auto centering on mobile
-      left: 1%;
-    }
+// Mobile Navigation Wrapper
+.mobileNavWrapper {
+  display: block;
+
+  @media only screen and (min-width: v.$screen-large) {
+    display: none;
   }
 }
 
-@media (max-width: #{v.$breakpoint-tablet - 1px}) {
-  .header {
-    .logo {
-      margin-left: 2%;
+// Fresh Bottom Navigation Bar
+.bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100px;
+  z-index: 1000;
+  transition: transform 0.3s ease;
+
+  &.hidden {
+    transform: translateY(100%);
+  }
+
+  // White strip at top with page label and blue border
+  .pageLabel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background-color: white;
+    border-top: 2px solid #07aae2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: "Train One", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: #07aae2;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    z-index: 3;
+    overflow: hidden;
+
+    // Moving label that follows the indicator
+    &::after {
+      content: attr(data-label);
+      position: absolute;
+      top: 0;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: white;
+      transition: transform 0.3s ease;
+
+      // Position based on CSS custom property
+      left: var(--label-position, 50%);
+      transform: translateX(-50%); // Center the label on its position
+    }
+  }
+
+  // Blue curved section
+  .ribbonContainer {
+    position: absolute;
+    top: 30px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: transparent; // Make transparent so SVG cutout is visible
+    border-bottom-left-radius: 1rem;
+    border-bottom-right-radius: 1rem;
+    z-index: 1;
+    overflow: hidden;
+  }
+
+  // SVG for the complex navbar shape
+  .navbarShape {
+    position: fixed;
+    bottom: -20px; // Move down by 20px to compensate for the 20px height increase
+    left: 0;
+    width: 1154.16px; // 961.8px * 1.2 = 1154.16px
+    height: 120px; // 100px * 1.2 = 120px
+    z-index: 2;
+    transition: all 0.3s ease;
+    transform: translateX(var(--cutout-position, 0%));
+  }
+
+  // Navigation items container
+  ul {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 50px;
+    list-style: none;
+    margin: 0;
+    padding: 0 5%;
+    z-index: 2;
+  }
+
+  .navItem {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    height: 50px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    a {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      text-decoration: none;
+      color: inherit;
     }
 
-    .burgerButton {
-      margin-right: 4%;
-      display: block;
+    .icon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 24px;
+      height: 24px;
+      transition: all 0.3s ease;
+
+      img {
+        width: 24px;
+        height: 24px;
+        filter: brightness(0) invert(1); // White icons
+        transition: inherit;
+      }
+    }
+
+    .text {
+      display: none;
+    }
+
+    // Active state - icon animates up into the indicator
+    &.active {
+      .icon {
+        transform: translateY(-35px) scale(1.2);
+        opacity: 0; // Hide the icon behind the indicator
+      }
+    }
+
+    // Hover effects for non-active items
+    &:not(.active):hover {
+      .icon {
+        transform: scale(1.1);
+      }
+    }
+  }
+
+  // Floating indicator circle - positioned relative to full screen width
+  .indicator {
+    position: fixed;
+    bottom: 35px; // Lowered further into the navbar
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #07aae2, #0891c7); // Match navbar blue
+    border: 3px solid white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 5; // Above the cutout
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    left: calc(
+      var(--indicator-position, 50%) - 30px
+    ); // Center the indicator on the position
+
+    .indicatorIcon {
+      width: 26px;
+      height: 26px;
+      filter: brightness(0) invert(1);
+      transition: transform 0.3s ease;
+    }
+
+    &.showIcon .indicatorIcon {
+      transform: scale(1);
+    }
+
+    &:not(.showIcon) .indicatorIcon {
+      transform: scale(0);
     }
   }
 }
