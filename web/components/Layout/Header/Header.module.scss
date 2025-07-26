@@ -113,43 +113,24 @@ $mobile-header-height: 65px;
     transform: translateY(100%);
   }
 
-  // White strip at top with page label and blue border
+  // Page label - now positioned underneath the indicator in blue section
   .pageLabel {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 30px;
-    background-color: white;
-    border-top: 2px solid #07aae2;
+    position: fixed;
+    bottom: 5px; // Moved down from 10px to 5px
+    width: 100px;
+    height: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
     font-family: "Train One", sans-serif;
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 600;
-    color: #07aae2;
+    color: white; // White text for visibility on blue background
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    z-index: 3;
-    overflow: hidden;
-
-    // Moving label that follows the indicator
-    &::after {
-      content: attr(data-label);
-      position: absolute;
-      top: 0;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background-color: white;
-      transition: transform 0.3s ease;
-
-      // Position based on CSS custom property
-      left: var(--label-position, 50%);
-      transform: translateX(-50%); // Center the label on its position
-    }
+    z-index: 4; // Above the SVG
+    transition: left 0.3s ease;
+    pointer-events: none; // Don't interfere with navigation
   }
 
   // Blue curved section
@@ -169,19 +150,39 @@ $mobile-header-height: 65px;
   // SVG for the complex navbar shape
   .navbarShape {
     position: fixed;
-    bottom: -20px; // Move down by 20px to compensate for the 20px height increase
-    left: 0;
-    width: 1154.16px; // 961.8px * 1.2 = 1154.16px
-    height: 120px; // 100px * 1.2 = 120px
+    bottom: -10px; // Move the entire SVG down (negative value moves it down)
+    left: 50%; // Center the SVG horizontally
+    width: 1075px; // Reduced by 10%: was 1144.16px
+    height: 85px; // Reduced by 10%: was 110px
     z-index: 2;
     transition: all 0.3s ease;
-    transform: translateX(var(--cutout-position, 0%));
+    transform: translateX(
+      calc(-50% + var(--cutout-position) - 50%)
+    ); // Center first, then adjust for cutout alignment
+
+    // Add anti-aliasing and smoothing properties
+    image-rendering: optimizeQuality;
+    shape-rendering: geometricPrecision;
+
+    // Improve rendering on different displays
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+
+    // Force hardware acceleration for smoother rendering
+    will-change: transform;
+
+    path {
+      // Ensure smooth path rendering
+      vector-effect: non-scaling-stroke;
+    }
   }
 
   // Navigation items container
   ul {
     position: absolute;
-    bottom: 0;
+    bottom: 10;
     width: 100%;
     display: flex;
     justify-content: space-between;
@@ -265,8 +266,8 @@ $mobile-header-height: 65px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
     left: calc(
-      var(--indicator-position, 50%) - 30px
-    ); // Center the indicator on the position
+      var(--indicator-position, 50%) - 29px
+    ); // Adjusted from -30px to -28px to move 2px right
 
     .indicatorIcon {
       width: 26px;
