@@ -1,304 +1,473 @@
-@use "styles/vars" as *;
-@use "sass:color";
+@use "styles/vars" as v;
 
-// mobile menu - slides up from bottom
-.menu {
+// Overlay for the menu
+.overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 999;
-  background: linear-gradient(
-    135deg,
-    rgba($background-dark, 0.98) 0%,
-    rgba($background-medium, 0.99) 100%
-  );
-  backdrop-filter: blur(15px);
+  background: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
   display: flex;
   flex-direction: column;
+}
+
+// Main container for the menu
+.menuContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(
+    135deg,
+    v.$bg-dark 0%,
+    darken(v.$bg-dark, 5%) 100%
+  );
+  color: v.$color-white;
+  overflow: hidden;
+}
+
+// Header Section
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: v.$space-lg v.$space-xl;
+  background: v.$color-bg-dark-3;
+  border-bottom: 1px solid rgba(v.$secondary-color, 0.2);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.logo {
+  display: flex;
+  align-items: baseline;
+  gap: v.$space-xs;
+}
+
+.logoText {
+  font-family: v.$font-family-accent;
+  font-size: v.$font-size-xl;
+  font-weight: 700;
+  color: v.$color-white;
+  letter-spacing: 0.5px;
+}
+
+.logoAccent {
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-sm;
+  font-weight: 400;
+  color: v.$secondary-color;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+// Close button for the menu
+.closeButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: v.$space-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: v.$border-radius-md;
+  transition: background-color v.$transition-duration v.$transition-easing;
+
+  &:hover {
+    background: rgba(v.$secondary-color, 0.1);
+  }
+
+  &:active {
+    background: rgba(v.$secondary-color, 0.2);
+  }
+}
+
+// Close icon for the button
+.closeIcon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+
+  span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 2px;
+    background: v.$color-white;
+    border-radius: 1px;
+    transition: all v.$transition-duration v.$transition-easing;
+
+    &:first-child {
+      transform: translate(-50%, -50%) rotate(45deg);
+    }
+
+    &:last-child {
+      transform: translate(-50%, -50%) rotate(-45deg);
+    }
+  }
+}
+
+// Search Section
+.searchSection {
+  padding: v.$space-xl;
+  border-bottom: 1px solid rgba(v.$color-grey-darker, 0.3);
+}
+
+.searchContainer {
+  position: relative;
+}
+
+.searchInputWrapper {
+  position: relative;
+  background: v.$background-light;
+  border: 2px solid transparent;
+  border-radius: v.$border-radius-lg;
+  overflow: hidden;
+  transition: all v.$transition-duration v.$transition-easing;
+
+  &:focus-within {
+    border-color: v.$secondary-color;
+    box-shadow: 0 0 0 3px rgba(v.$secondary-color, 0.1);
+  }
+}
+
+.searchInput {
+  width: 100%;
+  padding: v.$space-md v.$space-lg;
+  padding-right: 3rem;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: v.$font-size-base;
+  color: v.$color-white;
+  font-family: v.$font-family-primary;
+
+  &::placeholder {
+    color: v.$color-grey-text-sec;
+    opacity: 0.8;
+  }
+}
+
+.searchIcon {
+  position: absolute;
+  right: v.$space-md;
+  top: 50%;
+  transform: translateY(-50%);
+  color: v.$color-grey-text-sec;
+  pointer-events: none;
+
+  svg {
+    display: block;
+  }
+}
+
+.searchStatus {
+  padding: v.$space-sm v.$space-md;
+  font-size: v.$font-size-sm;
+  color: v.$secondary-color;
+  font-style: italic;
+}
+
+.searchResults {
+  background: v.$background-medium;
+  border-radius: v.$border-radius-md;
+  margin-top: v.$space-sm;
+  max-height: 200px;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  border: 1px solid rgba(v.$color-grey-darker, 0.5);
 
-  .menuHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: $space-xl $space-lg $space-md;
-    border-bottom: 1px solid $border-secondary;
-    background: rgba($background-header, 0.9);
-    backdrop-filter: blur(20px);
-    position: relative;
-    z-index: 2;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  @include v.custom-scrollbar(v.$secondary-color, v.$background-dark, 4px);
+}
 
-    .menuTitle {
-      font-family: $font-family-accent;
-      font-size: $font-size-xl;
-      color: $text-primary;
-      margin: 0;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-    }
+.searchResultItem {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: v.$space-md;
+  padding: v.$space-md;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(v.$color-grey-darker, 0.3);
+  color: v.$color-white;
+  cursor: pointer;
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-sm;
+  transition: all v.$transition-duration v.$transition-easing;
 
-    .closeButton {
-      all: unset;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #e23f07, #c73508);
-      border: 2px solid white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: $font-size-xxl;
-      color: white;
-      font-weight: 300;
-      transition: all $transition-duration $transition-easing;
-      box-shadow: 0 3px 15px rgba(226, 63, 7, 0.3);
-
-      &:hover {
-        transform: scale(1.1);
-        box-shadow: 0 5px 20px rgba(226, 63, 7, 0.5);
-      }
-
-      &:active {
-        transform: scale(0.95);
-      }
-    }
+  &:last-child {
+    border-bottom: none;
   }
 
-  .menuContent {
-    flex: 1;
-    padding: $space-lg $space-md;
-    min-height: 0;
-    overflow-y: auto;
-    position: relative;
-    z-index: 2;
-
-    // Override NavbarItems styles for mobile menu
-    :global(.items.small) {
-      margin-top: 0;
-      margin-left: 0;
-      height: auto;
-
-      .menu_list {
-        font-size: $font-size-lg;
-
-        li:not(:first-child) {
-          margin-top: $space-md;
-        }
-      }
-
-      .category {
-        margin-top: $space-lg;
-
-        .category_item {
-          padding: $space-md $space-lg;
-          background: linear-gradient(
-            135deg,
-            rgba($background-light, 0.8) 0%,
-            rgba($background-medium, 0.9) 100%
-          );
-          border-radius: $border-radius-lg;
-          border: 2px solid $border-secondary;
-          transition: all $transition-duration $transition-easing;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-          &:hover {
-            background: linear-gradient(
-              135deg,
-              rgba($primary-color, 0.2) 0%,
-              rgba($secondary-color, 0.2) 100%
-            );
-            border-color: $border-accent;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(7, 170, 226, 0.2);
-          }
-        }
-
-        &.active .category_item {
-          background: linear-gradient(
-            135deg,
-            rgba($primary-color, 0.3) 0%,
-            rgba($secondary-color, 0.3) 100%
-          );
-          border-color: $primary-color;
-          color: $text-primary;
-        }
-
-        .menu_list {
-          background: rgba($background-medium, 0.9);
-          border-radius: $border-radius-md;
-          padding: $space-md;
-          margin-top: $space-sm;
-          border: 1px solid $border-secondary;
-          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-
-          .link {
-            padding: $space-sm $space-md;
-            border-radius: $border-radius-sm;
-            transition: all $transition-duration $transition-easing;
-            margin-bottom: $space-xs;
-
-            &:hover,
-            &.active {
-              background: linear-gradient(
-                135deg,
-                rgba($primary-color, 0.2) 0%,
-                rgba($secondary-color, 0.2) 100%
-              );
-              color: $primary-color;
-              transform: translateX(8px);
-            }
-          }
-        }
-      }
-
-      .link {
-        padding: $space-md $space-lg;
-        border-radius: $border-radius-lg;
-        background: linear-gradient(
-          135deg,
-          rgba($background-light, 0.8) 0%,
-          rgba($background-medium, 0.9) 100%
-        );
-        border: 2px solid $border-secondary;
-        transition: all $transition-duration $transition-easing;
-        margin-bottom: $space-sm;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-        &:hover,
-        &.active {
-          background: linear-gradient(
-            135deg,
-            rgba($primary-color, 0.3) 0%,
-            rgba($secondary-color, 0.3) 100%
-          );
-          border-color: $primary-color;
-          color: $primary-color;
-          transform: translateX(8px) translateY(-2px);
-          box-shadow: 0 4px 15px rgba(7, 170, 226, 0.2);
-        }
-      }
-    }
+  &:hover {
+    background: rgba(v.$secondary-color, 0.1);
+    transform: translateX(4px);
   }
 
-  .menuFooter {
-    padding: $space-lg $space-md $space-xl;
-    border-top: 1px solid $border-secondary;
-    background: rgba($background-header, 0.9);
-    backdrop-filter: blur(20px);
-    position: relative;
-    z-index: 2;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-
-    .socialWrapper {
-      display: flex;
-      justify-content: center;
-      margin-bottom: $space-lg;
-
-      // Style social media icons
-      :global(.social-medias) {
-        gap: $space-lg;
-
-        a {
-          padding: $space-md;
-          border-radius: 50%;
-          background: linear-gradient(
-            135deg,
-            rgba($background-light, 0.9) 0%,
-            rgba($background-medium, 0.9) 100%
-          );
-          border: 2px solid $border-secondary;
-          transition: all $transition-duration $transition-easing;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-
-          &:hover {
-            background: linear-gradient(
-              135deg,
-              rgba($primary-color, 0.2) 0%,
-              rgba($secondary-color, 0.2) 100%
-            );
-            border-color: $primary-color;
-            transform: translateY(-3px);
-            box-shadow: 0 4px 15px rgba(7, 170, 226, 0.2);
-          }
-        }
-      }
-    }
-
-    .joinButton {
-      all: unset;
-      display: block;
-      width: 100%;
-      max-width: 300px;
-      margin: 0 auto $space-lg;
-      padding: $space-lg $space-xl;
-      font-family: $font-family-primary;
-      font-weight: 700;
-      font-size: $font-size-lg;
-      text-align: center;
-      color: white;
-      background: linear-gradient(
-        135deg,
-        $primary-color 0%,
-        $secondary-color 100%
-      );
-      border-radius: $border-radius-lg;
-      border: 3px solid white;
-      cursor: pointer;
-      transition: all $transition-duration $transition-easing;
-      box-shadow: 0 6px 20px rgba($primary-color, 0.4);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-
-      &:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 30px rgba($primary-color, 0.6);
-        background: linear-gradient(
-          135deg,
-          #{color.adjust($primary-color, $lightness: 10%)} 0%,
-          #{color.adjust($secondary-color, $lightness: 10%)} 100%
-        );
-      }
-
-      &:active {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 15px rgba($primary-color, 0.4);
-      }
-    }
+  &:active {
+    background: rgba(v.$secondary-color, 0.2);
   }
+}
 
-  // Enhanced scroll indicators
-  &::before,
-  &::after {
-    content: "";
-    position: sticky;
-    left: 0;
-    right: 0;
-    height: 30px;
-    pointer-events: none;
-    z-index: 10;
-  }
+.playerImage {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(v.$secondary-color, 0.3);
+}
 
-  &::before {
-    top: 0;
+.playerName {
+  flex: 1;
+  text-align: left;
+  font-weight: 500;
+}
+
+.noResults {
+  padding: v.$space-lg;
+  text-align: center;
+  color: v.$color-grey-text-sec;
+  font-style: italic;
+  font-size: v.$font-size-sm;
+}
+
+// Navigation Section
+.navigationSection {
+  flex: 1;
+  padding: v.$space-xl;
+  overflow-y: auto;
+
+  @include v.custom-scrollbar(v.$secondary-color, v.$background-dark, 4px);
+}
+
+.sectionTitle {
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-lg;
+  font-weight: 600;
+  color: v.$color-white;
+  margin: 0 0 v.$space-lg 0;
+  padding-bottom: v.$space-sm;
+  border-bottom: 2px solid v.$secondary-color;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+// Icon Grid Layout
+.iconGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: v.$space-lg;
+  padding: v.$space-sm 0;
+}
+
+.iconGridItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-md;
+  padding: v.$space-md v.$space-sm;
+  background: linear-gradient(
+    135deg,
+    rgba(v.$background-light, 0.8) 0%,
+    rgba(v.$background-light, 0.4) 100%
+  );
+  border: 1px solid rgba(v.$color-grey-darker, 0.3);
+  border-radius: v.$border-radius-lg;
+  color: v.$color-white;
+  text-decoration: none;
+  font-family: v.$font-family-primary;
+  transition: all v.$transition-duration v.$transition-easing;
+  min-height: 120px;
+
+  &:hover {
     background: linear-gradient(
-      to bottom,
-      rgba($background-dark, 1) 0%,
-      rgba($background-dark, 0) 100%
+      135deg,
+      rgba(v.$secondary-color, 0.2) 0%,
+      rgba(v.$secondary-color, 0.1) 100%
     );
+    border-color: rgba(v.$secondary-color, 0.6);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(v.$secondary-color, 0.15);
   }
 
-  &::after {
-    bottom: 0;
-    background: linear-gradient(
-      to top,
-      rgba($background-dark, 1) 0%,
-      rgba($background-dark, 0) 100%
-    );
+  &:active {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(v.$secondary-color, 0.2);
+  }
+}
+
+.iconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  background: rgba(v.$secondary-color, 0.1);
+  border-radius: v.$border-radius-md;
+  border: 2px solid rgba(v.$secondary-color, 0.3);
+  transition: all v.$transition-duration v.$transition-easing;
+
+  .iconGridItem:hover & {
+    background: rgba(v.$secondary-color, 0.2);
+    border-color: v.$secondary-color;
+    transform: scale(1.05);
+  }
+
+  // SVG icon styling
+  svg {
+    color: v.$color-white;
+    transition: color v.$transition-duration v.$transition-easing;
+
+    .iconGridItem:hover & {
+      color: v.$secondary-color;
+    }
+  }
+
+  img {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.navIcon {
+  filter: brightness(0) saturate(100%) invert(100%);
+  transition: filter v.$transition-duration v.$transition-easing;
+
+  .iconGridItem:hover & {
+    filter: brightness(0) saturate(100%) invert(45%) sepia(90%) saturate(2000%)
+      hue-rotate(180deg) brightness(100%) contrast(120%);
+  }
+}
+
+.iconLabel {
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.1;
+  letter-spacing: 0.25px;
+  color: v.$color-white;
+  transition: color v.$transition-duration v.$transition-easing;
+  max-width: 100%;
+  word-wrap: break-word;
+  hyphens: auto;
+
+  .iconGridItem:hover & {
+    color: v.$secondary-color;
+  }
+}
+
+// Footer Section
+.footer {
+  padding: v.$space-xl;
+  background: v.$color-bg-dark-1;
+  border-top: 1px solid rgba(v.$color-grey-darker, 0.3);
+}
+
+.socialSection {
+  margin-bottom: v.$space-lg;
+
+  // Override social media styles for mobile menu
+  :global(.social-media-container) {
+    justify-content: center;
+    gap: v.$space-lg;
+  }
+
+  :global(.social-media-link) {
+    background: rgba(v.$secondary-color, 0.1);
+    border: 1px solid rgba(v.$secondary-color, 0.3);
+    border-radius: v.$border-radius-md;
+    padding: v.$space-sm;
+    transition: all v.$transition-duration v.$transition-easing;
+
+    &:hover {
+      background: rgba(v.$secondary-color, 0.2);
+      border-color: v.$secondary-color;
+      transform: translateY(-2px);
+    }
+  }
+}
+
+.appInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-xs;
+  text-align: center;
+}
+
+.appName {
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+  color: v.$color-white;
+}
+
+.appVersion {
+  font-family: v.$font-family-primary;
+  font-size: v.$font-size-xs;
+  color: v.$secondary-color;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+// Responsive Design
+@media (max-width: v.$screen-small-max) {
+  .header {
+    padding: v.$space-md v.$space-lg;
+  }
+
+  .searchSection,
+  .navigationSection,
+  .footer {
+    padding: v.$space-lg;
+  }
+
+  .logoText {
+    font-size: v.$font-size-lg;
+  }
+
+  .logoAccent {
+    font-size: v.$font-size-xs;
+  }
+
+  .iconGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: v.$space-md;
+  }
+
+  .iconGridItem {
+    padding: v.$space-md v.$space-sm;
+    min-height: 90px;
+  }
+
+  .iconContainer {
+    width: 60px;
+    height: 60px;
+  }
+
+  .iconLabel {
+    font-size: v.$font-size-xs;
+  }
+}
+
+// Animation for smooth appearance
+@keyframes slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
