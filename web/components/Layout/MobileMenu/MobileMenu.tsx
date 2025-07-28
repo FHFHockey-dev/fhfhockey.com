@@ -69,29 +69,13 @@ const NAVIGATION_ITEMS = [
     id: "podcast",
     label: "Podcast",
     href: "/podfeed",
-    iconType: "svg", // Mark as SVG icon
-    svgIcon: (
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M12 1C8.688 1 6 3.688 6 7C6 8.5 6.5 9.875 7.375 10.938L6.219 17.375C6.094 18.125 6.625 18.781 7.406 18.781H16.594C17.375 18.781 17.906 18.125 17.781 17.375L16.625 10.938C17.5 9.875 18 8.5 18 7C18 3.688 15.312 1 12 1ZM12 3C14.219 3 16 4.781 16 7C16 9.219 14.219 11 12 11C9.781 11 8 9.219 8 7C8 4.781 9.781 3 12 3ZM9.5 5.5C9.219 5.5 9 5.781 9 6C9 6.219 9.219 6.5 9.5 6.5C9.781 6.5 10 6.219 10 6C10 5.781 9.781 5.5 9.5 5.5ZM14.5 5.5C14.219 5.5 14 5.781 14 6C14 6.219 14.219 6.5 14.5 6.5C14.781 6.5 15 6.219 15 6C15 5.781 14.781 5.5 14.5 5.5ZM9 20.5V22H15V20.5H9Z"
-          fill="currentColor"
-        />
-      </svg>
-    )
+    icon: "/pictures/podcastIcon.png"
   },
   {
     id: "blog",
     label: "Blog",
     href: "/blog",
-    iconType: "svg", // Mark as SVG icon
-    svgIcon: (
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M6 2C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2H6ZM6 4H13V9H18V20H6V4ZM8 12V14H16V12H8ZM8 16V18H13V16H8Z"
-          fill="currentColor"
-        />
-      </svg>
-    )
+    icon: "/pictures/blogIcon.png"
   }
 ];
 
@@ -280,17 +264,13 @@ function MobileMenu({ onItemClick, visible }: MobileMenuProps) {
                       onClick={handleNavItemClick}
                     >
                       <div className={styles.iconContainer}>
-                        {item.iconType === "svg" ? (
-                          item.svgIcon
-                        ) : item.icon ? (
-                          <Image
-                            src={item.icon}
-                            alt={item.label}
-                            width={32}
-                            height={32}
-                            className={styles.navIcon}
-                          />
-                        ) : null}
+                        <Image
+                          src={item.icon}
+                          alt={item.label}
+                          width={32}
+                          height={32}
+                          className={styles.navIcon}
+                        />
                       </div>
                       <span className={styles.iconLabel}>{item.label}</span>
                     </Link>
