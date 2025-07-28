@@ -110,6 +110,10 @@ $mobile-header-height: 65px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
 
+  // More compact design for mobile browsers
+  height: auto;
+  min-height: 60px;
+
   @media only screen and (min-width: v.$screen-large) {
     display: none;
   }
@@ -121,14 +125,18 @@ $mobile-header-height: 65px;
   align-items: center;
   max-width: 100%;
   margin: 0 auto;
-  padding: 8px 16px;
-  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  padding: 6px 8px;
+  padding-bottom: max(6px, env(safe-area-inset-bottom));
+
+  // Compact height for better mobile experience
+  min-height: 60px;
 }
 
 .bottomNavItem {
   flex: 1;
   display: flex;
   justify-content: center;
+  max-width: 80px; // Prevent items from getting too wide
 }
 
 .bottomNavButton {
@@ -137,18 +145,18 @@ $mobile-header-height: 65px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
-  border-radius: 16px;
-  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  padding: 6px 8px;
+  border-radius: 12px;
+  transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
   cursor: pointer;
-  min-width: 48px;
-  min-height: 48px;
+  min-width: 44px; // Slightly smaller but still accessible
+  min-height: 44px;
   position: relative;
   text-decoration: none;
 
   &:hover {
     background: rgba(7, 170, 226, 0.1);
-    transform: translateY(-2px);
+    transform: translateY(-1px);
 
     .bottomNavIcon img {
       filter: brightness(0) saturate(100%) invert(54%) sepia(75%)
@@ -179,10 +187,10 @@ $mobile-header-height: 65px;
       top: -1px;
       left: 50%;
       transform: translateX(-50%);
-      width: 24px;
-      height: 3px;
+      width: 20px;
+      height: 2px;
       background: linear-gradient(90deg, #07aae2, #0891c7);
-      border-radius: 0 0 3px 3px;
+      border-radius: 0 0 2px 2px;
     }
   }
 }
@@ -191,25 +199,28 @@ $mobile-header-height: 65px;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 4px;
-  transition: all 0.3s ease;
+  margin-bottom: 2px; // Reduced spacing
+  transition: all 0.25s ease;
 
   img {
     filter: brightness(0) invert(1);
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
     opacity: 0.8;
+    width: 18px; // Slightly smaller icons
+    height: 18px;
   }
 }
 
 .bottomNavLabel {
-  font-size: 10px;
+  font-size: 9px; // Smaller text
   font-weight: 500;
   color: rgba(255, 255, 255, 0.8);
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   font-family: "Train One", sans-serif;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   line-height: 1;
+  text-align: center;
 }
 
 .moreButton {
