@@ -477,8 +477,8 @@ export const teamsInfo: {
     id: 55
   },
   UTA: {
-    name: "Utah Hockey Club",
-    shortName: "Utah HC",
+    name: "Utah Mammoth",
+    shortName: "Mammoth",
     primaryColor: "#010101", // Black
     secondaryColor: "#69B3E7", // Light Blue
     jersey: "#FFFFFF", // White
@@ -528,7 +528,7 @@ export const teamNameToAbbreviationMap: { [name: string]: string } = {
   "Arizona Coyotes": "ARI",
   "Vegas Golden Knights": "VGK",
   "Seattle Kraken": "SEA",
-  "Utah Hockey Club": "UTA",
+  "Utah Mammoth": "UTA",
   "Utah Utah HC": "UTA" // Natural Stat Trick uses "Utah Utah HC" for some reason
 };
 

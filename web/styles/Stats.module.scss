@@ -3,29 +3,51 @@
 @use "sass:math";
 
 // =============================================================================
-// BASE LAYOUT & CONTAINER
+// BASE LAYOUT & CONTAINER - MOBILE FIRST EDGE-TO-EDGE
 // =============================================================================
 
 .container {
   width: 100%;
   max-width: none;
   margin: 0 auto;
-  padding: v.$space-lg v.$space-md;
+  // Mobile-first: Edge-to-edge design with minimal padding
+  padding: 0;
   background: v.$background-light;
   min-height: 100vh;
+
+  // Progressive enhancement for larger screens
+  @media (min-width: v.$breakpoint-tablet-min) {
+    padding: v.$space-lg v.$space-md;
+  }
 }
 
 // =============================================================================
-// MAIN LAYOUT WITH SIDEBARS
+// MAIN LAYOUT - MOBILE FIRST SINGLE COLUMN STACK
 // =============================================================================
 
 .mainLayout {
-  display: grid;
-  grid-template-columns: 400px 1fr 400px;
-  gap: v.$space-lg;
-  margin-bottom: v.$space-lg;
+  // Mobile-first: Single column stack with edge-to-edge sections
+  display: flex;
+  flex-direction: column;
+  gap: 0; // Remove gaps for edge-to-edge design
+  margin-bottom: 0;
   min-height: 100vh;
   width: 100%;
+
+  // Progressive enhancement for tablets and up
+  @media (min-width: v.$breakpoint-tablet-min) {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: v.$space-md;
+    margin-bottom: v.$mobile-space-lg;
+  }
+
+  // Desktop: Return to 3-column layout
+  @media (min-width: v.$breakpoint-desktop) {
+    grid-template-columns: 400px 1fr 400px;
+    gap: v.$space-lg;
+    margin-bottom: v.$space-lg;
+  }
 }
 
 .leftSidebar,
@@ -34,37 +56,87 @@
   background: v.$background-medium;
   border: 1px solid v.$border-secondary;
   height: fit-content;
-  position: sticky;
-  top: v.$space-md;
-  overflow-y: auto;
+  
+  // Mobile: Hide sidebars completely - use mobile cards instead
+  display: none;
+  
+  // Tablet and up: Show sidebars with proper styling
+  @media (min-width: v.$breakpoint-tablet-min) {
+    display: block;
+    position: sticky;
+    top: v.$space-md;
+    overflow-y: auto;
+    border-radius: v.$border-radius-lg;
+    border: 1px solid v.$border-secondary;
+  }
 }
 
 .middleContent {
   display: flex;
   flex-direction: column;
-  gap: v.$space-lg;
+  gap: 0; // Remove gaps for edge-to-edge design
   min-width: 0; // Prevent overflow
+  order: 1; // Ensure middle content appears first on mobile
+
+  // Progressive enhancement for larger screens
+  @media (min-width: v.$breakpoint-tablet-min) {
+    gap: v.$space-lg;
+    order: unset;
+  }
+}
+
+// Mobile: Sidebars appear after middle content
+.leftSidebar {
+  order: 2;
+}
+
+.rightSidebar {
+  order: 3;
+}
+
+// Tablet and up: Reset order
+@media (min-width: v.$breakpoint-tablet-min) {
+  .leftSidebar,
+  .rightSidebar {
+    order: unset;
+  }
 }
 
 // =============================================================================
-// HERO SECTION - COMPACT
+// HERO SECTION - MOBILE EDGE-TO-EDGE
 // =============================================================================
 
 .topRowHero {
   display: flex;
   align-items: center;
-  justify-content: center; // Changed from space-between to center
-  margin-bottom: 0; // Remove margin as it's handled by parent gap
-  padding: 0; // Remove padding
+  justify-content: center;
+  margin-bottom: 0;
+  padding: 0;
 }
 
 .heroSection {
   @include v.component-wrapper;
-  width: 100%; // Changed from 50% to 100%
-  padding: v.$space-lg v.$space-md;
+  width: 100%;
+  // Mobile-first: Edge-to-edge with container padding
+  padding: v.$mobile-space-lg v.$mobile-container-padding;
   text-align: center;
   background: v.$background-medium;
-  border: 1px solid v.$border-primary;
+  // Mobile: Edge-to-edge design
+  border: none;
+  border-top: 1px solid v.$border-primary;
+  border-bottom: 1px solid v.$border-primary;
+  border-radius: 0;
+
+  // Progressive enhancement
+  @media (min-width: v.$breakpoint-mobile-md) {
+    padding: v.$mobile-space-xl v.$mobile-space-lg;
+  }
+
+  @media (min-width: v.$breakpoint-tablet-min) {
+    padding: v.$space-lg v.$space-md;
+    border: 1px solid v.$border-primary;
+    border-radius: v.$border-radius-lg;
+  }
 }
 
 .heroContent {
@@ -73,21 +145,44 @@
 }
 
 .heroTitle {
-  font-size: v.$font-size-xl;
+  // Mobile-first typography
+  font-size: v.$mobile-font-size-lg;
   font-weight: 700;
   color: v.$text-primary;
-  margin-bottom: v.$space-sm;
+  margin-bottom: v.$mobile-space-sm;
   font-family: v.$font-family-accent;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
+  letter-spacing: v.$mobile-letter-spacing-tight;
+  line-height: v.$mobile-line-height-tight;
+
+  // Progressive enhancement
+  @media (min-width: v.$breakpoint-mobile-md) {
+    font-size: v.$mobile-font-size-xl;
+  }
+
+  @media (min-width: v.$breakpoint-tablet-min) {
+    font-size: v.$font-size-xl;
+    margin-bottom: v.$space-sm;
+  }
 }
 
 .heroSubtitle {
-  font-size: v.$font-size-md;
+  // Mobile-first typography
+  font-size: v.$mobile-font-size-sm;
   color: v.$text-secondary;
-  margin-bottom: v.$space-lg;
+  margin-bottom: v.$mobile-space-lg;
   font-weight: 400;
-  line-height: 1.3;
+  line-height: v.$mobile-line-height-normal;
+
+  // Progressive enhancement
+  @media (min-width: v.$breakpoint-mobile-md) {
+    font-size: v.$mobile-font-size-base;
+  }
+
+  @media (min-width: v.$breakpoint-tablet-min) {
+    font-size: v.$font-size-md;
+    margin-bottom: v.$space-lg;
+    line-height: 1.3;
+  }
 }
 
 // =============================================================================
@@ -95,7 +190,7 @@
 // =============================================================================
 
 .quickStatsSection {
-  width: 100%; // Changed from 50% to 100%
+  width: 100%;
   height: 100%;
   margin: 0 auto;
   background: v.$background-medium;
@@ -103,33 +198,64 @@
 
 .sectionTitle {
   color: v.$text-primary;
-  font-size: v.$font-size-lg;
+  // Mobile-first typography
+  font-size: v.$mobile-font-size-md;
   font-weight: 600;
-  margin-bottom: v.$space-md;
+  margin-bottom: v.$mobile-space-md;
   font-family: v.$font-family-accent;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: v.$mobile-letter-spacing-wide;
   position: relative;
+
+  // Progressive enhancement
+  @media (min-width: v.$breakpoint-tablet-min) {
+    font-size: v.$font-size-lg;
+    margin-bottom: v.$space-md;
+    letter-spacing: 0.05em;
+  }
 }
 
 .quickStatsGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: v.$space-md;
-  margin-bottom: v.$space-lg;
+  // Mobile-first: Single column
+  grid-template-columns: 1fr;
+  gap: v.$mobile-space-md;
+  margin-bottom: v.$mobile-space-lg;
+
+  // Mobile medium: 2 columns
+  @media (min-width: v.$breakpoint-mobile-md) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  // Tablet and up: 4 columns
+  @media (min-width: v.$breakpoint-tablet-min) {
+    grid-template-columns: repeat(4, 1fr);
+    gap: v.$space-md;
+    margin-bottom: v.$space-lg;
+  }
 }
 
 .quickStatCard {
   @include v.component-wrapper;
-  padding: v.$space-md;
+  // Mobile-first padding
+  padding: v.$mobile-card-padding;
   background: v.$background-medium;
   border: 1px solid v.$border-secondary;
-  transition: all 0.2s ease;
+  transition: all v.$mobile-animation-normal ease;
   position: relative;
   overflow: hidden;
   display: flex;
   align-items: center;
-  gap: v.$space-sm;
+  gap: v.$mobile-space-sm;
+  // Ensure touch target is large enough
+  min-height: v.$touch-target-comfortable;
+
+  // Progressive enhancement
+  @media (min-width: v.$breakpoint-tablet-min) {
+    padding: v.$space-md;
+    gap: v.$space-sm;
+    transition: all 0.2s ease;
+  }
 
   &:hover {
     transform: translateY(-1px);
@@ -282,28 +408,58 @@
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: v.$space-md;
+  // Mobile: Edge-to-edge with zero margin
+  margin-bottom: 0;
+  
+  // Mobile: Normal static positioning (not sticky)
+  position: static;
+  background: transparent;
+  padding: 0;
+  border-bottom: none;
+  box-shadow: none;
+
+  // Progressive enhancement for larger screens
+  @media (min-width: v.$breakpoint-tablet-min) {
+    margin-bottom: v.$space-md;
+  }
 }
 
 .teamsGridContainer {
   display: block;
-  margin-bottom: v.$space-lg;
+  // Mobile: Edge-to-edge with zero margin
+  margin-bottom: 0;
   position: relative;
   box-sizing: border-box;
   height: 100%;
   width: 100%;
+
+  // Progressive enhancement for larger screens
+  @media (min-width: v.$breakpoint-tablet-min) {
+    margin-bottom: v.$space-lg;
+  }
 }
 
 .teamsSection {
-  border: 2px solid v.$border-secondary;
-  border-radius: v.$border-radius-md;
-  padding: v.$space-md;
+  // Mobile: Edge-to-edge design
+  border: none;
+  border-top: 2px solid v.$border-secondary;
+  border-bottom: 2px solid v.$border-secondary;
+  border-radius: 0; // Remove border radius for edge-to-edge
+  // Mobile: Container padding for content
+  padding: v.$mobile-container-padding;
   height: 100%;
 
   background: v.$background-medium;
   margin: 0;
   position: relative;
   overflow: hidden;
+
+  // Progressive enhancement for larger screens
+  @media (min-width: v.$breakpoint-tablet-min) {
+    border: 2px solid v.$border-secondary;
+    border-radius: v.$border-radius-md;
+    padding: v.$space-md;
+  }
 
   // Sliding diagonal background layers - CRISP LINES at -115deg
   &::before,
@@ -604,10 +760,6 @@
   letter-spacing: 0.05em;
   border: 1px solid v.$border-accent;
   font-family: v.$font-family-condensed;
-}
-
-.grid {
-  // Remove this section as grids are now handled by sidebar classes
 }
 
 // =============================================================================
@@ -937,7 +1089,7 @@
   }
 
   .teamList {
-    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+    grid-template-columns: repeat(4, 1fr);
   }
 
   .leaderboardHeader {
@@ -969,10 +1121,6 @@
     grid-template-columns: 1fr;
   }
 
-  .grid {
-    grid-template-columns: 1fr;
-  }
-
   .heroTitle {
     font-size: v.$font-size-md;
   }
@@ -984,4 +1132,184 @@
   .quickStatCard {
     padding: v.$space-sm;
   }
+}
+
+// =============================================================================
+// SEARCH BAR SECTION - MOBILE EDGE-TO-EDGE
+// =============================================================================
+
+.searchSection {
+  // Mobile: Edge-to-edge design with container padding
+  position: static;
+  background: v.$background-medium;
+  padding: v.$mobile-container-padding;
+  border-top: 1px solid v.$border-secondary;
+  border-bottom: 1px solid v.$border-secondary;
+  box-shadow: none;
+  margin-bottom: 0;
+
+  // Progressive enhancement for larger screens
+  @media (min-width: v.$breakpoint-tablet-min) {
+    background: transparent;
+    padding: 0;
+    border: none;
+    margin-bottom: v.$space-md;
+  }
+}
+
+.searchBarWrapper {
+  max-width: 100%;
+  margin: 0 auto;
+  
+  // Mobile: Full width within container padding
+  @media (max-width: v.$breakpoint-mobile-max) {
+    width: 100%;
+  }
+
+  // Progressive enhancement for larger screens
+  @media (min-width: v.$breakpoint-tablet-min) {
+    max-width: 400px;
+  }
+}
+
+// =============================================================================
+// MOBILE LEADERBOARD CARDS - EDGE-TO-EDGE DESIGN
+// =============================================================================
+
+.mobileLeaderboardSection {
+  // Mobile: Edge-to-edge cards with zero gaps
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 0;
+
+  // Progressive enhancement: Hide on larger screens (use sidebar layout)
+  @media (min-width: v.$breakpoint-tablet-min) {
+    display: none;
+  }
+}
+
+.mobileLeaderboardCard {
+  @include v.component-wrapper;
+  background: v.$background-medium;
+  // Mobile: Edge-to-edge design
+  border: none;
+  border-top: 1px solid v.$border-secondary;
+  border-bottom: 1px solid v.$border-secondary;
+  border-radius: 0;
+  padding: v.$mobile-card-padding;
+  
+  // Touch-friendly minimum height
+  min-height: v.$touch-target-large;
+
+  // Add separator between cards
+  &:not(:last-child) {
+    border-bottom: 2px solid v.$border-primary;
+  }
+}
+
+.mobileCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: v.$mobile-space-sm;
+  padding-bottom: v.$mobile-space-xs;
+  border-bottom: 1px solid v.$border-primary;
+}
+
+.mobileCardTitle {
+  font-family: v.$font-family-accent;
+  font-size: v.$mobile-font-size-md;
+  font-weight: 600;
+  color: v.$text-primary;
+  text-transform: uppercase;
+  letter-spacing: v.$mobile-letter-spacing-wide;
+  margin: 0;
+}
+
+.mobileCardType {
+  background: v.$primary-color;
+  color: v.$text-button;
+  padding: v.$mobile-space-xxs v.$mobile-space-xs;
+  border-radius: v.$border-radius-sm;
+  font-size: v.$mobile-font-size-xs;
+  font-weight: 600;
+  letter-spacing: v.$mobile-letter-spacing-wide;
+}
+
+.mobileLeadersList {
+  display: flex;
+  flex-direction: column;
+  gap: v.$mobile-space-xs;
+}
+
+.mobileLeaderItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: v.$mobile-space-xs;
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$border-radius-sm;
+  transition: all v.$mobile-animation-fast ease;
+  
+  // Touch target optimization
+  min-height: v.$touch-target-min;
+
+  &:hover {
+    background: v.$background-light;
+    border-color: v.$border-accent;
+    transform: translateX(2px);
+  }
+
+  &:first-child {
+    border-left: 3px solid #10b981;
+  }
+
+  &:nth-child(2) {
+    border-left: 3px solid #22c55e;
+  }
+
+  &:nth-child(3) {
+    border-left: 3px solid #84cc16;
+  }
+}
+
+.mobileLeaderInfo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.mobileLeaderName {
+  font-size: v.$mobile-font-size-sm;
+  color: v.$primary-color;
+  font-family: v.$font-family-condensed;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: v.$mobile-letter-spacing-normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: v.$mobile-space-xxs;
+}
+
+.mobileLeaderTeam {
+  font-size: v.$mobile-font-size-xs;
+  color: v.$text-secondary;
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobileLeaderValue {
+  font-size: v.$mobile-font-size-md;
+  font-weight: 700;
+  color: v.$primary-color;
+  font-family: "SF Mono", "Monaco", "Cascadia Code", monospace;
+  letter-spacing: v.$mobile-letter-spacing-tight;
+  flex-shrink: 0;
+  text-align: right;
 }
