@@ -287,7 +287,6 @@ function MobileMenu({ onItemClick, visible }: MobileMenuProps) {
                   <span className={styles.appName}>
                     Five Hole Fantasy Hockey
                   </span>
-                  <span className={styles.appVersion}>Premium Analytics</span>
                 </div>
               </div>
             </div>
