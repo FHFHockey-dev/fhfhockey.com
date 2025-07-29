@@ -98,8 +98,18 @@ $mobile-easing-linear: linear; // Linear easing for loading indicators
 $mobile-easing-ease: ease; // Standard ease for general interactions
 $mobile-easing-ease-out: ease-out; // Ease out for elements appearing
 $mobile-easing-ease-in-out: ease-in-out; // Ease in-out for smooth bidirectional animations
-$mobile-easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55); // Bounce effect for playful interactions
-$mobile-easing-smooth: cubic-bezier(0.4, 0, 0.2, 1); // Material Design recommended easing for mobile
+$mobile-easing-bounce: cubic-bezier(
+  0.68,
+  -0.55,
+  0.265,
+  1.55
+); // Bounce effect for playful interactions
+$mobile-easing-smooth: cubic-bezier(
+  0.4,
+  0,
+  0.2,
+  1
+); // Material Design recommended easing for mobile
 
 // =============================================
 // Colors (All definitions preserved, grouped by original blocks)

@@ -177,7 +177,7 @@ export default function StatsPage({
 
   return (
     <div className={styles.container}>
-      {/* Main Layout with Sidebars */}
+      {/* Teams Grid with Sticky Positioning */}
       <div className={styles.teamSelectheader}>
         {/* Teams Grid with Sliding Diagonal Background */}
         <div className={styles.teamsGridContainer}>
@@ -236,150 +236,223 @@ export default function StatsPage({
             </div>
           </div>
         </div>
+      </div>
 
-        <div className={styles.mainLayout}>
-          {/* Left Sidebar - Skater Statistics */}
-          <aside className={styles.leftSidebar}>
-            <header className={styles.leaderboardHeader}>
-              <h1 className={styles.title}>
-                <span className={styles.titleAccent}>Skater Statistics</span>
-              </h1>
-              <div className={styles.seasonBadge}>2024-25 Season</div>
-            </header>
-            <div className={styles.leaderboards}>
-              <LeaderboardCategory
-                title="Points"
-                leaders={pointsLeaders}
-                statKey="points"
-              />
-              <LeaderboardCategory
-                title="Goals"
-                leaders={goalsLeaders}
-                statKey="goals"
-              />
-              <LeaderboardCategory
-                title="Power Play Points"
-                leaders={pppLeaders}
-                statKey="pp_points"
-              />
-              <LeaderboardCategoryBSH title="BSH Index" leaders={bshLeaders} />
-            </div>
-          </aside>
-
-          {/* Middle Content Section */}
-          <main className={styles.middleContent}>
-            <div className={styles.topRowHero}>
-              {/* Hero Section - Clean and Minimal */}
-              <section className={styles.heroSection}>
-                <div className={styles.heroContent}>
-                  <h1 className={styles.heroTitle}>Underlying Stats Hub</h1>
-
-                  <p className={styles.heroSubtitle}>
-                    Advanced hockey statistics and player performance analysis
-                  </p>
-                  <PlayerSearchBar />
-                </div>
-
-                {/* Quick Stats - Bento Box Layout */}
-                <section className={styles.quickStatsSection}>
-                  <h2 className={styles.sectionTitle}>Key Metrics</h2>
-                  <div className={styles.quickStatsGrid}>
-                    {quickStats.map((stat, index) => (
-                      <div
-                        key={index}
-                        className={`${styles.quickStatCard} ${stat.category ? styles[stat.category] : ""}`}
-                      >
-                        <div className={styles.quickStatIcon}>
-                          <div className={styles.iconInner}></div>
-                        </div>
-                        <div className={styles.quickStatContent}>
-                          <div className={styles.quickStatValue}>
-                            {stat.value}
-                          </div>
-                          <div className={styles.quickStatLabel}>
-                            {stat.label}
-                          </div>
-                          {stat.subtitle && (
-                            <div className={styles.quickStatSubtitle}>
-                              {stat.subtitle}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              </section>
-            </div>
-
-            {/* Position Filter */}
-            <section className={styles.filterSection}>
-              <h3 className={styles.filterTitle}>Filter by Position</h3>
-              <div className={styles.filterButtons}>
-                {[
-                  { key: "all", label: "All Players" },
-                  { key: "C", label: "Center" },
-                  { key: "LW", label: "Left Wing" },
-                  { key: "RW", label: "Right Wing" },
-                  { key: "D", label: "Defense" },
-                  { key: "G", label: "Goalie" }
-                ].map((filter) => (
-                  <button
-                    key={filter.key}
-                    className={`${styles.filterButton} ${
-                      selectedFilter === filter.key
-                        ? styles.filterButtonActive
-                        : ""
-                    }`}
-                    onClick={() => setSelectedFilter(filter.key)}
-                  >
-                    {filter.label}
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            {/* Goalie Share Chart */}
-            <section className={styles.goalieChartSection}>
-              <h3 className={styles.sectionTitle}>Goalie Share Analysis</h3>
-              <GoalieShareChart />
-            </section>
-          </main>
-
-          {/* Right Sidebar - Goaltender Statistics */}
-          <aside className={styles.rightSidebar}>
-            <header className={styles.leaderboardHeader}>
-              <h1 className={styles.title}>
-                <span className={styles.titleAccent}>
-                  Goaltender Statistics
-                </span>
-              </h1>
-            </header>
-            <div className={styles.leaderboards}>
-              <LeaderboardCategoryGoalie
-                title="Wins"
-                leaders={goalieLeadersWins}
-                statKey="wins"
-              />
-              <LeaderboardCategoryGoalie
-                title="Save Percentage"
-                leaders={goalieLeadersSavePct}
-                statKey="save_pct"
-              />
-              <LeaderboardCategoryGoalie
-                title="Goals Against Average"
-                leaders={goalieLeadersGAA}
-                statKey="goals_against_avg"
-              />
-              <LeaderboardCategoryGoalie
-                title="Quality Start Percentage"
-                leaders={goalieLeadersQS}
-                statKey="quality_starts_pct"
-              />
-            </div>
-          </aside>
+      {/* Search Bar Section - Normal Flow (Not Sticky) */}
+      <div className={styles.searchSection}>
+        <div className={styles.searchBarWrapper}>
+          <PlayerSearchBar />
         </div>
       </div>
+
+      {/* Main Layout with Sidebars */}
+      <div className={styles.mainLayout}>
+        {/* Left Sidebar - Skater Statistics */}
+        <aside className={styles.leftSidebar}>
+          <header className={styles.leaderboardHeader}>
+            <h1 className={styles.title}>
+              <span className={styles.titleAccent}>Skater Statistics</span>
+            </h1>
+            <div className={styles.seasonBadge}>2024-25 Season</div>
+          </header>
+          <div className={styles.leaderboards}>
+            <LeaderboardCategory
+              title="Points"
+              leaders={pointsLeaders}
+              statKey="points"
+            />
+            <LeaderboardCategory
+              title="Goals"
+              leaders={goalsLeaders}
+              statKey="goals"
+            />
+            <LeaderboardCategory
+              title="Power Play Points"
+              leaders={pppLeaders}
+              statKey="pp_points"
+            />
+            <LeaderboardCategoryBSH title="BSH Index" leaders={bshLeaders} />
+          </div>
+        </aside>
+
+        {/* Middle Content Section */}
+        <main className={styles.middleContent}>
+          <div className={styles.topRowHero}>
+            {/* Hero Section - Clean and Minimal */}
+            <section className={styles.heroSection}>
+              <div className={styles.heroContent}>
+                <h1 className={styles.heroTitle}>Underlying Stats Hub</h1>
+
+                <p className={styles.heroSubtitle}>
+                  Advanced hockey statistics and player performance analysis
+                </p>
+                  {/* PlayerSearchBar moved to sticky section above */}
+              </div>
+
+              {/* Quick Stats - Bento Box Layout */}
+              <section className={styles.quickStatsSection}>
+                <h2 className={styles.sectionTitle}>Key Metrics</h2>
+                <div className={styles.quickStatsGrid}>
+                  {quickStats.map((stat, index) => (
+                    <div
+                      key={index}
+                      className={`${styles.quickStatCard} ${stat.category ? styles[stat.category] : ""}`}
+                    >
+                      <div className={styles.quickStatIcon}>
+                        <div className={styles.iconInner}></div>
+                      </div>
+                      <div className={styles.quickStatContent}>
+                        <div className={styles.quickStatValue}>
+                          {stat.value}
+                        </div>
+                        <div className={styles.quickStatLabel}>
+                          {stat.label}
+                        </div>
+                        {stat.subtitle && (
+                          <div className={styles.quickStatSubtitle}>
+                            {stat.subtitle}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </section>
+          </div>
+
+          {/* Position Filter */}
+          <section className={styles.filterSection}>
+            <h3 className={styles.filterTitle}>Filter by Position</h3>
+            <div className={styles.filterButtons}>
+              {[
+                { key: "all", label: "All Players" },
+                { key: "C", label: "Center" },
+                { key: "LW", label: "Left Wing" },
+                { key: "RW", label: "Right Wing" },
+                { key: "D", label: "Defense" },
+                { key: "G", label: "Goalie" }
+              ].map((filter) => (
+                <button
+                  key={filter.key}
+                  className={`${styles.filterButton} ${
+                    selectedFilter === filter.key
+                      ? styles.filterButtonActive
+                      : ""
+                  }`}
+                  onClick={() => setSelectedFilter(filter.key)}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* Goalie Share Chart */}
+          <section className={styles.goalieChartSection}>
+            <h3 className={styles.sectionTitle}>Goalie Share Analysis</h3>
+            <GoalieShareChart />
+          </section>
+        </main>
+
+        {/* Right Sidebar - Goaltender Statistics */}
+        <aside className={styles.rightSidebar}>
+          <header className={styles.leaderboardHeader}>
+            <h1 className={styles.title}>
+              <span className={styles.titleAccent}>
+                Goaltender Statistics
+              </span>
+            </h1>
+          </header>
+          <div className={styles.leaderboards}>
+            <LeaderboardCategoryGoalie
+              title="Wins"
+              leaders={goalieLeadersWins}
+              statKey="wins"
+            />
+            <LeaderboardCategoryGoalie
+              title="Save Percentage"
+              leaders={goalieLeadersSavePct}
+              statKey="save_pct"
+            />
+            <LeaderboardCategoryGoalie
+              title="Goals Against Average"
+              leaders={goalieLeadersGAA}
+              statKey="goals_against_avg"
+            />
+            <LeaderboardCategoryGoalie
+              title="Quality Start Percentage"
+              leaders={goalieLeadersQS}
+              statKey="quality_starts_pct"
+            />
+          </div>
+        </aside>
+      </div>
+
+      {/* Mobile Leaderboard Cards - Appear Below Main Content on Mobile */}
+      <section className={styles.mobileLeaderboardSection}>
+        {/* Skater Statistics Card */}
+        <div className={styles.mobileLeaderboardCard}>
+          <div className={styles.mobileCardHeader}>
+            <h2 className={styles.mobileCardTitle}>Skater Stats</h2>
+            <span className={styles.mobileCardType}>Players</span>
+          </div>
+          <div className={styles.mobileLeadersList}>
+            {/* Points Leaders */}
+            {pointsLeaders.slice(0, 3).map((leader, index) => (
+              <div key={`points-${leader.player_id}`} className={styles.mobileLeaderItem}>
+                <div className={styles.mobileLeaderInfo}>
+                  <div className={styles.mobileLeaderName}>{leader.fullName}</div>
+                  <div className={styles.mobileLeaderTeam}>Points Leader</div>
+                </div>
+                <div className={styles.mobileLeaderValue}>{leader.points}</div>
+              </div>
+            ))}
+            {/* Goals Leaders */}
+            {goalsLeaders.slice(0, 2).map((leader, index) => (
+              <div key={`goals-${leader.player_id}`} className={styles.mobileLeaderItem}>
+                <div className={styles.mobileLeaderInfo}>
+                  <div className={styles.mobileLeaderName}>{leader.fullName}</div>
+                  <div className={styles.mobileLeaderTeam}>Goals Leader</div>
+                </div>
+                <div className={styles.mobileLeaderValue}>{leader.goals}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Goaltender Statistics Card */}
+        <div className={styles.mobileLeaderboardCard}>
+          <div className={styles.mobileCardHeader}>
+            <h2 className={styles.mobileCardTitle}>Goalie Stats</h2>
+            <span className={styles.mobileCardType}>Goalies</span>
+          </div>
+          <div className={styles.mobileLeadersList}>
+            {/* Save Percentage Leaders */}
+            {goalieLeadersSavePct.slice(0, 3).map((leader, index) => (
+              <div key={`save-pct-${leader.goalie_id}`} className={styles.mobileLeaderItem}>
+                <div className={styles.mobileLeaderInfo}>
+                  <div className={styles.mobileLeaderName}>{leader.fullName}</div>
+                  <div className={styles.mobileLeaderTeam}>Save %</div>
+                </div>
+                <div className={styles.mobileLeaderValue}>
+                  {leader.save_pct ? leader.save_pct.toFixed(3).replace(/^0/, "") : "-.---"}
+                </div>
+              </div>
+            ))}
+            {/* Wins Leaders */}
+            {goalieLeadersWins.slice(0, 2).map((leader, index) => (
+              <div key={`wins-${leader.goalie_id}`} className={styles.mobileLeaderItem}>
+                <div className={styles.mobileLeaderInfo}>
+                  <div className={styles.mobileLeaderName}>{leader.fullName}</div>
+                  <div className={styles.mobileLeaderTeam}>Wins</div>
+                </div>
+                <div className={styles.mobileLeaderValue}>{leader.wins}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
