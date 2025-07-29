@@ -42,7 +42,6 @@
 .logo {
   display: flex;
   align-items: baseline;
-  gap: v.$space-xs;
 }
 
 .logoText {
@@ -54,7 +53,7 @@
 }
 
 .logoAccent {
-  font-family: v.$font-family-primary;
+  font-family: v.$font-family-accent;
   font-size: v.$font-size-sm;
   font-weight: 400;
   color: v.$secondary-color;
@@ -428,7 +427,7 @@
   }
 
   .logoAccent {
-    font-size: v.$font-size-xs;
+    font-size: v.$font-size-lg;
   }
 
   .iconGrid {
