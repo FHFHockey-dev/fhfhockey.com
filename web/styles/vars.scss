@@ -26,6 +26,81 @@ $breakpoint-md-min: 641px; // Note: Same value as $screen-medium / $screen-mediu
 $breakpoint-md-max: 1007px; // Note: Same value as $screen-medium-max
 $breakpoint-lg-min: 1008px; // Note: Unique value
 
+// --- Mobile-Specific Breakpoints (Added for mobile optimization) ---
+$breakpoint-mobile-xs: 320px; // Small mobile phones (iPhone SE, Galaxy S5)
+$breakpoint-mobile-sm: 375px; // Standard mobile phones (iPhone 6/7/8, Galaxy S8)
+$breakpoint-mobile-md: 414px; // Large mobile phones (iPhone 6/7/8 Plus, Galaxy Note)
+$breakpoint-mobile-lg: 480px; // Maximum mobile breakpoint before tablet
+$breakpoint-mobile-max: 480px; // Mobile upper boundary
+$breakpoint-tablet-min: 481px; // Tablet starting point
+
+// --- Mobile Touch Target Variables (Added for mobile optimization) ---
+$touch-target-min: 44px; // Minimum touch target size (Apple & Google guidelines)
+$touch-target-comfortable: 48px; // Comfortable touch target size
+$touch-target-large: 56px; // Large touch target for primary actions
+$touch-target-small: 36px; // Small touch target for secondary actions (minimum acceptable)
+
+// --- Mobile Spacing Scale Variables (Added for mobile optimization) ---
+$mobile-space-xxs: 4px; // Extra extra small mobile spacing
+$mobile-space-xs: 8px; // Extra small mobile spacing
+$mobile-space-sm: 12px; // Small mobile spacing
+$mobile-space-md: 16px; // Medium mobile spacing
+$mobile-space-lg: 20px; // Large mobile spacing
+$mobile-space-xl: 24px; // Extra large mobile spacing
+$mobile-space-xxl: 32px; // Extra extra large mobile spacing
+$mobile-space-xxxl: 40px; // Triple extra large mobile spacing
+
+// --- Mobile Container & Padding Variables (Added for mobile optimization) ---
+$mobile-container-padding: $mobile-space-md; // Standard mobile container padding
+$mobile-edge-padding: $mobile-space-sm; // Padding from screen edges
+$mobile-section-gap: $mobile-space-lg; // Gap between major sections on mobile
+$mobile-card-padding: $mobile-space-md; // Padding inside mobile cards
+
+// --- Mobile Typography Variables (Added for mobile optimization) ---
+$mobile-font-size-xxs: 0.625rem; // 10px - Very small mobile text
+$mobile-font-size-xs: 0.75rem; // 12px - Small mobile text (captions, labels)
+$mobile-font-size-sm: 0.875rem; // 14px - Standard mobile body text
+$mobile-font-size-base: 1rem; // 16px - Mobile base font size
+$mobile-font-size-md: 1.125rem; // 18px - Medium mobile headings
+$mobile-font-size-lg: 1.25rem; // 20px - Large mobile headings
+$mobile-font-size-xl: 1.5rem; // 24px - Extra large mobile headings
+$mobile-font-size-xxl: 1.75rem; // 28px - Hero text on mobile
+
+// --- Mobile Line Height Variables (Added for mobile optimization) ---
+$mobile-line-height-tight: 1.2; // Tight line height for headings
+$mobile-line-height-normal: 1.4; // Normal line height for body text
+$mobile-line-height-relaxed: 1.6; // Relaxed line height for readability
+
+// --- Mobile Letter Spacing Variables (Added for mobile optimization) ---
+$mobile-letter-spacing-tight: -0.02em; // Tight letter spacing for large text
+$mobile-letter-spacing-normal: 0; // Normal letter spacing
+$mobile-letter-spacing-wide: 0.05em; // Wide letter spacing for small caps/labels
+
+// --- Mobile Z-Index Variables (Added for mobile optimization) ---
+$mobile-z-index-base: 1; // Base level for normal content
+$mobile-z-index-sticky: 10; // Sticky positioned elements (teams grid, search bar)
+$mobile-z-index-header: 20; // Fixed headers and navigation
+$mobile-z-index-overlay: 30; // Modal overlays and dropdowns
+$mobile-z-index-popup: 40; // Tooltips and popups
+$mobile-z-index-modal: 50; // Full-screen modals
+$mobile-z-index-toast: 60; // Toast notifications and alerts
+$mobile-z-index-debug: 9999; // Debug overlays (highest priority)
+
+// --- Mobile Animation Duration Variables (Added for mobile optimization) ---
+$mobile-animation-instant: 0s; // Instant animations for immediate feedback
+$mobile-animation-fast: 0.15s; // Fast animations for button states and small interactions
+$mobile-animation-normal: 0.25s; // Normal animations for page transitions and moderate interactions
+$mobile-animation-slow: 0.35s; // Slow animations for complex transitions and large movements
+$mobile-animation-extra-slow: 0.5s; // Extra slow animations for dramatic effects or loading states
+
+// --- Mobile Animation Easing Variables (Added for mobile optimization) ---
+$mobile-easing-linear: linear; // Linear easing for loading indicators
+$mobile-easing-ease: ease; // Standard ease for general interactions
+$mobile-easing-ease-out: ease-out; // Ease out for elements appearing
+$mobile-easing-ease-in-out: ease-in-out; // Ease in-out for smooth bidirectional animations
+$mobile-easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55); // Bounce effect for playful interactions
+$mobile-easing-smooth: cubic-bezier(0.4, 0, 0.2, 1); // Material Design recommended easing for mobile
+
 // =============================================
 // Colors (All definitions preserved, grouped by original blocks)
 // =============================================
