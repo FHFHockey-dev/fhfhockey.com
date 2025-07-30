@@ -286,7 +286,7 @@ export default function StatsPage({
                 <p className={styles.heroSubtitle}>
                   Advanced hockey statistics and player performance analysis
                 </p>
-                  {/* PlayerSearchBar moved to sticky section above */}
+                {/* PlayerSearchBar moved to sticky section above */}
               </div>
 
               {/* Quick Stats - Bento Box Layout */}
@@ -359,9 +359,7 @@ export default function StatsPage({
         <aside className={styles.rightSidebar}>
           <header className={styles.leaderboardHeader}>
             <h1 className={styles.title}>
-              <span className={styles.titleAccent}>
-                Goaltender Statistics
-              </span>
+              <span className={styles.titleAccent}>Goaltender Statistics</span>
             </h1>
           </header>
           <div className={styles.leaderboards}>
@@ -400,9 +398,14 @@ export default function StatsPage({
           <div className={styles.mobileLeadersList}>
             {/* Points Leaders */}
             {pointsLeaders.slice(0, 3).map((leader, index) => (
-              <div key={`points-${leader.player_id}`} className={styles.mobileLeaderItem}>
+              <div
+                key={`points-${leader.player_id}`}
+                className={styles.mobileLeaderItem}
+              >
                 <div className={styles.mobileLeaderInfo}>
-                  <div className={styles.mobileLeaderName}>{leader.fullName}</div>
+                  <div className={styles.mobileLeaderName}>
+                    {leader.fullName}
+                  </div>
                   <div className={styles.mobileLeaderTeam}>Points Leader</div>
                 </div>
                 <div className={styles.mobileLeaderValue}>{leader.points}</div>
@@ -410,9 +413,14 @@ export default function StatsPage({
             ))}
             {/* Goals Leaders */}
             {goalsLeaders.slice(0, 2).map((leader, index) => (
-              <div key={`goals-${leader.player_id}`} className={styles.mobileLeaderItem}>
+              <div
+                key={`goals-${leader.player_id}`}
+                className={styles.mobileLeaderItem}
+              >
                 <div className={styles.mobileLeaderInfo}>
-                  <div className={styles.mobileLeaderName}>{leader.fullName}</div>
+                  <div className={styles.mobileLeaderName}>
+                    {leader.fullName}
+                  </div>
                   <div className={styles.mobileLeaderTeam}>Goals Leader</div>
                 </div>
                 <div className={styles.mobileLeaderValue}>{leader.goals}</div>
@@ -430,21 +438,33 @@ export default function StatsPage({
           <div className={styles.mobileLeadersList}>
             {/* Save Percentage Leaders */}
             {goalieLeadersSavePct.slice(0, 3).map((leader, index) => (
-              <div key={`save-pct-${leader.goalie_id}`} className={styles.mobileLeaderItem}>
+              <div
+                key={`save-pct-${leader.goalie_id}`}
+                className={styles.mobileLeaderItem}
+              >
                 <div className={styles.mobileLeaderInfo}>
-                  <div className={styles.mobileLeaderName}>{leader.fullName}</div>
+                  <div className={styles.mobileLeaderName}>
+                    {leader.fullName}
+                  </div>
                   <div className={styles.mobileLeaderTeam}>Save %</div>
                 </div>
                 <div className={styles.mobileLeaderValue}>
-                  {leader.save_pct ? leader.save_pct.toFixed(3).replace(/^0/, "") : "-.---"}
+                  {leader.save_pct
+                    ? leader.save_pct.toFixed(3).replace(/^0/, "")
+                    : "-.---"}
                 </div>
               </div>
             ))}
             {/* Wins Leaders */}
             {goalieLeadersWins.slice(0, 2).map((leader, index) => (
-              <div key={`wins-${leader.goalie_id}`} className={styles.mobileLeaderItem}>
+              <div
+                key={`wins-${leader.goalie_id}`}
+                className={styles.mobileLeaderItem}
+              >
                 <div className={styles.mobileLeaderInfo}>
-                  <div className={styles.mobileLeaderName}>{leader.fullName}</div>
+                  <div className={styles.mobileLeaderName}>
+                    {leader.fullName}
+                  </div>
                   <div className={styles.mobileLeaderTeam}>Wins</div>
                 </div>
                 <div className={styles.mobileLeaderValue}>{leader.wins}</div>

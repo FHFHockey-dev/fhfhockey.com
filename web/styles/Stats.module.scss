@@ -56,10 +56,10 @@
   background: v.$background-medium;
   border: 1px solid v.$border-secondary;
   height: fit-content;
-  
+
   // Mobile: Hide sidebars completely - use mobile cards instead
   display: none;
-  
+
   // Tablet and up: Show sidebars with proper styling
   @media (min-width: v.$breakpoint-tablet-min) {
     display: block;
@@ -410,7 +410,7 @@
   justify-content: space-between;
   // Mobile: Edge-to-edge with zero margin
   margin-bottom: 0;
-  
+
   // Mobile: Normal static positioning (not sticky)
   position: static;
   background: transparent;
@@ -430,7 +430,7 @@
   margin-bottom: 0;
   position: relative;
   box-sizing: border-box;
-  height: 100%;
+  // Remove height constraint to allow grid to expand
   width: 100%;
 
   // Progressive enhancement for larger screens
@@ -440,25 +440,29 @@
 }
 
 .teamsSection {
-  // Mobile: Edge-to-edge design
+  // Mobile: Edge-to-edge design with proper overflow handling
   border: none;
   border-top: 2px solid v.$border-secondary;
   border-bottom: 2px solid v.$border-secondary;
   border-radius: 0; // Remove border radius for edge-to-edge
-  // Mobile: Container padding for content
-  padding: v.$mobile-container-padding;
-  height: 100%;
+  // Mobile: Reduce padding to prevent overflow
+  padding: v.$mobile-space-sm;
+  // Remove height constraint to allow grid to expand naturally
+  min-height: fit-content;
 
   background: v.$background-medium;
   margin: 0;
   position: relative;
-  overflow: hidden;
+  overflow: hidden; // Prevent horizontal overflow
+  width: 100%;
+  box-sizing: border-box;
 
   // Progressive enhancement for larger screens
   @media (min-width: v.$breakpoint-tablet-min) {
     border: 2px solid v.$border-secondary;
     border-radius: v.$border-radius-md;
     padding: v.$space-md;
+    overflow: visible;
   }
 
   // Sliding diagonal background layers - CRISP LINES at -115deg
@@ -634,12 +638,40 @@
 
 .teamList {
   display: grid;
-  grid-template-columns: repeat(16, 1fr);
-  gap: v.$space-md;
+  // Mobile-first: 8-column layout with proper sizing constraints
+  grid-template-columns: repeat(8, 1fr);
+  gap: v.$mobile-space-xxs;
   max-width: 100%;
   position: relative;
   z-index: 2;
-  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  // Prevent horizontal overflow
+  overflow: hidden;
+  // Ensure grid can accommodate all teams with explicit row definition (4 rows × 8 teams = 32 teams)
+  grid-template-rows: repeat(4, minmax(v.$touch-target-min, auto));
+
+  // Mobile medium: Keep 8-column layout but with better spacing
+  @media (min-width: v.$breakpoint-mobile-md) {
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(4, minmax(v.$touch-target-comfortable, auto));
+    gap: v.$mobile-space-xs;
+  }
+
+  // Tablet: 16-column layout (2 rows × 16 teams = 32 teams)
+  @media (min-width: v.$breakpoint-tablet-min) {
+    grid-template-columns: repeat(16, 1fr);
+    grid-template-rows: repeat(2, minmax(60px, auto));
+    gap: v.$space-md;
+    overflow: visible; // Allow overflow on larger screens
+  }
+
+  // Desktop: 16-column layout with enhanced spacing
+  @media (min-width: v.$breakpoint-desktop) {
+    grid-template-columns: repeat(16, 1fr);
+    grid-template-rows: repeat(2, minmax(60px, auto));
+    gap: v.$space-lg;
+  }
 }
 
 .teamListItem {
@@ -649,13 +681,37 @@
   text-decoration: none;
   color: v.$text-secondary;
   transition: all 0.2s ease;
-  padding: v.$space-xxs;
+  // Reduce padding to save space on mobile
+  padding: v.$mobile-space-xxs;
   border-radius: v.$border-radius-sm;
   background: v.$background-dark;
   border: 1px solid v.$border-primary;
   position: relative;
   z-index: 3;
-  height: 60px;
+  // Ensure proper box-sizing
+  box-sizing: border-box;
+
+  // Mobile-first: Ensure adequate touch target size but fit within grid
+  min-height: v.$touch-target-min;
+  min-width: v.$touch-target-min;
+  // Prevent items from growing too large
+  max-width: 100%;
+
+  // Mobile medium: Slightly larger touch targets
+  @media (min-width: v.$breakpoint-mobile-md) {
+    min-height: v.$touch-target-comfortable;
+    min-width: v.$touch-target-comfortable;
+    padding: v.$mobile-space-xs;
+  }
+
+  // Tablet: Return to original compact size
+  @media (min-width: v.$breakpoint-tablet-min) {
+    height: 60px;
+    min-height: auto;
+    min-width: auto;
+    max-width: none;
+    padding: v.$space-xxs;
+  }
 
   &:hover {
     transform: translateY(-1px);
@@ -673,46 +729,47 @@
   }
 }
 
-.teamListItemBlurred {
-  opacity: 0.75;
-  filter: blur(1px);
-  transition: all 0.3s ease;
-
-  &:hover {
-    opacity: 1;
-    filter: blur(0);
-  }
-}
-
 .teamLogoContainer {
   width: 100%;
   height: 100%;
-  margin-bottom: v.$space-xxs;
+  margin-bottom: v.$mobile-space-xxs;
   display: flex;
   align-items: center;
-  justify-content: space-evenly;
+  justify-content: center; // Change from space-evenly to center for mobile
   border-radius: v.$border-radius-sm;
   background: v.$background-medium;
   border: 1px solid v.$border-primary;
   transition: all 0.2s ease;
+  box-sizing: border-box;
+
+  // Ensure container doesn't overflow
+  overflow: hidden;
+
+  // Tablet and up: Return to space-evenly
+  @media (min-width: v.$breakpoint-tablet-min) {
+    justify-content: space-evenly;
+    margin-bottom: v.$space-xxs;
+  }
 }
 
 .teamLogo {
-  width: 40px;
-  height: 40px;
+  // Mobile: Smaller logos to fit better
+  width: 28px;
+  height: 28px;
   object-fit: contain;
-}
+  flex-shrink: 0;
 
-.teamAbbreviation {
-  font-size: v.$font-size-xxs;
-  font-weight: 600;
-  text-align: center;
-  color: v.$text-secondary;
-  letter-spacing: 0.1em;
-  font-family: v.$font-family-accent;
-  transition: color 0.2s ease;
-  writing-mode: vertical-rl;
-  text-orientation: upright;
+  // Mobile medium: Slightly larger
+  @media (min-width: v.$breakpoint-mobile-md) {
+    width: 32px;
+    height: 32px;
+  }
+
+  // Tablet and up: Full size
+  @media (min-width: v.$breakpoint-tablet-min) {
+    width: 40px;
+    height: 40px;
+  }
 }
 
 // =============================================================================
@@ -1050,55 +1107,9 @@
 // =============================================================================
 
 @media (max-width: v.$breakpoint-tablet) {
-  .mainLayout {
-    grid-template-columns: 1fr;
-    gap: v.$space-md;
-  }
-
-  .leftSidebar,
-  .rightSidebar {
-    position: static;
-    max-height: none;
-    order: 2; // Place sidebars after middle content on mobile
-  }
-
-  .middleContent {
-    order: 1;
-  }
-
   .container {
     width: 98%;
     padding: v.$space-sm;
-  }
-
-  .heroTitle {
-    font-size: v.$font-size-lg;
-  }
-
-  .heroSubtitle {
-    font-size: v.$font-size-sm;
-  }
-
-  .quickStatsGrid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: v.$space-sm;
-  }
-
-  .grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .teamList {
-    grid-template-columns: repeat(4, 1fr);
-  }
-
-  .leaderboardHeader {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .heroSection {
-    padding: v.$space-md;
   }
 
   .filterSection {
@@ -1109,6 +1120,11 @@
 
   .filterButtons {
     justify-content: center;
+  }
+
+  .leaderboardHeader {
+    flex-direction: column;
+    text-align: center;
   }
 }
 
@@ -1135,181 +1151,203 @@
 }
 
 // =============================================================================
-// SEARCH BAR SECTION - MOBILE EDGE-TO-EDGE
+// PROGRESSIVE ENHANCEMENT MEDIA QUERIES - MOBILE FIRST
 // =============================================================================
 
-.searchSection {
-  // Mobile: Edge-to-edge design with container padding
-  position: static;
-  background: v.$background-medium;
-  padding: v.$mobile-container-padding;
-  border-top: 1px solid v.$border-secondary;
-  border-bottom: 1px solid v.$border-secondary;
-  box-shadow: none;
-  margin-bottom: 0;
+// Mobile-first base styles are defined above without media queries
+// Progressive enhancement layers:
 
-  // Progressive enhancement for larger screens
-  @media (min-width: v.$breakpoint-tablet-min) {
+// =============================================================================
+// MOBILE MEDIUM ENHANCEMENT (375px+)
+// =============================================================================
+@media (min-width: v.$breakpoint-mobile-sm) {
+  .heroTitle {
+    font-size: v.$mobile-font-size-xl;
+  }
+
+  .heroSubtitle {
+    font-size: v.$mobile-font-size-base;
+  }
+
+  .heroSection {
+    padding: v.$mobile-space-xl v.$mobile-space-lg;
+  }
+
+  .quickStatsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+// =============================================================================
+// MOBILE LARGE ENHANCEMENT (414px+)
+// =============================================================================
+@media (min-width: v.$breakpoint-mobile-md) {
+  .quickStatsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: v.$mobile-space-lg;
+  }
+
+  .teamList {
+    grid-template-columns: repeat(8, 1fr);
+    gap: v.$mobile-space-sm;
+  }
+
+  .teamListItem {
+    height: 50px;
+  }
+
+  .teamLogo {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+// =============================================================================
+// TABLET ENHANCEMENT (481px+)
+// =============================================================================
+@media (min-width: v.$breakpoint-tablet-min) {
+  // Restore desktop-style layouts and spacing
+  .container {
+    padding: v.$space-lg v.$space-md;
+  }
+
+  .mainLayout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: v.$space-md;
+    margin-bottom: v.$mobile-space-lg;
+  }
+
+  .leftSidebar,
+  .rightSidebar {
+    display: block;
+    position: sticky;
+    top: v.$space-md;
+    overflow-y: auto;
+    border-radius: v.$border-radius-lg;
+    border: 1px solid v.$border-secondary;
+  }
+
+  .middleContent {
+    gap: v.$space-lg;
+    order: unset;
+  }
+
+  .leftSidebar,
+  .rightSidebar {
+    order: unset;
+  }
+
+  .teamSelectheader {
+    margin-bottom: v.$space-md;
+  }
+
+  .teamsGridContainer {
+    margin-bottom: v.$space-lg;
+  }
+
+  .teamsSection {
+    border: 2px solid v.$border-secondary;
+    border-radius: v.$border-radius-md;
+    padding: v.$space-md;
+  }
+
+  .searchSection {
     background: transparent;
     padding: 0;
     border: none;
     margin-bottom: v.$space-md;
   }
-}
 
-.searchBarWrapper {
-  max-width: 100%;
-  margin: 0 auto;
-  
-  // Mobile: Full width within container padding
-  @media (max-width: v.$breakpoint-mobile-max) {
-    width: 100%;
-  }
-
-  // Progressive enhancement for larger screens
-  @media (min-width: v.$breakpoint-tablet-min) {
+  .searchBarWrapper {
     max-width: 400px;
   }
-}
 
-// =============================================================================
-// MOBILE LEADERBOARD CARDS - EDGE-TO-EDGE DESIGN
-// =============================================================================
+  .heroSection {
+    padding: v.$space-lg v.$space-md;
+    border: 1px solid v.$border-primary;
+    border-radius: v.$border-radius-lg;
+  }
 
-.mobileLeaderboardSection {
-  // Mobile: Edge-to-edge cards with zero gaps
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin-top: 0;
+  .heroTitle {
+    font-size: v.$font-size-xl;
+    margin-bottom: v.$space-sm;
+  }
 
-  // Progressive enhancement: Hide on larger screens (use sidebar layout)
-  @media (min-width: v.$breakpoint-tablet-min) {
+  .heroSubtitle {
+    font-size: v.$font-size-md;
+    margin-bottom: v.$space-lg;
+    line-height: 1.3;
+  }
+
+  .sectionTitle {
+    font-size: v.$font-size-lg;
+    margin-bottom: v.$space-md;
+    letter-spacing: 0.05em;
+  }
+
+  .quickStatsGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: v.$space-md;
+    margin-bottom: v.$space-lg;
+  }
+
+  .quickStatCard {
+    padding: v.$space-md;
+    gap: v.$space-sm;
+    transition: all 0.2s ease;
+  }
+
+  .teamList {
+    grid-template-columns: repeat(16, 1fr);
+    gap: v.$space-md;
+  }
+
+  .teamListItem {
+    height: 60px;
+  }
+
+  .teamLogo {
+    width: 40px;
+    height: 40px;
+  }
+
+  // Hide mobile leaderboard cards on tablet+
+  .mobileLeaderboardSection {
     display: none;
   }
 }
 
-.mobileLeaderboardCard {
-  @include v.component-wrapper;
-  background: v.$background-medium;
-  // Mobile: Edge-to-edge design
-  border: none;
-  border-top: 1px solid v.$border-secondary;
-  border-bottom: 1px solid v.$border-secondary;
-  border-radius: 0;
-  padding: v.$mobile-card-padding;
-  
-  // Touch-friendly minimum height
-  min-height: v.$touch-target-large;
-
-  // Add separator between cards
-  &:not(:last-child) {
-    border-bottom: 2px solid v.$border-primary;
-  }
-}
-
-.mobileCardHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: v.$mobile-space-sm;
-  padding-bottom: v.$mobile-space-xs;
-  border-bottom: 1px solid v.$border-primary;
-}
-
-.mobileCardTitle {
-  font-family: v.$font-family-accent;
-  font-size: v.$mobile-font-size-md;
-  font-weight: 600;
-  color: v.$text-primary;
-  text-transform: uppercase;
-  letter-spacing: v.$mobile-letter-spacing-wide;
-  margin: 0;
-}
-
-.mobileCardType {
-  background: v.$primary-color;
-  color: v.$text-button;
-  padding: v.$mobile-space-xxs v.$mobile-space-xs;
-  border-radius: v.$border-radius-sm;
-  font-size: v.$mobile-font-size-xs;
-  font-weight: 600;
-  letter-spacing: v.$mobile-letter-spacing-wide;
-}
-
-.mobileLeadersList {
-  display: flex;
-  flex-direction: column;
-  gap: v.$mobile-space-xs;
-}
-
-.mobileLeaderItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: v.$mobile-space-xs;
-  background: v.$background-dark;
-  border: 1px solid v.$border-primary;
-  border-radius: v.$border-radius-sm;
-  transition: all v.$mobile-animation-fast ease;
-  
-  // Touch target optimization
-  min-height: v.$touch-target-min;
-
-  &:hover {
-    background: v.$background-light;
-    border-color: v.$border-accent;
-    transform: translateX(2px);
+// =============================================================================
+// DESKTOP ENHANCEMENT (1024px+)
+// =============================================================================
+@media (min-width: v.$breakpoint-desktop) {
+  .mainLayout {
+    grid-template-columns: 400px 1fr 400px;
+    gap: v.$space-lg;
+    margin-bottom: v.$space-lg;
   }
 
-  &:first-child {
-    border-left: 3px solid #10b981;
+  .container {
+    max-width: 1400px;
+    padding: v.$space-xl v.$space-lg;
   }
 
-  &:nth-child(2) {
-    border-left: 3px solid #22c55e;
+  .heroSection {
+    padding: v.$space-xl v.$space-lg;
   }
 
-  &:nth-child(3) {
-    border-left: 3px solid #84cc16;
+  .quickStatsGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: v.$space-lg;
   }
-}
 
-.mobileLeaderInfo {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-}
+  .teamList {
+    grid-template-columns: repeat(16, 1fr);
+    gap: v.$space-lg;
+  }
 
-.mobileLeaderName {
-  font-size: v.$mobile-font-size-sm;
-  color: v.$primary-color;
-  font-family: v.$font-family-condensed;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: v.$mobile-letter-spacing-normal;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-bottom: v.$mobile-space-xxs;
-}
-
-.mobileLeaderTeam {
-  font-size: v.$mobile-font-size-xs;
-  color: v.$text-secondary;
-  font-weight: 400;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.mobileLeaderValue {
-  font-size: v.$mobile-font-size-md;
-  font-weight: 700;
-  color: v.$primary-color;
-  font-family: "SF Mono", "Monaco", "Cascadia Code", monospace;
-  letter-spacing: v.$mobile-letter-spacing-tight;
-  flex-shrink: 0;
-  text-align: right;
+  .teamsSection {
+    padding: v.$space-lg;
+  }
 }
