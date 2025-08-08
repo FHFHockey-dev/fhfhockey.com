@@ -10,26 +10,23 @@
   z-index: 100;
   background: v.$background-medium;
   width: 100%;
-  // Dynamic heights
-  --expanded-height: 480px; // Fallback; JS will measure real height and override
-  max-height: var(--expanded-height);
-  overflow: hidden; // Enable smooth max-height animation
-  touch-action: pan-y; // Allow vertical scrolling to pass through
-  overscroll-behavior: contain;
-
-  // Smooth morphing animations using max-height (animatable) instead of auto height
+  --expanded-height: 480px; // fallback; JS updates
+  height: var(--expanded-height);
+  touch-action: pan-y;
+  /* Remove overscroll containment to prevent scroll lock */
+  overscroll-behavior: auto;
+  /* Allow scrolling to pass through while animating */
+  pointer-events: auto;
+  /* Simplified transition (height + padding only) */
   transition:
-    max-height 0.38s v.$mobile-easing-smooth,
-    padding 0.32s v.$mobile-easing-smooth,
-    background-color 0.25s v.$mobile-easing-ease-out,
-    backdrop-filter 0.3s v.$mobile-easing-smooth;
-
-  // Hint for compositor
-  will-change: max-height, padding, background-color, backdrop-filter;
+    height 0.35s v.$mobile-easing-smooth,
+    padding 0.28s v.$mobile-easing-smooth,
+    background-color 0.25s v.$mobile-easing-ease-out;
+  will-change: height, padding;
 
   // Expanded state - full teams grid
   &.expanded {
-    max-height: var(--expanded-height);
+    height: var(--expanded-height);
     padding: v.$mobile-container-padding;
     background: v.$background-medium;
 
@@ -192,7 +189,7 @@
 
   // Collapsed state - horizontal logo bar with smooth morphing
   &.collapsed {
-    max-height: 44px;
+    height: 44px;
     padding: 0;
     background: rgba(0, 0, 0, 0.95); // Slight transparency for depth
     backdrop-filter: blur(8px); // Modern glass effect
@@ -204,18 +201,15 @@
     }
 
     .teamsSection {
-      height: 44px; // internal section fixed height while collapsed
+      height: 44px;
       padding: 0;
       border: none;
       background: transparent;
       border-bottom: 1px solid v.$border-secondary;
       opacity: 1;
 
-      // Smooth collapse transitions
-      transition:
-        height v.$mobile-animation-normal v.$mobile-easing-smooth,
-        padding v.$mobile-animation-normal v.$mobile-easing-smooth,
-        background v.$mobile-animation-normal v.$mobile-easing-smooth;
+      // Remove extra transitions to reduce jank
+      transition: none;
 
       &::before {
         opacity: 0;
@@ -239,7 +233,7 @@
         height v.$mobile-animation-normal v.$mobile-easing-smooth;
     }
 
-    .teamList {
+  .teamList {
       display: flex;
       flex-direction: row;
       gap: v.$mobile-space-xs;
@@ -265,10 +259,7 @@
       }
 
       // Grid to flex transition
-      transition:
-        gap v.$mobile-animation-fast v.$mobile-easing-ease-out,
-        padding v.$mobile-animation-normal v.$mobile-easing-smooth,
-        height v.$mobile-animation-normal v.$mobile-easing-smooth;
+  transition: none;
     }
 
     .teamListItem {
@@ -285,12 +276,7 @@
       min-height: auto;
       opacity: 1;
       transform: scale(1); // FIXED: Always normal scale
-
-      // Smooth item collapse
-      transition:
-        width v.$mobile-animation-normal v.$mobile-easing-smooth,
-        height v.$mobile-animation-normal v.$mobile-easing-smooth,
-        opacity v.$mobile-animation-fast v.$mobile-easing-ease-out;
+      transition: none;
     }
 
     .teamLogo {
@@ -301,13 +287,7 @@
       object-fit: contain;
       filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
       opacity: 0.9;
-
-      // Logo size transition
-      transition:
-        width v.$mobile-animation-normal v.$mobile-easing-smooth,
-        height v.$mobile-animation-normal v.$mobile-easing-smooth,
-        opacity v.$mobile-animation-fast v.$mobile-easing-ease-out,
-        filter v.$mobile-animation-fast v.$mobile-easing-ease-out;
+      transition: opacity 0.2s ease, filter 0.2s ease, transform 0.25s ease;
 
       // Hover effect in collapsed state
       &:hover {
