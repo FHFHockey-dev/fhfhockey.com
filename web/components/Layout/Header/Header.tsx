@@ -29,7 +29,7 @@ const BOTTOM_NAV_ITEMS = [
   },
   {
     id: "gameGrid",
-    label: "Games",
+    label: "Game Grid",
     href: "/game-grid",
     icon: "/pictures/gameGrid.png"
   },
