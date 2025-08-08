@@ -97,6 +97,7 @@ $mobile-animation-extra-slow: 0.5s; // Extra slow animations for dramatic effect
 $mobile-easing-linear: linear; // Linear easing for loading indicators
 $mobile-easing-ease: ease; // Standard ease for general interactions
 $mobile-easing-ease-out: ease-out; // Ease out for elements appearing
+$mobile-easing-ease-in: ease-in; // Ease in for elements disappearing
 $mobile-easing-ease-in-out: ease-in-out; // Ease in-out for smooth bidirectional animations
 $mobile-easing-bounce: cubic-bezier(
   0.68,
@@ -111,184 +112,127 @@ $mobile-easing-smooth: cubic-bezier(
   1
 ); // Material Design recommended easing for mobile
 
+// (Moved desktop/mobile theming tokens below color definitions to ensure variables exist before use)
+
 // =============================================
-// Colors (All definitions preserved, grouped by original blocks)
+// Colors (Condensed canonical definitions + aliases)
 // =============================================
+// Core brand & semantic palette
+$primary-color: #14a2d2;
+$secondary-color: #07aae2;
+$warning-color: #ffcc33;
+$success-color: #00ff99;
+$danger-color: #ff6384;
+$danger-color-dark: #670c20;
+$info-color: #3b82f6;
+$focus-color: rgb(255, 193, 8);
 
-// --- Initial Basic Colors ---
-// $primary-color: #07aae2; // Commented out in original, kept commented
-$text-primary-color: #ffffff; // Definition 1
-$border-color: #ffffff; // Definition 1
-$bg-light: #272727; // Definition 1
-$bg-dark: #202020; // Definition 1 <<< KEPT - Original name
-
-// --- Initial Semantic Colors ---
-$primary-color: #14a2d2; // Definition 1
-$secondary-color: #07aae2; // Definition 1
-$background-dark: #101010; // Definition 1
-$background-medium: #1f1f1f; // Definition 1
-$background-light: #202020; // Definition 1 (Note: Same value as $bg-dark)
-$text-color-primary: white; // Definition 1 (Note: Same value as $text-primary-color)
-$text-color-secondary: #f0f0f0; // Definition 1
-$border-color-primary: #404040; // Definition 1
-$border-color-secondary: #505050; // Definition 1
-$focus-color: rgb(255, 193, 8); // Definition 1
-$warning-color: #ffcc00; // Definition 1
-$success-color: #00ff99; // Definition 1
-$danger-color: #ff6384; // Definition 1
-$danger-color-dark: #670c20; // Definition 1
-$info-color: #3b82f6; // Added for PlayerStats module
-
-// --- Base Colors Block ---
-$color-green: #00ff99;
-$color-red: #ff6384;
-$color-yellow: #ffcc33; // Note: Same value as $warning-color Def 1
-$color-blue: #66ccff;
-$color-brand-blue: #07aae2; // Note: Same value as $secondary-color Def 1
-$color-purple: #9b59b6;
+// Greys & neutrals
+$color-white: #ffffff;
+$color-black: #000000;
 $color-grey-light: #d3d3d3;
 $color-grey-medium: #808080;
-$color-grey-dark: #444444; // Definition 1
-$color-grey-darker: #333333; // Definition 1
 $color-grey-text: #cccccc;
-$color-white: #ffffff; // Note: Same value as $text-primary-color / $text-color-primary Def 1
-$color-black: #000000;
-$color-transparent: transparent;
+$color-grey-text-sec: #aaaaaa;
+$color-grey-darker: #404040; // border-primary base
+$color-grey-dark: #505050;   // border-secondary base
 
-// --- Semantic UI Colors Block ---
-$background-dark: #1a1d21; // Definition 2 (Implicitly overrides Def 1)
-$background-darker: color.adjust(
-  $background-dark,
-  $lightness: -5%
-); // Definition 1 (Uses $background-dark Def 2)
-$background-medium: color.adjust(
-  $background-dark,
-  $lightness: -3%
-); // Definition 2 (Uses $background-dark Def 2)
+// Backgrounds (single source of truth)
+$background-dark: #1a1d21;
+$background-medium: color.adjust($background-dark, $lightness: -3%);
+$background-light: #202020; // legacy dark-light surface
+$background-lighter: color.adjust($background-light, $lightness: 10%);
+$background-header: color.adjust($background-dark, $lightness: -5%);
 
-$background-header: color.adjust(
-  $background-dark,
-  $lightness: -5%
-); // Definition 1 (Uses $background-dark Def 2)
-$text-color-primary: $color-grey-text; // Definition 2 (Implicitly overrides Def 1)
-$text-color-secondary: color.adjust(
-  $color-grey-text,
-  $lightness: -20%
-); // Definition 2 (Implicitly overrides Def 1)
-$border-color-primary: $color-grey-darker; // Definition 2 (Implicitly overrides Def 1, uses $color-grey-darker Def 1 value)
-$border-color-secondary: $color-grey-dark; // Definition 2 (Implicitly overrides Def 1, uses $color-grey-dark Def 1 value)
-$error-color: $color-red; // Definition 1
+// Borders
+$border-primary: $color-grey-darker;
+$border-secondary: $color-grey-dark;
+$border-accent: $secondary-color;
 
-// --- Chart Specific Block ---
-$chart-color-teal: #4bc0c0; // Definition 1
-$chart-color-orange: #ff9f40; // Definition 1
-$chart-color-blue: #36a2eb; // Definition 1
+// Text (canonical)
+$text-primary: $color-grey-text;
+$text-secondary: $color-grey-text-sec;
+$text-button: $color-white;
+$text-link: $primary-color;
 
-// --- Structured Section 1: Base Colors ---
-// Only variables with names not seen before, OR same name but different value/definition
-$color-primary-blue: #14a2d2; // New name (value = $primary-color Def 1)
-$color-pink-red: #ff6b6b; // New name
-$color-soft-green: #98d8a8; // New name
-$color-teal: #4bc0c0; // New name (value = $chart-color-teal Def 1)
-$color-orange: #ff9f40; // New name (value = $chart-color-orange Def 1)
-$color-grey-dark: #505050; // Definition 2 (Implicitly overrides Def 1)
-$color-grey-darker: #404040; // Definition 2 (Implicitly overrides Def 1)
-$color-grey-text-sec: #aaaaaa; // New name
-$color-bg-dark-1: #101010; // New name (value = $background-dark Def 1)
-$color-bg-dark-2: #1a1d21; // New name (value = $background-dark Def 2)
-$color-bg-dark-3: #202020; // New name (value = $bg-dark / $background-light Def 1)
-$color-bg-dark-4: #272727; // New name (value = $bg-light Def 1)
-$color-focus: rgb(255, 193, 8); // New name (value = $focus-color Def 1)
+// Chart auxiliary colors
+$color-teal: #4bc0c0;
+$color-orange: #ff9f40;
+$color-purple: #9b59b6;
+$color-soft-green: #98d8a8;
+$color-pink-red: #ff6b6b;
 
-// --- Structured Section 2: Semantic Colors ---
-// Only variables with names not seen before, OR same name but different value/definition
-$primary-color: $color-primary-blue; // Definition 2 (Implicitly overrides Def 1)
-$secondary-color: $color-brand-blue; // Definition 2 (Implicitly overrides Def 1)
+// Legacy aliases (to avoid breaking existing modules)
+$text-color-primary: $text-primary !default;
+$text-color-secondary: $text-secondary !default;
+$border-color-primary: $border-primary !default;
+$border-color-secondary: $border-secondary !default;
+$text-primary-color: $text-primary !default;
+$bg-dark: $background-light !default;
+$bg-light: #272727 !default; // distinct legacy token
+$border-color: $border-secondary !default;
+$color-yellow: $warning-color !default;
+$color-green: $success-color !default;
+$color-red: $danger-color !default;
+$color-brand-blue: $secondary-color !default;
+$color-blue: #66ccff !default; // retained from original
+$color-transparent: transparent !default;
 
-$background-dark: $color-bg-dark-2; // Definition 3 (Implicitly overrides Def 2)
-$background-medium: color.adjust(
-  $background-dark,
-  $lightness: -3%
-); // Definition 3 (Uses $background-dark Def 3)
-$background-light: $color-bg-dark-3; // Definition 2 (Implicitly overrides Def 1)
-$background-header: color.adjust(
-  $background-dark,
-  $lightness: -5%
-); // Definition 2 (Uses $background-dark Def 3)
+// Legacy background shade aliases referenced in some modules
+$color-bg-dark-1: #101010 !default; // deepest original seed
+$color-bg-dark-2: $background-dark !default; // primary dark
+$color-bg-dark-3: $background-light !default; // lighter dark surface
+$color-bg-dark-4: $bg-light !default; // legacy lighter panel
 
-$background-middle: $color-bg-dark-4; // New name (value = $bg-light Def 1)
-
-$background-lighter: color.adjust(
-  $background-light,
-  $lightness: 10%
-); // Definition 2 (Uses $background-light Def 2)
-$text-primary: $color-grey-text; // New name
-$text-secondary: $color-grey-text-sec; // New name
-$text-button: $color-white; // New name
-$text-link: $color-primary-blue; // New name
-$border-primary: $color-grey-darker; // New name (uses $color-grey-darker Def 2)
-$border-secondary: $color-grey-dark; // New name (uses $color-grey-dark Def 2)
-$border-accent: $secondary-color; // New name (uses $secondary-color Def 2)
-$border-color: $border-secondary; // Definition 2 (Implicitly overrides Def 1, uses $border-secondary value)
-$focus-color: $color-focus; // Definition 2 (Implicitly overrides Def 1)
-$warning-color: $color-yellow; // Definition 2 (Implicitly overrides Def 1)
-$error-color: $color-red; // Definition 2 (Implicitly overrides Def 1)
+// Derivative used earlier (retain variable names referenced elsewhere)
+$background-darker: color.adjust($background-dark, $lightness: -5%);
+$background-middle: $bg-light; // legacy bridging name
 
 // =============================================
-// Typography (All definitions preserved)
+// Typography (Condensed)
 // =============================================
-$font-family-primary: "Roboto Condensed", sans-serif; // Definition 1
-$font-family-secondary: "Arial", sans-serif; // Definition 1
+$font-family-primary: "Roboto Condensed", sans-serif;
+$font-family-secondary: "Arial", sans-serif;
 $font-family-accent: "Train One", sans-serif;
 $font-family-numbers: "Martian Mono", monospace;
-// $font-family-numbers: "Tourney", sans-serif;
 
-$font-size-base: 16px; // Definition 1
-$font-size-small: 14px; // Definition 1
-$text-color-button: #ffffff; // Definition 1
-$font-size-small: 0.85rem; // Definition 2 (From Chart Specific block, overrides 14px)
-$font-family-condensed:
-  "Roboto Condensed", sans-serif; // Definition 1 (From Chart Specific block)
-$font-size-base: 1rem; // Definition 2 (From Structured Section 4, overrides 16px)
-$font-size-sm: 0.875rem; // Definition 1 (From Structured Section 4, new name)
-$font-size-xs: 0.75rem; // Definition 1 (From Structured Section 4)
-$font-size-xxs: 0.625rem; // Definition 1 (From Structured Section 4)
-$font-size-md: 1.125rem; // Definition 1 (From Structured Section 4)
-$font-size-lg: 1.25rem; // Definition 1 (From Structured Section 4)
-$font-size-xl: 1.5rem; // Definition 1 (From Structured Section 4)
-$font-size-xxl: 2rem; // Definition 1 (From Structured Section 4)
+$font-size-base: 1rem; // 16px canonical
+$font-size-sm: 0.875rem;
+$font-size-xs: 0.75rem;
+$font-size-xxs: 0.625rem;
+$font-size-md: 1.125rem;
+$font-size-lg: 1.25rem;
+$font-size-xl: 1.5rem;
+$font-size-xxl: 2rem;
+$font-size-small: $font-size-sm !default; // legacy alias
+$text-color-button: $text-button !default;
+
+// Legacy alias for condensed name used elsewhere
+$font-family-condensed: $font-family-primary !default;
 
 // =============================================
-// Spacing & Sizing (All definitions preserved)
+// Spacing & Sizing (Condensed)
 // =============================================
-$border-radius: 12px; // Definition 1
-$box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); // Definition 1
-$table-header-height: 15px; // Definition 1
-$table-cell-padding: 10px; // Definition 1
-$filter-vertical-spacing: 30px; // Definition 1
-// --- From Spacing Scale Example Block ---
-$space-xs: 4px; // Definition 1
-$space-sm: 8px; // Definition 1
-$space-md: 12px; // Definition 1
-$space-lg: 16px; // Definition 1
-$space-xl: 24px; // Definition 1
-$space-xxl: 32px; // Definition 1
-$space-xxxl: 64px; // Definition 1
-// --- From Chart Specific Block ---
-$space-md: 16px; // Definition 2 (Overrides 12px)
-// --- From Structured Section 5 ---
-$space-xxs: 2px; // Definition 1
-$space-lg: 24px; // Definition 2 (Overrides 16px)
-$space-xl: 32px; // Definition 2 (Overrides 24px)
-$space-xxl: 48px; // Definition 2 (Overrides 32px)
-$table-header-height: 35px; // Definition 2 (Overrides 15px)
-$table-cell-padding: $space-sm $space-md; // Definition 2 (Overrides 10px, uses $space-md Def 2)
-$filter-vertical-spacing: $space-xl; // Definition 2 (Overrides 30px, uses $space-xl Def 2)
-// --- From Structured Section 6 ---
-$box-shadow-default: 0 4px 8px rgba($color-black, 0.25); // Definition 1 (New name)
-$border-radius-md: 8px; // Definition 1
-$border-radius-lg: 12px; // Definition 1 (Note: Same value as $border-radius Def 1)
-$border-radius: $border-radius-lg; // Definition 2 (Overrides Def 1)
+$space-xxs: 2px;
+$space-xs: 4px;
+$space-sm: 8px;
+$space-md: 16px;
+$space-lg: 24px;
+$space-xl: 32px;
+$space-xxl: 48px;
+$space-xxxl: 64px;
+
+$border-radius-md: 8px;
+$border-radius-lg: 12px;
+$border-radius: $border-radius-lg; // canonical radius
+
+$box-shadow-default: 0 4px 8px rgba($color-black, 0.25);
+$box-shadow: $box-shadow-default !default; // legacy alias
+
+// Tables & layout
+$table-header-height: 35px;
+$table-cell-padding: $space-sm $space-md;
+$filter-vertical-spacing: $space-xl;
 
 // =============================================
 // Borders (All definitions preserved)
@@ -374,6 +318,109 @@ $chart-tooltip-bg: rgba(
 ); // Definition 2 (Uses $background-dark Def 3)
 $chart-tooltip-border: $border-secondary; // Definition 2 (Uses $border-secondary)
 $chart-tooltip-text: $text-primary; // Definition 2 (Uses $text-primary)
+
+// =============================================
+// Desktop vs Mobile Theming Tokens (now safely after color + semantic vars)
+// =============================================
+// Subtle translucent panel layers for desktop (frosted glass look)
+$desktop-panel-bg: rgba($background-dark, 0.6);
+$desktop-panel-border: color.adjust($border-primary, $lightness: 10%);
+$desktop-panel-shadow:
+  0 4px 24px -4px rgba(0, 0, 0, 0.6),
+  0 0 0 1px rgba(255, 255, 255, 0.04);
+$desktop-surface-elevated: linear-gradient(
+  145deg,
+  color.adjust($background-dark, $lightness: 3%) 0%,
+  color.adjust($background-dark, $lightness: -4%) 100%
+);
+
+// Accent gradients for stat emphasis (desktop)
+$gradient-accent-inline: linear-gradient(
+  90deg,
+  $primary-color 0%,
+  $secondary-color 50%,
+  $warning-color 100%
+);
+$gradient-accent-radial: radial-gradient(
+  circle at 30% 20%,
+  rgba($primary-color, 0.35),
+  rgba($secondary-color, 0) 70%
+);
+
+// Mobile specific soft surfaces
+$mobile-surface-bg: $background-medium;
+$mobile-surface-elevated: color.adjust($background-medium, $lightness: 2%);
+$mobile-separator: rgba($border-secondary, 0.6);
+
+// Focus rings
+$focus-ring-desktop: 0 0 0 2px rgba($primary-color, 0.5);
+$focus-ring-mobile: 0 0 0 3px rgba($primary-color, 0.8);
+
+// Typography weights
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;
+
+// Motion curves
+$ease-desktop-standard: cubic-bezier(0.3, 0.2, 0.2, 1);
+$ease-desktop-emphasized: cubic-bezier(0.4, 0, 0.2, 1);
+
+// Utility sizing / radii / blur
+$radius-xs: 4px;
+$radius-sm: 6px;
+$radius-md: 10px;
+$radius-lg: 16px;
+$blur-backdrop-strong: 28px;
+$blur-backdrop-soft: 12px;
+
+// Layer tokens
+$z-desktop-base: 0;
+$z-desktop-sticky: 30;
+$z-desktop-overlay: 400;
+$z-desktop-dialog: 600;
+$z-desktop-popover: 500;
+$z-desktop-toast: 650;
+
+// =============================================
+// Helper Mixins (desktop/mobile)
+// =============================================
+@mixin glass-panel($padding: $space-md $space-lg, $radius: $radius-lg) {
+  background: $desktop-panel-bg;
+  backdrop-filter: blur($blur-backdrop-soft) saturate(150%);
+  -webkit-backdrop-filter: blur($blur-backdrop-soft) saturate(150%);
+  border: 1px solid $desktop-panel-border;
+  box-shadow: $desktop-panel-shadow;
+  border-radius: $radius;
+  padding: $padding;
+}
+
+@mixin stat-accent-text {
+  background: $gradient-accent-inline;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@mixin focus-ring-desktop {
+  &:focus-visible {
+    outline: none;
+    box-shadow: $focus-ring-desktop;
+  }
+}
+@mixin focus-ring-mobile {
+  &:focus-visible {
+    outline: none;
+    box-shadow: $focus-ring-mobile;
+  }
+}
+
+@mixin truncate($lines: 1) {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: $lines;
+  -webkit-box-orient: vertical;
+}
 
 // =============================================
 // Functions

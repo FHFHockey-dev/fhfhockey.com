@@ -1,0 +1,465 @@
+@use "styles/vars" as v;
+
+// =============================================================================
+// MOBILE-ONLY TEAM LIST COMPONENT - SMOOTH ANIMATIONS & IMPROVED POSITIONING
+// =============================================================================
+
+.teamSelectHeader {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: v.$background-medium;
+  width: 100%;
+  // Dynamic heights
+  --expanded-height: 480px; // Fallback; JS will measure real height and override
+  max-height: var(--expanded-height);
+  overflow: hidden; // Enable smooth max-height animation
+  touch-action: pan-y; // Allow vertical scrolling to pass through
+  overscroll-behavior: contain;
+
+  // Smooth morphing animations using max-height (animatable) instead of auto height
+  transition:
+    max-height 0.38s v.$mobile-easing-smooth,
+    padding 0.32s v.$mobile-easing-smooth,
+    background-color 0.25s v.$mobile-easing-ease-out,
+    backdrop-filter 0.3s v.$mobile-easing-smooth;
+
+  // Hint for compositor
+  will-change: max-height, padding, background-color, backdrop-filter;
+
+  // Expanded state - full teams grid
+  &.expanded {
+    max-height: var(--expanded-height);
+    padding: v.$mobile-container-padding;
+    background: v.$background-medium;
+
+    .teamsGridContainer {
+      margin-bottom: 0;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .teamsSection {
+      height: auto;
+      padding: v.$mobile-container-padding;
+      border-top: 2px solid v.$border-secondary;
+      border-bottom: 2px solid v.$border-secondary;
+      background: linear-gradient(
+        135deg,
+        v.$background-medium 0%,
+        v.$background-dark 100%
+      );
+      position: relative;
+      opacity: 1;
+
+      // Smooth content transitions
+      transition:
+        height v.$mobile-animation-normal v.$mobile-easing-smooth,
+        padding v.$mobile-animation-normal v.$mobile-easing-smooth,
+        opacity v.$mobile-animation-fast v.$mobile-easing-ease-out,
+        background v.$mobile-animation-normal v.$mobile-easing-smooth;
+
+      // Add subtle texture overlay for modern feel
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+          circle at 30% 40%,
+          rgba(20, 162, 210, 0.05) 0%,
+          transparent 70%
+        );
+        pointer-events: none;
+        z-index: 1;
+        opacity: 1;
+        transition: opacity v.$mobile-animation-fast v.$mobile-easing-ease-out;
+      }
+    }
+
+    .teamsTitle {
+      display: block;
+      opacity: 1;
+      transform: translateY(-50%);
+      transition:
+        opacity v.$mobile-animation-normal v.$mobile-easing-ease-out
+          v.$mobile-animation-fast,
+        transform v.$mobile-animation-normal v.$mobile-easing-smooth;
+    }
+
+    .teamNameHeader {
+      display: flex;
+      opacity: 1;
+      height: 40px;
+      transition:
+        opacity v.$mobile-animation-normal v.$mobile-easing-ease-out
+          v.$mobile-animation-fast,
+        height v.$mobile-animation-normal v.$mobile-easing-smooth;
+    }
+
+    .teamList {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(8, 1fr);
+      gap: v.$mobile-space-sm; // tighter vertical spacing
+      height: auto;
+      min-height: 300px; // reduced to bring more logos above fold
+      max-height: none;
+      overflow: visible;
+      padding: 0;
+      background: transparent;
+      opacity: 1;
+      transform: scale(1);
+
+      // Smooth grid transitions
+      transition:
+        opacity v.$mobile-animation-normal v.$mobile-easing-ease-out,
+        transform v.$mobile-animation-normal v.$mobile-easing-smooth,
+        gap v.$mobile-animation-fast v.$mobile-easing-ease-out,
+        height v.$mobile-animation-normal v.$mobile-easing-smooth;
+
+      // FIXED: Ensure grid properly accommodates all items
+      grid-auto-rows: minmax(44px, auto);
+      align-content: start;
+    }
+
+    .teamListItem {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px; // explicit to maintain grid rhythm
+      padding: v.$mobile-space-xxs;
+      margin: 0;
+      border: none;
+      background: transparent;
+      border-radius: v.$border-radius-sm;
+      position: relative;
+      opacity: 1;
+      transform: scale(1); // FIXED: Always normal scale
+
+      // Individual item transitions
+      transition:
+        opacity v.$mobile-animation-fast v.$mobile-easing-ease-out,
+        transform v.$mobile-animation-fast v.$mobile-easing-smooth;
+
+      // Touch feedback for expanded state
+      &:active {
+        transform: scale(0.95);
+
+        .teamLogo {
+          filter: brightness(1.2) drop-shadow(0 0 8px rgba(20, 162, 210, 0.4));
+        }
+      }
+
+      // Focus state for accessibility
+      &:focus {
+        outline: 2px solid v.$primary-color;
+        outline-offset: 2px;
+        border-radius: v.$border-radius-sm;
+
+        .teamLogo {
+          filter: brightness(1.1);
+        }
+      }
+
+      // Staggered animation entrance - FIXED to handle all 32 teams
+      @for $i from 1 through 32 {
+        &:nth-child(#{$i}) {
+          transition-delay: #{($i - 1) * 0.008}s; // Slightly faster stagger
+        }
+      }
+    }
+
+    .teamLogo {
+      width: 38px;
+      height: 38px;
+      object-fit: contain;
+      border-radius: v.$border-radius-sm;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+      position: relative;
+      z-index: 3;
+      opacity: 1;
+      transform: scale(1); // FIXED: Always normal scale
+
+      // Logo-specific transitions
+      transition:
+        all v.$mobile-animation-fast v.$mobile-easing-smooth,
+        filter v.$mobile-animation-fast v.$mobile-easing-ease-out;
+    }
+  }
+
+  // Collapsed state - horizontal logo bar with smooth morphing
+  &.collapsed {
+    max-height: 44px;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.95); // Slight transparency for depth
+    backdrop-filter: blur(8px); // Modern glass effect
+
+    .teamsGridContainer {
+      margin-bottom: 0;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .teamsSection {
+      height: 44px; // internal section fixed height while collapsed
+      padding: 0;
+      border: none;
+      background: transparent;
+      border-bottom: 1px solid v.$border-secondary;
+      opacity: 1;
+
+      // Smooth collapse transitions
+      transition:
+        height v.$mobile-animation-normal v.$mobile-easing-smooth,
+        padding v.$mobile-animation-normal v.$mobile-easing-smooth,
+        background v.$mobile-animation-normal v.$mobile-easing-smooth;
+
+      &::before {
+        opacity: 0;
+        transition: opacity v.$mobile-animation-fast v.$mobile-easing-ease-in;
+      }
+    }
+
+    .teamsTitle {
+      opacity: 0;
+      transform: translateY(-100%);
+      transition:
+        opacity v.$mobile-animation-fast v.$mobile-easing-ease-in,
+        transform v.$mobile-animation-normal v.$mobile-easing-smooth;
+    }
+
+    .teamNameHeader {
+      opacity: 0;
+      height: 0;
+      transition:
+        opacity v.$mobile-animation-fast v.$mobile-easing-ease-in,
+        height v.$mobile-animation-normal v.$mobile-easing-smooth;
+    }
+
+    .teamList {
+      display: flex;
+      flex-direction: row;
+      gap: v.$mobile-space-xs;
+      height: 44px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: v.$mobile-space-xs v.$mobile-space-sm;
+      background: transparent;
+      width: 100%;
+      min-height: auto;
+      max-height: 44px;
+      opacity: 1;
+      transform: scale(1); // FIXED: Always normal scale
+
+      // Smooth scrolling
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+
+      // Grid to flex transition
+      transition:
+        gap v.$mobile-animation-fast v.$mobile-easing-ease-out,
+        padding v.$mobile-animation-normal v.$mobile-easing-smooth,
+        height v.$mobile-animation-normal v.$mobile-easing-smooth;
+    }
+
+    .teamListItem {
+      display: block;
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      flex: 0 0 32px;
+      padding: 0;
+      margin: 0;
+      border: none;
+      background: transparent;
+      border-radius: 0;
+      min-height: auto;
+      opacity: 1;
+      transform: scale(1); // FIXED: Always normal scale
+
+      // Smooth item collapse
+      transition:
+        width v.$mobile-animation-normal v.$mobile-easing-smooth,
+        height v.$mobile-animation-normal v.$mobile-easing-smooth,
+        opacity v.$mobile-animation-fast v.$mobile-easing-ease-out;
+    }
+
+    .teamLogo {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: v.$border-radius-sm;
+      object-fit: contain;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+      opacity: 0.9;
+
+      // Logo size transition
+      transition:
+        width v.$mobile-animation-normal v.$mobile-easing-smooth,
+        height v.$mobile-animation-normal v.$mobile-easing-smooth,
+        opacity v.$mobile-animation-fast v.$mobile-easing-ease-out,
+        filter v.$mobile-animation-fast v.$mobile-easing-ease-out;
+
+      // Hover effect in collapsed state
+      &:hover {
+        opacity: 1;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+        transform: scale(1.05);
+      }
+    }
+  }
+}
+
+.teamsGridContainer {
+  display: block;
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+
+  // FIXED: Direct state-based classes instead of nested selectors
+  transition:
+    height v.$mobile-animation-normal v.$mobile-easing-smooth,
+    min-height v.$mobile-animation-normal v.$mobile-easing-smooth,
+    max-height v.$mobile-animation-normal v.$mobile-easing-smooth,
+    opacity v.$mobile-animation-fast v.$mobile-easing-ease-out,
+    transform v.$mobile-animation-normal v.$mobile-easing-smooth;
+
+  // Default collapsed state
+  height: 44px;
+  min-height: 44px;
+  max-height: 44px;
+  opacity: 1;
+  transform: translateY(0);
+  overflow: hidden;
+  margin-bottom: 0;
+}
+
+// FIXED: Direct class selectors for better specificity and reliability
+.teamsGridContainerExpanded {
+  height: auto !important;
+  min-height: 400px !important;
+  max-height: none !important;
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  overflow: visible !important;
+  margin-bottom: 0 !important;
+}
+
+.teamsGridContainerCollapsed {
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+  overflow: hidden !important;
+  margin-bottom: 0 !important;
+}
+
+.teamsSection {
+  border: none;
+  border-radius: 0;
+  margin: 0;
+  position: relative;
+  overflow: visible;
+}
+
+.teamsTitle {
+  position: absolute;
+  top: 0;
+  left: v.$mobile-space-lg;
+  transform: translateY(-50%);
+  color: v.$text-primary;
+  font-weight: 600;
+  font-size: v.$mobile-font-size-md;
+  margin: 0;
+  padding: 0 v.$mobile-space-sm;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: v.$mobile-letter-spacing-wide;
+  background: transparent;
+  z-index: 10;
+  text-shadow:
+    0 3px 6px rgba(0, 0, 0, 0.8),
+    0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: opacity v.$mobile-animation-fast ease;
+}
+
+.titleAccent {
+  color: v.$text-primary;
+}
+
+// teamNameHeader removed on mobile to reclaim vertical space
+
+.teamNameText {
+  filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 1));
+}
+
+.teamList {
+  max-width: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+.teamListItem {
+  text-decoration: none;
+  color: transparent;
+  transition: all v.$mobile-animation-fast ease;
+
+  // Blur effect for non-hovered items
+  &.teamListItemBlurred {
+    opacity: 0.4;
+    filter: blur(1px);
+  }
+}
+
+.teamLogo {
+  display: block;
+}
+
+// =============================================================================
+// TEAM HOVER ANIMATIONS - MOBILE OPTIMIZED
+// =============================================================================
+
+.teamsSectionActive {
+  &::before,
+  &::after {
+    opacity: 0.3;
+  }
+}
+
+.teamsSectionTriggered {
+  &::before,
+  &::after {
+    opacity: 0.6;
+    transform: translateX(0%) translateY(0%);
+    transition: all v.$mobile-animation-normal ease-in-out;
+  }
+
+  &::after {
+    transition-delay: 0.2s;
+    transform: translateX(2%) translateY(2%);
+  }
+}
+
+.teamsSectionTriggeredAlt {
+  &::before,
+  &::after {
+    opacity: 0.7;
+    transform: translateX(-2%) translateY(-2%);
+    transition: all v.$mobile-animation-normal ease-in-out;
+  }
+
+  &::after {
+    transition-delay: 0.2s;
+    transform: translateX(-5%) translateY(-5%);
+  }
+}

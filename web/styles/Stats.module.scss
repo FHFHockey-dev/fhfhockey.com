@@ -351,28 +351,74 @@
 
 .filterSection {
   @include v.component-wrapper;
-  padding: v.$space-md;
-  margin-bottom: v.$space-lg;
-  background: v.$background-medium;
-  border: 1px solid v.$border-secondary;
-  display: flex;
-  align-items: center;
-  gap: v.$space-lg;
+  // Mobile-first: Edge-to-edge design with container padding
+  @media (max-width: v.$breakpoint-mobile-max) {
+    padding: v.$mobile-container-padding;
+    margin-bottom: 0;
+    background: v.$background-medium;
+    border: none;
+    border-top: 1px solid v.$border-secondary;
+    border-bottom: 1px solid v.$border-secondary;
+    border-radius: 0;
+    // Stack vertically on mobile for better touch targets
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: v.$mobile-space-md;
+  }
+
+  // Progressive enhancement for larger screens
+  @media (min-width: v.$breakpoint-tablet-min) {
+    padding: v.$space-md;
+    margin-bottom: v.$space-lg;
+    background: v.$background-medium;
+    border: 1px solid v.$border-secondary;
+    border-radius: v.$border-radius-lg;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: v.$space-lg;
+  }
 }
 
 .filterTitle {
   color: v.$text-primary;
-  font-size: v.$font-size-sm;
   margin: 0;
   font-weight: 600;
   font-family: v.$font-family-accent;
-  white-space: nowrap;
+
+  // Mobile-first typography
+  @media (max-width: v.$breakpoint-mobile-max) {
+    font-size: v.$mobile-font-size-sm;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: v.$mobile-letter-spacing-wide;
+    margin-bottom: v.$mobile-space-xs;
+  }
+
+  // Progressive enhancement
+  @media (min-width: v.$breakpoint-tablet-min) {
+    font-size: v.$font-size-sm;
+    white-space: nowrap;
+    text-align: left;
+  }
 }
 
 .filterButtons {
-  display: flex;
-  gap: v.$space-xs;
-  flex-wrap: wrap;
+  display: grid;
+  // Mobile-first: 2-column grid for better touch targets
+  @media (max-width: v.$breakpoint-mobile-max) {
+    grid-template-columns: repeat(2, 1fr);
+    gap: v.$mobile-space-sm;
+    width: 100%;
+  }
+
+  // Progressive enhancement for larger screens
+  @media (min-width: v.$breakpoint-tablet-min) {
+    display: flex;
+    gap: v.$space-xs;
+    flex-wrap: wrap;
+  }
 }
 
 .filterButton {
@@ -380,15 +426,48 @@
   background: v.$background-dark;
   color: v.$text-secondary;
   border: 1px solid v.$border-primary;
-  padding: v.$space-xs v.$space-sm;
   font-weight: 500;
   transition: all 0.2s ease;
-  font-size: v.$font-size-xs;
 
-  &:hover:not(.filterButtonActive) {
-    background: v.$background-light;
-    color: v.$text-primary;
-    border-color: v.$border-secondary;
+  // Mobile-first: Enhanced touch targets and spacing
+  @media (max-width: v.$breakpoint-mobile-max) {
+    padding: v.$mobile-space-sm v.$mobile-space-md;
+    font-size: v.$mobile-font-size-sm;
+    font-weight: 600;
+    text-align: center;
+    // Ensure minimum touch target size
+    min-height: v.$touch-target-min; // 44px minimum
+    border-radius: v.$border-radius-md;
+
+    // Enhanced touch feedback
+    &:active {
+      transform: translateY(1px) scale(0.98);
+      background: v.$primary-color;
+      color: v.$text-button;
+      border-color: v.$primary-color;
+    }
+
+    // Remove hover effects on touch devices
+    &:hover:not(.filterButtonActive) {
+      background: v.$background-dark;
+      color: v.$text-secondary;
+      border-color: v.$border-primary;
+    }
+  }
+
+  // Progressive enhancement for larger screens
+  @media (min-width: v.$breakpoint-tablet-min) {
+    padding: v.$space-xs v.$space-sm;
+    font-size: v.$font-size-xs;
+    font-weight: 500;
+    border-radius: v.$border-radius-sm;
+    min-height: auto;
+
+    &:hover:not(.filterButtonActive) {
+      background: v.$background-light;
+      color: v.$text-primary;
+      border-color: v.$border-secondary;
+    }
   }
 }
 
@@ -397,10 +476,17 @@
   color: v.$text-button;
   border-color: v.$primary-color;
   font-weight: 600;
+
+  // Mobile: Enhanced active state styling
+  @media (max-width: v.$breakpoint-mobile-max) {
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(7, 170, 226, 0.3);
+    transform: translateY(-1px);
+  }
 }
 
 // =============================================================================
-// COMPACT TEAMS GRID WITH DYNAMIC GRADIENT BACKGROUND
+// DESKTOP TEAMS GRID - CLEAN SEPARATION FROM MOBILE WITH RESTORED ANIMATIONS
 // =============================================================================
 
 .teamSelectheader {
@@ -408,64 +494,36 @@
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  // Mobile: Edge-to-edge with zero margin
-  margin-bottom: 0;
-
-  // Mobile: Normal static positioning (not sticky)
+  margin-bottom: v.$space-md;
+  padding: 0;
   position: static;
   background: transparent;
-  padding: 0;
-  border-bottom: none;
-  box-shadow: none;
-
-  // Progressive enhancement for larger screens
-  @media (min-width: v.$breakpoint-tablet-min) {
-    margin-bottom: v.$space-md;
-  }
 }
 
 .teamsGridContainer {
   display: block;
-  // Mobile: Edge-to-edge with zero margin
-  margin-bottom: 0;
+  margin-bottom: v.$space-lg;
   position: relative;
   box-sizing: border-box;
-  // Remove height constraint to allow grid to expand
+  height: 100%;
   width: 100%;
-
-  // Progressive enhancement for larger screens
-  @media (min-width: v.$breakpoint-tablet-min) {
-    margin-bottom: v.$space-lg;
-  }
 }
 
 .teamsSection {
-  // Mobile: Edge-to-edge design with proper overflow handling
-  border: none;
-  border-top: 2px solid v.$border-secondary;
-  border-bottom: 2px solid v.$border-secondary;
-  border-radius: 0; // Remove border radius for edge-to-edge
-  // Mobile: Reduce padding to prevent overflow
-  padding: v.$mobile-space-sm;
-  // Remove height constraint to allow grid to expand naturally
-  min-height: fit-content;
-
-  background: v.$background-medium;
+  border: 4px solid v.$border-primary;
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-md;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    v.$background-medium 0%,
+    v.$background-dark 100%
+  );
   margin: 0;
   position: relative;
-  overflow: hidden; // Prevent horizontal overflow
-  width: 100%;
-  box-sizing: border-box;
+  overflow: hidden;
 
-  // Progressive enhancement for larger screens
-  @media (min-width: v.$breakpoint-tablet-min) {
-    border: 2px solid v.$border-secondary;
-    border-radius: v.$border-radius-md;
-    padding: v.$space-md;
-    overflow: visible;
-  }
-
-  // Sliding diagonal background layers - CRISP LINES at -115deg
+  // Remove decorative diagonal layers for consistency & performance
   &::before,
   &::after {
     content: "";
@@ -590,12 +648,46 @@
   }
 }
 
+.teamsSectionActive {
+  &::before,
+  &::after {
+    opacity: 0.3;
+  }
+}
+
+.teamsSectionTriggered {
+  &::before,
+  &::after {
+    opacity: 0.6;
+    transform: translateX(5%) translateY(5%);
+    transition: all 0.8s ease-in-out;
+  }
+
+  &::after {
+    transition-delay: 0.2s;
+    transform: translateX(8%) translateY(8%);
+  }
+}
+
+.teamsSectionTriggeredAlt {
+  &::before,
+  &::after {
+    opacity: 0.7;
+    transform: translateX(-8%) translateY(-8%);
+    transition: all 0.8s ease-in-out;
+  }
+
+  &::after {
+    transition-delay: 0.2s;
+    transform: translateX(-12%) translateY(-12%);
+  }
+}
+
 .teamsTitle {
   position: absolute;
   top: 0;
-  left: v.$space-lg; // Adjust this value to control the inset from the left
-  transform: translateY(-50%); // This pulls the element up by half its height
-
+  left: v.$space-lg;
+  transform: translateY(-50%);
   color: v.$text-primary;
   font-weight: 600;
   font-size: v.$font-size-lg;
@@ -638,39 +730,29 @@
 
 .teamList {
   display: grid;
-  // Mobile-first: 8-column layout with proper sizing constraints
-  grid-template-columns: repeat(8, 1fr);
-  gap: v.$mobile-space-xxs;
+  grid-template-columns: repeat(16, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: v.$space-md;
+  aspect-ratio: 16/2;
   max-width: 100%;
   position: relative;
   z-index: 2;
-  width: 100%;
-  box-sizing: border-box;
-  // Prevent horizontal overflow
-  overflow: hidden;
-  // Ensure grid can accommodate all teams with explicit row definition (4 rows × 8 teams = 32 teams)
-  grid-template-rows: repeat(4, minmax(v.$touch-target-min, auto));
+  height: auto;
+  padding: 0;
 
-  // Mobile medium: Keep 8-column layout but with better spacing
-  @media (min-width: v.$breakpoint-mobile-md) {
+  // Responsive adjustments for smaller desktop screens
+  @media (max-width: v.$breakpoint-desktop) {
     grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(4, minmax(v.$touch-target-comfortable, auto));
-    gap: v.$mobile-space-xs;
+    grid-template-rows: repeat(4, 1fr);
+    gap: v.$space-sm;
+    aspect-ratio: 8/4;
   }
 
-  // Tablet: 16-column layout (2 rows × 16 teams = 32 teams)
-  @media (min-width: v.$breakpoint-tablet-min) {
-    grid-template-columns: repeat(16, 1fr);
-    grid-template-rows: repeat(2, minmax(60px, auto));
-    gap: v.$space-md;
-    overflow: visible; // Allow overflow on larger screens
-  }
-
-  // Desktop: 16-column layout with enhanced spacing
-  @media (min-width: v.$breakpoint-desktop) {
-    grid-template-columns: repeat(16, 1fr);
-    grid-template-rows: repeat(2, minmax(60px, auto));
-    gap: v.$space-lg;
+  @media (max-width: v.$breakpoint-tablet) {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: v.$space-sm;
+    aspect-ratio: 4/8;
   }
 }
 
@@ -680,96 +762,67 @@
   align-items: center;
   text-decoration: none;
   color: v.$text-secondary;
-  transition: all 0.2s ease;
-  // Reduce padding to save space on mobile
-  padding: v.$mobile-space-xxs;
-  border-radius: v.$border-radius-sm;
-  background: v.$background-dark;
-  border: 1px solid v.$border-primary;
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease;
+  padding: v.$space-sm;
+  border-radius: v.$border-radius-lg;
+  background: v.$background-medium;
+  border: 2px solid v.$border-primary;
   position: relative;
   z-index: 3;
-  // Ensure proper box-sizing
-  box-sizing: border-box;
-
-  // Mobile-first: Ensure adequate touch target size but fit within grid
-  min-height: v.$touch-target-min;
-  min-width: v.$touch-target-min;
-  // Prevent items from growing too large
-  max-width: 100%;
-
-  // Mobile medium: Slightly larger touch targets
-  @media (min-width: v.$breakpoint-mobile-md) {
-    min-height: v.$touch-target-comfortable;
-    min-width: v.$touch-target-comfortable;
-    padding: v.$mobile-space-xs;
-  }
-
-  // Tablet: Return to original compact size
-  @media (min-width: v.$breakpoint-tablet-min) {
-    height: 60px;
-    min-height: auto;
-    min-width: auto;
-    max-width: none;
-    padding: v.$space-xxs;
-  }
 
   &:hover {
     transform: translateY(-1px);
     border-color: v.$border-accent;
     background: v.$background-light;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-
     .teamAbbreviation {
       color: v.$text-primary;
     }
-
     .teamLogoContainer {
       transform: scale(1.05);
     }
+  }
+
+  &.teamListItemBlurred {
+    opacity: 0.4;
+    filter: blur(1px);
   }
 }
 
 .teamLogoContainer {
   width: 100%;
   height: 100%;
-  margin-bottom: v.$mobile-space-xxs;
+  margin-bottom: v.$space-xxs;
   display: flex;
   align-items: center;
-  justify-content: center; // Change from space-evenly to center for mobile
-  border-radius: v.$border-radius-sm;
-  background: v.$background-medium;
-  border: 1px solid v.$border-primary;
+  justify-content: center;
+
   transition: all 0.2s ease;
-  box-sizing: border-box;
+}
 
-  // Ensure container doesn't overflow
-  overflow: hidden;
-
-  // Tablet and up: Return to space-evenly
-  @media (min-width: v.$breakpoint-tablet-min) {
-    justify-content: space-evenly;
-    margin-bottom: v.$space-xxs;
-  }
+.teamAbbreviation {
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  text-align: center;
+  color: v.$text-secondary;
+  letter-spacing: 0.05em;
+  font-family: v.$font-family-accent;
+  transition: color 0.2s ease;
+  margin-top: 2px;
+  // Fixed: Remove vertical writing mode for normal horizontal text
+  writing-mode: initial;
+  text-orientation: initial;
 }
 
 .teamLogo {
-  // Mobile: Smaller logos to fit better
-  width: 28px;
-  height: 28px;
+  width: 45px;
+  height: 45px;
   object-fit: contain;
-  flex-shrink: 0;
-
-  // Mobile medium: Slightly larger
-  @media (min-width: v.$breakpoint-mobile-md) {
-    width: 32px;
-    height: 32px;
-  }
-
-  // Tablet and up: Full size
-  @media (min-width: v.$breakpoint-tablet-min) {
-    width: 40px;
-    height: 40px;
-  }
+  border: none;
+  border-radius: 0;
 }
 
 // =============================================================================
@@ -832,10 +885,24 @@
   width: 100%;
   border-bottom: 1px solid v.$border-primary;
 
+  // Mobile: Reduce height and padding for condensed display
+  @media (max-width: v.$breakpoint-mobile-max) {
+    padding: v.$mobile-space-xs v.$mobile-space-sm v.$mobile-space-sm
+      v.$mobile-space-sm;
+    // Reduce overall card height on mobile
+    min-height: auto;
+    height: auto;
+  }
+
   &:hover {
     transform: translateY(-1px);
     border-color: v.$border-accent;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+    // Mobile: Reduce transform on mobile for performance
+    @media (max-width: v.$breakpoint-mobile-max) {
+      transform: translateY(-0.5px);
+    }
   }
 }
 
@@ -843,6 +910,11 @@
   display: flex;
   flex-direction: row;
   gap: v.$space-sm;
+
+  // Mobile: Reduce gap for tighter layout
+  @media (max-width: v.$breakpoint-mobile-max) {
+    gap: v.$mobile-space-xs;
+  }
 }
 
 .cardLeft {
@@ -850,6 +922,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+
+  // Mobile: Reduce image container size
+  @media (max-width: v.$breakpoint-mobile-max) {
+    flex: 0 1 15%;
+  }
 
   a {
     transition: color 0.2s ease;
@@ -862,9 +939,19 @@
       background-color: v.$background-medium;
       width: 100%;
       height: 100%;
+      max-width: 150px;
+      max-height: 150px;
       border-radius: 0;
       border-right: 1px solid v.$border-primary;
       object-fit: cover;
+
+      // Mobile: Smaller player headshots for condensed cards
+      @media (max-width: v.$breakpoint-mobile-max) {
+        max-width: 50px;
+        max-height: 50px;
+        border-radius: v.$border-radius-sm;
+        border-right: none;
+      }
     }
   }
 }
@@ -875,6 +962,11 @@
   flex-direction: column;
   justify-content: center;
   margin-right: v.$space-sm;
+
+  // Mobile: Reduce margin for tighter layout
+  @media (max-width: v.$breakpoint-mobile-max) {
+    margin-right: v.$mobile-space-xs;
+  }
 }
 
 .topRow {
@@ -883,6 +975,12 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: space-evenly;
+
+  // Mobile: Reduce spacing between elements
+  @media (max-width: v.$breakpoint-mobile-max) {
+    justify-content: flex-start;
+    gap: v.$mobile-space-xxs;
+  }
 }
 
 .cardTitle {
@@ -897,6 +995,14 @@
   border-bottom: 1px solid v.$border-primary;
   position: relative;
 
+  // Mobile: Smaller font and reduced spacing
+  @media (max-width: v.$breakpoint-mobile-max) {
+    font-size: v.$mobile-font-size-sm;
+    margin: v.$mobile-space-xs 0 v.$mobile-space-xxs 0;
+    padding-bottom: v.$mobile-space-xxs;
+    letter-spacing: v.$mobile-letter-spacing-normal;
+  }
+
   &::after {
     content: "";
     position: absolute;
@@ -905,6 +1011,12 @@
     width: 50%;
     height: 2px;
     background: v.$primary-color;
+
+    // Mobile: Thinner accent line
+    @media (max-width: v.$breakpoint-mobile-max) {
+      height: 1px;
+      width: 30%;
+    }
   }
 }
 
@@ -923,6 +1035,14 @@
   border-radius: v.$border-radius-sm;
   transition: all 0.2s ease;
   position: relative;
+
+  // Mobile: Reduce margins and padding for condensed display
+  @media (max-width: v.$breakpoint-mobile-max) {
+    gap: v.$mobile-space-xxs;
+    margin-bottom: v.$mobile-space-xs;
+    // Reduce minimum height for more compact cards
+    min-height: auto;
+  }
 
   &:first-child {
     border-left: 3px solid #10b981;
@@ -945,11 +1065,21 @@
     background: v.$background-light;
     border-color: v.$border-accent;
     transform: translateX(2px);
+
+    // Mobile: Reduce transform for better performance
+    @media (max-width: v.$breakpoint-mobile-max) {
+      transform: translateX(1px);
+    }
   }
 }
 
 .leaderRowExpanded {
   border-left-width: 4px;
+
+  // Mobile: Reduce expanded border width
+  @media (max-width: v.$breakpoint-mobile-max) {
+    border-left-width: 3px;
+  }
 }
 
 .leaderMain {
@@ -958,6 +1088,11 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+
+  // Mobile: Reduce spacing for tighter layout
+  @media (max-width: v.$breakpoint-mobile-max) {
+    justify-content: flex-start;
+  }
 }
 
 .nameValueRow {
@@ -965,6 +1100,12 @@
   justify-content: space-between;
   align-items: center;
   gap: v.$space-sm;
+
+  // Mobile: Reduce gap for tighter layout
+  @media (max-width: v.$breakpoint-mobile-max) {
+    gap: v.$mobile-space-xs;
+    align-items: flex-start;
+  }
 }
 
 .leaderNameDetails {
@@ -974,6 +1115,12 @@
   flex: 1;
   min-width: 0; // Prevent overflow
   height: 100%;
+
+  // Mobile: Reduce spacing
+  @media (max-width: v.$breakpoint-mobile-max) {
+    justify-content: flex-start;
+    gap: 1px;
+  }
 }
 
 .leaderName {
@@ -986,6 +1133,13 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  // Mobile: Smaller font for condensed cards
+  @media (max-width: v.$breakpoint-mobile-max) {
+    font-size: v.$mobile-font-size-xs;
+    margin-bottom: 0;
+    letter-spacing: v.$mobile-letter-spacing-normal;
+  }
 }
 
 .playerDetails {
@@ -995,6 +1149,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+
+  // Mobile: Even smaller font for details
+  @media (max-width: v.$breakpoint-mobile-max) {
+    font-size: v.$mobile-font-size-xxs;
+  }
 }
 
 .leaderValue {
@@ -1004,6 +1163,12 @@
   font-family: "SF Mono", "Monaco", "Cascadia Code", monospace;
   letter-spacing: -0.02em;
   flex-shrink: 0;
+
+  // Mobile: Smaller value font but keep it prominent
+  @media (max-width: v.$breakpoint-mobile-max) {
+    font-size: v.$mobile-font-size-md;
+    letter-spacing: v.$mobile-letter-spacing-tight;
+  }
 }
 
 // =============================================================================
@@ -1013,6 +1178,11 @@
 .leaderBar {
   width: 100%;
   margin-top: v.$space-xs;
+
+  // Mobile: Reduce top margin for tighter spacing
+  @media (max-width: v.$breakpoint-mobile-max) {
+    margin-top: v.$mobile-space-xxs;
+  }
 }
 
 .angledBarContainer {
@@ -1024,6 +1194,11 @@
   border: 1px solid v.$border-primary;
   overflow: hidden;
   transition: all 0.2s ease;
+
+  // Mobile: Reduce height for more compact display
+  @media (max-width: v.$breakpoint-mobile-max) {
+    height: 16px;
+  }
 
   &:hover {
     border-color: v.$border-accent;
@@ -1037,6 +1212,11 @@
   display: flex;
   transition: all 0.2s ease;
 
+  // Mobile: Adjust height to match container
+  @media (max-width: v.$breakpoint-mobile-max) {
+    height: 16px;
+  }
+
   &:hover {
     filter: brightness(1.1);
     z-index: 2;
@@ -1048,6 +1228,11 @@
   height: 20px;
   position: relative;
   border-right: 1px solid rgba(0, 0, 0, 0.2);
+
+  // Mobile: Adjust height to match container
+  @media (max-width: v.$breakpoint-mobile-max) {
+    height: 16px;
+  }
 
   &:last-child {
     border-right: none;
@@ -1062,6 +1247,13 @@
   height: 0;
   border-bottom: 20px solid #ccc;
   border-left: 4px solid transparent;
+
+  // Mobile: Adjust triangle size
+  @media (max-width: v.$breakpoint-mobile-max) {
+    border-bottom: 16px solid #ccc;
+    border-left: 3px solid transparent;
+    left: -3px;
+  }
 }
 
 .rightTriangle {
@@ -1072,6 +1264,13 @@
   height: 0;
   border-top: 20px solid #ccc;
   border-right: 4px solid transparent;
+
+  // Mobile: Adjust triangle size
+  @media (max-width: v.$breakpoint-mobile-max) {
+    border-top: 16px solid #ccc;
+    border-right: 3px solid transparent;
+    right: -3px;
+  }
 }
 
 .segmentLabel {
@@ -1085,20 +1284,11 @@
   font-family: v.$font-family-accent;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
   z-index: 1;
-}
 
-// =============================================================================
-// GOALIE CHART SECTION
-// =============================================================================
-
-.goalieChartSection {
-  @include v.component-wrapper;
-  padding: v.$space-lg;
-  background: v.$background-medium;
-  border: 1px solid v.$border-secondary;
-
-  .sectionTitle {
-    margin-bottom: v.$space-md;
+  // Mobile: Smaller label font
+  @media (max-width: v.$breakpoint-mobile-max) {
+    font-size: v.$mobile-font-size-xxs;
+    top: 50%; // Adjust position for smaller height
   }
 }
 
@@ -1107,9 +1297,55 @@
 // =============================================================================
 
 @media (max-width: v.$breakpoint-tablet) {
+  .mainLayout {
+    grid-template-columns: 1fr;
+    gap: v.$space-md;
+  }
+
+  .leftSidebar,
+  .rightSidebar {
+    position: static;
+    max-height: none;
+    order: 2; // Place sidebars after middle content on mobile
+  }
+
+  .middleContent {
+    order: 1;
+  }
+
   .container {
     width: 98%;
     padding: v.$space-sm;
+  }
+
+  .heroTitle {
+    font-size: v.$font-size-lg;
+  }
+
+  .heroSubtitle {
+    font-size: v.$font-size-sm;
+  }
+
+  .quickStatsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: v.$space-sm;
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .teamList {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .leaderboardHeader {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .heroSection {
+    padding: v.$space-md;
   }
 
   .filterSection {
@@ -1120,11 +1356,6 @@
 
   .filterButtons {
     justify-content: center;
-  }
-
-  .leaderboardHeader {
-    flex-direction: column;
-    text-align: center;
   }
 }
 
@@ -1151,203 +1382,827 @@
 }
 
 // =============================================================================
-// PROGRESSIVE ENHANCEMENT MEDIA QUERIES - MOBILE FIRST
+// SEARCH BAR SECTION - DYNAMIC POSITIONING WITH TEAMS GRID
 // =============================================================================
 
-// Mobile-first base styles are defined above without media queries
-// Progressive enhancement layers:
+.searchSection {
+  // Mobile: Dynamic positioning based on teams grid state
+  position: sticky;
+  z-index: 99; // Just below teams grid (z-index: 100)
+  background: v.$background-medium;
+  padding: v.$mobile-container-padding;
+  border-bottom: 1px solid v.$border-secondary;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition:
+    top v.$mobile-animation-normal v.$mobile-easing-smooth,
+    box-shadow v.$mobile-animation-fast ease;
+  margin-bottom: 0;
 
-// =============================================================================
-// MOBILE MEDIUM ENHANCEMENT (375px+)
-// =============================================================================
-@media (min-width: v.$breakpoint-mobile-sm) {
-  .heroTitle {
-    font-size: v.$mobile-font-size-xl;
+  // When teams grid is expanded, stick below it
+  top: 0; // Will be updated via JavaScript or CSS custom properties
+
+  // When teams grid is collapsed, adjust positioning
+  &.teamsCollapsed {
+    top: 44px; // Height of collapsed teams grid
   }
 
-  .heroSubtitle {
-    font-size: v.$mobile-font-size-base;
+  &.teamsExpanded {
+    // Calculate dynamic top position based on teams grid height
+    // This will be set via CSS custom properties from JavaScript
+    top: var(--teams-grid-height, 0px);
   }
 
-  .heroSection {
-    padding: v.$mobile-space-xl v.$mobile-space-lg;
-  }
-
-  .quickStatsGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-// =============================================================================
-// MOBILE LARGE ENHANCEMENT (414px+)
-// =============================================================================
-@media (min-width: v.$breakpoint-mobile-md) {
-  .quickStatsGrid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: v.$mobile-space-lg;
-  }
-
-  .teamList {
-    grid-template-columns: repeat(8, 1fr);
-    gap: v.$mobile-space-sm;
-  }
-
-  .teamListItem {
-    height: 50px;
-  }
-
-  .teamLogo {
-    width: 32px;
-    height: 32px;
-  }
-}
-
-// =============================================================================
-// TABLET ENHANCEMENT (481px+)
-// =============================================================================
-@media (min-width: v.$breakpoint-tablet-min) {
-  // Restore desktop-style layouts and spacing
-  .container {
-    padding: v.$space-lg v.$space-md;
-  }
-
-  .mainLayout {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: v.$space-md;
-    margin-bottom: v.$mobile-space-lg;
-  }
-
-  .leftSidebar,
-  .rightSidebar {
-    display: block;
-    position: sticky;
-    top: v.$space-md;
-    overflow-y: auto;
-    border-radius: v.$border-radius-lg;
-    border: 1px solid v.$border-secondary;
-  }
-
-  .middleContent {
-    gap: v.$space-lg;
-    order: unset;
-  }
-
-  .leftSidebar,
-  .rightSidebar {
-    order: unset;
-  }
-
-  .teamSelectheader {
-    margin-bottom: v.$space-md;
-  }
-
-  .teamsGridContainer {
-    margin-bottom: v.$space-lg;
-  }
-
-  .teamsSection {
-    border: 2px solid v.$border-secondary;
-    border-radius: v.$border-radius-md;
-    padding: v.$space-md;
-  }
-
-  .searchSection {
+  // Progressive enhancement for larger screens
+  @media (min-width: v.$breakpoint-tablet-min) {
+    position: static;
     background: transparent;
     padding: 0;
     border: none;
+    box-shadow: none;
     margin-bottom: v.$space-md;
+    top: auto;
+  }
+}
+
+.searchBarWrapper {
+  max-width: 100%;
+  margin: 0 auto;
+
+  // Mobile: Full width within container padding
+  @media (max-width: v.$breakpoint-mobile-max) {
+    width: 100%;
   }
 
-  .searchBarWrapper {
+  // Progressive enhancement for larger screens
+  @media (min-width: v.$breakpoint-tablet-min) {
     max-width: 400px;
   }
+}
 
-  .heroSection {
-    padding: v.$space-lg v.$space-md;
-    border: 1px solid v.$border-primary;
-    border-radius: v.$border-radius-lg;
+// =============================================================================
+// MOBILE LEADERBOARD CARDS - HORIZONTAL SCROLLABLE DESIGN
+// =============================================================================
+
+.mobileLeaderboardSection {
+  // Mobile: Horizontal scrollable cards instead of stacked
+  display: flex;
+  flex-direction: row;
+  gap: v.$mobile-space-md;
+  margin-top: 0;
+  // Enable horizontal scrolling
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: v.$mobile-container-padding;
+  // Smooth scrolling on iOS
+  -webkit-overflow-scrolling: touch;
+  // Hide scrollbar but keep functionality
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
   }
 
-  .heroTitle {
-    font-size: v.$font-size-xl;
-    margin-bottom: v.$space-sm;
-  }
-
-  .heroSubtitle {
-    font-size: v.$font-size-md;
-    margin-bottom: v.$space-lg;
-    line-height: 1.3;
-  }
-
-  .sectionTitle {
-    font-size: v.$font-size-lg;
-    margin-bottom: v.$space-md;
-    letter-spacing: 0.05em;
-  }
-
-  .quickStatsGrid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: v.$space-md;
-    margin-bottom: v.$space-lg;
-  }
-
-  .quickStatCard {
-    padding: v.$space-md;
-    gap: v.$space-sm;
-    transition: all 0.2s ease;
-  }
-
-  .teamList {
-    grid-template-columns: repeat(16, 1fr);
-    gap: v.$space-md;
-  }
-
-  .teamListItem {
-    height: 60px;
-  }
-
-  .teamLogo {
-    width: 40px;
-    height: 40px;
-  }
-
-  // Hide mobile leaderboard cards on tablet+
-  .mobileLeaderboardSection {
+  // Progressive enhancement: Hide on larger screens (use sidebar layout)
+  @media (min-width: v.$breakpoint-tablet-min) {
     display: none;
   }
 }
 
+.mobileLeaderboardCard {
+  @include v.component-wrapper;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  // Horizontal scrolling: Fixed width cards
+  flex: 0 0 280px; // Fixed width, no grow/shrink
+  min-width: 280px; // Ensure minimum width
+  max-width: 320px; // Reasonable maximum
+  height: auto; // Let content determine height
+  padding: v.$mobile-card-padding;
+
+  // Touch-friendly minimum height
+  min-height: v.$touch-target-large;
+
+  // No border removal for horizontal layout - each card is independent
+  border-left: 3px solid v.$primary-color;
+
+  // Add subtle shadow for cards in horizontal scroll
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  // Smooth transitions
+  transition: all v.$mobile-animation-fast ease;
+
+  // Enhanced touch feedback for horizontal cards
+  &:active {
+    transform: scale(0.98);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  // Hover states for non-touch devices
+  @media (hover: hover) {
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+      border-color: v.$border-accent;
+    }
+  }
+}
+
+.mobileCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: v.$mobile-space-sm;
+  padding-bottom: v.$mobile-space-xs;
+  border-bottom: 1px solid v.$border-primary;
+}
+
+.mobileCardTitle {
+  font-family: v.$font-family-accent;
+  font-size: v.$mobile-font-size-md;
+  font-weight: 600;
+  color: v.$text-primary;
+  text-transform: uppercase;
+  letter-spacing: v.$mobile-letter-spacing-wide;
+  margin: 0;
+  // Ensure title doesn't wrap in horizontal cards
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobileCardType {
+  background: v.$primary-color;
+  color: v.$text-button;
+  padding: v.$mobile-space-xxs v.$mobile-space-xs;
+  border-radius: v.$border-radius-sm;
+  font-size: v.$mobile-font-size-xs;
+  font-weight: 600;
+  letter-spacing: v.$mobile-letter-spacing-wide;
+  // Prevent wrapping of type badge
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.mobileLeadersList {
+  display: flex;
+  flex-direction: column;
+  gap: v.$mobile-space-xs;
+  // Set max height to prevent cards from getting too tall in horizontal scroll
+  max-height: 200px;
+  overflow-y: auto;
+  // Custom scrollbar for vertical overflow in cards
+  scrollbar-width: thin;
+  scrollbar-color: v.$border-primary v.$background-dark;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: v.$background-dark;
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: v.$border-primary;
+    border-radius: 2px;
+
+    &:hover {
+      background: v.$border-accent;
+    }
+  }
+}
+
+.mobileLeaderItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: v.$mobile-space-xs;
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$border-radius-sm;
+  transition: all v.$mobile-animation-fast ease;
+
+  // Touch target optimization
+  min-height: v.$touch-target-min;
+
+  &:hover {
+    background: v.$background-light;
+    border-color: v.$border-accent;
+    transform: translateX(2px);
+  }
+
+  &:first-child {
+    border-left: 3px solid #10b981;
+  }
+
+  &:nth-child(2) {
+    border-left: 3px solid #22c55e;
+  }
+
+  &:nth-child(3) {
+    border-left: 3px solid #84cc16;
+  }
+
+  // Additional ranking colors for horizontal display
+  &:nth-child(4) {
+    border-left: 3px solid #f59e0b;
+  }
+
+  &:nth-child(5) {
+    border-left: 3px solid #ef4444;
+  }
+}
+
+.mobileLeaderInfo {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.mobileLeaderName {
+  font-size: v.$mobile-font-size-sm;
+  color: v.$primary-color;
+  font-family: v.$font-family-condensed;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: v.$mobile-letter-spacing-normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: v.$mobile-space-xxs;
+}
+
+.mobileLeaderTeam {
+  font-size: v.$mobile-font-size-xs;
+  color: v.$text-secondary;
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobileLeaderValue {
+  font-size: v.$mobile-font-size-md;
+  font-weight: 700;
+  color: v.$primary-color;
+  font-family: "SF Mono", "Monaco", "Cascadia Code", monospace;
+  letter-spacing: v.$mobile-letter-spacing-tight;
+  flex-shrink: 0;
+  text-align: right;
+}
+
 // =============================================================================
-// DESKTOP ENHANCEMENT (1024px+)
+// SKELETON LOADING STATES FOR MOBILE LEADERBOARDS
 // =============================================================================
-@media (min-width: v.$breakpoint-desktop) {
-  .mainLayout {
-    grid-template-columns: 400px 1fr 400px;
-    gap: v.$space-lg;
-    margin-bottom: v.$space-lg;
+
+.mobileLeaderboardSkeleton {
+  // Copy layout from mobileLeaderboardSection for consistency
+  display: flex;
+  flex-direction: row;
+  gap: v.$mobile-space-md;
+  margin-top: 0;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: v.$mobile-container-padding;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
   }
 
-  .container {
-    max-width: 1400px;
-    padding: v.$space-xl v.$space-lg;
+  // Progressive enhancement: Hide on larger screens
+  @media (min-width: v.$breakpoint-tablet-min) {
+    display: none;
+  }
+}
+
+.mobileLeaderboardCardSkeleton {
+  @include v.component-wrapper;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  // Match dimensions from real cards
+  flex: 0 0 280px;
+  min-width: 280px;
+  max-width: 320px;
+  height: auto;
+  padding: v.$mobile-card-padding;
+  min-height: v.$touch-target-large;
+  border-left: 3px solid v.$border-primary;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  // Subtle pulse animation for loading indication
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+.mobileCardHeaderSkeleton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: v.$mobile-space-sm;
+  padding-bottom: v.$mobile-space-xs;
+  border-bottom: 1px solid v.$border-primary;
+}
+
+.mobileCardTitleSkeleton {
+  // Skeleton for card title
+  height: 20px;
+  width: 60%;
+  background: v.$background-dark;
+  border-radius: v.$border-radius-sm;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+}
+
+.mobileCardTypeSkeleton {
+  // Skeleton for type badge
+  height: 16px;
+  width: 40px;
+  background: v.$background-dark;
+  border-radius: v.$border-radius-sm;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+}
+
+.mobileLeadersListSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: v.$mobile-space-xs;
+  max-height: 200px;
+}
+
+.mobileLeaderItemSkeleton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: v.$mobile-space-xs;
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$border-radius-sm;
+  min-height: v.$touch-target-min;
+  // Randomize border colors for more realistic skeleton
+  &:nth-child(1) {
+    border-left: 3px solid
+      color-mix(in srgb, #10b981 50%, v.$background-dark 50%);
+  }
+  &:nth-child(2) {
+    border-left: 3px solid
+      color-mix(in srgb, #22c55e 50%, v.$background-dark 50%);
+  }
+  &:nth-child(3) {
+    border-left: 3px solid
+      color-mix(in srgb, #84cc16 50%, v.$background-dark 50%);
+  }
+  &:nth-child(4) {
+    border-left: 3px solid
+      color-mix(in srgb, #f59e0b 50%, v.$background-dark 50%);
+  }
+  &:nth-child(5) {
+    border-left: 3px solid
+      color-mix(in srgb, #ef4444 50%, v.$background-dark 50%);
+  }
+}
+
+.mobileLeaderInfoSkeleton {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: v.$mobile-space-xxs;
+}
+
+.mobileLeaderNameSkeleton {
+  // Skeleton for player name
+  height: 14px;
+  width: 70%;
+  background: v.$background-light;
+  border-radius: v.$border-radius-sm;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+}
+
+.mobileLeaderTeamSkeleton {
+  // Skeleton for team name
+  height: 12px;
+  width: 45%;
+  background: v.$background-light;
+  border-radius: v.$border-radius-sm;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  // Delay animation for staggered effect
+  animation-delay: 0.2s;
+}
+
+.mobileLeaderValueSkeleton {
+  // Skeleton for stat value
+  height: 16px;
+  width: 32px;
+  background: v.$background-light;
+  border-radius: v.$border-radius-sm;
+  flex-shrink: 0;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  // Delay animation for staggered effect
+  animation-delay: 0.4s;
+}
+
+// =============================================================================
+// SKELETON ANIMATIONS
+// =============================================================================
+
+@keyframes skeletonPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: -200px 0;
+  }
+  100% {
+    background-position: calc(200px + 100%) 0;
+  }
+}
+
+// Apply shimmer gradient to skeleton elements
+.mobileCardTitleSkeleton,
+.mobileCardTypeSkeleton,
+.mobileLeaderNameSkeleton,
+.mobileLeaderTeamSkeleton,
+.mobileLeaderValueSkeleton {
+  background: linear-gradient(
+    90deg,
+    v.$background-dark 0%,
+    v.$background-light 20%,
+    v.$background-dark 40%,
+    v.$background-dark 100%
+  );
+  background-size: 200px 100%;
+  background-repeat: no-repeat;
+}
+
+// =============================================================================
+// COMPACT LEADERBOARD SKELETON STATES (FOR DESKTOP SIDEBARS)
+// =============================================================================
+
+.leaderboardSkeleton {
+  padding: v.$space-md v.$space-lg;
+}
+
+.leaderRowSkeleton {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+  padding: 0;
+  margin-bottom: v.$space-xs;
+  background: v.$background-dark;
+  border: 1px solid v.$border-primary;
+  border-radius: v.$border-radius-sm;
+  border-left: 3px solid v.$border-primary;
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+
+  // Stagger animations for more realistic effect
+  &:nth-child(1) {
+    animation-delay: 0s;
+  }
+  &:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+  &:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+  &:nth-child(4) {
+    animation-delay: 0.3s;
+  }
+  &:nth-child(5) {
+    animation-delay: 0.4s;
+  }
+}
+
+.cardContainerSkeleton {
+  display: flex;
+  flex-direction: row;
+  gap: v.$space-sm;
+  padding: v.$space-sm;
+}
+
+.cardLeftSkeleton {
+  flex: 0 1 20%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.playerHeadshotSkeleton {
+  width: 60px;
+  height: 60px;
+  background: v.$background-light;
+  border-radius: v.$border-radius-sm;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    v.$background-dark 0%,
+    v.$background-light 20%,
+    v.$background-dark 40%,
+    v.$background-dark 100%
+  );
+  background-size: 200px 100%;
+  background-repeat: no-repeat;
+
+  // Mobile: Smaller skeleton headshot
+  @media (max-width: v.$breakpoint-mobile-max) {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+.cardRightSkeleton {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: v.$space-xs;
+}
+
+.nameValueRowSkeleton {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: v.$space-sm;
+}
+
+.leaderNameDetailsSkeleton {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: v.$space-xxs;
+}
+
+.leaderNameSkeleton {
+  height: 16px;
+  width: 75%;
+  background: v.$background-light;
+  border-radius: v.$border-radius-sm;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  background: linear-gradient(
+    90deg,
+    v.$background-dark 0%,
+    v.$background-light 20%,
+    v.$background-dark 40%,
+    v.$background-dark 100%
+  );
+  background-size: 200px 100%;
+  background-repeat: no-repeat;
+}
+
+.playerDetailsSkeleton {
+  height: 12px;
+  width: 60%;
+  background: v.$background-light;
+  border-radius: v.$border-radius-sm;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  animation-delay: 0.2s;
+  background: linear-gradient(
+    90deg,
+    v.$background-dark 0%,
+    v.$background-light 20%,
+    v.$background-dark 40%,
+    v.$background-dark 100%
+  );
+  background-size: 200px 100%;
+  background-repeat: no-repeat;
+}
+
+.leaderValueSkeletonDesktop {
+  height: 18px;
+  width: 40px;
+  background: v.$background-light;
+  border-radius: v.$border-radius-sm;
+  flex-shrink: 0;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  animation-delay: 0.4s;
+  background: linear-gradient(
+    90deg,
+    v.$background-dark 0%,
+    v.$background-light 20%,
+    v.$background-dark 40%,
+    v.$background-dark 100%
+  );
+  background-size: 200px 100%;
+  background-repeat: no-repeat;
+}
+
+.leaderBarSkeleton {
+  width: 100%;
+  height: 20px;
+  margin-top: v.$space-xs;
+  background: v.$background-light;
+  border-radius: v.$border-radius-sm;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+  animation-delay: 0.6s;
+  background: linear-gradient(
+    90deg,
+    v.$background-dark 0%,
+    v.$background-light 20%,
+    v.$background-dark 40%,
+    v.$background-dark 100%
+  );
+  background-size: 200px 100%;
+  background-repeat: no-repeat;
+
+  // Mobile: Smaller bar height to match optimized bars
+  @media (max-width: v.$breakpoint-mobile-max) {
+    height: 16px;
+  }
+}
+
+// =============================================================================
+// LOADING STATES WITH ACCESSIBILITY
+// =============================================================================
+
+.loadingContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: v.$space-xl;
+  color: v.$text-secondary;
+  font-size: v.$font-size-sm;
+  gap: v.$space-sm;
+}
+
+.loadingSpinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid v.$border-primary;
+  border-top: 2px solid v.$primary-color;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+// Screen reader accessibility for skeleton states
+.skeletonSrText {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Reduce motion for users who prefer reduced motion
+@media (prefers-reduced-motion: reduce) {
+  .mobileLeaderboardCardSkeleton,
+  .leaderRowSkeleton,
+  .mobileCardTitleSkeleton,
+  .mobileCardTypeSkeleton,
+  .mobileLeaderNameSkeleton,
+  .mobileLeaderTeamSkeleton,
+  .mobileLeaderValueSkeleton,
+  .playerHeadshotSkeleton,
+  .leaderNameSkeleton,
+  .playerDetailsSkeleton,
+  .leaderValueSkeletonDesktop,
+  .leaderBarSkeleton,
+  .loadingSpinner {
+    animation: none;
   }
 
-  .heroSection {
-    padding: v.$space-xl v.$space-lg;
+  // Provide a subtle opacity change instead
+  .mobileLeaderboardCardSkeleton,
+  .leaderRowSkeleton {
+    opacity: 0.7;
+  }
+}
+
+// =============================================================================
+// TEAM HOVER ANIMATIONS - SLIDING DIAGONAL BACKGROUND LAYERS
+// =============================================================================
+
+.teamsSectionActive {
+  // Base active state - prepare for animations
+  &::before,
+  &::after {
+    opacity: 0.3;
+  }
+}
+
+.teamsSectionTriggered {
+  // First animation state - slide in from one direction
+  &::before,
+  &::after {
+    opacity: 0.6;
+    // Mobile: Simplified transforms for better performance
+    @media (max-width: v.$breakpoint-mobile-max) {
+      transform: translateX(0%) translateY(0%);
+      transition: all v.$mobile-animation-normal ease-in-out;
+    }
+
+    // Desktop: Full complexity transforms
+    @media (min-width: v.$breakpoint-tablet-min) {
+      transform: translateX(5%) translateY(5%);
+      transition: all 0.8s ease-in-out;
+    }
   }
 
-  .quickStatsGrid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: v.$space-lg;
+  // Staggered animation for second layer
+  &::after {
+    transition-delay: 0.2s;
+
+    @media (max-width: v.$breakpoint-mobile-max) {
+      transform: translateX(2%) translateY(2%);
+    }
+
+    @media (min-width: v.$breakpoint-tablet-min) {
+      transform: translateX(8%) translateY(8%);
+    }
+  }
+}
+
+.teamsSectionTriggeredAlt {
+  // Alternate animation state - slide in from opposite direction
+  &::before,
+  &::after {
+    opacity: 0.7;
+    // Mobile: Simplified alternate transforms
+    @media (max-width: v.$breakpoint-mobile-max) {
+      transform: translateX(-2%) translateY(-2%);
+      transition: all v.$mobile-animation-normal ease-in-out;
+    }
+
+    // Desktop: Full complexity alternate transforms
+    @media (min-width: v.$breakpoint-tablet-min) {
+      transform: translateX(-8%) translateY(-8%);
+      transition: all 0.8s ease-in-out;
+    }
   }
 
-  .teamList {
-    grid-template-columns: repeat(16, 1fr);
-    gap: v.$space-lg;
-  }
+  // Staggered animation for second layer (opposite direction)
+  &::after {
+    transition-delay: 0.2s;
 
-  .teamsSection {
-    padding: v.$space-lg;
+    @media (max-width: v.$breakpoint-mobile-max) {
+      transform: translateX(-5%) translateY(-5%);
+    }
+
+    @media (min-width: v.$breakpoint-tablet-min) {
+      transform: translateX(-12%) translateY(-12%);
+    }
   }
+}
+
+// =============================================================================
+// HORIZONTAL SCROLL INDICATORS (OPTIONAL ENHANCEMENT)
+// =============================================================================
+
+.scrollIndicatorLeft,
+.scrollIndicatorRight {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  background: v.$background-medium;
+  border: 1px solid v.$border-primary;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: v.$text-secondary;
+  font-size: v.$mobile-font-size-xs;
+  z-index: 10;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity v.$mobile-animation-fast ease;
+
+  // Show indicators when scrollable content is detected via JavaScript
+  .mobileLeaderboardSection.hasScroll & {
+    opacity: 0.7;
+  }
+}
+
+.scrollIndicatorLeft {
+  left: v.$mobile-space-xs;
+}
+
+.scrollIndicatorRight {
+  right: v.$mobile-space-xs;
 }

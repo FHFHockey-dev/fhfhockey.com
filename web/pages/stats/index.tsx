@@ -5,6 +5,7 @@ import styles from "styles/Stats.module.scss";
 import LeaderboardCategory from "components/StatsPage/LeaderboardCategory";
 import LeaderboardCategoryBSH from "components/StatsPage/LeaderboardCategoryBSH";
 import LeaderboardCategoryGoalie from "components/StatsPage/LeaderboardCategoryGoalie";
+import MobileTeamList from "components/StatsPage/MobileTeamList";
 import GoalieShareChart from "components/GoalieShareChart";
 import { StatsProps } from "lib/NHL/statsPageTypes";
 import { fetchStatsData } from "lib/NHL/statsPageFetch";
@@ -70,8 +71,18 @@ export default function StatsPage({
   const [lastTriggeredTeam, setLastTriggeredTeam] = useState<string | null>(
     null
   );
+  // New state for teams grid morphing
+  const [teamsGridState, setTeamsGridState] = useState<
+    "expanded" | "collapsed"
+  >("expanded");
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [scrollDirection, setScrollDirection] = useState<"up" | "down">("down");
+  // Mobile detection state
+  const [isMobile, setIsMobile] = useState(false);
+
   const hoverTimeoutRef = useRef<NodeJS.Timeout>();
   const mouseLeaveTimeoutRef = useRef<NodeJS.Timeout>();
+  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
 
   const handleTeamMouseEnter = (teamAbbreviation: string) => {
     if (hoverTimeoutRef.current) {
@@ -129,6 +140,9 @@ export default function StatsPage({
       if (mouseLeaveTimeoutRef.current) {
         clearTimeout(mouseLeaveTimeoutRef.current);
       }
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -166,80 +180,299 @@ export default function StatsPage({
         : "-.---",
       subtitle: `${goalieLeadersSavePct[0]?.fullName || "N/A"}`,
       category: "goaltending"
-    },
-    {
-      label: "Active Teams",
-      value: teams.length,
-      subtitle: "NHL Organizations",
-      category: "league"
     }
   ];
 
+  // Scroll handler for teams grid morphing - OPTIMIZED FOR MOBILE UX
+  useEffect(() => {
+    // Only run on mobile
+    if (!isMobile) return;
+
+    // Use ref to track scroll position to avoid dependency issues
+    const scrollPositionRef = { current: window.scrollY };
+    let ticking = false;
+    let isUserScrolling = false;
+    let scrollTimeout: NodeJS.Timeout;
+    let lastStateChange = 0; // Prevent rapid state changes
+
+    const handleScroll = () => {
+      // Mark that user is actively scrolling
+      isUserScrolling = true;
+
+      // Clear any existing timeout
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+
+      // Set timeout to detect when scrolling has stopped
+      scrollTimeout = setTimeout(() => {
+        isUserScrolling = false;
+      }, 150);
+
+      // Prevent multiple rapid scroll events
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          const previousScrollY = scrollPositionRef.current;
+          const newScrollDirection =
+            currentScrollY > previousScrollY ? "down" : "up";
+
+          // Calculate scroll delta to detect intentional scrolling
+          const scrollDelta = Math.abs(currentScrollY - previousScrollY);
+          const now = Date.now();
+
+          // Update refs and state
+          scrollPositionRef.current = currentScrollY;
+          setScrollDirection(newScrollDirection);
+          setLastScrollY(currentScrollY);
+
+          // MOBILE-OPTIMIZED THRESHOLDS - Much more responsive
+          const expandThreshold = 30; // Expand when very close to top
+          const collapseThreshold = 80; // REDUCED: Collapse much sooner for better mobile UX
+          const minStateChangeInterval = 150; // Slightly increased to reduce excessive re-renders
+
+          // Get current state to prevent unnecessary updates
+          const currentState = teamsGridState;
+
+          // OPTIMIZED: Reduce unnecessary scroll events and state changes
+          if (
+            scrollDelta < 8 ||
+            now - lastStateChange < minStateChangeInterval
+          ) {
+            ticking = false;
+            return;
+          }
+
+          // MOBILE UX DEBUG LOGGING (reduced frequency)
+          if (scrollDelta > 10) {
+            // Only log significant movements
+            console.log("📱 Mobile Scroll:", {
+              position: currentScrollY,
+              delta: scrollDelta,
+              state: currentState,
+              thresholds: {
+                expand: expandThreshold,
+                collapse: collapseThreshold
+              },
+              direction: newScrollDirection
+            });
+          }
+
+          // STATE LOGIC WITH IMMEDIATE STATE UPDATES
+          if (
+            currentScrollY <= expandThreshold &&
+            currentState !== "expanded"
+          ) {
+            // At the very top - expand
+            console.log("🟢 EXPANDING teams grid at scroll:", currentScrollY);
+
+            // CRITICAL FIX: Use React's batch update to ensure immediate state change
+            setTeamsGridState(() => {
+              console.log("🟢 State setter called: expanded");
+              return "expanded";
+            });
+
+            lastStateChange = now;
+
+            // DOM manipulation as backup
+            const teamsGridElement =
+              (document.querySelector("[data-grid-state]") as HTMLElement) ||
+              (document.querySelector(".teamSelectHeader") as HTMLElement);
+
+            if (teamsGridElement) {
+              // Force immediate DOM update
+              teamsGridElement.setAttribute("data-state", "expanded");
+              teamsGridElement.setAttribute("data-grid-state", "expanded");
+              console.log("✅ DOM element found and updated to expanded");
+            }
+          } else if (
+            currentScrollY >= collapseThreshold &&
+            currentState !== "collapsed" &&
+            newScrollDirection === "down" // Only collapse when scrolling down
+          ) {
+            // Scrolled down past threshold and moving down - collapse
+            console.log("🔴 COLLAPSING teams grid at scroll:", currentScrollY);
+
+            // CRITICAL FIX: Use React's batch update to ensure immediate state change
+            setTeamsGridState(() => {
+              console.log("🔴 State setter called: collapsed");
+              return "collapsed";
+            });
+
+            lastStateChange = now;
+
+            // DOM manipulation as backup
+            const teamsGridElement =
+              (document.querySelector("[data-grid-state]") as HTMLElement) ||
+              (document.querySelector(".teamSelectHeader") as HTMLElement);
+
+            if (teamsGridElement) {
+              // Force immediate DOM update
+              teamsGridElement.setAttribute("data-state", "collapsed");
+              teamsGridElement.setAttribute("data-grid-state", "collapsed");
+              console.log("✅ DOM element found and updated to collapsed");
+            }
+          }
+
+          ticking = false;
+        });
+      }
+      ticking = true;
+    };
+
+    // PASSIVE SCROLL LISTENER - Critical for performance and preventing scroll blocking
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    // Set initial state based on current scroll position - FIXED SYNCHRONIZATION
+    const initialScrollY = window.scrollY;
+    scrollPositionRef.current = initialScrollY;
+    setLastScrollY(initialScrollY);
+
+    // ENHANCED INITIAL STATE LOGIC WITH FORCED UPDATE
+    console.log("🚀 Initial scroll position:", initialScrollY);
+    if (initialScrollY <= 30) {
+      console.log("🟢 Initial state: expanded");
+      setTeamsGridState("expanded");
+
+      // Force DOM update immediately
+      setTimeout(() => {
+        const teamsGridElement = document.querySelector(
+          "[data-grid-state]"
+        ) as HTMLElement;
+        if (teamsGridElement) {
+          teamsGridElement.setAttribute("data-grid-state", "expanded");
+          console.log("🟢 Initial DOM state set to expanded");
+        }
+      }, 0);
+    } else if (initialScrollY >= 80) {
+      // UPDATED: Use new collapse threshold
+      console.log("🔴 Initial state: collapsed");
+      setTeamsGridState("collapsed");
+
+      // Force DOM update immediately
+      setTimeout(() => {
+        const teamsGridElement = document.querySelector(
+          "[data-grid-state]"
+        ) as HTMLElement;
+        if (teamsGridElement) {
+          teamsGridElement.setAttribute("data-grid-state", "collapsed");
+          console.log("🔴 Initial DOM state set to collapsed");
+        }
+      }, 0);
+    }
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+    };
+  }, [isMobile, teamsGridState]); // CRITICAL: Include teamsGridState to detect desync
+
+  // Mobile detection hook
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth <= 480);
+    };
+
+    // Check on mount
+    checkIsMobile();
+
+    // Add resize listener
+    window.addEventListener("resize", checkIsMobile);
+
+    return () => {
+      window.removeEventListener("resize", checkIsMobile);
+    };
+  }, []);
+
   return (
     <div className={styles.container}>
-      {/* Teams Grid with Sticky Positioning */}
-      <div className={styles.teamSelectheader}>
-        {/* Teams Grid with Sliding Diagonal Background */}
-        <div className={styles.teamsGridContainer}>
-          <h2 className={styles.teamsTitle}>
-            <span className={styles.titleAccent}>NHL Teams</span>
-          </h2>
+      {/* Conditional Teams Grid - Mobile vs Desktop */}
+      {isMobile ? (
+        <MobileTeamList
+          teams={teams}
+          hoveredTeam={hoveredTeam}
+          teamsGridState={teamsGridState}
+          activeTeamColors={activeTeamColors}
+          animationState={animationState}
+          onTeamMouseEnter={handleTeamMouseEnter}
+          onTeamMouseLeave={handleTeamMouseLeave}
+          generateTeamColorStyles={generateTeamColorStyles}
+        />
+      ) : (
+        // Desktop Teams Grid (existing implementation)
+        <div className={`${styles.teamSelectheader} ${styles[teamsGridState]}`}>
+          <div className={styles.teamsGridContainer}>
+            <h2 className={styles.teamsTitle}>
+              <span className={styles.titleAccent}>NHL Teams</span>
+            </h2>
 
-          <div
-            className={`${styles.teamsSection} ${
-              activeTeamColors ? styles.teamsSectionActive : ""
-            } ${
-              animationState === "triggered"
-                ? styles.teamsSectionTriggered
-                : animationState === "triggeredAlt"
-                  ? styles.teamsSectionTriggeredAlt
-                  : ""
-            }`}
-            style={generateTeamColorStyles()}
-            onMouseLeave={handleTeamMouseLeave}
-          >
-            <div className={styles.teamNameHeader}>
-              <span className={styles.teamNameText}>
-                {hoveredTeam
-                  ? teams.find((team) => team.abbreviation === hoveredTeam)
-                      ?.name || hoveredTeam
-                  : ""}
-              </span>
-            </div>
-            {/* team grid */}
-            <div className={styles.teamList}>
-              {teams.map((team) => (
-                <Link
-                  key={team.team_id}
-                  href={`/stats/team/${team.abbreviation}`}
-                  className={`${styles.teamListItem} ${
-                    hoveredTeam && hoveredTeam !== team.abbreviation
-                      ? styles.teamListItemBlurred
-                      : ""
-                  }`}
-                  title={team.name}
-                  onMouseEnter={() => handleTeamMouseEnter(team.abbreviation)}
-                >
-                  <div className={styles.teamLogoContainer}>
+            <div
+              className={`${styles.teamsSection} ${
+                activeTeamColors ? styles.teamsSectionActive : ""
+              } ${
+                animationState === "triggered"
+                  ? styles.teamsSectionTriggered
+                  : animationState === "triggeredAlt"
+                    ? styles.teamsSectionTriggeredAlt
+                    : ""
+              }`}
+              style={generateTeamColorStyles()}
+              onMouseLeave={handleTeamMouseLeave}
+            >
+              <div className={styles.teamNameHeader}>
+                <span className={styles.teamNameText}>
+                  {hoveredTeam
+                    ? teams.find((team) => team.abbreviation === hoveredTeam)
+                        ?.name || hoveredTeam
+                    : ""}
+                </span>
+              </div>
+              {/* Desktop team grid with containers and abbreviations */}
+              <div className={styles.teamList}>
+                {teams.map((team) => (
+                  <Link
+                    key={team.team_id}
+                    href={`/stats/team/${team.abbreviation}`}
+                    className={`${styles.teamListItem} ${
+                      hoveredTeam && hoveredTeam !== team.abbreviation
+                        ? styles.teamListItemBlurred
+                        : ""
+                    }`}
+                    title={team.name}
+                    onMouseEnter={() => handleTeamMouseEnter(team.abbreviation)}
+                  >
+                    <div className={styles.teamLogoContainer}>
+                      <img
+                        src={`/teamLogos/${team.abbreviation}.png`}
+                        alt={team.name}
+                        className={styles.teamLogo}
+                        loading="lazy"
+                        decoding="async"
+                        onError={(e) => {
+                          e.currentTarget.src = "/teamLogos/default.png";
+                        }}
+                      />
+                    </div>
                     <span className={styles.teamAbbreviation}>
                       {team.abbreviation}
                     </span>
-                    <img
-                      src={`/teamLogos/${team.abbreviation}.png`}
-                      alt={team.name}
-                      className={styles.teamLogo}
-                      loading="lazy"
-                    />
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Search Bar Section - Normal Flow (Not Sticky) */}
-      <div className={styles.searchSection}>
+      {/* Search Bar Section - Dynamic positioning based on teams grid state */}
+      <div
+        className={`${styles.searchSection} ${isMobile ? (teamsGridState === "collapsed" ? styles.teamsCollapsed : styles.teamsExpanded) : ""}`}
+      >
         <div className={styles.searchBarWrapper}>
           <PlayerSearchBar />
         </div>
