@@ -124,6 +124,7 @@ $warning-color: #ffcc33;
 $success-color: #00ff99;
 $danger-color: #ff6384;
 $danger-color-dark: #670c20;
+$error-color: $danger-color !default; // Error alias uses danger palette
 $info-color: #3b82f6;
 $focus-color: rgb(255, 193, 8);
 
@@ -135,7 +136,7 @@ $color-grey-medium: #808080;
 $color-grey-text: #cccccc;
 $color-grey-text-sec: #aaaaaa;
 $color-grey-darker: #404040; // border-primary base
-$color-grey-dark: #505050;   // border-secondary base
+$color-grey-dark: #505050; // border-secondary base
 
 // Backgrounds (single source of truth)
 $background-dark: #1a1d21;
