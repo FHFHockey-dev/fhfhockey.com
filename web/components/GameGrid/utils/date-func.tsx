@@ -1,6 +1,6 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\GameGrid\utils\date-func.tsx
 
-import { endOfISOWeek, getWeek, startOfDay, startOfISOWeek } from "date-fns";
+import { endOfISOWeek, getWeek, startOfISOWeek } from "date-fns";
 import { DAY_ABBREVIATION, EXTENDED_DAY_ABBREVIATION } from "lib/NHL/types";
 
 function getDayStrInternal(date: Date) {
@@ -61,7 +61,9 @@ export function dateDiffInDays(a: Date, b: Date) {
  */
 export function startAndEndOfWeek(date?: Date): [string, string] {
   const monday = startOfISOWeek(date || new Date());
-  const sunday = startOfDay(endOfISOWeek(date || new Date()));
+  // Use the actual end of ISO week (end of Sunday) so the interval
+  // includes the entire Sunday and isWithinInterval remains true all day.
+  const sunday = endOfISOWeek(date || new Date());
 
   // Return array of date objects
   return [monday.toISOString(), sunday.toISOString()];

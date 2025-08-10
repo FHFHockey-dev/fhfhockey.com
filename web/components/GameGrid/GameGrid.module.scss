@@ -174,9 +174,7 @@ $mobile-column-short: 30px;
 
 .spanColorBlue {
   color: v.$secondary-color; // Use variable
-  font-weight: 600;
 }
-
 .prevNextButtons {
   display: flex;
   align-items: center;
@@ -199,6 +197,7 @@ $mobile-column-short: 30px;
 .dateButtonNext,
 .dateButtonMode,
 .orientationToggleButton,
+.helperToggle,
 .mobileHeaderActions .navButtonRow button {
   @include v.button-style;
   font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
@@ -278,9 +277,9 @@ $mobile-column-short: 30px;
   width: 100%;
 }
 
+// keep span color utility simple
 .spanColorBlue {
   color: v.$secondary-color;
-  font-weight: 100;
 }
 
 // --- Mobile Specific Header Actions ---
@@ -292,31 +291,23 @@ $mobile-column-short: 30px;
     flex-direction: column;
     width: 100%;
     margin-bottom: 0px;
-    position: relative;
-    z-index: 1;
+    position: sticky; // Keep controls visible while scrolling grid
+    top: 0;
+    z-index: 5; // Above table header
+    background-color: v.$background-dark;
+    border-bottom: none; // Seamless join with table
+    border-top-left-radius: v.$border-radius;
+    border-top-right-radius: v.$border-radius;
 
     .titleRow {
+      // Kept for backward-compat when nested, but main styles added below at root
       text-align: left;
       margin-bottom: 0;
       padding: v.$space-md v.$space-md;
-
-      .gameGridTitle {
-        font-family:
-          v.$font-family-accent, v.$font-family-primary, sans-serif !important;
-        font-size: 1.6rem;
-        font-weight: 200;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin: 0;
-        color: v.$text-color-primary;
-        .spanColorBlue {
-          color: v.$secondary-color;
-          font-weight: 600;
-        }
-      }
     }
 
     .mobileGameGridAll {
+      // Back-compat
       display: flex;
       flex-direction: column;
       gap: v.$space-md;
@@ -413,6 +404,77 @@ $mobile-column-short: 30px;
         object-fit: contain;
       }
     }
+    // .helperToggle uses unified button styles above
+    .helperHint {
+      padding: 8px 0 0;
+      background: v.$background-dark;
+      color: v.$text-color-secondary;
+      font-size: 0.85rem;
+      border-top: 1px dashed v.$border-color-secondary;
+      margin-top: v.$space-xs;
+      ul {
+        margin: 0;
+        padding-left: v.$space-md;
+        display: grid;
+        gap: 4px;
+      }
+    }
+  }
+}
+
+// --- Top-level Mobile Containers (ensure styles apply when used outside .mobileHeaderActions) ---
+@media (max-width: 480px) {
+  .mobileGameGridAll {
+    display: flex;
+    flex-direction: column;
+    gap: v.$space-md;
+    width: 100%;
+  }
+
+  .titleRow {
+    text-align: left;
+    margin-top: v.$space-md;
+    padding: v.$space-xs v.$space-md;
+    background-color: rgba(20, 162, 210, 0.15);
+    border-left: 12px solid v.$secondary-color;
+
+    outline: 2px solid #1290bb;
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+    // Inline layout: title on the left, tips button on the right
+    .titleBar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: v.$space-sm;
+      width: 100%;
+    }
+    .gameGridTitle {
+      font-family:
+        v.$font-family-accent, v.$font-family-primary, sans-serif !important;
+      font-size: 1.6rem;
+      font-weight: 200;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 0;
+      color: v.$text-color-primary;
+      // override global block width to allow the button on the same line
+      width: auto;
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+    .helperToggle {
+      flex: 0 0 auto;
+      white-space: nowrap;
+    }
+  }
+
+  // Provide subtle spacing and prevent double-framing (child components already frame themselves)
+  .playerPickupSection,
+  .opponentMetricsSection,
+  .fourWeekSection {
+    width: 100%;
+    padding: 0 v.$space-md;
   }
 }
 
@@ -1152,38 +1214,48 @@ $mobile-column-short: 30px;
     margin: 0 auto;
     display: flex;
     justify-content: space-between;
-    gap: 20px;
+    gap: 16px;
     flex-direction: column;
     border-spacing: 0;
+    box-sizing: border-box;
+    overflow-x: hidden; // Prevent page-level horizontal scroll
   }
 
   .navAndGrid {
     width: 100%;
     display: flex;
     flex-direction: column;
-    margin-bottom: 30px;
+    gap: 0;
+    margin-bottom: 20px;
     border-radius: 12px;
+    background: transparent;
+    box-sizing: border-box;
+    max-width: 100vw;
+    overflow-x: hidden; // Contain children
   }
 
   .scheduleGrid {
     table-layout: fixed;
+    width: 100%;
     min-width: 100% !important;
 
     tbody tr {
-      height: 37px;
+  height: 44px; // Taller touch target for legibility
     }
 
     .firstColumnContent {
-      height: 37px;
+  height: 44px;
     }
 
     td {
-      width: 9.09% !important;
+      width: 9.09% !important; // 11 columns layout
       min-width: 0 !important;
       max-width: none !important;
-      padding: 2px 2px !important;
-      font-size: 18px !important;
+  padding: 6px 3px !important;
+  font-size: 14px !important; // Keep primary content legible
+      line-height: 1.1;
       box-sizing: border-box;
+  position: relative; // allow subtle column separators
     }
 
     th,
@@ -1191,7 +1263,7 @@ $mobile-column-short: 30px;
       width: 9.09% !important;
       min-width: 0 !important;
       max-width: none !important;
-      font-size: 8px !important;
+  font-size: 11px !important; // Slightly larger for readability
       box-sizing: border-box;
       height: auto;
       padding: 0 !important;
@@ -1202,6 +1274,26 @@ $mobile-column-short: 30px;
     th:last-child,
     td:last-child {
       width: auto !important;
+    }
+
+    // Subtle separation for sticky header/footer on mobile
+    thead {
+      box-shadow: 0 2px 0 rgba(255, 255, 255, 0.06);
+      backface-visibility: hidden;
+      will-change: transform;
+
+      th .dayHeaderLabel {
+        gap: 2px;
+      }
+      th .dayAbbreviation {
+        font-size: 12px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.4px;
+      }
+      th .dayDate {
+        font-size: 9px !important;
+        opacity: 0.85;
+      }
     }
   }
 
@@ -1275,6 +1367,34 @@ $mobile-column-short: 30px;
   .gridWrapper,
   .scheduleGridContainer {
     overflow: visible !important;
+    box-sizing: border-box;
+    max-width: 100vw;
+  }
+
+  // Ensure the table aligns with sticky controls framing
+  .scheduleGridContainer {
+    box-sizing: border-box;
+    border-left: 3px solid v.$background-light;
+    border-right: 3px solid v.$background-light;
+    border-bottom: 3px solid v.$background-light;
+    border-bottom-left-radius: v.$border-radius;
+    border-bottom-right-radius: v.$border-radius;
+    outline: 8px solid v.$background-dark;
+    outline-offset: -8px; // Align with header outline
+    max-width: 100vw;
+    overflow-x: hidden; // The inner table wrapper will handle horizontal scroll
+  }
+
+  // Subtle column separators to reduce visual noise but aid scanning
+  .scheduleGrid tbody td:not(:first-child)::after {
+    content: "";
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    left: 0;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.06);
+    pointer-events: none;
   }
 }
 
@@ -1285,10 +1405,10 @@ $mobile-column-short: 30px;
 
 .homeAwayIconBehind {
   position: absolute;
-  top: 15%;
-  left: 87%;
-  width: 10px;
-  height: 10px;
+  top: 18%;
+  left: 86%;
+  width: 12px;
+  height: 12px;
   transform: translate(-50%, -50%);
   z-index: 2;
   opacity: 1;
@@ -1302,6 +1422,134 @@ $mobile-column-short: 30px;
 
 .mobileLogoSize {
   z-index: 1;
+  width: 24px;
+  height: 24px;
+}
+
+/* --- Legend Bottom Sheet (Mobile) --- */
+@media (max-width: 480px) {
+  .legendOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    animation: fadeIn 200ms ease-out;
+  }
+  .legendSheet {
+    width: 100%;
+    max-height: 75vh;
+    background: v.$background-dark;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    border: 2px solid v.$background-light;
+    outline: 8px solid v.$background-dark;
+    padding: v.$space-md;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
+    transform: translateY(100%);
+    animation: slideUp 220ms ease-out forwards;
+  }
+  .legendGrabber {
+    width: 44px;
+    height: 4px;
+    border-radius: 2px;
+    background: v.$border-color-secondary;
+    margin: 0 auto v.$space-sm auto;
+  }
+  .legendHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: v.$space-sm;
+  }
+  .legendTitle {
+    font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 200;
+    font-size: 1.2rem;
+    margin: 0;
+    color: v.$text-color-primary;
+  }
+  .legendClose {
+    @include v.button-style;
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    border-radius: v.$border-radius-sm;
+    color: v.$text-secondary;
+  }
+  .legendContent {
+    overflow-y: auto;
+    max-height: calc(75vh - 56px);
+    @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
+    display: grid;
+    gap: v.$space-md;
+    h3 {
+      font-size: 0.95rem;
+      color: v.$text-color-primary;
+      margin: 0 0 v.$space-xs 0;
+      font-weight: 600;
+    }
+    ul {
+      margin: 0;
+      padding-left: v.$space-md;
+      color: v.$text-color-secondary;
+      font-size: 0.9rem;
+      display: grid;
+      gap: 6px;
+    }
+  }
+  .legendChips {
+    list-style: none;
+    padding-left: 0 !important;
+  }
+  .chip {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    margin-right: 8px;
+    vertical-align: -2px;
+  }
+  .offNight {
+    background-color: rgba(0, 128, 0, 0.25);
+  }
+  .mediumHeavy {
+    background-color: rgba(255, 165, 0, 0.25);
+  }
+  .heavy {
+    background-color: rgba(226, 43, 7, 0.25);
+  }
+  .inlineChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    vertical-align: middle;
+    img {
+      width: 16px;
+      height: 16px;
+      opacity: 0.8;
+    }
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 // Small mobile (<= 360px)
@@ -1694,13 +1942,46 @@ $mobile-column-short: 30px;
 // Add the scroll wrapper style within the main mobile block
 .tableScrollWrapper {
   @media (max-width: #{v.$breakpoint-desktop - 1px}) {
+    position: relative;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
     @include v.custom-scrollbar(
       v.$primary-color,
       v.$background-medium
     ); // Optional custom scrollbar
+
+    // edge fade gradients as scroll affordance
+    &::before,
+    &::after {
+      content: "";
+      position: sticky;
+      top: 0;
+      bottom: 0;
+      width: 18px;
+      z-index: 2;
+      pointer-events: none;
+    }
+    &::before {
+      left: 0;
+      background: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.24),
+        rgba(0, 0, 0, 0)
+      );
+    }
+    &::after {
+      float: right; // ensure right edge rendering
+      margin-left: auto;
+      right: 0;
+      background: linear-gradient(
+        -90deg,
+        rgba(0, 0, 0, 0.24),
+        rgba(0, 0, 0, 0)
+      );
+    }
   }
 }
 

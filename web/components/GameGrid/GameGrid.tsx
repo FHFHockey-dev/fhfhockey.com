@@ -35,7 +35,8 @@ import {
   previousSunday,
   previousMonday,
   format,
-  isWithinInterval
+  isWithinInterval,
+  endOfDay
 } from "date-fns";
 import {
   DAYS,
@@ -301,7 +302,10 @@ function GameGridInternal({
     const newStart =
       action === "PREV" ? previousMonday(start) : nextMonday(start);
 
-    const newEnd = action === "PREV" ? previousSunday(end) : nextSunday(end);
+    const newEndBase =
+      action === "PREV" ? previousSunday(end) : nextSunday(end);
+    // Ensure the end date includes the full Sunday to keep interval inclusive all day
+    const newEnd = endOfDay(newEndBase);
 
     // Only show yyyy-MM-dd on URL
     router.replace({
@@ -334,8 +338,11 @@ function GameGridInternal({
     if (start && end) {
       if (!ignore) {
         // search params only contain yyyy-MM-dd
-        start = parseDateStr(start).toISOString();
-        end = parseDateStr(end).toISOString();
+        const startObj = parseDateStr(start);
+        const endObj = endOfDay(parseDateStr(end));
+
+        start = startObj.toISOString();
+        end = endObj.toISOString();
 
         setDates([start, end]);
       }
@@ -531,6 +538,25 @@ function GameGridInternal({
   }, [fourWeekLoading, teamDataWithAverages]);
 
   const isMobile = useIsMobile();
+  const [showMobileTips, setShowMobileTips] = useState(false);
+
+  // UX: Close legend on Escape and lock body scroll while open
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setShowMobileTips(false);
+      }
+    }
+    if (showMobileTips) {
+      document.addEventListener("keydown", onKeyDown);
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.removeEventListener("keydown", onKeyDown);
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [showMobileTips]);
 
   if (isMobile) {
     // *** MOBILE VIEW ***
@@ -540,9 +566,19 @@ function GameGridInternal({
         <div className={styles.mobileGameGridAll}>
           {/* Title remains at the top */}
           <div className={styles.titleRow}>
-            <h1 className={styles.gameGridTitle}>
-              Game <span className={styles.spanColorBlue}>Grid</span>
-            </h1>
+            <div className={styles.titleBar}>
+              <h1 className={styles.gameGridTitle}>
+                Game <span className={styles.spanColorBlue}>Grid</span>
+              </h1>
+              <button
+                className={styles.helperToggle}
+                onClick={() => setShowMobileTips((v) => !v)}
+                aria-expanded={showMobileTips}
+                aria-controls="gg-legend-sheet"
+              >
+                {showMobileTips ? "Hide tips" : "Tips"}
+              </button>
+            </div>
           </div>
           {/* NEW: This div now ONLY wraps the Nav Buttons and the Schedule Grid */}
           <div className={styles.navAndGrid}>
@@ -590,46 +626,62 @@ function GameGridInternal({
             {/* Schedule Grid section MOVED directly inside navAndGrid */}
             {/* Note: Removed the wrapping gameGridSection div as it might be redundant here */}
             <div className={styles.scheduleGridContainer}>
-              <table className={styles.scheduleGrid}>
-                <Header
-                  start={dates[0]}
-                  end={dates[1]}
-                  extended={mode === "10-Day-Forecast"}
-                  setSortKeys={setSortKeys}
-                  excludedDays={excludedDays}
-                  setExcludedDays={setExcludedDays}
-                  weekData={teamDataWithAverages}
-                  gamesPerDay={currentNumGamesPerDay}
-                />
-                <tbody>
-                  <TotalGamesPerDayRow
+              <div className={styles.tableScrollWrapper}>
+                {orientation === "vertical" ? (
+                  <TransposedGrid
+                    sortedTeams={sortedTeams}
                     games={currentNumGamesPerDay}
                     excludedDays={excludedDays}
+                    setExcludedDays={setExcludedDays}
                     extended={mode === "10-Day-Forecast"}
-                    weekData={teamDataWithAverages}
+                    start={dates[0]}
+                    mode={
+                      mode === "10-Day-Forecast" ? "10-Day-Forecast" : "7-Day"
+                    }
                   />
-                  {sortedTeams.map(({ teamId, ...rest }) => {
-                    const highlightClass = top10TeamIds.has(teamId)
-                      ? styles.teamRowGreen
-                      : bottom10TeamIds.has(teamId)
-                        ? styles.teamRowRed
-                        : "";
-                    const rank = scoreRankMap.get(teamId) ?? 16;
-                    return (
-                      <TeamRow
-                        key={teamId}
-                        teamId={teamId}
-                        rank={rank}
-                        extended={mode === "10-Day-Forecast"}
-                        excludedDays={excludedDays}
-                        rowHighlightClass={highlightClass}
+                ) : (
+                  <table className={styles.scheduleGrid}>
+                    <Header
+                      start={dates[0]}
+                      end={dates[1]}
+                      extended={mode === "10-Day-Forecast"}
+                      setSortKeys={setSortKeys}
+                      excludedDays={excludedDays}
+                      setExcludedDays={setExcludedDays}
+                      weekData={teamDataWithAverages}
+                      gamesPerDay={currentNumGamesPerDay}
+                    />
+                    <tbody>
+                      <TotalGamesPerDayRow
                         games={currentNumGamesPerDay}
-                        {...rest}
+                        excludedDays={excludedDays}
+                        extended={mode === "10-Day-Forecast"}
+                        weekData={teamDataWithAverages}
                       />
-                    );
-                  })}
-                </tbody>
-              </table>
+                      {sortedTeams.map(({ teamId, ...rest }) => {
+                        const highlightClass = top10TeamIds.has(teamId)
+                          ? styles.teamRowGreen
+                          : bottom10TeamIds.has(teamId)
+                            ? styles.teamRowRed
+                            : "";
+                        const rank = scoreRankMap.get(teamId) ?? 16;
+                        return (
+                          <TeamRow
+                            key={teamId}
+                            teamId={teamId}
+                            rank={rank}
+                            extended={mode === "10-Day-Forecast"}
+                            excludedDays={excludedDays}
+                            rowHighlightClass={highlightClass}
+                            games={currentNumGamesPerDay}
+                            {...rest}
+                          />
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
             </div>{" "}
           </div>{" "}
           {/* End navAndGrid */}
@@ -665,6 +717,124 @@ function GameGridInternal({
           {/* End mobileContainer */}
         </div>{" "}
         {/* End mobileGameGridAll */}
+        {/* Legend Bottom Sheet Overlay (mobile) */}
+        {showMobileTips && (
+          <div
+            className={styles.legendOverlay}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="gg-legend-title"
+            onClick={() => setShowMobileTips(false)}
+          >
+            <div
+              id="gg-legend-sheet"
+              className={styles.legendSheet}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={styles.legendGrabber} />
+              <div className={styles.legendHeader}>
+                <h2 id="gg-legend-title" className={styles.legendTitle}>
+                  Game Grid Legend
+                </h2>
+                <button
+                  className={styles.legendClose}
+                  onClick={() => setShowMobileTips(false)}
+                  aria-label="Close legend"
+                >
+                  Close
+                </button>
+              </div>
+              <div className={styles.legendContent}>
+                <section>
+                  <h3>Matchups</h3>
+                  <ul>
+                    <li>
+                      Opponent logo indicates who your team plays. A subtle icon
+                      appears behind the logo:
+                      <span className={styles.inlineChip}>
+                        <img src="/pictures/homeIcon.png" alt="Home" />
+                      </span>
+                      = Home,{" "}
+                      <span className={styles.inlineChip}>
+                        <img src="/pictures/awayIcon.png" alt="Away" />
+                      </span>{" "}
+                      = Away.
+                    </li>
+                    <li>
+                      Tap a matchup cell to view win odds and a quick Poisson
+                      heatmap for that game.
+                    </li>
+                    <li>
+                      Dimmed logos indicate excluded days (e.g., earlier days
+                      this week on first visit).
+                    </li>
+                  </ul>
+                </section>
+                <section>
+                  <h3>Day Types</h3>
+                  <ul className={styles.legendChips}>
+                    <li>
+                      <span
+                        className={styles.chip + " " + styles.offNight}
+                      ></span>{" "}
+                      Off‑night day (fewer NHL games, better streaming)
+                    </li>
+                    <li>
+                      <span
+                        className={styles.chip + " " + styles.mediumHeavy}
+                      ></span>{" "}
+                      Medium‑heavy day (7–8 NHL games)
+                    </li>
+                    <li>
+                      <span className={styles.chip + " " + styles.heavy}></span>{" "}
+                      Heavy day (9+ NHL games)
+                    </li>
+                  </ul>
+                </section>
+                <section>
+                  <h3>Totals Row</h3>
+                  <ul>
+                    <li>
+                      The bottom sticky row shows total NHL games per day,
+                      color‑coded by intensity.
+                    </li>
+                  </ul>
+                </section>
+                <section>
+                  <h3>Columns</h3>
+                  <ul>
+                    <li>
+                      <strong>Total GP</strong>: Total games your team plays in
+                      the selected window.
+                    </li>
+                    <li>
+                      <strong>OFF</strong>: Number of off‑night games your team
+                      has.
+                    </li>
+                    <li>
+                      <strong>Week Score</strong>: Overall weekly value; cells
+                      use a rank color scale (1 = best).
+                    </li>
+                  </ul>
+                </section>
+                <section>
+                  <h3>Controls</h3>
+                  <ul>
+                    <li>
+                      <strong>Prev/Next</strong> moves by week;{" "}
+                      <strong>7/10‑Day</strong> switches the window size.
+                    </li>
+                    <li>
+                      <strong>Orientation</strong> toggles horizontal/vertical
+                      grid layout.
+                    </li>
+                    <li>Tap headers to sort where available.</li>
+                  </ul>
+                </section>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Loading and error overlays remain outside */}
         {(summaryLoading || fourWeekLoading) && (
           <div className={styles.overlaySpinner}>
@@ -731,47 +901,59 @@ function GameGridInternal({
                 </button>
               </div>
             </div>
-            <table className={styles.scheduleGrid}>
-              <Header
-                start={dates[0]}
-                end={dates[1]}
-                extended={mode === "10-Day-Forecast"}
-                setSortKeys={setSortKeys}
+            {orientation === "vertical" ? (
+              <TransposedGrid
+                sortedTeams={sortedTeams}
+                games={currentNumGamesPerDay}
                 excludedDays={excludedDays}
                 setExcludedDays={setExcludedDays}
-                weekData={teamDataWithAverages}
-                gamesPerDay={currentNumGamesPerDay}
+                extended={mode === "10-Day-Forecast"}
+                start={dates[0]}
+                mode={mode === "10-Day-Forecast" ? "10-Day-Forecast" : "7-Day"}
               />
-              <tbody>
-                <TotalGamesPerDayRow
-                  games={currentNumGamesPerDay}
-                  excludedDays={excludedDays}
+            ) : (
+              <table className={styles.scheduleGrid}>
+                <Header
+                  start={dates[0]}
+                  end={dates[1]}
                   extended={mode === "10-Day-Forecast"}
+                  setSortKeys={setSortKeys}
+                  excludedDays={excludedDays}
+                  setExcludedDays={setExcludedDays}
                   weekData={teamDataWithAverages}
+                  gamesPerDay={currentNumGamesPerDay}
                 />
-                {sortedTeams.map(({ teamId, ...rest }) => {
-                  const highlightClass = top10TeamIds.has(teamId)
-                    ? styles.teamRowGreen // Keep these general highlight classes for now
-                    : bottom10TeamIds.has(teamId)
-                      ? styles.teamRowRed
-                      : "";
-                  const rank = scoreRankMap.get(teamId) ?? 16;
+                <tbody>
+                  <TotalGamesPerDayRow
+                    games={currentNumGamesPerDay}
+                    excludedDays={excludedDays}
+                    extended={mode === "10-Day-Forecast"}
+                    weekData={teamDataWithAverages}
+                  />
+                  {sortedTeams.map(({ teamId, ...rest }) => {
+                    const highlightClass = top10TeamIds.has(teamId)
+                      ? styles.teamRowGreen // Keep these general highlight classes for now
+                      : bottom10TeamIds.has(teamId)
+                        ? styles.teamRowRed
+                        : "";
+                    const rank = scoreRankMap.get(teamId) ?? 16;
 
-                  return (
-                    <TeamRow
-                      key={teamId}
-                      teamId={teamId}
-                      extended={mode === "10-Day-Forecast"}
-                      excludedDays={excludedDays}
-                      rowHighlightClass={highlightClass}
-                      games={currentNumGamesPerDay}
-                      rank={rank}
-                      {...rest}
-                    />
-                  );
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <TeamRow
+                        key={teamId}
+                        teamId={teamId}
+                        extended={mode === "10-Day-Forecast"}
+                        excludedDays={excludedDays}
+                        rowHighlightClass={highlightClass}
+                        games={currentNumGamesPerDay}
+                        rank={rank}
+                        {...rest}
+                      />
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
           <div className={styles.opponentStatsContainer}>
             <OpponentMetricsTable teamData={teamDataWithAverages} />
@@ -824,10 +1006,12 @@ function GameGridInternal({
 
 const mod = (n: number, d: number) => ((n % d) + d) % d;
 
+// Determine past days using LOCAL time so the default toggles reflect the user's timezone
 function getDaysBeforeToday() {
   const today = new Date();
-  const todayIndex = mod(today.getUTCDay() - 1, 7);
-  return DAYS.slice(0, todayIndex);
+  // JS getDay(): 0=Sun,1=Mon,...6=Sat. Convert to Monday=0..Sunday=6
+  const mondayBasedIndex = mod(today.getDay() - 1, 7);
+  return DAYS.slice(0, mondayBasedIndex);
 }
 
 export type GameGridMode = "7-Day-Forecast" | "10-Day-Forecast";
