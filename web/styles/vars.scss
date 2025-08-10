@@ -124,9 +124,9 @@ $warning-color: #ffcc33;
 $success-color: #00ff99;
 $danger-color: #ff6384;
 $danger-color-dark: #670c20;
-$error-color: $danger-color !default; // Error alias uses danger palette
 $info-color: #3b82f6;
 $focus-color: rgb(255, 193, 8);
+$error-color: $focus-color !default;
 
 // Greys & neutrals
 $color-white: #ffffff;

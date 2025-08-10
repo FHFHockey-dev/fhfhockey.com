@@ -9,8 +9,7 @@ import {
   DAY_ABBREVIATION,
   EXTENDED_DAYS,
   GameData,
-  WeekData,
-  ExtendedWeekData
+  WeekData
 } from "lib/NHL/types";
 import Tooltip from "./PDHC/Tooltip";
 import PoissonHeatmap from "./PDHC/PoissonHeatMap";
@@ -42,22 +41,6 @@ export type MatchUpCellData = {
    * to signify what I call an "Off-Night"
    */
   offNight: boolean;
-};
-
-export type TeamRowData = {
-  teamName: string;
-  teamAbbreviation: string;
-  Mon?: MatchUpCellData;
-  Tue?: MatchUpCellData;
-  Wed?: MatchUpCellData;
-  Thu?: MatchUpCellData;
-  Fri?: MatchUpCellData;
-  Sat?: MatchUpCellData;
-  Sun?: MatchUpCellData;
-  totalGamesPlayed: number;
-  totalOffNights: number;
-  weekScore: number;
-  [key: string]: any;
 };
 
 type TeamRowProps = {
@@ -101,6 +84,7 @@ function useIsMobile() {
 function TeamRow(props: TeamRowProps) {
   const team = useTeam(props.teamId);
   const days = props.extended ? EXTENDED_DAYS : DAYS;
+  const isMobile = useIsMobile();
 
   // Handle cases where team data might not be loaded yet
   if (!team) {
@@ -176,7 +160,7 @@ function TeamRow(props: TeamRowProps) {
         return (
           <td key={day} className={cellClasses}>
             {/* Excluded Day Overlay */}
-            {!props.extended && excluded && (
+            {!props.extended && excluded && !isMobile && (
               <div className={styles.excludedOverlay}></div>
             )}
 
@@ -189,6 +173,8 @@ function TeamRow(props: TeamRowProps) {
                 awayTeam={matchUp.awayTeam}
                 excluded={excluded}
               />
+            ) : isMobile ? (
+              ""
             ) : (
               "-"
             )}
@@ -280,22 +266,16 @@ function MatchUpCell({
 
   return (
     <Tooltip content={tooltipContent}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-evenly",
-          width: "100%"
-        }}
-      >
+      <div className={styles.matchupCell}>
         {isMobile ? (
           <div className={styles.logoWithIconWrapper}>
             <span className={styles.homeAwayIconBehind}>
               <Image
                 src={home ? "/pictures/homeIcon.png" : "/pictures/awayIcon.png"}
                 alt={home ? "Home" : "Away"}
-                width={28}
-                height={28}
-                style={{ opacity: 0.75 }}
+                width={14}
+                height={14}
+                style={{ opacity: 0.6 }}
               />
             </span>
             <Image
@@ -305,8 +285,8 @@ function MatchUpCell({
               )}
               objectFit="contain"
               alt={`${opponentTeam.name} logo`}
-              width={24}
-              height={24}
+              width={22}
+              height={22}
               src={opponentTeam.logo}
               title={opponentTeam.name}
               style={{
@@ -314,7 +294,8 @@ function MatchUpCell({
                 zIndex: 1,
                 padding: "0px",
                 overflow: "visible",
-                opacity: excluded ? 0.5 : 1
+                opacity: excluded ? 0.45 : 1,
+                filter: excluded ? "grayscale(35%)" : undefined
               }}
             />
           </div>
@@ -330,7 +311,10 @@ function MatchUpCell({
               height={28}
               src={opponentTeam.logo}
               title={opponentTeam.name}
-              style={{ opacity: excluded ? 0.5 : 1 }}
+              style={{
+                opacity: excluded ? 0.6 : 1,
+                filter: excluded ? "grayscale(35%)" : undefined
+              }}
             />
             <span className={styles.homeAwayIconDesktop}>
               <Image
