@@ -84,7 +84,7 @@ const PoissonHeatmap: React.FC<PoissonHeatmapProps> = ({
 
   // Memoized CSS variables
   const cssVariables = useMemo(
-    (): React.CSSProperties => ({
+    (): React.CSSProperties & { [key: string]: string } => ({
       "--home-primary-color": homeTeamInfo?.primaryColor || "#333",
       "--home-secondary-color": homeTeamInfo?.secondaryColor || "#555",
       "--home-accent-color": homeTeamInfo?.accent || "#777",

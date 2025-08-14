@@ -16,7 +16,7 @@ export const ProjectionSourceAnalysis: React.FC<
   ProjectionSourceAnalysisProps
 > = ({ players, fantasyPointSettings, sourceControls, activePlayerType }) => {
   const [selectedView, setSelectedView] = useState<
-    "overall" | "positions" | "detailed"
+    "overall" | "positions" | "rounds" | "detailed"
   >("overall");
   const analysis = useProjectionSourceAnalysis(
     players,
@@ -59,6 +59,12 @@ export const ProjectionSourceAnalysis: React.FC<
             By Position
           </button>
           <button
+            className={`${styles.viewButton} ${selectedView === "rounds" ? styles.active : ""}`}
+            onClick={() => setSelectedView("rounds")}
+          >
+            By Round
+          </button>
+          <button
             className={`${styles.viewButton} ${selectedView === "detailed" ? styles.active : ""}`}
             onClick={() => setSelectedView("detailed")}
           >
@@ -73,6 +79,10 @@ export const ProjectionSourceAnalysis: React.FC<
 
       {selectedView === "positions" && (
         <PositionRankingsView positionRankings={analysis.positionRankings} />
+      )}
+
+      {selectedView === "rounds" && (
+        <RoundRankingsView roundRankings={analysis.roundRankings || []} />
       )}
 
       {selectedView === "detailed" && (
@@ -231,6 +241,65 @@ const PositionRankingsView: React.FC<{ positionRankings: any[] }> = ({
   );
 };
 
+const RoundRankingsView: React.FC<{ roundRankings: any[] }> = ({
+  roundRankings
+}) => {
+  return (
+    <div className={styles.roundsView}>
+      <div className={styles.roundsHeader}>
+        <h3>Projection Accuracy by Draft Round</h3>
+        <p>
+          Shows how well each source predicts players in different draft rounds
+          (12-pick bins)
+        </p>
+      </div>
+      <div className={styles.roundsGrid}>
+        {roundRankings.map((roundData) => (
+          <div key={roundData.round} className={styles.roundSection}>
+            <h3 className={styles.roundTitle}>{roundData.roundLabel}</h3>
+            <div className={styles.roundSubtitle}>
+              Picks {(roundData.round - 1) * 12 + 1}-{roundData.round * 12}
+            </div>
+            <div className={styles.roundTable}>
+              <div className={styles.roundHeader}>
+                <div className={styles.roundRankCol}>Rank</div>
+                <div className={styles.roundSourceCol}>Source</div>
+                <div className={styles.roundMetricCol}>Accuracy</div>
+                <div className={styles.roundMetricCol}>Avg Error</div>
+                <div className={styles.roundMetricCol}>Players</div>
+              </div>
+              {roundData.rankings.map((ranking: any) => (
+                <div
+                  key={ranking.sourceId}
+                  className={`${styles.roundRow} ${getRoundRankClassName(ranking.rank)}`}
+                >
+                  <div className={styles.roundRankCol}>
+                    <span className={styles.roundRankBadge}>
+                      #{ranking.rank}
+                    </span>
+                  </div>
+                  <div className={styles.roundSourceCol}>
+                    {ranking.sourceName}
+                  </div>
+                  <div className={styles.roundMetricCol}>
+                    {ranking.averageAccuracy.toFixed(1)}%
+                  </div>
+                  <div className={styles.roundMetricCol}>
+                    {ranking.averageMarginOfError.toFixed(1)} pts
+                  </div>
+                  <div className={styles.roundMetricCol}>
+                    {ranking.playerCount}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const DetailedMetricsView: React.FC<{ sourceMetrics: any[] }> = ({
   sourceMetrics
 }) => {
@@ -349,6 +418,12 @@ function getRankClassName(rank: number): string {
 function getPositionRankClassName(rank: number): string {
   if (rank === 1) return styles.posRank1;
   if (rank === 2) return styles.posRank2;
+  return "";
+}
+
+function getRoundRankClassName(rank: number): string {
+  if (rank === 1) return styles.roundRank1;
+  if (rank === 2) return styles.roundRank2;
   return "";
 }
 

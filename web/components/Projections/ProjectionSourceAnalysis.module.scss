@@ -462,3 +462,121 @@
   font-size: $font-size-xs;
   margin-top: $space-xs;
 }
+
+// ===== ROUND RANKINGS VIEW =====
+.roundsView {
+  display: flex;
+  flex-direction: column;
+  gap: $space-lg;
+}
+
+.roundsHeader {
+  text-align: center;
+  margin-bottom: $space-lg;
+  
+  h3 {
+    color: $text-primary;
+    margin: 0 0 $space-sm 0;
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+  }
+  
+  p {
+    color: $text-secondary;
+    margin: 0;
+    font-size: $font-size-md;
+  }
+}
+
+.roundsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: $space-lg;
+
+  @media (max-width: $breakpoint-tablet) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.roundSection {
+  background: $background-medium;
+  border-radius: $border-radius-md;
+  overflow: hidden;
+  border: 1px solid $border-secondary;
+}
+
+.roundTitle {
+  background: $background-header;
+  color: $text-primary;
+  padding: $space-md;
+  margin: 0;
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.roundSubtitle {
+  background: $background-light;
+  color: $text-secondary;
+  padding: $space-xs $space-md;
+  text-align: center;
+  font-size: $font-size-sm;
+  border-bottom: 1px solid $border-secondary;
+}
+
+.roundTable {
+  padding: $space-sm;
+}
+
+.roundHeader {
+  display: grid;
+  grid-template-columns: 50px 1fr 80px 80px 60px;
+  padding: $space-sm;
+  font-weight: $font-weight-bold;
+  color: $text-secondary;
+  font-size: $font-size-xs;
+  text-transform: uppercase;
+  border-bottom: 1px solid $border-secondary;
+}
+
+.roundRow {
+  display: grid;
+  grid-template-columns: 50px 1fr 80px 80px 60px;
+  padding: $space-sm;
+  border-bottom: 1px solid rgba($border-secondary, 0.3);
+  align-items: center;
+  font-size: $font-size-sm;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.roundRank1 {
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.roundRank2 {
+  background: rgba(192, 192, 192, 0.1);
+}
+
+.roundRankCol,
+.roundMetricCol {
+  text-align: center;
+}
+
+.roundSourceCol {
+  padding-left: $space-sm;
+  font-weight: $font-weight-medium;
+}
+
+.roundRankBadge {
+  background: $primary-color;
+  color: $color-white;
+  padding: 2px $space-xs;
+  border-radius: $border-radius-sm;
+  font-weight: $font-weight-bold;
+  font-size: $font-size-xs;
+}

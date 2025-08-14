@@ -50,6 +50,19 @@ export interface PositionSourceRanking {
   }>;
 }
 
+export interface RoundSourceRanking {
+  round: number;
+  roundLabel: string;
+  rankings: Array<{
+    sourceId: string;
+    sourceName: string;
+    averageAccuracy: number;
+    averageMarginOfError: number;
+    playerCount: number;
+    rank: number;
+  }>;
+}
+
 export function useProjectionSourceAnalysis(
   players: ProcessedPlayer[],
   fantasyPointSettings: Record<string, number>,
@@ -85,6 +98,9 @@ export function useProjectionSourceAnalysis(
     // Calculate position-specific rankings
     const positionRankings = calculatePositionRankings(sourceMetrics);
 
+    // Calculate round-specific rankings
+    const roundRankings = calculateRoundRankings(sourceMetrics, players, fantasyPointSettings);
+
     // Overall rankings sorted by quality score
     const overallRankings = [...sourceMetrics].sort(
       (a, b) => b.qualityScore - a.qualityScore
@@ -93,6 +109,7 @@ export function useProjectionSourceAnalysis(
     return {
       sourceMetrics,
       positionRankings,
+      roundRankings,
       overallRankings
     };
   }, [players, fantasyPointSettings, sourceControls]);
@@ -362,6 +379,90 @@ function calculatePositionRankings(
   });
 
   return positionRankings.sort((a, b) => a.position.localeCompare(b.position));
+}
+
+function calculateRoundRankings(
+  sourceMetrics: SourceAccuracyMetrics[],
+  players: ProcessedPlayer[],
+  fantasyPointSettings: Record<string, number>
+): RoundSourceRanking[] {
+  // Group players by draft round (using the same 12-pick bin logic as your table)
+  const roundGroups: Record<number, ProcessedPlayer[]> = {};
+  
+  players.forEach((player) => {
+    if (player.yahooAvgPick && player.yahooAvgPick > 0) {
+      const round = Math.ceil(player.yahooAvgPick / 12);
+      if (round <= 15) { // Limit to first 15 rounds like your chart
+        if (!roundGroups[round]) {
+          roundGroups[round] = [];
+        }
+        roundGroups[round].push(player);
+      }
+    }
+  });
+
+  const rounds = Object.keys(roundGroups).map(Number).sort((a, b) => a - b);
+  
+  const roundRankings: RoundSourceRanking[] = rounds.map((round) => {
+    const roundPlayers = roundGroups[round];
+    
+    const rankings = sourceMetrics
+      .map((source) => {
+        // Calculate this source's accuracy for players in this round
+        const roundPlayerAccuracies: number[] = [];
+        const roundPlayerErrors: number[] = [];
+        
+        roundPlayers.forEach((player) => {
+          // Check if player has both actual fantasy points and this source's projections
+          if (player.fantasyPoints.actual !== null && 
+              hasProjectionFromThisSource(player, source.sourceId, fantasyPointSettings)) {
+            
+            // Calculate source-specific fantasy points
+            const sourceProjectedFP = calculateSourceSpecificFantasyPoints(
+              player,
+              source.sourceId,
+              fantasyPointSettings
+            );
+            
+            if (sourceProjectedFP > 0) {
+              const actualFP = player.fantasyPoints.actual;
+              const marginOfError = Math.abs(sourceProjectedFP - actualFP);
+              const accuracyPercentage = Math.max(0, 100 - (marginOfError / Math.abs(actualFP)) * 100);
+              
+              roundPlayerAccuracies.push(accuracyPercentage);
+              roundPlayerErrors.push(marginOfError);
+            }
+          }
+        });
+        
+        if (roundPlayerAccuracies.length === 0) {
+          return null; // No data for this source in this round
+        }
+        
+        const averageAccuracy = roundPlayerAccuracies.reduce((sum, acc) => sum + acc, 0) / roundPlayerAccuracies.length;
+        const averageMarginOfError = roundPlayerErrors.reduce((sum, err) => sum + err, 0) / roundPlayerErrors.length;
+        
+        return {
+          sourceId: source.sourceId,
+          sourceName: source.sourceName,
+          averageAccuracy,
+          averageMarginOfError,
+          playerCount: roundPlayerAccuracies.length,
+          rank: 0 // Will be set below
+        };
+      })
+      .filter((ranking): ranking is NonNullable<typeof ranking> => ranking !== null)
+      .sort((a, b) => b.averageAccuracy - a.averageAccuracy) // Sort by accuracy desc
+      .map((item, index) => ({ ...item, rank: index + 1 }));
+
+    return {
+      round,
+      roundLabel: `Round ${round}`,
+      rankings
+    };
+  });
+
+  return roundRankings;
 }
 
 function createEmptyMetrics(
