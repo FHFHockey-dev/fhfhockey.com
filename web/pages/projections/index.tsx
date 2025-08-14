@@ -56,6 +56,8 @@ import {
   calculateTierThresholds
 } from "../../utils/tierUtils"; // Adjusted path relative to pages/projections
 
+import ProjectionSourceAnalysis from "components/Projections/ProjectionSourceAnalysis";
+
 const supabaseClient = supabase;
 
 // Helper for formatting TOI/G moved to lib/utils/formatting.ts and handled by cell renderer in useProcessedProjectionsData
@@ -555,6 +557,8 @@ const ProjectionsPage: NextPage = () => {
   const [roundSummaryDataForContext, setRoundSummaryDataForContext] = useState<
     RoundSummaryValue[]
   >([]);
+
+  const [activeView, setActiveView] = useState<"data" | "analysis">("data");
 
   const togglePerGameFantasyPoints = useCallback(() => {
     setShowPerGameFantasyPoints((prev) => !prev);
@@ -1089,60 +1093,120 @@ const ProjectionsPage: NextPage = () => {
       });
       labels = [];
     } else {
-      const roundsData: Record<number, ProcessedPlayer[]> = {};
-      players.forEach((player) => {
-        if (player.yahooAvgPick != null && player.yahooAvgPick > 0) {
-          const round = Math.ceil(player.yahooAvgPick / 12);
+      // Check how many players have draft data
+      const playersWithDraftData = players.filter(
+        (player) => player.yahooAvgPick != null && player.yahooAvgPick > 0
+      );
+
+      console.log(
+        `[Chart Debug] Players with draft data: ${playersWithDraftData.length} out of ${players.length}`
+      );
+
+      if (playersWithDraftData.length > 0) {
+        // Original logic - group by draft rounds
+        const roundsData: Record<number, ProcessedPlayer[]> = {};
+        playersWithDraftData.forEach((player) => {
+          const round = Math.ceil(player.yahooAvgPick! / 12);
           if (round <= 15) {
             if (!roundsData[round]) {
               roundsData[round] = [];
             }
             roundsData[round].push(player);
           }
-        }
-      });
-      const roundKeysForBoxPlot = Object.keys(roundsData)
-        .map(Number)
-        .sort((a, b) => a - b);
-      labels = roundKeysForBoxPlot.map((r) => `R${r}`);
+        });
+        const roundKeysForBoxPlot = Object.keys(roundsData)
+          .map(Number)
+          .sort((a, b) => a - b);
+        labels = roundKeysForBoxPlot.map((r) => `R${r}`);
 
-      const dataForBoxPlot = roundKeysForBoxPlot.map((roundNum) => {
-        return (roundsData[roundNum] || [])
+        const dataForBoxPlot = roundKeysForBoxPlot.map((roundNum) => {
+          return (roundsData[roundNum] || [])
+            .map((p) => p.fantasyPoints.diffPercentage)
+            .filter((value) => {
+              if (value === null || typeof value !== "number" || isNaN(value))
+                return false;
+              return value !== 99999 && value !== -99999;
+            }) as number[];
+        });
+
+        const allDraftedPlayerDiffs = playersWithDraftData
           .map((p) => p.fantasyPoints.diffPercentage)
           .filter((value) => {
             if (value === null || typeof value !== "number" || isNaN(value))
               return false;
             return value !== 99999 && value !== -99999;
           }) as number[];
-      });
 
-      const allDraftedPlayerDiffs = players
-        .filter(
-          (player) => player.yahooAvgPick != null && player.yahooAvgPick > 0
-        )
-        .map((p) => p.fantasyPoints.diffPercentage)
-        .filter((value) => {
-          if (value === null || typeof value !== "number" || isNaN(value))
-            return false;
-          return value !== 99999 && value !== -99999;
-        }) as number[];
+        if (allDraftedPlayerDiffs.length > 0) {
+          if (labels.indexOf("All Drafted") === -1) labels.push("All Drafted");
+          dataForBoxPlot.push(allDraftedPlayerDiffs);
+        }
 
-      if (allDraftedPlayerDiffs.length > 0) {
-        if (labels.indexOf("All Drafted") === -1) labels.push("All Drafted");
-        dataForBoxPlot.push(allDraftedPlayerDiffs);
+        datasets.push({
+          label: "Player Fantasy Points Diff % by Round",
+          data: dataForBoxPlot,
+          backgroundColor: "#07aae2",
+          borderColor: "#07aae2",
+          borderWidth: 1,
+          itemRadius: 3,
+          itemStyle: "circle" as const,
+          outlierColor: "#FF0000",
+          medianColor: "#FFFFFF"
+        });
+      } else {
+        // Fallback: Group by position instead of draft rounds
+        console.log(
+          "[Chart Debug] No draft data found, using position-based grouping"
+        );
+
+        const positionGroups: Record<string, ProcessedPlayer[]> = {};
+        players.forEach((player) => {
+          const position =
+            player.displayPosition?.split(",")[0].trim() || "Unknown";
+          if (!positionGroups[position]) {
+            positionGroups[position] = [];
+          }
+          positionGroups[position].push(player);
+        });
+
+        const sortedPositions = Object.keys(positionGroups).sort();
+        labels = sortedPositions;
+
+        const dataForBoxPlot = sortedPositions.map((position) => {
+          return (positionGroups[position] || [])
+            .map((p) => p.fantasyPoints.diffPercentage)
+            .filter((value) => {
+              if (value === null || typeof value !== "number" || isNaN(value))
+                return false;
+              return value !== 99999 && value !== -99999;
+            }) as number[];
+        });
+
+        const allPlayerDiffs = players
+          .map((p) => p.fantasyPoints.diffPercentage)
+          .filter((value) => {
+            if (value === null || typeof value !== "number" || isNaN(value))
+              return false;
+            return value !== 99999 && value !== -99999;
+          }) as number[];
+
+        if (allPlayerDiffs.length > 0) {
+          labels.push("All Players");
+          dataForBoxPlot.push(allPlayerDiffs);
+        }
+
+        datasets.push({
+          label: "Player Fantasy Points Diff % by Position",
+          data: dataForBoxPlot,
+          backgroundColor: "#07aae2",
+          borderColor: "#07aae2",
+          borderWidth: 1,
+          itemRadius: 3,
+          itemStyle: "circle" as const,
+          outlierColor: "#FF0000",
+          medianColor: "#FFFFFF"
+        });
       }
-
-      datasets.push({
-        label: "Player Fantasy Points Diff % by Round",
-        data: dataForBoxPlot,
-        backgroundColor: "#07aae2",
-        borderColor: "#07aae2",
-        borderWidth: 1,
-        itemRadius: 3,
-        itemStyle: "circle" as const,
-        outlierColor: "#FF0000",
-        medianColor: "#FFFFFF"
-      });
     }
 
     return { labels, datasets, yAxisLabel, chartType: finalChartType };
@@ -1284,140 +1348,186 @@ const ProjectionsPage: NextPage = () => {
               activeTab={activePlayerType}
               onTabChange={handlePlayerTypeChange}
             />
-            <div className={styles.controlPanelsGrid}>
-              <div className={styles.controlPanelsColumnLeft}>
-                <SourceSelectorPanel
-                  availableSources={availableSourcesForTab}
-                  sourceControls={sourceControls}
-                  onSourceSelectionChange={handleSourceSelectionChange}
-                  onSourceWeightChange={handleSourceWeightChange}
-                  onSelectAll={handleSelectAllSources}
-                  onDeselectAll={handleDeselectAllSources}
-                />
-                <YahooModeToggle
-                  currentMode={yahooDraftMode}
-                  onModeChange={setYahooDraftMode}
-                />
-              </div>
 
-              <div className={styles.controlPanelsColumnRight}>
-                <FantasyPointsSettingsPanel
-                  activePlayerType={
-                    activePlayerType === "goalie" ? "goalie" : "skater"
-                  }
-                  fantasyPointSettings={
-                    activePlayerType === "goalie"
-                      ? goaliePointValues
-                      : skaterPointValues
-                  }
-                  onFantasyPointSettingChange={handleFantasyPointSettingChange}
-                />
-              </div>
+            {/* NEW: View Selector - Data Table vs Projection Analysis */}
+            <div className={styles.viewSelectorWrapper}>
+              <button
+                className={`${styles.viewSelectorButton} ${activeView === "data" ? styles.activeViewButton : ""}`}
+                onClick={() => setActiveView("data")}
+              >
+                Data Table
+              </button>
+              <button
+                className={`${styles.viewSelectorButton} ${activeView === "analysis" ? styles.activeViewButton : ""}`}
+                onClick={() => setActiveView("analysis")}
+              >
+                Source Analysis
+              </button>
             </div>
+
+            {/* Only show controls when viewing data */}
+            {activeView === "data" && (
+              <div className={styles.controlPanelsGrid}>
+                <div className={styles.controlPanelsColumnLeft}>
+                  <SourceSelectorPanel
+                    availableSources={availableSourcesForTab}
+                    sourceControls={sourceControls}
+                    onSourceSelectionChange={handleSourceSelectionChange}
+                    onSourceWeightChange={handleSourceWeightChange}
+                    onSelectAll={handleSelectAllSources}
+                    onDeselectAll={handleDeselectAllSources}
+                  />
+                  <YahooModeToggle
+                    currentMode={yahooDraftMode}
+                    onModeChange={setYahooDraftMode}
+                  />
+                </div>
+
+                <div className={styles.controlPanelsColumnRight}>
+                  <FantasyPointsSettingsPanel
+                    activePlayerType={
+                      activePlayerType === "goalie" ? "goalie" : "skater"
+                    }
+                    fantasyPointSettings={
+                      activePlayerType === "goalie"
+                        ? goaliePointValues
+                        : skaterPointValues
+                    }
+                    onFantasyPointSettingChange={
+                      handleFantasyPointSettingChange
+                    }
+                  />
+                </div>
+              </div>
+            )}
           </section>
 
           <section className={styles.dataDisplaySection}>
-            {!displayedData.isLoading &&
-              !displayedData.error &&
-              displayedData.processedPlayers.length > 0 &&
-              ((chartPresentationData.chartType === "boxplot" &&
-                chartPresentationData.labels.length > 0) ||
-                (chartPresentationData.chartType === "line" &&
-                  chartPresentationData.datasets.some(
-                    (ds) => ds.data && ds.data.length > 0
-                  ))) && (
-                <div
-                  className={styles.chartSectionWrapper}
-                  style={{
-                    marginBottom: "2rem",
-                    borderBottom: `2px solid ${styles.primaryColor || "#00bfff"}`,
-                    paddingBottom: "1rem"
-                  }}
-                >
-                  <h3
-                    className={styles.panelTitle}
-                    style={{
-                      textAlign: "center",
-                      marginBottom: "0.5rem",
-                      borderBottom: "none",
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      flexWrap: "wrap"
-                    }}
-                  >
-                    <span>
-                      Player Performance Metric{" "}
-                      <span className={styles.spanColorBlue}>
-                        by Draft Round/Pick Bin
-                      </span>
-                    </span>
+            {activeView === "data" && (
+              <>
+                {!displayedData.isLoading &&
+                  !displayedData.error &&
+                  displayedData.processedPlayers.length > 0 &&
+                  ((chartPresentationData.chartType === "boxplot" &&
+                    chartPresentationData.labels.length > 0) ||
+                    (chartPresentationData.chartType === "line" &&
+                      chartPresentationData.datasets.some(
+                        (ds) => ds.data && ds.data.length > 0
+                      ))) && (
                     <div
+                      className={styles.chartSectionWrapper}
                       style={{
-                        marginLeft: "20px",
-                        display: "flex",
-                        gap: "10px",
-                        alignItems: "center"
+                        marginBottom: "2rem",
+                        borderBottom: `2px solid ${styles.primaryColor || "#00bfff"}`,
+                        paddingBottom: "1rem"
                       }}
                     >
-                      <button
-                        onClick={() => setChartDataType("diff")}
-                        className={`${styles.panelControlButton} ${chartDataType === "diff" ? styles.activePanelControlButton : ""}`}
-                        title="Show Difference Percentage"
+                      <h3
+                        className={styles.panelTitle}
+                        style={{
+                          textAlign: "center",
+                          marginBottom: "0.5rem",
+                          borderBottom: "none",
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          flexWrap: "wrap"
+                        }}
                       >
-                        Diff %
-                      </button>
-                      <button
-                        onClick={() => setChartDataType("actualFp")}
-                        className={`${styles.panelControlButton} ${chartDataType === "actualFp" ? styles.activePanelControlButton : ""}`}
-                        title="Show Actual Fantasy Points"
-                      >
-                        Actual FP
-                      </button>
+                        <span>
+                          Player Performance Metric{" "}
+                          <span className={styles.spanColorBlue}>
+                            by Draft Round/Pick Bin
+                          </span>
+                        </span>
+                        <div
+                          style={{
+                            marginLeft: "20px",
+                            display: "flex",
+                            gap: "10px",
+                            alignItems: "center"
+                          }}
+                        >
+                          <button
+                            onClick={() => setChartDataType("diff")}
+                            className={`${styles.panelControlButton} ${chartDataType === "diff" ? styles.activePanelControlButton : ""}`}
+                            title="Show Difference Percentage"
+                          >
+                            Diff %
+                          </button>
+                          <button
+                            onClick={() => setChartDataType("actualFp")}
+                            className={`${styles.panelControlButton} ${chartDataType === "actualFp" ? styles.activePanelControlButton : ""}`}
+                            title="Show Actual Fantasy Points"
+                          >
+                            Actual FP
+                          </button>
+                        </div>
+                      </h3>
+                      <RoundPerformanceChart
+                        labels={chartPresentationData.labels}
+                        datasets={chartPresentationData.datasets}
+                        styles={styles}
+                        chartType={chartPresentationData.chartType}
+                        yAxisLabel={chartPresentationData.yAxisLabel}
+                      />
                     </div>
-                  </h3>
-                  <RoundPerformanceChart
-                    labels={chartPresentationData.labels}
-                    datasets={chartPresentationData.datasets}
-                    styles={styles}
-                    chartType={chartPresentationData.chartType}
-                    yAxisLabel={chartPresentationData.yAxisLabel}
-                  />
-                </div>
-              )}
+                  )}
 
-            {displayedData.isLoading && (
-              <div className={styles.loadingState}>
-                <p>Loading projections...</p>
-              </div>
+                {displayedData.isLoading && (
+                  <div className={styles.loadingState}>
+                    <p>Loading projections...</p>
+                  </div>
+                )}
+                {displayedData.error && !displayedData.isLoading && (
+                  <div className={styles.errorState}>
+                    <p className={styles.errorTitle}>Error loading data:</p>
+                    <p className={styles.errorMessage}>{displayedData.error}</p>
+                  </div>
+                )}
+                {!displayedData.isLoading && !displayedData.error && (
+                  <ExpandedPlayerRowChartContext.Provider
+                    value={{
+                      performanceTiers,
+                      currentSeasonId: currentSeasonIdForProvider,
+                      skaterPointValues
+                    }}
+                  >
+                    <ProjectionsDataTable
+                      columns={displayedData.tableColumns}
+                      data={displayedData.processedPlayers}
+                      expandedRows={
+                        activePlayerType === "overall"
+                          ? expandedRows
+                          : undefined
+                      }
+                      toggleRowExpansion={
+                        activePlayerType === "overall"
+                          ? toggleRowExpansion
+                          : undefined
+                      }
+                    />
+                  </ExpandedPlayerRowChartContext.Provider>
+                )}
+              </>
             )}
-            {displayedData.error && !displayedData.isLoading && (
-              <div className={styles.errorState}>
-                <p className={styles.errorTitle}>Error loading data:</p>
-                <p className={styles.errorMessage}>{displayedData.error}</p>
-              </div>
-            )}
-            {!displayedData.isLoading && !displayedData.error && (
-              <ExpandedPlayerRowChartContext.Provider
-                value={{
-                  performanceTiers,
-                  currentSeasonId: currentSeasonIdForProvider,
-                  skaterPointValues
-                }}
-              >
-                <ProjectionsDataTable
-                  columns={displayedData.tableColumns}
-                  data={displayedData.processedPlayers}
-                  expandedRows={
-                    activePlayerType === "overall" ? expandedRows : undefined
-                  }
-                  toggleRowExpansion={
-                    activePlayerType === "overall"
-                      ? toggleRowExpansion
-                      : undefined
-                  }
-                />
-              </ExpandedPlayerRowChartContext.Provider>
+
+            {/* NEW: Projection Source Analysis View */}
+            {activeView === "analysis" && (
+              <ProjectionSourceAnalysis
+                players={displayedData.processedPlayers.filter(
+                  (p): p is ProcessedPlayer => !("type" in p)
+                )}
+                fantasyPointSettings={
+                  activePlayerType === "goalie"
+                    ? goaliePointValues
+                    : skaterPointValues
+                }
+                sourceControls={sourceControls}
+                activePlayerType={
+                  activePlayerType === "goalie" ? "goalie" : "skater"
+                }
+              />
             )}
           </section>
         </main>

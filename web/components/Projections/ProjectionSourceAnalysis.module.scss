@@ -1,0 +1,464 @@
+// components/Projections/ProjectionSourceAnalysis.module.scss
+
+@import "../../styles/vars";
+
+.container {
+  background: $background-dark;
+  border-radius: $border-radius-lg;
+  padding: $space-lg;
+  margin: $space-lg 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $space-lg;
+  padding-bottom: $space-md;
+  border-bottom: 2px solid $border-secondary;
+
+  @media (max-width: $breakpoint-mobile-max) {
+    flex-direction: column;
+    gap: $space-md;
+  }
+}
+
+.title {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $text-primary;
+  margin: 0;
+}
+
+.accent {
+  color: $primary-color;
+}
+
+.viewSelector {
+  display: flex;
+  gap: $space-xs;
+  background: $background-medium;
+  border-radius: $border-radius-md;
+  padding: $space-xs;
+}
+
+.viewButton {
+  padding: $space-sm $space-md;
+  border: none;
+  background: transparent;
+  color: $text-secondary;
+  border-radius: $border-radius-sm;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  &:hover {
+    background: $background-light;
+    color: $text-primary;
+  }
+
+  &.active {
+    background: $primary-color;
+    color: $color-white;
+  }
+}
+
+.emptyState {
+  text-align: center;
+  padding: $space-xl;
+  color: $text-secondary;
+
+  h3 {
+    color: $text-primary;
+    margin-bottom: $space-sm;
+  }
+}
+
+// ===== OVERALL RANKINGS VIEW =====
+.overallView {
+  display: flex;
+  flex-direction: column;
+  gap: $space-lg;
+}
+
+.rankingsTable {
+  background: $background-medium;
+  border-radius: $border-radius-md;
+  overflow: hidden;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 60px 1fr 100px 100px 100px 100px 120px 80px;
+  background: $background-header;
+  padding: $space-md;
+  font-weight: $font-weight-bold;
+  color: $text-primary;
+  font-size: $font-size-sm;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  @media (max-width: $breakpoint-tablet) {
+    grid-template-columns: 50px 1fr 80px 80px 80px 80px 100px 70px;
+    font-size: $font-size-xs;
+    padding: $space-sm;
+  }
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 60px 1fr 100px 100px 100px 100px 120px 80px;
+  padding: $space-md;
+  border-bottom: 1px solid $border-secondary;
+  align-items: center;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: $background-light;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  @media (max-width: $breakpoint-tablet) {
+    grid-template-columns: 50px 1fr 80px 80px 80px 80px 100px 70px;
+    padding: $space-sm;
+    font-size: $font-size-sm;
+  }
+}
+
+.rank1 {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 215, 0, 0.1),
+    rgba(255, 215, 0, 0.05)
+  );
+  border-left: 4px solid #ffd700;
+}
+
+.rank2 {
+  background: linear-gradient(
+    135deg,
+    rgba(192, 192, 192, 0.1),
+    rgba(192, 192, 192, 0.05)
+  );
+  border-left: 4px solid #c0c0c0;
+}
+
+.rank3 {
+  background: linear-gradient(
+    135deg,
+    rgba(205, 127, 50, 0.1),
+    rgba(205, 127, 50, 0.05)
+  );
+  border-left: 4px solid #cd7f32;
+}
+
+.rankColumn,
+.metricColumn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.sourceColumn {
+  display: flex;
+  align-items: center;
+  padding-left: $space-sm;
+}
+
+.rankBadge {
+  background: $primary-color;
+  color: $color-white;
+  padding: $space-xs $space-sm;
+  border-radius: $border-radius-lg;
+  font-weight: $font-weight-bold;
+  font-size: $font-size-xs;
+}
+
+.sourceName {
+  font-weight: $font-weight-medium;
+  color: $text-primary;
+}
+
+.qualityScore {
+  font-weight: $font-weight-bold;
+  color: $primary-color;
+  font-size: $font-size-md;
+}
+
+.overBias {
+  color: #ff6b6b;
+}
+
+.underBias {
+  color: #4ecdc4;
+}
+
+.neutralBias {
+  color: $text-secondary;
+}
+
+.summaryCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: $space-md;
+}
+
+.summaryCard {
+  background: $background-medium;
+  border-radius: $border-radius-md;
+  padding: $space-lg;
+  text-align: center;
+  border: 2px solid transparent;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $primary-color;
+    transform: translateY(-2px);
+  }
+
+  h3 {
+    margin: 0 0 $space-md 0;
+    font-size: $font-size-lg;
+    color: $text-primary;
+  }
+}
+
+.bestSource {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $primary-color;
+  margin: 0 0 $space-sm 0;
+}
+
+.bestScore {
+  font-size: $font-size-md;
+  color: $text-secondary;
+  margin: 0;
+}
+
+// ===== POSITION RANKINGS VIEW =====
+.positionsView {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: $space-lg;
+
+  @media (max-width: $breakpoint-tablet) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.positionSection {
+  background: $background-medium;
+  border-radius: $border-radius-md;
+  overflow: hidden;
+}
+
+.positionTitle {
+  background: $background-header;
+  color: $text-primary;
+  padding: $space-md;
+  margin: 0;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.positionTable {
+  padding: $space-sm;
+}
+
+.positionHeader {
+  display: grid;
+  grid-template-columns: 50px 1fr 80px 80px 60px;
+  padding: $space-sm;
+  font-weight: $font-weight-bold;
+  color: $text-secondary;
+  font-size: $font-size-xs;
+  text-transform: uppercase;
+  border-bottom: 1px solid $border-secondary;
+}
+
+.positionRow {
+  display: grid;
+  grid-template-columns: 50px 1fr 80px 80px 60px;
+  padding: $space-sm;
+  border-bottom: 1px solid rgba($border-secondary, 0.3);
+  align-items: center;
+  font-size: $font-size-sm;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.posRank1 {
+  background: rgba(255, 215, 0, 0.1);
+}
+
+.posRank2 {
+  background: rgba(192, 192, 192, 0.1);
+}
+
+.posRankCol,
+.posMetricCol {
+  text-align: center;
+}
+
+.posSourceCol {
+  padding-left: $space-sm;
+  font-weight: $font-weight-medium;
+}
+
+.posRankBadge {
+  background: $primary-color;
+  color: $color-white;
+  padding: 2px $space-xs;
+  border-radius: $border-radius-sm;
+  font-weight: $font-weight-bold;
+  font-size: $font-size-xs;
+}
+
+// ===== DETAILED METRICS VIEW =====
+.detailedView {
+  display: flex;
+  flex-direction: column;
+  gap: $space-lg;
+}
+
+.sourceDetailCard {
+  background: $background-medium;
+  border-radius: $border-radius-lg;
+  padding: $space-lg;
+  border: 1px solid $border-secondary;
+}
+
+.sourceDetailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $space-lg;
+  padding-bottom: $space-md;
+  border-bottom: 1px solid $border-secondary;
+
+  h3 {
+    margin: 0;
+    color: $text-primary;
+    font-size: $font-size-xl;
+  }
+
+  @media (max-width: $breakpoint-mobile-max) {
+    flex-direction: column;
+    gap: $space-sm;
+    text-align: center;
+  }
+}
+
+.qualityBadge {
+  background: $primary-color;
+  color: $color-white;
+  padding: $space-sm $space-md;
+  border-radius: $border-radius-lg;
+  font-weight: $font-weight-bold;
+  font-size: $font-size-sm;
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: $space-lg;
+  margin-bottom: $space-lg;
+
+  @media (max-width: $breakpoint-mobile-max) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metricGroup {
+  background: $background-light;
+  padding: $space-md;
+  border-radius: $border-radius-md;
+
+  h4 {
+    margin: 0 0 $space-md 0;
+    color: $text-primary;
+    font-size: $font-size-md;
+    font-weight: $font-weight-bold;
+    border-bottom: 2px solid $primary-color;
+    padding-bottom: $space-xs;
+  }
+}
+
+.metricItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $space-sm 0;
+  border-bottom: 1px solid rgba($border-secondary, 0.3);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.metricLabel {
+  color: $text-secondary;
+  font-size: $font-size-sm;
+}
+
+.metricValue {
+  font-weight: $font-weight-medium;
+  color: $text-primary;
+  font-size: $font-size-sm;
+}
+
+.positionBreakdown {
+  h4 {
+    margin: 0 0 $space-md 0;
+    color: $text-primary;
+    font-size: $font-size-md;
+    font-weight: $font-weight-bold;
+  }
+}
+
+.positionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: $space-sm;
+}
+
+.positionMetric {
+  background: $background-light;
+  padding: $space-sm;
+  border-radius: $border-radius-sm;
+  text-align: center;
+  border: 1px solid $border-secondary;
+}
+
+.positionName {
+  display: block;
+  font-weight: $font-weight-bold;
+  color: $text-primary;
+  font-size: $font-size-sm;
+  margin-bottom: $space-xs;
+}
+
+.positionAccuracy {
+  display: block;
+  color: $primary-color;
+  font-weight: $font-weight-bold;
+  font-size: $font-size-md;
+}
+
+.positionCount {
+  display: block;
+  color: $text-secondary;
+  font-size: $font-size-xs;
+  margin-top: $space-xs;
+}

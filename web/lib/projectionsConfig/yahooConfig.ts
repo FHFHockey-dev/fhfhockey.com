@@ -3,15 +3,16 @@ import { StatDefinition } from "lib/projectionsConfig/statsMasterList";
 
 export const YAHOO_DRAFT_ANALYSIS_KEYS = {
   ALL: {
-    // Keys within the draft_analysis JSON object
-    avgPick: "average_pick",
-    avgRound: "average_round",
+    // Keys for direct columns in yahoo_players table
+    avgPick: "average_draft_pick",
+    avgRound: "average_draft_round",
     pctDrafted: "percent_drafted"
   },
   PRESEASON: {
-    avgPick: "preseason_average_pick",
-    avgRound: "preseason_average_round",
-    pctDrafted: "preseason_percent_drafted"
+    // For now, fallback to the same columns since preseason data might not be separate
+    avgPick: "average_draft_pick",
+    avgRound: "average_draft_round",
+    pctDrafted: "percent_drafted"
   }
 } as const;
 

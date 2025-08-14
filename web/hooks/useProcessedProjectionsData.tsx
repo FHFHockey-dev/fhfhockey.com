@@ -520,9 +520,18 @@ async function fetchAllSourceData(
       }
     });
   }
+
+  console.log("Debug - Yahoo mapping data:", {
+    yahooMapDataCount: yahooMapData?.length || 0,
+    uniqueYahooPlayerIdsFromMapCount: uniqueYahooPlayerIdsFromMap.size,
+    sampleYahooMapData: yahooMapData?.slice(0, 3) || [],
+    uniqueNhlPlayerIdsCount: uniqueNhlPlayerIds.size,
+    sampleNhlPlayerIds: Array.from(uniqueNhlPlayerIds).slice(0, 5)
+  });
+
   let yahooPlayersMap = new Map<string, YahooPlayerDetailData>();
   if (uniqueYahooPlayerIdsFromMap.size > 0) {
-    const yahooPlayersSelectString = `${YAHOO_PLAYERS_TABLE_KEYS.primaryKey}, ${YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId}, ${YAHOO_PLAYERS_TABLE_KEYS.fullName}, ${YAHOO_PLAYERS_TABLE_KEYS.draftAnalysis}, ${YAHOO_PLAYERS_TABLE_KEYS.editorialTeamAbbreviation}, ${YAHOO_PLAYERS_TABLE_KEYS.displayPosition}, ${YAHOO_PLAYERS_TABLE_KEYS.eligiblePositions}`;
+    const yahooPlayersSelectString = `${YAHOO_PLAYERS_TABLE_KEYS.primaryKey}, ${YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId}, ${YAHOO_PLAYERS_TABLE_KEYS.fullName}, ${YAHOO_PLAYERS_TABLE_KEYS.draftAnalysis}, ${YAHOO_PLAYERS_TABLE_KEYS.editorialTeamAbbreviation}, ${YAHOO_PLAYERS_TABLE_KEYS.displayPosition}, ${YAHOO_PLAYERS_TABLE_KEYS.eligiblePositions}, average_draft_pick, average_draft_round, percent_drafted`;
     const yahooPlayersQueryBuilder = supabaseClient
       .from("yahoo_players")
       .select(yahooPlayersSelectString)
@@ -535,6 +544,12 @@ async function fetchAllSourceData(
         yahooPlayersQueryBuilder,
         yahooPlayersSelectString
       );
+
+    console.log("Debug - Yahoo players data:", {
+      yahooPlayersDetailsDataCount: yahooPlayersDetailsData?.length || 0,
+      sampleYahooPlayersData: yahooPlayersDetailsData?.slice(0, 3) || []
+    });
+
     yahooPlayersMap = new Map<string, YahooPlayerDetailData>(
       yahooPlayersDetailsData?.map((yp) => [
         String(yp[YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId]),
@@ -937,27 +952,36 @@ function processRawDataIntoPlayers(
     }
     processedPlayer.displayPosition = positionFromSources;
 
-    if (
-      yahooPlayerDetail &&
-      yahooPlayerDetail[YAHOO_PLAYERS_TABLE_KEYS.draftAnalysis]
-    ) {
-      const draftAnalysisData = yahooPlayerDetail[
-        YAHOO_PLAYERS_TABLE_KEYS.draftAnalysis
-      ] as Record<string, string | number | null>;
-      const modeKeys = YAHOO_DRAFT_ANALYSIS_KEYS[yahooDraftMode];
+    // Read Yahoo draft data directly from table columns instead of JSON field
+    if (yahooPlayerDetail) {
       const parseYahooStat = (val: string | number | null | undefined) => {
         if (val === "-" || val === null || val === undefined) return null;
         const num = parseFloat(String(val));
         return isNaN(num) ? null : num;
       };
+
+      // Read directly from the direct columns using the updated keys
+      const modeKeys = YAHOO_DRAFT_ANALYSIS_KEYS[yahooDraftMode];
+
+      // Debug logging to see what's actually in the yahooPlayerDetail
+      console.log("Debug - Yahoo Player Detail:", {
+        playerId: nhlPlayerId,
+        playerName: finalName,
+        yahooPlayerDetail: yahooPlayerDetail,
+        modeKeys: modeKeys,
+        avgPickValue: yahooPlayerDetail[modeKeys.avgPick],
+        avgRoundValue: yahooPlayerDetail[modeKeys.avgRound],
+        pctDraftedValue: yahooPlayerDetail[modeKeys.pctDrafted]
+      });
+
       processedPlayer.yahooAvgPick = parseYahooStat(
-        draftAnalysisData[modeKeys.avgPick]
+        yahooPlayerDetail[modeKeys.avgPick]
       );
       processedPlayer.yahooAvgRound = parseYahooStat(
-        draftAnalysisData[modeKeys.avgRound]
+        yahooPlayerDetail[modeKeys.avgRound]
       );
       const pctDraftedNum = parseYahooStat(
-        draftAnalysisData[modeKeys.pctDrafted]
+        yahooPlayerDetail[modeKeys.pctDrafted]
       );
       processedPlayer.yahooPctDrafted =
         pctDraftedNum !== null ? pctDraftedNum * 100 : null;
