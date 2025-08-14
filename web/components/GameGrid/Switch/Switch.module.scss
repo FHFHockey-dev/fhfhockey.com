@@ -1,0 +1,172 @@
+@use "styles/vars" as v;
+@use "sass:color";
+
+// Modern design tokens
+$switch-size: 24px;
+$switch-size-mobile: 20px;
+$arrow-size: 8px;
+$arrow-size-mobile: 6px;
+$transition-duration: 0.2s;
+
+.switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: $switch-size;
+  height: $switch-size;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all $transition-duration cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 50%;
+  padding: 0;
+  outline: none;
+
+  // Modern focus states
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(7, 170, 226, 0.2);
+  }
+
+  // Hover effects
+  &:hover:not(.disabled) {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(7, 170, 226, 0.3);
+  }
+
+  // Active state
+  &:active:not(.disabled) {
+    transform: scale(0.95);
+    transition: transform 0.1s ease;
+  }
+
+  // Disabled state
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+    transform: none;
+    box-shadow: none;
+
+    .arrow {
+      border-color: v.$text-color-secondary;
+    }
+  }
+
+  // Arrow styling
+  .arrow {
+    width: 0;
+    height: 0;
+    border-left: $arrow-size solid transparent;
+    border-right: $arrow-size solid transparent;
+    transition: all $transition-duration cubic-bezier(0.4, 0, 0.2, 1);
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  }
+
+  // Unchecked state (arrow up)
+  &.unchecked {
+    .arrow {
+      border-bottom: $arrow-size solid v.$primary-color;
+      border-top: none;
+    }
+
+    &:hover:not(.disabled) .arrow {
+      border-bottom-color: color.adjust(v.$primary-color, $lightness: 10%);
+    }
+  }
+
+  // Checked state (arrow down)
+  &.checked {
+    .arrow {
+      border-top: $arrow-size solid v.$primary-color;
+      border-bottom: none;
+    }
+
+    &:hover:not(.disabled) .arrow {
+      border-top-color: color.adjust(v.$primary-color, $lightness: 10%);
+    }
+  }
+
+  // Mobile responsive adjustments
+  @media (max-width: 480px) {
+    width: $switch-size-mobile;
+    height: $switch-size-mobile;
+
+    .arrow {
+      border-left-width: $arrow-size-mobile;
+      border-right-width: $arrow-size-mobile;
+    }
+
+    &.unchecked .arrow {
+      border-bottom-width: $arrow-size-mobile;
+    }
+
+    &.checked .arrow {
+      border-top-width: $arrow-size-mobile;
+    }
+  }
+
+  // Landscape mobile adjustments
+  @media screen and (orientation: landscape) and (min-device-width: 479px) and (max-device-width: 932px) {
+    width: $switch-size;
+    height: $switch-size;
+
+    .arrow {
+      border-left-width: $arrow-size;
+      border-right-width: $arrow-size;
+    }
+
+    &.unchecked .arrow {
+      border-bottom-width: $arrow-size;
+    }
+
+    &.checked .arrow {
+      border-top-width: $arrow-size;
+    }
+  }
+
+  // High contrast mode support
+  @media (prefers-contrast: high) {
+    .arrow {
+      filter: none;
+    }
+
+    &:focus-visible {
+      outline-width: 3px;
+      outline-offset: 3px;
+    }
+  }
+
+  // Reduced motion support
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    transform: none;
+
+    &:hover:not(.disabled) {
+      transform: none;
+    }
+
+    &:active:not(.disabled) {
+      transform: none;
+    }
+  }
+}
+
+// Animation keyframes for enhanced interactions
+@keyframes switchPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// Enhanced focus animation
+.switch:focus-visible {
+  animation: switchPulse 0.3s ease-in-out;
+}

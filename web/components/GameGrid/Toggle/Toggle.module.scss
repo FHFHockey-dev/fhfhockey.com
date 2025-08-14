@@ -1,0 +1,258 @@
+@use "styles/vars" as v;
+@use "sass:color";
+
+// Modern design tokens
+$toggle-sizes: (
+  small: (
+    width: 32px,
+    height: 16px,
+    thumb-size: 12px,
+    thumb-offset: 2px
+  ),
+  medium: (
+    width: 44px,
+    height: 22px,
+    thumb-size: 18px,
+    thumb-offset: 2px
+  ),
+  large: (
+    width: 56px,
+    height: 28px,
+    thumb-size: 24px,
+    thumb-offset: 2px
+  )
+);
+
+$transition-duration: 0.3s;
+$transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
+
+.switch {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+
+  // Hide the actual checkbox input
+  input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+    pointer-events: none;
+  }
+
+  // Slider track
+  .slider {
+    position: relative;
+    display: block;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0.05)
+    );
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 34px;
+    transition: all $transition-duration $transition-timing;
+    backdrop-filter: blur(8px);
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.1),
+      inset 0 1px 2px rgba(255, 255, 255, 0.1);
+
+    // Modern focus states
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: 2px;
+      box-shadow:
+        0 0 0 4px rgba(7, 170, 226, 0.2),
+        0 2px 4px rgba(0, 0, 0, 0.1),
+        inset 0 1px 2px rgba(255, 255, 255, 0.1);
+    }
+
+    // Hover effects
+    &:hover:not([aria-disabled="true"]) {
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.15),
+        rgba(255, 255, 255, 0.08)
+      );
+      border-color: rgba(7, 170, 226, 0.3);
+      transform: translateY(-1px);
+      box-shadow:
+        0 4px 8px rgba(0, 0, 0, 0.15),
+        inset 0 1px 2px rgba(255, 255, 255, 0.1);
+    }
+
+    // Active state
+    &:active:not([aria-disabled="true"]) {
+      transform: translateY(0);
+      transition: transform 0.1s ease;
+    }
+
+    // Disabled state
+    &[aria-disabled="true"] {
+      cursor: not-allowed;
+      opacity: 0.5;
+      transform: none;
+      box-shadow: none;
+    }
+
+    // Thumb (sliding circle)
+    &::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.95),
+        rgba(255, 255, 255, 0.85)
+      );
+      border-radius: 50%;
+      transition: all $transition-duration $transition-timing;
+      box-shadow:
+        0 2px 4px rgba(0, 0, 0, 0.2),
+        inset 0 1px 2px rgba(255, 255, 255, 0.8);
+      z-index: 2;
+    }
+
+    // Checked state styling
+    &[aria-checked="true"] {
+      background: linear-gradient(
+        135deg,
+        rgba(7, 170, 226, 0.8),
+        rgba(18, 144, 187, 0.6)
+      );
+      border-color: rgba(7, 170, 226, 0.4);
+
+      &:hover:not([aria-disabled="true"]) {
+        background: linear-gradient(
+          135deg,
+          rgba(7, 170, 226, 0.9),
+          rgba(18, 144, 187, 0.7)
+        );
+        border-color: rgba(7, 170, 226, 0.5);
+      }
+
+      // Thumb position when checked
+      &::before {
+        transform: translateX(calc(100% - 100% + 100%)) translateY(-50%);
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.98),
+          rgba(255, 255, 255, 0.9)
+        );
+      }
+    }
+  }
+
+  // Size variants
+  @each $size, $dimensions in $toggle-sizes {
+    $width: map-get($dimensions, width);
+    $height: map-get($dimensions, height);
+    $thumb-size: map-get($dimensions, thumb-size);
+    $thumb-offset: map-get($dimensions, thumb-offset);
+
+    &.#{$size} {
+      .slider {
+        width: $width;
+        height: $height;
+
+        &::before {
+          width: $thumb-size;
+          height: $thumb-size;
+          left: $thumb-offset;
+        }
+
+        // Adjust thumb position for checked state
+        &[aria-checked="true"]::before {
+          transform: translateX(
+              calc(#{$width} - #{$thumb-size} - #{$thumb-offset})
+            )
+            translateY(-50%);
+        }
+      }
+    }
+  }
+
+  // Mobile responsive adjustments
+  @media (max-width: 480px) {
+    .slider {
+      &:hover {
+        transform: none;
+        box-shadow:
+          0 2px 4px rgba(0, 0, 0, 0.1),
+          inset 0 1px 2px rgba(255, 255, 255, 0.1);
+      }
+    }
+  }
+
+  // High contrast mode support
+  @media (prefers-contrast: high) {
+    .slider {
+      border-width: 2px;
+
+      &::before {
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+      }
+    }
+  }
+
+  // Reduced motion support
+  @media (prefers-reduced-motion: reduce) {
+    .slider,
+    .slider::before {
+      transition: none;
+    }
+  }
+}
+
+// Animation keyframes for enhanced interactions
+@keyframes togglePulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// Enhanced focus animation
+.switch .slider:focus-visible {
+  animation: togglePulse 0.2s ease-in-out;
+}
+
+// Ripple effect for modern interactions
+@keyframes toggleRipple {
+  0% {
+    transform: scale(0);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.switch .slider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(7, 170, 226, 0.3);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+  transition: all 0.3s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.switch .slider:active::after {
+  animation: toggleRipple 0.6s ease-out;
+}

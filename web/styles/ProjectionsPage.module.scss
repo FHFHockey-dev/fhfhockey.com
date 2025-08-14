@@ -811,3 +811,41 @@
   text-align: center; // Center the placeholder text for now
   color: v.$text-secondary;
 }
+
+// View Selector Styles
+.viewSelectorWrapper {
+  display: flex;
+  gap: v.$space-sm;
+  justify-content: center;
+  margin: v.$space-md 0;
+  padding: v.$space-sm;
+  background: v.$background-medium;
+  border-radius: v.$border-radius-md;
+}
+
+.viewSelectorButton {
+  padding: v.$space-sm v.$space-lg;
+  border: none;
+  background: v.$background-light;
+  color: v.$text-secondary;
+  border-radius: v.$border-radius-sm;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: v.$font-size-md;
+  font-weight: v.$font-weight-medium;
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+
+  &:hover {
+    background: v.$background-header;
+    color: v.$text-primary;
+    transform: translateY(-1px);
+  }
+
+  &.activeViewButton {
+    background: v.$primary-color;
+    color: v.$color-white;
+    box-shadow: 0 2px 8px rgba(v.$primary-color, 0.3);
+  }
+}
