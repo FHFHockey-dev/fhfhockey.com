@@ -34,6 +34,48 @@
   color: $primary-color;
 }
 
+.controlsSection {
+  display: flex;
+  gap: $space-md;
+  align-items: center;
+
+  @media (max-width: $breakpoint-mobile-max) {
+    flex-direction: column;
+    gap: $space-sm;
+  }
+}
+
+.metricsToggle {
+  display: flex;
+  gap: $space-xs;
+  background: $background-medium;
+  border-radius: $border-radius-md;
+  padding: $space-xs;
+}
+
+.toggleButton {
+  padding: $space-xs $space-sm;
+  border: none;
+  background: transparent;
+  color: $text-secondary;
+  border-radius: $border-radius-sm;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+
+  &:hover {
+    background: $background-light;
+    color: $text-primary;
+  }
+
+  &.active {
+    background: $secondary-color;
+    color: $color-white;
+  }
+}
+
 .viewSelector {
   display: flex;
   gap: $space-xs;
@@ -473,14 +515,14 @@
 .roundsHeader {
   text-align: center;
   margin-bottom: $space-lg;
-  
+
   h3 {
     color: $text-primary;
     margin: 0 0 $space-sm 0;
     font-size: $font-size-lg;
     font-weight: $font-weight-bold;
   }
-  
+
   p {
     color: $text-secondary;
     margin: 0;

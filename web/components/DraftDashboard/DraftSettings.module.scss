@@ -1,0 +1,323 @@
+// components/DraftDashboard/DraftSettings.module.scss
+@use "sass:color";
+@use "styles/vars" as v;
+
+/* =================== Settings Container =================== */
+.settingsContainer {
+  width: 100%;
+  color: v.$text-primary;
+}
+
+.settingsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: v.$space-sm; // Reduced from v.$space-lg
+  padding-bottom: v.$space-sm; // Reduced from v.$space-md
+  border-bottom: 2px solid v.$border-secondary;
+}
+
+.title {
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-lg; // Reduced from v.$font-size-xl
+  font-weight: 900;
+  color: v.$color-white;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.titleAccent {
+  color: v.$primary-color;
+}
+
+/* =================== Draft Type Toggle =================== */
+.draftTypeToggle {
+  display: flex;
+  background-color: v.$background-dark;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-xs;
+  border: 1px solid v.$border-secondary;
+}
+
+.toggleButton {
+  @include v.button-style;
+  background-color: transparent;
+  color: v.$text-secondary;
+  border: none;
+  padding: v.$space-xs v.$space-md;
+  font-family: v.$font-family-accent, sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: v.$border-radius-sm;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: v.$primary-color;
+    background-color: color.adjust(v.$primary-color, $alpha: -0.9);
+  }
+
+  &.active {
+    background-color: v.$primary-color;
+    color: v.$color-white;
+
+    &:hover {
+      background-color: color.adjust(v.$primary-color, $lightness: -5%);
+    }
+  }
+}
+
+/* =================== Settings Grid =================== */
+.settingsGrid {
+  display: grid;
+  grid-template-columns: repeat(
+    4,
+    1fr
+  ); // Change to 4 columns for more compact layout
+  gap: v.$space-md; // Reduced gap
+}
+
+.settingsGroup {
+  background-color: color.adjust(v.$background-dark, $lightness: -2%);
+  border-radius: v.$border-radius-sm; // Smaller radius
+  padding: v.$space-sm v.$space-md; // Reduced padding
+  border: 1px solid v.$border-secondary;
+}
+
+.groupTitle {
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-sm; // Reduced from v.$font-size-md
+  font-weight: 700;
+  color: v.$color-white;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 v.$space-sm 0; // Reduced margin
+  padding-bottom: v.$space-xs;
+  border-bottom: 1px solid v.$border-secondary;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* =================== Form Elements =================== */
+.settingRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: v.$space-sm; // Reduced from v.$space-md
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.label {
+  font-size: v.$font-size-sm;
+  font-weight: 500;
+  color: v.$text-primary;
+  min-width: 80px;
+}
+
+.select {
+  background-color: v.$background-dark;
+  color: v.$text-primary;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  padding: v.$space-xs v.$space-sm;
+  font-size: v.$font-size-sm;
+  min-width: 120px;
+
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.2);
+  }
+
+  option {
+    background-color: v.$background-dark;
+    color: v.$text-primary;
+  }
+}
+
+/* =================== Roster Configuration =================== */
+.rosterGrid {
+  display: grid;
+  grid-template-columns: repeat(
+    4,
+    1fr
+  ); // More compact - 3 columns instead of auto-fit
+  gap: v.$space-xs; // Reduced gap
+  margin-bottom: v.$space-sm;
+}
+
+.rosterSetting {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: v.$space-xs;
+}
+
+.positionLabel {
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.numberInput {
+  background-color: v.$background-dark;
+  color: v.$text-primary;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  padding: v.$space-xs;
+  font-size: v.$font-size-xs; // Smaller font
+  text-align: center;
+  width: 40px; // Smaller width
+
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.2);
+  }
+
+  // Remove spinner arrows
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  &[type="number"] {
+    -moz-appearance: textfield;
+  }
+}
+
+.rosterTotal {
+  font-size: v.$font-size-xs;
+  color: v.$primary-color;
+  font-weight: 600;
+  padding: v.$space-xxs v.$space-xs;
+  background-color: color.adjust(v.$primary-color, $alpha: -0.9);
+  border-radius: v.$border-radius-sm;
+  border: 1px solid color.adjust(v.$primary-color, $alpha: -0.7);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+/* =================== Scoring Configuration =================== */
+.scoringGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); // More compact - 2 columns
+  gap: v.$space-xs; // Reduced gap
+}
+
+.scoringSetting {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+}
+
+.statLabel {
+  font-size: v.$font-size-xs;
+  font-weight: 500;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.pointsInput {
+  @extend .numberInput;
+  width: 100%;
+}
+
+.expandButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  color: v.$text-secondary;
+  border: 1px dashed v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  padding: v.$space-sm;
+  font-size: v.$font-size-xs;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: v.$primary-color;
+    border-color: v.$primary-color;
+    background-color: color.adjust(v.$primary-color, $alpha: -0.95);
+  }
+}
+
+/* =================== Action Buttons =================== */
+.actionButtons {
+  display: grid;
+  grid-template-columns: 1fr 1fr; // 2x2 grid for compact layout
+  gap: v.$space-xs;
+}
+
+.actionButton {
+  @include v.button-style;
+  background-color: transparent;
+  color: v.$text-primary;
+  border: 1px solid v.$border-secondary;
+  padding: v.$space-xs v.$space-sm; // Reduced padding
+  font-size: v.$font-size-xs; // Smaller font
+  text-align: center;
+  border-radius: v.$border-radius-sm;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background-color: color.adjust(v.$secondary-color, $alpha: -0.8);
+    border-color: v.$secondary-color;
+    color: v.$secondary-color;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* =================== Responsive Design =================== */
+@media (max-width: v.$breakpoint-desktop) {
+  .settingsHeader {
+    flex-direction: column;
+    gap: v.$space-md;
+    text-align: center;
+  }
+
+  .settingsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: v.$breakpoint-tablet) {
+  .title {
+    font-size: v.$font-size-lg;
+  }
+
+  .settingsGroup {
+    padding: v.$space-sm;
+  }
+
+  .rosterGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .scoringGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .draftTypeToggle {
+    width: 100%;
+  }
+
+  .toggleButton {
+    flex: 1;
+  }
+}
