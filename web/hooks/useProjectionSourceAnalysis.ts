@@ -12,14 +12,23 @@ export interface SourceAccuracyMetrics {
   totalPlayers: number;
   playersWithBothProjectedAndActual: number;
 
-  // Accuracy metrics
+  // Accuracy metrics - Total Fantasy Points
   averageAccuracyPercentage: number; // How close projections were to actual (100% = perfect)
   averageMarginOfError: number; // Average absolute difference in fantasy points
   medianMarginOfError: number;
 
-  // Error distribution
+  // NEW: Per-Game Accuracy metrics
+  averageAccuracyPercentagePerGame: number; // How close per-game projections were to actual per-game
+  averageMarginOfErrorPerGame: number; // Average absolute difference in per-game fantasy points
+  medianMarginOfErrorPerGame: number;
+
+  // Error distribution - Total
   withinTenPercent: number; // Players within 10% of actual
   withinTwentyPercent: number; // Players within 20% of actual
+
+  // NEW: Error distribution - Per-Game
+  withinTenPercentPerGame: number; // Players within 10% of actual per-game
+  withinTwentyPercentPerGame: number; // Players within 20% of actual per-game
 
   // Position-specific performance
   positionMetrics: Record<
@@ -28,14 +37,23 @@ export interface SourceAccuracyMetrics {
       playerCount: number;
       averageAccuracy: number;
       averageMarginOfError: number;
+      // NEW: Per-game position metrics
+      averageAccuracyPerGame: number;
+      averageMarginOfErrorPerGame: number;
     }
   >;
 
-  // Bias analysis
+  // Bias analysis - Total
   overProjectionBias: number; // Tendency to over-project (positive) or under-project (negative)
+
+  // NEW: Bias analysis - Per-Game
+  overProjectionBiasPerGame: number; // Per-game projection bias
 
   // Quality score (weighted combination of metrics)
   qualityScore: number;
+
+  // NEW: Per-game quality score
+  qualityScorePerGame: number;
 }
 
 export interface PositionSourceRanking {
@@ -45,6 +63,8 @@ export interface PositionSourceRanking {
     sourceName: string;
     averageAccuracy: number;
     averageMarginOfError: number;
+    averageAccuracyPerGame: number;
+    averageMarginOfErrorPerGame: number;
     playerCount: number;
     rank: number;
   }>;
@@ -58,6 +78,9 @@ export interface RoundSourceRanking {
     sourceName: string;
     averageAccuracy: number;
     averageMarginOfError: number;
+    // NEW: Per-game metrics for round rankings
+    averageAccuracyPerGame: number;
+    averageMarginOfErrorPerGame: number;
     playerCount: number;
     rank: number;
   }>;
@@ -99,18 +122,27 @@ export function useProjectionSourceAnalysis(
     const positionRankings = calculatePositionRankings(sourceMetrics);
 
     // Calculate round-specific rankings
-    const roundRankings = calculateRoundRankings(sourceMetrics, players, fantasyPointSettings);
+    const roundRankings = calculateRoundRankings(
+      sourceMetrics,
+      players,
+      fantasyPointSettings
+    );
 
-    // Overall rankings sorted by quality score
-    const overallRankings = [...sourceMetrics].sort(
+    // Calculate separate rankings for total and per-game metrics
+    const overallRankingsTotal = [...sourceMetrics].sort(
       (a, b) => b.qualityScore - a.qualityScore
+    );
+
+    const overallRankingsPerGame = [...sourceMetrics].sort(
+      (a, b) => b.qualityScorePerGame - a.qualityScorePerGame
     );
 
     return {
       sourceMetrics,
       positionRankings,
       roundRankings,
-      overallRankings
+      overallRankingsTotal,
+      overallRankingsPerGame
     };
   }, [players, fantasyPointSettings, sourceControls]);
 
@@ -149,6 +181,14 @@ function calculateSourceMetrics(
     );
     const actualFP = player.fantasyPoints.actual!;
 
+    // Calculate per-game metrics
+    const projectedGP = calculateSourceSpecificGamesPlayed(player, sourceId);
+    const actualGP = player.combinedStats.GAMES_PLAYED?.actual || 0;
+
+    const projectedFPPerGame = projectedGP > 0 ? projectedFP / projectedGP : 0;
+    const actualFPPerGame = actualGP > 0 ? actualFP / actualGP : 0;
+
+    // Total Fantasy Points accuracy
     const marginOfError = Math.abs(projectedFP - actualFP);
     const accuracyPercentage =
       actualFP === 0
@@ -157,20 +197,43 @@ function calculateSourceMetrics(
           : 0
         : Math.max(0, 100 - (marginOfError / Math.abs(actualFP)) * 100);
 
+    // Per-Game Fantasy Points accuracy
+    const marginOfErrorPerGame = Math.abs(projectedFPPerGame - actualFPPerGame);
+    const accuracyPercentagePerGame =
+      actualFPPerGame === 0
+        ? projectedFPPerGame === 0
+          ? 100
+          : 0
+        : Math.max(
+            0,
+            100 - (marginOfErrorPerGame / Math.abs(actualFPPerGame)) * 100
+          );
+
     const withinTenPercent = accuracyPercentage >= 90;
     const withinTwentyPercent = accuracyPercentage >= 80;
 
+    const withinTenPercentPerGame = accuracyPercentagePerGame >= 90;
+    const withinTwentyPercentPerGame = accuracyPercentagePerGame >= 80;
+
     const bias = projectedFP - actualFP; // Positive = over-projection, negative = under-projection
+    const biasPerGame = projectedFPPerGame - actualFPPerGame;
 
     return {
       player,
       projectedFP,
       actualFP,
+      projectedFPPerGame,
+      actualFPPerGame,
       marginOfError,
       accuracyPercentage,
+      marginOfErrorPerGame,
+      accuracyPercentagePerGame,
       withinTenPercent,
       withinTwentyPercent,
+      withinTenPercentPerGame,
+      withinTwentyPercentPerGame,
       bias,
+      biasPerGame,
       position: player.displayPosition?.split(",")[0].trim() || "Unknown"
     };
   });
@@ -186,6 +249,19 @@ function calculateSourceMetrics(
     playerAccuracyData.map((p) => p.marginOfError)
   );
 
+  // NEW: Per-game overall metrics
+  const averageAccuracyPercentagePerGame =
+    playerAccuracyData.reduce(
+      (sum, p) => sum + p.accuracyPercentagePerGame,
+      0
+    ) / playerAccuracyData.length;
+  const averageMarginOfErrorPerGame =
+    playerAccuracyData.reduce((sum, p) => sum + p.marginOfErrorPerGame, 0) /
+    playerAccuracyData.length;
+  const medianMarginOfErrorPerGame = calculateMedian(
+    playerAccuracyData.map((p) => p.marginOfErrorPerGame)
+  );
+
   const withinTenPercent = playerAccuracyData.filter(
     (p) => p.withinTenPercent
   ).length;
@@ -193,8 +269,21 @@ function calculateSourceMetrics(
     (p) => p.withinTwentyPercent
   ).length;
 
+  // NEW: Per-game accuracy distributions
+  const withinTenPercentPerGame = playerAccuracyData.filter(
+    (p) => p.withinTenPercentPerGame
+  ).length;
+  const withinTwentyPercentPerGame = playerAccuracyData.filter(
+    (p) => p.withinTwentyPercentPerGame
+  ).length;
+
   const overProjectionBias =
     playerAccuracyData.reduce((sum, p) => sum + p.bias, 0) /
+    playerAccuracyData.length;
+
+  // NEW: Per-game bias
+  const overProjectionBiasPerGame =
+    playerAccuracyData.reduce((sum, p) => sum + p.biasPerGame, 0) /
     playerAccuracyData.length;
 
   // Calculate position-specific metrics
@@ -217,7 +306,14 @@ function calculateSourceMetrics(
         posData.reduce((sum, p) => sum + p.accuracyPercentage, 0) /
         posData.length,
       averageMarginOfError:
-        posData.reduce((sum, p) => sum + p.marginOfError, 0) / posData.length
+        posData.reduce((sum, p) => sum + p.marginOfError, 0) / posData.length,
+      // NEW: Per-game position metrics
+      averageAccuracyPerGame:
+        posData.reduce((sum, p) => sum + p.accuracyPercentagePerGame, 0) /
+        posData.length,
+      averageMarginOfErrorPerGame:
+        posData.reduce((sum, p) => sum + p.marginOfErrorPerGame, 0) /
+        posData.length
     };
   });
 
@@ -230,6 +326,15 @@ function calculateSourceMetrics(
     playerCount: playerAccuracyData.length
   });
 
+  // NEW: Per-game quality score
+  const qualityScorePerGame = calculateQualityScore({
+    averageAccuracyPercentage: averageAccuracyPercentagePerGame,
+    averageMarginOfError: averageMarginOfErrorPerGame,
+    withinTwentyPercent:
+      (withinTwentyPercentPerGame / playerAccuracyData.length) * 100,
+    playerCount: playerAccuracyData.length
+  });
+
   return {
     sourceId,
     sourceName,
@@ -238,11 +343,18 @@ function calculateSourceMetrics(
     averageAccuracyPercentage,
     averageMarginOfError,
     medianMarginOfError,
+    averageAccuracyPercentagePerGame,
+    averageMarginOfErrorPerGame,
+    medianMarginOfErrorPerGame,
     withinTenPercent,
     withinTwentyPercent,
+    withinTenPercentPerGame,
+    withinTwentyPercentPerGame,
     positionMetrics,
     overProjectionBias,
-    qualityScore
+    overProjectionBiasPerGame,
+    qualityScore,
+    qualityScorePerGame
   };
 }
 
@@ -303,6 +415,36 @@ function calculateSourceSpecificFantasyPoints(
   }
 
   return totalFP;
+}
+
+function calculateSourceSpecificGamesPlayed(
+  player: ProcessedPlayer,
+  sourceId: string
+): number {
+  const sourceConfig = PROJECTION_SOURCES_CONFIG.find(
+    (src) => src.id === sourceId
+  );
+  if (!sourceConfig) return 0;
+
+  // Find this source's projection for games played
+  const gpStatData = player.combinedStats.GAMES_PLAYED;
+
+  if (gpStatData?.projectedDetail?.contributingSources) {
+    const sourceContribution =
+      gpStatData.projectedDetail.contributingSources.find(
+        (cs) => cs.name === sourceConfig.displayName
+      );
+
+    if (
+      sourceContribution?.value !== null &&
+      sourceContribution?.value !== undefined
+    ) {
+      return sourceContribution.value;
+    }
+  }
+
+  // Fallback to player's overall projected games played if source-specific not available
+  return player.combinedStats.GAMES_PLAYED?.projected || 0;
 }
 
 function calculateMedian(numbers: number[]): number {
@@ -366,6 +508,11 @@ function calculatePositionRankings(
         averageAccuracy: source.positionMetrics[position].averageAccuracy,
         averageMarginOfError:
           source.positionMetrics[position].averageMarginOfError,
+        // Add per-game metrics for position rankings
+        averageAccuracyPerGame:
+          source.positionMetrics[position].averageAccuracyPerGame,
+        averageMarginOfErrorPerGame:
+          source.positionMetrics[position].averageMarginOfErrorPerGame,
         playerCount: source.positionMetrics[position].playerCount,
         rank: 0 // Will be set below
       }))
@@ -388,11 +535,12 @@ function calculateRoundRankings(
 ): RoundSourceRanking[] {
   // Group players by draft round (using the same 12-pick bin logic as your table)
   const roundGroups: Record<number, ProcessedPlayer[]> = {};
-  
+
   players.forEach((player) => {
     if (player.yahooAvgPick && player.yahooAvgPick > 0) {
       const round = Math.ceil(player.yahooAvgPick / 12);
-      if (round <= 15) { // Limit to first 15 rounds like your chart
+      if (round <= 15) {
+        // Limit to first 15 rounds like your chart
         if (!roundGroups[round]) {
           roundGroups[round] = [];
         }
@@ -401,57 +549,114 @@ function calculateRoundRankings(
     }
   });
 
-  const rounds = Object.keys(roundGroups).map(Number).sort((a, b) => a - b);
-  
+  const rounds = Object.keys(roundGroups)
+    .map(Number)
+    .sort((a, b) => a - b);
+
   const roundRankings: RoundSourceRanking[] = rounds.map((round) => {
     const roundPlayers = roundGroups[round];
-    
+
     const rankings = sourceMetrics
       .map((source) => {
         // Calculate this source's accuracy for players in this round
         const roundPlayerAccuracies: number[] = [];
         const roundPlayerErrors: number[] = [];
-        
+        const roundPlayerAccuraciesPerGame: number[] = [];
+        const roundPlayerErrorsPerGame: number[] = [];
+
         roundPlayers.forEach((player) => {
           // Check if player has both actual fantasy points and this source's projections
-          if (player.fantasyPoints.actual !== null && 
-              hasProjectionFromThisSource(player, source.sourceId, fantasyPointSettings)) {
-            
-            // Calculate source-specific fantasy points
+          if (
+            player.fantasyPoints.actual !== null &&
+            hasProjectionFromThisSource(
+              player,
+              source.sourceId,
+              fantasyPointSettings
+            )
+          ) {
+            // Calculate source-specific fantasy points (total)
             const sourceProjectedFP = calculateSourceSpecificFantasyPoints(
               player,
               source.sourceId,
               fantasyPointSettings
             );
-            
+
             if (sourceProjectedFP > 0) {
               const actualFP = player.fantasyPoints.actual;
+
+              // Total fantasy points accuracy
               const marginOfError = Math.abs(sourceProjectedFP - actualFP);
-              const accuracyPercentage = Math.max(0, 100 - (marginOfError / Math.abs(actualFP)) * 100);
-              
+              const accuracyPercentage = Math.max(
+                0,
+                100 - (marginOfError / Math.abs(actualFP)) * 100
+              );
+
               roundPlayerAccuracies.push(accuracyPercentage);
               roundPlayerErrors.push(marginOfError);
+
+              // Per-game fantasy points accuracy
+              const projectedGP = calculateSourceSpecificGamesPlayed(
+                player,
+                source.sourceId
+              );
+              const actualGP = player.combinedStats.GAMES_PLAYED?.actual || 0;
+
+              if (projectedGP > 0 && actualGP > 0) {
+                const projectedFPPerGame = sourceProjectedFP / projectedGP;
+                const actualFPPerGame = actualFP / actualGP;
+
+                const marginOfErrorPerGame = Math.abs(
+                  projectedFPPerGame - actualFPPerGame
+                );
+                const accuracyPercentagePerGame = Math.max(
+                  0,
+                  100 - (marginOfErrorPerGame / Math.abs(actualFPPerGame)) * 100
+                );
+
+                roundPlayerAccuraciesPerGame.push(accuracyPercentagePerGame);
+                roundPlayerErrorsPerGame.push(marginOfErrorPerGame);
+              }
             }
           }
         });
-        
+
         if (roundPlayerAccuracies.length === 0) {
           return null; // No data for this source in this round
         }
-        
-        const averageAccuracy = roundPlayerAccuracies.reduce((sum, acc) => sum + acc, 0) / roundPlayerAccuracies.length;
-        const averageMarginOfError = roundPlayerErrors.reduce((sum, err) => sum + err, 0) / roundPlayerErrors.length;
-        
+
+        const averageAccuracy =
+          roundPlayerAccuracies.reduce((sum, acc) => sum + acc, 0) /
+          roundPlayerAccuracies.length;
+        const averageMarginOfError =
+          roundPlayerErrors.reduce((sum, err) => sum + err, 0) /
+          roundPlayerErrors.length;
+
+        // Per-game averages (fallback to total if no per-game data)
+        const averageAccuracyPerGame =
+          roundPlayerAccuraciesPerGame.length > 0
+            ? roundPlayerAccuraciesPerGame.reduce((sum, acc) => sum + acc, 0) /
+              roundPlayerAccuraciesPerGame.length
+            : averageAccuracy;
+        const averageMarginOfErrorPerGame =
+          roundPlayerErrorsPerGame.length > 0
+            ? roundPlayerErrorsPerGame.reduce((sum, err) => sum + err, 0) /
+              roundPlayerErrorsPerGame.length
+            : averageMarginOfError;
+
         return {
           sourceId: source.sourceId,
           sourceName: source.sourceName,
           averageAccuracy,
           averageMarginOfError,
+          averageAccuracyPerGame,
+          averageMarginOfErrorPerGame,
           playerCount: roundPlayerAccuracies.length,
           rank: 0 // Will be set below
         };
       })
-      .filter((ranking): ranking is NonNullable<typeof ranking> => ranking !== null)
+      .filter(
+        (ranking): ranking is NonNullable<typeof ranking> => ranking !== null
+      )
       .sort((a, b) => b.averageAccuracy - a.averageAccuracy) // Sort by accuracy desc
       .map((item, index) => ({ ...item, rank: index + 1 }));
 
@@ -477,10 +682,17 @@ function createEmptyMetrics(
     averageAccuracyPercentage: 0,
     averageMarginOfError: 0,
     medianMarginOfError: 0,
+    averageAccuracyPercentagePerGame: 0,
+    averageMarginOfErrorPerGame: 0,
+    medianMarginOfErrorPerGame: 0,
     withinTenPercent: 0,
     withinTwentyPercent: 0,
+    withinTenPercentPerGame: 0,
+    withinTwentyPercentPerGame: 0,
     positionMetrics: {},
     overProjectionBias: 0,
-    qualityScore: 0
+    overProjectionBiasPerGame: 0,
+    qualityScore: 0,
+    qualityScorePerGame: 0
   };
 }

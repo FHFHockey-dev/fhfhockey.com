@@ -1081,6 +1081,51 @@ export const useProcessedProjectionsData = ({
     };
   }>({});
 
+  // Stabilize dependencies with useMemo to prevent infinite loops
+  const stableSourceControls = useMemo(() => {
+    // Create a stable reference only when the actual values change
+    const keys = Object.keys(sourceControls).sort();
+    const stableObj: Record<string, { isSelected: boolean; weight: number }> =
+      {};
+    keys.forEach((key) => {
+      stableObj[key] = sourceControls[key];
+    });
+    return stableObj;
+  }, [
+    Object.keys(sourceControls).sort().join(","),
+    ...Object.keys(sourceControls)
+      .sort()
+      .map(
+        (key) =>
+          `${sourceControls[key]?.isSelected}-${sourceControls[key]?.weight}`
+      )
+  ]);
+
+  const stableFantasyPointSettings = useMemo(() => {
+    // Create a stable reference only when the actual values change
+    const keys = Object.keys(fantasyPointSettings).sort();
+    const stableObj: Record<string, number> = {};
+    keys.forEach((key) => {
+      stableObj[key] = fantasyPointSettings[key];
+    });
+    return stableObj;
+  }, [
+    Object.keys(fantasyPointSettings).sort().join(","),
+    ...Object.keys(fantasyPointSettings)
+      .sort()
+      .map((key) => fantasyPointSettings[key])
+  ]);
+
+  // Create stable string representations for cache comparison
+  const stableSourceControlsString = useMemo(
+    () => JSON.stringify(stableSourceControls),
+    [stableSourceControls]
+  );
+  const stableFantasyPointSettingsString = useMemo(
+    () => JSON.stringify(stableFantasyPointSettings),
+    [stableFantasyPointSettings]
+  );
+
   useEffect(() => {
     const relevantStatDefsForCollapse = STATS_MASTER_LIST.filter(
       (stat) =>
@@ -1099,7 +1144,7 @@ export const useProcessedProjectionsData = ({
     setStatGroupCollapseState(initialCollapseStateForType);
   }, [activePlayerType]);
 
-  useEffect(() => {
+  const fetchDataAndProcess = useCallback(async () => {
     if (!supabaseClient || !currentSeasonId) {
       setError("Supabase client or current season ID not available in hook.");
       setProcessedPlayers([]);
@@ -1108,341 +1153,330 @@ export const useProcessedProjectionsData = ({
       return;
     }
 
-    const fetchDataAndProcess = async () => {
-      const stringifiedSourceControls = JSON.stringify(sourceControls);
-      const stringifiedFantasyPointSettings =
-        JSON.stringify(fantasyPointSettings);
-      const cacheTypeKey = activePlayerType;
+    const cacheTypeKey = activePlayerType;
 
-      const generateTableCols = () =>
-        generateTableColumns(
-          activePlayerType,
-          STATS_MASTER_LIST,
-          PROJECTION_SOURCES_CONFIG,
-          sourceControls,
-          currentSeasonId,
-          styles,
-          showPerGameFantasyPoints,
-          togglePerGameFantasyPoints
-        );
-
-      if (!cache.current[cacheTypeKey]) {
-        cache.current[cacheTypeKey] = {};
-      }
-      const currentTypeCache = cache.current[cacheTypeKey]!;
-
-      if (
-        currentTypeCache.full &&
-        currentTypeCache.full.sourceControlsSnapshot ===
-          stringifiedSourceControls &&
-        currentTypeCache.full.yahooModeSnapshot === yahooDraftMode &&
-        currentTypeCache.full.currentSeasonIdSnapshot === currentSeasonId &&
-        currentTypeCache.full.fantasyPointSettingsSnapshot ===
-          stringifiedFantasyPointSettings &&
-        currentTypeCache.full.showPerGameFantasyPointsSnapshot ===
-          showPerGameFantasyPoints
-      ) {
-        setProcessedPlayers(currentTypeCache.full.data);
-        const freshColumns = generateTableCols();
-        const derivedCols = deriveVisibleColumns(
-          freshColumns,
-          statGroupCollapseState,
-          toggleStatGroupCollapse,
-          styles,
-          showPerGameFantasyPoints,
-          togglePerGameFantasyPoints
-        );
-        setTableColumns(derivedCols);
-        setIsLoading(false);
-        setError(null);
-        return;
-      }
-
-      setIsLoading(true);
-      setError(null);
-
-      const relevantStatDefinitions = STATS_MASTER_LIST.filter(
-        (stat) =>
-          (activePlayerType === "skater" && stat.isSkaterStat) ||
-          (activePlayerType === "goalie" && stat.isGoalieStat)
+    const generateTableCols = () =>
+      generateTableColumns(
+        activePlayerType,
+        STATS_MASTER_LIST,
+        PROJECTION_SOURCES_CONFIG,
+        stableSourceControls,
+        currentSeasonId,
+        styles,
+        showPerGameFantasyPoints,
+        togglePerGameFantasyPoints
       );
 
-      if (
-        currentTypeCache.base &&
-        currentTypeCache.base.sourceControlsSnapshot ===
-          stringifiedSourceControls &&
-        currentTypeCache.base.yahooModeSnapshot === yahooDraftMode &&
-        currentTypeCache.base.currentSeasonIdSnapshot === currentSeasonId
-      ) {
-        let basePlayers = currentTypeCache.base.data;
+    if (!cache.current[cacheTypeKey]) {
+      cache.current[cacheTypeKey] = {};
+    }
+    const currentTypeCache = cache.current[cacheTypeKey]!;
 
-        const playersWithNewFP = basePlayers.map((player) => {
-          let calculatedProjectedFantasyPoints = 0;
-          let calculatedActualFantasyPoints = 0;
-          let hasValidStatForFP = false;
+    // Check full cache first using stable string representations
+    if (
+      currentTypeCache.full &&
+      currentTypeCache.full.sourceControlsSnapshot ===
+        stableSourceControlsString &&
+      currentTypeCache.full.yahooModeSnapshot === yahooDraftMode &&
+      currentTypeCache.full.currentSeasonIdSnapshot === currentSeasonId &&
+      currentTypeCache.full.fantasyPointSettingsSnapshot ===
+        stableFantasyPointSettingsString &&
+      currentTypeCache.full.showPerGameFantasyPointsSnapshot ===
+        showPerGameFantasyPoints
+    ) {
+      setProcessedPlayers(currentTypeCache.full.data);
+      const freshColumns = generateTableCols();
+      const derivedCols = deriveVisibleColumns(
+        freshColumns,
+        statGroupCollapseState,
+        toggleStatGroupCollapse,
+        styles,
+        showPerGameFantasyPoints,
+        togglePerGameFantasyPoints
+      );
+      setTableColumns(derivedCols);
+      setIsLoading(false);
+      setError(null);
+      return;
+    }
 
-          for (const statKey in player.combinedStats) {
-            const combinedStat = player.combinedStats[statKey];
-            const pointValueForStat = fantasyPointSettings[statKey];
-            if (pointValueForStat !== undefined && pointValueForStat !== 0) {
-              if (combinedStat?.projected !== null) {
-                calculatedProjectedFantasyPoints +=
-                  combinedStat.projected * pointValueForStat;
-                hasValidStatForFP = true;
-              }
-              if (combinedStat?.actual !== null) {
-                calculatedActualFantasyPoints +=
-                  combinedStat.actual * pointValueForStat;
-                hasValidStatForFP = true;
-              }
+    setIsLoading(true);
+    setError(null);
+
+    const relevantStatDefinitions = STATS_MASTER_LIST.filter(
+      (stat) =>
+        (activePlayerType === "skater" && stat.isSkaterStat) ||
+        (activePlayerType === "goalie" && stat.isGoalieStat)
+    );
+
+    // Check base cache
+    if (
+      currentTypeCache.base &&
+      currentTypeCache.base.sourceControlsSnapshot ===
+        stableSourceControlsString &&
+      currentTypeCache.base.yahooModeSnapshot === yahooDraftMode &&
+      currentTypeCache.base.currentSeasonIdSnapshot === currentSeasonId
+    ) {
+      let basePlayers = currentTypeCache.base.data;
+
+      const playersWithNewFP = basePlayers.map((player) => {
+        let calculatedProjectedFantasyPoints = 0;
+        let calculatedActualFantasyPoints = 0;
+        let hasValidStatForFP = false;
+
+        for (const statKey in player.combinedStats) {
+          const combinedStat = player.combinedStats[statKey];
+          const pointValueForStat = stableFantasyPointSettings[statKey];
+          if (pointValueForStat !== undefined && pointValueForStat !== 0) {
+            if (combinedStat?.projected !== null) {
+              calculatedProjectedFantasyPoints +=
+                combinedStat.projected * pointValueForStat;
+              hasValidStatForFP = true;
+            }
+            if (combinedStat?.actual !== null) {
+              calculatedActualFantasyPoints +=
+                combinedStat.actual * pointValueForStat;
+              hasValidStatForFP = true;
             }
           }
-          const projectedGP = player.combinedStats.GAMES_PLAYED?.projected;
-          const actualGP = player.combinedStats.GAMES_PLAYED?.actual;
-          const currentProjectedFp = hasValidStatForFP
-            ? calculatedProjectedFantasyPoints
-            : null;
-          const currentActualFp = hasValidStatForFP
-            ? calculatedActualFantasyPoints
-            : null;
+        }
+        const projectedGP = player.combinedStats.GAMES_PLAYED?.projected;
+        const actualGP = player.combinedStats.GAMES_PLAYED?.actual;
+        const currentProjectedFp = hasValidStatForFP
+          ? calculatedProjectedFantasyPoints
+          : null;
+        const currentActualFp = hasValidStatForFP
+          ? calculatedActualFantasyPoints
+          : null;
 
-          return {
-            ...player,
-            fantasyPoints: {
-              projected: currentProjectedFp,
-              actual: currentActualFp,
-              diffPercentage: calculateDiffPercentage(
-                currentActualFp,
-                currentProjectedFp
-              ),
-              projectedPerGame:
-                currentProjectedFp !== null &&
-                projectedGP !== null &&
-                projectedGP > 0
-                  ? currentProjectedFp / projectedGP
-                  : null,
-              actualPerGame:
-                currentActualFp !== null && actualGP !== null && actualGP > 0
-                  ? currentActualFp / actualGP
-                  : null
-            }
-          };
-        });
-
-        const sortedPlayersForSummary = [...playersWithNewFP].sort((a, b) => {
-          const pickA = a.yahooAvgPick ?? Infinity;
-          const pickB = b.yahooAvgPick ?? Infinity;
-          return pickA - pickB;
-        });
-
-        const tableDataWithSummaries = addRoundSummariesToPlayers(
-          sortedPlayersForSummary,
-          calculateDiffPercentage
-        );
-
-        setProcessedPlayers(tableDataWithSummaries);
-        const freshColumns = generateTableCols();
-        const derivedCols = deriveVisibleColumns(
-          freshColumns,
-          statGroupCollapseState,
-          toggleStatGroupCollapse,
-          styles,
-          showPerGameFantasyPoints,
-          togglePerGameFantasyPoints
-        );
-        setTableColumns(derivedCols);
-
-        currentTypeCache.full = {
-          data: tableDataWithSummaries,
-          sourceControlsSnapshot: stringifiedSourceControls,
-          yahooModeSnapshot: yahooDraftMode,
-          currentSeasonIdSnapshot: currentSeasonId,
-          fantasyPointSettingsSnapshot: stringifiedFantasyPointSettings,
-          showPerGameFantasyPointsSnapshot: showPerGameFantasyPoints
+        return {
+          ...player,
+          fantasyPoints: {
+            projected: currentProjectedFp,
+            actual: currentActualFp,
+            diffPercentage: calculateDiffPercentage(
+              currentActualFp,
+              currentProjectedFp
+            ),
+            projectedPerGame:
+              currentProjectedFp !== null &&
+              projectedGP !== null &&
+              projectedGP > 0
+                ? currentProjectedFp / projectedGP
+                : null,
+            actualPerGame:
+              currentActualFp !== null && actualGP !== null && actualGP > 0
+                ? currentActualFp / actualGP
+                : null
+          }
         };
+      });
+
+      const sortedPlayersForSummary = [...playersWithNewFP].sort((a, b) => {
+        const pickA = a.yahooAvgPick ?? Infinity;
+        const pickB = b.yahooAvgPick ?? Infinity;
+        return pickA - pickB;
+      });
+
+      const tableDataWithSummaries = addRoundSummariesToPlayers(
+        sortedPlayersForSummary,
+        calculateDiffPercentage
+      );
+
+      setProcessedPlayers(tableDataWithSummaries);
+      const freshColumns = generateTableCols();
+      const derivedCols = deriveVisibleColumns(
+        freshColumns,
+        statGroupCollapseState,
+        toggleStatGroupCollapse,
+        styles,
+        showPerGameFantasyPoints,
+        togglePerGameFantasyPoints
+      );
+      setTableColumns(derivedCols);
+
+      currentTypeCache.full = {
+        data: tableDataWithSummaries,
+        sourceControlsSnapshot: stableSourceControlsString,
+        yahooModeSnapshot: yahooDraftMode,
+        currentSeasonIdSnapshot: currentSeasonId,
+        fantasyPointSettingsSnapshot: stableFantasyPointSettingsString,
+        showPerGameFantasyPointsSnapshot: showPerGameFantasyPoints
+      };
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const activeSourceConfigs = PROJECTION_SOURCES_CONFIG.filter(
+        (src) =>
+          src.playerType === activePlayerType &&
+          stableSourceControls[src.id]?.isSelected
+      );
+
+      if (activeSourceConfigs.length === 0) {
+        setProcessedPlayers([]);
+        setTableColumns([]);
         setIsLoading(false);
         return;
       }
 
-      try {
-        const activeSourceConfigs = PROJECTION_SOURCES_CONFIG.filter(
-          (src) =>
-            src.playerType === activePlayerType &&
-            sourceControls[src.id]?.isSelected
-        );
-
-        if (activeSourceConfigs.length === 0) {
-          setProcessedPlayers([]);
-          setTableColumns([]);
-          setIsLoading(false);
-          return;
-        }
-
-        const projectionDataPromises = activeSourceConfigs.map(
-          async (sourceConfig) => {
-            const selectKeys = new Set<string>([
-              sourceConfig.primaryPlayerIdKey,
-              sourceConfig.originalPlayerNameKey
-            ]);
-            if (sourceConfig.teamKey) selectKeys.add(sourceConfig.teamKey);
-            if (sourceConfig.positionKey)
-              selectKeys.add(sourceConfig.positionKey);
-            sourceConfig.statMappings.forEach((mapping) =>
-              selectKeys.add(mapping.dbColumnName)
+      // ...existing code for fetching data...
+      const projectionDataPromises = activeSourceConfigs.map(
+        async (sourceConfig) => {
+          const selectKeys = new Set<string>([
+            sourceConfig.primaryPlayerIdKey,
+            sourceConfig.originalPlayerNameKey
+          ]);
+          if (sourceConfig.teamKey) selectKeys.add(sourceConfig.teamKey);
+          if (sourceConfig.positionKey)
+            selectKeys.add(sourceConfig.positionKey);
+          sourceConfig.statMappings.forEach((mapping) =>
+            selectKeys.add(mapping.dbColumnName)
+          );
+          const selectString = Array.from(selectKeys).join(",");
+          const queryBuilder = supabaseClient.from(sourceConfig.tableName);
+          const allRowsForSource =
+            await fetchAllSupabaseData<RawProjectionSourcePlayer>(
+              queryBuilder,
+              selectString
             );
-            const selectString = Array.from(selectKeys).join(",");
-            const queryBuilder = supabaseClient.from(sourceConfig.tableName);
-            const allRowsForSource =
-              await fetchAllSupabaseData<RawProjectionSourcePlayer>(
-                queryBuilder,
-                selectString
-              );
-            return {
-              sourceId: sourceConfig.id,
-              data: allRowsForSource,
-              config: sourceConfig
-            };
-          }
-        );
-
-        const fetchedProjectionResults = await Promise.all(
-          projectionDataPromises
-        );
-        const initialRawProjectionDataById: Record<
-          string,
-          { data: RawProjectionSourcePlayer[]; config: ProjectionSourceConfig }
-        > = {};
-        fetchedProjectionResults.forEach((res) => {
-          initialRawProjectionDataById[res.sourceId] = {
-            data: res.data,
-            config: res.config
+          return {
+            sourceId: sourceConfig.id,
+            data: allRowsForSource,
+            config: sourceConfig
           };
-        });
-
-        const uniqueNhlPlayerIds = new Set<number>();
-        activeSourceConfigs.forEach((sourceConfig) => {
-          const sourceData =
-            initialRawProjectionDataById[sourceConfig.id]?.data;
-          if (sourceData) {
-            sourceData.forEach((row) => {
-              const playerId = row[sourceConfig.primaryPlayerIdKey];
-              if (playerId !== null && playerId !== undefined) {
-                uniqueNhlPlayerIds.add(Number(playerId));
-              }
-            });
-          }
-        });
-
-        if (uniqueNhlPlayerIds.size === 0) {
-          setProcessedPlayers([]);
-          setTableColumns([]);
-          setIsLoading(false);
-          return;
         }
+      );
 
-        const fetchedData = await fetchAllSourceData(
-          supabaseClient,
-          activeSourceConfigs,
-          uniqueNhlPlayerIds,
-          activePlayerType,
-          currentSeasonId,
-          initialRawProjectionDataById
-        );
+      const fetchedProjectionResults = await Promise.all(
+        projectionDataPromises
+      );
+      const initialRawProjectionDataById: Record<
+        string,
+        { data: RawProjectionSourcePlayer[]; config: ProjectionSourceConfig }
+      > = {};
+      fetchedProjectionResults.forEach((res) => {
+        initialRawProjectionDataById[res.sourceId] = {
+          data: res.data,
+          config: res.config
+        };
+      });
 
-        const { tempProcessedPlayers, playersRequiringNameDebug } =
-          processRawDataIntoPlayers(
-            uniqueNhlPlayerIds,
-            fetchedData.rawProjectionDataBySourceId,
-            fetchedData.actualStatsMap,
-            fetchedData.nhlToYahooMap,
-            fetchedData.yahooPlayersMap,
-            activeSourceConfigs,
-            relevantStatDefinitions,
-            sourceControls,
-            activePlayerType,
-            fantasyPointSettings,
-            yahooDraftMode
-          );
-
-        if (playersRequiringNameDebug.length > 0) {
-          console.warn(
-            `[FHFHockey Debug] Player Name Resolution Issues Encountered (${playersRequiringNameDebug.length} players):`
-          );
-          console.log(
-            "The following players may display as 'Unknown Player' or use a fallback name. This typically occurs if 'nhl_player_name' is missing or invalid in the 'yahoo_nhl_player_map_mat' table for the given 'nhlPlayerId'."
-          );
-          console.log(JSON.stringify(playersRequiringNameDebug, null, 2));
-          console.info(
-            "[FHFHockey Debug] Review 'nameFromYahooMapNhlName' (from 'yahoo_nhl_player_map_mat.nhl_player_name'), 'nameFromYahooMapYahooName' (from 'yahoo_nhl_player_map_mat.yahoo_player_name'), 'nameFromYahooPlayersTable' (from 'yahoo_players.full_name'), 'nameFromProjectionSource' (first fallback found from projection data), and 'finalNameUsed'. 'sourcesProvidingThisId' lists all selected projection sources that contain the 'nhlPlayerId' and the name they have for it. This can help identify discrepancies or missing data in 'yahoo_nhl_player_map_mat' or your primary player data."
-          );
+      const uniqueNhlPlayerIds = new Set<number>();
+      activeSourceConfigs.forEach((sourceConfig) => {
+        const sourceData = initialRawProjectionDataById[sourceConfig.id]?.data;
+        if (sourceData) {
+          sourceData.forEach((row) => {
+            const playerId = row[sourceConfig.primaryPlayerIdKey];
+            if (playerId !== null && playerId !== undefined) {
+              uniqueNhlPlayerIds.add(Number(playerId));
+            }
+          });
         }
+      });
 
-        currentTypeCache.base = {
-          data: tempProcessedPlayers,
-          sourceControlsSnapshot: stringifiedSourceControls,
-          yahooModeSnapshot: yahooDraftMode,
-          currentSeasonIdSnapshot: currentSeasonId
-        };
-
-        const sortedPlayersForSummary = [...tempProcessedPlayers].sort(
-          (a, b) => {
-            const pickA = a.yahooAvgPick ?? Infinity;
-            const pickB = b.yahooAvgPick ?? Infinity;
-            return pickA - pickB;
-          }
-        );
-
-        const finalTableDataWithSummaries = addRoundSummariesToPlayers(
-          sortedPlayersForSummary,
-          calculateDiffPercentage
-        );
-
-        currentTypeCache.full = {
-          data: finalTableDataWithSummaries,
-          sourceControlsSnapshot: stringifiedSourceControls,
-          yahooModeSnapshot: yahooDraftMode,
-          fantasyPointSettingsSnapshot: stringifiedFantasyPointSettings,
-          currentSeasonIdSnapshot: currentSeasonId,
-          showPerGameFantasyPointsSnapshot: showPerGameFantasyPoints
-        };
-
-        setProcessedPlayers(finalTableDataWithSummaries);
-        const freshColumns = generateTableCols();
-        const derivedCols = deriveVisibleColumns(
-          freshColumns,
-          statGroupCollapseState,
-          toggleStatGroupCollapse,
-          styles,
-          showPerGameFantasyPoints,
-          togglePerGameFantasyPoints
-        );
-        setTableColumns(derivedCols);
-      } catch (e: any) {
-        console.error("Error in useProcessedProjectionsData:", e);
-        setError(
-          e.message || "An unexpected error occurred during data processing."
-        );
+      if (uniqueNhlPlayerIds.size === 0) {
         setProcessedPlayers([]);
         setTableColumns([]);
-      } finally {
         setIsLoading(false);
+        return;
       }
-    };
 
-    fetchDataAndProcess();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+      const fetchedData = await fetchAllSourceData(
+        supabaseClient,
+        activeSourceConfigs,
+        uniqueNhlPlayerIds,
+        activePlayerType,
+        currentSeasonId,
+        initialRawProjectionDataById
+      );
+
+      const { tempProcessedPlayers, playersRequiringNameDebug } =
+        processRawDataIntoPlayers(
+          uniqueNhlPlayerIds,
+          fetchedData.rawProjectionDataBySourceId,
+          fetchedData.actualStatsMap,
+          fetchedData.nhlToYahooMap,
+          fetchedData.yahooPlayersMap,
+          activeSourceConfigs,
+          relevantStatDefinitions,
+          stableSourceControls,
+          activePlayerType,
+          stableFantasyPointSettings,
+          yahooDraftMode
+        );
+
+      if (playersRequiringNameDebug.length > 0) {
+        console.warn(
+          `[FHFHockey Debug] Player Name Resolution Issues Encountered (${playersRequiringNameDebug.length} players):`
+        );
+        console.log(playersRequiringNameDebug);
+      }
+
+      // Cache the base data
+      currentTypeCache.base = {
+        data: tempProcessedPlayers,
+        sourceControlsSnapshot: stableSourceControlsString,
+        yahooModeSnapshot: yahooDraftMode,
+        currentSeasonIdSnapshot: currentSeasonId
+      };
+
+      // Continue with fantasy points calculation and final processing
+      const sortedPlayersForSummary = [...tempProcessedPlayers].sort((a, b) => {
+        const pickA = a.yahooAvgPick ?? Infinity;
+        const pickB = b.yahooAvgPick ?? Infinity;
+        return pickA - pickB;
+      });
+
+      const tableDataWithSummaries = addRoundSummariesToPlayers(
+        sortedPlayersForSummary,
+        calculateDiffPercentage
+      );
+
+      setProcessedPlayers(tableDataWithSummaries);
+      const freshColumns = generateTableCols();
+      const derivedCols = deriveVisibleColumns(
+        freshColumns,
+        statGroupCollapseState,
+        toggleStatGroupCollapse,
+        styles,
+        showPerGameFantasyPoints,
+        togglePerGameFantasyPoints
+      );
+      setTableColumns(derivedCols);
+
+      // Cache the full data
+      currentTypeCache.full = {
+        data: tableDataWithSummaries,
+        sourceControlsSnapshot: stableSourceControlsString,
+        yahooModeSnapshot: yahooDraftMode,
+        currentSeasonIdSnapshot: currentSeasonId,
+        fantasyPointSettingsSnapshot: stableFantasyPointSettingsString,
+        showPerGameFantasyPointsSnapshot: showPerGameFantasyPoints
+      };
+
+      setIsLoading(false);
+    } catch (err: any) {
+      console.error(`Error processing ${activePlayerType} projections:`, err);
+      setError(err.message || "Unknown error occurred");
+      setIsLoading(false);
+    }
   }, [
     activePlayerType,
-    JSON.stringify(sourceControls),
+    stableSourceControlsString, // Use stable string instead of object
     yahooDraftMode,
-    JSON.stringify(fantasyPointSettings),
+    stableFantasyPointSettingsString, // Use stable string instead of object
     supabaseClient,
     currentSeasonId,
-    JSON.stringify(statGroupCollapseState),
-    showPerGameFantasyPoints,
-    toggleStatGroupCollapse,
-    styles
+    showPerGameFantasyPoints
+    // Removed togglePerGameFantasyPoints, statGroupCollapseState, toggleStatGroupCollapse, styles
+    // as these can cause infinite loops and are handled inside the callback
   ]);
+
+  useEffect(() => {
+    fetchDataAndProcess();
+  }, [fetchDataAndProcess]);
 
   return { processedPlayers, tableColumns, isLoading, error };
 };

@@ -1,0 +1,443 @@
+// components/DraftDashboard/MyRoster.module.scss
+@use "sass:color";
+@use "styles/vars" as v;
+
+/* =================== My Roster Container =================== */
+.myRosterContainer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.panelHeader {
+  background-color: color.adjust(v.$background-dark, $lightness: -3%);
+  border-bottom: 4px solid v.$primary-color;
+  padding: v.$space-sm v.$space-md; // Reduced padding
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.panelTitle {
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-md; // Reduced from v.$font-size-lg
+  font-weight: 700;
+  color: v.$color-white;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.panelTitleAccent {
+  color: v.$primary-color;
+}
+
+.teamBadge {
+  background: linear-gradient(
+    135deg,
+    v.$primary-color 0%,
+    v.$secondary-color 100%
+  );
+  color: v.$color-white;
+  padding: v.$space-xs v.$space-sm;
+  border-radius: v.$border-radius-md;
+  font-size: v.$font-size-xs; // Reduced font size
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* =================== Roster Progress =================== */
+.rosterProgress {
+  padding: v.$space-sm; // Reduced padding
+  background-color: color.adjust(v.$background-medium, $lightness: -1%);
+  border-bottom: 2px solid v.$border-secondary;
+  flex-shrink: 0;
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: v.$space-xs; // Reduced margin
+}
+
+.progressLabel {
+  font-size: v.$font-size-xs; // Reduced font size
+  font-weight: 600;
+  color: v.$text-primary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.progressCount {
+  font-size: v.$font-size-xs; // Reduced font size
+  font-weight: 700;
+  color: v.$primary-color;
+}
+
+.progressBar {
+  width: 100%;
+  height: 6px; // Reduced height
+  background-color: v.$background-dark;
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid v.$border-secondary;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    v.$primary-color 0%,
+    v.$secondary-color 100%
+  );
+  transition: width 0.5s ease;
+}
+
+/* =================== Team Summary =================== */
+.teamSummary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: v.$space-xs; // Reduced gap
+  padding: v.$space-sm; // Reduced padding
+  background-color: color.adjust(v.$background-medium, $lightness: -1%);
+  border-bottom: 2px solid v.$border-secondary;
+}
+
+.summaryCard {
+  background-color: v.$background-dark;
+  padding: v.$space-xs; // Reduced padding
+  border-radius: v.$border-radius-sm;
+  text-align: center;
+  border: 1px solid v.$border-secondary;
+}
+
+.summaryLabel {
+  font-size: v.$font-size-xxs; // Reduced font size
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: v.$space-xxs;
+}
+
+.summaryValue {
+  font-size: v.$font-size-sm; // Reduced font size
+  font-weight: 700;
+  color: v.$primary-color;
+}
+
+/* =================== Draft Section =================== */
+.draftSection {
+  padding: v.$space-sm; // Reduced padding
+  background-color: color.adjust(v.$background-medium, $lightness: 5%);
+  border-bottom: 4px solid v.$primary-color;
+  flex-shrink: 0;
+}
+
+.sectionTitle {
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-sm; // Reduced font size
+  font-weight: 600;
+  color: v.$color-white;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0 0 v.$space-sm 0; // Reduced margin
+  text-align: center;
+}
+
+.playerSearch {
+  margin-bottom: v.$space-sm; // Reduced margin
+}
+
+.searchInput {
+  width: 100%;
+  background-color: v.$background-dark !important;
+  color: v.$text-primary !important;
+  border: 2px solid v.$border-secondary !important;
+  border-radius: v.$border-radius-md !important;
+  font-size: v.$font-size-sm !important;
+
+  &:focus {
+    border-color: v.$primary-color !important;
+    box-shadow: 0 0 0 3px rgba(v.$primary-color, 0.2) !important;
+  }
+
+  &::placeholder {
+    color: v.$text-secondary !important;
+  }
+}
+
+.searchResults {
+  background-color: v.$background-dark !important;
+  border: 1px solid v.$primary-color !important;
+  border-radius: v.$border-radius-md !important;
+  max-height: 200px !important;
+
+  li {
+    color: v.$text-primary !important;
+    padding: v.$space-sm !important;
+
+    &:hover {
+      background-color: v.$primary-color !important;
+      color: v.$color-white !important;
+    }
+  }
+}
+
+.draftButton {
+  width: 100%;
+  background: linear-gradient(
+    135deg,
+    v.$primary-color 0%,
+    v.$secondary-color 100%
+  );
+  color: v.$color-white;
+  border: none;
+  padding: v.$space-xs; // Reduced padding
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-xs; // Reduced font size
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: v.$border-radius-md;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(v.$primary-color, 0.4);
+  }
+
+  &:disabled {
+    background: v.$color-grey-medium;
+    cursor: not-allowed;
+    opacity: 0.6;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+/* =================== Roster Slots =================== */
+.rosterSlots {
+  flex: 1;
+  overflow-y: auto;
+  padding: v.$space-sm; // Reduced padding
+  @include v.custom-scrollbar(v.$primary-color, v.$background-medium, 4px);
+}
+
+.slotsList {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm; // Reduced gap
+}
+
+.rosterSlot {
+  background-color: v.$background-dark;
+  border-radius: v.$border-radius-sm;
+  padding: v.$space-xs; // Reduced padding
+  border: 1px solid v.$border-secondary;
+}
+
+.slotHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: v.$space-xs; // Reduced margin
+  padding-bottom: v.$space-xs;
+  border-bottom: 1px solid v.$border-secondary;
+}
+
+.slotPosition {
+  font-size: v.$font-size-xs; // Reduced font size
+  font-weight: 700;
+  color: v.$primary-color;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.slotCount {
+  font-size: v.$font-size-xxs; // Reduced font size
+  color: v.$text-secondary;
+  font-weight: 600;
+}
+
+.slotPlayers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+}
+
+.slotPlayer {
+  flex: 1;
+  min-width: 50px; // Reduced width
+  height: 30px; // Reduced height
+  border-radius: v.$border-radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: v.$font-size-xxs; // Reduced font size
+  transition: all 0.2s ease;
+}
+
+.filledSlot {
+  background: linear-gradient(
+    135deg,
+    rgba(v.$success-color, 0.5) 0%,
+    rgba(color.adjust(v.$success-color, $lightness: -20%), 0.5) 100%
+  );
+  border: 1px solid v.$success-color;
+  color: color.adjust(v.$color-white, $lightness: -10%);
+}
+
+.emptySlot {
+  background-color: color.adjust(v.$background-medium, $lightness: -5%);
+  border: 1px dashed v.$border-secondary;
+  color: v.$text-secondary;
+}
+
+.playerInfo {
+  text-align: center;
+  width: 100%;
+}
+
+.playerName {
+  font-weight: 900;
+  line-height: 1;
+  font-size: v.$font-size-xs; // Reduced font size
+  text-transform: uppercase;
+  font-family: v.$font-family-primary, sans-serif;
+  letter-spacing: 0.1em;
+}
+
+.emptySlotText {
+  font-size: v.$font-size-xxs;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+
+/* =================== Bench Section =================== */
+.benchSection {
+  padding: v.$space-sm; // Reduced padding
+  background-color: color.adjust(v.$background-medium, $lightness: -2%);
+  border-top: 2px solid v.$border-secondary;
+  flex-shrink: 0;
+}
+
+.benchSlots {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(40px, 1fr)
+  ); // Reduced min width
+  gap: v.$space-xs;
+}
+
+.benchSlot {
+  height: 25px; // Reduced height
+  border-radius: v.$border-radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: v.$font-size-xxs; // Reduced font size
+  transition: all 0.2s ease;
+
+  &.filledSlot {
+    background: linear-gradient(
+      135deg,
+      v.$warning-color 0%,
+      color.adjust(v.$warning-color, $lightness: -10%) 100%
+    );
+    border: 1px solid v.$warning-color;
+    color: v.$color-white;
+  }
+
+  &.emptySlot {
+    background-color: color.adjust(v.$background-dark, $lightness: -3%);
+    border: 1px dashed v.$border-secondary;
+    color: v.$text-secondary;
+  }
+}
+
+/* =================== Responsive Design =================== */
+@media (max-width: v.$breakpoint-tablet) {
+  .panelHeader {
+    padding: v.$space-sm;
+  }
+
+  .teamSummary {
+    grid-template-columns: 1fr;
+    gap: v.$space-xs;
+  }
+
+  .slotPlayers {
+    flex-direction: column;
+  }
+
+  .slotPlayer {
+    min-width: auto;
+    height: 35px;
+  }
+
+  .benchSlots {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.headerControls {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+  flex-shrink: 0;
+}
+
+.viewingPill {
+  background: color.adjust(v.$warning-color, $lightness: -15%);
+  color: v.$color-white;
+  padding: 2px 6px;
+  border-radius: v.$border-radius-sm;
+  font-size: v.$font-size-xxs;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.teamSelect {
+  background-color: v.$background-dark;
+  color: v.$text-primary;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  padding: 4px 6px;
+  font-size: v.$font-size-xs;
+  max-width: 140px;
+}
+
+.quickMyTeamButton {
+  background: linear-gradient(
+    135deg,
+    v.$primary-color 0%,
+    v.$secondary-color 100%
+  );
+  color: v.$color-white;
+  border: 1px solid v.$primary-color;
+  border-radius: v.$border-radius-sm;
+  padding: 4px 8px;
+  font-size: v.$font-size-xxs;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+@media (max-width: v.$breakpoint-mobile-max) {
+  .headerControls {
+    gap: v.$space-xxs;
+  }
+  .teamSelect {
+    max-width: 120px;
+  }
+}
