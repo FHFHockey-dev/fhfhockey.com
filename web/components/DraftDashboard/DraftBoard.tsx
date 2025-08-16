@@ -276,7 +276,12 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                 `T${teamIndex + 1}`}
             </div>
           )}
-          <div className={styles.teamRoundCells}>{teamCells}</div>
+          <div
+            className={styles.teamRoundCells}
+            style={{ gridTemplateColumns: `repeat(${roundsToShow}, 1fr)` }}
+          >
+            {teamCells}
+          </div>
         </div>
       );
     }
@@ -421,11 +426,16 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
           {/* Round labels (columns) */}
           <div className={styles.roundLabels}>
             <div className={styles.teamLabelSpacer}></div>
-            {Array.from({ length: roundsToShow }, (_, i) => (
-              <span key={i} className={styles.roundLabel}>
-                {i + 1}
-              </span>
-            ))}
+            <div
+              className={styles.roundLabelsGrid}
+              style={{ gridTemplateColumns: `repeat(${roundsToShow}, 1fr)` }}
+            >
+              {Array.from({ length: roundsToShow }, (_, i) => (
+                <span key={i} className={styles.roundLabel}>
+                  {i + 1}
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* Contribution grid with teams as rows */}

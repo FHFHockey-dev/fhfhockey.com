@@ -1,9 +1,16 @@
 // hooks/useVORPCalculations.ts
 import { useMemo } from "react";
-import { DraftSettings } from "components/DraftDashboard/DraftDashboard";
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 
-export type ScoringMode = "points"; // categories not implemented yet
+export type LeagueType = "points" | "categories";
+
+// Minimal shape needed from DraftSettings for calculations
+export interface DraftSettings {
+  teamCount: number;
+  rosterConfig: Record<string, number> & { utility?: number };
+  leagueType?: LeagueType;
+  categoryWeights?: Record<string, number>;
+}
 
 export interface PlayerVorpMetrics {
   value: number; // comparable single value (proj points for now)
@@ -20,12 +27,17 @@ export interface UseVORPParams {
   availablePlayers: ProcessedPlayer[]; // exclude drafted
   draftSettings: DraftSettings;
   picksUntilNext: number; // estimated picks before user's next turn
-  scoringMode?: ScoringMode;
+  leagueType?: LeagueType;
+  baselineMode?: "remaining" | "full"; // NEW: replacement baseline source
+  categoryWeights?: Record<string, number>; // used when leagueType === 'categories'
 }
 
 export interface UseVORPResult {
   playerMetrics: Map<string, PlayerVorpMetrics>; // key: String(playerId)
   replacementByPos: Record<string, { vorp: number; vols: number }>;
+  // NEW: expected position run before next pick
+  expectedTakenByPos?: Record<string, number>;
+  expectedN?: number;
 }
 
 // Helper: parse eligible positions from displayPosition
@@ -42,22 +54,105 @@ export function useVORPCalculations({
   availablePlayers,
   draftSettings,
   picksUntilNext,
-  scoringMode = "points"
+  leagueType = "points",
+  baselineMode = "remaining",
+  categoryWeights = {}
 }: UseVORPParams): UseVORPResult {
   return useMemo(() => {
-    // Value per player (points mode only for now)
+    // Value per player (points or categories composite)
     const values = new Map<string, number>();
     const eligibility = new Map<string, string[]>();
 
     players.forEach((p) => {
       const id = String(p.playerId);
-      const val = p.fantasyPoints?.projected ?? 0;
-      values.set(id, isFinite(val) ? val : 0);
+      // initialize eligibility; values will be set after we compute based on leagueType
       eligibility.set(
         id,
         parseEligiblePositions(p.displayPosition ?? undefined)
       );
     });
+
+    // Compute player comparable values
+    if (leagueType === "points") {
+      players.forEach((p) => {
+        const id = String(p.playerId);
+        const val = p.fantasyPoints?.projected ?? 0;
+        values.set(id, Number.isFinite(val) ? val : 0);
+      });
+    } else {
+      // categories composite (z-score sum)
+      const CAT_KEYS = [
+        "GOALS",
+        "ASSISTS",
+        "PP_POINTS",
+        "SHOTS_ON_GOAL",
+        "HITS",
+        "BLOCKED_SHOTS"
+      ] as const;
+      type CatKey = (typeof CAT_KEYS)[number];
+      // choose pool: remaining skaters for dynamic z, else full skater pool
+      const pool = (
+        baselineMode === "remaining" ? availablePlayers : players
+      ).filter((p) => !parseEligiblePositions(p.displayPosition).includes("G"));
+      const stats: Record<CatKey, number[]> = {
+        GOALS: [],
+        ASSISTS: [],
+        PP_POINTS: [],
+        SHOTS_ON_GOAL: [],
+        HITS: [],
+        BLOCKED_SHOTS: []
+      };
+      pool.forEach((p) => {
+        CAT_KEYS.forEach((k) => {
+          const v = (p.combinedStats?.[k]?.projected as number | null) ?? null;
+          if (typeof v === "number" && Number.isFinite(v)) {
+            stats[k].push(v);
+          }
+        });
+      });
+      const mean: Record<CatKey, number> = {
+        GOALS: 0,
+        ASSISTS: 0,
+        PP_POINTS: 0,
+        SHOTS_ON_GOAL: 0,
+        HITS: 0,
+        BLOCKED_SHOTS: 0
+      };
+      const std: Record<CatKey, number> = {
+        GOALS: 0,
+        ASSISTS: 0,
+        PP_POINTS: 0,
+        SHOTS_ON_GOAL: 0,
+        HITS: 0,
+        BLOCKED_SHOTS: 0
+      };
+      CAT_KEYS.forEach((k) => {
+        const arr = stats[k];
+        if (arr.length > 0) {
+          const m = arr.reduce((s, x) => s + x, 0) / arr.length;
+          mean[k] = m;
+          const variance =
+            arr.reduce((s, x) => s + Math.pow(x - m, 2), 0) / arr.length;
+          std[k] = Math.sqrt(variance) || 0;
+        }
+      });
+      players.forEach((p) => {
+        let sum = 0;
+        CAT_KEYS.forEach((k) => {
+          const raw =
+            (p.combinedStats?.[k]?.projected as number | null) ?? null;
+          const w =
+            categoryWeights && typeof categoryWeights[k] === "number"
+              ? (categoryWeights as any)[k]
+              : 1;
+          if (typeof raw === "number" && Number.isFinite(raw) && std[k] > 0) {
+            const z = (raw - mean[k]) / std[k];
+            sum += w * z;
+          }
+        });
+        values.set(String(p.playerId), Number.isFinite(sum) ? sum : 0);
+      });
+    }
 
     const T = draftSettings.teamCount;
     const starters = draftSettings.rosterConfig; // C,LW,RW,D,G, utility, bench
@@ -119,15 +214,6 @@ export function useVORPCalculations({
       G: { vorp: 0, vols: 0 }
     };
 
-    positions.forEach((pos) => {
-      const arr = byPosFull[pos];
-      const vorpIdx = Math.min(idxVORP[pos], Math.max(0, arr.length - 1));
-      const volsIdx = Math.min(idxVOLS[pos], Math.max(0, arr.length - 1));
-      const vorpVal = arr[vorpIdx]?.value ?? 0;
-      const volsVal = arr[volsIdx]?.value ?? 0;
-      replacementByPos[pos] = { vorp: vorpVal, vols: volsVal };
-    });
-
     // AVAILABLE POOL for VONA: group and sort
     const byPosAvail: Record<string, Array<{ id: string; value: number }>> = {
       C: [],
@@ -147,6 +233,18 @@ export function useVORPCalculations({
     positions.forEach((pos) =>
       byPosAvail[pos].sort((a, b) => b.value - a.value)
     );
+
+    // Choose baseline source for replacement values
+    const baselineArrs = baselineMode === "remaining" ? byPosAvail : byPosFull;
+
+    positions.forEach((pos) => {
+      const arr = baselineArrs[pos];
+      const vorpIdx = Math.min(idxVORP[pos], Math.max(0, arr.length - 1));
+      const volsIdx = Math.min(idxVOLS[pos], Math.max(0, arr.length - 1));
+      const vorpVal = arr[vorpIdx]?.value ?? 0;
+      const volsVal = arr[volsIdx]?.value ?? 0;
+      replacementByPos[pos] = { vorp: vorpVal, vols: volsVal };
+    });
 
     // Build quick index lookup of current rank in available list per pos
     const currentRankIdx: Record<string, Record<string, number>> = {
@@ -247,6 +345,19 @@ export function useVORPCalculations({
       });
     });
 
-    return { playerMetrics, replacementByPos };
-  }, [players, availablePlayers, draftSettings, picksUntilNext, scoringMode]);
+    return {
+      playerMetrics,
+      replacementByPos,
+      expectedTakenByPos: expectedTaken,
+      expectedN: N
+    };
+  }, [
+    players,
+    availablePlayers,
+    draftSettings,
+    picksUntilNext,
+    leagueType,
+    baselineMode,
+    categoryWeights
+  ]);
 }

@@ -137,6 +137,7 @@ $color-grey-text: #cccccc;
 $color-grey-text-sec: #aaaaaa;
 $color-grey-darker: #404040; // border-primary base
 $color-grey-dark: #505050; // border-secondary base
+$text-muted: $color-grey-darker !default; // legacy alias
 
 // Backgrounds (single source of truth)
 $background-dark: #1a1d21;

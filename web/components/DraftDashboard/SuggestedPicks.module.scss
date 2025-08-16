@@ -1,0 +1,478 @@
+// filepath: /Users/tim/Desktop/fhfhockey.com/web/components/DraftDashboard/SuggestedPicks.module.scss
+@use "sass:color";
+@use "styles/vars" as v;
+
+/* =================== Suggested Picks Container =================== */
+.suggestedContainer {
+  @include v.glass-panel(
+    $padding: v.$space-md v.$space-lg,
+    $radius: v.$radius-lg
+  );
+  width: 100%;
+  color: v.$text-primary;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+}
+
+.title {
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-md;
+  font-weight: 900;
+  color: v.$color-white;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.titleAccent {
+  color: v.$primary-color;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+}
+
+.controlGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-xs;
+}
+
+.label {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.select {
+  background-color: v.$background-dark;
+  color: v.$text-primary;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  padding: v.$space-xs v.$space-sm;
+  font-size: v.$font-size-sm;
+  min-width: 100px;
+
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.2);
+  }
+}
+
+.sortDirBtn,
+.collapseBtn,
+.linkBtn {
+  @include v.button-style;
+  background-color: transparent;
+  color: v.$text-primary;
+  border: 1px solid v.$border-secondary;
+  padding: v.$space-xxs v.$space-sm;
+  font-size: v.$font-size-xs;
+
+  &:hover:not(:disabled) {
+    background-color: color.adjust(v.$primary-color, $alpha: -0.9);
+    color: v.$primary-color;
+    border-color: v.$primary-color;
+  }
+}
+
+/* =================== Cards Row =================== */
+$neon-strip-width: 12px;
+
+.cardsRow {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(320px, 1fr);
+  gap: v.$space-md;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: v.$space-xs;
+  @include v.custom-scrollbar(v.$primary-color, v.$background-medium, 6px);
+}
+
+.loading {
+  color: v.$text-secondary;
+  font-style: italic;
+  padding: v.$space-md;
+}
+
+/* =================== Position Accent (Neon) =================== */
+/* Each card sets an accent color via CSS vars used for border/glow/text */
+.posC {
+  --accent: #{v.$info-color};
+  --accent-soft: #{rgba(v.$info-color, 0.14)};
+}
+.posLW {
+  --accent: #{v.$color-orange};
+  --accent-soft: #{rgba(v.$color-orange, 0.14)};
+}
+.posRW {
+  --accent: #{v.$color-purple};
+  --accent-soft: #{rgba(v.$color-purple, 0.14)};
+}
+.posD {
+  --accent: #{v.$color-teal};
+  --accent-soft: #{rgba(v.$color-teal, 0.14)};
+}
+.posG {
+  --accent: #{v.$success-color};
+  --accent-soft: #{rgba(v.$success-color, 0.5)};
+}
+.posUTIL {
+  --accent: #{v.$warning-color};
+  --accent-soft: #{rgba(v.$warning-color, 0.16)};
+}
+
+/* Defaults if no position class is present */
+.card {
+  --accent: #{v.$primary-color};
+  --accent-soft: #{rgba(v.$primary-color, 0.12)};
+}
+
+/* =================== Card =================== */
+.card {
+  position: relative;
+  overflow: hidden;
+  /* Futuristic glass panel surface */
+  background:
+    /* neon accent tint layer */
+    linear-gradient(180deg, var(--accent-soft) 0%, rgba(0, 0, 0, 0) 100%),
+    /* base glass gradient */
+      linear-gradient(
+        145deg,
+        color.adjust(v.$background-dark, $lightness: 4%) 0%,
+        color.adjust(v.$background-dark, $lightness: -2%) 100%
+      );
+  border: 2px solid rgba(7, 170, 226, 0.5); /* subtle neutral body border */
+  border-radius: v.$radius-lg;
+  //   outline: 1px solid rgb(7, 170, 226);
+  padding: v.$space-sm calc(v.$space-md) v.$space-sm
+    calc(v.$space-md + #{$neon-strip-width} + v.$space-sm);
+  min-height: 120px; /* reduced from 200px */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  gap: v.$space-sm; /* tighter */
+  box-shadow: v.$desktop-panel-shadow;
+  backdrop-filter: blur(v.$blur-backdrop-soft) saturate(160%);
+  -webkit-backdrop-filter: blur(v.$blur-backdrop-soft) saturate(160%);
+  transition:
+    transform 240ms v.$ease-desktop-standard,
+    box-shadow 240ms v.$ease-desktop-standard,
+    border-color 240ms v.$ease-desktop-standard,
+    background 240ms v.$ease-desktop-standard;
+
+  /* Left neon strip (outside curve, flat inside) */
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: $neon-strip-width; /* thickness of neon strip */
+    background: var(--accent);
+    border-top-left-radius: inherit; /* outside curved */
+    border-bottom-left-radius: inherit;
+    border-top-right-radius: 0; /* inside flat */
+    border-bottom-right-radius: 0;
+    box-shadow:
+      0 0 14px var(--accent),
+      0 0 24px var(--accent);
+    pointer-events: none;
+  }
+
+  /* Ambient glow backdrop */
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -30%;
+    background:
+      radial-gradient(60% 40% at 20% 0%, var(--accent-soft), transparent 60%),
+      radial-gradient(60% 40% at 100% 100%, var(--accent-soft), transparent 60%);
+    filter: blur(14px); /* slightly less blur */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 360ms v.$ease-desktop-standard;
+  }
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 10px 30px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(v.$primary-color, 0.15) inset,
+      v.$desktop-panel-shadow;
+    border-color: color.adjust(v.$border-secondary, $lightness: 10%);
+
+    &::before {
+      background-position: 200% 0; /* subtle animated sweep */
+    }
+    &::after {
+      opacity: 1;
+    }
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow:
+      v.$focus-ring-desktop,
+      0 0 0 1px rgba(v.$primary-color, 0.25) inset,
+      v.$desktop-panel-shadow;
+  }
+}
+
+.cardSelected {
+  border-color: v.$primary-color;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.35),
+    0 0 18px var(--accent),
+    0 8px 20px rgba(0, 0, 0, 0.45);
+
+  &::after {
+    opacity: 1; /* keep ambient glow when selected */
+  }
+}
+
+.rankBadge {
+  position: static; /* no absolute overlay */
+  top: auto;
+  left: auto;
+  margin-right: v.$space-sm;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  min-width: 32px;
+  padding: 0 v.$space-xs;
+  font-size: v.$font-size-xxs;
+  font-weight: 800;
+  line-height: 1;
+  background: var(--accent);
+  color: v.$color-white;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  box-shadow: 0 0 10px var(--accent);
+}
+
+.header {
+  display: flex;
+  align-items: center; /* was baseline */
+  justify-content: space-between;
+  gap: v.$space-sm;
+}
+
+.name {
+  @include v.truncate(2);
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: v.$text-primary;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+  flex: 1 1 auto; /* allow name to take remaining space */
+}
+
+.meta {
+  display: flex;
+  gap: v.$space-xs;
+}
+
+.team {
+  color: v.$text-secondary;
+}
+
+.pos {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(
+    5,
+    minmax(0, 1fr)
+  ); // allow columns to shrink within card
+  gap: v.$space-xs; /* tighter */
+  width: 100%;
+}
+
+.stat {
+  background: linear-gradient(
+    180deg,
+    rgba(v.$background-light, 0.65) 0%,
+    rgba(v.$background-dark, 0.7) 100%
+  );
+  min-width: 0; // allow grid item to shrink within column
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: v.$radius-sm;
+  padding: v.$space-xs; /* reduced */
+  text-align: center;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 0 1px rgba(255, 255, 255, 0.02);
+}
+
+.statLabel {
+  font-size: v.$font-size-xxs;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.statValue {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800; /* slightly smaller weight to reduce visual bulk */
+  letter-spacing: 0.02em;
+  color: var(--accent);
+  text-shadow:
+    0 0 10px var(--accent),
+    0 0 2px rgba(0, 0, 0, 0.5);
+  overflow: hidden; // prevent text overflow
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tagsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xxs;
+}
+
+.tag {
+  display: inline-block;
+  font-size: v.$font-size-xxs;
+  color: v.$color-blue;
+  background: rgba(v.$color-blue, 0.12);
+  border: 1px solid rgba(102, 204, 255, 0.6);
+  border-radius: 999px;
+  padding: 3px 8px;
+  box-shadow: 0 0 0 1px rgba(v.$color-blue, 0.12) inset;
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: v.$space-xxs;
+}
+
+.bottomRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+  margin-top: v.$space-xs;
+}
+
+/* =================== Roster Progress Bar =================== */
+.progressBar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: v.$space-sm;
+  margin-top: v.$space-sm;
+}
+
+.progressSegment {
+  @include v.glass-panel($padding: v.$space-sm, $radius: v.$radius-md);
+  position: relative;
+  background:
+    linear-gradient(
+      180deg,
+      var(--accent-soft, rgba(255, 255, 255, 0.05)) 0%,
+      rgba(0, 0, 0, 0) 100%
+    ),
+    linear-gradient(
+      145deg,
+      color.adjust(v.$background-dark, $lightness: 4%) 0%,
+      color.adjust(v.$background-dark, $lightness: -2%) 100%
+    );
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+// Highlight active/selected position segment with accent border and glow
+.progressSegmentActive {
+  border-color: var(--accent, v.$primary-color);
+  box-shadow:
+    0 0 0 2px rgba(0, 0, 0, 0.4) inset,
+    0 0 10px var(--accent, v.$primary-color),
+    0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+.segmentHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: v.$space-xs;
+}
+
+.segmentPos {
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--accent, v.$primary-color);
+}
+
+.segmentCount {
+  font-variant-numeric: tabular-nums;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xs;
+}
+
+.segmentTrack {
+  position: relative;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.segmentFill {
+  height: 100%;
+  background: var(--accent, v.$primary-color);
+  box-shadow: 0 0 10px var(--accent, v.$primary-color);
+  border-radius: inherit;
+  transition: width 200ms v.$ease-desktop-standard;
+}
+
+@media (max-width: v.$breakpoint-tablet) {
+  .headerRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: v.$space-xs;
+  }
+
+  .controls {
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+
+  .cardsRow {
+    grid-auto-columns: minmax(220px, 75%);
+  }
+
+  $neon-strip-width-mobile: 10px;
+  .card {
+    padding-left: calc(v.$space-md + #{$neon-strip-width-mobile} + v.$space-sm);
+  }
+  .card::before {
+    width: $neon-strip-width-mobile;
+  }
+
+  // On smaller screens, allow stats to wrap into two rows if needed
+  .statsRow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .progressBar {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+}

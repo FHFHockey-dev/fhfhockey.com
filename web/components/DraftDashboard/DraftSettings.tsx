@@ -1,8 +1,10 @@
 // components/DraftDashboard/DraftSettings.tsx
 
 import React from "react";
-import { DraftSettings as DraftSettingsType } from "./DraftDashboard";
+import type { DraftSettings as DraftSettingsType } from "./DraftDashboard";
 import styles from "./DraftSettings.module.scss";
+
+type LeagueType = "points" | "categories";
 
 interface DraftSettingsProps {
   settings: DraftSettingsType;
@@ -11,15 +13,24 @@ interface DraftSettingsProps {
   onSnakeDraftChange: (isSnake: boolean) => void;
   myTeamId: string;
   onMyTeamIdChange: (teamId: string) => void;
-  // Add undo/reset props
   undoLastPick: () => void;
   resetDraft: () => void;
   draftHistory: any[];
   draftedPlayers: any[];
   currentPick: number;
-  // NEW: custom team names for labeling options
   customTeamNames?: Record<string, string>;
 }
+
+const CAT_KEYS = [
+  "GOALS",
+  "ASSISTS",
+  "PP_POINTS",
+  "SHOTS_ON_GOAL",
+  "HITS",
+  "BLOCKED_SHOTS"
+] as const;
+
+type CatKey = (typeof CAT_KEYS)[number];
 
 const DraftSettings: React.FC<DraftSettingsProps> = ({
   settings,
@@ -45,7 +56,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       draftOrder: newDraftOrder
     });
 
-    // Reset my team if it's no longer valid
     if (!newDraftOrder.includes(myTeamId)) {
       onMyTeamIdChange("Team 1");
     }
@@ -64,6 +74,11 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     (sum, count) => sum + count,
     0
   );
+
+  const leagueType: LeagueType = settings.leagueType || "points";
+  const weights = settings.categoryWeights || ({} as Record<string, number>);
+  const getWeight = (k: CatKey) =>
+    typeof weights[k] === "number" ? weights[k] : 1;
 
   return (
     <div className={styles.settingsContainer}>
@@ -120,6 +135,19 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               ))}
             </select>
           </div>
+          <div className={styles.settingRow}>
+            <label className={styles.label}>League Type:</label>
+            <select
+              value={leagueType}
+              onChange={(e) =>
+                onSettingsChange({ leagueType: e.target.value as LeagueType })
+              }
+              className={styles.select}
+            >
+              <option value="points">Points</option>
+              <option value="categories">Categories</option>
+            </select>
+          </div>
         </div>
 
         {/* Roster Configuration */}
@@ -152,34 +180,69 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
         </div>
 
         {/* Scoring Categories */}
-        <div className={styles.settingsGroup}>
-          <h3 className={styles.groupTitle}>Scoring Categories</h3>
-          <div className={styles.scoringGrid}>
-            {Object.entries(settings.scoringCategories)
-              .slice(0, 6)
-              .map(([stat, points]) => (
-                <div key={stat} className={styles.scoringSetting}>
-                  <label className={styles.statLabel}>{stat}:</label>
+        <div
+          className={`${styles.settingsGroup} ${styles.settingsGroupScoring}`}
+        >
+          <h3 className={styles.groupTitle}>
+            {leagueType === "categories"
+              ? "Category Weights"
+              : "Scoring Categories"}
+          </h3>
+          {leagueType === "categories" ? (
+            <div className={styles.scoringGrid}>
+              {CAT_KEYS.map((k) => (
+                <div key={k} className={styles.scoringSetting}>
+                  <label className={styles.statLabel}>{k}:</label>
                   <input
-                    type="number"
-                    step="0.1"
-                    value={points}
+                    type="range"
+                    min={0}
+                    max={2}
+                    step={0.1}
+                    value={getWeight(k)}
                     onChange={(e) =>
                       onSettingsChange({
-                        scoringCategories: {
-                          ...settings.scoringCategories,
-                          [stat]: Number(e.target.value)
+                        categoryWeights: {
+                          ...settings.categoryWeights,
+                          [k]: parseFloat(e.target.value)
                         }
                       })
                     }
-                    className={styles.pointsInput}
+                    className={styles.rangeInput}
                   />
+                  <div className={styles.weightLabel}>
+                    {getWeight(k).toFixed(1)}x
+                  </div>
                 </div>
               ))}
-            <button className={styles.expandButton}>
-              +{Object.keys(settings.scoringCategories).length - 6} more
-            </button>
-          </div>
+            </div>
+          ) : (
+            <div className={styles.scoringGrid}>
+              {Object.entries(settings.scoringCategories)
+                .slice(0, 6)
+                .map(([stat, points]) => (
+                  <div key={stat} className={styles.scoringSetting}>
+                    <label className={styles.statLabel}>{stat}:</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={points}
+                      onChange={(e) =>
+                        onSettingsChange({
+                          scoringCategories: {
+                            ...settings.scoringCategories,
+                            [stat]: Number(e.target.value)
+                          }
+                        })
+                      }
+                      className={styles.pointsInput}
+                    />
+                  </div>
+                ))}
+              <button className={styles.expandButton}>
+                +{Object.keys(settings.scoringCategories).length - 6} more
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Quick Actions */}

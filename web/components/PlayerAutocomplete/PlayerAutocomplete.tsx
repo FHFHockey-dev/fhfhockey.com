@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import Image from "next/legacy/image";
 import { createFilterOptions, useAutocomplete } from "@mui/material";
 import usePlayers from "hooks/usePlayers";
@@ -14,6 +14,8 @@ type PlayerAutocompleteProps = {
   inputClassName?: string;
   listClassName?: string;
   showButton?: boolean;
+  adpByPlayerId?: Map<number, number> | Record<number, number>;
+  sortByAdp?: boolean;
 };
 
 function PlayerAutocomplete({
@@ -23,10 +25,33 @@ function PlayerAutocomplete({
   inputClassName,
   listClassName,
   showButton = true,
+  adpByPlayerId,
+  sortByAdp = false
 }: PlayerAutocompleteProps) {
   const players = usePlayers();
-  //   const [playerId, setPlayerId] = useState<number>();
   const [playerOption, setPlayerOption] = useState<Player | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const optionsSorted = useMemo(() => {
+    if (!sortByAdp || !adpByPlayerId) return players;
+
+    const getAdp = (id: number): number => {
+      if (adpByPlayerId instanceof Map) {
+        return adpByPlayerId.get(id) ?? Number.POSITIVE_INFINITY;
+      }
+      return (
+        (adpByPlayerId as Record<number, number>)[id] ??
+        Number.POSITIVE_INFINITY
+      );
+    };
+
+    return [...players].sort((a, b) => {
+      const adpA = getAdp(a.id);
+      const adpB = getAdp(b.id);
+      if (adpA === adpB) return a.fullName.localeCompare(b.fullName);
+      return adpA - adpB;
+    });
+  }, [players, adpByPlayerId, sortByAdp]);
 
   const {
     getRootProps,
@@ -34,10 +59,10 @@ function PlayerAutocomplete({
     getInputProps,
     getListboxProps,
     getOptionProps,
-    groupedOptions,
+    groupedOptions
   } = useAutocomplete({
     id: "use-autocomplete-players",
-    options: players,
+    options: optionsSorted,
     getOptionLabel: (option) => `${option.fullName} (${option.sweaterNumber})`,
     isOptionEqualToValue: (option, value) => option.id === value.id,
     value: playerOption,
@@ -46,20 +71,31 @@ function PlayerAutocomplete({
       onPlayerChange(newValue);
       setPlayerOption(newValue);
 
-      // hide keyboard on mobile after a selection has been made
       if (reason === "selectOption") {
-        // @ts-ignore
-        getInputProps()?.ref.current?.blur();
+        inputRef.current?.blur();
       }
     },
     filterOptions: createFilterOptions({
       stringify(option) {
-        // ignore periods
-        // e.g. display T.J Oshine in option list while entering TJ
         return option.fullName.replaceAll(".", "");
-      },
-    }),
+      }
+    })
   });
+
+  // Create input props once so we can merge refs
+  const inputProps = useMemo(() => getInputProps(), [getInputProps]);
+
+  // Merge our ref with MUI's ref (which can be a callback or RefObject)
+  const mergedInputRef = (el: HTMLInputElement | null) => {
+    inputRef.current = el;
+    const refFromMUI = (inputProps as any).ref;
+    if (typeof refFromMUI === "function") {
+      refFromMUI(el);
+    } else if (refFromMUI && typeof refFromMUI === "object") {
+      (refFromMUI as React.MutableRefObject<HTMLInputElement | null>).current =
+        el;
+    }
+  };
 
   useEffect(() => {
     if (players.length) {
@@ -74,7 +110,8 @@ function PlayerAutocomplete({
           Player Name
         </label>
         <input
-          {...getInputProps()}
+          {...inputProps}
+          ref={mergedInputRef}
           placeholder="Search Player..."
           className={classNames(inputClassName)}
         />

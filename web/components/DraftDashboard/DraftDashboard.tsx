@@ -1,6 +1,6 @@
 // components/DraftDashboard/DraftDashboard.tsx
 
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useRef } from "react";
 import {
   useProcessedProjectionsData,
   ProcessedPlayer // Add this import
@@ -15,6 +15,7 @@ import DraftBoard from "./DraftBoard";
 import MyRoster from "./MyRoster";
 import ProjectionsTable from "./ProjectionsTable";
 import { useVORPCalculations } from "hooks/useVORPCalculations";
+import SuggestedPicks from "./SuggestedPicks";
 
 import styles from "./DraftDashboard.module.scss";
 
@@ -22,6 +23,8 @@ import styles from "./DraftDashboard.module.scss";
 export interface DraftSettings {
   teamCount: number;
   scoringCategories: Record<string, number>;
+  leagueType?: "points" | "categories";
+  categoryWeights?: Record<string, number>; // used in categories mode
   rosterConfig: {
     [position: string]: number;
     bench: number;
@@ -66,6 +69,15 @@ export interface VORPCalculation {
 const DEFAULT_DRAFT_SETTINGS: DraftSettings = {
   teamCount: 12,
   scoringCategories: getDefaultFantasyPointsConfig("skater"),
+  leagueType: "points",
+  categoryWeights: {
+    GOALS: 1,
+    ASSISTS: 1,
+    PP_POINTS: 1,
+    SHOTS_ON_GOAL: 1,
+    HITS: 1,
+    BLOCKED_SHOTS: 1
+  },
   rosterConfig: {
     C: 2,
     LW: 2,
@@ -90,6 +102,17 @@ const DraftDashboard: React.FC = () => {
   const [currentPick, setCurrentPick] = useState<number>(1);
   const [isSnakeDraft, setIsSnakeDraft] = useState<boolean>(true);
   const [myTeamId, setMyTeamId] = useState<string>("Team 1");
+  // NEW: baseline mode for VORP replacement source (persisted)
+  const [baselineMode, setBaselineMode] = useState<"remaining" | "full">(
+    "remaining"
+  );
+  // NEW: need-weighting toggle for VBD adjustments (persisted)
+  const [needWeightEnabled, setNeedWeightEnabled] = useState<boolean>(false);
+  // NEW: alpha strength for need weighting (persisted)
+  const [needAlpha, setNeedAlpha] = useState<number>(0.5);
+  // Guard to ensure we don't overwrite saved session before offering resume
+  const [sessionReady, setSessionReady] = React.useState(false);
+  const resumeAttemptedRef = React.useRef(false);
 
   // Add custom team names state
   const [customTeamNames, setCustomTeamNames] = useState<
@@ -142,6 +165,109 @@ const DraftDashboard: React.FC = () => {
     isLoading: projectionsData.isLoading,
     error: projectionsData.error
   });
+
+  // Restore persisted baselineMode
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem("draftDashboard.baselineMode");
+    if (saved === "remaining" || saved === "full") setBaselineMode(saved);
+  }, []);
+  // Persist baselineMode
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("draftDashboard.baselineMode", baselineMode);
+  }, [baselineMode]);
+  // Restore/persist needWeightEnabled
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem("draftDashboard.needWeight.v1");
+    if (saved === "true" || saved === "false")
+      setNeedWeightEnabled(saved === "true");
+  }, []);
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      "draftDashboard.needWeight.v1",
+      String(needWeightEnabled)
+    );
+  }, [needWeightEnabled]);
+  // Restore/persist needAlpha
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = window.localStorage.getItem("draftDashboard.needAlpha.v1");
+    if (saved != null) {
+      const v = parseFloat(saved);
+      if (!Number.isNaN(v)) setNeedAlpha(Math.max(0, Math.min(1, v)));
+    }
+  }, []);
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      "draftDashboard.needAlpha.v1",
+      String(needAlpha)
+    );
+  }, [needAlpha]);
+
+  // Resume Draft: load saved session on mount (once)
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (resumeAttemptedRef.current) return; // prevent double-run in StrictMode
+    resumeAttemptedRef.current = true;
+    try {
+      const raw = window.localStorage.getItem("draftDashboard.session.v1");
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved && typeof saved === "object") {
+          const ok = window.confirm("Resume draft from previous session?");
+          if (ok) {
+            if (saved.draftSettings) setDraftSettings(saved.draftSettings);
+            if (Array.isArray(saved.draftedPlayers))
+              setDraftedPlayers(saved.draftedPlayers);
+            if (typeof saved.currentPick === "number")
+              setCurrentPick(saved.currentPick);
+            if (typeof saved.isSnakeDraft === "boolean")
+              setIsSnakeDraft(saved.isSnakeDraft);
+            if (typeof saved.myTeamId === "string") setMyTeamId(saved.myTeamId);
+            if (saved.customTeamNames)
+              setCustomTeamNames(saved.customTeamNames);
+          }
+        }
+      }
+    } catch {
+    } finally {
+      // Allow persistence after resume decision (or if none existed)
+      setSessionReady(true);
+    }
+  }, []);
+
+  // Persist session on change (only after resume decision)
+  React.useEffect(() => {
+    if (!sessionReady) return;
+    if (typeof window === "undefined") return;
+    const payload = {
+      version: 1,
+      draftSettings,
+      draftedPlayers,
+      currentPick,
+      isSnakeDraft,
+      myTeamId,
+      customTeamNames
+    };
+    try {
+      window.localStorage.setItem(
+        "draftDashboard.session.v1",
+        JSON.stringify(payload)
+      );
+    } catch {}
+  }, [
+    sessionReady,
+    draftSettings,
+    draftedPlayers,
+    currentPick,
+    isSnakeDraft,
+    myTeamId,
+    customTeamNames
+  ]);
 
   // Calculate current turn and team
   const currentTurn = useMemo(() => {
@@ -241,11 +367,19 @@ const DraftDashboard: React.FC = () => {
   ]);
 
   // NEW: VORP metrics computed on full player pool (not just available)
-  const { playerMetrics: vorpMetrics, replacementByPos } = useVORPCalculations({
+  const {
+    playerMetrics: vorpMetrics,
+    replacementByPos,
+    expectedTakenByPos,
+    expectedN
+  } = useVORPCalculations({
     players: allPlayers,
     availablePlayers,
     draftSettings,
-    picksUntilNext
+    picksUntilNext,
+    leagueType: draftSettings.leagueType || "points",
+    baselineMode,
+    categoryWeights: draftSettings.categoryWeights
   });
 
   // Team stats calculations
@@ -315,18 +449,125 @@ const DraftDashboard: React.FC = () => {
         return sum + (m?.vorp || 0);
       }, 0);
 
+      // NEW: category totals for team (skater categories only for v1)
+      const CAT_KEYS = [
+        "GOALS",
+        "ASSISTS",
+        "PP_POINTS",
+        "SHOTS_ON_GOAL",
+        "HITS",
+        "BLOCKED_SHOTS"
+      ] as const;
+      const categoryTotals: Record<string, number> = {};
+      CAT_KEYS.forEach((k) => (categoryTotals[k] = 0));
+      teamPlayers.forEach((dp) => {
+        const player = allPlayers.find(
+          (p) => String(p.playerId) === dp.playerId
+        );
+        if (!player) return;
+        CAT_KEYS.forEach((k) => {
+          const v = (player.combinedStats as any)?.[k]?.projected as
+            | number
+            | null;
+          if (typeof v === "number" && Number.isFinite(v)) {
+            categoryTotals[k] += v;
+          }
+        });
+      });
+
       return {
         teamId,
         teamName: customTeamNames[teamId] || teamId,
         owner: teamId,
         projectedPoints,
-        categoryTotals: {},
+        categoryTotals,
         rosterSlots,
         bench,
         teamVorp
       };
     });
   }, [draftSettings, draftedPlayers, allPlayers, customTeamNames, vorpMetrics]);
+
+  // NEW: compute my team's positional needs normalized 0..1 (remaining slots / total slots)
+  const myTeamStats = React.useMemo(
+    () => teamStats.find((t) => t.teamId === myTeamId),
+    [teamStats, myTeamId]
+  );
+  const posNeeds = React.useMemo(() => {
+    const res: Record<string, number> = {};
+    if (!myTeamStats) return res;
+    const rc = draftSettings.rosterConfig as any;
+    const rs = myTeamStats.rosterSlots || {};
+    ["C", "LW", "RW", "D", "G"].forEach((pos) => {
+      const total = Math.max(1, Number(rc[pos] || 0));
+      const filled = (rs[pos]?.length || 0) as number;
+      const remaining = Math.max(0, total - filled);
+      res[pos] = Math.min(1, remaining / total);
+    });
+    return res;
+  }, [myTeamStats, draftSettings.rosterConfig]);
+
+  // NEW: category deficits vector for my team (categories mode): league mean - my totals
+  const catNeeds = React.useMemo(() => {
+    if ((draftSettings.leagueType || "points") !== "categories")
+      return undefined;
+    const teams = teamStats;
+    const CAT_KEYS = [
+      "GOALS",
+      "ASSISTS",
+      "PP_POINTS",
+      "SHOTS_ON_GOAL",
+      "HITS",
+      "BLOCKED_SHOTS"
+    ] as const;
+    const means: Record<string, number> = {};
+    CAT_KEYS.forEach((k) => (means[k] = 0));
+    if (teams.length > 0) {
+      CAT_KEYS.forEach((k) => {
+        const sum = teams.reduce(
+          (acc, t) => acc + (t.categoryTotals[k] || 0),
+          0
+        );
+        means[k] = sum / teams.length;
+      });
+    }
+    const mine = teams.find((t) => t.teamId === myTeamId);
+    const deficits: Record<string, number> = {};
+    CAT_KEYS.forEach((k) => {
+      const myVal = mine?.categoryTotals[k] || 0;
+      deficits[k] = Math.max(0, means[k] - myVal); // focus on below-average needs
+    });
+    return deficits;
+  }, [teamStats, myTeamId, draftSettings.leagueType]);
+
+  // NEW: roster progress for progress bar (C/LW/RW/D/UTIL/G)
+  const rosterProgress = React.useMemo(() => {
+    const rc: any = draftSettings.rosterConfig || {};
+    const rs = myTeamStats?.rosterSlots || {};
+    const items: { pos: string; filled: number; total: number }[] = [];
+    const order: Array<"C" | "LW" | "RW" | "D" | "UTIL" | "G"> = [
+      "C",
+      "LW",
+      "RW",
+      "D",
+      "UTIL",
+      "G"
+    ];
+    order.forEach((pos) => {
+      const total =
+        pos === "UTIL"
+          ? Number(rc.utility || 0)
+          : Number((rc as any)[pos] || 0);
+      if (total > 0) {
+        const filled =
+          pos === "UTIL"
+            ? Number(rs["UTILITY"]?.length || 0)
+            : Number(rs[pos]?.length || 0);
+        items.push({ pos, filled, total });
+      }
+    });
+    return items;
+  }, [draftSettings.rosterConfig, myTeamStats]);
 
   // Draft a player - Updated to track history for undo
   const draftPlayer = useCallback(
@@ -369,6 +610,11 @@ const DraftDashboard: React.FC = () => {
     setDraftedPlayers([]);
     setCurrentPick(1);
     setDraftHistory([]);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem("draftDashboard.session.v1");
+      } catch {}
+    }
   }, []);
 
   // Update draft settings
@@ -396,6 +642,26 @@ const DraftDashboard: React.FC = () => {
           draftedPlayers={draftedPlayers}
           currentPick={currentPick}
           customTeamNames={customTeamNames}
+        />
+      </section>
+
+      {/* Suggested Picks - Full Width Cards Row */}
+      <section className={styles.suggestedSection}>
+        <SuggestedPicks
+          players={availablePlayers}
+          vorpMetrics={vorpMetrics}
+          needWeightEnabled={needWeightEnabled}
+          needAlpha={needAlpha}
+          posNeeds={posNeeds}
+          leagueType={draftSettings.leagueType || "points"}
+          catNeeds={catNeeds}
+          currentPick={currentPick}
+          teamCount={draftSettings.teamCount}
+          baselineMode={baselineMode}
+          nextPickNumber={currentPick + picksUntilNext}
+          defaultLimit={10}
+          // NEW: roster progress bar data
+          rosterProgress={rosterProgress}
         />
       </section>
 
@@ -428,6 +694,11 @@ const DraftDashboard: React.FC = () => {
             currentPick={currentPick}
             currentTurn={currentTurn}
             teamOptions={teamOptions}
+            // NEW: recommendations context
+            vorpMetrics={vorpMetrics}
+            needWeightEnabled={needWeightEnabled}
+            needAlpha={needAlpha}
+            posNeeds={posNeeds}
           />
         </div>
 
@@ -442,6 +713,26 @@ const DraftDashboard: React.FC = () => {
             canDraft={true}
             // NEW: pass vorp metrics map for per-player VORP column
             vorpMetrics={vorpMetrics}
+            // NEW: pass replacement baselines for tooltip/context
+            replacementByPos={replacementByPos}
+            // NEW: baseline mode control
+            baselineMode={baselineMode}
+            onBaselineModeChange={setBaselineMode}
+            // NEW: pass expected position runs
+            expectedRuns={{
+              byPos: expectedTakenByPos || {},
+              N: expectedN || 0
+            }}
+            // NEW: Need-weighting controls and current team needs
+            needWeightEnabled={needWeightEnabled}
+            onNeedWeightChange={setNeedWeightEnabled}
+            posNeeds={posNeeds}
+            needAlpha={needAlpha}
+            onNeedAlphaChange={setNeedAlpha}
+            // NEW: Absolute next pick number for risk model
+            nextPickNumber={currentPick + picksUntilNext}
+            // NEW: League type for label/value switching
+            leagueType={draftSettings.leagueType || "points"}
           />
         </div>
       </section>
