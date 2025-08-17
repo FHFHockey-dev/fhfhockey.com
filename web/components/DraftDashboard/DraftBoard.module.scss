@@ -557,9 +557,9 @@
 
 /* Ensure spacer matches team label width for perfect column alignment */
 .teamLabelSpacer {
-  width: 60px;
-  min-width: 60px;
-  max-width: 60px;
+  width: v.$team-label-width;
+  min-width: v.$team-label-width;
+  max-width: v.$team-label-width;
   height: 20px;
   flex-shrink: 0;
 }
@@ -612,9 +612,9 @@
   //   border-radius: 3px;
   border: 1px solid v.$border-primary;
   padding: 0;
-  width: 60px; // Fixed width to prevent alignment issues
-  min-width: 60px;
-  max-width: 60px;
+  width: v.$team-label-width; // Fixed width to prevent alignment issues
+  min-width: v.$team-label-width;
+  max-width: v.$team-label-width;
   flex-shrink: 0;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -653,9 +653,9 @@
   font-weight: 600;
   text-align: center;
   line-height: 20px;
-  width: 60px; // Fixed width to match teamLabel
-  min-width: 60px;
-  max-width: 60px;
+  width: v.$team-label-width; // Fixed width to match teamLabel
+  min-width: v.$team-label-width;
+  max-width: v.$team-label-width;
   flex-shrink: 0;
 
   &:focus {

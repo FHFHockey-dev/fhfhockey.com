@@ -420,31 +420,6 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         </div>
       </div>
 
-      {/* GitHub-style contribution graph */}
-      <div className={styles.contributionGraphContainer}>
-        <div className={styles.contributionGraph}>
-          {/* Round labels (columns) */}
-          <div className={styles.roundLabels}>
-            <div className={styles.teamLabelSpacer}></div>
-            <div
-              className={styles.roundLabelsGrid}
-              style={{ gridTemplateColumns: `repeat(${roundsToShow}, 1fr)` }}
-            >
-              {Array.from({ length: roundsToShow }, (_, i) => (
-                <span key={i} className={styles.roundLabel}>
-                  {i + 1}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Contribution grid with teams as rows */}
-          <div className={styles.contributionGrid}>
-            {renderContributionGrid()}
-          </div>
-        </div>
-      </div>
-
       {/* Team Leaderboard Table */}
       <div className={styles.leaderboardSection}>
         <h3 className={styles.sectionTitle}>
@@ -621,6 +596,31 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
               })}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* GitHub-style contribution graph */}
+      <div className={styles.contributionGraphContainer}>
+        <div className={styles.contributionGraph}>
+          {/* Round labels (columns) */}
+          <div className={styles.roundLabels}>
+            <div className={styles.teamLabelSpacer}></div>
+            <div
+              className={styles.roundLabelsGrid}
+              style={{ gridTemplateColumns: `repeat(${roundsToShow}, 1fr)` }}
+            >
+              {Array.from({ length: roundsToShow }, (_, i) => (
+                <span key={i} className={styles.roundLabel}>
+                  {i + 1}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Contribution grid with teams as rows */}
+          <div className={styles.contributionGrid}>
+            {renderContributionGrid()}
+          </div>
         </div>
       </div>
     </div>
