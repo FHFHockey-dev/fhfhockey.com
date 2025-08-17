@@ -25,6 +25,58 @@
   box-shadow: v.$box-shadow-default;
 }
 
+/* =================== Settings Actions =================== */
+.settingsActions {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+  margin-top: v.$space-sm;
+  justify-content: flex-end;
+}
+
+.summaryButton {
+  @extend .draftButton;
+  padding: v.$space-xs v.$space-lg;
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    v.$box-shadow-default,
+    0 0 20px rgba(v.$primary-color, 0.25);
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      120deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.12) 20%,
+      transparent 40%
+    );
+    transform: translateX(-120%);
+    animation: summary-shimmer 3s infinite ease-in-out;
+    pointer-events: none;
+  }
+
+  &:hover:not(:disabled) {
+    box-shadow:
+      0 8px 16px rgba(v.$primary-color, 0.35),
+      0 0 28px rgba(v.$secondary-color, 0.25);
+  }
+}
+
+@keyframes summary-shimmer {
+  0% {
+    transform: translateX(-120%);
+  }
+  60% {
+    transform: translateX(120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+
 /* =================== Suggested Picks Row =================== */
 .suggestedSection {
   width: 100%;

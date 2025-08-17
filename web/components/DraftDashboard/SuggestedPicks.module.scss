@@ -208,7 +208,7 @@ $neon-strip-width: 12px;
   }
 
   &:hover {
-    transform: translateY(-3px);
+    transform: translateX(-3px);
     box-shadow:
       0 10px 30px rgba(0, 0, 0, 0.45),
       0 0 0 1px rgba(v.$primary-color, 0.15) inset,

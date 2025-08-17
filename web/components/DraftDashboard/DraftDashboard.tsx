@@ -1,6 +1,12 @@
 // components/DraftDashboard/DraftDashboard.tsx
 
-import React, { useState, useCallback, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect
+} from "react";
 import {
   useProcessedProjectionsData,
   ProcessedPlayer // Add this import
@@ -16,6 +22,7 @@ import MyRoster from "./MyRoster";
 import ProjectionsTable from "./ProjectionsTable";
 import { useVORPCalculations } from "hooks/useVORPCalculations";
 import SuggestedPicks from "./SuggestedPicks";
+import DraftSummaryModal from "./DraftSummaryModal";
 
 import styles from "./DraftDashboard.module.scss";
 
@@ -134,6 +141,9 @@ const DraftDashboard: React.FC = () => {
     }[]
   >([]);
 
+  // Add summary modal state
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+
   // Projection Data Setup
   const [sourceControls] = useState(() => {
     const controls: Record<string, { isSelected: boolean; weight: number }> =
@@ -146,8 +156,25 @@ const DraftDashboard: React.FC = () => {
     return controls;
   });
 
-  // Get player projections data
-  const projectionsData = useProcessedProjectionsData({
+  // NEW: Goalie projection source controls
+  const [goalieSourceControls] = useState(() => {
+    const controls: Record<string, { isSelected: boolean; weight: number }> =
+      {};
+    PROJECTION_SOURCES_CONFIG.filter(
+      (src) => src.playerType === "goalie"
+    ).forEach((source) => {
+      controls[source.id] = { isSelected: true, weight: 1 };
+    });
+    return controls;
+  });
+
+  // NEW: Goalie scoring values (editable via settings)
+  const [goaliePointValues, setGoaliePointValues] = useState<
+    Record<string, number>
+  >(() => getDefaultFantasyPointsConfig("goalie"));
+
+  // Get player projections data (skaters)
+  const skaterData = useProcessedProjectionsData({
     activePlayerType: "skater",
     sourceControls,
     yahooDraftMode: "ALL",
@@ -159,11 +186,25 @@ const DraftDashboard: React.FC = () => {
     togglePerGameFantasyPoints: () => {}
   });
 
+  // Get player projections data (goalies) - use editable goalie points config
+  const goalieData = useProcessedProjectionsData({
+    activePlayerType: "goalie",
+    sourceControls: goalieSourceControls,
+    yahooDraftMode: "ALL",
+    fantasyPointSettings: goaliePointValues,
+    supabaseClient: supabase,
+    currentSeasonId: currentSeasonId ? String(currentSeasonId) : undefined,
+    styles: {},
+    showPerGameFantasyPoints: false,
+    togglePerGameFantasyPoints: () => {}
+  });
+
   // Debug logging to see what data we're getting
-  console.log("Debug - DraftDashboard projectionsData:", {
-    playerCount: projectionsData.processedPlayers.length,
-    isLoading: projectionsData.isLoading,
-    error: projectionsData.error
+  console.log("Debug - DraftDashboard projections (skaters/goalies):", {
+    skaters: skaterData.processedPlayers.length,
+    goalies: goalieData.processedPlayers.length,
+    isLoading: skaterData.isLoading || goalieData.isLoading,
+    error: skaterData.error || goalieData.error
   });
 
   // Restore persisted baselineMode
@@ -297,8 +338,6 @@ const DraftDashboard: React.FC = () => {
     myTeamId
   ]);
 
-  // (removed duplicate availablePlayers; compute after allPlayers)
-
   // Add team name update function
   const updateTeamName = useCallback((teamId: string, newName: string) => {
     setCustomTeamNames((prev) => ({
@@ -307,13 +346,25 @@ const DraftDashboard: React.FC = () => {
     }));
   }, []);
 
-  // Compute all players array once for children that need complete data
-  const allPlayers: ProcessedPlayer[] = useMemo(
+  // Compute all players array from both skater and goalie data
+  const skaterPlayers: ProcessedPlayer[] = useMemo(
     () =>
-      projectionsData.processedPlayers.filter(
-        (player): player is ProcessedPlayer => !("type" in player)
+      skaterData.processedPlayers.filter(
+        (p): p is ProcessedPlayer => !("type" in p)
       ),
-    [projectionsData.processedPlayers]
+    [skaterData.processedPlayers]
+  );
+  const goaliePlayers: ProcessedPlayer[] = useMemo(
+    () =>
+      goalieData.processedPlayers.filter(
+        (p): p is ProcessedPlayer => !("type" in p)
+      ),
+    [goalieData.processedPlayers]
+  );
+
+  const allPlayers: ProcessedPlayer[] = useMemo(
+    () => [...skaterPlayers, ...goaliePlayers],
+    [skaterPlayers, goaliePlayers]
   );
 
   // Compute available players excluding drafted ones
@@ -387,17 +438,12 @@ const DraftDashboard: React.FC = () => {
     return draftSettings.draftOrder.map((teamId) => {
       const teamPlayers = draftedPlayers.filter((p) => p.teamId === teamId);
 
-      // Calculate projected points for this team
+      // Calculate projected points for this team (use merged pool)
       const projectedPoints = teamPlayers.reduce((total, draftedPlayer) => {
-        const player = projectionsData.processedPlayers.find(
-          (p) => !("type" in p) && String(p.playerId) === draftedPlayer.playerId
+        const player = allPlayers.find(
+          (p) => String(p.playerId) === draftedPlayer.playerId
         );
-        return (
-          total +
-          (player && !("type" in player)
-            ? player.fantasyPoints.projected || 0
-            : 0)
-        );
+        return total + (player ? player.fantasyPoints.projected || 0 : 0);
       }, 0);
 
       // Group players by position for roster slots with UTIL separate and BENCH rules
@@ -424,10 +470,20 @@ const DraftDashboard: React.FC = () => {
             rosterSlots[primaryPosition].length <
               (draftSettings.rosterConfig as any)[primaryPosition];
 
-          if (!isGoalie && canFillPrimary) {
+          if (isGoalie) {
+            // Goalies fill G slots first, never UTIL
+            if (
+              rosterSlots["G"] &&
+              rosterSlots["G"].length < (draftSettings.rosterConfig as any)["G"]
+            ) {
+              rosterSlots["G"].push(draftedPlayer);
+            } else {
+              rosterSlots["BENCH"] ||= [];
+              rosterSlots["BENCH"].push(draftedPlayer);
+            }
+          } else if (canFillPrimary) {
             rosterSlots[primaryPosition].push(draftedPlayer);
           } else if (
-            !isGoalie &&
             rosterSlots["UTILITY"] &&
             rosterSlots["UTILITY"].length < draftSettings.rosterConfig.utility
           ) {
@@ -569,9 +625,32 @@ const DraftDashboard: React.FC = () => {
     return items;
   }, [draftSettings.rosterConfig, myTeamStats]);
 
-  // Draft a player - Updated to track history for undo
+  // Calculate total roster size (rounds) and total picks
+  const totalRosterSize = useMemo(
+    () =>
+      Object.values(draftSettings.rosterConfig).reduce((sum, c) => sum + c, 0),
+    [draftSettings.rosterConfig]
+  );
+  const totalPicks = useMemo(
+    () => draftSettings.teamCount * totalRosterSize,
+    [draftSettings.teamCount, totalRosterSize]
+  );
+  const draftComplete = draftedPlayers.length >= totalPicks;
+
+  // Auto-open summary when draft completes
+  useEffect(() => {
+    if (draftComplete) setIsSummaryOpen(true);
+  }, [draftComplete]);
+
+  // Draft a player - Updated to track history for undo and prevent drafting beyond completion
   const draftPlayer = useCallback(
     (playerId: string) => {
+      // Prevent drafting beyond completion; open summary instead
+      if (draftComplete) {
+        setIsSummaryOpen(true);
+        return;
+      }
+
       const newDraftedPlayer: DraftedPlayer = {
         playerId,
         teamId: currentTurn.teamId,
@@ -592,7 +671,7 @@ const DraftDashboard: React.FC = () => {
       setDraftedPlayers((prev) => [...prev, newDraftedPlayer]);
       setCurrentPick((prev) => prev + 1);
     },
-    [currentTurn, currentPick, draftedPlayers]
+    [currentTurn, currentPick, draftedPlayers, draftComplete]
   );
 
   // Add undo functionality
@@ -642,6 +721,11 @@ const DraftDashboard: React.FC = () => {
           draftedPlayers={draftedPlayers}
           currentPick={currentPick}
           customTeamNames={customTeamNames}
+          // NEW: expose goalie scoring configuration controls
+          goalieScoringCategories={goaliePointValues}
+          onGoalieScoringChange={setGoaliePointValues}
+          // NEW: pass handler to open draft summary from settings header
+          onOpenSummary={() => setIsSummaryOpen(true)}
         />
       </section>
 
@@ -707,8 +791,8 @@ const DraftDashboard: React.FC = () => {
           <ProjectionsTable
             players={availablePlayers}
             draftedPlayers={draftedPlayers}
-            isLoading={projectionsData.isLoading}
-            error={projectionsData.error}
+            isLoading={skaterData.isLoading || goalieData.isLoading}
+            error={skaterData.error || goalieData.error}
             onDraftPlayer={draftPlayer}
             canDraft={true}
             // NEW: pass vorp metrics map for per-player VORP column
@@ -736,6 +820,17 @@ const DraftDashboard: React.FC = () => {
           />
         </div>
       </section>
+
+      {/* Summary Modal */}
+      <DraftSummaryModal
+        isOpen={isSummaryOpen}
+        onClose={() => setIsSummaryOpen(false)}
+        draftSettings={draftSettings}
+        draftedPlayers={draftedPlayers}
+        teamStats={teamStats}
+        allPlayers={allPlayers}
+        vorpMetrics={vorpMetrics}
+      />
     </main>
   );
 };

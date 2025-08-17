@@ -31,6 +31,13 @@
   color: v.$primary-color;
 }
 
+/* Header right-side actions cluster */
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+}
+
 /* =================== Draft Type Toggle =================== */
 .draftTypeToggle {
   display: flex;
@@ -65,6 +72,47 @@
     &:hover {
       background-color: color.adjust(v.$primary-color, $lightness: -5%);
     }
+  }
+}
+
+/* Summary button next to toggle */
+.summaryButton {
+  @include v.button-style;
+  padding: v.$space-xs v.$space-sm;
+  font-size: v.$font-size-xs;
+  background-color: transparent;
+  color: v.$text-primary;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+
+  &:hover:not(:disabled) {
+    background-color: color.adjust(v.$secondary-color, $alpha: -0.85);
+    border-color: v.$secondary-color;
+    color: v.$secondary-color;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+/* Tiny collapse chevron button */
+.collapseButton {
+  @include v.reset-button;
+  width: 28px;
+  height: 28px;
+  line-height: 28px;
+  text-align: center;
+  border-radius: v.$border-radius-sm;
+  border: 1px solid v.$border-secondary;
+  color: v.$text-secondary;
+  background: v.$background-dark;
+
+  &:hover {
+    color: v.$primary-color;
+    border-color: v.$primary-color;
+    background: color.adjust(v.$primary-color, $alpha: -0.95);
   }
 }
 
@@ -210,7 +258,7 @@
 /* =================== Scoring Configuration =================== */
 .scoringGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr); // More compact - 2 columns
+  grid-template-columns: repeat(8, 1fr); // More compact - 2 columns
   gap: v.$space-xs; // Reduced gap
 }
 
@@ -218,6 +266,21 @@
   display: flex;
   flex-direction: column;
   gap: v.$space-xs;
+}
+
+/* Compact subgroup heading (h4) */
+.subgroupTitle {
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+  color: v.$primary-color;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 v.$space-xs 0; // Remove large top margin
+}
+
+/* Wrapper for subgroup to control spacing between sections */
+.scoringSubgroup {
+  margin-top: 0; // remove default spacing between subgroups
 }
 
 .statLabel {

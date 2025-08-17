@@ -147,28 +147,44 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
 
   // Get all drafted and available players for calculating heat map intensities
   const allPlayersData = useMemo(() => {
+    // Use the full pool so drafted players remain colorized
     const playerDataMap = new Map<string, ProcessedPlayer>();
-    availablePlayers.forEach((player) => {
+    allPlayers.forEach((player) => {
       playerDataMap.set(String(player.playerId), player);
     });
     return playerDataMap;
-  }, [availablePlayers]);
+  }, [allPlayers]);
 
   // Calculate max fantasy points for heat map scaling
   const maxFantasyPoints = useMemo(() => {
+    // Scale from the full pool to keep intensity stable across the board
     let max = 0;
-    draftedPlayers.forEach((drafted) => {
-      const playerData = allPlayersData.get(drafted.playerId);
-      if (playerData?.fantasyPoints.projected) {
-        max = Math.max(max, playerData.fantasyPoints.projected);
+    allPlayers.forEach((p) => {
+      const fp = p?.fantasyPoints?.projected;
+      if (typeof fp === "number" && Number.isFinite(fp)) {
+        if (fp > max) max = fp;
       }
     });
-    return max || 100; // Default to 100 if no data
-  }, [draftedPlayers, allPlayersData]);
+
+    // Fallback: if no projections, try drafted players via lookup
+    if (max <= 0) {
+      draftedPlayers.forEach((drafted) => {
+        const playerData = allPlayersData.get(drafted.playerId);
+        const fp = playerData?.fantasyPoints?.projected;
+        if (typeof fp === "number" && Number.isFinite(fp)) {
+          if (fp > max) max = fp;
+        }
+      });
+    }
+
+    // Final fallback default
+    return max > 0 ? max : 100;
+  }, [allPlayers, draftedPlayers, allPlayersData]);
 
   // Get heat map intensity (0-4 levels like GitHub)
   const getHeatMapIntensity = (fantasyPoints: number | null): number => {
     if (!fantasyPoints || fantasyPoints <= 0) return 0;
+    if (!maxFantasyPoints || maxFantasyPoints <= 0) return 0;
     const percentage = fantasyPoints / maxFantasyPoints;
     if (percentage <= 0.2) return 1;
     if (percentage <= 0.4) return 2;
