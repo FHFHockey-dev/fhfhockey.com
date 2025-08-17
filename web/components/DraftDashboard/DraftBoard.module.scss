@@ -550,17 +550,28 @@
 }
 
 .roundLabels {
+  // wrapper for team label spacer + labels grid
   display: flex;
-  margin-bottom: v.$space-xs;
-  min-width: fit-content;
   align-items: center;
 }
 
+/* Ensure spacer matches team label width for perfect column alignment */
 .teamLabelSpacer {
-  width: 63px; // Match the teamLabel width
-  min-width: 63px;
-  max-width: 63px;
+  width: v.$team-label-width;
+  min-width: v.$team-label-width;
+  max-width: v.$team-label-width;
+  height: 20px;
   flex-shrink: 0;
+}
+
+.roundLabelsGrid {
+  display: grid; // equal-width columns
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  // grid-template-columns set inline from TSX: repeat(N, 1fr)
 }
 
 .roundLabel {
@@ -569,14 +580,11 @@
   font-weight: 600;
   text-align: center;
   line-height: 1;
-  min-width: 30px; // Minimum width for round numbers
-  padding: v.$space-xxs;
-  flex-shrink: 0;
-
-  &:first-child {
-    // Empty cell above team numbers
-    background: transparent;
-  }
+  min-width: 0;
+  padding: v.$space-xxs; // keep small padding
+  /* Make label size exactly one grid track and include padding/border */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .contributionGrid {
@@ -604,9 +612,9 @@
   //   border-radius: 3px;
   border: 1px solid v.$border-primary;
   padding: 0;
-  width: 60px; // Fixed width to prevent alignment issues
-  min-width: 60px;
-  max-width: 60px;
+  width: v.$team-label-width; // Fixed width to prevent alignment issues
+  min-width: v.$team-label-width;
+  max-width: v.$team-label-width;
   flex-shrink: 0;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -645,9 +653,9 @@
   font-weight: 600;
   text-align: center;
   line-height: 20px;
-  width: 60px; // Fixed width to match teamLabel
-  min-width: 60px;
-  max-width: 60px;
+  width: v.$team-label-width; // Fixed width to match teamLabel
+  min-width: v.$team-label-width;
+  max-width: v.$team-label-width;
   flex-shrink: 0;
 
   &:focus {
@@ -658,15 +666,18 @@
 }
 
 .teamRoundCells {
-  display: flex;
+  display: grid;
+  gap: 0;
   align-items: center;
-  flex: 1;
-  min-width: fit-content;
+  flex: 1 1 auto;
+  min-width: 0;
+  // grid-template-columns set inline from TSX: repeat(N, 1fr)
 }
 
 .contributionCell {
-  width: 30px; // Wider for better visibility and player names
-  height: 20px; // Taller for better visibility
+  height: 20px; // retain height
+  // remove fixed widths to allow dynamic grid sizing
+  // width: auto by default in grid
   border-radius: 3px;
   border: 1px solid color.adjust(v.$background-medium, $lightness: 5%);
   cursor: pointer;
@@ -674,19 +685,9 @@
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: v.$font-size-xxs;
-  font-weight: 600;
-  text-align: center;
-  line-height: 1;
-  min-width: 30px;
-  flex-shrink: 0; // Prevent cells from shrinking
-
-  &:hover {
-    border-color: color.adjust(v.$primary-color, $alpha: -0.3);
-    transform: scale(1.05);
-    z-index: 10;
-  }
+  /* Fill the grid track width and include border in sizing to match labels */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .emptyCell {
@@ -839,17 +840,17 @@
 
 @media (max-width: v.$breakpoint-mobile-max) {
   .contributionCell {
-    width: 9px;
+    // keep dynamic width; only reduce height for dense view
     height: 9px;
   }
 
+  // Legend squares can remain small independently of grid
   .legendSquare {
     width: 9px;
     height: 9px;
   }
 
   .emptyCell {
-    width: 9px;
     height: 9px;
   }
 

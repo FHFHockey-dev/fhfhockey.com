@@ -7,7 +7,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  max-height: 700px; /* Ensure it respects parent height */
+  max-height: 810px; /* Ensure it respects parent height */
   overflow: hidden;
   background-color: v.$background-medium;
 }
@@ -20,6 +20,99 @@
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
+}
+
+/* Header actions and info tooltip */
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: v.$space-md;
+}
+
+.infoTooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.infoButton {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid v.$border-secondary;
+  background: transparent;
+  color: v.$text-primary;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  transition: all 0.15s ease;
+
+  &:hover,
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+    color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.25);
+  }
+}
+
+.tooltipContent {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: min(360px, 90vw);
+  background: color.adjust(v.$background-dark, $lightness: -3%);
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-sm v.$space-md;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  color: v.$text-primary;
+  z-index: 50;
+  opacity: 0;
+  transform: translateY(6px);
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+/* Show tooltip on hover or keyboard focus */
+.infoTooltip:hover .tooltipContent,
+.infoTooltip:focus-within .tooltipContent {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.tooltipTitle {
+  font-weight: 700;
+  color: v.$primary-color;
+  margin-bottom: v.$space-xs;
+}
+
+.tooltipBody {
+  font-size: v.$font-size-xs;
+  line-height: 1.45;
+
+  ul {
+    margin: v.$space-xs 0;
+    padding-left: v.$space-md;
+
+    li {
+      list-style: disc;
+      margin: 0 0 v.$space-xxs 0;
+    }
+  }
+}
+
+.tooltipFootnote {
+  margin-top: v.$space-xs;
+  color: v.$text-secondary;
+  font-style: italic;
 }
 
 .panelTitle {
@@ -36,15 +129,6 @@
   color: v.$primary-color;
 }
 
-.playerCount {
-  background-color: v.$primary-color;
-  color: v.$color-white;
-  padding: v.$space-xs v.$space-sm;
-  border-radius: v.$border-radius-md;
-  font-size: v.$font-size-sm;
-  font-weight: 600;
-}
-
 /* =================== Filters Section =================== */
 .filtersSection {
   display: flex;
@@ -53,10 +137,13 @@
   background-color: color.adjust(v.$background-medium, $lightness: -1%);
   border-bottom: 1px solid v.$border-secondary;
   flex-shrink: 0;
+  /* NEW: allow controls to stay on one line and forecast to span below */
+  flex-wrap: wrap;
+  align-items: flex-start;
 }
 
 .searchContainer {
-  flex: 1;
+  flex: 1 1 420px; // grow, prefer wider search
 }
 
 .searchInput {
@@ -81,6 +168,7 @@
 
 .positionFilter {
   min-width: 150px;
+  flex: 0 0 200px; // keep select compact on the right
 }
 
 .positionSelect {
@@ -104,6 +192,12 @@
   }
 }
 
+/* NEW: full-width run forecast strip under filters */
+.runForecastWide {
+  flex: 1 0 100%;
+  margin-top: v.$space-sm;
+}
+
 /* =================== Table Container with Scroll =================== */
 .tableContainer {
   flex: 1;
@@ -119,19 +213,20 @@
   width: 100%;
   border-collapse: collapse;
   font-size: v.$font-size-sm;
+  table-layout: fixed; // Enforce column widths and consistent layout
 }
 
 .playersTable thead {
   position: sticky;
   top: 0;
+  z-index: 5;
   background-color: color.adjust(v.$background-dark, $lightness: -5%);
-  z-index: 10;
 }
 
 .playersTable th {
   background-color: color.adjust(v.$background-dark, $lightness: -5%);
   color: v.$text-primary;
-  padding: v.$space-sm v.$space-md;
+  padding: v.$space-sm v.$space-sm;
   text-align: left;
   font-weight: 700;
   text-transform: uppercase;
@@ -140,29 +235,136 @@
   font-size: v.$font-size-xs;
 }
 
+.playersTable th.colFP,
+.playersTable th.colVorp,
+.playersTable th.colAdp,
+.playersTable th.colNextPick {
+  text-align: left;
+}
+
 .playersTable td {
-  padding: v.$space-xs v.$space-md;
+  padding: v.$space-sm v.$space-sm; // Increase vertical spacing for legibility
   color: v.$text-primary;
   border-bottom: 1px solid v.$border-secondary;
   font-size: v.$font-size-xs;
   vertical-align: middle;
+  text-align: left;
+  line-height: 1.4; // Improve readability
+}
+
+/* =================== Value Bands (VBD & Proj FP) =================== */
+.valueBand {
+  /* Dark text to create transparent effect over tinted background */
+  color: v.$background-dark;
+  font-weight: 700;
+  border: 1px solid transparent; /* set by variant */
+  border-radius: 4px;
+}
+.valueSuccess {
+  background-color: rgba(v.$success-color, 0.5);
+  border-color: v.$success-color;
+}
+.valueWarning {
+  background-color: rgba(v.$warning-color, 0.5);
+  border-color: v.$warning-color;
+}
+.valueDanger {
+  background-color: rgba(v.$danger-color, 0.5);
+  border-color: v.$danger-color;
+}
+
+/* Ensure numeric alignment remains right for these cells */
+.valueNumeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* When value band applied to fantasy points, override default green text */
+.valueBand.fantasyPoints {
+  color: v.$background-dark;
+}
+
+/* Header controls for scope toggle */
+.scopeToggle {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+.scopeSelect {
+  background-color: v.$background-dark;
+  color: v.$text-primary;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  padding: 4px 6px;
+  font-size: v.$font-size-xs;
+}
+
+/* Column sizing to avoid overflow - now responsive with percentages */
+.colName {
+  width: 20%; // reduced to free space for ADP & Next-Pick
+}
+.colPos {
+  width: 7%;
+}
+.colTeam {
+  width: 7%;
+}
+.colFP {
+  width: 12%; // slightly increased
+}
+.colVorp {
+  width: 9%; // slightly reduced (applies to VORP, VONA, VBD)
+  // x 3
+}
+.colAdp {
+  width: 9%; // increased; benefits ADP and Next-Pick
+}
+.colNextPick {
+  width: 12%; // new: explicit width for Next-Pick %
+}
+.colAction {
+  width: 15%; // tightened to free space
+}
+
+/* Zebra striping for better row separation - Fixed to target actual row classes */
+.playerRow:nth-child(odd) {
+  background-color: color.adjust(v.$background-dark, $lightness: -2%);
+}
+.playerRow:nth-child(even) {
+  background-color: color.adjust(v.$background-dark, $lightness: -5%);
+}
+
+/* Ensure hover still stands out over zebra stripes */
+.playerRow:hover {
+  background-color: color.adjust(v.$background-dark, $lightness: 2%) !important;
 }
 
 /* =================== Table Cell Styles =================== */
 .playerName {
-  min-width: 200px;
+  min-width: 140px; // was 165px; allow narrower name column
+  width: 100%; /* Let the column definition drive layout */
 }
 
 .nameContainer {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  width: 100%; /* Ensure full width */
+  min-height: 1.5em; /* Ensure minimum height for visibility */
 }
 
 .fullName {
   font-weight: 600;
-  color: v.$primary-color;
+  color: v.$primary-color !important; /* Force color to ensure visibility */
   font-size: v.$font-size-sm;
-  margin: v.$space-xs;
+  margin: 0;
+  padding: 0; /* Ensure no padding */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block; /* Ensure block display */
+  line-height: 1.3; /* Consistent line height */
 }
 
 .position {
@@ -178,20 +380,42 @@
   font-size: v.$font-size-xs;
   font-weight: 600;
   text-transform: uppercase;
-  min-width: 60px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fantasyPoints,
+.vorp,
+.adp {
+  font-variant-numeric: tabular-nums;
 }
 
 .fantasyPoints {
   color: v.$primary-color;
   font-weight: 700;
   text-align: right;
-  min-width: 80px;
+  min-width: 70px;
 }
 
 .adp {
   color: v.$text-secondary;
   text-align: right;
   min-width: 60px;
+}
+
+/* New: Next-Pick (%) cell style */
+.nextPick {
+  color: v.$text-secondary;
+  text-align: right;
+  min-width: 60px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Numeric alignment for VORP column cells */
+.vorp {
+  text-align: right;
+  color: v.$text-primary;
+  font-weight: 700;
 }
 
 .actionCell {
@@ -228,6 +452,86 @@
     transform: none;
     box-shadow: none;
   }
+}
+
+/* =================== Position Run Forecast =================== */
+.runForecast {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  background-color: color.adjust(v.$background-dark, $lightness: -4%);
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  min-width: 220px;
+}
+.runTitle {
+  font-size: v.$font-size-xxs;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+.runBars {
+  display: flex;
+  flex-direction: row; /* was column */
+  gap: 8px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.runRow {
+  display: grid; /* switch from column flex to grid */
+  grid-template-columns: auto 1fr; /* pill | count (right-aligned in the free space) */
+  grid-template-rows: auto auto; /* header row + bar row */
+  grid-template-areas:
+    "pill count"
+    "bar  bar";
+  align-items: center;
+  column-gap: 6px;
+  row-gap: 4px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.runPosPill {
+  grid-area: pill;
+  justify-self: start;
+  background: color.adjust(v.$warning-color, $lightness: -15%);
+  color: v.$color-white;
+  padding: 2px 6px;
+  border-radius: v.$border-radius-sm;
+  font-size: v.$font-size-xxs;
+  font-weight: 800;
+  min-width: 28px;
+  text-align: center;
+}
+.runBar {
+  grid-area: bar;
+  width: 100%;
+  height: 8px;
+  background-color: v.$background-medium;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid v.$border-secondary;
+}
+.runBarFill {
+  height: 100%;
+  width: 0%; /* will be overridden inline */
+  background: linear-gradient(
+    90deg,
+    v.$primary-color 0%,
+    v.$secondary-color 100%
+  );
+  border-radius: 4px 0 0 4px; /* keep left corners rounded */
+  transition: width 240ms ease-in-out;
+}
+.runCount {
+  grid-area: count;
+  justify-self: end;
+  font-size: v.$font-size-xxs;
+  color: v.$text-primary;
+  font-variant-numeric: tabular-nums;
+  min-width: 30px;
+  text-align: right;
 }
 
 /* =================== Loading and Error States =================== */
@@ -291,6 +595,12 @@
     flex-direction: column;
     gap: v.$space-sm;
   }
+  .searchContainer {
+    flex: 1 1 auto;
+  }
+  .positionFilter {
+    flex: 1 1 auto;
+  }
 
   .tableContainer {
     height: 600px; /* Reduced height for mobile */
@@ -301,12 +611,43 @@
     padding: v.$space-xs v.$space-sm;
   }
 
+  /* Rebalance columns for smaller viewports - totals ≈ 100% */
+  .colName {
+    width: 36%; // decreased from 44%
+  }
+  .colPos {
+    width: 7%;
+  }
+  .colTeam {
+    width: 5%;
+  }
+  .colFP {
+    width: 10%; // up from 9%
+  }
+  .colVorp {
+    width: 6%; // down from 7% (3x = 18%)
+  }
+  .colAdp {
+    width: 8%; // up from 5% (2x = 16%)
+  }
+  .colNextPick {
+    width: 8%; // match ADP at this breakpoint
+  }
+  .colAction {
+    width: 8%; // down from 9%
+  }
+
   .playerName {
-    min-width: 150px;
+    min-width: 130px; // was 150px
   }
 
   .fullName {
     font-size: v.$font-size-xs;
+  }
+
+  .headerActions {
+    width: 100%;
+    justify-content: space-between;
   }
 }
 
@@ -325,8 +666,49 @@
     font-size: v.$font-size-xs;
   }
 
+  /* Slightly more room for ADP/Risk on very small screens - totals ≈ 100% */
+  .colName {
+    width: 42%; // down from 50%
+  }
+  .colPos {
+    width: 7%;
+  }
+  .colTeam {
+    width: 5%;
+  }
+  .colFP {
+    width: 10%;
+  }
+  .colVorp {
+    width: 5%; // down from 6% (3x = 15%)
+  }
+  .colAdp {
+    width: 7%; // up from 4% (2x = 14%)
+  }
+  .colNextPick {
+    width: 8%; // ensure readability of percentage label
+  }
+  .colAction {
+    width: 6%;
+  }
+
   .draftButton {
     padding: v.$space-xxs v.$space-xs;
     font-size: 10px;
+  }
+
+  .headerActions {
+    flex-direction: row;
+    gap: v.$space-sm;
+  }
+
+  .tooltipContent {
+    right: 50%;
+    transform: translate(50%, 6px);
+  }
+
+  .infoTooltip:hover .tooltipContent,
+  .infoTooltip:focus-within .tooltipContent {
+    transform: translate(50%, 0);
   }
 }

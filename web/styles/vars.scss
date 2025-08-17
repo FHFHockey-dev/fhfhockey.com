@@ -137,6 +137,7 @@ $color-grey-text: #cccccc;
 $color-grey-text-sec: #aaaaaa;
 $color-grey-darker: #404040; // border-primary base
 $color-grey-dark: #505050; // border-secondary base
+$text-muted: $color-grey-darker !default; // legacy alias
 
 // Backgrounds (single source of truth)
 $background-dark: #1a1d21;
@@ -234,6 +235,9 @@ $box-shadow: $box-shadow-default !default; // legacy alias
 $table-header-height: 35px;
 $table-cell-padding: $space-sm $space-md;
 $filter-vertical-spacing: $space-xl;
+
+// Shared widths
+$team-label-width: 60px; // Fixed team label width used in Draft Board
 
 // =============================================
 // Borders (All definitions preserved)
@@ -421,6 +425,21 @@ $z-desktop-toast: 650;
   display: -webkit-box;
   -webkit-line-clamp: $lines;
   -webkit-box-orient: vertical;
+}
+
+// Utility: reset default button styles while preserving semantics
+@mixin reset-button {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  cursor: pointer;
 }
 
 // =============================================

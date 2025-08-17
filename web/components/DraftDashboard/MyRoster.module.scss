@@ -127,6 +127,130 @@
   font-size: v.$font-size-sm; // Reduced font size
   font-weight: 700;
   color: v.$primary-color;
+
+  // Ensure block layout and spacing
+  display: block;
+  padding: v.$space-sm 0 0 0;
+
+  .suggestedTableWrap {
+    overflow-x: auto;
+    max-width: 100%;
+    border: 1px solid v.$border-primary;
+    border-radius: v.$border-radius-md;
+    background: v.$background-dark;
+  }
+
+  .suggestedTable {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+
+    thead th {
+      position: sticky;
+      top: 0;
+      background: v.$desktop-surface-elevated;
+      border-bottom: 1px solid v.$border-secondary;
+      padding: v.$space-sm;
+      text-align: left;
+      color: v.$text-primary;
+      font-weight: v.$font-weight-semibold;
+      white-space: nowrap;
+      z-index: v.$z-desktop-sticky;
+    }
+
+    tbody tr {
+      background: v.$background-dark;
+      transition: background-color v.$transition-duration
+        v.$ease-desktop-standard;
+    }
+
+    tbody tr:nth-child(odd) {
+      background: v.$background-light;
+    }
+
+    tbody tr:hover {
+      background: color.adjust(v.$background-light, $lightness: 4%);
+    }
+
+    .selectedRow {
+      background: color.adjust(v.$background-light, $lightness: 8%) !important;
+      outline: 0;
+    }
+
+    td {
+      padding: v.$space-sm;
+      border-bottom: 1px solid v.$border-secondary;
+      color: v.$text-primary;
+      vertical-align: middle;
+    }
+
+    .numeric {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .rankCell {
+      width: 36px;
+      text-align: right;
+      color: v.$text-secondary;
+    }
+
+    .playerCell {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .playerName {
+      color: v.$text-primary !important;
+    }
+
+    .playerMeta {
+      color: v.$text-secondary;
+      margin-left: v.$space-xs;
+    }
+
+    .reasonTags {
+      margin-left: v.$space-sm;
+    }
+
+    .tag {
+      display: inline-block;
+      font-size: v.$font-size-xs;
+      color: v.$color-blue;
+      background: rgba(v.$color-blue, 0.12);
+      border: 1px solid color.adjust(v.$color-blue, $lightness: -10%);
+      border-radius: 10px;
+      padding: 2px 6px;
+      margin-right: v.$space-xs;
+    }
+
+    .posCell {
+      width: 56px;
+      text-align: center;
+      color: v.$text-secondary;
+      font-weight: v.$font-weight-medium;
+    }
+  }
+
+  .sortButton {
+    all: unset;
+    cursor: pointer;
+    color: v.$text-primary;
+    padding: v.$space-xs v.$space-sm;
+    border-radius: v.$radius-sm;
+
+    &:hover {
+      background: rgba(v.$primary-color, 0.12);
+      color: v.$text-button;
+    }
+
+    &:focus-visible {
+      outline: none;
+      box-shadow: v.$focus-ring-desktop;
+    }
+  }
 }
 
 /* =================== Draft Section =================== */
