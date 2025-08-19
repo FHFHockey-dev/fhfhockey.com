@@ -23,6 +23,9 @@ export interface SuggestedPicksProps {
   catNeeds?: Record<string, number>;
   // NEW: roster progress bar data
   rosterProgress?: { pos: string; filled: number; total: number }[];
+  // NEW: allow drafting directly from suggestions
+  onDraftPlayer?: (playerId: string) => void;
+  canDraft?: boolean;
 }
 
 const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
@@ -40,7 +43,9 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   // accept but not used yet
   leagueType,
   catNeeds,
-  rosterProgress
+  rosterProgress,
+  onDraftPlayer,
+  canDraft
 }) => {
   // UI state
   type SortField = "rank" | "projFp" | "vorp" | "vbd" | "adp" | "avail" | "fit";
@@ -139,6 +144,56 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     localStorage.setItem("suggested.showRosterBar", String(showRosterBar));
   }, [showRosterBar]);
 
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const tag = (target?.tagName || "").toLowerCase();
+      const isTyping =
+        tag === "input" ||
+        tag === "select" ||
+        tag === "textarea" ||
+        (target as any)?.isContentEditable;
+      if (isTyping || e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const key = e.key.toLowerCase();
+      if (key === "c") {
+        e.preventDefault();
+        setCollapsed((c) => !c);
+      } else if (key === "p") {
+        e.preventDefault();
+        setShowRosterBar((v) => !v);
+      } else if (key === "f") {
+        e.preventDefault();
+        const order: SortField[] = [
+          "rank",
+          "vorp",
+          "vbd",
+          "projFp",
+          "adp",
+          "avail",
+          "fit"
+        ];
+        const idx = order.indexOf(sortField);
+        setSortField(order[(idx + 1) % order.length]);
+      } else if (key === "t") {
+        e.preventDefault();
+        const options = [5, 10, 12, 16, 20];
+        const i = options.indexOf(limit);
+        setLimit(options[(i + 1) % options.length]);
+      } else if (key === "o") {
+        e.preventDefault();
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      } else if (key === "d") {
+        if (selectedId && onDraftPlayer) {
+          e.preventDefault();
+          onDraftPlayer(selectedId);
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [sortField, limit, selectedId, onDraftPlayer]);
+
   // Compute recommendations
   const { recommendations } = usePlayerRecommendations({
     players,
@@ -235,7 +290,6 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         case "adp":
           return mul * ((aAdp as number) - (bAdp as number));
         case "avail":
-          return mul * (aAvail - bAvail);
         case "fit":
           return mul * (aFit - bFit);
       }
@@ -250,10 +304,13 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
 
   const onCardClick = useCallback(
     (id: string) => {
-      setSelectedId((prev) => (prev === id ? null : id));
-      onSelectPlayer && onSelectPlayer(selectedId === id ? null : id);
+      setSelectedId((prev) => {
+        const next = prev === id ? null : id;
+        onSelectPlayer && onSelectPlayer(next);
+        return next;
+      });
     },
-    [onSelectPlayer, selectedId]
+    [onSelectPlayer]
   );
 
   const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
@@ -270,9 +327,12 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       const prev = idx < 0 ? 0 : Math.max(0, idx - 1);
       setSelectedId(ids[prev]);
       onSelectPlayer && onSelectPlayer(ids[prev]);
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      // Intentionally no draft; could open details
+    } else if (e.key === "Enter" || e.key.toLowerCase() === "d") {
+      // Draft selected player
+      if (selectedId && onDraftPlayer) {
+        e.preventDefault();
+        onDraftPlayer(selectedId);
+      }
     }
   };
 
@@ -451,45 +511,54 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                       </div>
                     </div>
                   </div>
-                  {(Array.isArray(r.reasonTags) && r.reasonTags.length > 0) ||
-                  true ? (
-                    <div className={styles.bottomRow}>
-                      {Array.isArray(r.reasonTags) &&
-                      r.reasonTags.length > 0 ? (
-                        <div className={styles.tagsRow}>
-                          {r.reasonTags.map((t, i) => (
-                            <span key={i} className={styles.tag} title={t}>
-                              {t}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span />
-                      )}
-                      <div className={styles.cardFooter}>
-                        <button
-                          type="button"
-                          className={styles.linkBtn}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // placeholder for future: open player details
-                          }}
-                        >
-                          View
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.linkBtn}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            // placeholder for future: context menu / watchlist
-                          }}
-                        >
-                          More
-                        </button>
+                  <div className={styles.bottomRow}>
+                    {Array.isArray(r.reasonTags) && r.reasonTags.length > 0 ? (
+                      <div className={styles.tagsRow}>
+                        {r.reasonTags.map((t, i) => (
+                          <span key={i} className={styles.tag} title={t}>
+                            {t}
+                          </span>
+                        ))}
                       </div>
+                    ) : (
+                      <span />
+                    )}
+                    <div className={styles.cardFooter}>
+                      {
+                        <button
+                          type="button"
+                          className={styles.linkBtn}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDraftPlayer && onDraftPlayer(id);
+                          }}
+                          aria-label={`Draft ${name}`}
+                        >
+                          Draft
+                        </button>
+                      }
+                      <button
+                        type="button"
+                        className={styles.linkBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // placeholder for future: open player details
+                        }}
+                      >
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.linkBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // placeholder for future: context menu / watchlist
+                        }}
+                      >
+                        More
+                      </button>
                     </div>
-                  ) : null}
+                  </div>
                 </article>
               );
             })

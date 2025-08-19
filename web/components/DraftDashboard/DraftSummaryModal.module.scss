@@ -553,7 +553,6 @@
 }
 
 .recapBox {
-  border-right: 1px solid v.$border-secondary;
   background: color.adjust(v.$background-medium, $lightness: -2%);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.04) inset,
@@ -587,7 +586,8 @@
   justify-content: center;
   min-height: 48px;
   padding: 6px 8px 6px 10px;
-  border-bottom: 1px solid v.$border-secondary;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
   color: v.$color-white;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
 }

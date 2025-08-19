@@ -6,6 +6,7 @@ import { DraftedPlayer } from "./DraftDashboard";
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import { PlayerVorpMetrics } from "hooks/useVORPCalculations";
 import styles from "./ProjectionsTable.module.scss";
+import supabase from "lib/supabase";
 
 interface ProjectionsTableProps {
   players: ProcessedPlayer[];
@@ -73,6 +74,116 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   );
   // NEW: configurable risk standard deviation (in picks)
   const [riskSd, setRiskSd] = useState<number>(12);
+  // NEW: hide drafted toggle (persisted)
+  const [hideDrafted, setHideDrafted] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const v = window.localStorage.getItem("projections.hideDrafted");
+    return v === "true";
+  });
+
+  // Expand/collapse and last season totals cache per player
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [seasonTotals, setSeasonTotals] = useState<
+    Record<
+      string,
+      {
+        type: "skater" | "goalie";
+        seasonLabel: string;
+        data: any;
+      } | null
+    >
+  >({});
+  const [seasonLoading, setSeasonLoading] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [seasonError, setSeasonError] = useState<Record<string, string | null>>(
+    {}
+  );
+
+  const isGoaliePlayer = (player: ProcessedPlayer) => {
+    const pos = player.displayPosition?.toUpperCase() || "";
+    // Treat pure G or multi-position including G as goalie
+    return pos
+      .split(",")
+      .map((p) => p.trim())
+      .includes("G");
+  };
+
+  const formatSeasonLabel = (season: string | number | null) => {
+    if (season == null) return "";
+    const s = String(season);
+    if (s.length === 8) {
+      const start = s.slice(0, 4);
+      const end = s.slice(6, 8);
+      return `${start}-${end}`;
+    }
+    return s;
+  };
+
+  const fetchLastSeasonTotals = async (player: ProcessedPlayer) => {
+    const id = String(player.playerId);
+    if (seasonLoading[id]) return;
+    setSeasonLoading((m) => ({ ...m, [id]: true }));
+    setSeasonError((m) => ({ ...m, [id]: null }));
+    try {
+      if (isGoaliePlayer(player)) {
+        const { data, error } = await supabase
+          .from("wgo_goalie_stats_totals")
+          .select(
+            "season_id, games_played, wins, losses, ot_losses, goals_against_avg, save_pct, shutouts, saves"
+          )
+          .eq("goalie_id", Number(player.playerId))
+          .order("season_id", { ascending: false })
+          .limit(1);
+        if (error) throw error;
+        const row = data?.[0] || null;
+        setSeasonTotals((m) => ({
+          ...m,
+          [id]: row
+            ? {
+                type: "goalie",
+                seasonLabel: formatSeasonLabel(row.season_id),
+                data: row
+              }
+            : null
+        }));
+      } else {
+        const { data, error } = await supabase
+          .from("wgo_skater_stats_totals")
+          .select(
+            "season, games_played, goals, assists, points, shots, hits, blocked_shots, pp_points, toi_per_game, plus_minus, shooting_percentage, gw_goals"
+          )
+          .eq("player_id", Number(player.playerId))
+          .order("season", { ascending: false })
+          .limit(1);
+        if (error) throw error;
+        const row = data?.[0] || null;
+        setSeasonTotals((m) => ({
+          ...m,
+          [id]: row
+            ? {
+                type: "skater",
+                seasonLabel: formatSeasonLabel(row.season),
+                data: row
+              }
+            : null
+        }));
+      }
+    } catch (e: any) {
+      setSeasonError((m) => ({ ...m, [id]: e?.message || "Failed to load" }));
+    } finally {
+      setSeasonLoading((m) => ({ ...m, [id]: false }));
+    }
+  };
+
+  const toggleExpand = async (player: ProcessedPlayer) => {
+    const id = String(player.playerId);
+    setExpanded((m) => ({ ...m, [id]: !m[id] }));
+    const next = !expanded[id];
+    if (next && seasonTotals[id] === undefined) {
+      await fetchLastSeasonTotals(player);
+    }
+  };
 
   // Load persisted bandScope on mount
   useEffect(() => {
@@ -134,6 +245,17 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     } catch {}
   }, [riskSd]);
 
+  // Persist hide drafted on change
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        "projections.hideDrafted",
+        String(hideDrafted)
+      );
+    } catch {}
+  }, [hideDrafted]);
+
   // Persist position filter
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -168,6 +290,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     });
     return m;
   }, [players]);
+
+  // NEW: drafted player ID set for quick checks
+  const draftedIdSet = useMemo(() => {
+    const s = new Set<string>();
+    draftedPlayers?.forEach((dp) => s.add(String(dp.playerId)));
+    return s;
+  }, [draftedPlayers]);
 
   // Precompute VORP/VONA/VBD for quick lookup (with need-adjusted VBD when enabled)
   const vorpMap = useMemo(() => {
@@ -323,7 +452,11 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   const percentileBands = useMemo(() => {
     // Consider only players left in the list that have ADP
     const eligible = filteredAndSortedPlayers.filter(
-      (p) => typeof p.yahooAvgPick === "number" && !Number.isNaN(p.yahooAvgPick)
+      (p) =>
+        typeof p.yahooAvgPick === "number" &&
+        !Number.isNaN(p.yahooAvgPick) &&
+        // Exclude already drafted from banding; bands represent remaining pool
+        !draftedIdSet.has(String(p.playerId))
     );
 
     // Group values by scope key (ALL or position)
@@ -414,9 +547,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   };
 
   const handleDraftClick = (playerId: number) => {
-    if (canDraft) {
-      onDraftPlayer(String(playerId));
-    }
+    // Always allow drafting; assignment goes to currentTurn in parent
+    onDraftPlayer(String(playerId));
   };
 
   // Get unique positions for filter
@@ -479,171 +611,216 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           Available <span className={styles.panelTitleAccent}>Players</span>
         </h2>
         <div className={styles.headerActions}>
-          {/* Moved run forecast below filters */}
-          <div className={styles.scopeToggle}>
-            <label htmlFor="band-scope" style={{ fontSize: "12px" }}>
-              Scope
+          {/* FILTER scope (value band scope) */}
+          <div className={styles.controlGroup}>
+            <label htmlFor="band-scope" className={styles.controlLabel}>
+              Filter
             </label>
             <select
               id="band-scope"
-              className={styles.scopeSelect}
+              className={`${styles.scopeSelect} ${styles.compactSelect}`}
               value={bandScope}
               onChange={(e) => setBandScope(e.target.value as any)}
               title="Value band scope"
+              aria-label="Value band filter scope"
             >
-              <option value="overall">Overall</option>
-              <option value="position">Per Position</option>
+              <option value="position">POS</option>
+              <option value="overall">ALL</option>
             </select>
           </div>
-          <div className={styles.scopeToggle}>
-            <label htmlFor="baseline-mode" style={{ fontSize: "12px" }}>
-              Baseline
+          {/* VORP Base */}
+          <div className={styles.controlGroup}>
+            <label htmlFor="baseline-mode" className={styles.controlLabel}>
+              VORP Base
             </label>
             <select
               id="baseline-mode"
-              className={styles.scopeSelect}
+              className={`${styles.scopeSelect} ${styles.compactSelect}`}
               value={baselineMode}
               onChange={(e) =>
                 onBaselineModeChange &&
                 onBaselineModeChange(e.target.value as any)
               }
               title="VORP baseline source"
+              aria-label="VORP baseline source"
             >
-              <option value="remaining">Remaining</option>
-              <option value="full">Full Pool</option>
+              <option value="remaining">AVAIL</option>
+              <option value="full">ALL</option>
             </select>
           </div>
-          {/* NEW: Need weighting toggle */}
-          <div className={styles.scopeToggle}>
-            <label htmlFor="need-weight" style={{ fontSize: "12px" }}>
-              Need
-            </label>
-            <input
-              id="need-weight"
-              type="checkbox"
-              checked={!!needWeightEnabled}
-              onChange={(e) =>
-                onNeedWeightChange && onNeedWeightChange(e.target.checked)
-              }
-              title="Weight VBD by your positional needs"
-              style={{ width: 16, height: 16 }}
-            />
-          </div>
-          {needWeightEnabled && (
-            <div
-              className={styles.scopeToggle}
-              title="Adjust need weighting strength (alpha)"
+          {/* Need toggle with popover to adjust alpha (no layout shift) */}
+          <div className={`${styles.controlGroup} ${styles.toggleWithPopover}`}>
+            <label className={styles.controlLabel}>Need</label>
+            <label
+              className={`${styles.toggle} ${styles.toggleNoText}`}
+              title="Weight VBD by positional needs"
             >
-              <label htmlFor="need-alpha" style={{ fontSize: "12px" }}>
-                α
-              </label>
               <input
-                id="need-alpha"
-                type="range"
-                min={0}
-                max={1}
-                step={0.05}
-                value={needAlpha}
+                type="checkbox"
+                className={styles.toggleInput}
+                checked={!!needWeightEnabled}
                 onChange={(e) =>
-                  onNeedAlphaChange &&
-                  onNeedAlphaChange(parseFloat(e.target.value))
+                  onNeedWeightChange && onNeedWeightChange(e.target.checked)
                 }
-                style={{ width: 80 }}
+                aria-label="Toggle need weighting"
+                aria-haspopup="dialog"
+                aria-controls="need-alpha-popover"
               />
-              <span style={{ fontSize: 12, width: 28, textAlign: "right" }}>
-                {Number(needAlpha).toFixed(2)}
+              <span className={styles.toggleTrack}>
+                <span className={styles.toggleThumb} />
               </span>
-            </div>
-          )}
-          {/* NEW: Risk model sensitivity */}
+              <span className={styles.toggleText}>Need</span>
+            </label>
+            {needWeightEnabled && (
+              <div
+                id="need-alpha-popover"
+                className={styles.alphaPopover}
+                role="dialog"
+                aria-label="Need weighting strength"
+              >
+                <div className={styles.alphaPopoverHeader}>Need strength</div>
+                <div className={styles.alphaPopoverRow}>
+                  <input
+                    id="need-alpha"
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.05}
+                    value={needAlpha}
+                    onChange={(e) =>
+                      onNeedAlphaChange &&
+                      onNeedAlphaChange(parseFloat(e.target.value))
+                    }
+                    className={styles.rangeInput}
+                    aria-label="Need weighting alpha"
+                  />
+                  <span className={styles.rangeValue}>
+                    {Number(needAlpha).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+          {/* Risk SD slider */}
           <div
-            className={styles.scopeToggle}
+            className={styles.controlGroup}
             title="Risk model standard deviation (picks)"
           >
-            <label htmlFor="risk-sd" style={{ fontSize: "12px" }}>
+            <label htmlFor="risk-sd" className={styles.controlLabel}>
               Risk SD
             </label>
-            <input
-              id="risk-sd"
-              type="range"
-              min={2}
-              max={40}
-              step={1}
-              value={riskSd}
-              onChange={(e) => setRiskSd(parseInt(e.target.value, 10))}
-              style={{ width: 100 }}
-            />
-            <span style={{ fontSize: 12, width: 24, textAlign: "right" }}>
-              {riskSd}
-            </span>
-          </div>
-          <div className={styles.infoTooltip}>
-            <button
-              type="button"
-              className={styles.infoButton}
-              aria-describedby="projections-help"
-              aria-label="How to use Available Players table"
-            >
-              i
-            </button>
             <div
-              id="projections-help"
-              role="tooltip"
-              className={styles.tooltipContent}
+              style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
             >
+              <input
+                id="risk-sd"
+                type="range"
+                min={2}
+                max={40}
+                step={1}
+                value={riskSd}
+                onChange={(e) => setRiskSd(parseInt(e.target.value, 10))}
+                className={styles.rangeInput}
+                aria-label="Risk model standard deviation"
+              />
+              <span className={styles.rangeValue}>{riskSd}</span>
+            </div>
+          </div>
+        </div>
+        {/* Info tooltip moved to far right of header */}
+        <div className={styles.infoTooltip}>
+          <button
+            type="button"
+            className={styles.infoButton}
+            aria-describedby="projections-help"
+            aria-label="How to use Available Players controls"
+          >
+            i
+          </button>
+          <div
+            id="projections-help"
+            role="tooltip"
+            className={styles.tooltipContent}
+          >
+            <div className={styles.tooltipTitle}>Controls & Legend</div>
+            <div className={styles.tooltipBody}>
+              <ul>
+                <li>
+                  Filter: Value band scope for color tints. POS = per-position
+                  percentiles. ALL = overall percentiles across remaining
+                  players.
+                </li>
+                <li>
+                  VORP Base: Baseline pool for replacement levels. AVAIL =
+                  remaining player pool (dynamic). ALL = full player pool
+                  (static).
+                </li>
+                <li>
+                  Need: Adjusts VBD by positional needs. Click to toggle; adjust
+                  strength (alpha) in the popover slider below the toggle.
+                </li>
+                <li>
+                  Risk SD: Controls the spread of the ADP-based risk model (in
+                  picks). Higher SD = flatter distribution (more Medium).
+                  Affects Next-Pick% and risk labels.
+                </li>
+                <li>
+                  Search: Filter players by name. Position: Limit to a single
+                  position.
+                </li>
+                <li>
+                  Hide Drafted: Hides players already drafted in this session.
+                </li>
+              </ul>
               <div className={styles.tooltipTitle}>Draft Value Metrics</div>
-              <div className={styles.tooltipBody}>
-                <p>
-                  VORP: Projected points over a replacement-level player at the
-                  same position for your league size and roster settings.
-                </p>
-                <p>
-                  VONA: Projected points over the player likely to be available
-                  at your next pick, based on expected position run-outs.
-                </p>
-                <p>
-                  VBD: Blended draft value: 60% VORP, 30% VONA, 10% VOLS (last
-                  starter over replacement).
-                </p>
-                <p>
-                  Value bands: VBD and Proj FP cells are tinted by percentile
-                  among remaining players (
-                  {bandScope === "position" ? "per-position" : "overall"}).
-                  Green = top, Yellow = middle, Red = bottom. Only players with
-                  ADP are included.
-                </p>
-                <p>
-                  Baselines:{" "}
-                  {baselineMode === "remaining"
-                    ? "Remaining players"
-                    : "Full player pool"}{" "}
-                  determine replacement levels for VORP/VOLS.
-                </p>
-                {replacementByPos && (
-                  <div className={styles.tooltipBaselines}>
-                    <div className={styles.tooltipSubTitle}>
-                      Current replacement baselines
-                    </div>
-                    <ul>
-                      {Object.entries(replacementByPos).map(([pos, vals]) => (
-                        <li key={pos}>
-                          {pos}: VORP base {vals.vorp.toFixed(1)}, VOLS base{" "}
-                          {vals.vols.toFixed(1)}
-                        </li>
-                      ))}
-                    </ul>
+              <ul>
+                <li>
+                  VORP: Projected points over replacement at best eligible
+                  position.
+                </li>
+                <li>
+                  VONA: Projected points over the player likely available at
+                  your next pick.
+                </li>
+                <li>
+                  VBD: Blended value: 60% VORP, 30% VONA, 10% VOLS; adjusted by
+                  Need when enabled.
+                </li>
+                <li>
+                  Value bands: VBD and Proj FP cells tinted by percentile (
+                  {bandScope === "position" ? "POS" : "ALL"}). Green = top,
+                  Yellow = middle, Red = bottom. Only players with ADP are
+                  included.
+                </li>
+                <li>
+                  VORP Base: {baselineMode === "remaining" ? "AVAIL" : "ALL"}{" "}
+                  selection determines replacement baselines.
+                </li>
+              </ul>
+              {replacementByPos && (
+                <div className={styles.tooltipBaselines}>
+                  <div className={styles.tooltipTitle}>
+                    Current replacement baselines
                   </div>
-                )}
-                {needWeightEnabled && (
-                  <p className={styles.tooltipFootnote}>
-                    Need weighting active: VBD is adjusted by your positional
-                    needs (α={needAlpha}).
-                  </p>
-                )}
+                  <ul>
+                    {Object.entries(replacementByPos).map(([pos, vals]) => (
+                      <li key={pos}>
+                        {pos}: VORP base {vals.vorp.toFixed(1)}, VOLS base{" "}
+                        {vals.vols.toFixed(1)}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {needWeightEnabled && (
                 <p className={styles.tooltipFootnote}>
-                  Tip: Hover VORP to see a player’s best position for VORP.
+                  Need weighting active: VBD is adjusted by positional needs (α=
+                  {needAlpha}).
                 </p>
-              </div>
+              )}
+              <p className={styles.tooltipFootnote}>
+                Tip: Hover VORP to see a player’s best position for VORP.
+              </p>
             </div>
           </div>
         </div>
@@ -658,21 +835,50 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className={styles.searchInput}
+            aria-label="Search players"
           />
         </div>
-        <div className={styles.positionFilter}>
+        <div className={styles.controlGroup}>
+          <label className={styles.controlLabel} htmlFor="position-filter">
+            Position
+          </label>
           <select
+            id="position-filter"
             value={positionFilter}
             onChange={(e) => setPositionFilter(e.target.value)}
             className={styles.positionSelect}
           >
-            <option value="ALL">All Positions</option>
+            <option value="ALL">All</option>
             {availablePositions.map((position) => (
               <option key={position} value={position}>
                 {position}
               </option>
             ))}
           </select>
+        </div>
+        {/* Right-aligned filters cluster */}
+        <div className={styles.filtersRight}>
+          <div
+            className={`${styles.verticalToggleGroup} ${styles.toggleNoText}`}
+          >
+            <label className={styles.controlLabel}>Hide Drafted</label>
+            <label
+              className={styles.toggle}
+              title="Hide already drafted players"
+            >
+              <input
+                type="checkbox"
+                className={styles.toggleInput}
+                checked={hideDrafted}
+                onChange={(e) => setHideDrafted(e.target.checked)}
+                aria-label="Hide drafted players"
+              />
+              <span className={styles.toggleTrack}>
+                <span className={styles.toggleThumb} />
+              </span>
+              <span className={styles.toggleText}>Hide drafted</span>
+            </label>
+          </div>
         </div>
         {/* NEW: Position Run Forecast under the search bar, full-width */}
         {expectedRuns && (
@@ -825,111 +1031,343 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
             </tr>
           </thead>
           <tbody>
-            {filteredAndSortedPlayers.map((player) => {
-              const key = String(player.playerId);
-              const m = vorpMap.get(key);
-              const vorp = m?.vorp ?? 0;
-              const vona = m?.vona ?? 0;
-              const vbdBase = m?.vbd ?? 0;
-              const vbdAdj = m?.vbdAdj ?? vbdBase;
-              const bestPos = m?.bestPos;
-              const vbdDisplay = needWeightEnabled ? vbdAdj : vbdBase;
-              const vbdBand = percentileBands.vbdBandById.get(key);
-              const fpBand = percentileBands.fpBandById.get(key);
-              const vbdClasses = [styles.vorp, styles.valueNumeric];
-              if (vbdBand) vbdClasses.push(styles.valueBand, styles[vbdBand]);
-              const fpClasses = [styles.fantasyPoints, styles.valueNumeric];
-              if (fpBand) fpClasses.push(styles.valueBand, styles[fpBand]);
-              const risk = riskMap.get(key);
-              const riskPct =
-                typeof risk === "number" ? Math.round(risk * 100) : null;
-              const riskLabel =
-                riskPct == null
-                  ? "-"
-                  : riskPct >= 70
-                    ? "High"
-                    : riskPct >= 30
-                      ? "Med"
-                      : "Low";
-              return (
-                <tr key={player.playerId} className={styles.playerRow}>
-                  <td className={styles.playerName}>
-                    <div className={styles.nameContainer}>
-                      <span className={styles.fullName} title={player.fullName}>
-                        {player.fullName}
-                      </span>
-                    </div>
-                  </td>
-                  <td
-                    className={styles.position}
-                    title={player.displayPosition || undefined}
+            {(() => {
+              const displayPlayers = (() => {
+                let arr = [...filteredAndSortedPlayers];
+                if (hideDrafted) {
+                  arr = arr.filter(
+                    (p) => !draftedIdSet.has(String(p.playerId))
+                  );
+                } else {
+                  const undrafted = arr.filter(
+                    (p) => !draftedIdSet.has(String(p.playerId))
+                  );
+                  const drafted = arr.filter((p) =>
+                    draftedIdSet.has(String(p.playerId))
+                  );
+                  arr = [...undrafted, ...drafted];
+                }
+                return arr;
+              })();
+
+              return displayPlayers.flatMap((player) => {
+                const key = String(player.playerId);
+                const m = vorpMap.get(key);
+                const vorp = m?.vorp ?? 0;
+                const vona = m?.vona ?? 0;
+                const vbdBase = m?.vbd ?? 0;
+                const vbdAdj = m?.vbdAdj ?? vbdBase;
+                const bestPos = m?.bestPos;
+                const vbdDisplay = needWeightEnabled ? vbdAdj : vbdBase;
+                const vbdBand = percentileBands.vbdBandById.get(key);
+                const fpBand = percentileBands.fpBandById.get(key);
+                const vbdClasses = [styles.vorp, styles.valueNumeric];
+                if (vbdBand) vbdClasses.push(styles.valueBand, styles[vbdBand]);
+                const fpClasses = [styles.fantasyPoints, styles.valueNumeric];
+                if (fpBand) fpClasses.push(styles.valueBand, styles[fpBand]);
+                const risk = riskMap.get(key);
+                const riskPct =
+                  typeof risk === "number" ? Math.round(risk * 100) : null;
+                const riskLabel =
+                  riskPct == null
+                    ? "-"
+                    : riskPct >= 70
+                      ? "High"
+                      : riskPct >= 30
+                        ? "Med"
+                        : "Low";
+                const mainRow = (
+                  <tr
+                    key={player.playerId}
+                    className={`${styles.playerRow} ${draftedIdSet.has(key) ? styles.draftedRow : ""}`}
                   >
-                    {player.displayPosition || "-"}
-                  </td>
-                  <td
-                    className={styles.team}
-                    title={player.displayTeam || undefined}
-                  >
-                    {player.displayTeam || "-"}
-                  </td>
-                  <td className={fpClasses.join(" ")}>
-                    {player.fantasyPoints.projected?.toFixed(1) || "-"}
-                  </td>
-                  <td
-                    className={styles.vorp}
-                    title={bestPos ? `Best Pos: ${bestPos}` : undefined}
-                  >
-                    {vorp ? vorp.toFixed(1) : "-"}
-                  </td>
-                  <td className={styles.vorp} title="Value Over Next Available">
-                    {vona ? vona.toFixed(1) : "-"}
-                  </td>
-                  <td
-                    className={vbdClasses.join(" ")}
-                    title={
-                      needWeightEnabled
-                        ? "Value Based Drafting (need-adjusted)"
-                        : "Value Based Drafting"
-                    }
-                  >
-                    {vbdDisplay ? vbdDisplay.toFixed(1) : "-"}
-                  </td>
-                  <td className={styles.adp}>
-                    {player.yahooAvgPick?.toFixed(1) || "-"}
-                  </td>
-                  <td
-                    className={styles.nextPick}
-                    title={
-                      riskPct == null
-                        ? undefined
-                        : `${riskPct}% chance gone by your next pick`
-                    }
-                  >
-                    {riskPct == null ? "-" : `${riskLabel} (${riskPct}%)`}
-                  </td>
-                  <td className={styles.colAction}>
-                    <button
-                      className={styles.draftButton}
-                      onClick={() => handleDraftClick(player.playerId)}
-                      disabled={!canDraft}
+                    <td className={styles.playerName}>
+                      <div className={styles.nameContainer}>
+                        <button
+                          className={styles.expandToggle}
+                          onClick={() => toggleExpand(player)}
+                          title={
+                            expanded[key]
+                              ? "Hide last season"
+                              : "Show last season"
+                          }
+                          aria-expanded={!!expanded[key]}
+                          aria-label={
+                            expanded[key]
+                              ? `Collapse details for ${player.fullName}`
+                              : `Expand details for ${player.fullName}`
+                          }
+                        >
+                          {expanded[key] ? "−" : "+"}
+                        </button>
+                        <span
+                          className={styles.fullName}
+                          title={player.fullName}
+                        >
+                          {player.fullName}
+                        </span>
+                      </div>
+                    </td>
+                    <td
+                      className={styles.position}
+                      title={player.displayPosition || undefined}
                     >
-                      Draft
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
+                      {player.displayPosition || "-"}
+                    </td>
+                    <td
+                      className={styles.team}
+                      title={player.displayTeam || undefined}
+                    >
+                      {player.displayTeam || "-"}
+                    </td>
+                    <td className={fpClasses.join(" ")}>
+                      {player.fantasyPoints.projected?.toFixed(1) || "-"}
+                    </td>
+                    <td
+                      className={styles.vorp}
+                      title={bestPos ? `Best Pos: ${bestPos}` : undefined}
+                    >
+                      {vorp ? vorp.toFixed(1) : "-"}
+                    </td>
+                    <td
+                      className={styles.vorp}
+                      title="Value Over Next Available"
+                    >
+                      {vona ? vona.toFixed(1) : "-"}
+                    </td>
+                    <td
+                      className={vbdClasses.join(" ")}
+                      title={
+                        needWeightEnabled
+                          ? "Value Based Drafting (need-adjusted)"
+                          : "Value Based Drafting"
+                      }
+                    >
+                      {vbdDisplay ? vbdDisplay.toFixed(1) : "-"}
+                    </td>
+                    <td className={styles.adp}>
+                      {player.yahooAvgPick?.toFixed(1) || "-"}
+                    </td>
+                    <td
+                      className={styles.nextPick}
+                      title={
+                        riskPct == null
+                          ? undefined
+                          : `${riskPct}% chance gone by your next pick`
+                      }
+                    >
+                      {riskPct == null ? "-" : `${riskLabel} (${riskPct}%)`}
+                    </td>
+                    <td className={styles.colAction}>
+                      <button
+                        className={styles.draftButton}
+                        onClick={() => handleDraftClick(player.playerId)}
+                        disabled={draftedIdSet.has(key)}
+                        title={
+                          draftedIdSet.has(key)
+                            ? "Player already drafted"
+                            : "Draft this player"
+                        }
+                      >
+                        {draftedIdSet.has(key) ? "Drafted" : "Draft"}
+                      </button>
+                    </td>
+                  </tr>
+                );
+
+                const detailRow = expanded[key] ? (
+                  <tr
+                    key={`${player.playerId}-details`}
+                    className={styles.expandRow}
+                  >
+                    <td colSpan={10}>
+                      {seasonLoading[key] && (
+                        <div style={{ padding: "8px 12px", opacity: 0.8 }}>
+                          Loading last season totals...
+                        </div>
+                      )}
+                      {!seasonLoading[key] && seasonError[key] && (
+                        <div style={{ padding: "8px 12px", color: "#c66" }}>
+                          {seasonError[key]}
+                        </div>
+                      )}
+                      {!seasonLoading[key] &&
+                        !seasonError[key] &&
+                        seasonTotals[key] == null && (
+                          <div style={{ padding: "8px 12px", opacity: 0.8 }}>
+                            No last season totals available.
+                          </div>
+                        )}
+                      {!seasonLoading[key] &&
+                        !seasonError[key] &&
+                        seasonTotals[key] && (
+                          <div style={{ padding: "10px 12px" }}>
+                            <div
+                              style={{
+                                fontSize: 12,
+                                opacity: 0.8,
+                                marginBottom: 6
+                              }}
+                            >
+                              Last Season: {seasonTotals[key]?.seasonLabel}
+                            </div>
+                            {seasonTotals[key]?.type === "skater" ? (
+                              <div
+                                style={{
+                                  display: "grid",
+                                  gridTemplateColumns:
+                                    "repeat(auto-fit, minmax(110px, 1fr))",
+                                  gap: 8
+                                }}
+                              >
+                                <StatPill
+                                  label="GP"
+                                  value={seasonTotals[key]!.data.games_played}
+                                />
+                                <StatPill
+                                  label="G"
+                                  value={seasonTotals[key]!.data.goals}
+                                />
+                                <StatPill
+                                  label="A"
+                                  value={seasonTotals[key]!.data.assists}
+                                />
+                                <StatPill
+                                  label="P"
+                                  value={seasonTotals[key]!.data.points}
+                                />
+                                <StatPill
+                                  label="SOG"
+                                  value={seasonTotals[key]!.data.shots}
+                                />
+                                <StatPill
+                                  label="HIT"
+                                  value={seasonTotals[key]!.data.hits}
+                                />
+                                <StatPill
+                                  label="BLK"
+                                  value={seasonTotals[key]!.data.blocked_shots}
+                                />
+                                <StatPill
+                                  label="PPP"
+                                  value={seasonTotals[key]!.data.pp_points}
+                                />
+                                <StatPill
+                                  label="TOI/G"
+                                  value={
+                                    seasonTotals[
+                                      key
+                                    ]!.data.toi_per_game?.toFixed?.(2) ??
+                                    seasonTotals[key]!.data.toi_per_game
+                                  }
+                                />
+                                <StatPill
+                                  label="+/-"
+                                  value={seasonTotals[key]!.data.plus_minus}
+                                />
+                                <StatPill
+                                  label="S%"
+                                  value={
+                                    seasonTotals[key]!.data.shooting_percentage
+                                  }
+                                />
+                                <StatPill
+                                  label="GWG"
+                                  value={seasonTotals[key]!.data.gw_goals}
+                                />
+                              </div>
+                            ) : (
+                              <div
+                                style={{
+                                  display: "grid",
+                                  gridTemplateColumns:
+                                    "repeat(auto-fit, minmax(130px, 1fr))",
+                                  gap: 8
+                                }}
+                              >
+                                <StatPill
+                                  label="GP"
+                                  value={seasonTotals[key]!.data.games_played}
+                                />
+                                <StatPill
+                                  label="W-L-OT"
+                                  value={`${seasonTotals[key]!.data.wins ?? 0}-${seasonTotals[key]!.data.losses ?? 0}-${seasonTotals[key]!.data.ot_losses ?? 0}`}
+                                />
+                                <StatPill
+                                  label="SV%"
+                                  value={seasonTotals[key]!.data.save_pct}
+                                />
+                                <StatPill
+                                  label="GAA"
+                                  value={
+                                    seasonTotals[key]!.data.goals_against_avg
+                                  }
+                                />
+                                <StatPill
+                                  label="SO"
+                                  value={seasonTotals[key]!.data.shutouts}
+                                />
+                                <StatPill
+                                  label="SVS"
+                                  value={seasonTotals[key]!.data.saves}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
+                    </td>
+                  </tr>
+                ) : null;
+
+                return [mainRow, detailRow];
+              });
+            })()}
           </tbody>
         </table>
 
-        {filteredAndSortedPlayers.length === 0 && (
-          <div className={styles.emptyState}>
-            <p>No players found matching your filters.</p>
-          </div>
-        )}
+        {(() => {
+          const anyPlayers = hideDrafted
+            ? filteredAndSortedPlayers.some(
+                (p) => !draftedIdSet.has(String(p.playerId))
+              )
+            : filteredAndSortedPlayers.length > 0;
+          return !anyPlayers ? (
+            <div className={styles.emptyState}>
+              <p>No players found matching your filters.</p>
+            </div>
+          ) : null;
+        })()}
       </div>
     </div>
   );
 };
+
+// Simple pill component for compact stat display
+const StatPill = ({ label, value }: { label: string; value: any }) => (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+      padding: "6px 8px",
+      borderRadius: 6,
+      background: "rgba(255,255,255,0.04)",
+      border: "1px solid rgba(255,255,255,0.06)",
+      fontSize: 12
+    }}
+    title={`${label}: ${value ?? "-"}`}
+    aria-label={`${label} ${value ?? "-"}`}
+  >
+    <span style={{ opacity: 0.65 }}>{label}</span>
+    <span style={{ fontVariantNumeric: "tabular-nums" }}>
+      {value == null
+        ? "-"
+        : typeof value === "number"
+          ? Number(value).toFixed(0)
+          : String(value)}
+    </span>
+  </div>
+);
 
 export default ProjectionsTable;

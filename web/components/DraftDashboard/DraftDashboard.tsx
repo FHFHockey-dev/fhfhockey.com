@@ -704,6 +704,38 @@ const DraftDashboard: React.FC = () => {
     []
   );
 
+  // Add handy keyboard shortcuts for power users
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Avoid when focused inside inputs/textareas/contenteditable
+      const target = e.target as HTMLElement | null;
+      const tag = (target?.tagName || "").toLowerCase();
+      const isTyping =
+        tag === "input" ||
+        tag === "textarea" ||
+        (target as any)?.isContentEditable;
+      if (isTyping || e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const key = e.key.toLowerCase();
+      if (key === "u") {
+        e.preventDefault();
+        undoLastPick();
+      } else if (key === "s") {
+        e.preventDefault();
+        setIsSummaryOpen(true);
+      } else if (key === "n") {
+        e.preventDefault();
+        setNeedWeightEnabled((v) => !v);
+      } else if (key === "b") {
+        e.preventDefault();
+        setBaselineMode((m) => (m === "remaining" ? "full" : "remaining"));
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [undoLastPick]);
+
   return (
     <main className={styles.dashboardContainer}>
       {/* Settings Bar - Full Width */}
@@ -746,6 +778,9 @@ const DraftDashboard: React.FC = () => {
           defaultLimit={10}
           // NEW: roster progress bar data
           rosterProgress={rosterProgress}
+          // NEW: enable drafting from suggestions
+          onDraftPlayer={draftPlayer}
+          canDraft={currentTurn.isMyTurn}
         />
       </section>
 
@@ -774,7 +809,7 @@ const DraftDashboard: React.FC = () => {
             availablePlayers={availablePlayers}
             allPlayers={allPlayers}
             onDraftPlayer={draftPlayer}
-            canDraft={true}
+            canDraft={currentTurn.isMyTurn}
             currentPick={currentPick}
             currentTurn={currentTurn}
             teamOptions={teamOptions}
@@ -789,12 +824,12 @@ const DraftDashboard: React.FC = () => {
         {/* Right Panel (40%) - Projections Table */}
         <div className={styles.rightPanel}>
           <ProjectionsTable
-            players={availablePlayers}
+            players={allPlayers}
             draftedPlayers={draftedPlayers}
             isLoading={skaterData.isLoading || goalieData.isLoading}
             error={skaterData.error || goalieData.error}
             onDraftPlayer={draftPlayer}
-            canDraft={true}
+            canDraft={currentTurn.isMyTurn}
             // NEW: pass vorp metrics map for per-player VORP column
             vorpMetrics={vorpMetrics}
             // NEW: pass replacement baselines for tooltip/context

@@ -16,18 +16,199 @@
   background-color: color.adjust(v.$background-dark, $lightness: -3%);
   border-bottom: 2px solid v.$border-secondary;
   padding: v.$space-md v.$space-lg;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr auto auto; // title | actions | info
+  align-items: start;
+  column-gap: v.$space-lg;
+  row-gap: 0;
   flex-shrink: 0;
 }
 
-/* Header actions and info tooltip */
+.panelTitle {
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: v.$font-size-lg;
+  font-weight: 700;
+  color: v.$color-white;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+  grid-column: 1 / 2;
+  align-self: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panelTitleAccent {
+  color: v.$primary-color;
+}
+
+/* Header actions: tighten spacing and keep compact controls */
 .headerActions {
+  grid-column: 2 / 3;
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: v.$space-md;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+/* Place the info tooltip at far right of header */
+.panelHeader > .infoTooltip {
+  grid-column: 3 / 4;
+  justify-self: end;
+  align-self: center;
+}
+
+/* Generic vertical control group (label on top) */
+.controlGroup,
+.scopeToggle {
+  display: inline-flex;
+  flex-direction: column;
+  gap: v.$space-xxs;
+  min-width: 120px;
+}
+
+/* Top label style reused across controls */
+.controlLabel {
+  font-size: v.$font-size-xxs;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+
+/* Compact selects for dense header row */
+.compactSelect {
+  padding: 6px 24px 6px 10px;
+  min-height: 30px;
+}
+
+/* Range input compact width inside header */
+.headerActions .rangeInput {
+  width: 140px;
+}
+
+/* Toggle switch (Need, Hide Drafted) */
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+.toggleInput {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.toggleTrack {
+  width: 30px;
+  height: 18px;
+  background: v.$background-dark;
+  border: 1px solid v.$border-secondary;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 2px;
+  transition: all 0.2s ease;
+}
+.toggleThumb {
+  width: 14px;
+  height: 14px;
+  background: linear-gradient(135deg, v.$secondary-color, v.$primary-color);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transform: translateX(0);
+  transition: transform 0.2s ease;
+}
+.toggleInput:checked + .toggleTrack {
+  background: color.adjust(v.$primary-color, $alpha: -0.85);
+  border-color: v.$primary-color;
+}
+.toggleInput:checked + .toggleTrack .toggleThumb {
+  transform: translateX(12px);
+}
+.toggleText {
+  font-size: v.$font-size-xxs;
+  color: v.$text-primary;
+  font-weight: 700;
+}
+
+/* Need toggle popover for alpha slider to avoid layout shift */
+.toggleWithPopover {
+  position: relative;
+}
+.alphaPopover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: color.adjust(v.$background-dark, $lightness: -3%);
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  padding: v.$space-xs v.$space-sm;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 60;
+  width: max(180px, 22vw);
+  display: none;
+}
+.toggleWithPopover:hover .alphaPopover,
+.toggleWithPopover:focus-within .alphaPopover,
+.toggleWithPopover.open .alphaPopover {
+  display: block;
+}
+.alphaPopoverHeader {
+  font-size: v.$font-size-xxs;
+  color: v.$text-secondary;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  margin-bottom: v.$space-xxs;
+}
+.alphaPopoverRow {
   display: flex;
   align-items: center;
-  gap: v.$space-md;
+  gap: 8px;
 }
+.alphaPopover .rangeInput {
+  width: 140px;
+}
+
+/* Filters right cluster for compact toggles */
+.filtersRight {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-sm;
+  margin-left: auto; // push to right of row
+}
+
+/* Vertical toggle group with top label */
+.verticalToggleGroup {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: v.$space-xxs;
+  min-width: 120px;
+}
+
+/* Hide inline text on toggles when using top labels */
+.toggleNoText .toggleText {
+  display: none;
+}
+
+/* Make Hide drafted toggle same visual height as others via padding */
+.verticalToggleGroup .toggle {
+  padding-top: 2px;
+}
+/* Explicitly increase the toggle track height in filters row for better alignment */
+.filtersRight .toggleTrack {
+  height: 22px;
+}
+
+/* Header info tooltip (moved out of conflicting .headerActions block) */
+// Removed duplicate .headerActions definition to preserve compact spacing
 
 .infoTooltip {
   position: relative;
@@ -64,7 +245,7 @@
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: min(360px, 90vw);
+  width: min(420px, 92vw);
   background: color.adjust(v.$background-dark, $lightness: -3%);
   border: 1px solid v.$border-secondary;
   border-radius: v.$border-radius-md;
@@ -113,20 +294,6 @@
   margin-top: v.$space-xs;
   color: v.$text-secondary;
   font-style: italic;
-}
-
-.panelTitle {
-  font-family: v.$font-family-accent, sans-serif;
-  font-size: v.$font-size-lg;
-  font-weight: 700;
-  color: v.$color-white;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin: 0;
-}
-
-.panelTitleAccent {
-  color: v.$primary-color;
 }
 
 /* =================== Filters Section =================== */
@@ -235,6 +402,15 @@
   font-size: v.$font-size-xs;
 }
 
+/* Make sortable headers look clickable and provide hover affordance */
+.sortableHeader {
+  cursor: pointer;
+  user-select: none;
+}
+.sortableHeader:hover {
+  color: v.$primary-color;
+}
+
 .playersTable th.colFP,
 .playersTable th.colVorp,
 .playersTable th.colAdp,
@@ -250,6 +426,15 @@
   vertical-align: middle;
   text-align: left;
   line-height: 1.4; // Improve readability
+}
+
+/* Expanded details row styling */
+.expandRow td {
+  background-color: color.adjust(v.$background-dark, $lightness: -6%);
+  border-top: 1px solid v.$border-secondary;
+  border-bottom: 1px solid v.$border-secondary;
+  padding-top: v.$space-sm;
+  padding-bottom: v.$space-sm;
 }
 
 /* =================== Value Bands (VBD & Proj FP) =================== */
@@ -334,6 +519,12 @@
   background-color: color.adjust(v.$background-dark, $lightness: -5%);
 }
 
+/* Drafted rows appear greyed out but remain visible */
+.draftedRow {
+  opacity: 0.5;
+  filter: grayscale(60%);
+}
+
 /* Ensure hover still stands out over zebra stripes */
 .playerRow:hover {
   background-color: color.adjust(v.$background-dark, $lightness: 2%) !important;
@@ -346,12 +537,40 @@
 }
 
 .nameContainer {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex; // was flex; switch to inline-flex to fit content
+  flex-direction: row; // was column; keep items inline
+  align-items: center;
+  gap: 6px;
   overflow: hidden;
   padding: 0;
-  width: 100%; /* Ensure full width */
-  min-height: 1.5em; /* Ensure minimum height for visibility */
+  width: 100%;
+  min-height: 1.5em; // keep minimum line height only
+}
+
+.expandToggle {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: 1px solid v.$border-secondary;
+  background: transparent;
+  color: v.$text-primary;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.15s ease;
+
+  &:hover,
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+    color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.25);
+  }
 }
 
 .fullName {
@@ -365,6 +584,7 @@
   text-overflow: ellipsis;
   display: block; /* Ensure block display */
   line-height: 1.3; /* Consistent line height */
+  flex: 1 1 auto; // allow truncation to use remaining space
 }
 
 .position {
@@ -649,6 +869,19 @@
     width: 100%;
     justify-content: space-between;
   }
+
+  .headerActions {
+    gap: v.$space-xs;
+  }
+  .compactSelect {
+    max-width: 140px;
+  }
+  .rangeInput {
+    width: 100px;
+  }
+  .toggleText {
+    display: none;
+  } // icons only to save space
 }
 
 @media (max-width: v.$breakpoint-mobile-max) {
@@ -700,6 +933,13 @@
   .headerActions {
     flex-direction: row;
     gap: v.$space-sm;
+  }
+
+  .compactSelect {
+    max-width: 120px;
+  }
+  .rangeInput {
+    width: 90px;
   }
 
   .tooltipContent {
