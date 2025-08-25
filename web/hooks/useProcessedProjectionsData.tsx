@@ -16,7 +16,8 @@ import {
 } from "lib/projectionsConfig/statsMasterList";
 import {
   PROJECTION_SOURCES_CONFIG,
-  ProjectionSourceConfig
+  ProjectionSourceConfig,
+  SourceStatMapping
 } from "lib/projectionsConfig/projectionSourcesConfig";
 import {
   YAHOO_DRAFT_ANALYSIS_KEYS,
@@ -108,6 +109,19 @@ export interface RoundSummaryRow {
 
 export type TableDataRow = ProcessedPlayer | RoundSummaryRow;
 
+export interface CustomAdditionalProjectionSource {
+  id: string; // expected to be 'custom_csv'
+  displayName: string; // e.g. 'Custom CSV'
+  playerType: "skater" | "goalie";
+  // Raw row objects shaped similarly to Supabase rows (column names matching statMappings dbColumnName etc.)
+  rows: Array<Record<string, any>>;
+  primaryPlayerIdKey: string; // e.g. 'player_id'
+  originalPlayerNameKey: string; // e.g. 'Player_Name'
+  teamKey?: string;
+  positionKey?: string;
+  statMappings: SourceStatMapping[]; // reuse existing mapping type
+}
+
 export interface UseProcessedProjectionsDataProps {
   activePlayerType: "skater" | "goalie";
   sourceControls: Record<string, { isSelected: boolean; weight: number }>;
@@ -118,6 +132,10 @@ export interface UseProcessedProjectionsDataProps {
   styles: Record<string, string>; // To pass CSS Modules styles object
   showPerGameFantasyPoints: boolean;
   togglePerGameFantasyPoints: () => void;
+  // NEW: team count to drive round summaries
+  teamCountForRoundSummaries?: number;
+  // NEW: Optional in-memory custom source (session CSV import) to merge with pipeline
+  customAdditionalSource?: CustomAdditionalProjectionSource;
 }
 
 export interface UseProcessedProjectionsDataReturn {
@@ -257,7 +275,8 @@ export function addRoundSummariesToPlayers(
   calculateDiffFn: (
     actual: number | null | undefined,
     projected: number | null | undefined
-  ) => number | null
+  ) => number | null,
+  teamCount: number = 12
 ): TableDataRow[] {
   const finalTableDataWithSummaries: TableDataRow[] = [];
   let currentRoundPlayersBuffer: ProcessedPlayer[] = [];
@@ -327,7 +346,7 @@ export function addRoundSummariesToPlayers(
         displayTeam: null,
         displayPosition: null,
         combinedStats: {},
-        yahooAvgPick: currentRoundNum * 12 + 0.00001
+        yahooAvgPick: currentRoundNum * teamCount + 0.00001
       });
       currentRoundPlayersBuffer = [];
     }
@@ -337,7 +356,7 @@ export function addRoundSummariesToPlayers(
     const avgPick = player.yahooAvgPick;
     let playerRound = 0;
     if (avgPick != null && avgPick > 0) {
-      playerRound = Math.ceil(avgPick / 12);
+      playerRound = Math.ceil(avgPick / Math.max(1, teamCount));
     }
 
     if (playerRound !== currentRoundNum) {
@@ -1050,7 +1069,9 @@ export const useProcessedProjectionsData = ({
   currentSeasonId,
   styles,
   showPerGameFantasyPoints,
-  togglePerGameFantasyPoints
+  togglePerGameFantasyPoints,
+  teamCountForRoundSummaries,
+  customAdditionalSource
 }: UseProcessedProjectionsDataProps): UseProcessedProjectionsDataReturn => {
   const [processedPlayers, setProcessedPlayers] = useState<TableDataRow[]>([]);
   const [tableColumns, setTableColumns] = useState<
@@ -1126,6 +1147,25 @@ export const useProcessedProjectionsData = ({
     [stableFantasyPointSettings]
   );
 
+  const stableCustomAdditionalSourceString = useMemo(
+    () =>
+      customAdditionalSource
+        ? JSON.stringify({
+            id: customAdditionalSource.id,
+            playerType: customAdditionalSource.playerType,
+            rowsLen: customAdditionalSource.rows?.length || 0,
+            // Including a hash-esque piece: concatenate first 5 player ids if present
+            sample: customAdditionalSource.rows
+              ? customAdditionalSource.rows
+                  .slice(0, 5)
+                  .map((r) => r[customAdditionalSource.primaryPlayerIdKey])
+                  .join(",")
+              : ""
+          })
+        : "none",
+    [customAdditionalSource]
+  );
+
   useEffect(() => {
     const relevantStatDefsForCollapse = STATS_MASTER_LIST.filter(
       (stat) =>
@@ -1172,7 +1212,17 @@ export const useProcessedProjectionsData = ({
     }
     const currentTypeCache = cache.current[cacheTypeKey]!;
 
-    // Check full cache first using stable string representations
+    // If customAdditionalSource changes, bust caches related to that playerType (simple approach for now)
+    if (
+      customAdditionalSource &&
+      customAdditionalSource.playerType === activePlayerType
+    ) {
+      // Invalidate caches so new data flows through
+      currentTypeCache.base = undefined;
+      currentTypeCache.full = undefined;
+    }
+
+    // Check full cache first using stable string representations (skip if custom source present since invalidated above)
     if (
       currentTypeCache.full &&
       currentTypeCache.full.sourceControlsSnapshot ===
@@ -1182,7 +1232,8 @@ export const useProcessedProjectionsData = ({
       currentTypeCache.full.fantasyPointSettingsSnapshot ===
         stableFantasyPointSettingsString &&
       currentTypeCache.full.showPerGameFantasyPointsSnapshot ===
-        showPerGameFantasyPoints
+        showPerGameFantasyPoints &&
+      !customAdditionalSource // only reuse cache if no custom source (or unchanged and not invalidated)
     ) {
       setProcessedPlayers(currentTypeCache.full.data);
       const freshColumns = generateTableCols();
@@ -1209,121 +1260,55 @@ export const useProcessedProjectionsData = ({
         (activePlayerType === "goalie" && stat.isGoalieStat)
     );
 
-    // Check base cache
+    // Assemble active source configs including optional custom source
+    const baseActiveSourceConfigs = PROJECTION_SOURCES_CONFIG.filter(
+      (src) =>
+        src.playerType === activePlayerType &&
+        stableSourceControls[src.id]?.isSelected
+    );
+
+    const augmentedActiveSourceConfigs: ProjectionSourceConfig[] = [
+      ...baseActiveSourceConfigs
+    ];
+    let customSourceConfig: ProjectionSourceConfig | undefined;
     if (
-      currentTypeCache.base &&
-      currentTypeCache.base.sourceControlsSnapshot ===
-        stableSourceControlsString &&
-      currentTypeCache.base.yahooModeSnapshot === yahooDraftMode &&
-      currentTypeCache.base.currentSeasonIdSnapshot === currentSeasonId
+      customAdditionalSource &&
+      customAdditionalSource.playerType === activePlayerType &&
+      stableSourceControls[customAdditionalSource.id]?.isSelected
     ) {
-      let basePlayers = currentTypeCache.base.data;
-
-      const playersWithNewFP = basePlayers.map((player) => {
-        let calculatedProjectedFantasyPoints = 0;
-        let calculatedActualFantasyPoints = 0;
-        let hasValidStatForFP = false;
-
-        for (const statKey in player.combinedStats) {
-          const combinedStat = player.combinedStats[statKey];
-          const pointValueForStat = stableFantasyPointSettings[statKey];
-          if (pointValueForStat !== undefined && pointValueForStat !== 0) {
-            if (combinedStat?.projected !== null) {
-              calculatedProjectedFantasyPoints +=
-                combinedStat.projected * pointValueForStat;
-              hasValidStatForFP = true;
-            }
-            if (combinedStat?.actual !== null) {
-              calculatedActualFantasyPoints +=
-                combinedStat.actual * pointValueForStat;
-              hasValidStatForFP = true;
-            }
-          }
-        }
-        const projectedGP = player.combinedStats.GAMES_PLAYED?.projected;
-        const actualGP = player.combinedStats.GAMES_PLAYED?.actual;
-        const currentProjectedFp = hasValidStatForFP
-          ? calculatedProjectedFantasyPoints
-          : null;
-        const currentActualFp = hasValidStatForFP
-          ? calculatedActualFantasyPoints
-          : null;
-
-        return {
-          ...player,
-          fantasyPoints: {
-            projected: currentProjectedFp,
-            actual: currentActualFp,
-            diffPercentage: calculateDiffPercentage(
-              currentActualFp,
-              currentProjectedFp
-            ),
-            projectedPerGame:
-              currentProjectedFp !== null &&
-              projectedGP !== null &&
-              projectedGP > 0
-                ? currentProjectedFp / projectedGP
-                : null,
-            actualPerGame:
-              currentActualFp !== null && actualGP !== null && actualGP > 0
-                ? currentActualFp / actualGP
-                : null
-          }
-        };
-      });
-
-      const sortedPlayersForSummary = [...playersWithNewFP].sort((a, b) => {
-        const pickA = a.yahooAvgPick ?? Infinity;
-        const pickB = b.yahooAvgPick ?? Infinity;
-        return pickA - pickB;
-      });
-
-      const tableDataWithSummaries = addRoundSummariesToPlayers(
-        sortedPlayersForSummary,
-        calculateDiffPercentage
-      );
-
-      setProcessedPlayers(tableDataWithSummaries);
-      const freshColumns = generateTableCols();
-      const derivedCols = deriveVisibleColumns(
-        freshColumns,
-        statGroupCollapseState,
-        toggleStatGroupCollapse,
-        styles,
-        showPerGameFantasyPoints,
-        togglePerGameFantasyPoints
-      );
-      setTableColumns(derivedCols);
-
-      currentTypeCache.full = {
-        data: tableDataWithSummaries,
-        sourceControlsSnapshot: stableSourceControlsString,
-        yahooModeSnapshot: yahooDraftMode,
-        currentSeasonIdSnapshot: currentSeasonId,
-        fantasyPointSettingsSnapshot: stableFantasyPointSettingsString,
-        showPerGameFantasyPointsSnapshot: showPerGameFantasyPoints
+      customSourceConfig = {
+        id: customAdditionalSource.id,
+        displayName: customAdditionalSource.displayName,
+        tableName: "__custom_session__", // synthetic
+        playerType: customAdditionalSource.playerType,
+        primaryPlayerIdKey: customAdditionalSource.primaryPlayerIdKey,
+        originalPlayerNameKey: customAdditionalSource.originalPlayerNameKey,
+        teamKey: customAdditionalSource.teamKey,
+        positionKey: customAdditionalSource.positionKey,
+        statMappings: customAdditionalSource.statMappings
       };
+      augmentedActiveSourceConfigs.push(customSourceConfig);
+    }
+
+    if (augmentedActiveSourceConfigs.length === 0) {
+      setProcessedPlayers([]);
+      setTableColumns([]);
       setIsLoading(false);
       return;
     }
 
+    // If we have base cache (no custom source) attempt reuse logic below; otherwise fetch/process
     try {
-      const activeSourceConfigs = PROJECTION_SOURCES_CONFIG.filter(
-        (src) =>
-          src.playerType === activePlayerType &&
-          stableSourceControls[src.id]?.isSelected
-      );
-
-      if (activeSourceConfigs.length === 0) {
-        setProcessedPlayers([]);
-        setTableColumns([]);
-        setIsLoading(false);
-        return;
-      }
-
-      // ...existing code for fetching data...
-      const projectionDataPromises = activeSourceConfigs.map(
+      // Build raw projection data map (skip Supabase fetch for custom source)
+      const projectionDataPromises = augmentedActiveSourceConfigs.map(
         async (sourceConfig) => {
+          if (customSourceConfig && sourceConfig.id === customSourceConfig.id) {
+            return {
+              sourceId: sourceConfig.id,
+              data: customAdditionalSource!.rows as RawProjectionSourcePlayer[],
+              config: sourceConfig
+            };
+          }
           const selectKeys = new Set<string>([
             sourceConfig.primaryPlayerIdKey,
             sourceConfig.originalPlayerNameKey
@@ -1363,8 +1348,9 @@ export const useProcessedProjectionsData = ({
         };
       });
 
+      // Collect unique player IDs
       const uniqueNhlPlayerIds = new Set<number>();
-      activeSourceConfigs.forEach((sourceConfig) => {
+      augmentedActiveSourceConfigs.forEach((sourceConfig) => {
         const sourceData = initialRawProjectionDataById[sourceConfig.id]?.data;
         if (sourceData) {
           sourceData.forEach((row) => {
@@ -1375,7 +1361,6 @@ export const useProcessedProjectionsData = ({
           });
         }
       });
-
       if (uniqueNhlPlayerIds.size === 0) {
         setProcessedPlayers([]);
         setTableColumns([]);
@@ -1383,9 +1368,10 @@ export const useProcessedProjectionsData = ({
         return;
       }
 
+      // Fetch other data (actuals + Yahoo) using helper
       const fetchedData = await fetchAllSourceData(
         supabaseClient,
-        activeSourceConfigs,
+        augmentedActiveSourceConfigs,
         uniqueNhlPlayerIds,
         activePlayerType,
         currentSeasonId,
@@ -1399,7 +1385,7 @@ export const useProcessedProjectionsData = ({
           fetchedData.actualStatsMap,
           fetchedData.nhlToYahooMap,
           fetchedData.yahooPlayersMap,
-          activeSourceConfigs,
+          augmentedActiveSourceConfigs,
           relevantStatDefinitions,
           stableSourceControls,
           activePlayerType,
@@ -1409,29 +1395,30 @@ export const useProcessedProjectionsData = ({
 
       if (playersRequiringNameDebug.length > 0) {
         console.warn(
-          `[FHFHockey Debug] Player Name Resolution Issues Encountered (${playersRequiringNameDebug.length} players):`
+          "[FHFHockey Debug] Player Name Resolution Issues Encountered (including custom CSV if present):",
+          playersRequiringNameDebug.length
         );
-        console.log(playersRequiringNameDebug);
       }
 
-      // Cache the base data
-      currentTypeCache.base = {
-        data: tempProcessedPlayers,
-        sourceControlsSnapshot: stableSourceControlsString,
-        yahooModeSnapshot: yahooDraftMode,
-        currentSeasonIdSnapshot: currentSeasonId
-      };
+      // Cache base only if custom source absent (custom source data is session-volatile)
+      if (!customAdditionalSource) {
+        currentTypeCache.base = {
+          data: tempProcessedPlayers,
+          sourceControlsSnapshot: stableSourceControlsString,
+          yahooModeSnapshot: yahooDraftMode,
+          currentSeasonIdSnapshot: currentSeasonId
+        };
+      }
 
-      // Continue with fantasy points calculation and final processing
       const sortedPlayersForSummary = [...tempProcessedPlayers].sort((a, b) => {
         const pickA = a.yahooAvgPick ?? Infinity;
         const pickB = b.yahooAvgPick ?? Infinity;
         return pickA - pickB;
       });
-
       const tableDataWithSummaries = addRoundSummariesToPlayers(
         sortedPlayersForSummary,
-        calculateDiffPercentage
+        calculateDiffPercentage,
+        Math.max(1, teamCountForRoundSummaries ?? 12)
       );
 
       setProcessedPlayers(tableDataWithSummaries);
@@ -1446,32 +1433,35 @@ export const useProcessedProjectionsData = ({
       );
       setTableColumns(derivedCols);
 
-      // Cache the full data
-      currentTypeCache.full = {
-        data: tableDataWithSummaries,
-        sourceControlsSnapshot: stableSourceControlsString,
-        yahooModeSnapshot: yahooDraftMode,
-        currentSeasonIdSnapshot: currentSeasonId,
-        fantasyPointSettingsSnapshot: stableFantasyPointSettingsString,
-        showPerGameFantasyPointsSnapshot: showPerGameFantasyPoints
-      };
-
+      if (!customAdditionalSource) {
+        currentTypeCache.full = {
+          data: tableDataWithSummaries,
+          sourceControlsSnapshot: stableSourceControlsString,
+          yahooModeSnapshot: yahooDraftMode,
+          currentSeasonIdSnapshot: currentSeasonId,
+          fantasyPointSettingsSnapshot: stableFantasyPointSettingsString,
+          showPerGameFantasyPointsSnapshot: showPerGameFantasyPoints
+        };
+      }
       setIsLoading(false);
     } catch (err: any) {
-      console.error(`Error processing ${activePlayerType} projections:`, err);
+      console.error(
+        `Error processing ${activePlayerType} projections (custom source aware):`,
+        err
+      );
       setError(err.message || "Unknown error occurred");
       setIsLoading(false);
     }
   }, [
     activePlayerType,
-    stableSourceControlsString, // Use stable string instead of object
+    stableSourceControlsString,
     yahooDraftMode,
-    stableFantasyPointSettingsString, // Use stable string instead of object
+    stableFantasyPointSettingsString,
     supabaseClient,
     currentSeasonId,
-    showPerGameFantasyPoints
-    // Removed togglePerGameFantasyPoints, statGroupCollapseState, toggleStatGroupCollapse, styles
-    // as these can cause infinite loops and are handled inside the callback
+    showPerGameFantasyPoints,
+    teamCountForRoundSummaries,
+    stableCustomAdditionalSourceString // trigger recompute when custom data changes
   ]);
 
   useEffect(() => {

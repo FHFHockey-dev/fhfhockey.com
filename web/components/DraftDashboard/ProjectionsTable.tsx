@@ -80,6 +80,10 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     const v = window.localStorage.getItem("projections.hideDrafted");
     return v === "true";
   });
+  // Temporary diagnostics toggle to surface excluded counts
+  const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false);
+  // NEW: settings drawer visibility
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Expand/collapse and last season totals cache per player
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -281,6 +285,67 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     return () => clearTimeout(id);
   }, [searchTerm]);
 
+  // NEW: drafted player ID set for quick checks (moved before diagnostics)
+  const draftedIdSet = useMemo(() => {
+    const s = new Set<string>();
+    draftedPlayers?.forEach((dp) => s.add(String(dp.playerId)));
+    return s;
+  }, [draftedPlayers]);
+
+  const diagnostics = useMemo(() => {
+    const total = players.length;
+    const q = debouncedSearchTerm.toLowerCase();
+    const reasons: Record<string, number> = {};
+    const inc = (k: string) => (reasons[k] = (reasons[k] || 0) + 1);
+    players.forEach((p) => {
+      let excluded = false;
+      if (positionFilter !== "ALL") {
+        const ok = p.displayPosition?.includes(positionFilter);
+        if (!ok) {
+          inc("positionFilter");
+          excluded = true;
+        }
+      }
+      if (!excluded && q) {
+        const ok =
+          p.fullName.toLowerCase().includes(q) ||
+          (p.displayTeam || "").toLowerCase().includes(q);
+        if (!ok) {
+          inc("searchFilter");
+          excluded = true;
+        }
+      }
+      if (!excluded && hideDrafted) {
+        if (draftedIdSet.has(String(p.playerId))) {
+          inc("hideDrafted");
+          excluded = true;
+        }
+      }
+    });
+    const shown = (() => {
+      // Mirror visibility logic (minus sort)
+      let arr = [...players];
+      if (positionFilter !== "ALL") {
+        arr = arr.filter((p) => p.displayPosition?.includes(positionFilter));
+      }
+      if (debouncedSearchTerm) {
+        arr = arr.filter((p) => {
+          const q2 = debouncedSearchTerm.toLowerCase();
+          return (
+            p.fullName.toLowerCase().includes(q2) ||
+            (p.displayTeam || "").toLowerCase().includes(q2)
+          );
+        });
+      }
+      if (hideDrafted) {
+        arr = arr.filter((p) => !draftedIdSet.has(String(p.playerId)));
+      }
+      return arr.length;
+    })();
+    const excluded = Math.max(0, total - shown);
+    return { total, shown, excluded, reasons };
+  }, [players, positionFilter, debouncedSearchTerm, hideDrafted, draftedIdSet]);
+
   // Build a quick lookup for each player's primary position (first listed)
   const primaryPosById = useMemo(() => {
     const m = new Map<string, string>();
@@ -290,13 +355,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     });
     return m;
   }, [players]);
-
-  // NEW: drafted player ID set for quick checks
-  const draftedIdSet = useMemo(() => {
-    const s = new Set<string>();
-    draftedPlayers?.forEach((dp) => s.add(String(dp.playerId)));
-    return s;
-  }, [draftedPlayers]);
 
   // Precompute VORP/VONA/VBD for quick lookup (with need-adjusted VBD when enabled)
   const vorpMap = useMemo(() => {
@@ -574,7 +632,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   if (isLoading) {
     return (
       <div className={styles.projectionsContainer}>
-        <div className={styles.panelHeader}>
+        <div className={styles.controlsBar}>
           <h2 className={styles.panelTitle}>
             Available <span className={styles.panelTitleAccent}>Players</span>
           </h2>
@@ -590,7 +648,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   if (error) {
     return (
       <div className={styles.projectionsContainer}>
-        <div className={styles.panelHeader}>
+        <div className={styles.controlsBar}>
           <h2 className={styles.panelTitle}>
             Available <span className={styles.panelTitleAccent}>Players</span>
           </h2>
@@ -605,81 +663,220 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
 
   return (
     <div className={styles.projectionsContainer}>
-      {/* Header */}
-      <div className={styles.panelHeader}>
-        <h2 className={styles.panelTitle}>
+      {/* Primary Controls Bar */}
+      <div className={styles.controlsBar}>
+        <h2 className={styles.panelTitle} title="Available Players">
           Available <span className={styles.panelTitleAccent}>Players</span>
         </h2>
-        <div className={styles.headerActions}>
-          {/* FILTER scope (value band scope) */}
-          <div className={styles.controlGroup}>
-            <label htmlFor="band-scope" className={styles.controlLabel}>
-              Filter
-            </label>
+        <div className={styles.primaryControls}>
+          <div className={`${styles.stackedControl} ${styles.searchStack}`}>
+            <span className={styles.controlLabelMini}>Search</span>
+            <input
+              type="text"
+              placeholder="Search players..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className={styles.searchInput}
+              aria-label="Search players"
+            />
+          </div>
+          <div className={styles.stackedControl}>
+            <span className={styles.controlLabelMini}>Position</span>
             <select
-              id="band-scope"
-              className={`${styles.scopeSelect} ${styles.compactSelect}`}
-              value={bandScope}
-              onChange={(e) => setBandScope(e.target.value as any)}
-              title="Value band scope"
-              aria-label="Value band filter scope"
+              id="position-filter"
+              value={positionFilter}
+              onChange={(e) => setPositionFilter(e.target.value)}
+              className={styles.inlineSelect}
+              aria-label="Position filter"
             >
-              <option value="position">POS</option>
-              <option value="overall">ALL</option>
+              <option value="ALL">ALL</option>
+              {availablePositions.map((position) => (
+                <option key={position} value={position}>
+                  {position}
+                </option>
+              ))}
             </select>
           </div>
-          {/* VORP Base */}
-          <div className={styles.controlGroup}>
-            <label htmlFor="baseline-mode" className={styles.controlLabel}>
-              VORP Base
-            </label>
-            <select
-              id="baseline-mode"
-              className={`${styles.scopeSelect} ${styles.compactSelect}`}
-              value={baselineMode}
-              onChange={(e) =>
-                onBaselineModeChange &&
-                onBaselineModeChange(e.target.value as any)
-              }
-              title="VORP baseline source"
-              aria-label="VORP baseline source"
-            >
-              <option value="remaining">AVAIL</option>
-              <option value="full">ALL</option>
-            </select>
-          </div>
-          {/* Need toggle with popover to adjust alpha (no layout shift) */}
-          <div className={`${styles.controlGroup} ${styles.toggleWithPopover}`}>
-            <label className={styles.controlLabel}>Need</label>
-            <label
-              className={`${styles.toggle} ${styles.toggleNoText}`}
-              title="Weight VBD by positional needs"
-            >
+          <div className={styles.stackedControl}>
+            <span className={styles.controlLabelMini}>Hide Drafted</span>
+            <label className={styles.toggle} title="Hide drafted players">
               <input
                 type="checkbox"
                 className={styles.toggleInput}
-                checked={!!needWeightEnabled}
-                onChange={(e) =>
-                  onNeedWeightChange && onNeedWeightChange(e.target.checked)
-                }
-                aria-label="Toggle need weighting"
-                aria-haspopup="dialog"
-                aria-controls="need-alpha-popover"
+                checked={hideDrafted}
+                onChange={(e) => setHideDrafted(e.target.checked)}
+                aria-label="Hide drafted players"
               />
               <span className={styles.toggleTrack}>
                 <span className={styles.toggleThumb} />
               </span>
-              <span className={styles.toggleText}>Need</span>
+              <span className={styles.toggleText}>Hide</span>
             </label>
-            {needWeightEnabled && (
-              <div
-                id="need-alpha-popover"
-                className={styles.alphaPopover}
-                role="dialog"
-                aria-label="Need weighting strength"
+          </div>
+          <div
+            className={styles.stackedControl}
+            style={{ alignItems: "flex-end" }}
+          >
+            <span className={styles.controlLabelMini}>&nbsp;</span>
+            <button
+              type="button"
+              className={styles.settingsButton}
+              onClick={() => setSettingsOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={settingsOpen}
+              aria-controls="draft-settings-drawer"
+            >
+              Settings
+            </button>
+          </div>
+          <div
+            className={styles.stackedControl}
+            style={{ width: "auto", alignItems: "flex-end" }}
+          >
+            <span className={styles.controlLabelMini}>&nbsp;</span>
+            <div className={styles.infoTooltip}>
+              <button
+                type="button"
+                className={styles.infoButton}
+                aria-describedby="projections-help"
+                aria-label="Legend"
               >
-                <div className={styles.alphaPopoverHeader}>Need strength</div>
-                <div className={styles.alphaPopoverRow}>
+                i
+              </button>
+              <div
+                id="projections-help"
+                role="tooltip"
+                className={styles.tooltipContent}
+              >
+                <div className={styles.tooltipTitle}>Legend</div>
+                <div className={styles.tooltipBody}>
+                  <ul>
+                    <li>VORP: Value over replacement.</li>
+                    <li>VONA: Over next available.</li>
+                    <li>VBD: Blended draft value.</li>
+                    <li>Bands: Percentile tiers.</li>
+                    <li>Next-Pick %: Risk before your pick.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mini Run Forecast Row */}
+      {expectedRuns && (
+        <div className={styles.miniRunForecast}>
+          <div className={styles.miniRunDescriptor}>
+            Projected Next {expectedRuns.N} Picks by Position
+          </div>
+          <div className={styles.miniRunItems}>
+            {" "}
+            {/* new wrapper */}
+            {["C", "LW", "RW", "D", "G"].map((pos) => {
+              const val = Math.max(
+                0,
+                Math.round((expectedRuns.byPos?.[pos] ?? 0) * 10) / 10
+              );
+              const max = Math.max(1, expectedRuns.N || 1);
+              const pct = Math.min(100, Math.round((val / max) * 100));
+              return (
+                <div
+                  key={pos}
+                  className={styles.miniRunItem}
+                  title={`${pos} ${val} / ${expectedRuns.N}`}
+                >
+                  <span className={styles.miniRunLabel}>{pos}</span>
+                  <span className={styles.miniRunBar}>
+                    <span
+                      className={styles.miniRunFill}
+                      style={{ width: pct + "%" }}
+                    />
+                  </span>
+                  <span className={styles.miniRunVal}>{val.toFixed(1)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Settings Drawer Overlay */}
+      {settingsOpen && (
+        <div
+          className={styles.drawerOverlay}
+          role="presentation"
+          onClick={() => setSettingsOpen(false)}
+        />
+      )}
+      {settingsOpen && (
+        <aside
+          id="draft-settings-drawer"
+          className={styles.settingsDrawer}
+          role="dialog"
+          aria-label="Draft advanced settings"
+        >
+          <div className={styles.drawerHeader}>
+            <h3>Advanced Settings</h3>
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(false)}
+              className={styles.drawerClose}
+              aria-label="Close settings"
+            >
+              ×
+            </button>
+          </div>
+          <div className={styles.drawerContent}>
+            <section className={styles.drawerSection}>
+              <h4>Value Band Scope</h4>
+              <select
+                value={bandScope}
+                onChange={(e) => setBandScope(e.target.value as any)}
+                className={styles.drawerSelect}
+                aria-label="Value band scope"
+              >
+                <option value="position">Per Position</option>
+                <option value="overall">Overall</option>
+              </select>
+            </section>
+            <section className={styles.drawerSection}>
+              <h4>VORP Baseline</h4>
+              <select
+                value={baselineMode}
+                onChange={(e) =>
+                  onBaselineModeChange &&
+                  onBaselineModeChange(e.target.value as any)
+                }
+                className={styles.drawerSelect}
+                aria-label="VORP baseline mode"
+              >
+                <option value="remaining">Remaining (AVAIL)</option>
+                <option value="full">Full Pool (ALL)</option>
+              </select>
+            </section>
+            <section className={styles.drawerSection}>
+              <h4>Need Weighting</h4>
+              <label className={styles.toggle}>
+                <input
+                  type="checkbox"
+                  className={styles.toggleInput}
+                  checked={!!needWeightEnabled}
+                  onChange={(e) =>
+                    onNeedWeightChange && onNeedWeightChange(e.target.checked)
+                  }
+                  aria-label="Enable need weighting"
+                />
+                <span className={styles.toggleTrack}>
+                  <span className={styles.toggleThumb} />
+                </span>
+                <span className={styles.toggleText}>Enabled</span>
+              </label>
+              {needWeightEnabled && (
+                <div className={styles.sliderRow}>
+                  <label htmlFor="need-alpha" className={styles.sliderLabel}>
+                    Strength (α {needAlpha.toFixed(2)})
+                  </label>
                   <input
                     id="need-alpha"
                     type="range"
@@ -692,231 +889,67 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       onNeedAlphaChange(parseFloat(e.target.value))
                     }
                     className={styles.rangeInput}
-                    aria-label="Need weighting alpha"
                   />
-                  <span className={styles.rangeValue}>
-                    {Number(needAlpha).toFixed(2)}
-                  </span>
                 </div>
+              )}
+            </section>
+            <section className={styles.drawerSection}>
+              <h4>Risk Model</h4>
+              <div className={styles.sliderRow}>
+                <label htmlFor="risk-sd" className={styles.sliderLabel}>
+                  SD (picks): {riskSd}
+                </label>
+                <input
+                  id="risk-sd"
+                  type="range"
+                  min={2}
+                  max={40}
+                  step={1}
+                  value={riskSd}
+                  onChange={(e) => setRiskSd(parseInt(e.target.value, 10))}
+                  className={styles.rangeInput}
+                />
               </div>
+            </section>
+            <section className={styles.drawerSection}>
+              <h4>Diagnostics</h4>
+              <label className={styles.toggle}>
+                <input
+                  type="checkbox"
+                  className={styles.toggleInput}
+                  checked={showDiagnostics}
+                  onChange={(e) => setShowDiagnostics(e.target.checked)}
+                  aria-label="Show diagnostics"
+                />
+                <span className={styles.toggleTrack}>
+                  <span className={styles.toggleThumb} />
+                </span>
+                <span className={styles.toggleText}>Show Excluded</span>
+              </label>
+            </section>
+            {replacementByPos && (
+              <section className={styles.drawerSection}>
+                <h4>Replacement Baselines</h4>
+                <ul className={styles.baselineList}>
+                  {Object.entries(replacementByPos).map(([pos, vals]) => (
+                    <li key={pos}>
+                      <strong>{pos}</strong>: VORP {vals.vorp.toFixed(1)} | VOLS{" "}
+                      {vals.vols.toFixed(1)}
+                    </li>
+                  ))}
+                </ul>
+              </section>
             )}
-          </div>
-          {/* Risk SD slider */}
-          <div
-            className={styles.controlGroup}
-            title="Risk model standard deviation (picks)"
-          >
-            <label htmlFor="risk-sd" className={styles.controlLabel}>
-              Risk SD
-            </label>
-            <div
-              style={{ display: "inline-flex", alignItems: "center", gap: 8 }}
-            >
-              <input
-                id="risk-sd"
-                type="range"
-                min={2}
-                max={40}
-                step={1}
-                value={riskSd}
-                onChange={(e) => setRiskSd(parseInt(e.target.value, 10))}
-                className={styles.rangeInput}
-                aria-label="Risk model standard deviation"
-              />
-              <span className={styles.rangeValue}>{riskSd}</span>
-            </div>
-          </div>
-        </div>
-        {/* Info tooltip moved to far right of header */}
-        <div className={styles.infoTooltip}>
-          <button
-            type="button"
-            className={styles.infoButton}
-            aria-describedby="projections-help"
-            aria-label="How to use Available Players controls"
-          >
-            i
-          </button>
-          <div
-            id="projections-help"
-            role="tooltip"
-            className={styles.tooltipContent}
-          >
-            <div className={styles.tooltipTitle}>Controls & Legend</div>
-            <div className={styles.tooltipBody}>
-              <ul>
-                <li>
-                  Filter: Value band scope for color tints. POS = per-position
-                  percentiles. ALL = overall percentiles across remaining
-                  players.
-                </li>
-                <li>
-                  VORP Base: Baseline pool for replacement levels. AVAIL =
-                  remaining player pool (dynamic). ALL = full player pool
-                  (static).
-                </li>
-                <li>
-                  Need: Adjusts VBD by positional needs. Click to toggle; adjust
-                  strength (alpha) in the popover slider below the toggle.
-                </li>
-                <li>
-                  Risk SD: Controls the spread of the ADP-based risk model (in
-                  picks). Higher SD = flatter distribution (more Medium).
-                  Affects Next-Pick% and risk labels.
-                </li>
-                <li>
-                  Search: Filter players by name. Position: Limit to a single
-                  position.
-                </li>
-                <li>
-                  Hide Drafted: Hides players already drafted in this session.
-                </li>
-              </ul>
-              <div className={styles.tooltipTitle}>Draft Value Metrics</div>
-              <ul>
-                <li>
-                  VORP: Projected points over replacement at best eligible
-                  position.
-                </li>
-                <li>
-                  VONA: Projected points over the player likely available at
-                  your next pick.
-                </li>
-                <li>
-                  VBD: Blended value: 60% VORP, 30% VONA, 10% VOLS; adjusted by
-                  Need when enabled.
-                </li>
-                <li>
-                  Value bands: VBD and Proj FP cells tinted by percentile (
-                  {bandScope === "position" ? "POS" : "ALL"}). Green = top,
-                  Yellow = middle, Red = bottom. Only players with ADP are
-                  included.
-                </li>
-                <li>
-                  VORP Base: {baselineMode === "remaining" ? "AVAIL" : "ALL"}{" "}
-                  selection determines replacement baselines.
-                </li>
-              </ul>
-              {replacementByPos && (
-                <div className={styles.tooltipBaselines}>
-                  <div className={styles.tooltipTitle}>
-                    Current replacement baselines
-                  </div>
-                  <ul>
-                    {Object.entries(replacementByPos).map(([pos, vals]) => (
-                      <li key={pos}>
-                        {pos}: VORP base {vals.vorp.toFixed(1)}, VOLS base{" "}
-                        {vals.vols.toFixed(1)}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {needWeightEnabled && (
-                <p className={styles.tooltipFootnote}>
-                  Need weighting active: VBD is adjusted by positional needs (α=
-                  {needAlpha}).
-                </p>
-              )}
-              <p className={styles.tooltipFootnote}>
-                Tip: Hover VORP to see a player’s best position for VORP.
+            <section className={styles.drawerSection}>
+              <h4>Value Colors</h4>
+              <p className={styles.drawerNote}>
+                Green = top 30%, Yellow = middle 40%, Red = bottom 30% within
+                selected scope.
               </p>
-            </div>
+            </section>
           </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className={styles.filtersSection}>
-        <div className={styles.searchContainer}>
-          <input
-            type="text"
-            placeholder="Search players..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className={styles.searchInput}
-            aria-label="Search players"
-          />
-        </div>
-        <div className={styles.controlGroup}>
-          <label className={styles.controlLabel} htmlFor="position-filter">
-            Position
-          </label>
-          <select
-            id="position-filter"
-            value={positionFilter}
-            onChange={(e) => setPositionFilter(e.target.value)}
-            className={styles.positionSelect}
-          >
-            <option value="ALL">All</option>
-            {availablePositions.map((position) => (
-              <option key={position} value={position}>
-                {position}
-              </option>
-            ))}
-          </select>
-        </div>
-        {/* Right-aligned filters cluster */}
-        <div className={styles.filtersRight}>
-          <div
-            className={`${styles.verticalToggleGroup} ${styles.toggleNoText}`}
-          >
-            <label className={styles.controlLabel}>Hide Drafted</label>
-            <label
-              className={styles.toggle}
-              title="Hide already drafted players"
-            >
-              <input
-                type="checkbox"
-                className={styles.toggleInput}
-                checked={hideDrafted}
-                onChange={(e) => setHideDrafted(e.target.checked)}
-                aria-label="Hide drafted players"
-              />
-              <span className={styles.toggleTrack}>
-                <span className={styles.toggleThumb} />
-              </span>
-              <span className={styles.toggleText}>Hide drafted</span>
-            </label>
-          </div>
-        </div>
-        {/* NEW: Position Run Forecast under the search bar, full-width */}
-        {expectedRuns && (
-          <div
-            className={`${styles.runForecast} ${styles.runForecastWide}`}
-            title="Expected players taken at each position before your next pick"
-          >
-            <div className={styles.runTitle}>
-              Next {expectedRuns.N} projected picks by position
-            </div>
-            <div className={styles.runBars}>
-              {(["C", "LW", "RW", "D", "G"] as const).map((pos) => {
-                const val = Math.max(
-                  0,
-                  Math.round((expectedRuns.byPos?.[pos] ?? 0) * 10) / 10
-                );
-                const max = Math.max(1, expectedRuns.N || 1);
-                const pct = Math.min(100, Math.round((val / max) * 100));
-                return (
-                  <div key={pos} className={styles.runRow}>
-                    <span className={styles.runPosPill}>{pos}</span>
-                    <div
-                      className={styles.runBar}
-                      aria-label={`${pos} expected ${val} of ${expectedRuns.N}`}
-                    >
-                      <div
-                        className={styles.runBarFill}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className={styles.runCount}>{val.toFixed(1)}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
+        </aside>
+      )}
 
       {/* Players Table */}
       <div className={styles.tableContainer}>
@@ -1338,6 +1371,36 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           ) : null;
         })()}
       </div>
+
+      {showDiagnostics && (
+        <div
+          className={styles.diagnostics}
+          style={{
+            margin: "8px 0 0",
+            padding: "8px 10px",
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 6,
+            fontSize: 12
+          }}
+        >
+          <div style={{ marginBottom: 4 }}>
+            Excluded: <strong>{diagnostics.excluded}</strong> of{" "}
+            <strong>{diagnostics.total}</strong> (shown {diagnostics.shown})
+          </div>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            {Object.keys(diagnostics.reasons).length === 0 ? (
+              <span style={{ opacity: 0.7 }}>No exclusions at present.</span>
+            ) : (
+              Object.entries(diagnostics.reasons).map(([k, v]) => (
+                <span key={k} style={{ opacity: 0.9 }}>
+                  {k}: {v}
+                </span>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

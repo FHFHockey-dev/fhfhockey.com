@@ -12,6 +12,11 @@ A three-panel Draft Dashboard enabling fast, informed drafting with real‑time 
 - VORP/VONA/VBD engine with replacement logic; per‑position analysis; dynamic baselines.
 - ProjectionsTable improvements: zebra striping, fixed layout, value bands, baseline toggle, next‑pick risk (SD control), need weighting with alpha, run‑forecast UI, sort/comparator fixes, preference persistence, tooltips/accessibility.
 - Global shortcuts: U (Undo), S (Summary), N (Need weight), B (Baseline). Persisted and input‑safe.
+- Settings > Scoring UI split into side‑by‑side Skaters / Goalies subgroups with independent expand/collapse controls. (NEW 2025-08-22)
+- Added skater stat manager panel (add/remove dynamic scoring stats) with safeguard for already-added metrics. (NEW 2025-08-22)
+- Separate goalie stats expansion state (no longer tied to skater toggle). (NEW 2025-08-22)
+- Expand button now auto-spans two grid columns only when alone on its final row (CSS selector optimization). (NEW 2025-08-22)
+- Minor styling refinements: vertical divider between skater/goalie sections, per-stat remove button, adjusted number input theming. (NEW 2025-08-22)
 
 ## Active Initiatives (Detailed)
 
@@ -64,6 +69,8 @@ A three-panel Draft Dashboard enabling fast, informed drafting with real‑time 
 - Suggested Picks module: need‑adjusted VBD + VONA + risk composite ranking with explanations and actions.
 - Projection Source Accuracy UI: visualize per‑source quality; toggles for Total vs Per‑Game; future tie‑in to weights.
 - Row expanders for prior‑season stats inline in ProjectionsTable.
+- Dynamic scoring stat management enhancements (skater manager COMPLETE; goalie manager backlog). (UPDATED 2025-08-22)
+- JS-driven detection for expand button width in responsive auto-fill grids if future layout changes remove fixed 8-col grid. (NEW BACKLOG 2025-08-22)
 
 ## Success Criteria
 - CSV import requires zero backend and persists only for session; integrated into blended projections via a modal workflow.
@@ -107,53 +114,9 @@ A three-panel Draft Dashboard enabling fast, informed drafting with real‑time 
   - Determine minimal shared metrics set by intersecting official sources; enforce at import.
   - Map CSV headers to internal stat keys used by useProcessedProjectionsData/useProjectionSourceAnalysis.
 
-## Prompt for Next LLM (Copy-Paste into VS Code Copilot/ChatGPT-5)
-You are GitHub Copilot assisting on a Next.js + TypeScript app (web/ folder) on macOS. Goal: deliver three milestones in the Draft Dashboard without backend writes.
-
-Context
-- Paths of interest:
-  - web/components/DraftDashboard/ProjectionsTable.tsx
-  - web/hooks/useProcessedProjectionsData.tsx
-  - web/hooks/useProjectionSourceAnalysis.ts
-  - web/pages/db/upsert-projections.tsx (use as reference for CSV parsing/mapping only)
-  - lib/standardization/nameStandardization (standardizePlayerName, titleCase, standardizeColumnName)
-- Constraints:
-  - No AdminOnly requirements; no Supabase writes. All CSV data must be session-only.
-  - Persist source toggles/weights to localStorage.
-  - Accessibility: modals and toggles must be keyboard and screen-reader friendly.
-
-Tasks
-1) Client-side CSV Import Modal (session-only)
-- Add a header action “Import Projections (CSV)” that opens an accessible modal.
-- Inside the modal: drag-and-drop or file picker; parse CSV with a header row; preview first 50 rows.
-- Provide header mapping UI. Require columns: Player_Name, Team, Position, Goals, Assists, plus minimal shared projection metrics baseline across official sources (intersection). Use name/column standardization helpers.
-- Store parsed and mapped rows only for this session: keep in memory and persist a copy to sessionStorage under key draft.customCsv.v1. Add a “Remove source” action to clear it.
-- Register an ephemeral projection source id custom_csv labeled “Custom CSV”. Integrate it into the projections pipeline.
-
-2) Projection Source Toggles & Weights
-- Add UI to list sources (including Custom CSV when present) with an enable toggle and a weight slider 0.0–2.0 (step 0.1). Weight 0 == disabled.
-- Persist controls in localStorage under draft.sourceControls.v1; restore on load.
-- Normalize nonzero weights and recompute blended projections; propagate through VORP/VONA/VBD and any dependent rankings.
-- Show effective weight share per source in the UI.
-
-3) Missing Players Diagnostics & Fix
-- Add a temporary “Show excluded” toggle near filters in ProjectionsTable that opens a panel with counts and reasons for exclusions (position filter, drafted, missing ADP, name mismatch, etc.).
-- Log unmatched name pairs between projections and player master; verify displayPosition parsing (multi-position including G), search filter, and ADP null handling. Confirm fetching of season totals is not gating list rendering.
-- Fix root causes, add tests for name normalization and filter logic, and remove/restrict diagnostics behind a dev flag.
-
-Acceptance Criteria
-- Import modal: session-only data; required columns enforced; “Custom CSV” appears as a selectable source; refresh within session restores data; removing source fully reverts.
-- Source controls: toggles and 0.0–2.0 weights persist; recomputations reflected in ranking/VORP quickly (<~200ms desktop).
-- Missing players: root causes fixed; affected players present; tests added to prevent regression.
-
-Implementation Notes
-- Prefer existing helpers for standardization. For CSV parsing, you can use Papa Parse or a small custom parser; be mindful of bundle size.
-- Keep state updates memoized to avoid full-table rerenders; avoid unnecessary effect churn.
-- Maintain accessibility (focus trap, aria- attributes) and mobile responsiveness.
-- If adding new utility modules or tests, place them consistently within web/.
-
-Deliverables
-- Import modal component wired into the Draft Dashboard.
-- Updated hooks for source blending and persistence (useProcessedProjectionsData/useProjectionSourceAnalysis).
-- Diagnostics UI and fixes for missing players with tests.
+## Recent Updates Changelog
+- 2025-08-22: Implemented split Skaters/Goalies scoring subgroups side-by-side; independent expand buttons.
+- 2025-08-22: Added skater scoring stat manager (add/remove, prevents duplicates).
+- 2025-08-22: Added conditional grid-span behavior for expand button (spans two columns only when solitary in last row).
+- 2025-08-22: Added per-stat removal control and styling refinements (divider, inputs, badges).
 

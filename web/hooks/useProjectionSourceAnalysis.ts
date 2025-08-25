@@ -1,698 +1,112 @@
 // hooks/useProjectionSourceAnalysis.ts
 
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProcessedPlayer } from "./useProcessedProjectionsData";
 import { PROJECTION_SOURCES_CONFIG } from "lib/projectionsConfig/projectionSourcesConfig";
 
-export interface SourceAccuracyMetrics {
-  sourceId: string;
-  sourceName: string;
+export type SourceControl = {
+  id: string; // e.g., "custom_csv" or builtin ids
+  label: string;
+  enabled: boolean;
+  weight: number; // 0.0 - 2.0 (0 means disabled)
+};
 
-  // Overall metrics
-  totalPlayers: number;
-  playersWithBothProjectedAndActual: number;
+export type SourceControlsState = {
+  controls: SourceControl[];
+  effectiveShares: Record<string, number>; // normalized shares per enabled source
+};
 
-  // Accuracy metrics - Total Fantasy Points
-  averageAccuracyPercentage: number; // How close projections were to actual (100% = perfect)
-  averageMarginOfError: number; // Average absolute difference in fantasy points
-  medianMarginOfError: number;
-
-  // NEW: Per-Game Accuracy metrics
-  averageAccuracyPercentagePerGame: number; // How close per-game projections were to actual per-game
-  averageMarginOfErrorPerGame: number; // Average absolute difference in per-game fantasy points
-  medianMarginOfErrorPerGame: number;
-
-  // Error distribution - Total
-  withinTenPercent: number; // Players within 10% of actual
-  withinTwentyPercent: number; // Players within 20% of actual
-
-  // NEW: Error distribution - Per-Game
-  withinTenPercentPerGame: number; // Players within 10% of actual per-game
-  withinTwentyPercentPerGame: number; // Players within 20% of actual per-game
-
-  // Position-specific performance
-  positionMetrics: Record<
-    string,
-    {
-      playerCount: number;
-      averageAccuracy: number;
-      averageMarginOfError: number;
-      // NEW: Per-game position metrics
-      averageAccuracyPerGame: number;
-      averageMarginOfErrorPerGame: number;
-    }
-  >;
-
-  // Bias analysis - Total
-  overProjectionBias: number; // Tendency to over-project (positive) or under-project (negative)
-
-  // NEW: Bias analysis - Per-Game
-  overProjectionBiasPerGame: number; // Per-game projection bias
-
-  // Quality score (weighted combination of metrics)
-  qualityScore: number;
-
-  // NEW: Per-game quality score
-  qualityScorePerGame: number;
-}
-
-export interface PositionSourceRanking {
-  position: string;
-  rankings: Array<{
-    sourceId: string;
-    sourceName: string;
-    averageAccuracy: number;
-    averageMarginOfError: number;
-    averageAccuracyPerGame: number;
-    averageMarginOfErrorPerGame: number;
-    playerCount: number;
-    rank: number;
-  }>;
-}
-
-export interface RoundSourceRanking {
-  round: number;
-  roundLabel: string;
-  rankings: Array<{
-    sourceId: string;
-    sourceName: string;
-    averageAccuracy: number;
-    averageMarginOfError: number;
-    // NEW: Per-game metrics for round rankings
-    averageAccuracyPerGame: number;
-    averageMarginOfErrorPerGame: number;
-    playerCount: number;
-    rank: number;
-  }>;
-}
+const LOCAL_KEY = "draft.sourceControls.v1" as const;
 
 export function useProjectionSourceAnalysis(
-  players: ProcessedPlayer[],
-  fantasyPointSettings: Record<string, number>,
-  sourceControls: Record<string, { isSelected: boolean; weight: number }>
+  initialSources: { id: string; label: string }[]
 ) {
-  const analysis = useMemo(() => {
-    // Get active sources
-    const activeSources = PROJECTION_SOURCES_CONFIG.filter(
-      (src) => sourceControls[src.id]?.isSelected
-    );
-
-    if (activeSources.length === 0 || players.length === 0) {
-      return {
-        sourceMetrics: [],
-        positionRankings: [],
-        overallRankings: []
-      };
-    }
-
-    // Calculate metrics for each source
-    const sourceMetrics: SourceAccuracyMetrics[] = activeSources.map(
-      (source) => {
-        const metrics = calculateSourceMetrics(
-          source.id,
-          source.displayName,
-          players,
-          fantasyPointSettings
-        );
-        return metrics;
-      }
-    );
-
-    // Calculate position-specific rankings
-    const positionRankings = calculatePositionRankings(sourceMetrics);
-
-    // Calculate round-specific rankings
-    const roundRankings = calculateRoundRankings(
-      sourceMetrics,
-      players,
-      fantasyPointSettings
-    );
-
-    // Calculate separate rankings for total and per-game metrics
-    const overallRankingsTotal = [...sourceMetrics].sort(
-      (a, b) => b.qualityScore - a.qualityScore
-    );
-
-    const overallRankingsPerGame = [...sourceMetrics].sort(
-      (a, b) => b.qualityScorePerGame - a.qualityScorePerGame
-    );
-
-    return {
-      sourceMetrics,
-      positionRankings,
-      roundRankings,
-      overallRankingsTotal,
-      overallRankingsPerGame
-    };
-  }, [players, fantasyPointSettings, sourceControls]);
-
-  return analysis;
-}
-
-function calculateSourceMetrics(
-  sourceId: string,
-  sourceName: string,
-  players: ProcessedPlayer[],
-  fantasyPointSettings: Record<string, number>
-): SourceAccuracyMetrics {
-  // Filter players that have projections from this source and actual fantasy points
-  const relevantPlayers = players.filter((player) => {
-    const hasActualFP =
-      player.fantasyPoints.actual !== null &&
-      player.fantasyPoints.actual !== undefined;
-    const hasProjectionFromSource = hasProjectionFromThisSource(
-      player,
-      sourceId,
-      fantasyPointSettings
-    );
-    return hasActualFP && hasProjectionFromSource;
+  const [controls, setControls] = useState<SourceControl[]>(() => {
+    try {
+      const saved = localStorage.getItem(LOCAL_KEY);
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return initialSources.map((s) => ({
+      id: s.id,
+      label: s.label,
+      enabled: true,
+      weight: 1
+    }));
   });
 
-  if (relevantPlayers.length === 0) {
-    return createEmptyMetrics(sourceId, sourceName);
-  }
-
-  // Calculate individual projected fantasy points for this source
-  const playerAccuracyData = relevantPlayers.map((player) => {
-    const projectedFP = calculateSourceSpecificFantasyPoints(
-      player,
-      sourceId,
-      fantasyPointSettings
-    );
-    const actualFP = player.fantasyPoints.actual!;
-
-    // Calculate per-game metrics
-    const projectedGP = calculateSourceSpecificGamesPlayed(player, sourceId);
-    const actualGP = player.combinedStats.GAMES_PLAYED?.actual || 0;
-
-    const projectedFPPerGame = projectedGP > 0 ? projectedFP / projectedGP : 0;
-    const actualFPPerGame = actualGP > 0 ? actualFP / actualGP : 0;
-
-    // Total Fantasy Points accuracy
-    const marginOfError = Math.abs(projectedFP - actualFP);
-    const accuracyPercentage =
-      actualFP === 0
-        ? projectedFP === 0
-          ? 100
-          : 0
-        : Math.max(0, 100 - (marginOfError / Math.abs(actualFP)) * 100);
-
-    // Per-Game Fantasy Points accuracy
-    const marginOfErrorPerGame = Math.abs(projectedFPPerGame - actualFPPerGame);
-    const accuracyPercentagePerGame =
-      actualFPPerGame === 0
-        ? projectedFPPerGame === 0
-          ? 100
-          : 0
-        : Math.max(
-            0,
-            100 - (marginOfErrorPerGame / Math.abs(actualFPPerGame)) * 100
-          );
-
-    const withinTenPercent = accuracyPercentage >= 90;
-    const withinTwentyPercent = accuracyPercentage >= 80;
-
-    const withinTenPercentPerGame = accuracyPercentagePerGame >= 90;
-    const withinTwentyPercentPerGame = accuracyPercentagePerGame >= 80;
-
-    const bias = projectedFP - actualFP; // Positive = over-projection, negative = under-projection
-    const biasPerGame = projectedFPPerGame - actualFPPerGame;
-
-    return {
-      player,
-      projectedFP,
-      actualFP,
-      projectedFPPerGame,
-      actualFPPerGame,
-      marginOfError,
-      accuracyPercentage,
-      marginOfErrorPerGame,
-      accuracyPercentagePerGame,
-      withinTenPercent,
-      withinTwentyPercent,
-      withinTenPercentPerGame,
-      withinTwentyPercentPerGame,
-      bias,
-      biasPerGame,
-      position: player.displayPosition?.split(",")[0].trim() || "Unknown"
-    };
-  });
-
-  // Calculate overall metrics
-  const averageAccuracyPercentage =
-    playerAccuracyData.reduce((sum, p) => sum + p.accuracyPercentage, 0) /
-    playerAccuracyData.length;
-  const averageMarginOfError =
-    playerAccuracyData.reduce((sum, p) => sum + p.marginOfError, 0) /
-    playerAccuracyData.length;
-  const medianMarginOfError = calculateMedian(
-    playerAccuracyData.map((p) => p.marginOfError)
-  );
-
-  // NEW: Per-game overall metrics
-  const averageAccuracyPercentagePerGame =
-    playerAccuracyData.reduce(
-      (sum, p) => sum + p.accuracyPercentagePerGame,
-      0
-    ) / playerAccuracyData.length;
-  const averageMarginOfErrorPerGame =
-    playerAccuracyData.reduce((sum, p) => sum + p.marginOfErrorPerGame, 0) /
-    playerAccuracyData.length;
-  const medianMarginOfErrorPerGame = calculateMedian(
-    playerAccuracyData.map((p) => p.marginOfErrorPerGame)
-  );
-
-  const withinTenPercent = playerAccuracyData.filter(
-    (p) => p.withinTenPercent
-  ).length;
-  const withinTwentyPercent = playerAccuracyData.filter(
-    (p) => p.withinTwentyPercent
-  ).length;
-
-  // NEW: Per-game accuracy distributions
-  const withinTenPercentPerGame = playerAccuracyData.filter(
-    (p) => p.withinTenPercentPerGame
-  ).length;
-  const withinTwentyPercentPerGame = playerAccuracyData.filter(
-    (p) => p.withinTwentyPercentPerGame
-  ).length;
-
-  const overProjectionBias =
-    playerAccuracyData.reduce((sum, p) => sum + p.bias, 0) /
-    playerAccuracyData.length;
-
-  // NEW: Per-game bias
-  const overProjectionBiasPerGame =
-    playerAccuracyData.reduce((sum, p) => sum + p.biasPerGame, 0) /
-    playerAccuracyData.length;
-
-  // Calculate position-specific metrics
-  const positionGroups = playerAccuracyData.reduce(
-    (groups, data) => {
-      if (!groups[data.position]) {
-        groups[data.position] = [];
-      }
-      groups[data.position].push(data);
-      return groups;
-    },
-    {} as Record<string, typeof playerAccuracyData>
-  );
-
-  const positionMetrics: Record<string, any> = {};
-  Object.entries(positionGroups).forEach(([position, posData]) => {
-    positionMetrics[position] = {
-      playerCount: posData.length,
-      averageAccuracy:
-        posData.reduce((sum, p) => sum + p.accuracyPercentage, 0) /
-        posData.length,
-      averageMarginOfError:
-        posData.reduce((sum, p) => sum + p.marginOfError, 0) / posData.length,
-      // NEW: Per-game position metrics
-      averageAccuracyPerGame:
-        posData.reduce((sum, p) => sum + p.accuracyPercentagePerGame, 0) /
-        posData.length,
-      averageMarginOfErrorPerGame:
-        posData.reduce((sum, p) => sum + p.marginOfErrorPerGame, 0) /
-        posData.length
-    };
-  });
-
-  // Calculate quality score (weighted combination of metrics)
-  const qualityScore = calculateQualityScore({
-    averageAccuracyPercentage,
-    averageMarginOfError,
-    withinTwentyPercent:
-      (withinTwentyPercent / playerAccuracyData.length) * 100,
-    playerCount: playerAccuracyData.length
-  });
-
-  // NEW: Per-game quality score
-  const qualityScorePerGame = calculateQualityScore({
-    averageAccuracyPercentage: averageAccuracyPercentagePerGame,
-    averageMarginOfError: averageMarginOfErrorPerGame,
-    withinTwentyPercent:
-      (withinTwentyPercentPerGame / playerAccuracyData.length) * 100,
-    playerCount: playerAccuracyData.length
-  });
-
-  return {
-    sourceId,
-    sourceName,
-    totalPlayers: players.length,
-    playersWithBothProjectedAndActual: relevantPlayers.length,
-    averageAccuracyPercentage,
-    averageMarginOfError,
-    medianMarginOfError,
-    averageAccuracyPercentagePerGame,
-    averageMarginOfErrorPerGame,
-    medianMarginOfErrorPerGame,
-    withinTenPercent,
-    withinTwentyPercent,
-    withinTenPercentPerGame,
-    withinTwentyPercentPerGame,
-    positionMetrics,
-    overProjectionBias,
-    overProjectionBiasPerGame,
-    qualityScore,
-    qualityScorePerGame
-  };
-}
-
-function hasProjectionFromThisSource(
-  player: ProcessedPlayer,
-  sourceId: string,
-  fantasyPointSettings: Record<string, number>
-): boolean {
-  // Check if player has any stat projections from this source that contribute to fantasy points
-  for (const [statKey, points] of Object.entries(fantasyPointSettings)) {
-    if (points !== 0) {
-      const statData = player.combinedStats[statKey];
-      if (
-        statData?.projectedDetail?.contributingSources?.some(
-          (cs) =>
-            cs.name ===
-            PROJECTION_SOURCES_CONFIG.find((src) => src.id === sourceId)
-              ?.displayName
-        )
-      ) {
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-function calculateSourceSpecificFantasyPoints(
-  player: ProcessedPlayer,
-  sourceId: string,
-  fantasyPointSettings: Record<string, number>
-): number {
-  const sourceConfig = PROJECTION_SOURCES_CONFIG.find(
-    (src) => src.id === sourceId
-  );
-  if (!sourceConfig) return 0;
-
-  let totalFP = 0;
-
-  // Calculate fantasy points using only this source's projections
-  for (const [statKey, points] of Object.entries(fantasyPointSettings)) {
-    if (points !== 0) {
-      const statData = player.combinedStats[statKey];
-
-      // Find this source's contribution to the stat
-      const sourceContribution =
-        statData?.projectedDetail?.contributingSources?.find(
-          (cs) => cs.name === sourceConfig.displayName
-        );
-
-      if (
-        sourceContribution?.value !== null &&
-        sourceContribution?.value !== undefined
-      ) {
-        totalFP += sourceContribution.value * points;
-      }
-    }
-  }
-
-  return totalFP;
-}
-
-function calculateSourceSpecificGamesPlayed(
-  player: ProcessedPlayer,
-  sourceId: string
-): number {
-  const sourceConfig = PROJECTION_SOURCES_CONFIG.find(
-    (src) => src.id === sourceId
-  );
-  if (!sourceConfig) return 0;
-
-  // Find this source's projection for games played
-  const gpStatData = player.combinedStats.GAMES_PLAYED;
-
-  if (gpStatData?.projectedDetail?.contributingSources) {
-    const sourceContribution =
-      gpStatData.projectedDetail.contributingSources.find(
-        (cs) => cs.name === sourceConfig.displayName
-      );
-
-    if (
-      sourceContribution?.value !== null &&
-      sourceContribution?.value !== undefined
-    ) {
-      return sourceContribution.value;
-    }
-  }
-
-  // Fallback to player's overall projected games played if source-specific not available
-  return player.combinedStats.GAMES_PLAYED?.projected || 0;
-}
-
-function calculateMedian(numbers: number[]): number {
-  const sorted = [...numbers].sort((a, b) => a - b);
-  const mid = Math.floor(sorted.length / 2);
-  return sorted.length % 2 === 0
-    ? (sorted[mid - 1] + sorted[mid]) / 2
-    : sorted[mid];
-}
-
-function calculateQualityScore(metrics: {
-  averageAccuracyPercentage: number;
-  averageMarginOfError: number;
-  withinTwentyPercent: number;
-  playerCount: number;
-}): number {
-  // Weighted score out of 100
-  const accuracyWeight = 0.4;
-  const marginOfErrorWeight = 0.3;
-  const consistencyWeight = 0.2;
-  const sampleSizeWeight = 0.1;
-
-  const accuracyScore = metrics.averageAccuracyPercentage;
-
-  // Margin of error score (lower is better, normalize to 0-100 scale)
-  const marginOfErrorScore = Math.max(
-    0,
-    100 - metrics.averageMarginOfError * 2
-  );
-
-  const consistencyScore = metrics.withinTwentyPercent;
-
-  // Sample size score (more players = higher confidence, cap at 100 players for full score)
-  const sampleSizeScore = Math.min(100, (metrics.playerCount / 100) * 100);
-
-  return (
-    accuracyScore * accuracyWeight +
-    marginOfErrorScore * marginOfErrorWeight +
-    consistencyScore * consistencyWeight +
-    sampleSizeScore * sampleSizeWeight
-  );
-}
-
-function calculatePositionRankings(
-  sourceMetrics: SourceAccuracyMetrics[]
-): PositionSourceRanking[] {
-  // Get all unique positions
-  const allPositions = new Set<string>();
-  sourceMetrics.forEach((source) => {
-    Object.keys(source.positionMetrics).forEach((pos) => allPositions.add(pos));
-  });
-
-  const positionRankings: PositionSourceRanking[] = Array.from(
-    allPositions
-  ).map((position) => {
-    const rankings = sourceMetrics
-      .filter((source) => source.positionMetrics[position]?.playerCount > 0)
-      .map((source) => ({
-        sourceId: source.sourceId,
-        sourceName: source.sourceName,
-        averageAccuracy: source.positionMetrics[position].averageAccuracy,
-        averageMarginOfError:
-          source.positionMetrics[position].averageMarginOfError,
-        // Add per-game metrics for position rankings
-        averageAccuracyPerGame:
-          source.positionMetrics[position].averageAccuracyPerGame,
-        averageMarginOfErrorPerGame:
-          source.positionMetrics[position].averageMarginOfErrorPerGame,
-        playerCount: source.positionMetrics[position].playerCount,
-        rank: 0 // Will be set below
-      }))
-      .sort((a, b) => b.averageAccuracy - a.averageAccuracy) // Sort by accuracy desc
-      .map((item, index) => ({ ...item, rank: index + 1 }));
-
-    return {
-      position,
-      rankings
-    };
-  });
-
-  return positionRankings.sort((a, b) => a.position.localeCompare(b.position));
-}
-
-function calculateRoundRankings(
-  sourceMetrics: SourceAccuracyMetrics[],
-  players: ProcessedPlayer[],
-  fantasyPointSettings: Record<string, number>
-): RoundSourceRanking[] {
-  // Group players by draft round (using the same 12-pick bin logic as your table)
-  const roundGroups: Record<number, ProcessedPlayer[]> = {};
-
-  players.forEach((player) => {
-    if (player.yahooAvgPick && player.yahooAvgPick > 0) {
-      const round = Math.ceil(player.yahooAvgPick / 12);
-      if (round <= 15) {
-        // Limit to first 15 rounds like your chart
-        if (!roundGroups[round]) {
-          roundGroups[round] = [];
-        }
-        roundGroups[round].push(player);
-      }
-    }
-  });
-
-  const rounds = Object.keys(roundGroups)
-    .map(Number)
-    .sort((a, b) => a - b);
-
-  const roundRankings: RoundSourceRanking[] = rounds.map((round) => {
-    const roundPlayers = roundGroups[round];
-
-    const rankings = sourceMetrics
-      .map((source) => {
-        // Calculate this source's accuracy for players in this round
-        const roundPlayerAccuracies: number[] = [];
-        const roundPlayerErrors: number[] = [];
-        const roundPlayerAccuraciesPerGame: number[] = [];
-        const roundPlayerErrorsPerGame: number[] = [];
-
-        roundPlayers.forEach((player) => {
-          // Check if player has both actual fantasy points and this source's projections
-          if (
-            player.fantasyPoints.actual !== null &&
-            hasProjectionFromThisSource(
-              player,
-              source.sourceId,
-              fantasyPointSettings
-            )
-          ) {
-            // Calculate source-specific fantasy points (total)
-            const sourceProjectedFP = calculateSourceSpecificFantasyPoints(
-              player,
-              source.sourceId,
-              fantasyPointSettings
-            );
-
-            if (sourceProjectedFP > 0) {
-              const actualFP = player.fantasyPoints.actual;
-
-              // Total fantasy points accuracy
-              const marginOfError = Math.abs(sourceProjectedFP - actualFP);
-              const accuracyPercentage = Math.max(
-                0,
-                100 - (marginOfError / Math.abs(actualFP)) * 100
-              );
-
-              roundPlayerAccuracies.push(accuracyPercentage);
-              roundPlayerErrors.push(marginOfError);
-
-              // Per-game fantasy points accuracy
-              const projectedGP = calculateSourceSpecificGamesPlayed(
-                player,
-                source.sourceId
-              );
-              const actualGP = player.combinedStats.GAMES_PLAYED?.actual || 0;
-
-              if (projectedGP > 0 && actualGP > 0) {
-                const projectedFPPerGame = sourceProjectedFP / projectedGP;
-                const actualFPPerGame = actualFP / actualGP;
-
-                const marginOfErrorPerGame = Math.abs(
-                  projectedFPPerGame - actualFPPerGame
-                );
-                const accuracyPercentagePerGame = Math.max(
-                  0,
-                  100 - (marginOfErrorPerGame / Math.abs(actualFPPerGame)) * 100
-                );
-
-                roundPlayerAccuraciesPerGame.push(accuracyPercentagePerGame);
-                roundPlayerErrorsPerGame.push(marginOfErrorPerGame);
-              }
-            }
+  // Ensure any new sources appear with defaults
+  useEffect(() => {
+    setControls((prev) => {
+      const map = new Map(prev.map((c) => [c.id, c] as const));
+      let changed = false;
+      for (const s of initialSources) {
+        if (!map.has(s.id)) {
+          map.set(s.id, { id: s.id, label: s.label, enabled: true, weight: 1 });
+          changed = true;
+        } else {
+          const curr = map.get(s.id)!;
+          if (curr.label !== s.label) {
+            map.set(s.id, { ...curr, label: s.label });
+            changed = true;
           }
-        });
-
-        if (roundPlayerAccuracies.length === 0) {
-          return null; // No data for this source in this round
         }
+      }
+      // Remove missing sources
+      const initialIds = new Set(initialSources.map((s) => s.id));
+      for (const id of Array.from(map.keys())) {
+        if (!initialIds.has(id)) {
+          map.delete(id);
+          changed = true;
+        }
+      }
+      return changed ? Array.from(map.values()) : prev;
+    });
+  }, [initialSources]);
 
-        const averageAccuracy =
-          roundPlayerAccuracies.reduce((sum, acc) => sum + acc, 0) /
-          roundPlayerAccuracies.length;
-        const averageMarginOfError =
-          roundPlayerErrors.reduce((sum, err) => sum + err, 0) /
-          roundPlayerErrors.length;
+  useEffect(() => {
+    try {
+      localStorage.setItem(LOCAL_KEY, JSON.stringify(controls));
+    } catch {}
+  }, [controls]);
 
-        // Per-game averages (fallback to total if no per-game data)
-        const averageAccuracyPerGame =
-          roundPlayerAccuraciesPerGame.length > 0
-            ? roundPlayerAccuraciesPerGame.reduce((sum, acc) => sum + acc, 0) /
-              roundPlayerAccuraciesPerGame.length
-            : averageAccuracy;
-        const averageMarginOfErrorPerGame =
-          roundPlayerErrorsPerGame.length > 0
-            ? roundPlayerErrorsPerGame.reduce((sum, err) => sum + err, 0) /
-              roundPlayerErrorsPerGame.length
-            : averageMarginOfError;
-
-        return {
-          sourceId: source.sourceId,
-          sourceName: source.sourceName,
-          averageAccuracy,
-          averageMarginOfError,
-          averageAccuracyPerGame,
-          averageMarginOfErrorPerGame,
-          playerCount: roundPlayerAccuracies.length,
-          rank: 0 // Will be set below
-        };
-      })
-      .filter(
-        (ranking): ranking is NonNullable<typeof ranking> => ranking !== null
+  const setEnabled = useCallback((id: string, enabled: boolean) => {
+    setControls((prev) =>
+      prev.map((c) =>
+        c.id === id
+          ? { ...c, enabled, weight: enabled ? Math.max(0.1, c.weight) : 0 }
+          : c
       )
-      .sort((a, b) => b.averageAccuracy - a.averageAccuracy) // Sort by accuracy desc
-      .map((item, index) => ({ ...item, rank: index + 1 }));
+    );
+  }, []);
 
-    return {
-      round,
-      roundLabel: `Round ${round}`,
-      rankings
-    };
-  });
+  const setWeight = useCallback((id: string, weight: number) => {
+    setControls((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, weight, enabled: weight > 0 } : c))
+    );
+  }, []);
 
-  return roundRankings;
-}
+  const removeSource = useCallback((id: string) => {
+    setControls((prev) => prev.filter((c) => c.id !== id));
+  }, []);
 
-function createEmptyMetrics(
-  sourceId: string,
-  sourceName: string
-): SourceAccuracyMetrics {
+  const effectiveShares = useMemo(() => {
+    const weights = controls.map((c) =>
+      c.enabled && c.weight > 0 ? c.weight : 0
+    );
+    const total = weights.reduce((a, b) => a + b, 0);
+    const shares: Record<string, number> = {};
+    for (const c of controls) {
+      const w = c.enabled && c.weight > 0 ? c.weight : 0;
+      shares[c.id] = total > 0 ? w / total : 0;
+    }
+    return shares;
+  }, [controls]);
+
   return {
-    sourceId,
-    sourceName,
-    totalPlayers: 0,
-    playersWithBothProjectedAndActual: 0,
-    averageAccuracyPercentage: 0,
-    averageMarginOfError: 0,
-    medianMarginOfError: 0,
-    averageAccuracyPercentagePerGame: 0,
-    averageMarginOfErrorPerGame: 0,
-    medianMarginOfErrorPerGame: 0,
-    withinTenPercent: 0,
-    withinTwentyPercent: 0,
-    withinTenPercentPerGame: 0,
-    withinTwentyPercentPerGame: 0,
-    positionMetrics: {},
-    overProjectionBias: 0,
-    overProjectionBiasPerGame: 0,
-    qualityScore: 0,
-    qualityScorePerGame: 0
-  };
+    controls,
+    setEnabled,
+    setWeight,
+    removeSource,
+    effectiveShares
+  } as const;
 }

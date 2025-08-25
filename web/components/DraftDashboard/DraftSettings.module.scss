@@ -6,6 +6,19 @@
 .settingsContainer {
   width: 100%;
   color: v.$text-primary;
+  border: 2px solid v.$border-secondary;
+  padding: 16px 24px;
+  border-radius: v.$border-radius-lg;
+
+  @include v.glass-panel(
+    $padding: v.$space-md v.$space-lg,
+    $radius: v.$radius-lg
+  );
+  width: 100%;
+  color: v.$text-primary;
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
 }
 
 .settingsHeader {
@@ -19,10 +32,10 @@
 
 .title {
   font-family: v.$font-family-accent, sans-serif;
-  font-size: v.$font-size-lg; // Reduced from v.$font-size-xl
+  font-size: clamp(1.25rem, 1.8vw, 2rem);
   font-weight: 900;
   color: v.$color-white;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   margin: 0;
 }
@@ -120,10 +133,10 @@
 .settingsGrid {
   display: grid;
   grid-template-columns: repeat(
-    4,
-    1fr
-  ); // Change to 4 columns for more compact layout
-  gap: v.$space-md; // Reduced gap
+    auto-fit,
+    minmax(260px, 1fr)
+  ); // responsive min width columns
+  gap: v.$space-md;
 }
 
 .settingsGroup {
@@ -192,7 +205,7 @@
 .rosterGrid {
   display: grid;
   grid-template-columns: repeat(
-    4,
+    3,
     1fr
   ); // More compact - 3 columns instead of auto-fit
   gap: v.$space-xs; // Reduced gap
@@ -215,14 +228,17 @@
 }
 
 .numberInput {
-  background-color: v.$background-dark;
+  background-color: color.adjust(v.$primary-color, $alpha: -0.6);
   color: v.$text-primary;
-  border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-sm;
-  padding: v.$space-xs;
-  font-size: v.$font-size-xs; // Smaller font
+  border-top: 2px solid v.$primary-color;
+  border-bottom: 2px solid v.$primary-color;
+  padding: v.$space-xxs;
+  height: 30px;
+  font-size: v.$font-size-sm; // Smaller font
   text-align: center;
   width: 40px; // Smaller width
+  border-right: none;
+  border-left: none;
 
   &:focus {
     outline: none;
@@ -255,6 +271,56 @@
   letter-spacing: normal;
 }
 
+.rosterTotalWarning {
+  border-color: v.$warning-color;
+  background-color: color.adjust(v.$warning-color, $alpha: -0.85);
+  color: v.$warning-color;
+}
+
+.rosterStepper {
+  display: flex;
+  align-items: center;
+  max-width: 300px;
+}
+
+.stepButton {
+  @include v.reset-button;
+  width: 28px;
+  height: 30px;
+  line-height: 28px;
+  text-align: center;
+  font-size: v.$font-size-md;
+  font-weight: 700;
+  background-color: color.adjust(v.$primary-color, $alpha: -0.6);
+  border: 2px solid v.$primary-color;
+  color: v.$text-primary;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:first-child {
+    border-radius: 50% 0 0 50%;
+  }
+
+  &:last-child {
+    border-radius: 0 50% 50% 0;
+  }
+
+  &:hover {
+    color: v.$primary-color;
+    border-color: v.$primary-color;
+    background: color.adjust(v.$primary-color, $alpha: -0.9);
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
 /* =================== Scoring Configuration =================== */
 .scoringGrid {
   display: grid;
@@ -266,6 +332,8 @@
   display: flex;
   flex-direction: column;
   gap: v.$space-xs;
+  padding: 0 v.$space-xs; // horizontal padding for tap target
+  position: relative;
 }
 
 /* Compact subgroup heading (h4) */
@@ -283,6 +351,18 @@
   margin-top: 0; // remove default spacing between subgroups
 }
 
+/* Make expand button span 2 columns if it is alone on the last row
+   Fixed 8-column grid version (matches column 1 of any row): */
+.scoringGrid > .expandButton:last-child:nth-child(8n + 1) {
+  grid-column: span 2;
+}
+
+/* NOTE: Removed previous broad @media rule that always forced span 2 for the
+   last-child inside scoringSubgroupSplit, because it caused the button to take
+   two columns even when other items were on the same row. If needed for the
+   auto-fill subgroup grids, implement a JS-driven class (e.g. .expandButtonWide)
+   only when detection confirms it starts a new row. */
+
 .statLabel {
   font-size: v.$font-size-xs;
   font-weight: 500;
@@ -295,6 +375,9 @@
 .pointsInput {
   @extend .numberInput;
   width: 100%;
+  border-left: 2px solid v.$primary-color;
+  border-right: 2px solid v.$primary-color;
+  border-radius: v.$border-radius-md;
 }
 
 .expandButton {
@@ -304,16 +387,100 @@
   background-color: transparent;
   color: v.$text-secondary;
   border: 1px dashed v.$border-secondary;
-  border-radius: v.$border-radius-sm;
+  border-radius: v.$border-radius-md;
   padding: v.$space-sm;
   font-size: v.$font-size-xs;
   cursor: pointer;
   transition: all 0.2s ease;
+  margin-top: v.$space-sm; // Reduced margin
 
   &:hover {
     color: v.$primary-color;
     border-color: v.$primary-color;
     background-color: color.adjust(v.$primary-color, $alpha: -0.95);
+  }
+}
+
+/* New flex row scoring subgroups layout */
+.scoringSubgroupsRow {
+  display: flex;
+  align-items: flex-start;
+  gap: v.$space-md;
+  width: 100%;
+  position: relative;
+}
+
+.scoringSubgroupSplit {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  position: relative;
+  padding-right: v.$space-sm;
+}
+
+/* vertical divider between Skaters and Goalies */
+.scoringSubgroupsRow > .scoringSubgroupSplit:first-child {
+  border-right: 1px solid v.$border-secondary;
+  padding-right: v.$space-md;
+  margin-right: v.$space-md;
+}
+
+/* Adjust scoring grid inside split to use 2fr repeating columns for labels/inputs */
+.scoringSubgroupSplit .scoringGrid {
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+}
+
+/* Manage stats panel styles */
+.manageStatsPanel {
+  margin-top: v.$space-sm;
+  padding: v.$space-sm v.$space-md;
+  border: 1px dashed v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  background: color.adjust(v.$background-dark, $lightness: 2%);
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+}
+
+.manageStatsHeader {
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: v.$primary-color;
+}
+
+.manageStatsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+  align-items: center;
+}
+
+.noAddableStatsMsg {
+  font-size: v.$font-size-xxs;
+  color: v.$text-secondary;
+}
+
+.removeStatBtn {
+  @include v.reset-button;
+  font-size: 11px;
+  color: v.$text-secondary;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  padding: 2px 4px;
+  line-height: 1;
+  cursor: pointer;
+
+  &:hover {
+    color: v.$warning-color;
+    border-color: v.$warning-color;
+    background: color.adjust(v.$warning-color, $alpha: -0.9);
   }
 }
 
@@ -417,6 +584,12 @@
   min-width: 44px;
 }
 
+.weightShare {
+  font-size: v.$font-size-xxs;
+  color: v.$text-secondary;
+  text-align: center;
+}
+
 /* =================== Action Buttons =================== */
 .actionButtons {
   display: grid;
@@ -445,6 +618,472 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+}
+
+/* Status / badges */
+.statusCluster {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+}
+
+.unsavedBadge {
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 4px 16px;
+  border-radius: v.$border-radius-sm;
+  background: linear-gradient(
+    135deg,
+    color.adjust(v.$warning-color, $lightness: -10%),
+    color.adjust(v.$warning-color, $lightness: -20%)
+  );
+  color: v.$background-dark;
+  border: 1px solid color.adjust(v.$warning-color, $lightness: -5%);
+
+  &.saved {
+    background: linear-gradient(
+      135deg,
+      color.adjust(v.$success-color, $lightness: -5%),
+      color.adjust(v.$success-color, $lightness: -15%)
+    );
+    border-color: v.$success-color;
+  }
+}
+
+.normalizedBadge {
+  font-size: v.$font-size-xxs;
+  color: v.$primary-color;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* Reset buttons row */
+.inlineActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-xs;
+  margin-top: v.$space-sm;
+}
+
+.inlineResetBtn {
+  @include v.button-style;
+  background: transparent;
+  border: 1px dashed v.$border-secondary;
+  color: v.$text-secondary;
+  font-size: v.$font-size-xxs;
+  padding: v.$space-xxs v.$space-sm;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+
+  &:hover {
+    color: v.$primary-color;
+    border-color: v.$primary-color;
+    background: color.adjust(v.$primary-color, $alpha: -0.95);
+  }
+}
+
+/* Projection source grouping */
+.sourceGroup {
+  margin-bottom: v.$space-sm;
+}
+
+.sourceHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 0 v.$space-xs 0;
+}
+
+.sourceControlsBar {
+  display: flex;
+  align-items: center;
+  gap: v.$space-xs;
+  flex-wrap: wrap;
+}
+
+.sourceDisabled {
+  opacity: 0.35;
+  filter: grayscale(0.2);
+}
+
+/* Accessible fieldset styling */
+.fieldset {
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-sm v.$space-md v.$space-md;
+  margin: 0 0 v.$space-md 0;
+}
+
+.legend {
+  padding: 0 v.$space-xs;
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: v.$primary-color;
+}
+
+.persistIcon,
+.sessionIcon {
+  font-size: 10px;
+  margin-left: 4px;
+  vertical-align: middle;
+  opacity: 0.7;
+}
+
+.persistIcon {
+  color: v.$primary-color;
+}
+
+.sessionIcon {
+  color: v.$warning-color;
+}
+
+.visuallyHidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+}
+
+.accordionToggle {
+  @include v.reset-button;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: v.$text-secondary;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border: 1px solid v.$border-secondary;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: 0.15s;
+
+  &:hover {
+    color: v.$primary-color;
+    border-color: v.$primary-color;
+  }
+}
+
+/* ===== Projection Source Compact Summary (Chips) ===== */
+.sourceChipsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: v.$space-md;
+  margin: 10px;
+  justify-content: space-between; // distribute across full row
+  align-items: stretch;
+}
+
+.sourceChip {
+  flex: 1 1 140px; // uniform flex basis
+  max-width: 180px; // prevent over-expansion on wide screens
+  display: flex; // override inline-flex on sourceChip for consistent flex behaviour
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+  border-radius: v.$border-radius-md;
+  font-size: v.$font-size-xs;
+  font-family: v.$font-family-primary, sans-serif;
+  padding: 4px 8px;
+}
+
+.sourceChipEnabled {
+  border-color: v.$primary-color;
+  box-shadow:
+    0 0 0 1px color.adjust(v.$primary-color, $alpha: -0.7),
+    0 0 8px -2px v.$primary-color;
+}
+
+.sourceChip:hover {
+  border-color: v.$primary-color;
+  color: v.$primary-color;
+}
+
+.sourceChipName {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-left: 5%;
+}
+
+.sourceChipWeight {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+.sourceChipShare {
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: v.$border-radius-sm;
+  background: linear-gradient(
+    135deg,
+    color.adjust(v.$primary-color, $alpha: -0.85),
+    color.adjust(v.$secondary-color, $alpha: -0.85)
+  );
+  color: v.$primary-color;
+  font-weight: 600;
+}
+
+.sourceChipDisabled {
+  opacity: 0.4;
+  filter: grayscale(0.3);
+}
+
+.editWeightsBtn {
+  @include v.button-style;
+  font-size: 10px;
+  padding: 4px 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: v.$font-size-xs;
+
+  background: linear-gradient(
+    135deg,
+    color.adjust(v.$primary-color, $alpha: -0.6),
+    color.adjust(v.$secondary-color, $alpha: -0.62)
+  );
+  border: 2px solid v.$primary-color;
+  border-radius: v.$border-radius-md;
+  text-align: center;
+  height: 100%; // stretch to tallest in row for alignment
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 140px; // uniform flex basis
+  max-width: 180px; // prevent over-expansion on wide screens
+
+  &:hover {
+    border-color: v.$primary-color;
+    color: v.$primary-color;
+    background: color.adjust(v.$primary-color, $alpha: -0.92);
+  }
+}
+
+/* ===== Popover (Weights Editor) ===== */
+.weightsPopoverOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 400;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 72px;
+}
+
+.weightsPopover {
+  width: min(900px, 92%);
+  max-height: 70vh;
+  overflow: auto;
+  background: linear-gradient(
+    180deg,
+    color.adjust(v.$background-dark, $lightness: -3%),
+    color.adjust(v.$background-dark, $lightness: 2%)
+  );
+  border: 1px solid v.$border-secondary;
+  border-radius: 12px;
+  padding: 16px 20px 20px;
+  box-shadow:
+    0 8px 32px -4px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+  position: relative;
+  animation: popIn 0.28s cubic-bezier(0.4, 0.8, 0.2, 1);
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.weightsPopoverHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.weightsPopoverTitle {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: v.$primary-color;
+}
+
+.closePopoverBtn {
+  @include v.reset-button;
+  width: 30px;
+  height: 30px;
+  border: 1px solid v.$border-secondary;
+  border-radius: 6px;
+  color: v.$text-secondary;
+  background: v.$background-dark;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.15s;
+
+  &:hover {
+    color: v.$primary-color;
+    border-color: v.$primary-color;
+  }
+}
+
+.popoverSectionTitle {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 14px 0 6px;
+  color: v.$text-secondary;
+}
+
+.popoverGrid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+.popoverSourceCard {
+  border: 1px solid v.$border-secondary;
+  border-radius: 8px;
+  padding: 8px 10px 10px;
+  background: radial-gradient(
+    circle at 40% 20%,
+    color.adjust(v.$background-dark, $lightness: 4%),
+    v.$background-dark 75%
+  );
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.popoverSourceCardDisabled {
+  opacity: 0.4;
+  filter: grayscale(0.25);
+}
+
+.popoverSourceHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.popoverSourceName {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inlineToggle {
+  cursor: pointer;
+}
+
+.popoverSliderRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.popoverSlider {
+  flex: 1;
+}
+
+.shareBadge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: linear-gradient(
+    135deg,
+    color.adjust(v.$primary-color, $alpha: -0.85),
+    color.adjust(v.$secondary-color, $alpha: -0.85)
+  );
+  font-weight: 600;
+  color: v.$primary-color;
+}
+
+.weightNumberInput {
+  width: 54px;
+  background: v.$background-dark;
+  border: 1px solid v.$border-secondary;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 11px;
+  text-align: center;
+  color: v.$text-primary;
+
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+    box-shadow: 0 0 0 2px color.adjust(v.$primary-color, $alpha: -0.8);
+  }
+}
+
+/* Neon slider variant inside popover */
+.popoverSlider.rangeInput {
+  height: 20px;
+}
+
+.popoverSlider.rangeInput::-webkit-slider-runnable-track {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 180, 255, 0.15),
+    rgba(0, 180, 255, 0.05)
+  );
+  border-color: rgba(0, 180, 255, 0.4);
+}
+
+.popoverSlider.rangeInput::-webkit-slider-thumb {
+  background: radial-gradient(circle at 40% 40%, #0af, #058ad6);
+  box-shadow:
+    0 0 0 2px rgba(0, 170, 255, 0.35),
+    0 0 10px -2px #0af;
+}
+
+.popoverSlider.rangeInput::-moz-range-track {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 180, 255, 0.15),
+    rgba(0, 180, 255, 0.05)
+  );
+  border-color: rgba(0, 180, 255, 0.4);
+}
+
+.popoverSlider.rangeInput::-moz-range-thumb {
+  background: radial-gradient(circle at 40% 40%, #0af, #058ad6);
+  box-shadow:
+    0 0 0 2px rgba(0, 170, 255, 0.35),
+    0 0 10px -2px #0af;
+}
+
+/* Utility for slim height fieldset version */
+.slimFieldset {
+  padding: 8px 12px 10px;
+}
+
+.slimFieldset .legend {
+  font-size: 11px;
 }
 
 /* =================== Responsive Design =================== */
@@ -487,5 +1126,18 @@
 
   .settingsGroupScoring {
     min-height: 200px;
+  }
+
+  .scoringSubgroupsRow {
+    flex-direction: column;
+  }
+
+  .scoringSubgroupsRow > .scoringSubgroupSplit:first-child {
+    border-right: none;
+    padding-right: 0;
+    margin-right: 0;
+    border-bottom: 1px solid v.$border-secondary;
+    padding-bottom: v.$space-md;
+    margin-bottom: v.$space-md;
   }
 }

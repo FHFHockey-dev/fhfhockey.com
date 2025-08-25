@@ -32,268 +32,341 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin: 0;
-  grid-column: 1 / 2;
-  align-self: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.1;
 }
-
 .panelTitleAccent {
   color: v.$primary-color;
 }
 
-/* Header actions: tighten spacing and keep compact controls */
-.headerActions {
-  grid-column: 2 / 3;
-  display: inline-flex;
-  align-items: flex-start;
-  justify-content: flex-end;
+/* New condensed controls bar */
+.controlsBar {
+  background-color: color.adjust(v.$background-dark, $lightness: -4%);
+  border-bottom: 2px solid v.$border-secondary;
+  display: flex;
+  align-items: center;
   gap: v.$space-md;
-  flex-wrap: nowrap;
+  padding: 4px v.$space-md 6px;
+  min-height: 48px;
+}
+.primaryControls {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+  flex: 1 1 auto;
   min-width: 0;
 }
-
-/* Place the info tooltip at far right of header */
-.panelHeader > .infoTooltip {
-  grid-column: 3 / 4;
-  justify-self: end;
-  align-self: center;
+.inlineControl {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
 }
-
-/* Generic vertical control group (label on top) */
-.controlGroup,
-.scopeToggle {
-  display: inline-flex;
-  flex-direction: column;
-  gap: v.$space-xxs;
-  min-width: 120px;
+.inlineSelect {
+  background: v.$background-dark;
+  color: v.$text-primary;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  padding: 4px 8px;
+  font-size: v.$font-size-xs;
+  min-height: 28px;
 }
-
-/* Top label style reused across controls */
-.controlLabel {
-  font-size: v.$font-size-xxs;
-  color: v.$text-secondary;
+.inlineToggle {
+  display: flex;
+  align-items: center;
+}
+.settingsButton {
+  background: linear-gradient(135deg, v.$primary-color, v.$secondary-color);
+  color: v.$color-white;
+  border: none;
+  border-radius: v.$border-radius-sm;
+  padding: 6px 12px;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-weight: 700;
-}
-
-/* Compact selects for dense header row */
-.compactSelect {
-  padding: 6px 24px 6px 10px;
-  min-height: 30px;
-}
-
-/* Range input compact width inside header */
-.headerActions .rangeInput {
-  width: 140px;
-}
-
-/* Toggle switch (Need, Hide Drafted) */
-.toggle {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  cursor: pointer;
-  user-select: none;
-}
-.toggleInput {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-.toggleTrack {
-  width: 30px;
-  height: 18px;
-  background: v.$background-dark;
-  border: 1px solid v.$border-secondary;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  padding: 0 2px;
   transition: all 0.2s ease;
-}
-.toggleThumb {
-  width: 14px;
-  height: 14px;
-  background: linear-gradient(135deg, v.$secondary-color, v.$primary-color);
-  border-radius: 50%;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  transform: translateX(0);
-  transition: transform 0.2s ease;
-}
-.toggleInput:checked + .toggleTrack {
-  background: color.adjust(v.$primary-color, $alpha: -0.85);
-  border-color: v.$primary-color;
-}
-.toggleInput:checked + .toggleTrack .toggleThumb {
-  transform: translateX(12px);
-}
-.toggleText {
-  font-size: v.$font-size-xxs;
-  color: v.$text-primary;
-  font-weight: 700;
+  &:hover {
+    box-shadow: 0 4px 10px rgba(v.$primary-color, 0.35);
+    transform: translateY(-1px);
+  }
 }
 
-/* Need toggle popover for alpha slider to avoid layout shift */
-.toggleWithPopover {
-  position: relative;
+/* Stacked (label-above) control layout to reduce horizontal width and wrapping */
+.stackedControl {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-start;
 }
-.alphaPopover {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  background: color.adjust(v.$background-dark, $lightness: -3%);
-  border: 1px solid v.$border-secondary;
-  border-radius: v.$border-radius-sm;
-  padding: v.$space-xs v.$space-sm;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  z-index: 60;
-  width: max(180px, 22vw);
-  display: none;
-}
-.toggleWithPopover:hover .alphaPopover,
-.toggleWithPopover:focus-within .alphaPopover,
-.toggleWithPopover.open .alphaPopover {
-  display: block;
-}
-.alphaPopoverHeader {
+.controlLabelMini {
   font-size: v.$font-size-xxs;
-  color: v.$text-secondary;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  font-weight: 700;
-  margin-bottom: v.$space-xxs;
+  color: v.$text-secondary;
+  line-height: 1;
+  white-space: nowrap;
 }
-.alphaPopoverRow {
+.searchStack {
+  flex: 1 1 auto;
+  min-width: 140px;
+}
+.searchInput {
+  min-height: 28px;
+  padding: 4px 8px;
+}
+.toggle .toggleText {
+  font-size: v.$font-size-xxs;
+}
+
+/* Mini Run Forecast */
+.miniRunForecast {
+  display: flex;
+  flex-direction: column; // was row wrap
+  align-items: stretch;
+  gap: 8px;
+  padding: 4px v.$space-md 8px v.$space-md;
+  background: color.adjust(v.$background-dark, $lightness: -6%);
+  border-bottom: 1px solid v.$border-secondary;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.miniRunDescriptor {
+  font-size: v.$font-size-xxs;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: v.$text-secondary;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 0;
+  border-right: 0;
+  margin-right: 0;
+  width: 100%;
+  margin-bottom: 4px;
+  line-height: 1;
+}
+.miniRunItems {
+  // new wrapper for items row
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+.miniRunItem {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  font-size: v.$font-size-xxs;
+  color: v.$text-secondary;
+  min-width: 0;
+  flex: 1 1 0;
 }
-.alphaPopover .rangeInput {
-  width: 140px;
-}
-
-/* Filters right cluster for compact toggles */
-.filtersRight {
-  display: inline-flex;
-  align-items: center;
-  gap: v.$space-sm;
-  margin-left: auto; // push to right of row
-}
-
-/* Vertical toggle group with top label */
-.verticalToggleGroup {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: v.$space-xxs;
-  min-width: 120px;
-}
-
-/* Hide inline text on toggles when using top labels */
-.toggleNoText .toggleText {
-  display: none;
-}
-
-/* Make Hide drafted toggle same visual height as others via padding */
-.verticalToggleGroup .toggle {
-  padding-top: 2px;
-}
-/* Explicitly increase the toggle track height in filters row for better alignment */
-.filtersRight .toggleTrack {
-  height: 22px;
-}
-
-/* Header info tooltip (moved out of conflicting .headerActions block) */
-// Removed duplicate .headerActions definition to preserve compact spacing
-
-.infoTooltip {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-.infoButton {
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 1px solid v.$border-secondary;
-  background: transparent;
-  color: v.$text-primary;
+.miniRunLabel {
   font-weight: 700;
-  font-size: 12px;
+  color: v.$text-primary;
+}
+.miniRunBar {
+  position: relative;
+  flex: 1 1 60px;
+  height: 6px;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.miniRunFill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg, v.$primary-color, v.$secondary-color);
+  transition: width 240ms ease-in-out;
+}
+.miniRunVal {
+  font-variant-numeric: tabular-nums;
+  color: v.$text-primary;
+}
+
+/* Settings drawer */
+.drawerOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 200;
+}
+.settingsDrawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: min(380px, 92vw);
+  background: color.adjust(v.$background-dark, $lightness: -2%);
+  border-left: 1px solid v.$border-secondary;
+  box-shadow: -4px 0 18px rgba(0, 0, 0, 0.5);
+  z-index: 210;
+  display: flex;
+  flex-direction: column;
+  animation: drawerSlide 300ms ease;
+}
+@keyframes drawerSlide {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.drawerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: v.$space-md v.$space-lg;
+  border-bottom: 2px solid v.$border-secondary;
+  h3 {
+    margin: 0;
+    font-size: v.$font-size-md;
+    color: v.$text-primary;
+  }
+}
+.drawerClose {
+  background: transparent;
+  border: 1px solid v.$border-secondary;
+  color: v.$text-primary;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
   line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  cursor: help;
-  transition: all 0.15s ease;
-
-  &:hover,
-  &:focus {
-    outline: none;
-    border-color: v.$primary-color;
+  transition: all 0.2s ease;
+  &:hover {
     color: v.$primary-color;
-    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.25);
+    border-color: v.$primary-color;
   }
 }
-
-.tooltipContent {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  width: min(420px, 92vw);
-  background: color.adjust(v.$background-dark, $lightness: -3%);
+.drawerContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: v.$space-md v.$space-lg;
+  @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-lg;
+}
+.drawerSection {
+  background: color.adjust(v.$background-medium, $lightness: -2%);
   border: 1px solid v.$border-secondary;
   border-radius: v.$border-radius-md;
-  padding: v.$space-sm v.$space-md;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  padding: v.$space-md;
+  h4 {
+    margin: 0 0 v.$space-sm 0;
+    font-size: v.$font-size-sm;
+    color: v.$primary-color;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+}
+.drawerSelect {
+  width: 100%;
+  background: v.$background-dark;
   color: v.$text-primary;
-  z-index: 50;
-  opacity: 0;
-  transform: translateY(6px);
-  pointer-events: none;
-  transition:
-    opacity 0.15s ease,
-    transform 0.15s ease;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  padding: 6px 8px;
+  font-size: v.$font-size-sm;
 }
-
-/* Show tooltip on hover or keyboard focus */
-.infoTooltip:hover .tooltipContent,
-.infoTooltip:focus-within .tooltipContent {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
+.sliderRow {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
 }
-
-.tooltipTitle {
-  font-weight: 700;
-  color: v.$primary-color;
-  margin-bottom: v.$space-xs;
-}
-
-.tooltipBody {
+.sliderLabel {
   font-size: v.$font-size-xs;
-  line-height: 1.45;
+  color: v.$text-secondary;
+  white-space: nowrap;
+}
+.baselineList {
+  margin: 0;
+  padding-left: v.$space-md;
+  font-size: v.$font-size-xs;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.drawerNote {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+  margin: 0;
+}
 
-  ul {
-    margin: v.$space-xs 0;
-    padding-left: v.$space-md;
+/* Screenreader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
 
-    li {
-      list-style: disc;
-      margin: 0 0 v.$space-xxs 0;
-    }
+/* Mobile adjustments */
+@media (max-width: v.$breakpoint-tablet) {
+  .primaryControls {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .miniRunForecast {
+    padding-left: v.$space-sm;
+    padding-right: v.$space-sm;
+  }
+  .settingsButton {
+    padding: 6px 10px;
+  }
+  .inlineSelect {
+    font-size: v.$font-size-xxs;
   }
 }
 
-.tooltipFootnote {
-  margin-top: v.$space-xs;
-  color: v.$text-secondary;
-  font-style: italic;
+@media (max-width: v.$breakpoint-mobile-max) {
+  .controlsBar {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .panelTitle {
+    flex: 1 0 100%;
+  }
+  .miniRunForecast {
+    align-items: stretch;
+    gap: 6px;
+  }
+  .miniRunItems {
+    gap: 6px;
+  }
+  .miniRunItem {
+    min-width: 70px;
+  }
+  .miniRunDescriptor {
+    width: 100%;
+    border-right: 0;
+    margin: 0 0 2px 0;
+    padding: 0;
+  }
+  .controlsBar {
+    align-items: flex-start;
+  }
 }
 
 /* =================== Filters Section =================== */
@@ -807,6 +880,86 @@
   color: v.$text-secondary;
   font-style: italic;
   text-align: center;
+}
+
+/* =================== Legend Tooltip Fix =================== */
+.infoTooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.infoButton {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 1px solid v.$border-secondary;
+  background: v.$background-dark;
+  color: v.$text-primary;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  transition: all 0.15s ease;
+  &:hover,
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+    color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.25);
+  }
+}
+.tooltipContent {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  background: color.adjust(v.$background-dark, $lightness: -2%);
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  padding: v.$space-sm v.$space-md;
+  width: 240px;
+  box-shadow: 0 6px 18px -4px rgba(0, 0, 0, 0.55);
+  z-index: 50;
+  display: none;
+}
+.infoTooltip:hover .tooltipContent,
+.infoTooltip:focus-within .tooltipContent {
+  display: block;
+}
+.tooltipTitle {
+  font-size: v.$font-size-xs;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 v.$space-xs 0;
+  color: v.$primary-color;
+}
+.tooltipBody {
+  font-size: v.$font-size-xxs;
+  line-height: 1.3;
+  color: v.$text-secondary;
+}
+.tooltipBody ul {
+  list-style: disc;
+  margin: 0 0 v.$space-xs 1.1em;
+  padding: 0;
+}
+.tooltipBody li {
+  margin: 0 0 4px 0;
+}
+.tooltipBody li:last-child {
+  margin-bottom: 0;
+}
+
+/* Reduce any accidental global list spacing inside header */
+.controlsBar ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 /* =================== Responsive Design =================== */

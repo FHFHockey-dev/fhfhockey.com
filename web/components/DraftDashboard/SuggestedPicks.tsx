@@ -210,7 +210,23 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   });
 
   // Availability heuristic: Normal CDF around ADP
-  const riskSd = 12; // a reasonable default; could make adjustable later
+  const [riskSd, setRiskSd] = useState<number>(() => {
+    if (typeof window === "undefined") return 12;
+    const v = parseFloat(localStorage.getItem("projections.riskSd") || "12");
+    return Number.isFinite(v) ? Math.max(2, Math.min(40, v)) : 12;
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "projections.riskSd" && e.newValue) {
+        const v = parseFloat(e.newValue);
+        if (Number.isFinite(v)) setRiskSd(Math.max(2, Math.min(40, v)));
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
   const normalCdf = (z: number) => {
     const t = 1 / (1 + 0.2316419 * Math.abs(z));
     const d = Math.exp((-z * z) / 2) / Math.sqrt(2 * Math.PI);
@@ -235,7 +251,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       }
       return { ...r, availability };
     });
-  }, [recommendations, nextPickNumber]);
+  }, [recommendations, nextPickNumber, riskSd]);
 
   // Position filter options from players
   const availablePositions = useMemo(() => {
@@ -290,6 +306,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         case "adp":
           return mul * ((aAdp as number) - (bAdp as number));
         case "avail":
+          return mul * (aAvail - bAvail);
         case "fit":
           return mul * (aFit - bFit);
       }
