@@ -23,6 +23,7 @@ import ProjectionsTable from "./ProjectionsTable";
 import { useVORPCalculations } from "hooks/useVORPCalculations";
 import SuggestedPicks from "./SuggestedPicks";
 import DraftSummaryModal from "./DraftSummaryModal";
+import ImportCsvModal from "./ImportCsvModal";
 
 import styles from "./DraftDashboard.module.scss";
 
@@ -144,8 +145,15 @@ const DraftDashboard: React.FC = () => {
   // Add summary modal state
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
+  // Import CSV modal state
+  const [isImportCsvOpen, setIsImportCsvOpen] = useState(false);
+  // New: Custom CSV source label (from session import)
+  const [customCsvLabel, setCustomCsvLabel] = useState<string | undefined>(
+    undefined
+  );
+
   // Projection Data Setup
-  const [sourceControls] = useState(() => {
+  const [sourceControls, setSourceControls] = useState(() => {
     const controls: Record<string, { isSelected: boolean; weight: number }> =
       {};
     PROJECTION_SOURCES_CONFIG.filter(
@@ -157,7 +165,7 @@ const DraftDashboard: React.FC = () => {
   });
 
   // NEW: Goalie projection source controls
-  const [goalieSourceControls] = useState(() => {
+  const [goalieSourceControls, setGoalieSourceControls] = useState(() => {
     const controls: Record<string, { isSelected: boolean; weight: number }> =
       {};
     PROJECTION_SOURCES_CONFIG.filter(
@@ -183,7 +191,8 @@ const DraftDashboard: React.FC = () => {
     currentSeasonId: currentSeasonId ? String(currentSeasonId) : undefined,
     styles: {},
     showPerGameFantasyPoints: false,
-    togglePerGameFantasyPoints: () => {}
+    togglePerGameFantasyPoints: () => {},
+    teamCountForRoundSummaries: draftSettings.teamCount
   });
 
   // Get player projections data (goalies) - use editable goalie points config
@@ -196,7 +205,8 @@ const DraftDashboard: React.FC = () => {
     currentSeasonId: currentSeasonId ? String(currentSeasonId) : undefined,
     styles: {},
     showPerGameFantasyPoints: false,
-    togglePerGameFantasyPoints: () => {}
+    togglePerGameFantasyPoints: () => {},
+    teamCountForRoundSummaries: draftSettings.teamCount
   });
 
   // Debug logging to see what data we're getting
@@ -281,6 +291,25 @@ const DraftDashboard: React.FC = () => {
     }
   }, []);
 
+  // New: Restore custom CSV label from sessionStorage on mount
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = sessionStorage.getItem("draft.customCsv.v1");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed.label === "string" && parsed.label) {
+          setCustomCsvLabel(parsed.label);
+          // Ensure control exists so it renders in DraftSettings
+          setSourceControls((prev) => ({
+            ...prev,
+            custom_csv: prev.custom_csv || { isSelected: true, weight: 1 }
+          }));
+        }
+      }
+    } catch {}
+  }, []);
+
   // Persist session on change (only after resume decision)
   React.useEffect(() => {
     if (!sessionReady) return;
@@ -362,12 +391,164 @@ const DraftDashboard: React.FC = () => {
     [goalieData.processedPlayers]
   );
 
+  // Build ProcessedPlayer list from session CSV (client-side only)
+  const sessionCsvPlayers: ProcessedPlayer[] = useMemo(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = sessionStorage.getItem("draft.customCsv.v1");
+      if (!raw) return [];
+      const parsed = JSON.parse(raw) as {
+        headers?: {
+          original: string;
+          standardized: string;
+          selected: boolean;
+        }[];
+        rows?: Record<string, string | number | null>[];
+      };
+      const rows = parsed?.rows || [];
+      if (!rows.length) return [];
+
+      // Map standardized column names to StatDefinition keys
+      const COL_TO_STAT: Record<string, string> = {
+        Games_Played: "GAMES_PLAYED",
+        Goals: "GOALS",
+        Assists: "ASSISTS",
+        Points: "POINTS",
+        Plus_Minus: "PLUS_MINUS",
+        Shots_on_Goal: "SHOTS_ON_GOAL",
+        Hits: "HITS",
+        Blocked_Shots: "BLOCKED_SHOTS",
+        Penalty_Minutes: "PENALTY_MINUTES",
+        PP_Points: "PP_POINTS",
+        PP_Goals: "PP_GOALS",
+        PP_Assists: "PP_ASSISTS",
+        SH_Points: "SH_POINTS",
+        Time_on_Ice_Per_Game: "TIME_ON_ICE_PER_GAME",
+        Faceoffs_Won: "FACEOFFS_WON",
+        Faceoffs_Lost: "FACEOFFS_LOST",
+        Wins_Goalie: "WINS_GOALIE",
+        Losses_Goalie: "LOSSES_GOALIE",
+        Otl: "OTL_GOALIE",
+        Saves_Goalie: "SAVES_GOALIE",
+        Sa: "SHOTS_AGAINST_GOALIE",
+        Ga: "GOALS_AGAINST_GOALIE",
+        Goals_Against_Average: "GOALS_AGAINST_AVERAGE",
+        Save_Percentage: "SAVE_PERCENTAGE",
+        Shutouts_Goalie: "SHUTOUTS_GOALIE"
+      };
+
+      let nextId = -1;
+      const out: ProcessedPlayer[] = [];
+
+      for (const r of rows) {
+        const fullName = String(r["Player_Name"] ?? "").trim();
+        if (!fullName) continue;
+        const displayTeam = (r["Team_Abbreviation"] ?? null) as any;
+        const displayPosition = (r["Position"] ?? null) as any;
+        const combinedStats: any = {};
+
+        // Populate projected values from mapped columns
+        Object.keys(r).forEach((col) => {
+          const key = COL_TO_STAT[col];
+          if (!key) return;
+          const rawVal = r[col];
+          const num = rawVal == null ? null : Number(rawVal);
+          const projected = num != null && Number.isFinite(num) ? num : null;
+          combinedStats[key] = {
+            projected,
+            actual: null,
+            diffPercentage: null,
+            projectedDetail: {
+              value: projected,
+              contributingSources: [
+                {
+                  name: customCsvLabel || "Custom CSV",
+                  weight: 1,
+                  value: projected
+                }
+              ],
+              missingFromSelectedSources: [],
+              statDefinition: { key } as any
+            }
+          };
+        });
+
+        // Compute fantasy points using appropriate scoring config
+        const isGoalie = String(displayPosition || "")
+          .toUpperCase()
+          .split(",")
+          .map((s) => s.trim())
+          .includes("G");
+        const pointsConfig: Record<string, number> = isGoalie
+          ? goaliePointValues
+          : draftSettings.scoringCategories;
+        let fpProjected = 0;
+        let hasAny = false;
+        Object.keys(pointsConfig).forEach((statKey) => {
+          const w = pointsConfig[statKey];
+          if (!w) return;
+          const v = combinedStats[statKey]?.projected;
+          if (typeof v === "number") {
+            fpProjected += v * w;
+            hasAny = true;
+          }
+        });
+        const gp = combinedStats.GAMES_PLAYED?.projected;
+        const projectedPerGame =
+          hasAny && typeof gp === "number" && gp > 0 ? fpProjected / gp : null;
+
+        out.push({
+          playerId: nextId--,
+          fullName,
+          displayTeam: displayTeam ? String(displayTeam) : null,
+          displayPosition: displayPosition ? String(displayPosition) : null,
+          combinedStats,
+          fantasyPoints: {
+            projected: hasAny ? fpProjected : null,
+            actual: null,
+            diffPercentage: null,
+            projectedPerGame,
+            actualPerGame: null
+          },
+          yahooPlayerId: undefined,
+          yahooAvgPick: null,
+          yahooAvgRound: null,
+          yahooPctDrafted: null,
+          projectedRank: null,
+          actualRank: null
+        });
+      }
+
+      return out;
+    } catch {
+      return [];
+    }
+  }, [customCsvLabel, draftSettings.scoringCategories, goaliePointValues]);
+
   const allPlayers: ProcessedPlayer[] = useMemo(
-    () => [...skaterPlayers, ...goaliePlayers],
-    [skaterPlayers, goaliePlayers]
+    () => [...skaterPlayers, ...goaliePlayers, ...sessionCsvPlayers],
+    [skaterPlayers, goaliePlayers, sessionCsvPlayers]
   );
 
-  // Compute available players excluding drafted ones
+  // NEW: derive available stat keys (skater vs goalie) from projections + custom CSV
+  const { availableSkaterStatKeys, availableGoalieStatKeys } = useMemo(() => {
+    const skaterKeys = new Set<string>();
+    const goalieKeys = new Set<string>();
+    allPlayers.forEach((p) => {
+      const pos = (p.displayPosition || "").toUpperCase();
+      const isGoalie = pos
+        .split(",")
+        .map((s) => s.trim())
+        .includes("G");
+      const target = isGoalie ? goalieKeys : skaterKeys;
+      Object.keys(p.combinedStats || {}).forEach((k) => target.add(k));
+    });
+    return {
+      availableSkaterStatKeys: Array.from(skaterKeys).sort(),
+      availableGoalieStatKeys: Array.from(goalieKeys).sort()
+    };
+  }, [allPlayers]);
+
   const availablePlayers = useMemo(() => {
     const draftedPlayerIds = new Set(draftedPlayers.map((p) => p.playerId));
     return allPlayers.filter((p) => !draftedPlayerIds.has(String(p.playerId)));
@@ -696,40 +877,176 @@ const DraftDashboard: React.FC = () => {
     }
   }, []);
 
-  // Update draft settings
   const updateDraftSettings = useCallback(
     (newSettings: Partial<DraftSettings>) => {
-      setDraftSettings((prev) => ({ ...prev, ...newSettings }));
+      setDraftSettings((prev) => {
+        const next = { ...prev, ...newSettings };
+        // Ensure draftOrder length matches teamCount if teamCount changed
+        if (
+          typeof newSettings.teamCount === "number" &&
+          newSettings.teamCount > 0
+        ) {
+          const count = newSettings.teamCount;
+          if (!next.draftOrder || next.draftOrder.length !== count) {
+            next.draftOrder = Array.from(
+              { length: count },
+              (_, i) => `Team ${i + 1}`
+            );
+          }
+        }
+        // Ensure myTeamId is valid
+        if (!next.draftOrder.includes(myTeamId)) {
+          setMyTeamId(next.draftOrder[0] || "Team 1");
+        }
+        return next;
+      });
     },
-    []
+    [myTeamId]
   );
 
-  return (
-    <main className={styles.dashboardContainer}>
-      {/* Settings Bar - Full Width */}
-      <section className={styles.settingsSection}>
-        <DraftSettings
-          settings={draftSettings}
-          onSettingsChange={updateDraftSettings}
-          isSnakeDraft={isSnakeDraft}
-          onSnakeDraftChange={setIsSnakeDraft}
-          myTeamId={myTeamId}
-          onMyTeamIdChange={setMyTeamId}
-          undoLastPick={undoLastPick}
-          resetDraft={resetDraft}
-          draftHistory={draftHistory}
-          draftedPlayers={draftedPlayers}
-          currentPick={currentPick}
-          customTeamNames={customTeamNames}
-          // NEW: expose goalie scoring configuration controls
-          goalieScoringCategories={goaliePointValues}
-          onGoalieScoringChange={setGoaliePointValues}
-          // NEW: pass handler to open draft summary from settings header
-          onOpenSummary={() => setIsSummaryOpen(true)}
-        />
-      </section>
+  // Add handy keyboard shortcuts for power users
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Avoid when focused inside inputs/textareas/contenteditable
+      const target = e.target as HTMLElement | null;
+      const tag = (target?.tagName || "").toLowerCase();
+      const isTyping =
+        tag === "input" ||
+        tag === "textarea" ||
+        (target as any)?.isContentEditable;
+      if (isTyping || e.metaKey || e.ctrlKey || e.altKey) return;
 
-      {/* Suggested Picks - Full Width Cards Row */}
+      const key = e.key.toLowerCase();
+      if (key === "u") {
+        e.preventDefault();
+        undoLastPick();
+      } else if (key === "s") {
+        e.preventDefault();
+        setIsSummaryOpen(true);
+      } else if (key === "n") {
+        e.preventDefault();
+        setNeedWeightEnabled((v) => !v);
+      } else if (key === "b") {
+        e.preventDefault();
+        setBaselineMode((m) => (m === "remaining" ? "full" : "remaining"));
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [undoLastPick]);
+
+  const isLoading = skaterData.isLoading || goalieData.isLoading;
+  const errorMessage = skaterData.error || goalieData.error || null;
+
+  const nextPickNumber = useMemo(
+    () => currentPick + picksUntilNext,
+    [currentPick, picksUntilNext]
+  );
+
+  // --- CSV Export: Blended Projections ---
+  const exportBlendedProjectionsCsv = useCallback(() => {
+    try {
+      const players = allPlayers; // blended list already includes custom CSV players
+      if (!players.length) return;
+      // Collect all stat keys present
+      const statKeySet = new Set<string>();
+      players.forEach((p) => {
+        Object.keys(p.combinedStats || {}).forEach((k) => statKeySet.add(k));
+      });
+      const statKeys = Array.from(statKeySet).sort();
+
+      const headers = [
+        "playerId",
+        "fullName",
+        "team",
+        "positions",
+        "fantasyPointsProjected",
+        "fantasyPointsPerGame",
+        "yahooAvgPick",
+        "yahooAvgRound",
+        "yahooPctDrafted",
+        "projectedRank",
+        ...statKeys.map((k) => `${k}_proj`)
+      ];
+
+      const esc = (v: any) => {
+        if (v == null) return "";
+        const s = String(v);
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+
+      const lines: string[] = [headers.join(",")];
+      players.forEach((p) => {
+        const rowBase = [
+          p.playerId,
+          p.fullName,
+          p.displayTeam || "",
+          p.displayPosition || "",
+          p.fantasyPoints.projected ?? "",
+          p.fantasyPoints.projectedPerGame ?? "",
+          p.yahooAvgPick ?? "",
+          p.yahooAvgRound ?? "",
+          p.yahooPctDrafted ?? "",
+          p.projectedRank ?? ""
+        ];
+        const statVals = statKeys.map((k) => {
+          const v = (p.combinedStats as any)?.[k]?.projected;
+          return typeof v === "number" && Number.isFinite(v) ? v : "";
+        });
+        const row = [...rowBase, ...statVals].map(esc).join(",");
+        lines.push(row);
+      });
+
+      const blob = new Blob([lines.join("\n")], {
+        type: "text/csv;charset=utf-8"
+      });
+      const filename = `blended-projections-${players.length}players-${Date.now()}.csv`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 0);
+    } catch (e) {
+      console.error("Failed to export projections CSV", e);
+    }
+  }, [allPlayers]);
+
+  return (
+    <div className={styles.dashboardContainer}>
+      <DraftSettings
+        settings={draftSettings}
+        onSettingsChange={updateDraftSettings}
+        isSnakeDraft={isSnakeDraft}
+        onSnakeDraftChange={setIsSnakeDraft}
+        myTeamId={myTeamId}
+        onMyTeamIdChange={setMyTeamId}
+        undoLastPick={undoLastPick}
+        resetDraft={resetDraft}
+        draftHistory={draftHistory}
+        draftedPlayers={draftedPlayers}
+        currentPick={currentPick}
+        customTeamNames={customTeamNames}
+        sourceControls={sourceControls}
+        onSourceControlsChange={setSourceControls}
+        goalieSourceControls={goalieSourceControls}
+        onGoalieSourceControlsChange={setGoalieSourceControls}
+        goalieScoringCategories={goaliePointValues}
+        onGoalieScoringChange={setGoaliePointValues}
+        onOpenSummary={() => setIsSummaryOpen(true)}
+        onOpenImportCsv={() => setIsImportCsvOpen(true)}
+        customSourceLabel={customCsvLabel}
+        availableSkaterStatKeys={availableSkaterStatKeys}
+        availableGoalieStatKeys={availableGoalieStatKeys}
+        onExportCsv={exportBlendedProjectionsCsv}
+      />
+
+      {/* Full-width Suggested Picks above the three panels */}
       <section className={styles.suggestedSection}>
         <SuggestedPicks
           players={availablePlayers}
@@ -737,22 +1054,20 @@ const DraftDashboard: React.FC = () => {
           needWeightEnabled={needWeightEnabled}
           needAlpha={needAlpha}
           posNeeds={posNeeds}
-          leagueType={draftSettings.leagueType || "points"}
-          catNeeds={catNeeds}
           currentPick={currentPick}
           teamCount={draftSettings.teamCount}
           baselineMode={baselineMode}
-          nextPickNumber={currentPick + picksUntilNext}
-          defaultLimit={10}
-          // NEW: roster progress bar data
+          nextPickNumber={nextPickNumber}
+          onDraftPlayer={(id) => draftPlayer(id)}
+          canDraft={true}
+          leagueType={draftSettings.leagueType || "points"}
+          catNeeds={catNeeds}
           rosterProgress={rosterProgress}
         />
       </section>
 
-      {/* Three Panel Layout */}
-      <section className={styles.mainContent}>
-        {/* Left Panel (40%) - Draft Board + Leaderboard */}
-        <div className={styles.leftPanel}>
+      <div className={styles.mainContent}>
+        <section className={styles.leftPanel}>
           <DraftBoard
             draftSettings={draftSettings}
             draftedPlayers={draftedPlayers}
@@ -763,65 +1078,55 @@ const DraftDashboard: React.FC = () => {
             allPlayers={allPlayers}
             onUpdateTeamName={updateTeamName}
           />
-        </div>
+        </section>
 
-        {/* Center Panel (20%) - My Roster */}
-        <div className={styles.centerPanel}>
+        <section className={styles.centerPanel}>
           <MyRoster
             myTeamId={myTeamId}
             teamStatsList={teamStats}
             draftSettings={draftSettings}
             availablePlayers={availablePlayers}
             allPlayers={allPlayers}
-            onDraftPlayer={draftPlayer}
+            onDraftPlayer={(id) => draftPlayer(id)}
             canDraft={true}
             currentPick={currentPick}
             currentTurn={currentTurn}
             teamOptions={teamOptions}
-            // NEW: recommendations context
             vorpMetrics={vorpMetrics}
             needWeightEnabled={needWeightEnabled}
             needAlpha={needAlpha}
             posNeeds={posNeeds}
           />
-        </div>
+        </section>
 
-        {/* Right Panel (40%) - Projections Table */}
-        <div className={styles.rightPanel}>
+        <section className={styles.rightPanel}>
           <ProjectionsTable
             players={availablePlayers}
             draftedPlayers={draftedPlayers}
-            isLoading={skaterData.isLoading || goalieData.isLoading}
-            error={skaterData.error || goalieData.error}
-            onDraftPlayer={draftPlayer}
+            isLoading={isLoading}
+            error={errorMessage}
+            onDraftPlayer={(id) => draftPlayer(id)}
             canDraft={true}
-            // NEW: pass vorp metrics map for per-player VORP column
             vorpMetrics={vorpMetrics}
-            // NEW: pass replacement baselines for tooltip/context
             replacementByPos={replacementByPos}
-            // NEW: baseline mode control
             baselineMode={baselineMode}
             onBaselineModeChange={setBaselineMode}
-            // NEW: pass expected position runs
-            expectedRuns={{
-              byPos: expectedTakenByPos || {},
-              N: expectedN || 0
-            }}
-            // NEW: Need-weighting controls and current team needs
+            expectedRuns={
+              expectedTakenByPos && typeof expectedN === "number"
+                ? { byPos: expectedTakenByPos, N: expectedN }
+                : undefined
+            }
             needWeightEnabled={needWeightEnabled}
             onNeedWeightChange={setNeedWeightEnabled}
             posNeeds={posNeeds}
             needAlpha={needAlpha}
             onNeedAlphaChange={setNeedAlpha}
-            // NEW: Absolute next pick number for risk model
-            nextPickNumber={currentPick + picksUntilNext}
-            // NEW: League type for label/value switching
+            nextPickNumber={nextPickNumber}
             leagueType={draftSettings.leagueType || "points"}
           />
-        </div>
-      </section>
+        </section>
+      </div>
 
-      {/* Summary Modal */}
       <DraftSummaryModal
         isOpen={isSummaryOpen}
         onClose={() => setIsSummaryOpen(false)}
@@ -831,7 +1136,29 @@ const DraftDashboard: React.FC = () => {
         allPlayers={allPlayers}
         vorpMetrics={vorpMetrics}
       />
-    </main>
+
+      <ImportCsvModal
+        open={isImportCsvOpen}
+        onClose={() => setIsImportCsvOpen(false)}
+        onImported={({ headers, rows, sourceId, label }) => {
+          // Persist label alongside rows for restoration
+          try {
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem(
+                "draft.customCsv.v1",
+                JSON.stringify({ headers, rows, label })
+              );
+            }
+          } catch {}
+          // Add/enable the custom source control so it appears in settings
+          setSourceControls((prev) => ({
+            ...prev,
+            [sourceId]: prev[sourceId] || { isSelected: true, weight: 1 }
+          }));
+          setCustomCsvLabel(label);
+        }}
+      />
+    </div>
   );
 };
 

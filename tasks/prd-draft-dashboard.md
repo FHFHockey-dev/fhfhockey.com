@@ -1,185 +1,122 @@
-# Fantasy Hockey Draft Dashboard - Product Requirements Document
+# Fantasy Hockey Draft Dashboard — Condensed PRD
 
 ## Overview
-Create a cohesive Draft Dashboard that helps managers draft faster and smarter. The dashboard combines a visual Draft Graph, a sortable Team Standings leaderboard, a My Roster panel, Player Search/Autocomplete, and a Suggested Picks list. It supports snake drafts, dynamic roster sizes, inline team name editing, and live team/category totals.
+A three-panel Draft Dashboard enabling fast, informed drafting with real‑time projections, VORP/VONA/VBD value metrics, roster tracking, and sortable views.
 
-## ✅ COMPLETED FEATURES (Phase 1)
+## Completed (Summary)
+- Core layout and responsive settings panel; mobile optimizations, collapsible panels.
+- Draft management: team count, snake order, turn tracking, draft/undo history.
+- Search/autocomplete; draft progress and roster slot visualization.
+- Team leaderboard and contribution/draft board visualization.
+- Projections processing: multi‑source ingestion, fantasy points calc, Yahoo data.
+- VORP/VONA/VBD engine with replacement logic; per‑position analysis; dynamic baselines.
+- ProjectionsTable improvements: zebra striping, fixed layout, value bands, baseline toggle, next‑pick risk (SD control), need weighting with alpha, run‑forecast UI, sort/comparator fixes, preference persistence, tooltips/accessibility.
+- Global shortcuts: U (Undo), S (Summary), N (Need weight), B (Baseline). Persisted and input‑safe.
+- Settings > Scoring UI split into side‑by‑side Skaters / Goalies subgroups with independent expand/collapse controls. (NEW 2025-08-22)
+- Added skater stat manager panel (add/remove dynamic scoring stats) with safeguard for already-added metrics. (NEW 2025-08-22)
+- Separate goalie stats expansion state (no longer tied to skater toggle). (NEW 2025-08-22)
+- Expand button now auto-spans two grid columns only when alone on its final row (CSS selector optimization). (NEW 2025-08-22)
+- Minor styling refinements: vertical divider between skater/goalie sections, per-stat remove button, adjusted number input theming. (NEW 2025-08-22)
 
-### Core Infrastructure
-- **✅ Dashboard Layout**: Three-panel bento box layout (40%-20%-40%)
-- **✅ Settings Panel**: Full-width top section for draft configuration
-- **✅ Responsive Design**: Mobile-optimized with collapsible panels
+## Active Initiatives (Detailed)
 
-### Draft Management
-- **✅ Team Configuration**: 12-team default with customizable team count
-- **✅ Snake Draft Logic**: Proper round-by-round pick order calculation
-- **✅ Current Turn Tracking**: Visual indicators and turn management
-- **✅ Draft History**: Undo functionality with state management
-- **✅ Player Search**: Autocomplete player search and selection
-- **✅ Draft Progress**: Visual progress tracking per team
+1) Client‑Side CSV Import (Session‑Local) — NEW IMMEDIATE
+- Goal: Let users import projections CSV (like /pages/db/upsert-projections.tsx) without AdminOnly and without writing to DB. Data should live only for the user’s session.
+- UX Decisions (confirmed):
+  - Import UI will be a modal accessible from the Draft Dashboard header. All settings (e.g., naming teams) will also follow a modal pattern.
+- UI/Flow:
+  - Drag‑and‑drop or file picker, header preview, standardization of column names and player names (reuse standardizePlayerName/standardizeColumnName where applicable).
+  - Column selection and simple type inference (numeric/text) for parsing only (no schema creation).
+  - Mapping helper to align common columns (Player_Name, Team, Position, stat fields) to internal stat keys used in useProcessedProjectionsData/useProjectionSourceAnalysis.
+  - Required minimum columns (confirmed): Player_Name, Team, Position, Goals, Assists, plus the minimal projection metrics baseline matching whatever source has the fewest supported metrics (intersection approach).
+- Storage (session‑scoped) — confirmed:
+  - In‑memory state with optional persistence to sessionStorage fallback; consider IndexedDB only if file is very large. Clearable and isolated per tab.
+  - No network writes; no Supabase usage.
+- Integration:
+  - Merge imported projections into the current projections pipeline for the session and mark as a custom source (e.g., "Custom CSV").
+  - Ensure downstream hooks (projections processing, VORP) can include/exclude this source via source toggles (see task 2).
+- Validation/UX:
+  - Show row counts, skipped rows, and minimal data hygiene (trim, numeric coercion where safe).
+  - No admin gate; available from the modal entry point.
+- Deliverables:
+  - Import modal component, session storage strategy, merge adapter into processing hook, unit tests on parsing and mapping.
 
-### Team Stats & Visualization
-- **✅ GitHub-Style Contribution Graph**: Visual draft board with intensity mapping
-- **✅ Team Leaderboard**: Sortable category-based standings
-- **✅ Individual Stat Projections**: Goals, Assists, PPP, SOG, Hits, Blocks integration
-- **✅ Fantasy Points Calculation**: Real-time projected fantasy points
-- **✅ Team Progress Bubbles**: Visual roster completion indicators
+2) Projection Source Toggles & Weights — NEW IMMEDIATE
+- Goal: Enable/disable sources and assign weights (including 2x or arbitrary factors) when blending projections.
+- Requirements (confirmed):
+  - UI lists sources with an on/off toggle and a weight control range 0.0–2.0 with 0.1 step. Include the session "Custom CSV" source when present.
+  - Default to all sources enabled with normalized equal weights; persist preferences (localStorage).
+  - Blending logic updates aggregated projections and flows into VORP/VONA/VBD and Suggested Picks when present.
+  - Feedback: show effective weight share per source and indicate if disabling a source materially changes a player’s rank.
+- Constraints/Perf:
+  - Memoized recompute only on relevant changes (source set/weights). Validate weight inputs; normalize when sum > 0.
+- Deliverables:
+  - Controls + persistence, integration with useProcessedProjectionsData, unit tests on weighting math and persistence.
 
-### UI/UX Enhancements
-- **✅ Editable Team Names**: Inline editing in both contribution graph and leaderboard
-  - **Technical Implementation**: Fixed React event handling with manual focus management
-  - **Event Prevention**: Added proper `preventDefault()` and `stopPropagation()` to prevent immediate blur
-  - **Manual Focus**: Used `useRef` and `useEffect` for reliable input focus instead of `autoFocus`
-  - **Dual Input Support**: Separate refs for contribution graph and leaderboard table inputs
-  - **Text Selection**: Automatic text selection for improved UX
-  - **Key Handlers**: Enter saves, Escape cancels, proper blur handling with timeout
-- **✅ Fixed-Width Alignment**: Consistent column alignment in contribution graph
-- **✅ Left-Aligned Stats**: Proper text alignment for readability
-- **✅ Roster Slot Visualization**: Color-coded filled/empty roster positions
+3) Missing Players in ProjectionsTable — NEW IMMEDIATE
+- Problem: Certain players are not appearing in the available list.
+- Hypotheses:
+  - Over‑aggressive fuzzy name matching or failed normalization at ingest; multi‑position mapping edge cases; filters (position, hide drafted); ADP‑based exclusions in banding; data gaps from Supabase queries.
+- Debug Plan:
+  - Add diagnostics: count of filtered vs total, and a temporary "Show excluded" toggle listing reasons (e.g., filtered by position, missing ADP, marked drafted, name mismatch).
+  - Log unmatched names between projections and player master; surface a small reconciliation report in dev mode.
+  - Verify displayPosition parsing (multi‑pos includes G), search debounce and term filters, and ADP/null handling in sorting.
+  - Cross‑check Supabase season totals fetch logic doesn’t gate list rendering.
+- Acceptance Criteria:
+  - Reproduce and document root cause(s); implement targeted fixes; add tests for name normalization and filter logic; verify affected players appear with correct data.
 
-### Data Integration
-- **✅ Projections Data Hook**: Integration with `useProcessedProjectionsData`
-- **✅ Multi-Source Projections**: Support for multiple projection sources
-- **✅ Player Stats Processing**: Combined stats from various sources
-- **✅ Yahoo Integration**: Yahoo draft data and player rankings
+## Backlog (Brief)
+- Suggested Picks module: need‑adjusted VBD + VONA + risk composite ranking with explanations and actions.
+- Projection Source Accuracy UI: visualize per‑source quality; toggles for Total vs Per‑Game; future tie‑in to weights.
+- Row expanders for prior‑season stats inline in ProjectionsTable.
+- Dynamic scoring stat management enhancements (skater manager COMPLETE; goalie manager backlog). (UPDATED 2025-08-22)
+- JS-driven detection for expand button width in responsive auto-fill grids if future layout changes remove fixed 8-col grid. (NEW BACKLOG 2025-08-22)
 
-### VORP Integration *(COMPLETED IN LATEST SESSION)*
-- **✅ VORP Calculations Hook**: Complete implementation in `/hooks/useVORPCalculations.ts`
-- **✅ Multi-Metric VORP System**: VORP, VONA (Value Over Next Available), VBD (Value Based Drafting)
-- **✅ ProjectionsTable Integration**: VORP, VONA, VBD columns added to available players table
-- **✅ Real-time Calculations**: Dynamic VORP updates based on drafted players and league settings
-- **✅ Positional Analysis**: Best position detection for multi-position players
-- **✅ Replacement Level Logic**: Configurable replacement player calculation per position
+## Success Criteria
+- CSV import requires zero backend and persists only for session; integrated into blended projections via a modal workflow.
+- Source toggles/weights (0.0–2.0, step 0.1) update rankings and VORP instantly and persist across reloads.
+- Missing players issue resolved with tests preventing regression.
 
-### ProjectionsTable Improvements *(JUST COMPLETED)*
-- **✅ Zebra Striping**: Alternating row colors for better visual separation between players
-  - **Technical Details**: Fixed CSS targeting to use `.playerRow` class instead of generic `tr` elements
-  - **Color Implementation**: Subtle background variations (-2% vs -5% lightness) maintaining dark theme
-  - **Hover Effects**: Enhanced hover states that override zebra stripes for clear interaction feedback
-- **✅ Table Layout Optimization**: Fixed table layout with consistent column widths
-  - **Column Proportions**: Player name column expanded to 40% width for better readability
-  - **Fixed Widths**: Enforced consistent column sizing using `table-layout: fixed`
-  - **Text Overflow**: Long player names truncate with ellipsis and show full name on hover
-- **✅ Enhanced Typography**: Improved text readability and numeric alignment
-  - **Tabular Numerals**: Consistent vertical alignment for all numeric columns (Fantasy Points, VORP, ADP)
-  - **Right-Aligned Numbers**: Proper alignment for numeric headers and cells
-  - **Increased Padding**: Better cell spacing for improved legibility
-  - **Color Enforcement**: Added `!important` to player name colors to ensure visibility
-- **✅ Accessibility Improvements**: Better tooltips and title attributes for truncated content
-- **✅ Team Column Width**: Increased team abbreviation column from 30px to 40px for better readability
-- **✅ Value Bands (NEW)**: VBD and Proj FP cells tinted by percentile among remaining players
-  - **Scope Toggle**: Per-position vs overall (default per-position); only players with ADP included
-  - **Visuals**: Success/Warning/Danger with 50% tint, solid border, dark text; zebra-stripe friendly
-  - **Persistence**: Scope preference persisted to localStorage
-- **✅ VORP Baseline Toggle (NEW)**: Remaining vs Full Pool baselines
-  - **Default**: Remaining players (dynamic baselines as draft progresses)
-  - **Controls**: Header select; affects VORP/VOLS and thus VBD
-  - **Persistence**: Baseline mode saved in localStorage
-- **✅ Default Sort**: ADP (yahooAvgPick) remains the default initial sort
+## Next Steps & Direction
+- Milestone 1: Client-side CSV Import Modal (session-only)
+  - Build an accessible modal launched from Draft Dashboard header.
+  - Parse CSV (header row required), preview first 50 rows, map headers to internal stat keys.
+  - Require columns: Player_Name, Team, Position, Goals, Assists, plus the minimal shared metric baseline across official sources.
+  - Store data in memory with sessionStorage fallback under key draft.customCsv.v1. Register ephemeral source id custom_csv.
+  - No AdminOnly, no Supabase writes.
+- Milestone 2: Source Toggles & Weights
+  - UI with on/off toggle and 0.0–2.0 slider (step 0.1) per source (including Custom CSV).
+  - Persist to localStorage at draft.sourceControls.v1. Normalize nonzero weights.
+  - Recompute blended projections and propagate into VORP/VONA/VBD.
+- Milestone 3: Missing Players Diagnostics & Fix
+  - Add temporary “Show excluded” toggle; list counts and reasons per exclusion.
+  - Log unmatched names and validate normalization, filters, ADP null handling, and multi-position parsing.
+  - Implement targeted fixes and add regression tests.
 
-## 🚧 CURRENT ARCHITECTURE
+## Important Context & Connections
+- Files/Modules
+  - web/components/DraftDashboard/ProjectionsTable.tsx — table rendering, filters, search; target for diagnostics toggle.
+  - web/hooks/useProcessedProjectionsData.tsx — aggregation/blending pipeline; integrate source toggles/weights and Custom CSV.
+  - web/hooks/useProjectionSourceAnalysis.ts — per-source stats/coverage; reflect Custom CSV and weighting.
+  - web/pages/db/upsert-projections.tsx — reference for CSV parsing/mapping and standardization patterns (no Admin gate here).
+  - web/pages/api/v1/db/upsert-csv.ts — reference only; no API calls in client-side import.
+  - lib/standardization/nameStandardization — reuse standardizePlayerName/titleCase/standardizeColumnName.
+  - tasks/prd-draft-dashboard.md — this plan; keep updated as work proceeds.
+- Storage & Persistence
+  - Session data for imported CSV: memory with sessionStorage fallback (draft.customCsv.v1), tab-isolated, clearable.
+  - Source toggles/weights: localStorage (draft.sourceControls.v1), restored on load.
+  - Other prefs (existing): keep using current keys; avoid breaking changes.
+- Constraints
+  - No Supabase writes; no AdminOnly gating.
+  - Keep UI accessible: keyboard focus trap in modal, aria-labelledby/aria-describedby, aria-expanded on toggles.
+  - Performance: recompute projections within ~200ms on desktop after control changes; memoize appropriately.
+- Baseline/Mapping
+  - Determine minimal shared metrics set by intersecting official sources; enforce at import.
+  - Map CSV headers to internal stat keys used by useProcessedProjectionsData/useProjectionSourceAnalysis.
 
-### Page Structure & Layout
-```
-/draft-dashboard
-├── DraftDashboard.tsx (Main container)
-├── DraftSettings.tsx (Top settings bar)
-├── DraftBoard.tsx (Left panel - contribution graph + leaderboard)
-├── MyRoster.tsx (Center panel - roster management)
-└── ProjectionsTable.tsx (Right panel - available players)
-```
-
-### Key Data Flows
-1. **Draft Settings** → Team count, roster config, scoring categories
-2. **Player Projections** → Multi-source weighted projections
-3. **Draft State** → Current pick, drafted players, team rosters
-4. **Team Stats** → Real-time category totals and fantasy points
-5. **VORP Calculations** → Dynamic value calculations based on league state
-
-### State Management
-- **Team Names**: Custom team names with fallback to defaults
-- **Drafted Players**: Player ID, team assignment, pick metadata
-- **Current Turn**: Round, pick position, team identification
-- **Roster Progress**: Position-based slot tracking
-- **VORP Metrics**: Real-time value calculations per player
-
-## 📁 RELATED FILES & COMPONENTS
-
-### Core Draft Dashboard Files
-- **Main Page**: `/pages/draft-dashboard.tsx` - Entry point and page wrapper
-- **Main Component**: `/components/DraftDashboard/DraftDashboard.tsx` - Core state management and layout
-- **Main Styles**: `/components/DraftDashboard/DraftDashboard.module.scss` - Three-panel layout styling
-
-### Panel Components
-- **Left Panel**: `/components/DraftDashboard/DraftBoard.tsx` - Contribution graph + leaderboard
-- **Left Panel Styles**: `/components/DraftDashboard/DraftBoard.module.scss` - Visual styling for draft board
-- **Center Panel**: `/components/DraftDashboard/MyRoster.tsx` - Team roster management
-- **Center Panel Styles**: `/components/DraftDashboard/MyRoster.module.scss` - Roster visualization styling
-- **Right Panel**: `/components/DraftDashboard/ProjectionsTable.tsx` - Available players table *(RECENTLY ENHANCED)*
-- **Right Panel Styles**: `/components/DraftDashboard/ProjectionsTable.module.scss` - Enhanced table styling with zebra stripes *(RECENTLY UPDATED)*
-- **Settings Panel**: `/components/DraftDashboard/DraftSettings.tsx` - Draft configuration controls
-
-### Data & Analysis Hooks *(RECENTLY COMPLETED)*
-- **VORP Calculations**: `/hooks/useVORPCalculations.ts` - Complete VORP/VONA/VBD calculation system *(NEW)*
-- **Projections Hook**: `/hooks/useProcessedProjectionsData.tsx` - Main data processing hook
-- **Current Season Hook**: `/hooks/useCurrentSeason.ts` - Season data management
-
-### Configuration Files
-- **Projection Sources**: `/lib/projectionsConfig/projectionSourcesConfig.ts` - Source configuration
-- **Stats Master List**: `/lib/projectionsConfig/statsMasterList.ts` - Stat definitions
-- **Fantasy Points Config**: `/lib/projectionsConfig/fantasyPointsConfig.ts` - Scoring configurations
-- **Global Styles**: `/styles/vars.scss` - Color scheme, spacing, typography, breakpoints *(REFERENCE FOR STYLING)*
-
-### Integration Points
-- **Player Autocomplete**: `/components/PlayerAutocomplete/` - Player search component
-- **Team Colors**: `/contexts/TeamColorContext/` - Team color management
-- **Supabase Integration**: `/lib/supabase.ts` - Database connection
-
-## 📋 IMMEDIATE NEXT PRIORITIES (UPDATED)
-
-### 1) Suggested Picks Module (NEW)
-...existing code...
-
-## What was accomplished
-...existing code...
-
-## Files touched
-...existing code...
-
-## Completed tasks (✓)
-...existing code...
-
-## Next tasks
-1. Refactor team label width into a shared SCSS token
-   - Define a single variable (e.g., $team-label-width) in styles/vars.scss and use it for .teamLabel, .teamLabelInput, and .teamLabelSpacer to avoid drift.
-2. Improve heatmap intensity scaling
-   - Current max uses draftedPlayers only; consider using max across allPlayers.fantasyPoints.projected for more stable color scaling early in drafts.
-3. MyRoster component improvements (component exists and is implemented)
-   - Audit web/components/DraftDashboard/MyRoster.tsx for prop alignment with DraftDashboard (teamStatsList, draftSettings, availablePlayers, allPlayers, onDraftPlayer, etc.).
-   - Verify roster slot counts vs draftSettings.rosterConfig; ensure UTIL handling and bench counts match.
-   - Optional: add drag-and-drop for reordering within slots/bench. If adopted, use dnd-kit and persist order in state.
-   - Add tests for roster progress and slot rendering.
-4. Persist team name edits
-   - Wire onUpdateTeamName to backend (Supabase or app state) so edits persist across reloads.
-5. Round labels UX
-   - Ensure .roundLabelsGrid columns exactly match team grid and remain sticky on horizontal scroll if needed.
-6. Performance
-   - If teamCount*roundsToShow is large, consider virtualizing rows/columns or simplifying DOM (e.g., windowed grid).
-7. Testing
-   - Add visual/regression tests for grid alignment and sorting. Include unit tests for categoryTotals computed from allPlayers.combinedStats.
-
-## Implementation recommendations
-- SCSS tokenization
-  - Add $team-label-width: 60px in styles/vars.scss and replace hardcoded 60px in DraftBoard.module.scss selectors (.teamLabel, .teamLabelInput, .teamLabelSpacer).
-- Heatmap scaling
-  - Compute maxFantasyPoints from allPlayers first; fallback to a sane default if null. Keep getHeatMapIntensity thresholds as percentages.
-- MyRoster
-  - The component at web/components/DraftDashboard/MyRoster.tsx is present and used by DraftDashboard. Focus on QA and enhancements (prop types, slot correctness, optional DnD) rather than initial implementation.
-- Team name persistence
-  - If using Supabase, add a table (e.g., draft_teams) with id/name; update via RPC or simple upsert on edit. Debounce saves on blur/enter.
-- Accessibility
-  - Add aria-labels/titles to cells and inputs. Ensure keyboard focus styling on editable team labels and inputs.
-
-
-
+## Recent Updates Changelog
+- 2025-08-22: Implemented split Skaters/Goalies scoring subgroups side-by-side; independent expand buttons.
+- 2025-08-22: Added skater scoring stat manager (add/remove, prevents duplicates).
+- 2025-08-22: Added conditional grid-span behavior for expand button (spans two columns only when solitary in last row).
+- 2025-08-22: Added per-stat removal control and styling refinements (divider, inputs, badges).
 

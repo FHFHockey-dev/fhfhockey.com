@@ -41,22 +41,46 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   allPlayers,
   onUpdateTeamName
 }) => {
+  const DEBUG = process.env.NODE_ENV !== "production";
   const [sortField, setSortField] = useState<SortField>("projectedPoints");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [editingTeam, setEditingTeam] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
   const contributionInputRef = useRef<HTMLInputElement>(null);
   const leaderboardInputRef = useRef<HTMLInputElement>(null);
+  // NEW: manage blur timeout safely via ref instead of window-scoped var
+  const blurTimeoutRef = useRef<number | null>(null);
+
+  // Build a quick lookup for team names
+  const teamNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    draftSettings.draftOrder.forEach((id) => {
+      const name = teamStats.find((t) => t.teamId === id)?.teamName || id;
+      m.set(id, name);
+    });
+    return m;
+  }, [draftSettings.draftOrder, teamStats]);
 
   // Debug: Track editing state changes
   useEffect(() => {
-    console.log("Editing state changed:", { editingTeam, editingValue });
+    if (DEBUG)
+      console.log("Editing state changed:", { editingTeam, editingValue });
   }, [editingTeam, editingValue]);
+
+  // Clear any pending blur timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+        blurTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   // Auto-focus the input when editing starts
   useEffect(() => {
     if (editingTeam) {
-      console.log("Manually focusing input for team:", editingTeam);
+      if (DEBUG) console.log("Manually focusing input for team:", editingTeam);
       // Use setTimeout to ensure DOM has updated
       setTimeout(() => {
         // Try both refs - one will be rendered, the other won't
@@ -79,16 +103,23 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   ) => {
     e.preventDefault();
     e.stopPropagation();
-    console.log("=== CLICK EVENT START ===");
-    console.log("Team name clicked:", { teamId, currentName });
-    console.log("Current editing state before click:", {
-      editingTeam,
-      editingValue
-    });
-    console.log("Setting editing state...");
+    // Clear any pending blur submit from previous edits
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = null;
+    }
+    if (DEBUG) {
+      console.log("=== CLICK EVENT START ===");
+      console.log("Team name clicked:", { teamId, currentName });
+      console.log("Current editing state before click:", {
+        editingTeam,
+        editingValue
+      });
+      console.log("Setting editing state...");
+    }
     setEditingTeam(teamId);
     setEditingValue(currentName);
-    console.log("=== CLICK EVENT END ===");
+    if (DEBUG) console.log("=== CLICK EVENT END ===");
   };
 
   const handleTeamNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,7 +127,11 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   };
 
   const handleTeamNameSubmit = (teamId: string) => {
-    console.log("Submitting team name:", { teamId, editingValue }); // Debug log
+    if (DEBUG) console.log("Submitting team name:", { teamId, editingValue }); // Debug log
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = null;
+    }
     if (editingValue.trim() && editingValue !== "") {
       onUpdateTeamName(teamId, editingValue.trim());
     }
@@ -113,6 +148,10 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
       handleTeamNameSubmit(teamId);
     } else if (e.key === "Escape") {
       e.preventDefault();
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+        blurTimeoutRef.current = null;
+      }
       setEditingTeam(null);
       setEditingValue("");
     }
@@ -120,20 +159,27 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
 
   const handleTeamNameBlur = (teamId: string) => {
     // Prevent immediate blur after click by checking if we just started editing
-    console.log("Blur event triggered for team:", teamId);
-    console.log("Current editing team:", editingTeam);
+    if (DEBUG) {
+      console.log("Blur event triggered for team:", teamId);
+      console.log("Current editing team:", editingTeam);
+    }
 
     // Only handle blur if we've been editing for more than 100ms
-    const blurTimeout = setTimeout(() => {
-      console.log("Blur timeout executing for team:", teamId);
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current);
+      blurTimeoutRef.current = null;
+    }
+    blurTimeoutRef.current = window.setTimeout(() => {
+      if (DEBUG) console.log("Blur timeout executing for team:", teamId);
       // Double-check we're still editing this team
       if (editingTeam === teamId) {
         handleTeamNameSubmit(teamId);
       }
-    }, 100); // Reduced back to 100ms but with better logic
-
-    // Store timeout to potentially cancel it
-    (window as any).blurTimeout = blurTimeout;
+      if (blurTimeoutRef.current) {
+        clearTimeout(blurTimeoutRef.current);
+        blurTimeoutRef.current = null;
+      }
+    }, 100);
   };
 
   // Calculate total roster spots dynamically from settings
@@ -244,10 +290,10 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         const fantasyPoints =
           playerData?.fantasyPoints.projected?.toFixed(1) || "N/A";
         const tooltip = draftedPlayer
-          ? `${playerName}\n${teamId}\nRound ${round}, Pick ${pickInRound}\nProjected: ${fantasyPoints} pts`
+          ? `${playerName}\n${teamNameById.get(teamId) || teamId}\nRound ${round}, Pick ${pickInRound}\nProjected: ${fantasyPoints} pts`
           : isCurrentPick
-            ? `Current Pick: ${teamId}\nRound ${round}, Pick ${pickInRound}`
-            : `Available Pick\n${teamId}\nRound ${round}, Pick ${pickInRound}`;
+            ? `Current Pick: ${teamNameById.get(teamId) || teamId}\nRound ${round}, Pick ${pickInRound}`
+            : `Available Pick\n${teamNameById.get(teamId) || teamId}\nRound ${round}, Pick ${pickInRound}`;
 
         teamCells.push(
           <div
@@ -284,12 +330,11 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                 handleTeamNameClick(
                   e,
                   teamId,
-                  teamStats.find((t) => t.teamId === teamId)?.teamName || teamId
+                  teamNameById.get(teamId) || teamId
                 )
               }
             >
-              {teamStats.find((t) => t.teamId === teamId)?.teamName ||
-                `T${teamIndex + 1}`}
+              {teamNameById.get(teamId) || `T${teamIndex + 1}`}
             </div>
           )}
           <div
@@ -307,23 +352,25 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
 
   // Calculate team category totals for the leaderboard table
   const teamStatsWithCategories = useMemo(() => {
-    console.log("Debug - DraftBoard teamStatsWithCategories calculation:", {
-      teamStatsLength: teamStats.length,
-      draftedPlayersLength: draftedPlayers.length,
-      availablePlayersLength: availablePlayers.length,
-      sampleDraftedPlayer: draftedPlayers[0],
-      sampleTeamStat: teamStats[0]
-    });
+    if (DEBUG)
+      console.log("Debug - DraftBoard teamStatsWithCategories calculation:", {
+        teamStatsLength: teamStats.length,
+        draftedPlayersLength: draftedPlayers.length,
+        availablePlayersLength: availablePlayers.length,
+        sampleDraftedPlayer: draftedPlayers[0],
+        sampleTeamStat: teamStats[0]
+      });
 
     return teamStats.map((team) => {
       const teamPlayers = draftedPlayers.filter(
         (p) => p.teamId === team.teamId
       );
 
-      console.log(`Debug - Team ${team.teamId}:`, {
-        teamPlayersCount: teamPlayers.length,
-        teamPlayers: teamPlayers.map((p) => p.playerId)
-      });
+      if (DEBUG)
+        console.log(`Debug - Team ${team.teamId}:`, {
+          teamPlayersCount: teamPlayers.length,
+          teamPlayers: teamPlayers.map((p) => p.playerId)
+        });
 
       // Initialize category totals
       const categoryTotals = {
@@ -341,12 +388,14 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         const player = allPlayers.find(
           (p) => String(p.playerId) === draftedPlayer.playerId
         );
-        console.log(`Debug - Player lookup for ${draftedPlayer.playerId}:`, {
-          found: !!player,
-          playerStats: player?.combinedStats
-            ? Object.keys(player.combinedStats)
-            : "no stats"
-        });
+
+        if (DEBUG)
+          console.log(`Debug - Player lookup for ${draftedPlayer.playerId}:`, {
+            found: !!player,
+            playerStats: player?.combinedStats
+              ? Object.keys(player.combinedStats)
+              : "no stats"
+          });
 
         if (player) {
           // Access the projected values from the combinedStats structure
@@ -357,14 +406,15 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
           const hits = player.combinedStats.HITS?.projected || 0;
           const blocks = player.combinedStats.BLOCKED_SHOTS?.projected || 0;
 
-          console.log(`Debug - Adding stats for ${player.fullName}:`, {
-            goals,
-            assists,
-            ppPoints,
-            sog,
-            hits,
-            blocks
-          });
+          if (DEBUG)
+            console.log(`Debug - Adding stats for ${player.fullName}:`, {
+              goals,
+              assists,
+              ppPoints,
+              sog,
+              hits,
+              blocks
+            });
 
           categoryTotals.goals += goals;
           categoryTotals.assists += assists;
@@ -375,10 +425,11 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         }
       });
 
-      console.log(
-        `Debug - Final categoryTotals for ${team.teamId}:`,
-        categoryTotals
-      );
+      if (DEBUG)
+        console.log(
+          `Debug - Final categoryTotals for ${team.teamId}:`,
+          categoryTotals
+        );
 
       return {
         ...team,
@@ -426,21 +477,19 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
 
   return (
     <div className={styles.draftBoardContainer}>
-      {/* GitHub-style header */}
+      {/* Subheader: Team Standings */}
       <div className={styles.githubHeader}>
         <h3 className={styles.sectionTitle}>
-          Draft <span className={styles.panelTitleAccent}> Graph</span>
+          Team <span className={styles.panelTitleAccent}>Standings</span>
         </h3>
         <div className={styles.contributionSummary}>
-          {draftedPlayers.length} picks in {currentTurn.round} rounds
+          {draftedPlayers.length} of {draftSettings.teamCount * roundsToShow}{" "}
+          picks • {roundsToShow} rounds
         </div>
       </div>
 
       {/* Team Leaderboard Table */}
       <div className={styles.leaderboardSection}>
-        <h3 className={styles.sectionTitle}>
-          Team <span className={styles.panelTitleAccent}>Standings</span>
-        </h3>
         <div className={styles.leaderboardTableContainer}>
           <table className={styles.leaderboardTable}>
             <thead>
@@ -615,7 +664,18 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         </div>
       </div>
 
-      {/* GitHub-style contribution graph */}
+      {/* Subheader: Draft Graph */}
+      <div className={styles.githubHeader}>
+        <h3 className={styles.sectionTitle}>
+          Draft <span className={styles.panelTitleAccent}>Graph</span>
+        </h3>
+        <div className={styles.contributionSummary}>
+          {draftedPlayers.length} of {draftSettings.teamCount * roundsToShow}{" "}
+          picks • {roundsToShow} rounds
+        </div>
+      </div>
+
+      {/* Contribution graph */}
       <div className={styles.contributionGraphContainer}>
         <div className={styles.contributionGraph}>
           {/* Round labels (columns) */}

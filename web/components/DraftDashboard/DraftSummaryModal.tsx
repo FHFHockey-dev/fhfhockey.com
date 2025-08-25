@@ -8,6 +8,7 @@ import type {
 import type { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import { toPng } from "html-to-image";
 import type { PlayerVorpMetrics } from "hooks/useVORPCalculations";
+import Image from "next/image";
 
 interface DraftSummaryModalProps {
   isOpen: boolean;
@@ -179,7 +180,8 @@ export default function DraftSummaryModal({
       mm.max === mm.min ? 0.5 : (x - mm.min) / (mm.max - mm.min);
     const scored = teamStats.map((t) => ({
       team: t,
-      score: 0.6 * norm(t.projectedPoints, pmm) + 0.4 * norm(t.teamVorp || 0, vmm)
+      score:
+        0.6 * norm(t.projectedPoints, pmm) + 0.4 * norm(t.teamVorp || 0, vmm)
     }));
     scored.sort((a, b) => b.score - a.score);
     return scored[0];
@@ -301,7 +303,10 @@ export default function DraftSummaryModal({
       const dp = picks[i];
       if (!dp) {
         cells.push(
-          <div key={`${team.teamId}-empty-${i}`} className={`${styles.pickCell} ${styles.pickEmpty}`} />
+          <div
+            key={`${team.teamId}-empty-${i}`}
+            className={`${styles.pickCell} ${styles.pickEmpty}`}
+          />
         );
         continue;
       }
@@ -320,14 +325,16 @@ export default function DraftSummaryModal({
                   ? styles.posG
                   : styles.posUTIL;
       cells.push(
-        <div key={`${team.teamId}-${dp.pickNumber}`} className={`${styles.pickCell} ${posClass}`} title={`${p?.fullName || dp.playerId} • ${pos || "-"} • R${dp.round} P${dp.pickInRound}`}>
+        <div
+          key={`${team.teamId}-${dp.pickNumber}`}
+          className={`${styles.pickCell} ${posClass}`}
+          title={`${p?.fullName || dp.playerId} • ${pos || "-"} • R${dp.round} P${dp.pickInRound}`}
+        >
           <div className={styles.pickTop}>
             <span className={styles.pickRound}>R{dp.round}</span>
             <span className={styles.pickNum}>#{dp.pickNumber}</span>
           </div>
-          <div className={styles.pickName}>
-            {p?.fullName || dp.playerId}
-          </div>
+          <div className={styles.pickName}>{p?.fullName || dp.playerId}</div>
         </div>
       );
     }
@@ -390,15 +397,28 @@ export default function DraftSummaryModal({
           </div>
 
           {draftWinner && (
-            <div className={styles.winnerCard} role="region" aria-label="Winner of the Draft">
+            <div
+              className={styles.winnerCard}
+              role="region"
+              aria-label="Winner of the Draft"
+            >
               <div className={styles.winnerLeft}>
-                <div className={styles.trophy}>🏆</div>
+                <Image
+                  src="/teamLogos/fhfhGoldMedal.png"
+                  alt="Gold Medal"
+                  width={82}
+                  height={82}
+                  className={styles.trophy}
+                />
               </div>
               <div className={styles.winnerRight}>
                 <div className={styles.winnerTitle}>Winner of the Draft</div>
-                <div className={styles.winnerTeam}>{draftWinner.team.teamName}</div>
+                <div className={styles.winnerTeam}>
+                  {draftWinner.team.teamName}
+                </div>
                 <div className={styles.winnerMeta}>
-                  Proj Pts: {draftWinner.team.projectedPoints.toFixed(1)} • Team VORP: {(draftWinner.team.teamVorp || 0).toFixed(1)}
+                  Proj Pts: {draftWinner.team.projectedPoints.toFixed(1)} • Team
+                  VORP: {(draftWinner.team.teamVorp || 0).toFixed(1)}
                 </div>
               </div>
             </div>

@@ -487,7 +487,7 @@ export const canonicalNameMap: Record<string, string> = {
   // Default entries for all DB names (Key: normalized(DB name), Value: DB name)
   // These ensure that if a CSV name, after normalization, perfectly matches a normalized DB name, it maps correctly.
   // This is a selection; you'd generate this for your entire DB list.
-  ajgreer: "A.J. Greer",
+  ajgreer: "A.J. Greer"
   // aaronekblad: "Aaron Ekblad",
   // adamfantilli: "Adam Fantilli",
   // adamfox: "Adam Fox",
@@ -558,7 +558,7 @@ export const canonicalNameMap: Record<string, string> = {
   // charliemcavoy: "Charlie McAvoy", // Already listed
   // charlescoyle: "Charlie Coyle", // key vs charliecoyle
   // chriskreider: "Chris Kreider", // Already listed
-  christanev: "Chris Tanev" // CSV: Chris Tanev -> DB: Chris Tanev
+  // christanev: "Chris Tanev" // CSV: Chris Tanev -> DB: Chris Tanev
   // christiandvorak: "Christian Dvorak", // Already listed
   // claudegiroux: "Claude Giroux", // Already listed
   // claytonkeller: "Clayton Keller", // Already listed
@@ -971,7 +971,7 @@ export function standardizePlayerName(name: string): string {
     );
     if (mapEntryExists) {
       console.log(
-        `[DEBUG standardizePlayerName] Map returns for key: '${canonicalNameMap[lookupKey]}'`
+        `[DEBUG standardizePlayerName] Direct map resolves to '${canonicalNameMap[lookupKey]}'`
       );
     }
   }
@@ -980,7 +980,7 @@ export function standardizePlayerName(name: string): string {
   if (canonicalNameMap[lookupKey]) {
     if (debugNames.includes(lowerOriginalName)) {
       console.log(
-        `[DEBUG standardizePlayerName] SUCCESS: Returning from map: '${canonicalNameMap[lookupKey]}'`
+        `[DEBUG standardizePlayerName] Returning mapped canonical name '${canonicalNameMap[lookupKey]}'`
       );
     }
     return canonicalNameMap[lookupKey];
@@ -1005,18 +1005,21 @@ export function standardizePlayerName(name: string): string {
 
     // Check if this formalized version has an explicit mapping to a DB canonical name
     if (canonicalNameMap[potentialFormalLookupKey]) {
+      if (debugNames.includes(lowerOriginalName)) {
+        console.log(
+          `[DEBUG standardizePlayerName] Nickname formalization hit map -> '${canonicalNameMap[potentialFormalLookupKey]}'`
+        );
+      }
       return canonicalNameMap[potentialFormalLookupKey];
     }
-    // If the formalized name itself IS the target (e.g. CSV "Alex Tuch", DB "Alexander Tuch", and map has "alextuch": "Alexander Tuch")
-    // This case is handled by the first check if "alextuch" is directly mapped.
-    // If we reach here, it means the *formalized name's lookup key* wasn't in the map.
-    // We should be cautious about returning `titleCase(potentialFormalFullName)` if it might
-    // create a name that doesn't exist in the DB (e.g. "Alexander Tuch" when DB has "Alex Tuch").
-    // The primary reliance should be on canonicalNameMap.
-    // For now, if formalization happened but didn't lead to a map hit,
-    // we'll still prefer the original cleaned name unless the formalized name is *explicitly* better.
-    // This part of the logic is subtle. The goal is to ensure that if the DB has "Alex Tuch",
-    // we don't accidentally output "Alexander Tuch" unless "alexandertuch" maps back to "Alex Tuch".
+    // If no explicit mapping, fall through to title-cased formal version as a last resort
+    const formalTitle = titleCase(potentialFormalFullName);
+    if (debugNames.includes(lowerOriginalName)) {
+      console.log(
+        `[DEBUG standardizePlayerName] Nickname formalization fallback -> '${formalTitle}'`
+      );
+    }
+    return formalTitle;
   }
 
   // 3. Fallback: Title-case the original name (after cleaning suffixes).
@@ -1029,7 +1032,7 @@ export function standardizePlayerName(name: string): string {
   const titleCasedFallback = titleCase(cleanedOriginal);
   if (debugNames.includes(lowerOriginalName)) {
     console.log(
-      `[DEBUG standardizePlayerName] FALLBACK: No map/nickname match. Returning titleCase: '${titleCasedFallback}'`
+      `[DEBUG standardizePlayerName] Final fallback -> '${titleCasedFallback}'`
     );
   }
   return titleCasedFallback;
@@ -1037,43 +1040,12 @@ export function standardizePlayerName(name: string): string {
 
 // Basic Title Case Helper - Export this so other modules can use it.
 export function titleCase(str: string): string {
-  if (!str) return "";
+  if (!str) return str as any;
   return str
     .toLowerCase()
     .split(" ")
     .map((word) => {
-      if (word.startsWith("mc") && word.length > 2) {
-        return (
-          word.charAt(0).toUpperCase() +
-          word.charAt(1).toLowerCase() +
-          word.charAt(2).toUpperCase() +
-          word.slice(3)
-        );
-      } else if (
-        word.startsWith("mac") &&
-        word.length > 3 &&
-        /^[A-Za-z]+$/.test(word.charAt(3))
-      ) {
-        return (
-          word.charAt(0).toUpperCase() +
-          word.charAt(1).toLowerCase() +
-          word.charAt(2).toLowerCase() +
-          word.charAt(3).toUpperCase() +
-          word.slice(4)
-        );
-      } else if (word.includes("-")) {
-        return word
-          .split("-")
-          .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-          .join("-");
-      }
-      // Handle names like O'Reilly, D'Amato correctly
-      if (word.includes("'") && word.length > 1) {
-        return word
-          .split("'")
-          .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-          .join("'");
-      }
+      if (!word) return word;
       return word.charAt(0).toUpperCase() + word.slice(1);
     })
     .join(" ");

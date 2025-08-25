@@ -1,11 +1,6 @@
 // components/Projections/ProjectionSourceAnalysis.tsx
 
-import React, { useState } from "react";
-import {
-  useProjectionSourceAnalysis,
-  PositionSourceRanking,
-  RoundSourceRanking
-} from "hooks/useProjectionSourceAnalysis";
+import React, { useState, useMemo } from "react";
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import styles from "./ProjectionSourceAnalysis.module.scss";
 
@@ -16,18 +11,447 @@ interface ProjectionSourceAnalysisProps {
   activePlayerType: "skater" | "goalie";
 }
 
+// --- Internal Types ---
+interface SourcePerPlayerProjection {
+  sourceId: string;
+  projectedTotal: number | null;
+  projectedPerGame: number | null;
+  actualTotal: number | null;
+  actualPerGame: number | null;
+}
+
+interface SourceOverallMetrics {
+  sourceId: string;
+  sourceName: string;
+  playersWithBothProjectedAndActual: number;
+  averageMarginOfError: number; // absolute
+  medianMarginOfError: number;
+  averageAccuracyPercentage: number;
+  withinTenPercent: number;
+  withinTwentyPercent: number;
+  overProjectionBias: number; // signed average (actual - projected)
+  qualityScore: number;
+  averageMarginOfErrorPerGame: number;
+  medianMarginOfErrorPerGame: number;
+  averageAccuracyPercentagePerGame: number;
+  withinTenPercentPerGame: number;
+  withinTwentyPercentPerGame: number;
+  overProjectionBiasPerGame: number;
+  qualityScorePerGame: number;
+  positionMetrics: Record<
+    string,
+    {
+      playerCount: number;
+      averageAccuracy: number;
+      averageAccuracyPerGame: number;
+    }
+  >;
+}
+
+interface PositionRankingItem {
+  position: string;
+  rankings: Array<{
+    sourceId: string;
+    sourceName: string;
+    rank: number;
+    averageAccuracy: number;
+    averageAccuracyPerGame: number;
+    averageMarginOfError: number;
+    averageMarginOfErrorPerGame: number;
+    playerCount: number;
+  }>;
+}
+
+interface RoundRankingItem {
+  round: number;
+  roundLabel: string;
+  rankings: Array<{
+    sourceId: string;
+    sourceName: string;
+    rank: number;
+    averageAccuracy: number;
+    averageAccuracyPerGame: number;
+    averageMarginOfError: number;
+    averageMarginOfErrorPerGame: number;
+    playerCount: number;
+  }>;
+}
+
+interface ComputedAnalysisResult {
+  overallRankingsTotal: SourceOverallMetrics[];
+  overallRankingsPerGame: SourceOverallMetrics[];
+  positionRankings: PositionRankingItem[];
+  roundRankings: RoundRankingItem[];
+}
+
+// --- Utility Functions ---
+function median(values: number[]): number {
+  if (!values.length) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? (sorted[mid - 1] + sorted[mid]) / 2
+    : sorted[mid];
+}
+
+// Build per-source fantasy point projections for each player from contributing stat details
+function buildPerSourcePlayerProjections(
+  player: ProcessedPlayer,
+  fantasyPointSettings: Record<string, number>,
+  selectedSourceIds: string[]
+): SourcePerPlayerProjection[] {
+  // We accumulate per source
+  const perSourceTotals: Record<string, number> = {};
+  const perSourceProjectedGP: Record<string, number | null> = {}; // Use player's projected GP (same for all sources) for per-game
+  const projectedGP = player.combinedStats.GAMES_PLAYED?.projected ?? null;
+  const actualGP = player.combinedStats.GAMES_PLAYED?.actual ?? null;
+
+  // Iterate combinedStats (projectedDetail.contributingSources)
+  Object.entries(player.combinedStats).forEach(([statKey, statObj]) => {
+    const fpVal = fantasyPointSettings[statKey];
+    if (!fpVal) return; // skip stats not used in scoring
+    const detail = statObj.projectedDetail;
+    if (!detail) return;
+    detail.contributingSources.forEach((src: any) => {
+      if (
+        !selectedSourceIds.includes(src.name) &&
+        !selectedSourceIds.includes(src.sourceId)
+      )
+        return; // attempt by display name; fallback
+      const srcKey = src.name; // Use display name as key (assumes uniqueness)
+      if (typeof src.value === "number" && src.value !== null) {
+        perSourceTotals[srcKey] =
+          (perSourceTotals[srcKey] || 0) + src.value * fpVal;
+        if (!(srcKey in perSourceProjectedGP))
+          perSourceProjectedGP[srcKey] = projectedGP;
+      }
+    });
+  });
+
+  const actualTotal = player.fantasyPoints.actual;
+  const actualPerGame =
+    actualTotal !== null && actualGP && actualGP > 0
+      ? actualTotal / actualGP
+      : null;
+
+  return Object.keys(perSourceTotals).map((sourceName) => {
+    const projectedTotal = perSourceTotals[sourceName] ?? null;
+    const projectedPerGame =
+      projectedTotal !== null && projectedGP && projectedGP > 0
+        ? projectedTotal / projectedGP
+        : null;
+    return {
+      sourceId: sourceName, // using name until a stable id is available
+      projectedTotal,
+      projectedPerGame,
+      actualTotal,
+      actualPerGame
+    };
+  });
+}
+
+function computeSourceMetrics(
+  players: ProcessedPlayer[],
+  fantasyPointSettings: Record<string, number>,
+  sourceControls: Record<string, { isSelected: boolean; weight: number }>
+): ComputedAnalysisResult {
+  const selectedSourceIds = Object.entries(sourceControls)
+    .filter(([, c]) => c.isSelected && c.weight > 0)
+    .map(([id]) => id);
+  if (!selectedSourceIds.length) {
+    return {
+      overallRankingsTotal: [],
+      overallRankingsPerGame: [],
+      positionRankings: [],
+      roundRankings: []
+    };
+  }
+
+  // Map: sourceName -> arrays
+  interface AggBuckets {
+    errors: number[]; // actual - projected
+    absErrors: number[];
+    projectedTotals: number[];
+    accuracyPcts: number[]; // per-player accuracy % using projected baseline
+    errorsPerGame: number[];
+    absErrorsPerGame: number[];
+    projectedPerGame: number[];
+    accuracyPctsPerGame: number[];
+    within10: number;
+    within20: number;
+    within10PerGame: number;
+    within20PerGame: number;
+    count: number;
+    countPerGame: number;
+    positions: Record<
+      string,
+      {
+        acc: number[];
+        accPg: number[];
+        count: number;
+        countPg: number;
+        errors: number[];
+        errorsPg: number[];
+      }
+    >; // for position metrics
+  }
+
+  const agg: Record<string, AggBuckets> = {};
+
+  players.forEach((p) => {
+    if (!p || p.fantasyPoints.actual === null) return;
+    const position = (p.displayPosition || "UNK").split(",")[0].trim();
+    const projections = buildPerSourcePlayerProjections(
+      p,
+      fantasyPointSettings,
+      selectedSourceIds
+    );
+    projections.forEach((proj) => {
+      if (proj.projectedTotal === null || proj.actualTotal === null) return;
+      const key = proj.sourceId;
+      if (!agg[key]) {
+        agg[key] = {
+          errors: [],
+          absErrors: [],
+          projectedTotals: [],
+          accuracyPcts: [],
+          errorsPerGame: [],
+          absErrorsPerGame: [],
+          projectedPerGame: [],
+          accuracyPctsPerGame: [],
+          within10: 0,
+          within20: 0,
+          within10PerGame: 0,
+          within20PerGame: 0,
+          count: 0,
+          countPerGame: 0,
+          positions: {}
+        };
+      }
+      const bucket = agg[key];
+      const error = proj.actualTotal - proj.projectedTotal;
+      const absError = Math.abs(error);
+      const accuracyPct =
+        proj.projectedTotal !== 0
+          ? (1 - absError / Math.max(1e-9, Math.abs(proj.projectedTotal))) * 100
+          : 0;
+      bucket.errors.push(error);
+      bucket.absErrors.push(absError);
+      bucket.projectedTotals.push(proj.projectedTotal);
+      bucket.accuracyPcts.push(accuracyPct);
+      if (absError / Math.max(1e-9, Math.abs(proj.projectedTotal)) <= 0.1)
+        bucket.within10++;
+      if (absError / Math.max(1e-9, Math.abs(proj.projectedTotal)) <= 0.2)
+        bucket.within20++;
+      bucket.count++;
+
+      if (proj.projectedPerGame !== null && proj.actualPerGame !== null) {
+        const errorPg = proj.actualPerGame - proj.projectedPerGame;
+        const absErrorPg = Math.abs(errorPg);
+        const accuracyPctPg =
+          proj.projectedPerGame !== 0
+            ? (1 -
+                absErrorPg / Math.max(1e-9, Math.abs(proj.projectedPerGame))) *
+              100
+            : 0;
+        bucket.errorsPerGame.push(errorPg);
+        bucket.absErrorsPerGame.push(absErrorPg);
+        bucket.projectedPerGame.push(proj.projectedPerGame);
+        bucket.accuracyPctsPerGame.push(accuracyPctPg);
+        if (absErrorPg / Math.max(1e-9, Math.abs(proj.projectedPerGame)) <= 0.1)
+          bucket.within10PerGame++;
+        if (absErrorPg / Math.max(1e-9, Math.abs(proj.projectedPerGame)) <= 0.2)
+          bucket.within20PerGame++;
+        bucket.countPerGame++;
+      }
+
+      if (!bucket.positions[position]) {
+        bucket.positions[position] = {
+          acc: [],
+          accPg: [],
+          count: 0,
+          countPg: 0,
+          errors: [],
+          errorsPg: []
+        };
+      }
+      bucket.positions[position].acc.push(accuracyPct);
+      bucket.positions[position].errors.push(error);
+      bucket.positions[position].count++;
+      if (proj.projectedPerGame !== null && proj.actualPerGame !== null) {
+        const lastAccPg =
+          bucket.accuracyPctsPerGame[bucket.accuracyPctsPerGame.length - 1];
+        bucket.positions[position].accPg.push(lastAccPg);
+        bucket.positions[position].errorsPg.push(
+          bucket.errorsPerGame[bucket.errorsPerGame.length - 1]
+        );
+        bucket.positions[position].countPg++;
+      }
+    });
+  });
+
+  const overallMetrics: SourceOverallMetrics[] = Object.entries(agg).map(
+    ([sourceName, b]) => {
+      const avgAbsError = b.absErrors.length
+        ? b.absErrors.reduce((a, c) => a + c, 0) / b.absErrors.length
+        : 0;
+      const avgAcc = b.accuracyPcts.length
+        ? b.accuracyPcts.reduce((a, c) => a + c, 0) / b.accuracyPcts.length
+        : 0;
+      const bias = b.errors.length
+        ? b.errors.reduce((a, c) => a + c, 0) / b.errors.length
+        : 0;
+      const avgAbsErrorPg = b.absErrorsPerGame.length
+        ? b.absErrorsPerGame.reduce((a, c) => a + c, 0) /
+          b.absErrorsPerGame.length
+        : 0;
+      const avgAccPg = b.accuracyPctsPerGame.length
+        ? b.accuracyPctsPerGame.reduce((a, c) => a + c, 0) /
+          b.accuracyPctsPerGame.length
+        : 0;
+      const biasPg = b.errorsPerGame.length
+        ? b.errorsPerGame.reduce((a, c) => a + c, 0) / b.errorsPerGame.length
+        : 0;
+
+      // Simple composite quality score (can be refined later)
+      const qualityScore =
+        avgAcc -
+        avgAbsError +
+        (b.within20 / Math.max(1, b.count)) * 100 -
+        Math.abs(bias) * 0.5;
+      const qualityScorePg =
+        avgAccPg -
+        avgAbsErrorPg +
+        (b.within20PerGame / Math.max(1, b.countPerGame)) * 100 -
+        Math.abs(biasPg) * 0.5;
+
+      const positionMetrics: SourceOverallMetrics["positionMetrics"] = {};
+      Object.entries(b.positions).forEach(([pos, pm]) => {
+        positionMetrics[pos] = {
+          playerCount: pm.count,
+          averageAccuracy: pm.acc.length
+            ? pm.acc.reduce((a, c) => a + c, 0) / pm.acc.length
+            : 0,
+          averageAccuracyPerGame: pm.accPg.length
+            ? pm.accPg.reduce((a, c) => a + c, 0) / pm.accPg.length
+            : 0
+        };
+      });
+
+      return {
+        sourceId: sourceName,
+        sourceName,
+        playersWithBothProjectedAndActual: b.count,
+        averageMarginOfError: avgAbsError,
+        medianMarginOfError: median(b.absErrors),
+        averageAccuracyPercentage: avgAcc,
+        withinTenPercent: b.within10,
+        withinTwentyPercent: b.within20,
+        overProjectionBias: bias,
+        qualityScore: qualityScore,
+        averageMarginOfErrorPerGame: avgAbsErrorPg,
+        medianMarginOfErrorPerGame: median(b.absErrorsPerGame),
+        averageAccuracyPercentagePerGame: avgAccPg,
+        withinTenPercentPerGame: b.within10PerGame,
+        withinTwentyPercentPerGame: b.within20PerGame,
+        overProjectionBiasPerGame: biasPg,
+        qualityScorePerGame: qualityScorePg,
+        positionMetrics
+      };
+    }
+  );
+
+  // Sort for overall rankings (total)
+  const overallRankingsTotal = [...overallMetrics].sort(
+    (a, b) => b.qualityScore - a.qualityScore
+  );
+  const overallRankingsPerGame = [...overallMetrics].sort(
+    (a, b) => b.qualityScorePerGame - a.qualityScorePerGame
+  );
+
+  // Position rankings
+  const positions = new Set<string>();
+  overallMetrics.forEach((m) =>
+    Object.keys(m.positionMetrics).forEach((p) => positions.add(p))
+  );
+  const positionRankings: PositionRankingItem[] = Array.from(positions)
+    .sort()
+    .map((pos) => {
+      const rankings = overallMetrics
+        .filter((m) => m.positionMetrics[pos]?.playerCount > 0)
+        .map((m) => ({
+          sourceId: m.sourceId,
+          sourceName: m.sourceName,
+          rank: 0, // temp, will reassign
+          averageAccuracy: m.positionMetrics[pos].averageAccuracy,
+          averageAccuracyPerGame: m.positionMetrics[pos].averageAccuracyPerGame,
+          averageMarginOfError: m.averageMarginOfError,
+          averageMarginOfErrorPerGame: m.averageMarginOfErrorPerGame,
+          playerCount: m.positionMetrics[pos].playerCount
+        }))
+        .sort((a, b) => b.averageAccuracy - a.averageAccuracy)
+        .map((r, idx) => ({ ...r, rank: idx + 1 }));
+      return { position: pos, rankings };
+    });
+
+  // Round rankings using yahooAvgPick (12 picks per round)
+  const roundGroups: Record<number, ProcessedPlayer[]> = {};
+  players.forEach((p) => {
+    if (p.yahooAvgPick && p.yahooAvgPick > 0) {
+      const round = Math.ceil(p.yahooAvgPick / 12);
+      if (round <= 20) {
+        if (!roundGroups[round]) roundGroups[round] = [];
+        roundGroups[round].push(p);
+      }
+    }
+  });
+
+  const roundRankings: RoundRankingItem[] = Object.keys(roundGroups)
+    .map(Number)
+    .sort((a, b) => a - b)
+    .map((round) => {
+      const roundPlayers = roundGroups[round];
+      // Recompute metrics limited to these players
+      const subsetMetrics = computeSourceMetrics(
+        roundPlayers,
+        fantasyPointSettings,
+        sourceControls
+      ).overallRankingsTotal;
+      const rankings = subsetMetrics
+        .map((m) => ({
+          sourceId: m.sourceId,
+          sourceName: m.sourceName,
+          rank: 0,
+          averageAccuracy: m.averageAccuracyPercentage,
+          averageAccuracyPerGame: m.averageAccuracyPercentagePerGame,
+          averageMarginOfError: m.averageMarginOfError,
+          averageMarginOfErrorPerGame: m.averageMarginOfErrorPerGame,
+          playerCount: m.playersWithBothProjectedAndActual
+        }))
+        .sort((a, b) => b.averageAccuracy - a.averageAccuracy)
+        .map((r, idx) => ({ ...r, rank: idx + 1 }));
+      return { round, roundLabel: `Round ${round}`, rankings };
+    });
+
+  return {
+    overallRankingsTotal,
+    overallRankingsPerGame,
+    positionRankings,
+    roundRankings
+  };
+}
+
 export const ProjectionSourceAnalysis: React.FC<
   ProjectionSourceAnalysisProps
-> = ({ players, fantasyPointSettings, sourceControls, activePlayerType }) => {
+> = ({ players, fantasyPointSettings, sourceControls }) => {
   const [selectedView, setSelectedView] = useState<
     "overall" | "positions" | "rounds" | "detailed"
   >("overall");
   const [usePerGameMetrics, setUsePerGameMetrics] = useState<boolean>(false);
 
-  const analysis = useProjectionSourceAnalysis(
-    players,
-    fantasyPointSettings,
-    sourceControls
+  const analysis = useMemo(
+    () => computeSourceMetrics(players, fantasyPointSettings, sourceControls),
+    [players, fantasyPointSettings, sourceControls]
   );
 
   if ((analysis.overallRankingsTotal?.length || 0) === 0) {
@@ -599,9 +1023,9 @@ function getBiasClassName(bias: number): string {
 
 // Helper function to dynamically re-rank position data based on metric type
 function getDynamicPositionRankings(
-  positionRankings: PositionSourceRanking[],
+  positionRankings: PositionRankingItem[],
   usePerGameMetrics: boolean
-): PositionSourceRanking[] {
+): PositionRankingItem[] {
   return positionRankings.map((positionData) => ({
     ...positionData,
     rankings: [...positionData.rankings]
@@ -620,9 +1044,9 @@ function getDynamicPositionRankings(
 
 // Helper function to dynamically re-rank round data based on metric type
 function getDynamicRoundRankings(
-  roundRankings: RoundSourceRanking[],
+  roundRankings: RoundRankingItem[],
   usePerGameMetrics: boolean
-): RoundSourceRanking[] {
+): RoundRankingItem[] {
   return roundRankings.map((roundData) => ({
     ...roundData,
     rankings: [...roundData.rankings]
