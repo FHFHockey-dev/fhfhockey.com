@@ -108,13 +108,7 @@ function TeamRow(props: TeamRowProps) {
             height={24}
             src={team.logo}
             title={team.name}
-            style={{
-              minWidth: 24,
-              minHeight: 24,
-              width: 24,
-              height: 24,
-              display: "block"
-            }}
+            className={styles.teamLogo24}
           />
         </span>
       </td>
@@ -275,13 +269,14 @@ function MatchUpCell({
                 alt={home ? "Home" : "Away"}
                 width={14}
                 height={14}
-                style={{ opacity: 0.6 }}
+                className={styles.homeAwayIconMobile}
               />
             </span>
             <Image
               className={clsx(
                 styles.mobileLogoSize,
-                home ? styles["home-shadow"] : styles["away-shadow"]
+                home ? styles["home-shadow"] : styles["away-shadow"],
+                excluded ? styles.excludedStateMobile : undefined
               )}
               objectFit="contain"
               alt={`${opponentTeam.name} logo`}
@@ -289,21 +284,14 @@ function MatchUpCell({
               height={22}
               src={opponentTeam.logo}
               title={opponentTeam.name}
-              style={{
-                position: "absolute",
-                zIndex: 1,
-                padding: "0px",
-                overflow: "visible",
-                opacity: excluded ? 0.45 : 1,
-                filter: excluded ? "grayscale(35%)" : undefined
-              }}
             />
           </div>
         ) : (
           <>
             <Image
               className={clsx(
-                home ? styles["home-shadow"] : styles["away-shadow"]
+                home ? styles["home-shadow"] : styles["away-shadow"],
+                excluded ? styles.excludedStateDesktop : undefined
               )}
               objectFit="contain"
               alt={`${opponentTeam.name} logo`}
@@ -311,18 +299,14 @@ function MatchUpCell({
               height={28}
               src={opponentTeam.logo}
               title={opponentTeam.name}
-              style={{
-                opacity: excluded ? 0.6 : 1,
-                filter: excluded ? "grayscale(35%)" : undefined
-              }}
             />
-            <span className={styles.homeAwayIconDesktop}>
+            <span className={styles.homeAwayIconDesktopWrapper}>
               <Image
                 src={home ? "/pictures/homeIcon.png" : "/pictures/awayIcon.png"}
                 alt={home ? "Home" : "Away"}
                 width={18}
                 height={18}
-                style={{ opacity: 0.85 }}
+                className={styles.homeAwayIconDesktopImg}
               />
             </span>
           </>

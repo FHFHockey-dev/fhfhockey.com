@@ -21,6 +21,222 @@
   }
 }
 
+// Accessibility utilities
+.skipLink {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: v.$primary-color;
+  color: v.$text-button;
+  padding: v.$space-sm v.$space-md;
+  z-index: 1000;
+  border-radius: v.$border-radius-sm;
+  text-decoration: none;
+  font-weight: 600;
+  &:focus {
+    top: 0;
+  }
+}
+
+// ============================================================================
+// Visual Simplification Overrides (Cards & Interactive States)
+// ============================================================================
+
+.elevation1 {
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.elevation2 {
+  box-shadow:
+    0 4px 10px -2px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.quickStatCard,
+.card,
+.leaderRow,
+.mobileLeaderboardCard {
+  // Unified surface-1 base
+  background: v.$surface-1;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$radius-md;
+  box-shadow: none;
+  position: relative;
+  transition:
+    background-color v.$transition-duration v.$transition-easing,
+    transform v.$transition-duration v.$ease-desktop-standard,
+    border-color v.$transition-duration v.$transition-easing,
+    box-shadow v.$transition-duration v.$transition-easing;
+}
+
+.quickStatCard.scoring {
+  border-left: 4px solid v.$primary-color;
+}
+.quickStatCard.goaltending {
+  border-left: 4px solid v.$secondary-color;
+}
+.quickStatCard.league {
+  border-left: 4px solid v.$warning-color;
+}
+
+.quickStatCard:hover,
+.quickStatCard:focus-visible,
+.card:hover,
+.card:focus-visible,
+.leaderRow:hover,
+.leaderRow:focus-visible,
+.mobileLeaderboardCard:hover,
+.mobileLeaderboardCard:focus-visible {
+  background: v.$surface-2;
+  transform: translateY(-2px);
+  border-color: v.$border-accent;
+  box-shadow: v.$shadow-hover;
+}
+
+.quickStatCard:active,
+.card:active,
+.leaderRow:active,
+.mobileLeaderboardCard:active {
+  transform: translateY(0);
+  background: v.$surface-1;
+  box-shadow: none;
+}
+
+.quickStatCard:focus-visible,
+.card:focus-visible,
+.leaderRow:focus-visible,
+.mobileLeaderboardCard:focus-visible,
+.teamListItem:focus-visible,
+.filterButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.55);
+}
+
+.teamListItem {
+  border: 1px solid v.$border-secondary;
+  background: v.$surface-1;
+  transition:
+    background-color v.$transition-duration v.$transition-easing,
+    transform v.$transition-duration v.$ease-desktop-standard,
+    border-color v.$transition-duration v.$transition-easing,
+    box-shadow v.$transition-duration v.$transition-easing;
+}
+.teamListItem:hover,
+.teamListItem:focus-visible {
+  background: v.$surface-2;
+  border-color: v.$border-accent;
+  transform: translateY(-2px);
+  box-shadow: v.$shadow-hover;
+}
+.teamListItem:active {
+  transform: translateY(0);
+}
+
+.leaderRow:first-child {
+  border-left: 4px solid v.$primary-color;
+}
+.leaderRow:nth-child(2) {
+  border-left: 4px solid v.$secondary-color;
+}
+.leaderRow:nth-child(3) {
+  border-left: 4px solid v.$warning-color;
+}
+
+.mobileLeaderItem {
+  background: v.$surface-1;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$radius-sm;
+  padding: v.$space-sm v.$space-md;
+  transition:
+    background-color v.$transition-duration v.$transition-easing,
+    transform v.$transition-duration v.$ease-desktop-standard,
+    box-shadow v.$transition-duration v.$transition-easing;
+}
+.mobileLeaderItem + .mobileLeaderItem {
+  margin-top: v.$space-xs;
+}
+.mobileLeaderItem:hover,
+.mobileLeaderItem:focus-visible {
+  background: v.$surface-2;
+  box-shadow: v.$shadow-hover;
+}
+.mobileLeaderItem:active {
+  transform: scale(0.97);
+}
+
+.filterButton {
+  border: 1px solid v.$border-secondary;
+  background: v.$surface-1;
+  color: v.$text-secondary;
+  transition:
+    background-color v.$transition-duration v.$transition-easing,
+    color v.$transition-duration v.$transition-easing,
+    border-color v.$transition-duration v.$transition-easing,
+    box-shadow v.$transition-duration v.$transition-easing;
+}
+.filterButton:hover {
+  background: v.$surface-2;
+}
+.filterButtonActive {
+  background: v.$primary-color;
+  color: v.$text-button;
+  border-color: v.$primary-color;
+  position: relative;
+}
+.filterButtonActive::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-left: 4px solid v.$warning-color;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .quickStatValue {
+    transition:
+      color 0.4s ease,
+      transform 0.4s ease;
+  }
+  .quickStatCard:hover .quickStatValue {
+    transform: translateY(-2px);
+  }
+}
+
+.quickStatLabel {
+  letter-spacing: 0.03em;
+}
+.title {
+  letter-spacing: 0.06em;
+}
+
+.accentBarLeft {
+  position: relative;
+}
+.accentBarLeft::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: v.$primary-color;
+}
+
+.visuallyHidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  border: 0;
+  white-space: nowrap;
+}
+
 // =============================================================================
 // MAIN LAYOUT - MOBILE FIRST SINGLE COLUMN STACK
 // =============================================================================
@@ -490,14 +706,95 @@
 // =============================================================================
 
 .teamSelectheader {
+  // Part 1 Enhancement: Immersive full-bleed teams grid module
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: v.$space-md;
+  justify-content: flex-start;
+  margin: 0 0 v.$space-md 0;
   padding: 0;
-  position: static;
   background: transparent;
+  position: relative;
+  // Full-bleed technique while inside padded container
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  // Height transition variables
+  // NOTE: Original single heuristic (340px) caused clipping on narrower breakpoints when the grid reflowed to more rows.
+  // Provide responsive heuristics; JS can still override via inline style if present.
+  --teams-grid-expanded-height: 360px; // base desktop (16x2)
+  @media (max-width: v.$breakpoint-desktop) {
+    --teams-grid-expanded-height: 420px;
+  } // 8x4 layout
+  @media (max-width: v.$breakpoint-tablet) {
+    --teams-grid-expanded-height: 620px;
+  } // 4x8 stack
+  --teams-grid-collapsed-height: 48px;
+  max-height: var(--teams-grid-expanded-height);
+  // Keep overflow hidden only while expanded/collapsed animation runs; allow internal items breathing room
+  overflow: hidden;
+  // Remove outer decorative border; rely on inner .teamsSection border only.
+  border: none;
+  padding-top: v.$space-sm; // minimal space for legend overlap illusion
+  &::after {
+    display: none;
+  }
+  transition:
+    max-height 260ms ease,
+    opacity 200ms ease;
+  content-visibility: auto;
+  contain: layout paint style; // helps performance
+  will-change: max-height;
+  z-index: 100;
+
+  &::before {
+    display: none;
+  }
+
+  &.collapsed {
+    max-height: var(--teams-grid-collapsed-height);
+    &::before {
+      opacity: 0.35;
+    } // lighter when collapsed
+    .teamNameHeader {
+      opacity: 0;
+      transform: translateY(-6px);
+    }
+    .teamList {
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
+
+  &.expanded {
+    max-height: var(--teams-grid-expanded-height);
+    &::before {
+      opacity: 0.55;
+    }
+    .teamNameHeader {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .teamList {
+      opacity: 1;
+      pointer-events: auto;
+    }
+  }
+
+  // Smooth fade for inner elements
+  .teamNameHeader,
+  .teamList {
+    transition:
+      opacity 220ms ease,
+      transform 260ms ease;
+  }
+
+  // Desktop: constrain back to layout width
+  @media (min-width: v.$breakpoint-desktop) {
+    border-radius: v.$border-radius-lg;
+    width: 100%;
+    margin-left: 0;
+    max-width: 100%;
+  }
 }
 
 .teamsGridContainer {
@@ -510,18 +807,24 @@
 }
 
 .teamsSection {
-  border: 4px solid v.$border-primary;
+  // Updated: simplified container relying on outer radial gradient
+  border: 1px solid v.$border-secondary;
   border-radius: v.$border-radius-lg;
   padding: v.$space-md;
   height: 100%;
-  background: linear-gradient(
-    180deg,
-    v.$background-medium 0%,
-    v.$background-dark 100%
-  );
   margin: 0;
   position: relative;
   overflow: hidden;
+  backdrop-filter: blur(6px) saturate(130%);
+  // Fallback gradient uses team CSS vars directly (no mixing in Sass)
+  background: linear-gradient(
+    180deg,
+    var(--team-primary, #{v.$background-medium}) 0%,
+    var(--team-secondary, #{v.$background-dark}) 100%
+  );
+  transition:
+    background 400ms ease,
+    border-color 260ms ease;
 
   // Remove decorative diagonal layers for consistency & performance
   &::before,
@@ -573,13 +876,11 @@
 
   // Show background when team colors are active
   &.teamsSectionActive {
-    &::before {
-      opacity: 1;
-    }
-
+    &::before,
     &::after {
-      opacity: 1;
+      opacity: 0.8;
     }
+    border-color: v.$border-accent;
   }
 
   // First triggered state - moves to right position and stays
@@ -685,9 +986,9 @@
 
 .teamsTitle {
   position: absolute;
-  top: 0;
+  top: 0; // sits on the border
   left: v.$space-lg;
-  transform: translateY(-50%);
+  transform: translateY(-50%); // half in / half out effect (legend style)
   color: v.$text-primary;
   font-weight: 600;
   font-size: v.$font-size-lg;
@@ -696,11 +997,21 @@
   font-family: v.$font-family-accent;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  background: transparent;
   z-index: 10;
+  line-height: 1.1;
+  // background: linear-gradient(
+  //   90deg,
+  //   rgba(0, 0, 0, 0.65),
+  //   rgba(0, 0, 0, 0.4)
+  // ); // mask border behind text center
+  backdrop-filter: blur(4px) saturate(140%);
+  -webkit-backdrop-filter: blur(4px) saturate(140%);
+  // border: 1px solid rgba(255, 255, 255, 0.06);
+  // border-radius: v.$border-radius-sm;
+  box-shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.6);
   text-shadow:
-    0 3px 6px rgba(0, 0, 0, 0.8),
-    0 4px 12px rgba(0, 0, 0, 0.4);
+    0 2px 4px rgba(0, 0, 0, 0.7),
+    0 3px 10px rgba(0, 0, 0, 0.35);
 }
 
 .titleAccent {
@@ -765,19 +1076,20 @@
   transition:
     background 0.18s ease,
     border-color 0.18s ease,
-    transform 0.18s ease;
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
   padding: v.$space-sm;
   border-radius: v.$border-radius-lg;
-  background: v.$background-medium;
-  border: 2px solid v.$border-primary;
+  background: v.$surface-1;
+  border: 1px solid v.$border-primary;
   position: relative;
   z-index: 3;
 
   &:hover {
     transform: translateY(-1px);
     border-color: v.$border-accent;
-    background: v.$background-light;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    background: v.$surface-2;
+    box-shadow: v.$shadow-hover;
     .teamAbbreviation {
       color: v.$text-primary;
     }
@@ -1389,13 +1701,16 @@
   // Mobile: Dynamic positioning based on teams grid state
   position: sticky;
   z-index: 99; // Just below teams grid (z-index: 100)
-  background: v.$background-medium;
+  background: rgba(20, 28, 34, 0.65);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
   padding: v.$mobile-container-padding;
   border-bottom: 1px solid v.$border-secondary;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition:
     top v.$mobile-animation-normal v.$mobile-easing-smooth,
-    box-shadow v.$mobile-animation-fast ease;
+    box-shadow v.$mobile-animation-fast ease,
+    background 220ms ease;
   margin-bottom: 0;
 
   // When teams grid is expanded, stick below it
@@ -1403,7 +1718,9 @@
 
   // When teams grid is collapsed, adjust positioning
   &.teamsCollapsed {
-    top: 44px; // Height of collapsed teams grid
+    top: 48px; // Synced with collapsed teams grid
+    border-bottom: 1px solid v.$border-accent;
+    background: rgba(20, 28, 34, 0.75);
   }
 
   &.teamsExpanded {
@@ -1416,6 +1733,7 @@
   @media (min-width: v.$breakpoint-tablet-min) {
     position: static;
     background: transparent;
+    backdrop-filter: none;
     padding: 0;
     border: none;
     box-shadow: none;
@@ -1427,6 +1745,17 @@
 .searchBarWrapper {
   max-width: 100%;
   margin: 0 auto;
+  position: relative;
+
+  &::before {
+    // subtle inner glow edge when floating over content
+    content: "";
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: v.$border-radius-lg;
+    pointer-events: none;
+  }
 
   // Mobile: Full width within container padding
   @media (max-width: v.$breakpoint-mobile-max) {
@@ -1436,6 +1765,9 @@
   // Progressive enhancement for larger screens
   @media (min-width: v.$breakpoint-tablet-min) {
     max-width: 400px;
+    &::before {
+      display: none;
+    }
   }
 }
 

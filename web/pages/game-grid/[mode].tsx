@@ -15,7 +15,7 @@ function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
   } as const;
 
   const [mode, setMode] = useState<GameGridMode>(
-    initialMode ?? "7-Day Forecast"
+    initialMode ?? "7-Day-Forecast"
   );
   const [orientation, setOrientation] = useState<"horizontal" | "vertical">(
     "horizontal"
@@ -60,11 +60,9 @@ function GameGridPage({ initialMode }: { initialMode: GameGridMode }) {
 }
 
 export const getServerSideProps: GetServerSideProps = async ({ query }) => {
-  return {
-    props: {
-      initialMode: query.mode ?? "basic"
-    }
-  };
+  const mode =
+    query.mode === "10-Day-Forecast" ? "10-Day-Forecast" : "7-Day-Forecast";
+  return { props: { initialMode: mode } };
 };
 
 export default GameGridPage;

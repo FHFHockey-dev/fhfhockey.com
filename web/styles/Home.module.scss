@@ -309,6 +309,15 @@ $mobile-column-short: 30px;
   }
 }
 
+.noGamesMessage {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: v.$space-xl;
+  font-family: v.$font-family-primary;
+  font-size: 1rem;
+  color: v.$text-color-secondary;
+}
+
 .combinedGameCard {
   display: flex;
   flex-direction: row;
@@ -714,6 +723,20 @@ $mobile-column-short: 30px;
     min-width: 100px; // Ensure decent button width
     padding: v.$space-sm v.$space-lg;
   }
+}
+
+// Utility: visually hidden (accessible) content
+.visuallyHidden {
+  position: absolute !important;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px); /* deprecated but widely supported */
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+  padding: 0;
+  margin: -1px;
 }
 
 // --- Chart Container ---

@@ -1,6 +1,6 @@
 // /pages/StatsPage.tsx
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import styles from "styles/Stats.module.scss";
 import LeaderboardCategory from "components/StatsPage/LeaderboardCategory";
 import LeaderboardCategoryBSH from "components/StatsPage/LeaderboardCategoryBSH";
@@ -60,6 +60,13 @@ export default function StatsPage({
   goalieLeadersQS,
   teams = []
 }: StatsProps & { teams: TeamListItem[] }) {
+  // Dev logging wrapper (suppressed in production)
+  const debugLog = (...args: any[]) => {
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.log(...args);
+    }
+  };
   const [selectedFilter, setSelectedFilter] = useState<string>("all");
   const [activeTeamColors, setActiveTeamColors] = useState<TeamColors | null>(
     null
@@ -183,6 +190,34 @@ export default function StatsPage({
     }
   ];
 
+  // Accessible filter options definition
+  const filterOptions = useMemo(
+    () => [
+      { key: "all", label: "All Players" },
+      { key: "C", label: "Center" },
+      { key: "LW", label: "Left Wing" },
+      { key: "RW", label: "Right Wing" },
+      { key: "D", label: "Defense" },
+      { key: "G", label: "Goalie" }
+    ],
+    []
+  );
+
+  const selectedFilterIndex = filterOptions.findIndex(
+    (f) => f.key === selectedFilter
+  );
+
+  const onFilterKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown"].includes(e.key))
+      return;
+    e.preventDefault();
+    if (selectedFilterIndex === -1) return;
+    const dir = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1;
+    const nextIndex =
+      (selectedFilterIndex + dir + filterOptions.length) % filterOptions.length;
+    setSelectedFilter(filterOptions[nextIndex].key);
+  };
+
   // Scroll handler for teams grid morphing - OPTIMIZED FOR MOBILE UX
   useEffect(() => {
     // Only run on mobile
@@ -246,7 +281,7 @@ export default function StatsPage({
           // MOBILE UX DEBUG LOGGING (reduced frequency)
           if (scrollDelta > 10) {
             // Only log significant movements
-            console.log("📱 Mobile Scroll:", {
+            debugLog("📱 Mobile Scroll:", {
               position: currentScrollY,
               delta: scrollDelta,
               state: currentState,
@@ -264,11 +299,11 @@ export default function StatsPage({
             currentState !== "expanded"
           ) {
             // At the very top - expand
-            console.log("🟢 EXPANDING teams grid at scroll:", currentScrollY);
+            debugLog("🟢 EXPANDING teams grid at scroll:", currentScrollY);
 
             // CRITICAL FIX: Use React's batch update to ensure immediate state change
             setTeamsGridState(() => {
-              console.log("🟢 State setter called: expanded");
+              debugLog("🟢 State setter called: expanded");
               return "expanded";
             });
 
@@ -283,7 +318,7 @@ export default function StatsPage({
               // Force immediate DOM update
               teamsGridElement.setAttribute("data-state", "expanded");
               teamsGridElement.setAttribute("data-grid-state", "expanded");
-              console.log("✅ DOM element found and updated to expanded");
+              debugLog("✅ DOM element found and updated to expanded");
             }
           } else if (
             currentScrollY >= collapseThreshold &&
@@ -291,11 +326,11 @@ export default function StatsPage({
             newScrollDirection === "down" // Only collapse when scrolling down
           ) {
             // Scrolled down past threshold and moving down - collapse
-            console.log("🔴 COLLAPSING teams grid at scroll:", currentScrollY);
+            debugLog("🔴 COLLAPSING teams grid at scroll:", currentScrollY);
 
             // CRITICAL FIX: Use React's batch update to ensure immediate state change
             setTeamsGridState(() => {
-              console.log("🔴 State setter called: collapsed");
+              debugLog("🔴 State setter called: collapsed");
               return "collapsed";
             });
 
@@ -310,7 +345,7 @@ export default function StatsPage({
               // Force immediate DOM update
               teamsGridElement.setAttribute("data-state", "collapsed");
               teamsGridElement.setAttribute("data-grid-state", "collapsed");
-              console.log("✅ DOM element found and updated to collapsed");
+              debugLog("✅ DOM element found and updated to collapsed");
             }
           }
 
@@ -329,9 +364,9 @@ export default function StatsPage({
     setLastScrollY(initialScrollY);
 
     // ENHANCED INITIAL STATE LOGIC WITH FORCED UPDATE
-    console.log("🚀 Initial scroll position:", initialScrollY);
+    debugLog("🚀 Initial scroll position:", initialScrollY);
     if (initialScrollY <= 30) {
-      console.log("🟢 Initial state: expanded");
+      debugLog("🟢 Initial state: expanded");
       setTeamsGridState("expanded");
 
       // Force DOM update immediately
@@ -341,12 +376,12 @@ export default function StatsPage({
         ) as HTMLElement;
         if (teamsGridElement) {
           teamsGridElement.setAttribute("data-grid-state", "expanded");
-          console.log("🟢 Initial DOM state set to expanded");
+          debugLog("🟢 Initial DOM state set to expanded");
         }
       }, 0);
     } else if (initialScrollY >= 80) {
       // UPDATED: Use new collapse threshold
-      console.log("🔴 Initial state: collapsed");
+      debugLog("🔴 Initial state: collapsed");
       setTeamsGridState("collapsed");
 
       // Force DOM update immediately
@@ -356,7 +391,7 @@ export default function StatsPage({
         ) as HTMLElement;
         if (teamsGridElement) {
           teamsGridElement.setAttribute("data-grid-state", "collapsed");
-          console.log("🔴 Initial DOM state set to collapsed");
+          debugLog("🔴 Initial DOM state set to collapsed");
         }
       }, 0);
     }
@@ -391,6 +426,10 @@ export default function StatsPage({
 
   return (
     <div className={styles.container}>
+      {/* Skip link for keyboard users */}
+      <a href="#main-content" className={styles.skipLink}>
+        Skip to main content
+      </a>
       {/* Conditional Teams Grid - Mobile vs Desktop */}
       {isMobile ? (
         <MobileTeamList
@@ -405,7 +444,11 @@ export default function StatsPage({
         />
       ) : (
         // Desktop Teams Grid (existing implementation)
-        <div className={`${styles.teamSelectheader} ${styles[teamsGridState]}`}>
+        <div
+          className={`${styles.teamSelectheader} ${styles[teamsGridState]}`}
+          role="region"
+          aria-label="Select an NHL team"
+        >
           <div className={styles.teamsGridContainer}>
             <h2 className={styles.teamsTitle}>
               <span className={styles.titleAccent}>NHL Teams</span>
@@ -433,7 +476,11 @@ export default function StatsPage({
                 </span>
               </div>
               {/* Desktop team grid with containers and abbreviations */}
-              <div className={styles.teamList}>
+              <div
+                className={styles.teamList}
+                role="list"
+                aria-label="Teams list"
+              >
                 {teams.map((team) => (
                   <Link
                     key={team.team_id}
@@ -451,6 +498,8 @@ export default function StatsPage({
                         src={`/teamLogos/${team.abbreviation}.png`}
                         alt={team.name}
                         className={styles.teamLogo}
+                        width={45}
+                        height={45}
                         loading="lazy"
                         decoding="async"
                         onError={(e) => {
@@ -479,13 +528,17 @@ export default function StatsPage({
       </div>
 
       {/* Main Layout with Sidebars */}
-      <div className={styles.mainLayout}>
+      <div className={styles.mainLayout} id="main-content" role="main">
         {/* Left Sidebar - Skater Statistics */}
-        <aside className={styles.leftSidebar}>
+        <aside
+          className={styles.leftSidebar}
+          role="complementary"
+          aria-labelledby="skater-stats-heading"
+        >
           <header className={styles.leaderboardHeader}>
-            <h1 className={styles.title}>
+            <h2 id="skater-stats-heading" className={styles.title}>
               <span className={styles.titleAccent}>Skater Statistics</span>
-            </h1>
+            </h2>
             <div className={styles.seasonBadge}>2024-25 Season</div>
           </header>
           <div className={styles.leaderboards}>
@@ -525,17 +578,25 @@ export default function StatsPage({
               {/* Quick Stats - Bento Box Layout */}
               <section className={styles.quickStatsSection}>
                 <h2 className={styles.sectionTitle}>Key Metrics</h2>
-                <div className={styles.quickStatsGrid}>
+                <div
+                  className={styles.quickStatsGrid}
+                  role="list"
+                  aria-label="Key metrics"
+                >
                   {quickStats.map((stat, index) => (
                     <div
                       key={index}
+                      role="listitem"
                       className={`${styles.quickStatCard} ${stat.category ? styles[stat.category] : ""}`}
                     >
-                      <div className={styles.quickStatIcon}>
+                      <div className={styles.quickStatIcon} aria-hidden="true">
                         <div className={styles.iconInner}></div>
                       </div>
                       <div className={styles.quickStatContent}>
-                        <div className={styles.quickStatValue}>
+                        <div
+                          className={styles.quickStatValue}
+                          aria-label={`${stat.label} value`}
+                        >
                           {stat.value}
                         </div>
                         <div className={styles.quickStatLabel}>
@@ -555,45 +616,65 @@ export default function StatsPage({
           </div>
 
           {/* Position Filter */}
-          <section className={styles.filterSection}>
-            <h3 className={styles.filterTitle}>Filter by Position</h3>
-            <div className={styles.filterButtons}>
-              {[
-                { key: "all", label: "All Players" },
-                { key: "C", label: "Center" },
-                { key: "LW", label: "Left Wing" },
-                { key: "RW", label: "Right Wing" },
-                { key: "D", label: "Defense" },
-                { key: "G", label: "Goalie" }
-              ].map((filter) => (
-                <button
-                  key={filter.key}
-                  className={`${styles.filterButton} ${
-                    selectedFilter === filter.key
-                      ? styles.filterButtonActive
-                      : ""
-                  }`}
-                  onClick={() => setSelectedFilter(filter.key)}
-                >
-                  {filter.label}
-                </button>
-              ))}
+          <section
+            className={styles.filterSection}
+            aria-labelledby="position-filter-heading"
+          >
+            <h2 id="position-filter-heading" className={styles.filterTitle}>
+              Filter by Position
+            </h2>
+            <div
+              className={styles.filterButtons}
+              role="radiogroup"
+              aria-label="Player position filter"
+              onKeyDown={onFilterKeyDown}
+            >
+              {filterOptions.map((filter, idx) => {
+                const isSelected = selectedFilter === filter.key;
+                return (
+                  <button
+                    key={filter.key}
+                    role="radio"
+                    aria-checked={isSelected}
+                    tabIndex={isSelected ? 0 : -1}
+                    className={`${styles.filterButton} ${
+                      isSelected ? styles.filterButtonActive : ""
+                    }`}
+                    onClick={() => setSelectedFilter(filter.key)}
+                  >
+                    {filter.label}
+                  </button>
+                );
+              })}
+              {/* Live region announcing current filter */}
+              <div aria-live="polite" className={styles.visuallyHidden}>
+                Selected filter: {filterOptions[selectedFilterIndex]?.label}
+              </div>
             </div>
           </section>
 
           {/* Goalie Share Chart */}
-          <section className={styles.goalieChartSection}>
-            <h3 className={styles.sectionTitle}>Goalie Share Analysis</h3>
+          <section
+            className={styles.goalieChartSection}
+            aria-labelledby="goalie-share-heading"
+          >
+            <h2 id="goalie-share-heading" className={styles.sectionTitle}>
+              Goalie Share Analysis
+            </h2>
             <GoalieShareChart />
           </section>
         </main>
 
         {/* Right Sidebar - Goaltender Statistics */}
-        <aside className={styles.rightSidebar}>
+        <aside
+          className={styles.rightSidebar}
+          role="complementary"
+          aria-labelledby="goalie-stats-heading"
+        >
           <header className={styles.leaderboardHeader}>
-            <h1 className={styles.title}>
+            <h2 id="goalie-stats-heading" className={styles.title}>
               <span className={styles.titleAccent}>Goaltender Statistics</span>
-            </h1>
+            </h2>
           </header>
           <div className={styles.leaderboards}>
             <LeaderboardCategoryGoalie

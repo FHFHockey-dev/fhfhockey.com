@@ -146,6 +146,19 @@ $background-light: #202020; // legacy dark-light surface
 $background-lighter: color.adjust($background-light, $lightness: 10%);
 $background-header: color.adjust($background-dark, $lightness: -5%);
 
+// Unified surface elevation ramp (new)
+$surface-0: $background-dark; // page canvas
+$surface-1: $background-medium; // base card / row surfaces
+$surface-2: $background-light; // interactive hover / active surface
+
+// Elevation shadow tokens (soft, ambient)
+$shadow-hover:
+  0 4px 16px -4px rgba(0, 0, 0, 0.55),
+  0 0 0 1px rgba(255, 255, 255, 0.04);
+$shadow-focus:
+  0 0 0 2px rgba($primary-color, 0.55),
+  0 4px 16px -4px rgba(0, 0, 0, 0.6);
+
 // Borders
 $border-primary: $color-grey-darker;
 $border-secondary: $color-grey-dark;
@@ -179,6 +192,31 @@ $color-red: $danger-color !default;
 $color-brand-blue: $secondary-color !default;
 $color-blue: #66ccff !default; // retained from original
 $color-transparent: transparent !default;
+
+// --- Unified schedule & ranking tokens (new) ---
+// Consolidate multiple similar greens/reds/yellows used in GameGrid for off-nights, best/worst, intensity, ranks
+$schedule-green: #16c271; // replaces $best-accent, off-night variants
+$schedule-yellow: #c7a441; // replaces mid / warning variants for schedule intensity
+$schedule-red: #b64343; // replaces heavy / worst-accent base
+$rank-good: $primary-color; // ranking positive extreme (was distinct cyan variants)
+$rank-bad: #9e3a3a; // toned red for negative extreme (replaces #6a2c2c/#421515)
+
+// Opacity ramp for fills (limit to a few consistent steps)
+$fill-opacity-subtle: 0.15;
+$fill-opacity: 0.25;
+$fill-opacity-strong: 0.4;
+$fill-opacity-heavy: 0.6;
+
+// Helper mixins for flat (non-gradient) schedule fills
+@mixin schedule-fill($color, $alpha: $fill-opacity) {
+  background-color: rgba($color, $alpha);
+}
+@mixin schedule-outline($color) {
+  box-shadow: inset 0 0 0 1px rgba($color, 0.55);
+}
+
+// (Legacy) Accents slated for removal in refactor passes
+// $best-accent, $worst-accent, off-night/day intensity color literals in component styles
 
 // Legacy background shade aliases referenced in some modules
 $color-bg-dark-1: #101010 !default; // deepest original seed
