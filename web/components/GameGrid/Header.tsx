@@ -135,7 +135,17 @@ function Header({
         {
           label: (
             <div className={styles.headerLabel}>
-              <span className={styles.desktopText}>Score</span>
+              <span className={styles.desktopText}>
+                Score
+                <span
+                  className={styles.weekScoreHelp}
+                  title="Week Score formula explanation"
+                  aria-label="About Week Score formula"
+                  role="img"
+                >
+                  i
+                </span>
+              </span>
               <span className={styles.switchContainer}>
                 <Switch
                   checked={
@@ -163,18 +173,39 @@ function Header({
   return (
     <thead>
       <tr>
-        {/* Team column */}
-        <th>Team</th>
-        {/* Day columns */}
+        <th scope="col" aria-label="Team">
+          Team
+        </th>
         {dayColumns.map((col) => (
-          <th key={col.id} data-intensity={col.intensity}>
+          <th
+            key={col.id}
+            data-intensity={col.intensity}
+            scope="col"
+            aria-label={`${col.id} games column`}
+          >
             {col.label}
           </th>
         ))}
-        {/* Stat columns */}
-        {statsColumns.map((col) => (
-          <th key={col.id}>{col.label}</th>
-        ))}
+        {statsColumns.map((col) => {
+          const isSorted = currentSortKey?.key === (col.id as any);
+          const ariaSort = isSorted
+            ? currentSortKey?.ascending
+              ? "ascending"
+              : "descending"
+            : undefined;
+          return (
+            <th
+              key={col.id}
+              scope="col"
+              aria-sort={ariaSort}
+              className={
+                col.id === "totalGamesPlayed" ? styles.statsStart : undefined
+              }
+            >
+              {col.label}
+            </th>
+          );
+        })}
       </tr>
     </thead>
   );
@@ -228,6 +259,7 @@ function getDayColumns(
           {!extended && (
             <div className={styles.dayToggle}>
               <Toggle
+                size="small"
                 checked={excludedDays.includes(day)}
                 onChange={onChange}
               />

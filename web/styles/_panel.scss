@@ -1,0 +1,134 @@
+@use "styles/vars" as v;
+@use "sass:color";
+
+// Base elevated glass surface (panel container)
+@mixin panel-container(
+  $radius: v.$border-radius,
+  $padding: 0,
+  $gradient-start: rgba(255, 255, 255, 0.05),
+  $gradient-end: rgba(255, 255, 255, 0.02),
+  $blur: 12px
+) {
+  position: relative;
+  border-radius: $radius;
+  background: linear-gradient(135deg, $gradient-start, $gradient-end);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
+  padding: $padding;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+
+  // subtle inner highlight ring
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      140deg,
+      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0)
+    );
+    mix-blend-mode: overlay;
+    opacity: 0.4;
+  }
+}
+
+// Shared title header style (modernized to mirror GameGrid aesthetic)
+@mixin panel-title(
+  $padding-y: 16px,
+  $padding-x: 18px,
+  $gradient-dark: v.$background-dark,
+  $gradient-light: #{"#{v.$background-dark}"}
+) {
+  background: linear-gradient(
+    135deg,
+    $gradient-dark,
+    color.adjust($gradient-dark, $lightness: 4%)
+  );
+  padding: $padding-y $padding-x;
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 300;
+  font-size: clamp(1.15rem, 3.5vw, 1.4rem);
+  border-bottom: 2px solid transparent;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  .container:not(.minimized) & {
+    border-bottom-color: v.$secondary-color;
+  }
+
+  // soft overlay glow on hover when interactive
+  &[data-interactive="true"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+      circle at 30% 40%,
+      rgba(255, 255, 255, 0.1),
+      rgba(255, 255, 255, 0)
+    );
+    opacity: 0;
+    transition: opacity v.$transition-duration v.$transition-easing;
+  }
+  &[data-interactive="true"]:hover::after,
+  &[data-interactive="true"]:focus-visible::after {
+    opacity: 1;
+  }
+}
+
+// Sticky scroll container for tables
+@mixin panel-scroll-wrapper {
+  width: 100%;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.03),
+    rgba(255, 255, 255, 0.01)
+  );
+  transition:
+    max-height 0.4s v.$transition-easing,
+    opacity 0.3s v.$transition-easing,
+    visibility 0.3s v.$transition-easing;
+  max-height: 5000px;
+  opacity: 1;
+  visibility: visible;
+  .container.minimized & {
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+// Unified first column separator
+@mixin first-col-separator($width: 2px) {
+  border-right: $width solid v.$secondary-color;
+}
+
+// Global color utility classes (remove duplicates in modules)
+.red {
+  background-color: rgba(v.$schedule-red, 0.25);
+}
+.orange {
+  background-color: rgba(v.$schedule-yellow, 0.35);
+}
+.yellow {
+  background-color: rgba(v.$schedule-yellow, 0.25);
+}
+.green {
+  background-color: rgba(v.$schedule-green, 0.25);
+}
+.grey {
+  background-color: rgba(128, 128, 128, 0.2);
+}

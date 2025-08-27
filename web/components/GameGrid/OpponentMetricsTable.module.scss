@@ -2,15 +2,17 @@
 
 @use "sass:color";
 @use "styles/vars" as v;
+@use "styles/panel" as panel;
 @use "sass:math";
 
 /* --- Main Container --- */
 .container {
   width: 100%;
   margin: 0 auto;
+  margin-bottom: v.$panel-gap;
   transition: margin-bottom v.$transition-duration v.$transition-easing;
-  background-color: v.$background-dark; // Keep background
   overflow: hidden; // Keep overflow hidden
+  @include panel.panel-container();
 
   // --- Mobile Specific Framing & Styling ---
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
@@ -40,30 +42,7 @@
 
 /* --- Title Header Styling --- */
 .titleHeader {
-  background-color: v.$background-dark;
-  padding: 15px; // *** ALIGNED Padding with .filters ***
-  position: relative;
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-shrink: 0; // Prevent shrinking
-  border-bottom: 2px solid transparent; // *** Default border transparent ***
-  transition: border-bottom-color v.$transition-duration v.$transition-easing; // Transition color
-  font-family: v.$font-family-accent, v.$font-family-primary, sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-
-  // *** Show border only when container is NOT minimized (Applies to Desk & Mob initially) ***
-  .container:not(.minimized) & {
-    border-bottom-color: v.$secondary-color;
-  }
-
-  // Make clickable only on mobile
-  @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    cursor: pointer;
-    user-select: none;
-  }
+  @include panel.panel-title;
 }
 
 .titleText {
@@ -101,25 +80,7 @@
 
 /* --- Table Wrapper (Handles Minimize Collapse) --- */
 .tableWrapper {
-  width: 100%;
-  overflow: hidden;
-  transition:
-    max-height 0.4s v.$transition-easing,
-    opacity 0.3s v.$transition-easing,
-    visibility 0.3s v.$transition-easing;
-  max-height: 5000px;
-  opacity: 1;
-  visibility: visible;
-  background-color: v.$background-dark; // Ensure background matches
-
-  // When container is minimized, collapse this wrapper
-  .container.minimized & {
-    max-height: 0;
-    opacity: 0;
-    visibility: hidden;
-  }
-
-  // --- Desktop Height Filling & Scrolling ---
+  @include panel.panel-scroll-wrapper;
   @media (min-width: v.$breakpoint-desktop) {
     flex-grow: 1;
     overflow-y: auto;
@@ -144,45 +105,48 @@
   table-layout: fixed; // CRUCIAL for controlling column widths exactly
 }
 
+/* --- Make header sticky for cohesion with FourWeekGrid & PlayerPickupTable --- */
+.table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background-color: v.$background-dark; // Ensure solid bg when scrolling
+}
+
 /* --- Table Header Styling --- */
 
 .table th {
-  background-color: v.$background-dark; // Ensure header background
+  background-color: v.$background-dark;
   color: v.$text-color-secondary;
-  font-weight: 600; // Slightly lighter than before
-  padding: 8px 4px; // Reduced padding, especially horizontal
+  font-weight: 600;
+  padding: 8px 4px;
   font-family: v.$font-family-primary;
-  font-size: 11px; // Smaller font size
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
   border: 0.5px solid v.$border-color-secondary;
-  border-top: none; // Remove top border
-  white-space: normal; // Allow header text wrapping
-  vertical-align: middle; // Vertically center wrapped text
-
-  // Assign percentage widths - MUST add up to 100% with first-child
-  // Example: 7 metrics * 12.5% + Team 12.5% = 100%
-  // Adjust these percentages based on visual testing!
-  width: 12.57%; // (100 - 12) / 7 = ~12.57%
+  border-top: none;
+  white-space: normal;
+  vertical-align: middle;
+  width: 12.57%; // (100 - 12) / 7 columns
 
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    padding: 6px 3px; // Even smaller padding
-    font-size: 10px; // Even smaller font
+    padding: 6px 3px;
+    font-size: 10px;
   }
 }
 
 // Special styling for the first header cell (Team)
 .table th:first-child {
   text-align: left;
-  padding-left: 10px; // Adjust padding
+  padding-left: 10px;
   border-left: none;
-  border-right: 2px solid v.$secondary-color; // Keep separator
-  width: 12%; // Reduced width significantly
-  white-space: nowrap; // Prevent "Team" from wrapping
-
+  @include panel.first-col-separator(2px);
+  width: 12%;
+  white-space: nowrap;
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
     padding-left: 8px;
-    font-size: 10px; // Match other mobile headers
+    font-size: 10px;
   }
 }
 
@@ -207,38 +171,37 @@
 
 .table td {
   border: 0.5px solid v.$border-color-secondary;
-  padding: 6px 4px; // Reduced padding
+  padding: 5px 4px; // Slight tighten
   font-family: v.$font-family-primary;
   vertical-align: middle;
-  font-size: 12px; // Slightly smaller font
-  word-break: break-word; // Help break long numbers if needed (less ideal)
+  font-size: 12px;
+  word-break: break-word;
 
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    padding: 6px 3px;
-    font-size: 11px;
+    padding: 3px 2px; // compact mobile
+    font-size: 10px;
   }
 }
 
 // Special styling for the first data cell (Team logo)
 .table td:first-child {
   border-left: none;
-  border-right: 2px solid v.$secondary-color;
+  @include panel.first-col-separator(2px);
   text-align: center;
-  padding: 5px; // Keep minimal padding
-  width: 12%; // Match header width
-
+  padding: 5px;
+  width: 12%;
   img {
     display: block;
     margin: 0 auto;
-    max-width: 25px; // Limit logo size further if needed
-    height: auto;
+    max-width: 25px;
   }
 }
-
 // No border on last data cell
 .table td:last-child {
   border-right: none;
 }
+
+/* Color utility classes removed (now global via styles/_panel.scss) */
 
 // Style for the loading/no results message
 .message {

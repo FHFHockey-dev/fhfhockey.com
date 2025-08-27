@@ -107,35 +107,20 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   flex-grow: 1;
   @include v.element-wrapper;
   border-radius: $border-radius-lg;
-  box-shadow: $shadow-lg;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+  border: none; // remove outer border per request
+  // Previously visible allowed internal absolutely positioned separator
+  // lines to extend past the rounded bottom-left corner. Hide overflow so
+  // the vertical team column separator and any negative-offset pseudo
+  // elements are clipped to the container's radius.
   overflow: hidden;
   position: relative;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.03),
-    rgba(255, 255, 255, 0.01)
-  );
-  backdrop-filter: blur(10px);
+  background: v.$color-bg-dark-1; // darkest backdrop to show through gaps
+  backdrop-filter: none;
 
   // Modern border glow effect
   &::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: $border-radius-lg;
-    padding: 1px;
-    background: linear-gradient(
-      135deg,
-      rgba(7, 170, 226, 0.3),
-      rgba(18, 144, 187, 0.2),
-      rgba(255, 255, 255, 0.1)
-    );
-    mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    pointer-events: none;
+    display: none;
   }
 
   @media (min-width: v.$breakpoint-desktop) {
@@ -317,7 +302,6 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     );
     color: v.$text-color-primary;
     border-color: rgba(7, 170, 226, 0.3);
-    transform: translateY(-2px);
     box-shadow:
       $shadow-lg,
       0 0 20px rgba(7, 170, 226, 0.2);
@@ -400,6 +384,684 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: left;
   margin: 0;
   width: 100%;
+}
+
+// --- New header enhancements ---
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.subTitle {
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: v.$text-secondary;
+  margin: 0;
+  opacity: 0.85;
+  font-weight: 500;
+}
+
+.controlsBar {
+  display: flex;
+  gap: v.$space-md;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  width: 60%;
+  @media (max-width: 980px) {
+    width: 100%;
+    margin-top: v.$space-sm;
+    justify-content: flex-start;
+  }
+}
+
+.modeToggle {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 4px;
+  border-radius: 999px;
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.25) inset,
+    0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.modeButton,
+.modeButtonActive {
+  position: relative;
+  background: transparent;
+  border: 0;
+  color: v.$text-secondary;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    color $transition-fast,
+    background $transition-fast;
+  text-transform: uppercase;
+}
+
+.modeButtonActive {
+  background: linear-gradient(
+    135deg,
+    v.$secondary-color,
+    color.adjust(v.$secondary-color, $lightness: -10%)
+  );
+  color: #fff;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+}
+
+.modeButton:not(.modeButtonActive):hover,
+.modeButton:not(.modeButtonActive):focus-visible {
+  color: v.$color-white;
+}
+
+.dateNav {
+  display: inline-flex;
+  align-items: center;
+  gap: v.$space-sm;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 6px 14px;
+  border-radius: $border-radius-lg;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.weekRange {
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: v.$text-color-primary;
+  white-space: nowrap;
+}
+
+.viewToggleWrapper {
+  display: flex;
+  align-items: stretch;
+}
+
+.orientationToggleButton {
+  min-width: 90px;
+}
+
+// --- Grid layout improvements ---
+.theme-colors {
+  /* WCAG-adjusted palette tokens */
+  --color-off-night: #1b9b68; /* darkened for contrast */
+  --color-off-night-bg: rgba(27, 155, 104, 0.18);
+  --color-heavy: #b64343; /* slightly brighter mid-tone red */
+  --color-heavy-bg: rgba(182, 67, 67, 0.18);
+  --color-mid: #c7a441;
+  --color-mid-bg: rgba(199, 164, 65, 0.18);
+  --color-rank-top: #1d8dd6;
+  --color-rank-bottom: #6a2c2c;
+  --focus-ring: 0 0 0 3px rgba(7, 170, 226, 0.4);
+}
+.gridScrollOuter {
+  overflow: auto;
+  max-width: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: v.$secondary-color rgba(255, 255, 255, 0.1);
+  background-color: v.$color-bg-dark-1; // darkest canvas for visible gaps
+  position: relative; // anchor continuous separator lines
+  // Mirror container rounding so inner background doesn't visually square off
+  border-radius: inherit;
+  // Ensure internal absolutely positioned lines are clipped
+  overflow: hidden;
+  --separator-color: v.$primary-color;
+  &::before,
+  &::after,
+  .headerBottomLine {
+    pointer-events: none;
+  }
+  // Right edge of team column
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    left: var(--team-col-right, 0); // fallback before JS sets precise value
+    background: var(--separator-color);
+  }
+  // Left edge of stats (GP) column
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    left: var(--stats-start-left, 0);
+    background: var(--separator-color);
+  }
+  // Solid line under header row
+  .headerBottomLine {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: var(--header-height, 0);
+    height: 2px;
+    background: var(--separator-color);
+    z-index: 5;
+  }
+}
+
+.scheduleGrid {
+  @extend .theme-colors;
+  border-collapse: separate;
+  // Gaps between cells (increase to make matchup cells appear smaller and more isolated)
+  border-spacing: 6px 4px;
+  @media (max-width: 700px) {
+    // Slightly tighter on narrow viewports
+    border-spacing: 4px 2px;
+  }
+  @media (max-width: 480px) {
+    border-spacing: 0; // mobile compact
+  }
+  width: 100%;
+  font-size: 0.72rem;
+  background: transparent; // let dark parent show through gaps
+  border-radius: inherit;
+  // Clip interior cell backgrounds to container rounding; relies on ancestor overflow hidden
+  overflow: hidden;
+  thead th {
+    position: sticky;
+    top: 0;
+    background: rgba(0, 0, 0, 0.72); // flattened header surface
+    backdrop-filter: blur(8px);
+    z-index: 3;
+  }
+  th:first-child,
+  td:first-child {
+    position: sticky;
+    left: 0;
+    background: rgba(0, 0, 0, 0.7); // unified dark surface
+    backdrop-filter: blur(6px);
+    z-index: 2;
+  }
+  // Row hover: keep cells unchanged so intensity colors remain; rely on subtle lift effects elsewhere
+  // tbody tr:hover td {
+  //   background: transparent;
+  // }
+
+  // Refined zebra striping: ONLY affect non-matchup (stats) columns so we don't wipe intensity fills.
+  // Matchup cells carry .cellInnerBorder plus one of the day classes (off-night-day, medium-heavy-day, heavy-day).
+  // Exclude any cell that carries day intensity, matchup styling, or semantic color classes (green/yellow/red) or score/off-night metrics
+  tbody
+    tr:nth-of-type(odd)
+    td:not(:first-child):not(:last-child):not(.cellInnerBorder):not(
+      [data-intensity]
+    ):not(.green):not(.yellow):not(.red):not(.scoreMetric):not(.offMetric):not(
+      .gpMetric
+    ) {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  td,
+  th {
+    transition:
+      background $transition-fast,
+      color $transition-fast,
+      box-shadow $transition-fast;
+  }
+
+  // Give bottom-left cell a matching radius so its sticky background doesn't square off corner
+  tbody tr:last-of-type td:first-child {
+    border-bottom-left-radius: $border-radius-lg;
+    overflow: hidden;
+  }
+}
+
+// Intensity color cues for header days & cells using data-intensity
+.scheduleGrid [data-intensity="high"] {
+  --day-accent: var(--color-off-night);
+}
+.scheduleGrid [data-intensity="medium-high"] {
+  --day-accent: var(--color-mid);
+}
+.scheduleGrid [data-intensity="low"] {
+  --day-accent: var(--color-heavy);
+}
+
+.scheduleGrid th[data-intensity] {
+  box-shadow: inset 0 -2px 0 var(--day-accent);
+}
+.scheduleGrid td[data-intensity] {
+  box-shadow: inset 0 -2px 0 var(--day-accent);
+}
+
+// Week score rank colors (example mapping if missing)
+@for $i from 1 through 32 {
+  .rank-color-#{$i} {
+    background: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, math.div(20 - $i, 95)),
+      transparent
+    );
+  }
+}
+
+// Legend bar
+.legendBar {
+  margin: v.$space-lg auto;
+  max-width: 1600px;
+  font-size: 0.65rem;
+  letter-spacing: 0.05em;
+  ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 0;
+    margin: 0;
+  }
+  li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: v.$text-secondary;
+  }
+}
+.legendSwatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  display: inline-block;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+.legendOffNight {
+  background: var(--color-off-night);
+}
+.legendHeavy {
+  background: var(--color-heavy);
+}
+.legendBest {
+  background: rgba(29, 141, 214, 0.35);
+}
+.legendWorst {
+  background: rgba(182, 67, 67, 0.35);
+}
+
+// --- Utility & migrated inline styles ---
+.teamLogo24 {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  display: block;
+}
+
+.opponentLogoDesktop {
+  width: 28px;
+  height: 28px;
+  display: block;
+  transition:
+    opacity $transition-fast,
+    filter $transition-fast;
+}
+
+.homeAwayIconMobile {
+  opacity: 0.6;
+}
+.homeAwayIconDesktop {
+  opacity: 0.85;
+}
+
+.homeAwayIconDesktopImg {
+  opacity: 0.85;
+}
+// Image element inside desktop wrapper will control opacity; keep utility if applied directly
+
+.srOnly {
+  position: absolute !important;
+  left: -9999px !important;
+  top: auto !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// Excluded state styling migrated from inline styles
+.excludedStateMobile {
+  opacity: 0.45;
+  filter: grayscale(35%);
+  position: absolute;
+  z-index: 1;
+  padding: 0;
+  overflow: visible;
+}
+.excludedStateDesktop {
+  opacity: 0.6;
+  filter: grayscale(35%);
+}
+
+// Shared matchup cell intensity fill backgrounds (when there IS a game)
+.cellInnerBorder.off-night-day {
+  background: var(--color-off-night-bg);
+}
+.cellInnerBorder.medium-heavy-day {
+  background: var(--color-mid-bg);
+}
+.cellInnerBorder.heavy-day {
+  background: var(--color-heavy-bg);
+}
+
+// Compact matchup cell adjustments (smaller content area)
+.cellInnerBorder {
+  padding: 1px !important; // tighter
+  position: relative; // anchor for corner badge
+}
+.matchupCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 24px; // ensure consistent row height
+}
+
+// Mobile row compaction
+@media (max-width: 480px) {
+  .scheduleGrid tbody tr {
+    height: 37px; // target max height
+  }
+  .scheduleGrid td,
+  .scheduleGrid th {
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+  .cellInnerBorder {
+    padding: 0 !important;
+    position: relative; // ensure anchor on mobile override too
+  }
+  .matchupCell {
+    min-height: 20px;
+  }
+  .mobileLogoSize {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .mobileCompactTable {
+    font-size: 0.62rem;
+    width: 100%;
+  }
+  .mobileCompactTable thead th {
+    font-size: 0.55rem;
+    letter-spacing: 0.06em; // reduce visual noise
+    padding: 4px 2px !important;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+  }
+  .mobileCompactTable thead th .dayAbbreviation {
+    letter-spacing: 0.15em; // less spaced-out for compactness
+    font-weight: 700;
+  }
+  .mobileCompactTable thead th .dayDate {
+    font-size: 0.55rem !important;
+    font-weight: 600;
+    opacity: 0.85;
+  }
+  .mobileCompactTable tbody tr {
+    height: 34px; // slightly tighter
+    transition: filter $transition-fast; // smooth brightness change
+  }
+  .mobileCompactTable tbody tr:hover {
+    filter: brightness(1.07);
+  }
+  .mobileCompactTable td {
+    padding: 1px 3px !important; // tighter vertical spacing
+    line-height: 1.05;
+  }
+  .mobileCompactTable td:first-child {
+    padding-left: 6px !important;
+    font-weight: 600;
+    font-size: 0.65rem;
+    background: rgba(0, 0, 0, 0.7) !important;
+  }
+  .mobileCompactTable .cellInnerBorder {
+    padding: 1px !important;
+  }
+  .mobileCompactTable .matchupCell img {
+    max-width: 18px;
+    max-height: 18px;
+  }
+  .mobileCompactTable td[data-intensity] {
+    // soften intensity backgrounds slightly for less visual noise
+    background-color: color.adjust(rgba(255, 255, 255, 0.05), $alpha: -0.02);
+  }
+  .mobileCompactTable .weekScoreCell {
+    font-weight: 600;
+    font-size: 0.6rem;
+  }
+  // Hide verbose rank fill if any gradient overshadowing occurs – keep subtle
+  .mobileCompactTable td[class*="rank-color-"] {
+    background-image: none !important;
+  }
+}
+
+// Shrink logos slightly for tighter appearance
+.mobileLogoSize {
+  width: 20px !important;
+  height: 20px !important;
+}
+.opponentLogoDesktop,
+.homeAwayIconDesktopImg {
+  width: 24px !important;
+  height: 24px !important;
+}
+
+// ================= Row & Column Highlight Option Implementation =================
+// Row Pattern A: Left gutter bar for top 10 (best) and bottom 10 (worst)
+// We apply a pseudo-element on the tr via a utility class to avoid adding extra markup.
+// Keep it subtle to not overpower day density backgrounds.
+
+// Color tokens (migrated to vars.scss unified schedule tokens)
+$best-accent: v.$schedule-green;
+$worst-accent: v.$schedule-red;
+
+// Mirror CSS custom properties as SASS variables for header accent bars (avoid using color functions on CSS vars)
+$off-night-color: #1b9b68;
+$mid-color: #c7a441;
+$heavy-color: #b64343;
+
+// Base gutter helper (applied to tr) – sets positioning context
+.rowGutterHighlight {
+  position: relative;
+  // Ensure pseudo element sits below cell content but above table background
+  &::before {
+    content: "";
+    position: absolute;
+    left: -7px; // extend slightly further into gap for thicker presence
+    top: 2px; // tighter vertical insets to visually elongate
+    bottom: 2px;
+    width: 6px; // thicker gutter bar per Option A (thicker variant)
+    border-radius: 6px;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.25),
+      rgba(255, 255, 255, 0)
+    );
+    opacity: 0; // default off; only visible when specific modifier sets color
+    transition:
+      opacity $transition-fast,
+      box-shadow $transition-fast,
+      background $transition-fast;
+    pointer-events: none;
+  }
+}
+
+// Top 10 best schedule row
+.rowBest10 {
+  @extend .rowGutterHighlight;
+  &::before {
+    // Disabled gutter bar per request
+    display: none !important;
+  }
+  > td:first-child {
+    background: rgba($best-accent, v.$fill-opacity-strong) !important;
+    @include v.schedule-outline($best-accent);
+  }
+  > td:first-child .firstColumnContent {
+    background: transparent !important;
+  }
+}
+
+// Bottom 10 worst schedule row
+.rowWorst10 {
+  @extend .rowGutterHighlight;
+  &::before {
+    // Disabled gutter bar per request
+    display: none !important;
+  }
+  > td:first-child {
+    background: rgba($worst-accent, v.$fill-opacity-strong) !important;
+    @include v.schedule-outline($worst-accent);
+  }
+  > td:first-child .firstColumnContent {
+    background: transparent !important;
+  }
+}
+
+// Reduce gutter bar thickness & spacing on very narrow screens to save space
+@media (max-width: 640px) {
+  .rowGutterHighlight::before {
+    left: -5px;
+    width: 5px; // maintain proportionally thicker mobile gutter
+    top: 1px;
+    bottom: 1px;
+  }
+}
+
+// Column Pattern 2: Header emphasis only (keep body cells using existing day density fills)
+// We add a subtle stronger tint + bottom accent line for off / mid / heavy day headers.
+// Re-use existing intensity mapping via data-intensity on <th>.
+
+.scheduleGrid thead th[data-intensity] {
+  position: relative;
+  // Neutral preparatory background so accent variants layer consistently
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.045),
+    rgba(255, 255, 255, 0.02)
+  );
+  backdrop-filter: none;
+}
+.scheduleGrid thead th[data-intensity="high"] {
+  // Off-night (few games)
+  background: linear-gradient(
+    180deg,
+    var(--color-off-night-bg),
+    rgba(0, 0, 0, 0)
+  );
+}
+
+// "medium-high" corresponds to mid density (7–8 games – medium-heavy day)
+.scheduleGrid thead th[data-intensity="medium-high"] {
+  background: linear-gradient(180deg, var(--color-mid-bg), rgba(0, 0, 0, 0));
+}
+
+// "low" intensity used for heavy days (9+ games) in existing logic
+.scheduleGrid thead th[data-intensity="low"] {
+  background: linear-gradient(180deg, var(--color-heavy-bg), rgba(0, 0, 0, 0));
+}
+
+// Accessibility: if user prefers reduced motion, disable gradient transitions
+@media (prefers-reduced-motion: reduce) {
+  .rowGutterHighlight::before {
+    transition: none;
+  }
+}
+
+// Week score tooltip trigger styling
+.weekScoreHelp {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 14px;
+  height: 14px;
+  margin-left: 6px;
+  font-size: 0.55rem;
+  font-weight: 600;
+  line-height: 1;
+  background: v.$primary-color;
+  color: #000; // high contrast against primary
+  border-radius: 50%;
+  cursor: help;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.15),
+    0 0 4px -1px v.$primary-color;
+  text-transform: none;
+  letter-spacing: 0;
+  transition:
+    background $transition-fast,
+    box-shadow $transition-fast,
+    transform $transition-fast;
+
+  &:hover,
+  &:focus-visible {
+    background: color.adjust(v.$primary-color, $lightness: 8%);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.25),
+      0 0 6px 0 v.$primary-color;
+    transform: translateY(-1px);
+  }
+}
+
+.fadeEnter {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.fadeEnterActive {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity $transition-normal,
+    transform $transition-normal;
+}
+.fadeExit {
+  opacity: 1;
+}
+.fadeExitActive {
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    opacity $transition-fast,
+    transform $transition-fast;
+}
+
+// Collapsible no-games group
+.noGamesGroupRow details {
+  summary {
+    cursor: pointer;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+  }
+  &[open] summary {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  table {
+    width: 100%;
+  }
+}
+
+.innerNoGamesTable tr td:first-child {
+  background: rgba(0, 0, 0, 0.4);
 }
 
 // keep span color utility simple
@@ -502,7 +1164,6 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             rgba(7, 170, 226, 0.15)
           );
           color: v.$text-color-primary;
-          transform: translateY(-2px);
           box-shadow: $shadow-md;
 
           &::before {
@@ -656,8 +1317,17 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: none; // OVERRIDE mixin's border, assuming wrapper provides it visually
   border-radius: 0; // OVERRIDE mixin's border-radius
   table-layout: auto; // Use auto layout by default
-  border-spacing: 0;
-  background-color: v.$background-dark;
+  // Do NOT override earlier border-spacing / transparent background (set in primary definition)
+  background: transparent;
+  // Re-assert spacing so mixin or later overrides don't collapse gaps
+  border-collapse: separate;
+  border-spacing: 4px 3px;
+  @media (max-width: 700px) {
+    border-spacing: 3px 2px;
+  }
+  @media (max-width: 480px) {
+    border-spacing: 2px 1px;
+  }
 
   // --- Desktop Specific ---
   @media (min-width: v.$breakpoint-desktop) {
@@ -706,7 +1376,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     th {
       // Nested under thead
       vertical-align: middle;
-      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      border-right: 0; // remove column dividers so horizontal gaps show cleanly
       white-space: normal;
       cursor: default;
       min-width: 55px;
@@ -718,7 +1388,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       &:last-child {
-        border-right: none;
+        border-right: 0;
       }
 
       // Apply data-intensity background directly to th
@@ -759,17 +1429,22 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         content: "▼";
       }
 
-      // Day Toggle Styles
+      // Day Toggle Styles (ensure centered)
       .dayToggle {
-        display: block;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
       }
       .dayAbbreviation {
-        font-weight: 700;
-        font-size: 9px;
+        font-weight: 900;
+        font-size: 12px;
+        letter-spacing: 0.25em;
       }
       .dayDate {
         display: block;
-        font-size: 10px;
+        font-size: 12px;
         color: v.$text-color-secondary;
         white-space: nowrap;
 
@@ -797,7 +1472,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         v.$background-dark,
         color.adjust(v.$background-dark, $lightness: 3%)
       );
-      border-right: 2px solid v.$primary-color;
+      // Removed cell border in favor of continuous overlay line
       box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
 
       @media (max-width: 480px) {
@@ -807,10 +1482,6 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     @media (max-width: 480px) {
-      th:nth-child(9) {
-        border-left: 2px solid v.$primary-color;
-      }
-
       th:nth-child(8) {
         border-right: none;
       }
@@ -842,7 +1513,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       display: flex;
       flex-direction: row;
       align-items: center;
-      justify-content: space-between;
+      justify-content: space-evenly;
       height: 100%;
       width: 100%;
       background-color: transparent;
@@ -895,7 +1566,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   .desktopText {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
     height: 100%;
@@ -1001,15 +1672,8 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
       // Enhanced hover effect with glow
       &:hover {
-        background: linear-gradient(
-          90deg,
-          rgba(7, 170, 226, 0.12),
-          rgba(7, 170, 226, 0.06)
-        );
-        transform: translateY(-2px);
-        box-shadow:
-          $shadow-lg,
-          0 0 20px rgba(7, 170, 226, 0.15);
+        // Remove dark overlay; simply boost existing row background brightness
+        filter: brightness(1.4);
         z-index: 1;
         border-radius: $border-radius-sm;
       }
@@ -1020,34 +1684,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
       }
 
-      // Row Highlights (targeting first td)
-      &.teamRowGreen td:first-child {
-        background-color: rgba(0, 255, 0, 0.15);
-        border-left: 2px solid rgba(0, 255, 0, 0.3);
-        border-bottom: 2px solid rgba(0, 255, 0, 0.3);
-        border-top: 2px solid rgba(0, 255, 0, 0.3);
-        border-bottom-left-radius: 8px;
-        border-top-left-radius: 8px;
-      }
-
-      &.teamRowGreen td:not(:first-child):before {
-        border-bottom: 2px solid rgba(0, 255, 0, 0.4);
-        border-top: 2px solid rgba(0, 255, 0, 0.3);
-      }
-
-      &.teamRowRed td:first-child {
-        background-color: rgba(255, 0, 0, 0.15);
-        border-left: 2px solid rgba(255, 0, 0, 0.3);
-        border-bottom: 2px solid rgba(255, 0, 0, 0.3);
-        border-top: 2px solid rgba(255, 0, 0, 0.3);
-        border-top-left-radius: 8px;
-        border-bottom-left-radius: 8px;
-      }
-
-      &.teamRowRed td:not(:first-child):before {
-        border-bottom: 2px solid rgba(255, 0, 0, 0.4);
-        border-top: 2px solid rgba(255, 0, 0, 0.3);
-      }
+      // (Deprecated) previous row highlight styles removed in favor of left gutter bar (.rowBest10 / .rowWorst10)
     }
 
     // --- Modern TD Styling ---
@@ -1055,10 +1692,11 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       // Nested under tbody (implicitly under tr)
       padding: v.$space-sm v.$space-md;
       vertical-align: middle;
-      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      // Remove rigid grid lines; gaps (border-spacing) now create separation.
+      border-right: 0;
       border-radius: 0;
       border-collapse: collapse;
-      border-spacing: 0;
+      border-spacing: 0; // kept for safety, but gaps now controlled at table level
       min-width: 37px;
       transition: all $transition-normal;
       position: relative;
@@ -1106,30 +1744,22 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
       // DAILY CELL BORDER
       &.cellInnerBorder {
-        position: relative;
-        padding: v.$space-xs;
+        // Simplified: rely on direct background classes (.cellInnerBorder.off-night-day etc.)
+        padding: 2px;
+        border-radius: v.$border-radius-md;
+        box-shadow: none; // remove outline so only natural background color defines chip
+        background-clip: padding-box;
+        transition:
+          background-color $transition-fast,
+          box-shadow $transition-fast;
 
-        &:before {
-          content: "";
-          position: absolute;
-          inset: 0px;
-          pointer-events: none;
-          border-radius: 4px;
+        &:hover {
+          filter: brightness(1.08);
         }
-        &.heavy-day:before {
-          background-color: rgba(255, 0, 0, 0.1);
-        }
-        &.medium-heavy-day:before {
-          background-color: rgba(255, 165, 0, 0.1);
-        }
-        &.off-night-day:before {
-          background-color: rgba(0, 255, 0, 0.1);
-        }
-        &.off-night-home:before {
-          border-color: rgba(0, 255, 0, 0.1);
-        }
-        &.off-night-away:before {
-          border-color: rgba(255, 0, 0, 0.1);
+
+        @media (max-width: 480px) {
+          padding: 1px;
+          border-radius: 0;
         }
       }
 
@@ -1269,6 +1899,8 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   height: 55px;
   align-items: center;
   justify-content: center;
+  background: rgba(0, 0, 0, 0.64); // flattened from prior gradient
+  backdrop-filter: blur(6px);
   .desktopTeamAbbreviation {
     display: none;
   }
@@ -1460,20 +2092,20 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     min-width: 100% !important;
 
     tbody tr {
-      height: 44px; // Taller touch target for legibility
+      height: 30px; // compact target per request
     }
 
     .firstColumnContent {
-      height: 44px;
+      height: 30px;
     }
 
     td {
       width: 9.09% !important; // 11 columns layout
       min-width: 0 !important;
       max-width: none !important;
-      padding: 6px 3px !important;
-      font-size: 14px !important; // Keep primary content legible
-      line-height: 1.1;
+      padding: 2px 2px !important; // tighter vertical padding
+      font-size: 12px !important;
+      line-height: 1.05;
       box-sizing: border-box;
       position: relative; // allow subtle column separators
     }
@@ -1483,10 +2115,9 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       width: 9.09% !important;
       min-width: 0 !important;
       max-width: none !important;
-      font-size: 11px !important; // Slightly larger for readability
+      font-size: 11px !important;
       box-sizing: border-box;
       height: auto;
-      padding: 0 !important;
     }
 
     th:first-child,
@@ -1647,6 +2278,115 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1;
   width: 24px;
   height: 24px;
+}
+
+// Further compacting of mobile matchup logos & corner badges (H/A)
+@media (max-width: 480px) {
+  .mobileMatchupLogoWrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; // keep container tight
+    height: 24px;
+  }
+  // Let the badge be positioned relative to the cell instead of wrapper
+  .logoWithIconWrapper.mobileMatchupLogoWrapper {
+    position: static;
+  }
+  .compactMobileLogo {
+    width: 20px;
+    height: 20px;
+    transition:
+      filter 120ms ease,
+      transform 120ms ease;
+  }
+  .matchupCell:hover .compactMobileLogo {
+    filter: brightness(1.08) saturate(1.05);
+    transform: translateY(-1px);
+  }
+  .cornerBadge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    z-index: 3;
+    font-size: 0.55rem; // keep letter if present
+    font-weight: 600;
+    line-height: 1; // we'll center manually
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 1px 2px 0 0; // nudge letter inward slightly
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    color: v.$text-button;
+    pointer-events: none;
+    // Dog-ear triangle base
+    clip-path: polygon(100% 0, 0 0, 100% 100%);
+    background: transparent; // actual color via gradient layers per variant
+    mix-blend-mode: normal;
+    // Provide subtle layered depth via pseudo elements
+    &::before,
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      clip-path: inherit;
+      border-top-right-radius: 0; // ensure no rounding interfering
+      // Put triangle layers behind the letter
+      z-index: -1;
+    }
+    // Outer translucent layer
+    &::before {
+      opacity: 0.65; // ~65% overall tint
+    }
+    // Inner inset smaller triangle for nested effect
+    &::after {
+      inset: 2px 2px 0 0; // inset left a bit to preserve right/top edge alignment
+      clip-path: polygon(100% 0, 0 0, 100% 100%);
+      opacity: 0.9;
+      box-shadow: 0 0 2px rgba(0, 0, 0, 0.4) inset;
+    }
+    // Slight shadow along hypotenuse
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.55));
+  }
+  .homeBadge {
+    &::before {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$schedule-green, 0.65),
+        rgba(color.scale(v.$schedule-green, $lightness: -10%), 0.55)
+      );
+    }
+    &::after {
+      background: linear-gradient(
+        135deg,
+        rgba(color.scale(v.$schedule-green, $lightness: 5%), 0.9),
+        rgba(color.scale(v.$schedule-green, $lightness: -15%), 0.85)
+      );
+    }
+  }
+  .awayBadge {
+    &::before {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$danger-color, 0.65),
+        rgba(color.scale(v.$danger-color, $lightness: -12%), 0.55)
+      );
+    }
+    &::after {
+      background: linear-gradient(
+        135deg,
+        rgba(color.scale(v.$danger-color, $lightness: 5%), 0.9),
+        rgba(color.scale(v.$danger-color, $lightness: -18%), 0.85)
+      );
+    }
+  }
+
+  // Harmonize badge colors with existing palette accents if variables available
+  // (Fallback solid colors used above; replace with design tokens if/when added)
 }
 
 /* --- Legend Bottom Sheet (Mobile) --- */
@@ -2070,6 +2810,18 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     align-items: center;
     justify-content: center;
     margin-left: 4px;
+    .homeAwayIconDesktopWrapper {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 4px;
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        opacity: 0.75;
+      }
+    }
     img {
       width: 100%;
       height: 100%;

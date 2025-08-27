@@ -444,10 +444,13 @@ const Filters: React.FC<FiltersProps> = ({
         aria-expanded={isMobile ? !isMobileMinimized : undefined}
         aria-controls={isMobile ? "player-table-content" : undefined}
       >
-        <span className={styles.acronym}>BPA</span> -{" "}
-        <span className={styles.acronym}>B</span>est{" "}
-        <span className={styles.acronym}>P</span>layer{" "}
-        <span className={styles.acronym}>A</span>vailable
+        <span className={styles.titleContent}>
+          <span className={styles.acronym}>BPA</span>
+          <span>-</span>
+          <span className={styles.acronym}>B</span>est
+          <span className={styles.acronym}>P</span>layer
+          <span className={styles.acronym}>A</span>vailable
+        </span>
         {isMobile && (
           <span
             className={clsx(

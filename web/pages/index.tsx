@@ -31,9 +31,15 @@ const Home: NextPage = ({
   initialStandings,
   nextGameDate
 }) => {
+  const debugLog = (...args: any[]) => {
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.log(...args);
+    }
+  };
   // Debug logging
-  console.log("Server passed nextGameDate:", nextGameDate);
-  console.log(
+  debugLog("Server passed nextGameDate:", nextGameDate);
+  debugLog(
     "Client moment().format('YYYY-MM-DD'):",
     moment().format("YYYY-MM-DD")
   );
@@ -41,7 +47,7 @@ const Home: NextPage = ({
   // Always start with today's date, regardless of whether there are games
   const todayDate = moment().format("YYYY-MM-DD");
   const [currentDate, setCurrentDate] = useState(todayDate);
-  console.log("Client currentDate initialized to:", todayDate);
+  debugLog("Client currentDate initialized to:", todayDate);
 
   // If server found games for a different date, we'll use initialGames only if currentDate matches nextGameDate
   const [games, setGames] = useState(
@@ -364,16 +370,14 @@ const Home: NextPage = ({
                             homeTeamInfo.primaryColor || "#888888",
                           "--home-secondary-color":
                             homeTeamInfo.secondaryColor || "#555555",
-                          // *** ADD JERSEY COLOR VARIABLES BACK ***
                           "--home-jersey-color":
-                            homeTeamInfo.jersey || "#cccccc", // Default light grey
+                            homeTeamInfo.jersey || "#cccccc",
                           "--away-primary-color":
                             awayTeamInfo.primaryColor || "#888888",
                           "--away-secondary-color":
                             awayTeamInfo.secondaryColor || "#555555",
-                          // *** ADD JERSEY COLOR VARIABLES BACK ***
                           "--away-jersey-color":
-                            awayTeamInfo.jersey || "#cccccc" // Default light grey
+                            awayTeamInfo.jersey || "#cccccc"
                         } as React.CSSProperties
                       }
                     >
@@ -384,6 +388,7 @@ const Home: NextPage = ({
                           alt={`${homeTeam.abbrev} logo`}
                           width={70}
                           height={70}
+                          loading="lazy"
                         />
                       </div>
                       <div className={styles.gameTimeSection}>
@@ -402,13 +407,9 @@ const Home: NextPage = ({
                           </span>
                           <span className={styles.gameTimeText}>
                             {game.gameState === "LIVE" &&
-                            !game.clock?.inIntermission ? (
-                              (game.clock?.timeRemaining ?? "--:--")
-                            ) : (
-                              <ClientOnly placeHolder={<> </>}>
-                                {moment(game.startTimeUTC).format("h:mm A")}
-                              </ClientOnly>
-                            )}
+                            !game.clock?.inIntermission
+                              ? (game.clock?.timeRemaining ?? "--:--")
+                              : ""}
                           </span>
                         </div>
                         <div className={styles.awayScore}>
@@ -422,6 +423,7 @@ const Home: NextPage = ({
                           alt={`${awayTeam.abbrev} logo`}
                           width={70}
                           height={70}
+                          loading="lazy"
                         />
                       </div>
                     </div>
@@ -429,13 +431,7 @@ const Home: NextPage = ({
                 );
               })
             ) : (
-              <p
-                style={{
-                  gridColumn: "1 / -1",
-                  textAlign: "center",
-                  padding: "20px"
-                }}
-              >
+              <p className={styles.noGamesMessage}>
                 No games scheduled for{" "}
                 {moment(currentDate).format("MM/DD/YYYY")}.
               </p>
@@ -453,26 +449,27 @@ const Home: NextPage = ({
           {/* Standings */}
           <div className={styles.standingsContainer}>
             <div className={styles.standingsHeader}>
-              <h1>
+              <h2>
                 Current <span>Standings</span>
-              </h1>
+              </h2>
             </div>
             <div className={styles.tableWrapper}>
               <table className={styles.standingsTable}>
+                <caption className={styles.visuallyHidden}>
+                  NHL League Standings
+                </caption>
                 <thead>
                   <tr>
-                    <th>Rank</th>
-                    <th>Team</th>
-                    <th>Record</th>
-                    <th>Points</th>
+                    <th scope="col">Rank</th>
+                    <th scope="col">Team</th>
+                    <th scope="col">Record</th>
+                    <th scope="col">Points</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sortedStandings.map((teamRecord) => (
                     <tr key={teamRecord.teamName}>
-                      {/* Rank Cell */}
-                      <td>{teamRecord.leagueSequence}</td>
-                      {/* Team Cell */}
+                      <th scope="row">{teamRecord.leagueSequence}</th>
                       <td>
                         <img
                           className={styles.standingsTeamLogo}
@@ -480,16 +477,19 @@ const Home: NextPage = ({
                           alt={`${teamRecord.teamName} logo`}
                           width={25}
                           height={25}
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.src =
+                              "https://assets.nhle.com/logos/nhl/svg/NHL_light.svg";
+                          }}
                         />
                         <span className={styles.standingsTeamNameSpan}>
                           {teamRecord.teamName}
                         </span>
                       </td>
-                      {/* Record Cell */}
                       <td>{`${teamRecord.wins || 0}-${teamRecord.losses || 0}-${
                         teamRecord.otLosses || 0
                       }`}</td>
-                      {/* Points Cell */}
                       <td>{teamRecord.points}</td>
                     </tr>
                   ))}
@@ -501,24 +501,35 @@ const Home: NextPage = ({
           {/* Injuries */}
           <div className={styles.injuriesContainer}>
             <div className={styles.injuriesHeader}>
-              <h1>
+              <h2>
                 Injury <span>Updates</span>
-              </h1>
+              </h2>
             </div>
             <div className={styles.tableWrapper}>
-              <table className={styles.injuryTable}>
+              <table className={styles.injuryTable} aria-live="polite">
+                <caption className={styles.visuallyHidden}>
+                  Recent NHL Injury Updates
+                </caption>
                 <thead>
                   <tr>
-                    <th className={styles.dateColumn}>Date</th>
-                    <th className={styles.teamColumn}>Team</th>{" "}
-                    {/* Header for team column */}
-                    <th className={styles.nameColumn}>Player</th>
-                    <th className={styles.statusColumn}>Status</th>
-                    <th className={styles.descriptionColumn}>Description</th>
+                    <th scope="col" className={styles.dateColumn}>
+                      Date
+                    </th>
+                    <th scope="col" className={styles.teamColumn}>
+                      Team
+                    </th>
+                    <th scope="col" className={styles.nameColumn}>
+                      Player
+                    </th>
+                    <th scope="col" className={styles.statusColumn}>
+                      Status
+                    </th>
+                    <th scope="col" className={styles.descriptionColumn}>
+                      Description
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Use the updated displayInjuryRows */}
                   {displayInjuryRows.length > 0 ? (
                     displayInjuryRows
                   ) : (
@@ -691,7 +702,7 @@ export async function getServerSideProps({ req, res }) {
     nextGameDateFound = today;
 
     if (gamesToday.length === 0) {
-      console.log(
+      debugLog(
         `No games found for today (${today}), searching for next available date...`
       );
       let nextDay = moment(today).add(1, "days");
@@ -700,11 +711,11 @@ export async function getServerSideProps({ req, res }) {
 
       while (gamesToday.length === 0 && attempts < maxAttempts) {
         const dateStr = nextDay.format("YYYY-MM-DD");
-        console.log(`Checking for games on ${dateStr}...`);
+        debugLog(`Checking for games on ${dateStr}...`);
         gamesToday = await fetchGames(dateStr);
         if (gamesToday.length > 0) {
           nextGameDateFound = dateStr;
-          console.log(`Found next games on ${nextGameDateFound}`);
+          debugLog(`Found next games on ${nextGameDateFound}`);
           break;
         }
         nextDay.add(1, "days");
@@ -716,7 +727,7 @@ export async function getServerSideProps({ req, res }) {
         );
       }
     } else {
-      console.log(`Found games for today (${today})`);
+      debugLog(`Found games for today (${today})`);
     }
   }
 
