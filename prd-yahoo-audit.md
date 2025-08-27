@@ -496,3 +496,52 @@ This PRD considered complete when:
 - Normalization spec + mapping workflow design present.
 
 End of PRD.
+
+## Session updates — work completed (2025-08-27)
+Summary of concrete work done in this session and status against the PRD items above.
+
+- Implemented a date-based ownership ingestion script: `web/lib/supabase/Upserts/Yahoo/yahooHistoricalOwnership.py` that:
+  - queries Yahoo `percent_owned;type=date;date=YYYY-MM-DD` per-player, per-date,
+  - derives per-player league_key from `player_key` to avoid mixed-game-key errors,
+  - supports batch chunking (configurable, default 25 → later run with 10),
+  - upserts enriched rows into `yahoo_player_ownership_history` including metadata (player_name, player_id, game_id, season_start_year, season_id, league_id),
+  - has credential fallback to `yahoo_api_credentials` in Supabase if env vars absent.
+
+- Applied resilient persistence and schema updates:
+  - Supabase migration applied to add the history columns and unique constraint/indexes for idempotent upserts.
+  - `upsert_ownership_batch` uses retry with exponential backoff.
+
+- Resilience & scale improvements:
+  - Added per-player fetch retry/backoff with jitter and increased attempts.
+  - Added chunk-level escalation (pause extra when a chunk shows high failure rate).
+  - Implemented a resume pre-check: find the most recent `ownership_date` in `yahoo_player_ownership_history`, delete that date's rows (overwrite) and start ingestion from that date forward (avoids retracing already-completed days).
+
+- Validation & runs performed:
+  - Short dry runs validated chunked upserts (50 players × 2 dates; 200×3), confirmed HTTP 201 upserts.
+  - Started a full ingestion run in the background (safer throttling: `batch_size=10`, `sleep_seconds=3.0`) and attached a simple monitor to watch for rate-limit spikes and pause the job automatically.
+
+  - 2025-08-27: Added migration for draft analysis history and mapping tables; created `upsert_players_batch` RPC DDL; exported `player_name_normalization_spec.json`; updated mapping script for deterministic-first matching and unmatched persistence; updated player ingestion to call RPC with fallback.
+
+## PRD status mapping (high-level)
+Marking the PRD goals with status after this session.
+
+- Goal 1 (game IDs): Partially addressed — we mapped season -> game prefix and validated the ingestion flow, but canonical consolidation of game/weeks ingestion remains (P1/P2).
+- Goal 2 (player names): Partially addressed — historical ownership ingestion uses `yahoo_player_keys` and writes metadata; a full canonical single-authoritative player-keys job still needed (P2).
+- Goal 3 (append history): Done (P0) — ownership history ingestion implemented and schema added; draft-analysis history optional table remains and should be added similarly.
+- Goal 4 (mapping): Partially addressed — mapping script unchanged in this session, but we added tooling and recommendations to support a mapping pass; unmatched queue and review UI remain to implement (P0/P1).
+
+## Additional tasks & recommendations (shortlist)
+- Add `yahoo_player_draft_analysis_history` table and update batch RPC to insert draft snapshots alongside ownership.
+- Harden RPC `upsert_players_batch` to atomically upsert latest and append history (see PRD RPC contract sketch).
+- Persist ingestion run metadata to `ingestion_runs` table (start/end counts, failures) for observability.
+- Extract normalization spec JSON and import it into Python scripts; update `populate_yahoo_nhl_mapping.py` to use deterministic-first matching and persist unmatched queue.
+- Add a light scheduler or CI job to run the owner- ship historical ingestion daily with a rate-limit configuration parameter.
+
+## Next steps (recommended immediate actions)
+1. Finalize and deploy the RPC/function `upsert_players_batch` to insert both latest player snapshot and append to `yahoo_player_ownership_history` in a single transaction (P0).
+2. Create `yahoo_player_draft_analysis_history` and adapt ingestion to append draft snapshot rows (P0).
+3. Implement mapping improvements: export `player_name_normalization_spec.json`, run deterministic matching first, persist unmatched to `yahoo_nhl_player_map_unmatched` and wire a small admin UI for resolution (P0/P1).
+4. Add an ingestion_runs table and wire the historical ingestion script to report run summaries and counts (P1).
+5. Tune throttling parameters over several runs (batch_size, sleep_seconds) and add a global backoff policy for repeated 429s (P1).
+
+End of PRD.

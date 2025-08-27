@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 from supabase import create_client, Client
 from fuzzywuzzy import fuzz, process
 import re
+import json
+from pathlib import Path
 
 # -----------------------------------------------------------------------------
 # CONFIG & ENV
@@ -35,16 +37,40 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 # -----------------------------------------------------------------------------
 # HELPER FUNCTIONS
 # -----------------------------------------------------------------------------
-def clean_name(name):
-    """Clean and normalize player names for matching."""
+def load_normalization_spec():
+    spec_path = Path(__file__).resolve().parent / 'player_name_normalization_spec.json'
+    try:
+        with open(spec_path, 'r', encoding='utf-8') as fh:
+            return json.load(fh)
+    except Exception:
+        logging.warning('Could not load normalization spec; falling back to defaults')
+        return {}
+
+
+NORM_SPEC = load_normalization_spec()
+
+
+def normalize_name(name: str) -> str:
+    """Apply normalization rules from spec to produce a canonical key."""
     if not name:
         return ""
-    
-    # Remove common suffixes and prefixes
-    name = re.sub(r'\s+(Jr\.?|Sr\.?|II|III|IV)$', '', name, flags=re.IGNORECASE)
-    # Remove extra whitespace and convert to lowercase
-    name = ' '.join(name.split()).lower()
-    return name
+    s = name.lower().strip()
+    # remove punctuation
+    punct = NORM_SPEC.get('punctuation_regex', "[.'`-]")
+    s = re.sub(punct, '', s)
+    # replace mapped chars
+    for k, v in NORM_SPEC.get('replace_chars', {}).items():
+        s = s.replace(k, v)
+    # collapse whitespace
+    s = ' '.join(s.split())
+    # strip suffixes
+    for suf in NORM_SPEC.get('strip_suffixes', []):
+        s = re.sub(rf"\s+{re.escape(suf)}$", '', s)
+    # alias map
+    alias = NORM_SPEC.get('alias_map', {})
+    if s in alias:
+        s = alias[s]
+    return s
 
 def get_nhl_players():
     """Fetch NHL player data from projection sources."""
@@ -103,7 +129,7 @@ def get_nhl_players():
                             'name': name,
                             'team': team,
                             'position': position,
-                            'clean_name': clean_name(name)
+                            'clean_name': normalize_name(name)
                         }
         except Exception as e:
             logging.warning(f"Could not fetch from {table}: {e}")
@@ -142,7 +168,7 @@ def get_yahoo_players():
                     'name': name,
                     'team': team,
                     'position': position,
-                    'clean_name': clean_name(name)
+                        'clean_name': normalize_name(name)
                 }
         
         start += page_size
@@ -164,13 +190,13 @@ def match_players(nhl_players, yahoo_players):
     unmatched_count = 0
     
     for nhl_id, nhl_player in nhl_players.items():
-        nhl_name = nhl_player['clean_name']
-        
-        # Try exact match first
+        raw_nhl_name = nhl_player['name']
+        nhl_name = normalize_name(raw_nhl_name)
+
+        # Deterministic exact (normalized) match
         if nhl_name in yahoo_name_to_id:
             yahoo_id = yahoo_name_to_id[nhl_name]
             yahoo_player = yahoo_players[yahoo_id]
-            
             mappings.append({
                 'nhl_player_id': str(nhl_id),
                 'yahoo_player_id': yahoo_id,
@@ -179,38 +205,81 @@ def match_players(nhl_players, yahoo_players):
                 'nhl_team_abbreviation': nhl_player.get('team'),
                 'mapped_position': nhl_player.get('position'),
                 'match_confidence': 100.0,
+                'match_method': 'exact',
                 'last_updated': datetime.now().isoformat()
             })
             matched_count += 1
             continue
-        
-        # Try fuzzy matching with high threshold
+
+        # Try alias map deterministic
+        alias_map = NORM_SPEC.get('alias_map', {})
+        if nhl_name in alias_map:
+            alias_norm = alias_map[nhl_name]
+            if alias_norm in yahoo_name_to_id:
+                yahoo_id = yahoo_name_to_id[alias_norm]
+                yahoo_player = yahoo_players[yahoo_id]
+                mappings.append({
+                    'nhl_player_id': str(nhl_id),
+                    'yahoo_player_id': yahoo_id,
+                    'nhl_player_name': nhl_player['name'],
+                    'yahoo_player_name': yahoo_player['name'],
+                    'nhl_team_abbreviation': nhl_player.get('team'),
+                    'mapped_position': nhl_player.get('position'),
+                    'match_confidence': 100.0,
+                    'match_method': 'alias',
+                    'last_updated': datetime.now().isoformat()
+                })
+                matched_count += 1
+                continue
+
+        # Fuzzy matching fallback
         match_result = process.extractOne(
-            nhl_name, 
-            yahoo_names.values(), 
-            scorer=fuzz.ratio,
+            raw_nhl_name, 
+            [p['name'] for p in yahoo_players.values()], 
+            scorer=fuzz.token_set_ratio,
             score_cutoff=85  # High threshold for confidence
         )
-        
+
         if match_result:
             matched_name, confidence = match_result
-            yahoo_id = yahoo_name_to_id[matched_name]
-            yahoo_player = yahoo_players[yahoo_id]
-            
-            mappings.append({
+            # find the yahoo id for this matched display name
+            yahoo_id = None
+            for pid, p in yahoo_players.items():
+                if p.get('name') == matched_name:
+                    yahoo_id = pid
+                    break
+            if yahoo_id:
+                yahoo_player = yahoo_players[yahoo_id]
+                mappings.append({
+                    'nhl_player_id': str(nhl_id),
+                    'yahoo_player_id': yahoo_id,
+                    'nhl_player_name': nhl_player['name'],
+                    'yahoo_player_name': yahoo_player['name'],
+                    'nhl_team_abbreviation': nhl_player.get('team'),
+                    'mapped_position': nhl_player.get('position'),
+                    'match_confidence': float(confidence),
+                    'match_method': 'fuzzy',
+                    'last_updated': datetime.now().isoformat()
+                })
+                matched_count += 1
+                continue
+
+        # No match found — queue unmatched
+        logging.debug(f"No match found for NHL player: {nhl_player['name']}")
+        unmatched_count += 1
+        # persist unmatched suggestion row with empty candidates for now
+        try:
+            spec_norm = nhl_name
+            resp = supabase.table('yahoo_nhl_player_map_unmatched').insert({
                 'nhl_player_id': str(nhl_id),
-                'yahoo_player_id': yahoo_id,
                 'nhl_player_name': nhl_player['name'],
-                'yahoo_player_name': yahoo_player['name'],
-                'nhl_team_abbreviation': nhl_player.get('team'),
-                'mapped_position': nhl_player.get('position'),
-                'match_confidence': float(confidence),
-                'last_updated': datetime.now().isoformat()
-            })
-            matched_count += 1
-        else:
-            logging.debug(f"No match found for NHL player: {nhl_player['name']}")
-            unmatched_count += 1
+                'nhl_normalized': spec_norm,
+                'candidate_yahoo': [],
+            }).execute()
+            if hasattr(resp, 'error') and resp.error:
+                logging.warning('Could not insert unmatched row for %s: %s', nhl_player['name'], resp.error)
+        except Exception as e:
+            logging.warning('Exception while inserting unmatched for %s: %s', nhl_player['name'], e)
     
     logging.info(f"Matched {matched_count} players, {unmatched_count} unmatched")
     return mappings
@@ -232,7 +301,8 @@ def upsert_mappings(mappings):
             
             logging.info(f"Upserting batch {batch_num}/{total_batches} ({len(batch)} records)")
             
-            resp = supabase.table("yahoo_nhl_player_map_mat").upsert(batch).execute()
+            # Prefer authoritative table 'yahoo_nhl_player_map'
+            resp = supabase.table("yahoo_nhl_player_map").upsert(batch).execute()
             
             if hasattr(resp, "error") and resp.error:
                 logging.error(f"Error upserting batch {batch_num}: {resp.error}")

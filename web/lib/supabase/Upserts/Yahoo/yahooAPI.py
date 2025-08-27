@@ -242,11 +242,21 @@ def main():
     # 4) Perform a single upsert with all records
     if all_rows:
         try:
-            response = supabase.table("yahoo_players").upsert(all_rows).execute()
-            if hasattr(response, "error") and response.error:
-                logging.error(f"Failed to upsert yahoo_players: {response.error}")
-            else:
-                logging.info(f"Upserted {len(all_rows)} player records into 'yahoo_players'.")
+            # Prefer invoking RPC to upsert and append history atomically
+            try:
+                logging.info('Attempting to call RPC upsert_players_batch with payload size %d', len(all_rows))
+                rpc_resp = supabase.rpc('upsert_players_batch', { 'players_data': all_rows }).execute()
+                if hasattr(rpc_resp, 'error') and rpc_resp.error:
+                    logging.warning('RPC upsert_players_batch returned error: %s', rpc_resp.error)
+                    raise Exception(rpc_resp.error)
+                logging.info('RPC upsert_players_batch completed successfully')
+            except Exception as e:
+                logging.warning('RPC failed or not available; falling back to direct table upsert: %s', e)
+                response = supabase.table("yahoo_players").upsert(all_rows).execute()
+                if hasattr(response, "error") and response.error:
+                    logging.error(f"Failed to upsert yahoo_players: {response.error}")
+                else:
+                    logging.info(f"Upserted {len(all_rows)} player records into 'yahoo_players'.")
         except Exception as e:
             logging.error(f"Exception upserting players: {e}")
     else:
