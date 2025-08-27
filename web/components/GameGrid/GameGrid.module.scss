@@ -109,7 +109,11 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: $border-radius-lg;
   box-shadow: none;
   border: none; // remove outer border per request
-  overflow: visible; // allow cell gap edges to show
+  // Previously visible allowed internal absolutely positioned separator
+  // lines to extend past the rounded bottom-left corner. Hide overflow so
+  // the vertical team column separator and any negative-offset pseudo
+  // elements are clipped to the container's radius.
+  overflow: hidden;
   position: relative;
   background: v.$color-bg-dark-1; // darkest backdrop to show through gaps
   backdrop-filter: none;
@@ -298,7 +302,6 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     );
     color: v.$text-color-primary;
     border-color: rgba(7, 170, 226, 0.3);
-    transform: translateY(-2px);
     box-shadow:
       $shadow-lg,
       0 0 20px rgba(7, 170, 226, 0.2);
@@ -510,6 +513,10 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   scrollbar-color: v.$secondary-color rgba(255, 255, 255, 0.1);
   background-color: v.$color-bg-dark-1; // darkest canvas for visible gaps
   position: relative; // anchor continuous separator lines
+  // Mirror container rounding so inner background doesn't visually square off
+  border-radius: inherit;
+  // Ensure internal absolutely positioned lines are clipped
+  overflow: hidden;
   --separator-color: v.$primary-color;
   &::before,
   &::after,
@@ -564,6 +571,9 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
   font-size: 0.72rem;
   background: transparent; // let dark parent show through gaps
+  border-radius: inherit;
+  // Clip interior cell backgrounds to container rounding; relies on ancestor overflow hidden
+  overflow: hidden;
   thead th {
     position: sticky;
     top: 0;
@@ -580,9 +590,9 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 2;
   }
   // Row hover: keep cells unchanged so intensity colors remain; rely on subtle lift effects elsewhere
-  tbody tr:hover td {
-    background: transparent;
-  }
+  // tbody tr:hover td {
+  //   background: transparent;
+  // }
 
   // Refined zebra striping: ONLY affect non-matchup (stats) columns so we don't wipe intensity fills.
   // Matchup cells carry .cellInnerBorder plus one of the day classes (off-night-day, medium-heavy-day, heavy-day).
@@ -602,6 +612,12 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       background $transition-fast,
       color $transition-fast,
       box-shadow $transition-fast;
+  }
+
+  // Give bottom-left cell a matching radius so its sticky background doesn't square off corner
+  tbody tr:last-of-type td:first-child {
+    border-bottom-left-radius: $border-radius-lg;
+    overflow: hidden;
   }
 }
 
@@ -745,6 +761,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 // Compact matchup cell adjustments (smaller content area)
 .cellInnerBorder {
   padding: 1px !important; // tighter
+  position: relative; // anchor for corner badge
 }
 .matchupCell {
   display: flex;
@@ -766,6 +783,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .cellInnerBorder {
     padding: 0 !important;
+    position: relative; // ensure anchor on mobile override too
   }
   .matchupCell {
     min-height: 20px;
@@ -773,6 +791,63 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   .mobileLogoSize {
     width: 18px !important;
     height: 18px !important;
+  }
+
+  .mobileCompactTable {
+    font-size: 0.62rem;
+    width: 100%;
+  }
+  .mobileCompactTable thead th {
+    font-size: 0.55rem;
+    letter-spacing: 0.06em; // reduce visual noise
+    padding: 4px 2px !important;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(6px);
+  }
+  .mobileCompactTable thead th .dayAbbreviation {
+    letter-spacing: 0.15em; // less spaced-out for compactness
+    font-weight: 700;
+  }
+  .mobileCompactTable thead th .dayDate {
+    font-size: 0.55rem !important;
+    font-weight: 600;
+    opacity: 0.85;
+  }
+  .mobileCompactTable tbody tr {
+    height: 34px; // slightly tighter
+    transition: filter $transition-fast; // smooth brightness change
+  }
+  .mobileCompactTable tbody tr:hover {
+    filter: brightness(1.07);
+  }
+  .mobileCompactTable td {
+    padding: 1px 3px !important; // tighter vertical spacing
+    line-height: 1.05;
+  }
+  .mobileCompactTable td:first-child {
+    padding-left: 6px !important;
+    font-weight: 600;
+    font-size: 0.65rem;
+    background: rgba(0, 0, 0, 0.7) !important;
+  }
+  .mobileCompactTable .cellInnerBorder {
+    padding: 1px !important;
+  }
+  .mobileCompactTable .matchupCell img {
+    max-width: 18px;
+    max-height: 18px;
+  }
+  .mobileCompactTable td[data-intensity] {
+    // soften intensity backgrounds slightly for less visual noise
+    background-color: color.adjust(rgba(255, 255, 255, 0.05), $alpha: -0.02);
+  }
+  .mobileCompactTable .weekScoreCell {
+    font-weight: 600;
+    font-size: 0.6rem;
+  }
+  // Hide verbose rank fill if any gradient overshadowing occurs – keep subtle
+  .mobileCompactTable td[class*="rank-color-"] {
+    background-image: none !important;
   }
 }
 
@@ -824,13 +899,6 @@ $heavy-color: #b64343;
       box-shadow $transition-fast,
       background $transition-fast;
     pointer-events: none;
-  }
-
-  // Slight expansion on hover for discoverability
-  &:hover::before {
-    box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.12),
-      0 0 8px rgba(255, 255, 255, 0.25);
   }
 }
 
@@ -1096,7 +1164,6 @@ $heavy-color: #b64343;
             rgba(7, 170, 226, 0.15)
           );
           color: v.$text-color-primary;
-          transform: translateY(-2px);
           box-shadow: $shadow-md;
 
           &::before {
@@ -1605,15 +1672,8 @@ $heavy-color: #b64343;
 
       // Enhanced hover effect with glow
       &:hover {
-        background: linear-gradient(
-          90deg,
-          rgba(7, 170, 226, 0.12),
-          rgba(7, 170, 226, 0.06)
-        );
-        transform: translateY(-2px);
-        box-shadow:
-          $shadow-lg,
-          0 0 20px rgba(7, 170, 226, 0.15);
+        // Remove dark overlay; simply boost existing row background brightness
+        filter: brightness(1.4);
         z-index: 1;
         border-radius: $border-radius-sm;
       }
@@ -1699,7 +1759,7 @@ $heavy-color: #b64343;
 
         @media (max-width: 480px) {
           padding: 1px;
-          border-radius: v.$border-radius-sm;
+          border-radius: 0;
         }
       }
 
@@ -2218,6 +2278,115 @@ $heavy-color: #b64343;
   z-index: 1;
   width: 24px;
   height: 24px;
+}
+
+// Further compacting of mobile matchup logos & corner badges (H/A)
+@media (max-width: 480px) {
+  .mobileMatchupLogoWrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; // keep container tight
+    height: 24px;
+  }
+  // Let the badge be positioned relative to the cell instead of wrapper
+  .logoWithIconWrapper.mobileMatchupLogoWrapper {
+    position: static;
+  }
+  .compactMobileLogo {
+    width: 20px;
+    height: 20px;
+    transition:
+      filter 120ms ease,
+      transform 120ms ease;
+  }
+  .matchupCell:hover .compactMobileLogo {
+    filter: brightness(1.08) saturate(1.05);
+    transform: translateY(-1px);
+  }
+  .cornerBadge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 16px;
+    height: 16px;
+    z-index: 3;
+    font-size: 0.55rem; // keep letter if present
+    font-weight: 600;
+    line-height: 1; // we'll center manually
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding: 1px 2px 0 0; // nudge letter inward slightly
+    text-transform: uppercase;
+    letter-spacing: 0.2px;
+    color: v.$text-button;
+    pointer-events: none;
+    // Dog-ear triangle base
+    clip-path: polygon(100% 0, 0 0, 100% 100%);
+    background: transparent; // actual color via gradient layers per variant
+    mix-blend-mode: normal;
+    // Provide subtle layered depth via pseudo elements
+    &::before,
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      clip-path: inherit;
+      border-top-right-radius: 0; // ensure no rounding interfering
+      // Put triangle layers behind the letter
+      z-index: -1;
+    }
+    // Outer translucent layer
+    &::before {
+      opacity: 0.65; // ~65% overall tint
+    }
+    // Inner inset smaller triangle for nested effect
+    &::after {
+      inset: 2px 2px 0 0; // inset left a bit to preserve right/top edge alignment
+      clip-path: polygon(100% 0, 0 0, 100% 100%);
+      opacity: 0.9;
+      box-shadow: 0 0 2px rgba(0, 0, 0, 0.4) inset;
+    }
+    // Slight shadow along hypotenuse
+    filter: drop-shadow(0 0 1px rgba(0, 0, 0, 0.55));
+  }
+  .homeBadge {
+    &::before {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$schedule-green, 0.65),
+        rgba(color.scale(v.$schedule-green, $lightness: -10%), 0.55)
+      );
+    }
+    &::after {
+      background: linear-gradient(
+        135deg,
+        rgba(color.scale(v.$schedule-green, $lightness: 5%), 0.9),
+        rgba(color.scale(v.$schedule-green, $lightness: -15%), 0.85)
+      );
+    }
+  }
+  .awayBadge {
+    &::before {
+      background: linear-gradient(
+        135deg,
+        rgba(v.$danger-color, 0.65),
+        rgba(color.scale(v.$danger-color, $lightness: -12%), 0.55)
+      );
+    }
+    &::after {
+      background: linear-gradient(
+        135deg,
+        rgba(color.scale(v.$danger-color, $lightness: 5%), 0.9),
+        rgba(color.scale(v.$danger-color, $lightness: -18%), 0.85)
+      );
+    }
+  }
+
+  // Harmonize badge colors with existing palette accents if variables available
+  // (Fallback solid colors used above; replace with design tokens if/when added)
 }
 
 /* --- Legend Bottom Sheet (Mobile) --- */

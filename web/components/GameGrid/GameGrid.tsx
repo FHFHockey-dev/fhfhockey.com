@@ -640,7 +640,9 @@ function GameGridInternal({
                     }
                   />
                 ) : (
-                  <table className={styles.scheduleGrid}>
+                  <table
+                    className={`${styles.scheduleGrid} ${styles.mobileCompactTable}`}
+                  >
                     <Header
                       start={dates[0]}
                       end={dates[1]}

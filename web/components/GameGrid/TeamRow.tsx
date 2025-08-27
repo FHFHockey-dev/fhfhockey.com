@@ -262,26 +262,32 @@ function MatchUpCell({
     <Tooltip content={tooltipContent}>
       <div className={styles.matchupCell}>
         {isMobile ? (
-          <div className={styles.logoWithIconWrapper}>
-            <span className={styles.homeAwayIconBehind}>
-              <Image
-                src={home ? "/pictures/homeIcon.png" : "/pictures/awayIcon.png"}
-                alt={home ? "Home" : "Away"}
-                width={14}
-                height={14}
-                className={styles.homeAwayIconMobile}
-              />
+          <div
+            className={clsx(
+              styles.logoWithIconWrapper,
+              styles.mobileMatchupLogoWrapper
+            )}
+          >
+            <span
+              className={clsx(
+                styles.cornerBadge,
+                home ? styles.homeBadge : styles.awayBadge
+              )}
+              aria-label={home ? "Home game" : "Away game"}
+            >
+              {home ? "H" : "A"}
             </span>
             <Image
               className={clsx(
                 styles.mobileLogoSize,
+                styles.compactMobileLogo,
                 home ? styles["home-shadow"] : styles["away-shadow"],
                 excluded ? styles.excludedStateMobile : undefined
               )}
               objectFit="contain"
               alt={`${opponentTeam.name} logo`}
-              width={22}
-              height={22}
+              width={20}
+              height={20}
               src={opponentTeam.logo}
               title={opponentTeam.name}
             />

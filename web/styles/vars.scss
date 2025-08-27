@@ -262,6 +262,9 @@ $space-xl: 32px;
 $space-xxl: 48px;
 $space-xxxl: 64px;
 
+// Panel & layout helpers
+$panel-gap: $space-lg; // Standard vertical gap between stacked dashboard panels
+
 $border-radius-md: 8px;
 $border-radius-lg: 12px;
 $border-radius: $border-radius-lg; // canonical radius

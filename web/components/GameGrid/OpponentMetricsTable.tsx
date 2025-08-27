@@ -5,6 +5,7 @@ import { TeamDataWithTotals } from "lib/NHL/types";
 import supabase from "lib/supabase"; // Import the Supabase client
 import styles from "./OpponentMetricsTable.module.scss";
 import clsx from "clsx";
+import PanelStatus from "components/common/PanelStatus";
 
 // It's best practice to move this interface to a shared types file (e.g., lib/NHL/types.ts)
 // to avoid duplication. It is included here for completeness.
@@ -238,9 +239,9 @@ export default function OpponentMetricsTable({
       </div>
       <div id="opponent-metrics-content" className={styles.tableWrapper}>
         {statsLoading ? (
-          <div className={styles.message}>Loading opponent stats...</div>
+          <PanelStatus state="loading" message="Loading opponent stats..." />
         ) : !hasData ? (
-          <div className={styles.message}>No opponent data available.</div>
+          <PanelStatus state="empty" message="No opponent data available." />
         ) : (
           <table className={styles.table}>
             <thead>

@@ -1,6 +1,7 @@
 @use "sass:color";
 @use "styles/vars" as v; // Use an alias for brevity
 @use "sass:math";
+@use "styles/panel" as panel;
 
 // Define border color and width as variables for consistency
 $metric-border-color: #07aae2; // Your blue color
@@ -17,19 +18,15 @@ $selected-border-width: 2px; // The width of the indicator
 /* --- Filters Styling --- */
 .filters {
   margin: 0 auto 20px auto; // Add consistent bottom margin
+  margin-bottom: v.$panel-gap; // Override explicit magic number with token
   color: v.$text-color-primary;
   overflow: hidden;
-  outline: 8px solid v.$background-dark;
-  background-color: v.$background-dark;
-  border: 3px solid v.$background-light;
-  border-radius: v.$border-radius;
   width: 100%;
-  padding: 15px;
   position: relative; // For icon
-
   display: flex;
   flex-direction: column;
   gap: 15px; // Consistent gap between sections (title, basic filters, metric filters, reset)
+  @include panel.panel-container($padding: 15px);
 
   // Transition for filter content height/visibility
   .filterContainer, // Basic filter rows (desktop)
@@ -78,27 +75,24 @@ $selected-border-width: 2px; // The width of the indicator
 }
 
 .filtersTitle {
+  @include panel.panel-title;
   width: 100%;
-  text-align: left;
-  font-size: clamp(1.2rem, 4vw, 1.5rem);
-  font-weight: 100;
-  color: v.$text-color-primary;
-  font-family:
-    v.$font-family-accent, v.$font-family-primary, sans-serif !important;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  padding-bottom: 10px;
-  border-bottom: 2px solid v.$secondary-color;
-  // margin-bottom: 5px; // Spacing handled by parent gap
-  position: relative;
-  padding-right: 30px; // Space for icon
-  transition:
-    padding-bottom v.$transition-duration v.$transition-easing,
-    border-bottom v.$transition-duration v.$transition-easing,
-    margin-bottom v.$transition-duration v.$transition-easing;
-
+  padding-right: 40px; // Space for icon (align with others)
+  border-bottom-color: v.$secondary-color;
+  // Override panel-title default space-between so inline spans don't stretch apart
+  justify-content: flex-start;
+  gap: 8px;
+  // Optional inner wrapper if we later group content
+  .titleContent {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: baseline;
+  }
+  &[data-interactive="true"] {
+    cursor: pointer;
+  }
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {
-    cursor: pointer; // Make clickable on mobile
     user-select: none;
   }
 }
@@ -680,7 +674,7 @@ $selected-border-width: 2px; // The width of the indicator
   width: 100%;
   border-collapse: collapse;
   thead {
-    position: sticky;
+    position: sticky; // Cohesive sticky header like other tables
     top: 0;
     background-color: v.$background-dark;
     color: v.$text-color-secondary;
@@ -727,7 +721,7 @@ $selected-border-width: 2px; // The width of the indicator
   // Special styling for first column (Name)
   thead th:first-child,
   tbody tr td:first-child {
-    border-right: 5px solid v.$secondary-color; // Prominent right border for name column
+    @include panel.first-col-separator(2px); // Unified separator width
     text-align: left;
     padding: v.$table-cell-padding; // Use variable
     font-size: 16px; // Slightly larger for name
