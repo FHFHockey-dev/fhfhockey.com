@@ -497,51 +497,109 @@ This PRD considered complete when:
 
 End of PRD.
 
-## Session updates — work completed (2025-08-27)
-Summary of concrete work done in this session and status against the PRD items above.
+---
 
-- Implemented a date-based ownership ingestion script: `web/lib/supabase/Upserts/Yahoo/yahooHistoricalOwnership.py` that:
-  - queries Yahoo `percent_owned;type=date;date=YYYY-MM-DD` per-player, per-date,
-  - derives per-player league_key from `player_key` to avoid mixed-game-key errors,
-  - supports batch chunking (configurable, default 25 → later run with 10),
-  - upserts enriched rows into `yahoo_player_ownership_history` including metadata (player_name, player_id, game_id, season_start_year, season_id, league_id),
-  - has credential fallback to `yahoo_api_credentials` in Supabase if env vars absent.
+## Addendum — `yahooHistoricalOwnership.py` Review & Status (2025-08-28)
 
-- Applied resilient persistence and schema updates:
-  - Supabase migration applied to add the history columns and unique constraint/indexes for idempotent upserts.
-  - `upsert_ownership_batch` uses retry with exponential backoff.
+Summary
+- `yahooHistoricalOwnership.py` was optimized and validated in smoke runs; ingestion is running and producing upserts into `yahoo_player_ownership_history` with ownership_pct, player_name, season_start_year and a populated `season_id` when available.
 
-- Resilience & scale improvements:
-  - Added per-player fetch retry/backoff with jitter and increased attempts.
-  - Added chunk-level escalation (pause extra when a chunk shows high failure rate).
-  - Implemented a resume pre-check: find the most recent `ownership_date` in `yahoo_player_ownership_history`, delete that date's rows (overwrite) and start ingestion from that date forward (avoids retracing already-completed days).
+Completed items (observed)
+- Robust Supabase paging for `yahoo_player_keys` (no 1000-row truncation).
+- Multi-key Yahoo requests with configurable clamped max keys per request.
+- Adaptive split-on-failure backoff that shrinks batch sizes on rate-limit and retries before long pauses.
+- Retry-After header handling for numeric and HTTP-date formats.
+- Pacing controls (min interval + optional per-minute cap) to avoid burst throttling.
+- Structured telemetry to `yahoo_historical_progress.log` and run logging to `yahoo_historical.log`.
+- Robust extraction for percent_owned/name/player_id across multiple Yahoo response shapes.
+- Upsert retry with exponential backoff for Supabase writes.
+- Diagnostic helper `dump_sample_for_first_key()` for response-shape inspection.
+- Defensive fix to populate `season_id` from `seasons` row keys (`id`, `seasonId`, `season_id`).
 
-- Validation & runs performed:
-  - Short dry runs validated chunked upserts (50 players × 2 dates; 200×3), confirmed HTTP 201 upserts.
-  - Started a full ingestion run in the background (safer throttling: `batch_size=10`, `sleep_seconds=3.0`) and attached a simple monitor to watch for rate-limit spikes and pause the job automatically.
+Operational observations
+- Adaptive splitting reduces long sleeps but needs telemetry-driven tuning for full historical ingest.
+- Telemetry is compact and machine-friendly; ingest it into a metrics store or parse JSON-lines for tuning.
+- Conservative defaults are recommended for initial full runs; loosen after observing low failure rates.
 
-  - 2025-08-27: Added migration for draft analysis history and mapping tables; created `upsert_players_batch` RPC DDL; exported `player_name_normalization_spec.json`; updated mapping script for deterministic-first matching and unmatched persistence; updated player ingestion to call RPC with fallback.
+Recommended immediate next steps
+1. Run a conservative full historical ingestion with these starting envs:
+   - YFPY_MAX_KEYS_PER_REQUEST=5
+   - YHO_BATCH_SIZE=50
+   - YHO_SLEEP_SECONDS=1.5
+   - YHO_RATE_LIMIT_PAUSE_SECONDS=1800
+   - YHO_ADAPTIVE_MIN_KEYS=1
+   - YHO_ADAPTIVE_SHRINK_FACTOR=2
+   - YHO_ADAPTIVE_RETRY_LIMIT=4
+2. Collect & aggregate telemetry (`yahoo_historical_progress.log`) for 1–4 hours and compute per-hour metrics (processed, failures, adaptive events, Retry-After events).
+3. If 429s persist after adaptive shrinking, reduce `YFPY_MAX_KEYS_PER_REQUEST` further or step date granularity (weekly windows) to reduce call volume.
+4. Ensure the DB RPC (`upsert_players_batch`) implements atomic upsert + history append (see PRD Section 13). If not present, gate RPC deployment and use the script's safe upsert fallback until the RPC is available.
+5. Create an `ingestion_runs` audit record per run (start_ts, end_ts, processed_count, failed_count, params) for future monitoring and automated tuning.
 
-## PRD status mapping (high-level)
-Marking the PRD goals with status after this session.
+LLM-Optimized Prompt (use this to instruct an assistant/LLM for the next run)
+---
+You are operating on the repository root that contains the Yahoo ingestion and mapping tools. A validated, optimized ingestion script is at `web/lib/supabase/Upserts/Yahoo/yahooHistoricalOwnership.py`. Your goals: run a conservative full historical ingestion, collect structured telemetry, recommend tuned env defaults for production, and produce a migration/rollout plan for the RPC and history tables.
 
-- Goal 1 (game IDs): Partially addressed — we mapped season -> game prefix and validated the ingestion flow, but canonical consolidation of game/weeks ingestion remains (P1/P2).
-- Goal 2 (player names): Partially addressed — historical ownership ingestion uses `yahoo_player_keys` and writes metadata; a full canonical single-authoritative player-keys job still needed (P2).
-- Goal 3 (append history): Done (P0) — ownership history ingestion implemented and schema added; draft-analysis history optional table remains and should be added similarly.
-- Goal 4 (mapping): Partially addressed — mapping script unchanged in this session, but we added tooling and recommendations to support a mapping pass; unmatched queue and review UI remain to implement (P0/P1).
+Key files & logs (repo-relative):
+- `web/lib/supabase/Upserts/Yahoo/yahooHistoricalOwnership.py` (ingestion script)
+- `web/lib/supabase/Upserts/Yahoo/populate_yahoo_nhl_mapping.py` (mapping)
+- `web/lib/supabase/Upserts/Yahoo/player_name_normalization_spec.json` (normalization)
+- `migrations/20250827_yahoo_upsert_and_mapping.sql` (migration sketch)
+- `prd-yahoo-audit.md` (this PRD)
+- Telemetry/logs at repo root: `yahoo_historical_progress.log`, `yahoo_historical.log`
+- Upstream TS invoker: `web/pages/api/v1/db/update-yahoo-players.ts`
 
-## Additional tasks & recommendations (shortlist)
-- Add `yahoo_player_draft_analysis_history` table and update batch RPC to insert draft snapshots alongside ownership.
-- Harden RPC `upsert_players_batch` to atomically upsert latest and append history (see PRD RPC contract sketch).
-- Persist ingestion run metadata to `ingestion_runs` table (start/end counts, failures) for observability.
-- Extract normalization spec JSON and import it into Python scripts; update `populate_yahoo_nhl_mapping.py` to use deterministic-first matching and persist unmatched queue.
-- Add a light scheduler or CI job to run the owner- ship historical ingestion daily with a rate-limit configuration parameter.
+Step-by-step instructions for the assistant/LLM
+1. Start a conservative ingestion run (adjust python path for environment):
 
-## Next steps (recommended immediate actions)
-1. Finalize and deploy the RPC/function `upsert_players_batch` to insert both latest player snapshot and append to `yahoo_player_ownership_history` in a single transaction (P0).
-2. Create `yahoo_player_draft_analysis_history` and adapt ingestion to append draft snapshot rows (P0).
-3. Implement mapping improvements: export `player_name_normalization_spec.json`, run deterministic matching first, persist unmatched to `yahoo_nhl_player_map_unmatched` and wire a small admin UI for resolution (P0/P1).
-4. Add an ingestion_runs table and wire the historical ingestion script to report run summaries and counts (P1).
-5. Tune throttling parameters over several runs (batch_size, sleep_seconds) and add a global backoff policy for repeated 429s (P1).
+```bash
+YFPY_MAX_KEYS_PER_REQUEST=5 \
+YHO_BATCH_SIZE=50 \
+YHO_SLEEP_SECONDS=1.5 \
+YHO_RATE_LIMIT_PAUSE_SECONDS=1800 \
+YHO_ADAPTIVE_MIN_KEYS=1 \
+YHO_ADAPTIVE_SHRINK_FACTOR=2 \
+YHO_ADAPTIVE_RETRY_LIMIT=4 \
+YHO_SAMPLE_PLAYER_LIMIT=0 \
+YHO_SAMPLE_DATES_LIMIT=0 \
+YHO_RESUME=1 \
+.venv/bin/python web/lib/supabase/Upserts/Yahoo/yahooHistoricalOwnership.py
+```
 
-End of PRD.
+2. Tail telemetry for the first 60–240 minutes; parse JSON-lines and compute:
+   - processed_rows, failed_rows, chunk success/failure, adaptive adjustments (old/new max_keys), Retry-After events (seconds).
+
+3. Output a JSON summary:
+```json
+{
+  "start_ts": "...",
+  "end_ts": "...",
+  "processed_rows": 0,
+  "failed_rows": 0,
+  "adaptive_events": [{"ts":"...","old_max_keys":10,"new_max_keys":5,"failure_rate":0.25}],
+  "retry_after_events": [{"ts":"...","seconds":1500}],
+  "recommended_env_adjustments": {"YFPY_MAX_KEYS_PER_REQUEST":5,"YHO_SLEEP_SECONDS":1.5,"YHO_RATE_LIMIT_PAUSE_SECONDS":1800}
+}
+```
+
+4. If >5% of batch attempts trigger 429s even after adaptive shrinking, recommend either lowering `YFPY_MAX_KEYS_PER_REQUEST` further or setting `YHO_STEP_DAYS=7` to step weekly windows.
+
+5. Verify `season_id` population by sampling recent rows in `yahoo_player_ownership_history` and cross-checking `seasons` table; if NULLs remain, list keys present in `seasons` rows and propose canonical mapping.
+
+6. Produce a migration + rollout plan (SQL + gating checks) to:
+   - create/ensure `yahoo_player_ownership_history` with indexes and retention policy,
+   - create `yahoo_nhl_player_map_unmatched` queue table,
+   - implement `upsert_players_batch` RPC that atomically upserts latest snapshot and appends history rows.
+
+7. Produce a 1-page roll-out plan (staging run → monitoring → production) with failure mitigations and monitoring signals to watch.
+
+Notes & nuance
+- Parse telemetry JSON-lines; prefer structured parsing over regex.
+- Honor env clamping in script (max keys <= 25). Start conservative.
+- Use non-destructive DB changes (IF NOT EXISTS) and create new tables before any cutover.
+
+Output expected
+- Short runnable checklist confirming the ingestion run started and was monitored.
+- JSON telemetry summary.
+- Final recommended env settings for staging/production and concise migration plan (SQL snippets).
+
+---

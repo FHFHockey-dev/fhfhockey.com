@@ -205,7 +205,6 @@ def match_players(nhl_players, yahoo_players):
                 'nhl_team_abbreviation': nhl_player.get('team'),
                 'mapped_position': nhl_player.get('position'),
                 'match_confidence': 100.0,
-                'match_method': 'exact',
                 'last_updated': datetime.now().isoformat()
             })
             matched_count += 1
@@ -226,7 +225,6 @@ def match_players(nhl_players, yahoo_players):
                     'nhl_team_abbreviation': nhl_player.get('team'),
                     'mapped_position': nhl_player.get('position'),
                     'match_confidence': 100.0,
-                    'match_method': 'alias',
                     'last_updated': datetime.now().isoformat()
                 })
                 matched_count += 1
@@ -258,7 +256,6 @@ def match_players(nhl_players, yahoo_players):
                     'nhl_team_abbreviation': nhl_player.get('team'),
                     'mapped_position': nhl_player.get('position'),
                     'match_confidence': float(confidence),
-                    'match_method': 'fuzzy',
                     'last_updated': datetime.now().isoformat()
                 })
                 matched_count += 1
@@ -301,8 +298,13 @@ def upsert_mappings(mappings):
             
             logging.info(f"Upserting batch {batch_num}/{total_batches} ({len(batch)} records)")
             
-            # Prefer authoritative table 'yahoo_nhl_player_map'
-            resp = supabase.table("yahoo_nhl_player_map").upsert(batch).execute()
+            # Prefer authoritative materialized mapping table 'yahoo_nhl_player_map_mat'
+            # Use on_conflict to update existing rows when nhl_player_id+yahoo_player_id pair exists
+            try:
+                resp = supabase.table("yahoo_nhl_player_map_mat").upsert(batch, on_conflict="nhl_player_id,yahoo_player_id").execute()
+            except TypeError:
+                # Older client may not support on_conflict param; fall back to plain upsert and handle errors
+                resp = supabase.table("yahoo_nhl_player_map_mat").upsert(batch).execute()
             
             if hasattr(resp, "error") and resp.error:
                 logging.error(f"Error upserting batch {batch_num}: {resp.error}")

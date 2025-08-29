@@ -16,20 +16,13 @@ create table if not exists public.yahoo_player_draft_analysis_history (
 create index if not exists ix_yahoo_player_draft_analysis_history_recent on public.yahoo_player_draft_analysis_history (player_key, captured_at desc);
 
 -- Mapping table (authoritative)
-create table if not exists public.yahoo_nhl_player_map (
-  player_key text primary key,
-  yahoo_player_id text,
-  nhl_player_id text,
-  nhl_player_name text,
-  yahoo_player_name text,
-  normalized_key text,
-  match_confidence numeric(5,2),
-  match_method text check (match_method in ('exact','alias','fuzzy','manual')),
-  review_status text default 'auto' check (review_status in ('auto','needs_review','approved','rejected')),
-  manual_notes text,
-  last_updated timestamptz default now()
-);
-create index if not exists ix_yahoo_nhl_player_map_norm on public.yahoo_nhl_player_map(normalized_key);
+-- NOTE: A database object named "yahoo_nhl_player_map" already exists in the
+-- target database as a view. Creating a table (or an index on the same name)
+-- will fail on that DB. We intentionally do not create/alter the
+-- `yahoo_nhl_player_map` object here to avoid clobbering an existing view.
+-- The repository contains a materialized table `yahoo_nhl_player_map_mat` that
+-- is the operational target for upserts. The migration below will create the
+-- unmatched queue and the draft-history table and install the upsert RPC.
 
 -- Unmatched queue
 create table if not exists public.yahoo_nhl_player_map_unmatched (

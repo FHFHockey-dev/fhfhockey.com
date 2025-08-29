@@ -24,27 +24,40 @@ class MyYahooQuery(YahooFantasySportsQuery):
     def get_multiple_players(self, player_keys, subresources=None):
         """
         GET player data from Yahoo.
-        
-        For debugging, we construct the URL using only the first player key.
-        (The original approach joined all keys with commas.)
+        For efficiency, construct multi-player requests by joining player keys with commas.
+        If the list is large, break into chunks controlled by env var YFPY_MAX_KEYS_PER_REQUEST
+        (default 25) to avoid overly long URLs.
         """
-        # For debugging, use a single key (remove this line to revert to multi-key requests)
-        single_key = player_keys[0]
-        resource_path = f"players;player_keys={single_key}"
-        if subresources:
-            resource_path += f";out={','.join(subresources)}"
-        url = f"https://fantasysports.yahooapis.com/fantasy/v2/{resource_path}"
-        print("Constructed URL (single key):", url)  # Debug print
-        
-        # Execute the query and print the raw returned data
-        data = self.query(url, ["players"])
-        print("Raw data returned for key", single_key, ":", data)  # Debug print
-        
-        # Wrap the data in a list if it isn't already
-        if isinstance(data, list):
-            return data
-        else:
-            return [data]
+        max_keys = int(os.getenv('YFPY_MAX_KEYS_PER_REQUEST', '25'))
+        if not player_keys:
+            return []
+
+        # Helper to build URL for a list of keys
+        def _build_url(keys_subset):
+            resource_path = f"players;player_keys={','.join(keys_subset)}"
+            if subresources:
+                resource_path += f";out={','.join(subresources)}"
+            return f"https://fantasysports.yahooapis.com/fantasy/v2/{resource_path}"
+
+        results = []
+        # Chunk keys if larger than max_keys
+        for i in range(0, len(player_keys), max_keys):
+            chunk = player_keys[i:i+max_keys]
+            url = _build_url(chunk)
+            logging.info('Querying Yahoo for %d players (keys %d-%d)', len(chunk), i+1, i+len(chunk))
+            try:
+                data = self.query(url, ["players"])
+                # Ensure returned data is iterable; wrap single objects
+                if isinstance(data, list):
+                    results.extend(data)
+                else:
+                    results.append(data)
+            except Exception as e:
+                logging.warning('Failed to fetch players for keys %d-%d: %s', i+1, i+len(chunk), e)
+                # propagate the exception so callers can decide to retry
+                raise
+
+        return results
 
 # -----------------------------------------------------------------------------
 # CONFIG & ENV SETUP
