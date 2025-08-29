@@ -206,6 +206,44 @@ Recommendations (P1):
 
 ### Proposed Schema
 ```
+
+## Highest Priority Addition: Nightly Yahoo ownership upsert API (cron)
+Priority: Highest
+
+Goal
+- Create a Next.js API endpoint that, when invoked (cron nightly), upserts player ownership data for the current date into Supabase as a time-series (append one row per player per day) or optionally into a JSONB per-player column. This endpoint will be scheduled by your hosting (Vercel cron or external scheduler) to run nightly.
+
+Why
+- Provide a consistent nightly snapshot of percent_owned for analytics and UI features (ownership timelines, pick volatility, owner-share trends).
+
+Files / Areas to change
+- New API route: `web/pages/api/cron/upsert-yahoo-ownership.ts` (or `app/api/cron/upsert-yahoo-ownership/route.ts` if using App Router)
+- Existing Python historical job (`web/lib/supabase/Upserts/Yahoo/yahooHistoricalOwnership.py`) can be used as a reference for Yahoo query shapes and auth, but the Next.js route should reuse the backend credentials flow and Supabase server key (server-side). Prefer the `yahoo-fantasy` npm package or the same yfpy logic ported into TypeScript.
+- DB: create or confirm `yahoo_player_ownership_daily` exists with (player_key, ownership_date, ownership_pct, source, inserted_at, ...). If you prefer JSONB, add `ownership_history JSONB` to `yahoo_players` with the nightly entry appended (schema + migrations required).
+
+Implementation steps (minimal, no extra assumptions)
+1. Add API endpoint skeleton `web/pages/api/cron/upsert-yahoo-ownership.ts` that is server-only and reads Supabase URL/Service Role Key and Yahoo credentials from environment.
+2. Endpoint behavior:
+  - Query `yahoo_player_keys` for the current game prefix (or use a stored `yahoo_game_keys` mapping). Collect all player_keys.
+  - For batching (25 per call), call Yahoo API endpoint matching the historical script but request `percent_owned;type=date;date=TODAY` for the current date (or use the equivalent via `yahoo-fantasy` npm client).
+  - For each returned player object, extract `percent_owned.value` (or `ownership.value`) using the same defensive logic you implemented in Python (handle model objects and dicts).
+  - Upsert rows into `yahoo_player_ownership_daily` with `(player_key, ownership_date, ownership_pct, source='yahoo', inserted_at=now())`. Use upsert on conflict (player_key, ownership_date) to avoid duplicates.
+  - For players omitted in a batch response, insert a row with `ownership_pct = NULL` to preserve that the snapshot ran (optional; advisable for completeness).
+3. Database schema decision:
+  - Preferred: keep `yahoo_player_ownership_daily` as single-row-per-player-per-day table (fast to query for time series). Add indices on `(player_key, ownership_date)` and `(ownership_date)`.
+  - Alternate: `ownership_history JSONB` on `yahoo_players` where each nightly run appends a timestamped entry. This simplifies some reads but is less convenient for time-range analysis and larger volumes.
+4. Add a lightweight test harness in `web/pages/api/cron/upsert-yahoo-ownership.ts` that allows a `?dryRun=1` query param to run a single batch and print stats (rows upserted, rows missing).
+5. Schedule: configure the Vercel cron entry (or other scheduler) to call the endpoint nightly UTC (or your preferred timezone). If you use Vercel, add in `vercel.json` the cron schedule entry or set it up in Vercel UI.
+6. Monitoring & retry: if Yahoo returns partial responses, schedule a retry logic (exponential backoff) within the endpoint or rely on scheduler re-run on failure. Emit logs to Supabase or Sentry for failures.
+
+Acceptance criteria
+- A nightly run appends/updates rows for today's ownership for the majority of players. The `yahoo_player_ownership_daily` table has one row per player per date with `ownership_pct` as numeric or NULL.
+- Endpoint supports `dryRun` and emits counts for manual testing.
+- A cron schedule triggers the endpoint nightly.
+
+Notes
+- The Python historical job remains useful for backfilling past dates; keep it as a separate maintenance tool.
+- Keep the extraction logic aligned between the Python and TS implementations to reduce sniffing differences.
 Table: yahoo_player_ownership_history
 Columns:
   player_key text not null

@@ -65,6 +65,46 @@ A three-panel Draft Dashboard enabling fast, informed drafting with real‑time 
 - Acceptance Criteria:
   - Reproduce and document root cause(s); implement targeted fixes; add tests for name normalization and filter logic; verify affected players appear with correct data.
 
+## Highest Priority Additions (This Weekend)
+The following three items are highest priority for this weekend and expand the Draft Dashboard's draft-time functionality. Each item includes a concise implementation plan tied to the relevant files.
+
+1) FORWARDS aggregation option (C/LW/RW -> FORWARDS)
+- Goal: Offer a user toggle in the Draft Dashboard settings to treat C/LW/RW as separate (current behavior) or grouped into a single FORWARDS pool (new). When selected, VORP/VBD/VONA calculations should use FWD pools rather than separate C/LW/RW pools.
+- Files touched: `web/hooks/useVORPCalculations.ts`, `web/components/DraftDashboard/ProjectionsTable.tsx` (settings UI), `web/components/DraftDashboard/DraftBoard.tsx` (visuals consistent with new grouping).
+- Steps:
+  1. Add a persisted setting (e.g., `groupForwards: boolean`) in the ProjectionsTable settings and settings persistence layer (existing localStorage hooks used in table). Provide a toggle UI with explanatory tooltip.
+  2. In `useVORPCalculations.ts`, add a flag parameter (or accept via draftSettings) that when true will collapse eligible position categories: map C,LW,RW -> FWD for grouping. Update all position grouping logic (byPosFull, byPosAvail, idxVORP/idxVOLS and replacement calculation) to handle `FWD` as a position in addition to `D` and `G`.
+     - Ensure utility allocation (`utilAdj`) distributes to FWD when grouping is active (or allocate across FWD/D according to existing heuristics).
+     - Recompute replacement indices (vorsprank/vostr) using T * starters[FWD] when grouping is active.
+  3. Update `ProjectionsTable.tsx` to show banding and VORP/VBD columns aggregated for FWD when the toggle is on. Ensure sorting keys and tooltips reflect the active grouping.
+  4. Update UI labels in `DraftBoard.tsx` and any roster visuals that show position columns so they display FWD instead of separate C/LW/RW when grouping is active.
+  5. Add unit tests for `useVORPCalculations` covering grouped vs ungrouped outputs for a small synthetic pool.
+  6. Roll out behind the toggle and validate with live sample data.
+
+2) Keeper picks pre-load and pick-forfeiting UI
+- Goal: Allow users to pre-load keeper players into rosters with an associated kept round; mark the corresponding draft pick as forfeited (owned by that keeper's team) and remove the player from the available projections list and DraftBoard pick sequence/visuals.
+- Files touched: `web/components/DraftDashboard/MyRoster.tsx`, `web/components/DraftDashboard/ProjectionsTable.tsx`, `web/components/DraftDashboard/DraftBoard.tsx`.
+- Steps:
+  1. Add a Keeper import / dialog in `MyRoster.tsx` that accepts N keeper entries: playerId, teamId (owner), and keptRound (integer). Persist these locally (and optionally to server if you already support saved drafts). Provide validation (player exists and not duplicated).
+  2. When a keeper is added: attach the player to the specified team's roster state (update `teamStatsList` or the same state structure used by the app), mark that pick slot (round,pickInRound or global pick index) as "forfeited" and visually attribute it to the keeper's team in the `DraftBoard.tsx` pick grid.
+     - If your draft model uses a pick list, mark the corresponding pickOwner for that pick to the keeper's team and flag it as a kept pick so subsequent logic treats it as already-completed.
+  3. Remove the keeper player from the `ProjectionsTable` available list and from any availability maps used by recommendations (e.g., `availablePlayers`, `byPosAvail`). Ensure `useVORPCalculations` receives the updated available pool so replacement values reflect the reduced pool.
+  4. In `MyRoster.tsx` and `DraftBoard.tsx`, update any draft contribution graphs to include a distinct color/annotation for forfeited picks (keepers), and count them in roster progress calculations.
+  5. Add a simple import UI to pre-load multiple keepers at once (CSV or JSON paste) for rapid configuration.
+  6. Add tests to ensure: when keeper is preloaded the player is removed from availablePlayers, the pick is marked, and replacement calculations update.
+
+3) Custom draft pick trades UI
+- Goal: Allow the user to record traded draft picks (i.e., pick at round X originally belonging to Team A was traded to Team B). Update pick ownership for the specific pick and reflect changes across DraftBoard, MyRoster, and ProjectionsTable (recommendations/runs that use draft order).
+- Files touched: `web/components/DraftDashboard/DraftBoard.tsx`, `web/components/DraftDashboard/MyRoster.tsx`, `web/components/DraftDashboard/ProjectionsTable.tsx`.
+- Steps:
+  1. Add a "Manage Trades" modal in the Draft Dashboard that accepts one or more trade entries in the form: { round, pickInRound (optional), originalTeamId, newTeamId } or a global pick index mapping. Validate entries.
+  2. When a trade is added, update the internal pick ownership mapping used by `DraftBoard` so the visual grid shows the new team owner for that pick. Persist the trade mapping to localStorage (or server if desired).
+  3. Ensure `MyRoster` uses the updated ownership mapping to compute which team is drafting in which turn and to permit pre-assignment of keeper picks to the new owner if needed.
+  4. Notify downstream systems (recommendations, expectedRuns, risk calculations) by recomputing any caches that depend on pick order or upcoming owner sequence.
+  5. Add tests to verify the mapping updates propagate to visuals and calculations.
+
+These three items are highest priority for this weekend. After implementing the UI + state plumbing, we should run an integrated smoke test: create a mock draft with grouped forwards enabled, pre-load keepers, apply a trade, and verify VORP/banding, roster counts, and DraftBoard visuals update consistently.
+
 ## Backlog (Brief)
 - Suggested Picks module: need‑adjusted VBD + VONA + risk composite ranking with explanations and actions.
 - Projection Source Accuracy UI: visualize per‑source quality; toggles for Total vs Per‑Game; future tie‑in to weights.
