@@ -122,6 +122,33 @@ const DraftDashboard: React.FC = () => {
   const [sessionReady, setSessionReady] = React.useState(false);
   const resumeAttemptedRef = React.useRef(false);
 
+  // NEW: Forward grouping mode (split C/LW/RW vs combined FWD)
+  const [forwardGrouping, setForwardGrouping] = useState<"split" | "fwd">(
+    () => {
+      if (typeof window === "undefined") return "split";
+      const saved = window.localStorage.getItem(
+        "draftDashboard.forwardGrouping.v1"
+      );
+      return saved === "fwd" ? "fwd" : "split";
+    }
+  );
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      "draftDashboard.forwardGrouping.v1",
+      forwardGrouping
+    );
+  }, [forwardGrouping]);
+
+  // NEW: Traded pick ownership overrides and keeper entries
+  const [pickOwnerOverrides, setPickOwnerOverrides] = useState<
+    Record<string, string>
+  >({});
+  const [keepers, setKeepers] = useState<
+    Array<{ round: number; pickInRound: number; teamId: string; playerId: string }>
+  >([]);
+
   // Add custom team names state
   const [customTeamNames, setCustomTeamNames] = useState<
     Record<string, string>
@@ -281,6 +308,11 @@ const DraftDashboard: React.FC = () => {
             if (typeof saved.myTeamId === "string") setMyTeamId(saved.myTeamId);
             if (saved.customTeamNames)
               setCustomTeamNames(saved.customTeamNames);
+            if (saved.forwardGrouping === "fwd" || saved.forwardGrouping === "split")
+              setForwardGrouping(saved.forwardGrouping);
+            if (saved.pickOwnerOverrides && typeof saved.pickOwnerOverrides === "object")
+              setPickOwnerOverrides(saved.pickOwnerOverrides);
+            if (Array.isArray(saved.keepers)) setKeepers(saved.keepers);
           }
         }
       }
@@ -321,7 +353,10 @@ const DraftDashboard: React.FC = () => {
       currentPick,
       isSnakeDraft,
       myTeamId,
-      customTeamNames
+      customTeamNames,
+      forwardGrouping,
+      pickOwnerOverrides,
+      keepers
     };
     try {
       window.localStorage.setItem(
@@ -344,27 +379,30 @@ const DraftDashboard: React.FC = () => {
     const round = Math.ceil(currentPick / draftSettings.teamCount);
     const pickInRound = ((currentPick - 1) % draftSettings.teamCount) + 1;
 
-    let teamIndex: number;
+    const key = `${round}-${pickInRound}`;
+    let defaultTeamIndex: number;
     if (isSnakeDraft && round % 2 === 0) {
-      // Snake draft: reverse order on even rounds
-      teamIndex = draftSettings.teamCount - pickInRound;
+      defaultTeamIndex = draftSettings.teamCount - pickInRound;
     } else {
-      // Standard order
-      teamIndex = pickInRound - 1;
+      defaultTeamIndex = pickInRound - 1;
     }
+    const defaultTeamId = draftSettings.draftOrder[defaultTeamIndex];
+    const ownerOverride = pickOwnerOverrides[key];
+    const teamId = ownerOverride || defaultTeamId;
 
     return {
       round,
       pickInRound,
-      teamId: draftSettings.draftOrder[teamIndex],
-      isMyTurn: draftSettings.draftOrder[teamIndex] === myTeamId
+      teamId,
+      isMyTurn: teamId === myTeamId
     };
   }, [
     currentPick,
     draftSettings.teamCount,
     draftSettings.draftOrder,
     isSnakeDraft,
-    myTeamId
+    myTeamId,
+    pickOwnerOverrides
   ]);
 
   // Add team name update function
@@ -611,7 +649,8 @@ const DraftDashboard: React.FC = () => {
     picksUntilNext,
     leagueType: draftSettings.leagueType || "points",
     baselineMode,
-    categoryWeights: draftSettings.categoryWeights
+    categoryWeights: draftSettings.categoryWeights,
+    forwardGrouping
   });
 
   // Team stats calculations
@@ -904,6 +943,46 @@ const DraftDashboard: React.FC = () => {
     [myTeamId]
   );
 
+  // Handlers: traded picks and keepers
+  const addTradedPick = useCallback(
+    (round: number, pickInRound: number, newOwnerTeamId: string) => {
+      const key = `${round}-${pickInRound}`;
+      setPickOwnerOverrides((prev) => ({ ...prev, [key]: newOwnerTeamId }));
+    },
+    []
+  );
+  const removeTradedPick = useCallback((round: number, pickInRound: number) => {
+    const key = `${round}-${pickInRound}`;
+    setPickOwnerOverrides((prev) => {
+      const copy = { ...prev } as Record<string, string>;
+      delete copy[key];
+      return copy;
+    });
+  }, []);
+
+  const addKeeper = useCallback(
+    (round: number, pickInRound: number, teamId: string, playerId: string) => {
+      const pickNumber = (round - 1) * draftSettings.teamCount + pickInRound;
+      // Remove any existing drafted entry at this pick
+      setDraftedPlayers((prev) => [
+        ...prev.filter((p) => p.pickNumber !== pickNumber),
+        { playerId, teamId, pickNumber, round, pickInRound }
+      ]);
+      setKeepers((prev) => [
+        ...prev.filter((k) => k.round !== round || k.pickInRound !== pickInRound),
+        { round, pickInRound, teamId, playerId }
+      ]);
+    },
+    [draftSettings.teamCount]
+  );
+  const removeKeeper = useCallback((round: number, pickInRound: number) => {
+    const pickNumber = (round - 1) * draftSettings.teamCount + pickInRound;
+    setDraftedPlayers((prev) => prev.filter((p) => p.pickNumber !== pickNumber));
+    setKeepers((prev) =>
+      prev.filter((k) => k.round !== round || k.pickInRound !== pickInRound)
+    );
+  }, [draftSettings.teamCount]);
+
   // Add handy keyboard shortcuts for power users
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -1032,6 +1111,8 @@ const DraftDashboard: React.FC = () => {
         draftedPlayers={draftedPlayers}
         currentPick={currentPick}
         customTeamNames={customTeamNames}
+        forwardGrouping={forwardGrouping}
+        onForwardGroupingChange={setForwardGrouping}
         sourceControls={sourceControls}
         onSourceControlsChange={setSourceControls}
         goalieSourceControls={goalieSourceControls}
@@ -1044,6 +1125,12 @@ const DraftDashboard: React.FC = () => {
         availableSkaterStatKeys={availableSkaterStatKeys}
         availableGoalieStatKeys={availableGoalieStatKeys}
         onExportCsv={exportBlendedProjectionsCsv}
+        pickOwnerOverrides={pickOwnerOverrides}
+        onAddTradedPick={addTradedPick}
+        onRemoveTradedPick={removeTradedPick}
+        keepers={keepers}
+        onAddKeeper={addKeeper}
+        onRemoveKeeper={removeKeeper}
       />
 
       {/* Full-width Suggested Picks above the three panels */}
@@ -1077,6 +1164,8 @@ const DraftDashboard: React.FC = () => {
             availablePlayers={availablePlayers}
             allPlayers={allPlayers}
             onUpdateTeamName={updateTeamName}
+            pickOwnerOverrides={pickOwnerOverrides}
+            keepers={keepers}
           />
         </section>
 

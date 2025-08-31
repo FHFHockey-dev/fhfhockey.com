@@ -1358,26 +1358,149 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       let from = 0;
       const supabasePageSize = 1000;
       try {
+        // Determine optional gameId override from URL (quick dev convenience)
+        let gameId: string | null = null;
+        if (typeof window !== "undefined") {
+          const params = new URLSearchParams(window.location.search);
+          const override = params.get("gameId");
+          if (override) gameId = override;
+        }
+
+        // If no override, try to infer latest game_id from yahoo_game_keys
+        if (!gameId) {
+          try {
+            const { data: gameRow } = await supabase
+              .from("yahoo_game_keys")
+              .select("game_id")
+              .eq("code", "nhl")
+              .order("season", { ascending: false })
+              .limit(1)
+              .single();
+            if (gameRow && gameRow.game_id) gameId = String(gameRow.game_id);
+          } catch (e) {
+            // non-fatal, continue without game filter
+            console.warn("Could not read game_id from yahoo_game_keys:", e);
+          }
+        }
+
+        // Query `yahoo_nhl_player_map_mat` with pagination
         while (true) {
-          // Assuming RawDataFromDb is the intended row type, specify it in the select method
-          const { data, error, count } = await supabase
+          let builder = supabase
             .from("yahoo_nhl_player_map_mat")
-            .select<"*", RawDataFromDb>("*", { count: "exact" }) // Specify row type here
+            .select("*", { count: "exact" })
             .range(from, from + supabasePageSize - 1);
 
+          // Note: yahoo_nhl_player_map_mat does not include game_id, so we do not filter by it here.
+
+          const { data, error, count } = await builder;
           if (error) throw error;
           if (!data) break;
 
-          // Now TS believes `data` is `UnifiedPlayerData[]`
-          allData = allData.concat(data);
+          // Map DB rows (which may include extra fields) into UnifiedPlayerData shape
+          const mapped = (data as any[]).map((r) => ({
+            nhl_player_id: r.nhl_player_id ? String(r.nhl_player_id) : "",
+            nhl_player_name: r.nhl_player_name || "",
+            nhl_team_abbreviation: r.nhl_team_abbreviation || r.normalized_team || null,
+            yahoo_player_id: r.yahoo_player_id ? String(r.yahoo_player_id) : null,
+            yahoo_player_name: r.yahoo_player_name || null,
+            yahoo_team: r.yahoo_team || null,
+            percent_ownership:
+              typeof r.percent_ownership === "number"
+                ? r.percent_ownership
+                : r.percent_ownership != null
+                  ? Number(r.percent_ownership)
+                  : null,
+            eligible_positions: r.eligible_positions || null,
+            off_nights: r.off_nights ?? null,
+            points:
+              r.points != null
+                ? typeof r.points === "number" ? r.points : Number(r.points)
+                : null,
+            goals:
+              r.goals != null
+                ? typeof r.goals === "number" ? r.goals : Number(r.goals)
+                : null,
+            assists:
+              r.assists != null
+                ? typeof r.assists === "number" ? r.assists : Number(r.assists)
+                : null,
+            shots:
+              r.shots != null
+                ? typeof r.shots === "number" ? r.shots : Number(r.shots)
+                : null,
+            pp_points:
+              r.pp_points != null
+                ? typeof r.pp_points === "number" ? r.pp_points : Number(r.pp_points)
+                : null,
+            blocked_shots:
+              r.blocked_shots != null
+                ? typeof r.blocked_shots === "number" ? r.blocked_shots : Number(r.blocked_shots)
+                : null,
+            hits:
+              r.hits != null
+                ? typeof r.hits === "number" ? r.hits : Number(r.hits)
+                : null,
+            total_fow:
+              r.total_fow != null
+                ? typeof r.total_fow === "number" ? r.total_fow : Number(r.total_fow)
+                : null,
+            penalty_minutes:
+              r.penalty_minutes != null
+                ? typeof r.penalty_minutes === "number" ? r.penalty_minutes : Number(r.penalty_minutes)
+                : null,
+            sh_points:
+              r.sh_points != null
+                ? typeof r.sh_points === "number" ? r.sh_points : Number(r.sh_points)
+                : null,
+            wins:
+              r.wins != null
+                ? typeof r.wins === "number" ? r.wins : Number(r.wins)
+                : null,
+            saves:
+              r.saves != null
+                ? typeof r.saves === "number" ? r.saves : Number(r.saves)
+                : null,
+            shots_against:
+              r.shots_against != null
+                ? typeof r.shots_against === "number" ? r.shots_against : Number(r.shots_against)
+                : null,
+            shutouts:
+              r.shutouts != null
+                ? typeof r.shutouts === "number" ? r.shutouts : Number(r.shutouts)
+                : null,
+            quality_start:
+              r.quality_start != null
+                ? typeof r.quality_start === "number" ? r.quality_start : Number(r.quality_start)
+                : null,
+            goals_against_avg:
+              r.goals_against_avg != null
+                ? typeof r.goals_against_avg === "number" ? r.goals_against_avg : Number(r.goals_against_avg)
+                : null,
+            save_pct:
+              r.save_pct != null
+                ? typeof r.save_pct === "number" ? r.save_pct : Number(r.save_pct)
+                : null,
+            player_type: r.player_type === "goalie" || r.player_type === "G" ? "goalie" : "skater",
+            current_team_abbreviation: r.nhl_team_abbreviation || r.normalized_team || r.yahoo_team || null,
+            percent_games:
+              r.percent_games != null
+                ? typeof r.percent_games === "number" ? r.percent_games : Number(r.percent_games)
+                : null,
+            status: r.status || null,
+            injury_note: r.injury_note || null
+          }));
+
+          allData = allData.concat(mapped as UnifiedPlayerData[]);
 
           if (count !== null && allData.length >= count) break;
           if (data.length < supabasePageSize) break;
           from += supabasePageSize;
         }
+
         setPlayersData(allData);
       } catch (error) {
         console.error("Failed to load player data:", error);
+        setPlayersData([]);
       } finally {
         setLoading(false);
       }

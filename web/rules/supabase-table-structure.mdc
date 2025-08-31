@@ -1442,6 +1442,41 @@ wgo_team_stats:
 | game_id                    | bigint           | YES         | null                                       | null                     |
 | opponent_id                | integer          | YES         | null                                       | null                     |
 
+yahoo_nhl_player_map:
+| column_name           | data_type         | is_nullable | column_default | character_maximum_length |
+| --------------------- | ----------------- | ----------- | -------------- | ------------------------ |
+| nhl_player_id         | text              | YES         | null           | null                     |
+| nhl_player_name       | text              | YES         | null           | null                     |
+| nhl_team_abbreviation | text              | YES         | null           | null                     |
+| name_norm             | text              | YES         | null           | null                     |
+| player_type           | text              | YES         | null           | null                     |
+| points                | numeric           | YES         | null           | null                     |
+| goals                 | numeric           | YES         | null           | null                     |
+| assists               | numeric           | YES         | null           | null                     |
+| shots                 | numeric           | YES         | null           | null                     |
+| pp_points             | numeric           | YES         | null           | null                     |
+| blocked_shots         | numeric           | YES         | null           | null                     |
+| hits                  | numeric           | YES         | null           | null                     |
+| total_fow             | numeric           | YES         | null           | null                     |
+| penalty_minutes       | numeric           | YES         | null           | null                     |
+| sh_points             | numeric           | YES         | null           | null                     |
+| wins                  | numeric           | YES         | null           | null                     |
+| losses                | numeric           | YES         | null           | null                     |
+| saves                 | numeric           | YES         | null           | null                     |
+| shots_against         | numeric           | YES         | null           | null                     |
+| shutouts              | numeric           | YES         | null           | null                     |
+| quality_start         | numeric           | YES         | null           | null                     |
+| goals_against_avg     | numeric           | YES         | null           | null                     |
+| save_pct              | numeric           | YES         | null           | null                     |
+| yahoo_player_id       | character varying | YES         | null           | 255                      |
+| yahoo_player_name     | character varying | YES         | null           | 255                      |
+| yahoo_team            | character varying | YES         | null           | 10                       |
+| percent_ownership     | double precision  | YES         | null           | null                     |
+| eligible_positions    | jsonb             | YES         | null           | null                     |
+| injury_note           | text              | YES         | null           | null                     |
+| status                | character varying | YES         | null           | 10                       |
+| status_full           | character varying | YES         | null           | 255                      |
+
 yahoo_nhl_player_map_mat:
 | column_name           | data_type         | is_nullable | column_default | character_maximum_length |
 | --------------------- | ----------------- | ----------- | -------------- | ------------------------ |

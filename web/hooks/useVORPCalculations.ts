@@ -30,6 +30,8 @@ export interface UseVORPParams {
   leagueType?: LeagueType;
   baselineMode?: "remaining" | "full"; // NEW: replacement baseline source
   categoryWeights?: Record<string, number>; // used when leagueType === 'categories'
+  // NEW: forward grouping mode: split C/LW/RW or combined F
+  forwardGrouping?: "split" | "fwd";
 }
 
 export interface UseVORPResult {
@@ -56,7 +58,8 @@ export function useVORPCalculations({
   picksUntilNext,
   leagueType = "points",
   baselineMode = "remaining",
-  categoryWeights = {}
+  categoryWeights = {},
+  forwardGrouping = "split"
 }: UseVORPParams): UseVORPResult {
   return useMemo(() => {
     // Value per player (points or categories composite)
@@ -190,6 +193,10 @@ export function useVORPCalculations({
       byPosFull[pos].sort((a, b) => b.value - a.value);
     });
 
+    // If forward grouping is combined, build a merged forward pool (C+LW+RW)
+    const fwdPoolFull = [...byPosFull.C, ...byPosFull.LW, ...byPosFull.RW]
+      .sort((a, b) => b.value - a.value);
+
     // Replacement indices (0-based) for VORP and VOLS
     const idxVORP: Record<string, number> = {};
     const idxVOLS: Record<string, number> = {};
@@ -204,6 +211,13 @@ export function useVORPCalculations({
       idxVORP[pos] = vorpIdx;
       idxVOLS[pos] = volsIdx;
     });
+
+    // For combined forward mode, compute combined starter count for FWD pool
+    const fwdStarters =
+      (starters as any).C + (starters as any).LW + (starters as any).RW +
+      (utilAdj.C + utilAdj.LW + utilAdj.RW);
+    const fwdIdxVORP = Math.max(0, Math.floor(T * fwdStarters + 1) - 1);
+    const fwdIdxVOLS = Math.max(0, Math.floor(T * ((starters as any).C + (starters as any).LW + (starters as any).RW)) - 1);
 
     // Replacement values at indices (use last available if shorter)
     const replacementByPos: Record<string, { vorp: number; vols: number }> = {
@@ -234,16 +248,28 @@ export function useVORPCalculations({
       byPosAvail[pos].sort((a, b) => b.value - a.value)
     );
 
+    const fwdPoolAvail = [...byPosAvail.C, ...byPosAvail.LW, ...byPosAvail.RW]
+      .sort((a, b) => b.value - a.value);
+
     // Choose baseline source for replacement values
     const baselineArrs = baselineMode === "remaining" ? byPosAvail : byPosFull;
 
     positions.forEach((pos) => {
-      const arr = baselineArrs[pos];
-      const vorpIdx = Math.min(idxVORP[pos], Math.max(0, arr.length - 1));
-      const volsIdx = Math.min(idxVOLS[pos], Math.max(0, arr.length - 1));
-      const vorpVal = arr[vorpIdx]?.value ?? 0;
-      const volsVal = arr[volsIdx]?.value ?? 0;
-      replacementByPos[pos] = { vorp: vorpVal, vols: volsVal };
+      if (forwardGrouping === "fwd" && (pos === "C" || pos === "LW" || pos === "RW")) {
+        const arr = baselineMode === "remaining" ? fwdPoolAvail : fwdPoolFull;
+        const vorpIdx = Math.min(fwdIdxVORP, Math.max(0, arr.length - 1));
+        const volsIdx = Math.min(fwdIdxVOLS, Math.max(0, arr.length - 1));
+        const vorpVal = arr[vorpIdx]?.value ?? 0;
+        const volsVal = arr[volsIdx]?.value ?? 0;
+        replacementByPos[pos] = { vorp: vorpVal, vols: volsVal };
+      } else {
+        const arr = baselineArrs[pos];
+        const vorpIdx = Math.min(idxVORP[pos], Math.max(0, arr.length - 1));
+        const volsIdx = Math.min(idxVOLS[pos], Math.max(0, arr.length - 1));
+        const vorpVal = arr[vorpIdx]?.value ?? 0;
+        const volsVal = arr[volsIdx]?.value ?? 0;
+        replacementByPos[pos] = { vorp: vorpVal, vols: volsVal };
+      }
     });
 
     // Build quick index lookup of current rank in available list per pos
@@ -274,15 +300,36 @@ export function useVORPCalculations({
       D: 0,
       G: 0
     };
-    topN.forEach((p) => {
-      const elig = parseEligiblePositions(p.displayPosition);
-      const valid = elig.filter((pos) => positions.includes(pos as any));
-      if (valid.length === 0) return;
-      const frac = 1 / valid.length; // fractional allocation across elig positions
-      valid.forEach((pos) => {
-        expectedTaken[pos] += frac;
+    if (forwardGrouping === "fwd") {
+      // Count skaters (non-D, non-G) as FWD and distribute equally across C/LW/RW for display
+      let fwdExpected = 0;
+      topN.forEach((p) => {
+        const elig = parseEligiblePositions(p.displayPosition);
+        const isD = elig.includes("D");
+        const isG = elig.includes("G");
+        if (!isD && !isG && elig.length > 0) {
+          fwdExpected += 1; // treat as forward slot
+        } else if (isD) {
+          expectedTaken.D += 1;
+        } else if (isG) {
+          expectedTaken.G += 1;
+        }
       });
-    });
+      const share = fwdExpected / 3;
+      expectedTaken.C += share;
+      expectedTaken.LW += share;
+      expectedTaken.RW += share;
+    } else {
+      topN.forEach((p) => {
+        const elig = parseEligiblePositions(p.displayPosition);
+        const valid = elig.filter((pos) => positions.includes(pos as any));
+        if (valid.length === 0) return;
+        const frac = 1 / valid.length; // fractional allocation across elig positions
+        valid.forEach((pos) => {
+          expectedTaken[pos] += frac;
+        });
+      });
+    }
 
     // Compute metrics per player, choose best eligible position
     const playerMetrics = new Map<string, PlayerVorpMetrics>();
