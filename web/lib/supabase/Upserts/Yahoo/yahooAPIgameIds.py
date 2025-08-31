@@ -31,8 +31,8 @@ if not all([SUPABASE_URL, SUPABASE_KEY, YFPY_CONSUMER_KEY, YFPY_CONSUMER_SECRET]
     exit(1)
 
 # Yahoo API constants
-GAME_ID = '453'
-LEAGUE_ID = '105954'
+GAME_ID = '465'
+LEAGUE_ID = '858'
 ENV_FILE_LOCATION = Path("/Users/tim/Desktop/FHFH/fhfhockey.com/web/")
 
 # Initialize Supabase client

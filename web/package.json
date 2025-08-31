@@ -11,7 +11,8 @@
     "lint": "next lint",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "test": "vitest"
+  "test": "vitest",
+  "mcp:supabase": "SUPABASE_ACCESS_TOKEN=$(grep SUPABASE_ACCESS_TOKEN .env.mcp | cut -d= -f2) npx @supabase/mcp-server-supabase"
   },
   "dependencies": {
     "@apollo/client": "^3.6.9",

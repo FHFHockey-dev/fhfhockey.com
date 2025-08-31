@@ -1,0 +1,6 @@
+{
+  "strip_suffixes": ["jr", "sr", "ii", "iii", "iv"],
+  "replace_chars": {"é": "e", "ö": "o", "ü": "u", "ï": "i", "š": "s", "ć": "c", "č": "c", "ř": "r", "ĺ": "l", "í": "i", "á": "a", "ó": "o"},
+  "punctuation_regex": "[.\\'`-]",
+  "alias_map": {"alexander ovechkin": "alex ovechkin", "jonathan marchand": "jonathan marchessault"}
+}

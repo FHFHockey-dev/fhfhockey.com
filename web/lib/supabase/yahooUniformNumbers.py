@@ -4,6 +4,9 @@ from datetime import datetime
 from supabase import create_client, Client
 from dotenv import load_dotenv
 from yfpy.query import YahooFantasySportsQuery
+import time
+from pathlib import Path
+from tqdm import tqdm
 
 
 # Configure logging
@@ -16,12 +19,12 @@ logging.basicConfig(
 )
 
 # Load environment variables from .env.local
-load_dotenv('C:/Users/timbr/Desktop/FHFH/fhfhockey.com-3/web/.env.local')
+ENV_FILE = "/Users/tim/Desktop/FHFH/fhfhockey.com/web/.env.local"
+load_dotenv(ENV_FILE)
 
 # Constants from environment variables
 SUPABASE_URL = os.getenv('NEXT_PUBLIC_SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_ROLE_KEY')
-# CHANGED SUPABASE THING
 YFPY_CONSUMER_KEY = os.getenv('YFPY_CONSUMER_KEY')
 YFPY_CONSUMER_SECRET = os.getenv('YFPY_CONSUMER_SECRET')
 
@@ -34,18 +37,27 @@ if not all([SUPABASE_URL, SUPABASE_KEY, YFPY_CONSUMER_KEY, YFPY_CONSUMER_SECRET]
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # Yahoo API Constants
-GAME_ID = '453'  # Update this with your actual game ID
-LEAGUE_ID = '105954'  # Update this with your actual league ID
+GAME_ID = '465'  # Update this with your actual game ID
+LEAGUE_ID = '858'  # Update this with your actual league ID
+ENV_FILE_LOCATION = Path("/Users/tim/Desktop/FHFH/fhfhockey.com/web/")
+
 
 # Initialize YahooFantasySportsQuery
-auth_dir = 'C:/Users/timbr/Desktop/FHFH/fhfhockey.com-3/web/lib/supabase/Upserts/yahooAuth'
+# auth_dir = 'C:/Users/timbr/Desktop/FHFH/fhfhockey.com-3/web/lib/supabase/Upserts/yahooAuth'
 yahoo_query = YahooFantasySportsQuery(
-    auth_dir=auth_dir,
     league_id=LEAGUE_ID,
     game_code="nhl",
     game_id=GAME_ID,
-    consumer_key=YFPY_CONSUMER_KEY,
-    consumer_secret=YFPY_CONSUMER_SECRET
+    yahoo_consumer_key=YFPY_CONSUMER_KEY,
+    yahoo_consumer_secret=YFPY_CONSUMER_SECRET,
+    save_token_data_to_env_file=False,
+    env_file_location=ENV_FILE_LOCATION
+)
+
+# Save token data (if applicable)
+yahoo_query.save_access_token_data_to_env_file(
+    env_file_location=ENV_FILE_LOCATION,
+    env_file_name='.env.local'
 )
 
 # Function to upsert uniform numbers into Supabase

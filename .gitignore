@@ -30,6 +30,7 @@ yarn-error.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env.mcp
 
 # vercel
 .vercel
@@ -49,7 +50,9 @@ yarn-error.log*
 sitemap.xml
 sitemap-0.xml
 
-
 # Robots.txt
 robots.txt
 *storybook.log
+
+# MCP json
+.mcp.json
