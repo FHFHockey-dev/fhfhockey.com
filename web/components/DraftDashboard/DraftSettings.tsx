@@ -21,6 +21,9 @@ interface DraftSettingsProps {
   draftedPlayers: any[];
   currentPick: number;
   customTeamNames?: Record<string, string>;
+  // NEW: forward grouping mode controls
+  forwardGrouping?: "split" | "fwd";
+  onForwardGroupingChange?: (mode: "split" | "fwd") => void;
   // Projection source controls
   sourceControls?: Record<string, { isSelected: boolean; weight: number }>;
   onSourceControlsChange?: (
@@ -45,6 +48,27 @@ interface DraftSettingsProps {
   availableGoalieStatKeys?: string[];
   // NEW: export blended projections CSV
   onExportCsv?: () => void;
+  // NEW: traded picks & keepers
+  pickOwnerOverrides?: Record<string, string>;
+  onAddTradedPick?: (
+    round: number,
+    pickInRound: number,
+    teamId: string
+  ) => void;
+  onRemoveTradedPick?: (round: number, pickInRound: number) => void;
+  keepers?: Array<{
+    round: number;
+    pickInRound: number;
+    teamId: string;
+    playerId: string;
+  }>;
+  onAddKeeper?: (
+    round: number,
+    pickInRound: number,
+    teamId: string,
+    playerId: string
+  ) => void;
+  onRemoveKeeper?: (round: number, pickInRound: number) => void;
 }
 
 const CAT_KEYS = [
@@ -97,6 +121,8 @@ function getShortLabel(statKey: string): string {
   }
 }
 
+import PlayerAutocomplete from "components/PlayerAutocomplete";
+
 const DraftSettings: React.FC<DraftSettingsProps> = ({
   settings,
   onSettingsChange,
@@ -110,6 +136,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   draftedPlayers,
   currentPick,
   customTeamNames = {},
+  forwardGrouping = "split",
+  onForwardGroupingChange,
   sourceControls,
   onSourceControlsChange,
   goalieSourceControls,
@@ -121,7 +149,13 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   customSourceLabel,
   availableSkaterStatKeys = [],
   availableGoalieStatKeys = [],
-  onExportCsv
+  onExportCsv,
+  pickOwnerOverrides = {},
+  onAddTradedPick,
+  onRemoveTradedPick,
+  keepers = [],
+  onAddKeeper,
+  onRemoveKeeper
 }) => {
   const [collapsed, setCollapsed] = React.useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -275,6 +309,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     new Map()
   );
   const DEBOUNCE_MS = 200;
+
+  // Collapsible section for keepers & traded picks
+  const [keepersOpen, setKeepersOpen] = React.useState<boolean>(false);
 
   const applyDebouncedSourceWeight = (id: string, value: number) => {
     if (!onSourceControlsChange || !sourceControls) return;
@@ -712,6 +749,100 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                 <option value="categories">Categories</option>
               </select>
             </div>
+            {/* Quick Actions moved into League Setup to reduce containers */}
+            <div id="resetDraftWarning" className={styles.visuallyHidden}>
+              This will clear all picks. Action cannot be undone.
+            </div>
+            <div className={styles.actionButtons}>
+              <button
+                className={styles.actionButton}
+                onClick={undoLastPick}
+                disabled={draftHistory.length === 0}
+                title={
+                  draftHistory.length > 0
+                    ? `Undo Pick #${currentPick - 1}`
+                    : "No picks to undo"
+                }
+                data-testid="undo-pick-btn"
+              >
+                Undo Pick
+              </button>
+              <button
+                className={styles.actionButton}
+                onClick={handleResetDraftClick}
+                disabled={draftedPlayers.length === 0 && !confirmReset}
+                aria-describedby="resetDraftWarning"
+                data-testid="reset-draft-btn"
+                title="Reset entire draft"
+                style={
+                  confirmReset
+                    ? { borderColor: "#ff5555", color: "#ff5555" }
+                    : undefined
+                }
+              >
+                {confirmReset ? "Confirm Reset" : "Reset Draft"}
+              </button>
+              <button
+                className={styles.actionButton}
+                onClick={() => onOpenImportCsv && onOpenImportCsv()}
+                title="Import custom projections from CSV"
+                aria-label="Import CSV"
+                data-testid="import-csv-btn"
+              >
+                {customSource ? "Reimport CSV" : "Import CSV"}
+              </button>
+              <button
+                className={styles.actionButton}
+                onClick={() => {
+                  if (onExportCsv) {
+                    onExportCsv();
+                    return;
+                  }
+                  try {
+                    const payload = {
+                      type: "fhf-draft-settings",
+                      version: 1,
+                      generatedAt: new Date().toISOString(),
+                      settings: { ...settings },
+                      sourceControls: sourceControls || null,
+                      goalieSourceControls: goalieSourceControls || null,
+                      goalieScoringCategories: goalieScoringCategories || null,
+                      meta: {
+                        teamCount: settings.teamCount,
+                        leagueType: settings.leagueType,
+                        totalRosterSpots: Object.values(
+                          settings.rosterConfig || {}
+                        ).reduce((s: number, v: number) => s + v, 0)
+                      }
+                    };
+                    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+                      type: "application/json"
+                    });
+                    const filename = `draft-settings-${settings.teamCount}teams-${Date.now()}.json`;
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => {
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                    }, 0);
+                  } catch (e) {
+                    console.error("Failed to export settings", e);
+                  }
+                }}
+                data-testid="export-settings-btn"
+                title={
+                  onExportCsv
+                    ? "Export blended projections CSV"
+                    : "Export current draft settings JSON"
+                }
+              >
+                {onExportCsv ? "Export CSV" : "Export Settings"}
+              </button>
+            </div>
           </fieldset>
           <fieldset className={styles.fieldset}>
             <legend className={styles.legend}>
@@ -720,6 +851,31 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                 {totalRosterSpots}
               </span>
             </legend>
+            <div className={styles.settingRow}>
+              <label className={styles.label}>Forward Positions:</label>
+              <div className={styles.draftTypeToggle} role="tablist">
+                <button
+                  className={`${styles.toggleButton} ${forwardGrouping === "split" ? styles.active : ""}`}
+                  onClick={() =>
+                    onForwardGroupingChange && onForwardGroupingChange("split")
+                  }
+                  role="tab"
+                  aria-selected={forwardGrouping === "split"}
+                >
+                  C/LW/RW
+                </button>
+                <button
+                  className={`${styles.toggleButton} ${forwardGrouping === "fwd" ? styles.active : ""}`}
+                  onClick={() =>
+                    onForwardGroupingChange && onForwardGroupingChange("fwd")
+                  }
+                  role="tab"
+                  aria-selected={forwardGrouping === "fwd"}
+                >
+                  FWD
+                </button>
+              </div>
+            </div>
             <div className={styles.rosterGrid}>
               {Object.entries(settings.rosterConfig).map(
                 ([position, count]) => {
@@ -1022,104 +1178,389 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               )}
             </fieldset>
           )}
+          {/* Quick Actions fieldset removed; actions moved under League Setup */}
           <fieldset className={styles.fieldset}>
-            <legend className={styles.legend}>Quick Actions</legend>
-            <div id="resetDraftWarning" className={styles.visuallyHidden}>
-              This will clear all picks. Action cannot be undone.
-            </div>
-            <div className={styles.actionButtons}>
+            <legend className={styles.legend}>
+              Keepers & Traded Picks
               <button
-                className={styles.actionButton}
-                onClick={undoLastPick}
-                disabled={draftHistory.length === 0}
-                title={
-                  draftHistory.length > 0
-                    ? `Undo Pick #${currentPick - 1}`
-                    : "No picks to undo"
-                }
-                data-testid="undo-pick-btn"
+                type="button"
+                className={styles.accordionToggle}
+                aria-expanded={keepersOpen}
+                onClick={() => setKeepersOpen((v) => !v)}
+                style={{ marginLeft: 8 }}
               >
-                Undo Pick
+                {keepersOpen ? "Hide" : "Show"}
               </button>
-              <button
-                className={styles.actionButton}
-                onClick={handleResetDraftClick}
-                disabled={draftedPlayers.length === 0 && !confirmReset}
-                aria-describedby="resetDraftWarning"
-                data-testid="reset-draft-btn"
-                title="Reset entire draft"
-                style={
-                  confirmReset
-                    ? { borderColor: "#ff5555", color: "#ff5555" }
-                    : undefined
-                }
-              >
-                {confirmReset ? "Confirm Reset" : "Reset Draft"}
-              </button>
-              <button
-                className={styles.actionButton}
-                onClick={() => onOpenImportCsv && onOpenImportCsv()}
-                title="Import custom projections from CSV"
-                aria-label="Import CSV"
-                data-testid="import-csv-btn"
-              >
-                {customSource ? "Reimport CSV" : "Import CSV"}
-              </button>
-              {/* Export Settings / Projections Button */}
-              <button
-                className={styles.actionButton}
-                onClick={() => {
-                  if (onExportCsv) {
-                    // Preserve existing external export (blended projections CSV)
-                    onExportCsv();
-                    return;
-                  }
-                  // Fallback: export current draft settings & weighting config as JSON
-                  try {
-                    const payload = {
-                      type: "fhf-draft-settings",
-                      version: 1,
-                      generatedAt: new Date().toISOString(),
-                      settings: { ...settings },
-                      sourceControls: sourceControls || null,
-                      goalieSourceControls: goalieSourceControls || null,
-                      goalieScoringCategories: goalieScoringCategories || null,
-                      meta: {
-                        teamCount: settings.teamCount,
-                        leagueType: settings.leagueType,
-                        totalRosterSpots: Object.values(
-                          settings.rosterConfig || {}
-                        ).reduce((s: number, v: number) => s + v, 0)
-                      }
-                    };
-                    const blob = new Blob([JSON.stringify(payload, null, 2)], {
-                      type: "application/json"
-                    });
-                    const filename = `draft-settings-${settings.teamCount}teams-${Date.now()}.json`;
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = filename;
-                    document.body.appendChild(a);
-                    a.click();
-                    setTimeout(() => {
-                      document.body.removeChild(a);
-                      URL.revokeObjectURL(url);
-                    }, 0);
-                  } catch (e) {
-                    console.error("Failed to export settings", e);
-                  }
-                }}
-                data-testid="export-settings-btn"
-                title={
-                  onExportCsv
-                    ? "Export blended projections CSV"
-                    : "Export current draft settings JSON"
-                }
-              >
-                {onExportCsv ? "Export CSV" : "Export Settings"}
-              </button>
-            </div>
+            </legend>
+            {keepersOpen && (
+              <>
+                {/* Traded picks form */}
+                <div className={styles.settingRow}>
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                    <label className={styles.label}>Trade Pick:</label>
+                    <div className={styles.rosterStepper}>
+                      <button
+                        type="button"
+                        className={styles.stepButton}
+                        aria-label="Decrease trade round"
+                        onClick={() => {
+                          const el = document.getElementById("trade-round") as HTMLInputElement | null;
+                          if (!el) return;
+                          const max = Number(el.max) || 1;
+                          const cur = Math.max(1, Math.min(max, parseInt(el.value || "1", 10)));
+                          el.value = String(Math.max(1, cur - 1));
+                        }}
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        min={1}
+                        max={totalRosterSpots}
+                        placeholder="Round"
+                        className={styles.numberInput}
+                        id="trade-round"
+                      />
+                      <button
+                        type="button"
+                        className={styles.stepButton}
+                        aria-label="Increase trade round"
+                        onClick={() => {
+                          const el = document.getElementById("trade-round") as HTMLInputElement | null;
+                          if (!el) return;
+                          const max = Number(el.max) || totalRosterSpots || 1;
+                          const cur = Math.max(1, Math.min(max, parseInt(el.value || "1", 10)));
+                          el.value = String(Math.min(max, cur + 1));
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div className={styles.rosterStepper}>
+                      <button
+                        type="button"
+                        className={styles.stepButton}
+                        aria-label="Decrease trade pick"
+                        onClick={() => {
+                          const el = document.getElementById("trade-pick") as HTMLInputElement | null;
+                          if (!el) return;
+                          const max = Number(el.max) || settings.teamCount || 1;
+                          const cur = Math.max(1, Math.min(max, parseInt(el.value || "1", 10)));
+                          el.value = String(Math.max(1, cur - 1));
+                        }}
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        min={1}
+                        max={settings.teamCount}
+                        placeholder="Pick"
+                        className={styles.numberInput}
+                        id="trade-pick"
+                      />
+                      <button
+                        type="button"
+                        className={styles.stepButton}
+                        aria-label="Increase trade pick"
+                        onClick={() => {
+                          const el = document.getElementById("trade-pick") as HTMLInputElement | null;
+                          if (!el) return;
+                          const max = Number(el.max) || settings.teamCount || 1;
+                          const cur = Math.max(1, Math.min(max, parseInt(el.value || "1", 10)));
+                          el.value = String(Math.min(max, cur + 1));
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <select id="trade-owner" className={styles.select}>
+                      {settings.draftOrder.map((teamId) => (
+                        <option key={teamId} value={teamId}>
+                          {customTeamNames[teamId] || teamId}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className={styles.inlineResetBtn}
+                      onClick={() => {
+                        const r = parseInt(
+                          (
+                            document.getElementById(
+                              "trade-round"
+                            ) as HTMLInputElement
+                          )?.value || "",
+                          10
+                        );
+                        const p = parseInt(
+                          (
+                            document.getElementById(
+                              "trade-pick"
+                            ) as HTMLInputElement
+                          )?.value || "",
+                          10
+                        );
+                        const owner = (
+                          document.getElementById(
+                            "trade-owner"
+                          ) as HTMLSelectElement
+                        )?.value;
+                        if (
+                          onAddTradedPick &&
+                          Number.isFinite(r) &&
+                          Number.isFinite(p) &&
+                          owner
+                        ) {
+                          onAddTradedPick(r, p, owner);
+                        }
+                      }}
+                    >
+                      Add Trade
+                    </button>
+                  </div>
+                </div>
+                {/* Traded picks list */}
+                <div className={styles.settingRow}>
+                  <div style={{ fontSize: 12, color: "#888" }}>
+                    Traded Picks:
+                  </div>
+                  <div>
+                    {Object.entries(pickOwnerOverrides).length === 0 && (
+                      <div style={{ fontSize: 12 }}>None</div>
+                    )}
+                    {Object.entries(pickOwnerOverrides).map(([key, teamId]) => (
+                      <div
+                        key={key}
+                        style={{
+                          display: "flex",
+                          gap: 8,
+                          alignItems: "center",
+                          fontSize: 12
+                        }}
+                      >
+                        <span>
+                          {key} → {customTeamNames[teamId] || teamId}
+                        </span>
+                        {onRemoveTradedPick && (
+                          <button
+                            type="button"
+                            className={styles.inlineResetBtn}
+                            onClick={() => {
+                              const [r, p] = key
+                                .split("-")
+                                .map((s) => parseInt(s, 10));
+                              onRemoveTradedPick(r, p);
+                            }}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Keepers form */}
+                <div className={styles.settingRow}>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 8,
+                      flexWrap: "wrap",
+                      alignItems: "center"
+                    }}
+                  >
+                    <label className={styles.label}>Keeper:</label>
+                    <div className={styles.rosterStepper}>
+                      <button
+                        type="button"
+                        className={styles.stepButton}
+                        aria-label="Decrease keeper round"
+                        onClick={() => {
+                          const el = document.getElementById("keeper-round") as HTMLInputElement | null;
+                          if (!el) return;
+                          const max = Number(el.max) || 1;
+                          const cur = Math.max(1, Math.min(max, parseInt(el.value || "1", 10)));
+                          el.value = String(Math.max(1, cur - 1));
+                        }}
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        min={1}
+                        max={totalRosterSpots}
+                        placeholder="Round"
+                        className={styles.numberInput}
+                        id="keeper-round"
+                      />
+                      <button
+                        type="button"
+                        className={styles.stepButton}
+                        aria-label="Increase keeper round"
+                        onClick={() => {
+                          const el = document.getElementById("keeper-round") as HTMLInputElement | null;
+                          if (!el) return;
+                          const max = Number(el.max) || totalRosterSpots || 1;
+                          const cur = Math.max(1, Math.min(max, parseInt(el.value || "1", 10)));
+                          el.value = String(Math.min(max, cur + 1));
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <div className={styles.rosterStepper}>
+                      <button
+                        type="button"
+                        className={styles.stepButton}
+                        aria-label="Decrease keeper pick"
+                        onClick={() => {
+                          const el = document.getElementById("keeper-pick") as HTMLInputElement | null;
+                          if (!el) return;
+                          const max = Number(el.max) || settings.teamCount || 1;
+                          const cur = Math.max(1, Math.min(max, parseInt(el.value || "1", 10)));
+                          el.value = String(Math.max(1, cur - 1));
+                        }}
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        min={1}
+                        max={settings.teamCount}
+                        placeholder="Pick"
+                        className={styles.numberInput}
+                        id="keeper-pick"
+                      />
+                      <button
+                        type="button"
+                        className={styles.stepButton}
+                        aria-label="Increase keeper pick"
+                        onClick={() => {
+                          const el = document.getElementById("keeper-pick") as HTMLInputElement | null;
+                          if (!el) return;
+                          const max = Number(el.max) || settings.teamCount || 1;
+                          const cur = Math.max(1, Math.min(max, parseInt(el.value || "1", 10)));
+                          el.value = String(Math.min(max, cur + 1));
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <select id="keeper-team" className={styles.select}>
+                      {settings.draftOrder.map((teamId) => (
+                        <option key={teamId} value={teamId}>
+                          {customTeamNames[teamId] || teamId}
+                        </option>
+                      ))}
+                    </select>
+                    <div style={{ minWidth: 260 }}>
+                      <PlayerAutocomplete
+                        playerId={undefined}
+                        onPlayerIdChange={(id) => {
+                          const el = document.getElementById(
+                            "keeper-playerId"
+                          ) as HTMLInputElement | null;
+                          if (el) el.value = id ? String(id) : "";
+                        }}
+                        showButton={false}
+                      />
+                    </div>
+                    <input
+                      type="number"
+                      placeholder="Player ID"
+                      className={styles.numberInput}
+                      id="keeper-playerId"
+                      title="If autocomplete not used, enter playerId"
+                    />
+                    <button
+                      type="button"
+                      className={styles.inlineResetBtn}
+                      onClick={() => {
+                        const r = parseInt(
+                          (
+                            document.getElementById(
+                              "keeper-round"
+                            ) as HTMLInputElement
+                          )?.value || "",
+                          10
+                        );
+                        const p = parseInt(
+                          (
+                            document.getElementById(
+                              "keeper-pick"
+                            ) as HTMLInputElement
+                          )?.value || "",
+                          10
+                        );
+                        const teamId = (
+                          document.getElementById(
+                            "keeper-team"
+                          ) as HTMLSelectElement
+                        )?.value;
+                        const pidInput = (
+                          document.getElementById(
+                            "keeper-playerId"
+                          ) as HTMLInputElement
+                        )?.value;
+                        const playerId =
+                          pidInput && pidInput.trim()
+                            ? pidInput.trim()
+                            : undefined;
+                        if (
+                          onAddKeeper &&
+                          Number.isFinite(r) &&
+                          Number.isFinite(p) &&
+                          teamId &&
+                          playerId
+                        ) {
+                          onAddKeeper(r, p, teamId, String(playerId));
+                        }
+                      }}
+                    >
+                      Add Keeper
+                    </button>
+                  </div>
+                </div>
+                {/* Keepers list */}
+                <div className={styles.settingRow}>
+                  <div style={{ fontSize: 12, color: "#888" }}>Keepers:</div>
+                  <div>
+                    {keepers.length === 0 && (
+                      <div style={{ fontSize: 12 }}>None</div>
+                    )}
+                    {keepers.map((k) => (
+                      <div
+                        key={`${k.round}-${k.pickInRound}`}
+                        style={{
+                          display: "flex",
+                          gap: 8,
+                          alignItems: "center",
+                          fontSize: 12
+                        }}
+                      >
+                        <span>
+                          {k.round}-{k.pickInRound} →{" "}
+                          {customTeamNames[k.teamId] || k.teamId} (Player{" "}
+                          {k.playerId})
+                        </span>
+                        {onRemoveKeeper && (
+                          <button
+                            type="button"
+                            className={styles.inlineResetBtn}
+                            onClick={() =>
+                              onRemoveKeeper(k.round, k.pickInRound)
+                            }
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </fieldset>
         </div>
       )}

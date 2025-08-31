@@ -216,7 +216,9 @@ export default async function handler(
     let gameId: string | undefined = undefined;
     let season: number | undefined = undefined;
 
-    const overrideGameId = (req.query?.gameId as string) || (req.body && (req.body.gameId as string));
+    const overrideGameId =
+      (req.query?.gameId as string) ||
+      (req.body && (req.body.gameId as string));
     if (overrideGameId) {
       gameId = overrideGameId;
       console.log(`Using override gameId from request: ${gameId}`);
@@ -241,7 +243,9 @@ export default async function handler(
         } else if (gameRow && gameRow.game_id) {
           gameId = String(gameRow.game_id);
           season = gameRow.season ? Number(gameRow.season) : undefined;
-          console.log(`Detected active NHL game_id=${gameId}, season=${season}`);
+          console.log(
+            `Detected active NHL game_id=${gameId}, season=${season}`
+          );
         }
       } catch (e) {
         console.warn(
