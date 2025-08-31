@@ -108,24 +108,52 @@ async function getPlayerKeys(
   return allPlayerKeys;
 }
 
-// MODIFIED: Prepare payload for the RPC function
+// Handles Yahoo "percent_owned" in array/object/primitive forms.
+// Returns a number (0-100) or null if unknown/offseason.
+function extractPercentOwned(player: any): number | null {
+  const po = player?.percent_owned;
+  if (!po) return null;
+
+  // Array shape: find the first element with a numeric "value" / "Value"
+  if (Array.isArray(po)) {
+    const item = po.find((x: any) => x && (x.value != null || x.Value != null));
+    const v = item?.value ?? item?.Value;
+    const n = typeof v === "string" ? parseFloat(v) : Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  // Object shape: { coverage_type, value, delta }
+  if (typeof po === "object") {
+    const v = (po as any).value ?? (po as any).Value;
+    const n = typeof v === "string" ? parseFloat(v) : Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  // Primitive shape: "37" | 37
+  const n = typeof po === "string" ? parseFloat(po) : Number(po);
+  return Number.isFinite(n) ? n : null;
+}
+
 function prepareRpcPayload(
   player: any,
   currentDate: string,
   gameId?: string,
   season?: number
 ) {
-  // Extract the current ownership value
-  const currentOwnershipValue = parseFloat(
-    player.percent_owned?.[1]?.value || "0"
-  );
+  const val = extractPercentOwned(player);
+  const currentOwnershipValue = val != null && Number.isFinite(val) ? val : 0; // keep your legacy numeric fields non-null
+
+  // One-day entry for JSONB append; empty array if no valid reading (offseason)
+  const timelineEntry =
+    val != null && Number.isFinite(val)
+      ? [{ date: currentDate, value: val }]
+      : [];
 
   return {
-    // Include all fields needed by the INSERT/UPDATE part of the function
     player_key: player.player_key,
     player_id: player.player_id,
     player_name: player.name?.full || null,
-    draft_analysis: player.draft_analysis || {}, // Pass as JSON
+    draft_analysis: player.draft_analysis || {},
     average_draft_pick: parseFloat(player.draft_analysis?.average_pick || "0"),
     average_draft_round: parseFloat(
       player.draft_analysis?.average_round || "0"
@@ -135,12 +163,15 @@ function prepareRpcPayload(
     editorial_player_key: player.editorial_player_key || null,
     editorial_team_abbreviation: player.editorial_team_abbr || null,
     editorial_team_full_name: player.editorial_team_full_name || null,
-    eligible_positions: player.eligible_positions || [], // Pass as JSON array
+    eligible_positions: player.eligible_positions || [],
     display_position: player.display_position || null,
     headshot_url: player.headshot?.url || null,
     injury_note: player.injury_note || null,
     full_name: player.name?.full || null,
-    percent_ownership: currentOwnershipValue,
+
+    // numeric column
+    percent_ownership: val != null && Number.isFinite(val) ? val : undefined, // let SQL skip if null/undefined
+
     game_id: gameId || null,
     season: season ?? null,
     position_type: player.position_type || null,
@@ -151,9 +182,12 @@ function prepareRpcPayload(
       ? parseInt(player.uniform_number)
       : null,
 
-    // --- Add the special fields needed for the append logic ---
+    // timeline append support
+    ownership_timeline: timelineEntry,
+
+    // existing append helpers (used by RPC)
     current_ownership_value: currentOwnershipValue,
-    current_date: currentDate // Pass today's date (YYYY-MM-DD)
+    current_date: currentDate
   };
 }
 
@@ -177,35 +211,44 @@ export default async function handler(
   try {
     const creds = await getYahooAPICredentials(supabase);
 
-    // Determine active NHL game_id / season from yahoo_game_keys
+    // Allow explicit override of gameId via query or JSON body for one-off runs
+    // e.g. GET /api/v1/db/update-yahoo-players?gameId=465
     let gameId: string | undefined = undefined;
     let season: number | undefined = undefined;
-    try {
-      const { data: gameRow, error: gameErr } = await supabase
-        .from("yahoo_game_keys")
-        .select(
-          "game_id, game_key, season, is_offseason, is_game_over, current_week"
-        )
-        .eq("code", "nhl")
-        .order("season", { ascending: false })
-        .limit(1)
-        .single();
 
-      if (gameErr) {
+    const overrideGameId = (req.query?.gameId as string) || (req.body && (req.body.gameId as string));
+    if (overrideGameId) {
+      gameId = overrideGameId;
+      console.log(`Using override gameId from request: ${gameId}`);
+    } else {
+      // Determine active NHL game_id / season from yahoo_game_keys
+      try {
+        const { data: gameRow, error: gameErr } = await supabase
+          .from("yahoo_game_keys")
+          .select(
+            "game_id, game_key, season, is_offseason, is_game_over, current_week"
+          )
+          .eq("code", "nhl")
+          .order("season", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (gameErr) {
+          console.warn(
+            "Could not determine active game_id from yahoo_game_keys:",
+            gameErr.message || gameErr
+          );
+        } else if (gameRow && gameRow.game_id) {
+          gameId = String(gameRow.game_id);
+          season = gameRow.season ? Number(gameRow.season) : undefined;
+          console.log(`Detected active NHL game_id=${gameId}, season=${season}`);
+        }
+      } catch (e) {
         console.warn(
-          "Could not determine active game_id from yahoo_game_keys:",
-          gameErr.message || gameErr
+          "Error while querying yahoo_game_keys for active season:",
+          e
         );
-      } else if (gameRow && gameRow.game_id) {
-        gameId = String(gameRow.game_id);
-        season = gameRow.season ? Number(gameRow.season) : undefined;
-        console.log(`Detected active NHL game_id=${gameId}, season=${season}`);
       }
-    } catch (e) {
-      console.warn(
-        "Error while querying yahoo_game_keys for active season:",
-        e
-      );
     }
 
     const yf = new YahooFantasy(
@@ -320,7 +363,9 @@ export default async function handler(
         continue; // continue with next batch
       }
 
-      await new Promise((r) => setTimeout(r, 500)); // Slightly increased delay
+      await new Promise((r) =>
+        setTimeout(r, 450 + Math.floor(Math.random() * 200))
+      );
     }
 
     const RPC_BATCH_SIZE = 500; // Adjust as needed for performance/limits
