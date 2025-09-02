@@ -1725,7 +1725,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                               if (!el) return;
                               el.classList.remove(styles.inputErrorPulse);
                               // force reflow to restart animation
-                              // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+                              // eslint-disable-next-line no-unused-expressions
                               (el as any).offsetWidth;
                               el.classList.add(styles.inputErrorPulse);
                               window.setTimeout(
