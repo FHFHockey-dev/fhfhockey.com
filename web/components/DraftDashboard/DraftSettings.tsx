@@ -82,13 +82,25 @@ const CAT_KEYS = [
 
 type CatKey = (typeof CAT_KEYS)[number];
 
-const SKATER_LABELS: Record<CatKey, string> = {
+const SKATER_LABELS: Record<string, string> = {
+  // Core
   GOALS: "G",
   ASSISTS: "A",
   PP_POINTS: "PPP",
   SHOTS_ON_GOAL: "SOG",
   HITS: "HIT",
-  BLOCKED_SHOTS: "BLK"
+  BLOCKED_SHOTS: "BLK",
+  // Requested skater abbreviations
+  FACEOFFS_LOST: "FOL",
+  FACEOFFS_WON: "FOW",
+  GAMES_PLAYED: "GP",
+  PENALTY_MINUTES: "PIM",
+  POINTS: "PTS",
+  PP_ASSISTS: "PPA",
+  PP_GOALS: "PPG",
+  SH_POINTS: "SHP",
+  PLUS_MINUS: "+/-",
+  TIME_ON_ICE_PER_GAME: "ATOI"
 };
 
 const GOALIE_LABELS: Record<string, string> = {
@@ -97,11 +109,17 @@ const GOALIE_LABELS: Record<string, string> = {
   SHUTOUTS_GOALIE: "SHO",
   GOALS_AGAINST_GOALIE: "GAA",
   SAVE_PERCENTAGE: "SV%",
-  GOALS_AGAINST_AVERAGE: "GAA"
+  GOALS_AGAINST_AVERAGE: "GAA",
+  // Requested goalie abbreviations
+  GAA: "GAA",
+  GAMES_PLAYED: "GP",
+  LOSSES_GOALIE: "L",
+  OTL_GOALIE: "OTL",
+  SHOTS_AGAINST_GOALIE: "SA"
 };
 
 function getShortLabel(statKey: string): string {
-  if ((SKATER_LABELS as any)[statKey]) return (SKATER_LABELS as any)[statKey];
+  if (SKATER_LABELS[statKey]) return SKATER_LABELS[statKey];
   if (GOALIE_LABELS[statKey]) return GOALIE_LABELS[statKey];
   switch (statKey) {
     case "GOALS":
@@ -310,8 +328,15 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   );
   const DEBOUNCE_MS = 200;
 
-  // Collapsible section for keepers & traded picks
-  const [keepersOpen, setKeepersOpen] = React.useState<boolean>(false);
+  // Keepers & Traded Picks visibility now controlled by settings.isKeeper
+  const [keeperSelectedPlayerId, setKeeperSelectedPlayerId] = React.useState<
+    string | undefined
+  >(undefined);
+  // Separate refs for traded picks vs keeper steppers
+  const tradeRoundStepperRef = React.useRef<HTMLDivElement | null>(null);
+  const tradePickStepperRef = React.useRef<HTMLDivElement | null>(null);
+  const keeperRoundStepperRef = React.useRef<HTMLDivElement | null>(null);
+  const keeperPickStepperRef = React.useRef<HTMLDivElement | null>(null);
 
   const applyDebouncedSourceWeight = (id: string, value: number) => {
     if (!onSourceControlsChange || !sourceControls) return;
@@ -532,11 +557,38 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   // NEW: state for managing scoring metric expansion & add/remove UI
   const [showManageSkaterStats, setShowManageSkaterStats] =
     React.useState(false);
-  // NEW: separate goalie expand state
-  const [showAllGoalieStats, setShowAllGoalieStats] = React.useState(false);
+
+  // Note: goalie addable keys computed directly below; no separate memo needed.
 
   const [newSkaterStatKey, setNewSkaterStatKey] = React.useState("");
   const [newSkaterStatValue, setNewSkaterStatValue] = React.useState("1");
+
+  // Goalie manage/add state mirrors skaters
+  const [showAllGoalieStats, setShowAllGoalieStats] = React.useState(false);
+  const addableGoalieStats = React.useMemo(() => {
+    const existing = new Set(Object.keys(goalieScoringCategories || {}));
+    return (availableGoalieStatKeys || [])
+      .filter((k) => !existing.has(k))
+      .filter((k) => /[A-Z0-9_]/.test(k));
+  }, [availableGoalieStatKeys, goalieScoringCategories]);
+  const [newGoalieStatKey, setNewGoalieStatKey] = React.useState("");
+  const [newGoalieStatValue, setNewGoalieStatValue] = React.useState("1");
+  const handleAddGoalieStat = () => {
+    if (!onGoalieScoringChange || !goalieScoringCategories) return;
+    if (!newGoalieStatKey) return;
+    const val = parseFloat(newGoalieStatValue) || 0;
+    onGoalieScoringChange({
+      ...goalieScoringCategories,
+      [newGoalieStatKey]: val
+    });
+    setNewGoalieStatKey("");
+    setNewGoalieStatValue("1");
+  };
+  const handleRemoveGoalieStat = (key: string) => {
+    if (!onGoalieScoringChange || !goalieScoringCategories) return;
+    const { [key]: _, ...rest } = goalieScoringCategories;
+    onGoalieScoringChange(rest);
+  };
 
   // Derive addable skater stat keys (exclude already added + some core exclusions)
   const addableSkaterStats = React.useMemo(() => {
@@ -749,6 +801,27 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                 <option value="categories">Categories</option>
               </select>
             </div>
+            <div className={styles.settingRow}>
+              <label className={styles.label}>Keeper League:</label>
+              <div className={styles.draftTypeToggle} role="tablist">
+                <button
+                  className={`${styles.toggleButton} ${!settings.isKeeper ? styles.active : ""}`}
+                  onClick={() => onSettingsChange({ isKeeper: false })}
+                  role="tab"
+                  aria-selected={!settings.isKeeper}
+                >
+                  No
+                </button>
+                <button
+                  className={`${styles.toggleButton} ${settings.isKeeper ? styles.active : ""}`}
+                  onClick={() => onSettingsChange({ isKeeper: true })}
+                  role="tab"
+                  aria-selected={!!settings.isKeeper}
+                >
+                  Yes
+                </button>
+              </div>
+            </div>
             {/* Quick Actions moved into League Setup to reduce containers */}
             <div id="resetDraftWarning" className={styles.visuallyHidden}>
               This will clear all picks. Action cannot be undone.
@@ -768,17 +841,12 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                 Undo Pick
               </button>
               <button
-                className={styles.actionButton}
+                className={`${styles.actionButton} ${confirmReset ? styles.confirmReset : ""}`}
                 onClick={handleResetDraftClick}
                 disabled={draftedPlayers.length === 0 && !confirmReset}
                 aria-describedby="resetDraftWarning"
                 data-testid="reset-draft-btn"
                 title="Reset entire draft"
-                style={
-                  confirmReset
-                    ? { borderColor: "#ff5555", color: "#ff5555" }
-                    : undefined
-                }
               >
                 {confirmReset ? "Confirm Reset" : "Reset Draft"}
               </button>
@@ -938,26 +1006,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                 }
               )}
             </div>
-            <div className={styles.inlineActions}>
-              <button
-                type="button"
-                className={styles.inlineResetBtn}
-                onClick={handleResetSkaterScoring}
-                title="Reset skater scoring to defaults"
-              >
-                Reset Skater Scoring
-              </button>
-              {goalieScoringCategories && (
-                <button
-                  type="button"
-                  className={styles.inlineResetBtn}
-                  onClick={handleResetGoalieScoring}
-                  title="Reset goalie scoring to defaults"
-                >
-                  Reset Goalie Scoring
-                </button>
-              )}
-            </div>
+            {/* Reset buttons moved under Scoring Categories */}
           </fieldset>
           <fieldset
             className={`${styles.fieldset} ${styles.settingsGroupScoring}`}
@@ -1047,28 +1096,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                             )}
                           </div>
                         ))}
-                      <button
-                        className={styles.expandButton}
-                        type="button"
-                        aria-expanded={showManageSkaterStats}
-                        onClick={() => setShowManageSkaterStats((s) => !s)}
-                        title={
-                          showManageSkaterStats
-                            ? "Hide stat manager"
-                            : "Manage / Add scoring stats"
-                        }
-                      >
-                        {showManageSkaterStats
-                          ? "Hide"
-                          : `+${Math.max(0, Object.keys(settings.scoringCategories).length - 6)} more`}
-                      </button>
-                    </div>
-                    {showManageSkaterStats && (
-                      <div className={styles.manageStatsPanel}>
-                        <div className={styles.manageStatsHeader}>
-                          Manage Skater Scoring Stats
-                        </div>
-                        <div className={styles.manageStatsRow}>
+                      {showManageSkaterStats ? (
+                        <div className={styles.inlineManage}>
                           <select
                             value={newSkaterStatKey}
                             onChange={(e) =>
@@ -1080,20 +1109,19 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                             <option value="">Select Stat...</option>
                             {addableSkaterStats.map((k) => (
                               <option key={k} value={k}>
-                                {k}
+                                {getShortLabel(k)}
                               </option>
                             ))}
                           </select>
                           <input
                             type="number"
-                            step="0.1"
-                            className={styles.pointsInput}
+                            step={0.1}
+                            className={`${styles.pointsInput} ${styles.pointsInputNarrow}`}
                             value={newSkaterStatValue}
                             aria-label="New stat point value"
                             onChange={(e) =>
                               setNewSkaterStatValue(e.target.value)
                             }
-                            style={{ width: 70 }}
                           />
                           <button
                             type="button"
@@ -1103,15 +1131,37 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           >
                             Add Stat
                           </button>
+                          <button
+                            type="button"
+                            className={styles.inlineResetBtn}
+                            onClick={() => setShowManageSkaterStats(false)}
+                          >
+                            Hide
+                          </button>
                         </div>
-                        {addableSkaterStats.length === 0 && (
-                          <div className={styles.noAddableStatsMsg}>
-                            All available skater projection metrics are already
-                            added.
-                          </div>
-                        )}
-                      </div>
-                    )}
+                      ) : (
+                        <button
+                          className={styles.expandButton}
+                          type="button"
+                          aria-expanded={showManageSkaterStats}
+                          onClick={() => {
+                            setNewSkaterStatKey("");
+                            setNewSkaterStatValue("1");
+                            setShowManageSkaterStats(true);
+                          }}
+                          title="Manage / Add scoring stats"
+                        >
+                          {`+${Math.max(0, Object.keys(settings.scoringCategories).length - 6)} more`}
+                        </button>
+                      )}
+                    </div>
+                    {showManageSkaterStats &&
+                      addableSkaterStats.length === 0 && (
+                        <div className={styles.noAddableStatsMsg}>
+                          All available skater projection metrics are already
+                          added.
+                        </div>
+                      )}
                   </div>
                   {goalieScoringCategories && onGoalieScoringChange && (
                     <div
@@ -1120,7 +1170,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                       {" "}
                       {/* Goalies */}
                       <h4 className={styles.subgroupTitle}>Goalies</h4>
-                      <div className={styles.scoringGrid}>
+                      <div
+                        className={`${styles.scoringGrid} ${styles.goalieGrid}`}
+                      >
                         {Object.entries(goalieScoringCategories)
                           .slice(0, showAllGoalieStats ? undefined : 6)
                           .map(([stat, points]) => (
@@ -1140,25 +1192,106 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                 }
                                 className={styles.pointsInput}
                               />
+                              {showAllGoalieStats && (
+                                <button
+                                  type="button"
+                                  className={styles.removeStatBtn}
+                                  aria-label={`Remove ${stat}`}
+                                  title="Remove stat"
+                                  onClick={() => handleRemoveGoalieStat(stat)}
+                                >
+                                  ✕
+                                </button>
+                              )}
                             </div>
                           ))}
-                        <button
-                          className={styles.expandButton}
-                          type="button"
-                          aria-expanded={showAllGoalieStats}
-                          onClick={() => setShowAllGoalieStats((s) => !s)}
-                          title={
-                            showAllGoalieStats
-                              ? "Hide goalie stats"
-                              : "Show more goalie stats"
-                          }
-                        >
-                          {showAllGoalieStats
-                            ? "Hide"
-                            : `+${Math.max(0, Object.keys(goalieScoringCategories).length - 6)} more`}
-                        </button>
+                        {showAllGoalieStats ? (
+                          <div className={styles.inlineManage}>
+                            <select
+                              value={newGoalieStatKey}
+                              onChange={(e) =>
+                                setNewGoalieStatKey(e.target.value)
+                              }
+                              className={styles.select}
+                              aria-label="Select goalie stat to add"
+                            >
+                              <option value="">Select Stat...</option>
+                              {addableGoalieStats.map((k) => (
+                                <option key={k} value={k}>
+                                  {getShortLabel(k)}
+                                </option>
+                              ))}
+                            </select>
+                            <input
+                              type="number"
+                              step={0.1}
+                              className={`${styles.pointsInput} ${styles.pointsInputNarrow}`}
+                              value={newGoalieStatValue}
+                              aria-label="New goalie stat point value"
+                              onChange={(e) =>
+                                setNewGoalieStatValue(e.target.value)
+                              }
+                            />
+                            <button
+                              type="button"
+                              className={styles.actionButton}
+                              onClick={handleAddGoalieStat}
+                              disabled={!newGoalieStatKey}
+                            >
+                              Add Stat
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.inlineResetBtn}
+                              onClick={() => setShowAllGoalieStats(false)}
+                            >
+                              Hide
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className={styles.expandButton}
+                            type="button"
+                            aria-expanded={showAllGoalieStats}
+                            onClick={() => {
+                              setNewGoalieStatKey("");
+                              setNewGoalieStatValue("1");
+                              setShowAllGoalieStats(true);
+                            }}
+                            title="Manage / Add goalie stats"
+                          >
+                            {`+${Math.max(0, Object.keys(goalieScoringCategories).length - 6)} more`}
+                          </button>
+                        )}
                       </div>
+                      {showAllGoalieStats &&
+                        addableGoalieStats.length === 0 && (
+                          <div className={styles.noAddableStatsMsg}>
+                            All available goalie projection metrics are already
+                            added.
+                          </div>
+                        )}
                     </div>
+                  )}
+                </div>
+                <div className={styles.inlineActions}>
+                  <button
+                    type="button"
+                    className={styles.inlineResetBtn}
+                    onClick={handleResetSkaterScoring}
+                    title="Reset skater scoring to defaults"
+                  >
+                    Reset Skater Scoring
+                  </button>
+                  {goalieScoringCategories && (
+                    <button
+                      type="button"
+                      className={styles.inlineResetBtn}
+                      onClick={handleResetGoalieScoring}
+                      title="Reset goalie scoring to defaults"
+                    >
+                      Reset Goalie Scoring
+                    </button>
                   )}
                 </div>
               </>
@@ -1169,399 +1302,502 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               <legend className={styles.legend}>Projection Sources</legend>
               {renderSourceChips()}
               {autoNormalize && (
-                <span
-                  className={styles.normalizedBadge}
-                  style={{ marginTop: 4 }}
-                >
-                  {isNormalized ? "Normalized" : "Normalizing..."}
-                </span>
+                <>
+                  <span
+                    className={`${styles.normalizedBadge} ${styles.normalizedBadgeSpaced}`}
+                  >
+                    {isNormalized ? "Normalized" : "Normalizing..."}
+                  </span>
+                  <div className={styles.sourcePlug}>
+                    <a
+                      href="https://www.reddit.com/r/fantasyhockey/comments/1n1wsqc/dtz_20252026_nhl_projections/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      DtZ Projections
+                    </a>
+                    <span aria-hidden>— community contributed</span>
+                  </div>
+                </>
               )}
             </fieldset>
           )}
           {/* Quick Actions fieldset removed; actions moved under League Setup */}
-          <fieldset className={styles.fieldset}>
-            <legend className={styles.legend}>
-              Keepers & Traded Picks
-              <button
-                type="button"
-                className={styles.accordionToggle}
-                aria-expanded={keepersOpen}
-                onClick={() => setKeepersOpen((v) => !v)}
-                style={{ marginLeft: 8 }}
-              >
-                {keepersOpen ? "Hide" : "Show"}
-              </button>
-            </legend>
-            {keepersOpen && (
+          {settings.isKeeper && (
+            <fieldset className={styles.fieldset}>
+              <legend className={styles.legend}>Keepers & Traded Picks</legend>
               <>
-                {/* Traded picks form */}
-                <div className={styles.settingRow}>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                    <label className={styles.label}>Trade Pick:</label>
-                    <div className={styles.rosterStepper}>
-                      <button
-                        type="button"
-                        className={styles.stepButton}
-                        aria-label="Decrease trade round"
-                        onClick={() => {
-                          const el = document.getElementById("trade-round") as HTMLInputElement | null;
-                          if (!el) return;
-                          const max = Number(el.max) || 1;
-                          const cur = Math.max(1, Math.min(max, parseInt(el.value || "1", 10)));
-                          el.value = String(Math.max(1, cur - 1));
-                        }}
+                {/* Traded Picks subsection */}
+                <div className={styles.subsection}>
+                  <div className={styles.subsectionTitle}>Traded Picks</div>
+                  {/* Controls */}
+                  <div className={styles.settingRow}>
+                    <div className={styles.inlineFormRow}>
+                      <label
+                        className={styles.visuallyHidden}
+                        htmlFor="trade-owner"
                       >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        min={1}
-                        max={totalRosterSpots}
-                        placeholder="Round"
-                        className={styles.numberInput}
-                        id="trade-round"
-                      />
-                      <button
-                        type="button"
-                        className={styles.stepButton}
-                        aria-label="Increase trade round"
-                        onClick={() => {
-                          const el = document.getElementById("trade-round") as HTMLInputElement | null;
-                          if (!el) return;
-                          const max = Number(el.max) || totalRosterSpots || 1;
-                          const cur = Math.max(1, Math.min(max, parseInt(el.value || "1", 10)));
-                          el.value = String(Math.min(max, cur + 1));
-                        }}
+                        Trade Owner
+                      </label>
+                      <select
+                        id="trade-owner"
+                        className={`${styles.select} ${styles.ownerSelectInline}`}
                       >
-                        +
-                      </button>
-                    </div>
-                    <div className={styles.rosterStepper}>
-                      <button
-                        type="button"
-                        className={styles.stepButton}
-                        aria-label="Decrease trade pick"
-                        onClick={() => {
-                          const el = document.getElementById("trade-pick") as HTMLInputElement | null;
-                          if (!el) return;
-                          const max = Number(el.max) || settings.teamCount || 1;
-                          const cur = Math.max(1, Math.min(max, parseInt(el.value || "1", 10)));
-                          el.value = String(Math.max(1, cur - 1));
-                        }}
+                        {settings.draftOrder.map((teamId) => (
+                          <option key={teamId} value={teamId}>
+                            {customTeamNames[teamId] || teamId}
+                          </option>
+                        ))}
+                      </select>
+                      <div
+                        className={styles.rosterStepper}
+                        ref={tradeRoundStepperRef}
                       >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        min={1}
-                        max={settings.teamCount}
-                        placeholder="Pick"
-                        className={styles.numberInput}
-                        id="trade-pick"
-                      />
-                      <button
-                        type="button"
-                        className={styles.stepButton}
-                        aria-label="Increase trade pick"
-                        onClick={() => {
-                          const el = document.getElementById("trade-pick") as HTMLInputElement | null;
-                          if (!el) return;
-                          const max = Number(el.max) || settings.teamCount || 1;
-                          const cur = Math.max(1, Math.min(max, parseInt(el.value || "1", 10)));
-                          el.value = String(Math.min(max, cur + 1));
-                        }}
-                      >
-                        +
-                      </button>
-                    </div>
-                    <select id="trade-owner" className={styles.select}>
-                      {settings.draftOrder.map((teamId) => (
-                        <option key={teamId} value={teamId}>
-                          {customTeamNames[teamId] || teamId}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      className={styles.inlineResetBtn}
-                      onClick={() => {
-                        const r = parseInt(
-                          (
-                            document.getElementById(
+                        <button
+                          type="button"
+                          className={styles.stepButton}
+                          aria-label="Decrease trade round"
+                          onClick={() => {
+                            const el = document.getElementById(
                               "trade-round"
-                            ) as HTMLInputElement
-                          )?.value || "",
-                          10
-                        );
-                        const p = parseInt(
-                          (
-                            document.getElementById(
+                            ) as HTMLInputElement | null;
+                            if (!el) return;
+                            const max = Number(el.max) || 1;
+                            const cur = Math.max(
+                              1,
+                              Math.min(max, parseInt(el.value || "1", 10))
+                            );
+                            el.value = String(Math.max(1, cur - 1));
+                          }}
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          max={totalRosterSpots}
+                          placeholder="RD"
+                          className={styles.numberInput}
+                          id="trade-round"
+                        />
+                        <button
+                          type="button"
+                          className={styles.stepButton}
+                          aria-label="Increase trade round"
+                          onClick={() => {
+                            const el = document.getElementById(
+                              "trade-round"
+                            ) as HTMLInputElement | null;
+                            if (!el) return;
+                            const max = Number(el.max) || totalRosterSpots || 1;
+                            const cur = Math.max(
+                              1,
+                              Math.min(max, parseInt(el.value || "1", 10))
+                            );
+                            el.value = String(Math.min(max, cur + 1));
+                          }}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <div
+                        className={styles.rosterStepper}
+                        ref={tradePickStepperRef}
+                      >
+                        <button
+                          type="button"
+                          className={styles.stepButton}
+                          aria-label="Decrease trade pick"
+                          onClick={() => {
+                            const el = document.getElementById(
                               "trade-pick"
-                            ) as HTMLInputElement
-                          )?.value || "",
-                          10
-                        );
-                        const owner = (
-                          document.getElementById(
-                            "trade-owner"
-                          ) as HTMLSelectElement
-                        )?.value;
-                        if (
-                          onAddTradedPick &&
-                          Number.isFinite(r) &&
-                          Number.isFinite(p) &&
-                          owner
-                        ) {
-                          onAddTradedPick(r, p, owner);
-                        }
-                      }}
-                    >
-                      Add Trade
-                    </button>
-                  </div>
-                </div>
-                {/* Traded picks list */}
-                <div className={styles.settingRow}>
-                  <div style={{ fontSize: 12, color: "#888" }}>
-                    Traded Picks:
-                  </div>
-                  <div>
-                    {Object.entries(pickOwnerOverrides).length === 0 && (
-                      <div style={{ fontSize: 12 }}>None</div>
-                    )}
-                    {Object.entries(pickOwnerOverrides).map(([key, teamId]) => (
-                      <div
-                        key={key}
-                        style={{
-                          display: "flex",
-                          gap: 8,
-                          alignItems: "center",
-                          fontSize: 12
-                        }}
-                      >
-                        <span>
-                          {key} → {customTeamNames[teamId] || teamId}
-                        </span>
-                        {onRemoveTradedPick && (
-                          <button
-                            type="button"
-                            className={styles.inlineResetBtn}
-                            onClick={() => {
-                              const [r, p] = key
-                                .split("-")
-                                .map((s) => parseInt(s, 10));
-                              onRemoveTradedPick(r, p);
-                            }}
-                          >
-                            Remove
-                          </button>
-                        )}
+                            ) as HTMLInputElement | null;
+                            if (!el) return;
+                            const max =
+                              Number(el.max) || settings.teamCount || 1;
+                            const cur = Math.max(
+                              1,
+                              Math.min(max, parseInt(el.value || "1", 10))
+                            );
+                            el.value = String(Math.max(1, cur - 1));
+                          }}
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          max={settings.teamCount}
+                          placeholder="Pick"
+                          className={styles.numberInput}
+                          id="trade-pick"
+                        />
+                        <button
+                          type="button"
+                          className={styles.stepButton}
+                          aria-label="Increase trade pick"
+                          onClick={() => {
+                            const el = document.getElementById(
+                              "trade-pick"
+                            ) as HTMLInputElement | null;
+                            if (!el) return;
+                            const max =
+                              Number(el.max) || settings.teamCount || 1;
+                            const cur = Math.max(
+                              1,
+                              Math.min(max, parseInt(el.value || "1", 10))
+                            );
+                            el.value = String(Math.min(max, cur + 1));
+                          }}
+                        >
+                          +
+                        </button>
                       </div>
-                    ))}
+                      <button
+                        type="button"
+                        className={styles.addActionBtn}
+                        aria-label="Add traded pick override"
+                        onClick={() => {
+                          const r = parseInt(
+                            (
+                              document.getElementById(
+                                "trade-round"
+                              ) as HTMLInputElement
+                            )?.value || "",
+                            10
+                          );
+                          const p = parseInt(
+                            (
+                              document.getElementById(
+                                "trade-pick"
+                              ) as HTMLInputElement
+                            )?.value || "",
+                            10
+                          );
+                          const owner = (
+                            document.getElementById(
+                              "trade-owner"
+                            ) as HTMLSelectElement
+                          )?.value;
+                          if (
+                            onAddTradedPick &&
+                            Number.isFinite(r) &&
+                            Number.isFinite(p) &&
+                            owner
+                          ) {
+                            onAddTradedPick(r, p, owner);
+                          }
+                        }}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  {/* Traded picks list */}
+                  <div className={styles.settingRow}>
+                    <div className={styles.mutedSmallLabel}>Traded Picks:</div>
+                    <div className={styles.listScrollable}>
+                      {Object.entries(pickOwnerOverrides).length === 0 && (
+                        <div className={styles.smallText}>None</div>
+                      )}
+                      {Object.entries(pickOwnerOverrides).map(
+                        ([key, teamId]) => (
+                          <div key={key} className={styles.inlineItemRow}>
+                            <span>
+                              {key} → {customTeamNames[teamId] || teamId}
+                            </span>
+                            {onRemoveTradedPick && (
+                              <button
+                                type="button"
+                                className={styles.inlineResetBtn}
+                                onClick={() => {
+                                  const [r, p] = key
+                                    .split("-")
+                                    .map((s) => parseInt(s, 10));
+                                  onRemoveTradedPick(r, p);
+                                }}
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                        )
+                      )}
+                    </div>
                   </div>
                 </div>
-                {/* Keepers form */}
-                <div className={styles.settingRow}>
-                  <div
-                    style={{
-                      display: "flex",
-                      gap: 8,
-                      flexWrap: "wrap",
-                      alignItems: "center"
-                    }}
-                  >
-                    <label className={styles.label}>Keeper:</label>
-                    <div className={styles.rosterStepper}>
-                      <button
-                        type="button"
-                        className={styles.stepButton}
-                        aria-label="Decrease keeper round"
-                        onClick={() => {
-                          const el = document.getElementById("keeper-round") as HTMLInputElement | null;
-                          if (!el) return;
-                          const max = Number(el.max) || 1;
-                          const cur = Math.max(1, Math.min(max, parseInt(el.value || "1", 10)));
-                          el.value = String(Math.max(1, cur - 1));
-                        }}
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        min={1}
-                        max={totalRosterSpots}
-                        placeholder="Round"
-                        className={styles.numberInput}
-                        id="keeper-round"
-                      />
-                      <button
-                        type="button"
-                        className={styles.stepButton}
-                        aria-label="Increase keeper round"
-                        onClick={() => {
-                          const el = document.getElementById("keeper-round") as HTMLInputElement | null;
-                          if (!el) return;
-                          const max = Number(el.max) || totalRosterSpots || 1;
-                          const cur = Math.max(1, Math.min(max, parseInt(el.value || "1", 10)));
-                          el.value = String(Math.min(max, cur + 1));
-                        }}
-                      >
-                        +
-                      </button>
-                    </div>
-                    <div className={styles.rosterStepper}>
-                      <button
-                        type="button"
-                        className={styles.stepButton}
-                        aria-label="Decrease keeper pick"
-                        onClick={() => {
-                          const el = document.getElementById("keeper-pick") as HTMLInputElement | null;
-                          if (!el) return;
-                          const max = Number(el.max) || settings.teamCount || 1;
-                          const cur = Math.max(1, Math.min(max, parseInt(el.value || "1", 10)));
-                          el.value = String(Math.max(1, cur - 1));
-                        }}
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        min={1}
-                        max={settings.teamCount}
-                        placeholder="Pick"
-                        className={styles.numberInput}
-                        id="keeper-pick"
-                      />
-                      <button
-                        type="button"
-                        className={styles.stepButton}
-                        aria-label="Increase keeper pick"
-                        onClick={() => {
-                          const el = document.getElementById("keeper-pick") as HTMLInputElement | null;
-                          if (!el) return;
-                          const max = Number(el.max) || settings.teamCount || 1;
-                          const cur = Math.max(1, Math.min(max, parseInt(el.value || "1", 10)));
-                          el.value = String(Math.min(max, cur + 1));
-                        }}
-                      >
-                        +
-                      </button>
-                    </div>
-                    <select id="keeper-team" className={styles.select}>
-                      {settings.draftOrder.map((teamId) => (
-                        <option key={teamId} value={teamId}>
-                          {customTeamNames[teamId] || teamId}
-                        </option>
-                      ))}
-                    </select>
-                    <div style={{ minWidth: 260 }}>
-                      <PlayerAutocomplete
-                        playerId={undefined}
-                        onPlayerIdChange={(id) => {
-                          const el = document.getElementById(
-                            "keeper-playerId"
-                          ) as HTMLInputElement | null;
-                          if (el) el.value = id ? String(id) : "";
-                        }}
-                        showButton={false}
-                      />
-                    </div>
-                    <input
-                      type="number"
-                      placeholder="Player ID"
-                      className={styles.numberInput}
-                      id="keeper-playerId"
-                      title="If autocomplete not used, enter playerId"
+                {/* Keepers subsection */}
+                <div className={styles.subsection}>
+                  <div className={styles.subsectionTitle}>Keepers</div>
+                  {/* Autocomplete first to reduce vertical bounce */}
+                  <div className={styles.playerAutocompleteWrap}>
+                    <PlayerAutocomplete
+                      playerId={undefined}
+                      onPlayerIdChange={(id) => {
+                        setKeeperSelectedPlayerId(id ? String(id) : undefined);
+                      }}
+                      showButton={false}
+                      inputClassName={styles.playerAutoInputSmall}
                     />
-                    <button
-                      type="button"
-                      className={styles.inlineResetBtn}
-                      onClick={() => {
-                        const r = parseInt(
-                          (
-                            document.getElementById(
-                              "keeper-round"
-                            ) as HTMLInputElement
-                          )?.value || "",
-                          10
-                        );
-                        const p = parseInt(
-                          (
-                            document.getElementById(
-                              "keeper-pick"
-                            ) as HTMLInputElement
-                          )?.value || "",
-                          10
-                        );
-                        const teamId = (
-                          document.getElementById(
-                            "keeper-team"
-                          ) as HTMLSelectElement
-                        )?.value;
-                        const pidInput = (
-                          document.getElementById(
-                            "keeper-playerId"
-                          ) as HTMLInputElement
-                        )?.value;
-                        const playerId =
-                          pidInput && pidInput.trim()
-                            ? pidInput.trim()
-                            : undefined;
-                        if (
-                          onAddKeeper &&
-                          Number.isFinite(r) &&
-                          Number.isFinite(p) &&
-                          teamId &&
-                          playerId
-                        ) {
-                          onAddKeeper(r, p, teamId, String(playerId));
-                        }
-                      }}
+                    <span
+                      className={`${styles.statusIcon} ${keeperSelectedPlayerId ? styles.statusOk : styles.statusError} ${styles.statusIconInput}`}
+                      aria-label={
+                        keeperSelectedPlayerId
+                          ? "Player selected"
+                          : "No player selected"
+                      }
+                      title={
+                        keeperSelectedPlayerId
+                          ? "Player selected"
+                          : "No player selected"
+                      }
                     >
-                      Add Keeper
-                    </button>
+                      {keeperSelectedPlayerId ? "✓" : "✕"}
+                    </span>
                   </div>
-                </div>
-                {/* Keepers list */}
-                <div className={styles.settingRow}>
-                  <div style={{ fontSize: 12, color: "#888" }}>Keepers:</div>
-                  <div>
-                    {keepers.length === 0 && (
-                      <div style={{ fontSize: 12 }}>None</div>
-                    )}
-                    {keepers.map((k) => (
+                  <div className={styles.settingRow}>
+                    <div className={styles.inlineFormRow}>
+                      <label
+                        className={styles.visuallyHidden}
+                        htmlFor="keeper-team"
+                      >
+                        Keeper Team
+                      </label>
+                      <select
+                        id="keeper-team"
+                        className={`${styles.select} ${styles.ownerSelectInline}`}
+                      >
+                        {settings.draftOrder.map((teamId) => (
+                          <option key={teamId} value={teamId}>
+                            {customTeamNames[teamId] || teamId}
+                          </option>
+                        ))}
+                      </select>
                       <div
-                        key={`${k.round}-${k.pickInRound}`}
-                        style={{
-                          display: "flex",
-                          gap: 8,
-                          alignItems: "center",
-                          fontSize: 12
+                        className={styles.rosterStepper}
+                        ref={keeperRoundStepperRef}
+                      >
+                        <button
+                          type="button"
+                          className={styles.stepButton}
+                          aria-label="Decrease keeper round"
+                          onClick={() => {
+                            const el = document.getElementById(
+                              "keeper-round"
+                            ) as HTMLInputElement | null;
+                            if (!el) return;
+                            const max = Number(el.max) || 1;
+                            const cur = Math.max(
+                              1,
+                              Math.min(max, parseInt(el.value || "1", 10))
+                            );
+                            el.value = String(Math.max(1, cur - 1));
+                          }}
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          max={totalRosterSpots}
+                          placeholder="RD"
+                          className={styles.numberInput}
+                          id="keeper-round"
+                        />
+                        <button
+                          type="button"
+                          className={styles.stepButton}
+                          aria-label="Increase keeper round"
+                          onClick={() => {
+                            const el = document.getElementById(
+                              "keeper-round"
+                            ) as HTMLInputElement | null;
+                            if (!el) return;
+                            const max = Number(el.max) || totalRosterSpots || 1;
+                            const cur = Math.max(
+                              1,
+                              Math.min(max, parseInt(el.value || "1", 10))
+                            );
+                            el.value = String(Math.min(max, cur + 1));
+                          }}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <div
+                        className={styles.rosterStepper}
+                        ref={keeperPickStepperRef}
+                      >
+                        <button
+                          type="button"
+                          className={styles.stepButton}
+                          aria-label="Decrease keeper pick"
+                          onClick={() => {
+                            const el = document.getElementById(
+                              "keeper-pick"
+                            ) as HTMLInputElement | null;
+                            if (!el) return;
+                            const max =
+                              Number(el.max) || settings.teamCount || 1;
+                            const cur = Math.max(
+                              1,
+                              Math.min(max, parseInt(el.value || "1", 10))
+                            );
+                            el.value = String(Math.max(1, cur - 1));
+                          }}
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          max={settings.teamCount}
+                          placeholder="Pick"
+                          className={styles.numberInput}
+                          id="keeper-pick"
+                        />
+                        <button
+                          type="button"
+                          className={styles.stepButton}
+                          aria-label="Increase keeper pick"
+                          onClick={() => {
+                            const el = document.getElementById(
+                              "keeper-pick"
+                            ) as HTMLInputElement | null;
+                            if (!el) return;
+                            const max =
+                              Number(el.max) || settings.teamCount || 1;
+                            const cur = Math.max(
+                              1,
+                              Math.min(max, parseInt(el.value || "1", 10))
+                            );
+                            el.value = String(Math.min(max, cur + 1));
+                          }}
+                        >
+                          +
+                        </button>
+                      </div>
+                      {/* Status icon moved next to autocomplete */}
+                      <button
+                        type="button"
+                        className={styles.addActionBtn}
+                        aria-label="Add keeper"
+                        onClick={() => {
+                          const r = parseInt(
+                            (
+                              document.getElementById(
+                                "keeper-round"
+                              ) as HTMLInputElement
+                            )?.value || "",
+                            10
+                          );
+                          const p = parseInt(
+                            (
+                              document.getElementById(
+                                "keeper-pick"
+                              ) as HTMLInputElement
+                            )?.value || "",
+                            10
+                          );
+                          const teamId = (
+                            document.getElementById(
+                              "keeper-team"
+                            ) as HTMLSelectElement
+                          )?.value;
+                          const playerId = keeperSelectedPlayerId;
+                          if (
+                            onAddKeeper &&
+                            Number.isFinite(r) &&
+                            Number.isFinite(p) &&
+                            teamId &&
+                            playerId
+                          ) {
+                            onAddKeeper(r, p, teamId, String(playerId));
+                          } else {
+                            // Pulse invalid inputs to indicate required fields
+                            const roundEl = document.getElementById(
+                              "keeper-round"
+                            ) as HTMLInputElement | null;
+                            const pickEl = document.getElementById(
+                              "keeper-pick"
+                            ) as HTMLInputElement | null;
+                            const pulse = (el: HTMLInputElement | null) => {
+                              if (!el) return;
+                              el.classList.remove(styles.inputErrorPulse);
+                              // force reflow to restart animation
+                              // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+                              (el as any).offsetWidth;
+                              el.classList.add(styles.inputErrorPulse);
+                              window.setTimeout(
+                                () =>
+                                  el.classList.remove(styles.inputErrorPulse),
+                                1000
+                              );
+                            };
+                            if (!Number.isFinite(r)) pulse(roundEl);
+                            if (!Number.isFinite(p)) pulse(pickEl);
+                            const pulseGroup = (
+                              groupEl: HTMLDivElement | null
+                            ) => {
+                              if (!groupEl) return;
+                              groupEl.classList.remove(
+                                styles.rosterStepperError
+                              );
+                              (groupEl as any).offsetWidth;
+                              groupEl.classList.add(styles.rosterStepperError);
+                              window.setTimeout(() => {
+                                groupEl.classList.remove(
+                                  styles.rosterStepperError
+                                );
+                              }, 1000);
+                            };
+                            if (!Number.isFinite(r))
+                              pulseGroup(keeperRoundStepperRef.current);
+                            if (!Number.isFinite(p))
+                              pulseGroup(keeperPickStepperRef.current);
+                          }
                         }}
                       >
-                        <span>
-                          {k.round}-{k.pickInRound} →{" "}
-                          {customTeamNames[k.teamId] || k.teamId} (Player{" "}
-                          {k.playerId})
-                        </span>
-                        {onRemoveKeeper && (
-                          <button
-                            type="button"
-                            className={styles.inlineResetBtn}
-                            onClick={() =>
-                              onRemoveKeeper(k.round, k.pickInRound)
-                            }
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  {/* Keepers list */}
+                  <div className={styles.settingRow}>
+                    <div className={styles.mutedSmallLabel}>Keepers:</div>
+                    <div className={styles.listScrollable}>
+                      {keepers.length === 0 && (
+                        <div className={styles.smallText}>None</div>
+                      )}
+                      {keepers.map((k) => (
+                        <div
+                          key={`${k.round}-${k.pickInRound}`}
+                          className={styles.inlineItemRow}
+                        >
+                          <span>
+                            {k.round}-{k.pickInRound} →{" "}
+                            {customTeamNames[k.teamId] || k.teamId} (Player{" "}
+                            {k.playerId})
+                          </span>
+                          {onRemoveKeeper && (
+                            <button
+                              type="button"
+                              className={styles.inlineResetBtn}
+                              onClick={() =>
+                                onRemoveKeeper(k.round, k.pickInRound)
+                              }
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </>
-            )}
-          </fieldset>
+            </fieldset>
+          )}
         </div>
       )}
       {showWeightsPopover && (
@@ -1577,15 +1813,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               <div className={styles.weightsPopoverTitle}>
                 Projection Weights
               </div>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 4,
-                    fontSize: 11
-                  }}
-                >
+              <div className={styles.weightsHeaderControls}>
+                <label className={styles.popoverInlineLabel}>
                   <input
                     type="checkbox"
                     checked={autoNormalize}
@@ -1649,11 +1878,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                         >
                           <div className={styles.popoverSourceHeader}>
                             <label
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4
-                              }}
+                              className={styles.popoverInlineLabel}
                               htmlFor={`popover-skater-${id}`}
                             >
                               <input
@@ -1720,7 +1945,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
               </div>
             </div>
             {goalieSourceControls && (
-              <div style={{ marginTop: 12 }}>
+              <div className={styles.sectionSpacer}>
                 <div className={styles.popoverSectionTitle}>Goalie Sources</div>
                 <div
                   className={styles.popoverGrid}
@@ -1754,11 +1979,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           >
                             <div className={styles.popoverSourceHeader}>
                               <label
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 4
-                                }}
+                                className={styles.popoverInlineLabel}
                                 htmlFor={`popover-goalie-${id}`}
                               >
                                 <input

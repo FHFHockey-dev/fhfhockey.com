@@ -79,8 +79,9 @@
   }
 
   &.active {
-    background-color: v.$primary-color;
-    color: v.$color-white;
+    background-color: v.$primary-color-opaque;
+    border: 2px solid v.$primary-color;
+    color: v.$secondary-color;
 
     &:hover {
       background-color: color.adjust(v.$primary-color, $lightness: -5%);
@@ -259,6 +260,25 @@
   }
 }
 
+/* Error pulse for required numeric inputs (e.g., keeper round/pick) */
+@keyframes errorPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(v.$danger-color, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(v.$danger-color, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(v.$danger-color, 0);
+  }
+}
+
+.inputErrorPulse {
+  border-top-color: v.$danger-color !important;
+  border-bottom-color: v.$danger-color !important;
+  animation: errorPulse 0.9s ease;
+}
+
 .rosterTotal {
   font-size: v.$font-size-xs;
   color: v.$primary-color;
@@ -281,6 +301,67 @@
   display: flex;
   align-items: center;
   max-width: 300px;
+}
+
+@keyframes groupErrorPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(v.$danger-color, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(v.$danger-color, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(v.$danger-color, 0);
+  }
+}
+
+.rosterStepperError {
+  animation: groupErrorPulse 0.9s ease;
+  border-radius: v.$border-radius-md;
+  box-shadow: 0 0 0 2px rgba(v.$danger-color, 0.4);
+}
+
+.rosterStepperError .stepButton {
+  border-color: v.$danger-color !important;
+  animation: groupErrorPulse 0.9s ease;
+  box-shadow: 0 0 8px -1px v.$danger-color;
+  background: color.adjust(v.$danger-color, $alpha: -0.85) !important;
+  color: v.$danger-color !important;
+}
+
+.rosterStepperError .numberInput {
+  border-top-color: v.$danger-color !important;
+  border-bottom-color: v.$danger-color !important;
+  box-shadow: 0 0 8px -1px v.$danger-color;
+  background-color: rgba(v.$danger-color, 0.4);
+}
+
+/* Subtle branded link used for projection sources plug */
+.sourcePlug {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: v.$space-md;
+  padding: 4px 8px;
+  font-size: v.$font-size-xxs;
+  color: v.$primary-color;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  background: linear-gradient(
+    135deg,
+    color.adjust(v.$primary-color, $alpha: -0.92),
+    color.adjust(v.$secondary-color, $alpha: -0.94)
+  );
+}
+.sourcePlug a {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px dotted v.$primary-color;
+}
+.sourcePlug a:hover {
+  color: color.adjust(v.$primary-color, $lightness: 10%);
+  border-bottom-color: color.adjust(v.$primary-color, $lightness: 10%);
 }
 
 .stepButton {
@@ -392,7 +473,8 @@
   font-size: v.$font-size-xs;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-top: v.$space-sm; // Reduced margin
+  margin: v.$space-sm auto 0;
+  width: 95%;
 
   &:hover {
     color: v.$primary-color;
@@ -401,11 +483,43 @@
   }
 }
 
+/* Inline manage container that replaces expand button when open */
+.inlineManage {
+  border: 1px dashed v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-xs;
+  margin-top: v.$space-sm;
+  background: color.adjust(v.$background-dark, $lightness: 2%);
+  display: grid;
+  grid-template-columns: 2fr 1fr; // add button twice the width of hide
+  gap: v.$space-xs;
+  align-items: center;
+}
+
+.inlineManage .pointsInput {
+  min-width: 70px;
+}
+
+/* Buttons share the same row; Add sits in col1 (2x width), Hide in col2 */
+.inlineManage .actionButton {
+  grid-column: 1;
+}
+.inlineManage .inlineResetBtn {
+  grid-column: 2;
+}
+
+/* Make the inline manage span full width of the grid for clarity */
+.scoringGrid > .inlineManage {
+  grid-column: 1 / -1;
+}
+.goalieGrid > .inlineManage {
+  grid-column: 1 / -1;
+}
+
 /* New flex row scoring subgroups layout */
 .scoringSubgroupsRow {
   display: flex;
   align-items: flex-start;
-  gap: v.$space-md;
   width: 100%;
   position: relative;
 }
@@ -422,13 +536,24 @@
 /* vertical divider between Skaters and Goalies */
 .scoringSubgroupsRow > .scoringSubgroupSplit:first-child {
   border-right: 1px solid v.$border-secondary;
-  padding-right: v.$space-md;
-  margin-right: v.$space-md;
+  padding: 0 v.$space-xs;
+  margin-right: v.$space-sm;
 }
 
 /* Adjust scoring grid inside split to use 2fr repeating columns for labels/inputs */
 .scoringSubgroupSplit .scoringGrid {
   grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+}
+
+/* Ensure goalie expand button aligns within its grid */
+.goalieGrid .expandButton {
+  grid-column: 1 / -1;
+  margin-top: v.$space-sm;
+}
+
+.scoringGrid .expandButton {
+  grid-column: 1 / -1;
+  margin-top: v.$space-sm;
 }
 
 /* Manage stats panel styles */
@@ -456,6 +581,45 @@
   flex-wrap: wrap;
   gap: v.$space-xs;
   align-items: center;
+}
+
+/* Reusable inline row used in traded picks/keepers forms */
+.inlineFormRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+/* Small, muted inline labels (e.g., Traded Picks/Keepers headers) */
+.mutedSmallLabel {
+  font-size: v.$font-size-xs;
+  color: v.$text-secondary;
+}
+
+/* Generic small text for inline rows like "None" */
+.smallText {
+  font-size: v.$font-size-xs;
+}
+
+/* List row for overrides/keepers entries */
+.inlineItemRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: v.$font-size-xs;
+}
+
+// /* Narrow points input for add-stat control */
+// .pointsInputNarrow {
+//   width: 70px;
+// }
+
+/* Wrapper sizing for player autocomplete input */
+.playerAutocompleteWrap {
+  position: relative;
+  min-width: 260px;
+  margin-bottom: v.$space-xs;
 }
 
 .noAddableStatsMsg {
@@ -659,10 +823,15 @@
   letter-spacing: 0.05em;
 }
 
+/* Spacing utility for normalized badge placement */
+.normalizedBadgeSpaced {
+  margin-top: 4px;
+}
+
 /* Reset buttons row */
 .inlineActions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: row;
   gap: v.$space-xs;
   margin-top: v.$space-sm;
 }
@@ -676,12 +845,43 @@
   padding: v.$space-xxs v.$space-sm;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+  width: 50%;
+  min-width: 70px;
 
   &:hover {
     color: v.$primary-color;
     border-color: v.$primary-color;
     background: color.adjust(v.$primary-color, $alpha: -0.95);
   }
+}
+
+/* Compact green "+" add action button */
+.addActionBtn {
+  @include v.reset-button;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid v.$success-color;
+  color: v.$success-color;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  transition: 0.15s;
+
+  &:hover {
+    background: color.adjust(v.$success-color, $alpha: -0.9);
+    color: v.$background-dark;
+  }
+}
+
+/* Confirm state for destructive actions */
+.confirmReset {
+  border-color: v.$danger-color !important;
+  color: v.$danger-color !important;
 }
 
 /* Projection source grouping */
@@ -752,6 +952,11 @@
   border: 0;
 }
 
+/* Generic utility to hide elements (used to keep dev-only controls in DOM) */
+.hidden {
+  display: none !important;
+}
+
 .accordionToggle {
   @include v.reset-button;
   font-size: v.$font-size-xs;
@@ -771,6 +976,11 @@
     color: v.$primary-color;
     border-color: v.$primary-color;
   }
+}
+
+/* Small left margin utility for toggle inside legends */
+.accordionToggleSpacer {
+  margin-left: 8px;
 }
 
 /* ===== Projection Source Compact Summary (Chips) ===== */
@@ -917,6 +1127,13 @@
   margin-bottom: 10px;
 }
 
+/* Header control cluster in weights popover */
+.weightsHeaderControls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .weightsPopoverTitle {
   font-size: 13px;
   text-transform: uppercase;
@@ -953,10 +1170,105 @@
   color: v.$text-secondary;
 }
 
+/* Inline label layout in popover lists */
+.popoverInlineLabel {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+}
+
 .popoverGrid {
   display: grid;
   gap: 8px;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+}
+
+/* ===== Subsections inside Keepers & Traded Picks ===== */
+.subsection {
+  padding: v.$space-sm 0;
+}
+
+.subsection + .subsection {
+  border-top: 1px solid v.$border-secondary;
+  margin-top: v.$space-sm;
+  padding-top: v.$space-sm;
+}
+
+.subsectionTitle {
+  font-size: v.$font-size-xs;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: v.$primary-color;
+  margin: 0 0 v.$space-xs 0;
+}
+
+/* Tighter rows inside subsections */
+.subsection .settingRow {
+  margin-bottom: v.$space-xs;
+}
+
+/* Compact owner/team select placement */
+.ownerSelectInline {
+  min-width: 100px;
+}
+
+/* Scrollable list areas to keep panel height stable */
+.listScrollable {
+  max-height: 120px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+
+/* Smaller autocomplete input specifically for DraftSettings usage */
+.playerAutoInputSmall {
+  height: 30px !important;
+  line-height: 30px !important;
+  padding: 0 30px 0 10px !important; // leave space for status icon
+  border: 2px solid v.$primary-color !important;
+  border-radius: v.$border-radius-md !important;
+}
+
+/* Add a little spacing under the autocomplete */
+.playerAutocompleteWrap {
+  position: relative;
+  min-width: 120px;
+  max-width: 280px;
+  margin-bottom: v.$space-xs;
+}
+
+/* ===== Keeper status indicator ===== */
+.statusIcon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1;
+  margin-left: 4px;
+}
+
+.statusOk {
+  border: 2px solid v.$primary-color;
+  color: v.$primary-color;
+  background: color.adjust(v.$primary-color, $alpha: -0.9);
+}
+
+.statusError {
+  border: 2px solid v.$danger-color;
+  color: v.$danger-color;
+  background: color.adjust(v.$danger-color, $alpha: -0.9);
+}
+
+/* Position variant when used beside the autocomplete input */
+.statusIconInput {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .popoverSourceCard {
@@ -1083,7 +1395,7 @@
 }
 
 .slimFieldset .legend {
-  font-size: 11px;
+  font-size: v.$font-size-sm;
 }
 
 /* =================== Responsive Design =================== */
@@ -1140,4 +1452,9 @@
     padding-bottom: v.$space-md;
     margin-bottom: v.$space-md;
   }
+}
+
+/* Spacing utility for sections within popover */
+.sectionSpacer {
+  margin-top: 12px;
 }
