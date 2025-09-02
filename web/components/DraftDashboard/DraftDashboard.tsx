@@ -33,6 +33,8 @@ export interface DraftSettings {
   scoringCategories: Record<string, number>;
   leagueType?: "points" | "categories";
   categoryWeights?: Record<string, number>; // used in categories mode
+  // Whether this is a keeper league. Controls visibility of Keepers & Traded Picks section.
+  isKeeper?: boolean;
   rosterConfig: {
     [position: string]: number;
     bench: number;
@@ -78,6 +80,7 @@ const DEFAULT_DRAFT_SETTINGS: DraftSettings = {
   teamCount: 12,
   scoringCategories: getDefaultFantasyPointsConfig("skater"),
   leagueType: "points",
+  isKeeper: false,
   categoryWeights: {
     GOALS: 1,
     ASSISTS: 1,
@@ -893,6 +896,15 @@ const DraftDashboard: React.FC = () => {
     },
     [currentTurn, currentPick, draftedPlayers, draftComplete]
   );
+
+  // Auto-skip picks that are already drafted (e.g., keepers)
+  useEffect(() => {
+    if (draftComplete) return;
+    const alreadyDrafted = draftedPlayers.some((p) => p.pickNumber === currentPick);
+    if (alreadyDrafted) {
+      setCurrentPick((prev) => prev + 1);
+    }
+  }, [currentPick, draftedPlayers, draftComplete]);
 
   // Add undo functionality
   const undoLastPick = useCallback(() => {

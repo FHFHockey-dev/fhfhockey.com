@@ -11,8 +11,8 @@
     "lint": "next lint",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-  "test": "vitest",
-  "mcp:supabase": "SUPABASE_ACCESS_TOKEN=$(grep SUPABASE_ACCESS_TOKEN .env.mcp | cut -d= -f2) npx @supabase/mcp-server-supabase"
+    "test": "vitest",
+    "mcp:supabase": "SUPABASE_ACCESS_TOKEN=$(grep SUPABASE_ACCESS_TOKEN .env.mcp | cut -d= -f2) npx @supabase/mcp-server-supabase"
   },
   "dependencies": {
     "@apollo/client": "^3.6.9",
@@ -105,6 +105,8 @@
     "@types/node-fetch": "^2.6.12",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "@typescript-eslint/eslint-plugin": "^8.42.0",
+    "@typescript-eslint/parser": "^8.42.0",
     "@vitejs/plugin-react": "^4.2.1",
     "eslint": "^9.31.0",
     "eslint-config-next": "15.1.6",

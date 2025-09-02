@@ -1,11 +1,9 @@
 // /Users/tim/Desktop/fhfhockey.com/web/utils/fetchAllPages.ts
 
-import { PostgrestFilterBuilder } from "@supabase/postgrest-js";
-import { SupabaseClient } from "@supabase/supabase-js"; // Import if needed, though often inferred
 import supabase from "lib/supabase";
 
-// Define a generic type for the query builder if needed, or use `any` for simplicity here
-type SupabaseQueryBuilder = PostgrestFilterBuilder<any, any, any[], any>; // Adjust schema/table/return types if known
+// Use a broad type for the incoming query builder to avoid mismatched Postgrest generics
+type SupabaseQueryBuilder = any;
 
 const SUPABASE_PAGE_SIZE = 1000; // Match your constant
 
@@ -14,9 +12,7 @@ const SUPABASE_PAGE_SIZE = 1000; // Match your constant
  * @param queryBuilder The Supabase query builder instance configured with filters, selects, etc.
  * @returns A promise that resolves to an array containing all fetched rows.
  */
-export async function fetchAllPages<T = any>(
-  queryBuilder: SupabaseQueryBuilder
-): Promise<T[]> {
+export async function fetchAllPages<T = any>(queryBuilder: SupabaseQueryBuilder): Promise<T[]> {
   let allData: T[] = [];
   let currentPage = 0;
   let moreDataAvailable = true;
