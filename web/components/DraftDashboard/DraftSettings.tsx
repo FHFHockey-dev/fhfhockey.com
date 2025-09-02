@@ -1724,7 +1724,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                             const pulse = (el: HTMLInputElement | null) => {
                               if (!el) return;
                               el.classList.remove(styles.inputErrorPulse);
-                              // force reflow to restart animation
+                              // force reflow to restart animation te
                               // eslint-disable-next-line no-unused-expressions
                               (el as any).offsetWidth;
                               el.classList.add(styles.inputErrorPulse);
