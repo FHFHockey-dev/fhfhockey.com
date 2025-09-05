@@ -475,6 +475,26 @@ export default async function handler(
       console.log(
         `Successfully processed all ${allRpcPayloads.length} player payloads via RPC.`
       );
+
+      // Fire-and-forget trigger to sync Google Sheet. Do not block response.
+      try {
+        const targetUrl = `https://fhfhockey.com/api/internal/sync-yahoo-players-to-sheet${
+          gameId ? `?gameId=${encodeURIComponent(gameId)}` : ''
+        }`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000);
+        fetch(targetUrl, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${process.env.CRON_SECRET}` },
+          signal: controller.signal as any,
+        })
+          .then(() => console.log('Triggered sheet sync endpoint'))
+          .catch((e) => console.warn('Sheet sync trigger failed (non-fatal):', e?.message || e))
+          .finally(() => clearTimeout(timeout));
+      } catch (e: any) {
+        console.warn('Could not trigger sheet sync (non-fatal):', e?.message || e);
+      }
+
       return res.status(200).json({
         success: true,
         message: `Processed ${allRpcPayloads.length} players via RPC.`

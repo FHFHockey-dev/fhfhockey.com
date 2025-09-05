@@ -12,6 +12,7 @@ import {
 import supabase from "lib/supabase";
 import {
   calcTotalOffNights,
+  calcWeightedOffNights,
   getTotalGamePlayed,
   createExtendedWeekData // Ensure this is imported
 } from "./helper";
@@ -148,6 +149,11 @@ export default function useFourWeekSchedule(
                 schedule.numGamesPerDay,
                 []
               );
+              const weightedOffNights = calcWeightedOffNights(
+                weekData,
+                schedule.numGamesPerDay,
+                []
+              );
               const winOddsList = convertTeamRowToWinOddsList({
                 ...weekData,
                 teamId: Number(teamId),
@@ -155,7 +161,7 @@ export default function useFourWeekSchedule(
               });
               const weekScore = calcWeekScore(
                 winOddsList,
-                totalOffNights,
+                weightedOffNights, // use weighted off‑nights for scoring
                 calcTotalGP(schedule.numGamesPerDay, []),
                 totalGamesPlayed
               );

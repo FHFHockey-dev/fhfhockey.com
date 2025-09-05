@@ -10,12 +10,26 @@ import type { Player } from "lib/NHL/types";
 type PlayerAutocompleteProps = {
   playerId: number | undefined;
   onPlayerIdChange?: React.Dispatch<React.SetStateAction<number | undefined>>;
-  onPlayerChange?: (player: Player | null) => void;
+  onPlayerChange?: (player: MinimalPlayer | null) => void;
   inputClassName?: string;
   listClassName?: string;
   showButton?: boolean;
   adpByPlayerId?: Map<number, number> | Record<number, number>;
   sortByAdp?: boolean;
+  // Optional override to supply a custom player pool (e.g., processed projections)
+  // Sweater numbers may be missing in projections, so allow them to be optional
+  playersOverride?: Array<
+    Pick<Player, "id" | "fullName"> &
+      Partial<Pick<Player, "sweaterNumber" | "teamId">>
+  >;
+};
+
+// Minimal shape we render/search on
+type MinimalPlayer = {
+  id: number;
+  fullName: string;
+  sweaterNumber?: number | null;
+  teamId?: number | undefined;
 };
 
 function PlayerAutocomplete({
@@ -26,10 +40,15 @@ function PlayerAutocomplete({
   listClassName,
   showButton = true,
   adpByPlayerId,
-  sortByAdp = false
+  sortByAdp = false,
+  playersOverride
 }: PlayerAutocompleteProps) {
-  const players = usePlayers();
-  const [playerOption, setPlayerOption] = useState<Player | null>(null);
+  const defaultPlayers = usePlayers();
+  const players: MinimalPlayer[] =
+    playersOverride && playersOverride.length > 0
+      ? playersOverride
+      : (defaultPlayers as MinimalPlayer[]);
+  const [playerOption, setPlayerOption] = useState<MinimalPlayer | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   const optionsSorted = useMemo(() => {
@@ -63,10 +82,11 @@ function PlayerAutocomplete({
   } = useAutocomplete({
     id: "use-autocomplete-players",
     options: optionsSorted,
-    getOptionLabel: (option) => `${option.fullName} (${option.sweaterNumber})`,
+    // Always show names only for completeness and consistency with projections
+    getOptionLabel: (option) => option.fullName,
     isOptionEqualToValue: (option, value) => option.id === value.id,
     value: playerOption,
-    onChange: (e, newValue, reason) => {
+    onChange: (_e, newValue, reason) => {
       onPlayerIdChange(Number(newValue?.id));
       onPlayerChange(newValue);
       setPlayerOption(newValue);
@@ -78,7 +98,9 @@ function PlayerAutocomplete({
     filterOptions: createFilterOptions({
       stringify(option) {
         return option.fullName.replaceAll(".", "");
-      }
+      },
+      // Ensure a complete list is available without truncation
+      limit: 10000
     })
   });
 
@@ -129,12 +151,9 @@ function PlayerAutocomplete({
       </div>
       {groupedOptions.length > 0 ? (
         <ul {...getListboxProps()} className={listClassName}>
-          {(groupedOptions as typeof players).map((option, index) => (
-            <li
-              {...getOptionProps({ option, index })}
-              key={`${option.teamId}-${option.id}`}
-            >
-              {`${option.fullName} (${option.sweaterNumber ?? "unknown"})`}
+          {(groupedOptions as MinimalPlayer[]).map((option, index) => (
+            <li {...getOptionProps({ option, index })} key={`${option.id}`}>
+              {option.fullName}
             </li>
           ))}
         </ul>

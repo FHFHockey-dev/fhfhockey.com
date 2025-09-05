@@ -1,0 +1,114 @@
+[
+  {
+    "nhl_player_id": "8476874",
+    "nhl_player_name": "Olli Määttä",
+    "nhl_normalized": "olli määttä",
+    "team": null,
+    "position": "D"
+  },
+  {
+    "nhl_player_id": "8474884",
+    "nhl_player_name": "Mike Hoffman",
+    "nhl_normalized": "mike hoffman",
+    "team": "UFA",
+    "position": "LW,RW"
+  },
+  {
+    "nhl_player_id": "8474031",
+    "nhl_player_name": "Kevin Shattenkirk",
+    "nhl_normalized": "kevin shattenkirk",
+    "team": "UFA",
+    "position": "D"
+  },
+  {
+    "nhl_player_id": "8480884",
+    "nhl_player_name": "Calen Addison",
+    "nhl_normalized": "calen addison",
+    "team": "UFA",
+    "position": "D"
+  },
+  {
+    "nhl_player_id": "8473473",
+    "nhl_player_name": "Milan Lucic",
+    "nhl_normalized": "milan lucic",
+    "team": "UFA",
+    "position": "LW"
+  },
+  {
+    "nhl_player_id": "8470966",
+    "nhl_player_name": "Mark Giordano",
+    "nhl_normalized": "mark giordano",
+    "team": "UFA",
+    "position": "D"
+  },
+  {
+    "nhl_player_id": "8474040",
+    "nhl_player_name": "Sam Gagner",
+    "nhl_normalized": "sam gagner",
+    "team": "UFA",
+    "position": "C"
+  },
+  {
+    "nhl_player_id": "8480252",
+    "nhl_player_name": "Cole Guttman",
+    "nhl_normalized": "cole guttman",
+    "team": "CHI",
+    "position": "C"
+  },
+  {
+    "nhl_player_id": "8474009",
+    "nhl_player_name": "Nick Bonino",
+    "nhl_normalized": "nick bonino",
+    "team": "UFA",
+    "position": "C"
+  },
+  {
+    "nhl_player_id": "8477930",
+    "nhl_player_name": "Pierre-Edouard Bellemare",
+    "nhl_normalized": "pierreedouard bellemare",
+    "team": "UFA",
+    "position": "LW"
+  },
+  {
+    "nhl_player_id": "8483619",
+    "nhl_player_name": "Filip Roos",
+    "nhl_normalized": "filip roos",
+    "team": "CHI",
+    "position": "D"
+  },
+  {
+    "nhl_player_id": "8477846",
+    "nhl_player_name": "Ryan Carpenter",
+    "nhl_normalized": "ryan carpenter",
+    "team": "UFA",
+    "position": "C"
+  },
+  {
+    "nhl_player_id": "8476919",
+    "nhl_player_name": "Chris Tierney",
+    "nhl_normalized": "chris tierney",
+    "team": "UFA",
+    "position": "C"
+  },
+  {
+    "nhl_player_id": "8474618",
+    "nhl_player_name": "Marco Scandella",
+    "nhl_normalized": "marco scandella",
+    "team": "UFA",
+    "position": "D"
+  },
+  {
+    "nhl_player_id": "8481751",
+    "nhl_player_name": "Lukas Rousek",
+    "nhl_normalized": "lukas rousek",
+    "team": "BUF",
+    "position": "LW"
+  },
+  {
+    "nhl_player_id": "8477293",
+    "nhl_player_name": "Antti Raanta",
+    "nhl_normalized": "antti raanta",
+    "team": "UFA",
+    "position": "G"
+  }
+]

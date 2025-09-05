@@ -34,6 +34,11 @@ import Container from "components/Layout/Container";
 import PageTitle from "components/PageTitle";
 import ClientOnly from "components/ClientOnly";
 import { useUser } from "contexts/AuthProviderContext"; // Your AuthProvider
+// Optional: import name mapping JSONs produced/edited elsewhere
+// These files are large but useful for consistent manual corrections across tools.
+// If they don't exist, the bundler may warn; keep them optional in repo.
+// @ts-ignore
+import nameMappingTodo from "lib/supabase/Upserts/Yahoo/name_mapping_todo.json";
 
 interface CSVRow {
   [key: string]: string | number;
@@ -139,6 +144,165 @@ export default function UpsertProjectionsPage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isProcessingPreview, setIsProcessingPreview] =
     useState<boolean>(false);
+
+  // Heuristic matching against Yahoo names
+  const [yahooCandidates, setYahooCandidates] = useState<string[]>([]);
+
+  // Load candidate list from Supabase (prefer yahoo_names, fallback to yahoo_players)
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const supabase = (await import("lib/supabase")).default;
+        const { data: n1, error: e1 } = await supabase
+          .from("yahoo_names")
+          .select("player_name")
+          .limit(5000);
+        if (!cancelled && !e1 && Array.isArray(n1) && n1.length) {
+          setYahooCandidates(
+            n1.map((r: any) => String(r?.player_name || "")).filter(Boolean)
+          );
+          return;
+        }
+        const { data: n2, error: e2 } = await supabase
+          .from("yahoo_players")
+          .select("full_name")
+          .limit(5000);
+        if (!cancelled && !e2 && Array.isArray(n2)) {
+          setYahooCandidates(
+            n2.map((r: any) => String(r?.full_name || "")).filter(Boolean)
+          );
+        }
+      } catch (err) {
+        console.warn("Failed loading Yahoo candidates", err);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Normalization helpers
+  const norm = useCallback(
+    (s: string) =>
+      (s || "")
+        .toLowerCase()
+        .trim()
+        .replace(/[.'`-]/g, "")
+        .replace(/\s+/g, " "),
+    []
+  );
+
+  const splitFirstLast = useCallback((name: string) => {
+    const parts = (name || "").trim().split(/\s+/);
+    if (!parts.length) return ["", ""] as const;
+    if (parts.length === 1) return [parts[0], parts[0]] as const;
+    return [parts.slice(0, -1).join(" "), parts[parts.length - 1]] as const;
+  }, []);
+
+  const lastTokens = useCallback(
+    (name: string) => {
+      const [, last] = splitFirstLast(name);
+      if (!last) return [] as string[];
+      return last
+        .split(/[-\s]+/)
+        .map((t) => norm(t))
+        .filter(Boolean);
+    },
+    [norm, splitFirstLast]
+  );
+
+  const FIRSTNAME_ALIASES: Record<string, string[]> = {
+    joshua: ["josh"],
+    jacob: ["jake"],
+    michael: ["mike"],
+    matthew: ["matt"],
+    nicholas: ["nick"],
+    anthony: ["tony"],
+    alexander: ["alex"],
+    william: ["will", "bill", "billy"],
+    christopher: ["chris"],
+    jonathan: ["john", "jon"],
+  };
+
+  const firstNameSimilar = useCallback(
+    (a: string, b: string) => {
+      const na = norm(a);
+      const nb = norm(b);
+      if (!na || !nb) return false;
+      if (na === nb) return true;
+      // common prefix similarity >= 0.5 of the longer
+      const minLen = Math.min(na.length, nb.length);
+      let common = 0;
+      for (let i = 0; i < minLen; i++) {
+        if (na[i] === nb[i]) common++;
+        else break;
+      }
+      if (common / Math.max(na.length, nb.length) >= 0.5) return true;
+      const aAliases = FIRSTNAME_ALIASES[na] || [];
+      const bAliases = FIRSTNAME_ALIASES[nb] || [];
+      if (aAliases.includes(nb) || bAliases.includes(na)) return true;
+      return false;
+    },
+    [norm]
+  );
+
+  // Build a quick lookup from the mapping JSONs: normalized unmatchedName -> correctedName
+  const buildOverridesMap = useCallback(() => {
+    const m: Record<string, string> = {};
+    const fold = (src: any) => {
+      if (!src) return;
+      const entries: any[] = Array.isArray(src) ? src : Array.isArray(src?.data) ? src.data : [];
+      for (const e of entries) {
+        const data = e?.data ?? e;
+        const u = norm(String(data?.unmatchedName || ""));
+        const c = String(data?.correctedName || "");
+        if (u && c) m[u] = c;
+      }
+    };
+    try { fold(nameMappingTodo); } catch {}
+    return m;
+  }, [norm]);
+
+  const nameOverridesMap = buildOverridesMap();
+
+  const resolveByLastNameHeuristic = useCallback(
+    (name: string) => {
+      if (!name || !yahooCandidates.length) return "";
+      const [srcFirst] = splitFirstLast(name);
+      const srcLasts = lastTokens(name);
+      if (!srcLasts.length) return "";
+      let best = "";
+      let bestScore = -1;
+      for (const cand of yahooCandidates) {
+        const [candFirst] = splitFirstLast(cand);
+        const candLasts = lastTokens(cand);
+        const lastExact = candLasts.some((t) => srcLasts.includes(t));
+        if (!lastExact) continue; // must match last name exactly (normalized)
+        const firstOK = firstNameSimilar(srcFirst, candFirst);
+        const score = (lastExact ? 1 : 0) + (firstOK ? 1 : 0);
+        if (score > bestScore) {
+          best = cand;
+          bestScore = score;
+          if (score === 2) break; // perfect
+        }
+      }
+      return best;
+    },
+    [yahooCandidates, splitFirstLast, lastTokens, firstNameSimilar]
+  );
+
+  const applyNameOverridesOrHeuristic = useCallback(
+    (name: string) => {
+      const key = norm(name);
+      const overridden = nameOverridesMap[key];
+      if (overridden) return overridden;
+      const h = resolveByLastNameHeuristic(name);
+      return h || name;
+    },
+    [nameOverridesMap, norm, resolveByLastNameHeuristic]
+  );
 
   // Redirect if not admin
   useEffect(() => {
@@ -266,8 +430,8 @@ export default function UpsertProjectionsPage() {
         // (identified by headerConfig.original === playerColumn)
         // is standardized for display under its new standardized column name.
         if (headerConfig.original === playerColumn) {
-          standardizedRow[headerConfig.standardized] =
-            standardizePlayerName(originalValue);
+          const std = standardizePlayerName(originalValue);
+          standardizedRow[headerConfig.standardized] = applyNameOverridesOrHeuristic(std);
         } else {
           standardizedRow[headerConfig.standardized] = originalValue;
         }
@@ -362,7 +526,8 @@ export default function UpsertProjectionsPage() {
       for (const colDef of finalColumnsToUpsert) {
         const originalValue = String(row[colDef.original] ?? ""); // Use ?? '' for undefined/null
         if (colDef.original === playerColumn) {
-          upsertRow[colDef.standardized] = standardizePlayerName(originalValue);
+          const std = standardizePlayerName(originalValue);
+          upsertRow[colDef.standardized] = applyNameOverridesOrHeuristic(std);
           playerNameStandardized = true;
         } else {
           upsertRow[colDef.standardized] = originalValue;
@@ -371,9 +536,8 @@ export default function UpsertProjectionsPage() {
       // If the player column was de-selected but was the source, this would be an issue.
       // The logic assumes if `playerColumn` is set, its config will be found if selected.
       if (!playerNameStandardized && selectedPlayerColConfig) {
-        upsertRow[selectedPlayerColConfig.standardized] = standardizePlayerName(
-          String(row[playerColumn] || "")
-        );
+        const std = standardizePlayerName(String(row[playerColumn] || ""));
+        upsertRow[selectedPlayerColConfig.standardized] = applyNameOverridesOrHeuristic(std);
       }
       return upsertRow;
     });

@@ -55,6 +55,38 @@ export function calcTotalOffNights(
 }
 
 /**
+ * Calculate a weighted sum of off‑night games for a team.
+ * Lighter NHL nights (fewer total games) contribute a larger weight.
+ *
+ * Weight function for off nights (<= 8 NHL games):
+ *   weight = clamp01((9 - numGames) / 7)
+ *   - If 2 games: (9-2)/7 = 1.0 (max bonus)
+ *   - If 7 games: (9-7)/7 ≈ 0.286
+ *   - If 8 games: (9-8)/7 ≈ 0.143
+ * Heavier nights (> 8) contribute 0.
+ */
+export function calcWeightedOffNights(
+  matchUps: WeekData,
+  numGamesPerDay: number[],
+  excludedDays: DAY_ABBREVIATION[] = []
+) {
+  let total = 0;
+  DAYS.forEach((day, i) => {
+    if (excludedDays.includes(day)) return;
+
+    const matchUp = matchUps[day];
+    const hasMatchUp_ = hasMatchUp(matchUp);
+    const games = numGamesPerDay[i] ?? 0;
+    const isOffNight = games <= 8;
+    if (hasMatchUp_ && isOffNight) {
+      const weight = Math.max(0, Math.min(1, (9 - games) / 7));
+      total += weight;
+    }
+  });
+  return total;
+}
+
+/**
  * Constructs an ExtendedWeekData object.
  *
  * @param teamId - The unique identifier for the team.

@@ -4,6 +4,94 @@ import adminOnly from "utils/adminOnlyMiddleware";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { standardizePlayerName } from "lib/standardization/nameStandardization";
 
+// ------------------------------------------------------------
+// Name normalization + heuristic helpers
+// ------------------------------------------------------------
+const stripDiacritics = (s: string) =>
+  (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+const normalize = (s: string) =>
+  stripDiacritics(s)
+    .toLowerCase()
+    .trim()
+    .replace(/[.'`-]/g, "")
+    .replace(/\s+/g, " ");
+
+const splitFirstLast = (name: string): [string, string] => {
+  const parts = (name || "").trim().split(/\s+/);
+  if (parts.length === 0) return ["", ""];
+  if (parts.length === 1) return [parts[0], parts[0]];
+  return [parts.slice(0, -1).join(" "), parts[parts.length - 1]];
+};
+
+const lastNameTokens = (name: string) => {
+  const [, last] = splitFirstLast(name);
+  if (!last) return [] as string[];
+  return stripDiacritics(last)
+    .split(/[-\s]+/)
+    .map((t) => normalize(t))
+    .filter(Boolean);
+};
+
+// Simple normalized similarity ratio using Levenshtein distance
+function similarityRatio(a: string, b: string): number {
+  const s = normalize(a);
+  const t = normalize(b);
+  const m = s.length;
+  const n = t.length;
+  if (m === 0 && n === 0) return 1;
+  if (m === 0 || n === 0) return 0;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
+      );
+    }
+  }
+  const dist = dp[m][n];
+  const maxLen = Math.max(m, n);
+  return (maxLen - dist) / maxLen;
+}
+
+const FIRSTNAME_ALIASES: Record<string, string[]> = {
+  joshua: ["josh"],
+  jacob: ["jake"],
+  michael: ["mike"],
+  matthew: ["matt"],
+  nicholas: ["nick"],
+  anthony: ["tony"],
+  alexander: ["alex"],
+  william: ["will", "bill", "billy"],
+  christopher: ["chris"],
+  jonathan: ["john", "jon"],
+  ukkopekka: ["ukko-pekka", "ukko pekka"],
+};
+
+const firstNameSimilar = (a: string, b: string) => {
+  const na = normalize(a);
+  const nb = normalize(b);
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  // common prefix similarity >= 0.5 of longer
+  const minLen = Math.min(na.length, nb.length);
+  let common = 0;
+  for (let i = 0; i < minLen; i++) {
+    if (na[i] === nb[i]) common++;
+    else break;
+  }
+  if (common / Math.max(na.length, nb.length) >= 0.5) return true;
+  const aAliases = FIRSTNAME_ALIASES[na] || [];
+  const bAliases = FIRSTNAME_ALIASES[nb] || [];
+  if (aAliases.includes(nb) || bAliases.includes(na)) return true;
+  return false;
+};
+
 // Player Master Type (reflects what is used from the existing table)
 type PlayerMasterLookup = {
   id: number; // bigint corresponds to number in JS/TS
@@ -26,7 +114,7 @@ async function getPlayerIdByFullName(
     return null;
   }
 
-  // Query for players by fullName, also selecting their position from the database
+  // Query for players by fullName (exact), also selecting their position from the database
   // Ensure the 'players' table has a 'position' column.
   let { data: existingPlayers, error: selectError } = await supabase
     .from("players")
@@ -42,10 +130,116 @@ async function getPlayerIdByFullName(
   }
 
   if (!existingPlayers || existingPlayers.length === 0) {
-    console.warn(
-      `Player not found in 'players' table with fullName: '${standardizedFullName}'`
+    // Heuristic fallback: last-name exact (normalized), first-name ~50% or alias
+    const [csvFirst, csvLastRaw] = splitFirstLast(standardizedFullName);
+    const csvLastTokens = lastNameTokens(standardizedFullName);
+    if (!csvLastTokens.length) {
+      console.warn(
+        `Player not found in 'players' table with fullName: '${standardizedFullName}'`
+      );
+      return null;
+    }
+
+    // Coarse candidate fetch by last name pattern
+    const tryFetchCandidates = async (pattern: string) =>
+      supabase
+        .from("players")
+        .select("id, fullName, position")
+        .ilike("fullName", pattern)
+        .limit(5000);
+    // Attempt 1: raw last name pattern
+    let { data: cand, error: e2 } = await tryFetchCandidates(`%${csvLastRaw}%`);
+    // Attempt 2: diacritics-stripped last name pattern
+    if ((!cand || !cand.length) && stripDiacritics(csvLastRaw) !== csvLastRaw) {
+      const base = stripDiacritics(csvLastRaw);
+      const r2 = await tryFetchCandidates(`%${base}%`);
+      cand = r2.data || cand;
+      e2 = r2.error || e2;
+    }
+    // Attempt 3: prefix fallback (first 3 letters) to catch diacritic variants
+    if (!cand || !cand.length) {
+      const prefix = csvLastRaw.slice(0, 3);
+      const r3 = await tryFetchCandidates(`%${prefix}%`);
+      cand = r3.data || cand;
+      e2 = r3.error || e2;
+    }
+    if (e2) {
+      console.error("Error searching players by last name pattern:", e2);
+      return null;
+    }
+    const candidates = (cand || []).filter((p) => p && typeof p.fullName === "string");
+    let best: { id: number; score: number; firstOK: boolean } | null = null;
+    let bestIdx = -1;
+    for (let i = 0; i < candidates.length; i++) {
+      const p = candidates[i] as any;
+      const pLastTokens = lastNameTokens(p.fullName);
+      const lastExact = pLastTokens.some((t) => csvLastTokens.includes(t));
+      let lastNear = false;
+      if (!lastExact) {
+        for (const a of csvLastTokens) {
+          for (const b of pLastTokens) {
+            const sim = similarityRatio(a, b);
+            if (sim >= 0.9) {
+              lastNear = true;
+              break;
+            }
+          }
+          if (lastNear) break;
+        }
+      }
+      const lastOK = lastExact || lastNear;
+      if (!lastOK) continue;
+      const [pf] = splitFirstLast(p.fullName);
+      const fOK = firstNameSimilar(csvFirst, pf);
+      const score = (lastExact ? 1 : (lastNear ? 0.9 : 0)) + (fOK ? 1 : 0);
+      if (!best || score > best.score) {
+        best = { id: p.id as number, score, firstOK: fOK };
+        bestIdx = i;
+        if (score === 2) break; // perfect
+      }
+    }
+
+    if (!best) {
+      console.warn(
+        `Player not found in 'players' by heuristic for fullName: '${standardizedFullName}'`
+      );
+      return null;
+    }
+
+    // If ambiguous on first name (score 1), try CSV position disambiguation
+    if (!best.firstOK) {
+      const csvPlayerPosition = csvRow["Position"]
+        ? String(csvRow["Position"]).trim().toUpperCase()
+        : null;
+      if (csvPlayerPosition) {
+        const csvPosSet = new Set(
+          csvPlayerPosition
+            .split(",")
+            .map((p) => p.trim().toUpperCase())
+            .filter(Boolean)
+        );
+        const pMatches = (cand || []).filter((p: any) => {
+          const pLastTokens = lastNameTokens(p.fullName);
+          const lastExact = pLastTokens.some((t: string) => csvLastTokens.includes(t));
+          const [pf] = splitFirstLast(p.fullName);
+          const fOK = firstNameSimilar(csvFirst, pf);
+          const pos = String(p.position || "").trim().toUpperCase();
+          const posOk = pos && (csvPosSet.has(pos) || csvPosSet.has((pos.split("/")[0] || pos)));
+          return lastExact && posOk;
+        });
+        if (pMatches.length === 1) {
+          console.log(
+            `Heuristic disambiguation by position mapped '${standardizedFullName}' to ID ${pMatches[0].id}.`
+          );
+          return pMatches[0].id as number;
+        }
+      }
+    }
+
+    console.log(
+      `Heuristic matched '${standardizedFullName}' to ID ${best.id} (score=${best.score}).`
     );
-    return null;
+    return best.id;
   }
 
   if (existingPlayers.length === 1) {
@@ -68,11 +262,16 @@ async function getPlayerIdByFullName(
     return null;
   }
 
-  const matchedPlayer = existingPlayers.find(
-    (player) =>
-      player.position &&
-      String(player.position).trim().toUpperCase() === csvPlayerPosition
+  const csvPosSet = new Set(
+    csvPlayerPosition
+      .split(",")
+      .map((p) => p.trim().toUpperCase())
+      .filter(Boolean)
   );
+  const matchedPlayer = existingPlayers.find((player) => {
+    const pos = player.position ? String(player.position).trim().toUpperCase() : "";
+    return pos && (csvPosSet.has(pos) || csvPosSet.has((pos.split("/")[0] || pos)));
+  });
 
   if (matchedPlayer) {
     console.log(

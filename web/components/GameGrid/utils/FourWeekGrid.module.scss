@@ -56,7 +56,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: clamp(1.2rem, 4vw, 1.5rem);
-  font-weight: 100; // Lighter weight
+  // Inherit weight from panel-title (300) to match Game Grid
   color: v.$text-color-primary;
   flex-grow: 1;
   text-align: left;
@@ -64,7 +64,7 @@
 
 .spanColorBlue {
   color: v.$secondary-color;
-  font-weight: 100; // Adjusted weight
+  // Inherit weight
 }
 
 .minimizeToggleIcon {

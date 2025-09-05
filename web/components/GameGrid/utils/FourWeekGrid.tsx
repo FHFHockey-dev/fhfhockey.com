@@ -221,6 +221,7 @@ const FourWeekGrid: React.FC<FourWeekGridProps> = ({ teamDataArray }) => {
         tabIndex={isMobile ? 0 : undefined}
         aria-expanded={isMobile ? !isMobileMinimized : undefined}
         aria-controls={isMobile ? "four-week-grid-content" : undefined}
+        data-interactive={isMobile ? true : undefined}
       >
         <span className={styles.titleText}>
           {" "}

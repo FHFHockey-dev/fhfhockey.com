@@ -391,24 +391,67 @@ $selected-border-width: 2px; // The width of the indicator
   gap: 8px;
   flex-shrink: 0;
   button {
-    // Style preset buttons
-    padding: 4px 8px;
-    font-size: 0.8em;
-    background-color: v.$background-light;
-    border: 1px solid v.$border-color-secondary;
-    color: v.$text-color-secondary;
-    border-radius: 4px;
-    cursor: pointer;
-    transition:
-      background-color 0.2s,
-      border-color 0.2s;
+    // Align button visuals with Game Grid controls
+    @include v.button-style;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: v.$font-size-sm;
+    font-weight: 600;
+    border-radius: v.$border-radius-md;
+    padding: v.$space-xs v.$space-md;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0.04)
+    );
+    color: v.$text-secondary;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    transition: all v.$transition-duration v.$transition-easing;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(7, 170, 226, 0.1),
+        rgba(18, 144, 187, 0.05)
+      );
+      opacity: 0;
+      transition: opacity v.$transition-duration v.$transition-easing;
+    }
     &:hover:not(:disabled) {
-      background-color: color.scale(v.$background-light, $lightness: -10%);
-      border-color: v.$primary-color;
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.12),
+        rgba(255, 255, 255, 0.08)
+      );
+      color: v.$text-color-primary;
+      border-color: rgba(7, 170, 226, 0.3);
+      box-shadow:
+        0 10px 15px rgba(0, 0, 0, 0.1),
+        0 0 20px rgba(7, 170, 226, 0.2);
+      &::before {
+        opacity: 1;
+      }
+    }
+    &:active:not(:disabled) {
+      transform: translateY(0);
+      transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: 2px;
+      z-index: 2;
+      box-shadow: 0 0 0 4px rgba(7, 170, 226, 0.2);
     }
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+      transform: none;
     }
   }
 }
@@ -588,17 +631,36 @@ $selected-border-width: 2px; // The width of the indicator
 
 /* Reset Button Styling & Placement */
 .buttonReset {
-  padding: 10px 20px;
-  font-size: 1em;
-  background-color: v.$secondary-color;
-  color: v.$background-dark; // Dark text on light button
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  font-weight: bold;
-  &:hover {
-    background-color: color.scale(v.$secondary-color, $lightness: -10%);
+  // Align reset button with Game Grid button style
+  @include v.button-style;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: v.$font-size-sm;
+  font-weight: 700;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-sm v.$space-lg;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.04)
+  );
+  color: v.$text-secondary;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  transition: all v.$transition-duration v.$transition-easing;
+  position: relative;
+  overflow: hidden;
+  &:hover:not(:disabled) {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.12),
+      rgba(255, 255, 255, 0.08)
+    );
+    color: v.$text-color-primary;
+    border-color: rgba(7, 170, 226, 0.3);
+    box-shadow:
+      0 10px 15px rgba(0, 0, 0, 0.1),
+      0 0 20px rgba(7, 170, 226, 0.2);
   }
   align-self: center; // Center the button horizontally within the filters container
   margin-top: 10px; // Add some space above the button (gap also contributes)
@@ -683,9 +745,10 @@ $selected-border-width: 2px; // The width of the indicator
       border-collapse: collapse;
       background-color: v.$background-dark;
       color: v.$text-color-primary;
-      font-weight: 900;
+      font-weight: 700; // align with Game Grid header weight
       font-family: v.$font-family-primary;
-      font-size: 14px;
+      font-size: 12px; // compact like Game Grid
+      letter-spacing: 0.3px;
       height: v.$table-header-height; // Use variable if defined
       padding: v.$table-cell-padding; // Use variable if defined
       cursor: pointer;
@@ -697,7 +760,7 @@ $selected-border-width: 2px; // The width of the indicator
   tbody {
     tr {
       font-family: v.$font-family-primary;
-      height: 64px; // Adjust row height as needed
+      height: 40px; // compact to align with Game Grid tables
       text-align: center;
       transition: background-color v.$transition-duration v.$transition-easing;
       &:nth-child(even) {
@@ -713,7 +776,7 @@ $selected-border-width: 2px; // The width of the indicator
         padding: 4px 5px; // Keep padding consistent
         border: 0.5px solid v.$border-color-secondary;
         vertical-align: middle; // Crucial for consistent height
-        font-size: 14px;
+        font-size: 13px; // slightly smaller to match grid density
         box-sizing: border-box; // Ensure padding/border included in height calc
       }
     }
@@ -802,20 +865,66 @@ $selected-border-width: 2px; // The width of the indicator
   padding: 10px 0;
   gap: 20px;
   button {
-    padding: 8px 15px;
-    font-size: 0.9em;
-    background-color: v.$primary-color;
-    color: v.$text-color-primary;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background-color 0.2s;
+    // Align pagination buttons with Game Grid button style
+    @include v.button-style;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: v.$font-size-sm;
+    font-weight: 600;
+    border-radius: v.$border-radius-md;
+    padding: v.$space-xs v.$space-md;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.08),
+      rgba(255, 255, 255, 0.04)
+    );
+    color: v.$text-secondary;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(12px);
+    transition: all v.$transition-duration v.$transition-easing;
+    position: relative;
+    overflow: hidden;
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(7, 170, 226, 0.1),
+        rgba(18, 144, 187, 0.05)
+      );
+      opacity: 0;
+      transition: opacity v.$transition-duration v.$transition-easing;
+    }
     &:hover:not(:disabled) {
-      background-color: color.scale(v.$primary-color, $lightness: -10%);
+      background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.12),
+        rgba(255, 255, 255, 0.08)
+      );
+      color: v.$text-color-primary;
+      border-color: rgba(7, 170, 226, 0.3);
+      box-shadow:
+        0 10px 15px rgba(0, 0, 0, 0.1),
+        0 0 20px rgba(7, 170, 226, 0.2);
+      &::before {
+        opacity: 1;
+      }
+    }
+    &:active:not(:disabled) {
+      transform: translateY(0);
+      transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    &:focus-visible {
+      outline: 2px solid v.$primary-color;
+      outline-offset: 2px;
+      z-index: 2;
+      box-shadow: 0 0 0 4px rgba(7, 170, 226, 0.2);
     }
     &:disabled {
       opacity: 0.5;
       cursor: not-allowed;
+      transform: none;
     }
   }
   span {

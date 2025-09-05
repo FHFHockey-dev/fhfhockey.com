@@ -1,0 +1,6082 @@
+[
+  {
+    "data": {
+      "unmatchedName": "Olli Määttä",
+      "correctedName": "Olli Maatta",
+      "sourceToUpsertTo": "yahoo_players",
+      "direction": "NHL->Yahoo",
+      "normalized": "olli määttä",
+      "notes": "Need Yahoo version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Mike Hoffman",
+      "correctedName": "",
+      "sourceToUpsertTo": "yahoo_players",
+      "direction": "NHL->Yahoo",
+      "normalized": "mike hoffman",
+      "notes": "Need Yahoo version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kevin Shattenkirk",
+      "correctedName": "",
+      "sourceToUpsertTo": "yahoo_players",
+      "direction": "NHL->Yahoo",
+      "normalized": "kevin shattenkirk",
+      "notes": "Need Yahoo version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Calen Addison",
+      "correctedName": "",
+      "sourceToUpsertTo": "yahoo_players",
+      "direction": "NHL->Yahoo",
+      "normalized": "calen addison",
+      "notes": "Need Yahoo version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Milan Lucic",
+      "correctedName": "",
+      "sourceToUpsertTo": "yahoo_players",
+      "direction": "NHL->Yahoo",
+      "normalized": "milan lucic",
+      "notes": "Need Yahoo version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Mark Giordano",
+      "correctedName": "",
+      "sourceToUpsertTo": "yahoo_players",
+      "direction": "NHL->Yahoo",
+      "normalized": "mark giordano",
+      "notes": "Need Yahoo version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Sam Gagner",
+      "correctedName": "",
+      "sourceToUpsertTo": "yahoo_players",
+      "direction": "NHL->Yahoo",
+      "normalized": "sam gagner",
+      "notes": "Need Yahoo version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cole Guttman",
+      "correctedName": "",
+      "sourceToUpsertTo": "yahoo_players",
+      "direction": "NHL->Yahoo",
+      "normalized": "cole guttman",
+      "notes": "Need Yahoo version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nick Bonino",
+      "correctedName": "",
+      "sourceToUpsertTo": "yahoo_players",
+      "direction": "NHL->Yahoo",
+      "normalized": "nick bonino",
+      "notes": "Need Yahoo version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Pierre-Edouard Bellemare",
+      "correctedName": "",
+      "sourceToUpsertTo": "yahoo_players",
+      "direction": "NHL->Yahoo",
+      "normalized": "pierreedouard bellemare",
+      "notes": "Need Yahoo version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Filip Roos",
+      "correctedName": "",
+      "sourceToUpsertTo": "yahoo_players",
+      "direction": "NHL->Yahoo",
+      "normalized": "filip roos",
+      "notes": "Need Yahoo version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ryan Carpenter",
+      "correctedName": "",
+      "sourceToUpsertTo": "yahoo_players",
+      "direction": "NHL->Yahoo",
+      "normalized": "ryan carpenter",
+      "notes": "Need Yahoo version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Chris Tierney",
+      "correctedName": "",
+      "sourceToUpsertTo": "yahoo_players",
+      "direction": "NHL->Yahoo",
+      "normalized": "chris tierney",
+      "notes": "Need Yahoo version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Marco Scandella",
+      "correctedName": "",
+      "sourceToUpsertTo": "yahoo_players",
+      "direction": "NHL->Yahoo",
+      "normalized": "marco scandella",
+      "notes": "Need Yahoo version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Lukas Rousek",
+      "correctedName": "",
+      "sourceToUpsertTo": "yahoo_players",
+      "direction": "NHL->Yahoo",
+      "normalized": "lukas rousek",
+      "notes": "Need Yahoo version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Antti Raanta",
+      "correctedName": "",
+      "sourceToUpsertTo": "yahoo_players",
+      "direction": "NHL->Yahoo",
+      "normalized": "antti raanta",
+      "notes": "Need Yahoo version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Dustin Tokarski",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "dustin tokarski",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ryan Ellis",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ryan ellis",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Dylan McIlrath",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "dylan mcilrath",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Magnus Hellberg",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "magnus hellberg",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Joseph LaBate",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "joseph labate",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Oscar Dansk",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "oscar dansk",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Martin Frk",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "martin frk",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Mackenzie MacEachern",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "mackenzie maceachern",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Chris Driedger",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "chris driedger",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Matthew Murray",
+      "correctedName": "Matt Murray",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "matthew murray",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Steven Santini",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "steven santini",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "John Hayden",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "john hayden",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jack Campbell",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jack campbell",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Marcus Hogberg",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "marcus hogberg",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ben Harpur",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ben harpur",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tucker Poolman",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tucker poolman",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Anton Blidh",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "anton blidh",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Scott Sabourin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "scott sabourin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Anthony DeAngelo",
+      "correctedName": "Anthony DeAngelo",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "anthony deangelo",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Juho Lammikko",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "juho lammikko",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Max Willman",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "max willman",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Clark Bishop",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "clark bishop",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Dysin Mayo",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "dysin mayo",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Hayden Hodgson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "hayden hodgson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Joe Hicketts",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "joe hicketts",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Anthony Richard",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "anthony richard",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Glenn Gawdin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "glenn gawdin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Joseph Cecconi",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "joseph cecconi",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Samuel Laberge",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "samuel laberge",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tyler Pitlick",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tyler pitlick",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Andrew Poturalski",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "andrew poturalski",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Alexander Petrovic",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "alexander petrovic",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Dylan Gambrell",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "dylan gambrell",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cam Dineen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cam dineen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Casey Fitzgerald",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "casey fitzgerald",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Garrett Pilon",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "garrett pilon",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Max Lajoie",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "max lajoie",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Joona Koppanen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "joona koppanen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Zach Sawchenko",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "zach sawchenko",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jeffrey Viel",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jeffrey viel",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tye Felhaber",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tye felhaber",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Matthew Highmore",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "matthew highmore",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Shane Bowers",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "shane bowers",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kole Lind",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kole lind",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Robin Salo",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "robin salo",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ian Mitchell",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ian mitchell",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Michael DiPietro",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "michael dipietro",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Matt Villalta",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "matt villalta",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Reilly Walsh",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "reilly walsh",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cameron Crotty",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cameron crotty",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jack Rathbone",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jack rathbone",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Eetu Makiniemi",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "eetu makiniemi",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Noel Hoefenmayer",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "noel hoefenmayer",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Chris Wagner",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "chris wagner",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Dylan Ferguson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "dylan ferguson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jiri Patera",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jiri patera",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Arvid Holm",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "arvid holm",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cedric Pare",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cedric pare",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Skyler Brind'Amour",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "skyler brindamour",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Philip Kemp",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "philip kemp",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Dominik Shine",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "dominik shine",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Sheldon Dries",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "sheldon dries",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Alex Belzile",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "alex belzile",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Louis Domingue",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "louis domingue",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cameron Hebig",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cameron hebig",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Pavel Francouz",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "pavel francouz",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kevin Gravel",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kevin gravel",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Vitali Kravtsov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "vitali kravtsov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jett Woo",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jett woo",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Adam Ginning",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "adam ginning",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Bo Groulx",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "bo groulx",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jan Jenik",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jan jenik",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Alec Regula",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "alec regula",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tyler Madden",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tyler madden",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jakub Skarek",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jakub skarek",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Oskar Back",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "oskar back",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jonathan Gruden",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jonathan gruden",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Luke Henman",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "luke henman",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Curtis Douglas",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "curtis douglas",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ivan Prosvetov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ivan prosvetov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Mac Hollowell",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "mac hollowell",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Angus Crookshank",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "angus crookshank",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Hugh McGing",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "hugh mcging",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Michael Callahan",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "michael callahan",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Filip Kral",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "filip kral",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Magnus Chrona",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "magnus chrona",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kevin Mandolese",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kevin mandolese",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "John Leonard",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "john leonard",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Sam Hentges",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "sam hentges",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jonathan Aspirot",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jonathan aspirot",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ryan Schmelzer",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ryan schmelzer",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jimmy Huntington",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jimmy huntington",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Joe Snively",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "joe snively",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Brogan Rafferty",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "brogan rafferty",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Mason Jobst",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "mason jobst",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jimmy Schuldt",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jimmy schuldt",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Sam Poulin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "sam poulin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tobias Bjornfot",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tobias bjornfot",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nolan Foote",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nolan foote",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Mads Sogaard",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "mads sogaard",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Raphael Lavoie",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "raphael lavoie",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Drew Helleson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "drew helleson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Samuel Fagemo",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "samuel fagemo",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Simon Lundmark",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "simon lundmark",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Vladislav Kolyachonok",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "vladislav kolyachonok",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ronnie Attard",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ronnie attard",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nathan Légaré",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nathan legare",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Adam Beckman",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "adam beckman",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cole Schwindt",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cole schwindt",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Mikko Kokkonen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "mikko kokkonen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Colten Ellis",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "colten ellis",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Matej Blumel",
+      "correctedName": "Matěj  Blumel",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "matej blumel",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Marc Del Gaizo",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "marc del gaizo",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nicholas Abruzzese",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nicholas abruzzese",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Isaiah Saville",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "isaiah saville",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Henrik Rybinski",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "henrik rybinski",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Adam Edstrom",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "adam edstrom",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Maxence Guenette",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "maxence guenette",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Trent Miner",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "trent miner",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ben McCartney",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ben mccartney",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Louis Crevier",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "louis crevier",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Corey Schueneman",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "corey schueneman",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Mason Morelli",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "mason morelli",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Brandon Biro",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "brandon biro",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Colton Poolman",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "colton poolman",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jack Ahcan",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jack ahcan",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Shakir Mukhamadullin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "shakir mukhamadullin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ozzy Wiesblatt",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ozzy wiesblatt",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Roby Jarventie",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "roby jarventie",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Helge Grans",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "helge grans",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Emil Heineman",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "emil heineman",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Vasily Ponomarev",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "vasily ponomarev",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jack Finley",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jack finley",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Roni Hirvonen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "roni hirvonen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Gage Goncalves",
+      "correctedName": "Gage Goncalves",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "gage goncalves",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Donovan Sebrango",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "donovan sebrango",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "T.J. Tynan",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tj tynan",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Max McCormick",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "max mccormick",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Derrick Pouliot",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "derrick pouliot",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Topi Niemela",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "topi niemela",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Lukas Cormier",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "lukas cormier",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Leevi Merilainen",
+      "correctedName": "Leevi Meriläinen",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "leevi merilainen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Danil Gushchin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "danil gushchin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Calle Clang",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "calle clang",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Olli Maatta",
+      "correctedName": "Olli Määttä",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "olli maatta",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Dominic Toninato",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "dominic toninato",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Matt Tomkins",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "matt tomkins",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Troy Grosenick",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "troy grosenick",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Justin Dowling",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "justin dowling",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Brandon Halverson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "brandon halverson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Justin Kirkland",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "justin kirkland",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Justin Sourdif",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "justin sourdif",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kyle Capobianco",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kyle capobianco",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Brandon Coe",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "brandon coe",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Adam Wilsby",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "adam wilsby",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Guillaume Brisebois",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "guillaume brisebois",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "William Villeneuve",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "william villeneuve",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tyler Tullio",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tyler tullio",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Christian Wolanin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "christian wolanin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Adam Gaudette",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "adam gaudette",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Luke Philp",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "luke philp",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Lane Pederson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "lane pederson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Drake Caggiula",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "drake caggiula",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kieffer Bellows",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kieffer bellows",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Dennis Cholowski",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "dennis cholowski",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Riley Tufte",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "riley tufte",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Rasmus Asplund",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "rasmus asplund",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Fredrik Karlstrom",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "fredrik karlstrom",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Brett Murray",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "brett murray",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Riley Stillman",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "riley stillman",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nathan Clurman",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nathan clurman",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tanner Laczynski",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tanner laczynski",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nicolas Mattinen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nicolas mattinen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Rodrigo Abols",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "rodrigo abols",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jeremy Davies",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jeremy davies",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kevin Connauton",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kevin connauton",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Will Cranley",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "will cranley",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Zack Ostapchuk",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "zack ostapchuk",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Rory Kerins",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "rory kerins",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Remi Poirier",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "remi poirier",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Adam Raska",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "adam raska",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ilya Solovyov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ilya solovyov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ronan Seeley",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ronan seeley",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Josh Dunne",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "josh dunne",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Mike Hardman",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "mike hardman",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Alex Steeves",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "alex steeves",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Matt Kiersted",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "matt kiersted",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Adam Scheel",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "adam scheel",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jeff Malott",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jeff malott",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tyler Boucher",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tyler boucher",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Sebastian Cossa",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "sebastian cossa",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Brennan Othmann",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "brennan othmann",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Chaz Lucius",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "chaz lucius",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jesper Wallstedt",
+      "correctedName": "Jesper Wallstedt",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jesper wallstedt",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Fabian Lysell",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "fabian lysell",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Xavier Bourgault",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "xavier bourgault",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Carson Lambos",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "carson lambos",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Zachary L'Heureux",
+      "correctedName": "Zachary L'Heureux",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "zachary lheureux",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Oskar Olausson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "oskar olausson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Chase Stillman",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "chase stillman",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Zach Dean",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "zach dean",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Logan Mailloux",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "logan mailloux",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nolan Allan",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nolan allan",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Danila Klimovich",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "danila klimovich",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ville Koivunen",
+      "correctedName": "Ville Koivunen",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ville koivunen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Aatu Raty",
+      "correctedName": "Aatu Raty",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "aatu raty",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Vincent Iorio",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "vincent iorio",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Evan Nause",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "evan nause",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Samuel Helenius",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "samuel helenius",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tyson Hinds",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tyson hinds",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Dmitry Kuzmin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "dmitry kuzmin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cameron Whynot",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cameron whynot",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tristan Lennox",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tristan lennox",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ethan Del Mastro",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ethan del mastro",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jake Chiasson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jake chiasson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ethan Cardwell",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ethan cardwell",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Topias Vilen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "topias vilen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jacob Melanson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jacob melanson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "James Malatesta",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "james malatesta",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Justin Robidas",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "justin robidas",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Bryce Montgomery",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "bryce montgomery",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Alex Limoges",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "alex limoges",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tory Dello",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tory dello",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Connor Ungar",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "connor ungar",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Callahan Burke",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "callahan burke",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nick Cicek",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nick cicek",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kyle Konin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kyle konin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jordan Frasca",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jordan frasca",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Taylor Ward",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "taylor ward",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Declan Carlile",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "declan carlile",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Brandon Scanlin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "brandon scanlin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Arshdeep Bains",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "arshdeep bains",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jaxson Stauber",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jaxson stauber",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Brian Halonen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "brian halonen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Clay Stevenson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "clay stevenson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Brandon Bussi",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "brandon bussi",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Lucas Condotta",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "lucas condotta",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Noah Philp",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "noah philp",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Wyatt Aamodt",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "wyatt aamodt",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Wyatt Bongiovanni",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "wyatt bongiovanni",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Adam Klapka",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "adam klapka",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Marco Kasper",
+      "correctedName": "Marco Kasper",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "marco kasper",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Matt Savoie",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "matt savoie",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Denton Mateychuk",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "denton mateychuk",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Noah Ostlund",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "noah ostlund",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Joakim Kemell",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "joakim kemell",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Liam Ohgren",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "liam ohgren",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Owen Pickering",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "owen pickering",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nathan Gaucher",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nathan gaucher",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jiri Kulich",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jiri kulich",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Maveric Lamoureux",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "maveric lamoureux",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Brad Lambert",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "brad lambert",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Owen Beck",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "owen beck",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jagger Firkus",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jagger firkus",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Fraser Minten",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "fraser minten",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Luca Del Bel Belluz",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "luca del bel belluz",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Hunter Haight",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "hunter haight",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Elias Salomonsson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "elias salomonsson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Adam Sykora",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "adam sykora",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Danil Zhilkin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "danil zhilkin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Michael Milne",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "michael milne",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Marek Alscher",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "marek alscher",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jordan Dumais",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jordan dumais",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Isaiah George",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "isaiah george",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tyler Brennan",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tyler brennan",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Angus Booth",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "angus booth",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Dennis Hildeby",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "dennis hildeby",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Frederic Brunet",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "frederic brunet",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Graham Sward",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "graham sward",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Sandis Vilmanis",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "sandis vilmanis",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Maksymilian Szuber",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "maksymilian szuber",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Josh Davies",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "josh davies",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Domenic DiVincentiis",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "domenic divincentiis",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kirill Kudryavtsev",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kirill kudryavtsev",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jacob Gaucher",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jacob gaucher",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Patrick Giles",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "patrick giles",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Matt Murray",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "matt murray",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ethen Frank",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ethen frank",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Joseph Abate",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "joseph abate",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Marshall Rifai",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "marshall rifai",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Thomas Milic",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "thomas milic",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Marc Gatcomb",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "marc gatcomb",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Braeden Bowman",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "braeden bowman",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nikita Nesterenko",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nikita nesterenko",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Aidan McDonough",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "aidan mcdonough",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Hunter McKown",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "hunter mckown",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ville Ottavainen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ville ottavainen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Maxwell Crozier",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "maxwell crozier",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Trevor Kuntar",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "trevor kuntar",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tyler Kleven",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tyler kleven",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Sean Farrell",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "sean farrell",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Chase Bradley",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "chase bradley",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Scott Morrow",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "scott morrow",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Emil Andrae",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "emil andrae",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Akito Hirose",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "akito hirose",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jake Livingstone",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jake livingstone",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jackson Blake",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jackson blake",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Travis Mitchell",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "travis mitchell",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ryan Ufko",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ryan ufko",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cole McWard",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cole mcward",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Joel Blomqvist",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "joel blomqvist",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Easton Cowan",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "easton cowan",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "David Edstrom",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "david edstrom",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Drew Commesso",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "drew commesso",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Domenick Fensore",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "domenick fensore",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Rasmus Kumpulainen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "rasmus kumpulainen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Joey Willis",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "joey willis",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Mazden Leslie",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "mazden leslie",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Felix Unger Sorum",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "felix unger sorum",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Erik Portillo",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "erik portillo",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Hardy Haman Aktell",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "hardy haman aktell",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Leo Loof",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "leo loof",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Fedor Svechkov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "fedor svechkov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nikolas Matinpalo",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nikolas matinpalo",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Carl Lindbom",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "carl lindbom",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Fabian Wagner",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "fabian wagner",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Brett Seney",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "brett seney",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Bokondji Imama",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "bokondji imama",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ryan Leonard",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ryan leonard",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Dmitriy Simashev",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "dmitriy simashev",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Daniil But",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "daniil but",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nate Danielson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nate danielson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "David Reinbacher",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "david reinbacher",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Dalibor Dvorsky",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "dalibor dvorsky",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Brayden Yager",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "brayden yager",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Axel Sandin Pellikka",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "axel sandin pellikka",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Samuel Honzek",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "samuel honzek",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Eduard Sale",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "eduard sale",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Colby Barlow",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "colby barlow",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Calum Ritchie",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "calum ritchie",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Quentin Musty",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "quentin musty",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Gabe Perreault",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "gabe perreault",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Gavin Brindley",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "gavin brindley",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Hunter Brzustewicz",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "hunter brzustewicz",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Aydar Suniev",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "aydar suniev",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Zach Nehring",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "zach nehring",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ty Mueller",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ty mueller",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Luca Cagnoni",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "luca cagnoni",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Noah Chadwick",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "noah chadwick",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Matthew Andonovski",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "matthew andonovski",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Connor Levis",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "connor levis",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jacob Julien",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jacob julien",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nikolas Brouillard",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nikolas brouillard",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Artur Akhtyamov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "artur akhtyamov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Danila Yurov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "danila yurov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Devin Kaplan",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "devin kaplan",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Aleksei Kolosov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "aleksei kolosov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jimmy Snuggerud",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jimmy snuggerud",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jakub Dobes",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jakub dobes",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Riley Duran",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "riley duran",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Arseni Gritsyuk",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "arseni gritsyuk",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Dylan Duke",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "dylan duke",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Alexander Nikishin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "alexander nikishin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cade Webber",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cade webber",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jason Polin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jason polin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Matt Stienburg",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "matt stienburg",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "John Farinacci",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "john farinacci",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Sam Colangelo",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "sam colangelo",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Max Sasson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "max sasson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nikita Tolopilo",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nikita tolopilo",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Wilmer Skoog",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "wilmer skoog",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ryan McAllister",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ryan mcallister",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Carter Mazur",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "carter mazur",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Daniil Misyul",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "daniil misyul",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Patrik Koch",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "patrik koch",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Parker Ford",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "parker ford",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nikita Chibrikov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nikita chibrikov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Connor Clattenburg",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "connor clattenburg",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cam Lund",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cam lund",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jonathan Lekkerimäki",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jonathan lekkerimäki",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ales Stezka",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ales stezka",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kirill Gerasimyuk",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kirill gerasimyuk",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jani Nyman",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jani nyman",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Niklas Kokko",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "niklas kokko",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Seamus Casey",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "seamus casey",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Lian Bichsel",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "lian bichsel",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nikita Quapp",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nikita quapp",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Isaac Howard",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "isaac howard",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Sam Rinzel",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "sam rinzel",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ryan Greene",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ryan greene",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ludvig Jansson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ludvig jansson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Stephen Halliday",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "stephen halliday",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Victor Mancini",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "victor mancini",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Miko Matikka",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "miko matikka",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Trevor Connelly",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "trevor connelly",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Zeev Buium",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "zeev buium",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Carter Yakemchuk",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "carter yakemchuk",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cole Eiserman",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cole eiserman",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Liam Greentree",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "liam greentree",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tij Iginla",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tij iginla",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Zayne Parekh",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "zayne parekh",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Adam Jecho",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "adam jecho",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Berkly Catton",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "berkly catton",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Terik Parascak",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "terik parascak",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Michael Hage",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "michael hage",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ryder Ritchie",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ryder ritchie",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Beckett Sennecke",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "beckett sennecke",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nicklas Backstrom",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nicklas backstrom",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Dean Letourneau",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "dean letourneau",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Sacha Boisvert",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "sacha boisvert",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Andrew Basha",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "andrew basha",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Sam Morton",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "sam morton",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Emil Hemming",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "emil hemming",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Konsta Helenius",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "konsta helenius",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Matvei Shuravin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "matvei shuravin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ivan Demidov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ivan demidov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Michael Brandsegg-Nygard",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "michael brandseggnygard",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Anton Silayev",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "anton silayev",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Igor Chernyshov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "igor chernyshov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Leo Sahlin Wallenius",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "leo sahlin wallenius",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Dominik Badinka",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "dominik badinka",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Leon Muggli",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "leon muggli",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nikita Artamonov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nikita artamonov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jesse Pulkkinen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jesse pulkkinen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Linus Eriksson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "linus eriksson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Egor Surin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "egor surin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Veeti Vaisanen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "veeti vaisanen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jacob Quillan",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jacob quillan",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cooper Black",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cooper black",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Victor Ostman",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "victor ostman",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Collin Graf",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "collin graf",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Miguel Marques",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "miguel marques",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Spencer Gill",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "spencer gill",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Maxim Masse",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "maxim masse",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Marek Vanacker",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "marek vanacker",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Charlie Elick",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "charlie elick",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kamil Bednarik",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kamil bednarik",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ben Danford",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ben danford",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Henry Mews",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "henry mews",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Luca Marrelli",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "luca marrelli",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tanner Howe",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tanner howe",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Matvei Gridin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "matvei gridin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jett Luchanko",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jett luchanko",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "EJ Emery",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ej emery",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cole Beaudoin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cole beaudoin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Eriks Mateiko",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "eriks mateiko",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Carter George",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "carter george",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Francesco Pinelli",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "francesco pinelli",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ryan Winterton",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ryan winterton",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tyson Kozak",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tyson kozak",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Hunter Shepard",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "hunter shepard",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Billy Sweezey",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "billy sweezey",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Marc McLaughlin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "marc mclaughlin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Georgii Merkulov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "georgii merkulov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Pavol Regenda",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "pavol regenda",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tristan Luneau",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tristan luneau",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tomas Hamara",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tomas hamara",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Christoffer Sedoff",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "christoffer sedoff",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kai Schwindt",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kai schwindt",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Isaac Poulter",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "isaac poulter",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nolan Burke",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nolan burke",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Yaniv Perets",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "yaniv perets",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Mikhail Yegorov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "mikhail yegorov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Evan Gardner",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "evan gardner",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Samuel Hlavaj",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "samuel hlavaj",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ilya Nabokov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ilya nabokov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Eemil Vinni",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "eemil vinni",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Pavel Moysevich",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "pavel moysevich",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kim Saarinen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kim saarinen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Juha Jaaska",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "juha jaaska",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Mikulas Hovorka",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "mikulas hovorka",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Gabriel Eliasson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "gabriel eliasson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Stian Solberg",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "stian solberg",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ondrej Kos",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ondrej kos",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kasper Pikkarainen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kasper pikkarainen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Alfons Freij",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "alfons freij",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Aatos Koivu",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "aatos koivu",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Herman Traff",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "herman traff",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Melvin Fernstrom",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "melvin fernstrom",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jack Berglund",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jack berglund",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "William Zellers",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "william zellers",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tomas Lavoie",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tomas lavoie",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Julius Miettinen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "julius miettinen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Carson Wetsch",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "carson wetsch",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Brodie Ziemer",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "brodie ziemer",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Colin Ralph",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "colin ralph",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Max Plante",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "max plante",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Adam Kleber",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "adam kleber",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nathan Villeneuve",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nathan villeneuve",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ethan Procyszyn",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ethan procyszyn",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Will Skahan",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "will skahan",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jacob Battaglia",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jacob battaglia",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Arttu Hyry",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "arttu hyry",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Teddy Stiga",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "teddy stiga",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Hiroki Gojsic",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "hiroki gojsic",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Alexis Bernier",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "alexis bernier",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jack Pridham",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jack pridham",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "AJ Spellacy",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "aj spellacy",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Noel Fransen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "noel fransen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nikita Grebenkin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nikita grebenkin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Logan Sawyer",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "logan sawyer",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jesper Vikman",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jesper vikman",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "John Mustard",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "john mustard",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jere Innala",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jere innala",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cole Davis",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cole davis",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kirill Zarubin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kirill zarubin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nikita Prishchepov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nikita prishchepov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Patrick Geary",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "patrick geary",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Carson Golder",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "carson golder",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kai Uchacz",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kai uchacz",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Viliam Kmec",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "viliam kmec",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tyler Palmer",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tyler palmer",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Harrison Brunicke",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "harrison brunicke",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Dylan Anhorn",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "dylan anhorn",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Justin Hryckowian",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "justin hryckowian",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jack Williams",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jack williams",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ben Steeves",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ben steeves",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Karsen Dorwart",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "karsen dorwart",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tim Washe",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tim washe",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Caleb Desnoyers",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "caleb desnoyers",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Radim Mrtka",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "radim mrtka",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Roger McQueen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "roger mcqueen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Michael Misa",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "michael misa",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kashawn Aitcheson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kashawn aitcheson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Matthew Schaefer",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "matthew schaefer",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "James Hagens",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "james hagens",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Porter Martone",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "porter martone",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Alexander Zharovsky",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "alexander zharovsky",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Vojtech Cihar",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "vojtech cihar",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Anton Frondell",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "anton frondell",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Milton Gastrin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "milton gastrin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Eddie Genborg",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "eddie genborg",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Eric Nilson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "eric nilson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kurban Limatov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kurban limatov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Logan Hensler",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "logan hensler",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Theodor Hallquisth",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "theodor hallquisth",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jakob Ihs Wozniak",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jakob ihs wozniak",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jack Nesbitt",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jack nesbitt",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Lynden Lakovic",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "lynden lakovic",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Benjamin Kindel",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "benjamin kindel",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cullen Potter",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cullen potter",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Braeden Cootes",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "braeden cootes",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Lasse Boelius",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "lasse boelius",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Malte Vass",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "malte vass",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Justin Carbonneau",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "justin carbonneau",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Theo Stockselius",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "theo stockselius",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Artem Gonchar",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "artem gonchar",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Henry Brzustewicz",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "henry brzustewicz",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Sascha Boumedienne",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "sascha boumedienne",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Daniil Prokhorov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "daniil prokhorov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cole Reschny",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cole reschny",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "William Horcoff",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "william horcoff",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cameron Reid",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cameron reid",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Blake Fiddler",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "blake fiddler",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Mason West",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "mason west",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jack Murtagh",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jack murtagh",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Stepan Hoch",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "stepan hoch",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Peyton Kettles",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "peyton kettles",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cole McKinney",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cole mckinney",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Matthew Gard",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "matthew gard",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Max Psenicka",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "max psenicka",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Vaclav Nestrasil",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "vaclav nestrasil",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Hayden Paupanekis",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "hayden paupanekis",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Shane Vansaghi",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "shane vansaghi",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ivan Ryabkin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ivan ryabkin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Bill Zonnon",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "bill zonnon",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Roman Bausov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "roman bausov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jack Ivankovic",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jack ivankovic",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Joshua Ravensbergen",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "joshua ravensbergen",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Michal Pradel",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "michal pradel",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Alexei Medvedev",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "alexei medvedev",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Semyon Frolov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "semyon frolov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Pyotr Andreyanov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "pyotr andreyanov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ethan Czata",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ethan czata",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Jacob Rombach",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "jacob rombach",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Conrad Fondrk",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "conrad fondrk",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kristian Epperson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kristian epperson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Carter Amico",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "carter amico",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Nathan Behm",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "nathan behm",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Charlton Trethewey",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "charlton trethewey",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Mason Moe",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "mason moe",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Ben Kevan",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "ben kevan",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Mateo Nobert",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "mateo nobert",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Teddy Mutryn",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "teddy mutryn",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "David Bedkowski",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "david bedkowski",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Will Reynolds",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "will reynolds",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Sean Barnhill",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "sean barnhill",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Cooper Simpson",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "cooper simpson",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Kieren Dervin",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "kieren dervin",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Francesco Dell'Elce",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "francesco dellelce",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Brady Peddle",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "brady peddle",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Bryce Pickford",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "bryce pickford",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Charlie Cerrato",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "charlie cerrato",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Tinus Luc Koblar",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "tinus luc koblar",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Simon Wang - DUP",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "simon wang dup",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Gabriel D'Aigle",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "gabriel daigle",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Arseni Radkov",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "arseni radkov",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Noah Read",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "noah read",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Maxim Schafer",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "maxim schafer",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Blake Vanek",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "blake vanek",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "John Mooney",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "john mooney",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  },
+  {
+    "data": {
+      "unmatchedName": "Alexis Cournoyer",
+      "correctedName": "",
+      "sourceToUpsertTo": "projections",
+      "direction": "Yahoo->NHL",
+      "normalized": "alexis cournoyer",
+      "notes": "Need NHL/Projections version of name in 'correctedName'."
+    }
+  }
+]

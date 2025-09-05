@@ -221,6 +221,7 @@ export default function OpponentMetricsTable({
         tabIndex={isMobile ? 0 : undefined}
         aria-expanded={isMobile ? !isMobileMinimized : undefined}
         aria-controls="opponent-metrics-content"
+        data-interactive={isMobile ? true : undefined}
       >
         <span className={styles.titleText}>
           AVG OPPONENT <span className={styles.spanColorBlue}>STATS</span>
@@ -259,8 +260,8 @@ export default function OpponentMetricsTable({
                     <Image
                       src={`/teamLogos/${team.teamAbbreviation}.png`}
                       alt={team.teamAbbreviation || "Team Logo"}
-                      width={30}
-                      height={30}
+                      width={24}
+                      height={24}
                     />
                   </td>
                   {metricColumns.map((metric) => {
