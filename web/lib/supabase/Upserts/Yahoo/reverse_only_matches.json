@@ -1,0 +1,646 @@
+[
+  {
+    "nhl_player_id": "8478038",
+    "nhl_player_name": "Devon Toews",
+    "yahoo_player_id": "3981",
+    "yahoo_player_name": "Jonathan Toews",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8476473",
+    "nhl_player_name": "Connor Murphy",
+    "yahoo_player_id": "5381",
+    "yahoo_player_name": "Connor Murphy",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8478109",
+    "nhl_player_name": "Victor Olofsson",
+    "yahoo_player_id": "6026",
+    "yahoo_player_name": "Gustav Olofsson",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8480222",
+    "nhl_player_name": "Sebastian Aho",
+    "yahoo_player_id": "6777",
+    "yahoo_player_name": "Sebastian Aho",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8477015",
+    "nhl_player_name": "Connor Brown",
+    "yahoo_player_id": "7119",
+    "yahoo_player_name": "Logan Brown",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8478136",
+    "nhl_player_name": "Jake Middleton",
+    "yahoo_player_id": "7208",
+    "yahoo_player_name": "Keaton Middleton",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8484153",
+    "nhl_player_name": "Leo Carlsson",
+    "yahoo_player_id": "7217",
+    "yahoo_player_name": "Lucas Carlsson",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8481517",
+    "nhl_player_name": "Brett Leason",
+    "yahoo_player_id": "7435",
+    "yahoo_player_name": "Ben Gleason",
+    "match_confidence": 92.0
+  },
+  {
+    "nhl_player_id": "8480012",
+    "nhl_player_name": "Elias Pettersson",
+    "yahoo_player_id": "7520",
+    "yahoo_player_name": "Elias Pettersson",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8470594",
+    "nhl_player_name": "Marc-Andre Fleury",
+    "yahoo_player_id": "7602",
+    "yahoo_player_name": "Cale Fleury",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8483570",
+    "nhl_player_name": "Ben Meyers",
+    "yahoo_player_id": "7694",
+    "yahoo_player_name": "Carson Meyer",
+    "match_confidence": 91.0
+  },
+  {
+    "nhl_player_id": "8477495",
+    "nhl_player_name": "Seth Jones",
+    "yahoo_player_id": "7704",
+    "yahoo_player_name": "Ben Jones",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8480336",
+    "nhl_player_name": "Sean Walker",
+    "yahoo_player_id": "7714",
+    "yahoo_player_name": "Sammy Walker",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8475191",
+    "nhl_player_name": "Reilly Smith",
+    "yahoo_player_id": "7915",
+    "yahoo_player_name": "Ty Smith",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8478542",
+    "nhl_player_name": "Evan Rodrigues",
+    "yahoo_player_id": "7960",
+    "yahoo_player_name": "Olivier Rodrigue",
+    "match_confidence": 94.0
+  },
+  {
+    "nhl_player_id": "8474578",
+    "nhl_player_name": "Erik Karlsson",
+    "yahoo_player_id": "7985",
+    "yahoo_player_name": "Linus Karlsson",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8474090",
+    "nhl_player_name": "Brendan Smith",
+    "yahoo_player_id": "7989",
+    "yahoo_player_name": "Nathan Smith",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8476958",
+    "nhl_player_name": "Jaccob Slavin",
+    "yahoo_player_id": "8091",
+    "yahoo_player_name": "Josiah Slavin",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8477018",
+    "nhl_player_name": "Ben Hutton",
+    "yahoo_player_id": "8242",
+    "yahoo_player_name": "Grant Hutton",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8480018",
+    "nhl_player_name": "Nick Suzuki",
+    "yahoo_player_id": "8306",
+    "yahoo_player_name": "Ryan Suzuki",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8480027",
+    "nhl_player_name": "Jason Robertson",
+    "yahoo_player_id": "8327",
+    "yahoo_player_name": "Matthew Robertson",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8482730",
+    "nhl_player_name": "Brandt Clarke",
+    "yahoo_player_id": "8358",
+    "yahoo_player_name": "Graeme Clarke",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8479420",
+    "nhl_player_name": "Tage Thompson",
+    "yahoo_player_id": "8374",
+    "yahoo_player_name": "Tyce Thompson",
+    "match_confidence": 85.0
+  },
+  {
+    "nhl_player_id": "8479973",
+    "nhl_player_name": "Stuart Skinner",
+    "yahoo_player_id": "8390",
+    "yahoo_player_name": "Hunter Skinner",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8475314",
+    "nhl_player_name": "Anders Lee",
+    "yahoo_player_id": "8465",
+    "yahoo_player_name": "Andre Lee",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8475744",
+    "nhl_player_name": "Evgeny Kuznetsov",
+    "yahoo_player_id": "8689",
+    "yahoo_player_name": "Yan Kuznetsov",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8478211",
+    "nhl_player_name": "Dryden Hunt",
+    "yahoo_player_id": "8703",
+    "yahoo_player_name": "Daemon Hunt",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8480853",
+    "nhl_player_name": "Liam Foudy",
+    "yahoo_player_id": "8713",
+    "yahoo_player_name": "Jean-Luc Foudy",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8475842",
+    "nhl_player_name": "Sam Carrick",
+    "yahoo_player_id": "5827",
+    "yahoo_player_name": "Connor Carrick",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8478585",
+    "nhl_player_name": "Derek Ryan",
+    "yahoo_player_id": "5887",
+    "yahoo_player_name": "Joakim Ryan",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8480313",
+    "nhl_player_name": "Logan Thompson",
+    "yahoo_player_id": "8731",
+    "yahoo_player_name": "Jack Thompson",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8478856",
+    "nhl_player_name": "Conor Garland",
+    "yahoo_player_id": "8741",
+    "yahoo_player_name": "Dylan Garand",
+    "match_confidence": 92.0
+  },
+  {
+    "nhl_player_id": "8478400",
+    "nhl_player_name": "Colin White",
+    "yahoo_player_id": "6839",
+    "yahoo_player_name": "Colton White",
+    "match_confidence": 87.0
+  },
+  {
+    "nhl_player_id": "8474574",
+    "nhl_player_name": "Tyler Myers",
+    "yahoo_player_id": "6965",
+    "yahoo_player_name": "Philippe Myers",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8475171",
+    "nhl_player_name": "Oliver Ekman-Larsson",
+    "yahoo_player_id": "7272",
+    "yahoo_player_name": "Filip Larsson",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8480289",
+    "nhl_player_name": "Morgan Barron",
+    "yahoo_player_id": "7296",
+    "yahoo_player_name": "Travis Barron",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8483431",
+    "nhl_player_name": "Logan Cooley",
+    "yahoo_player_id": "8794",
+    "yahoo_player_name": "Devin Cooley",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8477933",
+    "nhl_player_name": "Sam Reinhart",
+    "yahoo_player_id": "8819",
+    "yahoo_player_name": "Cole Reinhardt",
+    "match_confidence": 94.0
+  },
+  {
+    "nhl_player_id": "8480157",
+    "nhl_player_name": "Calle Rosen",
+    "yahoo_player_id": "8889",
+    "yahoo_player_name": "Isak Rosen",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8477435",
+    "nhl_player_name": "Ryan Graves",
+    "yahoo_player_id": "9118",
+    "yahoo_player_name": "Jet Greaves",
+    "match_confidence": 92.0
+  },
+  {
+    "nhl_player_id": "8482153",
+    "nhl_player_name": "Brendan Brisson",
+    "yahoo_player_id": "9152",
+    "yahoo_player_name": "Tobie Bisson",
+    "match_confidence": 92.0
+  },
+  {
+    "nhl_player_id": "8479987",
+    "nhl_player_name": "Morgan Geekie",
+    "yahoo_player_id": "9279",
+    "yahoo_player_name": "Conor Geekie",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8479385",
+    "nhl_player_name": "Jordan Kyrou",
+    "yahoo_player_id": "9318",
+    "yahoo_player_name": "Christian Kyrou",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8477964",
+    "nhl_player_name": "Ivan Barbashev",
+    "yahoo_player_id": "9533",
+    "yahoo_player_name": "Ivan Ivan",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8480879",
+    "nhl_player_name": "Jacob Bernard-Docker",
+    "yahoo_player_id": "30120",
+    "yahoo_player_name": "Brett Berard",
+    "match_confidence": 92.0
+  },
+  {
+    "nhl_player_id": "8476434",
+    "nhl_player_name": "John Gibson",
+    "yahoo_player_id": "30168",
+    "yahoo_player_name": "Mitchell Gibson",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8478432",
+    "nhl_player_name": "Christian Fischer",
+    "yahoo_player_id": "30211",
+    "yahoo_player_name": "Paul Fischer",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8476988",
+    "nhl_player_name": "Matt Benning",
+    "yahoo_player_id": "30251",
+    "yahoo_player_name": "Mike Benning",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8481559",
+    "nhl_player_name": "Jack Hughes",
+    "yahoo_player_id": "6907",
+    "yahoo_player_name": "Cameron Hughes",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8479675",
+    "nhl_player_name": "Trevor Moore",
+    "yahoo_player_id": "30559",
+    "yahoo_player_name": "Oliver Moore",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8477425",
+    "nhl_player_name": "Miles Wood",
+    "yahoo_player_id": "30565",
+    "yahoo_player_name": "Matthew Wood",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8470613",
+    "nhl_player_name": "Brent Burns",
+    "yahoo_player_id": "30615",
+    "yahoo_player_name": "Quinton Burns",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8474596",
+    "nhl_player_name": "Jake Allen",
+    "yahoo_player_id": "30694",
+    "yahoo_player_name": "Cameron Allen",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8477953",
+    "nhl_player_name": "Kasperi Kapanen",
+    "yahoo_player_id": "30796",
+    "yahoo_player_name": "Oliver Kapanen",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8480069",
+    "nhl_player_name": "Cale Makar",
+    "yahoo_player_id": "30812",
+    "yahoo_player_name": "Taylor Makar",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8481014",
+    "nhl_player_name": "Alexander Romanov",
+    "yahoo_player_id": "31045",
+    "yahoo_player_name": "Georgi Romanov",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8479675",
+    "nhl_player_name": "Trevor Moore",
+    "yahoo_player_id": "31617",
+    "yahoo_player_name": "Ian Moore",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8483457",
+    "nhl_player_name": "Lane Hutson",
+    "yahoo_player_id": "32625",
+    "yahoo_player_name": "Quinn Hutson",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8477887",
+    "nhl_player_name": "Patrick Brown",
+    "yahoo_player_id": "32756",
+    "yahoo_player_name": "Garrett Brown",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8480184",
+    "nhl_player_name": "Gustav Lindstrom",
+    "yahoo_player_id": "32767",
+    "yahoo_player_name": "Cayden Lindstrom",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8477450",
+    "nhl_player_name": "Jason Dickinson",
+    "yahoo_player_id": "32771",
+    "yahoo_player_name": "Sam Dickinson",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8483460",
+    "nhl_player_name": "David Jiricek",
+    "yahoo_player_id": "32792",
+    "yahoo_player_name": "Adam Jiricek",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8480012",
+    "nhl_player_name": "Elias Pettersson",
+    "yahoo_player_id": "32799",
+    "yahoo_player_name": "Lucas Pettersson",
+    "match_confidence": 88.0
+  },
+  {
+    "nhl_player_id": "8475158",
+    "nhl_player_name": "Ryan O'Reilly",
+    "yahoo_player_id": "32832",
+    "yahoo_player_name": "Sam O'Reilly",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8481523",
+    "nhl_player_name": "Kirby Dach",
+    "yahoo_player_id": "8937",
+    "yahoo_player_name": "Colton Dach",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8482705",
+    "nhl_player_name": "Cole Sillinger",
+    "yahoo_player_id": "9495",
+    "yahoo_player_name": "Owen Sillinger",
+    "match_confidence": 86.0
+  },
+  {
+    "nhl_player_id": "8479439",
+    "nhl_player_name": "Jacob MacDonald",
+    "yahoo_player_id": "9564",
+    "yahoo_player_name": "Kyle McDonald",
+    "match_confidence": 94.0
+  },
+  {
+    "nhl_player_id": "8480800",
+    "nhl_player_name": "Quinn Hughes",
+    "yahoo_player_id": "33089",
+    "yahoo_player_name": "Connor Hughes",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8483457",
+    "nhl_player_name": "Lane Hutson",
+    "yahoo_player_id": "32898",
+    "yahoo_player_name": "Cole Hutson",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8478432",
+    "nhl_player_name": "Christian Fischer",
+    "yahoo_player_id": "32903",
+    "yahoo_player_name": "Lukas Fischer",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8475225",
+    "nhl_player_name": "Craig Smith",
+    "yahoo_player_id": "32907",
+    "yahoo_player_name": "Tarin Smith",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8476979",
+    "nhl_player_name": "Erik Gustafsson",
+    "yahoo_player_id": "32927",
+    "yahoo_player_name": "Viggo Gustafsson",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8481656",
+    "nhl_player_name": "Aliaksei Protas",
+    "yahoo_player_id": "32933",
+    "yahoo_player_name": "Ilya Protas",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8481556",
+    "nhl_player_name": "John Beecher",
+    "yahoo_player_id": "32942",
+    "yahoo_player_name": "Ondrej Becher",
+    "match_confidence": 92.0
+  },
+  {
+    "nhl_player_id": "8477992",
+    "nhl_player_name": "Jonas Johansson",
+    "yahoo_player_id": "32957",
+    "yahoo_player_name": "Loke Johansson",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8477484",
+    "nhl_player_name": "Spencer Martin",
+    "yahoo_player_id": "33203",
+    "yahoo_player_name": "Hunter St. Martin",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8478851",
+    "nhl_player_name": "Alexandre Carrier",
+    "yahoo_player_id": "33255",
+    "yahoo_player_name": "Gabriel Carriere",
+    "match_confidence": 93.0
+  },
+  {
+    "nhl_player_id": "8478451",
+    "nhl_player_name": "Ethan Bear",
+    "yahoo_player_id": "33419",
+    "yahoo_player_name": "Carter Bear",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8477070",
+    "nhl_player_name": "Liam O'Brien",
+    "yahoo_player_id": "33421",
+    "yahoo_player_name": "Jake O'Brien",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8482667",
+    "nhl_player_name": "William Eklund",
+    "yahoo_player_id": "33430",
+    "yahoo_player_name": "Victor Eklund",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8474709",
+    "nhl_player_name": "Matt Martin",
+    "yahoo_player_id": "33433",
+    "yahoo_player_name": "Brady Martin",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8479379",
+    "nhl_player_name": "Givani Smith",
+    "yahoo_player_id": "33434",
+    "yahoo_player_name": "Jackson Smith",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8481606",
+    "nhl_player_name": "Jordan Spence",
+    "yahoo_player_id": "33444",
+    "yahoo_player_name": "Malcolm Spencer",
+    "match_confidence": 92.0
+  },
+  {
+    "nhl_player_id": "8479675",
+    "nhl_player_name": "Trevor Moore",
+    "yahoo_player_id": "33462",
+    "yahoo_player_name": "William Moore",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8475314",
+    "nhl_player_name": "Anders Lee",
+    "yahoo_player_id": "33464",
+    "yahoo_player_name": "Ryker Lee",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8480012",
+    "nhl_player_name": "Elias Pettersson",
+    "yahoo_player_id": "33473",
+    "yahoo_player_name": "Liam Pettersson",
+    "match_confidence": 90.0
+  },
+  {
+    "nhl_player_id": "8481014",
+    "nhl_player_name": "Alexander Romanov",
+    "yahoo_player_id": "33517",
+    "yahoo_player_name": "Luca Romano",
+    "match_confidence": 92.0
+  },
+  {
+    "nhl_player_id": "8477220",
+    "nhl_player_name": "Nate Schmidt",
+    "yahoo_player_id": "33523",
+    "yahoo_player_name": "Cameron Schmidt",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8477484",
+    "nhl_player_name": "Spencer Martin",
+    "yahoo_player_id": "33535",
+    "yahoo_player_name": "Owen Martin",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8476454",
+    "nhl_player_name": "Ryan Nugent-Hopkins",
+    "yahoo_player_id": "33538",
+    "yahoo_player_name": "Tyler Hopkins",
+    "match_confidence": 100.0
+  },
+  {
+    "nhl_player_id": "8482109",
+    "nhl_player_name": "Alexis Lafrenière",
+    "yahoo_player_id": "33542",
+    "yahoo_player_name": "Tommy Lafreniere",
+    "match_confidence": 90.0
+  },
+  {
+    "nhl_player_id": "8479547",
+    "nhl_player_name": "Matthew Phillips",
+    "yahoo_player_id": "33546",
+    "yahoo_player_name": "Maceo Phillips",
+    "match_confidence": 100.0
+  }
+]

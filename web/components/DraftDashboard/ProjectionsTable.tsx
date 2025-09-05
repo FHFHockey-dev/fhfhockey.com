@@ -10,6 +10,8 @@ import supabase from "lib/supabase";
 
 interface ProjectionsTableProps {
   players: ProcessedPlayer[];
+  // Full pool including drafted; used for diagnostics cross-check
+  allPlayers?: ProcessedPlayer[];
   draftedPlayers: DraftedPlayer[];
   isLoading: boolean;
   error: string | null;
@@ -34,6 +36,8 @@ interface ProjectionsTableProps {
   nextPickNumber?: number;
   // NEW: league type for value semantics
   leagueType?: "points" | "categories";
+  // NEW: forward grouping display mode (C/LW/RW vs FWD)
+  forwardGrouping?: "split" | "fwd";
 }
 
 type SortableField =
@@ -46,6 +50,7 @@ type SortableField =
 
 const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   players,
+  allPlayers,
   draftedPlayers,
   isLoading,
   error,
@@ -61,7 +66,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   posNeeds = {},
   needAlpha = 0.5,
   onNeedAlphaChange,
-  nextPickNumber
+  nextPickNumber,
+  forwardGrouping = "split"
 }) => {
   const [sortField, setSortField] = useState<SortableField>("yahooAvgPick");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -82,6 +88,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   });
   // Temporary diagnostics toggle to surface excluded counts
   const [showDiagnostics, setShowDiagnostics] = useState<boolean>(false);
+  // Cross-check results against projection source tables
+  const [crosscheckRunning, setCrosscheckRunning] = useState(false);
+  const [crosscheckError, setCrosscheckError] = useState<string | null>(null);
+  const [crosscheckMissing, setCrosscheckMissing] = useState<
+    Array<{ player_id: number; name: string | null; sourceIds: string[] }>
+  >([]);
   // NEW: settings drawer visibility
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -111,6 +123,18 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       .split(",")
       .map((p) => p.trim())
       .includes("G");
+  };
+
+  // Map raw displayPosition to UI display based on forward grouping
+  const getDisplayPos = (player: ProcessedPlayer): string => {
+    const raw = (player.displayPosition || "").toUpperCase();
+    if (!raw) return raw;
+    if (forwardGrouping !== "fwd") return raw;
+    const parts = raw.split(",").map((p) => p.trim());
+    if (parts.includes("G")) return "G";
+    if (parts.includes("D")) return "D";
+    if (parts.some((p) => p === "C" || p === "LW" || p === "RW")) return "F";
+    return raw;
   };
 
   const formatSeasonLabel = (season: string | number | null) => {
@@ -300,7 +324,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     players.forEach((p) => {
       let excluded = false;
       if (positionFilter !== "ALL") {
-        const ok = p.displayPosition?.includes(positionFilter);
+        const ok = getDisplayPos(p)?.includes(positionFilter);
         if (!ok) {
           inc("positionFilter");
           excluded = true;
@@ -326,7 +350,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       // Mirror visibility logic (minus sort)
       let arr = [...players];
       if (positionFilter !== "ALL") {
-        arr = arr.filter((p) => p.displayPosition?.includes(positionFilter));
+        arr = arr.filter((p) => getDisplayPos(p)?.includes(positionFilter));
       }
       if (debouncedSearchTerm) {
         arr = arr.filter((p) => {
@@ -350,11 +374,11 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   const primaryPosById = useMemo(() => {
     const m = new Map<string, string>();
     players.forEach((p) => {
-      const first = p.displayPosition?.split(",")[0]?.trim()?.toUpperCase();
+      const first = getDisplayPos(p)?.split(",")[0]?.trim()?.toUpperCase();
       if (first) m.set(String(p.playerId), first);
     });
     return m;
-  }, [players]);
+  }, [players, forwardGrouping]);
 
   // Precompute VORP/VONA/VBD for quick lookup (with need-adjusted VBD when enabled)
   const vorpMap = useMemo(() => {
@@ -428,7 +452,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     // Apply position filter
     if (positionFilter !== "ALL") {
       filtered = filtered.filter((player) =>
-        player.displayPosition?.includes(positionFilter)
+        getDisplayPos(player)?.includes(positionFilter)
       );
     }
 
@@ -465,8 +489,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         aValue = riskMap.get(String(a.playerId));
         bValue = riskMap.get(String(b.playerId));
       } else {
-        aValue = (a as any)[sortField];
-        bValue = (b as any)[sortField]; // fix: use 'b'
+        if (sortField === "displayPosition") {
+          aValue = getDisplayPos(a);
+          bValue = getDisplayPos(b);
+        } else {
+          aValue = (a as any)[sortField];
+          bValue = (b as any)[sortField]; // fix: use 'b'
+        }
       }
 
       // Handle null/undefined
@@ -503,7 +532,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   const getPrimaryPos = (p: ProcessedPlayer, bestPos?: string): string => {
     if (bandScope === "overall") return "ALL";
     if (bestPos) return bestPos;
-    const first = p.displayPosition?.split(",")[0]?.trim();
+    const first = getDisplayPos(p)?.split(",")[0]?.trim();
     return first || "ALL";
   };
 
@@ -604,6 +633,78 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     }
   };
 
+  // Cross-check helper: fetch unique player_ids from all projection sources and compare to allPlayers
+  const runCrosscheck = async () => {
+    setCrosscheckRunning(true);
+    setCrosscheckError(null);
+    setCrosscheckMissing([]);
+    try {
+      // Build set of player_ids present in UI pool (include drafted via allPlayers when provided)
+      const pool =
+        (allPlayers && allPlayers.length ? allPlayers : players) || [];
+      const uiIds = new Set<string>(pool.map((p) => String(p.playerId)));
+
+      // Import config dynamically
+      const { PROJECTION_SOURCES_CONFIG } = await import(
+        "lib/projectionsConfig/projectionSourcesConfig"
+      );
+
+      // Group by tableName to avoid duplicate queries for same table
+      const tableToSourceIds = new Map<string, string[]>();
+      PROJECTION_SOURCES_CONFIG.forEach((cfg) => {
+        const arr = tableToSourceIds.get(cfg.tableName) || [];
+        arr.push(cfg.id);
+        tableToSourceIds.set(cfg.tableName, arr);
+      });
+
+      type Row = {
+        player_id?: number | null;
+        Player_Name?: string | null;
+        Goalie?: string | null;
+      };
+      const missing: Map<number, { name: string | null; sourceIds: string[] }> =
+        new Map();
+
+      for (const [tableName, sourceIds] of tableToSourceIds.entries()) {
+        const { data, error } = await supabase
+          .from(tableName as any)
+          .select("player_id, Player_Name, Goalie")
+          .not("player_id", "is", null);
+        if (error) throw error;
+        (data as Row[]).forEach((r) => {
+          const id = r.player_id != null ? Number(r.player_id) : null;
+          if (id == null || Number.isNaN(id)) return;
+          if (!uiIds.has(String(id))) {
+            const prev = missing.get(id) || {
+              name: r.Player_Name || r.Goalie || null,
+              sourceIds: []
+            };
+            sourceIds.forEach((sid) => {
+              if (!prev.sourceIds.includes(sid)) prev.sourceIds.push(sid);
+            });
+            if (!prev.name && (r.Player_Name || r.Goalie)) {
+              prev.name = (r.Player_Name as any) || (r.Goalie as any) || null;
+            }
+            missing.set(id, prev);
+          }
+        });
+      }
+
+      const out = Array.from(missing.entries())
+        .map(([player_id, info]) => ({
+          player_id,
+          name: info.name || null,
+          sourceIds: info.sourceIds.sort()
+        }))
+        .sort((a, b) => a.player_id - b.player_id);
+      setCrosscheckMissing(out);
+    } catch (e: any) {
+      setCrosscheckError(e?.message || "Cross-check failed");
+    } finally {
+      setCrosscheckRunning(false);
+    }
+  };
+
   const handleDraftClick = (playerId: number) => {
     // Always allow drafting; assignment goes to currentTurn in parent
     onDraftPlayer(String(playerId));
@@ -613,14 +714,15 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   const availablePositions = useMemo(() => {
     const positions = new Set<string>();
     players.forEach((player) => {
-      if (player.displayPosition) {
-        player.displayPosition.split(",").forEach((pos) => {
+      const disp = getDisplayPos(player);
+      if (disp) {
+        disp.split(",").forEach((pos) => {
           positions.add(pos.trim());
         });
       }
     });
     return Array.from(positions).sort();
-  }, [players]);
+  }, [players, forwardGrouping]);
 
   const getAriaSort = (
     field: SortableField
@@ -926,6 +1028,38 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 </span>
                 <span className={styles.toggleText}>Show Excluded</span>
               </label>
+              <div className={styles.drawerNote} style={{ marginTop: 8 }}>
+                <button
+                  onClick={runCrosscheck}
+                  disabled={crosscheckRunning}
+                  className={styles.collapseButton}
+                  title="Cross-check source coverage"
+                  aria-busy={crosscheckRunning}
+                >
+                  {crosscheckRunning ? "Checking…" : "Cross-check Sources"}
+                </button>
+                {crosscheckError && (
+                  <div className={styles.errorText} style={{ marginTop: 6 }}>
+                    {crosscheckError}
+                  </div>
+                )}
+                {crosscheckMissing.length > 0 && (
+                  <div style={{ marginTop: 6 }}>
+                    <strong>Missing from UI but present in sources:</strong>
+                    <div style={{ fontSize: 12, marginTop: 4 }}>
+                      {crosscheckMissing.slice(0, 25).map((m) => (
+                        <div key={m.player_id}>
+                          {m.name || "Unknown"} (ID {m.player_id}) —{" "}
+                          {m.sourceIds.join(", ")}
+                        </div>
+                      ))}
+                      {crosscheckMissing.length > 25 && (
+                        <div>…and {crosscheckMissing.length - 25} more</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </section>
             {replacementByPos && (
               <section className={styles.drawerSection}>
@@ -1143,9 +1277,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     </td>
                     <td
                       className={styles.position}
-                      title={player.displayPosition || undefined}
+                      title={getDisplayPos(player) || undefined}
                     >
-                      {player.displayPosition || "-"}
+                      {getDisplayPos(player) || "-"}
                     </td>
                     <td
                       className={styles.team}

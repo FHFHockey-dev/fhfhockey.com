@@ -45,10 +45,20 @@ export interface UseVORPResult {
 // Helper: parse eligible positions from displayPosition
 const parseEligiblePositions = (displayPosition?: string | null): string[] => {
   if (!displayPosition) return [];
-  return displayPosition
+  const parts = displayPosition
     .split(",")
-    .map((p) => p.trim().toUpperCase())
-    .filter((p) => ["C", "LW", "RW", "D", "G"].includes(p));
+    .map((p) => p.trim().toUpperCase());
+  const out: string[] = [];
+  parts.forEach((p) => {
+    if (p === "F") {
+      // Treat F as skater forward eligibility (C/LW/RW)
+      out.push("C", "LW", "RW");
+    } else if (["C", "LW", "RW", "D", "G"].includes(p)) {
+      out.push(p);
+    }
+  });
+  // De-duplicate
+  return Array.from(new Set(out));
 };
 
 export function useVORPCalculations({
@@ -161,13 +171,14 @@ export function useVORPCalculations({
     const starters = draftSettings.rosterConfig; // C,LW,RW,D,G, utility, bench
     const utilSkater = starters.utility ?? 0;
 
-    // Allocate utility across skater positions C/LW/RW equally (robust heuristic)
+    // Allocate UTIL across all skater positions (C/LW/RW/D) equally
     const utilAdj: Record<string, number> = { C: 0, LW: 0, RW: 0, D: 0, G: 0 };
     if (utilSkater > 0) {
-      const share = utilSkater / 3; // distribute across C/LW/RW only
+      const share = utilSkater / 4; // distribute across C, LW, RW, D
       utilAdj.C = share;
       utilAdj.LW = share;
       utilAdj.RW = share;
+      utilAdj.D = share;
     }
 
     // Group by position and sort by value desc (FULL POOL)
@@ -213,11 +224,12 @@ export function useVORPCalculations({
     });
 
     // For combined forward mode, compute combined starter count for FWD pool
-    const fwdStarters =
-      (starters as any).C + (starters as any).LW + (starters as any).RW +
-      (utilAdj.C + utilAdj.LW + utilAdj.RW);
+    const baseFwdStarters =
+      (starters as any).C + (starters as any).LW + (starters as any).RW;
+    const fwdUtilShare = utilAdj.C + utilAdj.LW + utilAdj.RW; // UTIL portion that can be filled by FWD
+    const fwdStarters = baseFwdStarters + fwdUtilShare;
     const fwdIdxVORP = Math.max(0, Math.floor(T * fwdStarters + 1) - 1);
-    const fwdIdxVOLS = Math.max(0, Math.floor(T * ((starters as any).C + (starters as any).LW + (starters as any).RW)) - 1);
+    const fwdIdxVOLS = Math.max(0, Math.floor(T * (baseFwdStarters + fwdUtilShare)) - 1);
 
     // Replacement values at indices (use last available if shorter)
     const replacementByPos: Record<string, { vorp: number; vols: number }> = {
@@ -405,6 +417,7 @@ export function useVORPCalculations({
     picksUntilNext,
     leagueType,
     baselineMode,
-    categoryWeights
+    categoryWeights,
+    forwardGrouping
   ]);
 }

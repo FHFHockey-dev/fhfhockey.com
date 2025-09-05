@@ -443,6 +443,7 @@ const Filters: React.FC<FiltersProps> = ({
         tabIndex={isMobile ? 0 : undefined}
         aria-expanded={isMobile ? !isMobileMinimized : undefined}
         aria-controls={isMobile ? "player-table-content" : undefined}
+        data-interactive={isMobile ? true : undefined}
       >
         <span className={styles.titleContent}>
           <span className={styles.acronym}>BPA</span>

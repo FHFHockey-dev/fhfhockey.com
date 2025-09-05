@@ -50,7 +50,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-size: clamp(1.2rem, 4vw, 1.5rem);
-  font-weight: 100; // Lighter weight
+  // Inherit weight from panel-title (300) for cohesion with Game Grid
   color: v.$text-color-primary;
   flex-grow: 1;
   text-align: left;
@@ -59,7 +59,7 @@
 
 .spanColorBlue {
   color: v.$secondary-color;
-  font-weight: 100; // Adjusted to match base title weight
+  // Inherit weight
 }
 
 .minimizeToggleIcon {
@@ -121,7 +121,7 @@
   font-weight: 600;
   padding: 8px 4px;
   font-family: v.$font-family-primary;
-  font-size: 11px;
+  font-size: 12px; // align with PlayerPickup/GameGrid compact headers
   text-transform: uppercase;
   letter-spacing: 0.3px;
   border: 0.5px solid v.$border-color-secondary;
@@ -158,6 +158,7 @@
 /* --- Table Body Styling --- */
 .table tbody tr {
   transition: background-color v.$transition-duration v.$transition-easing;
+  height: 40px; // align row height with PlayerPickup/GameGrid
   &:nth-child(even) {
     background-color: v.$background-light;
   }
@@ -174,7 +175,7 @@
   padding: 5px 4px; // Slight tighten
   font-family: v.$font-family-primary;
   vertical-align: middle;
-  font-size: 12px;
+  font-size: 13px; // match PlayerPickup compact body text
   word-break: break-word;
 
   @media (max-width: #{v.$breakpoint-tablet - 1px}) {

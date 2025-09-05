@@ -13,7 +13,11 @@ import FourWeekGrid from "./utils/FourWeekGrid";
 import PlayerPickupTable from "components/PlayerPickupTable/PlayerPickupTable";
 
 import { parseDateStr, startAndEndOfWeek } from "./utils/date-func";
-import { calcTotalOffNights, getTotalGamePlayed } from "./utils/helper";
+import {
+  calcTotalOffNights,
+  calcWeightedOffNights,
+  getTotalGamePlayed
+} from "./utils/helper";
 
 import useSchedule from "./utils/useSchedule";
 import useFourWeekSchedule from "./utils/useFourWeekSchedule"; // New import
@@ -182,6 +186,11 @@ function GameGridInternal({
         currentNumGamesPerDay,
         excludedDays
       );
+      const weightedOffNights = calcWeightedOffNights(
+        row,
+        currentNumGamesPerDay,
+        excludedDays
+      );
 
       // add Week Score
       const winOddsList = convertTeamRowToWinOddsList({
@@ -191,7 +200,7 @@ function GameGridInternal({
 
       const weekScore = calcWeekScore(
         winOddsList,
-        totalOffNights,
+        weightedOffNights, // use weighted off‑nights for scoring
         totalGP,
         totalGamesPlayed
       );
@@ -1070,9 +1079,11 @@ function GameGridInternal({
         </ul>
       </div>
       <p id="weekScoreDesc" className={styles.srOnly}>
-        Week Score = (Adjusted Team Games × 6) + (Off-Nights × 4) + (Average Win
-        Odds × 0.15). Adjusted Team Games = (Team Games – League Average Games).
-        A score of -100 indicates no games this period.
+        Week Score = (Adjusted Team Games × 6) + (Weighted Off‑Nights × 4) +
+        (Average Win Odds × 0.15). Adjusted Team Games = (Team Games – League
+        Average Games). Weighted Off‑Nights gives larger credit on lighter NHL
+        nights (for example, 2‑game nights count more than 7‑game nights). A
+        score of -100 indicates no games this period.
       </p>
       {summaryError && (
         <div className={styles.error}>

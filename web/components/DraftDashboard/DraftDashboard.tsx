@@ -571,6 +571,17 @@ const DraftDashboard: React.FC = () => {
     [skaterPlayers, goaliePlayers, sessionCsvPlayers]
   );
 
+  // Targeted trace for a known missing name report
+  useEffect(() => {
+    const byName = allPlayers.find((p) => p.fullName?.toLowerCase().includes("marchenko"));
+    const byId = allPlayers.find((p) => String(p.playerId) === "8480893");
+    if (byName || byId) {
+      console.log("Trace - Found Marchenko in player pool:", byName || byId);
+    } else {
+      console.warn("Trace - Marchenko not found in player pool (name/id checks)");
+    }
+  }, [allPlayers]);
+
   // NEW: derive available stat keys (skater vs goalie) from projections + custom CSV
   const { availableSkaterStatKeys, availableGoalieStatKeys } = useMemo(() => {
     const skaterKeys = new Set<string>();
@@ -1203,6 +1214,7 @@ const DraftDashboard: React.FC = () => {
         <section className={styles.rightPanel}>
           <ProjectionsTable
             players={availablePlayers}
+            allPlayers={allPlayers}
             draftedPlayers={draftedPlayers}
             isLoading={isLoading}
             error={errorMessage}
@@ -1224,6 +1236,7 @@ const DraftDashboard: React.FC = () => {
             onNeedAlphaChange={setNeedAlpha}
             nextPickNumber={nextPickNumber}
             leagueType={draftSettings.leagueType || "points"}
+            forwardGrouping={forwardGrouping}
           />
         </section>
       </div>

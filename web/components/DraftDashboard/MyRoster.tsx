@@ -311,6 +311,13 @@ const MyRoster: React.FC<MyRosterProps> = ({
             listClassName={styles.searchResults}
             adpByPlayerId={adpByPlayerId}
             sortByAdp
+            // Ensure same pool as projections by passing processed players
+            playersOverride={allPlayers.map((p) => ({
+              id: Number(p.playerId),
+              fullName: p.fullName,
+              sweaterNumber: undefined,
+              teamId: undefined
+            }))}
           />
         </div>
 
