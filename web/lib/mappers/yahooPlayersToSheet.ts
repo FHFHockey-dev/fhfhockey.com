@@ -55,7 +55,8 @@ export function mapPlayersToRows(
     const da = (r.draft_analysis || {}) as any;
 
     const avgCost = r.average_draft_cost ?? toNumber(da.average_cost);
-    const avgPick = r.average_draft_pick ?? toNumber(da.average_pick);
+    const rawAvgPick = r.average_draft_pick ?? toNumber(da.average_pick);
+    const avgPick = rawAvgPick === 0 ? null : rawAvgPick; // treat 0 (not drafted) as blank so it sorts to bottom
     const avgRound = r.average_draft_round ?? toNumber(da.average_round);
     const pctDrafted = r.percent_drafted ?? toNumber(da.percent_drafted);
 
@@ -107,4 +108,3 @@ export function mapPlayersToRows(
   }
   return out;
 }
-
