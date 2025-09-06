@@ -1,10 +1,36 @@
 import { google } from 'googleapis';
 
+function resolveGooglePrivateKey() {
+  let key = process.env.GOOGLE_PRIVATE_KEY || '';
+  const b64 = process.env.GOOGLE_PRIVATE_KEY_BASE64 || '';
+
+  // If plain key not present, try base64 variant
+  if (!key && b64) {
+    try {
+      key = Buffer.from(b64, 'base64').toString('utf8');
+    } catch (e) {
+      // ignore decode errors; will fall through to error below
+    }
+  }
+
+  if (!key) return '';
+
+  // Strip surrounding quotes if present
+  if ((key.startsWith('"') && key.endsWith('"')) || (key.startsWith("'") && key.endsWith("'"))) {
+    key = key.slice(1, -1);
+  }
+
+  // Normalize literal escape sequences to real newlines
+  key = key.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n');
+
+  return key.trim();
+}
+
 export function getSheetsAuth() {
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-  const privateKey = (process.env.GOOGLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+  const privateKey = resolveGooglePrivateKey();
   if (!clientEmail || !privateKey) {
-    throw new Error('Missing GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY');
+    throw new Error('Missing GOOGLE_CLIENT_EMAIL or GOOGLE_PRIVATE_KEY (or GOOGLE_PRIVATE_KEY_BASE64)');
   }
   return new google.auth.JWT({
     email: clientEmail,
