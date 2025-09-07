@@ -436,7 +436,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     const sd = Math.max(2, Math.min(40, riskSd)); // clamp reasonable range
     players.forEach((p) => {
       const adp = p.yahooAvgPick;
-      if (typeof adp === "number" && Number.isFinite(adp)) {
+      // Treat 0 or negative ADP as missing
+      if (typeof adp === "number" && Number.isFinite(adp) && adp > 0) {
         const z = (nextPickNumber - adp) / sd;
         const risk = Math.max(0, Math.min(1, normalCdf(z)));
         m.set(String(p.playerId), risk);
@@ -466,6 +467,10 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       );
     }
 
+    // Helper: treat ADP <= 0 as missing
+    const normAdp = (v: any): number | null =>
+      typeof v === "number" && Number.isFinite(v) && v > 0 ? v : null;
+
     // Sort players
     filtered.sort((a, b) => {
       let aValue: any;
@@ -474,6 +479,22 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       if (sortField === "fantasyPoints") {
         aValue = a.fantasyPoints.projected;
         bValue = b.fantasyPoints.projected; // fix: use 'b'
+      } else if (sortField === "yahooAvgPick") {
+        const aAdp = normAdp(a.yahooAvgPick);
+        const bAdp = normAdp(b.yahooAvgPick);
+        // Place missing ADP at bottom for asc; at top for desc
+        if (aAdp == null && bAdp == null) {
+          // Tie-breakers for missing ADP: project FP desc, then name asc
+          const aFp = a.fantasyPoints.projected ?? -Infinity;
+          const bFp = b.fantasyPoints.projected ?? -Infinity;
+          if (aFp !== bFp) return bFp - aFp;
+          const aName = a.fullName || "";
+          const bName = b.fullName || "";
+          return aName.localeCompare(bName);
+        }
+        if (aAdp == null) return sortDirection === "asc" ? 1 : -1;
+        if (bAdp == null) return sortDirection === "asc" ? -1 : 1;
+        return sortDirection === "asc" ? aAdp - bAdp : bAdp - aAdp;
       } else if (sortField === "vorp") {
         aValue = vorpMap.get(String(a.playerId))?.vorp ?? 0;
         bValue = vorpMap.get(String(b.playerId))?.vorp ?? 0;
@@ -542,6 +563,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       (p) =>
         typeof p.yahooAvgPick === "number" &&
         !Number.isNaN(p.yahooAvgPick) &&
+        p.yahooAvgPick > 0 &&
         // Exclude already drafted from banding; bands represent remaining pool
         !draftedIdSet.has(String(p.playerId))
     );
@@ -1313,7 +1335,10 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       {vbdDisplay ? vbdDisplay.toFixed(1) : "-"}
                     </td>
                     <td className={styles.adp}>
-                      {player.yahooAvgPick?.toFixed(1) || "-"}
+                      {typeof player.yahooAvgPick === "number" &&
+                      player.yahooAvgPick > 0
+                        ? player.yahooAvgPick.toFixed(1)
+                        : "-"}
                     </td>
                     <td
                       className={styles.nextPick}

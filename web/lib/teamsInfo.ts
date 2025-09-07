@@ -488,7 +488,7 @@ export const teamsInfo: {
     alt: "#67bdfb",
     franchiseId: 40,
     nstAbbr: "UTA",
-    id: 59
+    id: 68 // Updated to new NHL team ID so schedules match
   }
 };
 
