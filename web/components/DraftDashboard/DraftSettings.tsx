@@ -678,6 +678,34 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     onSettingsChange({ scoringCategories: rest });
   };
 
+  // Categories-league: allow add/remove category metrics
+  const [showManageCategories, setShowManageCategories] = React.useState(false);
+  const addableCategoryStats = React.useMemo(() => {
+    const existing = new Set(Object.keys(settings.categoryWeights || {}));
+    return (availableSkaterStatKeys || [])
+      .filter((k) => !existing.has(k))
+      .filter((k) => /[A-Z0-9_]/.test(k));
+  }, [availableSkaterStatKeys, settings.categoryWeights]);
+  const [newCategoryKey, setNewCategoryKey] = React.useState("");
+  const [newCategoryWeight, setNewCategoryWeight] = React.useState("1");
+  const handleAddCategory = () => {
+    if (!newCategoryKey) return;
+    const val = parseFloat(newCategoryWeight);
+    onSettingsChange({
+      categoryWeights: {
+        ...(settings.categoryWeights || {}),
+        [newCategoryKey]: Number.isFinite(val) ? val : 1
+      }
+    });
+    setNewCategoryKey("");
+    setNewCategoryWeight("1");
+  };
+  const handleRemoveCategory = (key: string) => {
+    const current = settings.categoryWeights || {};
+    const { [key]: _, ...rest } = current;
+    onSettingsChange({ categoryWeights: rest });
+  };
+
   return (
     <div className={styles.settingsContainer}>
       <div className={styles.settingsHeader}>
@@ -1079,40 +1107,117 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                 : "Scoring Categories"}
             </legend>
             {leagueType === "categories" ? (
-              <div className={styles.scoringGrid}>
-                {CAT_KEYS.map((k) => (
-                  <div key={k} className={styles.scoringSetting}>
-                    <label className={styles.statLabel} htmlFor={`cat-${k}`}>
-                      {SKATER_LABELS[k]}
-                    </label>
+              <>
+                <div className={styles.scoringGrid}>
+                  {Object.entries(settings.categoryWeights || {})
+                    .slice(0, showManageCategories ? undefined : 8)
+                    .map(([k, w]) => (
+                      <div key={k} className={styles.scoringSetting}>
+                        <label className={styles.statLabel} htmlFor={`cat-${k}`}>
+                          {getShortLabel(k)}
+                        </label>
+                        <input
+                          id={`cat-${k}`}
+                          type="range"
+                          min={0}
+                          max={2}
+                          step={0.1}
+                          value={typeof w === "number" ? w : 1}
+                          aria-label={`${k} weight`}
+                          aria-valuemin={0}
+                          aria-valuemax={2}
+                          aria-valuenow={typeof w === "number" ? w : 1}
+                          aria-valuetext={`${(typeof w === "number" ? w : 1).toFixed(1)}x`}
+                          onChange={(e) =>
+                            onSettingsChange({
+                              categoryWeights: {
+                                ...(settings.categoryWeights || {}),
+                                [k]: parseFloat(e.target.value)
+                              }
+                            })
+                          }
+                          className={styles.rangeInput}
+                        />
+                        <div className={styles.weightLabel}>
+                          {(typeof w === "number" ? w : 1).toFixed(1)}x
+                        </div>
+                        {showManageCategories && (
+                          <button
+                            type="button"
+                            className={styles.removeStatBtn}
+                            aria-label={`Remove ${k}`}
+                            title="Remove category"
+                            onClick={() => handleRemoveCategory(k)}
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  {!showManageCategories && (
+                    <button
+                      className={styles.expandButton}
+                      type="button"
+                      aria-expanded={showManageCategories}
+                      onClick={() => {
+                        setNewCategoryKey("");
+                        setNewCategoryWeight("1");
+                        setShowManageCategories(true);
+                      }}
+                      title="Manage / Add categories"
+                    >
+                      {`+${Math.max(0, Object.keys(settings.categoryWeights || {}).length - 8)} more`}
+                    </button>
+                  )}
+                </div>
+                {showManageCategories && (
+                  <div className={styles.inlineManage}>
+                    <select
+                      value={newCategoryKey}
+                      onChange={(e) => setNewCategoryKey(e.target.value)}
+                      className={styles.select}
+                      aria-label="Select category to add"
+                    >
+                      <option value="">Select Category...</option>
+                      {addableCategoryStats.map((k) => (
+                        <option key={k} value={k}>
+                          {getShortLabel(k)}
+                        </option>
+                      ))}
+                    </select>
                     <input
-                      id={`cat-${k}`}
-                      type="range"
+                      type="number"
+                      step={0.1}
                       min={0}
                       max={2}
-                      step={0.1}
-                      value={getWeight(k)}
-                      aria-label={`${k} weight`}
-                      aria-valuemin={0}
-                      aria-valuemax={2}
-                      aria-valuenow={getWeight(k)}
-                      aria-valuetext={`${getWeight(k).toFixed(1)}x`}
-                      onChange={(e) =>
-                        onSettingsChange({
-                          categoryWeights: {
-                            ...settings.categoryWeights,
-                            [k]: parseFloat(e.target.value)
-                          }
-                        })
-                      }
-                      className={styles.rangeInput}
+                      className={`${styles.pointsInput} ${styles.pointsInputNarrow}`}
+                      value={newCategoryWeight}
+                      aria-label="New category weight"
+                      onChange={(e) => setNewCategoryWeight(e.target.value)}
                     />
-                    <div className={styles.weightLabel}>
-                      {getWeight(k).toFixed(1)}x
-                    </div>
+                    <button
+                      type="button"
+                      className={styles.actionButton}
+                      onClick={handleAddCategory}
+                      disabled={!newCategoryKey}
+                    >
+                      Add Category
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.inlineResetBtn}
+                      onClick={() => setShowManageCategories(false)}
+                    >
+                      Hide
+                    </button>
                   </div>
-                ))}
-              </div>
+                )}
+                {showManageCategories && addableCategoryStats.length === 0 && (
+                  <div className={styles.noAddableStatsMsg}>
+                    All available skater projection metrics are already added.
+                  </div>
+                )}
+              </>
             ) : (
               <>
                 {/* Scoring subgroups side-by-side wrapper */}
