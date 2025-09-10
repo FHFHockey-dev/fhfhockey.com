@@ -12,7 +12,9 @@ const SUPABASE_PAGE_SIZE = 1000; // Match your constant
  * @param queryBuilder The Supabase query builder instance configured with filters, selects, etc.
  * @returns A promise that resolves to an array containing all fetched rows.
  */
-export async function fetchAllPages<T = any>(queryBuilder: SupabaseQueryBuilder): Promise<T[]> {
+export async function fetchAllPages<T = any>(
+  queryBuilder: SupabaseQueryBuilder
+): Promise<T[]> {
   let allData: T[] = [];
   let currentPage = 0;
   let moreDataAvailable = true;

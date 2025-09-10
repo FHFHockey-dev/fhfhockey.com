@@ -22,7 +22,12 @@ interface DraftBoardProps {
   // NEW: traded pick ownership overrides
   pickOwnerOverrides?: Record<string, string>;
   // NEW: keepers list
-  keepers?: Array<{ round: number; pickInRound: number; teamId: string; playerId: string }>;
+  keepers?: Array<{
+    round: number;
+    pickInRound: number;
+    teamId: string;
+    playerId: string;
+  }>;
 }
 
 type SortField =
@@ -303,7 +308,9 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         const ownerName = teamNameById.get(ownerTeamId) || ownerTeamId;
         const rowTeamName = teamNameById.get(teamId) || teamId;
         const traded = ownerTeamId !== teamId;
-        const ownershipLine = traded ? `\nTraded: ${rowTeamName} → ${ownerName}` : "";
+        const ownershipLine = traded
+          ? `\nTraded: ${rowTeamName} → ${ownerName}`
+          : "";
         const isKeeper = keeperKeySet.has(key);
         const tooltip = draftedPlayer
           ? `${playerName}\n${rowTeamName}${ownershipLine}\nRound ${round}, Pick ${pickInRound}\nProjected: ${fantasyPoints} pts`
@@ -331,7 +338,9 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
               </span>
             )}
             {isKeeper && (
-              <span className={styles.keeperBadge} aria-label="Keeper">K</span>
+              <span className={styles.keeperBadge} aria-label="Keeper">
+                K
+              </span>
             )}
           </div>
         );
@@ -463,6 +472,59 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
       };
     });
   }, [teamStats, draftedPlayers, availablePlayers, allPlayers]);
+
+  // Compute per-category min/max across teams for intra-team heat coloring
+  const categoryExtents = useMemo(() => {
+    const keys: Array<keyof TeamDraftStats["categoryTotals"]> = [
+      "goals",
+      "assists",
+      "pp_points",
+      "shots_on_goal",
+      "hits",
+      "blocked_shots"
+    ];
+    const extents: Record<string, { min: number; max: number }> = {};
+    keys.forEach((k) => {
+      const values = teamStatsWithCategories
+        .slice(0, draftSettings.teamCount)
+        .map(
+          (t) =>
+            (t.categoryTotals[k as keyof typeof t.categoryTotals] ||
+              0) as number
+        );
+      const min = values.length ? Math.min(...values) : 0;
+      const max = values.length ? Math.max(...values) : 0;
+      extents[k as string] = { min, max };
+    });
+    return extents;
+  }, [teamStatsWithCategories, draftSettings.teamCount]);
+
+  // Map a value within [min,max] to a green→yellow→red color (hsla) with 40% fill and solid border
+  const getCategoryCellStyle = (
+    key:
+      | "goals"
+      | "assists"
+      | "pp_points"
+      | "shots_on_goal"
+      | "hits"
+      | "blocked_shots",
+    value: number | undefined
+  ): React.CSSProperties => {
+    const { min, max } = categoryExtents[key] || { min: 0, max: 0 };
+    const v = typeof value === "number" ? value : 0;
+    let t = 0.5; // neutral
+    if (max > min) {
+      t = (v - min) / (max - min);
+      t = Math.max(0, Math.min(1, t));
+    }
+    const hue = Math.round(t * 120); // 0 = red, 120 = green
+    const fill = `hsla(${hue}, 85%, 50%, 0.4)`;
+    const stroke = `hsl(${hue}, 80%, 45%)`;
+    return {
+      backgroundColor: fill,
+      border: `1px solid ${stroke}`
+    };
+  };
 
   // Sort teams based on selected field and direction
   const sortedTeams = useMemo(() => {
@@ -658,22 +720,58 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                         </div>
                       </div>
                     </td>
-                    <td className={styles.statCell}>
+                    <td
+                      className={styles.statCell}
+                      style={getCategoryCellStyle(
+                        "goals",
+                        team.categoryTotals.goals
+                      )}
+                    >
                       {(team.categoryTotals.goals || 0).toFixed(0)}
                     </td>
-                    <td className={styles.statCell}>
+                    <td
+                      className={styles.statCell}
+                      style={getCategoryCellStyle(
+                        "assists",
+                        team.categoryTotals.assists
+                      )}
+                    >
                       {(team.categoryTotals.assists || 0).toFixed(0)}
                     </td>
-                    <td className={styles.statCell}>
+                    <td
+                      className={styles.statCell}
+                      style={getCategoryCellStyle(
+                        "pp_points",
+                        team.categoryTotals.pp_points
+                      )}
+                    >
                       {(team.categoryTotals.pp_points || 0).toFixed(0)}
                     </td>
-                    <td className={styles.statCell}>
+                    <td
+                      className={styles.statCell}
+                      style={getCategoryCellStyle(
+                        "shots_on_goal",
+                        team.categoryTotals.shots_on_goal
+                      )}
+                    >
                       {(team.categoryTotals.shots_on_goal || 0).toFixed(0)}
                     </td>
-                    <td className={styles.statCell}>
+                    <td
+                      className={styles.statCell}
+                      style={getCategoryCellStyle(
+                        "hits",
+                        team.categoryTotals.hits
+                      )}
+                    >
                       {(team.categoryTotals.hits || 0).toFixed(0)}
                     </td>
-                    <td className={styles.statCell}>
+                    <td
+                      className={styles.statCell}
+                      style={getCategoryCellStyle(
+                        "blocked_shots",
+                        team.categoryTotals.blocked_shots
+                      )}
+                    >
                       {(team.categoryTotals.blocked_shots || 0).toFixed(0)}
                     </td>
                     <td className={styles.statCell}>
