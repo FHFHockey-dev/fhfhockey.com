@@ -22,7 +22,12 @@ interface DraftBoardProps {
   // NEW: traded pick ownership overrides
   pickOwnerOverrides?: Record<string, string>;
   // NEW: keepers list
-  keepers?: Array<{ round: number; pickInRound: number; teamId: string; playerId: string }>;
+  keepers?: Array<{
+    round: number;
+    pickInRound: number;
+    teamId: string;
+    playerId: string;
+  }>;
 }
 
 type SortField =
@@ -303,7 +308,9 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         const ownerName = teamNameById.get(ownerTeamId) || ownerTeamId;
         const rowTeamName = teamNameById.get(teamId) || teamId;
         const traded = ownerTeamId !== teamId;
-        const ownershipLine = traded ? `\nTraded: ${rowTeamName} → ${ownerName}` : "";
+        const ownershipLine = traded
+          ? `\nTraded: ${rowTeamName} → ${ownerName}`
+          : "";
         const isKeeper = keeperKeySet.has(key);
         const tooltip = draftedPlayer
           ? `${playerName}\n${rowTeamName}${ownershipLine}\nRound ${round}, Pick ${pickInRound}\nProjected: ${fantasyPoints} pts`
@@ -331,7 +338,9 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
               </span>
             )}
             {isKeeper && (
-              <span className={styles.keeperBadge} aria-label="Keeper">K</span>
+              <span className={styles.keeperBadge} aria-label="Keeper">
+                K
+              </span>
             )}
           </div>
         );
@@ -478,10 +487,14 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     keys.forEach((k) => {
       const values = teamStatsWithCategories
         .slice(0, draftSettings.teamCount)
-        .map((t) => (t.categoryTotals[k] || 0) as number);
+        .map(
+          (t) =>
+            (t.categoryTotals[k as keyof typeof t.categoryTotals] ||
+              0) as number
+        );
       const min = values.length ? Math.min(...values) : 0;
       const max = values.length ? Math.max(...values) : 0;
-      extents[k] = { min, max };
+      extents[k as string] = { min, max };
     });
     return extents;
   }, [teamStatsWithCategories, draftSettings.teamCount]);
