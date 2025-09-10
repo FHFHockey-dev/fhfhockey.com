@@ -1,49 +1,78 @@
 ///////////////////////////////////////////////////////////////////////////////////////////
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\BlogPost\BlogPost.module.scss
 
-@use "styles/vars";
+@use "styles/vars" as vars;
 
 .post {
-  outline: 3px solid white;
-  // border: 3px solid white;
-  border-radius: 4px;
-  background-color: #0d0d0d;
-  padding: 1rem;
+  background-color: vars.$surface-1;
+  border: 1px solid vars.$border-primary;
+  border-radius: 12px;
+  padding: vars.$mobile-space-md;
   font-family: "Roboto", sans-serif;
+  color: vars.$text-primary;
 
   display: grid;
-  grid-template-columns: repeat(3, 1fr) repeat(2, 1fr);
-  column-gap: 1rem;
+  grid-template-columns: 1fr;
+  row-gap: vars.$mobile-space-md;
+  transition:
+    transform vars.$mobile-animation-fast vars.$mobile-easing-ease,
+    box-shadow vars.$mobile-animation-fast vars.$mobile-easing-ease,
+    border-color vars.$mobile-animation-fast vars.$mobile-easing-ease;
+
+  &:hover {
+    cursor: pointer;
+    transform: translateY(-2px);
+    box-shadow:
+      0 6px 18px rgba(0, 0, 0, 0.35),
+      vars.$shadow-hover;
+    border-color: vars.$border-accent;
+  }
+
+  &:focus-within {
+    outline: 2px solid vars.$primary-color;
+    outline-offset: 2px;
+  }
 
   .textArea {
-    grid-column: 1 / 4;
-
     .header {
-      .title {
-        margin: 0;
-        text-transform: none;
-        font-family: roboto condensed, sans-serif;
-        &:hover {
-          text-decoration: underline;
-          cursor: pointer;
-        }
-      }
-      .createdAt {
-        color: rgb(255, 255, 255);
-      }
-      color: #18a3d9;
+      color: vars.$primary-color;
       display: flex;
       justify-content: space-between;
       align-items: baseline;
-      border-bottom: 2px solid white;
-      padding-bottom: 0.2rem;
+      border-bottom: 1px solid vars.$border-secondary;
+      padding-bottom: 0.4rem;
+
+      .title {
+        margin: 0;
+        text-transform: none;
+        font-family:
+          roboto condensed,
+          sans-serif;
+        letter-spacing: 0.2px;
+        line-height: 1.2;
+        color: vars.$text-primary;
+
+        &:hover {
+          text-decoration: underline;
+          text-decoration-thickness: 2px;
+          text-underline-offset: 3px;
+        }
+      }
+
+      .createdAt {
+        color: vars.$text-secondary;
+        font-size: vars.$mobile-font-size-xs;
+      }
+    }
+
+    .summaryWrapper {
+      margin-top: vars.$mobile-space-md;
     }
 
     .summary {
       /* number of lines to show */
       $lines: 6;
       margin: 0;
-      margin-top: 1rem;
       padding-right: 0.3rem;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -51,9 +80,11 @@
       -webkit-line-clamp: $lines;
       line-clamp: $lines;
       -webkit-box-orient: vertical;
+      color: vars.$text-primary;
+      line-height: vars.$mobile-line-height-relaxed;
 
       @media only screen and (min-width: vars.$screen-medium) {
-        $lines: 10;
+        $lines: 8;
         -webkit-line-clamp: $lines;
         line-clamp: $lines;
       }
@@ -61,13 +92,25 @@
   }
 
   .image {
-    grid-column: 4 / 6;
-    height: fit-content;
-    border: 2px solid #18a3d2;
-    border-radius: 2px;
+    position: relative;
+    border: 1px solid vars.$border-secondary;
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    background-color: vars.$surface-2;
   }
 
-  &:hover {
-    cursor: pointer;
+  @media only screen and (min-width: vars.$screen-medium) {
+    grid-template-columns: 3fr 2fr;
+    column-gap: vars.$mobile-space-lg;
+
+    .textArea {
+      padding-right: vars.$mobile-space-sm;
+    }
+
+    .image {
+      grid-column: auto;
+      height: auto;
+    }
   }
 }

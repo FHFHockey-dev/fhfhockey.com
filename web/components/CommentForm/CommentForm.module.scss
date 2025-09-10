@@ -1,67 +1,98 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/CommentForm/CommentForm.module.scss
 
-@use "styles/vars";
+@use "styles/vars" as vars;
 
 .form {
+  display: grid;
+  row-gap: vars.$mobile-space-md;
+
   .error {
-    color: #ffc107;
-    font-size: small;
-    margin: 0.3rem 0;
+    color: vars.$warning-color;
+    font-size: vars.$mobile-font-size-xs;
+    margin: 0.25rem 0;
   }
+
   .contentWrapper {
-    border: 2px solid white;
-    background-color: vars.$bg-light;
-    color: white;
-    padding: 0.3rem;
-    .name {
-      display: block;
-      width: 100%;
-      border: 1px solid white;
-      background-color: inherit;
-      color: inherit;
-      padding: 0.3rem;
-      &::placeholder {
-        color: inherit;
-        font-style: italic;
-        opacity: 0.7;
-      }
-      margin-bottom: 0.3rem;
-    }
+    border: 1px solid vars.$border-primary;
+    background-color: vars.$surface-1;
+    color: vars.$text-primary;
+    padding: vars.$mobile-space-md;
+    border-radius: 12px;
+    display: grid;
+    row-gap: vars.$mobile-space-sm;
+
+    .name,
     .comment {
       display: block;
       width: 100%;
-      border: 1px solid white;
-      background-color: inherit;
-      color: inherit;
-      padding: 0.2rem 0.3rem;
-      font-family: "Roboto", sans-serif;
+      border: 1px solid vars.$border-secondary;
+      background-color: vars.$surface-2;
+      color: vars.$text-primary;
+      padding: 0.6rem 0.75rem;
+      border-radius: 10px;
+      outline: none;
+      transition:
+        border-color vars.$mobile-animation-fast vars.$mobile-easing-ease,
+        box-shadow vars.$mobile-animation-fast vars.$mobile-easing-ease,
+        background-color vars.$mobile-animation-fast vars.$mobile-easing-ease;
 
       &::placeholder {
-        color: inherit;
+        color: vars.$text-secondary;
         font-style: italic;
-        opacity: 0.7;
+        opacity: 0.85;
       }
+
+      &:focus-visible {
+        border-color: vars.$primary-color;
+        box-shadow: 0 0 0 3px rgba(20, 162, 210, 0.25);
+      }
+    }
+
+    .comment {
+      font-family: "Roboto", sans-serif;
+      resize: vertical;
+      min-height: 120px;
     }
   }
 
   .actions {
-    margin-top: 0.5rem;
+    margin-top: 0.25rem;
     display: flex;
     justify-content: flex-end;
     align-items: center;
+    gap: vars.$mobile-space-sm;
+
     .commentButton {
       all: unset;
-      color: white;
-      background-color: #202020;
-      border: 2px solid #1190bc;
-      padding: 6px 16px;
-      border-radius: 1rem;
+      color: vars.$text-button;
+      background-color: vars.$primary-color;
+      border: 1px solid vars.$primary-color;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      font-weight: 600;
+      transition:
+        transform vars.$mobile-animation-fast vars.$mobile-easing-ease,
+        background-color vars.$mobile-animation-fast vars.$mobile-easing-ease,
+        box-shadow vars.$mobile-animation-fast vars.$mobile-easing-ease;
+
       &:hover {
         cursor: pointer;
+        background-color: mix(#000, vars.$primary-color, 5%);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      }
+
+      &:active {
+        transform: translateY(1px);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
       }
     }
+
     .spinner {
-      margin-right: 0.5rem;
+      margin-right: 0.25rem;
     }
   }
 }

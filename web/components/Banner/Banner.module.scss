@@ -1,21 +1,15 @@
-@use "styles/vars" as *;
+@use "styles/vars" as vars;
 
 .banner {
-  color: #ffffff;
-  background: #181818;
-  border-bottom: 4px solid white;
-  // extend to the left right sides
-  margin: 0 -2rem 0.8rem -2rem;
+  color: vars.$text-primary;
+  background: vars.$surface-1;
+  border-bottom: 1px solid vars.$border-secondary;
+  margin: 0 -2rem vars.$mobile-space-md -2rem;
+  padding: 10px 0;
 
-  padding-top: 10px;
-  padding-bottom: 10px;
-  @media only screen and (min-width: $screen-large) {
+  @media only screen and (min-width: vars.$screen-large) {
     margin-bottom: 10px;
-    border-bottom: 4px solid white;
-
     min-height: 40px;
-    background: #181818;
-    color: #ffffff;
     text-align: left;
   }
 }
@@ -23,23 +17,24 @@
 .textBanner {
   font-family: "Roboto", sans-serif;
   text-align: center;
-  color: #ffffff;
-  background: #181818;
-  border-bottom: 4px solid white;
-  // extend to the left right sides
-  margin: 0 -2rem 0.8rem -2rem;
+  color: vars.$text-primary;
+  background: vars.$surface-1;
+  border-bottom: 1px solid vars.$border-secondary;
+  margin: 0 -2rem vars.$mobile-space-md -2rem;
   & > h1 {
     margin: 0;
+    font-size: vars.$mobile-font-size-lg;
+    letter-spacing: 0.2px;
   }
-  @media only screen and (max-width: $screen-medium-max) {
+  @media only screen and (max-width: vars.$screen-medium-max) {
     padding: 0.3rem;
 
     & > h1 {
-      font-size: large;
+      font-size: vars.$mobile-font-size-md;
     }
   }
 
-  @media only screen and (min-width: $screen-large) {
+  @media only screen and (min-width: vars.$screen-large) {
     padding: 0.8rem;
 
     margin-bottom: 15px;
@@ -49,14 +44,14 @@
 @media (max-width: 480px) {
   .textBanner {
     font-family: roboto condensed, sans-serif;
-    border-bottom: 2px solid white;
+    border-bottom: 1px solid vars.$border-secondary;
   }
 }
 
 @media screen and (orientation: landscape) /* LANDSCAPE */ and (min-device-width: 479px) and (max-device-width: 932px) {
   .textBanner {
     font-family: roboto condensed, sans-serif;
-    border-bottom: 4px solid white;
+    border-bottom: 1px solid vars.$border-secondary;
   }
 }
 
@@ -66,7 +61,7 @@
     padding-top: 6.67px; // Two-thirds of 10px
     padding-bottom: 6.67px; // Two-thirds of 10px
     font-family: roboto condensed, sans-serif;
-    border-bottom: 4px solid white;
+    border-bottom: 1px solid vars.$border-secondary;
   }
 }
 
@@ -76,7 +71,7 @@
     padding-top: 6.67px; // Two-thirds of 10px
     padding-bottom: 6.67px; // Two-thirds of 10px
     font-family: roboto condensed, sans-serif;
-    border-bottom: 2px solid white;
+    border-bottom: 1px solid vars.$border-secondary;
   }
 }
 

@@ -57,13 +57,15 @@ function Comments({ slug }: { slug: string }, ref: any) {
 
   return (
     <section className={styles.comments}>
-      <h2 className={styles.title}>Comments</h2>
-      <ul className={styles.list}>
+      <h2 className={styles.title} id="comments-heading">Comments</h2>
+      <ul className={styles.list} aria-labelledby="comments-heading">
         {loading && <Spinner center />}
         {data?.comments.map((comment: CommentData) => (
           <Comment key={comment.id} {...comment} />
         ))}
-        {!loading && data?.comments.length === 0 ? <p>No comments</p> : null}
+        {!loading && data?.comments.length === 0 ? (
+          <p className={styles.empty}>Be the first to comment</p>
+        ) : null}
       </ul>
     </section>
   );

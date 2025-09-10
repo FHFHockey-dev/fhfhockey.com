@@ -6,13 +6,14 @@ import React from "react";
 import { PostPreviewData } from "pages/blog";
 import styles from "./BlogPost.module.scss";
 import Link from "next/link";
+import Image from "next/image";
 
 function BlogPost({
   title,
   slug,
   createdAt,
   summary,
-  imageUrl,
+  imageUrl
 }: PostPreviewData) {
   return (
     <Link href={`/blog/${slug}`} legacyBehavior>
@@ -28,10 +29,13 @@ function BlogPost({
         </div>
 
         <div className={styles.image}>
-          <img
+          <Image
             alt={title}
             src={imageUrl}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 420px"
+            style={{ objectFit: "cover" }}
+            priority={false}
           />
         </div>
       </article>
