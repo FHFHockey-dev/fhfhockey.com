@@ -1,37 +1,76 @@
 // /Users/tim/Desktop/FHFH/fhfhockey.com/web/components/Comments/Comments.module.scss
 
-@use "styles/vars";
+@use "styles/vars" as vars;
 
 .comments {
+  margin-top: vars.$mobile-space-xl;
+  color: vars.$text-primary;
+
   .title {
-    border-bottom: 4px solid #0aa8e2;
-    padding-bottom: 3px;
-    font-size: 1.3em;
-    margin-bottom: 1rem;
+    color: vars.$primary-color;
+    border-bottom: 2px solid vars.$border-secondary;
+    padding-bottom: 0.4rem;
+    font-size: vars.$mobile-font-size-lg;
+    margin-bottom: vars.$mobile-space-md;
+    letter-spacing: 0.2px;
   }
 
   .list {
-    display: flex;
-    flex-direction: column;
-    row-gap: 1rem;
+    display: grid;
+    row-gap: vars.$mobile-space-md;
+    margin: 0;
+    padding: 0;
   }
   .comment {
     display: block;
+    background: vars.$surface-1;
+    border: 1px solid vars.$border-primary;
+    border-radius: 12px;
+    padding: vars.$mobile-space-md;
+    box-shadow: vars.$shadow-hover;
+    transition: border-color vars.$mobile-animation-fast vars.$mobile-easing-ease,
+      box-shadow vars.$mobile-animation-fast vars.$mobile-easing-ease,
+      transform vars.$mobile-animation-fast vars.$mobile-easing-ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      border-color: vars.$border-accent;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35), vars.$shadow-hover;
+    }
+
     .content {
-      border: 2px solid white;
-      padding: 0.3rem;
-      background-color: vars.$bg-light;
+      padding: 0;
+      background: transparent;
+      color: vars.$text-primary;
+      line-height: vars.$mobile-line-height-relaxed;
     }
     .footer {
       display: flex;
       justify-content: flex-end;
       font-style: italic;
-      margin-top: 0.4rem;
+      margin-top: vars.$mobile-space-sm;
+      color: vars.$text-secondary;
+      gap: vars.$mobile-space-xs;
+
+      .userName {
+        color: vars.$text-primary;
+        font-weight: 600;
+      }
     }
+  }
+
+  .empty {
+    color: vars.$text-secondary;
+    background: vars.$surface-2;
+    border: 1px solid vars.$border-secondary;
+    border-radius: 10px;
+    padding: vars.$mobile-space-md;
+    text-align: center;
   }
 
   ul,
   li {
     all: unset;
+    display: contents;
   }
 }

@@ -38,7 +38,8 @@ type SortField =
   | "shots_on_goal"
   | "hits"
   | "blocked_shots"
-  | "teamVorp";
+  | "teamVorp"
+  | `dynamic:${string}`;
 
 const DraftBoard: React.FC<DraftBoardProps> = ({
   draftSettings,
@@ -55,6 +56,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   const DEBUG = process.env.NODE_ENV !== "production";
   const [sortField, setSortField] = useState<SortField>("projectedPoints");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const [editingTeam, setEditingTeam] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
   const contributionInputRef = useRef<HTMLInputElement>(null);
@@ -385,6 +387,58 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     return grid;
   };
 
+  // Short label helper for dynamic categories
+  const getShortLabel = (statKey: string): string => {
+    const SKATER_LABELS: Record<string, string> = {
+      GOALS: "G",
+      ASSISTS: "A",
+      PP_POINTS: "PPP",
+      SHOTS_ON_GOAL: "SOG",
+      HITS: "HIT",
+      BLOCKED_SHOTS: "BLK",
+      FACEOFFS_LOST: "FOL",
+      FACEOFFS_WON: "FOW",
+      GAMES_PLAYED: "GP",
+      PENALTY_MINUTES: "PIM",
+      POINTS: "PTS",
+      PP_ASSISTS: "PPA",
+      PP_GOALS: "PPG",
+      SH_POINTS: "SHP",
+      PLUS_MINUS: "+/-",
+      TIME_ON_ICE_PER_GAME: "ATOI"
+    };
+    const GOALIE_LABELS: Record<string, string> = {
+      WINS_GOALIE: "W",
+      SAVES_GOALIE: "SV",
+      SHUTOUTS_GOALIE: "SHO",
+      GOALS_AGAINST_GOALIE: "GAA",
+      SAVE_PERCENTAGE: "SV%",
+      GOALS_AGAINST_AVERAGE: "GAA",
+      GAA: "GAA",
+      GAMES_PLAYED: "GP",
+      LOSSES_GOALIE: "L",
+      OTL_GOALIE: "OTL",
+      SHOTS_AGAINST_GOALIE: "SA"
+    };
+    if (SKATER_LABELS[statKey]) return SKATER_LABELS[statKey];
+    if (GOALIE_LABELS[statKey]) return GOALIE_LABELS[statKey];
+    return statKey;
+  };
+
+  // Determine dynamic category keys from settings (exclude the six core)
+  const CORE_CAT_UPPER = [
+    "GOALS",
+    "ASSISTS",
+    "PP_POINTS",
+    "SHOTS_ON_GOAL",
+    "HITS",
+    "BLOCKED_SHOTS"
+  ];
+  const dynamicCategoryKeys = useMemo(() => {
+    const keys = Object.keys(draftSettings.categoryWeights || {});
+    return keys.filter((k) => !CORE_CAT_UPPER.includes(k));
+  }, [draftSettings.categoryWeights]);
+
   // Calculate team category totals for the leaderboard table
   const teamStatsWithCategories = useMemo(() => {
     if (DEBUG)
@@ -416,6 +470,9 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         hits: 0,
         blocked_shots: 0
       };
+      // Dynamic totals keyed by uppercase stat keys present in settings
+      const dynamicTotals: Record<string, number> = {};
+      dynamicCategoryKeys.forEach((k) => (dynamicTotals[k] = 0));
 
       // Sum up category totals from all team players
       teamPlayers.forEach((draftedPlayer) => {
@@ -457,6 +514,14 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
           categoryTotals.shots_on_goal += sog;
           categoryTotals.hits += hits;
           categoryTotals.blocked_shots += blocks;
+
+          // Sum dynamic keys
+          dynamicCategoryKeys.forEach((k) => {
+            const v = (player.combinedStats as any)?.[k]?.projected;
+            if (typeof v === "number" && Number.isFinite(v)) {
+              dynamicTotals[k] += v;
+            }
+          });
         }
       });
 
@@ -468,14 +533,22 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
 
       return {
         ...team,
-        categoryTotals
+        categoryTotals,
+        dynamicCategoryTotals: dynamicTotals
       };
     });
-  }, [teamStats, draftedPlayers, availablePlayers, allPlayers]);
+  }, [
+    teamStats,
+    draftedPlayers,
+    availablePlayers,
+    allPlayers,
+    dynamicCategoryKeys
+  ]);
 
   // Compute per-category min/max across teams for intra-team heat coloring
   const categoryExtents = useMemo(() => {
-    const keys: Array<keyof TeamDraftStats["categoryTotals"]> = [
+    const extents: Record<string, { min: number; max: number }> = {};
+    const coreKeys = [
       "goals",
       "assists",
       "pp_points",
@@ -483,31 +556,28 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
       "hits",
       "blocked_shots"
     ];
-    const extents: Record<string, { min: number; max: number }> = {};
-    keys.forEach((k) => {
+    coreKeys.forEach((k) => {
       const values = teamStatsWithCategories
         .slice(0, draftSettings.teamCount)
-        .map(
-          (t) =>
-            (t.categoryTotals[k as keyof typeof t.categoryTotals] ||
-              0) as number
-        );
+        .map((t: any) => (t.categoryTotals?.[k] || 0) as number);
       const min = values.length ? Math.min(...values) : 0;
       const max = values.length ? Math.max(...values) : 0;
-      extents[k as string] = { min, max };
+      extents[k] = { min, max };
+    });
+    dynamicCategoryKeys.forEach((k) => {
+      const values = teamStatsWithCategories
+        .slice(0, draftSettings.teamCount)
+        .map((t: any) => (t.dynamicCategoryTotals?.[k] || 0) as number);
+      const min = values.length ? Math.min(...values) : 0;
+      const max = values.length ? Math.max(...values) : 0;
+      extents[k] = { min, max };
     });
     return extents;
-  }, [teamStatsWithCategories, draftSettings.teamCount]);
+  }, [teamStatsWithCategories, draftSettings.teamCount, dynamicCategoryKeys]);
 
   // Map a value within [min,max] to a green→yellow→red color (hsla) with 40% fill and solid border
   const getCategoryCellStyle = (
-    key:
-      | "goals"
-      | "assists"
-      | "pp_points"
-      | "shots_on_goal"
-      | "hits"
-      | "blocked_shots",
+    key: string,
     value: number | undefined
   ): React.CSSProperties => {
     const { min, max } = categoryExtents[key] || { min: 0, max: 0 };
@@ -526,6 +596,42 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     };
   };
 
+  // Extents for VORP and Projected points and a distinct blue scale
+  const metricExtents = useMemo(() => {
+    const rows = teamStatsWithCategories.slice(0, draftSettings.teamCount);
+    const pointsVals = rows.map((t) => t.projectedPoints || 0);
+    const vorpVals = rows.map((t: any) => (t.teamVorp || 0) as number);
+    return {
+      projectedPoints: {
+        min: pointsVals.length ? Math.min(...pointsVals) : 0,
+        max: pointsVals.length ? Math.max(...pointsVals) : 0
+      },
+      teamVorp: {
+        min: vorpVals.length ? Math.min(...vorpVals) : 0,
+        max: vorpVals.length ? Math.max(...vorpVals) : 0
+      }
+    } as const;
+  }, [teamStatsWithCategories, draftSettings.teamCount]);
+
+  const getMetricCellStyle = (
+    key: "projectedPoints" | "teamVorp",
+    value: number | undefined
+  ): React.CSSProperties => {
+    const e = metricExtents[key];
+    const v = typeof value === "number" ? value : 0;
+    let t = 0.5;
+    if (e.max > e.min) {
+      t = (v - e.min) / (e.max - e.min);
+      t = Math.max(0, Math.min(1, t));
+    }
+    // Blue scale: low = light, high = deep blue
+    const hue = 210; // blue
+    const light = 80 - t * 35; // 80% → 45%
+    const fill = `hsla(${hue}, 85%, ${light}%, 0.4)`;
+    const stroke = `hsl(${hue}, 80%, ${Math.max(30, light - 10)}%)`;
+    return { backgroundColor: fill, border: `1px solid ${stroke}` };
+  };
+
   // Sort teams based on selected field and direction
   const sortedTeams = useMemo(() => {
     return [...teamStatsWithCategories]
@@ -540,9 +646,13 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         } else if (sortField === "teamVorp") {
           aValue = a.teamVorp || 0;
           bValue = b.teamVorp || 0;
+        } else if (typeof sortField === "string" && sortField.startsWith("dynamic:")) {
+          const key = sortField.slice("dynamic:".length);
+          aValue = (a as any).dynamicCategoryTotals?.[key] || 0;
+          bValue = (b as any).dynamicCategoryTotals?.[key] || 0;
         } else {
-          aValue = a.categoryTotals[sortField] || 0;
-          bValue = b.categoryTotals[sortField] || 0;
+          aValue = (a as any).categoryTotals[sortField as any] || 0;
+          bValue = (b as any).categoryTotals[sortField as any] || 0;
         }
 
         return sortDirection === "desc" ? bValue - aValue : aValue - bValue;
@@ -649,6 +759,19 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                   {sortField === "projectedPoints" &&
                     (sortDirection === "asc" ? "↑" : "↓")}
                 </th>
+                {showAllCategories &&
+                  dynamicCategoryKeys.map((k) => (
+                    <th
+                      key={`hd-${k}`}
+                      className={`${styles.sortableHeader} ${sortField === `dynamic:${k}` ? styles.activeSortHeader : ""}`}
+                      onClick={() => handleSort(`dynamic:${k}`)}
+                      title={k}
+                    >
+                      {getShortLabel(k)}{" "}
+                      {sortField === `dynamic:${k}` &&
+                        (sortDirection === "asc" ? "↑" : "↓")}
+                    </th>
+                  ))}
               </tr>
             </thead>
             <tbody>
@@ -774,17 +897,52 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                     >
                       {(team.categoryTotals.blocked_shots || 0).toFixed(0)}
                     </td>
-                    <td className={styles.statCell}>
+                    <td
+                      className={styles.statCell}
+                      style={getMetricCellStyle("teamVorp", team.teamVorp || 0)}
+                    >
                       {(team.teamVorp || 0).toFixed(1)}
                     </td>
-                    <td className={styles.projectedPointsCell}>
+                    <td
+                      className={styles.projectedPointsCell}
+                      style={getMetricCellStyle(
+                        "projectedPoints",
+                        team.projectedPoints || 0
+                      )}
+                    >
                       {team.projectedPoints.toFixed(1)}
                     </td>
+                    {showAllCategories &&
+                      dynamicCategoryKeys.map((k) => (
+                        <td
+                          key={`ct-${team.teamId}-${k}`}
+                          className={styles.statCell}
+                          style={getCategoryCellStyle(
+                            k,
+                            (team as any).dynamicCategoryTotals?.[k] || 0
+                          )}
+                        >
+                          {(((team as any).dynamicCategoryTotals?.[k] || 0) as number).toFixed(0)}
+                        </td>
+                      ))}
                   </tr>
                 );
               })}
             </tbody>
           </table>
+          {dynamicCategoryKeys.length > 0 && (
+            <div style={{ marginTop: 8 }}>
+              <label style={{ fontSize: 12, color: "#9aa4af" }}>
+                <input
+                  type="checkbox"
+                  checked={showAllCategories}
+                  onChange={(e) => setShowAllCategories(e.target.checked)}
+                  style={{ marginRight: 6 }}
+                />
+                Show all categories
+              </label>
+            </div>
+          )}
         </div>
       </div>
 

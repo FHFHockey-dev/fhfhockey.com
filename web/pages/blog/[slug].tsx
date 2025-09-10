@@ -220,22 +220,53 @@ function Post({ post, recentPosts }: PostPageProps) {
                 <div>{createdAt}</div>
               </div>
             </header>
-            <PortableText
-              value={content}
-              components={{
-                types: {
-                  image: ({ value }) => (
-                    <Image
-                      alt=""
-                      src={urlFor(value).url()}
-                      layout="responsive"
-                      width={700}
-                      height={475}
-                    />
-                  )
-                }
-              }}
-            />
+            <div className={styles.portableText}>
+              <PortableText
+                value={content}
+                components={{
+                  types: {
+                    image: ({ value }) => {
+                      const alignment = value.alignment || "inline";
+                      const alt = value.alt || "";
+                      const src = urlFor(value).url();
+                      const figureStyle: React.CSSProperties = {
+                        margin:
+                          alignment === "inline"
+                            ? "1rem 0"
+                            : alignment === "left"
+                              ? "0.5rem 1rem 0.5rem 0"
+                              : "0.5rem 0 0.5rem 1rem",
+                        float:
+                          alignment === "left" || alignment === "right"
+                            ? (alignment as any)
+                            : undefined,
+                        maxWidth: alignment === "inline" ? "100%" : "45%"
+                      };
+                      const sizes =
+                        alignment === "inline"
+                          ? "(max-width: 480px) 100vw, (max-width: 1024px) 90vw, 900px"
+                          : "(max-width: 480px) 100vw, (max-width: 1024px) 50vw, 45vw";
+                      return (
+                        <figure className={styles.figure} style={figureStyle}>
+                          <Image
+                            alt={alt}
+                            src={src}
+                            width={700}
+                            height={475}
+                            sizes={sizes}
+                          />
+                          {value.caption ? (
+                            <figcaption className={styles.figcaption}>
+                              {value.caption}
+                            </figcaption>
+                          ) : null}
+                        </figure>
+                      );
+                    }
+                  }
+                }}
+              />
+            </div>
 
             <div className={styles.actions}>
               <Tooltip onHoverText={!like ? "like" : "dislike"}>

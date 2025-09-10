@@ -89,10 +89,25 @@ function CommentForm({
           id={displayName}
           placeholder="Display Name..."
           title="display name"
+          autoComplete="name"
+          aria-invalid={Boolean(
+            formik.touched.displayName && formik.errors.displayName
+          )}
+          aria-describedby={
+            formik.touched.displayName && formik.errors.displayName
+              ? `${displayName}-error`
+              : undefined
+          }
           {...formik.getFieldProps("displayName")}
         />
         {formik.touched.displayName && formik.errors.displayName ? (
-          <div className={styles.error}>{formik.errors.displayName}</div>
+          <div
+            id={`${displayName}-error`}
+            className={styles.error}
+            role="alert"
+          >
+            {formik.errors.displayName}
+          </div>
         ) : null}
         <label htmlFor={comment} hidden>
           Comment
@@ -102,19 +117,36 @@ function CommentForm({
           id={comment}
           placeholder="Enter your comment here"
           rows={5}
+          aria-invalid={Boolean(
+            formik.touched.comment && formik.errors.comment
+          )}
+          aria-describedby={
+            formik.touched.comment && formik.errors.comment
+              ? `${comment}-error`
+              : undefined
+          }
           {...formik.getFieldProps("comment")}
         />
         {formik.touched.comment && formik.errors.comment ? (
-          <div className={styles.error}>{formik.errors.comment}</div>
+          <div id={`${comment}-error`} className={styles.error} role="alert">
+            {formik.errors.comment}
+          </div>
         ) : null}
       </div>
-      {error && <div className={styles.error}>{error}</div>}
+      {error && (
+        <div className={styles.error} role="alert" aria-live="polite">
+          {error}
+        </div>
+      )}
       <div className={styles.actions}>
-        {formik.isSubmitting && <Spinner className={styles.spinner} />}
+        {formik.isSubmitting && (
+          <Spinner className={styles.spinner} aria-hidden="true" />
+        )}
         <button
           className={styles.commentButton}
           type="submit"
           disabled={formik.isSubmitting}
+          aria-disabled={formik.isSubmitting}
         >
           Comment
         </button>

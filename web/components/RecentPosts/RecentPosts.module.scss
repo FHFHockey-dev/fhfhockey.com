@@ -1,30 +1,66 @@
-@use "styles/vars";
+@use "styles/vars" as vars;
 
 .posts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: vars.$mobile-space-md;
+
+  li {
+    margin: 0;
+    padding: 0;
+  }
+
   .postCard {
-    background-color: vars.$bg-light;
-    border: 3px solid #09a7df;
-    padding: 0.7rem 1rem;
-    margin-bottom: 1rem;
+    background-color: vars.$surface-1;
+    border: 1px solid vars.$border-primary;
+    border-radius: 12px;
+    padding: vars.$mobile-space-md;
     cursor: pointer;
+    color: vars.$text-primary;
+    box-shadow: vars.$shadow-hover;
+    transition: transform vars.$mobile-animation-fast vars.$mobile-easing-ease,
+      border-color vars.$mobile-animation-fast vars.$mobile-easing-ease,
+      box-shadow vars.$mobile-animation-fast vars.$mobile-easing-ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      border-color: vars.$border-accent;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), vars.$shadow-hover;
+    }
 
     .header {
       display: flex;
       align-items: flex-end;
       justify-content: space-between;
-      border-bottom: 2px solid #09a7df;
+      border-bottom: 1px solid vars.$border-secondary;
       padding-bottom: 0.3rem;
-      font-style: italic;
+
+      h3 {
+        margin: 0;
+        font-size: vars.$mobile-font-size-md;
+        letter-spacing: 0.2px;
+        color: vars.$text-primary;
+      }
+
+      p {
+        margin: 0;
+        color: vars.$text-secondary;
+        font-size: vars.$mobile-font-size-xs;
+      }
     }
+
     .summary {
-      margin-top: 0.8rem;
+      margin-top: vars.$mobile-space-sm;
+      color: vars.$text-primary;
+      line-height: vars.$mobile-line-height-relaxed;
+      // Clamp to 3 lines on small screens
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
     }
-  }
-  all: unset;
-  li {
-    all: unset;
-  }
-  & * {
-    margin: 0;
   }
 }

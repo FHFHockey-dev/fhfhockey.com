@@ -1,16 +1,20 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\styles\Blog.module.scss
 
-@use "styles/vars";
+@use "styles/vars" as vars;
 
 .posts {
   display: grid;
-  row-gap: 1.3rem;
+  row-gap: vars.$mobile-space-lg;
+  margin-top: vars.$mobile-space-md;
+  margin-bottom: vars.$mobile-space-xxl;
+
+  @media only screen and (min-width: vars.$screen-medium) {
+    grid-template-columns: 1fr;
+  }
 
   @media only screen and (min-width: vars.$screen-large) {
-    column-gap: 1rem;
+    column-gap: vars.$mobile-space-lg;
     grid-template-columns: 1fr 1fr;
-    margin-top: 1rem;
-    margin-bottom: 2rem;
   }
 }
