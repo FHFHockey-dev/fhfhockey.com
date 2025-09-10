@@ -21,7 +21,7 @@ import TeamColorProvider, { useTeamColor } from "contexts/TeamColorContext";
 
 import styles from "./[abbreviation].module.scss";
 import useScreenSize from "hooks/useScreenSize";
-import { getTeamLogo, getTeams } from "lib/NHL/server";
+import { getTeamLogo, getTeams, getCurrentSeason } from "lib/NHL/server";
 import { Team } from "lib/NHL/types";
 import { getLineCombinations } from "components/LineCombinations/utilities";
 
@@ -308,6 +308,31 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       revalidate: 60, // In seconds
     };
   } catch (error) {
+    // If UTA doesn't have enough current-season data yet, try last season with prior team ID
+    if (team.abbreviation === "UTA") {
+      try {
+        const { lastSeasonId } = await getCurrentSeason();
+        const utahLastSeasonTeamId = 59;
+        const lineCombinations = await getLineCombinations(
+          utahLastSeasonTeamId,
+          lastSeasonId
+        );
+        return {
+          props: {
+            teamName: team.name,
+            lastUpdated: lineCombinations.game.startTime,
+            lineCombinations,
+            teams,
+          },
+          revalidate: 60,
+        };
+      } catch (fallbackError) {
+        console.error(
+          `Failed fallback for UTA (last season/team 59):`,
+          fallbackError
+        );
+      }
+    }
     console.error(
       `Failed to get line combinations for team ${mappedAbbreviation}:`,
       error
