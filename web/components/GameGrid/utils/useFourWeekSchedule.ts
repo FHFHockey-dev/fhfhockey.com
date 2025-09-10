@@ -1,8 +1,7 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\GameGrid\utils\useFourWeekSchedule.ts
 
 import { useEffect, useState } from "react";
-import { useTeams } from "../contexts/GameGridContext";
-import { getSchedule } from "lib/NHL/client";
+import { getSchedule, getTeams } from "lib/NHL/client";
 import { format, nextMonday, parseISO } from "date-fns";
 import {
   WeekData,
@@ -36,7 +35,6 @@ export default function useFourWeekSchedule(
   const [loading, setLoading] = useState(false);
   const [scheduleArray, setScheduleArray] = useState<ScheduleArray>([]);
   const [numGamesPerDay, setNumGamesPerDay] = useState<number[]>([]);
-  const allTeams = useTeams();
 
   useEffect(() => {
     let ignore = false;
@@ -47,6 +45,15 @@ export default function useFourWeekSchedule(
         const weeksToFetch = 4; // Total of four weeks
         const aggregatedSchedule: ScheduleArray = [];
         let aggregatedNumGamesPerDay: number[] = [];
+
+        // Fetch the set of season-active teams once (avoid retired teams)
+        const seasonTeams = await getTeams();
+        // Safety: prefer highest id per abbreviation (e.g., UTA 68 over 59)
+        const preferredByAbbr = new Map<string, number>();
+        seasonTeams.forEach((t) => {
+          const prev = preferredByAbbr.get(t.abbreviation);
+          if (prev === undefined || t.id > prev) preferredByAbbr.set(t.abbreviation, t.id);
+        });
 
         for (let week = 1; week <= weeksToFetch; week++) {
           const schedule = await getSchedule(currentStart);
@@ -75,12 +82,13 @@ export default function useFourWeekSchedule(
             });
           }
 
-          // Ensure all teams are included, even if they have no games
+          // Ensure all season-active teams are included, even if they have no games this week
           const paddedTeams: Record<number, WeekData> = { ...schedule.data };
-          Object.keys(allTeams).forEach((id) => {
-            const teamId = Number(id);
-            if (!paddedTeams[teamId]) {
-              paddedTeams[teamId] = {};
+          seasonTeams.forEach((team) => {
+            const preferredId = preferredByAbbr.get(team.abbreviation);
+            if (team.id !== preferredId) return; // skip non-preferred duplicate
+            if (!paddedTeams[team.id]) {
+              paddedTeams[team.id] = {};
             }
           });
 
@@ -193,8 +201,20 @@ export default function useFourWeekSchedule(
           );
         }
 
+        // Filter out teams that have zero games across the entire 4-week span
+        const totalGamesByTeam = new Map<number, number>();
+        for (const row of aggregatedSchedule) {
+          totalGamesByTeam.set(
+            row.teamId,
+            (totalGamesByTeam.get(row.teamId) ?? 0) + (row.totalGamesPlayed ?? 0)
+          );
+        }
+        const filteredAggregated = aggregatedSchedule.filter(
+          (row) => (totalGamesByTeam.get(row.teamId) ?? 0) > 0
+        );
+
         if (!ignore) {
-          setScheduleArray(aggregatedSchedule);
+          setScheduleArray(filteredAggregated);
           setNumGamesPerDay(aggregatedNumGamesPerDay);
           setLoading(false);
         }
@@ -210,7 +230,7 @@ export default function useFourWeekSchedule(
       ignore = true;
       setLoading(false);
     };
-  }, [start, extended, allTeams]);
+  }, [start, extended]);
 
   return [scheduleArray, numGamesPerDay, loading];
 }

@@ -13,7 +13,7 @@ import Container from "components/Layout/Container";
 
 import type { Team } from "lib/NHL/types";
 import styles from "styles/Lines.module.scss";
-import { getTeams } from "lib/NHL/server";
+import { getTeams, getCurrentSeason } from "lib/NHL/server";
 import ClientOnly from "components/ClientOnly";
 import { getLineCombinations } from "components/LineCombinations/utilities";
 import supabase from "lib/supabase";
@@ -69,27 +69,60 @@ export const getStaticProps: GetStaticProps = async () => {
 
   await Promise.all(
     teams.map(async (team) => {
-      const lineCombos = await getLineCombinations(team.id);
-      // Add team abbreviation
-      promotions.push(
-        ...lineCombos.promotions.map(
-          (p) =>
-            ({
-              ...p,
-              abbreviation: team.abbreviation,
-            } as any)
-        )
-      );
+      try {
+        const lineCombos = await getLineCombinations(team.id);
+        // Add team abbreviation
+        promotions.push(
+          ...lineCombos.promotions.map(
+            (p) =>
+              ({
+                ...p,
+                abbreviation: team.abbreviation,
+              } as any)
+          )
+        );
 
-      demotions.push(
-        ...lineCombos.demotions.map(
-          (p) =>
-            ({
-              ...p,
-              abbreviation: team.abbreviation,
-            } as any)
-        )
-      );
+        demotions.push(
+          ...lineCombos.demotions.map(
+            (p) =>
+              ({
+                ...p,
+                abbreviation: team.abbreviation,
+              } as any)
+          )
+        );
+      } catch (err) {
+        // Fallback for Utah: try last season + prior team ID if current season has no data yet
+        if (team.abbreviation === "UTA") {
+          try {
+            const { lastSeasonId } = await getCurrentSeason();
+            const utahLastSeasonTeamId = 59; // prior ID
+            const lineCombos = await getLineCombinations(
+              utahLastSeasonTeamId,
+              lastSeasonId
+            );
+            promotions.push(
+              ...lineCombos.promotions.map(
+                (p) => ({ ...p, abbreviation: team.abbreviation } as any)
+              )
+            );
+            demotions.push(
+              ...lineCombos.demotions.map(
+                (p) => ({ ...p, abbreviation: team.abbreviation } as any)
+              )
+            );
+          } catch (fallbackErr) {
+            console.warn(
+              `Skipping team ${team.abbreviation} due to missing line combos (current and fallback).`
+            );
+          }
+        } else {
+          console.warn(
+            `Skipping team ${team.abbreviation} due to missing line combos.`,
+            err
+          );
+        }
+      }
     })
   );
   // Add player name

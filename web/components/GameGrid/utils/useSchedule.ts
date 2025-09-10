@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import { useTeams } from "../contexts/GameGridContext";
-import { getSchedule } from "lib/NHL/client";
+import { getSchedule, getTeams } from "lib/NHL/client";
 import { format, nextMonday, parseISO } from "date-fns";
 import { WeekData, EXTENDED_DAY_ABBREVIATION } from "lib/NHL/types";
 import supabase from "lib/supabase";
@@ -14,13 +13,22 @@ export default function useSchedule(
   const [loading, setLoading] = useState(false);
   const [scheduleArray, setScheduleArray] = useState<ScheduleArray>([]);
   const [numGamesPerDay, setNumGamesPerDay] = useState<number[]>([]);
-  const allTeams = useTeams();
 
   useEffect(() => {
     let ignore = false;
     setLoading(true);
     (async () => {
+      // Fetch schedule for the selected week
       const schedule = await getSchedule(start);
+      // Fetch season-active teams (prevents padding with retired teams like ARI)
+      const seasonTeams = await getTeams();
+      // Safety: if API/DB has duplicate franchise entries with same abbreviation,
+      // keep the higher teamId (e.g., prefer UTA 68 over legacy 59)
+      const preferredByAbbr = new Map<string, number>();
+      seasonTeams.forEach((t) => {
+        const prev = preferredByAbbr.get(t.abbreviation);
+        if (prev === undefined || t.id > prev) preferredByAbbr.set(t.abbreviation, t.id);
+      });
       const nextMon = format(nextMonday(parseISO(start)), "yyyy-MM-dd");
       const nextWeekSchedule = await getSchedule(nextMon);
 
@@ -44,11 +52,13 @@ export default function useSchedule(
         // Explicitly type paddedTeams
         const paddedTeams: Record<number, WeekData> = { ...schedule.data };
 
-        // Add other teams even if they are not playing
-        Object.keys(allTeams).forEach((id) => {
-          const exist = paddedTeams[Number(id)] !== undefined;
-          if (!exist) {
-            paddedTeams[Number(id)] = {};
+        // Add other season-active teams even if they are not playing this week
+        // This ensures bye weeks still appear, while excluding defunct teams
+        seasonTeams.forEach((team) => {
+          const preferredId = preferredByAbbr.get(team.abbreviation);
+          if (team.id !== preferredId) return; // skip non-preferred duplicate
+          if (paddedTeams[team.id] === undefined) {
+            paddedTeams[team.id] = {};
           }
         });
 
@@ -78,10 +88,13 @@ export default function useSchedule(
         }
 
         // Map odds data by game_id
-        const oddsByGameId = (oddsData || []).reduce((acc, item) => {
-          acc[item.game_id] = item;
-          return acc;
-        }, {} as Record<number, any>);
+        const oddsByGameId = (oddsData || []).reduce(
+          (acc, item) => {
+            acc[item.game_id] = item;
+            return acc;
+          },
+          {} as Record<number, any>
+        );
 
         // Assign win odds to each game
         for (const teamData of Object.values(paddedTeams) as WeekData[]) {
@@ -124,7 +137,7 @@ export default function useSchedule(
       ignore = true;
       setLoading(false);
     };
-  }, [start, allTeams, extended]);
+  }, [start, extended]);
 
   return [scheduleArray, numGamesPerDay, loading];
 }

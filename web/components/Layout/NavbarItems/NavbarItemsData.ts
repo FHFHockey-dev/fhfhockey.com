@@ -22,6 +22,8 @@ const ITEMS_DATA: NavbarItem[] = [
     label: "TOOLS",
     items: [
       { type: "link", label: "GAME GRID", href: "/game-grid" },
+      { type: "link", label: "DRAFT TOOL", href: "/draft-dashboard" },
+
       { type: "link", label: "LINES", href: "/lines" },
       { type: "link", label: "STATS", href: "/stats" },
       { type: "link", label: "WiGO CHARTS", href: "/wigoCharts" },

@@ -50,6 +50,7 @@ type TeamRowProps = {
   weekScore: number;
   extended: boolean;
   excludedDays: DAY_ABBREVIATION[];
+  hidePreseason?: boolean;
   rowHighlightClass?: string;
   games: number[];
   rank: number;
@@ -118,6 +119,8 @@ function TeamRow(props: TeamRowProps) {
 
         const matchUp = props[day];
         const hasMatchUp = matchUp !== undefined;
+        const isPreseason = !!matchUp && matchUp.gameType === 1;
+        const isPostseason = !!matchUp && matchUp.gameType === 3;
         const excluded = props.excludedDays.includes(day as DAY_ABBREVIATION);
         const numGamesThatDay = props.games[index] || 0;
         // Determine cell classes for inner border styling
@@ -148,7 +151,9 @@ function TeamRow(props: TeamRowProps) {
         const cellClasses = clsx(
           styles.cellInnerBorder,
           dayIntensityClass,
-          offNightTypeClass
+          offNightTypeClass,
+          isPreseason ? styles.preseason : undefined,
+          isPostseason ? styles.postseason : undefined
         );
 
         return (
@@ -158,7 +163,7 @@ function TeamRow(props: TeamRowProps) {
               <div className={styles.excludedOverlay}></div>
             )}
 
-            {hasMatchUp ? (
+            {hasMatchUp && !(isPreseason && props.hidePreseason) ? (
               <MatchUpCell
                 key={day}
                 gameId={matchUp.id}

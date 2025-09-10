@@ -160,13 +160,17 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .playerPickupContainer {
+  @include v.element-wrapper;
+
   // PlayerPickupTable handles its own wrapper
+  @include v.component-wrapper; // Apply framing
   width: 100%;
 }
 
 .bpaAndOppContainer {
   width: 100%;
   height: 100%;
+
   @media (min-width: v.$breakpoint-desktop) {
     display: flex;
     flex-direction: column;
@@ -758,6 +762,14 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: var(--color-heavy-bg);
 }
 
+// Special game type highlights
+.cellInnerBorder.preseason {
+  background: v.$primary-color-opaque !important;
+}
+.cellInnerBorder.postseason {
+  background: rgba(v.$warning-color, 0.22) !important;
+}
+
 // Compact matchup cell adjustments (smaller content area)
 .cellInnerBorder {
   padding: 1px !important; // tighter
@@ -803,6 +815,7 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 4px 2px !important;
     background: rgba(0, 0, 0, 0.65);
     backdrop-filter: blur(6px);
+    position: relative;
   }
   .mobileCompactTable thead th .dayAbbreviation {
     letter-spacing: 0.15em; // less spaced-out for compactness
@@ -860,6 +873,24 @@ $transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 .homeAwayIconDesktopImg {
   width: 24px !important;
   height: 24px !important;
+}
+
+// Discrete control inside header th
+.teamHeaderContent {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xs;
+  align-items: center;
+  justify-content: space-between; // create room between "Team" and toggle
+  width: 100%;
+}
+
+.preseasonToggle {
+  font-size: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.9;
 }
 
 // ================= Row & Column Highlight Option Implementation =================
@@ -1998,13 +2029,13 @@ $heavy-color: #b64343;
 .lowerGridHorizontal {
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: v.$space-xxl;
   width: 100%;
   padding-top: 30px;
   @media (min-width: v.$breakpoint-desktop) {
     // Keep desktop layout
     flex-direction: row;
-    gap: 25px;
+    gap: v.$space-xxl;
     align-items: stretch;
   }
 }

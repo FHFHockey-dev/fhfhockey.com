@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ProcessedPlayer } from "./useProcessedProjectionsData";
-import { PROJECTION_SOURCES_CONFIG } from "lib/projectionsConfig/projectionSourcesConfig";
 
 export type SourceControl = {
   id: string; // e.g., "custom_csv" or builtin ids
@@ -16,7 +15,7 @@ export type SourceControlsState = {
   effectiveShares: Record<string, number>; // normalized shares per enabled source
 };
 
-const LOCAL_KEY = "draft.sourceControls.v1" as const;
+const LOCAL_KEY = "draft.sourceControls.v2" as const;
 
 export function useProjectionSourceAnalysis(
   initialSources: { id: string; label: string }[]

@@ -37,7 +37,8 @@ function isNonEmptyArray(goalie: any[] | null): goalie is any[] {
 }
 
 export async function getLineCombinations(
-  teamId: number
+  teamId: number,
+  seasonId?: number
 ): Promise<LineCombinations> {
   try {
     const { data: rawLineCombinations } = await supabase
@@ -102,14 +103,15 @@ export async function getLineCombinations(
     // **Console Log: Parsed Line Combinations**
     console.log("Parsed Line Combinations:", lineCombinations);
 
-    const season = await getCurrentSeason();
+    // Determine which season to use for downstream queries
+    const seasonToUse = seasonId ?? (await getCurrentSeason()).seasonId;
 
     // Fetch player info
     const { data: playerId_sweaterNumber } = await supabase
       .from("rosters")
       .select("playerId, sweaterNumber, ...players(position)")
       .eq("teamId", teamId)
-      .eq("seasonId", season.seasonId)
+      .eq("seasonId", seasonToUse)
       .returns<any[]>()
       .throwOnError();
 
@@ -193,7 +195,7 @@ export async function getLineCombinations(
             lineCombinations.map((game: any) => game.gameId)
           )
           .eq("playerId", id)
-          .eq("games.seasonId", season.seasonId)
+          .eq("games.seasonId", seasonToUse)
           .order("game(startTime)", { ascending: false })
           .returns<any[]>()
           .throwOnError()

@@ -37,6 +37,8 @@ export default function Page() {
   const [nstTeamStatsInput, setNstTeamStatsInput] = useState<string>("all"); // State for NST tables
   const [standingsDetailsInput, setStandingsDetailsInput] =
     useState<string>("all");
+  const [teamsSeasonIdInput, setTeamsSeasonIdInput] = useState<string>("");
+  const [gamesSeasonIdInput, setGamesSeasonIdInput] = useState<string>("");
 
   const season = useCurrentSeason();
   console.log(season);
@@ -71,7 +73,11 @@ export default function Page() {
 
   async function updateTeams() {
     try {
-      const { message, success } = await doPOST("/api/v1/db/update-teams");
+      const seasonId = teamsSeasonIdInput.trim();
+      const endpoint = seasonId
+        ? `/api/v1/db/update-teams?seasonId=${encodeURIComponent(seasonId)}`
+        : "/api/v1/db/update-teams";
+      const { message, success } = await doPOST(endpoint);
       enqueueSnackbar(message, {
         variant: success ? "success" : "error"
       });
@@ -85,7 +91,11 @@ export default function Page() {
 
   async function updateGames() {
     try {
-      const { message, success } = await doPOST("/api/v1/db/update-games");
+      const seasonId = gamesSeasonIdInput.trim();
+      const endpoint = seasonId
+        ? `/api/v1/db/update-games?seasonId=${encodeURIComponent(seasonId)}`
+        : "/api/v1/db/update-games";
+      const { message, success } = await doPOST(endpoint);
       enqueueSnackbar(message, {
         variant: success ? "success" : "error"
       });
@@ -420,6 +430,29 @@ export default function Page() {
                 The table contains the data for {numTeams} teams. This card
                 updates the `teams` & `team_season` tables.
               </Typography>
+              <TextField
+                label="Season ID (optional)"
+                variant="outlined"
+                size="small"
+                fullWidth
+                margin="normal"
+                value={teamsSeasonIdInput}
+                onChange={(e) => setTeamsSeasonIdInput(e.target.value)}
+                placeholder="e.g. 20252026"
+                sx={{
+                  backgroundColor: "#202020",
+                  border: "1px solid #07aae2",
+                  borderRadius: "4px",
+                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
+                    {
+                      color: "#07aae2",
+                      fontWeight: "900",
+                      textTransform: "uppercase",
+                      backgroundColor: "#202020",
+                      margin: "1px"
+                    }
+                }}
+              />
             </CardContent>
             <CardActions>
               <Button size="small" onClick={updateTeams}>
@@ -455,6 +488,29 @@ export default function Page() {
                 The table contains the data for {numGames} games in{" "}
                 {season?.seasonId} season. This card updates the `games` tables.
               </Typography>
+              <TextField
+                label="Season ID (optional)"
+                variant="outlined"
+                size="small"
+                fullWidth
+                margin="normal"
+                value={gamesSeasonIdInput}
+                onChange={(e) => setGamesSeasonIdInput(e.target.value)}
+                placeholder="e.g. 20252026"
+                sx={{
+                  backgroundColor: "#202020",
+                  border: "1px solid #07aae2",
+                  borderRadius: "4px",
+                  "& .css-1sumxir-MuiFormLabel-root-MuiInputLabel-root, .css-1n4twyu-MuiInputBase-input-MuiOutlinedInput-input":
+                    {
+                      color: "#07aae2",
+                      fontWeight: "900",
+                      textTransform: "uppercase",
+                      backgroundColor: "#202020",
+                      margin: "1px"
+                    }
+                }}
+              />
             </CardContent>
             <CardActions>
               <Button size="small" onClick={updateGames}>

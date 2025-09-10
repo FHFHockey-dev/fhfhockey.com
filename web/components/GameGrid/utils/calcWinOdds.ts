@@ -39,7 +39,7 @@ export function convertTeamRowToWinOddsList(
 
   DAYS.forEach((day, i) => {
     const game = row[day];
-    if (game) {
+    if (game && game.gameType === 2) {
       const ourTeam =
         row.teamId === game.homeTeam.id ? game.homeTeam : game.awayTeam;
       const blendedWinOdds = calculateBlendedWinOdds(

@@ -540,6 +540,64 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     );
   };
 
+  const renderGoalieSourceChips = () => {
+    if (!goalieSourceControls) return null;
+    const entries = orderSources(goalieSourceControls);
+    const active = entries.filter(([_, v]) => v.isSelected);
+    const disabled = entries.filter(([_, v]) => !v.isSelected);
+
+    const chipFor = (
+      id: string,
+      ctrl: { isSelected: boolean; weight: number }
+    ) => {
+      const src = PROJECTION_SOURCES_CONFIG.find((s) => s.id === id);
+      const displayName = src?.displayName || id;
+      const shareBase = ctrl.isSelected ? totalActiveGoalieSourceWeight : 0;
+      const weightVal = pendingGoalieSourceWeights[id] ?? ctrl.weight;
+      const share =
+        ctrl.isSelected && shareBase > 0
+          ? ((weightVal / shareBase) * 100).toFixed(0) + "%"
+          : "-";
+      return (
+        <div
+          key={id}
+          className={`${styles.sourceChip} ${ctrl.isSelected ? styles.sourceChipEnabled : styles.sourceChipDisabled}`}
+          data-testid={`goalie-source-chip-${id}`}
+          title={`${displayName} ${weightVal.toFixed(1)}x ${share}`}
+          onClick={() => setShowWeightsPopover(true)}
+        >
+          <span className={styles.sourceChipName}>{displayName}</span>
+          <span className={styles.sourceChipWeight}>{weightVal.toFixed(1)}x</span>
+          <span className={styles.sourceChipShare}>{share}</span>
+        </div>
+      );
+    };
+
+    return (
+      <div className={styles.sourceChipsRow}>
+        {active.map(([id, ctrl]) => chipFor(id, ctrl))}
+        {showDisabledSources && disabled.map(([id, ctrl]) => chipFor(id, ctrl))}
+        {disabled.length > 0 && (
+          <button
+            type="button"
+            className={styles.editWeightsBtn}
+            onClick={() => setShowDisabledSources((s) => !s)}
+            aria-pressed={showDisabledSources}
+          >
+            {showDisabledSources ? "Hide Disabled" : `+${disabled.length} Disabled`}
+          </button>
+        )}
+        <button
+          type="button"
+          className={styles.editWeightsBtn}
+          onClick={() => setShowWeightsPopover(true)}
+        >
+          Edit Weights
+        </button>
+      </div>
+    );
+  };
+
   // Handle direct numeric change inside popover
   const handleDirectWeightInput = (
     id: string,
@@ -1300,7 +1358,18 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
           {(sourceControls || goalieSourceControls) && (
             <fieldset className={`${styles.fieldset} ${styles.slimFieldset}`}>
               <legend className={styles.legend}>Projection Sources</legend>
-              {renderSourceChips()}
+              {sourceControls && (
+                <>
+                  <div className={styles.subsectionTitle}>Skaters</div>
+                  {renderSourceChips()}
+                </>
+              )}
+              {goalieSourceControls && (
+                <>
+                  <div className={styles.subsectionTitle}>Goalies</div>
+                  {renderGoalieSourceChips()}
+                </>
+              )}
               {autoNormalize && (
                 <>
                   <span
