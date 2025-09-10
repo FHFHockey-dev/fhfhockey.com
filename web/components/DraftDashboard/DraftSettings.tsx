@@ -567,7 +567,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
           onClick={() => setShowWeightsPopover(true)}
         >
           <span className={styles.sourceChipName}>{displayName}</span>
-          <span className={styles.sourceChipWeight}>{weightVal.toFixed(1)}x</span>
+          <span className={styles.sourceChipWeight}>
+            {weightVal.toFixed(1)}x
+          </span>
           <span className={styles.sourceChipShare}>{share}</span>
         </div>
       );
@@ -584,7 +586,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
             onClick={() => setShowDisabledSources((s) => !s)}
             aria-pressed={showDisabledSources}
           >
-            {showDisabledSources ? "Hide Disabled" : `+${disabled.length} Disabled`}
+            {showDisabledSources
+              ? "Hide Disabled"
+              : `+${disabled.length} Disabled`}
           </button>
         )}
         <button
