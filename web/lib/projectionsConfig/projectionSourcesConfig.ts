@@ -261,10 +261,7 @@ export const PROJECTION_SOURCES_CONFIG: ProjectionSourceConfig[] = [
       { key: "SHOTS_ON_GOAL", dbColumnName: "Shots_on_Goal" },
       { key: "HITS", dbColumnName: "Hits" },
       { key: "BLOCKED_SHOTS", dbColumnName: "Blocked_Shots" },
-      { key: "PENALTY_MINUTES", dbColumnName: "Penalty_Minutes" },
-      { key: "FACEOFFS_WON", dbColumnName: "Faceoffs_Won" },
-      { key: "FACEOFFS_LOST", dbColumnName: "Faceoffs_Lost" },
-      { key: "PLUS_MINUS", dbColumnName: "Plus_Minus" }
+      { key: "PENALTY_MINUTES", dbColumnName: "Penalty_Minutes" }
     ]
   },
 

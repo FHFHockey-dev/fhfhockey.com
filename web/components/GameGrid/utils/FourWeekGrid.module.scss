@@ -9,8 +9,7 @@
 .container {
   width: 100%;
   margin: 0 auto;
-  margin-bottom: v.$panel-gap;
-  transition: margin-bottom v.$transition-duration v.$transition-easing;
+  // transition: margin-bottom v.$transition-duration v.$transition-easing;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -88,6 +87,7 @@
   @include panel.panel-scroll-wrapper;
   flex-grow: 1;
   overflow-y: auto;
+
   &::-webkit-scrollbar {
     display: none;
   }

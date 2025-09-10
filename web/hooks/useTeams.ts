@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getTeams } from "lib/NHL/client";
 import { Team } from "lib/NHL/types";
+import { teamsInfo } from "lib/teamsInfo";
 
 export default function useTeams() {
   const [teams, setTeams] = useState<Team[]>([]);
@@ -18,8 +19,21 @@ export function useTeamsMap(): { [id: number]: Team } {
   const teams = useTeams();
 
   const map = useMemo(() => {
-    const result = {} as any;
+    const result: { [id: number]: Team } = {};
     teams.forEach((team) => (result[team.id] = team));
+
+    // Fallback: ensure static teams exist even if DB hasn't populated
+    // for the current season (e.g., Utah Mammoth id 68 during rebrand).
+    Object.entries(teamsInfo).forEach(([abbr, info]) => {
+      if (!result[info.id]) {
+        result[info.id] = {
+          id: info.id,
+          name: info.name,
+          abbreviation: abbr,
+          logo: `/teamLogos/${abbr}.png`
+        };
+      }
+    });
     return result;
   }, [teams]);
 

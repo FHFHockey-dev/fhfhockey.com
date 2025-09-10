@@ -151,6 +151,7 @@ function GameGridInternal({
     );
 
   const [excludedDays, setExcludedDays] = useState<DAY_ABBREVIATION[]>([]);
+  const [hidePreseason, setHidePreseason] = useState(false);
   const [sortKeys, setSortKeys] = useState<
     {
       key: "totalOffNights" | "totalGamesPlayed" | "weekScore";
@@ -165,6 +166,24 @@ function GameGridInternal({
   } as const;
 
   // Process the current schedule for Game Grid display
+  // Compute league-wide per-day counts including ONLY regular-season games for calculations
+  const regularNumGamesPerDay = useMemo(() => {
+    const baseDays =
+      mode === "10-Day-Forecast"
+        ? ([...DAYS, "nMON", "nTUE", "nWED"] as const)
+        : DAYS;
+    const idSets: Array<Set<number>> = baseDays.map(() => new Set<number>());
+    currentSchedule.forEach((row) => {
+      baseDays.forEach((d, i) => {
+        const g = (row as any)[d];
+        if (g && g.gameType === 2 && g.id) {
+          idSets[i].add(g.id);
+        }
+      });
+    });
+    return idSets.map((s) => s.size);
+  }, [currentSchedule, mode]);
+
   const filteredColumns = useMemo(() => {
     const adjustedSchedule = [...currentSchedule];
     adjustBackToBackGames(adjustedSchedule);
@@ -175,7 +194,7 @@ function GameGridInternal({
       totalOffNights: number;
       weekScore: number;
     })[] = [];
-    const totalGP = calcTotalGP(currentNumGamesPerDay, excludedDays);
+    const totalGP = calcTotalGP(regularNumGamesPerDay, excludedDays);
     adjustedSchedule.forEach((row) => {
       // add Total GP for each team
       const totalGamesPlayed = getTotalGamePlayed(row, excludedDays);
@@ -183,12 +202,12 @@ function GameGridInternal({
       // add Total Off-Nights
       const totalOffNights = calcTotalOffNights(
         row,
-        currentNumGamesPerDay,
+        regularNumGamesPerDay,
         excludedDays
       );
       const weightedOffNights = calcWeightedOffNights(
         row,
-        currentNumGamesPerDay,
+        regularNumGamesPerDay,
         excludedDays
       );
 
@@ -213,7 +232,19 @@ function GameGridInternal({
       copy.push(newRow);
     });
     return copy;
-  }, [excludedDays, currentSchedule, currentNumGamesPerDay]);
+  }, [
+    excludedDays,
+    currentSchedule,
+    currentNumGamesPerDay,
+    regularNumGamesPerDay
+  ]);
+
+  // Detect if this week contains any preseason games
+  const hasPreseason = useMemo(() => {
+    return currentSchedule.some((row) =>
+      DAYS.some((d) => (row[d as DAY_ABBREVIATION] as any)?.gameType === 1)
+    );
+  }, [currentSchedule]);
 
   // Sort teams based on sortKeys
   const sortedTeams = useMemo(() => {
@@ -387,7 +418,6 @@ function GameGridInternal({
         const team = teams[teamData.teamId];
         if (!team) {
           console.warn(`Team data not found for teamId: ${teamData.teamId}`);
-          return;
         }
 
         if (!teamMap[teamData.teamId]) {
@@ -416,16 +446,10 @@ function GameGridInternal({
                 : matchUp.homeTeam;
 
             const opponent = teams[opponentTeam.id];
-            if (opponent) {
-              opponents.push({
-                abbreviation: opponent.abbreviation,
-                teamId: opponent.id
-              });
-            } else {
-              console.warn(
-                `Opponent team data not found for teamId: ${opponentTeam.id}`
-              );
-            }
+            opponents.push({
+              abbreviation: opponent?.abbreviation ?? String(opponentTeam.id),
+              teamId: opponentTeam.id
+            });
           }
         });
 
@@ -462,7 +486,6 @@ function GameGridInternal({
       const team = teams[teamData.teamId];
       if (!team) {
         console.warn(`Team data not found for teamId: ${teamData.teamId}`);
-        return;
       }
 
       if (!teamMap[teamData.teamId]) {
@@ -491,16 +514,10 @@ function GameGridInternal({
               : matchUp.homeTeam;
 
           const opponent = teams[opponentTeam.id];
-          if (opponent) {
-            opponents.push({
-              abbreviation: opponent.abbreviation,
-              teamId: opponent.id
-            });
-          } else {
-            console.warn(
-              `Opponent team data not found for teamId: ${opponentTeam.id}`
-            );
-          }
+          opponents.push({
+            abbreviation: opponent?.abbreviation ?? String(opponentTeam.id),
+            teamId: opponentTeam.id
+          });
         }
       });
 
@@ -661,6 +678,9 @@ function GameGridInternal({
                       setExcludedDays={setExcludedDays}
                       weekData={teamDataWithAverages}
                       gamesPerDay={currentNumGamesPerDay}
+                      hasPreseason={hasPreseason}
+                      hidePreseason={hidePreseason}
+                      setHidePreseason={setHidePreseason}
                     />
                     <tbody>
                       <TotalGamesPerDayRow
@@ -685,6 +705,7 @@ function GameGridInternal({
                             excludedDays={excludedDays}
                             rowHighlightClass={highlightClass}
                             games={currentNumGamesPerDay}
+                            hidePreseason={hidePreseason}
                             {...rest}
                           />
                         );
@@ -977,6 +998,9 @@ function GameGridInternal({
                     setExcludedDays={setExcludedDays}
                     weekData={teamDataWithAverages}
                     gamesPerDay={currentNumGamesPerDay}
+                    hasPreseason={hasPreseason}
+                    hidePreseason={hidePreseason}
+                    setHidePreseason={setHidePreseason}
                   />
                   <tbody key={dates[0]} className={styles.fadeEnterActive}>
                     <TotalGamesPerDayRow
@@ -1000,6 +1024,7 @@ function GameGridInternal({
                           excludedDays={excludedDays}
                           rowHighlightClass={highlightClass}
                           games={currentNumGamesPerDay}
+                          hidePreseason={hidePreseason}
                           rank={rank}
                           {...rest}
                         />
@@ -1013,6 +1038,34 @@ function GameGridInternal({
           <div className={styles.opponentStatsContainer}>
             <OpponentMetricsTable teamData={teamDataWithAverages} />
           </div>
+        </div>
+        <div className={styles.legendBar} aria-hidden="true">
+          <ul>
+            <li>
+              <span
+                className={styles.legendSwatch + " " + styles.legendOffNight}
+              ></span>{" "}
+              Off-night (≤8 GP)
+            </li>
+            <li>
+              <span
+                className={styles.legendSwatch + " " + styles.legendHeavy}
+              ></span>{" "}
+              Heavy (≥9 GP)
+            </li>
+            <li>
+              <span
+                className={styles.legendSwatch + " " + styles.legendBest}
+              ></span>{" "}
+              Top 10 score
+            </li>
+            <li>
+              <span
+                className={styles.legendSwatch + " " + styles.legendWorst}
+              ></span>{" "}
+              Bottom 10 score
+            </li>
+          </ul>
         </div>
         {/* New lower grid container for FourWeekGrid and PlayerPickupTable */}
         <div className={styles.fourWeekAndBPAtableContainer}>
@@ -1050,34 +1103,7 @@ function GameGridInternal({
           <Spinner />
         </div>
       )}
-      <div className={styles.legendBar} aria-hidden="true">
-        <ul>
-          <li>
-            <span
-              className={styles.legendSwatch + " " + styles.legendOffNight}
-            ></span>{" "}
-            Off-night (≤8 GP)
-          </li>
-          <li>
-            <span
-              className={styles.legendSwatch + " " + styles.legendHeavy}
-            ></span>{" "}
-            Heavy (≥9 GP)
-          </li>
-          <li>
-            <span
-              className={styles.legendSwatch + " " + styles.legendBest}
-            ></span>{" "}
-            Top 10 score
-          </li>
-          <li>
-            <span
-              className={styles.legendSwatch + " " + styles.legendWorst}
-            ></span>{" "}
-            Bottom 10 score
-          </li>
-        </ul>
-      </div>
+
       <p id="weekScoreDesc" className={styles.srOnly}>
         Week Score = (Adjusted Team Games × 6) + (Weighted Off‑Nights × 4) +
         (Average Win Odds × 0.15). Adjusted Team Games = (Team Games – League

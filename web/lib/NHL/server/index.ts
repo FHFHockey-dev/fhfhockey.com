@@ -77,7 +77,14 @@ export async function getTeams(seasonId?: number): Promise<Team[]> {
     .eq("team_season.seasonId", seasonId)) as unknown as {
     data: Tables<"teams">[];
   };
-  return teams.map((team) => ({
+  // Deduplicate by abbreviation: keep the entry with the highest team ID
+  const byAbbr = new Map<string, Tables<"teams">>();
+  for (const t of teams) {
+    const prev = byAbbr.get(t.abbreviation);
+    if (!prev || t.id > prev.id) byAbbr.set(t.abbreviation, t);
+  }
+  const deduped = Array.from(byAbbr.values());
+  return deduped.map((team) => ({
     ...team,
     logo: getTeamLogo(team.abbreviation)
   }));
@@ -240,10 +247,13 @@ export async function getSchedule(startDate: string) {
   }
 
   // Map odds data by game_id
-  const oddsByGameId = (oddsData || []).reduce((acc, item) => {
-    acc[item.game_id] = item;
-    return acc;
-  }, {} as Record<number, any>);
+  const oddsByGameId = (oddsData || []).reduce(
+    (acc, item) => {
+      acc[item.game_id] = item;
+      return acc;
+    },
+    {} as Record<number, any>
+  );
 
   const tasksForOneWeek = gameWeek.map((day) => async () => {
     const tasksForOneDay = day.games.map((game) => async () => {
@@ -270,9 +280,11 @@ export async function getSchedule(startDate: string) {
         awayApiWinOdds = odds.away_api_win_odds;
       }
 
+      const derivedGameType = Math.floor(game.id / 10000) % 100;
       const gameData: GameData = {
         id: game.id,
         season: game.season,
+        gameType: derivedGameType,
         homeTeam: {
           id: homeTeam.id,
           score: homeTeam.score,

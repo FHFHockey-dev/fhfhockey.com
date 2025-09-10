@@ -91,6 +91,7 @@
 // Sticky scroll container for tables
 @mixin panel-scroll-wrapper {
   width: 100%;
+  height: 100%;
   overflow: hidden;
   background: linear-gradient(
     135deg,

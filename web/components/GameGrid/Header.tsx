@@ -37,6 +37,9 @@ type HeaderProps = {
   setExcludedDays: React.Dispatch<React.SetStateAction<DAY_ABBREVIATION[]>>;
   weekData: TeamDataWithTotals[];
   gamesPerDay: number[];
+  hasPreseason?: boolean;
+  hidePreseason?: boolean;
+  setHidePreseason?: Dispatch<SetStateAction<boolean>>;
 };
 
 type SortKey = {
@@ -71,7 +74,10 @@ function Header({
   excludedDays,
   setExcludedDays,
   weekData,
-  gamesPerDay
+  gamesPerDay,
+  hasPreseason,
+  hidePreseason,
+  setHidePreseason
 }: HeaderProps) {
   const [currentSortKey, setCurrentSortKey] = useState<SortKey | null>(null);
   const isMobile = useIsMobile();
@@ -174,7 +180,19 @@ function Header({
     <thead>
       <tr>
         <th scope="col" aria-label="Team">
-          Team
+          <div className={styles.teamHeaderContent}>
+            {!extended && hasPreseason && setHidePreseason && (
+              <span className={styles.preseasonToggle}>
+                <span>Pre</span>
+                <Toggle
+                  size="small"
+                  checked={!!hidePreseason}
+                  onChange={() => setHidePreseason((v) => !v)}
+                />
+              </span>
+            )}
+            <span>Team</span>
+          </div>
         </th>
         {dayColumns.map((col) => (
           <th

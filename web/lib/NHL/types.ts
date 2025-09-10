@@ -280,6 +280,8 @@ export type TeamGameData = {
 export type GameData = {
   id: number;
   season: number;
+  /** NHL game type: 1=Preseason, 2=Regular, 3=Playoffs */
+  gameType?: number;
   homeTeam: TeamGameData;
   awayTeam: TeamGameData;
 };

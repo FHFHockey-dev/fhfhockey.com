@@ -9,7 +9,6 @@
 .container {
   width: 100%;
   margin: 0 auto;
-  margin-bottom: v.$panel-gap;
   transition: margin-bottom v.$transition-duration v.$transition-easing;
   overflow: hidden; // Keep overflow hidden
   @include panel.panel-container();
