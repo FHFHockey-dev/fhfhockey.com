@@ -48,6 +48,13 @@ interface DraftSettingsProps {
   onOpenImportCsv?: () => void;
   // New: label to show for the custom CSV source
   customSourceLabel?: string;
+  // New: players list for keepers autocomplete (use projections pool)
+  playersForKeeperAutocomplete?: Array<{
+    id: number;
+    fullName: string;
+    sweaterNumber?: number | null;
+    teamId?: number;
+  }>;
   // NEW: available stat keys derived from projections/custom CSV
   availableSkaterStatKeys?: string[];
   availableGoalieStatKeys?: string[];
@@ -183,7 +190,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   onAddKeeper,
   onRemoveKeeper,
   onBookmarkCreate,
-  onBookmarkImport
+  onBookmarkImport,
+  playersForKeeperAutocomplete
 }) => {
   const [collapsed, setCollapsed] = React.useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -1880,6 +1888,14 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                       }}
                       showButton={false}
                       inputClassName={styles.playerAutoInputSmall}
+                      playersOverride={playersForKeeperAutocomplete?.map(
+                        (p) => ({
+                          id: p.id,
+                          fullName: p.fullName,
+                          sweaterNumber: p.sweaterNumber ?? undefined,
+                          teamId: p.teamId
+                        })
+                      )}
                     />
                     <span
                       className={`${styles.statusIcon} ${keeperSelectedPlayerId ? styles.statusOk : styles.statusError} ${styles.statusIconInput}`}
