@@ -4,6 +4,8 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import { NextSeo } from "next-seo";
 import { useMemo, useState, useEffect } from "react";
+import OptimizedImage from "components/common/OptimizedImage";
+import { getTeamLogoSvg, fallbackNHLLogo } from "lib/images";
 import moment from "moment";
 import "moment-timezone"; // Import moment-timezone
 import Link from "next/link";
@@ -166,7 +168,7 @@ const Home: NextPage = ({
     // Construct logo URL based on team abbreviation (similar to standings)
     // Ensure injury.team holds the abbreviation (e.g., 'TOR', 'BOS')
     const teamAbbrev = injury.team?.toUpperCase() ?? "NHL"; // Default to NHL if missing
-    const injuryTeamLogoUrl = `https://assets.nhle.com/logos/nhl/svg/${teamAbbrev}_light.svg`;
+    const injuryTeamLogoUrl = getTeamLogoSvg(teamAbbrev);
 
     return (
       <tr key={`${injury.player?.id ?? idx}-${idx}`}>
@@ -177,17 +179,14 @@ const Home: NextPage = ({
         </td>
         {/* Team Column now includes Logo */}
         <td className={styles.teamColumn}>
-          <img
-            className={styles.injuryTeamLogo} // Use new class for styling
+          <OptimizedImage
+            className={styles.injuryTeamLogo}
             src={injuryTeamLogoUrl}
             alt={`${injury.team ?? ""} logo`}
-            width={25} // Set explicit width/height
+            width={25}
             height={25}
-            loading="lazy"
-            onError={(e) => {
-              e.currentTarget.src =
-                "https://assets.nhle.com/logos/nhl/svg/NHL_light.svg";
-            }} // Fallback logo
+            priority={false}
+            fallbackSrc={fallbackNHLLogo}
           />
           {/* Optional: Add span for abbreviation if desired */}
           {/* <span className={styles.injuryTeamNameSpan}>{injury.team}</span> */}
@@ -384,13 +383,14 @@ const Home: NextPage = ({
                       }
                     >
                       <div className={styles.homeTeamLogo}>
-                        <img
-                          src={`https://assets.nhle.com/logos/nhl/svg/${homeTeam.abbrev}_light.svg`}
+                        <OptimizedImage
+                          src={getTeamLogoSvg(homeTeam.abbrev)}
                           className={styles.leftImage}
                           alt={`${homeTeam.abbrev} logo`}
                           width={70}
                           height={70}
-                          loading="lazy"
+                          priority={false}
+                          fallbackSrc={fallbackNHLLogo}
                         />
                       </div>
                       <div className={styles.gameTimeSection}>
@@ -419,13 +419,14 @@ const Home: NextPage = ({
                         </div>
                       </div>
                       <div className={styles.awayTeamLogo}>
-                        <img
-                          src={`https://assets.nhle.com/logos/nhl/svg/${awayTeam.abbrev}_light.svg`}
+                        <OptimizedImage
+                          src={getTeamLogoSvg(awayTeam.abbrev)}
                           className={styles.rightImage}
                           alt={`${awayTeam.abbrev} logo`}
                           width={70}
                           height={70}
-                          loading="lazy"
+                          priority={false}
+                          fallbackSrc={fallbackNHLLogo}
                         />
                       </div>
                     </div>
@@ -473,17 +474,14 @@ const Home: NextPage = ({
                     <tr key={teamRecord.teamName}>
                       <th scope="row">{teamRecord.leagueSequence}</th>
                       <td>
-                        <img
+                        <OptimizedImage
                           className={styles.standingsTeamLogo}
                           src={teamRecord.teamLogo}
                           alt={`${teamRecord.teamName} logo`}
                           width={25}
                           height={25}
-                          loading="lazy"
-                          onError={(e) => {
-                            e.currentTarget.src =
-                              "https://assets.nhle.com/logos/nhl/svg/NHL_light.svg";
-                          }}
+                          priority={false}
+                          fallbackSrc={fallbackNHLLogo}
                         />
                         <span className={styles.standingsTeamNameSpan}>
                           {teamRecord.teamName}

@@ -14,6 +14,7 @@ import {
   GameData
 } from "lib/NHL/types";
 import supabase from "lib/supabase";
+import { teamsInfo } from "lib/teamsInfo";
 import supabaseServer from "lib/supabase/server";
 import { Tables } from "lib/supabase/database-generated.types";
 import { updatePlayer } from "pages/api/v1/db/update-player/[playerId]";
@@ -83,6 +84,21 @@ export async function getTeams(seasonId?: number): Promise<Team[]> {
     const prev = byAbbr.get(t.abbreviation);
     if (!prev || t.id > prev.id) byAbbr.set(t.abbreviation, t);
   }
+
+  // Merge in static fallbacks for current NHL teams (e.g., UTA id 68 during rebrand)
+  for (const [abbr, info] of Object.entries(teamsInfo)) {
+    const existing = byAbbr.get(abbr);
+    if (!existing || existing.id < info.id) {
+      // Minimal shape to satisfy Team type downstream
+      byAbbr.set(abbr, {
+        id: info.id,
+        name: info.name,
+        abbreviation: abbr
+        // other columns not required for downstream Team type
+      } as unknown as Tables<"teams">);
+    }
+  }
+
   const deduped = Array.from(byAbbr.values());
   return deduped.map((team) => ({
     ...team,
@@ -258,13 +274,10 @@ export async function getSchedule(startDate: string) {
   const tasksForOneWeek = gameWeek.map((day) => async () => {
     const tasksForOneDay = day.games.map((game) => async () => {
       const { homeTeam, awayTeam } = game;
-      if (
-        teams[homeTeam.id] === undefined ||
-        teams[awayTeam.id] === undefined
-      ) {
-        console.error("skip for ", homeTeam.id, teams[awayTeam.id]);
-        return;
-      }
+      // Do not skip games if a team is missing from the DB teams map.
+      // Schedules should still include those team IDs (e.g., new/rebranded teams like UTA 68),
+      // and the client can provide fallback team metadata via teamsInfo/useTeamsMap.
+      // Keeping this logic ensures we don't drop entire games (which also hides the opponent's entry).
 
       // Fetch win odds from the oddsByGameId
       const odds = oddsByGameId[game.id];

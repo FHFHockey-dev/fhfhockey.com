@@ -1,4 +1,5 @@
 import React, { useLayoutEffect, useRef } from "react";
+import OptimizedImage from "components/common/OptimizedImage";
 import Link from "next/link";
 import styles from "./MobileTeamList.module.scss";
 
@@ -121,15 +122,14 @@ export default function MobileTeamList({
                 title={team.name}
                 onMouseEnter={() => onTeamMouseEnter(team.abbreviation)}
               >
-                <img
+                <OptimizedImage
                   src={`/teamLogos/${team.abbreviation ?? "default"}.png`}
                   alt={team.name}
                   className={styles.teamLogo}
-                  loading="lazy"
-                  decoding="async"
-                  onError={(e) => {
-                    e.currentTarget.src = "/teamLogos/default.png";
-                  }}
+                  width={45}
+                  height={45}
+                  priority={false}
+                  fallbackSrc="/teamLogos/default.png"
                 />
               </Link>
             ))}

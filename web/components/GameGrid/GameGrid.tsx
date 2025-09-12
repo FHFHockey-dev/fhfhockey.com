@@ -784,11 +784,27 @@ function GameGridInternal({
                       Opponent logo indicates who your team plays. A subtle icon
                       appears behind the logo:
                       <span className={styles.inlineChip}>
-                        <img src="/pictures/homeIcon.png" alt="Home" />
-                      </span>
+                        <picture>
+                          <img
+                            src="/pictures/homeIcon.png"
+                            alt="Home"
+                            width={16}
+                            height={16}
+                            loading="lazy"
+                          />
+                        </picture>
+                      </span>{" "}
                       = Home,{" "}
                       <span className={styles.inlineChip}>
-                        <img src="/pictures/awayIcon.png" alt="Away" />
+                        <picture>
+                          <img
+                            src="/pictures/awayIcon.png"
+                            alt="Away"
+                            width={16}
+                            height={16}
+                            loading="lazy"
+                          />
+                        </picture>
                       </span>{" "}
                       = Away.
                     </li>

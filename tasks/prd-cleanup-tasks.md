@@ -49,12 +49,20 @@ Reduce technical noise (lint warnings, repetitive code patterns) to improve deve
 ## Task Breakdown (Actionable Tickets)
 1. a11y-switch-fix (DONE)
 2. stats-ref-cleanup adjustments (IN PROGRESS)
-3. add OptimizedImage wrapper
-4. pilot image replacements
+3. add OptimizedImage wrapper (DONE)
+4. pilot image replacements (PARTIAL – first injury table logo row migrated; next: standings + game cards)
 5. hook-deps-pass-1 (missing deps) + justifications
 6. hook-deps-pass-2 (remove unnecessary deps)
 7. annotate intentional suppressions
 8. metrics-report script (optional) to count warnings pre/post (`next lint --no-cache` parse)
+
+### Progress Log
+- 2025-09-11: Created wrapper `components/common/OptimizedImage.tsx` and migrated first `<img>` instance in `pages/index.tsx` (injury list). Added `lib/images.ts` util.
+- 2025-09-11: Migrated standings table logos on `pages/index.tsx`; warning count reduced (pre:33 -> 32 after first, further reduction pending game card migration).
+- 2025-09-11: Migrated standings table logos on `pages/index.tsx`; warning count reduced (pre:33 -> 32 after first).
+- 2025-09-11: Migrated game card home/away logos on `pages/index.tsx` (additional reductions, tracking ongoing).
+- 2025-09-11: Post game-card migration build: `@next/next/no-img-element` warnings down to 29 (from initial 33) – ~12% reduction on home page-focused subset.
+- 2025-09-11: Migrated MobileTeamList logos to OptimizedImage (further reduction expected on next build).
 
 ## Acceptance Criteria
 - Build passes with zero new errors
