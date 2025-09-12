@@ -43,14 +43,18 @@
 
 @media (max-width: 480px) {
   .textBanner {
-    font-family: roboto condensed, sans-serif;
+    font-family:
+      roboto condensed,
+      sans-serif;
     border-bottom: 1px solid vars.$border-secondary;
   }
 }
 
 @media screen and (orientation: landscape) /* LANDSCAPE */ and (min-device-width: 479px) and (max-device-width: 932px) {
   .textBanner {
-    font-family: roboto condensed, sans-serif;
+    font-family:
+      roboto condensed,
+      sans-serif;
     border-bottom: 1px solid vars.$border-secondary;
   }
 }
@@ -60,7 +64,9 @@
   .textBanner {
     padding-top: 6.67px; // Two-thirds of 10px
     padding-bottom: 6.67px; // Two-thirds of 10px
-    font-family: roboto condensed, sans-serif;
+    font-family:
+      roboto condensed,
+      sans-serif;
     border-bottom: 1px solid vars.$border-secondary;
   }
 }
@@ -70,7 +76,9 @@
   .textBanner {
     padding-top: 6.67px; // Two-thirds of 10px
     padding-bottom: 6.67px; // Two-thirds of 10px
-    font-family: roboto condensed, sans-serif;
+    font-family:
+      roboto condensed,
+      sans-serif;
     border-bottom: 1px solid vars.$border-secondary;
   }
 }

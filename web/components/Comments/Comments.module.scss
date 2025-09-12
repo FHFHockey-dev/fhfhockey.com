@@ -28,14 +28,17 @@
     border-radius: 12px;
     padding: vars.$mobile-space-md;
     box-shadow: vars.$shadow-hover;
-    transition: border-color vars.$mobile-animation-fast vars.$mobile-easing-ease,
+    transition:
+      border-color vars.$mobile-animation-fast vars.$mobile-easing-ease,
       box-shadow vars.$mobile-animation-fast vars.$mobile-easing-ease,
       transform vars.$mobile-animation-fast vars.$mobile-easing-ease;
 
     &:hover {
       transform: translateY(-1px);
       border-color: vars.$border-accent;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.35), vars.$shadow-hover;
+      box-shadow:
+        0 6px 18px rgba(0, 0, 0, 0.35),
+        vars.$shadow-hover;
     }
 
     .content {

@@ -290,7 +290,7 @@ const TeamStandingsChart: React.FC = () => {
             firstRecord.division === selectedDivision)
         ) {
           const abbr = teamNameToAbbreviationMap[teamName];
-          teams.push(abbr);
+          if (abbr) teams.push(abbr);
         }
       }
     });
@@ -349,7 +349,7 @@ const TeamStandingsChart: React.FC = () => {
       const useRolling = rolling5 || rolling10;
       data.forEach((teamData, teamName) => {
         const abbr = teamNameToAbbreviationMap[teamName];
-        if (!selectedTeams.includes(abbr)) return;
+        if (!abbr || !selectedTeams.includes(abbr)) return;
         if (
           (selectedConference !== "All" &&
             teamData[0].conference !== selectedConference) ||
@@ -418,7 +418,7 @@ const TeamStandingsChart: React.FC = () => {
       const useRolling = rolling5 || rolling10;
       data.forEach((teamData, teamName) => {
         const abbr = teamNameToAbbreviationMap[teamName];
-        if (!selectedTeams.includes(abbr)) return;
+        if (!abbr || !selectedTeams.includes(abbr)) return;
         if (
           (selectedConference !== "All" &&
             teamData[0].conference !== selectedConference) ||
@@ -575,7 +575,7 @@ const TeamStandingsChart: React.FC = () => {
             const lastPoint = s.data[s.data.length - 1];
             teamG
               .append("svg:image")
-              .attr("xlink:href", `/teamLogos/${abbr}.png`)
+              .attr("xlink:href", `/teamLogos/${abbr || "default"}.png`)
               .attr("x", xScale(lastPoint.gamesPlayed) + 5)
               .attr("y", yScale(getMetricValue(lastPoint, metric)) - 10)
               .attr("width", 20)
@@ -639,7 +639,7 @@ const TeamStandingsChart: React.FC = () => {
         const lastPoint = sortedData[sortedData.length - 1];
         teamG
           .append("svg:image")
-          .attr("xlink:href", `/teamLogos/${abbr}.png`)
+          .attr("xlink:href", `/teamLogos/${abbr || "default"}.png`)
           .attr("x", xScale(lastPoint.gamesPlayed) + 5)
           .attr("y", () =>
             metric === "pointPct"
@@ -792,6 +792,7 @@ const TeamStandingsChart: React.FC = () => {
           firstRecord.division === selectedDivision)
       ) {
         const abbr = teamNameToAbbreviationMap[teamName];
+        if (!abbr) return;
         if (!divisions[firstRecord.division]) {
           divisions[firstRecord.division] = [];
         }
@@ -928,7 +929,7 @@ const TeamStandingsChart: React.FC = () => {
                         }}
                       />
                       <img
-                        src={`/teamLogos/${abbr}.png`}
+                        src={`/teamLogos/${abbr ?? "default"}.png`}
                         alt={abbr}
                         className={styles.toggleLogo}
                       />
@@ -957,7 +958,7 @@ const TeamStandingsChart: React.FC = () => {
                         }}
                       />
                       <img
-                        src={`/teamLogos/${abbr}.png`}
+                        src={`/teamLogos/${abbr ?? "default"}.png`}
                         alt={abbr}
                         className={styles.toggleLogo}
                       />

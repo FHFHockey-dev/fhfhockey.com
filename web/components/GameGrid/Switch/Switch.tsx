@@ -1,14 +1,13 @@
 import React from "react";
 import styles from "./Switch.module.scss";
 
-type SwitchProps = {
+interface SwitchProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   onClick?: () => void;
   checked?: boolean;
   disabled?: boolean;
   "aria-label"?: string;
   className?: string;
-  [x: string]: any;
-};
+}
 
 function Switch({
   checked = false,
@@ -44,8 +43,8 @@ function Switch({
       onKeyDown={handleKeyDown}
       disabled={disabled}
       aria-label={ariaLabel || `Toggle ${checked ? "on" : "off"}`}
-      aria-pressed={checked}
       role="switch"
+      aria-checked={checked}
       tabIndex={disabled ? -1 : 0}
       {...rest}
     >

@@ -856,7 +856,7 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                 <td>
                   {teamAbbr ? (
                     <Image
-                      src={`/teamLogos/${teamAbbr}.png`}
+                      src={`/teamLogos/${teamAbbr ?? "default"}.png`}
                       alt={teamAbbr}
                       width={30}
                       height={30}
@@ -1151,7 +1151,7 @@ const MobileTable: React.FC<MobileTableProps> = ({
                     {/* Team */}
                     {teamAbbr ? (
                       <Image
-                        src={`/teamLogos/${teamAbbr}.png`}
+                        src={`/teamLogos/${teamAbbr ?? "default"}.png`}
                         alt={teamAbbr}
                         width={25}
                         height={25}
