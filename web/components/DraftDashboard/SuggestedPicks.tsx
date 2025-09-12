@@ -205,10 +205,10 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
           e.preventDefault();
           onDraftPlayer(selectedId);
         }
-  } else if (key === "r") {
-    // quick toggle roster-adjusted VORP
-    e.preventDefault();
-    setRosterVorpEnabled((v) => !v);
+      } else if (key === "r") {
+        // quick toggle roster-adjusted VORP
+        e.preventDefault();
+        setRosterVorpEnabled((v) => !v);
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -284,7 +284,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
         .map((s) => s.trim().toUpperCase())
         .filter((p) => p && ["C", "LW", "RW", "D", "G"].includes(p));
       if (elig.length === 0) return { ...r, vorpAdj: baseVorp };
-      const avgNeed = elig.reduce((acc, pos) => acc + (posNeeds[pos] || 0), 0) /
+      const avgNeed =
+        elig.reduce((acc, pos) => acc + (posNeeds[pos] || 0), 0) /
         Math.max(1, elig.length);
       // Multiplier: positions fully filled (need≈0) still retain 25% of VORP; unfilled keep ~100%.
       const multiplier = 0.25 + 0.75 * Math.max(0, Math.min(1, avgNeed));
@@ -314,9 +315,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       });
     }
     if (posFilter === "ALL") return source;
-    return source.filter((r) =>
-      r.player.displayPosition?.includes(posFilter)
-    );
+    return source.filter((r) => r.player.displayPosition?.includes(posFilter));
   }, [withRosterAdjustedVorp, posFilter, selectedPositions]);
 
   const sorted = useMemo(() => {
@@ -325,8 +324,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     arr.sort((a, b) => {
       const aFp = a.player.fantasyPoints?.projected ?? 0;
       const bFp = b.player.fantasyPoints?.projected ?? 0;
-  const aVorp = (rosterVorpEnabled ? (a as any).vorpAdj : a.vorp) ?? 0;
-  const bVorp = (rosterVorpEnabled ? (b as any).vorpAdj : b.vorp) ?? 0;
+      const aVorp = (rosterVorpEnabled ? (a as any).vorpAdj : a.vorp) ?? 0;
+      const bVorp = (rosterVorpEnabled ? (b as any).vorpAdj : b.vorp) ?? 0;
       const aVbd = a.vbd ?? 0;
       const bVbd = b.vbd ?? 0;
       const aAdp = (a.player as any).yahooAvgPick ?? Infinity;
@@ -582,12 +581,12 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                         {rosterVorpEnabled ? "AdjV" : "VORP"}
                       </div>
                       <div className={styles.statValue}>
-                        {typeof (rosterVorpEnabled ? (r as any).vorpAdj : r.vorp) ===
-                        "number"
+                        {typeof (rosterVorpEnabled
+                          ? (r as any).vorpAdj
+                          : r.vorp) === "number"
                           ? (rosterVorpEnabled
                               ? (r as any).vorpAdj
-                              : r.vorp
-                            )!.toFixed(1)
+                              : r.vorp)!.toFixed(1)
                           : "—"}
                       </div>
                     </div>

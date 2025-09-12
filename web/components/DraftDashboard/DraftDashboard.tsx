@@ -1207,6 +1207,43 @@ const DraftDashboard: React.FC = () => {
         keepers={keepers}
         onAddKeeper={addKeeper}
         onRemoveKeeper={removeKeeper}
+        onBookmarkCreate={(key) => {
+          // Optional: could surface a toast; for now just log
+          // eslint-disable-next-line no-console
+          console.log("Bookmark key created (len)", key.length);
+        }}
+        onBookmarkImport={(data) => {
+          try {
+            if (data.settings) setDraftSettings(data.settings);
+            if (Array.isArray(data.draftedPlayers))
+              setDraftedPlayers(data.draftedPlayers);
+            if (typeof data.currentPick === "number")
+              setCurrentPick(data.currentPick);
+            if (typeof data.myTeamId === "string") setMyTeamId(data.myTeamId);
+            if (data.forwardGrouping === "fwd" || data.forwardGrouping === "split")
+              setForwardGrouping(data.forwardGrouping);
+            if (data.sourceControls) setSourceControls(data.sourceControls);
+            if (data.goalieSourceControls)
+              setGoalieSourceControls(data.goalieSourceControls);
+            if (data.goalieScoringCategories)
+              setGoaliePointValues(data.goalieScoringCategories);
+            if (typeof data.personalizeReplacement === "boolean")
+              setPersonalizeReplacement(data.personalizeReplacement);
+            if (typeof data.needWeightEnabled === "boolean")
+              setNeedWeightEnabled(data.needWeightEnabled);
+            if (typeof data.needAlpha === "number")
+              setNeedAlpha(Math.max(0, Math.min(1, data.needAlpha)));
+            if (data.baselineMode === "remaining" || data.baselineMode === "full")
+              setBaselineMode(data.baselineMode);
+            if (data.customTeamNames && typeof data.customTeamNames === "object")
+              setCustomTeamNames(data.customTeamNames);
+            // Reset history since imported state may not map cleanly
+            setDraftHistory([]);
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error("Failed to apply imported bookmark", e);
+          }
+        }}
       />
 
       {/* Full-width Suggested Picks above the three panels */}

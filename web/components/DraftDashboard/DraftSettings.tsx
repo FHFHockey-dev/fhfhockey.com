@@ -69,6 +69,9 @@ interface DraftSettingsProps {
     playerId: string
   ) => void;
   onRemoveKeeper?: (round: number, pickInRound: number) => void;
+  // Bookmark (portable draft session) handlers
+  onBookmarkCreate?: (key: string) => void;
+  onBookmarkImport?: (data: any) => void;
 }
 
 const CAT_KEYS = [
@@ -173,7 +176,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   onRemoveTradedPick,
   keepers = [],
   onAddKeeper,
-  onRemoveKeeper
+  onRemoveKeeper,
+  onBookmarkCreate,
+  onBookmarkImport
 }) => {
   const [collapsed, setCollapsed] = React.useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -678,6 +683,135 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     onSettingsChange({ scoringCategories: rest });
   };
 
+  // --- Bookmark (Portable Draft Session) ---
+  // Build a serializable payload capturing draft state & settings for cross-device restoration.
+  const buildBookmarkPayload = React.useCallback(() => {
+    const ls = (k: string, def: any = undefined) => {
+      if (typeof window === "undefined") return def;
+      return window.localStorage.getItem(k) ?? def;
+    };
+    let personalizeReplacement: boolean | undefined;
+    let needWeightEnabled: boolean | undefined;
+    let needAlpha: number | undefined;
+    let baselineMode: string | undefined;
+    try {
+      personalizeReplacement = ls("draftDashboard.personalizeReplacement.v1") === "true";
+      needWeightEnabled = ls("draftDashboard.needWeight.v1") === "true";
+      const naRaw = ls("draftDashboard.needAlpha.v1");
+      needAlpha = naRaw ? parseFloat(naRaw) : undefined;
+      baselineMode = ls("draftDashboard.baselineMode") || undefined;
+    } catch {}
+    return {
+      v: 1, // version for future migrations
+      ts: Date.now(),
+      settings,
+      draftedPlayers,
+      draftHistory,
+      currentPick,
+      myTeamId,
+      forwardGrouping,
+      customTeamNames,
+      sourceControls,
+      goalieSourceControls,
+      goalieScoringCategories,
+      personalizeReplacement,
+      needWeightEnabled,
+      needAlpha,
+      baselineMode
+    };
+  }, [
+    settings,
+    draftedPlayers,
+    draftHistory,
+    currentPick,
+    myTeamId,
+    forwardGrouping,
+    customTeamNames,
+    sourceControls,
+    goalieSourceControls,
+    goalieScoringCategories
+  ]);
+
+  const serializeBookmark = (payload: any): string => {
+    try {
+      // Lazy require to avoid increasing initial bundle size unnecessarily
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { compressToEncodedURIComponent } = require("lz-string");
+      return compressToEncodedURIComponent(JSON.stringify(payload));
+    } catch (e) {
+      try {
+        return typeof btoa === "function"
+          ? btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
+          : JSON.stringify(payload);
+      } catch {
+        return JSON.stringify(payload);
+      }
+    }
+  };
+
+  const deserializeBookmark = (key: string): any | null => {
+    if (!key) return null;
+    // Try lz-string first
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { decompressFromEncodedURIComponent } = require("lz-string");
+      const json = decompressFromEncodedURIComponent(key);
+      if (json) return JSON.parse(json);
+    } catch {}
+    // Try base64
+    try {
+      const json = typeof atob === "function" ? decodeURIComponent(escape(atob(key))) : key;
+      const parsed = JSON.parse(json);
+      if (parsed && typeof parsed === "object") return parsed;
+    } catch {}
+    // Try raw JSON
+    try {
+      return JSON.parse(key);
+    } catch {}
+    return null;
+  };
+
+  const handleCreateBookmark = () => {
+    const payload = buildBookmarkPayload();
+    const key = serializeBookmark(payload);
+    if (onBookmarkCreate) onBookmarkCreate(key);
+    try {
+      if (navigator?.clipboard?.writeText) {
+        navigator.clipboard.writeText(key);
+      }
+    } catch {}
+    // Lightweight user feedback (avoid adding more UI state for now)
+    // eslint-disable-next-line no-alert
+    alert(`Bookmark key created (len ${key.length}). Copied to clipboard.`);
+  };
+
+  const handleImportBookmark = () => {
+    // eslint-disable-next-line no-alert
+    const raw = window.prompt("Paste Bookmark Key (or JSON):");
+    if (!raw) return;
+    const data = deserializeBookmark(raw.trim());
+    if (!data || typeof data !== "object") {
+      // eslint-disable-next-line no-alert
+      alert("Invalid bookmark key");
+      return;
+    }
+    if (data.v !== 1) {
+      // eslint-disable-next-line no-alert
+      alert("Unsupported bookmark version");
+      return;
+    }
+    if (onBookmarkImport) {
+      onBookmarkImport(data);
+      // eslint-disable-next-line no-alert
+      alert("Bookmark imported. Parent will reconcile state.");
+    } else {
+      // eslint-disable-next-line no-alert
+      alert("Bookmark parsed, but no onBookmarkImport handler provided.");
+      // As a safety, we can apply settings directly if present
+      if (data.settings) onSettingsChange(data.settings);
+    }
+  };
+
   // Categories-league: allow add/remove category metrics
   const [showManageCategories, setShowManageCategories] = React.useState(false);
   const addableCategoryStats = React.useMemo(() => {
@@ -729,6 +863,23 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                 Weights 1.00
               </span>
             )}
+            <button
+              type="button"
+              className={styles.inlineResetBtn}
+              style={{ marginLeft: 6 }}
+              onClick={handleCreateBookmark}
+              title="Create portable draft bookmark key"
+            >
+              Bookmark
+            </button>
+            <button
+              type="button"
+              className={styles.inlineResetBtn}
+              onClick={handleImportBookmark}
+              title="Import draft bookmark key"
+            >
+              Import
+            </button>
           </div>
           <div
             className={styles.draftTypeToggle}
