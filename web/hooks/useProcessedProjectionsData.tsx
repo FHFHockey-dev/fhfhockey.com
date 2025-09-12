@@ -25,6 +25,10 @@ import {
   YAHOO_PLAYERS_TABLE_KEYS
 } from "lib/projectionsConfig/yahooConfig";
 
+// Central constant: current Yahoo game/season prefix for filtering ADP rows.
+// Ensure all yahoo_players and mapping data are restricted to this prefix to avoid prior season leakage.
+export const CURRENT_YAHOO_GAME_PREFIX = "465."; // (Prev season prefix: 453.)
+
 // --- Types ---
 interface RawPlayerStatFromSource {
   value: number | null;
@@ -521,21 +525,54 @@ async function fetchAllSourceData(
     yahooMapQueryBuilder,
     yahooMapSelectString
   );
-  const nhlToYahooMap = new Map<number, YahooNhlPlayerMapEntry>(
-    yahooMapData
-      ?.map((m) => {
-        const nhlIdNum = Number(m[YAHOO_PLAYER_MAP_KEYS.nhlPlayerId]);
-        return isNaN(nhlIdNum) ? null : [nhlIdNum, m];
-      })
-      .filter(
-        (entry): entry is [number, YahooNhlPlayerMapEntry] => entry !== null
-      ) || []
-  );
+  // --- Business Rule: Only use current-season Yahoo game prefix (e.g. 465.) ---
+  const filteredYahooMapData = (yahooMapData || []).filter((m) => {
+    const yahooId = m[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId];
+    return (
+      typeof yahooId === "string" &&
+      yahooId.startsWith(CURRENT_YAHOO_GAME_PREFIX)
+    );
+  });
+
+  // Fallback safety: if for some reason we have no rows for the current prefix, log a warning and revert to unfiltered to avoid empty ADP data.
+  const effectiveYahooMapData =
+    filteredYahooMapData.length > 0 ? filteredYahooMapData : yahooMapData;
+
+  if (filteredYahooMapData.length === 0) {
+    console.warn(
+      `Yahoo map filter: no entries matched prefix ${CURRENT_YAHOO_GAME_PREFIX}. Using unfiltered data (count=${yahooMapData?.length || 0}).`
+    );
+  }
+
+  // If both 453.* and 465.* rows exist for the same NHL player, prefer 465.*
+  const tempDedupMap = new Map<number, YahooNhlPlayerMapEntry>();
+  for (const m of effectiveYahooMapData) {
+    const nhlIdNum = Number(m[YAHOO_PLAYER_MAP_KEYS.nhlPlayerId]);
+    if (isNaN(nhlIdNum)) continue;
+    const existing = tempDedupMap.get(nhlIdNum);
+    if (!existing) {
+      tempDedupMap.set(nhlIdNum, m);
+      continue;
+    }
+    const existingYahooId = String(
+      existing[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId] || ""
+    );
+    const incomingYahooId = String(
+      m[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId] || ""
+    );
+    const existingIs465 = existingYahooId.startsWith(CURRENT_YAHOO_GAME_PREFIX);
+    const incomingIs465 = incomingYahooId.startsWith(CURRENT_YAHOO_GAME_PREFIX);
+    // Replace if incoming is 465 and existing is not 465.
+    if (!existingIs465 && incomingIs465) {
+      tempDedupMap.set(nhlIdNum, m);
+    }
+  }
+  const nhlToYahooMap = tempDedupMap;
 
   // 4. Fetch Yahoo Player Details
   const uniqueYahooPlayerIdsFromMap = new Set<string>();
-  if (yahooMapData) {
-    yahooMapData.forEach((m) => {
+  if (effectiveYahooMapData) {
+    effectiveYahooMapData.forEach((m) => {
       const yahooId = m[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId];
       if (yahooId) {
         uniqueYahooPlayerIdsFromMap.add(String(yahooId));
@@ -545,8 +582,11 @@ async function fetchAllSourceData(
 
   console.log("Debug - Yahoo mapping data:", {
     yahooMapDataCount: yahooMapData?.length || 0,
+    filteredYahooMapDataCount: filteredYahooMapData.length,
+    usingFiltered: filteredYahooMapData.length > 0,
+    dedupedCount: nhlToYahooMap.size,
     uniqueYahooPlayerIdsFromMapCount: uniqueYahooPlayerIdsFromMap.size,
-    sampleYahooMapData: yahooMapData?.slice(0, 3) || [],
+    sampleYahooMapData: effectiveYahooMapData?.slice(0, 3) || [],
     uniqueNhlPlayerIdsCount: uniqueNhlPlayerIds.size,
     sampleNhlPlayerIds: Array.from(uniqueNhlPlayerIds).slice(0, 5)
   });
@@ -572,8 +612,24 @@ async function fetchAllSourceData(
       sampleYahooPlayersData: yahooPlayersDetailsData?.slice(0, 3) || []
     });
 
+    // Filter yahoo_players rows to only current-season player_key prefix to avoid mixing prior season ADP
+    const filteredYahooPlayersDetailsData = (
+      yahooPlayersDetailsData || []
+    ).filter((yp) => {
+      const pk: any = (yp as any)[YAHOO_PLAYERS_TABLE_KEYS.primaryKey];
+      return typeof pk === "string" && pk.startsWith(CURRENT_YAHOO_GAME_PREFIX);
+    });
+    const effectiveYahooPlayersData =
+      filteredYahooPlayersDetailsData.length > 0
+        ? filteredYahooPlayersDetailsData
+        : yahooPlayersDetailsData;
+    if (filteredYahooPlayersDetailsData.length === 0) {
+      console.warn(
+        `Yahoo players filter: no rows matched prefix ${CURRENT_YAHOO_GAME_PREFIX}; using unfiltered data (count=${yahooPlayersDetailsData?.length || 0}).`
+      );
+    }
     yahooPlayersMap = new Map<string, YahooPlayerDetailData>(
-      yahooPlayersDetailsData?.map((yp) => [
+      effectiveYahooPlayersData?.map((yp) => [
         String(yp[YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId]),
         yp
       ]) || []

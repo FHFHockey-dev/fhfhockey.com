@@ -295,11 +295,13 @@ export default function DRMPage() {
       <div className={styles.columnsContainer}>
         <div className={styles.leftColumn}>
           <div className={styles.options1}>
-            <div
-              className={styles.timeFrameToggle}
-              role="tablist"
-              aria-label="Select timeframe"
-            >
+            <div className={styles.timeFrameGroup}>
+              <label className={styles.label}>Timeframe</label>
+              <div
+                className={styles.timeFrameToggle}
+                role="tablist"
+                aria-label="Select timeframe"
+              >
               <button
                 className={`${styles.button} ${timeFrame === "L7" ? styles.active : ""}`}
                 onClick={() => setTimeFrame("L7")}
@@ -332,6 +334,7 @@ export default function DRMPage() {
               >
                 Season
               </button>
+              </div>
             </div>
 
             <div className={styles.dropdownGroup}>

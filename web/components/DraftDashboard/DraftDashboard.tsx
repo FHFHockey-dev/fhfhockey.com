@@ -1207,6 +1207,10 @@ const DraftDashboard: React.FC = () => {
         keepers={keepers}
         onAddKeeper={addKeeper}
         onRemoveKeeper={removeKeeper}
+        playersForKeeperAutocomplete={allPlayers.map((p) => ({
+          id: Number(p.playerId),
+          fullName: p.fullName
+        }))}
         onBookmarkCreate={(key) => {
           // Optional: could surface a toast; for now just log
           // eslint-disable-next-line no-console
