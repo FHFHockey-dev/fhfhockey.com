@@ -273,22 +273,20 @@ export default function UpsertProjectionsPage() {
       const [srcFirst] = splitFirstLast(name);
       const srcLasts = lastTokens(name);
       if (!srcLasts.length) return "";
-      let best = "";
-      let bestScore = -1;
+      // Only accept a candidate if BOTH last name matches and first name is a clear match
       for (const cand of yahooCandidates) {
         const [candFirst] = splitFirstLast(cand);
         const candLasts = lastTokens(cand);
         const lastExact = candLasts.some((t) => srcLasts.includes(t));
         if (!lastExact) continue; // must match last name exactly (normalized)
         const firstOK = firstNameSimilar(srcFirst, candFirst);
-        const score = (lastExact ? 1 : 0) + (firstOK ? 1 : 0);
-        if (score > bestScore) {
-          best = cand;
-          bestScore = score;
-          if (score === 2) break; // perfect
+        if (firstOK) {
+          return cand; // strong match (score === 2)
         }
       }
-      return best;
+      // If we didn't find a strong match on first name, do NOT default to the first same-last-name.
+      // Return empty to keep the original standardized name.
+      return "";
     },
     [yahooCandidates, splitFirstLast, lastTokens, firstNameSimilar]
   );
