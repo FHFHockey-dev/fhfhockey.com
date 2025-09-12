@@ -90,6 +90,8 @@ export default function StatsPage({
   const hoverTimeoutRef = useRef<NodeJS.Timeout>();
   const mouseLeaveTimeoutRef = useRef<NodeJS.Timeout>();
   const scrollTimeoutRef = useRef<NodeJS.Timeout>();
+  // Stable snapshots used only for cleanup; assigned lazily where needed
+  let scrollTimeoutSnapshot: NodeJS.Timeout | undefined;
 
   const handleTeamMouseEnter = (teamAbbreviation: string) => {
     if (hoverTimeoutRef.current) {
@@ -140,17 +142,16 @@ export default function StatsPage({
   };
 
   useEffect(() => {
+    // Cleanup on unmount: snapshot ref values once to satisfy exhaustive-deps guidance
     return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
-      if (mouseLeaveTimeoutRef.current) {
-        clearTimeout(mouseLeaveTimeoutRef.current);
-      }
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
+      const hoverTimeout = hoverTimeoutRef.current;
+      const leaveTimeout = mouseLeaveTimeoutRef.current;
+      scrollTimeoutSnapshot = scrollTimeoutRef.current; // capture once
+      if (hoverTimeout) clearTimeout(hoverTimeout);
+      if (leaveTimeout) clearTimeout(leaveTimeout);
+      if (scrollTimeoutSnapshot) clearTimeout(scrollTimeoutSnapshot);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- no dependencies; on unmount only
   }, []);
 
   const generateTeamColorStyles = (): React.CSSProperties => {
@@ -398,12 +399,9 @@ export default function StatsPage({
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
-      }
-      if (scrollTimeout) {
-        clearTimeout(scrollTimeout);
-      }
+      const timeoutFromRef = scrollTimeoutRef.current;
+      if (timeoutFromRef) clearTimeout(timeoutFromRef);
+      if (scrollTimeout) clearTimeout(scrollTimeout);
     };
   }, [isMobile, teamsGridState]); // CRITICAL: Include teamsGridState to detect desync
 
@@ -483,7 +481,8 @@ export default function StatsPage({
               >
                 {teams.map((team) => (
                   <Link
-                    key={team.id}
+                    // team_id is the canonical unique identifier; previously used non-existent team.id
+                    key={team.team_id ?? team.abbreviation}
                     href={`/stats/team/${team.abbreviation}`}
                     className={`${styles.teamListItem} ${
                       hoveredTeam && hoveredTeam !== team.abbreviation
