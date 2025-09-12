@@ -136,6 +136,8 @@ export interface UseProcessedProjectionsDataProps {
   teamCountForRoundSummaries?: number;
   // NEW: Optional in-memory custom source (session CSV import) to merge with pipeline
   customAdditionalSource?: CustomAdditionalProjectionSource;
+  // NEW: external refresh key to bust caches and force reload
+  refreshKey?: number | string;
 }
 
 export interface UseProcessedProjectionsDataReturn {
@@ -163,6 +165,7 @@ interface CachedFullPlayerData extends BaseCacheSnapshotInfo {
   // columns: ColumnDef<TableDataRow, any>[]; // Same columns as base, designed for TableDataRow.
   fantasyPointSettingsSnapshot: string; // Specific to the fully calculated FP data
   showPerGameFantasyPointsSnapshot: boolean; // Added to ensure cache considers this display mode
+  refreshKeySnapshot?: number | string;
 }
 
 interface RawProjectionSourcePlayer extends Record<string, any> {}
@@ -1071,7 +1074,8 @@ export const useProcessedProjectionsData = ({
   showPerGameFantasyPoints,
   togglePerGameFantasyPoints,
   teamCountForRoundSummaries,
-  customAdditionalSource
+  customAdditionalSource,
+  refreshKey
 }: UseProcessedProjectionsDataProps): UseProcessedProjectionsDataReturn => {
   const [processedPlayers, setProcessedPlayers] = useState<TableDataRow[]>([]);
   const [tableColumns, setTableColumns] = useState<
@@ -1233,6 +1237,7 @@ export const useProcessedProjectionsData = ({
         stableFantasyPointSettingsString &&
       currentTypeCache.full.showPerGameFantasyPointsSnapshot ===
         showPerGameFantasyPoints &&
+      currentTypeCache.full.refreshKeySnapshot === refreshKey &&
       !customAdditionalSource // only reuse cache if no custom source (or unchanged and not invalidated)
     ) {
       setProcessedPlayers(currentTypeCache.full.data);
@@ -1440,7 +1445,8 @@ export const useProcessedProjectionsData = ({
           yahooModeSnapshot: yahooDraftMode,
           currentSeasonIdSnapshot: currentSeasonId,
           fantasyPointSettingsSnapshot: stableFantasyPointSettingsString,
-          showPerGameFantasyPointsSnapshot: showPerGameFantasyPoints
+          showPerGameFantasyPointsSnapshot: showPerGameFantasyPoints,
+          refreshKeySnapshot: refreshKey
         };
       }
       setIsLoading(false);
@@ -1461,7 +1467,8 @@ export const useProcessedProjectionsData = ({
     currentSeasonId,
     showPerGameFantasyPoints,
     teamCountForRoundSummaries,
-    stableCustomAdditionalSourceString // trigger recompute when custom data changes
+    stableCustomAdditionalSourceString, // trigger recompute when custom data changes
+    refreshKey
   ]);
 
   useEffect(() => {

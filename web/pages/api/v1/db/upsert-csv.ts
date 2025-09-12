@@ -236,6 +236,14 @@ async function getPlayerIdByFullName(
       }
     }
 
+    if (!best.firstOK) {
+      // Do not accept a weak match on last name alone; avoid wrong player mapping.
+      console.warn(
+        `Ambiguous heuristic match for '${standardizedFullName}'. Skipping to avoid misassignment (score=${best.score}).`
+      );
+      return null;
+    }
+
     console.log(
       `Heuristic matched '${standardizedFullName}' to ID ${best.id} (score=${best.score}).`
     );

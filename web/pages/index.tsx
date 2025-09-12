@@ -22,6 +22,14 @@ import Fetch from "lib/cors-fetch";
 // Import our chart component
 import TeamStandingsChart from "components/TeamStandingsChart/TeamStandingsChart";
 
+// Shared debug logger for both server and client
+const debugLog = (...args: any[]) => {
+  if (process.env.NODE_ENV !== "production") {
+    // eslint-disable-next-line no-console
+    console.log(...args);
+  }
+};
+
 // DEV NOTE:
 // Integrate Live Period/Time Clock instead of just displaying "LIVE" for live games
 
@@ -31,12 +39,6 @@ const Home: NextPage = ({
   initialStandings,
   nextGameDate
 }) => {
-  const debugLog = (...args: any[]) => {
-    if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
-      console.log(...args);
-    }
-  };
   // Debug logging
   debugLog("Server passed nextGameDate:", nextGameDate);
   debugLog(

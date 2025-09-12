@@ -212,6 +212,7 @@ const DraftDashboard: React.FC = () => {
   >(() => getDefaultFantasyPointsConfig("goalie"));
 
   // Get player projections data (skaters)
+  const [dataRefreshKey, setDataRefreshKey] = useState<number>(0);
   const skaterData = useProcessedProjectionsData({
     activePlayerType: "skater",
     sourceControls,
@@ -222,7 +223,8 @@ const DraftDashboard: React.FC = () => {
     styles: {},
     showPerGameFantasyPoints: false,
     togglePerGameFantasyPoints: () => {},
-    teamCountForRoundSummaries: draftSettings.teamCount
+    teamCountForRoundSummaries: draftSettings.teamCount,
+    refreshKey: dataRefreshKey
   });
 
   // Get player projections data (goalies) - use editable goalie points config
@@ -236,7 +238,8 @@ const DraftDashboard: React.FC = () => {
     styles: {},
     showPerGameFantasyPoints: false,
     togglePerGameFantasyPoints: () => {},
-    teamCountForRoundSummaries: draftSettings.teamCount
+    teamCountForRoundSummaries: draftSettings.teamCount,
+    refreshKey: dataRefreshKey
   });
 
   // Debug logging to see what data we're getting
@@ -1212,6 +1215,26 @@ const DraftDashboard: React.FC = () => {
         </section>
 
         <section className={styles.rightPanel}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+            <div style={{ color: "#9aa4af", fontSize: 12 }}>
+              {skaterData.isLoading || goalieData.isLoading ? "Refreshing…" : ""}
+            </div>
+            <button
+              onClick={() => setDataRefreshKey((k) => k + 1)}
+              style={{
+                padding: "4px 8px",
+                fontSize: 12,
+                border: "1px solid var(--border-color, #334155)",
+                background: "transparent",
+                color: "#9aa4af",
+                borderRadius: 4,
+                cursor: "pointer"
+              }}
+              title="Force refresh projections from database"
+            >
+              Refresh Data
+            </button>
+          </div>
           <ProjectionsTable
             players={availablePlayers}
             allPlayers={allPlayers}
