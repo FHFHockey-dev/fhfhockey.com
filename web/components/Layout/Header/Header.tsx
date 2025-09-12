@@ -173,6 +173,21 @@ function Header() {
           <SocialMedias />
         </div>
 
+        {/* Buy Me a Coffee */}
+        <div className={styles.bmcWrap}>
+          <a
+            href="https://www.buymeacoffee.com/tjsusername"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Buy me a coffee"
+          >
+            <img
+              src="https://img.buymeacoffee.com/button-api/?text=ferda boys&emoji=🥃&slug=tjsusername&button_colour=07aae2&font_colour=000000&font_family=Poppins&outline_colour=000000&coffee_colour=FFDD00"
+              alt="Buy me a coffee"
+            />
+          </a>
+        </div>
+
         {/* join button */}
         <button className={styles.join}>JOIN COMMUNITY</button>
 
