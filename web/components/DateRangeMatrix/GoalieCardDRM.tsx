@@ -141,8 +141,10 @@ const GoalieCardDRM: React.FC<GoalieCardProps> = ({
     <div
       className={styles.goalieCard}
       style={{
-        backgroundColor: teamColors.primary,
-        borderColor: teamColors.jersey,
+        ["--accent-color" as any]: teamColors.accent,
+        ["--secondary-color" as any]: teamColors.secondary,
+        ["--primary-color" as any]: teamColors.primary,
+        ["--jersey-color" as any]: teamColors.jersey,
       }}
     >
       <div className={styles.goalieCardHeader}>

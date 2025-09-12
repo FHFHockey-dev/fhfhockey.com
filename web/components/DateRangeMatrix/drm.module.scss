@@ -62,60 +62,69 @@
   color: v.$text-primary;
 }
 
-.optionsContainer,
-.contentContainer {
+// New two-column container spanning controls and content
+.columnsContainer {
   width: 95%;
-  margin: v.$space-md auto; // unified vertical margins for both rows
+  margin: v.$space-md auto;
+  display: grid;
+  grid-template-columns: 3fr 2fr; // 60/40
+  column-gap: v.$space-md;
+  row-gap: v.$space-md;
+  align-items: start;
+  // Normalize control heights for buttons/selects/inputs within controls
+  --control-h: 40px;
+}
+
+.leftColumn,
+.rightColumn {
   display: flex;
-  justify-content: space-evenly;
+  flex-direction: column;
   gap: v.$space-md;
-  align-items: center;
-  --control-h: 40px; // normalize control heights
+}
+
+.rightColumn {
+  border-left: 1px solid v.$primary-color; // thin separator
+  padding-left: v.$space-md;
 }
 
 .options1,
 .options2,
 .linePairGrid,
 .dateRangeMatrixContainer {
-  flex: 1 1 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
 }
 
-// Content area: restore exact 60/40 split, subtracting half the gap from each side
-.linePairGrid {
-  flex: 0 0 calc(60% - #{v.$space-md} / 2);
-  max-width: calc(60% - #{v.$space-md} / 2);
-}
-.dateRangeMatrixContainer {
-  flex: 0 0 calc(40% - #{v.$space-md} / 2);
-  max-width: calc(40% - #{v.$space-md} / 2);
-}
+// Grid handles the column sizing; children fill 100%
 
 // Stack on smaller screens
 @media only screen and (max-width: v.$screen-medium-max) {
-  .linePairGrid,
-  .dateRangeMatrixContainer {
-    flex: 0 0 100%;
-    max-width: 100%;
+  .columnsContainer {
+    grid-template-columns: 1fr;
+  }
+  .rightColumn {
+    border-left: 0;
+    padding-left: 0;
   }
 }
 
 // Controls width split and horizontal layout
 .options1 {
-  flex: 3 1 0;
-  max-width: none;
+  @include v.component-wrapper;
+  padding: v.$space-sm;
   flex-direction: row;
   align-items: center;
   gap: v.$space-sm;
   flex-wrap: wrap;
+  min-height: 75px;
 
   // Desired order: timeframe (left), date pickers, team dropdown (right)
   .timeFrameToggle {
-    order: 1;
+    order: 2;
   }
   .datePickerGroup {
-    order: 2;
+    order: 1;
   }
   .dropdownGroup {
     order: 3;
@@ -123,13 +132,14 @@
 }
 
 .options2 {
-  flex: 2 1 0;
-  max-width: none;
+  @include v.component-wrapper;
+  padding: v.$space-sm;
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
   gap: v.$space-sm;
   flex-wrap: wrap;
+  min-height: 75px;
 
   // Desired order: buttons (left), select (right)
   .buttonsContainer {
@@ -197,7 +207,7 @@
 .customSelect {
   position: relative;
   display: inline-block;
-  width: 30%;
+  width: 70%;
   font-family: "Roboto Condensed", sans-serif;
 
   select {
@@ -295,7 +305,7 @@
   border: 1px solid v.$border-secondary;
   border-radius: v.$border-radius-md;
   padding: 0 v.$space-md;
-  height: var(--control-h);
+  height: var(--control-h, 40px);
   line-height: calc(var(--control-h) - 2px);
   color: v.$text-primary;
   font-family: v.$font-family-primary;
@@ -325,7 +335,7 @@
   background-color: v.$background-medium;
   color: v.$text-secondary;
   border-color: v.$border-secondary;
-  height: var(--control-h);
+  height: var(--control-h, 40px);
   padding: 0 v.$space-md;
   &:hover {
     color: v.$text-primary;
@@ -342,6 +352,7 @@
   flex: 1 1 0;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .pulsatingGridWrapper {

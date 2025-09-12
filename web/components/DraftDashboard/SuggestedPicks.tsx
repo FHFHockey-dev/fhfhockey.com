@@ -26,6 +26,9 @@ export interface SuggestedPicksProps {
   // NEW: allow drafting directly from suggestions
   onDraftPlayer?: (playerId: string) => void;
   canDraft?: boolean;
+  // NEW: personalized replacement toggle (upstream state)
+  personalizeReplacement?: boolean;
+  onPersonalizeReplacementChange?: (enabled: boolean) => void;
 }
 
 const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
@@ -45,7 +48,9 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   catNeeds,
   rosterProgress,
   onDraftPlayer,
-  canDraft
+  canDraft,
+  personalizeReplacement,
+  onPersonalizeReplacementChange
 }) => {
   // UI state
   type SortField = "rank" | "projFp" | "vorp" | "vbd" | "adp" | "avail" | "fit";
@@ -111,6 +116,11 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     const v = localStorage.getItem("suggested.showRosterBar");
     return v == null ? true : v === "true";
   });
+  // NEW: toggle to adjust (recalculate) displayed VORP by roster needs (lightweight client multiplier)
+  const [rosterVorpEnabled, setRosterVorpEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("suggested.rosterVorpEnabled") === "true";
+  });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -143,6 +153,13 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     if (typeof window === "undefined") return;
     localStorage.setItem("suggested.showRosterBar", String(showRosterBar));
   }, [showRosterBar]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(
+      "suggested.rosterVorpEnabled",
+      String(rosterVorpEnabled)
+    );
+  }, [rosterVorpEnabled]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -188,6 +205,10 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
           e.preventDefault();
           onDraftPlayer(selectedId);
         }
+  } else if (key === "r") {
+    // quick toggle roster-adjusted VORP
+    e.preventDefault();
+    setRosterVorpEnabled((v) => !v);
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -253,6 +274,25 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     });
   }, [recommendations, nextPickNumber, riskSd]);
 
+  // NEW: apply roster-need multiplier directly to VORP (does not change underlying vorpMetrics)
+  const withRosterAdjustedVorp = useMemo(() => {
+    if (!rosterVorpEnabled) return withAvail;
+    return withAvail.map((r) => {
+      const baseVorp = r.vorp ?? 0;
+      const elig = (r.player.displayPosition || "")
+        .split(",")
+        .map((s) => s.trim().toUpperCase())
+        .filter((p) => p && ["C", "LW", "RW", "D", "G"].includes(p));
+      if (elig.length === 0) return { ...r, vorpAdj: baseVorp };
+      const avgNeed = elig.reduce((acc, pos) => acc + (posNeeds[pos] || 0), 0) /
+        Math.max(1, elig.length);
+      // Multiplier: positions fully filled (need≈0) still retain 25% of VORP; unfilled keep ~100%.
+      const multiplier = 0.25 + 0.75 * Math.max(0, Math.min(1, avgNeed));
+      const adj = baseVorp * multiplier;
+      return { ...r, vorpAdj: adj } as typeof r & { vorpAdj: number };
+    });
+  }, [withAvail, rosterVorpEnabled, posNeeds]);
+
   // Position filter options from players
   const availablePositions = useMemo(() => {
     const s = new Set<string>();
@@ -264,19 +304,20 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
 
   // Apply filters: if multi-select set has items, use it; else fallback to single select
   const filtered = useMemo(() => {
+    const source = withRosterAdjustedVorp;
     if (selectedPositions.size > 0) {
-      return withAvail.filter((r) => {
+      return source.filter((r) => {
         const posList = (r.player.displayPosition || "")
           .split(",")
           .map((p) => p.trim());
         return posList.some((p) => selectedPositions.has(p));
       });
     }
-    if (posFilter === "ALL") return withAvail;
-    return withAvail.filter((r) =>
+    if (posFilter === "ALL") return source;
+    return source.filter((r) =>
       r.player.displayPosition?.includes(posFilter)
     );
-  }, [withAvail, posFilter, selectedPositions]);
+  }, [withRosterAdjustedVorp, posFilter, selectedPositions]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -284,8 +325,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
     arr.sort((a, b) => {
       const aFp = a.player.fantasyPoints?.projected ?? 0;
       const bFp = b.player.fantasyPoints?.projected ?? 0;
-      const aVorp = a.vorp ?? 0;
-      const bVorp = b.vorp ?? 0;
+  const aVorp = (rosterVorpEnabled ? (a as any).vorpAdj : a.vorp) ?? 0;
+  const bVorp = (rosterVorpEnabled ? (b as any).vorpAdj : b.vorp) ?? 0;
       const aVbd = a.vbd ?? 0;
       const bVbd = b.vbd ?? 0;
       const aAdp = (a.player as any).yahooAvgPick ?? Infinity;
@@ -374,6 +415,41 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                 </option>
               ))}
             </select>
+          </div>
+          <div className={styles.controlGroup}>
+            <label
+              className={styles.label}
+              htmlFor="rosterVorpToggle"
+              title="Adjust VORP values by remaining roster needs"
+            >
+              NeedV
+            </label>
+            <input
+              id="rosterVorpToggle"
+              type="checkbox"
+              checked={rosterVorpEnabled}
+              onChange={(e) => setRosterVorpEnabled(e.target.checked)}
+              aria-label="Toggle roster-adjusted VORP"
+            />
+          </div>
+          <div className={styles.controlGroup}>
+            <label
+              className={styles.label}
+              htmlFor="personalReplaceToggle"
+              title="Personalize replacement baselines using your filled slots"
+            >
+              PR
+            </label>
+            <input
+              id="personalReplaceToggle"
+              type="checkbox"
+              checked={!!personalizeReplacement}
+              onChange={(e) =>
+                onPersonalizeReplacementChange &&
+                onPersonalizeReplacementChange(e.target.checked)
+              }
+              aria-label="Toggle personalized replacement baselines"
+            />
           </div>
           <div className={styles.controlGroup}>
             <label className={styles.label}>Sort</label>
@@ -502,9 +578,17 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
                       </div>
                     </div>
                     <div className={styles.stat}>
-                      <div className={styles.statLabel}>VORP</div>
+                      <div className={styles.statLabel}>
+                        {rosterVorpEnabled ? "AdjV" : "VORP"}
+                      </div>
                       <div className={styles.statValue}>
-                        {typeof r.vorp === "number" ? r.vorp.toFixed(1) : "—"}
+                        {typeof (rosterVorpEnabled ? (r as any).vorpAdj : r.vorp) ===
+                        "number"
+                          ? (rosterVorpEnabled
+                              ? (r as any).vorpAdj
+                              : r.vorp
+                            )!.toFixed(1)
+                          : "—"}
                       </div>
                     </div>
                     <div className={styles.stat}>

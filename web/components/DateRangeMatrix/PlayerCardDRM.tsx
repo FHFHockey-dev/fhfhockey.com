@@ -70,8 +70,6 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
     <div
       className={styles.playerCard}
       style={{
-        backgroundColor: primary,
-        borderColor: jersey,
         ["--accent-color" as any]: accentColor,
         ["--secondary-color" as any]: secondary,
         ["--primary-color" as any]: primary,

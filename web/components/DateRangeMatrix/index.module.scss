@@ -1,6 +1,7 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\DateRangeMatrix\index.module.scss
 
 @use "styles/vars";
+@use "styles/_panel" as panel;
 
 .gridWrapper {
   display: flex;
@@ -102,19 +103,25 @@
   }
 
   .grid {
-    background-color: #292929;
-    color: #fff;
+    @include panel.panel-container($padding: 20px);
+    background-color: vars.$background-medium;
+    color: vars.$text-primary;
     display: grid;
-    width: 95%;
+    width: 100%;
     aspect-ratio: 1 / 1;
     padding: 20px;
-    border: 2px solid #292929;
-    border-radius: 10px;
+    border: 1px solid vars.$border-primary;
+    border-radius: vars.$border-radius-lg;
+    overflow: auto;
 
     .topPlayerName {
-      position: relative;
-      transition: transform 0.5s;
+      position: sticky;
+      top: 0;
+      background: vars.$background-medium;
+      z-index: 3;
+      transition: transform 0.2s;
       font-variant: small-caps;
+      border-bottom: 1px solid vars.$border-secondary;
     }
     .topPlayerName .inner {
       position: absolute;
@@ -127,10 +134,16 @@
       top: 100%;
       left: 50%;
       padding: 0 var(--spacing);
-      font-family: roboto condensed, sans-serif;
+      font-family:
+        roboto condensed,
+        sans-serif;
     }
 
     .leftPlayerName {
+      position: sticky;
+      left: 0;
+      background: vars.$background-medium;
+      z-index: 2;
       text-align: right;
       text-overflow: ellipsis;
       font-variant: small-caps;
@@ -139,24 +152,27 @@
       padding: 0 var(--spacing);
       transition: transform 0.2s ease-in-out;
       align-self: center;
-      font-family: roboto condensed, sans-serif;
+      font-family:
+        roboto condensed,
+        sans-serif;
+      border-right: 1px solid vars.$border-secondary;
     }
 
     .active {
-      color: darkorange;
-      transform: scale(1.05);
+      color: vars.$primary-color;
+      transform: scale(1.03);
     }
 
     .cell {
-      border: 1px solid #585858;
-      background: #292929;
+      border: 1px solid vars.$border-primary;
+      background: vars.$background-medium;
 
       &:hover {
-        border-color: darkorange; // Ensure hover effect is visible
+        border-color: vars.$border-accent; // Ensure hover effect is visible
       }
 
       &.highlight {
-        border: 1px solid #e5d2b0; // Use a class to apply the highlight style
+        border: 1px solid vars.$border-accent; // Use a class to apply the highlight style
       }
 
       & .content {

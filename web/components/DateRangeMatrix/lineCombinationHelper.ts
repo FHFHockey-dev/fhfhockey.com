@@ -1,7 +1,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\DateRangeMatrix\lineCombinationHelper.ts
 
-import { PlayerData } from "./utilities";
+import { PlayerData, isForward, isDefense } from "./utilities";
 
 export type LinePairResult = {
   lines: PlayerData[][];
@@ -56,8 +56,14 @@ export const calculateLinesAndPairs = (
     );
 
     remainingPlayers.sort((a, b) => {
-      const mutualToiA = pivotPlayer.mutualSharedToi?.[a.id] || 0;
-      const mutualToiB = pivotPlayer.mutualSharedToi?.[b.id] || 0;
+      const mutualToiA =
+        (pivotPlayer.mutualSharedToi && pivotPlayer.mutualSharedToi[a.id]) ??
+        (pivotPlayer.percentToiWith && pivotPlayer.percentToiWith[a.id]) ??
+        0;
+      const mutualToiB =
+        (pivotPlayer.mutualSharedToi && pivotPlayer.mutualSharedToi[b.id]) ??
+        (pivotPlayer.percentToiWith && pivotPlayer.percentToiWith[b.id]) ??
+        0;
       return mutualToiB - mutualToiA;
     });
 
@@ -81,8 +87,21 @@ export const calculateLinesAndPairs = (
   const linesArray: PlayerData[][] = [];
   const pairsArray: PlayerData[][] = [];
 
-  const forwards = sortedRoster.filter((player) => player.playerType === "F");
-  const defensemen = sortedRoster.filter((player) => player.playerType === "D");
+  // Derive skater type if playerType is not provided by input
+  const getSkaterType = (p: PlayerData): "F" | "D" | "G" | "U" => {
+    const pos = (p.displayPosition || p.position || "").toUpperCase();
+    if (isForward(pos)) return "F";
+    if (isDefense(pos)) return "D";
+    if (pos === "G") return "G";
+    return "U";
+  };
+
+  const forwards = sortedRoster.filter(
+    (player) => (player.playerType || getSkaterType(player)) === "F"
+  );
+  const defensemen = sortedRoster.filter(
+    (player) => (player.playerType || getSkaterType(player)) === "D"
+  );
 
   // Assign all forwards to lines
   while (forwards.length > 0) {

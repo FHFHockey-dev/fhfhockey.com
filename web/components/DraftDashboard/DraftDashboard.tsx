@@ -135,6 +135,24 @@ const DraftDashboard: React.FC = () => {
       return saved === "fwd" ? "fwd" : "split";
     }
   );
+  // NEW: personalized replacement toggle
+  const [personalizeReplacement, setPersonalizeReplacement] = useState<boolean>(
+    () => {
+      if (typeof window === "undefined") return false;
+      return (
+        window.localStorage.getItem(
+          "draftDashboard.personalizeReplacement.v1"
+        ) === "true"
+      );
+    }
+  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(
+      "draftDashboard.personalizeReplacement.v1",
+      String(personalizeReplacement)
+    );
+  }, [personalizeReplacement]);
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
@@ -149,7 +167,12 @@ const DraftDashboard: React.FC = () => {
     Record<string, string>
   >({});
   const [keepers, setKeepers] = useState<
-    Array<{ round: number; pickInRound: number; teamId: string; playerId: string }>
+    Array<{
+      round: number;
+      pickInRound: number;
+      teamId: string;
+      playerId: string;
+    }>
   >([]);
 
   // Add custom team names state
@@ -314,9 +337,15 @@ const DraftDashboard: React.FC = () => {
             if (typeof saved.myTeamId === "string") setMyTeamId(saved.myTeamId);
             if (saved.customTeamNames)
               setCustomTeamNames(saved.customTeamNames);
-            if (saved.forwardGrouping === "fwd" || saved.forwardGrouping === "split")
+            if (
+              saved.forwardGrouping === "fwd" ||
+              saved.forwardGrouping === "split"
+            )
               setForwardGrouping(saved.forwardGrouping);
-            if (saved.pickOwnerOverrides && typeof saved.pickOwnerOverrides === "object")
+            if (
+              saved.pickOwnerOverrides &&
+              typeof saved.pickOwnerOverrides === "object"
+            )
               setPickOwnerOverrides(saved.pickOwnerOverrides);
             if (Array.isArray(saved.keepers)) setKeepers(saved.keepers);
           }
@@ -576,12 +605,16 @@ const DraftDashboard: React.FC = () => {
 
   // Targeted trace for a known missing name report
   useEffect(() => {
-    const byName = allPlayers.find((p) => p.fullName?.toLowerCase().includes("marchenko"));
+    const byName = allPlayers.find((p) =>
+      p.fullName?.toLowerCase().includes("marchenko")
+    );
     const byId = allPlayers.find((p) => String(p.playerId) === "8480893");
     if (byName || byId) {
       console.log("Trace - Found Marchenko in player pool:", byName || byId);
     } else {
-      console.warn("Trace - Marchenko not found in player pool (name/id checks)");
+      console.warn(
+        "Trace - Marchenko not found in player pool (name/id checks)"
+      );
     }
   }, [allPlayers]);
 
@@ -800,6 +833,17 @@ const DraftDashboard: React.FC = () => {
     return res;
   }, [myTeamStats, draftSettings.rosterConfig]);
 
+  // Map of filled starters for personalized replacement (exclude bench & util logic handled earlier)
+  const myFilledSlots = React.useMemo(() => {
+    const out: Record<string, number> = { C: 0, LW: 0, RW: 0, D: 0, G: 0 };
+    if (!myTeamStats) return out;
+    const rs = myTeamStats.rosterSlots || {};
+    ["C", "LW", "RW", "D", "G"].forEach((pos) => {
+      out[pos] = rs[pos]?.length || 0;
+    });
+    return out;
+  }, [myTeamStats]);
+
   // NEW: category deficits vector for my team (categories mode): league mean - my totals
   const catNeeds = React.useMemo(() => {
     if ((draftSettings.leagueType || "points") !== "categories")
@@ -914,7 +958,9 @@ const DraftDashboard: React.FC = () => {
   // Auto-skip picks that are already drafted (e.g., keepers)
   useEffect(() => {
     if (draftComplete) return;
-    const alreadyDrafted = draftedPlayers.some((p) => p.pickNumber === currentPick);
+    const alreadyDrafted = draftedPlayers.some(
+      (p) => p.pickNumber === currentPick
+    );
     if (alreadyDrafted) {
       setCurrentPick((prev) => prev + 1);
     }
@@ -947,10 +993,7 @@ const DraftDashboard: React.FC = () => {
       setDraftSettings((prev) => {
         const next = { ...prev, ...newSettings };
         // Ensure draftOrder length matches teamCount if teamCount changed
-        if (
-          typeof newSettings.teamCount === "number" &&
-          newSettings.teamCount > 0
-        ) {
+        if (typeof newSettings.teamCount === "number") {
           const count = newSettings.teamCount;
           if (!next.draftOrder || next.draftOrder.length !== count) {
             next.draftOrder = Array.from(
@@ -995,19 +1038,26 @@ const DraftDashboard: React.FC = () => {
         { playerId, teamId, pickNumber, round, pickInRound }
       ]);
       setKeepers((prev) => [
-        ...prev.filter((k) => k.round !== round || k.pickInRound !== pickInRound),
+        ...prev.filter(
+          (k) => k.round !== round || k.pickInRound !== pickInRound
+        ),
         { round, pickInRound, teamId, playerId }
       ]);
     },
     [draftSettings.teamCount]
   );
-  const removeKeeper = useCallback((round: number, pickInRound: number) => {
-    const pickNumber = (round - 1) * draftSettings.teamCount + pickInRound;
-    setDraftedPlayers((prev) => prev.filter((p) => p.pickNumber !== pickNumber));
-    setKeepers((prev) =>
-      prev.filter((k) => k.round !== round || k.pickInRound !== pickInRound)
-    );
-  }, [draftSettings.teamCount]);
+  const removeKeeper = useCallback(
+    (round: number, pickInRound: number) => {
+      const pickNumber = (round - 1) * draftSettings.teamCount + pickInRound;
+      setDraftedPlayers((prev) =>
+        prev.filter((p) => p.pickNumber !== pickNumber)
+      );
+      setKeepers((prev) =>
+        prev.filter((k) => k.round !== round || k.pickInRound !== pickInRound)
+      );
+    },
+    [draftSettings.teamCount]
+  );
 
   // Add handy keyboard shortcuts for power users
   useEffect(() => {
@@ -1176,6 +1226,8 @@ const DraftDashboard: React.FC = () => {
           leagueType={draftSettings.leagueType || "points"}
           catNeeds={catNeeds}
           rosterProgress={rosterProgress}
+          personalizeReplacement={personalizeReplacement}
+          onPersonalizeReplacementChange={setPersonalizeReplacement}
         />
       </section>
 
@@ -1215,9 +1267,18 @@ const DraftDashboard: React.FC = () => {
         </section>
 
         <section className={styles.rightPanel}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 6
+            }}
+          >
             <div style={{ color: "#9aa4af", fontSize: 12 }}>
-              {skaterData.isLoading || goalieData.isLoading ? "Refreshing…" : ""}
+              {skaterData.isLoading || goalieData.isLoading
+                ? "Refreshing…"
+                : ""}
             </div>
             <button
               onClick={() => setDataRefreshKey((k) => k + 1)}
