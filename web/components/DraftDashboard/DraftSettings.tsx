@@ -226,7 +226,13 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     return () => {
       if (dirtyTimerRef.current) window.clearTimeout(dirtyTimerRef.current);
     };
-  }, [settings, sourceControls, goalieSourceControls, goalieScoringCategories, computeHash]);
+  }, [
+    settings,
+    sourceControls,
+    goalieSourceControls,
+    goalieScoringCategories,
+    computeHash
+  ]);
 
   const handleTeamCountChange = (count: number) => {
     const newDraftOrder = Array.from(
