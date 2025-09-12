@@ -1,8 +1,11 @@
+@use "styles/vars" as v;
+@use "styles/_panel" as panel;
+
 .gridContainer {
   display: grid;
   grid-template-columns: repeat(3, 1fr) min-content repeat(2, 1fr);
   grid-template-rows: min-content repeat(4, 1fr);
-  gap: 0.65rem;
+  gap: v.$space-sm;
   height: 100%;
   box-sizing: border-box;
   position: relative;
@@ -10,20 +13,24 @@
 
 .sectionLabel {
   text-align: center;
-  color: white;
+  color: v.$text-secondary;
   grid-column: span 3;
   margin: 0;
   line-height: 1;
-  padding-bottom: 0.25rem;
-  font-family: "Roboto Condensed", sans-serif;
+  padding-bottom: v.$space-xs;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .defenseLabel {
   grid-column: 5 / span 2;
   margin: 0;
   line-height: 1;
-  padding-bottom: 0.25rem;
-  font-family: "Roboto Condensed", sans-serif;
+  padding-bottom: v.$space-xs;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .goalieContainer {
@@ -35,11 +42,13 @@
 
 .goalieLabel {
   text-align: center;
-  color: white;
+  color: v.$text-secondary;
   margin: 0;
   line-height: 1;
-  padding-bottom: 0.5rem;
-  font-family: "Roboto Condensed", sans-serif;
+  padding-bottom: v.$space-sm;
+  font-family: v.$font-family-accent;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .goalieCards {
@@ -51,7 +60,7 @@
 }
 
 .divider {
-  background-color: white;
+  background-color: v.$border-secondary;
   width: 2px;
   grid-column: 4 / 5;
   grid-row: 2 / 6;
@@ -63,11 +72,11 @@
 }
 
 .goalieCard {
-  background-color: var(--primary-color);
-  border: 2px solid var(--jersey-color);
-  border-radius: 2px;
-  color: white;
-  padding: 0.5rem;
+  @include panel.panel-container($padding: v.$space-sm);
+  background-color: v.$surface-1;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$radius-sm;
+  color: v.$text-primary;
   text-align: left;
   box-sizing: border-box;
   display: flex;
@@ -85,25 +94,23 @@
 
 .goalieCardName {
   display: flex;
-  flex-direction: column; /* Changed from column to row */
+  flex-direction: column;
   align-items: flex-start;
-  font-family: "Roboto Condensed", sans-serif;
+  font-family: v.$font-family-accent;
 }
 
 .firstNameGoalieCard {
   font-weight: 600;
-  font-variant: small-caps;
-  font-size: 0.9rem;
-  letter-spacing: 1.15px;
+  font-size: v.$font-size-sm;
+  letter-spacing: 0.08em;
   color: var(--secondary-color);
-  margin-right: 0.2rem; /* Add some spacing between first and last names */
+  margin-right: 0.2rem;
 }
 
 .lastNameGoalieCard {
-  font-weight: 900;
-  font-variant: small-caps;
-  font-size: 0.9rem;
-  letter-spacing: 1.15px;
+  font-weight: 800;
+  font-size: v.$font-size-sm;
+  letter-spacing: 0.08em;
   color: var(--accent-color);
 }
 
@@ -151,28 +158,28 @@
 }
 
 .goalieStatLabel {
-  font-size: 0.6rem;
-  font-weight: bold;
-  color: #ccc;
-  margin-bottom: 0.25rem;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  color: v.$text-secondary;
+  margin-bottom: v.$space-xxs;
 }
 
 .goalieStatValue {
-  font-size: 0.7rem;
+  font-size: v.$font-size-sm;
   color: var(--accent-color);
-  font-weight: bold;
+  font-weight: 700;
 }
 
 .playerCard {
-  background-color: #202020;
+  @include panel.panel-container($padding: v.$space-sm);
+  background-color: v.$surface-1;
   height: 100%;
-  font-size: 1rem;
-  padding: 0.5rem;
+  padding: v.$space-sm;
   text-align: left;
-  border: 2px solid #333;
-  border-radius: 2px;
-  color: white;
-  font-family: "Roboto Condensed", sans-serif;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$radius-sm;
+  color: v.$text-primary;
+  font-family: v.$font-family-accent;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -195,17 +202,15 @@
 
 .firstNamePlayerCard {
   font-weight: 600;
-  font-variant: small-caps;
-  font-size: 0.75rem;
-  letter-spacing: 1.15px;
+  font-size: v.$font-size-xs;
+  letter-spacing: 0.08em;
   color: var(--secondary-color);
 }
 
 .lastNamePlayerCard {
-  font-weight: 900;
-  font-variant: small-caps;
-  font-size: 0.9rem;
-  letter-spacing: 1.15px;
+  font-weight: 800;
+  font-size: v.$font-size-sm;
+  letter-spacing: 0.08em;
   color: var(--accent-color);
 }
 
@@ -230,10 +235,10 @@
 }
 
 .lastTenGames span {
-  font-size: 0.55rem;
-  font-weight: bold;
+  font-size: v.$font-size-xxs;
+  font-weight: 700;
   color: var(--accent-color);
-  letter-spacing: 1px;
+  letter-spacing: 0.08em;
 }
 
 .statsGrid {
@@ -250,25 +255,25 @@
 }
 
 .statLabel {
-  font-size: 0.6rem;
-  font-weight: bold;
-  color: #ccc;
-  margin-bottom: 0.25rem;
+  font-size: v.$font-size-xs;
+  font-weight: 600;
+  color: v.$text-secondary;
+  margin-bottom: v.$space-xxs;
 }
 
 .statValue {
-  font-size: 0.9rem;
+  font-size: v.$font-size-sm;
   color: var(--accent-color);
-  font-weight: bold;
+  font-weight: 700;
 }
 
 .displayPosition {
   position: absolute;
   top: 8px;
   right: 8px;
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
+  background-color: rgba(0, 0, 0, 0.4);
+  color: v.$text-primary;
   padding: 2px 4px;
-  border-radius: 3px;
-  font-size: 12px;
+  border-radius: v.$radius-xs;
+  font-size: v.$font-size-xs;
 }

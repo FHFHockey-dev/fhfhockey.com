@@ -32,6 +32,9 @@ export interface UseVORPParams {
   categoryWeights?: Record<string, number>; // used when leagueType === 'categories'
   // NEW: forward grouping mode: split C/LW/RW or combined F
   forwardGrouping?: "split" | "fwd";
+  // NEW: personalized replacement context
+  myFilledSlots?: Record<string, number>; // counts of already filled starters per position (C,LW,RW,D,G,UTILITY?)
+  personalizeReplacement?: boolean; // if true, adjust replacement indices by subtracting filled starters
 }
 
 export interface UseVORPResult {
@@ -45,9 +48,7 @@ export interface UseVORPResult {
 // Helper: parse eligible positions from displayPosition
 const parseEligiblePositions = (displayPosition?: string | null): string[] => {
   if (!displayPosition) return [];
-  const parts = displayPosition
-    .split(",")
-    .map((p) => p.trim().toUpperCase());
+  const parts = displayPosition.split(",").map((p) => p.trim().toUpperCase());
   const out: string[] = [];
   parts.forEach((p) => {
     if (p === "F") {
@@ -69,7 +70,9 @@ export function useVORPCalculations({
   leagueType = "points",
   baselineMode = "remaining",
   categoryWeights = {},
-  forwardGrouping = "split"
+  forwardGrouping = "split",
+  myFilledSlots = {},
+  personalizeReplacement = false
 }: UseVORPParams): UseVORPResult {
   return useMemo(() => {
     // Value per player (points or categories composite)
@@ -205,8 +208,9 @@ export function useVORPCalculations({
     });
 
     // If forward grouping is combined, build a merged forward pool (C+LW+RW)
-    const fwdPoolFull = [...byPosFull.C, ...byPosFull.LW, ...byPosFull.RW]
-      .sort((a, b) => b.value - a.value);
+    const fwdPoolFull = [...byPosFull.C, ...byPosFull.LW, ...byPosFull.RW].sort(
+      (a, b) => b.value - a.value
+    );
 
     // Replacement indices (0-based) for VORP and VOLS
     const idxVORP: Record<string, number> = {};
@@ -214,8 +218,14 @@ export function useVORPCalculations({
 
     positions.forEach((pos) => {
       const startersPos = (starters as any)[pos] || 0;
-      const vorpRank1Based = T * (startersPos + (utilAdj[pos] || 0)) + 1; // as spec
-      const volsRank1Based = T * startersPos; // last starter
+      let effectiveStarters = startersPos;
+      if (personalizeReplacement) {
+        // Subtract user's filled starters (but never below 0) to shift replacement deeper for filled spots.
+        const filled = myFilledSlots[pos] || 0;
+        effectiveStarters = Math.max(0, startersPos - filled);
+      }
+      const vorpRank1Based = T * (effectiveStarters + (utilAdj[pos] || 0)) + 1; // replacement just after last effective starter
+      const volsRank1Based = T * effectiveStarters; // last effective starter index (1-based)
       // Convert to 0-based indices with clamping >=1
       const vorpIdx = Math.max(0, Math.floor(vorpRank1Based) - 1);
       const volsIdx = Math.max(0, Math.floor(volsRank1Based) - 1);
@@ -229,7 +239,10 @@ export function useVORPCalculations({
     const fwdUtilShare = utilAdj.C + utilAdj.LW + utilAdj.RW; // UTIL portion that can be filled by FWD
     const fwdStarters = baseFwdStarters + fwdUtilShare;
     const fwdIdxVORP = Math.max(0, Math.floor(T * fwdStarters + 1) - 1);
-    const fwdIdxVOLS = Math.max(0, Math.floor(T * (baseFwdStarters + fwdUtilShare)) - 1);
+    const fwdIdxVOLS = Math.max(
+      0,
+      Math.floor(T * (baseFwdStarters + fwdUtilShare)) - 1
+    );
 
     // Replacement values at indices (use last available if shorter)
     const replacementByPos: Record<string, { vorp: number; vols: number }> = {
@@ -260,14 +273,20 @@ export function useVORPCalculations({
       byPosAvail[pos].sort((a, b) => b.value - a.value)
     );
 
-    const fwdPoolAvail = [...byPosAvail.C, ...byPosAvail.LW, ...byPosAvail.RW]
-      .sort((a, b) => b.value - a.value);
+    const fwdPoolAvail = [
+      ...byPosAvail.C,
+      ...byPosAvail.LW,
+      ...byPosAvail.RW
+    ].sort((a, b) => b.value - a.value);
 
     // Choose baseline source for replacement values
     const baselineArrs = baselineMode === "remaining" ? byPosAvail : byPosFull;
 
     positions.forEach((pos) => {
-      if (forwardGrouping === "fwd" && (pos === "C" || pos === "LW" || pos === "RW")) {
+      if (
+        forwardGrouping === "fwd" &&
+        (pos === "C" || pos === "LW" || pos === "RW")
+      ) {
         const arr = baselineMode === "remaining" ? fwdPoolAvail : fwdPoolFull;
         const vorpIdx = Math.min(fwdIdxVORP, Math.max(0, arr.length - 1));
         const volsIdx = Math.min(fwdIdxVOLS, Math.max(0, arr.length - 1));
@@ -418,6 +437,8 @@ export function useVORPCalculations({
     leagueType,
     baselineMode,
     categoryWeights,
-    forwardGrouping
+    forwardGrouping,
+    personalizeReplacement,
+    myFilledSlots
   ]);
 }

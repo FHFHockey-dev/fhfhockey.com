@@ -1,7 +1,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\DateRangeMatrix\utilities.ts
 
-import { teamsInfo } from "lib/NHL/teamsInfo";
+import { teamsInfo } from "lib/teamsInfo";
 import supabase from "lib/supabase";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 

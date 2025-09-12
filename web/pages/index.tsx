@@ -16,7 +16,7 @@ import Container from "components/Layout/Container";
 import ClientOnly from "components/ClientOnly";
 import styles from "../styles/Home.module.scss";
 
-import { teamsInfo } from "lib/NHL/teamsInfo";
+import { teamsInfo } from "lib/teamsInfo";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
 import { checkIsOffseason } from "../hooks/useOffseason";
 import Fetch from "lib/cors-fetch";

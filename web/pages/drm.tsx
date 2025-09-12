@@ -12,12 +12,14 @@
 // cron job all of the databases to run every day at 3am
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import DateRangeMatrix, {
+import {
   OPTIONS as DATERANGE_MATRIX_MODES,
   Mode
 } from "components/DateRangeMatrix/index";
-import TeamDropdown from "components/DateRangeMatrix/TeamDropdown";
+import DateRangeMatrixView from "components/DateRangeMatrix/DateRangeMatrixView";
+import { useDateRangeMatrixData } from "components/DateRangeMatrix/useDateRangeMatrixData";
 import TeamSelect from "components/TeamSelect";
+import TeamDropdown from "components/DateRangeMatrix/TeamDropdown";
 import LinePairGrid from "components/DateRangeMatrix/LinePairGrid";
 import Select from "components/Select";
 import {
@@ -28,14 +30,14 @@ import {
 import styles from "components/DateRangeMatrix/drm.module.scss";
 import { queryTypes, useQueryState } from "next-usequerystate";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
-import { teamsInfo } from "lib/NHL/teamsInfo";
+import { teamsInfo } from "lib/teamsInfo";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { fetchAggregatedData } from "components/DateRangeMatrix/fetchAggregatedData";
 import { calculateLinesAndPairs } from "components/DateRangeMatrix/lineCombinationHelper";
 import Image from "next/image";
 
-type TeamAbbreviation = keyof typeof teamsInfo;
+type TeamAbbreviation = Extract<keyof typeof teamsInfo, string>; // remove implicit number from index signature
 
 const DEFAULT_LOGO = "Five Hole.png";
 const DEFAULT_COLORS = {
@@ -51,6 +53,14 @@ export default function DRMPage() {
     queryTypes.string.withDefault(DATERANGE_MATRIX_MODES[0].value)
   );
   const [selectedTeam, setSelectedTeam] = useState<TeamAbbreviation | "">("");
+  // Ensure runtime value always stays a string (never number)
+  const setTeamSafe = (val: string | TeamAbbreviation | null) => {
+    if (!val) {
+      setSelectedTeam("");
+      return;
+    }
+    setSelectedTeam(val as TeamAbbreviation);
+  };
   const [seasonId, setSeasonId] = useState<number | null>(null);
   const [gameIds, setGameIds] = useState<number[]>([]);
   const [regularSeasonData, setRegularSeasonData] = useState<any[]>([]);
@@ -145,13 +155,14 @@ export default function DRMPage() {
   useEffect(() => {
     async function fetchGames() {
       if (selectedTeam && seasonId && startDate && endDate) {
+        const teamKey = selectedTeam as TeamAbbreviation; // selectedTeam guaranteed non-empty
         const { regularSeasonPlayersData, playoffPlayersData } =
           await fetchAggregatedData(
-            selectedTeam,
+            teamKey,
             startDate.toISOString().split("T")[0],
             endDate.toISOString().split("T")[0],
             seasonType,
-            timeFrame, // Updated to ensure correct data is fetched
+            timeFrame,
             "",
             ""
           );
@@ -175,19 +186,18 @@ export default function DRMPage() {
   }, [seasonType, regularSeasonData, playoffData]);
 
   useEffect(() => {
-    if (aggregatedData.length > 0 && startDate && endDate) {
-      const recalculateLinesAndPairs = () => {
-        const { lines: newLines, pairs: newPairs } = calculateLinesAndPairs(
-          aggregatedData,
-          "line-combination"
-        );
-        setLines(newLines);
-        setPairs(newPairs);
-        console.log("Recalculated Lines:", newLines);
-        console.log("Recalculated Pairs:", newPairs);
-      };
-
-      recalculateLinesAndPairs();
+    const aggArray = Array.isArray(aggregatedData)
+      ? (aggregatedData as any[])
+      : Object.values(aggregatedData || {});
+    if (aggArray.length > 0 && startDate && endDate) {
+      const { lines: newLines, pairs: newPairs } = calculateLinesAndPairs(
+        aggArray as any,
+        "line-combination"
+      );
+      setLines(newLines);
+      setPairs(newPairs);
+      console.log("Recalculated Lines:", newLines);
+      console.log("Recalculated Pairs:", newPairs);
     }
   }, [startDate, endDate, aggregatedData]);
 
@@ -217,6 +227,23 @@ export default function DRMPage() {
     ? `/teamLogos/${teamsInfo[selectedTeam as TeamAbbreviation].abbrev}.png`
     : `/teamLogos/${DEFAULT_LOGO}`;
 
+  const startStr = startDate?.toISOString().split("T")[0] || "";
+  const endStr = endDate?.toISOString().split("T")[0] || "";
+  const aggregatedForHook = useMemo(() => {
+    return seasonType === "regularSeason"
+      ? Object.values(regularSeasonData)
+      : Object.values(playoffData);
+  }, [seasonType, regularSeasonData, playoffData]);
+
+  const drmData = useDateRangeMatrixData({
+    teamAbbreviation: (selectedTeam as TeamAbbreviation) || undefined,
+    startDate: startStr,
+    endDate: endStr,
+    mode,
+    source: "aggregated",
+    aggregatedData: aggregatedForHook
+  });
+
   return (
     <div
       className={styles.drmContainer}
@@ -232,9 +259,9 @@ export default function DRMPage() {
           abbreviation: key as TeamAbbreviation,
           name: teamsInfo[key as TeamAbbreviation].name
         }))}
-        team={selectedTeam}
+        team={(selectedTeam || "") as string}
         onTeamChange={(teamAbbreviation) => {
-          setSelectedTeam(teamAbbreviation as TeamAbbreviation);
+          setTeamSafe(teamAbbreviation);
         }}
       />
 
@@ -265,111 +292,97 @@ export default function DRMPage() {
         </span>
       </h4>
 
-      <div className={styles.optionsContainer}>
-        <div className={styles.options1}>
-          <div className={styles.dropdownGroup}>
-            <label htmlFor="teamDropdown" className={styles.label}>
-              Team
-            </label>
-            <TeamDropdown
-              selectedTeam={selectedTeam}
-              onSelect={(team) => {
-                setSelectedTeam(team as TeamAbbreviation);
-              }}
-              className={`${styles.select} ${styles.teamDropdown}`} // Apply the styled class names
-            />
-          </div>
+      <div className={styles.columnsContainer}>
+        <div className={styles.leftColumn}>
+          <div className={styles.options1}>
+            <div
+              className={styles.timeFrameToggle}
+              role="tablist"
+              aria-label="Select timeframe"
+            >
+              <button
+                className={`${styles.button} ${timeFrame === "L7" ? styles.active : ""}`}
+                onClick={() => setTimeFrame("L7")}
+                role="tab"
+                aria-selected={timeFrame === "L7"}
+              >
+                L7
+              </button>
+              <button
+                className={`${styles.button} ${timeFrame === "L14" ? styles.active : ""}`}
+                onClick={() => setTimeFrame("L14")}
+                role="tab"
+                aria-selected={timeFrame === "L14"}
+              >
+                L14
+              </button>
+              <button
+                className={`${styles.button} ${timeFrame === "L30" ? styles.active : ""}`}
+                onClick={() => setTimeFrame("L30")}
+                role="tab"
+                aria-selected={timeFrame === "L30"}
+              >
+                L30
+              </button>
+              <button
+                className={`${styles.button} ${timeFrame === "Totals" ? styles.active : ""}`}
+                onClick={() => setTimeFrame("Totals")}
+                role="tab"
+                aria-selected={timeFrame === "Totals"}
+              >
+                Season
+              </button>
+            </div>
 
-          <div className={styles.datePickerGroup}>
-            <div className={styles.datePicker}>
-              <label htmlFor="startDate" className={styles.label}>
-                Start Date
+            <div className={styles.dropdownGroup}>
+              <label htmlFor="teamDropdown" className={styles.label}>
+                Team
               </label>
-              <DatePicker
-                selected={startDate}
-                onChange={(date: Date | null) =>
-                  setStartDate(date ?? undefined)
-                }
-                selectsStart
-                startDate={startDate}
-                endDate={endDate}
-                className={`${styles.select} ${styles.datePickerInput}`}
+              <TeamDropdown
+                selectedTeam={(selectedTeam || "") as string}
+                onSelect={(team) => {
+                  setSelectedTeam(team as TeamAbbreviation);
+                }}
+                className={`${styles.select} ${styles.teamDropdown}`}
               />
             </div>
-            <div className={styles.datePicker}>
-              <label htmlFor="endDate" className={styles.label}>
-                End Date
-              </label>
-              <DatePicker
-                selected={endDate}
-                onChange={(date: Date | null) => setEndDate(date ?? undefined)}
-                selectsEnd
-                startDate={startDate}
-                endDate={endDate}
-                className={`${styles.select} ${styles.datePickerInput}`}
-              />
+
+            <div className={styles.datePickerGroup}>
+              <div className={styles.datePicker}>
+                <label htmlFor="startDate" className={styles.label}>
+                  Start Date
+                </label>
+                <DatePicker
+                  selected={startDate}
+                  onChange={(date: Date | null) =>
+                    setStartDate(date ?? undefined)
+                  }
+                  withPortal
+                  selectsStart
+                  startDate={startDate}
+                  endDate={endDate}
+                  className={`${styles.select} ${styles.datePickerInput}`}
+                />
+              </div>
+              <div className={styles.datePicker}>
+                <label htmlFor="endDate" className={styles.label}>
+                  End Date
+                </label>
+                <DatePicker
+                  selected={endDate}
+                  onChange={(date: Date | null) =>
+                    setEndDate(date ?? undefined)
+                  }
+                  withPortal
+                  selectsEnd
+                  startDate={startDate}
+                  endDate={endDate}
+                  className={`${styles.select} ${styles.datePickerInput}`}
+                />
+              </div>
             </div>
           </div>
 
-          {/* Timeframe Toggle Buttons */}
-          <div className={styles.timeFrameToggle}>
-            <button
-              className={timeFrame === "L7" ? styles.active : ""}
-              onClick={() => setTimeFrame("L7")}
-            >
-              L7
-            </button>
-            <button
-              className={timeFrame === "L14" ? styles.active : ""}
-              onClick={() => setTimeFrame("L14")}
-            >
-              L14
-            </button>
-            <button
-              className={timeFrame === "L30" ? styles.active : ""}
-              onClick={() => setTimeFrame("L30")}
-            >
-              L30
-            </button>
-            <button
-              className={timeFrame === "Totals" ? styles.active : ""}
-              onClick={() => setTimeFrame("Totals")}
-            >
-              Season
-            </button>
-          </div>
-        </div>
-
-        <div className={styles.options2}>
-          <div className={styles.buttonsContainer}>
-            <button
-              onClick={() => handleSeasonTypeChange("regularSeason")}
-              className={`${styles.button} ${
-                seasonType === "regularSeason" ? styles.active : ""
-              }`}
-            >
-              Regular Season
-            </button>
-            <button
-              onClick={() => handleSeasonTypeChange("playoffs")}
-              className={`${styles.button} ${
-                seasonType === "playoffs" ? styles.active : ""
-              }`}
-            >
-              Playoffs
-            </button>
-          </div>
-          <Select
-            options={DATERANGE_MATRIX_MODES}
-            option={mode}
-            onOptionChange={(newOption) => setDateRangeMatrixMode(newOption)}
-            className={styles.selectWrapper}
-          />
-        </div>
-      </div>
-
-      <div className={styles.contentContainer}>
-        <>
           <div className={styles.linePairGrid}>
             <LinePairGrid
               selectedTeam={selectedTeam}
@@ -377,35 +390,56 @@ export default function DRMPage() {
               endDate={endDate}
               onLinesAndPairsCalculated={onLinesAndPairsCalculated}
               seasonType={seasonType}
-              timeFrame={timeFrame} // Pass the selected time frame
+              timeFrame={timeFrame}
               dateRange={{
-                start: startDate || new Date(), // Fallback to current date if undefined
-                end: endDate || new Date() // Fallback to current date if undefined
-              }} // Pass dateRange
+                start: startDate || new Date(),
+                end: endDate || new Date()
+              }}
               regularSeasonPlayersData={regularSeasonData}
               playoffPlayersData={playoffData}
             />
           </div>
-          <div className={styles.dateRangeMatrixContainer}>
-            <DateRangeMatrix
-              id={selectedTeam as TeamAbbreviation}
-              gameIds={gameIds}
-              mode={mode}
-              onModeChanged={(newMode) => {
-                setDateRangeMatrixMode(newMode);
-              }}
-              aggregatedData={
-                seasonType === "regularSeason"
-                  ? Object.values(regularSeasonData)
-                  : Object.values(playoffData)
-              }
-              startDate={startDate?.toISOString().split("T")[0] || ""}
-              endDate={endDate?.toISOString().split("T")[0] || ""}
-              lines={lines}
-              pairs={pairs}
+        </div>
+
+        <div className={styles.rightColumn}>
+          <div className={styles.options2}>
+            <div className={styles.buttonsContainer}>
+              <button
+                onClick={() => handleSeasonTypeChange("regularSeason")}
+                className={`${styles.button} ${seasonType === "regularSeason" ? styles.active : ""}`}
+              >
+                Regular Season
+              </button>
+              <button
+                onClick={() => handleSeasonTypeChange("playoffs")}
+                className={`${styles.button} ${seasonType === "playoffs" ? styles.active : ""}`}
+              >
+                Playoffs
+              </button>
+            </div>
+            <Select
+              options={DATERANGE_MATRIX_MODES}
+              option={mode}
+              onOptionChange={(newOption) => setDateRangeMatrixMode(newOption)}
+              className={styles.selectWrapper}
             />
           </div>
-        </>
+          <div className={styles.dateRangeMatrixContainer}>
+            {drmData.teamId && drmData.teamName ? (
+              <DateRangeMatrixView
+                teamId={drmData.teamId}
+                teamName={drmData.teamName}
+                roster={drmData.roster}
+                toiData={drmData.toiData}
+                mode={mode}
+                playerATOI={drmData.playerATOI}
+                loading={drmData.loading}
+                lines={drmData.lines}
+                pairs={drmData.pairs}
+              />
+            ) : null}
+          </div>
+        </div>
       </div>
     </div>
   );

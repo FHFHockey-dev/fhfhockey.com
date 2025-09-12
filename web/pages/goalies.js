@@ -262,7 +262,7 @@ const GoalieTrends = () => {
     };
 
     fetchSeasonData();
-  }, []);
+  }, [selectedStats]); // Include selectedStats so rankings recompute if user changes stat set
 
   useEffect(() => {
     if (!fetchData || !selectedWeek) return;

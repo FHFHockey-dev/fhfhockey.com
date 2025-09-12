@@ -7,5 +7,6 @@
     "headshot",
     "Linemate",
     "plusminus"
-  ]
+  ],
+  "chatgpt.openOnStartup": true
 }

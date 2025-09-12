@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import useTeams from "../hooks/useTeams";
 import styles from "../styles/teamStats.module.scss";
-import { teamsInfo } from "lib/teamsInfo";
+import { teamsInfo } from "lib/teamsInfo"; // ensure unified path
 
 interface CustomStyle extends React.CSSProperties {
   "--primary-color"?: string;
@@ -23,7 +23,7 @@ const TeamStats = () => {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
-    (<div className={styles.teamStatsContainer}>
+    <div className={styles.teamStatsContainer}>
       <h1 className={styles.pageHeader}>
         <span className={styles.spanColorBlue}>Team</span> Stats
       </h1>
@@ -32,22 +32,21 @@ const TeamStats = () => {
           sortedTeams.map((team) => {
             const teamInfo = teamsInfo[team.abbreviation];
             return (
-              (<Link
+              <Link
                 href={`/teamStats/${team.abbreviation}`}
                 key={team.id}
                 className={styles.teamCard}
                 style={
                   {
-                    "--primary-color":
-                      teamInfo?.primaryColor || ("" as string),
+                    "--primary-color": teamInfo?.primaryColor || ("" as string),
                     "--secondary-color":
                       teamInfo?.secondaryColor || ("" as string),
                     "--jersey": teamInfo?.jersey || "black",
                     "--accent-color": teamInfo?.accent || ("" as string),
-                    "--alt-color": teamInfo?.alt || "black",
+                    "--alt-color": teamInfo?.alt || "black"
                   } as CustomStyle
-                }>
-
+                }
+              >
                 <div className="center-stripe"></div>
                 <div className={styles.teamLogoContainer}>
                   <img
@@ -60,15 +59,14 @@ const TeamStats = () => {
                   />
                 </div>
                 <div className={styles.teamAbbrev}>{team.abbreviation}</div>
-
-              </Link>)
+              </Link>
             );
           })
         ) : (
           <p className={styles.loading}>Loading...</p>
         )}
       </div>
-    </div>)
+    </div>
   );
 };
 

@@ -89,9 +89,7 @@ export default function StatsPage({
 
   const hoverTimeoutRef = useRef<NodeJS.Timeout>();
   const mouseLeaveTimeoutRef = useRef<NodeJS.Timeout>();
-  const scrollTimeoutRef = useRef<NodeJS.Timeout>();
-  // Stable snapshots used only for cleanup; assigned lazily where needed
-  let scrollTimeoutSnapshot: NodeJS.Timeout | undefined;
+  // Removed scrollTimeoutRef: using localized timeout handles within effects to avoid lint warnings
 
   const handleTeamMouseEnter = (teamAbbreviation: string) => {
     if (hoverTimeoutRef.current) {
@@ -146,10 +144,8 @@ export default function StatsPage({
     return () => {
       const hoverTimeout = hoverTimeoutRef.current;
       const leaveTimeout = mouseLeaveTimeoutRef.current;
-      scrollTimeoutSnapshot = scrollTimeoutRef.current; // capture once
       if (hoverTimeout) clearTimeout(hoverTimeout);
       if (leaveTimeout) clearTimeout(leaveTimeout);
-      if (scrollTimeoutSnapshot) clearTimeout(scrollTimeoutSnapshot);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- no dependencies; on unmount only
   }, []);
@@ -399,8 +395,6 @@ export default function StatsPage({
 
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      const timeoutFromRef = scrollTimeoutRef.current;
-      if (timeoutFromRef) clearTimeout(timeoutFromRef);
       if (scrollTimeout) clearTimeout(scrollTimeout);
     };
   }, [isMobile, teamsGridState]); // CRITICAL: Include teamsGridState to detect desync

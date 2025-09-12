@@ -2,7 +2,7 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\DateRangeMatrix\TeamDropdown.tsx
 
 import React from "react";
-import { teamsInfo } from "lib/NHL/teamsInfo";
+import { teamsInfo } from "lib/teamsInfo";
 import styles from "./drm.module.scss"; // Assuming your custom styles are in drm.module.scss
 
 type TeamAbbreviation = keyof typeof teamsInfo;
@@ -15,13 +15,13 @@ type TeamDropdownProps = {
 
 const TeamDropdown: React.FC<TeamDropdownProps> = ({
   selectedTeam,
-  onSelect,
+  onSelect
 }) => {
   const teamOptions = Object.keys(teamsInfo)
     .sort()
     .map((key) => ({
       value: key,
-      label: key,
+      label: key
     }));
 
   return (

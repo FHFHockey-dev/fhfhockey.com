@@ -40,6 +40,23 @@ import { useUser } from "contexts/AuthProviderContext"; // Your AuthProvider
 // @ts-ignore
 import nameMappingTodo from "lib/supabase/Upserts/Yahoo/name_mapping_todo.json";
 
+// NOTE: Moved out of component so identity is stable and does not need to be
+// listed in hook dependency arrays. This resolves the previous
+// react-hooks/exhaustive-deps warning about missing FIRSTNAME_ALIASES while
+// keeping callbacks minimal.
+const FIRSTNAME_ALIASES: Record<string, string[]> = {
+  joshua: ["josh"],
+  jacob: ["jake"],
+  michael: ["mike"],
+  matthew: ["matt"],
+  nicholas: ["nick"],
+  anthony: ["tony"],
+  alexander: ["alex"],
+  william: ["will", "bill", "billy"],
+  christopher: ["chris"],
+  jonathan: ["john", "jon"]
+};
+
 interface CSVRow {
   [key: string]: string | number;
 }
@@ -213,19 +230,6 @@ export default function UpsertProjectionsPage() {
     [norm, splitFirstLast]
   );
 
-  const FIRSTNAME_ALIASES: Record<string, string[]> = {
-    joshua: ["josh"],
-    jacob: ["jake"],
-    michael: ["mike"],
-    matthew: ["matt"],
-    nicholas: ["nick"],
-    anthony: ["tony"],
-    alexander: ["alex"],
-    william: ["will", "bill", "billy"],
-    christopher: ["chris"],
-    jonathan: ["john", "jon"],
-  };
-
   const firstNameSimilar = useCallback(
     (a: string, b: string) => {
       const na = norm(a);
@@ -253,7 +257,11 @@ export default function UpsertProjectionsPage() {
     const m: Record<string, string> = {};
     const fold = (src: any) => {
       if (!src) return;
-      const entries: any[] = Array.isArray(src) ? src : Array.isArray(src?.data) ? src.data : [];
+      const entries: any[] = Array.isArray(src)
+        ? src
+        : Array.isArray(src?.data)
+          ? src.data
+          : [];
       for (const e of entries) {
         const data = e?.data ?? e;
         const u = norm(String(data?.unmatchedName || ""));
@@ -261,7 +269,9 @@ export default function UpsertProjectionsPage() {
         if (u && c) m[u] = c;
       }
     };
-    try { fold(nameMappingTodo); } catch {}
+    try {
+      fold(nameMappingTodo);
+    } catch {}
     return m;
   }, [norm]);
 
@@ -429,7 +439,8 @@ export default function UpsertProjectionsPage() {
         // is standardized for display under its new standardized column name.
         if (headerConfig.original === playerColumn) {
           const std = standardizePlayerName(originalValue);
-          standardizedRow[headerConfig.standardized] = applyNameOverridesOrHeuristic(std);
+          standardizedRow[headerConfig.standardized] =
+            applyNameOverridesOrHeuristic(std);
         } else {
           standardizedRow[headerConfig.standardized] = originalValue;
         }
@@ -535,7 +546,8 @@ export default function UpsertProjectionsPage() {
       // The logic assumes if `playerColumn` is set, its config will be found if selected.
       if (!playerNameStandardized && selectedPlayerColConfig) {
         const std = standardizePlayerName(String(row[playerColumn] || ""));
-        upsertRow[selectedPlayerColConfig.standardized] = applyNameOverridesOrHeuristic(std);
+        upsertRow[selectedPlayerColConfig.standardized] =
+          applyNameOverridesOrHeuristic(std);
       }
       return upsertRow;
     });

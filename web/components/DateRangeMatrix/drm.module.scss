@@ -1,98 +1,164 @@
+@use "styles/vars" as v;
+@use "styles/_panel" as panel;
+
 .drmContainer {
   margin: 0 auto;
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
+  gap: 0; // remove gap between TeamSelect container and page title
 }
 
 .pageTitle {
+  // keep panel-title metrics for spacing/typography
+  @include panel.panel-title($padding-y: v.$space-sm, $padding-x: v.$space-md);
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  margin-bottom: 1rem;
-  margin-top: 0;
-  padding-left: 2rem;
-  font-size: 2.5rem;
-  font-weight: 900;
-  text-align: left;
-  font-family: roboto condensed, sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  position: relative;
+  gap: v.$space-sm;
+  margin: 0;
+  color: v.$text-primary;
+  border-bottom-color: v.$border-accent;
+  // restore team-color hard-line gradient background
   background: linear-gradient(
     180deg,
-    #07aae2 0%,
-    #07aae2 2%,
-
-    var(--accent-color) 2%,
-    var(--accent-color) 7%,
-
-    var(--primary-color) 7%,
+    var(--secondary-color) 0%,
+    var(--secondary-color) 3%,
+    var(--accent-color) 3%,
+    var(--accent-color) 8%,
+    var(--primary-color) 8%,
     var(--primary-color) 65%,
-
     var(--jersey-color) 65%,
     var(--jersey-color) 70%,
-
     var(--accent-color) 70%,
     var(--accent-color) 75%,
-
     var(--secondary-color) 75%,
     var(--secondary-color) 80%,
-
     var(--jersey-color) 80%,
     var(--jersey-color) 100%
-  ); // Gradient using team colors
-  color: var(--accent-color); // Dynamic secondary color for text
-  border-bottom: 5px solid var(--accent-color); // Dynamic accent color
-  overflow: hidden;
+  );
 }
 
 .teamLogo {
-  width: 90px; // Size of the logo
-  height: 90px; // Size of the logo
-  margin-right: 1rem;
-  margin-left: 2rem;
-  z-index: 1; // Ensure logo is on top of the gradient
-  filter: drop-shadow(
-    0 0 5px var(--accent-color)
-  ); // Add a drop shadow to the logo
+  width: 56px;
+  height: 56px;
+  margin-left: v.$space-sm;
+  margin-right: v.$space-sm;
+  z-index: 1;
+  filter: drop-shadow(0 0 5px v.$border-accent);
 }
 
 .teamName {
   flex-grow: 1;
-  z-index: 1; // Ensure the team name is on top of the gradient
-  margin-left: 1rem;
-  margin-bottom: 2rem;
+  z-index: 1;
+  margin-left: v.$space-sm;
 }
 
 .teamLocation {
-  color: var(--accent-color); /* Style for the location part */
+  color: v.$text-secondary;
 }
 
 .teamShortName {
-  color: var(--jersey-color); /* Style for the short name part */
+  color: v.$text-primary;
 }
 
-.optionsContainer,
-.contentContainer {
-  width: 95%; /* Set the width to 95% of the parent container */
-  margin: 0 auto;
+// New two-column container spanning controls and content
+.columnsContainer {
+  width: 95%;
+  margin: v.$space-md auto;
+  display: grid;
+  grid-template-columns: 3fr 2fr; // 60/40
+  column-gap: v.$space-md;
+  row-gap: v.$space-md;
+  align-items: start;
+  // Normalize control heights for buttons/selects/inputs within controls
+  --control-h: 40px;
+}
+
+.leftColumn,
+.rightColumn {
   display: flex;
-  justify-content: space-around;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  flex-direction: column;
+  gap: v.$space-md;
+}
+
+.rightColumn {
+  border-left: 1px solid v.$primary-color; // thin separator
+  padding-left: v.$space-md;
 }
 
 .options1,
 .options2,
 .linePairGrid,
 .dateRangeMatrixContainer {
-  flex: 1 1 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  max-width: 600px; /* Ensure that both containers maintain a 1:1 ratio */
+}
+
+// Grid handles the column sizing; children fill 100%
+
+// Stack on smaller screens
+@media only screen and (max-width: v.$screen-medium-max) {
+  .columnsContainer {
+    grid-template-columns: 1fr;
+  }
+  .rightColumn {
+    border-left: 0;
+    padding-left: 0;
+  }
+}
+
+// Controls width split and horizontal layout
+.options1 {
+  @include v.component-wrapper;
+  padding: v.$space-sm;
+  flex-direction: row;
+  align-items: center;
+  gap: v.$space-sm;
+  flex-wrap: wrap;
+  min-height: 75px;
+
+  // Desired order: timeframe (left), date pickers, team dropdown (right)
+  .timeFrameToggle {
+    order: 2;
+  }
+  .datePickerGroup {
+    order: 1;
+  }
+  .dropdownGroup {
+    order: 3;
+  }
+}
+
+.options2 {
+  @include v.component-wrapper;
+  padding: v.$space-sm;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: v.$space-sm;
+  flex-wrap: wrap;
+  min-height: 75px;
+
+  // Desired order: buttons (left), select (right)
+  .buttonsContainer {
+    order: 1;
+  }
+  .selectWrapper {
+    order: 2;
+  }
+}
+
+// Stack controls on smaller screens
+@media only screen and (max-width: v.$screen-medium-max) {
+  .options1,
+  .options2 {
+    flex: 0 0 100%;
+    max-width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
 }
 
 .dropdownGroup,
@@ -100,40 +166,64 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: v.$space-sm;
 }
 
 .datePickerGroup {
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-xs v.$space-sm;
+  overflow: visible; // allow popper to escape panel
+  gap: v.$space-sm;
   flex: 1;
 }
 
+// Ensure datepicker popper appears above surrounding content
+.datePickerGroup .react-datepicker-popper {
+  z-index: 10000;
+}
+
 .label {
-  font-size: 0.85rem;
-  font-weight: bold;
-  color: white;
-  margin-right: 0.5rem;
+  font-size: v.$font-size-sm;
+  font-weight: 600;
+  color: v.$text-secondary;
+  margin-right: v.$space-sm;
   min-width: 70px;
   text-align: right;
+}
+
+.datePicker {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-xxs;
+}
+.datePicker .label {
+  margin: 0;
+  min-width: auto;
+  text-align: left;
 }
 
 .customSelect {
   position: relative;
   display: inline-block;
-  width: 30%;
+  width: 70%;
   font-family: "Roboto Condensed", sans-serif;
 
   select {
     width: 100%;
-    padding: 8px 12px;
-    border: 2px solid rgba(255, 255, 255, 0.15);
-    border-radius: 5px;
-    background-color: rgba(255, 255, 255, 0.15);
-    color: white;
+    padding: 0 v.$space-md;
+    height: var(--control-h);
+    border: 1px solid v.$border-secondary;
+    border-radius: v.$border-radius-md;
+    background-color: v.$background-medium;
+    color: v.$text-primary;
     appearance: none; /* Removes the default dropdown arrow */
     -webkit-appearance: none;
     -moz-appearance: none;
     cursor: pointer;
-    font-family: "Roboto Condensed", sans-serif; /* Apply font to the select element */
+    font-family:
+      "Roboto Condensed", sans-serif; /* Apply font to the select element */
   }
 
   &::after {
@@ -170,8 +260,8 @@
   .react-datepicker__day-name,
   .react-datepicker__day,
   .react-datepicker__time-name {
-    color: white; /* Change text color to white */
-    background-color: #202020; /* Change background color */
+    color: v.$text-primary; /* Change text color to site token */
+    background-color: v.$background-medium; /* Change background color */
     border-radius: 5px; /* Add some border-radius */
     font-family: "Roboto Condensed", sans-serif; /* Use Roboto Condensed font */
     font-size: 14px; /* Adjust font size if needed */
@@ -180,43 +270,45 @@
   /* Override selected day */
   .react-datepicker__day--selected,
   .react-datepicker__day--keyboard-selected {
-    background-color: #07aae2; /* Selected day background color */
-    color: white; /* Selected day text color */
+    background-color: v.$primary-color; /* Selected day background color */
+    color: v.$text-button; /* Selected day text color */
   }
 
   /* Override hover effect */
   .react-datepicker__day:hover {
-    background-color: #07aae2; /* Hover background color */
-    color: white; /* Hover text color */
+    background-color: v.$secondary-color; /* Hover background color */
+    color: v.$text-button; /* Hover text color */
   }
 
   /* Adjust the date picker input */
   .react-datepicker-wrapper input {
     width: 100%;
-    padding: 8px 12px;
-    border: 2px solid #07aae2;
-    border-radius: 5px;
-    background-color: #202020;
-    color: white;
-    font-family: "Roboto Condensed", sans-serif;
-    font-size: 15px;
+    padding: v.$space-sm v.$space-md;
+    border: 1px solid v.$border-secondary;
+    border-radius: v.$border-radius-md;
+    background-color: v.$background-medium;
+    color: v.$text-primary;
+    font-family: v.$font-family-primary;
+    font-size: v.$font-size-sm;
     cursor: pointer;
 
     &:focus {
       outline: none;
-      border-color: #07aae2;
+      border-color: v.$primary-color;
     }
   }
 }
 
 .datePickerInput {
   width: 100%;
-  background-color: rgba(255, 255, 255, 0.15);
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  border-radius: 5px;
-  padding: 8px 12px;
-  color: white;
-  font-family: roboto condensed, sans-serif;
+  background-color: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-md;
+  padding: 0 v.$space-md;
+  height: var(--control-h, 40px);
+  line-height: calc(var(--control-h) - 2px);
+  color: v.$text-primary;
+  font-family: v.$font-family-primary;
 }
 
 .datePickers {
@@ -227,26 +319,31 @@
 
 .selectWrapper {
   position: relative;
-  font-size: 15px;
-  font-weight: 700;
+  font-size: v.$font-size-sm;
+  font-weight: 600;
 }
 
 .buttonsContainer {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  gap: v.$space-sm;
+  margin-bottom: v.$space-sm;
 }
 
 .button {
-  background-color: #4b4b4b;
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  border: none;
-
+  @include v.button-style;
+  background-color: v.$background-medium;
+  color: v.$text-secondary;
+  border-color: v.$border-secondary;
+  height: var(--control-h, 40px);
+  padding: 0 v.$space-md;
+  &:hover {
+    color: v.$text-primary;
+  }
   &.active {
-    background-color: #ff4500;
+    background-color: v.$primary-color;
+    color: v.$text-button;
+    border-color: v.$primary-color;
   }
 }
 
@@ -255,6 +352,7 @@
   flex: 1 1 0;
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .pulsatingGridWrapper {
@@ -272,24 +370,21 @@
 
 .timeFrameToggle {
   display: flex;
-  justify-content: space-around;
-  margin: 1rem 0;
-
-  button {
-    background: var(--secondary-color);
-    border: none;
-    color: var(--accent-color);
-    padding: 0.5rem 1rem;
-    cursor: pointer;
-    transition: background 0.3s ease;
-
-    &:hover {
-      background: var(--primary-color);
-    }
-
-    &.active {
-      background: var(--primary-color);
-      color: var(--jersey-color);
-    }
-  }
+  justify-content: flex-start;
+  gap: 2px;
+  margin: 0;
+  background: v.$background-medium;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$radius-sm;
+  padding: 2px;
+}
+.timeFrameToggle .button {
+  background: transparent;
+  border: 0;
+  color: v.$text-secondary;
+}
+.timeFrameToggle .button.active {
+  background: v.$primary-color;
+  color: v.$text-button;
+  border-radius: v.$radius-sm;
 }

@@ -1,1 +1,0 @@
-export { TeamScheduleCalendar } from "./TeamScheduleCalendar";

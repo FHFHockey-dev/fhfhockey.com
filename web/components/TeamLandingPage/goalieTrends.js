@@ -2,7 +2,7 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-1\web\pages\goalieTrends.js
 
 import React, { useEffect, useState } from "react";
-import { teamsInfo } from "lib/NHL/teamsInfo";
+import { teamsInfo } from "lib/teamsInfo";
 import Fetch from "lib/cors-fetch";
 import styles from "styles/GoalieTrends.module.scss";
 import fetchWithCache from "lib/fetchWithCache"; // Adjust the path as necessary

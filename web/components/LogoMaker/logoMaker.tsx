@@ -2,7 +2,7 @@
 
 import React from "react";
 import styles from "./logoMaker.module.scss";
-import { teamsInfo } from "lib/NHL/teamsInfo";
+import { teamsInfo } from "lib/teamsInfo";
 
 type LogoMakerProps = {
   selectedTeam: keyof typeof teamsInfo;
@@ -21,7 +21,7 @@ const LogoMaker: React.FC<LogoMakerProps> = ({ selectedTeam }) => {
             "--secondary-color": team.secondaryColor,
             "--jersey-color": team.jersey,
             "--alt-color": team.alt,
-            "--accent-color": team.accent,
+            "--accent-color": team.accent
           } as React.CSSProperties
         }
       >

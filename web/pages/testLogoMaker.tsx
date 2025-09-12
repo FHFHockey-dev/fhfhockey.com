@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import LogoMaker from "../components/LogoMaker/logoMaker";
-import { teamsInfo } from "lib/NHL/teamsInfo";
+import { teamsInfo } from "lib/teamsInfo";
 import styles from "../components/LogoMaker/logoMaker.module.scss";
 
 const TestLogoMaker = () => {
@@ -19,7 +19,7 @@ const TestLogoMaker = () => {
         textAlign: "center",
         padding: "20px",
         backgroundColor: "#333",
-        color: "#fff",
+        color: "#fff"
       }}
     >
       <h1 className={styles.header}>Team Logo Selector</h1>

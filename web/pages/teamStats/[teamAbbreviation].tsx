@@ -38,7 +38,7 @@ const curatedFields = [
   { key: "hits", label: "HIT" },
   { key: "save_pct_5v5", label: "SV% 5v5" },
   { key: "shooting_pct_5v5", label: "SH%" },
-  { key: "zone_start_pct_5v5", label: "oZS%" },
+  { key: "zone_start_pct_5v5", label: "oZS%" }
 ];
 
 const averagingFields = new Set([
@@ -55,7 +55,7 @@ const averagingFields = new Set([
   "faceoff_win_pct",
   "save_pct_5v5",
   "shooting_pct_5v5",
-  "zone_start_pct_5v5",
+  "zone_start_pct_5v5"
 ]);
 
 const formatValue = (key: string, value: number | string) => {
@@ -67,7 +67,7 @@ const formatValue = (key: string, value: number | string) => {
       "goals_against_per_game",
       "pp_opportunities_per_game",
       "shots_for_per_game",
-      "shots_against_per_game",
+      "shots_against_per_game"
     ].includes(key)
   ) {
     return value.toFixed(2);
@@ -82,7 +82,7 @@ const formatValue = (key: string, value: number | string) => {
       "faceoff_win_pct",
       "save_pct_5v5",
       "shooting_pct_5v5",
-      "zone_start_pct_5v5",
+      "zone_start_pct_5v5"
     ].includes(key)
   ) {
     return (value * 100).toFixed(2) + "%";
@@ -135,25 +135,33 @@ const TeamDetail = () => {
   };
 
   const aggregateStatsBySeason = (data: any[]) => {
-    const aggregated = data.reduce((acc, item) => {
-      const seasonId = item.season_id.toString();
-      const season = `${seasonId.slice(2, 4)}-${seasonId.slice(6, 8)}`;
+    const aggregated = data.reduce(
+      (acc, item) => {
+        const seasonId = item.season_id.toString();
+        const season = `${seasonId.slice(2, 4)}-${seasonId.slice(6, 8)}`;
 
-      if (!acc[season]) {
-        acc[season] = curatedFields.reduce((fields, field) => {
-          fields[field.key] = 0;
-          return fields;
-        }, {} as { [key: string]: number });
-        acc[season].count = 0; // Count of records for averaging purposes
+        if (!acc[season]) {
+          acc[season] = curatedFields.reduce(
+            (fields, field) => {
+              fields[field.key] = 0;
+              return fields;
+            },
+            {} as { [key: string]: number }
+          );
+          acc[season].count = 0; // Count of records for averaging purposes
+        }
+
+        curatedFields.forEach((field) => {
+          acc[season][field.key] += item[field.key] || 0;
+        });
+        acc[season].count += 1;
+
+        return acc;
+      },
+      {} as {
+        [season: string]: { [key: string]: number | string; count: number };
       }
-
-      curatedFields.forEach((field) => {
-        acc[season][field.key] += item[field.key] || 0;
-      });
-      acc[season].count += 1;
-
-      return acc;
-    }, {} as { [season: string]: { [key: string]: number | string; count: number } });
+    );
 
     // Compute averages for specific fields
     Object.keys(aggregated).forEach((season) => {
