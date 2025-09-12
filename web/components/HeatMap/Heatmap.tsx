@@ -13,7 +13,7 @@ const HeatMap: React.FC<HeatMapProps> = ({ teamAbbreviation }) => {
   const [shots, setShots] = useState<any[]>([]);
   const [selectedSeasons, setSelectedSeasons] = useState<string[]>([
     "20222023",
-    "20232024",
+    "20232024"
   ]);
   const svgRef = useRef<SVGSVGElement>(null);
 
@@ -97,7 +97,7 @@ const HeatMap: React.FC<HeatMapProps> = ({ teamAbbreviation }) => {
       )
       .map((shot) => [
         mapXCoordinate(shot.xcoord),
-        mapYCoordinate(shot.ycoord),
+        mapYCoordinate(shot.ycoord)
       ]) as [number, number][]; // Ensuring points are strictly [number, number] pairs
 
     // Create a density plot using d3.contourDensity

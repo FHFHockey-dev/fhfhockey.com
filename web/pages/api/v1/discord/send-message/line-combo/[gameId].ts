@@ -1,5 +1,5 @@
 import { NUM_PLAYERS_PER_LINE } from "components/LinemateMatrix";
-import { teamsInfo } from "lib/NHL/teamsInfo";
+import { teamsInfo } from "lib/teamsInfo";
 import supabase from "lib/supabase";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -46,7 +46,7 @@ export default adminOnly(async (req, res) => {
         .getPublicUrl(`line-combos/${gameId}-${item.teamId}.png`)
         .data.publicUrl;
       const image = {
-        url: imageUrl,
+        url: imageUrl
       };
       // get players
       let { data: forwards } = await supabase
@@ -79,7 +79,7 @@ export default adminOnly(async (req, res) => {
 
       const extras = createExtras({
         forwards,
-        defensemen,
+        defensemen
       });
 
       const description = `${forwardsLines}
@@ -94,7 +94,7 @@ ${extras.length === 0 ? "" : "\n" + extras + "\n"}
         description,
         url,
         color,
-        image,
+        image
       };
       return embed;
     })
@@ -102,7 +102,7 @@ ${extras.length === 0 ? "" : "\n" + extras + "\n"}
 
   const message = {
     content: null,
-    embeds,
+    embeds
   };
   try {
     await sendMessage(message, WEBHOOK_URL);
@@ -111,7 +111,7 @@ ${extras.length === 0 ? "" : "\n" + extras + "\n"}
     console.error(e);
     res.json({
       error: "Failed to post the line combo to discord " + e.message,
-      message,
+      message
     });
   }
 });
@@ -123,9 +123,9 @@ function sendMessage(payload: any, webhookUrl: string) {
     fetch(webhookUrl, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify(data)
     })
       .then((response) => {
         if (!response.ok) {
@@ -197,7 +197,7 @@ function createExtras(players: {
 }) {
   const numLines = {
     forwards: 4,
-    defensemen: 3,
+    defensemen: 3
   };
   const extras = [] as string[];
   extras.push(

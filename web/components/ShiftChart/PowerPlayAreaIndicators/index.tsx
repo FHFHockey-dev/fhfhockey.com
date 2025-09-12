@@ -1,5 +1,5 @@
 import { Time, usePowerPlayBlocks } from "utils/getPowerPlayBlocks";
-import { teamsInfo } from "lib/NHL/teamsInfo";
+import { teamsInfo } from "lib/teamsInfo";
 import { NORMAL_PERIOD_IN_SECONDS, convertTimeToSeconds } from "hooks/useGoals";
 
 type Props = {

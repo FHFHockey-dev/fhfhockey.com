@@ -26,6 +26,8 @@ export const teamsInfo: {
     franchiseId: number;
     nstAbbr: string;
     id: number;
+    abbrev: string; // added for compatibility with legacy JS version
+    location?: string; // added where legacy version exposed a location label
   };
 } = {
   NJD: {
@@ -40,7 +42,9 @@ export const teamsInfo: {
     alt: "#670919", // White
     franchiseId: 23,
     nstAbbr: "N.J",
-    id: 1
+    id: 1,
+    abbrev: "NJD",
+    location: "New Jersey"
   },
   NYI: {
     name: "New York Islanders",
@@ -54,7 +58,9 @@ export const teamsInfo: {
     alt: "#08265f",
     franchiseId: 22,
     nstAbbr: "NYI",
-    id: 2
+    id: 2,
+    abbrev: "NYI",
+    location: "New York"
   },
   NYR: {
     name: "New York Rangers",
@@ -68,7 +74,9 @@ export const teamsInfo: {
     alt: "#255ed0",
     franchiseId: 10,
     nstAbbr: "NYR",
-    id: 3
+    id: 3,
+    abbrev: "NYR",
+    location: "New York"
   },
   PHI: {
     name: "Philadelphia Flyers",
@@ -82,7 +90,9 @@ export const teamsInfo: {
     alt: "#b7340d",
     franchiseId: 16,
     nstAbbr: "PHI",
-    id: 4
+    id: 4,
+    abbrev: "PHI",
+    location: "Philadelphia"
   },
   PIT: {
     name: "Pittsburgh Penguins",
@@ -96,7 +106,9 @@ export const teamsInfo: {
     alt: "#FFFFFF",
     franchiseId: 17,
     nstAbbr: "PIT",
-    id: 5
+    id: 5,
+    abbrev: "PIT",
+    location: "Pittsburgh"
   },
   BOS: {
     name: "Boston Bruins",
@@ -110,7 +122,9 @@ export const teamsInfo: {
     alt: "#202020", // charcoal
     franchiseId: 6,
     nstAbbr: "BOS",
-    id: 6
+    id: 6,
+    abbrev: "BOS",
+    location: "Boston"
   },
   BUF: {
     name: "Buffalo Sabres",
@@ -124,7 +138,9 @@ export const teamsInfo: {
     alt: "#2762c7",
     franchiseId: 19,
     nstAbbr: "BUF",
-    id: 7
+    id: 7,
+    abbrev: "BUF",
+    location: "Buffalo"
   },
   MTL: {
     name: "Montréal Canadiens",
@@ -138,7 +154,9 @@ export const teamsInfo: {
     alt: "#1f5fd5", // White
     franchiseId: 1,
     nstAbbr: "MTL",
-    id: 8
+    id: 8,
+    abbrev: "MTL",
+    location: "Montréal"
   },
   OTT: {
     name: "Ottawa Senators",
@@ -152,7 +170,9 @@ export const teamsInfo: {
     alt: "#B9975B",
     franchiseId: 30,
     nstAbbr: "OTT",
-    id: 9
+    id: 9,
+    abbrev: "OTT",
+    location: "Ottawa"
   },
   TOR: {
     name: "Toronto Maple Leafs",
@@ -166,7 +186,9 @@ export const teamsInfo: {
     darkColor: "#080a91", // Darker Blue
     franchiseId: 5,
     nstAbbr: "TOR",
-    id: 10
+    id: 10,
+    abbrev: "TOR",
+    location: "Toronto"
   },
   CAR: {
     name: "Carolina Hurricanes",
@@ -180,7 +202,9 @@ export const teamsInfo: {
     darkColor: "#8a0113", // Darker Red
     franchiseId: 26,
     nstAbbr: "CAR",
-    id: 12
+    id: 12,
+    abbrev: "CAR",
+    location: "Carolina"
   },
   FLA: {
     name: "Florida Panthers",
@@ -194,7 +218,9 @@ export const teamsInfo: {
     alt: "#000000",
     franchiseId: 33,
     nstAbbr: "FLA",
-    id: 13
+    id: 13,
+    abbrev: "FLA",
+    location: "Florida"
   },
   TBL: {
     name: "Tampa Bay Lightning",
@@ -208,7 +234,9 @@ export const teamsInfo: {
     alt: "#3478f6",
     franchiseId: 31,
     nstAbbr: "T.B",
-    id: 14
+    id: 14,
+    abbrev: "TBL",
+    location: "Tampa Bay"
   },
   WSH: {
     name: "Washington Capitals",
@@ -222,7 +250,9 @@ export const teamsInfo: {
     alt: "#103a75",
     franchiseId: 24,
     nstAbbr: "WSH",
-    id: 15
+    id: 15,
+    abbrev: "WSH",
+    location: "Washington"
   },
   CHI: {
     name: "Chicago Blackhawks",
@@ -236,7 +266,9 @@ export const teamsInfo: {
     darkColor: "#6c0415", // Darker Red
     franchiseId: 11,
     nstAbbr: "CHI",
-    id: 16
+    id: 16,
+    abbrev: "CHI",
+    location: "Chicago"
   },
   DET: {
     name: "Detroit Red Wings",
@@ -250,7 +282,9 @@ export const teamsInfo: {
     darkColor: "#6c0415", // Darker Red
     franchiseId: 12,
     nstAbbr: "DET",
-    id: 17
+    id: 17,
+    abbrev: "DET",
+    location: "Detroit"
   },
   NSH: {
     name: "Nashville Predators",
@@ -264,7 +298,9 @@ export const teamsInfo: {
     alt: "#da9501",
     franchiseId: 34,
     nstAbbr: "NSH",
-    id: 18
+    id: 18,
+    abbrev: "NSH",
+    location: "Nashville"
   },
   STL: {
     name: "St. Louis Blues",
@@ -278,7 +314,9 @@ export const teamsInfo: {
     alt: "#3478f6",
     franchiseId: 18,
     nstAbbr: "STL",
-    id: 19
+    id: 19,
+    abbrev: "STL",
+    location: "St. Louis"
   },
   CGY: {
     name: "Calgary Flames",
@@ -292,7 +330,9 @@ export const teamsInfo: {
     darkColor: "#6c0415", // Darker Red
     franchiseId: 21,
     nstAbbr: "CGY",
-    id: 20
+    id: 20,
+    abbrev: "CGY",
+    location: "Calgary"
   },
   COL: {
     name: "Colorado Avalanche",
@@ -306,7 +346,9 @@ export const teamsInfo: {
     alt: "#3478f6",
     franchiseId: 27,
     nstAbbr: "COL",
-    id: 21
+    id: 21,
+    abbrev: "COL",
+    location: "Colorado"
   },
   EDM: {
     name: "Edmonton Oilers",
@@ -320,7 +362,9 @@ export const teamsInfo: {
     darkColor: "#1b1d7e", // Darker Blue
     franchiseId: 25,
     nstAbbr: "EDM",
-    id: 22
+    id: 22,
+    abbrev: "EDM",
+    location: "Edmonton"
   },
   VAN: {
     name: "Vancouver Canucks",
@@ -334,7 +378,9 @@ export const teamsInfo: {
     darkColor: "#024421", // Darker green
     franchiseId: 20,
     nstAbbr: "VAN",
-    id: 23
+    id: 23,
+    abbrev: "VAN",
+    location: "Vancouver"
   },
   ANA: {
     name: "Anaheim Ducks",
@@ -348,7 +394,9 @@ export const teamsInfo: {
     darkColor: "#992809", // Darker orange
     franchiseId: 32,
     nstAbbr: "ANA",
-    id: 24
+    id: 24,
+    abbrev: "ANA",
+    location: "Anaheim"
   },
   DAL: {
     name: "Dallas Stars",
@@ -362,7 +410,9 @@ export const teamsInfo: {
     alt: "#65ed50",
     franchiseId: 15,
     nstAbbr: "DAL",
-    id: 25
+    id: 25,
+    abbrev: "DAL",
+    location: "Dallas"
   },
   LAK: {
     name: "Los Angeles Kings",
@@ -376,7 +426,9 @@ export const teamsInfo: {
     alt: "#656768",
     franchiseId: 14,
     nstAbbr: "L.A",
-    id: 26
+    id: 26,
+    abbrev: "LAK",
+    location: "Los Angeles"
   },
   SJS: {
     name: "San Jose Sharks",
@@ -390,7 +442,9 @@ export const teamsInfo: {
     alt: "#1a8d96",
     franchiseId: 29,
     nstAbbr: "S.J",
-    id: 28
+    id: 28,
+    abbrev: "SJS",
+    location: "San Jose"
   },
   CBJ: {
     name: "Columbus Blue Jackets",
@@ -404,7 +458,9 @@ export const teamsInfo: {
     alt: "#1756a3",
     franchiseId: 36,
     nstAbbr: "CBJ",
-    id: 29
+    id: 29,
+    abbrev: "CBJ",
+    location: "Columbus"
   },
   MIN: {
     name: "Minnesota Wild",
@@ -418,7 +474,9 @@ export const teamsInfo: {
     darkColor: "#0b2e21", // Darker green
     franchiseId: 37,
     nstAbbr: "MIN",
-    id: 30
+    id: 30,
+    abbrev: "MIN",
+    location: "Minnesota"
   },
   WPG: {
     name: "Winnipeg Jets",
@@ -432,7 +490,9 @@ export const teamsInfo: {
     alt: "#1953bf",
     franchiseId: 35,
     nstAbbr: "WPG",
-    id: 52
+    id: 52,
+    abbrev: "WPG",
+    location: "Winnipeg"
   },
   ARI: {
     name: "Arizona Coyotes",
@@ -446,7 +506,9 @@ export const teamsInfo: {
     darkColor: "#6c0415", // Darker Red
     franchiseId: 28,
     nstAbbr: "ARI",
-    id: 53
+    id: 53,
+    abbrev: "ARI",
+    location: "Arizona"
   },
   VGK: {
     name: "Vegas Golden Knights",
@@ -460,7 +522,9 @@ export const teamsInfo: {
     alt: "#696e72",
     franchiseId: 38,
     nstAbbr: "VGK",
-    id: 54
+    id: 54,
+    abbrev: "VGK",
+    location: "Vegas"
   },
   SEA: {
     name: "Seattle Kraken",
@@ -474,7 +538,9 @@ export const teamsInfo: {
     alt: "#6bcdf4",
     franchiseId: 39,
     nstAbbr: "SEA",
-    id: 55
+    id: 55,
+    abbrev: "SEA",
+    location: "Seattle"
   },
   UTA: {
     name: "Utah Mammoth",
@@ -488,7 +554,9 @@ export const teamsInfo: {
     alt: "#67bdfb",
     franchiseId: 40,
     nstAbbr: "UTA",
-    id: 68 // Updated to new NHL team ID so schedules match
+    id: 68, // Updated to new NHL team ID so schedules match
+    abbrev: "UTA",
+    location: "Utah"
   }
 };
 

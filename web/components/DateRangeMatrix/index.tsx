@@ -8,11 +8,11 @@ import {
   isDefense,
   getColor,
   parseTime,
-  PlayerData,
+  PlayerData
 } from "./utilities";
 import styles from "./index.module.scss";
 import Tooltip from "components/Tooltip";
-import { teamsInfo } from "lib/NHL/teamsInfo";
+import { teamsInfo } from "lib/teamsInfo";
 import { useTOI } from "./useTOIData";
 
 export type Mode = "line-combination" | "full-roster" | "total-toi";
@@ -49,7 +49,7 @@ export class MySet<T> {
 }
 
 type Props = {
-  id: keyof typeof teamsInfo;
+  id: keyof typeof teamsInfo | ""; // allow blank when no team selected
   gameIds: number[];
   mode: Mode;
   onModeChanged?: (newMode: Mode) => void;
@@ -63,7 +63,7 @@ type Props = {
 export const OPTIONS = [
   { label: "Line Combination", value: "line-combination" },
   { label: "Total TOI", value: "total-toi" },
-  { label: "Full Roster", value: "full-roster" },
+  { label: "Full Roster", value: "full-roster" }
 ] as const;
 
 export default function DateRangeMatrix({
@@ -73,13 +73,25 @@ export default function DateRangeMatrix({
   startDate,
   endDate,
   lines,
-  pairs,
+  pairs
 }: Props) {
   const [loading, setLoading] = useState<boolean>(true);
-  const [toiData, rosters, team, loadingData, homeAwayInfo, playerATOI] =
-    useTOI(id, startDate, endDate);
+  // Always call hook (React rule) with a string; pass empty string if no id
+  const [
+    rawToiData,
+    rawRosters,
+    rawTeam,
+    loadingData,
+    rawHomeAwayInfo,
+    rawPlayerATOI
+  ] = useTOI((id as string) || "", startDate, endDate);
+  const toiData = id ? rawToiData : [];
+  const rosters = id ? rawRosters : [];
+  const team = id ? rawTeam : null;
+  const homeAwayInfo = id ? rawHomeAwayInfo : [];
+  const playerATOI = id ? rawPlayerATOI : {};
 
-  const teamId = teamsInfo[id]?.id;
+  const teamId = id ? teamsInfo[id]?.id : undefined;
 
   useEffect(() => {
     setLoading(loadingData);
@@ -90,7 +102,7 @@ export default function DateRangeMatrix({
       Object.fromEntries(
         Object.entries(playerATOI).map(([key, value]) => [
           Number(key),
-          String(value),
+          String(value)
         ])
       ),
     [playerATOI]
@@ -120,7 +132,7 @@ export default function DateRangeMatrix({
       percentOfSeason: item.regularSeasonData.percentOfSeason,
       displayPosition: item.regularSeasonData.displayPosition,
       mutualSharedToi: {},
-      comboPoints: item.comboPoints || 0,
+      comboPoints: item.comboPoints || 0
     }));
     // console.log("Sorted Roster in DateRangeMatrix:", roster);
     return roster;
@@ -242,13 +254,13 @@ export function DateRangeMatrixInternal({
   playerATOI,
   loading,
   lines,
-  pairs,
+  pairs
 }: DateRangeMatrixInternalProps) {
   const [selectedCell, setSelectedCell] = useState({ row: -1, col: -1 });
 
   const containerClass = classNames(styles.container, {
     [styles.totalToiMode]: mode === "total-toi",
-    [styles.fullRosterMode]: mode === "full-roster",
+    [styles.fullRosterMode]: mode === "full-roster"
   });
 
   const sortedRoster = useMemo(() => {
@@ -280,7 +292,7 @@ export function DateRangeMatrixInternal({
         className={classNames(styles.grid, "content")}
         style={{
           gridTemplateRows: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`,
-          gridTemplateColumns: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`,
+          gridTemplateColumns: `var(--player-info-size) repeat(${sortedRoster.length}, 1fr)`
         }}
       >
         {sortedRoster.length > 0 &&
@@ -292,14 +304,14 @@ export function DateRangeMatrixInternal({
                   <div
                     key={player.id}
                     className={classNames(styles.topPlayerName, {
-                      [styles.active]: col === selectedCell.col - 1,
+                      [styles.active]: col === selectedCell.col - 1
                     })}
                   >
                     <div className={styles.inner}>
                       {player.playerAbbrevName}
                     </div>
                   </div>
-                )),
+                ))
               ];
             } else {
               return new Array(sortedRoster.length + 1)
@@ -313,7 +325,7 @@ export function DateRangeMatrixInternal({
                       <div
                         key={p2.id}
                         className={classNames(styles.leftPlayerName, {
-                          [styles.active]: selectedCell.row === row,
+                          [styles.active]: selectedCell.row === row
                         })}
                       >
                         {p2.playerAbbrevName}
@@ -373,7 +385,7 @@ function Cell({
   onPointerEnter = () => {},
   onPointerLeave = () => {},
   isSelf,
-  ATOI,
+  ATOI
 }: CellProps) {
   const mixedToi = p1.percentToiWithMixed?.[p2.id] || 0;
   const effectiveToi = sharedToi || mixedToi;
@@ -398,7 +410,7 @@ function Cell({
           className={styles.content}
           style={{
             opacity: opacity,
-            backgroundColor: color,
+            backgroundColor: color
           }}
         ></div>
       </Tooltip>

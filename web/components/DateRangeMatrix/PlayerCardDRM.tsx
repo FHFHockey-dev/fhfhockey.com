@@ -2,7 +2,7 @@
 // C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-3\web\components\DateRangeMatrix\PlayerCardDRM.tsx
 
 import { useEffect, useState } from "react";
-import { teamsInfo } from "lib/NHL/teamsInfo";
+import { teamsInfo } from "lib/teamsInfo";
 import React from "react";
 import styles from "../../styles/LinePairGrid.module.scss";
 import { getTeamColors } from "./utilities";
@@ -26,7 +26,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
   playerId,
   timeFrame,
   dateRange,
-  displayPosition,
+  displayPosition
 }) => {
   const { primary, secondary, jersey, accentColor } = getTeamColors(teamId);
   const [goals, setGoals] = useState<number | null>(null);
@@ -75,7 +75,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({
         ["--accent-color" as any]: accentColor,
         ["--secondary-color" as any]: secondary,
         ["--primary-color" as any]: primary,
-        ["--jersey-color" as any]: jersey,
+        ["--jersey-color" as any]: jersey
       }}
     >
       <div className={styles.playerCardHeader}>

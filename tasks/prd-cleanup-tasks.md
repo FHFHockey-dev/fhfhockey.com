@@ -63,6 +63,10 @@ Reduce technical noise (lint warnings, repetitive code patterns) to improve deve
 - 2025-09-11: Migrated game card home/away logos on `pages/index.tsx` (additional reductions, tracking ongoing).
 - 2025-09-11: Post game-card migration build: `@next/next/no-img-element` warnings down to 29 (from initial 33) – ~12% reduction on home page-focused subset.
 - 2025-09-11: Migrated MobileTeamList logos to OptimizedImage (further reduction expected on next build).
+- 2025-09-11: Post MobileTeamList migration build: warnings now 28 (down from 33 baseline; ~15% reduction overall so far).
+- 2025-09-11: Refactored scroll timeout handling in stats page (removed scrollTimeoutRef; localized cleanup) to satisfy hook dependency warning gracefully.
+- 2025-09-11: Hook pass: added missing dependency (selectedStats) to season data effect in goalies page.
+ - 2025-09-11: Hook pass: moved FIRSTNAME_ALIASES to module scope in `pages/db/upsert-projections.tsx` eliminating missing-dep warning without expanding callback deps.
 
 ## Acceptance Criteria
 - Build passes with zero new errors
@@ -80,3 +84,20 @@ Reduce technical noise (lint warnings, repetitive code patterns) to improve deve
 
 ---
 Generated: 2025-09-11
+
+## Hook Audit (Initial Snapshot)
+Tracking representative warnings to address or justify:
+| File (excerpt) | Line | Type | Action Plan |
+|----------------|------|------|-------------|
+| pages/db/upsert-projections.tsx | 248 | (resolved) | Moved FIRSTNAME_ALIASES to module scope; callback no longer needs dep |
+| pages/goalies.js | 265 | missing dep | Include selectedStats in effect deps |
+| pages/projections/index.tsx | 973 | unnecessary deps | Trim extras to only derived inputs |
+| pages/shiftChart.js | 331+ | missing deps (multiple) | Wrap functions in useCallback or move inside effect |
+| components/DraftDashboard/ProjectionsTable.tsx | 371+ | missing getDisplayPos, etc. | Stabilize helpers with useCallback then include |
+| components/GameGrid/GameGrid.tsx | 235 | unnecessary dep | Remove currentNumGamesPerDay if not referenced |
+| components/TeamScheduleCalendar/TeamScheduleCalendar.tsx | 673 | missing complex deps | Evaluate cost; may justify suppression |
+| components/TeamDashboard/TeamDashboard.tsx | 1120 | complex state deps | Consider useReducer or include gated accessors |
+| components/WiGO/NameSearchBar.tsx | 151 | missing filteredPlayers.length | Add length or refactor to useMemo source |
+| components/WiGO/PerGameStatsTable.tsx | 156 | missing playerId | Add dependency |
+
+Next pass will implement top 5 low-risk fixes and document 3 justified suppressions.

@@ -12,10 +12,12 @@
 // cron job all of the databases to run every day at 3am
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import DateRangeMatrix, {
+import {
   OPTIONS as DATERANGE_MATRIX_MODES,
   Mode
 } from "components/DateRangeMatrix/index";
+import DateRangeMatrixView from "components/DateRangeMatrix/DateRangeMatrixView";
+import { useDateRangeMatrixData } from "components/DateRangeMatrix/useDateRangeMatrixData";
 import TeamDropdown from "components/DateRangeMatrix/TeamDropdown";
 import TeamSelect from "components/TeamSelect";
 import LinePairGrid from "components/DateRangeMatrix/LinePairGrid";
@@ -28,14 +30,14 @@ import {
 import styles from "components/DateRangeMatrix/drm.module.scss";
 import { queryTypes, useQueryState } from "next-usequerystate";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
-import { teamsInfo } from "lib/NHL/teamsInfo";
+import { teamsInfo } from "lib/teamsInfo";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { fetchAggregatedData } from "components/DateRangeMatrix/fetchAggregatedData";
 import { calculateLinesAndPairs } from "components/DateRangeMatrix/lineCombinationHelper";
 import Image from "next/image";
 
-type TeamAbbreviation = keyof typeof teamsInfo;
+type TeamAbbreviation = Extract<keyof typeof teamsInfo, string>; // remove implicit number from index signature
 
 const DEFAULT_LOGO = "Five Hole.png";
 const DEFAULT_COLORS = {
@@ -51,6 +53,14 @@ export default function DRMPage() {
     queryTypes.string.withDefault(DATERANGE_MATRIX_MODES[0].value)
   );
   const [selectedTeam, setSelectedTeam] = useState<TeamAbbreviation | "">("");
+  // Ensure runtime value always stays a string (never number)
+  const setTeamSafe = (val: string | TeamAbbreviation | null) => {
+    if (!val) {
+      setSelectedTeam("");
+      return;
+    }
+    setSelectedTeam(val as TeamAbbreviation);
+  };
   const [seasonId, setSeasonId] = useState<number | null>(null);
   const [gameIds, setGameIds] = useState<number[]>([]);
   const [regularSeasonData, setRegularSeasonData] = useState<any[]>([]);
@@ -145,13 +155,14 @@ export default function DRMPage() {
   useEffect(() => {
     async function fetchGames() {
       if (selectedTeam && seasonId && startDate && endDate) {
+        const teamKey = selectedTeam as TeamAbbreviation; // selectedTeam guaranteed non-empty
         const { regularSeasonPlayersData, playoffPlayersData } =
           await fetchAggregatedData(
-            selectedTeam,
+            teamKey,
             startDate.toISOString().split("T")[0],
             endDate.toISOString().split("T")[0],
             seasonType,
-            timeFrame, // Updated to ensure correct data is fetched
+            timeFrame,
             "",
             ""
           );
@@ -217,6 +228,22 @@ export default function DRMPage() {
     ? `/teamLogos/${teamsInfo[selectedTeam as TeamAbbreviation].abbrev}.png`
     : `/teamLogos/${DEFAULT_LOGO}`;
 
+  const startStr = startDate?.toISOString().split("T")[0] || "";
+  const endStr = endDate?.toISOString().split("T")[0] || "";
+  const aggregatedForHook =
+    seasonType === "regularSeason"
+      ? Object.values(regularSeasonData)
+      : Object.values(playoffData);
+
+  const drmData = useDateRangeMatrixData({
+    teamAbbreviation: (selectedTeam as TeamAbbreviation) || undefined,
+    startDate: startStr,
+    endDate: endStr,
+    mode,
+    source: "aggregated",
+    aggregatedData: aggregatedForHook
+  });
+
   return (
     <div
       className={styles.drmContainer}
@@ -232,9 +259,9 @@ export default function DRMPage() {
           abbreviation: key as TeamAbbreviation,
           name: teamsInfo[key as TeamAbbreviation].name
         }))}
-        team={selectedTeam}
+        team={(selectedTeam || "") as string}
         onTeamChange={(teamAbbreviation) => {
-          setSelectedTeam(teamAbbreviation as TeamAbbreviation);
+          setTeamSafe(teamAbbreviation);
         }}
       />
 
@@ -272,7 +299,7 @@ export default function DRMPage() {
               Team
             </label>
             <TeamDropdown
-              selectedTeam={selectedTeam}
+              selectedTeam={(selectedTeam || "") as string}
               onSelect={(team) => {
                 setSelectedTeam(team as TeamAbbreviation);
               }}
@@ -387,23 +414,19 @@ export default function DRMPage() {
             />
           </div>
           <div className={styles.dateRangeMatrixContainer}>
-            <DateRangeMatrix
-              id={selectedTeam as TeamAbbreviation}
-              gameIds={gameIds}
-              mode={mode}
-              onModeChanged={(newMode) => {
-                setDateRangeMatrixMode(newMode);
-              }}
-              aggregatedData={
-                seasonType === "regularSeason"
-                  ? Object.values(regularSeasonData)
-                  : Object.values(playoffData)
-              }
-              startDate={startDate?.toISOString().split("T")[0] || ""}
-              endDate={endDate?.toISOString().split("T")[0] || ""}
-              lines={lines}
-              pairs={pairs}
-            />
+            {drmData.teamId && drmData.teamName ? (
+              <DateRangeMatrixView
+                teamId={drmData.teamId}
+                teamName={drmData.teamName}
+                roster={drmData.roster}
+                toiData={drmData.toiData}
+                mode={mode}
+                playerATOI={drmData.playerATOI}
+                loading={drmData.loading}
+                lines={drmData.lines}
+                pairs={drmData.pairs}
+              />
+            ) : null}
           </div>
         </>
       </div>

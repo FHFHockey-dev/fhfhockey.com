@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSnackbar } from "notistack";
-import { teamsInfo } from "lib/NHL/teamsInfo";
+import { teamsInfo } from "lib/teamsInfo";
 import styles from "styles/ShiftChart.module.scss";
 import Fetch from "lib/cors-fetch";
 import { GoalIndicators } from "hooks/useGoals";
