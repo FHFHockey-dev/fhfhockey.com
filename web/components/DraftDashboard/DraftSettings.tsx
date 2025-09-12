@@ -1,6 +1,11 @@
 // components/DraftDashboard/DraftSettings.tsx
 
 import React from "react";
+// Static import for compression utilities to satisfy eslint (avoid dynamic require)
+import {
+  compressToEncodedURIComponent,
+  decompressFromEncodedURIComponent
+} from "lz-string";
 import type { DraftSettings as DraftSettingsType } from "./DraftDashboard";
 import { PROJECTION_SOURCES_CONFIG } from "lib/projectionsConfig/projectionSourcesConfig";
 import { getDefaultFantasyPointsConfig } from "lib/projectionsConfig/fantasyPointsConfig";
@@ -195,13 +200,16 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const stableHashRef = React.useRef<string>("");
   const dirtyTimerRef = React.useRef<number | null>(null);
 
-  const computeHash = () =>
-    JSON.stringify({
-      s: settings,
-      sc: sourceControls,
-      gsc: goalieSourceControls,
-      gs: goalieScoringCategories
-    });
+  const computeHash = React.useCallback(
+    () =>
+      JSON.stringify({
+        s: settings,
+        sc: sourceControls,
+        gsc: goalieSourceControls,
+        gs: goalieScoringCategories
+      }),
+    [settings, sourceControls, goalieSourceControls, goalieScoringCategories]
+  );
 
   React.useEffect(() => {
     const h = computeHash();
@@ -218,7 +226,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     return () => {
       if (dirtyTimerRef.current) window.clearTimeout(dirtyTimerRef.current);
     };
-  }, [settings, sourceControls, goalieSourceControls, goalieScoringCategories]);
+  }, [settings, sourceControls, goalieSourceControls, goalieScoringCategories, computeHash]);
 
   const handleTeamCountChange = (count: number) => {
     const newDraftOrder = Array.from(
@@ -735,9 +743,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
 
   const serializeBookmark = (payload: any): string => {
     try {
-      // Lazy require to avoid increasing initial bundle size unnecessarily
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { compressToEncodedURIComponent } = require("lz-string");
       return compressToEncodedURIComponent(JSON.stringify(payload));
     } catch (e) {
       try {
@@ -752,14 +757,10 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
 
   const deserializeBookmark = (key: string): any | null => {
     if (!key) return null;
-    // Try lz-string first
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { decompressFromEncodedURIComponent } = require("lz-string");
       const json = decompressFromEncodedURIComponent(key);
       if (json) return JSON.parse(json);
     } catch {}
-    // Try base64
     try {
       const json =
         typeof atob === "function"
@@ -768,7 +769,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       const parsed = JSON.parse(json);
       if (parsed && typeof parsed === "object") return parsed;
     } catch {}
-    // Try raw JSON
     try {
       return JSON.parse(key);
     } catch {}
