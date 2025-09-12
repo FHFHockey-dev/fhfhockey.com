@@ -1220,7 +1220,10 @@ const DraftDashboard: React.FC = () => {
             if (typeof data.currentPick === "number")
               setCurrentPick(data.currentPick);
             if (typeof data.myTeamId === "string") setMyTeamId(data.myTeamId);
-            if (data.forwardGrouping === "fwd" || data.forwardGrouping === "split")
+            if (
+              data.forwardGrouping === "fwd" ||
+              data.forwardGrouping === "split"
+            )
               setForwardGrouping(data.forwardGrouping);
             if (data.sourceControls) setSourceControls(data.sourceControls);
             if (data.goalieSourceControls)
@@ -1233,9 +1236,15 @@ const DraftDashboard: React.FC = () => {
               setNeedWeightEnabled(data.needWeightEnabled);
             if (typeof data.needAlpha === "number")
               setNeedAlpha(Math.max(0, Math.min(1, data.needAlpha)));
-            if (data.baselineMode === "remaining" || data.baselineMode === "full")
+            if (
+              data.baselineMode === "remaining" ||
+              data.baselineMode === "full"
+            )
               setBaselineMode(data.baselineMode);
-            if (data.customTeamNames && typeof data.customTeamNames === "object")
+            if (
+              data.customTeamNames &&
+              typeof data.customTeamNames === "object"
+            )
               setCustomTeamNames(data.customTeamNames);
             // Reset history since imported state may not map cleanly
             setDraftHistory([]);

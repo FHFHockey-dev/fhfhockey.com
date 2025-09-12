@@ -695,7 +695,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     let needAlpha: number | undefined;
     let baselineMode: string | undefined;
     try {
-      personalizeReplacement = ls("draftDashboard.personalizeReplacement.v1") === "true";
+      personalizeReplacement =
+        ls("draftDashboard.personalizeReplacement.v1") === "true";
       needWeightEnabled = ls("draftDashboard.needWeight.v1") === "true";
       const naRaw = ls("draftDashboard.needAlpha.v1");
       needAlpha = naRaw ? parseFloat(naRaw) : undefined;
@@ -760,7 +761,10 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     } catch {}
     // Try base64
     try {
-      const json = typeof atob === "function" ? decodeURIComponent(escape(atob(key))) : key;
+      const json =
+        typeof atob === "function"
+          ? decodeURIComponent(escape(atob(key)))
+          : key;
       const parsed = JSON.parse(json);
       if (parsed && typeof parsed === "object") return parsed;
     } catch {}
@@ -1264,7 +1268,10 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                     .slice(0, showManageCategories ? undefined : 8)
                     .map(([k, w]) => (
                       <div key={k} className={styles.scoringSetting}>
-                        <label className={styles.statLabel} htmlFor={`cat-${k}`}>
+                        <label
+                          className={styles.statLabel}
+                          htmlFor={`cat-${k}`}
+                        >
                           {getShortLabel(k)}
                         </label>
                         <input
