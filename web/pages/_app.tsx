@@ -21,8 +21,8 @@ import "components/TeamLandingPage/teamLandingPage.scss";
 const queryClient = new QueryClient();
 
 function MyApp({ Component, pageProps }: AppProps) {
-  return (
-    <ApolloProvider client={client}>
+  const hasGql = Boolean(process.env.NEXT_PUBLIC_SANITY_GRAPHQL_URI);
+  const AppTree = (
       <SnackbarProvider maxSnack={3} autoHideDuration={6000}>
         <AuthProvider>
           <Layout>
@@ -64,6 +64,8 @@ function MyApp({ Component, pageProps }: AppProps) {
                 name="apple-mobile-web-app-status-bar-style"
                 content="#000"
               />
+              {/* Recommended modern mobile web app meta */}
+              <meta name="mobile-web-app-capable" content="yes" />
               <link rel="manifest" href="/site.webmanifest" />
             </Head>
             <DefaultSeo {...SEO} />
@@ -75,7 +77,13 @@ function MyApp({ Component, pageProps }: AppProps) {
           <Analytics />
         </AuthProvider>
       </SnackbarProvider>
-    </ApolloProvider>
+  );
+
+  // Only wrap with ApolloProvider if configured
+  return hasGql ? (
+    <ApolloProvider client={client}>{AppTree}</ApolloProvider>
+  ) : (
+    AppTree
   );
 }
 

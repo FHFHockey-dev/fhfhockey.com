@@ -15,7 +15,7 @@ export interface SeasonInfo {
   idTwo?: number;
 }
 
-console.log("fetchCurrentSeason.ts ///////////////////");
+// console marker removed for production noise reduction
 
 export async function fetchCurrentSeason(): Promise<SeasonInfo> {
   console.log("Fetching current season...");

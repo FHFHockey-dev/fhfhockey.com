@@ -483,7 +483,7 @@ export default function StatsPage({
               >
                 {teams.map((team) => (
                   <Link
-                    key={team.team_id}
+                    key={team.id}
                     href={`/stats/team/${team.abbreviation}`}
                     className={`${styles.teamListItem} ${
                       hoveredTeam && hoveredTeam !== team.abbreviation
@@ -495,7 +495,7 @@ export default function StatsPage({
                   >
                     <div className={styles.teamLogoContainer}>
                       <img
-                        src={`/teamLogos/${team.abbreviation}.png`}
+                        src={`/teamLogos/${team.abbreviation ?? "default"}.png`}
                         alt={team.name}
                         className={styles.teamLogo}
                         width={45}

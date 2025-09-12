@@ -258,7 +258,7 @@ export default function OpponentMetricsTable({
                 <tr key={team.teamId}>
                   <td>
                     <Image
-                      src={`/teamLogos/${team.teamAbbreviation}.png`}
+                      src={`/teamLogos/${team.teamAbbreviation ?? "default"}.png`}
                       alt={team.teamAbbreviation || "Team Logo"}
                       width={24}
                       height={24}

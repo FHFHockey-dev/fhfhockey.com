@@ -46,18 +46,20 @@ function Comment({ userName, content, createdAt }: CommentData) {
 function Comments({ slug }: { slug: string }, ref: any) {
   const { data, loading, refetch } = useQuery(QUERY, {
     variables: { slug },
-    notifyOnNetworkStatusChange: true,
+    notifyOnNetworkStatusChange: true
   });
   // allow other componet to refech the comments
   useImperativeHandle(ref, () => ({
     refetch: () => {
       refetch();
-    },
+    }
   }));
 
   return (
     <section className={styles.comments}>
-      <h2 className={styles.title} id="comments-heading">Comments</h2>
+      <h2 className={styles.title} id="comments-heading">
+        Comments
+      </h2>
       <ul className={styles.list} aria-labelledby="comments-heading">
         {loading && <Spinner center />}
         {data?.comments.map((comment: CommentData) => (

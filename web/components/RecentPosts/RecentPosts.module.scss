@@ -20,14 +20,17 @@
     cursor: pointer;
     color: vars.$text-primary;
     box-shadow: vars.$shadow-hover;
-    transition: transform vars.$mobile-animation-fast vars.$mobile-easing-ease,
+    transition:
+      transform vars.$mobile-animation-fast vars.$mobile-easing-ease,
       border-color vars.$mobile-animation-fast vars.$mobile-easing-ease,
       box-shadow vars.$mobile-animation-fast vars.$mobile-easing-ease;
 
     &:hover {
       transform: translateY(-2px);
       border-color: vars.$border-accent;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), vars.$shadow-hover;
+      box-shadow:
+        0 6px 18px rgba(0, 0, 0, 0.35),
+        vars.$shadow-hover;
     }
 
     .header {
@@ -59,8 +62,8 @@
       overflow: hidden;
       display: -webkit-box;
       -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
     }
   }
 }

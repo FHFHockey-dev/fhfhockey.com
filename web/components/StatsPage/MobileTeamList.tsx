@@ -122,7 +122,7 @@ export default function MobileTeamList({
                 onMouseEnter={() => onTeamMouseEnter(team.abbreviation)}
               >
                 <img
-                  src={`/teamLogos/${team.abbreviation}.png`}
+                  src={`/teamLogos/${team.abbreviation ?? "default"}.png`}
                   alt={team.name}
                   className={styles.teamLogo}
                   loading="lazy"
