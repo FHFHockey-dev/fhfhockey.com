@@ -43,6 +43,7 @@ interface ProjectionsTableProps {
 type SortableField =
   | keyof ProcessedPlayer
   | "fantasyPoints"
+  | "score"
   | "vorp"
   | "vona"
   | "vbd"
@@ -67,7 +68,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   needAlpha = 0.5,
   onNeedAlphaChange,
   nextPickNumber,
-  forwardGrouping = "split"
+  forwardGrouping = "split",
+  leagueType = "points"
 }) => {
   const [sortField, setSortField] = useState<SortableField>("yahooAvgPick");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -237,6 +239,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         "displayTeam",
         "yahooAvgPick",
         "fantasyPoints",
+        "score",
         "vorp",
         "vona",
         "vbd",
@@ -390,6 +393,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         vbd: number;
         bestPos?: string;
         vbdAdj: number;
+        value?: number;
       }
     >();
     if (vorpMetrics) {
@@ -408,7 +412,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           vona: metrics.vona,
           vbd: baseVbd,
           bestPos: metrics.bestPos,
-          vbdAdj
+          vbdAdj,
+          value: metrics.value
         });
       });
     }
@@ -495,6 +500,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         if (aAdp == null) return sortDirection === "asc" ? 1 : -1;
         if (bAdp == null) return sortDirection === "asc" ? -1 : 1;
         return sortDirection === "asc" ? aAdp - bAdp : bAdp - aAdp;
+      } else if (sortField === "score") {
+        aValue = vorpMap.get(String(a.playerId))?.value ?? 0;
+        bValue = vorpMap.get(String(b.playerId))?.value ?? 0;
       } else if (sortField === "vorp") {
         aValue = vorpMap.get(String(a.playerId))?.vorp ?? 0;
         bValue = vorpMap.get(String(b.playerId))?.vorp ?? 0;
@@ -569,11 +577,11 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     );
 
     // Group values by scope key (ALL or position)
-    const groups: Record<string, { vbdVals: number[]; fpVals: number[] }> = {};
-    const pushVal = (key: string, vbd?: number | null, fp?: number | null) => {
-      if (!groups[key]) groups[key] = { vbdVals: [], fpVals: [] };
+    const groups: Record<string, { vbdVals: number[]; valVals: number[] }> = {};
+    const pushVal = (key: string, vbd?: number | null, val?: number | null) => {
+      if (!groups[key]) groups[key] = { vbdVals: [], valVals: [] };
       if (typeof vbd === "number") groups[key].vbdVals.push(vbd);
-      if (typeof fp === "number") groups[key].fpVals.push(fp);
+      if (typeof val === "number") groups[key].valVals.push(val);
     };
 
     eligible.forEach((p) => {
@@ -581,15 +589,16 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       const m = vorpMap.get(key);
       // Use adjusted VBD when enabled for banding
       const vbd = needWeightEnabled ? m?.vbdAdj : m?.vbd;
-      const fp = p.fantasyPoints.projected;
+      const fpOrScore =
+        leagueType === "categories" ? (m?.value ?? null) : p.fantasyPoints.projected;
       const scopeKey = getPrimaryPos(p, m?.bestPos);
-      pushVal(scopeKey, vbd, fp);
+      pushVal(scopeKey, vbd, fpOrScore);
     });
 
     // Sort arrays ascending for percentile rank
     Object.values(groups).forEach((g) => {
       g.vbdVals.sort((a, b) => a - b);
-      g.fpVals.sort((a, b) => a - b);
+      g.valVals.sort((a, b) => a - b);
     });
 
     const rank = (val: number, arr: number[]): number | null => {
@@ -615,28 +624,30 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     };
 
     const vbdBandById = new Map<string, string | null>();
-    const fpBandById = new Map<string, string | null>();
+    const valBandById = new Map<string, string | null>();
 
     eligible.forEach((p) => {
       const id = String(p.playerId);
       const m = vorpMap.get(id);
       const scopeKey = getPrimaryPos(p, m?.bestPos);
       const vbd = needWeightEnabled ? m?.vbdAdj : m?.vbd;
-      const fp = p.fantasyPoints.projected;
+      const fpOrScore =
+        leagueType === "categories" ? (m?.value ?? null) : p.fantasyPoints.projected;
       const g = groups[scopeKey];
       if (g) {
         const vbdPct = typeof vbd === "number" ? rank(vbd, g.vbdVals) : null;
-        const fpPct = typeof fp === "number" ? rank(fp, g.fpVals) : null;
+        const valPct =
+          typeof fpOrScore === "number" ? rank(fpOrScore, g.valVals) : null;
         vbdBandById.set(id, toBand(vbdPct));
-        fpBandById.set(id, toBand(fpPct));
+        valBandById.set(id, toBand(valPct));
       } else {
         vbdBandById.set(id, null);
-        fpBandById.set(id, null);
+        valBandById.set(id, null);
       }
     });
 
-    return { vbdBandById, fpBandById };
-  }, [filteredAndSortedPlayers, vorpMap, bandScope, needWeightEnabled]);
+    return { vbdBandById, valBandById };
+  }, [filteredAndSortedPlayers, vorpMap, bandScope, needWeightEnabled, leagueType]);
 
   const handleSort = (field: SortableField) => {
     if (sortField === field) {
@@ -875,6 +886,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 <div className={styles.tooltipTitle}>Legend</div>
                 <div className={styles.tooltipBody}>
                   <ul>
+                    {leagueType === "categories" && (
+                      <li>
+                        <strong>Score</strong>: percentile-weighted composite (0–100)
+                        across your selected categories, weighted by your category
+                        weights and by metric scarcity.
+                      </li>
+                    )}
                     <li>VORP: Value over replacement.</li>
                     <li>VONA: Over next available.</li>
                     <li>VBD: Blended draft value.</li>
@@ -1155,13 +1173,22 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   (sortDirection === "asc" ? "↑" : "↓")}
               </th>
               <th
-                onClick={() => handleSort("fantasyPoints")}
+                onClick={() =>
+                  handleSort(leagueType === "categories" ? ("score" as any) : "fantasyPoints")
+                }
                 className={`${styles.sortableHeader} ${styles.colFP}`}
-                aria-sort={getAriaSort("fantasyPoints")}
+                aria-sort={getAriaSort(
+                  leagueType === "categories" ? ("score" as any) : "fantasyPoints"
+                )}
                 scope="col"
+                title={
+                  leagueType === "categories"
+                    ? "Score: percentile-weighted composite (0–100) across selected categories, weighted by category weights and metric scarcity."
+                    : "Projected Fantasy Points"
+                }
               >
-                Proj FP{" "}
-                {sortField === "fantasyPoints" &&
+                {leagueType === "categories" ? "Score" : "Proj FP"}{" "}
+                {sortField === (leagueType === "categories" ? "score" : "fantasyPoints") &&
                   (sortDirection === "asc" ? "↑" : "↓")}
               </th>
               <th
@@ -1249,7 +1276,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 const bestPos = m?.bestPos;
                 const vbdDisplay = needWeightEnabled ? vbdAdj : vbdBase;
                 const vbdBand = percentileBands.vbdBandById.get(key);
-                const fpBand = percentileBands.fpBandById.get(key);
+                const fpBand = percentileBands.valBandById.get(key);
                 const vbdClasses = [styles.vorp, styles.valueNumeric];
                 if (vbdBand) vbdClasses.push(styles.valueBand, styles[vbdBand]);
                 const fpClasses = [styles.fantasyPoints, styles.valueNumeric];
@@ -1310,7 +1337,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       {player.displayTeam || "-"}
                     </td>
                     <td className={fpClasses.join(" ")}>
-                      {player.fantasyPoints.projected?.toFixed(1) || "-"}
+                      {leagueType === "categories"
+                        ? (typeof m?.value === "number" ? m.value.toFixed(1) : "-")
+                        : player.fantasyPoints.projected?.toFixed(1) || "-"}
                     </td>
                     <td
                       className={styles.vorp}

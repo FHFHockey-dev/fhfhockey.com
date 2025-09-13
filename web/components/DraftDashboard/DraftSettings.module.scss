@@ -491,13 +491,37 @@
   margin-top: v.$space-sm;
   background: color.adjust(v.$background-dark, $lightness: 2%);
   display: grid;
-  grid-template-columns: 2fr 1fr; // add button twice the width of hide
+  /* Make right column size to content; left fills remaining without overflowing */
+  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-auto-flow: row dense;
   gap: v.$space-xs;
   align-items: center;
+  /* Ensure it spans the full grid width and measures correctly */
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden; // clip any tiny visual bleed from rounded inputs
+  contain: layout paint;
 }
 
 .inlineManage .pointsInput {
   min-width: 70px;
+  box-sizing: border-box;
+}
+
+.inlineManage .select {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.inlineManage .actionButton {
+  justify-self: stretch;
+  max-width: 100%;
+}
+
+.inlineManage .inlineResetBtn {
+  justify-self: end;
+  white-space: nowrap;
 }
 
 /* Buttons share the same row; Add sits in col1 (2x width), Hide in col2 */
@@ -510,10 +534,10 @@
 
 /* Make the inline manage span full width of the grid for clarity */
 .scoringGrid > .inlineManage {
-  grid-column: 1 / -1;
+  grid-column: 1 / -1 !important;
 }
 .goalieGrid > .inlineManage {
-  grid-column: 1 / -1;
+  grid-column: 1 / -1 !important;
 }
 
 /* New flex row scoring subgroups layout */
@@ -610,10 +634,10 @@
   font-size: v.$font-size-xs;
 }
 
-// /* Narrow points input for add-stat control */
-// .pointsInputNarrow {
-//   width: 70px;
-// }
+/* Narrow points input for add-stat control */
+.pointsInputNarrow {
+  width: 70px;
+}
 
 /* Wrapper sizing for player autocomplete input */
 .playerAutocompleteWrap {
@@ -781,6 +805,20 @@
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+}
+
+/* Variant: Danger emphasis (for Undo) */
+.actionButtonDanger {
+  color: v.$danger-color;
+  border-color: v.$danger-color;
+  background-color: color.adjust(v.$danger-color-dark, $alpha: -0.85);
+
+  &:hover:not(:disabled) {
+    background-color: color.adjust(v.$danger-color-dark, $lightness: -5%, $alpha: -0.8);
+    border-color: v.$danger-color;
+    color: v.$danger-color;
+    box-shadow: 0 0 0 2px rgba(v.$danger-color, 0.15);
   }
 }
 

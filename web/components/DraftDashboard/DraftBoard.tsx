@@ -3,6 +3,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { DraftSettings, DraftedPlayer, TeamDraftStats } from "./DraftDashboard";
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
+import type { PlayerVorpMetrics } from "hooks/useVORPCalculations";
 import styles from "./DraftBoard.module.scss";
 
 interface DraftBoardProps {
@@ -28,6 +29,8 @@ interface DraftBoardProps {
     teamId: string;
     playerId: string;
   }>;
+  // NEW: per-player VORP/value metrics (value used as Score in categories)
+  vorpMetrics?: Map<string, PlayerVorpMetrics>;
 }
 
 type SortField =
@@ -51,7 +54,8 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   allPlayers,
   onUpdateTeamName,
   pickOwnerOverrides = {},
-  keepers = []
+  keepers = [],
+  vorpMetrics
 }) => {
   const DEBUG = process.env.NODE_ENV !== "production";
   const [sortField, setSortField] = useState<SortField>("projectedPoints");
@@ -411,7 +415,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
       WINS_GOALIE: "W",
       SAVES_GOALIE: "SV",
       SHUTOUTS_GOALIE: "SHO",
-      GOALS_AGAINST_GOALIE: "GAA",
+      GOALS_AGAINST_GOALIE: "GA",
       SAVE_PERCENTAGE: "SV%",
       GOALS_AGAINST_AVERAGE: "GAA",
       GAA: "GAA",
@@ -438,6 +442,17 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     const keys = Object.keys(draftSettings.categoryWeights || {});
     return keys.filter((k) => !CORE_CAT_UPPER.includes(k));
   }, [draftSettings.categoryWeights]);
+
+  // Auto-show dynamic categories when present in Categories leagues
+  useEffect(() => {
+    if (
+      (draftSettings.leagueType || "points") === "categories" &&
+      dynamicCategoryKeys.length > 0 &&
+      !showAllCategories
+    ) {
+      setShowAllCategories(true);
+    }
+  }, [dynamicCategoryKeys, draftSettings.leagueType]);
 
   // Calculate team category totals for the leaderboard table
   const teamStatsWithCategories = useMemo(() => {
@@ -531,10 +546,26 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
           categoryTotals
         );
 
+      // Compute team score average for categories mode
+      let teamScoreAvg = 0;
+      if ((draftSettings.leagueType || "points") === "categories" && vorpMetrics) {
+        const scores: number[] = [];
+        teamPlayers.forEach((dp) => {
+          const m = vorpMetrics.get(dp.playerId);
+          if (m && typeof m.value === "number" && Number.isFinite(m.value)) {
+            scores.push(m.value);
+          }
+        });
+        if (scores.length) {
+          teamScoreAvg = scores.reduce((a, b) => a + b, 0) / scores.length;
+        }
+      }
+
       return {
         ...team,
         categoryTotals,
-        dynamicCategoryTotals: dynamicTotals
+        dynamicCategoryTotals: dynamicTotals,
+        teamScoreAvg
       };
     });
   }, [
@@ -542,7 +573,9 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     draftedPlayers,
     availablePlayers,
     allPlayers,
-    dynamicCategoryKeys
+    dynamicCategoryKeys,
+    draftSettings.leagueType,
+    vorpMetrics
   ]);
 
   // Compute per-category min/max across teams for intra-team heat coloring
@@ -742,23 +775,6 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                   {sortField === "blocked_shots" &&
                     (sortDirection === "asc" ? "↑" : "↓")}
                 </th>
-                <th
-                  className={`${styles.sortableHeader} ${sortField === "teamVorp" ? styles.activeSortHeader : ""}`}
-                  onClick={() => handleSort("teamVorp")}
-                  title="Sum of team VORP"
-                >
-                  Team VORP{" "}
-                  {sortField === "teamVorp" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
-                </th>
-                <th
-                  className={`${styles.sortableHeader} ${sortField === "projectedPoints" ? styles.activeSortHeader : ""}`}
-                  onClick={() => handleSort("projectedPoints")}
-                >
-                  Proj Pts{" "}
-                  {sortField === "projectedPoints" &&
-                    (sortDirection === "asc" ? "↑" : "↓")}
-                </th>
                 {showAllCategories &&
                   dynamicCategoryKeys.map((k) => (
                     <th
@@ -772,6 +788,28 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                         (sortDirection === "asc" ? "↑" : "↓")}
                     </th>
                   ))}
+                <th
+                  className={`${styles.sortableHeader} ${sortField === "teamVorp" ? styles.activeSortHeader : ""}`}
+                  onClick={() => handleSort("teamVorp")}
+                  title="Sum of team VORP"
+                >
+                  Team VORP{" "}
+                  {sortField === "teamVorp" &&
+                    (sortDirection === "asc" ? "↑" : "↓")}
+                </th>
+                <th
+                  className={`${styles.sortableHeader} ${sortField === "projectedPoints" ? styles.activeSortHeader : ""}`}
+                  onClick={() => handleSort("projectedPoints")}
+                  title={
+                    (draftSettings.leagueType || "points") === "categories"
+                      ? "Score: team average of players' percentile-weighted category composite (0–100)."
+                      : "Projected fantasy points (team total)."
+                  }
+                >
+                  {(draftSettings.leagueType || "points") === "categories" ? "Score" : "Proj Pts"}{" "}
+                  {sortField === "projectedPoints" &&
+                    (sortDirection === "asc" ? "↑" : "↓")}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -897,21 +935,6 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                     >
                       {(team.categoryTotals.blocked_shots || 0).toFixed(0)}
                     </td>
-                    <td
-                      className={styles.statCell}
-                      style={getMetricCellStyle("teamVorp", team.teamVorp || 0)}
-                    >
-                      {(team.teamVorp || 0).toFixed(1)}
-                    </td>
-                    <td
-                      className={styles.projectedPointsCell}
-                      style={getMetricCellStyle(
-                        "projectedPoints",
-                        team.projectedPoints || 0
-                      )}
-                    >
-                      {team.projectedPoints.toFixed(1)}
-                    </td>
                     {showAllCategories &&
                       dynamicCategoryKeys.map((k) => (
                         <td
@@ -925,6 +948,26 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                           {(((team as any).dynamicCategoryTotals?.[k] || 0) as number).toFixed(0)}
                         </td>
                       ))}
+                    <td
+                      className={styles.statCell}
+                      style={getMetricCellStyle("teamVorp", team.teamVorp || 0)}
+                    >
+                      {(team.teamVorp || 0).toFixed(1)}
+                    </td>
+                    <td
+                      className={styles.projectedPointsCell}
+                      style={getMetricCellStyle(
+                        "projectedPoints",
+                        (draftSettings.leagueType || "points") === "categories"
+                          ? ((team as any).teamScoreAvg || 0)
+                          : (team.projectedPoints || 0)
+                      )}
+                    >
+                      {((draftSettings.leagueType || "points") === "categories"
+                        ? ((team as any).teamScoreAvg || 0)
+                        : team.projectedPoints
+                      ).toFixed(1)}
+                    </td>
                   </tr>
                 );
               })}

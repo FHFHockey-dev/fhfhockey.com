@@ -53,6 +53,18 @@ export default function DRMPage() {
     queryTypes.string.withDefault(DATERANGE_MATRIX_MODES[0].value)
   );
   const [selectedTeam, setSelectedTeam] = useState<TeamAbbreviation | "">("");
+  // URL query state for team and dates/opponent/homeAway
+  const [teamQ, setTeamQ] = useQueryState("team", queryTypes.string);
+  const [startQ, setStartQ] = useQueryState("start", queryTypes.string);
+  const [endQ, setEndQ] = useQueryState("end", queryTypes.string);
+  const [opponentQ, setOpponentQ] = useQueryState(
+    "opponent",
+    queryTypes.string
+  );
+  const [homeAwayQ, setHomeAwayQ] = useQueryState(
+    "homeAway",
+    queryTypes.string
+  );
   // Ensure runtime value always stays a string (never number)
   const setTeamSafe = (val: string | TeamAbbreviation | null) => {
     if (!val) {
@@ -70,6 +82,8 @@ export default function DRMPage() {
   );
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+  const [opponent, setOpponent] = useState<string>("");
+  const [homeOrAway, setHomeOrAway] = useState<"home" | "away" | "">("");
   const [regularSeasonDateRange, setRegularSeasonDateRange] = useState<
     { start: Date; end: Date } | undefined
   >(undefined);
@@ -90,6 +104,39 @@ export default function DRMPage() {
     },
     []
   );
+
+  // Sync in: apply initial query values to state
+  useEffect(() => {
+    if (teamQ && teamQ !== selectedTeam) {
+      setSelectedTeam(teamQ as TeamAbbreviation);
+    }
+  }, [teamQ]);
+
+  useEffect(() => {
+    if (opponentQ !== undefined && opponentQ !== opponent) {
+      setOpponent(opponentQ || "");
+    }
+  }, [opponentQ]);
+
+  useEffect(() => {
+    if (homeAwayQ !== undefined && homeAwayQ !== homeOrAway) {
+      const val = homeAwayQ === "home" || homeAwayQ === "away" ? homeAwayQ : "";
+      setHomeOrAway(val);
+    }
+  }, [homeAwayQ]);
+
+  useEffect(() => {
+    // Parse start/end from query on first load or when changed externally
+    if (startQ) {
+      const d = new Date(startQ);
+      if (!Number.isNaN(d.getTime())) setStartDate(d);
+    }
+    if (endQ) {
+      const d = new Date(endQ);
+      if (!Number.isNaN(d.getTime())) setEndDate(d);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [startQ, endQ]);
 
   useEffect(() => {
     async function fetchSeason() {
@@ -163,8 +210,8 @@ export default function DRMPage() {
             endDate.toISOString().split("T")[0],
             seasonType,
             timeFrame,
-            "",
-            ""
+            homeOrAway,
+            opponent
           );
         setRegularSeasonData(regularSeasonPlayersData);
         setPlayoffData(playoffPlayersData);
@@ -179,7 +226,16 @@ export default function DRMPage() {
       }
     }
     fetchGames();
-  }, [selectedTeam, seasonId, startDate, endDate, timeFrame, seasonType]);
+  }, [
+    selectedTeam,
+    seasonId,
+    startDate,
+    endDate,
+    timeFrame,
+    seasonType,
+    homeOrAway,
+    opponent
+  ]);
 
   const aggregatedData = useMemo(() => {
     return seasonType === "regularSeason" ? regularSeasonData : playoffData;
@@ -229,6 +285,28 @@ export default function DRMPage() {
 
   const startStr = startDate?.toISOString().split("T")[0] || "";
   const endStr = endDate?.toISOString().split("T")[0] || "";
+
+  // Sync out: push team/date/opponent/homeAway to URL when local state changes
+  useEffect(() => {
+    if (selectedTeam) setTeamQ(selectedTeam);
+    else setTeamQ(null);
+  }, [selectedTeam, setTeamQ]);
+  useEffect(() => {
+    if (startStr) setStartQ(startStr);
+    else setStartQ(null);
+  }, [startStr, setStartQ]);
+  useEffect(() => {
+    if (endStr) setEndQ(endStr);
+    else setEndQ(null);
+  }, [endStr, setEndQ]);
+  useEffect(() => {
+    if (opponent) setOpponentQ(opponent);
+    else setOpponentQ(null);
+  }, [opponent, setOpponentQ]);
+  useEffect(() => {
+    if (homeOrAway) setHomeAwayQ(homeOrAway);
+    else setHomeAwayQ(null);
+  }, [homeOrAway, setHomeAwayQ]);
   const aggregatedForHook = useMemo(() => {
     return seasonType === "regularSeason"
       ? Object.values(regularSeasonData)
@@ -302,38 +380,38 @@ export default function DRMPage() {
                 role="tablist"
                 aria-label="Select timeframe"
               >
-              <button
-                className={`${styles.button} ${timeFrame === "L7" ? styles.active : ""}`}
-                onClick={() => setTimeFrame("L7")}
-                role="tab"
-                aria-selected={timeFrame === "L7"}
-              >
-                L7
-              </button>
-              <button
-                className={`${styles.button} ${timeFrame === "L14" ? styles.active : ""}`}
-                onClick={() => setTimeFrame("L14")}
-                role="tab"
-                aria-selected={timeFrame === "L14"}
-              >
-                L14
-              </button>
-              <button
-                className={`${styles.button} ${timeFrame === "L30" ? styles.active : ""}`}
-                onClick={() => setTimeFrame("L30")}
-                role="tab"
-                aria-selected={timeFrame === "L30"}
-              >
-                L30
-              </button>
-              <button
-                className={`${styles.button} ${timeFrame === "Totals" ? styles.active : ""}`}
-                onClick={() => setTimeFrame("Totals")}
-                role="tab"
-                aria-selected={timeFrame === "Totals"}
-              >
-                Season
-              </button>
+                <button
+                  className={`${styles.button} ${timeFrame === "L7" ? styles.active : ""}`}
+                  onClick={() => setTimeFrame("L7")}
+                  role="tab"
+                  aria-selected={timeFrame === "L7"}
+                >
+                  L7
+                </button>
+                <button
+                  className={`${styles.button} ${timeFrame === "L14" ? styles.active : ""}`}
+                  onClick={() => setTimeFrame("L14")}
+                  role="tab"
+                  aria-selected={timeFrame === "L14"}
+                >
+                  L14
+                </button>
+                <button
+                  className={`${styles.button} ${timeFrame === "L30" ? styles.active : ""}`}
+                  onClick={() => setTimeFrame("L30")}
+                  role="tab"
+                  aria-selected={timeFrame === "L30"}
+                >
+                  L30
+                </button>
+                <button
+                  className={`${styles.button} ${timeFrame === "Totals" ? styles.active : ""}`}
+                  onClick={() => setTimeFrame("Totals")}
+                  role="tab"
+                  aria-selected={timeFrame === "Totals"}
+                >
+                  Season
+                </button>
               </div>
             </div>
 
@@ -345,6 +423,19 @@ export default function DRMPage() {
                 selectedTeam={(selectedTeam || "") as string}
                 onSelect={(team) => {
                   setSelectedTeam(team as TeamAbbreviation);
+                }}
+                className={`${styles.select} ${styles.teamDropdown}`}
+              />
+            </div>
+
+            <div className={styles.dropdownGroup}>
+              <label htmlFor="opponentDropdown" className={styles.label}>
+                Opponent
+              </label>
+              <TeamDropdown
+                selectedTeam={(opponent || "") as string}
+                onSelect={(opp) => {
+                  setOpponent(opp == null ? "" : String(opp));
                 }}
                 className={`${styles.select} ${styles.teamDropdown}`}
               />
@@ -418,6 +509,24 @@ export default function DRMPage() {
                 className={`${styles.button} ${seasonType === "playoffs" ? styles.active : ""}`}
               >
                 Playoffs
+              </button>
+              <button
+                onClick={() =>
+                  setHomeOrAway(homeOrAway === "home" ? "" : "home")
+                }
+                className={`${styles.button} ${homeOrAway === "home" ? styles.active : ""}`}
+                title="Home games only"
+              >
+                Home
+              </button>
+              <button
+                onClick={() =>
+                  setHomeOrAway(homeOrAway === "away" ? "" : "away")
+                }
+                className={`${styles.button} ${homeOrAway === "away" ? styles.active : ""}`}
+                title="Away games only"
+              >
+                Away
               </button>
             </div>
             <Select

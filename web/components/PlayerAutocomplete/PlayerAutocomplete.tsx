@@ -87,12 +87,18 @@ function PlayerAutocomplete({
     isOptionEqualToValue: (option, value) => option.id === value.id,
     value: playerOption,
     onChange: (_e, newValue, reason) => {
-      onPlayerIdChange(Number(newValue?.id));
-      onPlayerChange(newValue);
-      setPlayerOption(newValue);
-
       if (reason === "selectOption") {
+        const id = newValue ? newValue.id : undefined;
+        onPlayerIdChange(id as any);
+        onPlayerChange(newValue);
+        setPlayerOption(newValue);
         inputRef.current?.blur();
+      } else if (reason === "clear") {
+        onPlayerIdChange(undefined as any);
+        onPlayerChange(null);
+        setPlayerOption(null);
+      } else {
+        // ignore blur and other reasons to avoid clearing selection unintentionally
       }
     },
     filterOptions: createFilterOptions({

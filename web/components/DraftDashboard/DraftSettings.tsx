@@ -122,7 +122,7 @@ const GOALIE_LABELS: Record<string, string> = {
   WINS_GOALIE: "W",
   SAVES_GOALIE: "SV",
   SHUTOUTS_GOALIE: "SHO",
-  GOALS_AGAINST_GOALIE: "GAA",
+  GOALS_AGAINST_GOALIE: "GA",
   SAVE_PERCENTAGE: "SV%",
   GOALS_AGAINST_AVERAGE: "GAA",
   // Requested goalie abbreviations
@@ -834,10 +834,13 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const [showManageCategories, setShowManageCategories] = React.useState(false);
   const addableCategoryStats = React.useMemo(() => {
     const existing = new Set(Object.keys(settings.categoryWeights || {}));
-    return (availableSkaterStatKeys || [])
+    const skaterKeys = availableSkaterStatKeys || [];
+    const goalieKeys = availableGoalieStatKeys || [];
+    const merged = [...skaterKeys, ...goalieKeys];
+    return merged
       .filter((k) => !existing.has(k))
       .filter((k) => /[A-Z0-9_]/.test(k));
-  }, [availableSkaterStatKeys, settings.categoryWeights]);
+  }, [availableSkaterStatKeys, availableGoalieStatKeys, settings.categoryWeights]);
   const [newCategoryKey, setNewCategoryKey] = React.useState("");
   const [newCategoryWeight, setNewCategoryWeight] = React.useState("1");
   const handleAddCategory = () => {
@@ -1087,7 +1090,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
             </div>
             <div className={styles.actionButtons}>
               <button
-                className={styles.actionButton}
+                className={`${styles.actionButton} ${styles.actionButtonDanger}`}
                 onClick={undoLastPick}
                 disabled={draftHistory.length === 0}
                 title={
@@ -1882,7 +1885,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                   {/* Autocomplete first to reduce vertical bounce */}
                   <div className={styles.playerAutocompleteWrap}>
                     <PlayerAutocomplete
-                      playerId={undefined}
+                      playerId={keeperSelectedPlayerId ? Number(keeperSelectedPlayerId) : undefined}
                       onPlayerIdChange={(id) => {
                         setKeeperSelectedPlayerId(id ? String(id) : undefined);
                       }}

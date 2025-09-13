@@ -1294,6 +1294,7 @@ const DraftDashboard: React.FC = () => {
             onUpdateTeamName={updateTeamName}
             pickOwnerOverrides={pickOwnerOverrides}
             keepers={keepers}
+            vorpMetrics={vorpMetrics}
           />
         </section>
 

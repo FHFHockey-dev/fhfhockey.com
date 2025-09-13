@@ -9,7 +9,8 @@ import { getDateRangeForGames } from "./utilities"; // Import the helper functio
 async function fetchAllDataForTeam(
   teamId: number,
   startDate: string,
-  endDate: string
+  endDate: string,
+  filters?: { homeOrAway?: string; opponentTeamAbbreviation?: string }
 ) {
   const PAGE_SIZE = 1000;
   let offset = 0;
@@ -20,13 +21,25 @@ async function fetchAllDataForTeam(
     "game_id,game_type,player_id,player_first_name,player_last_name,team_id,team_abbreviation,game_toi,home_or_away,opponent_team_abbreviation,opponent_team_id,display_position,primary_position,time_spent_with,percent_toi_with,time_spent_with_mixed,percent_toi_with_mixed,game_length,line_combination,pairing_combination,season_id,player_type";
 
   while (fetchMore) {
-    const { data, error } = await supabase
+    let query = supabase
       .from("shift_charts")
       .select(fieldsToSelect)
       .eq("team_id", teamId)
       .gte("game_date", startDate)
-      .lte("game_date", endDate)
-      .range(offset, offset + PAGE_SIZE - 1);
+      .lte("game_date", endDate);
+
+    if (filters?.homeOrAway) {
+      // DB stores as 'home' | 'away' strings per rows pulled in other code paths
+      query = query.eq("home_or_away", filters.homeOrAway);
+    }
+    if (filters?.opponentTeamAbbreviation) {
+      query = query.eq(
+        "opponent_team_abbreviation",
+        filters.opponentTeamAbbreviation
+      );
+    }
+
+    const { data, error } = await query.range(offset, offset + PAGE_SIZE - 1);
 
     if (error) {
       console.error(`Error fetching data from Supabase:`, error);
@@ -146,7 +159,11 @@ export async function fetchAggregatedData(
   const allTeamData = await fetchAllDataForTeam(
     teamId,
     calculatedDateRange.startDate,
-    calculatedDateRange.endDate
+    calculatedDateRange.endDate,
+    {
+      homeOrAway: homeOrAway || undefined,
+      opponentTeamAbbreviation: opponentTeamAbbreviation || undefined,
+    }
   );
 
   // Get unique player IDs from the data
