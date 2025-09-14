@@ -53,6 +53,7 @@ export interface ProcessedPlayer {
   fullName: string;
   displayTeam: string | null;
   displayPosition: string | null;
+  eligiblePositions?: string[]; // From yahoo_players.eligible_positions when available
 
   // New structure for combined stats
   combinedStats: Record<
@@ -142,6 +143,8 @@ export interface UseProcessedProjectionsDataProps {
   customAdditionalSource?: CustomAdditionalProjectionSource;
   // NEW: external refresh key to bust caches and force reload
   refreshKey?: number | string;
+  // NEW: support multiple in-memory custom sources
+  customAdditionalSources?: CustomAdditionalProjectionSource[];
 }
 
 export interface UseProcessedProjectionsDataReturn {
@@ -1029,6 +1032,98 @@ function processRawDataIntoPlayers(
       processedPlayer.displayTeam = teamFromSources;
     }
     processedPlayer.displayPosition = positionFromSources;
+    // Eligible positions from yahoo_players (array of strings like ["C","RW"])
+    try {
+      const rawElig = yahooPlayerDetail?.[
+        YAHOO_PLAYERS_TABLE_KEYS.eligiblePositions
+      ] as any;
+      if (Array.isArray(rawElig)) {
+        const norm = rawElig
+          .map((s) => String(s || "").trim().toUpperCase())
+          .filter(Boolean);
+        if (norm.length) processedPlayer.eligiblePositions = norm;
+      } else if (typeof rawElig === "string" && rawElig.trim() !== "") {
+        // Fallback if stored as comma-delimited string
+        const norm = rawElig
+          .split(",")
+          .map((s) => s.trim().toUpperCase())
+          .filter(Boolean);
+        if (norm.length) processedPlayer.eligiblePositions = norm;
+      }
+    } catch {}
+
+    // Add derived stat: DEFENSE_POINTS (Defensemen goals + assists)
+    try {
+      const posStr = String(processedPlayer.displayPosition || "").toUpperCase();
+      const isDefenseman = posStr
+        .split(",")
+        .map((s) => s.trim())
+        .includes("D");
+      const gProj = processedPlayer.combinedStats.GOALS?.projected ?? null;
+      const aProj = processedPlayer.combinedStats.ASSISTS?.projected ?? null;
+      const gAct = processedPlayer.combinedStats.GOALS?.actual ?? null;
+      const aAct = processedPlayer.combinedStats.ASSISTS?.actual ?? null;
+
+      const sumNullable = (x: number | null, y: number | null) => {
+        if (x == null && y == null) return null;
+        return (x || 0) + (y || 0);
+      };
+
+      const dpProjected = isDefenseman ? sumNullable(gProj, aProj) : null;
+      const dpActual = isDefenseman ? sumNullable(gAct, aAct) : null;
+
+      // Only attach when defenseman to avoid marking FP as "valid" for others
+      if (isDefenseman) {
+        const dpStatDef = STATS_MASTER_LIST.find(
+          (s) => s.key === "DEFENSE_POINTS"
+        )!;
+        processedPlayer.combinedStats["DEFENSE_POINTS"] = {
+          projected: dpProjected,
+          actual: dpActual,
+          diffPercentage: calculateDiffPercentage(dpActual, dpProjected),
+          projectedDetail: {
+            value: dpProjected,
+            contributingSources: [],
+            missingFromSelectedSources: [],
+            statDefinition: dpStatDef
+          }
+        };
+      }
+    } catch (e) {
+      // Fail-safe: do not block processing if derived stat computation fails
+      console.warn("Derived stat DEFENSE_POINTS computation failed", e);
+    }
+
+    // Add derived stat: SH_ASSISTS (Short-Handed Assists) = SH_POINTS - SH_GOALS when both available
+    try {
+      const shpProj = processedPlayer.combinedStats.SH_POINTS?.projected ?? null;
+      const shpAct = processedPlayer.combinedStats.SH_POINTS?.actual ?? null;
+      const shgProj = (processedPlayer.combinedStats as any).SH_GOALS?.projected ?? null;
+      const shgAct = (processedPlayer.combinedStats as any).SH_GOALS?.actual ?? null;
+
+      const shaProjected =
+        shpProj != null && shgProj != null ? shpProj - shgProj : null;
+      const shaActual = shpAct != null && shgAct != null ? shpAct - shgAct : null;
+
+      if (shaProjected != null || shaActual != null) {
+        const shaDef = STATS_MASTER_LIST.find((s) => s.key === "SH_ASSISTS");
+        if (shaDef) {
+          (processedPlayer.combinedStats as any)["SH_ASSISTS"] = {
+            projected: shaProjected,
+            actual: shaActual,
+            diffPercentage: calculateDiffPercentage(shaActual, shaProjected),
+            projectedDetail: {
+              value: shaProjected,
+              contributingSources: [],
+              missingFromSelectedSources: [],
+              statDefinition: shaDef
+            }
+          };
+        }
+      }
+    } catch (e) {
+      console.warn("Derived stat SH_ASSISTS computation failed", e);
+    }
 
     // Read Yahoo draft data directly from table columns instead of JSON field
     if (yahooPlayerDetail) {
@@ -1131,6 +1226,7 @@ export const useProcessedProjectionsData = ({
   togglePerGameFantasyPoints,
   teamCountForRoundSummaries,
   customAdditionalSource,
+  customAdditionalSources,
   refreshKey
 }: UseProcessedProjectionsDataProps): UseProcessedProjectionsDataReturn => {
   const [processedPlayers, setProcessedPlayers] = useState<TableDataRow[]>([]);
@@ -1207,24 +1303,24 @@ export const useProcessedProjectionsData = ({
     [stableFantasyPointSettings]
   );
 
-  const stableCustomAdditionalSourceString = useMemo(
-    () =>
-      customAdditionalSource
-        ? JSON.stringify({
-            id: customAdditionalSource.id,
-            playerType: customAdditionalSource.playerType,
-            rowsLen: customAdditionalSource.rows?.length || 0,
-            // Including a hash-esque piece: concatenate first 5 player ids if present
-            sample: customAdditionalSource.rows
-              ? customAdditionalSource.rows
-                  .slice(0, 5)
-                  .map((r) => r[customAdditionalSource.primaryPlayerIdKey])
-                  .join(",")
-              : ""
-          })
-        : "none",
-    [customAdditionalSource]
-  );
+  const stableCustomAdditionalSourcesString = useMemo(() => {
+    if (customAdditionalSources && customAdditionalSources.length) {
+      const payload = customAdditionalSources.map((s) => ({
+        id: s.id,
+        playerType: s.playerType,
+        rowsLen: s.rows?.length || 0
+      }));
+      return JSON.stringify(payload);
+    }
+    if (customAdditionalSource) {
+      return JSON.stringify({
+        id: customAdditionalSource.id,
+        playerType: customAdditionalSource.playerType,
+        rowsLen: customAdditionalSource.rows?.length || 0
+      });
+    }
+    return "none";
+  }, [customAdditionalSources, customAdditionalSource]);
 
   useEffect(() => {
     const relevantStatDefsForCollapse = STATS_MASTER_LIST.filter(
@@ -1273,10 +1369,10 @@ export const useProcessedProjectionsData = ({
     const currentTypeCache = cache.current[cacheTypeKey]!;
 
     // If customAdditionalSource changes, bust caches related to that playerType (simple approach for now)
-    if (
-      customAdditionalSource &&
-      customAdditionalSource.playerType === activePlayerType
-    ) {
+    const anyCustomForType =
+      (customAdditionalSources || []).some((s) => s.playerType === activePlayerType) ||
+      (customAdditionalSource && customAdditionalSource.playerType === activePlayerType);
+    if (anyCustomForType) {
       // Invalidate caches so new data flows through
       currentTypeCache.base = undefined;
       currentTypeCache.full = undefined;
@@ -1294,7 +1390,7 @@ export const useProcessedProjectionsData = ({
       currentTypeCache.full.showPerGameFantasyPointsSnapshot ===
         showPerGameFantasyPoints &&
       currentTypeCache.full.refreshKeySnapshot === refreshKey &&
-      !customAdditionalSource // only reuse cache if no custom source (or unchanged and not invalidated)
+      !(customAdditionalSources && customAdditionalSources.length) && !customAdditionalSource // only reuse cache if no custom sources
     ) {
       setProcessedPlayers(currentTypeCache.full.data);
       const freshColumns = generateTableCols();
@@ -1331,24 +1427,26 @@ export const useProcessedProjectionsData = ({
     const augmentedActiveSourceConfigs: ProjectionSourceConfig[] = [
       ...baseActiveSourceConfigs
     ];
-    let customSourceConfig: ProjectionSourceConfig | undefined;
-    if (
-      customAdditionalSource &&
-      customAdditionalSource.playerType === activePlayerType &&
-      stableSourceControls[customAdditionalSource.id]?.isSelected
-    ) {
-      customSourceConfig = {
-        id: customAdditionalSource.id,
-        displayName: customAdditionalSource.displayName,
-        tableName: "__custom_session__", // synthetic
-        playerType: customAdditionalSource.playerType,
-        primaryPlayerIdKey: customAdditionalSource.primaryPlayerIdKey,
-        originalPlayerNameKey: customAdditionalSource.originalPlayerNameKey,
-        teamKey: customAdditionalSource.teamKey,
-        positionKey: customAdditionalSource.positionKey,
-        statMappings: customAdditionalSource.statMappings
-      };
-      augmentedActiveSourceConfigs.push(customSourceConfig);
+    const customById = new Map<string, CustomAdditionalProjectionSource>();
+    (customAdditionalSources || []).forEach((s) => customById.set(s.id, s));
+    if (customAdditionalSource) customById.set(customAdditionalSource.id, customAdditionalSource);
+
+    // Push selected custom sources for this player type
+    for (const s of Array.from(customById.values())) {
+      if (s.playerType !== activePlayerType) continue;
+      const ctrl = stableSourceControls[s.id];
+      if (!ctrl || !ctrl.isSelected) continue;
+      augmentedActiveSourceConfigs.push({
+        id: s.id,
+        displayName: s.displayName,
+        tableName: "__custom_session__",
+        playerType: s.playerType,
+        primaryPlayerIdKey: s.primaryPlayerIdKey,
+        originalPlayerNameKey: s.originalPlayerNameKey,
+        teamKey: s.teamKey,
+        positionKey: s.positionKey,
+        statMappings: s.statMappings
+      });
     }
 
     if (augmentedActiveSourceConfigs.length === 0) {
@@ -1363,10 +1461,12 @@ export const useProcessedProjectionsData = ({
       // Build raw projection data map (skip Supabase fetch for custom source)
       const projectionDataPromises = augmentedActiveSourceConfigs.map(
         async (sourceConfig) => {
-          if (customSourceConfig && sourceConfig.id === customSourceConfig.id) {
+          // If this ID belongs to a custom in-memory source, return its rows
+          const mem = customById.get(sourceConfig.id);
+          if (mem) {
             return {
               sourceId: sourceConfig.id,
-              data: customAdditionalSource!.rows as RawProjectionSourcePlayer[],
+              data: (mem.rows || []) as RawProjectionSourcePlayer[],
               config: sourceConfig
             };
           }
@@ -1535,7 +1635,7 @@ export const useProcessedProjectionsData = ({
       }
 
       // Cache base only if custom source absent (custom source data is session-volatile)
-      if (!customAdditionalSource) {
+      if (!(customAdditionalSources && customAdditionalSources.length) && !customAdditionalSource) {
         currentTypeCache.base = {
           data: tempProcessedPlayers,
           sourceControlsSnapshot: stableSourceControlsString,
@@ -1567,7 +1667,7 @@ export const useProcessedProjectionsData = ({
       );
       setTableColumns(derivedCols);
 
-      if (!customAdditionalSource) {
+      if (!(customAdditionalSources && customAdditionalSources.length) && !customAdditionalSource) {
         currentTypeCache.full = {
           data: tableDataWithSummaries,
           sourceControlsSnapshot: stableSourceControlsString,
@@ -1596,7 +1696,7 @@ export const useProcessedProjectionsData = ({
     currentSeasonId,
     showPerGameFantasyPoints,
     teamCountForRoundSummaries,
-    stableCustomAdditionalSourceString, // trigger recompute when custom data changes
+    stableCustomAdditionalSourcesString, // trigger recompute when custom data changes
     refreshKey
   ]);
 

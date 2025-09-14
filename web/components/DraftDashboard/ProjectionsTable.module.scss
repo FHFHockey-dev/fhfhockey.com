@@ -24,6 +24,30 @@
   flex-shrink: 0;
 }
 
+.controlsBarTitle {
+  font-size: v.$font-size-md;
+  font-weight: 700;
+  color: v.$text-primary;
+  padding: 0;
+  line-height: 1.1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+  border-bottom: 1px solid v.$border-secondary;
+}
+
+.settingsAndTooltips {
+  display: flex;
+  align-items: center;
+  gap: v.$space-sm;
+  justify-content: flex-end;
+  margin: v.$space-md;
+}
+
 .panelTitle {
   font-family: v.$font-family-accent, sans-serif;
   font-size: v.$font-size-lg;
@@ -31,7 +55,9 @@
   color: v.$color-white;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  margin: 0;
+  text-align: left;
+  width: 100%;
+  margin: v.$space-md;
   line-height: 1.1;
 }
 .panelTitleAccent {
@@ -40,20 +66,25 @@
 
 /* New condensed controls bar */
 .controlsBar {
-  background-color: color.adjust(v.$background-dark, $lightness: -4%);
+  background-color: color.adjust(v.$background-dark, $lightness: -2%);
   border-bottom: 2px solid v.$border-secondary;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: v.$space-md;
-  padding: 4px v.$space-md 6px;
+  // padding: 0px v.$space-md 6px;
   min-height: 48px;
 }
 .primaryControls {
   display: flex;
-  align-items: center;
-  gap: v.$space-sm;
+  align-items: end;
+  flex-wrap: nowrap;
+  width: 100%;
+  height: 100%;
+  gap: v.$space-md;
   flex: 1 1 auto;
   min-width: 0;
+  padding: v.$space-sm v.$space-md;
+  overflow-x: auto;
 }
 .inlineControl {
   flex: 0 0 auto;
@@ -68,12 +99,62 @@
   padding: 4px 8px;
   font-size: v.$font-size-xs;
   min-height: 28px;
+  width: 100%;
+}
+
+.stackedControlsRow {
+  display: flex;
+  align-items: end;
+  flex-wrap: nowrap;
+  gap: v.$space-md;
+  width: 100%;
 }
 
 /* Compact toggle buttons for header controls */
 .toggleButtonsGroup {
   display: inline-flex;
   gap: 6px;
+  width: 100%;
+}
+
+/* Compare selection checkbox styling */
+.compareCheckbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  background: v.$background-dark;
+  display: inline-grid;
+  place-content: center;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+
+  &:hover {
+    border-color: v.$primary-color;
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.35);
+    border-color: v.$primary-color;
+  }
+  &::after {
+    content: "";
+    width: 6px;
+    height: 10px;
+    transform: rotate(45deg) scale(0);
+    border-right: 2px solid v.$color-white;
+    border-bottom: 2px solid v.$color-white;
+    transition: transform 0.12s ease-in-out;
+  }
+  &:checked {
+    background: v.$primary-color;
+    border-color: v.$primary-color;
+  }
+  &:checked::after {
+    transform: rotate(45deg) scale(1);
+  }
 }
 .controlToggleBtn {
   background: v.$background-dark;
@@ -88,6 +169,7 @@
   cursor: pointer;
   min-height: 28px;
   transition: all 0.15s ease;
+  flex: 1 1 0;
   &:hover,
   &:focus {
     outline: none;
@@ -131,24 +213,35 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  align-items: flex-start;
+  align-items: stretch;
+  min-width: 0;
+  flex: 1 1 0; /* equalize widths across row */
 }
 .controlLabelMini {
   font-size: v.$font-size-xxs;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  text-align: center;
   color: v.$text-secondary;
   line-height: 1;
   white-space: nowrap;
+  display: block;
+  width: 100%;
 }
 .searchStack {
   flex: 1 1 auto;
-  min-width: 140px;
+  min-width: 240px;
+  width: 50%;
+  .controlLabelMini {
+    text-align: left;
+    white-space: normal;
+  }
 }
 .searchInput {
   min-height: 28px;
   padding: 4px 8px;
+  width: 100%;
 }
 .toggle .toggleText {
   font-size: v.$font-size-xxs;
@@ -424,7 +517,6 @@
   color: v.$text-primary;
   border: 1px solid v.$border-secondary;
   border-radius: v.$border-radius-sm;
-  padding: v.$space-sm;
   font-size: v.$font-size-sm;
 
   &:focus {

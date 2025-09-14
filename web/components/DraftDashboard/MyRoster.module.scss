@@ -6,7 +6,8 @@
 .myRosterContainer {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1 1 auto; /* fill parent panel */
+  min-height: 0; /* allow inner scrollers to shrink */
   overflow: hidden;
 }
 
@@ -346,16 +347,22 @@
 
 /* =================== Roster Slots =================== */
 .rosterSlots {
+  /* Make this section a column so the list can grow/scroll but bench stays below */
   flex: 1;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   padding: v.$space-sm; // Reduced padding
-  @include v.custom-scrollbar(v.$primary-color, v.$background-medium, 4px);
 }
 
 .slotsList {
   display: flex;
   flex-direction: column;
   gap: v.$space-sm; // Reduced gap
+  /* Fill remaining height of this panel without overlapping bench */
+  flex: 1 1 auto;
+  min-height: 0; /* allow internal scroller to shrink */
+  overflow-y: auto;
+  @include v.custom-scrollbar(v.$primary-color, v.$background-medium, 4px);
 }
 
 .rosterSlot {
@@ -363,6 +370,10 @@
   border-radius: v.$border-radius-sm;
   padding: v.$space-xs; // Reduced padding
   border: 1px solid v.$border-secondary;
+  /* Allow each position section to expand and fill available height */
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .slotHeader {
@@ -389,20 +400,43 @@
 }
 
 .slotPlayers {
-  display: flex;
-  flex-wrap: wrap;
+  /* Use grid so rows can expand evenly to fill parent height */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-auto-rows: 1fr; /* each row gets an equal share of available height */
+  align-items: stretch;
+  align-content: stretch;
   gap: v.$space-xs;
+  /* Grow to consume free vertical space inside a rosterSlot */
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* For FWD we want two slots per row */
+.slotPlayersFwd {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr; /* stretch rows evenly for FWD as well */
+  align-items: stretch;
+  align-content: stretch;
+  gap: v.$space-xs;
+}
+
+.slotPlayersFwd .slotPlayer {
+  width: 100%;
 }
 
 .slotPlayer {
   flex: 1;
   min-width: 50px; // Reduced width
-  height: 30px; // Reduced height
+  min-height: 30px; // Safety minimum
+  height: 100%; // stretch to grid row height
   border-radius: v.$border-radius-sm;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: v.$font-size-xxs; // Reduced font size
+  box-sizing: border-box;
   transition: all 0.2s ease;
 }
 
@@ -484,6 +518,12 @@
     border: 1px dashed v.$border-secondary;
     color: v.$text-secondary;
   }
+}
+
+/* Highlight eligible target slots when a roster player with multi-eligibility is selected */
+.eligibleTarget {
+  border: 2px solid v.$focus-color !important;
+  background-color: rgba(v.$focus-color, 0.4) !important;
 }
 
 /* =================== Responsive Design =================== */

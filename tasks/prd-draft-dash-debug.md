@@ -177,7 +177,141 @@ Test Plan
 
 ---
 
+## Issue 8: Projection Source Weighting Yields Zero Points When One Source Set to 100%
+
+Symptoms
+- A beta user reports that setting a single projection source slider to 100% (without manually un‑checking the others) causes some players to show 0 projected fantasy points.
+- User expectation: forcing one source to 100% should implicitly make that the sole contributor (i.e., blended == that source), never zero out players that have data in that source.
+
+Likely Root Causes / Hypotheses
+- Normalization step may only consider sources marked `isSelected`; if others remain selected with weight 0 after user interaction, division by total (or skipping) could yield 0.
+- Some players may lack rows in other sources; current blend might multiply by zero weights but still divides by sum > 1 or incorrectly early‑returns 0 when encountering missing stats for a source.
+- UI sets a source weight to 100 but other active sources keep small floating weights until explicit normalize, so downstream logic treats them all and, for players missing in the 100% source, returns 0 instead of falling back.
+
+Desired Behavior
+1. Always re‑normalize active (selected) sources so their weights sum to 1.000 (within tolerance) after any slider change (unless user has disabled auto-normalize).
+2. If one active source weight is set to 100 (or 1 after normalization) treat blend as that source alone; missing player rows should produce a graceful fallback (e.g., 0 only if truly absent in that chosen source) – but should not become 0 if player exists in that source.
+3. If a player is missing in the dominant (100%) source but present elsewhere, either (a) show a clear indicator (e.g., "–" with tooltip "No data in selected source") or (b) optionally fall back to next weighted source (decision: pick (a) for clarity; do not silently mix).
+4. Users should not be required to manually un‑check other sources to single‑source the projections.
+
+Proposed Fix
+- In `DraftSettings` weight slider handler: after any change, if auto‑normalize is enabled, recompute weights so sum == 1. If a single slider is >= 0.999, force that slider to 1 and set all other selected sources to 0 (but keep their selection state for quick revert) before normalization.
+- In blending logic (likely in `useProcessedProjectionsData.tsx`):
+  - Ignore any selected source whose effective weight <= 0.0005 (treat as disabled for that calculation) to avoid micro-float contributions.
+  - When computing per-player blended metrics, iterate only over sources with weight > 0; accumulate (value * weight). Missing value in a source: skip (do not treat as zero) so long as at least one source supplies the stat. If all contributing sources missing that stat, result undefined → final FP sum should still proceed with available stats; missing stat counts as 0 only for its category weight, not entire player.
+  - Provide optional diagnostic map recording which sources contributed for a player (future UI enhancement; not required now).
+- Add defensive assertion: if after normalization total weight not within [0.999,1.001], force re‑normalize.
+
+Acceptance Criteria
+- Setting one projection source to 100 instantly makes blended fantasy points match that source’s raw projections for players present in that source.
+- Players absent from that 100% source display a clear placeholder (e.g., dash, tooltip) and are not incorrectly shown as 0 if they have values in other sources (unless design chooses strict single-source mode—document choice).
+- No players that have valid projections in the selected 100% source display 0 due purely to weighting.
+- Weight sum invariant holds (logged/verified) after arbitrary slider adjustments.
+
+Test Plan
+1. Enable multiple sources; pick a player known to have projections in all sources. Set one source to 100. Verify projected FP equals that source’s value (within rounding tolerance).
+2. Pick a player missing in one secondary source— ensure value unchanged when that secondary source weight moves from small > 0 to 0 while dominant at 100.
+3. Temporarily disable auto-normalize (if feature exists); set a single source to 100; click normalize – verify weights finalize correctly.
+4. Regression: blend with two sources at 60/40 still matches manual weighted average for sample players.
+5. Edge: Set all sliders to 0 accidentally; system auto-corrects (either revert previous state or set last changed to 1) – no division by zero.
+
+Open Questions
+- Strict single-source semantics vs. fallback. Current assumption: strict; surface absence clearly. Confirm before implementation.
+
+Instrumentation / Logging (Optional)
+- Console warn in dev if normalization sum drifts or if player blend path encounters all-missing stats.
+
+---
+
+## Issue 9: Last Season TOI/G Display Should Use MM:SS Format in Expanded Row
+
+Symptoms
+- In `ProjectionsTable` expanded player row (after clicking "+"), skater stat `TOI/G` (currently `toi_per_game`) displays as a decimal (e.g., `19.52`) instead of the conventional minutes/seconds format `19:31`.
+
+Context
+- Expanded row builds pills and formats `toi_per_game` with `.toFixed(2)`. Field is stored in minutes (fractional). Users expect standard hockey notation (MM:SS).
+
+Desired Behavior
+- Convert fractional minutes to `MM:SS` (zero‑pad seconds). For 19.52 minutes: seconds = 0.52 * 60 ≈ 31.2 → `19:31` (round to nearest second).
+- If value missing / null: show `-`.
+- Tooltip can show original decimal for transparency (optional).
+
+Proposed Fix
+- Helper: `function formatMinutesToClock(v:number){ const totalSeconds=Math.round(v*60); const m=Math.floor(totalSeconds/60); const s=totalSeconds%60; return `${m}:${s.toString().padStart(2,'0')}`; }`
+- Replace current TOI pill value with the formatted string; optionally keep raw decimal in `title` attribute.
+- Ensure goalie expanded rows unaffected (they use different stats set).
+
+Acceptance Criteria
+- Expanded skater row shows TOI/G as `MM:SS` consistently (e.g., 20.00 → 20:00; 19.5 → 19:30; 19.51 → 19:31).
+- Rounding does not produce 60 seconds; e.g., 19.999 minutes → 20:00 (handle carry).
+- No layout regressions in pill grid.
+
+Test Plan
+1. Expand a known skater; verify format matches expected clock format.
+2. Edge: value with many decimals (simulate 12.0167) → 12:01.
+3. Edge: rounding boundary (14.999) → 15:00.
+4. Missing value: shows dash.
+
+Implementation Notes
+- Keep pure formatting in component (no data model change). Optionally centralize in a `formatters.ts` for reuse.
+
+---
+
 ## Implementation Plan (summary)
+
+---
+
+## Prompt for LLM Handoff
+
+You are ChatGPT 5 taking over implementation on a Next.js (15.1+) monorepo with a Draft Dashboard UI. You are continuing work started by a prior assistant. Please read carefully and pick up where we left off.
+
+Context snapshot
+- App: Fantasy Hockey Draft Dashboard (Next.js web app).
+- State owner: `web/components/DraftDashboard/DraftDashboard.tsx`.
+- Data model for players: `ProcessedPlayer` from `web/hooks/useProcessedProjectionsData.tsx`.
+- Projections sources: `web/lib/projectionsConfig/projectionSourcesConfig.ts`.
+- Stats master list: `web/lib/projectionsConfig/statsMasterList.ts`.
+- VORP: `web/hooks/useVORPCalculations.ts`.
+
+What’s implemented in this branch
+- Snapshot V2: `DraftSnapshotV2` with `saveSnapshot()`/`loadSnapshot()` in DraftDashboard; sessionStorage key `draft.snapshot.v2`; resume prompt on mount; auto-save after state changes.
+- Multi‑CSV: Session‑scoped array `draft.customCsvList.v2` with ids `custom_csv_1..n`. UI to enable/weight/remove appears under Projection Sources in Draft Settings. Hook `useProcessedProjectionsData` accepts `customAdditionalSources` (array) for both skaters and goalies.
+- SHA metric: `SH_ASSISTS` added to `STATS_MASTER_LIST` and derived in `useProcessedProjectionsData` as `SHP - SHG` when both present.
+- Compare Players: `ComparePlayersModal.tsx` with radar chart (react-chartjs-2/chart.js) and per-metric percentile table. Multi-select checkboxes were added to the Projections table header/rows. A toolbar button opens the modal when 2+ selected.
+- Categories sorting: `DraftBoard.tsx` leaderboard “Projected Points” sort now uses `teamScoreAvg` when league type = Categories.
+
+Key files changed
+- DraftDashboard.tsx: snapshot save/load, multi‑CSV list utilities, removal handler, reordering snapshot hooks to avoid TDZ.
+- useProcessedProjectionsData.tsx: support multiple custom sources; SHA derived metric.
+- DraftSettings.tsx: projection sources chips and weights popover updated for multiple `custom_csv_*` ids with removal button.
+- ProjectionsTable.tsx: selection checkboxes, compare modal wiring.
+- ComparePlayersModal.tsx: new component.
+- statsMasterList.ts: add `SH_ASSISTS`.
+- DraftBoard.tsx: categories sort fix.
+
+Immediate next steps
+1) Build and smoke test locally.
+   - Verify no TDZ/SSR issues and no duplicate resume prompts (snapshot vs legacy resume); snapshot effect sets `resumeAttemptedRef` to prevent duplicate.
+2) Multi‑CSV QA:
+   - Import 2 CSVs; confirm two chips created (skater + goalie sections), weights adjustable, removal works for both control maps.
+   - Confirm projections reblend after weight changes and after removal (manual refresh button also available).
+3) Compare modal UX:
+   - Verify header checkbox column aligns and doesn’t break layout on mobile widths.
+   - Validate radar chart renders and table computes percentiles. Check accessibility: ESC to close, focus trap, aria labels.
+4) SHA metric:
+   - Confirm `SH_ASSISTS` appears as a selectable stat in settings (Derived/Short Handed group) and values compute where SHG/SHP present.
+5) Categories sorting:
+   - Switch league type to Categories; confirm leaderboard sorts by Score and rightmost columns order remains as specified.
+
+If you need to continue implementation
+- Consider adding minimal styles (if any artefacts appear) for the compare selection column in `ProjectionsTable.module.scss` (we reused `.colFav` for the select column).
+- Optionally add a per-source enable/weight UI for goalies consistent with skaters; this is already hooked.
+- If duplicate resume prompts appear in rare flows, guard the legacy resume block behind absence of `draft.snapshot.v2`.
+
+Definition of done
+- No runtime errors; UI accessible; no regressions to points/categories flows, FWD toggle, need‑weight, baseline mode.
+- Multi-CSV behaves as independent sources with enable/weight/remove.
+- Bookmark Snapshot V2 reliably restores full session and respects resume choice.
 - DraftSettings
   - Merge goalie keys into `addableCategoryStats` (Categories mode).
   - Pass controlled `playerId` to Keepers autocomplete; keep local state in sync.
@@ -198,6 +332,9 @@ Test Plan
 - Verify GA vs GAA changes don’t break any CSV export/import expectations.
 
 ## Validation Checklist
+- Defense Points option: added as derived skater stat (`DEFENSE_POINTS` → label "DPTS"), selectable in Draft Settings > Scoring. Defaults to 1.0 on add and is editable. Included in FP math only when added.
+- Eligible positions: Projections table shows Yahoo `eligible_positions` as comma-separated list (e.g., "C, RW").
+- Dual-eligibility drafting: On draft, fills primary position per existing cascade; if that slot is full, falls back to another eligible position before UTIL/Bench. Roster UI highlights eligible empty slots for swaps using focus color.
 - Points and Categories flows exercised after changes.
 - Add/remove skater/goalie stats, verify Draft Board totals appear and sort.
 - Keepers flow: select → add → list updates; no double‑click required.
@@ -215,3 +352,86 @@ Test Plan
 - Completed: Issue 6 (Suggested Picks Skater filter no longer hangs; added empty state). File: `SuggestedPicks.tsx`.
 - New/Completed: Issue 7 (Auto‑show new category columns on Draft Board; still left of Team VORP/Score). File: `DraftBoard.tsx`.
 - New Feature: Categories “Score” replaces Proj FP; leaderboard shows team average Score and tooltips/legend added. Files: `useVORPCalculations.ts`, `ProjectionsTable.tsx`, `DraftBoard.tsx`, `DraftDashboard.tsx`.
+- Completed: Defense Points (DPTS) addable scoring metric; computed from D goals + assists when added; editable value. Files: `statsMasterList.ts`, `useProcessedProjectionsData.tsx`, `DraftSettings.tsx`.
+- Completed: Yahoo eligible positions displayed (e.g., "C, RW") and used for draft fallback (tries other eligible slots if primary is full). Roster UI highlights eligible empty slots for swaps. Files: `useProcessedProjectionsData.tsx`, `ProjectionsTable.tsx`, `DraftDashboard.tsx`, `MyRoster.tsx`.
+
+---
+
+## New TODOs (Q4 Roadmap)
+
+- [ ] Bookmarking: snapshot everything
+  - Save/restore a complete session bundle (draft board state, keepers, traded picks, projections source selections + weights, imported CSV(s), settings including forward grouping, need‑weight, baseline mode, category weights, custom team names, position overrides).
+  - Files: `DraftDashboard.tsx` (serialize/deserialize), `DraftSettings.tsx` (export/import helpers), `ImportCsvModal.tsx` (persist imported sources), `useProcessedProjectionsData.tsx` (rebuild from snapshot), `localStorage/sessionStorage` keys.
+
+- [x] Defense points option
+  - Add a global toggle/points mapping to award “Defensive points” (e.g., bonus per D position) or a per‑stat weighting group for D only.
+  - Files: `DraftSettings.tsx` (UI), `fantasyPointsConfig.ts` (defaults), `useProcessedProjectionsData.tsx` and `useVORPCalculations.ts` (apply modifier only when primary/assigned position is D), `DraftBoard.tsx` (display).
+
+ - [x] Dual/triple‑eligibility position swap in My Roster
+  - Status: COMPLETED for current scope. Click‑to‑move to eligible empty slots is implemented with position overrides and visual highlighting; draft auto‑assignment falls back to alternate eligible positions.
+  - Future polish (separate task): swap with an occupied slot, drag‑and‑drop UX, and undo integration.
+  - Files: `MyRoster.tsx/.module.scss` (UI + DnD), `DraftDashboard.tsx` (override state + history), `useVORPCalculations.ts` (optional personalized replacement using current filled starters).
+
+- [ ] Multiple user projection sets (multi‑CSV)
+  - Support importing and enabling multiple custom sources simultaneously; show per‑source controls and weights; de‑dup with name + team; blend in averages.
+  - Files: `ImportCsvModal.tsx` (store array `draft.customCsvList.v1`), `DraftDashboard.tsx` (synthesize multiple `customAdditionalSource`s), `useProcessedProjectionsData.tsx` (merge loop already supports N sources), `DraftSettings.tsx` (chips for each custom source).
+
+- [ ] Add SHA derived metric
+  - Most sources provide SHP and some SHG. Provide `SHA = SHP - SHG` as a derived projection/actual metric; expose in categories/points selectors.
+  - Files: `useProcessedProjectionsData.tsx` (post‑aggregation derivation), `statsMasterList.ts` (new `SHA` definition), `projectionSourcesConfig.ts` (mark derived), `DraftSettings.tsx` (labels), `DraftBoard.tsx` (column), CSV export.
+
+- [ ] Compare Players modal
+  - In ProjectionsTable add a multi‑select “Compare” action to open a modal:
+    - Metrics table: totals/means per player; highlight deltas and per‑metric winner.
+    - Radar/Spider chart: percentile per selected category (respect category weights if in Categories mode).
+    - Category win table: which player “wins” each metric; summary of winners.
+  - Files: `ProjectionsTable.tsx` (select state + button), `components/DraftDashboard/ComparePlayersModal.tsx` (new), `hooks/usePercentiles.ts` (new helper), `styles`.
+
+---
+
+## Gameplan
+
+1) Bookmarking snapshot
+- Model: create a single `DraftSnapshotV2` interface capturing all state. Add safe versioning.
+- Save: throttle to localStorage; store large/transient (CSV) in sessionStorage but include references in snapshot for restoration.
+- Restore: on “Resume?” Yes → restore all; No → clear session CSV and saved snapshot for a clean start.
+- Edge cases: missing sources/season id; validate snapshot version; warn and continue.
+
+2) Defense points option
+- UX: Settings toggle + numeric input(s). If enabled, apply a modifier for D players only (either additive or multiplier); reflect in ProjectionsTable and DraftBoard.
+- Calc: during FP calc, if player assigned/bestPos is D, apply. For Categories, keep separate.
+
+3) My Roster swaps
+- Keep current click‑to‑highlight flow. Add click‑to‑swap when clicking a filled target.
+- Maintain `positionOverrides` map and draft history for undo. Animate swaps.
+- Optionally drag‑and‑drop (HTML5 DnD or keyboard accessible handles).
+
+4) Multi‑CSV
+- Storage: migrate to `draft.customCsvList.v1` array.
+- Synthesis: map each item to a `CustomAdditionalProjectionSource` with unique id `custom_csv_<n>`.
+- UI: chips with weight sliders and remove buttons in DraftSettings.
+- Merge: existing name/team alignment step will coalesce rows; ensure no perf regressions.
+
+5) SHA derived metric
+- Add `SHA` to `STATS_MASTER_LIST` (numeric, higher is better). Compute after all source aggregation:
+  - projected.SHA = clamp(SHP - SHG, >=0); actual.SHA likewise when both present.
+- Expose in category selectors and tables with proper labels.
+
+6) Compare Players modal
+- Selection: maintain a Set of selected playerIds in ProjectionsTable; enable “Compare” when size ≥ 2.
+- Modal: summary header, metric table, radar chart (recharts or chart.js), per‑metric winner row.
+- Percentiles: precompute distribution for selected metrics using current pool; cache.
+- Accessibility: keyboard navigation and screen reader descriptions.
+
+---
+
+## Files to touch
+
+- Core state/UI: `web/components/DraftDashboard/DraftDashboard.tsx`, `DraftSettings.tsx`, `DraftBoard.tsx`, `MyRoster.tsx`, `MyRoster.module.scss`, `ProjectionsTable.tsx`.
+- Data + calc: `web/hooks/useProcessedProjectionsData.tsx`, `web/hooks/useVORPCalculations.ts`.
+- Configs + labels: `web/lib/projectionsConfig/statsMasterList.ts`, `projectionSourcesConfig.ts`, `fantasyPointsConfig.ts`.
+- New: `web/components/DraftDashboard/ComparePlayersModal.tsx`, `web/hooks/usePercentiles.ts`.
+
+---
+
+

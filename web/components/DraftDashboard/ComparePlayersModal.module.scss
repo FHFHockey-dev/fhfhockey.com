@@ -1,0 +1,782 @@
+@use "sass:color";
+@use "styles/vars" as v;
+@use "styles/panel" as p;
+
+/* ==========================================================
+   Compare Players Modal (Revamped) - FLATTENED
+   ========================================================== */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at 30% 40%,
+      rgba(0, 140, 255, 0.15),
+      transparent 70%
+    ),
+    rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(12px, 3vh, 32px) clamp(10px, 2vw, 28px);
+  z-index: v.$mobile-z-index-modal;
+  overflow-y: auto;
+}
+
+.modal {
+  width: min(1400px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: v.$border-radius-lg;
+  position: relative;
+  background:
+    linear-gradient(
+      140deg,
+      rgba(255, 255, 255, 0.04),
+      rgba(255, 255, 255, 0.01)
+    ),
+    linear-gradient(
+      155deg,
+      color.adjust(v.$background-dark, $lightness: 4%) 0%,
+      color.adjust(v.$background-dark, $lightness: -6%) 100%
+    );
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 8px 32px -6px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(v.$primary-color, 0.25),
+    0 0 44px -8px rgba(v.$primary-color, 0.4);
+  overflow: hidden;
+  animation: modalIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes modalIn {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(0) scale(1.01);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: v.$space-md clamp(12px, 2vw, v.$space-xl);
+  background: linear-gradient(
+    120deg,
+    color.adjust(v.$background-dark, $lightness: -2%),
+    color.adjust(v.$background-dark, $lightness: -10%)
+  );
+  border-bottom: 2px solid color.adjust(v.$primary-color, $lightness: -8%);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.title {
+  margin: 0;
+  font-family: v.$font-family-accent, sans-serif;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: clamp(1.05rem, 2.2vw, 1.45rem);
+  color: v.$color-white;
+  display: flex;
+  align-items: baseline;
+  gap: 0.75ch;
+}
+.title::after {
+  content: "Radar";
+  font-weight: 300;
+  opacity: 0.5;
+  letter-spacing: 0.15em;
+  font-size: 0.7em;
+}
+
+.closeBtn {
+  @include v.reset-button;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  border-radius: 10px;
+  color: v.$text-secondary;
+  background: linear-gradient(
+    145deg,
+    color.adjust(v.$background-dark, $lightness: 4%),
+    color.adjust(v.$background-dark, $lightness: -4%)
+  );
+  border: 1px solid v.$border-secondary;
+  transition: all 0.35s v.$transition-easing;
+  &:hover,
+  &:focus-visible {
+    color: v.$primary-color;
+    border-color: v.$primary-color;
+    box-shadow:
+      0 0 0 1px rgba(v.$primary-color, 0.4),
+      0 0 22px -4px v.$primary-color;
+  }
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(340px, 1.15fr) minmax(
+      260px,
+      1fr
+    );
+  gap: clamp(v.$space-sm, 1.6vw, v.$space-lg);
+  padding: v.$space-lg clamp(v.$space-sm, 1.5vw, v.$space-xl) v.$space-xl;
+  overflow: auto;
+  position: relative;
+  @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
+}
+
+.playerCard {
+  --team-primary: v.$background-dark;
+  --team-secondary: v.$primary-color;
+  --team-accent: v.$primary-color;
+  --team-light: v.$primary-color;
+  --team-dark: v.$background-dark;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: v.$border-radius-lg;
+  padding: v.$space-sm v.$space-md v.$space-md;
+  background:
+    linear-gradient(
+      150deg,
+      rgba(255, 255, 255, 0.04),
+      rgba(255, 255, 255, 0) 55%
+    ),
+    linear-gradient(
+      155deg,
+      var(--team-primary),
+      color-mix(in srgb, var(--team-primary), black 30%)
+    );
+  background-blend-mode: overlay;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 0 0 1px rgba(var(--team-accent-rgb, 7, 170, 226), 0.35),
+    0 6px 18px -2px rgba(0, 0, 0, 0.6),
+    0 0 28px -6px var(--team-accent, v.$primary-color);
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    transform 0.4s v.$transition-easing,
+    box-shadow 0.5s v.$transition-easing;
+}
+.playerCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 30% 25%,
+    var(--team-accent, v.$primary-color),
+    transparent 70%
+  );
+  mix-blend-mode: overlay;
+  opacity: 0.35;
+  pointer-events: none;
+}
+.playerCard:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 0 0 1px rgba(var(--team-accent-rgb, 7, 170, 226), 0.55),
+    0 14px 30px -4px rgba(0, 0, 0, 0.75),
+    0 0 44px -6px var(--team-accent, v.$primary-color);
+}
+.playerHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: v.$space-sm;
+  margin-bottom: v.$space-sm;
+}
+.headshot {
+  width: 84px;
+  height: 84px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: #000;
+  box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.7);
+}
+.nameAndLogo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: v.$space-sm;
+}
+.teamLogo {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.7));
+}
+.playerName {
+  font-family: v.$font-family-accent, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  line-height: 1.1;
+  font-size: clamp(0.72rem, 1.25vw, 0.85rem);
+  text-transform: uppercase;
+  color: var(--team-accent, v.$primary-color);
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.7),
+    0 0 10px rgba(var(--team-accent-rgb, 7, 170, 226), 0.6);
+  max-width: 20ch;
+}
+
+.radarWrap {
+  position: relative;
+  border-radius: 18px;
+  padding: v.$space-sm v.$space-sm v.$space-md;
+  background:
+    linear-gradient(
+      140deg,
+      rgba(255, 255, 255, 0.06),
+      rgba(255, 255, 255, 0) 60%
+    ),
+    linear-gradient(
+      160deg,
+      color.adjust(v.$background-dark, $lightness: 3%),
+      color.adjust(v.$background-dark, $lightness: -4%)
+    );
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 4px 14px -4px rgba(0, 0, 0, 0.6);
+  margin-bottom: v.$space-sm;
+  min-height: 280px;
+}
+.radarWrap::after {
+  content: "Percentile";
+  position: absolute;
+  top: 6px;
+  right: 10px;
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.statList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: auto;
+  font-size: 0.7rem;
+}
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  gap: v.$space-xs;
+  padding: 3px 6px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  line-height: 1.2;
+  transition:
+    background 0.3s,
+    border-color 0.3s;
+}
+.statRow:hover {
+  background: linear-gradient(
+    90deg,
+    var(--team-accent, v.$primary-color),
+    transparent
+  );
+  border-color: var(--team-accent, v.$primary-color);
+}
+.statLabel {
+  opacity: 0.6;
+}
+.statVal {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.compareTableWrap {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-md;
+  align-items: stretch;
+  position: relative;
+}
+.scoreSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.scoreBar {
+  position: relative;
+  height: 16px;
+  background: color.adjust(v.$background-dark, $lightness: -4%);
+  border: 1px solid v.$border-secondary;
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+}
+.scoreLeft,
+.scoreRight {
+  height: 100%;
+  transition: width 0.6s ease;
+}
+.scoreLeft {
+  background: linear-gradient(
+    90deg,
+    var(--left-accent),
+    color-mix(in srgb, var(--left-accent), black 35%)
+  );
+}
+.scoreRight {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--right-accent), white 15%),
+    var(--right-accent)
+  );
+}
+.scoreLabels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: v.$text-secondary;
+}
+
+.compareTable {
+  width: 100%;
+  font-size: 0.68rem;
+  border-collapse: separate;
+  border-spacing: 0 6px;
+}
+.compareTable thead th {
+  font-size: 0.55rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: v.$text-secondary;
+  padding: 0 0 4px 0;
+}
+.compareTable tbody tr {
+  transition: background 0.25s;
+}
+.compareTable tbody tr:hover {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0)
+  );
+}
+.thLeft {
+  text-align: left;
+}
+.thAdv {
+  text-align: center;
+}
+.thRight {
+  text-align: right;
+}
+.tdLeft,
+.tdRight,
+.tdAdv {
+  padding: 6px 8px;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-variant-numeric: tabular-nums;
+  border-radius: 8px;
+}
+.tdLeft {
+  text-align: left;
+}
+.tdRight {
+  text-align: right;
+}
+.tdAdv {
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  position: relative;
+}
+.winCell {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.15),
+    0 0 0 2px var(--cell-accent),
+    0 0 16px -2px var(--cell-accent);
+  background: linear-gradient(
+    140deg,
+    var(--cell-accent),
+    color-mix(in srgb, var(--cell-accent), black 35%)
+  );
+  color: #fff;
+}
+.advLeft .advArrow,
+.advRight .advArrow {
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+}
+.advArrow {
+  margin-right: 4px;
+  font-weight: 700;
+}
+.advLabel {
+  opacity: 0.85;
+}
+.advLeft {
+  --cell-accent: var(--left-accent);
+}
+.advRight {
+  --cell-accent: var(--right-accent);
+}
+.advNeutral {
+  --cell-accent: v.$border-secondary;
+}
+.tdLeft.winCell {
+  --cell-accent: var(--left-accent);
+}
+.tdRight.winCell {
+  --cell-accent: var(--right-accent);
+}
+
+.winnerCard {
+  @include v.glass-panel($padding: v.$space-sm, $radius: v.$border-radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(
+    140deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0)
+  );
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 40px -10px rgba(v.$success-color, 0.6) inset;
+}
+.winnerLeft {
+  box-shadow: 0 0 24px -4px rgba(var(--left-accent-rgb, 7, 170, 226), 0.7);
+}
+.winnerRight {
+  box-shadow: 0 0 24px -4px rgba(var(--right-accent-rgb, 255, 99, 132), 0.7);
+}
+
+/* Team color utilities */
+$teams: (
+  NJD: (
+    primary: #000000,
+    secondary: #a20620,
+    accent: #154734,
+    light: #f03554,
+    dark: #670919
+  ),
+  NYI: (
+    primary: #003087,
+    secondary: #000000,
+    accent: #ffffff,
+    light: #1f5fd5,
+    dark: #08265f
+  ),
+  NYR: (
+    primary: #0038a8,
+    secondary: #ffffff,
+    accent: #a2aaad,
+    light: #255ed0,
+    dark: #001d5c
+  ),
+  PHI: (
+    primary: #cf3308,
+    secondary: #ffffff,
+    accent: #ffffff,
+    light: #ef794b,
+    dark: #b7340d
+  ),
+  PIT: (
+    primary: #000000,
+    secondary: #ffb81c,
+    accent: #ffa200,
+    light: #ffc852,
+    dark: #ffa200
+  ),
+  BOS: (
+    primary: #000000,
+    secondary: #ffc64d,
+    accent: #ffb81c,
+    light: #dfc16c,
+    dark: #e19a01
+  ),
+  BUF: (
+    primary: #02235e,
+    secondary: #ffb81c,
+    accent: #adafaa,
+    light: #2762c7,
+    dark: #072f6f
+  ),
+  MTL: (
+    primary: #001e62,
+    secondary: #6cace4,
+    accent: #ffffff,
+    light: #1f5fd5,
+    dark: #08265f
+  ),
+  OTT: (
+    primary: #000000,
+    secondary: #a20620,
+    accent: #ffffff,
+    light: #ec2b4b,
+    dark: #931523
+  ),
+  TOR: (
+    primary: #00205b,
+    secondary: #ffffff,
+    accent: #ffffff,
+    light: #3478f6,
+    dark: #080a91
+  ),
+  CAR: (
+    primary: #000000,
+    secondary: #b10018,
+    accent: #ffffff,
+    light: #e92549,
+    dark: #8a0113
+  ),
+  FLA: (
+    primary: #041e42,
+    secondary: #b9975b,
+    accent: #ffffff,
+    light: #ea304f,
+    dark: #6a0415
+  ),
+  TBL: (
+    primary: #00205b,
+    secondary: #ffffff,
+    accent: #000000,
+    light: #3478f6,
+    dark: #1b1d7e
+  ),
+  WSH: (
+    primary: #041e42,
+    secondary: #c8102e,
+    accent: #a2aaad,
+    light: #103a75,
+    dark: #011f4a
+  ),
+  CHI: (
+    primary: #a20620,
+    secondary: #000000,
+    accent: #cc8a00,
+    light: #d72d49,
+    dark: #6c0415
+  ),
+  DET: (
+    primary: #a20620,
+    secondary: #ffffff,
+    accent: #ddcba4,
+    light: #d72d49,
+    dark: #6c0415
+  ),
+  NSH: (
+    primary: #041e42,
+    secondary: #ffb81c,
+    accent: #a2aaad,
+    light: #efbe53,
+    dark: #da9501
+  ),
+  STL: (
+    primary: #041e42,
+    secondary: #fcb514,
+    accent: #ffffff,
+    light: #3478f6,
+    dark: #1b1d7e
+  ),
+  CGY: (
+    primary: #8a0113,
+    secondary: #faaf19,
+    accent: #000000,
+    light: #d72d49,
+    dark: #6c0415
+  ),
+  COL: (
+    primary: #041e42,
+    secondary: #902647,
+    accent: #ffffff,
+    light: #3478f6,
+    dark: #1b1d7e
+  ),
+  EDM: (
+    primary: #041e42,
+    secondary: #fc4c02,
+    accent: #a2aaad,
+    light: #1953bf,
+    dark: #1b1d7e
+  ),
+  VAN: (
+    primary: #00205b,
+    secondary: #00843d,
+    accent: #041c2c,
+    light: #259358,
+    dark: #024421
+  ),
+  ANA: (
+    primary: #af4d35,
+    secondary: #89734c,
+    accent: #ffffff,
+    light: #ec623c,
+    dark: #992809
+  ),
+  DAL: (
+    primary: #000000,
+    secondary: #44d62c,
+    accent: #006847,
+    light: #65ed50,
+    dark: #116704
+  ),
+  LAK: (
+    primary: #000000,
+    secondary: #a2aaad,
+    accent: #bac8cd,
+    light: #bac8cd,
+    dark: #656768
+  ),
+  SJS: (
+    primary: #006d75,
+    secondary: #000000,
+    accent: #ea7200,
+    light: #1a8d96,
+    dark: #015156
+  ),
+  CBJ: (
+    primary: #002654,
+    secondary: #7da1c4,
+    accent: #c8102e,
+    light: #1756a3,
+    dark: #001835
+  ),
+  MIN: (
+    primary: #154734,
+    secondary: #ddcba4,
+    accent: #ffffff,
+    light: #24694f,
+    dark: #0b2e21
+  ),
+  WPG: (
+    primary: #041e42,
+    secondary: #a2aaad,
+    accent: #55565a,
+    light: #1953bf,
+    dark: #1b1d7e
+  ),
+  ARI: (
+    primary: #8c2633,
+    secondary: #ddcba4,
+    accent: #a9431e,
+    light: #d72d49,
+    dark: #6c0415
+  ),
+  VGK: (
+    primary: #24292c,
+    secondary: #b4975a,
+    accent: #000000,
+    light: #696e72,
+    dark: #0f1112
+  ),
+  SEA: (
+    primary: #001628,
+    secondary: #68a2b9,
+    accent: #e9072b,
+    light: #6bcdf4,
+    dark: #4592b0
+  ),
+  UTA: (
+    primary: #010101,
+    secondary: #69b3e7,
+    accent: #47a4c9,
+    light: #67bdfb,
+    dark: #47a4c9
+  )
+);
+
+@each $abbr, $c in $teams {
+  .team-#{$abbr} {
+    --team-primary: #{map-get($c, primary)};
+    --team-secondary: #{map-get($c, secondary)};
+    --team-accent: #{map-get($c, accent)};
+    --team-light: #{map-get($c, light)};
+    --team-dark: #{map-get($c, dark)};
+    --team-accent-soft: #{rgba(map-get($c, accent), 0.15)};
+    --team-accent-glow: #{rgba(map-get($c, accent), 0.55)};
+  }
+}
+
+/* Responsive */
+@media (max-width: 1150px) {
+  .grid3 {
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: auto;
+  }
+  .playerCard:last-child {
+    order: 3;
+  }
+  .compareTableWrap {
+    order: 2;
+  }
+}
+@media (max-width: v.$breakpoint-tablet) {
+  .grid3 {
+    grid-template-columns: 1fr;
+  }
+  .playerCard {
+    min-height: 0;
+  }
+  .radarWrap {
+    min-height: 220px;
+  }
+  .compareTable {
+    font-size: 0.62rem;
+  }
+  .statList {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .statRow {
+    flex: 1 1 calc(50% - 6px);
+  }
+}
+@media (max-width: v.$breakpoint-mobile-max) {
+  .headshot {
+    width: 72px;
+    height: 72px;
+  }
+  .title {
+    font-size: 1rem;
+  }
+  .scoreBar {
+    height: 12px;
+  }
+}

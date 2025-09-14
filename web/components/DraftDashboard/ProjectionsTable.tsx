@@ -9,6 +9,7 @@ import styles from "./ProjectionsTable.module.scss";
 import supabase from "lib/supabase";
 import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
 import type { StatDefinition } from "lib/projectionsConfig/statsMasterList";
+import ComparePlayersModal from "./ComparePlayersModal";
 
 interface ProjectionsTableProps {
   players: ProcessedPlayer[];
@@ -19,26 +20,26 @@ interface ProjectionsTableProps {
   error: string | null;
   onDraftPlayer: (playerId: string) => void;
   canDraft: boolean;
-  // NEW: VORP metrics map
+  // VORP metrics map
   vorpMetrics?: Map<string, PlayerVorpMetrics>;
-  // NEW: replacement baselines for tooltip/context
+  //  replacement baselines for tooltip/context
   replacementByPos?: Record<string, { vorp: number; vols: number }>;
-  // NEW: baseline mode controls
+  //  baseline mode controls
   baselineMode?: "remaining" | "full";
   onBaselineModeChange?: (mode: "remaining" | "full") => void;
-  // NEW: expected position runs before next pick
+  //  expected position runs before next pick
   expectedRuns?: { byPos: Record<string, number>; N: number };
-  // NEW: need-weight controls and data
+  //  need-weight controls and data
   needWeightEnabled?: boolean;
   onNeedWeightChange?: (enabled: boolean) => void;
   posNeeds?: Record<string, number>; // e.g., { C: 0.5, LW: 1 }
   needAlpha?: number; // 0..1 strength of weighting, default 0.5
   onNeedAlphaChange?: (alpha: number) => void;
-  // NEW: pick risk context: absolute next pick number (currentPick + picksUntilNext)
+  // pick risk context: absolute next pick number (currentPick + picksUntilNext)
   nextPickNumber?: number;
-  // NEW: league type for value semantics
+  // league type for value semantics
   leagueType?: "points" | "categories";
-  // NEW: forward grouping display mode (C/LW/RW vs FWD)
+  // forward grouping display mode (C/LW/RW vs FWD)
   forwardGrouping?: "split" | "fwd";
   activeCategoryKeys?: string[];
 }
@@ -84,7 +85,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   const [bandScope, setBandScope] = useState<"overall" | "position">(
     "position"
   );
-  // NEW: configurable risk standard deviation (in picks)
+  // configurable risk standard deviation (in picks)
   const [riskSd, setRiskSd] = useState<number>(12);
   // Favorites
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => {
@@ -134,7 +135,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   // Toggle: show stat columns instead of value columns
   const [statColumnsMode, setStatColumnsMode] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    return window.localStorage.getItem("projections.statColumnsMode") === "true";
+    return (
+      window.localStorage.getItem("projections.statColumnsMode") === "true"
+    );
   });
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -187,7 +190,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     }
     return Number(value).toFixed(dp);
   };
-  // NEW: hide drafted toggle (persisted)
+  // hide drafted toggle (persisted)
   const [hideDrafted, setHideDrafted] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     const v = window.localStorage.getItem("projections.hideDrafted");
@@ -201,8 +204,19 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   const [crosscheckMissing, setCrosscheckMissing] = useState<
     Array<{ player_id: number; name: string | null; sourceIds: string[] }>
   >([]);
-  // NEW: settings drawer visibility
+  // settings drawer visibility
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // compare players modal state
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   // Expand/collapse and last season totals cache per player
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -234,9 +248,14 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
 
   // Map raw displayPosition to UI display based on forward grouping
   const getDisplayPos = (player: ProcessedPlayer): string => {
+    // Prefer Yahoo eligible positions for display when available
+    const elig = Array.isArray((player as any).eligiblePositions)
+      ? ((player as any).eligiblePositions as string[])
+      : null;
     const raw = (player.displayPosition || "").toUpperCase();
-    if (!raw) return raw;
-    if (forwardGrouping !== "fwd") return raw;
+    const pretty = elig && elig.length ? elig.join(", ") : raw;
+    if (!pretty) return pretty;
+    if (forwardGrouping !== "fwd") return pretty;
     const parts = raw.split(",").map((p) => p.trim());
     if (parts.includes("G")) return "G";
     if (parts.includes("D")) return "D";
@@ -416,14 +435,17 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const savedStatKey = window.localStorage.getItem("projections.statSortKey");
+      const savedStatKey = window.localStorage.getItem(
+        "projections.statSortKey"
+      );
       if (savedStatKey) setStatSortKey(savedStatKey);
     } catch {}
   }, []);
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      if (!statSortKey) window.localStorage.removeItem("projections.statSortKey");
+      if (!statSortKey)
+        window.localStorage.removeItem("projections.statSortKey");
       else window.localStorage.setItem("projections.statSortKey", statSortKey);
     } catch {}
   }, [statSortKey]);
@@ -438,7 +460,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     return () => clearTimeout(id);
   }, [searchTerm]);
 
-  // NEW: drafted player ID set for quick checks (moved before diagnostics)
+  // drafted player ID set for quick checks (moved before diagnostics)
   const draftedIdSet = useMemo(() => {
     const s = new Set<string>();
     draftedPlayers?.forEach((dp) => s.add(String(dp.playerId)));
@@ -729,7 +751,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       // Use adjusted VBD when enabled for banding
       const vbd = needWeightEnabled ? m?.vbdAdj : m?.vbd;
       const fpOrScore =
-        leagueType === "categories" ? (m?.value ?? null) : p.fantasyPoints.projected;
+        leagueType === "categories"
+          ? (m?.value ?? null)
+          : p.fantasyPoints.projected;
       const scopeKey = getPrimaryPos(p, m?.bestPos);
       pushVal(scopeKey, vbd, fpOrScore);
     });
@@ -771,7 +795,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       const scopeKey = getPrimaryPos(p, m?.bestPos);
       const vbd = needWeightEnabled ? m?.vbdAdj : m?.vbd;
       const fpOrScore =
-        leagueType === "categories" ? (m?.value ?? null) : p.fantasyPoints.projected;
+        leagueType === "categories"
+          ? (m?.value ?? null)
+          : p.fantasyPoints.projected;
       const g = groups[scopeKey];
       if (g) {
         const vbdPct = typeof vbd === "number" ? rank(vbd, g.vbdVals) : null;
@@ -786,7 +812,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     });
 
     return { vbdBandById, valBandById };
-  }, [filteredAndSortedPlayers, vorpMap, bandScope, needWeightEnabled, leagueType]);
+  }, [
+    filteredAndSortedPlayers,
+    vorpMap,
+    bandScope,
+    needWeightEnabled,
+    leagueType
+  ]);
 
   const handleSort = (field: SortableField) => {
     if (statSortKey) setStatSortKey("");
@@ -940,9 +972,66 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     <div className={styles.projectionsContainer}>
       {/* Primary Controls Bar */}
       <div className={styles.controlsBar}>
-        <h2 className={styles.panelTitle} title="Available Players">
-          Available <span className={styles.panelTitleAccent}>Players</span>
-        </h2>
+        <div className={styles.controlsBarTitle}>
+          <h2 className={styles.panelTitle} title="Available Players">
+            Available <span className={styles.panelTitleAccent}>Players</span>
+          </h2>
+          <div className={styles.settingsAndTooltips}>
+            <div
+              className={styles.stackedControl}
+              style={{ alignItems: "flex-end" }}
+            >
+              <button
+                type="button"
+                className={styles.settingsButton}
+                onClick={() => setSettingsOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={settingsOpen}
+                aria-controls="draft-settings-drawer"
+              >
+                Settings
+              </button>
+            </div>
+            <div
+              className={styles.stackedControl}
+              style={{ width: "auto", alignItems: "flex-end" }}
+            >
+              <div className={styles.infoTooltip}>
+                <button
+                  type="button"
+                  className={styles.infoButton}
+                  aria-describedby="projections-help"
+                  aria-label="Legend"
+                >
+                  i
+                </button>
+                <div
+                  id="projections-help"
+                  role="tooltip"
+                  className={styles.tooltipContent}
+                >
+                  <div className={styles.tooltipTitle}>Legend</div>
+                  <div className={styles.tooltipBody}>
+                    <ul>
+                      {leagueType === "categories" && (
+                        <li>
+                          <strong>Score</strong>: percentile-weighted composite
+                          (0–100) across your selected categories, weighted by
+                          your category weights and by metric scarcity.
+                        </li>
+                      )}
+                      <li>VORP: Value over replacement.</li>
+                      <li>VONA: Over next available.</li>
+                      <li>VBD: Blended draft value.</li>
+                      <li>Bands: Percentile tiers.</li>
+                      <li>Next-Pick %: Risk before your pick.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div className={styles.primaryControls}>
           <div className={`${styles.stackedControl} ${styles.searchStack}`}>
             <span className={styles.controlLabelMini}>Search</span>
@@ -955,123 +1044,85 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               aria-label="Search players"
             />
           </div>
-          <div className={styles.stackedControl}>
-            <span className={styles.controlLabelMini}>Position</span>
-            <select
-              id="position-filter"
-              value={positionFilter}
-              onChange={(e) => setPositionFilter(e.target.value)}
-              className={styles.inlineSelect}
-              aria-label="Position filter"
-            >
-              <option value="ALL">ALL</option>
-              {availablePositions.map((position) => (
-                <option key={position} value={position}>
-                  {position}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className={styles.stackedControl}>
-            <span className={styles.controlLabelMini}>Favorites</span>
-            <div className={styles.toggleButtonsGroup}>
-              <button
-                type="button"
-                className={`${styles.controlToggleBtn} ${
-                  favoritesOnly ? styles.controlToggleBtnActive : ""
-                }`}
-                onClick={() => setFavoritesOnly((v) => !v)}
-                aria-pressed={favoritesOnly}
-                aria-label="Toggle favorites only"
+          <div className={styles.stackedControlsRow}>
+            <div className={styles.stackedControl}>
+              <span className={styles.controlLabelMini}>Position</span>
+              <select
+                id="position-filter"
+                value={positionFilter}
+                onChange={(e) => setPositionFilter(e.target.value)}
+                className={styles.inlineSelect}
+                aria-label="Position filter"
               >
-                Only
-              </button>
+                <option value="ALL">ALL</option>
+                {availablePositions.map((position) => (
+                  <option key={position} value={position}>
+                    {position}
+                  </option>
+                ))}
+              </select>
             </div>
-          </div>
-          <div className={styles.stackedControl}>
-            <span className={styles.controlLabelMini}>Stat Columns</span>
-            <div className={styles.toggleButtonsGroup}>
-              <button
-                type="button"
-                className={`${styles.controlToggleBtn} ${
-                  statColumnsMode ? styles.controlToggleBtnActive : ""
-                }`}
-                onClick={() => setStatColumnsMode((v) => !v)}
-                aria-pressed={statColumnsMode}
-                aria-label="Toggle stat columns"
-              >
-                Show
-              </button>
+            <div className={styles.stackedControl}>
+              <span className={styles.controlLabelMini}>Favorites</span>
+              <div className={styles.toggleButtonsGroup}>
+                <button
+                  type="button"
+                  className={`${styles.controlToggleBtn} ${
+                    favoritesOnly ? styles.controlToggleBtnActive : ""
+                  }`}
+                  onClick={() => setFavoritesOnly((v) => !v)}
+                  aria-pressed={favoritesOnly}
+                  aria-label="Toggle favorites only"
+                >
+                  Only
+                </button>
+              </div>
             </div>
-          </div>
-          <div className={styles.stackedControl}>
-            <span className={styles.controlLabelMini}>Hide Drafted</span>
-            <div className={styles.toggleButtonsGroup}>
-              <button
-                type="button"
-                className={`${styles.controlToggleBtn} ${
-                  hideDrafted ? styles.controlToggleBtnActive : ""
-                }`}
-                onClick={() => setHideDrafted((v) => !v)}
-                aria-pressed={hideDrafted}
-                aria-label="Toggle hide drafted"
-              >
-                Hide
-              </button>
+            <div className={styles.stackedControl}>
+              <span className={styles.controlLabelMini}>Stat Columns</span>
+              <div className={styles.toggleButtonsGroup}>
+                <button
+                  type="button"
+                  className={`${styles.controlToggleBtn} ${
+                    statColumnsMode ? styles.controlToggleBtnActive : ""
+                  }`}
+                  onClick={() => setStatColumnsMode((v) => !v)}
+                  aria-pressed={statColumnsMode}
+                  aria-label="Toggle stat columns"
+                >
+                  Show
+                </button>
+              </div>
             </div>
-          </div>
-          <div
-            className={styles.stackedControl}
-            style={{ alignItems: "flex-end" }}
-          >
-            <span className={styles.controlLabelMini}>&nbsp;</span>
-            <button
-              type="button"
-              className={styles.settingsButton}
-              onClick={() => setSettingsOpen(true)}
-              aria-haspopup="dialog"
-              aria-expanded={settingsOpen}
-              aria-controls="draft-settings-drawer"
-            >
-              Settings
-            </button>
-          </div>
-          <div
-            className={styles.stackedControl}
-            style={{ width: "auto", alignItems: "flex-end" }}
-          >
-            <span className={styles.controlLabelMini}>&nbsp;</span>
-            <div className={styles.infoTooltip}>
-              <button
-                type="button"
-                className={styles.infoButton}
-                aria-describedby="projections-help"
-                aria-label="Legend"
-              >
-                i
-              </button>
-              <div
-                id="projections-help"
-                role="tooltip"
-                className={styles.tooltipContent}
-              >
-                <div className={styles.tooltipTitle}>Legend</div>
-                <div className={styles.tooltipBody}>
-                  <ul>
-                    {leagueType === "categories" && (
-                      <li>
-                        <strong>Score</strong>: percentile-weighted composite (0–100)
-                        across your selected categories, weighted by your category
-                        weights and by metric scarcity.
-                      </li>
-                    )}
-                    <li>VORP: Value over replacement.</li>
-                    <li>VONA: Over next available.</li>
-                    <li>VBD: Blended draft value.</li>
-                    <li>Bands: Percentile tiers.</li>
-                    <li>Next-Pick %: Risk before your pick.</li>
-                  </ul>
-                </div>
+            <div className={styles.stackedControl}>
+              <span className={styles.controlLabelMini}>Hide Drafted</span>
+              <div className={styles.toggleButtonsGroup}>
+                <button
+                  type="button"
+                  className={`${styles.controlToggleBtn} ${
+                    hideDrafted ? styles.controlToggleBtnActive : ""
+                  }`}
+                  onClick={() => setHideDrafted((v) => !v)}
+                  aria-pressed={hideDrafted}
+                  aria-label="Toggle hide drafted"
+                >
+                  Hide
+                </button>
+              </div>
+            </div>
+            <div className={styles.stackedControl}>
+              <span className={styles.controlLabelMini}>Compare</span>
+              <div className={styles.toggleButtonsGroup}>
+                <button
+                  type="button"
+                  className={styles.controlToggleBtn}
+                  onClick={() => setCompareOpen(true)}
+                  disabled={selectedIds.size < 2}
+                  aria-label="Open compare players"
+                  title={selectedIds.size < 2 ? "Select 2+ players in the table" : "Compare selected players"}
+                >
+                  {`Open (${selectedIds.size})`}
+                </button>
               </div>
             </div>
           </div>
@@ -1302,6 +1353,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         <table className={styles.playersTable}>
           <colgroup>
             <col className={styles.colFav} />
+            <col className={styles.colFav} />
             <col className={styles.colName} />
             <col className={styles.colPos} />
             <col className={styles.colTeam} />
@@ -1326,7 +1378,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           </colgroup>
           <thead>
             <tr>
-              <th className={styles.colFav} scope="col" title="Favorite">★</th>
+              <th className={styles.colFav} scope="col" title="Select">
+                
+              </th>
+              <th className={styles.colFav} scope="col" title="Favorite">
+                ★
+              </th>
               <th
                 onClick={() => handleSort("fullName")}
                 className={`${styles.sortableHeader} ${styles.colName}`}
@@ -1362,12 +1419,16 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                   <th
                     onClick={() =>
                       handleSort(
-                        leagueType === "categories" ? ("score" as any) : "fantasyPoints"
+                        leagueType === "categories"
+                          ? ("score" as any)
+                          : "fantasyPoints"
                       )
                     }
                     className={`${styles.sortableHeader} ${styles.colFP}`}
                     aria-sort={getAriaSort(
-                      leagueType === "categories" ? ("score" as any) : "fantasyPoints"
+                      leagueType === "categories"
+                        ? ("score" as any)
+                        : "fantasyPoints"
                     )}
                     scope="col"
                     title={
@@ -1377,7 +1438,10 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     }
                   >
                     {leagueType === "categories" ? "Score" : "Proj FP"}{" "}
-                    {sortField === (leagueType === "categories" ? "score" : "fantasyPoints") &&
+                    {sortField ===
+                      (leagueType === "categories"
+                        ? "score"
+                        : "fantasyPoints") &&
                       (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                   <th
@@ -1387,7 +1451,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     aria-sort={getAriaSort("vorp")}
                     scope="col"
                   >
-                    VORP {sortField === "vorp" && (sortDirection === "asc" ? "↑" : "↓")}
+                    VORP{" "}
+                    {sortField === "vorp" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                   <th
                     onClick={() => handleSort("vona")}
@@ -1396,7 +1462,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     aria-sort={getAriaSort("vona")}
                     scope="col"
                   >
-                    VONA {sortField === "vona" && (sortDirection === "asc" ? "↑" : "↓")}
+                    VONA{" "}
+                    {sortField === "vona" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                   <th
                     onClick={() => handleSort("vbd")}
@@ -1405,7 +1473,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     aria-sort={getAriaSort("vbd")}
                     scope="col"
                   >
-                    VBD {sortField === "vbd" && (sortDirection === "asc" ? "↑" : "↓")}
+                    VBD{" "}
+                    {sortField === "vbd" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                 </>
               ) : (
@@ -1419,7 +1489,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       title={`Projected ${statDefByKey.get(key)?.displayName || key}`}
                     >
                       {statDefByKey.get(key)?.displayName || key}{" "}
-                      {statSortKey === key && (sortDirection === "asc" ? "↑" : "↓")}
+                      {statSortKey === key &&
+                        (sortDirection === "asc" ? "↑" : "↓")}
                     </th>
                   ))}
                 </>
@@ -1513,6 +1584,15 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     }`}
                   >
                     <td className={styles.colFav}>
+                      <input
+                        type="checkbox"
+                        className={styles.compareCheckbox}
+                        checked={selectedIds.has(key)}
+                        onChange={() => toggleSelected(key)}
+                        aria-label={`Select ${player.fullName}`}
+                      />
+                    </td>
+                    <td className={styles.colFav}>
                       <button
                         type="button"
                         className={`${styles.favoriteButton} ${favoriteIds.has(key) ? styles.favorited : ""}`}
@@ -1560,7 +1640,17 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     </td>
                     <td
                       className={styles.position}
-                      title={getDisplayPos(player) || undefined}
+                      title={(() => {
+                        const disp = getDisplayPos(player) || "-";
+                        const elig = Array.isArray(
+                          (player as any).eligiblePositions
+                        )
+                          ? ((player as any).eligiblePositions as string[])
+                          : [];
+                        return elig.length
+                          ? `${disp} (Eligible: ${elig.join("/")})`
+                          : disp;
+                      })()}
                     >
                       {getDisplayPos(player) || "-"}
                     </td>
@@ -1574,7 +1664,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       <>
                         <td className={fpClasses.join(" ")}>
                           {leagueType === "categories"
-                            ? (typeof m?.value === "number" ? m.value.toFixed(1) : "-")
+                            ? typeof m?.value === "number"
+                              ? m.value.toFixed(1)
+                              : "-"
                             : player.fantasyPoints.projected?.toFixed(1) || "-"}
                         </td>
                         <td
@@ -1583,7 +1675,10 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         >
                           {vorp ? vorp.toFixed(1) : "-"}
                         </td>
-                        <td className={styles.vorp} title="Value Over Next Available">
+                        <td
+                          className={styles.vorp}
+                          title="Value Over Next Available"
+                        >
                           {vona ? vona.toFixed(1) : "-"}
                         </td>
                         <td
@@ -1600,12 +1695,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     ) : (
                       <>
                         {statColumns.map((k) => {
-                          const val = (player.combinedStats as any)?.[k]?.projected as
-                            | number
-                            | null
-                            | undefined;
+                          const val = (player.combinedStats as any)?.[k]
+                            ?.projected as number | null | undefined;
                           return (
-                            <td key={`c-${k}-${key}`} className={styles.statCol}>
+                            <td
+                              key={`c-${k}-${key}`}
+                              className={styles.statCol}
+                            >
                               {formatStatValue(k, val)}
                             </td>
                           );
@@ -1838,6 +1934,14 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           </div>
         </div>
       )}
+
+      <ComparePlayersModal
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        selectedIds={Array.from(selectedIds)}
+        allPlayers={allPlayers || players}
+        leagueType={leagueType}
+      />
     </div>
   );
 };
