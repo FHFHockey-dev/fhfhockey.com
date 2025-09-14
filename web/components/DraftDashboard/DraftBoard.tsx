@@ -68,6 +68,40 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   // NEW: manage blur timeout safely via ref instead of window-scoped var
   const blurTimeoutRef = useRef<number | null>(null);
 
+  const augmentedAllPlayers = useMemo(() => {
+    const allPlayersMap = new Map<string, ProcessedPlayer>();
+    allPlayers.forEach(p => allPlayersMap.set(String(p.playerId), p));
+
+    draftedPlayers.forEach(p => {
+      if (!allPlayersMap.has(p.playerId)) {
+        const placeholder: ProcessedPlayer = {
+          playerId: Number(p.playerId),
+          fullName: `Player #${p.playerId}`,
+          displayTeam: null,
+          displayPosition: null,
+          eligiblePositions: [],
+          combinedStats: {},
+          fantasyPoints: {
+            projected: null,
+            actual: null,
+            diffPercentage: null,
+            projectedPerGame: null,
+            actualPerGame: null,
+          },
+          yahooPlayerId: undefined,
+          yahooAvgPick: null,
+          yahooAvgRound: null,
+          yahooPctDrafted: null,
+          projectedRank: null,
+          actualRank: null,
+        };
+        allPlayersMap.set(p.playerId, placeholder);
+      }
+    });
+
+    return Array.from(allPlayersMap.values());
+  }, [allPlayers, draftedPlayers]);
+
   // Build a quick lookup for team names
   const teamNameById = useMemo(() => {
     const m = new Map<string, string>();
@@ -212,37 +246,26 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
   const allPlayersData = useMemo(() => {
     // Use the full pool so drafted players remain colorized
     const playerDataMap = new Map<string, ProcessedPlayer>();
-    allPlayers.forEach((player) => {
+    augmentedAllPlayers.forEach((player) => {
       playerDataMap.set(String(player.playerId), player);
     });
     return playerDataMap;
-  }, [allPlayers]);
+  }, [augmentedAllPlayers]);
 
   // Calculate max fantasy points for heat map scaling
   const maxFantasyPoints = useMemo(() => {
     // Scale from the full pool to keep intensity stable across the board
     let max = 0;
-    allPlayers.forEach((p) => {
+    augmentedAllPlayers.forEach((p) => {
       const fp = p?.fantasyPoints?.projected;
       if (typeof fp === "number" && Number.isFinite(fp)) {
         if (fp > max) max = fp;
       }
     });
 
-    // Fallback: if no projections, try drafted players via lookup
-    if (max <= 0) {
-      draftedPlayers.forEach((drafted) => {
-        const playerData = allPlayersData.get(drafted.playerId);
-        const fp = playerData?.fantasyPoints?.projected;
-        if (typeof fp === "number" && Number.isFinite(fp)) {
-          if (fp > max) max = fp;
-        }
-      });
-    }
-
     // Final fallback default
     return max > 0 ? max : 100;
-  }, [allPlayers, draftedPlayers, allPlayersData]);
+  }, [augmentedAllPlayers]);
 
   // Get heat map intensity (0-4 levels like GitHub)
   const getHeatMapIntensity = (fantasyPoints: number | null): number => {
@@ -408,7 +431,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
       PP_ASSISTS: "PPA",
       PP_GOALS: "PPG",
       SH_POINTS: "SHP",
-      PLUS_MINUS: "+/-",
+      PLUS_MINUS: "+/- ",
       TIME_ON_ICE_PER_GAME: "ATOI"
     };
     const GOALIE_LABELS: Record<string, string> = {
@@ -492,7 +515,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
       // Sum up category totals from all team players
       teamPlayers.forEach((draftedPlayer) => {
         // FIXED: Use allPlayers prop which contains ALL players (including drafted ones)
-        const player = allPlayers.find(
+        const player = augmentedAllPlayers.find(
           (p) => String(p.playerId) === draftedPlayer.playerId
         );
 
@@ -572,7 +595,7 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
     teamStats,
     draftedPlayers,
     availablePlayers,
-    allPlayers,
+    augmentedAllPlayers,
     dynamicCategoryKeys,
     draftSettings.leagueType,
     vorpMetrics

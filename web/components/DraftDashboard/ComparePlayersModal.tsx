@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef } from "react";
+import Image from "next/image";
 import { ProcessedPlayer } from "hooks/useProcessedProjectionsData";
 import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
 import { Radar } from "react-chartjs-2";
@@ -190,35 +191,62 @@ export default function ComparePlayersModal({
     },
     plugins: { legend: { display: false } }
   } as const;
-  const leftData = {
-    labels,
-    datasets: [
-      {
-        label: left?.fullName || "Player 1",
-        data: rows.map((r) => r.p1),
-        backgroundColor: "rgba(78,121,255,0.4)",
-        borderColor: "rgba(78,121,255,1)",
-        borderWidth: 1
-      }
-    ]
-  } as const;
-  const rightData = {
-    labels,
-    datasets: [
-      {
-        label: right?.fullName || "Player 2",
-        data: rows.map((r) => r.p2),
-        backgroundColor: "rgba(255,99,132,0.4)",
-        borderColor: "rgba(255,99,132,1)",
-        borderWidth: 1
-      }
-    ]
-  } as const;
+  const leftData = useMemo(
+    () => ({
+      labels,
+      datasets: [
+        {
+          label: left?.fullName || "Player 1",
+          data: rows.map((r) => r.p1),
+          backgroundColor: "rgba(78,121,255,0.35)",
+          borderColor: "rgba(78,121,255,0.95)",
+          pointBackgroundColor: "rgba(255,255,255,0.9)",
+          pointRadius: 2,
+          borderWidth: 2
+        }
+      ]
+    }),
+    [left?.fullName, labels, rows]
+  );
+  const rightData = useMemo(
+    () => ({
+      labels,
+      datasets: [
+        {
+          label: right?.fullName || "Player 2",
+          data: rows.map((r) => r.p2),
+          backgroundColor: "rgba(255,99,132,0.35)",
+          borderColor: "rgba(255,99,132,0.95)",
+          pointBackgroundColor: "rgba(255,255,255,0.9)",
+          pointRadius: 2,
+          borderWidth: 2
+        }
+      ]
+    }),
+    [right?.fullName, labels, rows]
+  );
 
   const overallWinner =
     leftAvg === rightAvg ? null : leftAvg > rightAvg ? "left" : "right";
 
   if (!open) return null;
+
+  // Score bar widths (avoid divide by zero)
+  const totalAvg = leftAvg + rightAvg || 1;
+  const leftShare = (leftAvg / totalAvg) * 100;
+  const rightShare = (rightAvg / totalAvg) * 100;
+
+  // Utilities
+  const teamClass = (abbr?: string | null): string =>
+    abbr && teamsInfo[abbr] ? `team-${abbr}` : "";
+
+  const hexToRgb = (hex?: string): string | undefined => {
+    if (!hex || !/^#?[0-9a-fA-F]{6}$/.test(hex)) return undefined;
+    const clean = hex.replace("#", "");
+    const parts = clean.match(/.{1,2}/g);
+    if (!parts) return undefined;
+    return parts.map((h) => parseInt(h, 16)).join(",");
+  };
 
   return (
     <div
@@ -242,44 +270,46 @@ export default function ComparePlayersModal({
           </button>
         </div>
         <div className={styles.grid3}>
+          {/* Left Player Card */}
           <div
-            className={styles.playerCard}
-            style={{
-              // Use team primary color as accent where available
-              // fall back to primary-color if team not known
-              // CSS var consumed by SCSS (e.g., borders/glows)
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore
-              "--accent":
-                (left?.displayTeam &&
-                  teamsInfo[left.displayTeam]?.primaryColor) ||
-                undefined
-            }}
+            className={`${styles.playerCard} ${teamClass(left?.displayTeam)}`}
+            style={
+              left?.displayTeam
+                ? {
+                    ["--team-accent-rgb" as any]: hexToRgb(
+                      teamsInfo[left.displayTeam]?.primaryColor
+                    )
+                  }
+                : undefined
+            }
           >
             {left && (
               <>
                 <div className={styles.playerHeader}>
-                  <img
+                  <Image
                     className={styles.headshot}
-                    // Try assets.nhle.com first, then CMS bamgrid
                     src={leftImgs[leftImgRef.current]}
                     alt={left.fullName}
-                    onError={(e) => {
+                    width={84}
+                    height={84}
+                    onError={() => {
                       const next = leftImgRef.current + 1;
                       if (next < leftImgs.length) {
                         leftImgRef.current = next;
-                        (e.currentTarget as HTMLImageElement).src =
-                          leftImgs[next];
                       }
                     }}
+                    unoptimized
                   />
                   <div className={styles.nameAndLogo}>
                     <div className={styles.playerName}>{left.fullName}</div>
                     {left.displayTeam && (
-                      <img
+                      <Image
                         className={styles.teamLogo}
                         src={`/teamLogos/${left.displayTeam}.png`}
                         alt={left.displayTeam}
+                        width={46}
+                        height={46}
+                        unoptimized
                       />
                     )}
                   </div>
@@ -316,7 +346,43 @@ export default function ComparePlayersModal({
               </>
             )}
           </div>
-          <div className={styles.compareTableWrap}>
+
+          {/* Comparison / Middle Section */}
+          <div
+            className={styles.compareTableWrap}
+            style={{
+              ["--left-accent" as any]: left?.displayTeam
+                ? teamsInfo[left.displayTeam]?.primaryColor
+                : "#4e79ff",
+              ["--right-accent" as any]: right?.displayTeam
+                ? teamsInfo[right.displayTeam]?.primaryColor
+                : "#ff6384"
+            }}
+          >
+            {players.length === 2 && (
+              <div className={styles.scoreSummary}>
+                <div className={styles.scoreBar} aria-hidden>
+                  <div
+                    className={styles.scoreLeft}
+                    style={{ width: `${leftShare.toFixed(2)}%` }}
+                  />
+                  <div
+                    className={styles.scoreRight}
+                    style={{ width: `${rightShare.toFixed(2)}%` }}
+                  />
+                </div>
+                <div className={styles.scoreLabels}>
+                  <span>
+                    {left?.fullName?.split(" ").slice(-1)[0] || "Left"} Avg{" "}
+                    {Math.round(leftAvg)}
+                  </span>
+                  <span>
+                    {right?.fullName?.split(" ").slice(-1)[0] || "Right"} Avg{" "}
+                    {Math.round(rightAvg)}
+                  </span>
+                </div>
+              </div>
+            )}
             <table className={styles.compareTable}>
               <thead>
                 <tr>
@@ -340,18 +406,34 @@ export default function ComparePlayersModal({
                       ? styles.advRight
                       : styles.advNeutral;
                   return (
-                    <tr key={`row-${r.key}`}>
+                    <tr key={`row-${r.key}`} className={gradientClass}>
                       <td
                         className={`${styles.tdLeft} ${leftWins ? styles.winCell : ""}`}
+                        style={
+                          leftWins && left?.displayTeam
+                            ? {
+                                ["--cell-accent" as any]:
+                                  teamsInfo[left.displayTeam]?.primaryColor
+                              }
+                            : undefined
+                        }
                       >
                         {Math.round(r.p1)}
                       </td>
-                      <td className={`${styles.tdAdv} ${gradientClass}`}>
+                      <td className={`${styles.tdAdv}`}>
                         <span className={styles.advArrow}>{arrow}</span>
                         <span className={styles.advLabel}>{r.label}</span>
                       </td>
                       <td
                         className={`${styles.tdRight} ${rightWins ? styles.winCell : ""}`}
+                        style={
+                          rightWins && right?.displayTeam
+                            ? {
+                                ["--cell-accent" as any]:
+                                  teamsInfo[right.displayTeam]?.primaryColor
+                              }
+                            : undefined
+                        }
                       >
                         {Math.round(r.p2)}
                       </td>
@@ -370,41 +452,47 @@ export default function ComparePlayersModal({
               </div>
             )}
           </div>
+
+          {/* Right Player Card */}
           <div
-            className={styles.playerCard}
-            style={{
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore
-              "--accent":
-                (right?.displayTeam &&
-                  teamsInfo[right.displayTeam]?.primaryColor) ||
-                undefined
-            }}
+            className={`${styles.playerCard} ${teamClass(right?.displayTeam)}`}
+            style={
+              right?.displayTeam
+                ? {
+                    ["--team-accent-rgb" as any]: hexToRgb(
+                      teamsInfo[right.displayTeam]?.primaryColor
+                    )
+                  }
+                : undefined
+            }
           >
             {right && (
               <>
                 <div className={styles.playerHeader}>
-                  <img
+                  <Image
                     className={styles.headshot}
                     src={rightImgs[rightImgRef.current]}
                     alt={right?.fullName || ""}
-                    onError={(e) => {
+                    width={84}
+                    height={84}
+                    onError={() => {
                       const next = rightImgRef.current + 1;
                       if (next < rightImgs.length) {
                         rightImgRef.current = next;
-                        (e.currentTarget as HTMLImageElement).src =
-                          rightImgs[next];
                       }
                     }}
+                    unoptimized
                   />
                   <div className={styles.nameAndLogo}>
                     <div className={styles.playerName}>{right.fullName}</div>
-
                     {right.displayTeam && (
-                      <img
+                      <Image
                         className={styles.teamLogo}
                         src={`/teamLogos/${right.displayTeam}.png`}
                         alt={right.displayTeam}
+                        width={46}
+                        height={46}
+                        unoptimized
                       />
                     )}
                   </div>
