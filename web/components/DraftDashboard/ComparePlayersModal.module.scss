@@ -1,0 +1,193 @@
+@use "sass:color";
+@use "../../styles/vars" as v;
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #121212;
+  color: #f5f5f5;
+  width: min(1100px, 96vw);
+  max-height: 90vh;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  padding: 12px;
+  outline: none;
+  overflow: auto;
+}
+
+.teamLogo {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  margin-right: 8px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.title {
+  margin: 0;
+}
+.closeBtn {
+  background: transparent;
+  color: inherit;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.grid3 {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 1fr;
+  gap: 16px;
+}
+
+.playerCard {
+  background: v.$surface-1;
+  border: 1px solid v.$border-secondary;
+  border-radius: 8px;
+  padding: 10px;
+}
+.playerHeader {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.headshot {
+  width: 75px;
+  height: 75px;
+  border-radius: 8px;
+  border: 1px solid v.$border-secondary;
+  object-fit: cover;
+}
+.playerName {
+  font-weight: 600;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+.nameAndLogo {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 100%;
+}
+.radarWrap {
+  background: v.$surface-0;
+  border: 1px solid v.$border-secondary;
+  border-radius: 6px;
+  padding: 6px;
+}
+.statList {
+  margin-top: 8px;
+}
+.statRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 2px 0;
+  border-bottom: 1px dotted rgba(255, 255, 255, 0.08);
+}
+.statLabel {
+  opacity: 0.75;
+}
+.statVal {
+  font-variant-numeric: tabular-nums;
+}
+
+.compareTableWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.compareTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.compareTable th,
+.compareTable td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 6px 8px;
+}
+.thLeft {
+  text-align: left;
+}
+.thAdv {
+  text-align: center;
+}
+.thRight {
+  text-align: right;
+}
+.tdLeft {
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+.tdRight {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.winCell {
+  background: rgba(v.$success-color, 0.4);
+  border: 2px solid v.$success-color;
+  border-radius: v.$radius-sm;
+}
+.tdAdv {
+  text-align: center;
+  position: relative;
+}
+.advArrow {
+  margin-right: 6px;
+  opacity: 0.9;
+}
+.advLabel {
+  opacity: 0.85;
+}
+
+// Directional advantage backgrounds
+.advLeft {
+  background: linear-gradient(
+    to right,
+    rgba(v.$success-color, 0.35),
+    rgba(v.$success-color, 0) 60%
+  );
+}
+.advRight {
+  background: linear-gradient(
+    to left,
+    rgba(v.$success-color, 0.35),
+    rgba(v.$success-color, 0) 60%
+  );
+}
+.advNeutral {
+  background: transparent;
+}
+
+.winnerCard {
+  margin-top: 6px;
+  border: 2px solid v.$success-color;
+  background: rgba(v.$success-color, 0.4);
+  border-radius: 6px;
+  padding: 8px;
+  font-weight: 600;
+  text-align: center;
+}
+.winnerLeft {
+}
+.winnerRight {
+}

@@ -9,6 +9,7 @@ import styles from "./ProjectionsTable.module.scss";
 import supabase from "lib/supabase";
 import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
 import type { StatDefinition } from "lib/projectionsConfig/statsMasterList";
+import ComparePlayersModal from "./ComparePlayersModal";
 
 interface ProjectionsTableProps {
   players: ProcessedPlayer[];
@@ -205,6 +206,17 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   >([]);
   // settings drawer visibility
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // compare players modal state
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   // Expand/collapse and last season totals cache per player
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -236,9 +248,14 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
 
   // Map raw displayPosition to UI display based on forward grouping
   const getDisplayPos = (player: ProcessedPlayer): string => {
+    // Prefer Yahoo eligible positions for display when available
+    const elig = Array.isArray((player as any).eligiblePositions)
+      ? ((player as any).eligiblePositions as string[])
+      : null;
     const raw = (player.displayPosition || "").toUpperCase();
-    if (!raw) return raw;
-    if (forwardGrouping !== "fwd") return raw;
+    const pretty = elig && elig.length ? elig.join(", ") : raw;
+    if (!pretty) return pretty;
+    if (forwardGrouping !== "fwd") return pretty;
     const parts = raw.split(",").map((p) => p.trim());
     if (parts.includes("G")) return "G";
     if (parts.includes("D")) return "D";
@@ -1093,6 +1110,21 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 </button>
               </div>
             </div>
+            <div className={styles.stackedControl}>
+              <span className={styles.controlLabelMini}>Compare</span>
+              <div className={styles.toggleButtonsGroup}>
+                <button
+                  type="button"
+                  className={styles.controlToggleBtn}
+                  onClick={() => setCompareOpen(true)}
+                  disabled={selectedIds.size < 2}
+                  aria-label="Open compare players"
+                  title={selectedIds.size < 2 ? "Select 2+ players in the table" : "Compare selected players"}
+                >
+                  {`Open (${selectedIds.size})`}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1321,6 +1353,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         <table className={styles.playersTable}>
           <colgroup>
             <col className={styles.colFav} />
+            <col className={styles.colFav} />
             <col className={styles.colName} />
             <col className={styles.colPos} />
             <col className={styles.colTeam} />
@@ -1345,6 +1378,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           </colgroup>
           <thead>
             <tr>
+              <th className={styles.colFav} scope="col" title="Select">
+                
+              </th>
               <th className={styles.colFav} scope="col" title="Favorite">
                 ★
               </th>
@@ -1547,6 +1583,14 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       favoriteIds.has(key) ? styles.favoritedRow : ""
                     }`}
                   >
+                    <td className={styles.colFav}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(key)}
+                        onChange={() => toggleSelected(key)}
+                        aria-label={`Select ${player.fullName}`}
+                      />
+                    </td>
                     <td className={styles.colFav}>
                       <button
                         type="button"
@@ -1889,6 +1933,14 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
           </div>
         </div>
       )}
+
+      <ComparePlayersModal
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        selectedIds={Array.from(selectedIds)}
+        allPlayers={allPlayers || players}
+        leagueType={leagueType}
+      />
     </div>
   );
 };

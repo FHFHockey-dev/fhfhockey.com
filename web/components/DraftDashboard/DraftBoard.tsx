@@ -674,8 +674,10 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
         let bValue: number;
 
         if (sortField === "projectedPoints") {
-          aValue = a.projectedPoints;
-          bValue = b.projectedPoints;
+          // In Categories leagues, sort by teamScoreAvg; otherwise projected points
+          const useScore = (draftSettings.leagueType || "points") === "categories";
+          aValue = useScore ? ((a as any).teamScoreAvg || 0) : a.projectedPoints;
+          bValue = useScore ? ((b as any).teamScoreAvg || 0) : b.projectedPoints;
         } else if (sortField === "teamVorp") {
           aValue = a.teamVorp || 0;
           bValue = b.teamVorp || 0;

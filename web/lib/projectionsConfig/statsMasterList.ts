@@ -44,6 +44,16 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     category: "Standard"
   },
   {
+    key: "DEFENSE_POINTS",
+    displayName: "DPTS",
+    dataType: "numeric",
+    higherIsBetter: true,
+    isSkaterStat: true,
+    isGoalieStat: false,
+    defaultVisible: false,
+    category: "Derived"
+  },
+  {
     key: "ASSISTS",
     displayName: "A",
     dataType: "numeric",
@@ -152,6 +162,16 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     higherIsBetter: true,
     isSkaterStat: true,
     isGoalieStat: false,
+    category: "Short Handed"
+  },
+  {
+    key: "SH_ASSISTS",
+    displayName: "SHA",
+    dataType: "numeric",
+    higherIsBetter: true,
+    isSkaterStat: true,
+    isGoalieStat: false,
+    defaultVisible: false,
     category: "Short Handed"
   },
   {

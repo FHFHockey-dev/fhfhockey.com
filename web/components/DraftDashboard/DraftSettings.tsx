@@ -60,6 +60,8 @@ interface DraftSettingsProps {
   availableGoalieStatKeys?: string[];
   // NEW: export blended projections CSV
   onExportCsv?: () => void;
+  // NEW: remove a custom CSV source
+  onRemoveCustomSource?: (id: string) => void;
   // NEW: traded picks & keepers
   pickOwnerOverrides?: Record<string, string>;
   onAddTradedPick?: (
@@ -101,6 +103,7 @@ const SKATER_LABELS: Record<string, string> = {
   // Core
   GOALS: "G",
   ASSISTS: "A",
+  DEFENSE_POINTS: "DPTS",
   PP_POINTS: "PPP",
   SHOTS_ON_GOAL: "SOG",
   HITS: "HIT",
@@ -183,6 +186,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   availableSkaterStatKeys = [],
   availableGoalieStatKeys = [],
   onExportCsv,
+  onRemoveCustomSource,
   pickOwnerOverrides = {},
   onAddTradedPick,
   onRemoveTradedPick,
@@ -511,10 +515,19 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       ctrl: { isSelected: boolean; weight: number }
     ) => {
       const src = PROJECTION_SOURCES_CONFIG.find((s) => s.id === id);
-      const isCustom = id === "custom_csv";
-      const displayName = isCustom
-        ? customSourceLabel || "Custom CSV"
-        : src?.displayName || id;
+      const isCustom = id.startsWith("custom_csv");
+      const displayName = (() => {
+        if (!isCustom) return src?.displayName || id;
+        try {
+          const raw = sessionStorage.getItem("draft.customCsvList.v2");
+          if (raw) {
+            const list = JSON.parse(raw) as Array<{ id: string; label: string }>;
+            const found = list.find((e) => e.id === id);
+            if (found) return found.label || id;
+          }
+        } catch {}
+        return customSourceLabel || "Custom CSV";
+      })();
       const shareBase = ctrl.isSelected ? totalActiveSourceWeight : 0;
       const weightVal = pendingSourceWeights[id] ?? ctrl.weight;
       const share =
@@ -2214,16 +2227,25 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                       ([id]) =>
                         PROJECTION_SOURCES_CONFIG.some(
                           (s) => s.id === id && s.playerType === "skater"
-                        ) || id === "custom_csv"
+                        ) || id.startsWith("custom_csv")
                     )
                     .map(([id, ctrl]) => {
                       const src = PROJECTION_SOURCES_CONFIG.find(
                         (s) => s.id === id
                       );
-                      const isCustom = id === "custom_csv";
-                      const displayName = isCustom
-                        ? customSourceLabel || "Custom CSV"
-                        : src?.displayName || id;
+                      const isCustom = id.startsWith("custom_csv");
+                      const displayName = (() => {
+                        if (!isCustom) return src?.displayName || id;
+                        try {
+                          const raw = sessionStorage.getItem("draft.customCsvList.v2");
+                          if (raw) {
+                            const list = JSON.parse(raw) as Array<{ id: string; label: string }>;
+                            const found = list.find((e) => e.id === id);
+                            if (found) return found.label || id;
+                          }
+                        } catch {}
+                        return customSourceLabel || "Custom CSV";
+                      })();
                       const weightVal = pendingSourceWeights[id] ?? ctrl.weight;
                       const share =
                         ctrl.isSelected && totalActiveSourceWeight > 0
@@ -2299,6 +2321,16 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                               className={styles.weightNumberInput}
                               aria-label={`${displayName} numeric weight`}
                             />
+                            {isCustom && onRemoveCustomSource && (
+                              <button
+                                type="button"
+                                className={styles.inlineResetBtn}
+                                onClick={() => onRemoveCustomSource(id)}
+                                title="Remove this custom source"
+                              >
+                                Remove
+                              </button>
+                            )}
                           </div>
                         </div>
                       );
@@ -2317,13 +2349,25 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                       .filter(([id]) =>
                         PROJECTION_SOURCES_CONFIG.some(
                           (s) => s.id === id && s.playerType === "goalie"
-                        )
+                        ) || id.startsWith("custom_csv")
                       )
                       .map(([id, ctrl]) => {
                         const src = PROJECTION_SOURCES_CONFIG.find(
                           (s) => s.id === id
                         );
-                        const displayName = src?.displayName || id;
+                        const isCustom = id.startsWith("custom_csv");
+                        const displayName = (() => {
+                          if (!isCustom) return src?.displayName || id;
+                          try {
+                            const raw = sessionStorage.getItem("draft.customCsvList.v2");
+                            if (raw) {
+                              const list = JSON.parse(raw) as Array<{ id: string; label: string }>;
+                              const found = list.find((e) => e.id === id);
+                              if (found) return found.label || id;
+                            }
+                          } catch {}
+                          return "Custom CSV";
+                        })();
                         const weightVal =
                           pendingGoalieSourceWeights[id] ?? ctrl.weight;
                         const share =
@@ -2383,27 +2427,37 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                 aria-valuetext={`${weightVal.toFixed(1)}x`}
                                 className={`${styles.rangeInput} ${styles.popoverSlider}`}
                               />
-                              <input
-                                type="number"
-                                step={0.1}
-                                min={0}
-                                max={2}
-                                value={weightVal}
-                                onChange={(e) =>
-                                  handleDirectWeightInput(
-                                    id,
-                                    parseFloat(e.target.value || "0"),
-                                    true
-                                  )
-                                }
-                                disabled={!ctrl.isSelected}
-                                className={styles.weightNumberInput}
-                                aria-label={`${displayName} numeric weight`}
-                              />
-                            </div>
+                            <input
+                              type="number"
+                              step={0.1}
+                              min={0}
+                              max={2}
+                              value={weightVal}
+                              onChange={(e) =>
+                                handleDirectWeightInput(
+                                  id,
+                                  parseFloat(e.target.value || "0"),
+                                  true
+                                )
+                              }
+                              disabled={!ctrl.isSelected}
+                              className={styles.weightNumberInput}
+                              aria-label={`${displayName} numeric weight`}
+                            />
+                            {isCustom && onRemoveCustomSource && (
+                              <button
+                                type="button"
+                                className={styles.inlineResetBtn}
+                                onClick={() => onRemoveCustomSource(id)}
+                                title="Remove this custom source"
+                              >
+                                Remove
+                              </button>
+                            )}
                           </div>
-                        );
-                      })}
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             )}

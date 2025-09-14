@@ -209,6 +209,43 @@ const DraftDashboard: React.FC = () => {
   const [customCsvLabel, setCustomCsvLabel] = useState<string | undefined>(
     undefined
   );
+  // Multi-CSV: derived list of custom sources persisted in session
+  type SessionCsvEntry = {
+    id: string;
+    label: string;
+    headers?: { original: string; standardized: string; selected: boolean }[];
+    rows?: Record<string, any>[];
+  };
+  const getCsvList = useCallback((): SessionCsvEntry[] => {
+    if (typeof window === "undefined") return [];
+    try {
+      // Migrate legacy single entry if present
+      const legacy = sessionStorage.getItem("draft.customCsv.v1");
+      if (legacy) {
+        const parsed = JSON.parse(legacy);
+        const listRaw = sessionStorage.getItem("draft.customCsvList.v2");
+        const list: SessionCsvEntry[] = listRaw ? JSON.parse(listRaw) : [];
+        if (!list.find((e) => e.id === "custom_csv_1")) {
+          list.push({ id: "custom_csv_1", label: parsed.label || "Custom CSV", headers: parsed.headers, rows: parsed.rows });
+          sessionStorage.setItem("draft.customCsvList.v2", JSON.stringify(list));
+        }
+        sessionStorage.removeItem("draft.customCsv.v1");
+        return list;
+      }
+      const raw = sessionStorage.getItem("draft.customCsvList.v2");
+      return raw ? (JSON.parse(raw) as SessionCsvEntry[]) : [];
+    } catch {
+      return [];
+    }
+  }, []);
+  const setCsvList = useCallback((next: SessionCsvEntry[]) => {
+    if (typeof window === "undefined") return;
+    try {
+      sessionStorage.setItem("draft.customCsvList.v2", JSON.stringify(next));
+    } catch {}
+  }, []);
+
+  // Snapshot V2 will be defined after dependent state declarations
 
   // Projection Data Setup
   const [sourceControls, setSourceControls] = useState(() => {
@@ -239,6 +276,128 @@ const DraftDashboard: React.FC = () => {
     Record<string, number>
   >(() => getDefaultFantasyPointsConfig("goalie"));
 
+  // --- Snapshot V2: save & load full session (after state declarations) ---
+  type DraftSnapshotV2 = {
+    v: 2;
+    ts: number;
+    draftSettings: DraftSettings;
+    draftedPlayers: DraftedPlayer[];
+    keepers: Array<{ round: number; pickInRound: number; teamId: string; playerId: string }>;
+    pickOwnerOverrides: Record<string, string>;
+    positionOverrides: Record<string, string>;
+    customTeamNames: Record<string, string>;
+    currentPick: number;
+    isSnakeDraft: boolean;
+    myTeamId: string;
+    baselineMode: "remaining" | "full";
+    needWeightEnabled: boolean;
+    needAlpha: number;
+    forwardGrouping: "split" | "fwd";
+    personalizeReplacement: boolean;
+    goaliePointValues: Record<string, number>;
+    sourceControls: Record<string, { isSelected: boolean; weight: number }>;
+    goalieSourceControls: Record<string, { isSelected: boolean; weight: number }>;
+    customCsvList: SessionCsvEntry[];
+  };
+
+  const saveSnapshot = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const payload: DraftSnapshotV2 = {
+      v: 2,
+      ts: Date.now(),
+      draftSettings,
+      draftedPlayers,
+      keepers,
+      pickOwnerOverrides,
+      positionOverrides,
+      customTeamNames,
+      currentPick,
+      isSnakeDraft,
+      myTeamId,
+      baselineMode,
+      needWeightEnabled,
+      needAlpha,
+      forwardGrouping,
+      personalizeReplacement,
+      goaliePointValues,
+      sourceControls,
+      goalieSourceControls,
+      customCsvList: getCsvList()
+    };
+    try {
+      sessionStorage.setItem("draft.snapshot.v2", JSON.stringify(payload));
+    } catch {}
+  }, [
+    draftSettings,
+    draftedPlayers,
+    keepers,
+    pickOwnerOverrides,
+    positionOverrides,
+    customTeamNames,
+    currentPick,
+    isSnakeDraft,
+    myTeamId,
+    baselineMode,
+    needWeightEnabled,
+    needAlpha,
+    forwardGrouping,
+    personalizeReplacement,
+    goaliePointValues,
+    sourceControls,
+    goalieSourceControls,
+    getCsvList
+  ]);
+
+  const loadSnapshot = useCallback(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const raw = sessionStorage.getItem("draft.snapshot.v2");
+      if (!raw) return false;
+      const snap = JSON.parse(raw) as DraftSnapshotV2;
+      if (snap.v !== 2) return false;
+      setDraftSettings(snap.draftSettings);
+      setDraftedPlayers(snap.draftedPlayers || []);
+      setKeepers(snap.keepers || []);
+      setPickOwnerOverrides(snap.pickOwnerOverrides || {});
+      setPositionOverrides(snap.positionOverrides || {});
+      setCustomTeamNames(snap.customTeamNames || {});
+      setCurrentPick(snap.currentPick || 1);
+      setIsSnakeDraft(!!snap.isSnakeDraft);
+      setMyTeamId(snap.myTeamId || "Team 1");
+      setBaselineMode(snap.baselineMode || "remaining");
+      setNeedWeightEnabled(!!snap.needWeightEnabled);
+      setNeedAlpha(typeof snap.needAlpha === "number" ? snap.needAlpha : 0.5);
+      setForwardGrouping(snap.forwardGrouping || "split");
+      setPersonalizeReplacement(!!snap.personalizeReplacement);
+      setGoaliePointValues(snap.goaliePointValues || getDefaultFantasyPointsConfig("goalie"));
+      setSourceControls(snap.sourceControls || {});
+      setGoalieSourceControls(snap.goalieSourceControls || {});
+      if (Array.isArray(snap.customCsvList)) setCsvList(snap.customCsvList);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [setCsvList]);
+
+  // On mount: offer to resume snapshot
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (resumeAttemptedRef.current) return;
+    resumeAttemptedRef.current = true;
+    const raw = sessionStorage.getItem("draft.snapshot.v2");
+    if (raw) {
+      const ok = window.confirm("Resume your last Draft Dashboard session?");
+      if (ok) loadSnapshot();
+    }
+    setSessionReady(true);
+  }, [loadSnapshot]);
+
+  // Persist snapshot as state changes
+  useEffect(() => {
+    if (!sessionReady) return;
+    saveSnapshot();
+  }, [sessionReady, saveSnapshot]);
+
   // Get player projections data (skaters)
   const [dataRefreshKey, setDataRefreshKey] = useState<number>(0);
   const skaterData = useProcessedProjectionsData({
@@ -252,66 +411,56 @@ const DraftDashboard: React.FC = () => {
     showPerGameFantasyPoints: false,
     togglePerGameFantasyPoints: () => {},
     teamCountForRoundSummaries: draftSettings.teamCount,
-    // inject custom CSV as additional source for skaters
-    customAdditionalSource: (() => {
-      if (typeof window === "undefined") return undefined;
-      try {
-        const raw = sessionStorage.getItem("draft.customCsv.v1");
-        if (!raw) return undefined;
-        const parsed = JSON.parse(raw) as {
-          headers?: {
-            original: string;
-            standardized: string;
-            selected: boolean;
-          }[];
-          rows?: Record<string, any>[];
-          label?: string;
-        };
-        const rows = (parsed?.rows || []).filter((r) => {
-          const pos = String(r["Position"] || "").toUpperCase();
-          return !pos
-            .split(",")
-            .map((s: string) => s.trim())
-            .includes("G");
-        });
-        if (!rows.length) return undefined;
-        const COL_TO_STAT: Record<string, string> = {
-          Games_Played: "GAMES_PLAYED",
-          Goals: "GOALS",
-          Assists: "ASSISTS",
-          Points: "POINTS",
-          Plus_Minus: "PLUS_MINUS",
-          Shots_on_Goal: "SHOTS_ON_GOAL",
-          Hits: "HITS",
-          Blocked_Shots: "BLOCKED_SHOTS",
-          Penalty_Minutes: "PENALTY_MINUTES",
-          PP_Points: "PP_POINTS",
-          PP_Goals: "PP_GOALS",
-          PP_Assists: "PP_ASSISTS",
-          SH_Points: "SH_POINTS",
-          Time_on_Ice_Per_Game: "TIME_ON_ICE_PER_GAME",
-          Faceoffs_Won: "FACEOFFS_WON",
-          Faceoffs_Lost: "FACEOFFS_LOST"
-        };
-        const statMappings = Object.entries(COL_TO_STAT).map(([col, key]) => ({
-          key: key as any,
-          dbColumnName: col
-        }));
-        const source: CustomAdditionalProjectionSource = {
-          id: "custom_csv",
-          displayName: parsed?.label || "Custom CSV",
-          playerType: "skater",
-          rows,
-          primaryPlayerIdKey: "player_id",
-          originalPlayerNameKey: "Player_Name",
-          teamKey: "Team_Abbreviation",
-          positionKey: "Position",
-          statMappings
-        };
-        return source;
-      } catch {
-        return undefined;
-      }
+    // inject custom CSVs as additional sources for skaters
+    customAdditionalSources: (() => {
+      const list = getCsvList();
+      if (!list.length) return undefined;
+      const COL_TO_STAT: Record<string, string> = {
+        Games_Played: "GAMES_PLAYED",
+        Goals: "GOALS",
+        Assists: "ASSISTS",
+        Points: "POINTS",
+        Plus_Minus: "PLUS_MINUS",
+        Shots_on_Goal: "SHOTS_ON_GOAL",
+        Hits: "HITS",
+        Blocked_Shots: "BLOCKED_SHOTS",
+        Penalty_Minutes: "PENALTY_MINUTES",
+        PP_Points: "PP_POINTS",
+        PP_Goals: "PP_GOALS",
+        PP_Assists: "PP_ASSISTS",
+        SH_Points: "SH_POINTS",
+        Time_on_Ice_Per_Game: "TIME_ON_ICE_PER_GAME",
+        Faceoffs_Won: "FACEOFFS_WON",
+        Faceoffs_Lost: "FACEOFFS_LOST"
+      };
+      const statMappings = Object.entries(COL_TO_STAT).map(([col, key]) => ({
+        key: key as any,
+        dbColumnName: col
+      }));
+      return list
+        .map((entry) => {
+          const rows = (entry.rows || []).filter((r) => {
+            const pos = String(r["Position"] || "").toUpperCase();
+            return !pos
+              .split(",")
+              .map((s: string) => s.trim())
+              .includes("G");
+          });
+          if (!rows.length) return undefined as any;
+          const src: CustomAdditionalProjectionSource = {
+            id: entry.id,
+            displayName: entry.label || entry.id,
+            playerType: "skater",
+            rows,
+            primaryPlayerIdKey: "player_id",
+            originalPlayerNameKey: "Player_Name",
+            teamKey: "Team_Abbreviation",
+            positionKey: "Position",
+            statMappings
+          };
+          return src;
+        })
+        .filter(Boolean) as CustomAdditionalProjectionSource[];
     })(),
     refreshKey: dataRefreshKey
   });
@@ -328,59 +477,49 @@ const DraftDashboard: React.FC = () => {
     showPerGameFantasyPoints: false,
     togglePerGameFantasyPoints: () => {},
     teamCountForRoundSummaries: draftSettings.teamCount,
-    customAdditionalSource: (() => {
-      if (typeof window === "undefined") return undefined;
-      try {
-        const raw = sessionStorage.getItem("draft.customCsv.v1");
-        if (!raw) return undefined;
-        const parsed = JSON.parse(raw) as {
-          headers?: {
-            original: string;
-            standardized: string;
-            selected: boolean;
-          }[];
-          rows?: Record<string, any>[];
-          label?: string;
-        };
-        const rows = (parsed?.rows || []).filter((r) => {
-          const pos = String(r["Position"] || "").toUpperCase();
-          return pos
-            .split(",")
-            .map((s: string) => s.trim())
-            .includes("G");
-        });
-        if (!rows.length) return undefined;
-        const COL_TO_STAT: Record<string, string> = {
-          Games_Played: "GAMES_PLAYED",
-          Wins_Goalie: "WINS_GOALIE",
-          Losses_Goalie: "LOSSES_GOALIE",
-          Otl: "OTL_GOALIE",
-          Saves_Goalie: "SAVES_GOALIE",
-          Sa: "SHOTS_AGAINST_GOALIE",
-          Ga: "GOALS_AGAINST_GOALIE",
-          Save_Percentage: "SAVE_PERCENTAGE",
-          Goals_Against_Average: "GOALS_AGAINST_AVERAGE",
-          Shutouts_Goalie: "SHUTOUTS_GOALIE"
-        };
-        const statMappings = Object.entries(COL_TO_STAT).map(([col, key]) => ({
-          key: key as any,
-          dbColumnName: col
-        }));
-        const source: CustomAdditionalProjectionSource = {
-          id: "custom_csv",
-          displayName: parsed?.label || "Custom CSV",
-          playerType: "goalie",
-          rows,
-          primaryPlayerIdKey: "player_id",
-          originalPlayerNameKey: "Player_Name",
-          teamKey: "Team_Abbreviation",
-          positionKey: "Position",
-          statMappings
-        };
-        return source;
-      } catch {
-        return undefined;
-      }
+    customAdditionalSources: (() => {
+      const list = getCsvList();
+      if (!list.length) return undefined;
+      const COL_TO_STAT: Record<string, string> = {
+        Games_Played: "GAMES_PLAYED",
+        Wins_Goalie: "WINS_GOALIE",
+        Losses_Goalie: "LOSSES_GOALIE",
+        Otl: "OTL_GOALIE",
+        Saves_Goalie: "SAVES_GOALIE",
+        Sa: "SHOTS_AGAINST_GOALIE",
+        Ga: "GOALS_AGAINST_GOALIE",
+        Save_Percentage: "SAVE_PERCENTAGE",
+        Goals_Against_Average: "GOALS_AGAINST_AVERAGE",
+        Shutouts_Goalie: "SHUTOUTS_GOALIE"
+      };
+      const statMappings = Object.entries(COL_TO_STAT).map(([col, key]) => ({
+        key: key as any,
+        dbColumnName: col
+      }));
+      return list
+        .map((entry) => {
+          const rows = (entry.rows || []).filter((r) => {
+            const pos = String(r["Position"] || "").toUpperCase();
+            return pos
+              .split(",")
+              .map((s: string) => s.trim())
+              .includes("G");
+          });
+          if (!rows.length) return undefined as any;
+          const src: CustomAdditionalProjectionSource = {
+            id: entry.id,
+            displayName: entry.label || entry.id,
+            playerType: "goalie",
+            rows,
+            primaryPlayerIdKey: "player_id",
+            originalPlayerNameKey: "Player_Name",
+            teamKey: "Team_Abbreviation",
+            positionKey: "Position",
+            statMappings
+          };
+          return src;
+        })
+        .filter(Boolean) as CustomAdditionalProjectionSource[];
     })(),
     refreshKey: dataRefreshKey
   });
@@ -798,6 +937,26 @@ const DraftDashboard: React.FC = () => {
               rosterSlots["FWD"].push(draftedPlayer);
             } else if (canFillPrimary) {
               rosterSlots[displayPos].push(draftedPlayer);
+            } else if (elig && elig.length) {
+              // Try alternate eligible positions before UTIL/bench
+              const alt = elig.find((p) => {
+                if (p === displayPos) return false;
+                return (
+                  rosterSlots[p] &&
+                  rosterSlots[p].length < (draftSettings.rosterConfig as any)[p]
+                );
+              });
+              if (alt) {
+                rosterSlots[alt].push(draftedPlayer);
+              } else if (
+                rosterSlots["UTILITY"] &&
+                rosterSlots["UTILITY"].length < draftSettings.rosterConfig.utility
+              ) {
+                rosterSlots["UTILITY"].push(draftedPlayer);
+              } else {
+                rosterSlots["BENCH"] ||= [];
+                rosterSlots["BENCH"].push(draftedPlayer);
+              }
             } else if (
               rosterSlots["UTILITY"] &&
               rosterSlots["UTILITY"].length < draftSettings.rosterConfig.utility
@@ -809,6 +968,26 @@ const DraftDashboard: React.FC = () => {
             }
           } else if (canFillPrimary) {
             rosterSlots[displayPos].push(draftedPlayer);
+          } else if (elig && elig.length) {
+            // Split mode (no FWD): try alternate eligible slots before UTIL
+            const alt = elig.find((p) => {
+              if (p === displayPos) return false;
+              return (
+                rosterSlots[p] &&
+                rosterSlots[p].length < (draftSettings.rosterConfig as any)[p]
+              );
+            });
+            if (alt) {
+              rosterSlots[alt].push(draftedPlayer);
+            } else if (
+              rosterSlots["UTILITY"] &&
+              rosterSlots["UTILITY"].length < draftSettings.rosterConfig.utility
+            ) {
+              rosterSlots["UTILITY"].push(draftedPlayer);
+            } else {
+              rosterSlots["BENCH"] ||= [];
+              rosterSlots["BENCH"].push(draftedPlayer);
+            }
           } else if (
             rosterSlots["UTILITY"] &&
             rosterSlots["UTILITY"].length < draftSettings.rosterConfig.utility
@@ -1286,7 +1465,23 @@ const DraftDashboard: React.FC = () => {
         customSourceLabel={customCsvLabel}
         availableSkaterStatKeys={availableSkaterStatKeys}
         availableGoalieStatKeys={availableGoalieStatKeys}
-        onExportCsv={exportBlendedProjectionsCsv}
+      onExportCsv={exportBlendedProjectionsCsv}
+        onRemoveCustomSource={(id) => {
+          // Remove from session list and controls
+          const list = getCsvList();
+          const next = list.filter((e) => e.id !== id);
+          setCsvList(next);
+          setSourceControls((prev) => {
+            const { [id]: _, ...rest } = prev;
+            return rest as typeof prev;
+          });
+          setGoalieSourceControls((prev) => {
+            const { [id]: _, ...rest } = prev;
+            return rest as typeof prev;
+          });
+          // Force data refresh
+          setDataRefreshKey((k) => k + 1);
+        }}
         pickOwnerOverrides={pickOwnerOverrides}
         onAddTradedPick={addTradedPick}
         onRemoveTradedPick={removeTradedPick}
@@ -1466,27 +1661,29 @@ const DraftDashboard: React.FC = () => {
         vorpMetrics={vorpMetrics}
       />
 
-      <ImportCsvModal
-        open={isImportCsvOpen}
-        onClose={() => setIsImportCsvOpen(false)}
-        onImported={({ headers, rows, sourceId, label }) => {
-          // Persist label alongside rows for restoration
-          try {
-            if (typeof window !== "undefined") {
-              sessionStorage.setItem(
-                "draft.customCsv.v1",
-                JSON.stringify({ headers, rows, label })
-              );
-            }
-          } catch {}
-          // Add/enable the custom source control so it appears in settings
+  <ImportCsvModal
+    open={isImportCsvOpen}
+    onClose={() => setIsImportCsvOpen(false)}
+    onImported={({ headers, rows, sourceId, label }) => {
+          // Append to list with incremental id custom_csv_1..n
+          const list = getCsvList();
+          const nextIndex = list.length + 1;
+          const id = `custom_csv_${nextIndex}`;
+          const next = [...list, { id, label, headers, rows }];
+          setCsvList(next);
+          // Add/enable the custom source control so it appears in settings (skater controls by default)
           setSourceControls((prev) => ({
             ...prev,
-            [sourceId]: prev[sourceId] || { isSelected: true, weight: 1 }
+            [id]: prev[id] || { isSelected: true, weight: 1 }
+          }));
+          // Also add goalie controls entry so it can be toggled
+          setGoalieSourceControls((prev) => ({
+            ...prev,
+            [id]: prev[id] || { isSelected: true, weight: 1 }
           }));
           setCustomCsvLabel(label);
-        }}
-      />
+    }}
+  />
     </div>
   );
 };
