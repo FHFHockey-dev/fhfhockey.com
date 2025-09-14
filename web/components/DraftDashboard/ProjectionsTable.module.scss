@@ -69,6 +69,38 @@
   font-size: v.$font-size-xs;
   min-height: 28px;
 }
+
+/* Compact toggle buttons for header controls */
+.toggleButtonsGroup {
+  display: inline-flex;
+  gap: 6px;
+}
+.controlToggleBtn {
+  background: v.$background-dark;
+  border: 1px solid v.$border-secondary;
+  color: v.$text-secondary;
+  border-radius: v.$border-radius-sm;
+  padding: 6px 8px;
+  font-size: v.$font-size-xxs;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  min-height: 28px;
+  transition: all 0.15s ease;
+  &:hover,
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+    color: v.$text-primary;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.25);
+  }
+}
+.controlToggleBtnActive {
+  background: v.$primary-color-opaque;
+  border-color: v.$primary-color;
+  color: v.$color-white;
+}
 .inlineToggle {
   display: flex;
   align-items: center;
@@ -561,11 +593,17 @@
 .colName {
   width: 20%; // reduced to free space for ADP & Next-Pick
 }
+.colFav {
+  width: 4%;
+}
 .colPos {
   width: 7%;
 }
 .colTeam {
   width: 7%;
+}
+.colStat {
+  width: 3%;
 }
 .colFP {
   width: 12%; // slightly increased
@@ -601,6 +639,14 @@
 /* Ensure hover still stands out over zebra stripes */
 .playerRow:hover {
   background-color: color.adjust(v.$background-dark, $lightness: 2%) !important;
+}
+
+/* Favorited row highlight */
+.favoritedRow td {
+  background-color: v.$primary-color-opaque !important;
+}
+.favoritedRow {
+  box-shadow: inset 0 0 0 2px v.$primary-color;
 }
 
 /* =================== Table Cell Styles =================== */
@@ -660,6 +706,77 @@
   flex: 1 1 auto; // allow truncation to use remaining space
 }
 
+.favoriteButton {
+  background: transparent;
+  border: none;
+  color: v.$text-secondary;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.15s ease;
+  &:hover,
+  &:focus {
+    color: v.$primary-color;
+    outline: none;
+  }
+}
+.favorited {
+  color: v.$warning-color;
+}
+
+.statSortSelect {
+  background: v.$background-dark;
+  color: v.$text-primary;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  padding: 4px 8px;
+  font-size: v.$font-size-xxs;
+  min-height: 28px;
+}
+
+.iconButton {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid v.$border-secondary;
+  background: v.$background-dark;
+  color: v.$text-primary;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  transition: all 0.15s ease;
+  &:hover,
+  &:focus {
+    outline: none;
+    border-color: v.$primary-color;
+    color: v.$primary-color;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.25);
+  }
+}
+
+/* Dynamic stat view helpers */
+.statHeader {
+  text-align: right;
+}
+.statCol {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Favorited row highlight */
+.favoritedRow td {
+  background-color: v.$primary-color-opaque !important;
+}
+.favoritedRow {
+  box-shadow: inset 0 0 0 2px v.$primary-color;
+}
+
 .position {
   color: v.$text-secondary;
   font-size: v.$font-size-xs;
@@ -680,6 +797,15 @@
 .fantasyPoints,
 .vorp,
 .adp {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Stat mode numeric columns */
+.statHeader {
+  text-align: right;
+}
+.statCol {
+  text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
@@ -986,7 +1112,13 @@
 
   /* Rebalance columns for smaller viewports - totals ≈ 100% */
   .colName {
-    width: 36%; // decreased from 44%
+    width: 32%; // decreased from 44% to make room for favorites
+  }
+  .colFav {
+    width: 6%;
+  }
+  .colStat {
+    width: 4%;
   }
   .colPos {
     width: 7%;
@@ -1054,7 +1186,13 @@
 
   /* Slightly more room for ADP/Risk on very small screens - totals ≈ 100% */
   .colName {
-    width: 42%; // down from 50%
+    width: 36%; // down from 50%, leave room for favs
+  }
+  .colFav {
+    width: 8%;
+  }
+  .colStat {
+    width: 5%;
   }
   .colPos {
     width: 7%;
