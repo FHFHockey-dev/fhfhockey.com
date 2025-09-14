@@ -81,11 +81,12 @@ export function useVORPCalculations({
 
     players.forEach((p) => {
       const id = String(p.playerId);
-      // initialize eligibility; values will be set after we compute based on leagueType
-      eligibility.set(
-        id,
-        parseEligiblePositions(p.displayPosition ?? undefined)
-      );
+      const prefer = Array.isArray((p as any).eligiblePositions)
+        ? ((p as any).eligiblePositions as string[])
+        : undefined;
+      const parsed = parseEligiblePositions(p.displayPosition ?? undefined);
+      const elig = prefer && prefer.length ? prefer : parsed;
+      eligibility.set(id, elig);
     });
 
     // Compute player comparable values

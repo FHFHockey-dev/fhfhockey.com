@@ -18,6 +18,7 @@ interface MyRosterProps {
   availablePlayers: ProcessedPlayer[];
   allPlayers: ProcessedPlayer[];
   onDraftPlayer: (playerId: string) => void;
+  onMovePlayer?: (playerId: string, targetPos: string) => void;
   canDraft: boolean;
   currentPick: number;
   currentTurn: {
@@ -32,6 +33,8 @@ interface MyRosterProps {
   needWeightEnabled?: boolean;
   needAlpha?: number;
   posNeeds?: Record<string, number>;
+  // Forward grouping preference
+  forwardGrouping?: "split" | "fwd";
 }
 
 const MyRoster: React.FC<MyRosterProps> = ({
@@ -41,6 +44,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
   availablePlayers,
   allPlayers,
   onDraftPlayer,
+  onMovePlayer,
   canDraft,
   currentPick,
   currentTurn,
@@ -50,6 +54,7 @@ const MyRoster: React.FC<MyRosterProps> = ({
   needWeightEnabled = false,
   needAlpha = 0.5,
   posNeeds = {}
+  , forwardGrouping = "split"
 }) => {
   const [selectedPlayerId, setSelectedPlayerId] = useState<
     number | undefined
@@ -266,10 +271,41 @@ const MyRoster: React.FC<MyRosterProps> = ({
       .map((pos) =>
         pos.toUpperCase() === "UTILITY" ? "UTILITY" : pos.toUpperCase()
       );
-    // Enforce desired order
-    const order = ["C", "LW", "RW", "D", "G", "UTILITY"] as const;
+    const orderSplit = ["C", "LW", "RW", "D", "G", "UTILITY"] as const;
+    const orderFwd = ["FWD", "D", "G", "UTILITY"] as const;
+    const order = forwardGrouping === "fwd" ? orderFwd : orderSplit;
     return order.filter((pos) => basePositions.includes(pos));
-  }, [draftSettings.rosterConfig]);
+  }, [draftSettings.rosterConfig, forwardGrouping]);
+
+  // Selection for roster player to show eligible targets
+  const [selectedRoster, setSelectedRoster] = useState<
+    | { playerId: string; currentPos: string }
+    | null
+  >(null);
+
+  const eligibleTargetsForSelected = useMemo(() => {
+    if (!selectedRoster) return new Set<string>();
+    const p = playerMap.get(selectedRoster.playerId);
+    if (!p) return new Set();
+    const elig = Array.isArray((p as any).eligiblePositions)
+      ? ((p as any).eligiblePositions as string[])
+      : (p.displayPosition || "").split(",").map((s) => s.trim().toUpperCase());
+    const targets = new Set<string>();
+    elig.forEach((pos) => {
+      if (pos === selectedRoster.currentPos) return;
+      if (forwardGrouping === "fwd") {
+        if (["C", "LW", "RW"].includes(pos)) targets.add("FWD");
+        else targets.add(pos);
+      } else {
+        targets.add(pos);
+      }
+    });
+    // All skaters can move to UTILITY if present
+    const hasUtility = (draftSettings.rosterConfig as any)?.utility > 0;
+    const isGoalie = elig.includes("G");
+    if (hasUtility && !isGoalie) targets.add("UTILITY");
+    return targets;
+  }, [selectedRoster, playerMap, draftSettings.rosterConfig, forwardGrouping]);
 
   return (
     <div className={styles.myRosterContainer}>
@@ -381,7 +417,11 @@ const MyRoster: React.FC<MyRosterProps> = ({
                     {currentPlayers.length} / {maxCount}
                   </span>
                 </div>
-                <div className={styles.slotPlayers}>
+                <div
+                  className={`${styles.slotPlayers} ${
+                    pos === "FWD" ? styles.slotPlayersFwd : ""
+                  }`}
+                >
                   {Array.from({ length: maxCount }, (_, index) => {
                     const drafted = currentPlayers[index];
                     const fullName = drafted
@@ -393,7 +433,22 @@ const MyRoster: React.FC<MyRosterProps> = ({
                         key={index}
                         className={`${styles.slotPlayer} ${
                           drafted ? styles.filledSlot : styles.emptySlot
+                        } ${
+                          !drafted && eligibleTargetsForSelected.has(pos)
+                            ? styles.eligibleTarget
+                            : ""
                         }`}
+                        onClick={() => {
+                          if (drafted) {
+                            setSelectedRoster({
+                              playerId: drafted.playerId,
+                              currentPos: pos
+                            });
+                          } else if (selectedRoster && eligibleTargetsForSelected.has(pos)) {
+                            onMovePlayer && onMovePlayer(selectedRoster.playerId, pos);
+                            setSelectedRoster(null);
+                          }
+                        }}
                       >
                         {drafted ? (
                           <div className={styles.playerInfo}>

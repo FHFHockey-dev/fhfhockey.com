@@ -111,6 +111,10 @@ const DraftDashboard: React.FC = () => {
     DEFAULT_DRAFT_SETTINGS
   );
   const [draftedPlayers, setDraftedPlayers] = useState<DraftedPlayer[]>([]);
+  // Explicit per-player slot overrides (C/LW/RW/FWD/D/G/UTILITY)
+  const [positionOverrides, setPositionOverrides] = useState<
+    Record<string, string>
+  >({});
   const [currentPick, setCurrentPick] = useState<number>(1);
   const [isSnakeDraft, setIsSnakeDraft] = useState<boolean>(true);
   const [myTeamId, setMyTeamId] = useState<string>("Team 1");
@@ -255,13 +259,20 @@ const DraftDashboard: React.FC = () => {
         const raw = sessionStorage.getItem("draft.customCsv.v1");
         if (!raw) return undefined;
         const parsed = JSON.parse(raw) as {
-          headers?: { original: string; standardized: string; selected: boolean }[];
+          headers?: {
+            original: string;
+            standardized: string;
+            selected: boolean;
+          }[];
           rows?: Record<string, any>[];
           label?: string;
         };
         const rows = (parsed?.rows || []).filter((r) => {
           const pos = String(r["Position"] || "").toUpperCase();
-          return !pos.split(",").map((s: string) => s.trim()).includes("G");
+          return !pos
+            .split(",")
+            .map((s: string) => s.trim())
+            .includes("G");
         });
         if (!rows.length) return undefined;
         const COL_TO_STAT: Record<string, string> = {
@@ -323,13 +334,20 @@ const DraftDashboard: React.FC = () => {
         const raw = sessionStorage.getItem("draft.customCsv.v1");
         if (!raw) return undefined;
         const parsed = JSON.parse(raw) as {
-          headers?: { original: string; standardized: string; selected: boolean }[];
+          headers?: {
+            original: string;
+            standardized: string;
+            selected: boolean;
+          }[];
           rows?: Record<string, any>[];
           label?: string;
         };
         const rows = (parsed?.rows || []).filter((r) => {
           const pos = String(r["Position"] || "").toUpperCase();
-          return pos.split(",").map((s: string) => s.trim()).includes("G");
+          return pos
+            .split(",")
+            .map((s: string) => s.trim())
+            .includes("G");
         });
         if (!rows.length) return undefined;
         const COL_TO_STAT: Record<string, string> = {
@@ -480,7 +498,8 @@ const DraftDashboard: React.FC = () => {
     if (typeof window === "undefined") return;
     try {
       // Skip restoring if user declined to resume saved session on this load
-      const declined = sessionStorage.getItem("draft.resume.declined") === "true";
+      const declined =
+        sessionStorage.getItem("draft.resume.declined") === "true";
       if (declined) {
         sessionStorage.removeItem("draft.resume.declined");
         return;
@@ -689,7 +708,8 @@ const DraftDashboard: React.FC = () => {
     leagueType: draftSettings.leagueType || "points",
     baselineMode,
     categoryWeights: draftSettings.categoryWeights,
-    forwardGrouping
+    forwardGrouping,
+    personalizeReplacement
   });
 
   // Team stats calculations
@@ -719,15 +739,44 @@ const DraftDashboard: React.FC = () => {
         );
 
         if (player) {
-          const primaryPosition =
+          const displayPos =
             player.displayPosition?.split(",")[0]?.trim()?.toUpperCase() ||
             "UTIL";
-          const isGoalie = primaryPosition === "G";
+          const isGoalie = displayPos === "G";
+          const elig = Array.isArray((player as any).eligiblePositions)
+            ? ((player as any).eligiblePositions as string[])
+            : (player.displayPosition || "")
+                .split(",")
+                .map((s) => s.trim().toUpperCase())
+                .filter(Boolean);
 
+          // Apply override if valid and capacity exists
+          const overridePos = (positionOverrides as any)[
+            draftedPlayer.playerId
+          ];
+          if (
+            overridePos &&
+            rosterSlots[overridePos] &&
+            rosterSlots[overridePos].length <
+              (draftSettings.rosterConfig as any)[overridePos] &&
+            (overridePos === "FWD"
+              ? !elig.includes("G") && !elig.includes("D")
+              : elig.includes(overridePos))
+          ) {
+            rosterSlots[overridePos].push(draftedPlayer);
+            return;
+          }
+
+          const hasFwdSlots = Boolean(
+            (draftSettings.rosterConfig as any)["FWD"]
+          );
+          const isSkater =
+            displayPos === "F" ||
+            elig.some((p) => p === "C" || p === "LW" || p === "RW");
           const canFillPrimary =
-            rosterSlots[primaryPosition] &&
-            rosterSlots[primaryPosition].length <
-              (draftSettings.rosterConfig as any)[primaryPosition];
+            rosterSlots[displayPos] &&
+            rosterSlots[displayPos].length <
+              (draftSettings.rosterConfig as any)[displayPos];
 
           if (isGoalie) {
             // Goalies fill G slots first, never UTIL
@@ -740,8 +789,26 @@ const DraftDashboard: React.FC = () => {
               rosterSlots["BENCH"] ||= [];
               rosterSlots["BENCH"].push(draftedPlayer);
             }
+          } else if (hasFwdSlots && isSkater) {
+            if (
+              rosterSlots["FWD"] &&
+              rosterSlots["FWD"].length <
+                (draftSettings.rosterConfig as any)["FWD"]
+            ) {
+              rosterSlots["FWD"].push(draftedPlayer);
+            } else if (canFillPrimary) {
+              rosterSlots[displayPos].push(draftedPlayer);
+            } else if (
+              rosterSlots["UTILITY"] &&
+              rosterSlots["UTILITY"].length < draftSettings.rosterConfig.utility
+            ) {
+              rosterSlots["UTILITY"].push(draftedPlayer);
+            } else {
+              rosterSlots["BENCH"] ||= [];
+              rosterSlots["BENCH"].push(draftedPlayer);
+            }
           } else if (canFillPrimary) {
-            rosterSlots[primaryPosition].push(draftedPlayer);
+            rosterSlots[displayPos].push(draftedPlayer);
           } else if (
             rosterSlots["UTILITY"] &&
             rosterSlots["UTILITY"].length < draftSettings.rosterConfig.utility
@@ -943,6 +1010,14 @@ const DraftDashboard: React.FC = () => {
     },
     [currentTurn, currentPick, draftedPlayers, draftComplete]
   );
+
+  // Assign a drafted player to a specific eligible slot (C/LW/RW/FWD/D/G/UTILITY)
+  const assignPlayerToSlot = useCallback((playerId: string, pos: string) => {
+    setPositionOverrides((prev) => ({
+      ...prev,
+      [playerId]: pos.toUpperCase()
+    }));
+  }, []);
 
   // Auto-skip picks that are already drafted (e.g., keepers)
   useEffect(() => {
@@ -1161,6 +1236,28 @@ const DraftDashboard: React.FC = () => {
     }
   }, [allPlayers]);
 
+  const handleForwardGroupingChange = (mode: "split" | "fwd") => {
+    setForwardGrouping(mode);
+    setDraftSettings((prev) => {
+      const rc: any = { ...(prev.rosterConfig || {}) };
+      if (mode === "fwd") {
+        const sum = (rc.C || 0) + (rc.LW || 0) + (rc.RW || 0);
+        delete rc.C;
+        delete rc.LW;
+        delete rc.RW;
+        rc.FWD = sum > 0 ? sum : 6; // default to 6 if not set
+      } else {
+        const existing = rc.FWD || 6;
+        delete rc.FWD;
+        // Restore defaults (2 each) or distribute roughly
+        rc.C = 2;
+        rc.LW = 2;
+        rc.RW = 2;
+      }
+      return { ...prev, rosterConfig: rc };
+    });
+  };
+
   return (
     <div className={styles.dashboardContainer}>
       <DraftSettings
@@ -1177,7 +1274,7 @@ const DraftDashboard: React.FC = () => {
         currentPick={currentPick}
         customTeamNames={customTeamNames}
         forwardGrouping={forwardGrouping}
-        onForwardGroupingChange={setForwardGrouping}
+        onForwardGroupingChange={handleForwardGroupingChange}
         sourceControls={sourceControls}
         onSourceControlsChange={setSourceControls}
         goalieSourceControls={goalieSourceControls}
@@ -1295,6 +1392,7 @@ const DraftDashboard: React.FC = () => {
             availablePlayers={availablePlayers}
             allPlayers={allPlayers}
             onDraftPlayer={(id) => draftPlayer(id)}
+            onMovePlayer={assignPlayerToSlot}
             canDraft={true}
             currentPick={currentPick}
             currentTurn={currentTurn}
@@ -1303,6 +1401,7 @@ const DraftDashboard: React.FC = () => {
             needWeightEnabled={needWeightEnabled}
             needAlpha={needAlpha}
             posNeeds={posNeeds}
+            forwardGrouping={forwardGrouping}
           />
         </section>
 
@@ -1312,7 +1411,7 @@ const DraftDashboard: React.FC = () => {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              marginBottom: 6
+              marginBottom: 0
             }}
           >
             <div style={{ color: "#9aa4af", fontSize: 12 }}>
@@ -1320,21 +1419,6 @@ const DraftDashboard: React.FC = () => {
                 ? "Refreshing…"
                 : ""}
             </div>
-            <button
-              onClick={() => setDataRefreshKey((k) => k + 1)}
-              style={{
-                padding: "4px 8px",
-                fontSize: 12,
-                border: "1px solid var(--border-color, #334155)",
-                background: "transparent",
-                color: "#9aa4af",
-                borderRadius: 4,
-                cursor: "pointer"
-              }}
-              title="Force refresh projections from database"
-            >
-              Refresh Data
-            </button>
           </div>
           <ProjectionsTable
             players={availablePlayers}
@@ -1362,6 +1446,13 @@ const DraftDashboard: React.FC = () => {
             leagueType={draftSettings.leagueType || "points"}
             forwardGrouping={forwardGrouping}
           />
+          <button
+            onClick={() => setDataRefreshKey((k) => k + 1)}
+            className={styles.refreshButton}
+            title="Force refresh projections from database"
+          >
+            Refresh Data
+          </button>
         </section>
       </div>
 

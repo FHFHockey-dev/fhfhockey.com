@@ -34,6 +34,30 @@
   justify-content: flex-end;
 }
 
+.refreshButton {
+  // @include v.button-style;
+  background-color: transparent;
+  color: v.$text-primary;
+  border: 2px solid v.$border-secondary;
+  border-radius: 0 0 v.$border-radius-md v.$border-radius-md;
+  padding: v.$space-xs v.$space-md;
+  font-size: v.$font-size-xs;
+  font-family: v.$font-family-accent, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.25em;
+  transition:
+    background-color 0.3s,
+    border-color 0.3s,
+    color 0.3s;
+
+  &:hover:not(:disabled) {
+    background-color: v.$primary-color-opaque;
+    border-color: v.$primary-color;
+    border-radius: 0 0 v.$border-radius-lg v.$border-radius-md;
+    color: v.$primary-color;
+  }
+}
+
 .summaryButton {
   @extend .draftButton;
   padding: v.$space-xs v.$space-lg;

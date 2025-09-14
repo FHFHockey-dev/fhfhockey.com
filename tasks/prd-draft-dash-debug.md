@@ -215,3 +215,114 @@ Test Plan
 - Completed: Issue 6 (Suggested Picks Skater filter no longer hangs; added empty state). File: `SuggestedPicks.tsx`.
 - New/Completed: Issue 7 (Auto‑show new category columns on Draft Board; still left of Team VORP/Score). File: `DraftBoard.tsx`.
 - New Feature: Categories “Score” replaces Proj FP; leaderboard shows team average Score and tooltips/legend added. Files: `useVORPCalculations.ts`, `ProjectionsTable.tsx`, `DraftBoard.tsx`, `DraftDashboard.tsx`.
+
+---
+
+## New TODOs (Q4 Roadmap)
+
+- [ ] Bookmarking: snapshot everything
+  - Save/restore a complete session bundle (draft board state, keepers, traded picks, projections source selections + weights, imported CSV(s), settings including forward grouping, need‑weight, baseline mode, category weights, custom team names, position overrides).
+  - Files: `DraftDashboard.tsx` (serialize/deserialize), `DraftSettings.tsx` (export/import helpers), `ImportCsvModal.tsx` (persist imported sources), `useProcessedProjectionsData.tsx` (rebuild from snapshot), `localStorage/sessionStorage` keys.
+
+- [ ] Defense points option
+  - Add a global toggle/points mapping to award “Defensive points” (e.g., bonus per D position) or a per‑stat weighting group for D only.
+  - Files: `DraftSettings.tsx` (UI), `fantasyPointsConfig.ts` (defaults), `useProcessedProjectionsData.tsx` and `useVORPCalculations.ts` (apply modifier only when primary/assigned position is D), `DraftBoard.tsx` (display).
+
+- [ ] Dual/triple‑eligibility position swap in My Roster
+  - Status: PARTIAL. Click‑to‑move to eligible empty slots is implemented with position overrides and visual highlighting.
+  - Add: swap with an occupied slot, drag‑and‑drop polish, and undo integration.
+  - Files: `MyRoster.tsx/.module.scss` (UI + DnD), `DraftDashboard.tsx` (override state + history), `useVORPCalculations.ts` (optional personalized replacement using current filled starters).
+
+- [ ] Multiple user projection sets (multi‑CSV)
+  - Support importing and enabling multiple custom sources simultaneously; show per‑source controls and weights; de‑dup with name + team; blend in averages.
+  - Files: `ImportCsvModal.tsx` (store array `draft.customCsvList.v1`), `DraftDashboard.tsx` (synthesize multiple `customAdditionalSource`s), `useProcessedProjectionsData.tsx` (merge loop already supports N sources), `DraftSettings.tsx` (chips for each custom source).
+
+- [ ] Add SHA derived metric
+  - Most sources provide SHP and some SHG. Provide `SHA = SHP - SHG` as a derived projection/actual metric; expose in categories/points selectors.
+  - Files: `useProcessedProjectionsData.tsx` (post‑aggregation derivation), `statsMasterList.ts` (new `SHA` definition), `projectionSourcesConfig.ts` (mark derived), `DraftSettings.tsx` (labels), `DraftBoard.tsx` (column), CSV export.
+
+- [ ] Compare Players modal
+  - In ProjectionsTable add a multi‑select “Compare” action to open a modal:
+    - Metrics table: totals/means per player; highlight deltas and per‑metric winner.
+    - Radar/Spider chart: percentile per selected category (respect category weights if in Categories mode).
+    - Category win table: which player “wins” each metric; summary of winners.
+  - Files: `ProjectionsTable.tsx` (select state + button), `components/DraftDashboard/ComparePlayersModal.tsx` (new), `hooks/usePercentiles.ts` (new helper), `styles`.
+
+---
+
+## Gameplan
+
+1) Bookmarking snapshot
+- Model: create a single `DraftSnapshotV2` interface capturing all state. Add safe versioning.
+- Save: throttle to localStorage; store large/transient (CSV) in sessionStorage but include references in snapshot for restoration.
+- Restore: on “Resume?” Yes → restore all; No → clear session CSV and saved snapshot for a clean start.
+- Edge cases: missing sources/season id; validate snapshot version; warn and continue.
+
+2) Defense points option
+- UX: Settings toggle + numeric input(s). If enabled, apply a modifier for D players only (either additive or multiplier); reflect in ProjectionsTable and DraftBoard.
+- Calc: during FP calc, if player assigned/bestPos is D, apply. For Categories, keep separate.
+
+3) My Roster swaps
+- Keep current click‑to‑highlight flow. Add click‑to‑swap when clicking a filled target.
+- Maintain `positionOverrides` map and draft history for undo. Animate swaps.
+- Optionally drag‑and‑drop (HTML5 DnD or keyboard accessible handles).
+
+4) Multi‑CSV
+- Storage: migrate to `draft.customCsvList.v1` array.
+- Synthesis: map each item to a `CustomAdditionalProjectionSource` with unique id `custom_csv_<n>`.
+- UI: chips with weight sliders and remove buttons in DraftSettings.
+- Merge: existing name/team alignment step will coalesce rows; ensure no perf regressions.
+
+5) SHA derived metric
+- Add `SHA` to `STATS_MASTER_LIST` (numeric, higher is better). Compute after all source aggregation:
+  - projected.SHA = clamp(SHP - SHG, >=0); actual.SHA likewise when both present.
+- Expose in category selectors and tables with proper labels.
+
+6) Compare Players modal
+- Selection: maintain a Set of selected playerIds in ProjectionsTable; enable “Compare” when size ≥ 2.
+- Modal: summary header, metric table, radar chart (recharts or chart.js), per‑metric winner row.
+- Percentiles: precompute distribution for selected metrics using current pool; cache.
+- Accessibility: keyboard navigation and screen reader descriptions.
+
+---
+
+## Files to touch
+
+- Core state/UI: `web/components/DraftDashboard/DraftDashboard.tsx`, `DraftSettings.tsx`, `DraftBoard.tsx`, `MyRoster.tsx`, `MyRoster.module.scss`, `ProjectionsTable.tsx`.
+- Data + calc: `web/hooks/useProcessedProjectionsData.tsx`, `web/hooks/useVORPCalculations.ts`.
+- Configs + labels: `web/lib/projectionsConfig/statsMasterList.ts`, `projectionSourcesConfig.ts`, `fantasyPointsConfig.ts`.
+- New: `web/components/DraftDashboard/ComparePlayersModal.tsx`, `web/hooks/usePercentiles.ts`.
+
+---
+
+## Prompt for ChatGPT‑5 (hand‑off)
+
+You are an expert React/TypeScript engineer working in a Next.js monorepo with Supabase. Your task is to implement Draft Dashboard enhancements. Follow the acceptance criteria and file pointers precisely, keep code minimal and consistent with the project.
+
+Context
+- Components live under `web/components/DraftDashboard/*`.
+- Player data shape: `ProcessedPlayer` from `hooks/useProcessedProjectionsData.tsx`.
+- VORP logic: `hooks/useVORPCalculations.ts`.
+- State owner: `DraftDashboard.tsx`.
+
+Goals
+1) Bookmark snapshot V2: serialize and restore full session (draft board, keepers, traded picks, settings, source controls, goalie controls, imported CSV list, position overrides). Respect user choice on resume.
+2) Defense points option: settings UI + calc path for D only.
+3) My Roster swaps: add click‑to‑swap (occupied target), reuse existing highlight logic and position overrides; update undo.
+4) Multi‑CSV: store array in sessionStorage, synthesize multiple custom sources, add UI to enable/weight/remove each.
+5) SHA derived metric: add to master list and compute from SHP/SHG if present.
+6) Compare Players modal: multi‑select in table, modal with metric table + radar chart + winner summary.
+
+Constraints
+- Do not break existing flows (Points/Categories, FWD toggle, need‑weight, baseline mode).
+- Keep accessibility: keyboard navigation, aria labels, focus order.
+- Maintain the existing coding style and CSS modules.
+
+Implementation Hints
+- For bookmarking, define `DraftSnapshotV2`; add `saveSnapshot()` and `loadSnapshot()` in `DraftDashboard.tsx`.
+- Multi‑CSV: assign ids `custom_csv_1..n`; update `useProcessedProjectionsData` merge step (already generic for N sources) and DraftSettings chips.
+- SHA: implement derivation after aggregation with guards; add to `STATS_MASTER_LIST`.
+- Compare modal: create `ComparePlayersModal.tsx`; lift selected ids state in `ProjectionsTable.tsx`; use chart.js radar; compute percentiles in a tiny hook.
+
+Deliverables
+- Code changes plus a brief summary of what was added, files touched, and any migrations.
