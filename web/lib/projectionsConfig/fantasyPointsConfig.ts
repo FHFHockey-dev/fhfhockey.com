@@ -11,8 +11,7 @@ export const DEFAULT_SKATER_FANTASY_POINTS: Record<string, number> = {
   PP_POINTS: 1,
   SHOTS_ON_GOAL: 0.2,
   HITS: 0.2,
-  BLOCKED_SHOTS: 0.25,
-  SH_POINTS: 1
+  BLOCKED_SHOTS: 0.25
   // Other skater stats (e.g., PLUS_MINUS, PENALTY_MINUTES, TIME_ON_ICE_PER_GAME, FACEOFFS_WON, FACEOFFS_LOST)
   // will default to 0 unless specified here during initialization.
   // GAMES_PLAYED typically doesn't have a direct fantasy point value.

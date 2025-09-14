@@ -948,6 +948,13 @@ export function standardizePlayerName(name: string): string {
     return "";
   }
   const originalTrimmedName = name.trim();
+  // Guard: if input is a single token (likely last name only), do NOT force-map
+  // to a specific canonical full name. Return Title Case of the token and let
+  // the importer disambiguate using team/position. This avoids collisions like
+  // Elias vs Hampus Lindholm both becoming the same person.
+  if (originalTrimmedName.split(/\s+/).length < 2) {
+    return titleCase(originalTrimmedName);
+  }
   const lookupKey = normalizeForLookup(originalTrimmedName);
 
   // --- BEGIN DEBUG LOGGING for specific names ---

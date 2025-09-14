@@ -296,11 +296,30 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
 
   // Position filter options from players
   const availablePositions = useMemo(() => {
-    const s = new Set<string>();
+    const raw = new Set<string>();
     players.forEach((p) => {
-      p.displayPosition?.split(",")?.forEach((pos) => s.add(pos.trim()));
+      p.displayPosition?.split(",")?.forEach((pos) => raw.add(pos.trim()));
     });
-    return ["ALL", ...Array.from(s).sort()];
+    // Normalize and de-duplicate by case
+    const normalized = Array.from(raw)
+      .filter(Boolean)
+      .map((s) => s.trim())
+      .filter((s, idx, arr) => arr.findIndex((t) => t.toLowerCase() === s.toLowerCase()) === idx)
+      .sort();
+    const lower = new Set(normalized.map((s) => s.toLowerCase()));
+    const list: string[] = ["ALL"];
+    // Prefer composite labels over raw singulars
+    list.push("Skater");
+    list.push("Goalie");
+    // Avoid listing raw 'G' since 'Goalie' covers it
+    normalized.forEach((p) => {
+      const up = p.toUpperCase();
+      const low = p.toLowerCase();
+      if (low === "all" || low === "skater" || low === "goalie") return;
+      if (up === "G") return; // hide raw G to prevent redundancy
+      list.push(p);
+    });
+    return list;
   }, [players]);
 
   // Apply filters: if multi-select set has items, use it; else fallback to single select
@@ -315,6 +334,23 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       });
     }
     if (posFilter === "ALL") return source;
+    if (posFilter === "Skater") {
+      return source.filter((r) => {
+        const posList = (r.player.displayPosition || "")
+          .split(",")
+          .map((p) => p.trim().toUpperCase());
+        // Skater encompasses F (C,LW,RW), D, and UTIL
+        return posList.some((p) => p && p !== "G");
+      });
+    }
+    if (posFilter === "Goalie") {
+      return source.filter((r) =>
+        (r.player.displayPosition || "")
+          .split(",")
+          .map((p) => p.trim().toUpperCase())
+          .includes("G")
+      );
+    }
     return source.filter((r) => r.player.displayPosition?.includes(posFilter));
   }, [withRosterAdjustedVorp, posFilter, selectedPositions]);
 
@@ -409,7 +445,7 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
               aria-label="Filter by position"
             >
               {availablePositions.map((p) => (
-                <option key={p} value={p}>
+                <option key={`opt-${p}`} value={p}>
                   {p}
                 </option>
               ))}
@@ -521,7 +557,11 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
           onKeyDown={onKeyDown}
         >
           {top.length === 0 ? (
-            <div className={styles.loading}>Computing suggestions…</div>
+            filtered.length === 0 ? (
+              <div className={styles.loading}>No matching players</div>
+            ) : (
+              <div className={styles.loading}>Computing suggestions…</div>
+            )
           ) : (
             top.map((r, idx) => {
               const id = String(r.player.playerId);

@@ -1409,6 +1409,79 @@ export const useProcessedProjectionsData = ({
         };
       });
 
+      // Name disambiguation and merge for any newly added source: map by standardized name to existing ids
+      try {
+        const { standardizePlayerName } = await import(
+          "lib/standardization/nameStandardization"
+        );
+        const mkKey = (s: string) =>
+          (s || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, "");
+
+        // For each target source, build an index from all other sources, then attempt to align ids
+        for (const targetCfg of augmentedActiveSourceConfigs) {
+          const nameToIds = new Map<string, Set<number>>();
+          const idToTeam = new Map<number, string>();
+
+          for (const cfg of augmentedActiveSourceConfigs) {
+            if (cfg.id === targetCfg.id) continue;
+            const rows = initialRawProjectionDataById[cfg.id]?.data || [];
+            const nameKey = cfg.originalPlayerNameKey;
+            const teamKey = cfg.teamKey;
+            const idKey = cfg.primaryPlayerIdKey;
+            for (const row of rows) {
+              const id = row[idKey];
+              if (id == null) continue;
+              const idNum = Number(id);
+              if (!Number.isFinite(idNum)) continue;
+              const rawName = (row as any)[nameKey];
+              const canon = standardizePlayerName(String(rawName || ""));
+              const key = mkKey(canon);
+              if (!nameToIds.has(key)) nameToIds.set(key, new Set());
+              nameToIds.get(key)!.add(idNum);
+              if (teamKey && (row as any)[teamKey]) {
+                const t = String((row as any)[teamKey]);
+                if (!idToTeam.has(idNum)) idToTeam.set(idNum, t);
+              }
+            }
+          }
+
+          const rows = initialRawProjectionDataById[targetCfg.id]?.data || [];
+          if (!rows.length) continue;
+          const nameKey = targetCfg.originalPlayerNameKey;
+          const teamKey = targetCfg.teamKey;
+          const idKey = targetCfg.primaryPlayerIdKey;
+          for (const row of rows) {
+            const rawName = (row as any)[nameKey];
+            if (!rawName) continue;
+            const canon = standardizePlayerName(String(rawName));
+            const key = mkKey(canon);
+            const candidates = nameToIds.get(key);
+            if (!candidates || candidates.size === 0) continue;
+            let resolved: number | null = null;
+            if (candidates.size === 1) {
+              resolved = Array.from(candidates)[0];
+            } else if (teamKey && (row as any)[teamKey]) {
+              const team = String((row as any)[teamKey]);
+              for (const id of candidates) {
+                if (idToTeam.get(id) === team) {
+                  resolved = id;
+                  break;
+                }
+              }
+            }
+            if (resolved != null) {
+              (row as any)[idKey] = resolved;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Name-based id alignment failed:", (e as any)?.message);
+      }
+
       // Collect unique player IDs
       const uniqueNhlPlayerIds = new Set<number>();
       augmentedActiveSourceConfigs.forEach((sourceConfig) => {

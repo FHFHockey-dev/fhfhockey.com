@@ -5,6 +5,7 @@ import {
   standardizePlayerName,
   titleCase
 } from "../../lib/standardization/nameStandardization";
+import supabase from "lib/supabase";
 import { standardizeColumnName } from "../../lib/standardization/columnStandardization";
 
 export type CsvPreviewRow = Record<string, string | number | null>;
@@ -42,12 +43,19 @@ export default function ImportCsvModal({
   onImported
 }: ImportCsvModalProps) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
-  const [rawRows, setRawRows] = useState<CsvPreviewRow[]>([]);
+  const [allRows, setAllRows] = useState<CsvPreviewRow[]>([]);
+  const [rawRows, setRawRows] = useState<CsvPreviewRow[]>([]); // preview (first 50)
   const [headers, setHeaders] = useState<HeaderConfig[]>([]);
   const [playerHeader, setPlayerHeader] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isParsing, setIsParsing] = useState(false);
   const [sourceName, setSourceName] = useState("Custom CSV"); // Default name
+  const [dbPlayers, setDbPlayers] = useState<
+    Array<{ id: number; fullName: string; position: string | null }>
+  >([]);
+  const [ambiguousChoices, setAmbiguousChoices] = useState<
+    Record<string, number | "">
+  >({}); // key: standardized name in preview, val: selected player id
 
   const focusFirst = useCallback(() => {
     const el = dialogRef.current;
@@ -62,6 +70,26 @@ export default function ImportCsvModal({
     if (open) {
       // focus trap start
       setTimeout(focusFirst, 0);
+      // Fetch players list for disambiguation
+      (async () => {
+        try {
+          const { data, error } = await supabase
+            .from("players")
+            .select("id, fullName, position")
+            .limit(10000);
+          if (!error && Array.isArray(data)) {
+            setDbPlayers(
+              data.map((r: any) => ({
+                id: Number(r.id),
+                fullName: String(r.fullName),
+                position: (r as any).position ?? null
+              }))
+            );
+          }
+        } catch {
+          // ignore network / unexpected errors
+        }
+      })();
     }
   }, [open, focusFirst]);
 
@@ -130,6 +158,7 @@ export default function ImportCsvModal({
           processed.find((h) => h.standardized === "Player_Name")?.original ||
           null;
         setPlayerHeader(guess);
+        setAllRows(data as CsvPreviewRow[]);
         setRawRows(data.slice(0, 50));
         setIsParsing(false);
       },
@@ -163,6 +192,34 @@ export default function ImportCsvModal({
     });
   }, [rawRows, headers, playerHeader]);
 
+  // Build ambiguities for preview rows: if standardized Player_Name matches multiple DB players by last name
+  const previewAmbiguities = useMemo(() => {
+    const list: Array<{
+      key: string;
+      candidates: Array<{ id: number; fullName: string }>;
+    }> = [];
+    const seen = new Set<string>();
+    mappedPreview.forEach((row) => {
+      const name = String((row as any).Player_Name || "");
+      if (!name) return;
+      const tokens = name.split(/\s+/);
+      const last = tokens.length > 1 ? tokens[tokens.length - 1] : name;
+      const cands = dbPlayers.filter(
+        (p) =>
+          p.fullName.split(" ").slice(-1)[0].toLowerCase() ===
+          last.toLowerCase()
+      );
+      if (cands.length > 1 && !seen.has(name)) {
+        seen.add(name);
+        list.push({
+          key: name,
+          candidates: cands.map((c) => ({ id: c.id, fullName: c.fullName }))
+        });
+      }
+    });
+    return list;
+  }, [mappedPreview, dbPlayers]);
+
   const missingRequired = useMemo(() => {
     const set = new Set(
       headers.filter((h) => h.selected).map((h) => h.standardized)
@@ -170,21 +227,55 @@ export default function ImportCsvModal({
     return REQUIRED_COLUMNS.filter((r) => !set.has(r));
   }, [headers]);
 
+  const mapRows = (rows: CsvPreviewRow[]) => {
+    const selected = headers.filter((h) => h.selected);
+    return rows.map((row) => {
+      const out: CsvPreviewRow = {};
+      let stdName = "";
+      for (const h of selected) {
+        const v = row[h.original];
+        if (playerHeader && h.original === playerHeader) {
+          stdName = standardizePlayerName(String(v ?? ""));
+          out[h.standardized] = stdName;
+        } else {
+          out[h.standardized] = v as any;
+        }
+      }
+      // If user selected a specific player for this standardized name, attach player_id
+      const sel = ambiguousChoices[stdName];
+      if (sel && typeof sel === "number") {
+        (out as any).player_id = sel;
+      }
+      return out;
+    });
+  };
+
   const handleConfirm = () => {
     if (missingRequired.length) {
       setError(`Missing required columns: ${missingRequired.join(", ")}`);
       return;
     }
+    if (previewAmbiguities.length > 0) {
+      const unresolved = previewAmbiguities.filter(
+        (a) => !ambiguousChoices[a.key]
+      );
+      if (unresolved.length > 0) {
+        setError(
+          `Resolve ambiguous names: ${unresolved.map((u) => u.key).join(", ")}`
+        );
+        return;
+      }
+    }
     const payload = {
       headers,
-      rows: mappedPreview,
+      rows: mapRows(allRows.length ? allRows : rawRows),
       sourceId: "custom_csv",
       label: sourceName // Use the custom name
     } as const;
     try {
       sessionStorage.setItem(
         SESSION_KEY,
-        JSON.stringify({ headers, rows: mappedPreview, label: sourceName })
+        JSON.stringify({ headers, rows: payload.rows, label: sourceName })
       );
     } catch {}
     onImported(payload);
@@ -342,6 +433,48 @@ export default function ImportCsvModal({
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* Ambiguity resolver for preview */}
+        {previewAmbiguities.length > 0 && (
+          <div style={{ marginTop: 12 }}>
+            <h3 style={{ margin: "8px 0" }}>Resolve Ambiguous Names</h3>
+            <p style={{ opacity: 0.8, marginTop: 0 }}>
+              Our autmatic name detection has flagged these players as
+              ambiguous. Please choose the correct one. Your selection will be
+              used to set <code>player_id</code> during import.
+            </p>
+            {previewAmbiguities.map((a) => (
+              <div
+                key={a.key}
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  alignItems: "center",
+                  marginBottom: 8
+                }}
+              >
+                <div style={{ minWidth: 160 }}>{a.key}</div>
+                <select
+                  value={ambiguousChoices[a.key] ?? ""}
+                  onChange={(e) =>
+                    setAmbiguousChoices((prev) => ({
+                      ...prev,
+                      [a.key]: e.target.value ? Number(e.target.value) : ""
+                    }))
+                  }
+                  style={{ minWidth: 240 }}
+                >
+                  <option value="">Select player…</option>
+                  {a.candidates.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.fullName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
           </div>
         )}
 

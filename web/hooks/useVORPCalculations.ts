@@ -96,77 +96,120 @@ export function useVORPCalculations({
         values.set(id, Number.isFinite(val) ? val : 0);
       });
     } else {
-      // categories composite (z-score sum)
-      const CAT_KEYS = [
+      // Categories composite score: weighted average of per-metric percentiles (0..100),
+      // additionally weighted by scarcity of metric totals (inverse of total supply).
+      // Determine active category keys from settings; fallback to six core skater cats.
+      const DEFAULT_CATS = [
         "GOALS",
         "ASSISTS",
         "PP_POINTS",
         "SHOTS_ON_GOAL",
         "HITS",
         "BLOCKED_SHOTS"
-      ] as const;
-      type CatKey = (typeof CAT_KEYS)[number];
-      // choose pool: remaining skaters for dynamic z, else full skater pool
-      const pool = (
-        baselineMode === "remaining" ? availablePlayers : players
-      ).filter((p) => !parseEligiblePositions(p.displayPosition).includes("G"));
-      const stats: Record<CatKey, number[]> = {
-        GOALS: [],
-        ASSISTS: [],
-        PP_POINTS: [],
-        SHOTS_ON_GOAL: [],
-        HITS: [],
-        BLOCKED_SHOTS: []
-      };
-      pool.forEach((p) => {
-        CAT_KEYS.forEach((k) => {
-          const v = (p.combinedStats?.[k]?.projected as number | null) ?? null;
+      ];
+      const allKeys: string[] = Object.keys(categoryWeights || {}).length
+        ? Object.keys(categoryWeights || {})
+        : DEFAULT_CATS;
+
+      // Identify goalie vs skater keys and inversion (lower is better) for some goalie metrics
+      const isGoalieKey = (k: string) =>
+        k.endsWith("_GOALIE") ||
+        k === "GOALS_AGAINST_AVERAGE" ||
+        k === "SAVE_PERCENTAGE" ||
+        k === "GOALS_AGAINST_GOALIE" ||
+        k === "SHOTS_AGAINST_GOALIE" ||
+        k === "SHUTOUTS_GOALIE" ||
+        k === "WINS_GOALIE" ||
+        k === "LOSSES_GOALIE" ||
+        k === "OTL_GOALIE";
+      const isInverted = (k: string) =>
+        k === "GOALS_AGAINST_AVERAGE" || k === "GOALS_AGAINST_GOALIE";
+
+      // Build per-key arrays from the appropriate player pool (skater vs goalie)
+      type StatArrays = Record<string, number[]>;
+      const arrays: StatArrays = {};
+      const sums: Record<string, number> = {};
+      const sourcePool = baselineMode === "remaining" ? availablePlayers : players;
+      allKeys.forEach((k) => {
+        arrays[k] = [];
+        sums[k] = 0;
+      });
+      sourcePool.forEach((p) => {
+        const elig = parseEligiblePositions(p.displayPosition);
+        const isG = elig.includes("G");
+        allKeys.forEach((k) => {
+          // Only collect stat for players relevant to this key type
+          if ((isGoalieKey(k) && !isG) || (!isGoalieKey(k) && isG)) return;
+          const v = (p.combinedStats as any)?.[k]?.projected as number | null;
           if (typeof v === "number" && Number.isFinite(v)) {
-            stats[k].push(v);
+            arrays[k].push(v);
+            sums[k] += v;
           }
         });
       });
-      const mean: Record<CatKey, number> = {
-        GOALS: 0,
-        ASSISTS: 0,
-        PP_POINTS: 0,
-        SHOTS_ON_GOAL: 0,
-        HITS: 0,
-        BLOCKED_SHOTS: 0
-      };
-      const std: Record<CatKey, number> = {
-        GOALS: 0,
-        ASSISTS: 0,
-        PP_POINTS: 0,
-        SHOTS_ON_GOAL: 0,
-        HITS: 0,
-        BLOCKED_SHOTS: 0
-      };
-      CAT_KEYS.forEach((k) => {
-        const arr = stats[k];
-        if (arr.length > 0) {
-          const m = arr.reduce((s, x) => s + x, 0) / arr.length;
-          mean[k] = m;
-          const variance =
-            arr.reduce((s, x) => s + Math.pow(x - m, 2), 0) / arr.length;
-          std[k] = Math.sqrt(variance) || 0;
-        }
+
+      // Pre-sort arrays and compute scarcity weights (inverse of totals; normalized to mean 1)
+      const sorted: Record<string, number[]> = {};
+      const scarcity: Record<string, number> = {};
+      const invs: number[] = [];
+      allKeys.forEach((k) => {
+        const arr = arrays[k];
+        sorted[k] = arr.slice().sort((a, b) => a - b);
+        const inv = 1 / Math.max(1e-6, sums[k]);
+        scarcity[k] = inv;
+        invs.push(inv);
       });
+      const meanInv = invs.length
+        ? invs.reduce((s, x) => s + x, 0) / invs.length
+        : 1;
+      allKeys.forEach((k) => {
+        scarcity[k] = scarcity[k] / meanInv; // mean normalize ~1.0
+      });
+
+      // Helper: empirical percentile (0..100) for value within sorted array
+      const percentile = (arr: number[], v: number, invert: boolean) => {
+        if (!arr || arr.length === 0) return 50;
+        let lo = 0,
+          hi = arr.length;
+        while (lo < hi) {
+          const mid = (lo + hi) >> 1;
+          if (arr[mid] <= v) lo = mid + 1;
+          else hi = mid;
+        }
+        const pct = (lo / arr.length) * 100; // proportion <= v
+        return invert ? 100 - pct : pct;
+      };
+
+      // Compute composite 0..100 score per player based on selected keys
       players.forEach((p) => {
-        let sum = 0;
-        CAT_KEYS.forEach((k) => {
-          const raw =
-            (p.combinedStats?.[k]?.projected as number | null) ?? null;
-          const w =
-            categoryWeights && typeof categoryWeights[k] === "number"
+        const id = String(p.playerId);
+        const elig = parseEligiblePositions(p.displayPosition);
+        const isG = elig.includes("G");
+        const keysForPlayer = allKeys.filter((k) =>
+          isG ? isGoalieKey(k) : !isGoalieKey(k)
+        );
+        if (keysForPlayer.length === 0) {
+          values.set(id, 0);
+          return;
+        }
+        let num = 0;
+        let den = 0;
+        keysForPlayer.forEach((k) => {
+          const raw = (p.combinedStats as any)?.[k]?.projected as number | null;
+          if (typeof raw !== "number" || !Number.isFinite(raw)) return;
+          const arr = sorted[k];
+          if (!arr || arr.length === 0) return;
+          const pct = percentile(arr, raw, isInverted(k));
+          const userW =
+            categoryWeights && typeof (categoryWeights as any)[k] === "number"
               ? (categoryWeights as any)[k]
               : 1;
-          if (typeof raw === "number" && Number.isFinite(raw) && std[k] > 0) {
-            const z = (raw - mean[k]) / std[k];
-            sum += w * z;
-          }
+          const w = userW * (scarcity[k] || 1);
+          num += w * pct;
+          den += w;
         });
-        values.set(String(p.playerId), Number.isFinite(sum) ? sum : 0);
+        const score = den > 0 ? num / den : 0;
+        values.set(id, Number.isFinite(score) ? score : 0);
       });
     }
 
