@@ -38,6 +38,7 @@ interface ProjectionsTableProps {
   leagueType?: "points" | "categories";
   // NEW: forward grouping display mode (C/LW/RW vs FWD)
   forwardGrouping?: "split" | "fwd";
+  activeCategoryKeys?: string[];
 }
 
 type SortableField =
@@ -69,7 +70,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   onNeedAlphaChange,
   nextPickNumber,
   forwardGrouping = "split",
-  leagueType = "points"
+  leagueType = "points",
+  activeCategoryKeys = []
 }) => {
   const [sortField, setSortField] = useState<SortableField>("yahooAvgPick");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -82,6 +84,45 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   );
   // NEW: configurable risk standard deviation (in picks)
   const [riskSd, setRiskSd] = useState<number>(12);
+  // Favorites
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const raw = window.localStorage.getItem("projections.favorites");
+      if (!raw) return new Set();
+      const arr = JSON.parse(raw);
+      return new Set((Array.isArray(arr) ? arr : []).map(String));
+    } catch {
+      return new Set();
+    }
+  });
+  const [favoritesOnly, setFavoritesOnly] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("projections.favoritesOnly") === "true";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        "projections.favorites",
+        JSON.stringify(Array.from(favoriteIds))
+      );
+      window.localStorage.setItem(
+        "projections.favoritesOnly",
+        String(favoritesOnly)
+      );
+    } catch {}
+  }, [favoriteIds, favoritesOnly]);
+  const toggleFavorite = (id: string) => {
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  // Optional stat sort
+  const [statSortKey, setStatSortKey] = useState<string>("");
   // NEW: hide drafted toggle (persisted)
   const [hideDrafted, setHideDrafted] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -481,7 +522,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       let aValue: any;
       let bValue: any;
 
-      if (sortField === "fantasyPoints") {
+      if (statSortKey) {
+        const av = (a.combinedStats as any)?.[statSortKey]?.projected;
+        const bv = (b.combinedStats as any)?.[statSortKey]?.projected;
+        aValue = typeof av === "number" ? av : -Infinity;
+        bValue = typeof bv === "number" ? bv : -Infinity;
+      } else if (sortField === "fantasyPoints") {
         aValue = a.fantasyPoints.projected;
         bValue = b.fantasyPoints.projected; // fix: use 'b'
       } else if (sortField === "yahooAvgPick") {
@@ -554,7 +600,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     sortDirection,
     vorpMap,
     needWeightEnabled,
-    riskMap
+    riskMap,
+    statSortKey
   ]);
 
   // Helpers for percentile calculations
