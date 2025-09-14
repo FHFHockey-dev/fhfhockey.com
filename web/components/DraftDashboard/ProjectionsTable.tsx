@@ -1586,6 +1586,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                     <td className={styles.colFav}>
                       <input
                         type="checkbox"
+                        className={styles.compareCheckbox}
                         checked={selectedIds.has(key)}
                         onChange={() => toggleSelected(key)}
                         aria-label={`Select ${player.fullName}`}

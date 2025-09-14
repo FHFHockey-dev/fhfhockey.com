@@ -116,6 +116,46 @@
   gap: 6px;
   width: 100%;
 }
+
+/* Compare selection checkbox styling */
+.compareCheckbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid v.$border-secondary;
+  border-radius: v.$border-radius-sm;
+  background: v.$background-dark;
+  display: inline-grid;
+  place-content: center;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+
+  &:hover {
+    border-color: v.$primary-color;
+  }
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.35);
+    border-color: v.$primary-color;
+  }
+  &::after {
+    content: "";
+    width: 6px;
+    height: 10px;
+    transform: rotate(45deg) scale(0);
+    border-right: 2px solid v.$color-white;
+    border-bottom: 2px solid v.$color-white;
+    transition: transform 0.12s ease-in-out;
+  }
+  &:checked {
+    background: v.$primary-color;
+    border-color: v.$primary-color;
+  }
+  &:checked::after {
+    transform: rotate(45deg) scale(1);
+  }
+}
 .controlToggleBtn {
   background: v.$background-dark;
   border: 1px solid v.$border-secondary;

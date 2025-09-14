@@ -521,7 +521,10 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
         try {
           const raw = sessionStorage.getItem("draft.customCsvList.v2");
           if (raw) {
-            const list = JSON.parse(raw) as Array<{ id: string; label: string }>;
+            const list = JSON.parse(raw) as Array<{
+              id: string;
+              label: string;
+            }>;
             const found = list.find((e) => e.id === id);
             if (found) return found.label || id;
           }
@@ -853,7 +856,50 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     return merged
       .filter((k) => !existing.has(k))
       .filter((k) => /[A-Z0-9_]/.test(k));
-  }, [availableSkaterStatKeys, availableGoalieStatKeys, settings.categoryWeights]);
+  }, [
+    availableSkaterStatKeys,
+    availableGoalieStatKeys,
+    settings.categoryWeights
+  ]);
+
+  // Ensure core goalie category weights (GA, SV, SV%) are present by default in categories leagues.
+  // Underlying stat keys: GOALS_AGAINST_GOALIE -> GA, SAVES_GOALIE -> SV, SAVE_PERCENTAGE -> SV%.
+  React.useEffect(() => {
+    if (leagueType !== "categories") return;
+    const current = settings.categoryWeights || {};
+    const required = [
+      "GOALS_AGAINST_GOALIE",
+      "SAVES_GOALIE",
+      "SAVE_PERCENTAGE"
+    ];
+    let changed = false;
+    const next = { ...current } as Record<string, number>;
+    for (const key of required) {
+      if (!(key in next)) {
+        next[key] = 1; // default weight
+        changed = true;
+      }
+    }
+    // Always ensure ordering puts required goalie stats first so their sliders are visible
+    // in the collapsed (top 8) view.
+    const orderedKeys = [
+      ...required,
+      ...Object.keys(next).filter((k) => !required.includes(k))
+    ];
+    const ordered: Record<string, number> = {};
+    let orderChanged = false;
+    orderedKeys.forEach((k, idx) => {
+      ordered[k] = next[k];
+      // Detect ordering difference by comparing position in original key sequence
+      if (!orderChanged) {
+        const originalIdx = Object.keys(current).indexOf(k);
+        if (originalIdx !== -1 && originalIdx !== idx) orderChanged = true;
+      }
+    });
+    if (changed || orderChanged) {
+      onSettingsChange({ categoryWeights: ordered });
+    }
+  }, [leagueType, settings.categoryWeights, onSettingsChange]);
   const [newCategoryKey, setNewCategoryKey] = React.useState("");
   const [newCategoryWeight, setNewCategoryWeight] = React.useState("1");
   const handleAddCategory = () => {
@@ -1293,118 +1339,183 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
             </legend>
             {leagueType === "categories" ? (
               <>
-                <div className={styles.scoringGrid}>
-                  {Object.entries(settings.categoryWeights || {})
-                    .slice(0, showManageCategories ? undefined : 8)
-                    .map(([k, w]) => (
-                      <div key={k} className={styles.scoringSetting}>
-                        <label
-                          className={styles.statLabel}
-                          htmlFor={`cat-${k}`}
+                {/* Split skater and goalie category weights into two rows */}
+                {(() => {
+                  const all = Object.entries(settings.categoryWeights || {});
+                  const goalieSet = new Set(availableGoalieStatKeys || []);
+                  const skaterEntries = all.filter(([k]) => !goalieSet.has(k));
+                  const goalieEntries = all.filter(([k]) => goalieSet.has(k));
+                  // Ensure required goalie categories (including SV%) are always present in collapsed view
+                  const REQUIRED_GOALIE_CAT_KEYS = [
+                    "GOALS_AGAINST_GOALIE",
+                    "SAVES_GOALIE",
+                    "SAVE_PERCENTAGE"
+                  ];
+                  let visibleSkater: [string, number][] = skaterEntries;
+                  let visibleGoalie: [string, number][] = goalieEntries;
+                  if (!showManageCategories) {
+                    const requiredGoalieEntries = goalieEntries.filter(([k]) =>
+                      REQUIRED_GOALIE_CAT_KEYS.includes(k)
+                    );
+                    const otherGoalieEntries = goalieEntries.filter(
+                      ([k]) => !REQUIRED_GOALIE_CAT_KEYS.includes(k)
+                    );
+                    // Prioritize required goalie -> skaters -> remaining goalie when collapsed
+                    const prioritized = [
+                      ...requiredGoalieEntries,
+                      ...skaterEntries,
+                      ...otherGoalieEntries
+                    ];
+                    const limited = prioritized.slice(0, 8);
+                    const limitedKeys = new Set(limited.map(([k]) => k));
+                    visibleSkater = skaterEntries.filter(([k]) =>
+                      limitedKeys.has(k)
+                    );
+                    visibleGoalie = goalieEntries.filter(([k]) =>
+                      limitedKeys.has(k)
+                    );
+                  }
+                  const renderEntry = (k: string, w: number) => (
+                    <div key={k} className={styles.scoringSetting}>
+                      <label className={styles.statLabel} htmlFor={`cat-${k}`}>
+                        {getShortLabel(k)}
+                      </label>
+                      <input
+                        id={`cat-${k}`}
+                        type="range"
+                        min={0}
+                        max={2}
+                        step={0.1}
+                        value={typeof w === "number" ? w : 1}
+                        aria-label={`${k} weight`}
+                        aria-valuemin={0}
+                        aria-valuemax={2}
+                        aria-valuenow={typeof w === "number" ? w : 1}
+                        aria-valuetext={`${(typeof w === "number" ? w : 1).toFixed(1)}x`}
+                        onChange={(e) =>
+                          onSettingsChange({
+                            categoryWeights: {
+                              ...(settings.categoryWeights || {}),
+                              [k]: parseFloat(e.target.value)
+                            }
+                          })
+                        }
+                        className={styles.rangeInput}
+                      />
+                      <div className={styles.weightLabel}>
+                        {(typeof w === "number" ? w : 1).toFixed(1)}x
+                      </div>
+                      {showManageCategories && (
+                        <button
+                          type="button"
+                          className={styles.removeStatBtn}
+                          aria-label={`Remove ${k}`}
+                          title="Remove category"
+                          onClick={() => handleRemoveCategory(k)}
                         >
-                          {getShortLabel(k)}
-                        </label>
-                        <input
-                          id={`cat-${k}`}
-                          type="range"
-                          min={0}
-                          max={2}
-                          step={0.1}
-                          value={typeof w === "number" ? w : 1}
-                          aria-label={`${k} weight`}
-                          aria-valuemin={0}
-                          aria-valuemax={2}
-                          aria-valuenow={typeof w === "number" ? w : 1}
-                          aria-valuetext={`${(typeof w === "number" ? w : 1).toFixed(1)}x`}
-                          onChange={(e) =>
-                            onSettingsChange({
-                              categoryWeights: {
-                                ...(settings.categoryWeights || {}),
-                                [k]: parseFloat(e.target.value)
-                              }
-                            })
-                          }
-                          className={styles.rangeInput}
-                        />
-                        <div className={styles.weightLabel}>
-                          {(typeof w === "number" ? w : 1).toFixed(1)}x
-                        </div>
-                        {showManageCategories && (
-                          <button
-                            type="button"
-                            className={styles.removeStatBtn}
-                            aria-label={`Remove ${k}`}
-                            title="Remove category"
-                            onClick={() => handleRemoveCategory(k)}
-                          >
-                            ✕
-                          </button>
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  );
+                  return (
+                    <>
+                      <div
+                        className={styles.subsectionTitle}
+                        style={{ marginTop: 4 }}
+                      >
+                        Skater Categories
+                      </div>
+                      <div className={styles.scoringGrid}>
+                        {visibleSkater.map(([k, w]) =>
+                          renderEntry(k, w as number)
                         )}
                       </div>
-                    ))}
-                  {!showManageCategories && (
-                    <button
-                      className={styles.expandButton}
-                      type="button"
-                      aria-expanded={showManageCategories}
-                      onClick={() => {
-                        setNewCategoryKey("");
-                        setNewCategoryWeight("1");
-                        setShowManageCategories(true);
-                      }}
-                      title="Manage / Add categories"
-                    >
-                      {`+${Math.max(0, Object.keys(settings.categoryWeights || {}).length - 8)} more`}
-                    </button>
-                  )}
-                </div>
-                {showManageCategories && (
-                  <div className={styles.inlineManage}>
-                    <select
-                      value={newCategoryKey}
-                      onChange={(e) => setNewCategoryKey(e.target.value)}
-                      className={styles.select}
-                      aria-label="Select category to add"
-                    >
-                      <option value="">Select Category...</option>
-                      {addableCategoryStats.map((k) => (
-                        <option key={k} value={k}>
-                          {getShortLabel(k)}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      step={0.1}
-                      min={0}
-                      max={2}
-                      className={`${styles.pointsInput} ${styles.pointsInputNarrow}`}
-                      value={newCategoryWeight}
-                      aria-label="New category weight"
-                      onChange={(e) => setNewCategoryWeight(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      className={styles.actionButton}
-                      onClick={handleAddCategory}
-                      disabled={!newCategoryKey}
-                    >
-                      Add Category
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.inlineResetBtn}
-                      onClick={() => setShowManageCategories(false)}
-                    >
-                      Hide
-                    </button>
-                  </div>
-                )}
-                {showManageCategories && addableCategoryStats.length === 0 && (
-                  <div className={styles.noAddableStatsMsg}>
-                    All available skater projection metrics are already added.
-                  </div>
-                )}
+                      {visibleGoalie.length > 0 && (
+                        <>
+                          <div
+                            className={styles.subsectionTitle}
+                            style={{ marginTop: 12 }}
+                          >
+                            Goalie Categories
+                          </div>
+                          <div className={styles.scoringGrid}>
+                            {visibleGoalie.map(([k, w]) =>
+                              renderEntry(k, w as number)
+                            )}
+                          </div>
+                        </>
+                      )}
+                      {!showManageCategories &&
+                        skaterEntries.length + goalieEntries.length > 8 && (
+                          <button
+                            className={styles.expandButton}
+                            type="button"
+                            aria-expanded={showManageCategories}
+                            onClick={() => {
+                              setNewCategoryKey("");
+                              setNewCategoryWeight("1");
+                              setShowManageCategories(true);
+                            }}
+                            title="Manage / Add categories"
+                          >
+                            {`+${Math.max(0, skaterEntries.length + goalieEntries.length - 8)} more`}
+                          </button>
+                        )}
+                      {showManageCategories && (
+                        <div className={styles.inlineManage}>
+                          <select
+                            value={newCategoryKey}
+                            onChange={(e) => setNewCategoryKey(e.target.value)}
+                            className={styles.select}
+                            aria-label="Select category to add"
+                          >
+                            <option value="">Select Category...</option>
+                            {addableCategoryStats.map((k) => (
+                              <option key={k} value={k}>
+                                {getShortLabel(k)}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="number"
+                            step={0.1}
+                            min={0}
+                            max={2}
+                            className={`${styles.pointsInput} ${styles.pointsInputNarrow}`}
+                            value={newCategoryWeight}
+                            aria-label="New category weight"
+                            onChange={(e) =>
+                              setNewCategoryWeight(e.target.value)
+                            }
+                          />
+                          <button
+                            type="button"
+                            className={styles.actionButton}
+                            onClick={handleAddCategory}
+                            disabled={!newCategoryKey}
+                          >
+                            Add Category
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.inlineResetBtn}
+                            onClick={() => setShowManageCategories(false)}
+                          >
+                            Hide
+                          </button>
+                        </div>
+                      )}
+                      {showManageCategories &&
+                        addableCategoryStats.length === 0 && (
+                          <div className={styles.noAddableStatsMsg}>
+                            All available skater & goalie category metrics are
+                            already added.
+                          </div>
+                        )}
+                    </>
+                  );
+                })()}
               </>
             ) : (
               <>
@@ -1898,7 +2009,11 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                   {/* Autocomplete first to reduce vertical bounce */}
                   <div className={styles.playerAutocompleteWrap}>
                     <PlayerAutocomplete
-                      playerId={keeperSelectedPlayerId ? Number(keeperSelectedPlayerId) : undefined}
+                      playerId={
+                        keeperSelectedPlayerId
+                          ? Number(keeperSelectedPlayerId)
+                          : undefined
+                      }
                       onPlayerIdChange={(id) => {
                         setKeeperSelectedPlayerId(id ? String(id) : undefined);
                       }}
@@ -2237,9 +2352,14 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                       const displayName = (() => {
                         if (!isCustom) return src?.displayName || id;
                         try {
-                          const raw = sessionStorage.getItem("draft.customCsvList.v2");
+                          const raw = sessionStorage.getItem(
+                            "draft.customCsvList.v2"
+                          );
                           if (raw) {
-                            const list = JSON.parse(raw) as Array<{ id: string; label: string }>;
+                            const list = JSON.parse(raw) as Array<{
+                              id: string;
+                              label: string;
+                            }>;
                             const found = list.find((e) => e.id === id);
                             if (found) return found.label || id;
                           }
@@ -2346,10 +2466,11 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                 >
                   {goalieSourceControls &&
                     orderSources(goalieSourceControls)
-                      .filter(([id]) =>
-                        PROJECTION_SOURCES_CONFIG.some(
-                          (s) => s.id === id && s.playerType === "goalie"
-                        ) || id.startsWith("custom_csv")
+                      .filter(
+                        ([id]) =>
+                          PROJECTION_SOURCES_CONFIG.some(
+                            (s) => s.id === id && s.playerType === "goalie"
+                          ) || id.startsWith("custom_csv")
                       )
                       .map(([id, ctrl]) => {
                         const src = PROJECTION_SOURCES_CONFIG.find(
@@ -2359,9 +2480,14 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                         const displayName = (() => {
                           if (!isCustom) return src?.displayName || id;
                           try {
-                            const raw = sessionStorage.getItem("draft.customCsvList.v2");
+                            const raw = sessionStorage.getItem(
+                              "draft.customCsvList.v2"
+                            );
                             if (raw) {
-                              const list = JSON.parse(raw) as Array<{ id: string; label: string }>;
+                              const list = JSON.parse(raw) as Array<{
+                                id: string;
+                                label: string;
+                              }>;
                               const found = list.find((e) => e.id === id);
                               if (found) return found.label || id;
                             }
@@ -2427,37 +2553,37 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                 aria-valuetext={`${weightVal.toFixed(1)}x`}
                                 className={`${styles.rangeInput} ${styles.popoverSlider}`}
                               />
-                            <input
-                              type="number"
-                              step={0.1}
-                              min={0}
-                              max={2}
-                              value={weightVal}
-                              onChange={(e) =>
-                                handleDirectWeightInput(
-                                  id,
-                                  parseFloat(e.target.value || "0"),
-                                  true
-                                )
-                              }
-                              disabled={!ctrl.isSelected}
-                              className={styles.weightNumberInput}
-                              aria-label={`${displayName} numeric weight`}
-                            />
-                            {isCustom && onRemoveCustomSource && (
-                              <button
-                                type="button"
-                                className={styles.inlineResetBtn}
-                                onClick={() => onRemoveCustomSource(id)}
-                                title="Remove this custom source"
-                              >
-                                Remove
-                              </button>
-                            )}
+                              <input
+                                type="number"
+                                step={0.1}
+                                min={0}
+                                max={2}
+                                value={weightVal}
+                                onChange={(e) =>
+                                  handleDirectWeightInput(
+                                    id,
+                                    parseFloat(e.target.value || "0"),
+                                    true
+                                  )
+                                }
+                                disabled={!ctrl.isSelected}
+                                className={styles.weightNumberInput}
+                                aria-label={`${displayName} numeric weight`}
+                              />
+                              {isCustom && onRemoveCustomSource && (
+                                <button
+                                  type="button"
+                                  className={styles.inlineResetBtn}
+                                  onClick={() => onRemoveCustomSource(id)}
+                                  title="Remove this custom source"
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                 </div>
               </div>
             )}
