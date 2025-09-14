@@ -8,6 +8,7 @@ import { PlayerVorpMetrics } from "hooks/useVORPCalculations";
 import styles from "./ProjectionsTable.module.scss";
 import supabase from "lib/supabase";
 import { STATS_MASTER_LIST } from "lib/projectionsConfig/statsMasterList";
+import type { StatDefinition } from "lib/projectionsConfig/statsMasterList";
 
 interface ProjectionsTableProps {
   players: ProcessedPlayer[];
@@ -125,10 +126,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   // Optional stat sort
   const [statSortKey, setStatSortKey] = useState<string>("");
   const statDefByKey = useMemo(() => {
-    const m = new Map<string, { displayName: string; higherIsBetter: boolean }>();
-    STATS_MASTER_LIST.forEach((s) =>
-      m.set(s.key, { displayName: s.displayName, higherIsBetter: s.higherIsBetter })
-    );
+    const m = new Map<string, StatDefinition>();
+    STATS_MASTER_LIST.forEach((s) => m.set(s.key, s));
     return m;
   }, []);
 
@@ -182,7 +181,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     if (value == null || Number.isNaN(value)) return "-";
     const def = statDefByKey.get(key);
     if (!def) return String(value);
-    const dp = (def as any).decimalPlaces ?? (def.dataType === "percentage" ? 1 : 0);
+    const dp = def.decimalPlaces ?? (def.dataType === "percentage" ? 1 : 0);
     if (def.dataType === "percentage") {
       return `${(value * 100).toFixed(dp)}%`;
     }
