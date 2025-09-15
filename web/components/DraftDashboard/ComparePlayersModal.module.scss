@@ -3,7 +3,7 @@
 @use "styles/panel" as p;
 
 /* ==========================================================
-   Compare Players Modal (Revamped) - FLATTENED
+   Compare Players Modal (Revamped) - VIBRANT
    ========================================================== */
 
 .backdrop {
@@ -12,23 +12,23 @@
   background:
     radial-gradient(
       circle at 30% 40%,
-      rgba(0, 140, 255, 0.15),
-      transparent 70%
+      rgba(v.$primary-color, 0.25),
+      transparent 50%
     ),
-    rgba(0, 0, 0, 0.82);
-  backdrop-filter: blur(10px) saturate(140%);
-  -webkit-backdrop-filter: blur(10px) saturate(140%);
+    rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
   display: flex;
-  align-items: flex-start;
+  align-items: center; // vertically center modal
   justify-content: center;
   padding: clamp(12px, 3vh, 32px) clamp(10px, 2vw, 28px);
   z-index: v.$mobile-z-index-modal;
-  overflow-y: auto;
+  overflow-y: hidden;
 }
 
 .modal {
   width: min(1400px, 100%);
-  max-height: 100%;
+  max-height: calc(100vh - (2 * clamp(12px, 3vh, 32px)));
   display: flex;
   flex-direction: column;
   border-radius: v.$border-radius-lg;
@@ -36,21 +36,19 @@
   background:
     linear-gradient(
       140deg,
-      rgba(255, 255, 255, 0.04),
-      rgba(255, 255, 255, 0.01)
+      rgba(252, 252, 252, 0.6),
+      rgba(255, 255, 255, 0.1) 60%
     ),
-    linear-gradient(
-      155deg,
-      color.adjust(v.$background-dark, $lightness: 4%) 0%,
-      color.adjust(v.$background-dark, $lightness: -6%) 100%
-    );
-  border: 1px solid rgba(255, 255, 255, 0.12);
+    linear-gradient(155deg, var(--team-primary), var(--team-dark));
+  background-blend-mode: lighten;
+  border: 1px solid rgba(v.$primary-color, 0.25);
   box-shadow:
-    0 8px 32px -6px rgba(0, 0, 0, 0.7),
-    0 0 0 1px rgba(v.$primary-color, 0.25),
-    0 0 44px -8px rgba(v.$primary-color, 0.4);
+    0 12px 40px -8px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(v.$primary-color, 0.35),
+    0 0 55px -10px rgba(v.$primary-color, 0.5);
   overflow: hidden;
   animation: modalIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  overflow-y: auto;
 }
 
 @keyframes modalIn {
@@ -74,10 +72,10 @@
   padding: v.$space-md clamp(12px, 2vw, v.$space-xl);
   background: linear-gradient(
     120deg,
-    color.adjust(v.$background-dark, $lightness: -2%),
-    color.adjust(v.$background-dark, $lightness: -10%)
+    color.adjust(v.$background-dark, $lightness: -1%),
+    color.adjust(v.$background-dark, $lightness: -12%)
   );
-  border-bottom: 2px solid color.adjust(v.$primary-color, $lightness: -8%);
+  border-bottom: 2px solid v.$primary-color;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -88,8 +86,9 @@
   font-weight: 900;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  font-size: clamp(1.05rem, 2.2vw, 1.45rem);
+  font-size: clamp(1.1rem, 2.2vw, 1.5rem);
   color: v.$color-white;
+  text-shadow: 0 0 8px rgba(v.$primary-color, 0.5);
   display: flex;
   align-items: baseline;
   gap: 0.75ch;
@@ -97,26 +96,26 @@
 .title::after {
   content: "Radar";
   font-weight: 300;
-  opacity: 0.5;
-  letter-spacing: 0.15em;
+  opacity: 0.6;
+  letter-spacing: 0.18em;
   font-size: 0.7em;
 }
 
 .closeBtn {
   @include v.reset-button;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.25rem;
+  font-size: 1.3rem;
   font-weight: 600;
-  border-radius: 10px;
+  border-radius: 12px;
   color: v.$text-secondary;
   background: linear-gradient(
     145deg,
-    color.adjust(v.$background-dark, $lightness: 4%),
-    color.adjust(v.$background-dark, $lightness: -4%)
+    color.adjust(v.$background-dark, $lightness: 5%),
+    color.adjust(v.$background-dark, $lightness: -5%)
   );
   border: 1px solid v.$border-secondary;
   transition: all 0.35s v.$transition-easing;
@@ -125,19 +124,19 @@
     color: v.$primary-color;
     border-color: v.$primary-color;
     box-shadow:
-      0 0 0 1px rgba(v.$primary-color, 0.4),
-      0 0 22px -4px v.$primary-color;
+      0 0 0 1px rgba(v.$primary-color, 0.5),
+      0 0 28px -4px v.$primary-color;
   }
 }
 
 .grid3 {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(340px, 1.15fr) minmax(
-      260px,
+  grid-template-columns: minmax(280px, 1fr) minmax(360px, 1.2fr) minmax(
+      280px,
       1fr
     );
-  gap: clamp(v.$space-sm, 1.6vw, v.$space-lg);
-  padding: v.$space-lg clamp(v.$space-sm, 1.5vw, v.$space-xl) v.$space-xl;
+  gap: clamp(v.$space-md, 1.8vw, v.$space-lg);
+  padding: v.$space-lg clamp(v.$space-md, 1.8vw, v.$space-xl) v.$space-xl;
   overflow: auto;
   position: relative;
   @include v.custom-scrollbar(v.$primary-color, v.$background-medium);
@@ -153,24 +152,20 @@
   display: flex;
   flex-direction: column;
   border-radius: v.$border-radius-lg;
-  padding: v.$space-sm v.$space-md v.$space-md;
+  padding: v.$space-md v.$space-lg;
   background:
     linear-gradient(
       150deg,
-      rgba(255, 255, 255, 0.04),
+      rgba(255, 255, 255, 0.05),
       rgba(255, 255, 255, 0) 55%
     ),
-    linear-gradient(
-      155deg,
-      var(--team-primary),
-      color-mix(in srgb, var(--team-primary), black 30%)
-    );
+    linear-gradient(155deg, var(--team-primary), var(--team-dark));
   background-blend-mode: overlay;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow:
-    0 0 0 1px rgba(var(--team-accent-rgb, 7, 170, 226), 0.35),
-    0 6px 18px -2px rgba(0, 0, 0, 0.6),
-    0 0 28px -6px var(--team-accent, v.$primary-color);
+    0 0 0 1px rgba(var(--team-accent-rgb, 7, 170, 226), 0.45),
+    0 8px 24px -4px rgba(0, 0, 0, 0.7),
+    0 0 32px -8px var(--team-accent, v.$primary-color);
   overflow: hidden;
   isolation: isolate;
   transition:
@@ -182,35 +177,35 @@
   position: absolute;
   inset: 0;
   background: radial-gradient(
-    circle at 30% 25%,
+    circle at 30% 20%,
     var(--team-accent, v.$primary-color),
-    transparent 70%
+    transparent 65%
   );
   mix-blend-mode: overlay;
-  opacity: 0.35;
+  opacity: 0.45;
   pointer-events: none;
 }
 .playerCard:hover {
-  transform: translateY(-4px);
+  transform: translateY(-6px) scale(1.01);
   box-shadow:
-    0 0 0 1px rgba(var(--team-accent-rgb, 7, 170, 226), 0.55),
-    0 14px 30px -4px rgba(0, 0, 0, 0.75),
-    0 0 44px -6px var(--team-accent, v.$primary-color);
+    0 0 0 1px rgba(var(--team-accent-rgb, 7, 170, 226), 0.65),
+    0 16px 36px -6px rgba(0, 0, 0, 0.8),
+    0 0 50px -8px var(--team-accent, v.$primary-color);
 }
 .playerHeader {
   display: flex;
   align-items: flex-start;
-  gap: v.$space-sm;
-  margin-bottom: v.$space-sm;
+  gap: v.$space-md;
+  margin-bottom: v.$space-md;
 }
 .headshot {
-  width: 84px;
-  height: 84px;
+  width: 90px;
+  height: 90px;
   object-fit: cover;
-  border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
   background: #000;
-  box-shadow: 0 4px 18px -4px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 6px 22px -6px rgba(0, 0, 0, 0.8);
 }
 .nameAndLogo {
   flex: 1;
@@ -220,78 +215,78 @@
   gap: v.$space-sm;
 }
 .teamLogo {
-  width: 46px;
-  height: 46px;
+  width: 50px;
+  height: 50px;
   object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.7));
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.8));
 }
 .playerName {
   font-family: v.$font-family-accent, sans-serif;
   font-weight: 800;
-  letter-spacing: 0.11em;
-  line-height: 1.1;
-  font-size: clamp(0.72rem, 1.25vw, 0.85rem);
+  letter-spacing: 0.12em;
+  line-height: 1.15;
+  font-size: clamp(0.8rem, 1.4vw, 0.95rem);
   text-transform: uppercase;
   color: var(--team-accent, v.$primary-color);
   text-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.7),
-    0 0 10px rgba(var(--team-accent-rgb, 7, 170, 226), 0.6);
+    0 2px 4px rgba(0, 0, 0, 0.8),
+    0 0 12px rgba(var(--team-accent-rgb, 7, 170, 226), 0.7);
   max-width: 20ch;
 }
 
 .radarWrap {
   position: relative;
-  border-radius: 18px;
+  border-radius: 20px;
   padding: v.$space-sm v.$space-sm v.$space-md;
   background:
     linear-gradient(
       140deg,
-      rgba(255, 255, 255, 0.06),
+      rgba(255, 255, 255, 0.08),
       rgba(255, 255, 255, 0) 60%
     ),
     linear-gradient(
       160deg,
-      color.adjust(v.$background-dark, $lightness: 3%),
-      color.adjust(v.$background-dark, $lightness: -4%)
+      color.adjust(v.$background-dark, $lightness: 4%),
+      color.adjust(v.$background-dark, $lightness: -6%)
     );
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 4px 14px -4px rgba(0, 0, 0, 0.6);
-  margin-bottom: v.$space-sm;
-  min-height: 280px;
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 6px 18px -6px rgba(0, 0, 0, 0.7);
+  margin-bottom: v.$space-md;
+  min-height: 300px;
 }
 .radarWrap::after {
   content: "Percentile";
   position: absolute;
-  top: 6px;
-  right: 10px;
-  font-size: 0.55rem;
-  letter-spacing: 0.15em;
+  top: 8px;
+  right: 12px;
+  font-size: 0.6rem;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .statList {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   margin-top: auto;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 }
 .statRow {
   display: flex;
   justify-content: space-between;
-  gap: v.$space-xs;
-  padding: 3px 6px;
+  gap: v.$space-sm;
+  padding: 4px 8px;
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.05),
     rgba(255, 255, 255, 0)
   );
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 6px;
-  line-height: 1.2;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  line-height: 1.3;
   transition:
     background 0.3s,
     border-color 0.3s;
@@ -305,33 +300,34 @@
   border-color: var(--team-accent, v.$primary-color);
 }
 .statLabel {
-  opacity: 0.6;
+  opacity: 0.7;
 }
 .statVal {
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .compareTableWrap {
   display: flex;
   flex-direction: column;
-  gap: v.$space-md;
+  gap: v.$space-lg;
   align-items: stretch;
   position: relative;
 }
 .scoreSummary {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 .scoreBar {
   position: relative;
-  height: 16px;
-  background: color.adjust(v.$background-dark, $lightness: -4%);
+  height: 20px;
+  background: color.adjust(v.$background-dark, $lightness: -6%);
   border: 1px solid v.$border-secondary;
   border-radius: 999px;
   overflow: hidden;
   display: flex;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 .scoreLeft,
 .scoreRight {
@@ -339,41 +335,44 @@
   transition: width 0.6s ease;
 }
 .scoreLeft {
-  background: linear-gradient(
-    90deg,
-    var(--left-accent),
-    color-mix(in srgb, var(--left-accent), black 35%)
-  );
+  background: var(--left-accent);
 }
 .scoreRight {
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--right-accent), white 15%),
-    var(--right-accent)
-  );
+  background: var(--right-accent);
 }
 .scoreLabels {
   display: flex;
   justify-content: space-between;
-  font-size: 0.6rem;
-  letter-spacing: 0.1em;
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: v.$text-secondary;
 }
 
 .compareTable {
   width: 100%;
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   border-collapse: separate;
-  border-spacing: 0 6px;
+  border-spacing: 0 8px;
+}
+.compareTable caption.tableLabel,
+.tableLabel {
+  font-size: 0.55rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: v.$text-secondary;
+  text-align: center;
+  margin: 0 0 4px 0;
+  caption-side: top;
 }
 .compareTable thead th {
-  font-size: 0.55rem;
-  font-weight: 600;
+  font-size: 0.6rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   color: v.$text-secondary;
-  padding: 0 0 4px 0;
+  padding: 0 0 6px 0;
 }
 .compareTable tbody tr {
   transition: background 0.25s;
@@ -381,7 +380,7 @@
 .compareTable tbody tr:hover {
   background: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0.04),
+    rgba(255, 255, 255, 0.06),
     rgba(255, 255, 255, 0)
   );
 }
@@ -397,50 +396,77 @@
 .tdLeft,
 .tdRight,
 .tdAdv {
-  padding: 6px 8px;
+  padding: 8px 10px;
   background: linear-gradient(
     120deg,
-    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.06),
     rgba(255, 255, 255, 0)
   );
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   font-variant-numeric: tabular-nums;
-  border-radius: 8px;
 }
 .tdLeft {
   text-align: left;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
 }
 .tdRight {
   text-align: right;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 .tdAdv {
   text-align: center;
-  font-weight: 600;
-  letter-spacing: 0.05em;
+  font-weight: 700;
+  letter-spacing: 0.06em;
   position: relative;
+  padding-left: 0;
+  padding-right: 0;
 }
 .winCell {
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.2),
     0 0 0 2px var(--cell-accent),
-    0 0 16px -2px var(--cell-accent);
-  background: linear-gradient(
-    140deg,
-    var(--cell-accent),
-    color-mix(in srgb, var(--cell-accent), black 35%)
-  );
+    0 0 20px -2px var(--cell-accent);
+  background: var(--cell-accent);
   color: #fff;
 }
 .advLeft .advArrow,
 .advRight .advArrow {
-  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6));
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.7));
 }
 .advArrow {
-  margin-right: 4px;
-  font-weight: 700;
+  margin-right: 6px;
+  font-weight: 800;
+}
+.advInner {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: center;
+  justify-items: center;
+  width: 100%;
+  gap: 2px;
+}
+.advInner .advLabel {
+  text-align: center;
+  width: 100%;
+}
+.advArrow {
+  margin: 0;
+  width: 1.25em;
+  height: 1.25em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.arrowHidden {
+  opacity: 0;
+}
+.arrowVisible {
+  opacity: 1;
 }
 .advLabel {
-  opacity: 0.85;
+  opacity: 0.9;
 }
 .advLeft {
   --cell-accent: var(--left-accent);
@@ -459,32 +485,32 @@
 }
 
 .winnerCard {
-  @include v.glass-panel($padding: v.$space-sm, $radius: v.$border-radius-md);
+  @include v.glass-panel($padding: v.$space-md, $radius: v.$border-radius-lg);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   text-align: center;
-  font-weight: 700;
-  font-size: 0.7rem;
-  letter-spacing: 0.1em;
+  font-weight: 800;
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   background: linear-gradient(
     140deg,
-    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.06),
     rgba(255, 255, 255, 0)
   );
   position: relative;
   overflow: hidden;
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.05),
-    0 0 40px -10px rgba(v.$success-color, 0.6) inset;
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 50px -12px rgba(v.$success-color, 0.7) inset;
 }
 .winnerLeft {
-  box-shadow: 0 0 24px -4px rgba(var(--left-accent-rgb, 7, 170, 226), 0.7);
+  box-shadow: 0 0 30px -6px rgba(var(--left-accent-rgb, 7, 170, 226), 0.8);
 }
 .winnerRight {
-  box-shadow: 0 0 24px -4px rgba(var(--right-accent-rgb, 255, 99, 132), 0.7);
+  box-shadow: 0 0 30px -6px rgba(var(--right-accent-rgb, 255, 99, 132), 0.8);
 }
 
 /* Team color utilities */

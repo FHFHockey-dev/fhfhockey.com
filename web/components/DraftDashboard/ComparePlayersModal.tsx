@@ -159,6 +159,54 @@ export default function ComparePlayersModal({
     return { labels, rows, leftAvg, rightAvg };
   }, [players, allPlayers, metricKeys]);
 
+  // Per-game rates table data (exclude percentage or already rate stats like GAA & TOI)
+  const perGameRows = useMemo(() => {
+    const defs = STATS_MASTER_LIST.filter((d) => metricKeys.includes(d.key));
+    const perGameEligible = defs.filter(
+      (d) =>
+        d.dataType !== "percentage" &&
+        !["GOALS_AGAINST_AVERAGE", "TIME_ON_ICE_PER_GAME"].includes(d.key)
+    );
+    const getProjected = (p: ProcessedPlayer | undefined, key: string) =>
+      p
+        ? ((p.combinedStats as any)?.[key]?.projected as
+            | number
+            | null
+            | undefined)
+        : undefined;
+    const getGP = (p: ProcessedPlayer | undefined) =>
+      (getProjected(p, "GAMES_PLAYED") &&
+      typeof getProjected(p, "GAMES_PLAYED") === "number"
+        ? (getProjected(p, "GAMES_PLAYED") as number)
+        : 0) || 0;
+    const left = players[0];
+    const right = players[1];
+    const gpLeft = getGP(left);
+    const gpRight = getGP(right);
+    const format = (v: number) => {
+      if (!isFinite(v)) return "-";
+      if (v < 0.1) return v.toFixed(3);
+      return v.toFixed(2);
+    };
+    return perGameEligible.map((d) => {
+      const rawLeft = getProjected(left, d.key);
+      const rawRight = getProjected(right, d.key);
+      const perLeft =
+        gpLeft > 0 && typeof rawLeft === "number" ? rawLeft / gpLeft : 0;
+      const perRight =
+        gpRight > 0 && typeof rawRight === "number" ? rawRight / gpRight : 0;
+      return {
+        key: d.key,
+        label: d.displayName,
+        p1: perLeft,
+        p2: perRight,
+        p1Display: format(perLeft),
+        p2Display: format(perRight),
+        higherIsBetter: d.higherIsBetter
+      };
+    });
+  }, [players, metricKeys]);
+
   const left = players[0];
   const right = players[1];
   // Use assets.nhle.com mugshots first, then fall back to CMS bamgrid headshots
@@ -384,6 +432,7 @@ export default function ComparePlayersModal({
               </div>
             )}
             <table className={styles.compareTable}>
+              <caption className={styles.tableLabel}>Percentiles</caption>
               <thead>
                 <tr>
                   <th className={styles.thLeft}>
@@ -421,8 +470,21 @@ export default function ComparePlayersModal({
                         {Math.round(r.p1)}
                       </td>
                       <td className={`${styles.tdAdv}`}>
-                        <span className={styles.advArrow}>{arrow}</span>
-                        <span className={styles.advLabel}>{r.label}</span>
+                        <div className={styles.advInner}>
+                          <span
+                            className={`${styles.advArrow} ${leftWins ? styles.arrowVisible : styles.arrowHidden}`}
+                            aria-hidden={!leftWins}
+                          >
+                            ←
+                          </span>
+                          <span className={styles.advLabel}>{r.label}</span>
+                          <span
+                            className={`${styles.advArrow} ${rightWins ? styles.arrowVisible : styles.arrowHidden}`}
+                            aria-hidden={!rightWins}
+                          >
+                            →
+                          </span>
+                        </div>
                       </td>
                       <td
                         className={`${styles.tdRight} ${rightWins ? styles.winCell : ""}`}
@@ -450,6 +512,91 @@ export default function ComparePlayersModal({
                   ? "It’s a tie on average percentile."
                   : `${overallWinner === "left" ? left?.fullName : right?.fullName} wins overall`}
               </div>
+            )}
+            {players.length === 2 && perGameRows.length > 0 && (
+              <table className={styles.compareTable}>
+                <caption className={styles.tableLabel}>Per-Game Rates</caption>
+                <thead>
+                  <tr>
+                    <th className={styles.thLeft}>
+                      {left?.fullName || "Player 1"}
+                    </th>
+                    <th className={styles.thAdv}>Advantage</th>
+                    <th className={styles.thRight}>
+                      {right?.fullName || "Player 2"}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {perGameRows.map((r) => {
+                    const leftWins =
+                      r.p1 === r.p2
+                        ? false
+                        : r.higherIsBetter
+                          ? r.p1 > r.p2
+                          : r.p1 < r.p2;
+                    const rightWins =
+                      r.p1 === r.p2
+                        ? false
+                        : r.higherIsBetter
+                          ? r.p2 > r.p1
+                          : r.p2 < r.p1;
+                    const arrow = leftWins ? "←" : rightWins ? "→" : "=";
+                    const gradientClass = leftWins
+                      ? styles.advLeft
+                      : rightWins
+                        ? styles.advRight
+                        : styles.advNeutral;
+                    return (
+                      <tr key={`pg-${r.key}`} className={gradientClass}>
+                        <td
+                          className={`${styles.tdLeft} ${leftWins ? styles.winCell : ""}`}
+                          style={
+                            leftWins && left?.displayTeam
+                              ? {
+                                  ["--cell-accent" as any]:
+                                    teamsInfo[left.displayTeam]?.primaryColor
+                                }
+                              : undefined
+                          }
+                        >
+                          {r.p1Display}
+                        </td>
+                        <td className={styles.tdAdv}>
+                          <div className={styles.advInner}>
+                            <span
+                              className={`${styles.advArrow} ${leftWins ? styles.arrowVisible : styles.arrowHidden}`}
+                              aria-hidden={!leftWins}
+                            >
+                              ←
+                            </span>
+                            <span className={styles.advLabel}>{r.label}</span>
+                            <span
+                              className={`${styles.advArrow} ${rightWins ? styles.arrowVisible : styles.arrowHidden}`}
+                              aria-hidden={!rightWins}
+                            >
+                              →
+                            </span>
+                          </div>
+                        </td>
+                        <td
+                          className={`${styles.tdRight} ${rightWins ? styles.winCell : ""}`}
+                          style={
+                            rightWins && right?.displayTeam
+                              ? {
+                                  ["--cell-accent" as any]:
+                                    teamsInfo[right.displayTeam]?.primaryColor
+                                }
+                              : undefined
+                          }
+                        >
+                          {r.p2Display}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             )}
           </div>
 

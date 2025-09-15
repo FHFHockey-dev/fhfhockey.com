@@ -165,6 +165,16 @@ export const STATS_MASTER_LIST: StatDefinition[] = [
     category: "Short Handed"
   },
   {
+    key: "SH_GOALS",
+    displayName: "SHG",
+    dataType: "numeric",
+    higherIsBetter: true,
+    isSkaterStat: true,
+    isGoalieStat: false,
+    defaultVisible: false,
+    category: "Short Handed"
+  },
+  {
     key: "SH_ASSISTS",
     displayName: "SHA",
     dataType: "numeric",

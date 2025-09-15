@@ -149,6 +149,33 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     } catch {}
   }, [statColumnsMode]);
 
+  // 82G Proration toggle (skater counting stats pacing)
+  const [prorate82, setProrate82] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("projections.prorate82") === "true";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem("projections.prorate82", String(prorate82));
+    } catch {}
+  }, [prorate82]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && typeof detail.value === "boolean") {
+        setProrate82(detail.value);
+      }
+    };
+    window.addEventListener("projections:prorate82", handler as EventListener);
+    return () =>
+      window.removeEventListener(
+        "projections:prorate82",
+        handler as EventListener
+      );
+  }, []);
+
   const DEFAULT_SKATER_STAT_KEYS = [
     "GOALS",
     "ASSISTS",
@@ -727,12 +754,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   };
 
   const percentileBands = useMemo(() => {
-    // Consider only players left in the list that have ADP
+    // Consider only players left in the list
     const eligible = filteredAndSortedPlayers.filter(
       (p) =>
-        typeof p.yahooAvgPick === "number" &&
-        !Number.isNaN(p.yahooAvgPick) &&
-        p.yahooAvgPick > 0 &&
         // Exclude already drafted from banding; bands represent remaining pool
         !draftedIdSet.has(String(p.playerId))
     );
@@ -977,20 +1001,61 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
             Available <span className={styles.panelTitleAccent}>Players</span>
           </h2>
           <div className={styles.settingsAndTooltips}>
+            {/* 82G Prorate Toggle */}
             <div
               className={styles.stackedControl}
               style={{ alignItems: "flex-end" }}
             >
-              <button
-                type="button"
-                className={styles.settingsButton}
-                onClick={() => setSettingsOpen(true)}
-                aria-haspopup="dialog"
-                aria-expanded={settingsOpen}
-                aria-controls="draft-settings-drawer"
-              >
-                Settings
-              </button>
+              <span className={styles.controlLabelMini}>82G Prorate</span>
+              <div className={styles.toggleButtonsGroup}>
+                <button
+                  type="button"
+                  className={`${styles.controlToggleBtn} ${prorate82 ? styles.controlToggleBtnActive : ""}`}
+                  onClick={() => {
+                    setProrate82((v) => {
+                      const next = !v;
+                      try {
+                        if (typeof window !== "undefined") {
+                          window.localStorage.setItem(
+                            "projections.prorate82",
+                            String(next)
+                          );
+                          window.dispatchEvent(
+                            new CustomEvent("projections:prorate82", {
+                              detail: { value: next }
+                            })
+                          );
+                        }
+                      } catch {}
+                      return next;
+                    });
+                  }}
+                  aria-pressed={prorate82}
+                  aria-label="Toggle 82-game prorated skater stats"
+                  title="Display skater counting stats on 82-game pace (asterisk indicates prorated)"
+                >
+                  {prorate82 ? "On" : "Off"}
+                </button>
+              </div>
+            </div>
+            <div
+              className={styles.stackedControl}
+              style={{ alignItems: "flex-end" }}
+            >
+              <span className={styles.controlLabelMini}>Settings</span>
+              <div className={styles.toggleButtonsGroup}>
+                <button
+                  type="button"
+                  className={`${styles.controlToggleBtn} ${settingsOpen ? styles.controlToggleBtnActive : ""}`}
+                  onClick={() => setSettingsOpen(true)}
+                  aria-haspopup="dialog"
+                  aria-expanded={settingsOpen}
+                  aria-controls="draft-settings-drawer"
+                  aria-label="Open settings drawer"
+                >
+                  Open
+                </button>
+              </div>
             </div>
             <div
               className={styles.stackedControl}
@@ -1680,13 +1745,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                           className={styles.vorp}
                           title={bestPos ? `Best Pos: ${bestPos}` : undefined}
                         >
-                          {vorp ? vorp.toFixed(1) : "-"}
+                          {typeof vorp === "number" ? vorp.toFixed(1) : "-"}
                         </td>
                         <td
                           className={styles.vorp}
                           title="Value Over Next Available"
                         >
-                          {vona ? vona.toFixed(1) : "-"}
+                          {typeof vona === "number" ? vona.toFixed(1) : "-"}
                         </td>
                         <td
                           className={vbdClasses.join(" ")}
@@ -1696,7 +1761,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                               : "Value Based Drafting"
                           }
                         >
-                          {vbdDisplay ? vbdDisplay.toFixed(1) : "-"}
+                          {typeof vbdDisplay === "number"
+                            ? vbdDisplay.toFixed(1)
+                            : "-"}
                         </td>
                       </>
                     ) : (

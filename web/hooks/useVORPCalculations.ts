@@ -35,6 +35,10 @@ export interface UseVORPParams {
   // NEW: personalized replacement context
   myFilledSlots?: Record<string, number>; // counts of already filled starters per position (C,LW,RW,D,G,UTILITY?)
   personalizeReplacement?: boolean; // if true, adjust replacement indices by subtracting filled starters
+  // NEW: 82-game proration toggle for skater counting stats (affects points-league value only)
+  prorate82?: boolean;
+  // Optional fantasy scoring overrides (will merge with defaults inside helper)
+  fantasyPointSettings?: Record<string, number>;
 }
 
 export interface UseVORPResult {
@@ -72,7 +76,9 @@ export function useVORPCalculations({
   categoryWeights = {},
   forwardGrouping = "split",
   myFilledSlots = {},
-  personalizeReplacement = false
+  personalizeReplacement = false,
+  prorate82 = false,
+  fantasyPointSettings = {}
 }: UseVORPParams): UseVORPResult {
   return useMemo(() => {
     // Value per player (points or categories composite)
@@ -91,9 +97,30 @@ export function useVORPCalculations({
 
     // Compute player comparable values
     if (leagueType === "points") {
+      // Points leagues: optionally recompute fantasy points using prorated 82G pace for skaters.
+      let computeProrated:
+        | ((
+            p: ProcessedPlayer,
+            enable: boolean,
+            scoring?: Record<string, number>
+          ) => number | null)
+        | null = null;
+      if (prorate82) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          const mod = require("lib/projectionsConfig/proration");
+          computeProrated = mod.computeProratedFantasyPoints;
+        } catch {
+          computeProrated = null;
+        }
+      }
       players.forEach((p) => {
         const id = String(p.playerId);
-        const val = p.fantasyPoints?.projected ?? 0;
+        let val = p.fantasyPoints?.projected ?? 0;
+        if (prorate82 && computeProrated) {
+          const fp = computeProrated(p, true, fantasyPointSettings);
+          if (fp != null && Number.isFinite(fp)) val = fp;
+        }
         values.set(id, Number.isFinite(val) ? val : 0);
       });
     } else {
@@ -130,7 +157,8 @@ export function useVORPCalculations({
       type StatArrays = Record<string, number[]>;
       const arrays: StatArrays = {};
       const sums: Record<string, number> = {};
-      const sourcePool = baselineMode === "remaining" ? availablePlayers : players;
+      const sourcePool =
+        baselineMode === "remaining" ? availablePlayers : players;
       allKeys.forEach((k) => {
         arrays[k] = [];
         sums[k] = 0;
@@ -483,6 +511,8 @@ export function useVORPCalculations({
     categoryWeights,
     forwardGrouping,
     personalizeReplacement,
-    myFilledSlots
+    myFilledSlots,
+    prorate82,
+    fantasyPointSettings
   ]);
 }
