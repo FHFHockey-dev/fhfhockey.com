@@ -1115,11 +1115,15 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               <div className={styles.toggleButtonsGroup}>
                 <button
                   type="button"
-                  className={styles.controlToggleBtn}
+                  className={`${styles.controlToggleBtn} ${styles.compareLaunchButton}`}
                   onClick={() => setCompareOpen(true)}
                   disabled={selectedIds.size < 2}
                   aria-label="Open compare players"
-                  title={selectedIds.size < 2 ? "Select 2+ players in the table" : "Compare selected players"}
+                  title={
+                    selectedIds.size < 2
+                      ? "Select 2+ players in the table"
+                      : "Compare selected players"
+                  }
                 >
                   {`Open (${selectedIds.size})`}
                 </button>
@@ -1353,7 +1357,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
         <table className={styles.playersTable}>
           <colgroup>
             <col className={styles.colFav} />
-            <col className={styles.colFav} />
             <col className={styles.colName} />
             <col className={styles.colPos} />
             <col className={styles.colTeam} />
@@ -1375,14 +1378,12 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
             <col className={styles.colAdp} />
             <col className={styles.colNextPick} />
             <col className={styles.colAction} />
+            <col className={styles.colCompare} />
           </colgroup>
           <thead>
             <tr>
-              <th className={styles.colFav} scope="col" title="Select">
-                
-              </th>
               <th className={styles.colFav} scope="col" title="Favorite">
-                ★
+                Fav
               </th>
               <th
                 onClick={() => handleSort("fullName")}
@@ -1510,12 +1511,24 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 className={`${styles.sortableHeader} ${styles.colNextPick}`}
                 aria-sort={getAriaSort("risk")}
                 scope="col"
-                title="Probability drafted before your next pick (ADP-based)"
+                title="Probability of being drafted before your next pick (ADP-based)"
               >
-                Next-Pick %{" "}
+                AVL%{" "}
               </th>
               <th className={styles.colAction} scope="col">
                 Action
+              </th>
+              <th
+                className={styles.colCompare}
+                scope="col"
+                title="Select players via right-side checkboxes; need 2+ to enable compare"
+              >
+                <span
+                  aria-label="Compare column header"
+                  title="Select players (checkboxes) then click Open to compare. Risk (AVL%) color: green low, yellow med, red high chance player is gone before next pick."
+                >
+                  COMP.
+                </span>
               </th>
             </tr>
           </thead>
@@ -1557,24 +1570,25 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 const risk = riskMap.get(key);
                 const riskPct =
                   typeof risk === "number" ? Math.round(risk * 100) : null;
-                const riskLabel =
+                const riskClass =
                   riskPct == null
-                    ? "-"
+                    ? undefined
                     : riskPct >= 70
-                      ? "High"
+                      ? styles.riskHigh
                       : riskPct >= 30
-                        ? "Med"
-                        : "Low";
+                        ? styles.riskMed
+                        : styles.riskLow;
                 const metricColumnsCount = 4; // FP/Score, VORP, VONA, VBD
                 const detailColSpan =
-                  1 + // fav
+                  1 + // favorite star
                   1 + // name
                   1 + // pos
                   1 + // team
                   (statColumnsMode ? statColumns.length : metricColumnsCount) +
                   1 + // ADP
                   1 + // Next Pick
-                  1; // Action
+                  1 + // Action
+                  1; // Compare
 
                 const mainRow = (
                   <tr
@@ -1583,15 +1597,6 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       favoriteIds.has(key) ? styles.favoritedRow : ""
                     }`}
                   >
-                    <td className={styles.colFav}>
-                      <input
-                        type="checkbox"
-                        className={styles.compareCheckbox}
-                        checked={selectedIds.has(key)}
-                        onChange={() => toggleSelected(key)}
-                        aria-label={`Select ${player.fullName}`}
-                      />
-                    </td>
                     <td className={styles.colFav}>
                       <button
                         type="button"
@@ -1715,14 +1720,14 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                         : "-"}
                     </td>
                     <td
-                      className={styles.nextPick}
+                      className={`${styles.nextPick} ${riskClass ? riskClass : ""}`}
                       title={
                         riskPct == null
                           ? undefined
-                          : `${riskPct}% chance gone by your next pick`
+                          : `${riskPct}% chance gone before your next pick`
                       }
                     >
-                      {riskPct == null ? "-" : `${riskLabel} (${riskPct}%)`}
+                      {riskPct == null ? "-" : `${riskPct}%`}
                     </td>
                     <td className={styles.colAction}>
                       <button
@@ -1737,6 +1742,15 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       >
                         {draftedIdSet.has(key) ? "Drafted" : "Draft"}
                       </button>
+                    </td>
+                    <td className={`${styles.compareCell}`}>
+                      <input
+                        type="checkbox"
+                        className={styles.compareCheckbox}
+                        checked={selectedIds.has(key)}
+                        onChange={() => toggleSelected(key)}
+                        aria-label={`Select ${player.fullName} for comparison`}
+                      />
                     </td>
                   </tr>
                 );

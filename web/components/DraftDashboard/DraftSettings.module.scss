@@ -589,7 +589,7 @@
 
 /* Adjust scoring grid inside split to use 2fr repeating columns for labels/inputs */
 .scoringSubgroupSplit .scoringGrid {
-  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(35px, 1fr));
 }
 
 /* Ensure goalie expand button aligns within its grid */

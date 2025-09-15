@@ -129,7 +129,10 @@
   display: inline-grid;
   place-content: center;
   cursor: pointer;
-  transition: box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    box-shadow 0.15s ease,
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 
   &:hover {
     border-color: v.$primary-color;
@@ -176,6 +179,12 @@
     border-color: v.$primary-color;
     color: v.$text-primary;
     box-shadow: 0 0 0 2px rgba(v.$primary-color, 0.25);
+  }
+  .controlToggleBtnActive,
+  .controlToggleBtn:focus-visible {
+    border-color: v.$focus-color !important;
+    background: rgba(v.$focus-color, 0.4) !important;
+    color: v.$color-white !important;
   }
 }
 .controlToggleBtnActive {
@@ -615,6 +624,86 @@
   text-align: left;
 }
 
+/* Compare column (moved to far right) */
+.colCompare {
+  width: 52px; /* fixed to prevent checkbox clipping */
+  min-width: 48px;
+  text-align: center;
+}
+
+/* Strengthen value band backgrounds so zebra striping never masks them */
+.valueBand.valueSuccess,
+.valueBand.valueWarning,
+.valueBand.valueDanger {
+  background-clip: padding-box;
+  /* Ensure they win over row zebra backgrounds */
+  position: relative;
+  z-index: 1;
+}
+
+/* Compare launch button visual affinity with compare checkboxes */
+.compareLaunchButton {
+  border: 1px solid v.$focus-color;
+  background: rgba(v.$focus-color, 0.4);
+  color: v.$color-white;
+  box-shadow: 0 0 0 1px rgba(v.$focus-color, 0.25);
+  &:disabled {
+    opacity: 0.55;
+    filter: grayscale(15%);
+  }
+}
+
+/* Updated compare checkbox styling for right-most column */
+.compareCheckbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid v.$focus-color;
+  border-radius: v.$border-radius-sm;
+  background: rgba(v.$focus-color, 0.15);
+  display: inline-grid;
+  place-content: center;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+  position: relative;
+}
+.compareCheckbox:hover {
+  background: rgba(v.$focus-color, 0.25);
+}
+.compareCheckbox:focus-visible {
+  outline: 2px solid v.$focus-color;
+  outline-offset: 2px;
+}
+.compareCheckbox:checked {
+  background: rgba(v.$focus-color, 0.55);
+  box-shadow: 0 0 0 2px rgba(v.$focus-color, 0.35);
+}
+.compareCheckbox::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: v.$focus-color;
+  opacity: 0;
+  transform: scale(0.6);
+  transition: all 0.15s ease;
+}
+.compareCheckbox:checked::after {
+  opacity: 1;
+  transform: scale(1);
+  background: v.$color-white;
+}
+
+/* Right-most compare column cell centering */
+.compareCell {
+  text-align: center;
+  padding: 0;
+}
+
 .playersTable td {
   padding: v.$space-sm v.$space-sm; // Increase vertical spacing for legibility
   color: v.$text-primary;
@@ -920,6 +1009,22 @@
   text-align: right;
   min-width: 60px;
   font-variant-numeric: tabular-nums;
+}
+
+/* Risk level background cues (probability player is GONE before next pick) */
+.riskLow {
+  /* low risk player will be gone => safer (green) */
+  background: rgba(v.$success-color, 0.3);
+  color: v.$text-primary;
+}
+.riskMed {
+  background: rgba(v.$warning-color, 0.3);
+  color: v.$text-primary;
+}
+.riskHigh {
+  /* high risk of being gone => urgent (red) */
+  background: rgba(v.$danger-color, 0.3);
+  color: v.$text-primary;
 }
 
 /* Numeric alignment for VORP column cells */

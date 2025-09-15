@@ -421,8 +421,8 @@ export function useVORPCalculations({
 
       elig.forEach((pos) => {
         const rep = replacementByPos[pos] || { vorp: 0, vols: 0 };
-        const vorp = Math.max(0, val - rep.vorp);
-        const vols = Math.max(0, val - rep.vols);
+        const vorp = val - rep.vorp;
+        const vols = val - rep.vols;
 
         // VONA: predict next baseline given expectedTaken at position among N picks
         const arr = byPosAvail[pos];
@@ -433,7 +433,7 @@ export function useVORPCalculations({
             Math.floor((curIdx as number) + (expectedTaken[pos] || 0))
           );
           const nextBaselineVal = arr[nextRank]?.value ?? 0;
-          const vona = Math.max(0, val - nextBaselineVal);
+          const vona = val - nextBaselineVal;
           if (
             vorp > bestVorp ||
             (vorp === bestVorp &&
