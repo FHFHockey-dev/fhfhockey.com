@@ -70,9 +70,9 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
 
   const augmentedAllPlayers = useMemo(() => {
     const allPlayersMap = new Map<string, ProcessedPlayer>();
-    allPlayers.forEach(p => allPlayersMap.set(String(p.playerId), p));
+    allPlayers.forEach((p) => allPlayersMap.set(String(p.playerId), p));
 
-    draftedPlayers.forEach(p => {
+    draftedPlayers.forEach((p) => {
       if (!allPlayersMap.has(p.playerId)) {
         const placeholder: ProcessedPlayer = {
           playerId: Number(p.playerId),
@@ -86,14 +86,14 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
             actual: null,
             diffPercentage: null,
             projectedPerGame: null,
-            actualPerGame: null,
+            actualPerGame: null
           },
           yahooPlayerId: undefined,
           yahooAvgPick: null,
           yahooAvgRound: null,
           yahooPctDrafted: null,
           projectedRank: null,
-          actualRank: null,
+          actualRank: null
         };
         allPlayersMap.set(p.playerId, placeholder);
       }
@@ -431,6 +431,8 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
       PP_ASSISTS: "PPA",
       PP_GOALS: "PPG",
       SH_POINTS: "SHP",
+      SH_GOALS: "SHG",
+      SH_ASSISTS: "SHA",
       PLUS_MINUS: "+/- ",
       TIME_ON_ICE_PER_GAME: "ATOI"
     };
@@ -571,7 +573,10 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
 
       // Compute team score average for categories mode
       let teamScoreAvg = 0;
-      if ((draftSettings.leagueType || "points") === "categories" && vorpMetrics) {
+      if (
+        (draftSettings.leagueType || "points") === "categories" &&
+        vorpMetrics
+      ) {
         const scores: number[] = [];
         teamPlayers.forEach((dp) => {
           const m = vorpMetrics.get(dp.playerId);
@@ -698,13 +703,17 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
 
         if (sortField === "projectedPoints") {
           // In Categories leagues, sort by teamScoreAvg; otherwise projected points
-          const useScore = (draftSettings.leagueType || "points") === "categories";
-          aValue = useScore ? ((a as any).teamScoreAvg || 0) : a.projectedPoints;
-          bValue = useScore ? ((b as any).teamScoreAvg || 0) : b.projectedPoints;
+          const useScore =
+            (draftSettings.leagueType || "points") === "categories";
+          aValue = useScore ? (a as any).teamScoreAvg || 0 : a.projectedPoints;
+          bValue = useScore ? (b as any).teamScoreAvg || 0 : b.projectedPoints;
         } else if (sortField === "teamVorp") {
           aValue = a.teamVorp || 0;
           bValue = b.teamVorp || 0;
-        } else if (typeof sortField === "string" && sortField.startsWith("dynamic:")) {
+        } else if (
+          typeof sortField === "string" &&
+          sortField.startsWith("dynamic:")
+        ) {
           const key = sortField.slice("dynamic:".length);
           aValue = (a as any).dynamicCategoryTotals?.[key] || 0;
           bValue = (b as any).dynamicCategoryTotals?.[key] || 0;
@@ -831,7 +840,9 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                       : "Projected fantasy points (team total)."
                   }
                 >
-                  {(draftSettings.leagueType || "points") === "categories" ? "Score" : "Proj Pts"}{" "}
+                  {(draftSettings.leagueType || "points") === "categories"
+                    ? "Score"
+                    : "Proj Pts"}{" "}
                   {sortField === "projectedPoints" &&
                     (sortDirection === "asc" ? "↑" : "↓")}
                 </th>
@@ -970,7 +981,10 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                             (team as any).dynamicCategoryTotals?.[k] || 0
                           )}
                         >
-                          {(((team as any).dynamicCategoryTotals?.[k] || 0) as number).toFixed(0)}
+                          {(
+                            ((team as any).dynamicCategoryTotals?.[k] ||
+                              0) as number
+                          ).toFixed(0)}
                         </td>
                       ))}
                     <td
@@ -984,12 +998,12 @@ const DraftBoard: React.FC<DraftBoardProps> = ({
                       style={getMetricCellStyle(
                         "projectedPoints",
                         (draftSettings.leagueType || "points") === "categories"
-                          ? ((team as any).teamScoreAvg || 0)
-                          : (team.projectedPoints || 0)
+                          ? (team as any).teamScoreAvg || 0
+                          : team.projectedPoints || 0
                       )}
                     >
                       {((draftSettings.leagueType || "points") === "categories"
-                        ? ((team as any).teamScoreAvg || 0)
+                        ? (team as any).teamScoreAvg || 0
                         : team.projectedPoints
                       ).toFixed(1)}
                     </td>

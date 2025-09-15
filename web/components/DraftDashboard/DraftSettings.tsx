@@ -117,6 +117,8 @@ const SKATER_LABELS: Record<string, string> = {
   PP_ASSISTS: "PPA",
   PP_GOALS: "PPG",
   SH_POINTS: "SHP",
+  SH_ASSISTS: "SHA",
+  SH_GOALS: "SHG",
   PLUS_MINUS: "+/-",
   TIME_ON_ICE_PER_GAME: "ATOI"
 };
@@ -362,7 +364,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const playerNamesById = React.useMemo(() => {
     const map = new Map<string, string>();
     if (playersForKeeperAutocomplete) {
-      playersForKeeperAutocomplete.forEach(p => {
+      playersForKeeperAutocomplete.forEach((p) => {
         map.set(String(p.id), p.fullName);
       });
     }
@@ -2310,7 +2312,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                             {k.round}-{k.pickInRound} →{" "}
                             {customTeamNames[k.teamId] || k.teamId} (
                             {playerNamesById.get(k.playerId) ||
-                              `Player #${k.playerId}`})
+                              `Player #${k.playerId}`}
+                            )
                           </span>
                           {onRemoveKeeper && (
                             <button

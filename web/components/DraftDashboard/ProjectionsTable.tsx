@@ -727,12 +727,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   };
 
   const percentileBands = useMemo(() => {
-    // Consider only players left in the list that have ADP
+    // Consider only players left in the list
     const eligible = filteredAndSortedPlayers.filter(
       (p) =>
-        typeof p.yahooAvgPick === "number" &&
-        !Number.isNaN(p.yahooAvgPick) &&
-        p.yahooAvgPick > 0 &&
         // Exclude already drafted from banding; bands represent remaining pool
         !draftedIdSet.has(String(p.playerId))
     );
@@ -1680,13 +1677,13 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                           className={styles.vorp}
                           title={bestPos ? `Best Pos: ${bestPos}` : undefined}
                         >
-                          {vorp ? vorp.toFixed(1) : "-"}
+                          {typeof vorp === "number" ? vorp.toFixed(1) : "-"}
                         </td>
                         <td
                           className={styles.vorp}
                           title="Value Over Next Available"
                         >
-                          {vona ? vona.toFixed(1) : "-"}
+                          {typeof vona === "number" ? vona.toFixed(1) : "-"}
                         </td>
                         <td
                           className={vbdClasses.join(" ")}
@@ -1696,7 +1693,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                               : "Value Based Drafting"
                           }
                         >
-                          {vbdDisplay ? vbdDisplay.toFixed(1) : "-"}
+                          {typeof vbdDisplay === "number"
+                            ? vbdDisplay.toFixed(1)
+                            : "-"}
                         </td>
                       </>
                     ) : (
