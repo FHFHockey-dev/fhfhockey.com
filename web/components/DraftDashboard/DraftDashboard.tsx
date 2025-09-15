@@ -226,8 +226,16 @@ const DraftDashboard: React.FC = () => {
         const listRaw = sessionStorage.getItem("draft.customCsvList.v2");
         const list: SessionCsvEntry[] = listRaw ? JSON.parse(listRaw) : [];
         if (!list.find((e) => e.id === "custom_csv_1")) {
-          list.push({ id: "custom_csv_1", label: parsed.label || "Custom CSV", headers: parsed.headers, rows: parsed.rows });
-          sessionStorage.setItem("draft.customCsvList.v2", JSON.stringify(list));
+          list.push({
+            id: "custom_csv_1",
+            label: parsed.label || "Custom CSV",
+            headers: parsed.headers,
+            rows: parsed.rows
+          });
+          sessionStorage.setItem(
+            "draft.customCsvList.v2",
+            JSON.stringify(list)
+          );
         }
         sessionStorage.removeItem("draft.customCsv.v1");
         return list;
@@ -282,7 +290,12 @@ const DraftDashboard: React.FC = () => {
     ts: number;
     draftSettings: DraftSettings;
     draftedPlayers: DraftedPlayer[];
-    keepers: Array<{ round: number; pickInRound: number; teamId: string; playerId: string }>;
+    keepers: Array<{
+      round: number;
+      pickInRound: number;
+      teamId: string;
+      playerId: string;
+    }>;
     pickOwnerOverrides: Record<string, string>;
     positionOverrides: Record<string, string>;
     customTeamNames: Record<string, string>;
@@ -296,7 +309,10 @@ const DraftDashboard: React.FC = () => {
     personalizeReplacement: boolean;
     goaliePointValues: Record<string, number>;
     sourceControls: Record<string, { isSelected: boolean; weight: number }>;
-    goalieSourceControls: Record<string, { isSelected: boolean; weight: number }>;
+    goalieSourceControls: Record<
+      string,
+      { isSelected: boolean; weight: number }
+    >;
     customCsvList: SessionCsvEntry[];
   };
 
@@ -369,7 +385,9 @@ const DraftDashboard: React.FC = () => {
       setNeedAlpha(typeof snap.needAlpha === "number" ? snap.needAlpha : 0.5);
       setForwardGrouping(snap.forwardGrouping || "split");
       setPersonalizeReplacement(!!snap.personalizeReplacement);
-      setGoaliePointValues(snap.goaliePointValues || getDefaultFantasyPointsConfig("goalie"));
+      setGoaliePointValues(
+        snap.goaliePointValues || getDefaultFantasyPointsConfig("goalie")
+      );
       setSourceControls(snap.sourceControls || {});
       setGoalieSourceControls(snap.goalieSourceControls || {});
       if (Array.isArray(snap.customCsvList)) setCsvList(snap.customCsvList);
@@ -765,6 +783,24 @@ const DraftDashboard: React.FC = () => {
     }
   }, [allPlayers]);
 
+  // Additional targeted trace for Jack Hughes visibility debugging
+  useEffect(() => {
+    const jack = allPlayers.find((p) => String(p.playerId) === "8481559");
+    if (jack) {
+      console.log("Trace - Jack Hughes present in player pool", {
+        playerId: jack.playerId,
+        name: jack.fullName,
+        team: jack.displayTeam,
+        position: jack.displayPosition,
+        sources: Object.keys(jack.combinedStats || {}).length
+      });
+    } else {
+      console.warn(
+        "Trace - Jack Hughes (8481559) NOT found in player pool after processing. Check source selection and ID alignment."
+      );
+    }
+  }, [allPlayers]);
+
   // NEW: derive available stat keys (skater vs goalie) from projections + custom CSV
   const { availableSkaterStatKeys, availableGoalieStatKeys } = useMemo(() => {
     const skaterKeys = new Set<string>();
@@ -950,7 +986,8 @@ const DraftDashboard: React.FC = () => {
                 rosterSlots[alt].push(draftedPlayer);
               } else if (
                 rosterSlots["UTILITY"] &&
-                rosterSlots["UTILITY"].length < draftSettings.rosterConfig.utility
+                rosterSlots["UTILITY"].length <
+                  draftSettings.rosterConfig.utility
               ) {
                 rosterSlots["UTILITY"].push(draftedPlayer);
               } else {
@@ -1465,7 +1502,7 @@ const DraftDashboard: React.FC = () => {
         customSourceLabel={customCsvLabel}
         availableSkaterStatKeys={availableSkaterStatKeys}
         availableGoalieStatKeys={availableGoalieStatKeys}
-      onExportCsv={exportBlendedProjectionsCsv}
+        onExportCsv={exportBlendedProjectionsCsv}
         onRemoveCustomSource={(id) => {
           // Remove from session list and controls
           const list = getCsvList();
@@ -1502,6 +1539,12 @@ const DraftDashboard: React.FC = () => {
             if (data.settings) setDraftSettings(data.settings);
             if (Array.isArray(data.draftedPlayers))
               setDraftedPlayers(data.draftedPlayers);
+            if (Array.isArray(data.keepers)) setKeepers(data.keepers);
+            if (
+              data.pickOwnerOverrides &&
+              typeof data.pickOwnerOverrides === "object"
+            )
+              setPickOwnerOverrides(data.pickOwnerOverrides);
             if (typeof data.currentPick === "number")
               setCurrentPick(data.currentPick);
             if (typeof data.myTeamId === "string") setMyTeamId(data.myTeamId);
@@ -1661,10 +1704,10 @@ const DraftDashboard: React.FC = () => {
         vorpMetrics={vorpMetrics}
       />
 
-  <ImportCsvModal
-    open={isImportCsvOpen}
-    onClose={() => setIsImportCsvOpen(false)}
-    onImported={({ headers, rows, sourceId, label }) => {
+      <ImportCsvModal
+        open={isImportCsvOpen}
+        onClose={() => setIsImportCsvOpen(false)}
+        onImported={({ headers, rows, sourceId, label }) => {
           // Append to list with incremental id custom_csv_1..n
           const list = getCsvList();
           const nextIndex = list.length + 1;
@@ -1682,8 +1725,8 @@ const DraftDashboard: React.FC = () => {
             [id]: prev[id] || { isSelected: true, weight: 1 }
           }));
           setCustomCsvLabel(label);
-    }}
-  />
+        }}
+      />
     </div>
   );
 };

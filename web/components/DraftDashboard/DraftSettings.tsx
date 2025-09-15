@@ -741,7 +741,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       baselineMode = ls("draftDashboard.baselineMode") || undefined;
     } catch {}
     return {
-      v: 1, // version for future migrations
+      v: 2, // version for future migrations
       ts: Date.now(),
       settings,
       draftedPlayers,
@@ -756,7 +756,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       personalizeReplacement,
       needWeightEnabled,
       needAlpha,
-      baselineMode
+      baselineMode,
+      keepers,
+      pickOwnerOverrides
     };
   }, [
     settings,
@@ -768,7 +770,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     customTeamNames,
     sourceControls,
     goalieSourceControls,
-    goalieScoringCategories
+    goalieScoringCategories,
+    keepers,
+    pickOwnerOverrides
   ]);
 
   const serializeBookmark = (payload: any): string => {
@@ -829,9 +833,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       alert("Invalid bookmark key");
       return;
     }
-    if (data.v !== 1) {
+    if (data.v !== 2) {
       // eslint-disable-next-line no-alert
-      alert("Unsupported bookmark version");
+      alert("Unsupported bookmark version. Expected v2.");
       return;
     }
     if (onBookmarkImport) {
@@ -1427,9 +1431,22 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                         Skater Categories
                       </div>
                       <div className={styles.scoringGrid}>
-                        {visibleSkater.map(([k, w]) =>
-                          renderEntry(k, w as number)
-                        )}
+                        {(() => {
+                          const chunks: Array<[string, number][]> = [];
+                          for (let i = 0; i < visibleSkater.length; i += 5) {
+                            chunks.push(visibleSkater.slice(i, i + 5));
+                          }
+                          return chunks.map((chunk, ci) => (
+                            <div
+                              key={"sk-row-" + ci}
+                              className={styles.scoringRow}
+                            >
+                              {chunk.map(([k, w]) =>
+                                renderEntry(k, w as number)
+                              )}
+                            </div>
+                          ));
+                        })()}
                       </div>
                       {visibleGoalie.length > 0 && (
                         <>
@@ -1440,9 +1457,26 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                             Goalie Categories
                           </div>
                           <div className={styles.scoringGrid}>
-                            {visibleGoalie.map(([k, w]) =>
-                              renderEntry(k, w as number)
-                            )}
+                            {(() => {
+                              const gChunks: Array<[string, number][]> = [];
+                              for (
+                                let i = 0;
+                                i < visibleGoalie.length;
+                                i += 5
+                              ) {
+                                gChunks.push(visibleGoalie.slice(i, i + 5));
+                              }
+                              return gChunks.map((chunk, ci) => (
+                                <div
+                                  key={"g-row-" + ci}
+                                  className={styles.scoringRow}
+                                >
+                                  {chunk.map(([k, w]) =>
+                                    renderEntry(k, w as number)
+                                  )}
+                                </div>
+                              ));
+                            })()}
                           </div>
                         </>
                       )}
