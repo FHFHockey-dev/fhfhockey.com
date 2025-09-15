@@ -825,6 +825,35 @@ const DraftDashboard: React.FC = () => {
     return allPlayers.filter((p) => !draftedPlayerIds.has(String(p.playerId)));
   }, [allPlayers, draftedPlayers]);
 
+  // Track prorate82 toggle (shared via localStorage)
+  const [prorate82, setProrate82] = React.useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("projections.prorate82") === "true";
+  });
+  React.useEffect(() => {
+    const handler = (e: any) => {
+      if (e?.detail && typeof e.detail.value === "boolean") {
+        setProrate82(e.detail.value);
+      } else {
+        // fallback read
+        setProrate82(
+          window.localStorage.getItem("projections.prorate82") === "true"
+        );
+      }
+    };
+    window.addEventListener("projections:prorate82", handler as any);
+    const onStorage = (ev: StorageEvent) => {
+      if (ev.key === "projections.prorate82") {
+        setProrate82(ev.newValue === "true");
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("projections:prorate82", handler as any);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
   // Build TeamRosterSelect options from current draft order and custom names
   const teamOptions = useMemo(
     () =>
@@ -884,7 +913,8 @@ const DraftDashboard: React.FC = () => {
     baselineMode,
     categoryWeights: draftSettings.categoryWeights,
     forwardGrouping,
-    personalizeReplacement
+    personalizeReplacement,
+    prorate82
   });
 
   // Team stats calculations
