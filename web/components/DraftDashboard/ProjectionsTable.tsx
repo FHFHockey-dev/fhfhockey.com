@@ -1111,7 +1111,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
               </div>
             </div>
             <div className={styles.stackedControl}>
-              <span className={styles.controlLabelMini}>Compare</span>
+              <span className={styles.controlLabelMini}>
+                Compare ({selectedIds.size})
+              </span>
               <div className={styles.toggleButtonsGroup}>
                 <button
                   type="button"
@@ -1125,7 +1127,7 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                       : "Compare selected players"
                   }
                 >
-                  {`Open (${selectedIds.size})`}
+                  {`Compare`}
                 </button>
               </div>
             </div>

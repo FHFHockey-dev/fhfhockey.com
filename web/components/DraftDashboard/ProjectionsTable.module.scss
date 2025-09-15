@@ -152,8 +152,8 @@
     transition: transform 0.12s ease-in-out;
   }
   &:checked {
-    background: v.$primary-color;
-    border-color: v.$primary-color;
+    background: v.$focus-color;
+    border-color: v.$focus-color;
   }
   &:checked::after {
     transform: rotate(45deg) scale(1);
@@ -644,13 +644,9 @@
 /* Compare launch button visual affinity with compare checkboxes */
 .compareLaunchButton {
   border: 1px solid v.$focus-color;
-  background: rgba(v.$focus-color, 0.4);
-  color: v.$color-white;
+  background: rgba(v.$focus-color, 0.3);
+  color: v.$focus-color;
   box-shadow: 0 0 0 1px rgba(v.$focus-color, 0.25);
-  &:disabled {
-    opacity: 0.55;
-    filter: grayscale(15%);
-  }
 }
 
 /* Updated compare checkbox styling for right-most column */
@@ -680,7 +676,7 @@
 }
 .compareCheckbox:checked {
   background: rgba(v.$focus-color, 0.55);
-  box-shadow: 0 0 0 2px rgba(v.$focus-color, 0.35);
+  box-shadow: 0 0 0 2px rgba(v.$focus-color, 0.55);
 }
 .compareCheckbox::after {
   content: "";
@@ -695,7 +691,7 @@
 .compareCheckbox:checked::after {
   opacity: 1;
   transform: scale(1);
-  background: v.$color-white;
+  background: v.$focus-color;
 }
 
 /* Right-most compare column cell centering */

@@ -414,9 +414,9 @@ export function useVORPCalculations({
       const val = values.get(id) || 0;
       const elig = eligibility.get(id) || [];
 
-      let bestVorp = 0;
-      let bestVols = 0;
-      let bestVona = 0;
+      let bestVorp = -Infinity;
+      let bestVols = -Infinity;
+      let bestVona = -Infinity;
       let bestPos = elig[0] || "";
 
       elig.forEach((pos) => {
