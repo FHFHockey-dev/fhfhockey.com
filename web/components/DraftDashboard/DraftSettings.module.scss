@@ -404,9 +404,32 @@
 
 /* =================== Scoring Configuration =================== */
 .scoringGrid {
+  display: flex;
+  flex-direction: column;
+  gap: v.$space-sm;
+}
+
+/* Each logical row (injected by component when >5 categories) */
+.scoringRow {
   display: grid;
-  grid-template-columns: repeat(8, 1fr); // More compact - 2 columns
-  gap: v.$space-xs; // Reduced gap
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: v.$space-xs;
+}
+
+@media (max-width: 900px) {
+  .scoringRow {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 700px) {
+  .scoringRow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 520px) {
+  .scoringRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .scoringSetting {
@@ -815,7 +838,11 @@
   background-color: color.adjust(v.$danger-color-dark, $alpha: -0.85);
 
   &:hover:not(:disabled) {
-    background-color: color.adjust(v.$danger-color-dark, $lightness: -5%, $alpha: -0.8);
+    background-color: color.adjust(
+      v.$danger-color-dark,
+      $lightness: -5%,
+      $alpha: -0.8
+    );
     border-color: v.$danger-color;
     color: v.$danger-color;
     box-shadow: 0 0 0 2px rgba(v.$danger-color, 0.15);

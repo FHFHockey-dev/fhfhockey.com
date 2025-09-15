@@ -64,6 +64,7 @@ export const PROJECTION_SOURCES_CONFIG: ProjectionSourceConfig[] = [
   {
     id: "cullen_skaters",
     displayName: "Cullen",
+    // PROJECTIONS_20252026_CULLEN_SKATERS
     tableName: "PROJECTIONS_20252026_CULLEN_SKATERS",
     playerType: "skater",
     primaryPlayerIdKey: "player_id",
