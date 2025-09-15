@@ -476,6 +476,25 @@ export default function ImportCsvModal({
     });
   }, [previewAmbiguities, levenshtein]);
 
+  // Debug: log missing teamAbbrev counts once after suggestions built
+  useEffect(() => {
+    if (!ambiguousWithSuggestions.length) return;
+    try {
+      const total = ambiguousWithSuggestions.reduce(
+        (acc, r) => acc + r.candidates.length,
+        0
+      );
+      const missing = ambiguousWithSuggestions.reduce(
+        (acc, r) =>
+          acc + r.candidates.filter((c) => !c.teamAbbrev).length,
+        0
+      );
+      console.log(
+        `[ImportCsvModal] Ambiguity candidates: ${total}, missing teamAbbrev: ${missing}`
+      );
+    } catch {}
+  }, [ambiguousWithSuggestions]);
+
   // Auto resolve perfect unique matches among ambiguous candidates (only if exactly one perfect score)
   useEffect(() => {
     setAmbiguousChoices((prev) => {
@@ -930,12 +949,15 @@ export default function ImportCsvModal({
                           >
                             <option value="">Select player…</option>
                             {r.candidates.map((c) => {
-                              const team = c.teamAbbrev || "??";
-                              const pos = c.position || "?";
+                              // fallback to CSV context if no teamAbbrev / position
+                              const csvCtx = previewAmbiguities.find(
+                                (p) => p.key === r.key
+                              );
+                              const team = c.teamAbbrev || csvCtx?.csvTeam || "??";
+                              const pos = c.position || csvCtx?.csvPos || "?";
                               return (
                                 <option key={c.id} value={c.id}>
-                                  {c.fullName} ({team} {pos}){" "}
-                                  {(c.score * 100).toFixed(0)}%
+                                  {c.fullName} ({team} {pos}) {(c.score * 100).toFixed(0)}%
                                 </option>
                               );
                             })}
@@ -943,8 +965,11 @@ export default function ImportCsvModal({
                               <option disabled>-- Search Results --</option>
                             )}
                             {dynamicMatches.map((p) => {
-                              const team = (p as any).teamAbbrev || "??";
-                              const pos = (p as any).position || "?";
+                              const csvCtx = previewAmbiguities.find(
+                                (px) => px.key === r.key
+                              );
+                              const team = (p as any).teamAbbrev || csvCtx?.csvTeam || "??";
+                              const pos = (p as any).position || csvCtx?.csvPos || "?";
                               return (
                                 <option key={p.id} value={p.id}>
                                   {p.fullName} ({team} {pos})
