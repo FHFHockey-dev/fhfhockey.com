@@ -129,7 +129,6 @@ const GOALIE_LABELS: Record<string, string> = {
   SAVE_PERCENTAGE: "SV%",
   GOALS_AGAINST_AVERAGE: "GAA",
   // Requested goalie abbreviations
-  GAA: "GAA",
   GAMES_PLAYED: "GP",
   LOSSES_GOALIE: "L",
   OTL_GOALIE: "OTL",
@@ -360,6 +359,16 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const DEBOUNCE_MS = 200;
 
   // Keepers & Traded Picks visibility now controlled by settings.isKeeper
+  const playerNamesById = React.useMemo(() => {
+    const map = new Map<string, string>();
+    if (playersForKeeperAutocomplete) {
+      playersForKeeperAutocomplete.forEach(p => {
+        map.set(String(p.id), p.fullName);
+      });
+    }
+    return map;
+  }, [playersForKeeperAutocomplete]);
+
   const [keeperSelectedPlayerId, setKeeperSelectedPlayerId] = React.useState<
     string | undefined
   >(undefined);
@@ -2299,8 +2308,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                         >
                           <span>
                             {k.round}-{k.pickInRound} →{" "}
-                            {customTeamNames[k.teamId] || k.teamId} (Player{" "}
-                            {k.playerId})
+                            {customTeamNames[k.teamId] || k.teamId} (
+                            {playerNamesById.get(k.playerId) ||
+                              `Player #${k.playerId}`})
                           </span>
                           {onRemoveKeeper && (
                             <button

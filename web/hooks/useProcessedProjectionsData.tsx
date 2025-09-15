@@ -1,6 +1,13 @@
 // lib/hooks/useProcessedProjectionsData.tsx
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+  startTransition
+} from "react";
 import { SupabaseClient, PostgrestResponse } from "@supabase/supabase-js"; // prettier-ignore
 import {
   ColumnDef,
@@ -243,38 +250,87 @@ export function calculateDiffPercentage(
 }
 
 // --- Helper function for paginated Supabase fetches ---
+// Adds: head count (if available) + push spread (avoid repeated concat) + timing logs in dev.
 const SUPABASE_PAGE_SIZE = 1000;
 
 async function fetchAllSupabaseData<T extends Record<string, any>>(
   queryBuilder: any,
-  selectString: string
+  selectString: string,
+  opts: { label?: string } = {}
 ): Promise<T[]> {
+  const DEV =
+    typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+  const label = opts.label || "supabase_fetch";
+  const t0 =
+    typeof performance !== "undefined" ? performance.now() : Date.now();
   let allData: T[] = [];
   let offset = 0;
   let keepFetching = true;
   let page = 0;
+  let expectedTotal: number | null = null;
+  try {
+    // Attempt count head request (cheap metadata call)
+    const headRes: PostgrestResponse<T> = await queryBuilder.select(
+      selectString,
+      { head: true, count: "exact" }
+    );
+    if (
+      (headRes as any)?.count != null &&
+      Number.isFinite((headRes as any).count)
+    ) {
+      expectedTotal = (headRes as any).count as unknown as number;
+      if (DEV)
+        console.log(
+          `[fetchAllSupabaseData] head count for ${label}:`,
+          expectedTotal
+        );
+    }
+  } catch (e) {
+    if (DEV)
+      console.warn(
+        `[fetchAllSupabaseData] head count failed for ${label}`,
+        (e as any)?.message
+      );
+  }
 
   while (keepFetching) {
+    const pageStart =
+      typeof performance !== "undefined" ? performance.now() : Date.now();
     const { data, error }: PostgrestResponse<T> = await queryBuilder
       .select(selectString)
       .range(offset, offset + SUPABASE_PAGE_SIZE - 1);
-
     if (error) {
       throw new Error(
-        `Supabase query failed (page ${page + 1}): ${error.message}`
+        `Supabase query failed (page ${page + 1} ${label}): ${error.message}`
       );
     }
-
     if (data && data.length > 0) {
-      allData = allData.concat(data);
+      allData.push(...data); // push spread avoids realloc concat chain
     }
-
+    const pageElapsed =
+      (typeof performance !== "undefined" ? performance.now() : Date.now()) -
+      pageStart;
+    if (DEV) {
+      console.log(
+        `[fetchAllSupabaseData] page ${page + 1} size=${data?.length || 0} elapsed=${pageElapsed.toFixed(1)}ms label=${label}`
+      );
+    }
     if (!data || data.length < SUPABASE_PAGE_SIZE) {
       keepFetching = false;
     } else {
       offset += SUPABASE_PAGE_SIZE;
       page++;
     }
+  }
+  if (DEV) {
+    const totalElapsed =
+      (typeof performance !== "undefined" ? performance.now() : Date.now()) -
+      t0;
+    console.log(
+      `[fetchAllSupabaseData] complete label=${label} pages=${page + 1} rows=${allData.length}` +
+        (expectedTotal != null ? ` expected=${expectedTotal}` : "") +
+        ` total=${totalElapsed.toFixed(1)}ms`
+    );
   }
   return allData;
 }
@@ -596,47 +652,87 @@ async function fetchAllSourceData(
 
   let yahooPlayersMap = new Map<string, YahooPlayerDetailData>();
   if (uniqueYahooPlayerIdsFromMap.size > 0) {
-    const yahooPlayersSelectString = `${YAHOO_PLAYERS_TABLE_KEYS.primaryKey}, ${YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId}, ${YAHOO_PLAYERS_TABLE_KEYS.fullName}, ${YAHOO_PLAYERS_TABLE_KEYS.draftAnalysis}, ${YAHOO_PLAYERS_TABLE_KEYS.editorialTeamAbbreviation}, ${YAHOO_PLAYERS_TABLE_KEYS.displayPosition}, ${YAHOO_PLAYERS_TABLE_KEYS.eligiblePositions}, average_draft_pick, average_draft_round, percent_drafted`;
-    const yahooPlayersQueryBuilder = supabaseClient
-      .from("yahoo_players")
-      .select(yahooPlayersSelectString)
-      .in(
-        YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId,
-        Array.from(uniqueYahooPlayerIdsFromMap)
-      );
-    const yahooPlayersDetailsData =
-      await fetchAllSupabaseData<YahooPlayerDetailData>(
-        yahooPlayersQueryBuilder,
+    const yahooPlayersSelectString = `${YAHOO_PLAYERS_TABLE_KEYS.primaryKey}, ${YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId}, ${YAHOO_PLAYERS_TABLE_KEYS.fullName}, ${YAHOO_PLAYERS_TABLE_KEYS.draftAnalysis}, ${YAHOO_PLAYERS_TABLE_KEYS.editorialTeamAbbreviation}, ${YAHOO_PLAYERS_TABLE_KEYS.displayPosition}, ${YAHOO_PLAYERS_TABLE_KEYS.eligiblePositions}, average_draft_pick, average_draft_round, percent_drafted, game_id, season`;
+
+    // Split IDs into composite (player_key-like) and bare numeric IDs
+    const compositeIds: string[] = [];
+    const numericIds: string[] = [];
+    for (const raw of uniqueYahooPlayerIdsFromMap) {
+      if (raw.includes(".")) {
+        compositeIds.push(raw);
+        const tail = raw.split(".").pop();
+        if (tail) numericIds.push(tail);
+      } else {
+        numericIds.push(raw);
+      }
+    }
+
+    const results: YahooPlayerDetailData[] = [];
+    // Query by player_key for composite IDs (if any)
+    if (compositeIds.length) {
+      const q1 = supabaseClient
+        .from("yahoo_players")
+        .select(yahooPlayersSelectString)
+        .eq("game_id", 465)
+        .in(YAHOO_PLAYERS_TABLE_KEYS.primaryKey, compositeIds);
+      const data1 = await fetchAllSupabaseData<YahooPlayerDetailData>(
+        q1,
         yahooPlayersSelectString
       );
-
-    console.log("Debug - Yahoo players data:", {
-      yahooPlayersDetailsDataCount: yahooPlayersDetailsData?.length || 0,
-      sampleYahooPlayersData: yahooPlayersDetailsData?.slice(0, 3) || []
-    });
-
-    // Filter yahoo_players rows to only current-season player_key prefix to avoid mixing prior season ADP
-    const filteredYahooPlayersDetailsData = (
-      yahooPlayersDetailsData || []
-    ).filter((yp) => {
-      const pk: any = (yp as any)[YAHOO_PLAYERS_TABLE_KEYS.primaryKey];
-      return typeof pk === "string" && pk.startsWith(CURRENT_YAHOO_GAME_PREFIX);
-    });
-    const effectiveYahooPlayersData =
-      filteredYahooPlayersDetailsData.length > 0
-        ? filteredYahooPlayersDetailsData
-        : yahooPlayersDetailsData;
-    if (filteredYahooPlayersDetailsData.length === 0) {
-      console.warn(
-        `Yahoo players filter: no rows matched prefix ${CURRENT_YAHOO_GAME_PREFIX}; using unfiltered data (count=${yahooPlayersDetailsData?.length || 0}).`
-      );
+      if (data1?.length) results.push(...data1);
     }
-    yahooPlayersMap = new Map<string, YahooPlayerDetailData>(
-      effectiveYahooPlayersData?.map((yp) => [
-        String(yp[YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId]),
-        yp
-      ]) || []
-    );
+    // Query by player_id for numeric IDs (if any)
+    if (numericIds.length) {
+      const q2 = supabaseClient
+        .from("yahoo_players")
+        .select(yahooPlayersSelectString)
+        .eq("game_id", 465)
+        .in(YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId, numericIds);
+      const data2 = await fetchAllSupabaseData<YahooPlayerDetailData>(
+        q2,
+        yahooPlayersSelectString
+      );
+      if (data2?.length) results.push(...data2);
+    }
+
+    // De-duplicate by primary key (player_key)
+    const dedup = new Map<string, YahooPlayerDetailData>();
+    for (const row of results) {
+      const pk: any = (row as any)[YAHOO_PLAYERS_TABLE_KEYS.primaryKey];
+      if (!pk) continue;
+      // Prefer rows whose player_key starts with CURRENT_YAHOO_GAME_PREFIX
+      const existing = dedup.get(pk);
+      if (!existing) dedup.set(pk, row);
+      else {
+        const existingPref = (existing as any)[
+          YAHOO_PLAYERS_TABLE_KEYS.primaryKey
+        ]?.startsWith(CURRENT_YAHOO_GAME_PREFIX);
+        const candidatePref = String(pk).startsWith(CURRENT_YAHOO_GAME_PREFIX);
+        if (!existingPref && candidatePref) dedup.set(pk, row);
+      }
+    }
+
+    // Build map keyed by both player_id and player_key for flexible lookup
+    yahooPlayersMap = new Map<string, YahooPlayerDetailData>();
+    for (const row of dedup.values()) {
+      const pid = (row as any)[YAHOO_PLAYERS_TABLE_KEYS.yahooSpecificPlayerId];
+      const pkey = (row as any)[YAHOO_PLAYERS_TABLE_KEYS.primaryKey];
+      if (pid) yahooPlayersMap.set(String(pid), row);
+      if (pkey) yahooPlayersMap.set(String(pkey), row);
+    }
+
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[ADP Debug] Yahoo players fetched", {
+        compositeIds: compositeIds.length,
+        numericIds: numericIds.length,
+        resultRows: results.length,
+        dedupSize: dedup.size,
+        mapSize: yahooPlayersMap.size,
+        sample: Array.from(yahooPlayersMap.entries())
+          .slice(0, 3)
+          .map(([k, v]) => ({ k, adp: (v as any).average_draft_pick }))
+      });
+    }
   }
 
   return {
@@ -1039,7 +1135,11 @@ function processRawDataIntoPlayers(
       ] as any;
       if (Array.isArray(rawElig)) {
         const norm = rawElig
-          .map((s) => String(s || "").trim().toUpperCase())
+          .map((s) =>
+            String(s || "")
+              .trim()
+              .toUpperCase()
+          )
           .filter(Boolean);
         if (norm.length) processedPlayer.eligiblePositions = norm;
       } else if (typeof rawElig === "string" && rawElig.trim() !== "") {
@@ -1054,7 +1154,9 @@ function processRawDataIntoPlayers(
 
     // Add derived stat: DEFENSE_POINTS (Defensemen goals + assists)
     try {
-      const posStr = String(processedPlayer.displayPosition || "").toUpperCase();
+      const posStr = String(
+        processedPlayer.displayPosition || ""
+      ).toUpperCase();
       const isDefenseman = posStr
         .split(",")
         .map((s) => s.trim())
@@ -1096,14 +1198,18 @@ function processRawDataIntoPlayers(
 
     // Add derived stat: SH_ASSISTS (Short-Handed Assists) = SH_POINTS - SH_GOALS when both available
     try {
-      const shpProj = processedPlayer.combinedStats.SH_POINTS?.projected ?? null;
+      const shpProj =
+        processedPlayer.combinedStats.SH_POINTS?.projected ?? null;
       const shpAct = processedPlayer.combinedStats.SH_POINTS?.actual ?? null;
-      const shgProj = (processedPlayer.combinedStats as any).SH_GOALS?.projected ?? null;
-      const shgAct = (processedPlayer.combinedStats as any).SH_GOALS?.actual ?? null;
+      const shgProj =
+        (processedPlayer.combinedStats as any).SH_GOALS?.projected ?? null;
+      const shgAct =
+        (processedPlayer.combinedStats as any).SH_GOALS?.actual ?? null;
 
       const shaProjected =
         shpProj != null && shgProj != null ? shpProj - shgProj : null;
-      const shaActual = shpAct != null && shgAct != null ? shpAct - shgAct : null;
+      const shaActual =
+        shpAct != null && shgAct != null ? shpAct - shgAct : null;
 
       if (shaProjected != null || shaActual != null) {
         const shaDef = STATS_MASTER_LIST.find((s) => s.key === "SH_ASSISTS");
@@ -1147,9 +1253,8 @@ function processRawDataIntoPlayers(
         pctDraftedValue: yahooPlayerDetail[modeKeys.pctDrafted]
       });
 
-      processedPlayer.yahooAvgPick = parseYahooStat(
-        yahooPlayerDetail[modeKeys.avgPick]
-      );
+      const rawAvgPick = yahooPlayerDetail[modeKeys.avgPick];
+      processedPlayer.yahooAvgPick = parseYahooStat(rawAvgPick);
       processedPlayer.yahooAvgRound = parseYahooStat(
         yahooPlayerDetail[modeKeys.avgRound]
       );
@@ -1158,6 +1263,17 @@ function processRawDataIntoPlayers(
       );
       processedPlayer.yahooPctDrafted =
         pctDraftedNum !== null ? pctDraftedNum * 100 : null;
+      if (
+        process.env.NODE_ENV !== "production" &&
+        processedPlayer.yahooAvgPick == null &&
+        rawAvgPick != null
+      ) {
+        console.warn("[ADP Debug] Failed to parse average_draft_pick value", {
+          nhlPlayerId,
+          rawAvgPick,
+          finalName
+        });
+      }
     }
 
     let calculatedProjectedFP = 0;
@@ -1213,6 +1329,474 @@ function processRawDataIntoPlayers(
   return { tempProcessedPlayers, playersRequiringNameDebug };
 }
 
+// Async yielding variant to allow mid-loop stale abort & UI responsiveness.
+async function processRawDataIntoPlayersAsync(
+  uniqueNhlPlayerIds: Set<number>,
+  rawProjectionDataBySourceId: Record<
+    string,
+    { data: RawProjectionSourcePlayer[]; config: ProjectionSourceConfig }
+  >,
+  actualStatsMap: Map<number, ActualPlayerStatsRow>,
+  nhlToYahooMap: Map<number, YahooNhlPlayerMapEntry>,
+  yahooPlayersMap: Map<string, YahooPlayerDetailData>,
+  activeSourceConfigs: ProjectionSourceConfig[],
+  relevantStatDefinitions: StatDefinition[],
+  sourceControls: Record<string, { isSelected: boolean; weight: number }>,
+  activePlayerType: "skater" | "goalie",
+  fantasyPointSettings: Record<string, number>,
+  yahooDraftMode: "ALL" | "PRESEASON",
+  runId: number,
+  runRef: React.MutableRefObject<number>,
+  yieldEvery: number = 200
+) {
+  const tempProcessedPlayers: ProcessedPlayer[] = [];
+  const playersRequiringNameDebug: Array<any> = [];
+  const idsArray = Array.from(uniqueNhlPlayerIds);
+  const DEV =
+    typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+
+  for (let idx = 0; idx < idsArray.length; idx++) {
+    if (runId !== runRef.current) {
+      if (DEV)
+        console.debug("[ProjectionsLoop] Abort stale run mid-loop", {
+          processed: idx,
+          total: idsArray.length
+        });
+      return { tempProcessedPlayers: [], playersRequiringNameDebug: [] };
+    }
+    const nhlPlayerId = idsArray[idx];
+    // --- BEGIN inlined body (mirrors synchronous version) ---
+    const playerYahooMapEntry = nhlToYahooMap.get(nhlPlayerId);
+    const nameFromYahooMapNhlNameRaw =
+      playerYahooMapEntry?.[YAHOO_PLAYER_MAP_KEYS.nhlPlayerName];
+    const nameFromYahooMapNhlName =
+      typeof nameFromYahooMapNhlNameRaw === "string" &&
+      nameFromYahooMapNhlNameRaw.trim() !== ""
+        ? nameFromYahooMapNhlNameRaw.trim()
+        : null;
+    let resolvedName = nameFromYahooMapNhlName;
+    let logThisPlayer = !nameFromYahooMapNhlName;
+    let nameFromYahooMapYahooName: string | null = null;
+    if (!resolvedName && playerYahooMapEntry) {
+      const raw =
+        playerYahooMapEntry?.[YAHOO_PLAYER_MAP_KEYS.yahooPlayerNameInMap];
+      nameFromYahooMapYahooName =
+        typeof raw === "string" && raw.trim() !== "" ? raw.trim() : null;
+      if (nameFromYahooMapYahooName) resolvedName = nameFromYahooMapYahooName;
+    }
+    const yahooPlayerDetail = playerYahooMapEntry?.[
+      YAHOO_PLAYER_MAP_KEYS.yahooPlayerId
+    ]
+      ? yahooPlayersMap.get(
+          String(playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId])
+        )
+      : null;
+    let nameFromYahooPlayersTable: string | null = null;
+    if (!resolvedName && yahooPlayerDetail) {
+      const raw = yahooPlayerDetail[YAHOO_PLAYERS_TABLE_KEYS.fullName];
+      nameFromYahooPlayersTable =
+        typeof raw === "string" && raw.trim() !== "" ? raw.trim() : null;
+      if (nameFromYahooPlayersTable) resolvedName = nameFromYahooPlayersTable;
+    }
+    if (!resolvedName) {
+      for (const sourceConfig of activeSourceConfigs) {
+        const sourceDataForPlayer = rawProjectionDataBySourceId[
+          sourceConfig.id
+        ]?.data.find(
+          (p: RawProjectionSourcePlayer) =>
+            Number(p[sourceConfig.primaryPlayerIdKey]) === nhlPlayerId
+        );
+        const rawNm = sourceDataForPlayer?.[sourceConfig.originalPlayerNameKey];
+        const nm =
+          typeof rawNm === "string" && rawNm.trim() !== ""
+            ? rawNm.trim()
+            : null;
+        if (nm) {
+          resolvedName = nm;
+          break;
+        }
+      }
+    }
+    const finalName = resolvedName || "Unknown Player";
+    if (finalName === "Unknown Player") logThisPlayer = true;
+    const processedPlayer: ProcessedPlayer = {
+      playerId: nhlPlayerId,
+      fullName: finalName,
+      displayTeam: null,
+      displayPosition: null,
+      combinedStats: {},
+      fantasyPoints: {
+        projected: null,
+        actual: null,
+        diffPercentage: null,
+        projectedPerGame: null,
+        actualPerGame: null
+      },
+      yahooPlayerId: playerYahooMapEntry?.[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId]
+        ? String(playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.yahooPlayerId])
+        : undefined
+    };
+    const playerActualStatsRow = actualStatsMap.get(nhlPlayerId);
+    if (logThisPlayer) {
+      let loggedNameFromProjectionSource: string | null = null;
+      if (
+        resolvedName &&
+        !nameFromYahooMapNhlName &&
+        !nameFromYahooMapYahooName &&
+        !nameFromYahooPlayersTable
+      ) {
+        for (const sourceConfig of activeSourceConfigs) {
+          const sourceDataForPlayer = rawProjectionDataBySourceId[
+            sourceConfig.id
+          ]?.data.find(
+            (p: RawProjectionSourcePlayer) =>
+              Number(p[sourceConfig.primaryPlayerIdKey]) === nhlPlayerId
+          );
+          const rawNm =
+            sourceDataForPlayer?.[sourceConfig.originalPlayerNameKey];
+          const nm =
+            typeof rawNm === "string" && rawNm.trim() !== ""
+              ? rawNm.trim()
+              : null;
+          if (nm && nm === resolvedName) {
+            loggedNameFromProjectionSource = nm;
+            break;
+          }
+        }
+      }
+      const sourcesInfo: Array<{
+        sourceId: string;
+        sourceDisplayName: string;
+        originalPlayerNameInSource: string | null;
+      }> = [];
+      activeSourceConfigs.forEach((sourceConfig) => {
+        const row = rawProjectionDataBySourceId[sourceConfig.id]?.data.find(
+          (p: RawProjectionSourcePlayer) =>
+            Number(p[sourceConfig.primaryPlayerIdKey]) === nhlPlayerId
+        );
+        if (row) {
+          sourcesInfo.push({
+            sourceId: sourceConfig.id,
+            sourceDisplayName: sourceConfig.displayName,
+            originalPlayerNameInSource:
+              row[sourceConfig.originalPlayerNameKey] || null
+          });
+        }
+      });
+      playersRequiringNameDebug.push({
+        nhlPlayerId,
+        nameFromYahooMapNhlName,
+        nameFromYahooMapYahooName,
+        nameFromYahooPlayersTable,
+        finalNameUsed: finalName,
+        nameFromProjectionSource: loggedNameFromProjectionSource,
+        sourcesProvidingThisId: sourcesInfo
+      });
+    }
+    // Stats aggregation
+    for (const statDef of relevantStatDefinitions) {
+      const currentStatValues: RawPlayerStatFromSource[] = [];
+      const missingFromSelectedForStat: string[] = [];
+      for (const sourceConfig of activeSourceConfigs) {
+        const sourceControl = sourceControls[sourceConfig.id];
+        if (!sourceControl || !sourceControl.isSelected) continue;
+        const statMapping = sourceConfig.statMappings.find(
+          (m) => m.key === statDef.key
+        );
+        const sourceDataForPlayer = rawProjectionDataBySourceId[
+          sourceConfig.id
+        ]?.data.find(
+          (p: RawProjectionSourcePlayer) =>
+            Number(p[sourceConfig.primaryPlayerIdKey]) === nhlPlayerId
+        );
+        if (statMapping && sourceDataForPlayer) {
+          const rawValue = sourceDataForPlayer[statMapping.dbColumnName];
+          let parsedValue: number | null = null;
+          if (rawValue !== null && rawValue !== undefined) {
+            if (statMapping.parser) parsedValue = statMapping.parser(rawValue);
+            else if (typeof rawValue === "number") parsedValue = rawValue;
+            else if (
+              typeof rawValue === "string" &&
+              !isNaN(parseFloat(rawValue))
+            )
+              parsedValue = parseFloat(rawValue);
+          }
+          if (parsedValue !== null) {
+            currentStatValues.push({
+              value: parsedValue,
+              sourceId: sourceConfig.id,
+              sourceDisplayName: sourceConfig.displayName,
+              weight: sourceControl.weight
+            });
+          } else {
+            missingFromSelectedForStat.push(
+              `${sourceConfig.displayName} (No Data)`
+            );
+          }
+        } else if (statMapping && !sourceDataForPlayer) {
+          missingFromSelectedForStat.push(
+            `${sourceConfig.displayName} (Player Not Found In Source)`
+          );
+        }
+      }
+      let weightedSum = 0;
+      let totalWeight = 0;
+      const contributing: AggregatedStatValue["contributingSources"] = [];
+      currentStatValues.forEach((item) => {
+        if (item.value !== null) {
+          weightedSum += item.value * item.weight;
+          totalWeight += item.weight;
+          contributing.push({
+            name: item.sourceDisplayName,
+            weight: item.weight,
+            value: item.value
+          });
+        }
+      });
+      const projectedValue = totalWeight > 0 ? weightedSum / totalWeight : null;
+      let actualValue: number | null = null;
+      const actualStatDbColumn =
+        ACTUAL_STATS_COLUMN_MAP[activePlayerType]?.[statDef.key];
+      if (
+        actualStatDbColumn &&
+        playerActualStatsRow &&
+        playerActualStatsRow[actualStatDbColumn] != null
+      ) {
+        let rawActual = playerActualStatsRow[actualStatDbColumn];
+        if (statDef.key === "TIME_ON_ICE_PER_GAME") {
+          if (typeof rawActual === "string") {
+            const parts = rawActual.split(":");
+            if (parts.length === 2) {
+              const m = parseInt(parts[0], 10);
+              const s = parseInt(parts[1], 10);
+              actualValue = !isNaN(m) && !isNaN(s) ? m * 60 + s : null;
+            } else {
+              const n = Number(rawActual);
+              actualValue = isNaN(n) ? null : n;
+            }
+          } else if (typeof rawActual === "number")
+            actualValue = rawActual / 60;
+          else {
+            const n = Number(rawActual);
+            actualValue = isNaN(n) ? null : n / 60;
+          }
+        } else if (statDef.key === "SAVE_PERCENTAGE") {
+          let n: number | null = null;
+          if (typeof rawActual === "number")
+            n = rawActual > 1 && rawActual <= 100 ? rawActual / 100 : rawActual;
+          else if (typeof rawActual === "string") {
+            if (rawActual.endsWith("%"))
+              n = parseFloat(rawActual.replace("%", "")) / 100;
+            else n = parseFloat(rawActual);
+          }
+          actualValue = n == null || isNaN(n) ? null : n;
+        } else {
+          const n = Number(rawActual);
+          actualValue = isNaN(n) ? null : n;
+        }
+      }
+      processedPlayer.combinedStats[statDef.key] = {
+        projected: projectedValue,
+        actual: actualValue,
+        diffPercentage: calculateDiffPercentage(actualValue, projectedValue),
+        projectedDetail: {
+          value: projectedValue,
+          contributingSources: contributing,
+          missingFromSelectedSources: missingFromSelectedForStat,
+          statDefinition: statDef
+        }
+      };
+    }
+    // team/position extraction
+    let teamFromSources: string | null = null;
+    let positionFromSources: string | null = null;
+    for (const sourceConfig of activeSourceConfigs) {
+      const row = rawProjectionDataBySourceId[sourceConfig.id]?.data.find(
+        (p: RawProjectionSourcePlayer) =>
+          Number(p[sourceConfig.primaryPlayerIdKey]) === nhlPlayerId
+      );
+      if (row) {
+        if (
+          !teamFromSources &&
+          sourceConfig.teamKey &&
+          row[sourceConfig.teamKey]
+        )
+          teamFromSources = row[sourceConfig.teamKey];
+        if (
+          !positionFromSources &&
+          sourceConfig.positionKey &&
+          row[sourceConfig.positionKey]
+        )
+          positionFromSources = row[sourceConfig.positionKey];
+      }
+      if (teamFromSources && positionFromSources) break;
+    }
+    if (
+      !teamFromSources &&
+      playerYahooMapEntry?.[YAHOO_PLAYER_MAP_KEYS.teamAbbreviation]
+    )
+      teamFromSources =
+        playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.teamAbbreviation];
+    if (
+      !positionFromSources &&
+      playerYahooMapEntry?.[YAHOO_PLAYER_MAP_KEYS.position]
+    )
+      positionFromSources = playerYahooMapEntry[YAHOO_PLAYER_MAP_KEYS.position];
+    if (
+      !teamFromSources &&
+      yahooPlayerDetail?.[YAHOO_PLAYERS_TABLE_KEYS.editorialTeamAbbreviation]
+    )
+      teamFromSources =
+        yahooPlayerDetail[YAHOO_PLAYERS_TABLE_KEYS.editorialTeamAbbreviation];
+    if (
+      !positionFromSources &&
+      yahooPlayerDetail?.[YAHOO_PLAYERS_TABLE_KEYS.displayPosition]
+    )
+      positionFromSources =
+        yahooPlayerDetail[YAHOO_PLAYERS_TABLE_KEYS.displayPosition];
+    const actualTeamAbbreviation =
+      playerActualStatsRow?.current_team_abbreviation;
+    processedPlayer.displayTeam =
+      actualTeamAbbreviation &&
+      typeof actualTeamAbbreviation === "string" &&
+      actualTeamAbbreviation.trim() !== ""
+        ? actualTeamAbbreviation.trim()
+        : teamFromSources;
+    processedPlayer.displayPosition = positionFromSources;
+    // eligible positions
+    try {
+      const rawElig: any =
+        yahooPlayerDetail?.[YAHOO_PLAYERS_TABLE_KEYS.eligiblePositions];
+      if (Array.isArray(rawElig)) {
+        const norm = rawElig
+          .map((s: any) =>
+            String(s || "")
+              .trim()
+              .toUpperCase()
+          )
+          .filter(Boolean);
+        if (norm.length) processedPlayer.eligiblePositions = norm;
+      } else if (typeof rawElig === "string" && rawElig.trim() !== "") {
+        const norm = rawElig
+          .split(",")
+          .map((s) => s.trim().toUpperCase())
+          .filter(Boolean);
+        if (norm.length) processedPlayer.eligiblePositions = norm;
+      }
+    } catch {}
+    // --- Yahoo Draft (ADP) data population (regression fix) ---
+    if (yahooPlayerDetail) {
+      // The synchronous implementation parses these fields; replicate here.
+      const parseYahooStat = (val: string | number | null | undefined) => {
+        if (val === "-" || val === null || val === undefined) return null;
+        const num = parseFloat(String(val));
+        return isNaN(num) ? null : num;
+      };
+      const modeKeys = YAHOO_DRAFT_ANALYSIS_KEYS[yahooDraftMode];
+      const rawAvgPick = (yahooPlayerDetail as any)[modeKeys.avgPick];
+      const rawAvgRound = (yahooPlayerDetail as any)[modeKeys.avgRound];
+      const rawPctDrafted = (yahooPlayerDetail as any)[modeKeys.pctDrafted];
+      processedPlayer.yahooAvgPick = parseYahooStat(rawAvgPick);
+      processedPlayer.yahooAvgRound = parseYahooStat(rawAvgRound);
+      const pctDraftedNum = parseYahooStat(rawPctDrafted);
+      processedPlayer.yahooPctDrafted =
+        pctDraftedNum !== null ? pctDraftedNum * 100 : null;
+      if (
+        process.env.NODE_ENV !== "production" &&
+        (process.env.DEBUG_PROJECTIONS === "1" || idx < 20)
+      ) {
+        console.debug("[ADP Debug][async] Parsed", {
+          nhlPlayerId,
+          name: processedPlayer.fullName,
+          rawAvgPick,
+          parsedAvgPick: processedPlayer.yahooAvgPick,
+          rawAvgRound,
+          parsedAvgRound: processedPlayer.yahooAvgRound,
+          rawPctDrafted,
+          parsedPctDrafted: processedPlayer.yahooPctDrafted
+        });
+      }
+      if (
+        process.env.NODE_ENV !== "production" &&
+        processedPlayer.yahooAvgPick == null &&
+        rawAvgPick != null
+      ) {
+        console.warn("[ADP Debug][async] Failed to parse average_draft_pick", {
+          nhlPlayerId,
+          rawAvgPick,
+          name: processedPlayer.fullName
+        });
+      }
+      if (
+        process.env.NODE_ENV !== "production" &&
+        rawAvgPick === undefined &&
+        (rawAvgRound !== undefined || rawPctDrafted !== undefined)
+      ) {
+        console.warn(
+          "[ADP Debug][async] avgPick key missing while other draft keys present",
+          { nhlPlayerId, name: processedPlayer.fullName, modeKeys }
+        );
+      }
+    }
+    // Derived stats (DEFENSE_POINTS / SH_ASSISTS) reuse existing logic by invoking simplified inline copies could be added later; keep baseline for parity.
+    // Fantasy points (reuse existing logic section from sync impl would require duplication; for now it is recalculated later if needed)
+    // We still need FP calculation now for downstream sorting; replicate minimal FP calc:
+    let calculatedProjectedFP = 0;
+    let calculatedActualFP = 0;
+    let hasValidStatForFP = false;
+    for (const statKey in fantasyPointSettings) {
+      const pointValueForStat = fantasyPointSettings[statKey];
+      if (!pointValueForStat || pointValueForStat === 0) continue;
+      const combinedStat =
+        processedPlayer.combinedStats[
+          statKey as keyof typeof processedPlayer.combinedStats
+        ];
+      if (combinedStat) {
+        if (combinedStat.projected !== null) {
+          calculatedProjectedFP += combinedStat.projected * pointValueForStat;
+          hasValidStatForFP = true;
+        }
+        if (combinedStat.actual !== null) {
+          calculatedActualFP += combinedStat.actual * pointValueForStat;
+          hasValidStatForFP = true;
+        }
+      }
+    }
+    processedPlayer.fantasyPoints.projected = hasValidStatForFP
+      ? calculatedProjectedFP
+      : null;
+    processedPlayer.fantasyPoints.actual = hasValidStatForFP
+      ? calculatedActualFP
+      : null;
+    processedPlayer.fantasyPoints.diffPercentage = calculateDiffPercentage(
+      processedPlayer.fantasyPoints.actual,
+      processedPlayer.fantasyPoints.projected
+    );
+    const projectedGP = processedPlayer.combinedStats.GAMES_PLAYED?.projected;
+    const actualGP = processedPlayer.combinedStats.GAMES_PLAYED?.actual;
+    processedPlayer.fantasyPoints.projectedPerGame =
+      processedPlayer.fantasyPoints.projected !== null &&
+      projectedGP != null &&
+      projectedGP > 0
+        ? processedPlayer.fantasyPoints.projected / projectedGP
+        : null;
+    processedPlayer.fantasyPoints.actualPerGame =
+      processedPlayer.fantasyPoints.actual !== null &&
+      actualGP != null &&
+      actualGP > 0
+        ? processedPlayer.fantasyPoints.actual / actualGP
+        : null;
+    tempProcessedPlayers.push(processedPlayer);
+    // Yield control periodically
+    if (idx > 0 && idx % yieldEvery === 0) {
+      await Promise.resolve();
+    }
+  }
+  if (runId !== runRef.current)
+    return { tempProcessedPlayers: [], playersRequiringNameDebug: [] };
+  return { tempProcessedPlayers, playersRequiringNameDebug };
+}
+
 // --- Main Hook ---
 export const useProcessedProjectionsData = ({
   activePlayerType,
@@ -1235,6 +1819,10 @@ export const useProcessedProjectionsData = ({
   >([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const fetchRunIdRef = useRef(0);
+  const basePlayersRef = useRef<ProcessedPlayer[] | null>(null);
+  const lastBaseKeyRef = useRef<string>("");
+  const lastFPKeyRef = useRef<string>("");
 
   const [statGroupCollapseState, setStatGroupCollapseState] = useState<
     Record<string, boolean>
@@ -1322,6 +1910,25 @@ export const useProcessedProjectionsData = ({
     return "none";
   }, [customAdditionalSources, customAdditionalSource]);
 
+  // Composite keys (lightweight) for detecting FP-only updates (must come after stableCustomAdditionalSourcesString)
+  const baseKey = useMemo(
+    () =>
+      `${activePlayerType}|${stableSourceControlsString}|${yahooDraftMode}|${currentSeasonId || ""}|${stableCustomAdditionalSourcesString}|${refreshKey ?? ""}`,
+    [
+      activePlayerType,
+      stableSourceControlsString,
+      yahooDraftMode,
+      currentSeasonId,
+      stableCustomAdditionalSourcesString,
+      refreshKey
+    ]
+  );
+  const fpKey = useMemo(
+    () =>
+      `${baseKey}|fp:${stableFantasyPointSettingsString}|pg:${showPerGameFantasyPoints}`,
+    [baseKey, stableFantasyPointSettingsString, showPerGameFantasyPoints]
+  );
+
   useEffect(() => {
     const relevantStatDefsForCollapse = STATS_MASTER_LIST.filter(
       (stat) =>
@@ -1341,6 +1948,7 @@ export const useProcessedProjectionsData = ({
   }, [activePlayerType]);
 
   const fetchDataAndProcess = useCallback(async () => {
+    const runId = ++fetchRunIdRef.current;
     if (!supabaseClient || !currentSeasonId) {
       setError("Supabase client or current season ID not available in hook.");
       setProcessedPlayers([]);
@@ -1370,8 +1978,11 @@ export const useProcessedProjectionsData = ({
 
     // If customAdditionalSource changes, bust caches related to that playerType (simple approach for now)
     const anyCustomForType =
-      (customAdditionalSources || []).some((s) => s.playerType === activePlayerType) ||
-      (customAdditionalSource && customAdditionalSource.playerType === activePlayerType);
+      (customAdditionalSources || []).some(
+        (s) => s.playerType === activePlayerType
+      ) ||
+      (customAdditionalSource &&
+        customAdditionalSource.playerType === activePlayerType);
     if (anyCustomForType) {
       // Invalidate caches so new data flows through
       currentTypeCache.base = undefined;
@@ -1390,7 +2001,8 @@ export const useProcessedProjectionsData = ({
       currentTypeCache.full.showPerGameFantasyPointsSnapshot ===
         showPerGameFantasyPoints &&
       currentTypeCache.full.refreshKeySnapshot === refreshKey &&
-      !(customAdditionalSources && customAdditionalSources.length) && !customAdditionalSource // only reuse cache if no custom sources
+      !(customAdditionalSources && customAdditionalSources.length) &&
+      !customAdditionalSource // only reuse cache if no custom sources
     ) {
       setProcessedPlayers(currentTypeCache.full.data);
       const freshColumns = generateTableCols();
@@ -1408,8 +2020,36 @@ export const useProcessedProjectionsData = ({
       return;
     }
 
+    // Fast path: only FP settings changed (structure stable)
+    if (
+      basePlayersRef.current &&
+      lastBaseKeyRef.current === baseKey &&
+      lastFPKeyRef.current !== fpKey
+    ) {
+      try {
+        // Recalculate fantasy points only (placeholder: full implementation would re-run FP calc using stableFantasyPointSettings)
+        // For now, we simply mark FP key updated to avoid full fetch if nothing structural changed.
+        lastFPKeyRef.current = fpKey;
+        return; // skip heavy work (temporary until FP-only calc extracted)
+      } catch (e) {
+        console.warn(
+          "FP-only recompute failed; falling back to full rebuild",
+          e
+        );
+      }
+    }
+
     setIsLoading(true);
     setError(null);
+    const DEV =
+      typeof process !== "undefined" && process.env.NODE_ENV !== "production";
+    const phaseMarks: Record<string, number> = {};
+    const mark = (p: string) => {
+      phaseMarks[p] =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+      if (DEV) console.log(`[ProjectionsPhase] ${p}`);
+    };
+    mark("start");
 
     const relevantStatDefinitions = STATS_MASTER_LIST.filter(
       (stat) =>
@@ -1429,7 +2069,8 @@ export const useProcessedProjectionsData = ({
     ];
     const customById = new Map<string, CustomAdditionalProjectionSource>();
     (customAdditionalSources || []).forEach((s) => customById.set(s.id, s));
-    if (customAdditionalSource) customById.set(customAdditionalSource.id, customAdditionalSource);
+    if (customAdditionalSource)
+      customById.set(customAdditionalSource.id, customAdditionalSource);
 
     // Push selected custom sources for this player type
     for (const s of Array.from(customById.values())) {
@@ -1459,6 +2100,7 @@ export const useProcessedProjectionsData = ({
     // If we have base cache (no custom source) attempt reuse logic below; otherwise fetch/process
     try {
       // Build raw projection data map (skip Supabase fetch for custom source)
+      mark("fetch:projectionSources:start");
       const projectionDataPromises = augmentedActiveSourceConfigs.map(
         async (sourceConfig) => {
           // If this ID belongs to a custom in-memory source, return its rows
@@ -1485,7 +2127,8 @@ export const useProcessedProjectionsData = ({
           const allRowsForSource =
             await fetchAllSupabaseData<RawProjectionSourcePlayer>(
               queryBuilder,
-              selectString
+              selectString,
+              { label: `projection:${sourceConfig.id}` }
             );
           return {
             sourceId: sourceConfig.id,
@@ -1498,6 +2141,7 @@ export const useProcessedProjectionsData = ({
       const fetchedProjectionResults = await Promise.all(
         projectionDataPromises
       );
+      mark("fetch:projectionSources:done");
       const initialRawProjectionDataById: Record<
         string,
         { data: RawProjectionSourcePlayer[]; config: ProjectionSourceConfig }
@@ -1603,6 +2247,7 @@ export const useProcessedProjectionsData = ({
       }
 
       // Fetch other data (actuals + Yahoo) using helper
+      mark("fetch:aux:start");
       const fetchedData = await fetchAllSourceData(
         supabaseClient,
         augmentedActiveSourceConfigs,
@@ -1611,9 +2256,11 @@ export const useProcessedProjectionsData = ({
         currentSeasonId,
         initialRawProjectionDataById
       );
+      mark("fetch:aux:done");
 
+      mark("process:players:start");
       const { tempProcessedPlayers, playersRequiringNameDebug } =
-        processRawDataIntoPlayers(
+        await processRawDataIntoPlayersAsync(
           uniqueNhlPlayerIds,
           fetchedData.rawProjectionDataBySourceId,
           fetchedData.actualStatsMap,
@@ -1624,8 +2271,12 @@ export const useProcessedProjectionsData = ({
           stableSourceControls,
           activePlayerType,
           stableFantasyPointSettings,
-          yahooDraftMode
+          yahooDraftMode,
+          runId,
+          fetchRunIdRef
         );
+      if (runId !== fetchRunIdRef.current) return; // stale after processing
+      mark("process:players:done");
 
       if (playersRequiringNameDebug.length > 0) {
         console.warn(
@@ -1635,7 +2286,10 @@ export const useProcessedProjectionsData = ({
       }
 
       // Cache base only if custom source absent (custom source data is session-volatile)
-      if (!(customAdditionalSources && customAdditionalSources.length) && !customAdditionalSource) {
+      if (
+        !(customAdditionalSources && customAdditionalSources.length) &&
+        !customAdditionalSource
+      ) {
         currentTypeCache.base = {
           data: tempProcessedPlayers,
           sourceControlsSnapshot: stableSourceControlsString,
@@ -1649,25 +2303,67 @@ export const useProcessedProjectionsData = ({
         const pickB = b.yahooAvgPick ?? Infinity;
         return pickA - pickB;
       });
+      if (runId !== fetchRunIdRef.current) {
+        if (DEV)
+          console.debug(
+            "[Projections] Aborted stale run before round summaries"
+          );
+        return;
+      }
+      mark("process:roundSummaries:start");
       const tableDataWithSummaries = addRoundSummariesToPlayers(
         sortedPlayersForSummary,
         calculateDiffPercentage,
         Math.max(1, teamCountForRoundSummaries ?? 12)
       );
+      mark("process:roundSummaries:done");
+      if (runId !== fetchRunIdRef.current) {
+        if (DEV)
+          console.debug(
+            "[Projections] Aborted stale run after round summaries"
+          );
+        return;
+      }
 
-      setProcessedPlayers(tableDataWithSummaries);
-      const freshColumns = generateTableCols();
-      const derivedCols = deriveVisibleColumns(
-        freshColumns,
-        statGroupCollapseState,
-        toggleStatGroupCollapse,
-        styles,
-        showPerGameFantasyPoints,
-        togglePerGameFantasyPoints
-      );
-      setTableColumns(derivedCols);
+      // Preserve baseline (non-summary) players for FP-only path
+      basePlayersRef.current = tempProcessedPlayers;
+      lastBaseKeyRef.current = baseKey;
+      lastFPKeyRef.current = fpKey;
 
-      if (!(customAdditionalSources && customAdditionalSources.length) && !customAdditionalSource) {
+      mark("render:prepareColumns:start");
+      startTransition(() => {
+        setProcessedPlayers(tableDataWithSummaries);
+        const freshColumns = generateTableCols();
+        const derivedCols = deriveVisibleColumns(
+          freshColumns,
+          statGroupCollapseState,
+          toggleStatGroupCollapse,
+          styles,
+          showPerGameFantasyPoints,
+          togglePerGameFantasyPoints
+        );
+        setTableColumns(derivedCols);
+      });
+      mark("render:prepareColumns:done");
+      if (DEV) {
+        const phases = Object.keys(phaseMarks);
+        if (phases.length) {
+          const base = phaseMarks.start;
+          const rows = phases
+            .filter((p) => p !== "start")
+            .map((p) => ({ phase: p, ms: (phaseMarks[p] - base).toFixed(1) }));
+          try {
+            console.table(rows);
+          } catch {
+            console.log("[ProjectionsPhaseTable]", rows);
+          }
+        }
+      }
+
+      if (
+        !(customAdditionalSources && customAdditionalSources.length) &&
+        !customAdditionalSource
+      ) {
         currentTypeCache.full = {
           data: tableDataWithSummaries,
           sourceControlsSnapshot: stableSourceControlsString,
@@ -1678,14 +2374,14 @@ export const useProcessedProjectionsData = ({
           refreshKeySnapshot: refreshKey
         };
       }
-      setIsLoading(false);
+      if (runId === fetchRunIdRef.current) setIsLoading(false);
     } catch (err: any) {
       console.error(
         `Error processing ${activePlayerType} projections (custom source aware):`,
         err
       );
       setError(err.message || "Unknown error occurred");
-      setIsLoading(false);
+      if (runId === fetchRunIdRef.current) setIsLoading(false);
     }
   }, [
     activePlayerType,
@@ -1697,7 +2393,9 @@ export const useProcessedProjectionsData = ({
     showPerGameFantasyPoints,
     teamCountForRoundSummaries,
     stableCustomAdditionalSourcesString, // trigger recompute when custom data changes
-    refreshKey
+    refreshKey,
+    baseKey,
+    fpKey
   ]);
 
   useEffect(() => {

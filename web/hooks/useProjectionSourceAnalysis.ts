@@ -1,6 +1,6 @@
 // hooks/useProjectionSourceAnalysis.ts
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ProcessedPlayer } from "./useProcessedProjectionsData";
 
 export type SourceControl = {
@@ -21,6 +21,14 @@ export function useProjectionSourceAnalysis(
   initialSources: { id: string; label: string }[]
 ) {
   const [controls, setControls] = useState<SourceControl[]>(() => {
+    if (typeof window === "undefined") {
+      return initialSources.map((s) => ({
+        id: s.id,
+        label: s.label,
+        enabled: true,
+        weight: 1
+      }));
+    }
     try {
       const saved = localStorage.getItem(LOCAL_KEY);
       if (saved) return JSON.parse(saved);
@@ -32,6 +40,14 @@ export function useProjectionSourceAnalysis(
       weight: 1
     }));
   });
+
+  // Keep last non-zero weight so re-enabling restores prior intent
+  const lastNonZeroWeightRef = useRef<Record<string, number>>({});
+  useEffect(() => {
+    controls.forEach((c) => {
+      if (c.weight > 0) lastNonZeroWeightRef.current[c.id] = c.weight;
+    });
+  }, [controls]);
 
   // Ensure any new sources appear with defaults
   useEffect(() => {
@@ -62,25 +78,53 @@ export function useProjectionSourceAnalysis(
     });
   }, [initialSources]);
 
+  // Debounced persistence (avoid thrashing localStorage on slider drags)
+  const saveTimerRef = useRef<number | null>(null);
+  const prevJsonRef = useRef<string>("");
   useEffect(() => {
-    try {
-      localStorage.setItem(LOCAL_KEY, JSON.stringify(controls));
-    } catch {}
+    if (typeof window === "undefined") return;
+    const json = JSON.stringify(controls);
+    if (json === prevJsonRef.current) return; // no structural change
+    prevJsonRef.current = json;
+    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = window.setTimeout(() => {
+      try {
+        localStorage.setItem(LOCAL_KEY, json);
+      } catch {}
+    }, 180);
+    return () => {
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    };
   }, [controls]);
 
+  const MIN_ENABLED_WEIGHT = 0.1;
   const setEnabled = useCallback((id: string, enabled: boolean) => {
     setControls((prev) =>
-      prev.map((c) =>
-        c.id === id
-          ? { ...c, enabled, weight: enabled ? Math.max(0.1, c.weight) : 0 }
-          : c
-      )
+      prev.map((c) => {
+        if (c.id !== id) return c;
+        if (enabled) {
+          const restore = lastNonZeroWeightRef.current[id];
+          const nextWeight =
+            restore && restore > 0
+              ? restore
+              : Math.max(MIN_ENABLED_WEIGHT, c.weight || MIN_ENABLED_WEIGHT);
+          return { ...c, enabled: true, weight: nextWeight };
+        }
+        return { ...c, enabled: false, weight: 0 };
+      })
     );
   }, []);
 
   const setWeight = useCallback((id: string, weight: number) => {
     setControls((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, weight, enabled: weight > 0 } : c))
+      prev.map((c) => {
+        if (c.id !== id) return c;
+        return {
+          ...c,
+          weight,
+          enabled: weight > 0 ? true : false
+        };
+      })
     );
   }, []);
 
@@ -89,14 +133,22 @@ export function useProjectionSourceAnalysis(
   }, []);
 
   const effectiveShares = useMemo(() => {
-    const weights = controls.map((c) =>
-      c.enabled && c.weight > 0 ? c.weight : 0
-    );
-    const total = weights.reduce((a, b) => a + b, 0);
+    // Early exit for zero-length
+    if (!controls.length) return {} as Record<string, number>;
+    let total = 0;
+    for (let i = 0; i < controls.length; i++) {
+      const c = controls[i];
+      if (c.enabled && c.weight > 0) total += c.weight;
+    }
+    if (total <= 0) {
+      const zeroShares: Record<string, number> = {};
+      controls.forEach((c) => (zeroShares[c.id] = 0));
+      return zeroShares;
+    }
     const shares: Record<string, number> = {};
-    for (const c of controls) {
-      const w = c.enabled && c.weight > 0 ? c.weight : 0;
-      shares[c.id] = total > 0 ? w / total : 0;
+    for (let i = 0; i < controls.length; i++) {
+      const c = controls[i];
+      shares[c.id] = c.enabled && c.weight > 0 ? c.weight / total : 0;
     }
     return shares;
   }, [controls]);

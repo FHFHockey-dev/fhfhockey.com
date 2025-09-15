@@ -57,18 +57,18 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
   const [sortField, setSortField] = useState<SortField>(() => {
     if (typeof window !== "undefined") {
       return (
-        (localStorage.getItem("suggested.sortField") as SortField) || "rank"
+        (localStorage.getItem("suggested.sortField") as SortField) || "adp"
       );
     }
-    return "rank";
+    return "adp";
   });
   const [sortDir, setSortDir] = useState<"asc" | "desc">(() => {
     if (typeof window !== "undefined") {
       return (
-        (localStorage.getItem("suggested.sortDir") as "asc" | "desc") || "desc"
+        (localStorage.getItem("suggested.sortDir") as "asc" | "desc") || "asc"
       );
     }
-    return "desc";
+    return "asc";
   });
   const [posFilter, setPosFilter] = useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -364,8 +364,8 @@ const SuggestedPicks: React.FC<SuggestedPicksProps> = ({
       const bVorp = (rosterVorpEnabled ? (b as any).vorpAdj : b.vorp) ?? 0;
       const aVbd = a.vbd ?? 0;
       const bVbd = b.vbd ?? 0;
-      const aAdp = (a.player as any).yahooAvgPick ?? Infinity;
-      const bAdp = (b.player as any).yahooAvgPick ?? Infinity;
+      const aAdp = (a.player as any).yahooAvgPick || Infinity;
+      const bAdp = (b.player as any).yahooAvgPick || Infinity;
       const aAvail = typeof a.availability === "number" ? a.availability : -1;
       const bAvail = typeof b.availability === "number" ? b.availability : -1;
       const aFit = a.fitScore ?? 0;

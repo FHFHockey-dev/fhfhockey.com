@@ -1,3 +1,75 @@
+### Performance & Data Pipeline Optimization Roadmap (NEW)
+
+Context: Projection source tables are static per season; indices exist on player_id and primary keys. Goal is to reduce initial draft dashboard load time and interactive re-computation latency without changing public types or exported APIs.
+### Success Metrics
+
+Initial projections load TTFP (time to fantasy points displayed) reduced by >=30% vs baseline.
+### Validation Strategy
+
+1. Instrument baseline timings (fetch, process, render) before changes; store in `console.table` snapshot (dev only).
+### Notes / Constraints
+
+Must not alter exported types: `ProcessedPlayer`, `TableDataRow`, hook return signatures.
+## Performance Update Log (append as changes land)
+
+2025-09-15: Added debounced persistence + last non-zero weight restore in `useProjectionSourceAnalysis` (Tier 1: Debounced sourceControls save). 
+2025-09-15: Introduced stale run guard scaffolding (runIdRef) and FP-only recompute placeholder + startTransition in `useProcessedProjectionsData` (Tier 1: Stale run guard). 
+
+2025-09-15: Added composite base / FP keys for future FP-only fast path (Tier 1: Hash/composite key groundwork). 
+2025-09-15: Implemented phase instrumentation logs + improved pagination helper (head count, spread push, timing) in `useProcessedProjectionsData` (Tier 1 & Hang Issue mitigation start).
+2025-09-15: Added async processing scaffolding with stale run abort checks before/after round summaries (no partial commits) in `useProcessedProjectionsData`.
+
+2025-09-15: Inlined async per-player processing loop with periodic yielding (every 200 players) and mid-loop stale abort.
+
+### Newly Identified Issues (UI/Data Regressions)
+
+Issue A: Duplicate Compare Checkbox Column
+- Symptom: After moving the compare checkbox to the far right (COMP.), an earlier left-side compare checkbox remained, producing two selectable columns.
+- Root Cause: Initial refactor added the new column without removing the original compare input cell & header placeholder.
+- Status: Left duplicate column removed; only rightmost COMP. column retained (ProjectionsTable.tsx / ProjectionsTable.module.scss).
+- Follow-up: Ensure accessibility labeling for single remaining checkbox; confirm no stale CSS selectors remain.
+
+Issue B: Value Band Colors (Proj FP / VBD) Lost Visual Emphasis
+- Symptom: Green / Yellow / Red bands faded or overridden by zebra striping.
+- Root Cause: Zebra row backgrounds had higher specificity; value band classes lacked stronger background overlay.
+- Fix: Added reinforced `.valueBand.valueSuccess|Warning|Danger` styles with higher z-index and explicit backgrounds.
+- Follow-up: Re-test in dark and light theme modes (if applicable) and ensure contrast ratios >= WCAG AA.
+
+Issue C: Missing ADP (average_draft_pick) Values
+- Symptom: ADP column shows '-' for all players; previously populated from `yahoo_players.average_draft_pick`.
+ Symptom: ADP column showed '-' for all players; previously populated from `yahoo_players.average_draft_pick`.
+ Confirmed Root Cause (post‑investigation): Lookup mismatch caused by relying only on one identifier form. Some mappings referenced composite Yahoo `player_key` values (e.g. `465.p.12345`) while the original fetch queried only by numeric `player_id` (tail segment). As a result, many current‑season rows (scoped by `game_id=465`) were never retrieved or not addressable via the key actually used in `yahooPlayersMap` during processing.
+ Implemented Fix: Dual query strategy added:
+  1. Split requested IDs into composite IDs (containing '.') and raw numeric IDs.
+  2. Query `yahoo_players` twice (by `player_key` and by `player_id`) each constrained with `game_id=465`.
+  3. De‑duplicate preferring rows whose `player_key` begins with `CURRENT_YAHOO_GAME_PREFIX`.
+  4. Populate `yahooPlayersMap` under BOTH `player_id` and `player_key` to allow flexible resolution when only one form is present in mapping.
+ Instrumentation: Dev‑only console.debug block logs counts (compositeIds, numericIds, fetched rows, dedup size, final map size) plus a 3‑entry sample including ADP values for verification.
+ Remaining Risks / Edge Cases:
+  - Mapping table might store an outdated season prefix causing lookups to resolve to stale / absent ADP (should be mitigated by dual keys).
+  - Players with null ADP legitimately (undrafted / new entrants) must not be treated as failures.
+  - Potential performance overhead of two queries (acceptable now; can merge with OR logic later if needed, but current Supabase pagination helper simplicity preferred).
+ Validation Plan (current phase):
+  - Count processed players with non-null parsed ADP; expect > 0 for mainstream skaters.
+  - Spot check a few known early‑round players vs Yahoo site values (within reasonable rounding tolerance).
+  - Ensure ADP sort ascending places elite players (e.g., McDavid) near top when no other sort applied.
+  - Verify `SuggestedPicks` risk model now computes availability (was previously skipping due to null ADP).
+ Cleanup (post‑validation):
+  - Gate verbose ADP debug logs behind a future `DEBUG_PROJECTIONS` or remove entirely.
+  - Collapse dual query if schema guarantees both identifiers moving forward (defer for now).
+ Definition of Done (ADP slice): Non‑zero count of players with `processedPlayer.yahooAvgPick !== null`; ADP visible & sortable; risk / suggestion calculations consuming numeric ADP; no TypeScript regressions.
+
+Issue D: Control Toggle Button Focus Styling
+- Symptom: Control buttons (.controlToggleBtn) did not visually align with new compare emphasis; requested focus-color border and 40% opaque background when active/focused.
+- Fix: Added `.controlToggleBtnActive, .controlToggleBtn:focus-visible` styling using `$focus-color` with translucent background.
+- Follow-up: Apply `.controlToggleBtnActive` class in JSX where an active state is conceptually applied (pending if not already wired) and test keyboard focus ring.
+
+Issue E: Compare Button Visual Affinity (Pending)
+- Symptom: Compare launch button not yet styled with new yellow/focus-color scheme.
+- Planned: Apply `.compareLaunchButton` class to the toolbar Compare button when `selectedIds.size >= 2` for visual affordance.
+
+---
+
 # PRD: Draft Dashboard Debug & UX Fixes
 
 Owner: Tim  •  Status: Draft  •  Scope: Draft Dashboard (web/pages/draft-dashboard.tsx)
@@ -398,6 +470,129 @@ Definition of done
 - Edge cases: missing sources/season id; validate snapshot version; warn and continue.
 
 2) Defense points option
+
+---
+
+## Performance & Data Pipeline Optimization Roadmap (NEW)
+
+Context: Projection source tables are static per season; indices exist on player_id and primary keys. Goal is to reduce initial draft dashboard load time and interactive re-computation latency without changing public types or exported APIs.
+
+### Prioritization Tiers
+
+1. High Impact / Low Risk (implement first)
+2. High Impact / Moderate Risk (behind feature flag if needed)
+3. Medium Impact / Low Risk (incremental polish)
+4. Advanced / Optional (evaluate after measuring gains)
+
+### Tier 1: High Impact / Low Risk
+
+- Parallel Source Fetch
+  - Replace sequential per‑source Supabase queries with `Promise.all` (or limited concurrency if rate limited). Each projection source query is independent.
+  - Keep existing error handling; use `Promise.allSettled` to allow partial data rather than failing whole load.
+
+- Stale Run / Abort Guard
+  - Maintain `fetchRunIdRef`; discard late results if a newer run started (prevents double state commits during rapid weight or filter tweaks).
+
+- Lightweight Fantasy Points Recompute Path
+  - If only `fantasyPointSettings` or `showPerGameFantasyPoints` changes, reuse cached base player objects; recompute only FP aggregates (O(n) numeric) instead of full rebuild.
+
+- Debounced LocalStorage Writes in `useProjectionSourceAnalysis`
+  - Add 150–200ms debounce; skip write if JSON unchanged.
+
+- Hash-Based Cache Keys
+  - Compute a short murmurhash (or simple FNV-1a) of concatenated dependency JSON for quick equality comparisons instead of repeated `JSON.stringify` equality checks.
+
+### Tier 2: High Impact / Moderate Risk
+
+- Row Virtualization (Projections Table)
+  - Integrate `@tanstack/react-virtual` for vertical windowing. Target: render ~20–40 rows at a time.
+  - Preserve keyboard navigation and existing row expansion logic.
+
+- Paginated Bulk Fetch Optimization
+  - Pre-fetch row count (`.select('*', { head: true, count: 'exact' })`). Generate all range queries in parallel with capped concurrency (e.g., 4–6). Fallback to sequential loop on error.
+
+- startTransition Wrapping
+  - Wrap `setProcessedPlayers` and `setTableColumns` in `React.startTransition` for smoother UI while heavy JS runs.
+
+### Tier 3: Medium Impact / Low Risk
+
+- Comparator Map & Filter Pipeline Split
+  - Split filtering and sorting memos; avoid recomputing filters when only sort toggles.
+  - Pre-build comparator functions keyed by `sortField`.
+
+- Skip Rebuild of Static Columns
+  - Separate “identity” columns (Name, Pos, Team) from dynamic stat / FP groups. Only regenerate dynamic subset when source selection or stat set changes.
+
+- Microtask Chunking for Large Player Sets
+  - If players > 1500, yield every 200 iterations (`await new Promise(r => setTimeout(r, 0))`) to keep main thread responsive.
+
+- Source Weight Epsilon Handling
+  - Treat weights below `0.0005` as zero to avoid floating point drizzle causing unexpected blended values.
+
+- Memo Interning of Stat Keys
+  - Intern frequently used stat keys to reduce string allocations in hot loops.
+
+### Tier 4: Advanced / Optional
+
+- Web Worker Offload
+  - Move CPU-heavy percentile + VORP + diff% computations into a worker. Main thread receives a compact array of derived fields keyed by `playerId`.
+
+- Adaptive Prefetch / Warm Cache
+  - On initial season load, prefetch both skater and goalie sets if user likely to toggle soon (heuristic: if user visited both in past 24h).
+
+- Telemetry / Performance Marks
+  - Add `performance.mark` / `performance.measure` around: fetch, process, render. Log in dev mode and optionally upload anonymized timings for monitoring.
+
+### Implementation Order & Tracking
+
+| Step | Feature | Tier | Status | Notes |
+|------|---------|------|--------|-------|
+| 1 | Parallel source fetch | 1 | TODO | Convert fetch loop -> Promise.allSettled |
+| 2 | Stale run guard | 1 | TODO | runIdRef increment + check before committing state |
+| 3 | FP-only recompute path | 1 | TODO | Detect changes limited to FP settings/per-game toggle |
+| 4 | Debounced sourceControls save | 1 | TODO | Add debounce + prev JSON ref |
+| 5 | Hash composite cache key | 1 | TODO | Implement FNV-1a helper local to hook |
+| 6 | Virtualized projections table | 2 | TODO | Introduce react-virtual; ensure expansion works |
+| 7 | Parallel paginated fetch | 2 | TODO | Count head query + batched ranges |
+| 8 | startTransition for state commit | 2 | TODO | Guard for non-React 18 fallback |
+| 9 | Filter/sort pipeline split | 3 | TODO | Two useMemos; stable identity on filtered array |
+| 10 | Static vs dynamic columns | 3 | TODO | Cache static columns separately |
+| 11 | Chunked processing | 3 | TODO | Only if player count threshold exceeded |
+| 12 | Weight epsilon + intern keys | 3 | TODO | Clean numeric sums; micro-alloc savings |
+| 13 | Worker offload | 4 | Backlog | Build only if Tier 1–3 insufficient |
+| 14 | Adaptive prefetch | 4 | Backlog | Heuristic user behavior based |
+| 15 | Perf telemetry | 4 | Backlog | Dev-mode instrumentation only |
+
+### Success Metrics
+
+- Initial projections load TTFP (time to fantasy points displayed) reduced by >=30% vs baseline.
+- Projections table scroll FPS remains >55 on modern laptop while filtering/sorting.
+- Weight slider adjustment re-render under 150ms for N ≤ 2000 players.
+- No increase in error logs or mismatched fantasy point totals (parity test vs baseline run).
+
+### Validation Strategy
+
+1. Instrument baseline timings (fetch, process, render) before changes; store in `console.table` snapshot (dev only).
+2. Implement Tier 1; re-measure and document deltas in Update Log.
+3. After Tier 2 (virtualization), test expansions, keyboard nav, and compare modal with virtualization active.
+4. Run integrity script comparing FP sums & player counts pre/post refactor (add a temporary dev route if needed).
+5. Gate Tier 4 features behind ENV flag `NEXT_PUBLIC_DRAFT_OPT_EXPERIMENTAL=1`.
+
+### Notes / Constraints
+
+- Must not alter exported types: `ProcessedPlayer`, `TableDataRow`, hook return signatures.
+- Avoid introducing race conditions with snapshot restore (ensure fetch abort respects snapshot restoration sequence).
+- Keep SSR safety: guard any `window` / `localStorage` usage.
+- Maintain deterministic ordering for equal sort keys to avoid row flicker (tie-break by `playerId`).
+
+---
+
+## Performance Update Log (append as changes land)
+
+- 2025-09-15: Added debounced persistence + last non-zero weight restore in `useProjectionSourceAnalysis` (Tier 1: Debounced sourceControls save). 
+- 2025-09-15: Introduced stale run guard scaffolding (runIdRef) and FP-only recompute placeholder + startTransition in `useProcessedProjectionsData` (Tier 1: Stale run guard). 
+- 2025-09-15: Added composite base / FP keys for future FP-only fast path (Tier 1: Hash/composite key groundwork). 
+
 - UX: Settings toggle + numeric input(s). If enabled, apply a modifier for D players only (either additive or multiplier); reflect in ProjectionsTable and DraftBoard.
 - Calc: during FP calc, if player assigned/bestPos is D, apply. For Categories, keep separate.
 
