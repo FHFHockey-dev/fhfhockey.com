@@ -333,13 +333,22 @@ export default function ImportCsvModal({
   const previewAmbiguities = useMemo(() => {
     const list: Array<{
       key: string;
-      candidates: Array<{ id: number; fullName: string }>;
+      candidates: Array<{
+        id: number;
+        fullName: string;
+        position: string | null;
+        teamAbbrev: string | null;
+      }>;
+      csvTeam?: string | null;
+      csvPos?: string | null;
     }> = [];
     const seen = new Set<string>();
     // Use full dataset so ambiguity resolution covers entire CSV, not just first 50 preview rows.
     mappedAllRows.forEach((row) => {
       const name = String((row as any).Player_Name || "");
       if (!name) return;
+      const csvTeam = (row as any).Team_Abbreviation || null;
+      const csvPos = (row as any).Position || null;
       const tokens = name.split(/\s+/);
       const last = tokens.length > 1 ? tokens[tokens.length - 1] : name;
       let cands = dbPlayers.filter(
@@ -358,7 +367,14 @@ export default function ImportCsvModal({
         seen.add(name);
         list.push({
           key: name,
-          candidates: cands.map((c) => ({ id: c.id, fullName: c.fullName }))
+          candidates: cands.map((c) => ({
+            id: c.id,
+            fullName: c.fullName,
+            position: c.position ?? null,
+            teamAbbrev: (c as any).teamAbbrev ?? null
+          })),
+          csvTeam,
+          csvPos
         });
       }
     });
@@ -425,8 +441,20 @@ export default function ImportCsvModal({
     if (!previewAmbiguities.length)
       return [] as Array<{
         key: string;
-        candidates: { id: number; fullName: string; score: number }[];
-        best?: { id: number; fullName: string; score: number } | null;
+        candidates: {
+          id: number;
+          fullName: string;
+          score: number;
+          position: string | null;
+          teamAbbrev: string | null;
+        }[];
+        best?: {
+          id: number;
+          fullName: string;
+          score: number;
+          position: string | null;
+          teamAbbrev: string | null;
+        } | null;
       }>;
     return previewAmbiguities.map((a) => {
       const scored = a.candidates
@@ -434,7 +462,13 @@ export default function ImportCsvModal({
           const dist = levenshtein(a.key, c.fullName);
           const maxLen = Math.max(a.key.length, c.fullName.length) || 1;
           const score = 1 - dist / maxLen; // 1 = perfect
-          return { ...c, score };
+          return {
+            id: c.id,
+            fullName: c.fullName,
+            position: (c as any).position ?? null,
+            teamAbbrev: (c as any).teamAbbrev ?? null,
+            score
+          };
         })
         .sort((x, y) => y.score - x.score);
       const best = scored[0];
@@ -794,16 +828,21 @@ export default function ImportCsvModal({
               {ambiguousWithSuggestions
                 .filter((r) => !ambiguousChoices[r.key])
                 .map((r) => {
+                  const csvMeta = (() => {
+                    const raw = previewAmbiguities.find((p) => p.key === r.key);
+                    const t = raw?.csvTeam || "CSV?";
+                    const p = raw?.csvPos || "?";
+                    return ` (${t} ${p})`;
+                  })();
                   const suggestion = r.best;
                   const rejected = rejectedSuggestions.has(r.key);
                   const search = searchInputs[r.key] || "";
                   const dynamicMatches = search
                     ? dbPlayers
-                        .filter((p) =>
-                          p.fullName
-                            .toLowerCase()
-                            .includes(search.toLowerCase())
-                        )
+                        .filter((p) => {
+                          const q = search.toLowerCase();
+                          return p.fullName.toLowerCase().includes(q);
+                        })
                         .slice(0, 25)
                     : [];
                   return (
@@ -825,7 +864,10 @@ export default function ImportCsvModal({
                           justifyContent: "space-between"
                         }}
                       >
-                        <div style={{ fontWeight: 600 }}>{r.key}</div>
+                        <div style={{ fontWeight: 600 }}>
+                          {r.key}
+                          <span style={{ opacity: 0.6 }}>{csvMeta}</span>
+                        </div>
                         {!rejected && suggestion && (
                           <div
                             style={{
@@ -835,8 +877,11 @@ export default function ImportCsvModal({
                             }}
                           >
                             <span style={{ fontSize: 12, opacity: 0.85 }}>
-                              Suggest: {suggestion.fullName} (
-                              {(suggestion.score * 100).toFixed(1)}%)
+                              {(() => {
+                                const team = suggestion.teamAbbrev || "??";
+                                const pos = suggestion.position || "?";
+                                return `Suggest: ${suggestion.fullName} (${team} ${pos}) ${(suggestion.score * 100).toFixed(1)}%`;
+                              })()}
                             </span>
                             <button
                               onClick={() =>
@@ -884,19 +929,28 @@ export default function ImportCsvModal({
                             style={{ minWidth: 260 }}
                           >
                             <option value="">Select player…</option>
-                            {r.candidates.map((c) => (
-                              <option key={c.id} value={c.id}>
-                                {c.fullName} {(c.score * 100).toFixed(0)}%
-                              </option>
-                            ))}
+                            {r.candidates.map((c) => {
+                              const team = c.teamAbbrev || "??";
+                              const pos = c.position || "?";
+                              return (
+                                <option key={c.id} value={c.id}>
+                                  {c.fullName} ({team} {pos}){" "}
+                                  {(c.score * 100).toFixed(0)}%
+                                </option>
+                              );
+                            })}
                             {dynamicMatches.length > 0 && (
                               <option disabled>-- Search Results --</option>
                             )}
-                            {dynamicMatches.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.fullName}
-                              </option>
-                            ))}
+                            {dynamicMatches.map((p) => {
+                              const team = (p as any).teamAbbrev || "??";
+                              const pos = (p as any).position || "?";
+                              return (
+                                <option key={p.id} value={p.id}>
+                                  {p.fullName} ({team} {pos})
+                                </option>
+                              );
+                            })}
                           </select>
                           <input
                             type="text"
