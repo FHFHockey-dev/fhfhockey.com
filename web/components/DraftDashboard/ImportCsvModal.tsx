@@ -485,8 +485,7 @@ export default function ImportCsvModal({
         0
       );
       const missing = ambiguousWithSuggestions.reduce(
-        (acc, r) =>
-          acc + r.candidates.filter((c) => !c.teamAbbrev).length,
+        (acc, r) => acc + r.candidates.filter((c) => !c.teamAbbrev).length,
         0
       );
       console.log(
@@ -953,11 +952,13 @@ export default function ImportCsvModal({
                               const csvCtx = previewAmbiguities.find(
                                 (p) => p.key === r.key
                               );
-                              const team = c.teamAbbrev || csvCtx?.csvTeam || "??";
+                              const team =
+                                c.teamAbbrev || csvCtx?.csvTeam || "??";
                               const pos = c.position || csvCtx?.csvPos || "?";
                               return (
                                 <option key={c.id} value={c.id}>
-                                  {c.fullName} ({team} {pos}) {(c.score * 100).toFixed(0)}%
+                                  {c.fullName} ({team} {pos}){" "}
+                                  {(c.score * 100).toFixed(0)}%
                                 </option>
                               );
                             })}
@@ -968,8 +969,12 @@ export default function ImportCsvModal({
                               const csvCtx = previewAmbiguities.find(
                                 (px) => px.key === r.key
                               );
-                              const team = (p as any).teamAbbrev || csvCtx?.csvTeam || "??";
-                              const pos = (p as any).position || csvCtx?.csvPos || "?";
+                              const team =
+                                (p as any).teamAbbrev ||
+                                csvCtx?.csvTeam ||
+                                "??";
+                              const pos =
+                                (p as any).position || csvCtx?.csvPos || "?";
                               return (
                                 <option key={p.id} value={p.id}>
                                   {p.fullName} ({team} {pos})
