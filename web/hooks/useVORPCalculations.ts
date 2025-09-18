@@ -13,7 +13,7 @@ export interface DraftSettings {
 }
 
 export interface PlayerVorpMetrics {
-  value: number; // comparable single value (proj points for now)
+  value: number; // comparable single value (fp for points; Z-sum for categories)
   vorp: number;
   vols: number;
   vona: number;
@@ -28,23 +28,22 @@ export interface UseVORPParams {
   draftSettings: DraftSettings;
   picksUntilNext: number; // estimated picks before user's next turn
   leagueType?: LeagueType;
-  baselineMode?: "remaining" | "full"; // NEW: replacement baseline source
+  baselineMode?: "remaining" | "full"; // replacement baseline source
   categoryWeights?: Record<string, number>; // used when leagueType === 'categories'
-  // NEW: forward grouping mode: split C/LW/RW or combined F
+  //  forward grouping mode: split C/LW/RW or combined F
   forwardGrouping?: "split" | "fwd";
-  // NEW: personalized replacement context
-  myFilledSlots?: Record<string, number>; // counts of already filled starters per position (C,LW,RW,D,G,UTILITY?)
-  personalizeReplacement?: boolean; // if true, adjust replacement indices by subtracting filled starters
-  // NEW: 82-game proration toggle for skater counting stats (affects points-league value only)
+  // personalized replacement context
+  myFilledSlots?: Record<string, number>;
+  personalizeReplacement?: boolean;
+  // 82-game proration toggle for skater counting stats (affects points-league value only)
   prorate82?: boolean;
   // Optional fantasy scoring overrides (will merge with defaults inside helper)
   fantasyPointSettings?: Record<string, number>;
 }
 
 export interface UseVORPResult {
-  playerMetrics: Map<string, PlayerVorpMetrics>; // key: String(playerId)
+  playerMetrics: Map<string, PlayerVorpMetrics>;
   replacementByPos: Record<string, { vorp: number; vols: number }>;
-  // NEW: expected position run before next pick
   expectedTakenByPos?: Record<string, number>;
   expectedN?: number;
 }
@@ -62,8 +61,48 @@ const parseEligiblePositions = (displayPosition?: string | null): string[] => {
       out.push(p);
     }
   });
-  // De-duplicate
   return Array.from(new Set(out));
+};
+
+const clamp = (v: number, lo: number, hi: number) =>
+  Math.max(lo, Math.min(hi, v));
+const isFiniteNumber = (x: any): x is number =>
+  typeof x === "number" && Number.isFinite(x);
+
+// Category helpers
+const isGoalieKey = (k: string) =>
+  k.endsWith("_GOALIE") ||
+  k === "GOALS_AGAINST_AVERAGE" ||
+  k === "SAVE_PERCENTAGE" ||
+  k === "GOALS_AGAINST_GOALIE" ||
+  k === "SHOTS_AGAINST_GOALIE" ||
+  k === "SHUTOUTS_GOALIE" ||
+  k === "WINS_GOALIE" ||
+  k === "LOSSES_GOALIE" ||
+  k === "OTL_GOALIE";
+
+const isInverted = (k: string) =>
+  k === "GOALS_AGAINST_AVERAGE" ||
+  k === "GOALS_AGAINST_GOALIE" ||
+  k === "LOSSES_GOALIE";
+
+const isGoalieRate = (k: string) =>
+  k === "SAVE_PERCENTAGE" || k === "GOALS_AGAINST_AVERAGE";
+
+// Stats access
+const getProjected = (p: ProcessedPlayer, key: string): number | null => {
+  const v = (p.combinedStats as any)?.[key]?.projected;
+  return isFiniteNumber(v) ? (v as number) : null;
+};
+
+// Mean / StdDev
+const mean = (arr: number[]): number =>
+  arr.length ? arr.reduce((s, x) => s + x, 0) / arr.length : 0;
+const stdev = (arr: number[]): number => {
+  if (arr.length < 2) return 0;
+  const mu = mean(arr);
+  const v = arr.reduce((s, x) => s + (x - mu) * (x - mu), 0) / (arr.length - 1);
+  return Math.sqrt(v);
 };
 
 export function useVORPCalculations({
@@ -124,9 +163,9 @@ export function useVORPCalculations({
         values.set(id, Number.isFinite(val) ? val : 0);
       });
     } else {
-      // Categories composite score: weighted average of per-metric percentiles (0..100),
-      // additionally weighted by scarcity of metric totals (inverse of total supply).
-      // Determine active category keys from settings; fallback to six core skater cats.
+      // ===============================
+      // Categories: per-role Z-score model on FULL pool (stable)
+      // ===============================
       const DEFAULT_CATS = [
         "GOALS",
         "ASSISTS",
@@ -139,77 +178,72 @@ export function useVORPCalculations({
         ? Object.keys(categoryWeights || {})
         : DEFAULT_CATS;
 
-      // Identify goalie vs skater keys and inversion (lower is better) for some goalie metrics
-      const isGoalieKey = (k: string) =>
-        k.endsWith("_GOALIE") ||
-        k === "GOALS_AGAINST_AVERAGE" ||
-        k === "SAVE_PERCENTAGE" ||
-        k === "GOALS_AGAINST_GOALIE" ||
-        k === "SHOTS_AGAINST_GOALIE" ||
-        k === "SHUTOUTS_GOALIE" ||
-        k === "WINS_GOALIE" ||
-        k === "LOSSES_GOALIE" ||
-        k === "OTL_GOALIE";
-      const isInverted = (k: string) =>
-        k === "GOALS_AGAINST_AVERAGE" || k === "GOALS_AGAINST_GOALIE";
-
-      // Build per-key arrays from the appropriate player pool (skater vs goalie)
-      type StatArrays = Record<string, number[]>;
-      const arrays: StatArrays = {};
-      const sums: Record<string, number> = {};
-      const sourcePool =
-        baselineMode === "remaining" ? availablePlayers : players;
+      // Build role-specific arrays from the FULL pool
+      const arraysSkater: Record<string, number[]> = {};
+      const arraysGoalie: Record<string, number[]> = {};
       allKeys.forEach((k) => {
-        arrays[k] = [];
-        sums[k] = 0;
+        arraysSkater[k] = [];
+        arraysGoalie[k] = [];
       });
-      sourcePool.forEach((p) => {
+
+      players.forEach((p) => {
         const elig = parseEligiblePositions(p.displayPosition);
         const isG = elig.includes("G");
         allKeys.forEach((k) => {
-          // Only collect stat for players relevant to this key type
-          if ((isGoalieKey(k) && !isG) || (!isGoalieKey(k) && isG)) return;
-          const v = (p.combinedStats as any)?.[k]?.projected as number | null;
-          if (typeof v === "number" && Number.isFinite(v)) {
-            arrays[k].push(v);
-            sums[k] += v;
+          if (isGoalieKey(k) !== isG) return;
+          const v = getProjected(p, k);
+          if (isFiniteNumber(v)) {
+            if (isG) arraysGoalie[k].push(v!);
+            else arraysSkater[k].push(v!);
           }
         });
       });
 
-      // Pre-sort arrays and compute scarcity weights (inverse of totals; normalized to mean 1)
-      const sorted: Record<string, number[]> = {};
-      const scarcity: Record<string, number> = {};
-      const invs: number[] = [];
+      // Means and std devs per role/category
+      const muSkater: Record<string, number> = {};
+      const sdSkater: Record<string, number> = {};
+      const muGoalie: Record<string, number> = {};
+      const sdGoalie: Record<string, number> = {};
+
       allKeys.forEach((k) => {
-        const arr = arrays[k];
-        sorted[k] = arr.slice().sort((a, b) => a - b);
-        const inv = 1 / Math.max(1e-6, sums[k]);
-        scarcity[k] = inv;
-        invs.push(inv);
-      });
-      const meanInv = invs.length
-        ? invs.reduce((s, x) => s + x, 0) / invs.length
-        : 1;
-      allKeys.forEach((k) => {
-        scarcity[k] = scarcity[k] / meanInv; // mean normalize ~1.0
+        muSkater[k] = mean(arraysSkater[k]);
+        sdSkater[k] = stdev(arraysSkater[k]);
+        muGoalie[k] = mean(arraysGoalie[k]);
+        sdGoalie[k] = stdev(arraysGoalie[k]);
       });
 
-      // Helper: empirical percentile (0..100) for value within sorted array
-      const percentile = (arr: number[], v: number, invert: boolean) => {
-        if (!arr || arr.length === 0) return 50;
-        let lo = 0,
-          hi = arr.length;
-        while (lo < hi) {
-          const mid = (lo + hi) >> 1;
-          if (arr[mid] <= v) lo = mid + 1;
-          else hi = mid;
+      // Priors for rate regression (tunable)
+      const PRIOR_SHOTS = 1200; // shots prior for SV%
+      const PRIOR_STARTS = 25; // starts prior for GAA
+
+      // Helpers: estimate goalie workloads
+      const estimateShots = (p: ProcessedPlayer): number => {
+        const cs = (p.combinedStats as any) || {};
+        const shots = cs["SHOTS_AGAINST_GOALIE"]?.projected;
+        const saves = cs["SAVES_GOALIE"]?.projected;
+        const ga = cs["GOALS_AGAINST_GOALIE"]?.projected;
+        if (isFiniteNumber(shots)) return shots as number;
+        if (isFiniteNumber(saves) && isFiniteNumber(ga))
+          return (saves as number) + (ga as number);
+        return 0;
+      };
+      const estimateStarts = (p: ProcessedPlayer): number => {
+        const cs = (p.combinedStats as any) || {};
+        const keys = [
+          "STARTS_GOALIE",
+          "GAMES_STARTED_GOALIE",
+          "GAMES_GOALIE",
+          "GAMES_PLAYED_GOALIE",
+          "GP_GOALIE"
+        ];
+        for (const k of keys) {
+          const v = cs[k]?.projected;
+          if (isFiniteNumber(v)) return v as number;
         }
-        const pct = (lo / arr.length) * 100; // proportion <= v
-        return invert ? 100 - pct : pct;
+        return 0;
       };
 
-      // Compute composite 0..100 score per player based on selected keys
+      // Compute composite Z-sum per player
       players.forEach((p) => {
         const id = String(p.playerId);
         const elig = parseEligiblePositions(p.displayPosition);
@@ -221,24 +255,50 @@ export function useVORPCalculations({
           values.set(id, 0);
           return;
         }
-        let num = 0;
-        let den = 0;
+
+        let zsum = 0;
+
         keysForPlayer.forEach((k) => {
-          const raw = (p.combinedStats as any)?.[k]?.projected as number | null;
-          if (typeof raw !== "number" || !Number.isFinite(raw)) return;
-          const arr = sorted[k];
-          if (!arr || arr.length === 0) return;
-          const pct = percentile(arr, raw, isInverted(k));
-          const userW =
-            categoryWeights && typeof (categoryWeights as any)[k] === "number"
-              ? (categoryWeights as any)[k]
-              : 1;
-          const w = userW * (scarcity[k] || 1);
-          num += w * pct;
-          den += w;
+          let raw = getProjected(p, k);
+          if (!isFiniteNumber(raw)) return;
+
+          // Regress goalie rates to mean by workload
+          if (isG && isGoalieRate(k)) {
+            if (k === "SAVE_PERCENTAGE") {
+              const shots = estimateShots(p);
+              const mu = muGoalie[k] || 0;
+              const w = Math.max(0, shots);
+              raw =
+                (w * (raw as number) + PRIOR_SHOTS * mu) /
+                Math.max(1, w + PRIOR_SHOTS);
+            } else if (k === "GOALS_AGAINST_AVERAGE") {
+              const starts = estimateStarts(p);
+              const mu = muGoalie[k] || 0;
+              const w = Math.max(0, starts);
+              raw =
+                (w * (raw as number) + PRIOR_STARTS * mu) /
+                Math.max(1, w + PRIOR_STARTS);
+            }
+          }
+
+          const wUser = isFiniteNumber((categoryWeights as any)[k])
+            ? (categoryWeights as any)[k]
+            : 1;
+
+          // Choose role stats
+          const mu = isG ? muGoalie[k] : muSkater[k];
+          const sd = isG ? sdGoalie[k] : sdSkater[k];
+          if (!isFiniteNumber(sd) || sd === 0) return; // no variance; contribution ~ 0
+
+          // Z-score (invert where lower is better)
+          const z = isInverted(k)
+            ? (mu - (raw as number)) / sd
+            : ((raw as number) - mu) / sd;
+
+          zsum += wUser * z;
         });
-        const score = den > 0 ? num / den : 0;
-        values.set(id, Number.isFinite(score) ? score : 0);
+
+        values.set(id, Number.isFinite(zsum) ? zsum : 0);
       });
     }
 
@@ -246,14 +306,14 @@ export function useVORPCalculations({
     const starters = draftSettings.rosterConfig; // C,LW,RW,D,G, utility, bench
     const utilSkater = starters.utility ?? 0;
 
-    // Allocate UTIL across all skater positions (C/LW/RW/D) equally
+    // Allocate UTIL across skater forward positions (C/LW/RW) equally (not D)
     const utilAdj: Record<string, number> = { C: 0, LW: 0, RW: 0, D: 0, G: 0 };
     if (utilSkater > 0) {
-      const share = utilSkater / 4; // distribute across C, LW, RW, D
+      const share = utilSkater / 3; // distribute across C, LW, RW
       utilAdj.C = share;
       utilAdj.LW = share;
       utilAdj.RW = share;
-      utilAdj.D = share;
+      utilAdj.D = 0; // do not allocate UTIL to D by default
     }
 
     // Group by position and sort by value desc (FULL POOL)
@@ -292,13 +352,11 @@ export function useVORPCalculations({
       const startersPos = (starters as any)[pos] || 0;
       let effectiveStarters = startersPos;
       if (personalizeReplacement) {
-        // Subtract user's filled starters (but never below 0) to shift replacement deeper for filled spots.
         const filled = myFilledSlots[pos] || 0;
         effectiveStarters = Math.max(0, startersPos - filled);
       }
-      const vorpRank1Based = T * (effectiveStarters + (utilAdj[pos] || 0)) + 1; // replacement just after last effective starter
-      const volsRank1Based = T * effectiveStarters; // last effective starter index (1-based)
-      // Convert to 0-based indices with clamping >=1
+      const vorpRank1Based = T * (effectiveStarters + (utilAdj[pos] || 0)) + 1;
+      const volsRank1Based = T * effectiveStarters;
       const vorpIdx = Math.max(0, Math.floor(vorpRank1Based) - 1);
       const volsIdx = Math.max(0, Math.floor(volsRank1Based) - 1);
       idxVORP[pos] = vorpIdx;
@@ -308,7 +366,7 @@ export function useVORPCalculations({
     // For combined forward mode, compute combined starter count for FWD pool
     const baseFwdStarters =
       (starters as any).C + (starters as any).LW + (starters as any).RW;
-    const fwdUtilShare = utilAdj.C + utilAdj.LW + utilAdj.RW; // UTIL portion that can be filled by FWD
+    const fwdUtilShare = utilAdj.C + utilAdj.LW + utilAdj.RW;
     const fwdStarters = baseFwdStarters + fwdUtilShare;
     const fwdIdxVORP = Math.max(0, Math.floor(T * fwdStarters + 1) - 1);
     const fwdIdxVOLS = Math.max(
@@ -316,7 +374,7 @@ export function useVORPCalculations({
       Math.floor(T * (baseFwdStarters + fwdUtilShare)) - 1
     );
 
-    // Replacement values at indices (use last available if shorter)
+    // Replacement values at indices
     const replacementByPos: Record<string, { vorp: number; vols: number }> = {
       C: { vorp: 0, vols: 0 },
       LW: { vorp: 0, vols: 0 },
@@ -325,7 +383,7 @@ export function useVORPCalculations({
       G: { vorp: 0, vols: 0 }
     };
 
-    // AVAILABLE POOL for VONA: group and sort
+    // AVAILABLE POOL for VONA
     const byPosAvail: Record<string, Array<{ id: string; value: number }>> = {
       C: [],
       LW: [],
@@ -360,8 +418,8 @@ export function useVORPCalculations({
         (pos === "C" || pos === "LW" || pos === "RW")
       ) {
         const arr = baselineMode === "remaining" ? fwdPoolAvail : fwdPoolFull;
-        const vorpIdx = Math.min(fwdIdxVORP, Math.max(0, arr.length - 1));
-        const volsIdx = Math.min(fwdIdxVOLS, Math.max(0, arr.length - 1));
+        const vorpIdx = Math.min(idxVORP[pos], Math.max(0, arr.length - 1));
+        const volsIdx = Math.min(idxVOLS[pos], Math.max(0, arr.length - 1));
         const vorpVal = arr[vorpIdx]?.value ?? 0;
         const volsVal = arr[volsIdx]?.value ?? 0;
         replacementByPos[pos] = { vorp: vorpVal, vols: volsVal };
@@ -404,14 +462,13 @@ export function useVORPCalculations({
       G: 0
     };
     if (forwardGrouping === "fwd") {
-      // Count skaters (non-D, non-G) as FWD and distribute equally across C/LW/RW for display
       let fwdExpected = 0;
       topN.forEach((p) => {
         const elig = parseEligiblePositions(p.displayPosition);
         const isD = elig.includes("D");
         const isG = elig.includes("G");
         if (!isD && !isG && elig.length > 0) {
-          fwdExpected += 1; // treat as forward slot
+          fwdExpected += 1;
         } else if (isD) {
           expectedTaken.D += 1;
         } else if (isG) {
@@ -427,7 +484,7 @@ export function useVORPCalculations({
         const elig = parseEligiblePositions(p.displayPosition);
         const valid = elig.filter((pos) => positions.includes(pos as any));
         if (valid.length === 0) return;
-        const frac = 1 / valid.length; // fractional allocation across elig positions
+        const frac = 1 / valid.length;
         valid.forEach((pos) => {
           expectedTaken[pos] += frac;
         });
@@ -452,7 +509,6 @@ export function useVORPCalculations({
         const vorp = val - rep.vorp;
         const vols = val - rep.vols;
 
-        // VONA: predict next baseline given expectedTaken at position among N picks
         const arr = byPosAvail[pos];
         const curIdx = currentRankIdx[pos][id];
         if (arr && arr.length > 0 && Number.isFinite(curIdx)) {
@@ -473,7 +529,6 @@ export function useVORPCalculations({
             bestPos = pos;
           }
         } else {
-          // If not in available list (already drafted), don't consider for VONA
           if (vorp > bestVorp || (vorp === bestVorp && vols > bestVols)) {
             bestVorp = vorp;
             bestVols = vols;

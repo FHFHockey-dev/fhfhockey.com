@@ -1,7 +1,5 @@
 // components/DraftDashboard/DraftSettings.tsx
-
 import React from "react";
-// Static import for compression utilities to satisfy eslint (avoid dynamic require)
 import {
   compressToEncodedURIComponent,
   decompressFromEncodedURIComponent
@@ -26,10 +24,8 @@ interface DraftSettingsProps {
   draftedPlayers: any[];
   currentPick: number;
   customTeamNames?: Record<string, string>;
-  // NEW: forward grouping mode controls
   forwardGrouping?: "split" | "fwd";
   onForwardGroupingChange?: (mode: "split" | "fwd") => void;
-  // Projection source controls
   sourceControls?: Record<string, { isSelected: boolean; weight: number }>;
   onSourceControlsChange?: (
     next: Record<string, { isSelected: boolean; weight: number }>
@@ -42,27 +38,15 @@ interface DraftSettingsProps {
     next: Record<string, { isSelected: boolean; weight: number }>
   ) => void;
   goalieScoringCategories?: Record<string, number>;
-  onGoalieScoringChange?: (values: Record<string, number>) => void;
+  onGoalieScoringChange?: (next: Record<string, number>) => void;
+  goalieScoringCategoriesVersion?: number; // for future migrations
   onOpenSummary?: () => void;
-  // New: open Import CSV modal
   onOpenImportCsv?: () => void;
-  // New: label to show for the custom CSV source
   customSourceLabel?: string;
-  // New: players list for keepers autocomplete (use projections pool)
-  playersForKeeperAutocomplete?: Array<{
-    id: number;
-    fullName: string;
-    sweaterNumber?: number | null;
-    teamId?: number;
-  }>;
-  // NEW: available stat keys derived from projections/custom CSV
   availableSkaterStatKeys?: string[];
   availableGoalieStatKeys?: string[];
-  // NEW: export blended projections CSV
   onExportCsv?: () => void;
-  // NEW: remove a custom CSV source
   onRemoveCustomSource?: (id: string) => void;
-  // NEW: traded picks & keepers
   pickOwnerOverrides?: Record<string, string>;
   onAddTradedPick?: (
     round: number,
@@ -83,9 +67,14 @@ interface DraftSettingsProps {
     playerId: string
   ) => void;
   onRemoveKeeper?: (round: number, pickInRound: number) => void;
-  // Bookmark (portable draft session) handlers
   onBookmarkCreate?: (key: string) => void;
   onBookmarkImport?: (data: any) => void;
+  playersForKeeperAutocomplete?: Array<{
+    id: number;
+    fullName: string;
+    sweaterNumber?: number;
+    teamId?: number;
+  }>;
 }
 
 const CAT_KEYS = [
@@ -276,6 +265,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const getWeight = (k: CatKey) =>
     typeof weights[k] === "number" ? weights[k] : 1;
 
+  // 1) Scalar normalization: sum to ~1.00 and keep [0..2] domain
   const normalizeWeights = (
     controls?: Record<string, { isSelected: boolean; weight: number }>
   ) => {
@@ -289,6 +279,198 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       next[k] = { ...v, weight: parseFloat((v.weight / sum).toFixed(3)) };
     });
     return next;
+  };
+
+  // 2) Normalized check vs 1.00 (keep 0 as “ok” for empty case)
+  const isNormalized = React.useMemo(() => {
+    const approxOne = (n: number) => Math.abs(n - 1) < 0.01 || n === 0;
+    return (
+      approxOne(
+        sourceControls
+          ? Object.values(sourceControls).reduce(
+              (acc, v) => (v.isSelected ? acc + v.weight : acc),
+              0
+            )
+          : 0
+      ) &&
+      approxOne(
+        goalieSourceControls
+          ? Object.values(goalieSourceControls).reduce(
+              (acc, v) => (v.isSelected ? acc + v.weight : acc),
+              0
+            )
+          : 0
+      )
+    );
+  }, [sourceControls, goalieSourceControls]);
+
+  const DEBOUNCE_MS = 200;
+  const toPercent = (scalar: number) => Math.round(scalar * 100);
+  const sharePercent = (scalar: number, total: number, selected: boolean) =>
+    selected && total > 0
+      ? `${Math.round((scalar / total) * 100)}%`
+      : "-";
+  const shareValue = (scalar: number, total: number, selected: boolean) => {
+    if (!selected) return 0;
+    if (total > 0) {
+      const pct = Math.round((scalar / total) * 100);
+      return Math.max(0, Math.min(100, pct));
+    }
+    return Math.max(0, Math.min(100, toPercent(scalar)));
+  };
+  const getPendingScalar = (
+    pendingMap: Record<string, number>,
+    id: string,
+    fallback: number
+  ) => (typeof pendingMap[id] === "number" ? pendingMap[id] : fallback);
+  const rebalanceWithAnchor = (
+    controls: Record<string, { isSelected: boolean; weight: number }>,
+    anchorId: string,
+    rawTarget: number
+  ) => {
+    const existing = controls[anchorId];
+    if (!existing) return controls;
+
+    const next: typeof controls = { ...controls };
+    const sanitized = Math.max(0, Math.min(2, rawTarget));
+
+    if (!existing.isSelected) {
+      next[anchorId] = {
+        ...existing,
+        weight: parseFloat(sanitized.toFixed(3))
+      };
+      return next;
+    }
+
+    const active = Object.entries(controls).filter(
+      ([id, ctrl]) => id !== anchorId && ctrl.isSelected
+    );
+
+    // Only one active -> force 100% share
+    if (active.length === 0) {
+      next[anchorId] = {
+        ...existing,
+        weight: 1
+      };
+      return next;
+    }
+
+    const anchorWeight = Math.max(0, Math.min(1, sanitized));
+    const anchorRounded = parseFloat(anchorWeight.toFixed(3));
+    next[anchorId] = {
+      ...existing,
+      weight: anchorRounded
+    };
+
+    const remainder = Math.max(0, parseFloat((1 - anchorRounded).toFixed(3)));
+    if (remainder === 0) {
+      active.forEach(([id, ctrl]) => {
+        next[id] = {
+          ...ctrl,
+          weight: 0
+        };
+      });
+      return next;
+    }
+
+    const weighted = active.map(([id, ctrl]) => ({
+      id,
+      ctrl,
+      weight: ctrl.weight > 0 ? ctrl.weight : 1
+    }));
+    let weightSum = weighted.reduce((acc, item) => acc + item.weight, 0);
+    if (weightSum <= 0) weightSum = weighted.length;
+    let allocated = 0;
+    weighted.forEach((item, index) => {
+      let value: number;
+      if (index === weighted.length - 1) {
+        value = parseFloat((remainder - allocated).toFixed(3));
+      } else {
+        value = parseFloat(
+          (((item.weight / weightSum) * remainder) || 0).toFixed(3)
+        );
+        allocated += value;
+      }
+      if (!Number.isFinite(value) || value < 0) value = 0;
+      next[item.id] = {
+        ...item.ctrl,
+        weight: value
+      };
+    });
+
+    return next;
+  };
+
+  // 3) Debounced write (working behavior)
+  const applyDebouncedSourceWeight = (id: string, value: number) => {
+    if (!onSourceControlsChange || !sourceControls) return;
+    const timers = sourceDebounceTimers.current;
+    if (timers.has(id)) {
+      window.clearTimeout(timers.get(id)!);
+      timers.delete(id);
+    }
+    const numeric = Number.isFinite(value) ? value : 0;
+    const clamped = Math.max(0, Math.min(2, numeric));
+    const existing = sourceControls[id];
+    if (!existing) return;
+
+    const nextControls = autoNormalize
+      ? rebalanceWithAnchor(sourceControls, id, clamped)
+      : {
+          ...sourceControls,
+          [id]: {
+            ...existing,
+            weight: parseFloat(clamped.toFixed(3))
+          }
+        };
+
+    const pendingUpdates: Record<string, number> = {};
+    if (autoNormalize) {
+      Object.entries(nextControls).forEach(([key, ctrl]) => {
+        if (!ctrl.isSelected) return;
+        const prevWeight = sourceControls[key]?.weight ?? 0;
+        if (Math.abs(ctrl.weight - prevWeight) > 0.0005) {
+          pendingUpdates[key] = ctrl.weight;
+        }
+      });
+    } else {
+      const nextWeight = nextControls[id]?.weight ?? clamped;
+      if (Math.abs(nextWeight - existing.weight) > 0.0005) {
+        pendingUpdates[id] = nextWeight;
+      }
+    }
+
+    const pendingKeys = Object.keys(pendingUpdates);
+    if (pendingKeys.length === 0) {
+      timers.delete(id);
+      return;
+    }
+
+    setPendingSourceWeights((prev) => ({ ...prev, ...pendingUpdates }));
+    const t = window.setTimeout(() => {
+      onSourceControlsChange(nextControls);
+      setPendingSourceWeights((prev) => {
+        const copy = { ...prev };
+        pendingKeys.forEach((key) => {
+          delete copy[key];
+        });
+        return copy;
+      });
+      timers.delete(id);
+    }, DEBOUNCE_MS);
+    timers.set(id, t);
+  };
+
+  const handleDirectWeightInput = (
+    id: string,
+    value: number,
+    isGoalie: boolean
+  ) => {
+    const numeric = Number.isFinite(value) ? value : 0;
+    const clamped = Math.max(0, Math.min(2, numeric)); // scalar domain
+    isGoalie
+      ? applyDebouncedGoalieSourceWeight(id, clamped)
+      : applyDebouncedSourceWeight(id, clamped);
   };
 
   const handleNormalizeAll = () => {
@@ -314,14 +496,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       0
     );
   }, [goalieSourceControls]);
-
-  const isNormalized = React.useMemo(() => {
-    const approxOne = (n: number) => Math.abs(n - 1) < 0.01 || n === 0;
-    return (
-      approxOne(totalActiveSourceWeight) &&
-      approxOne(totalActiveGoalieSourceWeight)
-    );
-  }, [totalActiveSourceWeight, totalActiveGoalieSourceWeight]);
 
   const handleResetSkaterScoring = () => {
     onSettingsChange({
@@ -358,7 +532,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const goalieSourceDebounceTimers = React.useRef<Map<string, number>>(
     new Map()
   );
-  const DEBOUNCE_MS = 200;
 
   // Keepers & Traded Picks visibility now controlled by settings.isKeeper
   const playerNamesById = React.useMemo(() => {
@@ -380,29 +553,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const keeperRoundStepperRef = React.useRef<HTMLDivElement | null>(null);
   const keeperPickStepperRef = React.useRef<HTMLDivElement | null>(null);
 
-  const applyDebouncedSourceWeight = (id: string, value: number) => {
-    if (!onSourceControlsChange || !sourceControls) return;
-    const timers = sourceDebounceTimers.current;
-    if (timers.has(id)) {
-      window.clearTimeout(timers.get(id)!);
-      timers.delete(id);
-    }
-    setPendingSourceWeights((prev) => ({ ...prev, [id]: value }));
-    const t = window.setTimeout(() => {
-      onSourceControlsChange({
-        ...sourceControls,
-        [id]: { isSelected: sourceControls[id].isSelected, weight: value }
-      });
-      setPendingSourceWeights((prev) => {
-        const copy = { ...prev };
-        delete copy[id];
-        return copy;
-      });
-      timers.delete(id);
-    }, DEBOUNCE_MS);
-    timers.set(id, t);
-  };
-
   const applyDebouncedGoalieSourceWeight = (id: string, value: number) => {
     if (!onGoalieSourceControlsChange || !goalieSourceControls) return;
     const timers = goalieSourceDebounceTimers.current;
@@ -410,15 +560,51 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       window.clearTimeout(timers.get(id)!);
       timers.delete(id);
     }
-    setPendingGoalieSourceWeights((prev) => ({ ...prev, [id]: value }));
-    const t = window.setTimeout(() => {
-      onGoalieSourceControlsChange({
-        ...goalieSourceControls,
-        [id]: { isSelected: goalieSourceControls[id].isSelected, weight: value }
+    const numeric = Number.isFinite(value) ? value : 0;
+    const clamped = Math.max(0, Math.min(2, numeric));
+    const existing = goalieSourceControls[id];
+    if (!existing) return;
+
+    const nextControls = autoNormalize
+      ? rebalanceWithAnchor(goalieSourceControls, id, clamped)
+      : {
+          ...goalieSourceControls,
+          [id]: {
+            ...existing,
+            weight: parseFloat(clamped.toFixed(3))
+          }
+        };
+
+    const pendingUpdates: Record<string, number> = {};
+    if (autoNormalize) {
+      Object.entries(nextControls).forEach(([key, ctrl]) => {
+        if (!ctrl.isSelected) return;
+        const prevWeight = goalieSourceControls[key]?.weight ?? 0;
+        if (Math.abs(ctrl.weight - prevWeight) > 0.0005) {
+          pendingUpdates[key] = ctrl.weight;
+        }
       });
+    } else {
+      const nextWeight = nextControls[id]?.weight ?? clamped;
+      if (Math.abs(nextWeight - existing.weight) > 0.0005) {
+        pendingUpdates[id] = nextWeight;
+      }
+    }
+
+    const pendingKeys = Object.keys(pendingUpdates);
+    if (pendingKeys.length === 0) {
+      timers.delete(id);
+      return;
+    }
+
+    setPendingGoalieSourceWeights((prev) => ({ ...prev, ...pendingUpdates }));
+    const t = window.setTimeout(() => {
+      onGoalieSourceControlsChange(nextControls);
       setPendingGoalieSourceWeights((prev) => {
         const copy = { ...prev };
-        delete copy[id];
+        pendingKeys.forEach((key) => {
+          delete copy[key];
+        });
         return copy;
       });
       timers.delete(id);
@@ -542,23 +728,27 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
         } catch {}
         return customSourceLabel || "Custom CSV";
       })();
-      const shareBase = ctrl.isSelected ? totalActiveSourceWeight : 0;
-      const weightVal = pendingSourceWeights[id] ?? ctrl.weight;
-      const share =
-        ctrl.isSelected && shareBase > 0
-          ? ((weightVal / shareBase) * 100).toFixed(0) + "%"
-          : "-";
+      const weightScalar = getPendingScalar(
+        pendingSourceWeights,
+        id,
+        ctrl.weight
+      );
+      const share = sharePercent(
+        weightScalar,
+        totalActiveSourceWeight,
+        ctrl.isSelected
+      );
       return (
         <div
           key={id}
           className={`${styles.sourceChip} ${ctrl.isSelected ? styles.sourceChipEnabled : styles.sourceChipDisabled}`}
           data-testid={`source-chip-${id}`}
-          title={`${displayName} ${weightVal.toFixed(1)}x ${share}`}
+          title={`${displayName} ${weightScalar.toFixed(1)}x ${share}`}
           onClick={() => setShowWeightsPopover(true)}
         >
           <span className={styles.sourceChipName}>{displayName}</span>
           <span className={styles.sourceChipWeight}>
-            {weightVal.toFixed(1)}x
+            {weightScalar.toFixed(1)}x
           </span>
           <span className={styles.sourceChipShare}>{share}</span>
         </div>
@@ -606,23 +796,27 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     ) => {
       const src = PROJECTION_SOURCES_CONFIG.find((s) => s.id === id);
       const displayName = src?.displayName || id;
-      const shareBase = ctrl.isSelected ? totalActiveGoalieSourceWeight : 0;
-      const weightVal = pendingGoalieSourceWeights[id] ?? ctrl.weight;
-      const share =
-        ctrl.isSelected && shareBase > 0
-          ? ((weightVal / shareBase) * 100).toFixed(0) + "%"
-          : "-";
+      const weightScalar = getPendingScalar(
+        pendingGoalieSourceWeights,
+        id,
+        ctrl.weight
+      );
+      const share = sharePercent(
+        weightScalar,
+        totalActiveGoalieSourceWeight,
+        ctrl.isSelected
+      );
       return (
         <div
           key={id}
           className={`${styles.sourceChip} ${ctrl.isSelected ? styles.sourceChipEnabled : styles.sourceChipDisabled}`}
           data-testid={`goalie-source-chip-${id}`}
-          title={`${displayName} ${weightVal.toFixed(1)}x ${share}`}
+          title={`${displayName} ${weightScalar.toFixed(1)}x ${share}`}
           onClick={() => setShowWeightsPopover(true)}
         >
           <span className={styles.sourceChipName}>{displayName}</span>
           <span className={styles.sourceChipWeight}>
-            {weightVal.toFixed(1)}x
+            {weightScalar.toFixed(1)}x
           </span>
           <span className={styles.sourceChipShare}>{share}</span>
         </div>
@@ -657,18 +851,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   };
 
   // Handle direct numeric change inside popover
-  const handleDirectWeightInput = (
-    id: string,
-    value: number,
-    isGoalie: boolean
-  ) => {
-    const clamped = Math.max(0, Math.min(2, value));
-    if (isGoalie) {
-      applyDebouncedGoalieSourceWeight(id, clamped);
-    } else {
-      applyDebouncedSourceWeight(id, clamped);
-    }
-  };
 
   // NEW: state for managing scoring metric expansion & add/remove UI
   const [showManageSkaterStats, setShowManageSkaterStats] =
@@ -877,44 +1059,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     settings.categoryWeights
   ]);
 
-  // Ensure core goalie category weights (GA, SV, SV%) are present by default in categories leagues.
-  // Underlying stat keys: GOALS_AGAINST_GOALIE -> GA, SAVES_GOALIE -> SV, SAVE_PERCENTAGE -> SV%.
-  React.useEffect(() => {
-    if (leagueType !== "categories") return;
-    const current = settings.categoryWeights || {};
-    const required = [
-      "GOALS_AGAINST_GOALIE",
-      "SAVES_GOALIE",
-      "SAVE_PERCENTAGE"
-    ];
-    let changed = false;
-    const next = { ...current } as Record<string, number>;
-    for (const key of required) {
-      if (!(key in next)) {
-        next[key] = 1; // default weight
-        changed = true;
-      }
-    }
-    // Always ensure ordering puts required goalie stats first so their sliders are visible
-    // in the collapsed (top 8) view.
-    const orderedKeys = [
-      ...required,
-      ...Object.keys(next).filter((k) => !required.includes(k))
-    ];
-    const ordered: Record<string, number> = {};
-    let orderChanged = false;
-    orderedKeys.forEach((k, idx) => {
-      ordered[k] = next[k];
-      // Detect ordering difference by comparing position in original key sequence
-      if (!orderChanged) {
-        const originalIdx = Object.keys(current).indexOf(k);
-        if (originalIdx !== -1 && originalIdx !== idx) orderChanged = true;
-      }
-    });
-    if (changed || orderChanged) {
-      onSettingsChange({ categoryWeights: ordered });
-    }
-  }, [leagueType, settings.categoryWeights, onSettingsChange]);
+  // Removed enforcement of required goalie categories: users may now remove all categories (spec change).
+  // Consumers must handle empty category list gracefully.
   const [newCategoryKey, setNewCategoryKey] = React.useState("");
   const [newCategoryWeight, setNewCategoryWeight] = React.useState("1");
   const handleAddCategory = () => {
@@ -1360,28 +1506,50 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                   const goalieSet = new Set(availableGoalieStatKeys || []);
                   const skaterEntries = all.filter(([k]) => !goalieSet.has(k));
                   const goalieEntries = all.filter(([k]) => goalieSet.has(k));
-                  // Ensure required goalie categories (including SV%) are always present in collapsed view
-                  const REQUIRED_GOALIE_CAT_KEYS = [
-                    "GOALS_AGAINST_GOALIE",
-                    "SAVES_GOALIE",
-                    "SAVE_PERCENTAGE"
-                  ];
+                  const totalCount =
+                    skaterEntries.length + goalieEntries.length;
+                  if (totalCount === 0) {
+                    return (
+                      <div className={styles.emptyCategoriesMsg}>
+                        No categories selected. Add categories to enable
+                        category scoring.
+                      </div>
+                    );
+                  }
                   let visibleSkater: [string, number][] = skaterEntries;
                   let visibleGoalie: [string, number][] = goalieEntries;
                   if (!showManageCategories) {
-                    const requiredGoalieEntries = goalieEntries.filter(([k]) =>
-                      REQUIRED_GOALIE_CAT_KEYS.includes(k)
-                    );
-                    const otherGoalieEntries = goalieEntries.filter(
-                      ([k]) => !REQUIRED_GOALIE_CAT_KEYS.includes(k)
-                    );
-                    // Prioritize required goalie -> skaters -> remaining goalie when collapsed
-                    const prioritized = [
-                      ...requiredGoalieEntries,
-                      ...skaterEntries,
-                      ...otherGoalieEntries
+                    const GOALIE_PRIORITY = [
+                      "WINS_GOALIE",
+                      "SAVES_GOALIE",
+                      "SAVE_PERCENTAGE"
                     ];
-                    const limited = prioritized.slice(0, 8);
+                    const goalieMap = new Map(goalieEntries);
+                    const prioritizedGoalie = GOALIE_PRIORITY.filter((k) =>
+                      goalieMap.has(k)
+                    ).map((k) => [k, goalieMap.get(k)!] as [string, number]);
+                    const remainingSkaters = [...skaterEntries];
+                    const remainingGoalies = goalieEntries.filter(
+                      ([k]) => !GOALIE_PRIORITY.includes(k)
+                    );
+                    // Build list ensuring prioritized goalie stats show first, then skaters, then remaining goalie
+                    const ordered = [
+                      ...prioritizedGoalie,
+                      ...remainingSkaters,
+                      ...remainingGoalies
+                    ];
+                    // Base collapsed limit
+                    const baseLimit = 8;
+                    let limited = ordered.slice(0, baseLimit);
+                    // Ensure BLK (BLOCKED_SHOTS) is visible in collapsed view if present in defaults
+                    if (
+                      ordered.length > baseLimit &&
+                      ordered.some(([k]) => k === "BLOCKED_SHOTS") &&
+                      !limited.some(([k]) => k === "BLOCKED_SHOTS")
+                    ) {
+                      // Extend limit by one (to 9) to keep BLK without displacing prioritized goalie stats
+                      limited = ordered.slice(0, baseLimit + 1);
+                    }
                     const limitedKeys = new Set(limited.map(([k]) => k));
                     visibleSkater = skaterEntries.filter(([k]) =>
                       limitedKeys.has(k)
@@ -1492,7 +1660,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                         </>
                       )}
                       {!showManageCategories &&
-                        skaterEntries.length + goalieEntries.length > 8 && (
+                        (skaterEntries.length + goalieEntries.length > 8 ||
+                          addableCategoryStats.length > 0) && (
                           <button
                             className={styles.expandButton}
                             type="button"
@@ -1504,7 +1673,9 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                             }}
                             title="Manage / Add categories"
                           >
-                            {`+${Math.max(0, skaterEntries.length + goalieEntries.length - 8)} more`}
+                            {skaterEntries.length + goalieEntries.length > 8
+                              ? `+${Math.max(0, skaterEntries.length + goalieEntries.length - 8)} more`
+                              : "Add Category"}
                           </button>
                         )}
                       {showManageCategories && (
@@ -2413,14 +2584,21 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                         } catch {}
                         return customSourceLabel || "Custom CSV";
                       })();
-                      const weightVal = pendingSourceWeights[id] ?? ctrl.weight;
-                      const share =
-                        ctrl.isSelected && totalActiveSourceWeight > 0
-                          ? (
-                              (weightVal / totalActiveSourceWeight) *
-                              100
-                            ).toFixed(0) + "%"
-                          : "-";
+                      const weightScalar = getPendingScalar(
+                        pendingSourceWeights,
+                        id,
+                        ctrl.weight
+                      );
+                      const share = sharePercent(
+                        weightScalar,
+                        totalActiveSourceWeight,
+                        ctrl.isSelected
+                      );
+                      const sliderValue = shareValue(
+                        weightScalar,
+                        totalActiveSourceWeight,
+                        ctrl.isSelected
+                      );
                       return (
                         <div
                           key={id}
@@ -2450,54 +2628,54 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                               <span className={styles.popoverSourceName}>
                                 {displayName}
                               </span>
-                            </label>
-                            <span className={styles.shareBadge}>{share}</span>
-                          </div>
-                          <div className={styles.popoverSliderRow}>
-                            <input
-                              type="range"
-                              min={0}
-                              max={2}
-                              step={0.1}
-                              value={weightVal}
-                              onChange={(e) =>
-                                applyDebouncedSourceWeight(
-                                  id,
-                                  parseFloat(e.target.value)
-                                )
-                              }
-                              disabled={!ctrl.isSelected}
-                              aria-label={`${displayName} weight`}
-                              aria-valuetext={`${weightVal.toFixed(1)}x`}
-                              className={`${styles.rangeInput} ${styles.popoverSlider}`}
-                            />
-                            <input
-                              type="number"
-                              step={0.1}
-                              min={0}
-                              max={2}
-                              value={weightVal}
-                              onChange={(e) =>
-                                handleDirectWeightInput(
-                                  id,
-                                  parseFloat(e.target.value || "0"),
-                                  false
-                                )
-                              }
-                              disabled={!ctrl.isSelected}
-                              className={styles.weightNumberInput}
-                              aria-label={`${displayName} numeric weight`}
-                            />
-                            {isCustom && onRemoveCustomSource && (
-                              <button
-                                type="button"
-                                className={styles.inlineResetBtn}
-                                onClick={() => onRemoveCustomSource(id)}
-                                title="Remove this custom source"
-                              >
-                                Remove
-                              </button>
-                            )}
+                              </label>
+                              <span className={styles.shareBadge}>{share}</span>
+                            </div>
+                            <div className={styles.popoverSliderRow}>
+                              <input
+                                type="range"
+                                min={0}
+                                max={100}
+                                step={1}
+                                value={ctrl.isSelected ? sliderValue : 0}
+                                onChange={(e) =>
+                                  applyDebouncedSourceWeight(
+                                    id,
+                                    parseInt(e.target.value, 10) / 100
+                                  )
+                                }
+                                disabled={!ctrl.isSelected}
+                                aria-label={`${displayName} weight share (%)`}
+                                aria-valuetext={`${sliderValue}% (${weightScalar.toFixed(2)}x)`}
+                                className={`${styles.rangeInput} ${styles.popoverSlider}`}
+                              />
+                              <input
+                                type="number"
+                                step={0.1}
+                                min={0}
+                                max={2}
+                                value={Number.isFinite(weightScalar) ? weightScalar : 0}
+                                onChange={(e) =>
+                                  handleDirectWeightInput(
+                                    id,
+                                    parseFloat(e.target.value || "0"),
+                                    false
+                                  )
+                                }
+                                disabled={!ctrl.isSelected}
+                                className={styles.weightNumberInput}
+                                aria-label={`${displayName} numeric weight multiplier`}
+                              />
+                              {isCustom && onRemoveCustomSource && (
+                                <button
+                                  type="button"
+                                  className={styles.inlineResetBtn}
+                                  onClick={() => onRemoveCustomSource(id)}
+                                  title="Remove this custom source"
+                                >
+                                  Remove
+                                </button>
+                              )}
                           </div>
                         </div>
                       );
@@ -2541,15 +2719,21 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           } catch {}
                           return "Custom CSV";
                         })();
-                        const weightVal =
-                          pendingGoalieSourceWeights[id] ?? ctrl.weight;
-                        const share =
-                          ctrl.isSelected && totalActiveGoalieSourceWeight > 0
-                            ? (
-                                (weightVal / totalActiveGoalieSourceWeight) *
-                                100
-                              ).toFixed(0) + "%"
-                            : "-";
+                        const weightScalar = getPendingScalar(
+                          pendingGoalieSourceWeights,
+                          id,
+                          ctrl.weight
+                        );
+                        const share = sharePercent(
+                          weightScalar,
+                          totalActiveGoalieSourceWeight,
+                          ctrl.isSelected
+                        );
+                        const sliderValue = shareValue(
+                          weightScalar,
+                          totalActiveGoalieSourceWeight,
+                          ctrl.isSelected
+                        );
                         return (
                           <div
                             key={id}
@@ -2586,18 +2770,18 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                               <input
                                 type="range"
                                 min={0}
-                                max={2}
-                                step={0.1}
-                                value={weightVal}
+                                max={100}
+                                step={1}
+                                value={ctrl.isSelected ? sliderValue : 0}
                                 onChange={(e) =>
                                   applyDebouncedGoalieSourceWeight(
                                     id,
-                                    parseFloat(e.target.value)
+                                    parseInt(e.target.value, 10) / 100
                                   )
                                 }
                                 disabled={!ctrl.isSelected}
-                                aria-label={`${displayName} weight`}
-                                aria-valuetext={`${weightVal.toFixed(1)}x`}
+                                aria-label={`${displayName} weight share (%)`}
+                                aria-valuetext={`${sliderValue}% (${weightScalar.toFixed(2)}x)`}
                                 className={`${styles.rangeInput} ${styles.popoverSlider}`}
                               />
                               <input
@@ -2605,7 +2789,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                 step={0.1}
                                 min={0}
                                 max={2}
-                                value={weightVal}
+                                value={Number.isFinite(weightScalar) ? weightScalar : 0}
                                 onChange={(e) =>
                                   handleDirectWeightInput(
                                     id,
@@ -2615,7 +2799,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                 }
                                 disabled={!ctrl.isSelected}
                                 className={styles.weightNumberInput}
-                                aria-label={`${displayName} numeric weight`}
+                                aria-label={`${displayName} numeric weight multiplier`}
                               />
                               {isCustom && onRemoveCustomSource && (
                                 <button

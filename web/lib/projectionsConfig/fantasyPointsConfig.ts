@@ -26,8 +26,7 @@ export const DEFAULT_GOALIE_FANTASY_POINTS: Record<string, number> = {
   GOALS_AGAINST_GOALIE: -1, // Note: This is typically negative
   SAVES_GOALIE: 0.2,
   SHUTOUTS_GOALIE: 3,
-  WINS_GOALIE: 4,
-  GOALS_AGAINST_AVERAGE: -1
+  WINS_GOALIE: 4
   // Other goalie stats (e.g., GAMES_PLAYED, LOSSES_GOALIE, OTL_GOALIE, SHOTS_AGAINST_GOALIE,
   // SAVE_PERCENTAGE) will default to 0 unless specified here during initialization.
 };

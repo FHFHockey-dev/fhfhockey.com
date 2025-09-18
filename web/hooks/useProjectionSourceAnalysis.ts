@@ -7,7 +7,7 @@ export type SourceControl = {
   id: string; // e.g., "custom_csv" or builtin ids
   label: string;
   enabled: boolean;
-  weight: number; // 0.0 - 2.0 (0 means disabled)
+  weight: number; // integer 0-100 (0 disables) post-migration
 };
 
 export type SourceControlsState = {
@@ -15,29 +15,102 @@ export type SourceControlsState = {
   effectiveShares: Record<string, number>; // normalized shares per enabled source
 };
 
-const LOCAL_KEY = "draft.sourceControls.v2" as const;
+const LOCAL_KEY_V3 = "draft.sourceControls.v3" as const;
+const LEGACY_KEY_V2 = "draft.sourceControls.v2" as const; // legacy 0-2 float weights
 
 export function useProjectionSourceAnalysis(
   initialSources: { id: string; label: string }[]
 ) {
   const [controls, setControls] = useState<SourceControl[]>(() => {
+    // SSR fallback with even distribution
     if (typeof window === "undefined") {
+      const even = initialSources.length
+        ? Math.floor(100 / initialSources.length)
+        : 0;
+      let remainder = 100 - even * initialSources.length;
       return initialSources.map((s) => ({
         id: s.id,
         label: s.label,
         enabled: true,
-        weight: 1
+        weight: even + (remainder-- > 0 ? 1 : 0)
       }));
     }
     try {
-      const saved = localStorage.getItem(LOCAL_KEY);
-      if (saved) return JSON.parse(saved);
+      const savedV3 = localStorage.getItem(LOCAL_KEY_V3);
+      if (savedV3) {
+        const parsed = JSON.parse(savedV3);
+        if (Array.isArray(parsed)) return parsed as SourceControl[];
+      }
+      // Attempt migration from legacy v2 (0-2 floats)
+      const legacy = localStorage.getItem(LEGACY_KEY_V2);
+      if (legacy) {
+        const parsed = JSON.parse(legacy) as Array<{
+          id: string;
+          label: string;
+          enabled: boolean;
+          weight: number;
+        }>;
+        if (Array.isArray(parsed) && parsed.length) {
+          let legacyTotal = 0;
+          parsed.forEach((c) => {
+            if (c.enabled && c.weight > 0) legacyTotal += c.weight;
+          });
+          let migrated: SourceControl[];
+          if (legacyTotal > 0) {
+            migrated = parsed.map((c) => {
+              if (!c.enabled || c.weight <= 0) {
+                return { id: c.id, label: c.label, enabled: false, weight: 0 };
+              }
+              return {
+                id: c.id,
+                label: c.label,
+                enabled: true,
+                weight: Math.max(0, Math.round((c.weight / legacyTotal) * 100))
+              };
+            });
+          } else {
+            // All zero legacy weights -> even distribution
+            const even = parsed.length ? Math.floor(100 / parsed.length) : 0;
+            let rem = 100 - even * parsed.length;
+            migrated = parsed.map((c) => ({
+              id: c.id,
+              label: c.label,
+              enabled: true,
+              weight: even + (rem-- > 0 ? 1 : 0)
+            }));
+          }
+          // Normalize rounding drift
+          let sum = migrated.reduce(
+            (a, c) => a + (c.enabled ? c.weight : 0),
+            0
+          );
+          if (sum !== 100) {
+            const enabledIdx = migrated
+              .map((c, idx) => [c, idx] as const)
+              .filter(([c]) => c.enabled)
+              .sort((a, b) => b[0].weight - a[0].weight)[0]?.[1];
+            if (enabledIdx != null) {
+              migrated[enabledIdx] = {
+                ...migrated[enabledIdx],
+                weight: Math.max(0, migrated[enabledIdx].weight + (100 - sum))
+              };
+            }
+          }
+          localStorage.setItem(LOCAL_KEY_V3, JSON.stringify(migrated));
+          return migrated;
+        }
+      }
     } catch {}
+    // Default even distribution
+    const even = initialSources.length
+      ? Math.floor(100 / initialSources.length)
+      : 0;
+    let remainder = 100 - even * initialSources.length;
     return initialSources.map((s) => ({
       id: s.id,
       label: s.label,
       enabled: true,
-      weight: 1
+      weight: even + (remainder-- > 0 ? 1 : 0)
     }));
   });
 
@@ -56,7 +129,7 @@ export function useProjectionSourceAnalysis(
       let changed = false;
       for (const s of initialSources) {
         if (!map.has(s.id)) {
-          map.set(s.id, { id: s.id, label: s.label, enabled: true, weight: 1 });
+          map.set(s.id, { id: s.id, label: s.label, enabled: true, weight: 0 });
           changed = true;
         } else {
           const curr = map.get(s.id)!;
@@ -89,7 +162,7 @@ export function useProjectionSourceAnalysis(
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     saveTimerRef.current = window.setTimeout(() => {
       try {
-        localStorage.setItem(LOCAL_KEY, json);
+        localStorage.setItem(LOCAL_KEY_V3, json);
       } catch {}
     }, 180);
     return () => {
@@ -97,7 +170,7 @@ export function useProjectionSourceAnalysis(
     };
   }, [controls]);
 
-  const MIN_ENABLED_WEIGHT = 0.1;
+  const MIN_ENABLED_WEIGHT = 1; // 1% minimum when enabling
   const setEnabled = useCallback((id: string, enabled: boolean) => {
     setControls((prev) =>
       prev.map((c) => {
@@ -105,9 +178,7 @@ export function useProjectionSourceAnalysis(
         if (enabled) {
           const restore = lastNonZeroWeightRef.current[id];
           const nextWeight =
-            restore && restore > 0
-              ? restore
-              : Math.max(MIN_ENABLED_WEIGHT, c.weight || MIN_ENABLED_WEIGHT);
+            restore && restore > 0 ? restore : MIN_ENABLED_WEIGHT;
           return { ...c, enabled: true, weight: nextWeight };
         }
         return { ...c, enabled: false, weight: 0 };
