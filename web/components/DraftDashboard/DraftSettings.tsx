@@ -304,6 +304,103 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     );
   }, [sourceControls, goalieSourceControls]);
 
+  const DEBOUNCE_MS = 200;
+  const toPercent = (scalar: number) => Math.round(scalar * 100);
+  const sharePercent = (scalar: number, total: number, selected: boolean) =>
+    selected && total > 0
+      ? `${Math.round((scalar / total) * 100)}%`
+      : "-";
+  const shareValue = (scalar: number, total: number, selected: boolean) => {
+    if (!selected) return 0;
+    if (total > 0) {
+      const pct = Math.round((scalar / total) * 100);
+      return Math.max(0, Math.min(100, pct));
+    }
+    return Math.max(0, Math.min(100, toPercent(scalar)));
+  };
+  const getPendingScalar = (
+    pendingMap: Record<string, number>,
+    id: string,
+    fallback: number
+  ) => (typeof pendingMap[id] === "number" ? pendingMap[id] : fallback);
+  const rebalanceWithAnchor = (
+    controls: Record<string, { isSelected: boolean; weight: number }>,
+    anchorId: string,
+    rawTarget: number
+  ) => {
+    const existing = controls[anchorId];
+    if (!existing) return controls;
+
+    const next: typeof controls = { ...controls };
+    const sanitized = Math.max(0, Math.min(2, rawTarget));
+
+    if (!existing.isSelected) {
+      next[anchorId] = {
+        ...existing,
+        weight: parseFloat(sanitized.toFixed(3))
+      };
+      return next;
+    }
+
+    const active = Object.entries(controls).filter(
+      ([id, ctrl]) => id !== anchorId && ctrl.isSelected
+    );
+
+    // Only one active -> force 100% share
+    if (active.length === 0) {
+      next[anchorId] = {
+        ...existing,
+        weight: 1
+      };
+      return next;
+    }
+
+    const anchorWeight = Math.max(0, Math.min(1, sanitized));
+    const anchorRounded = parseFloat(anchorWeight.toFixed(3));
+    next[anchorId] = {
+      ...existing,
+      weight: anchorRounded
+    };
+
+    const remainder = Math.max(0, parseFloat((1 - anchorRounded).toFixed(3)));
+    if (remainder === 0) {
+      active.forEach(([id, ctrl]) => {
+        next[id] = {
+          ...ctrl,
+          weight: 0
+        };
+      });
+      return next;
+    }
+
+    const weighted = active.map(([id, ctrl]) => ({
+      id,
+      ctrl,
+      weight: ctrl.weight > 0 ? ctrl.weight : 1
+    }));
+    let weightSum = weighted.reduce((acc, item) => acc + item.weight, 0);
+    if (weightSum <= 0) weightSum = weighted.length;
+    let allocated = 0;
+    weighted.forEach((item, index) => {
+      let value: number;
+      if (index === weighted.length - 1) {
+        value = parseFloat((remainder - allocated).toFixed(3));
+      } else {
+        value = parseFloat(
+          (((item.weight / weightSum) * remainder) || 0).toFixed(3)
+        );
+        allocated += value;
+      }
+      if (!Number.isFinite(value) || value < 0) value = 0;
+      next[item.id] = {
+        ...item.ctrl,
+        weight: value
+      };
+    });
+
+    return next;
+  };
+
   // 3) Debounced write (working behavior)
   const applyDebouncedSourceWeight = (id: string, value: number) => {
     if (!onSourceControlsChange || !sourceControls) return;
@@ -312,22 +409,55 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       window.clearTimeout(timers.get(id)!);
       timers.delete(id);
     }
-    setPendingSourceWeights((prev) => ({ ...prev, [id]: value }));
-    const t = window.setTimeout(() => {
-      onSourceControlsChange({
-        ...sourceControls,
-        [id]: {
-          isSelected: sourceControls[id].isSelected,
-          weight: value // scalar
+    const numeric = Number.isFinite(value) ? value : 0;
+    const clamped = Math.max(0, Math.min(2, numeric));
+    const existing = sourceControls[id];
+    if (!existing) return;
+
+    const nextControls = autoNormalize
+      ? rebalanceWithAnchor(sourceControls, id, clamped)
+      : {
+          ...sourceControls,
+          [id]: {
+            ...existing,
+            weight: parseFloat(clamped.toFixed(3))
+          }
+        };
+
+    const pendingUpdates: Record<string, number> = {};
+    if (autoNormalize) {
+      Object.entries(nextControls).forEach(([key, ctrl]) => {
+        if (!ctrl.isSelected) return;
+        const prevWeight = sourceControls[key]?.weight ?? 0;
+        if (Math.abs(ctrl.weight - prevWeight) > 0.0005) {
+          pendingUpdates[key] = ctrl.weight;
         }
       });
+    } else {
+      const nextWeight = nextControls[id]?.weight ?? clamped;
+      if (Math.abs(nextWeight - existing.weight) > 0.0005) {
+        pendingUpdates[id] = nextWeight;
+      }
+    }
+
+    const pendingKeys = Object.keys(pendingUpdates);
+    if (pendingKeys.length === 0) {
+      timers.delete(id);
+      return;
+    }
+
+    setPendingSourceWeights((prev) => ({ ...prev, ...pendingUpdates }));
+    const t = window.setTimeout(() => {
+      onSourceControlsChange(nextControls);
       setPendingSourceWeights((prev) => {
         const copy = { ...prev };
-        delete copy[id];
+        pendingKeys.forEach((key) => {
+          delete copy[key];
+        });
         return copy;
       });
       timers.delete(id);
-    }, 200);
+    }, DEBOUNCE_MS);
     timers.set(id, t);
   };
 
@@ -336,7 +466,8 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     value: number,
     isGoalie: boolean
   ) => {
-    const clamped = Math.max(0, Math.min(2, value)); // scalar domain
+    const numeric = Number.isFinite(value) ? value : 0;
+    const clamped = Math.max(0, Math.min(2, numeric)); // scalar domain
     isGoalie
       ? applyDebouncedGoalieSourceWeight(id, clamped)
       : applyDebouncedSourceWeight(id, clamped);
@@ -401,7 +532,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const goalieSourceDebounceTimers = React.useRef<Map<string, number>>(
     new Map()
   );
-  const DEBOUNCE_MS = 200;
 
   // Keepers & Traded Picks visibility now controlled by settings.isKeeper
   const playerNamesById = React.useMemo(() => {
@@ -424,43 +554,62 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const keeperPickStepperRef = React.useRef<HTMLDivElement | null>(null);
 
   const applyDebouncedGoalieSourceWeight = (id: string, value: number) => {
-    setPendingGoalieSourceWeights((prev) => ({ ...prev, [id]: value }));
-  };
+    if (!onGoalieSourceControlsChange || !goalieSourceControls) return;
+    const timers = goalieSourceDebounceTimers.current;
+    if (timers.has(id)) {
+      window.clearTimeout(timers.get(id)!);
+      timers.delete(id);
+    }
+    const numeric = Number.isFinite(value) ? value : 0;
+    const clamped = Math.max(0, Math.min(2, numeric));
+    const existing = goalieSourceControls[id];
+    if (!existing) return;
 
-  const commitSourceWeight = (id: string, isGoalie: boolean) => {
-    if (isGoalie) {
-      if (!onGoalieSourceControlsChange || !goalieSourceControls) return;
-      const value = pendingGoalieSourceWeights[id];
-      if (value == null) return; // nothing pending
-      onGoalieSourceControlsChange({
-        ...goalieSourceControls,
-        [id]: {
-          isSelected: goalieSourceControls[id].isSelected,
-          weight: Math.max(0, Math.min(100, Math.round(value)))
+    const nextControls = autoNormalize
+      ? rebalanceWithAnchor(goalieSourceControls, id, clamped)
+      : {
+          ...goalieSourceControls,
+          [id]: {
+            ...existing,
+            weight: parseFloat(clamped.toFixed(3))
+          }
+        };
+
+    const pendingUpdates: Record<string, number> = {};
+    if (autoNormalize) {
+      Object.entries(nextControls).forEach(([key, ctrl]) => {
+        if (!ctrl.isSelected) return;
+        const prevWeight = goalieSourceControls[key]?.weight ?? 0;
+        if (Math.abs(ctrl.weight - prevWeight) > 0.0005) {
+          pendingUpdates[key] = ctrl.weight;
         }
-      });
-      setPendingGoalieSourceWeights((prev) => {
-        const copy = { ...prev };
-        delete copy[id];
-        return copy;
       });
     } else {
-      if (!onSourceControlsChange || !sourceControls) return;
-      const value = pendingSourceWeights[id];
-      if (value == null) return;
-      onSourceControlsChange({
-        ...sourceControls,
-        [id]: {
-          isSelected: sourceControls[id].isSelected,
-          weight: Math.max(0, Math.min(100, Math.round(value)))
-        }
-      });
-      setPendingSourceWeights((prev) => {
+      const nextWeight = nextControls[id]?.weight ?? clamped;
+      if (Math.abs(nextWeight - existing.weight) > 0.0005) {
+        pendingUpdates[id] = nextWeight;
+      }
+    }
+
+    const pendingKeys = Object.keys(pendingUpdates);
+    if (pendingKeys.length === 0) {
+      timers.delete(id);
+      return;
+    }
+
+    setPendingGoalieSourceWeights((prev) => ({ ...prev, ...pendingUpdates }));
+    const t = window.setTimeout(() => {
+      onGoalieSourceControlsChange(nextControls);
+      setPendingGoalieSourceWeights((prev) => {
         const copy = { ...prev };
-        delete copy[id];
+        pendingKeys.forEach((key) => {
+          delete copy[key];
+        });
         return copy;
       });
-    }
+      timers.delete(id);
+    }, DEBOUNCE_MS);
+    timers.set(id, t);
   };
 
   // Focus first interactive element when expanding
@@ -579,22 +728,28 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
         } catch {}
         return customSourceLabel || "Custom CSV";
       })();
-      const shareBase = ctrl.isSelected ? totalActiveSourceWeight : 0;
-      const weightVal = pendingSourceWeights[id] ?? ctrl.weight;
-      const share =
-        ctrl.isSelected && shareBase > 0
-          ? ((weightVal / shareBase) * 100).toFixed(0) + "%"
-          : "-";
+      const weightScalar = getPendingScalar(
+        pendingSourceWeights,
+        id,
+        ctrl.weight
+      );
+      const share = sharePercent(
+        weightScalar,
+        totalActiveSourceWeight,
+        ctrl.isSelected
+      );
       return (
         <div
           key={id}
           className={`${styles.sourceChip} ${ctrl.isSelected ? styles.sourceChipEnabled : styles.sourceChipDisabled}`}
           data-testid={`source-chip-${id}`}
-          title={`${displayName} ${weightVal}% ${share} share`}
+          title={`${displayName} ${weightScalar.toFixed(1)}x ${share}`}
           onClick={() => setShowWeightsPopover(true)}
         >
           <span className={styles.sourceChipName}>{displayName}</span>
-          <span className={styles.sourceChipWeight}>{weightVal}%</span>
+          <span className={styles.sourceChipWeight}>
+            {weightScalar.toFixed(1)}x
+          </span>
           <span className={styles.sourceChipShare}>{share}</span>
         </div>
       );
@@ -641,22 +796,28 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     ) => {
       const src = PROJECTION_SOURCES_CONFIG.find((s) => s.id === id);
       const displayName = src?.displayName || id;
-      const shareBase = ctrl.isSelected ? totalActiveGoalieSourceWeight : 0;
-      const weightVal = pendingGoalieSourceWeights[id] ?? ctrl.weight;
-      const share =
-        ctrl.isSelected && shareBase > 0
-          ? ((weightVal / shareBase) * 100).toFixed(0) + "%"
-          : "-";
+      const weightScalar = getPendingScalar(
+        pendingGoalieSourceWeights,
+        id,
+        ctrl.weight
+      );
+      const share = sharePercent(
+        weightScalar,
+        totalActiveGoalieSourceWeight,
+        ctrl.isSelected
+      );
       return (
         <div
           key={id}
           className={`${styles.sourceChip} ${ctrl.isSelected ? styles.sourceChipEnabled : styles.sourceChipDisabled}`}
           data-testid={`goalie-source-chip-${id}`}
-          title={`${displayName} ${weightVal}% ${share} share`}
+          title={`${displayName} ${weightScalar.toFixed(1)}x ${share}`}
           onClick={() => setShowWeightsPopover(true)}
         >
           <span className={styles.sourceChipName}>{displayName}</span>
-          <span className={styles.sourceChipWeight}>{weightVal}%</span>
+          <span className={styles.sourceChipWeight}>
+            {weightScalar.toFixed(1)}x
+          </span>
           <span className={styles.sourceChipShare}>{share}</span>
         </div>
       );
@@ -2423,14 +2584,21 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                         } catch {}
                         return customSourceLabel || "Custom CSV";
                       })();
-                      const weightVal = pendingSourceWeights[id] ?? ctrl.weight;
-                      const share =
-                        ctrl.isSelected && totalActiveSourceWeight > 0
-                          ? (
-                              (weightVal / totalActiveSourceWeight) *
-                              100
-                            ).toFixed(0) + "%"
-                          : "-";
+                      const weightScalar = getPendingScalar(
+                        pendingSourceWeights,
+                        id,
+                        ctrl.weight
+                      );
+                      const share = sharePercent(
+                        weightScalar,
+                        totalActiveSourceWeight,
+                        ctrl.isSelected
+                      );
+                      const sliderValue = shareValue(
+                        weightScalar,
+                        totalActiveSourceWeight,
+                        ctrl.isSelected
+                      );
                       return (
                         <div
                           key={id}
@@ -2460,54 +2628,54 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                               <span className={styles.popoverSourceName}>
                                 {displayName}
                               </span>
-                            </label>
-                            <span className={styles.shareBadge}>{share}</span>
-                          </div>
-                          <div className={styles.popoverSliderRow}>
-                            <input
-                              type="range"
-                              min={0}
-                              max={100}
-                              step={1}
-                              value={weightVal}
-                              onChange={(e) =>
-                                applyDebouncedSourceWeight(
-                                  id,
-                                  parseInt(e.target.value, 10)
-                                )
-                              }
-                              disabled={!ctrl.isSelected}
-                              aria-label={`${displayName} weight (%)`}
-                              aria-valuetext={`${weightVal}%`}
-                              className={`${styles.rangeInput} ${styles.popoverSlider}`}
-                            />
-                            <input
-                              type="number"
-                              step={1}
-                              min={0}
-                              max={100}
-                              value={weightVal}
-                              onChange={(e) =>
-                                handleDirectWeightInput(
-                                  id,
-                                  parseInt(e.target.value || "0", 10),
-                                  false
-                                )
-                              }
-                              disabled={!ctrl.isSelected}
-                              className={styles.weightNumberInput}
-                              aria-label={`${displayName} numeric weight (%)`}
-                            />
-                            {isCustom && onRemoveCustomSource && (
-                              <button
-                                type="button"
-                                className={styles.inlineResetBtn}
-                                onClick={() => onRemoveCustomSource(id)}
-                                title="Remove this custom source"
-                              >
-                                Remove
-                              </button>
-                            )}
+                              </label>
+                              <span className={styles.shareBadge}>{share}</span>
+                            </div>
+                            <div className={styles.popoverSliderRow}>
+                              <input
+                                type="range"
+                                min={0}
+                                max={100}
+                                step={1}
+                                value={ctrl.isSelected ? sliderValue : 0}
+                                onChange={(e) =>
+                                  applyDebouncedSourceWeight(
+                                    id,
+                                    parseInt(e.target.value, 10) / 100
+                                  )
+                                }
+                                disabled={!ctrl.isSelected}
+                                aria-label={`${displayName} weight share (%)`}
+                                aria-valuetext={`${sliderValue}% (${weightScalar.toFixed(2)}x)`}
+                                className={`${styles.rangeInput} ${styles.popoverSlider}`}
+                              />
+                              <input
+                                type="number"
+                                step={0.1}
+                                min={0}
+                                max={2}
+                                value={Number.isFinite(weightScalar) ? weightScalar : 0}
+                                onChange={(e) =>
+                                  handleDirectWeightInput(
+                                    id,
+                                    parseFloat(e.target.value || "0"),
+                                    false
+                                  )
+                                }
+                                disabled={!ctrl.isSelected}
+                                className={styles.weightNumberInput}
+                                aria-label={`${displayName} numeric weight multiplier`}
+                              />
+                              {isCustom && onRemoveCustomSource && (
+                                <button
+                                  type="button"
+                                  className={styles.inlineResetBtn}
+                                  onClick={() => onRemoveCustomSource(id)}
+                                  title="Remove this custom source"
+                                >
+                                  Remove
+                                </button>
+                              )}
                           </div>
                         </div>
                       );
@@ -2551,15 +2719,21 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                           } catch {}
                           return "Custom CSV";
                         })();
-                        const weightVal =
-                          pendingGoalieSourceWeights[id] ?? ctrl.weight;
-                        const share =
-                          ctrl.isSelected && totalActiveGoalieSourceWeight > 0
-                            ? (
-                                (weightVal / totalActiveGoalieSourceWeight) *
-                                100
-                              ).toFixed(0) + "%"
-                            : "-";
+                        const weightScalar = getPendingScalar(
+                          pendingGoalieSourceWeights,
+                          id,
+                          ctrl.weight
+                        );
+                        const share = sharePercent(
+                          weightScalar,
+                          totalActiveGoalieSourceWeight,
+                          ctrl.isSelected
+                        );
+                        const sliderValue = shareValue(
+                          weightScalar,
+                          totalActiveGoalieSourceWeight,
+                          ctrl.isSelected
+                        );
                         return (
                           <div
                             key={id}
@@ -2598,34 +2772,34 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                 min={0}
                                 max={100}
                                 step={1}
-                                value={weightVal}
+                                value={ctrl.isSelected ? sliderValue : 0}
                                 onChange={(e) =>
                                   applyDebouncedGoalieSourceWeight(
                                     id,
-                                    parseInt(e.target.value, 10)
+                                    parseInt(e.target.value, 10) / 100
                                   )
                                 }
                                 disabled={!ctrl.isSelected}
-                                aria-label={`${displayName} weight (%)`}
-                                aria-valuetext={`${weightVal}%`}
+                                aria-label={`${displayName} weight share (%)`}
+                                aria-valuetext={`${sliderValue}% (${weightScalar.toFixed(2)}x)`}
                                 className={`${styles.rangeInput} ${styles.popoverSlider}`}
                               />
                               <input
                                 type="number"
-                                step={1}
+                                step={0.1}
                                 min={0}
-                                max={100}
-                                value={weightVal}
+                                max={2}
+                                value={Number.isFinite(weightScalar) ? weightScalar : 0}
                                 onChange={(e) =>
                                   handleDirectWeightInput(
                                     id,
-                                    parseInt(e.target.value || "0", 10),
+                                    parseFloat(e.target.value || "0"),
                                     true
                                   )
                                 }
                                 disabled={!ctrl.isSelected}
                                 className={styles.weightNumberInput}
-                                aria-label={`${displayName} numeric weight (%)`}
+                                aria-label={`${displayName} numeric weight multiplier`}
                               />
                               {isCustom && onRemoveCustomSource && (
                                 <button
