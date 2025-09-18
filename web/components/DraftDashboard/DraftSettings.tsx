@@ -265,6 +265,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const getWeight = (k: CatKey) =>
     typeof weights[k] === "number" ? weights[k] : 1;
 
+  // 1) Scalar normalization: sum to ~1.00 and keep [0..2] domain
   const normalizeWeights = (
     controls?: Record<string, { isSelected: boolean; weight: number }>
   ) => {
@@ -275,12 +276,70 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     if (sum <= 0) return controls;
     const next: typeof controls = { ...controls };
     active.forEach(([k, v]) => {
-      next[k] = {
-        ...v,
-        weight: Math.max(0, Math.min(100, Math.round((v.weight / sum) * 100)))
-      };
+      next[k] = { ...v, weight: parseFloat((v.weight / sum).toFixed(3)) };
     });
     return next;
+  };
+
+  // 2) Normalized check vs 1.00 (keep 0 as “ok” for empty case)
+  const isNormalized = React.useMemo(() => {
+    const approxOne = (n: number) => Math.abs(n - 1) < 0.01 || n === 0;
+    return (
+      approxOne(
+        sourceControls
+          ? Object.values(sourceControls).reduce(
+              (acc, v) => (v.isSelected ? acc + v.weight : acc),
+              0
+            )
+          : 0
+      ) &&
+      approxOne(
+        goalieSourceControls
+          ? Object.values(goalieSourceControls).reduce(
+              (acc, v) => (v.isSelected ? acc + v.weight : acc),
+              0
+            )
+          : 0
+      )
+    );
+  }, [sourceControls, goalieSourceControls]);
+
+  // 3) Debounced write (working behavior)
+  const applyDebouncedSourceWeight = (id: string, value: number) => {
+    if (!onSourceControlsChange || !sourceControls) return;
+    const timers = sourceDebounceTimers.current;
+    if (timers.has(id)) {
+      window.clearTimeout(timers.get(id)!);
+      timers.delete(id);
+    }
+    setPendingSourceWeights((prev) => ({ ...prev, [id]: value }));
+    const t = window.setTimeout(() => {
+      onSourceControlsChange({
+        ...sourceControls,
+        [id]: {
+          isSelected: sourceControls[id].isSelected,
+          weight: value // scalar
+        }
+      });
+      setPendingSourceWeights((prev) => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      });
+      timers.delete(id);
+    }, 200);
+    timers.set(id, t);
+  };
+
+  const handleDirectWeightInput = (
+    id: string,
+    value: number,
+    isGoalie: boolean
+  ) => {
+    const clamped = Math.max(0, Math.min(2, value)); // scalar domain
+    isGoalie
+      ? applyDebouncedGoalieSourceWeight(id, clamped)
+      : applyDebouncedSourceWeight(id, clamped);
   };
 
   const handleNormalizeAll = () => {
@@ -306,14 +365,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
       0
     );
   }, [goalieSourceControls]);
-
-  const isNormalized = React.useMemo(() => {
-    const approxHundred = (n: number) => Math.abs(n - 100) <= 1 || n === 0;
-    return (
-      approxHundred(totalActiveSourceWeight) &&
-      approxHundred(totalActiveGoalieSourceWeight)
-    );
-  }, [totalActiveSourceWeight, totalActiveGoalieSourceWeight]);
 
   const handleResetSkaterScoring = () => {
     onSettingsChange({
@@ -371,11 +422,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const tradePickStepperRef = React.useRef<HTMLDivElement | null>(null);
   const keeperRoundStepperRef = React.useRef<HTMLDivElement | null>(null);
   const keeperPickStepperRef = React.useRef<HTMLDivElement | null>(null);
-
-  const applyDebouncedSourceWeight = (id: string, value: number) => {
-    // Deprecated in percent model: we now stage changes & commit on pointer up.
-    setPendingSourceWeights((prev) => ({ ...prev, [id]: value }));
-  };
 
   const applyDebouncedGoalieSourceWeight = (id: string, value: number) => {
     setPendingGoalieSourceWeights((prev) => ({ ...prev, [id]: value }));
@@ -644,18 +690,6 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   };
 
   // Handle direct numeric change inside popover
-  const handleDirectWeightInput = (
-    id: string,
-    value: number,
-    isGoalie: boolean
-  ) => {
-    const clamped = Math.max(0, Math.min(100, Math.round(value)));
-    if (isGoalie) {
-      applyDebouncedGoalieSourceWeight(id, clamped);
-    } else {
-      applyDebouncedSourceWeight(id, clamped);
-    }
-  };
 
   // NEW: state for managing scoring metric expansion & add/remove UI
   const [showManageSkaterStats, setShowManageSkaterStats] =
