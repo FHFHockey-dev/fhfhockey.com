@@ -435,7 +435,6 @@
 .scoringSetting {
   display: flex;
   flex-direction: column;
-  gap: v.$space-xs;
   padding: 0 v.$space-xs; // horizontal padding for tap target
   position: relative;
 }

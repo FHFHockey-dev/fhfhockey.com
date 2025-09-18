@@ -88,7 +88,10 @@ const DEFAULT_DRAFT_SETTINGS: DraftSettings = {
     PP_POINTS: 1,
     SHOTS_ON_GOAL: 1,
     HITS: 1,
-    BLOCKED_SHOTS: 1
+    BLOCKED_SHOTS: 1,
+    WINS_GOALIE: 1,
+    SAVES_GOALIE: 1,
+    SAVE_PERCENTAGE: 1
   },
   rosterConfig: {
     C: 2,
@@ -110,6 +113,23 @@ const DraftDashboard: React.FC = () => {
   const [draftSettings, setDraftSettings] = useState<DraftSettings>(
     DEFAULT_DRAFT_SETTINGS
   );
+  // Ensure baseline goalie categories appear in categories leagues if user has none.
+  useEffect(() => {
+    if (draftSettings.leagueType !== "categories") return;
+    const cw = draftSettings.categoryWeights || {};
+    const goalieKeys = ["WINS_GOALIE", "SAVES_GOALIE", "SAVE_PERCENTAGE"];
+    if (!goalieKeys.some((k) => k in cw)) {
+      setDraftSettings((prev) => ({
+        ...prev,
+        categoryWeights: {
+          ...prev.categoryWeights,
+          WINS_GOALIE: 1,
+          SAVES_GOALIE: 1,
+          SAVE_PERCENTAGE: 1
+        }
+      }));
+    }
+  }, [draftSettings.leagueType, draftSettings.categoryWeights]);
   const [draftedPlayers, setDraftedPlayers] = useState<DraftedPlayer[]>([]);
   // Explicit per-player slot overrides (C/LW/RW/FWD/D/G/UTILITY)
   const [positionOverrides, setPositionOverrides] = useState<
@@ -1713,6 +1733,20 @@ const DraftDashboard: React.FC = () => {
             nextPickNumber={nextPickNumber}
             leagueType={draftSettings.leagueType || "points"}
             forwardGrouping={forwardGrouping}
+            enabledSkaterStatKeys={
+              draftSettings.leagueType === "categories"
+                ? Object.keys(draftSettings.categoryWeights || {}).filter(
+                    (k) => !availableGoalieStatKeys.includes(k)
+                  )
+                : Object.keys(draftSettings.scoringCategories || {})
+            }
+            enabledGoalieStatKeys={
+              draftSettings.leagueType === "categories"
+                ? Object.keys(draftSettings.categoryWeights || {}).filter((k) =>
+                    availableGoalieStatKeys.includes(k)
+                  )
+                : Object.keys(goaliePointValues || {})
+            }
           />
           <button
             onClick={() => setDataRefreshKey((k) => k + 1)}

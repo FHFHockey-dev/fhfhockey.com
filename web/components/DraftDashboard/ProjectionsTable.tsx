@@ -42,6 +42,9 @@ interface ProjectionsTableProps {
   // forward grouping display mode (C/LW/RW vs FWD)
   forwardGrouping?: "split" | "fwd";
   activeCategoryKeys?: string[];
+  // Enabled stat keys coming from DraftSettings (only these show in Stat Columns mode)
+  enabledSkaterStatKeys?: string[];
+  enabledGoalieStatKeys?: string[];
 }
 
 type SortableField =
@@ -74,7 +77,9 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   nextPickNumber,
   forwardGrouping = "split",
   leagueType = "points",
-  activeCategoryKeys = []
+  activeCategoryKeys = [],
+  enabledSkaterStatKeys,
+  enabledGoalieStatKeys
 }) => {
   const [sortField, setSortField] = useState<SortableField>("yahooAvgPick");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -192,10 +197,24 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     "SHUTOUTS_GOALIE"
   ];
   const statColumns = useMemo(() => {
-    // If viewing only goalies, show goalie columns; otherwise show skater columns
-    if (positionFilter === "G") return DEFAULT_GOALIE_STAT_KEYS;
-    return DEFAULT_SKATER_STAT_KEYS;
-  }, [positionFilter]);
+    if (positionFilter === "G") {
+      const src = enabledGoalieStatKeys
+        ? enabledGoalieStatKeys // if provided (even empty) respect it
+        : DEFAULT_GOALIE_STAT_KEYS;
+      return src.filter(Boolean).slice(0, 16);
+    }
+    const base = enabledSkaterStatKeys
+      ? enabledSkaterStatKeys
+      : DEFAULT_SKATER_STAT_KEYS;
+    return base.filter(Boolean).slice(0, 24);
+  }, [positionFilter, enabledSkaterStatKeys, enabledGoalieStatKeys]);
+
+  // If current stat sort key is no longer in visible stat columns, clear it
+  useEffect(() => {
+    if (statSortKey && !statColumns.includes(statSortKey)) {
+      setStatSortKey("");
+    }
+  }, [statColumns, statSortKey]);
 
   const handleStatHeaderSort = (key: string) => {
     if (statSortKey === key) {
@@ -502,7 +521,22 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     players.forEach((p) => {
       let excluded = false;
       if (positionFilter !== "ALL") {
-        const ok = getDisplayPos(p)?.includes(positionFilter);
+        const disp = (getDisplayPos(p) || "").toUpperCase();
+        const parts = disp.split(",").map((s) => s.trim());
+        const isGoalie = parts.includes("G");
+        const isDefense = parts.includes("D");
+        const isForwardSplit = parts.some((x) => ["C", "LW", "RW"].includes(x));
+        const isForwardMerged = parts.includes("F");
+        let ok = true;
+        if (positionFilter === "G") ok = isGoalie;
+        else if (positionFilter === "SKATER")
+          ok = !isGoalie && (isDefense || isForwardSplit || isForwardMerged);
+        else if (positionFilter === "FORWARDS")
+          ok =
+            forwardGrouping === "fwd"
+              ? isForwardMerged && !isGoalie
+              : isForwardSplit && !isGoalie;
+        else ok = disp.includes(positionFilter);
         if (!ok) {
           inc("positionFilter");
           excluded = true;
@@ -528,7 +562,26 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
       // Mirror visibility logic (minus sort)
       let arr = [...players];
       if (positionFilter !== "ALL") {
-        arr = arr.filter((p) => getDisplayPos(p)?.includes(positionFilter));
+        arr = arr.filter((p) => {
+          const disp = (getDisplayPos(p) || "").toUpperCase();
+          const parts = disp.split(",").map((s) => s.trim());
+          const isGoalie = parts.includes("G");
+          const isDefense = parts.includes("D");
+          const isForwardSplit = parts.some((x) =>
+            ["C", "LW", "RW"].includes(x)
+          );
+          const isForwardMerged = parts.includes("F");
+          if (positionFilter === "G") return isGoalie;
+          if (positionFilter === "SKATER")
+            return (
+              !isGoalie && (isDefense || isForwardSplit || isForwardMerged)
+            );
+          if (positionFilter === "FORWARDS")
+            return forwardGrouping === "fwd"
+              ? isForwardMerged && !isGoalie
+              : isForwardSplit && !isGoalie;
+          return disp.includes(positionFilter);
+        });
       }
       if (debouncedSearchTerm) {
         arr = arr.filter((p) => {
@@ -546,7 +599,14 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     })();
     const excluded = Math.max(0, total - shown);
     return { total, shown, excluded, reasons };
-  }, [players, positionFilter, debouncedSearchTerm, hideDrafted, draftedIdSet]);
+  }, [
+    players,
+    positionFilter,
+    debouncedSearchTerm,
+    hideDrafted,
+    draftedIdSet,
+    forwardGrouping
+  ]);
 
   // Build a quick lookup for each player's primary position (first listed)
   const primaryPosById = useMemo(() => {
@@ -629,12 +689,24 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
   // Filter and sort players
   const filteredAndSortedPlayers = useMemo(() => {
     let filtered = [...players];
-
-    // Apply position filter
+    // Position filter predicate
     if (positionFilter !== "ALL") {
-      filtered = filtered.filter((player) =>
-        getDisplayPos(player)?.includes(positionFilter)
-      );
+      filtered = filtered.filter((p) => {
+        const disp = (getDisplayPos(p) || "").toUpperCase();
+        const parts = disp.split(",").map((s) => s.trim());
+        const isGoalie = parts.includes("G");
+        const isDefense = parts.includes("D");
+        const isForwardSplit = parts.some((x) => ["C", "LW", "RW"].includes(x));
+        const isForwardMerged = parts.includes("F");
+        if (positionFilter === "G") return isGoalie;
+        if (positionFilter === "SKATER")
+          return !isGoalie && (isDefense || isForwardSplit || isForwardMerged);
+        if (positionFilter === "FORWARDS")
+          return forwardGrouping === "fwd"
+            ? isForwardMerged && !isGoalie
+            : isForwardSplit && !isGoalie;
+        return disp.includes(positionFilter);
+      });
     }
 
     // Apply search filter
@@ -742,7 +814,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
     riskMap,
     statSortKey,
     favoritesOnly,
-    favoriteIds
+    favoriteIds,
+    forwardGrouping
   ]);
 
   // Helpers for percentile calculations
@@ -1120,6 +1193,8 @@ const ProjectionsTable: React.FC<ProjectionsTableProps> = ({
                 aria-label="Position filter"
               >
                 <option value="ALL">ALL</option>
+                <option value="SKATER">Skater</option>
+                <option value="FORWARDS">Forwards</option>
                 {availablePositions.map((position) => (
                   <option key={position} value={position}>
                     {position}
