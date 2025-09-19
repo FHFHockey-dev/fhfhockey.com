@@ -48,6 +48,16 @@ export interface UseVORPResult {
   expectedN?: number;
 }
 
+// Tunables: goalie rate regression and UTIL distribution
+const PRIOR_SHOTS = 1200; // shots prior for SV% regression
+const PRIOR_STARTS = 25; // starts prior for GAA regression
+const UTIL_TO_DEF_ENABLED = false; // if true, allocate UTIL to D as well
+
+// Debug guard; logs only in development
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+const __DEV__ = process.env.NODE_ENV !== "production";
+
 // Helper: parse eligible positions from displayPosition
 const parseEligiblePositions = (displayPosition?: string | null): string[] => {
   if (!displayPosition) return [];
@@ -70,6 +80,7 @@ const isFiniteNumber = (x: any): x is number =>
   typeof x === "number" && Number.isFinite(x);
 
 // Category helpers
+// Goalie category identification: map common keys to goalie role
 const isGoalieKey = (k: string) =>
   k.endsWith("_GOALIE") ||
   k === "GOALS_AGAINST_AVERAGE" ||
@@ -81,11 +92,13 @@ const isGoalieKey = (k: string) =>
   k === "LOSSES_GOALIE" ||
   k === "OTL_GOALIE";
 
+// Inversions: categories where lower is better (e.g., GAA, GA, Losses)
 const isInverted = (k: string) =>
   k === "GOALS_AGAINST_AVERAGE" ||
   k === "GOALS_AGAINST_GOALIE" ||
   k === "LOSSES_GOALIE";
 
+// Goalie rate stats to regress by workload before z-scoring
 const isGoalieRate = (k: string) =>
   k === "SAVE_PERCENTAGE" || k === "GOALS_AGAINST_AVERAGE";
 
@@ -212,10 +225,6 @@ export function useVORPCalculations({
         sdGoalie[k] = stdev(arraysGoalie[k]);
       });
 
-      // Priors for rate regression (tunable)
-      const PRIOR_SHOTS = 1200; // shots prior for SV%
-      const PRIOR_STARTS = 25; // starts prior for GAA
-
       // Helpers: estimate goalie workloads
       const estimateShots = (p: ProcessedPlayer): number => {
         const cs = (p.combinedStats as any) || {};
@@ -263,6 +272,8 @@ export function useVORPCalculations({
           if (!isFiniteNumber(raw)) return;
 
           // Regress goalie rates to mean by workload
+          // rate* = (w*rate + w0*mu) / (w + w0)
+          // SV% uses projected shots as w; GAA uses projected starts as w.
           if (isG && isGoalieRate(k)) {
             if (k === "SAVE_PERCENTAGE") {
               const shots = estimateShots(p);
@@ -300,20 +311,47 @@ export function useVORPCalculations({
 
         values.set(id, Number.isFinite(zsum) ? zsum : 0);
       });
+
+      // Dev-only: log a couple μ/σ for sanity on first render
+      // Avoid noise by logging once per module load
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      if (__DEV__ && !globalThis.__VORP_Z_DEBUG_LOGGED__) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        globalThis.__VORP_Z_DEBUG_LOGGED__ = true;
+        const sampleSkaterCats = ["GOALS", "ASSISTS", "SHOTS_ON_GOAL"];
+        const sampleGoalieCats = [
+          "SAVE_PERCENTAGE",
+          "GOALS_AGAINST_AVERAGE",
+          "WINS_GOALIE"
+        ];
+        const skaterDump = sampleSkaterCats
+          .filter((k) => k in muSkater)
+          .map((k) => ({ k, mu: muSkater[k], sd: sdSkater[k] }));
+        const goalieDump = sampleGoalieCats
+          .filter((k) => k in muGoalie)
+          .map((k) => ({ k, mu: muGoalie[k], sd: sdGoalie[k] }));
+        // eslint-disable-next-line no-console
+        console.log("[VORP] Z-scale (skater):", skaterDump);
+        // eslint-disable-next-line no-console
+        console.log("[VORP] Z-scale (goalie):", goalieDump);
+      }
     }
 
     const T = draftSettings.teamCount;
     const starters = draftSettings.rosterConfig; // C,LW,RW,D,G, utility, bench
     const utilSkater = starters.utility ?? 0;
 
-    // Allocate UTIL across skater forward positions (C/LW/RW) equally (not D)
+    // Allocate UTIL across skater positions; default C/LW/RW only (not D)
     const utilAdj: Record<string, number> = { C: 0, LW: 0, RW: 0, D: 0, G: 0 };
     if (utilSkater > 0) {
-      const share = utilSkater / 3; // distribute across C, LW, RW
+      const groupCount = UTIL_TO_DEF_ENABLED ? 4 : 3;
+      const share = utilSkater / groupCount; // distribute across selected skater roles
       utilAdj.C = share;
       utilAdj.LW = share;
       utilAdj.RW = share;
-      utilAdj.D = 0; // do not allocate UTIL to D by default
+      utilAdj.D = UTIL_TO_DEF_ENABLED ? share : 0;
     }
 
     // Group by position and sort by value desc (FULL POOL)
@@ -367,11 +405,19 @@ export function useVORPCalculations({
     const baseFwdStarters =
       (starters as any).C + (starters as any).LW + (starters as any).RW;
     const fwdUtilShare = utilAdj.C + utilAdj.LW + utilAdj.RW;
-    const fwdStarters = baseFwdStarters + fwdUtilShare;
+    let fwdEffectiveBase = baseFwdStarters;
+    if (personalizeReplacement) {
+      const filledFwd =
+        (myFilledSlots.C || 0) +
+        (myFilledSlots.LW || 0) +
+        (myFilledSlots.RW || 0);
+      fwdEffectiveBase = Math.max(0, baseFwdStarters - filledFwd);
+    }
+    const fwdStarters = fwdEffectiveBase + fwdUtilShare;
     const fwdIdxVORP = Math.max(0, Math.floor(T * fwdStarters + 1) - 1);
     const fwdIdxVOLS = Math.max(
       0,
-      Math.floor(T * (baseFwdStarters + fwdUtilShare)) - 1
+      Math.floor(T * (fwdEffectiveBase + fwdUtilShare)) - 1
     );
 
     // Replacement values at indices
@@ -409,22 +455,20 @@ export function useVORPCalculations({
       ...byPosAvail.RW
     ].sort((a, b) => b.value - a.value);
 
-    // Choose baseline source for replacement values
-    const baselineArrs = baselineMode === "remaining" ? byPosAvail : byPosFull;
-
+    // Replacement values: ALWAYS from FULL pool (stable, comparable)
     positions.forEach((pos) => {
       if (
         forwardGrouping === "fwd" &&
         (pos === "C" || pos === "LW" || pos === "RW")
       ) {
-        const arr = baselineMode === "remaining" ? fwdPoolAvail : fwdPoolFull;
-        const vorpIdx = Math.min(idxVORP[pos], Math.max(0, arr.length - 1));
-        const volsIdx = Math.min(idxVOLS[pos], Math.max(0, arr.length - 1));
+        const arr = fwdPoolFull;
+        const vorpIdx = Math.min(fwdIdxVORP, Math.max(0, arr.length - 1));
+        const volsIdx = Math.min(fwdIdxVOLS, Math.max(0, arr.length - 1));
         const vorpVal = arr[vorpIdx]?.value ?? 0;
         const volsVal = arr[volsIdx]?.value ?? 0;
         replacementByPos[pos] = { vorp: vorpVal, vols: volsVal };
       } else {
-        const arr = baselineArrs[pos];
+        const arr = byPosFull[pos];
         const vorpIdx = Math.min(idxVORP[pos], Math.max(0, arr.length - 1));
         const volsIdx = Math.min(idxVOLS[pos], Math.max(0, arr.length - 1));
         const vorpVal = arr[vorpIdx]?.value ?? 0;

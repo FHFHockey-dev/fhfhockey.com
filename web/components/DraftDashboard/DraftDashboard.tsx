@@ -36,6 +36,9 @@ export interface DraftSettings {
   categoryWeights?: Record<string, number>; // used in categories mode
   // Whether this is a keeper league. Controls visibility of Keepers & Traded Picks section.
   isKeeper?: boolean;
+  // Custom source safeguards
+  allowCustomNameFallback?: boolean;
+  customSourceMinimumCoverage?: number; // percentage 0-100
   rosterConfig: {
     [position: string]: number;
     bench: number;
@@ -82,6 +85,8 @@ const DEFAULT_DRAFT_SETTINGS: DraftSettings = {
   scoringCategories: getDefaultFantasyPointsConfig("skater"),
   leagueType: "points",
   isKeeper: false,
+  allowCustomNameFallback: true,
+  customSourceMinimumCoverage: 25,
   categoryWeights: {
     GOALS: 1,
     ASSISTS: 1,
@@ -235,6 +240,18 @@ const DraftDashboard: React.FC = () => {
     label: string;
     headers?: { original: string; standardized: string; selected: boolean }[];
     rows?: Record<string, any>[];
+    resolution?: {
+      totalRows: number;
+      idMatched: number;
+      nameMatched: number;
+      fuzzyMatched?: number;
+      manualOverrides?: number;
+      invalidIds?: number;
+      unresolved: number;
+      coverage: number; // 0-1 fraction of rows with ids
+      lastUpdated: number;
+      unresolvedNames: string[];
+    };
   };
   const getCsvList = useCallback((): SessionCsvEntry[] => {
     if (typeof window === "undefined") return [];
@@ -391,7 +408,16 @@ const DraftDashboard: React.FC = () => {
       if (!raw) return false;
       const snap = JSON.parse(raw) as DraftSnapshotV2;
       if (snap.v !== 2) return false;
-      setDraftSettings(snap.draftSettings);
+      setDraftSettings({
+        ...DEFAULT_DRAFT_SETTINGS,
+        ...snap.draftSettings,
+        allowCustomNameFallback:
+          snap.draftSettings?.allowCustomNameFallback ?? true,
+        customSourceMinimumCoverage:
+          typeof snap.draftSettings?.customSourceMinimumCoverage === "number"
+            ? snap.draftSettings.customSourceMinimumCoverage
+            : 25
+      });
       setDraftedPlayers(snap.draftedPlayers || []);
       setKeepers(snap.keepers || []);
       setPickOwnerOverrides(snap.pickOwnerOverrides || {});
@@ -500,7 +526,8 @@ const DraftDashboard: React.FC = () => {
         })
         .filter(Boolean) as CustomAdditionalProjectionSource[];
     })(),
-    refreshKey: dataRefreshKey
+    refreshKey: dataRefreshKey,
+    allowCustomNameFallback: draftSettings.allowCustomNameFallback ?? true
   });
 
   // Get player projections data (goalies) - use editable goalie points config
@@ -559,8 +586,68 @@ const DraftDashboard: React.FC = () => {
         })
         .filter(Boolean) as CustomAdditionalProjectionSource[];
     })(),
-    refreshKey: dataRefreshKey
+    refreshKey: dataRefreshKey,
+    allowCustomNameFallback: draftSettings.allowCustomNameFallback ?? true
   });
+
+  const mergedCustomResolutions = useMemo(
+    () => ({
+      ...(skaterData.customSourceResolutions || {}),
+      ...(goalieData.customSourceResolutions || {})
+    }),
+    [skaterData.customSourceResolutions, goalieData.customSourceResolutions]
+  );
+
+  const skaterFallbackCount = skaterData.customFallbackUsage?.total ?? 0;
+  const goalieFallbackCount = goalieData.customFallbackUsage?.total ?? 0;
+
+  const onlyCustomSkater = useMemo(() => {
+    const selected = Object.entries(sourceControls).filter(([, ctrl]) =>
+      ctrl.isSelected
+    );
+    return (
+      selected.length > 0 &&
+      selected.every(([id]) => id.startsWith("custom_csv"))
+    );
+  }, [sourceControls]);
+
+  const onlyCustomGoalie = useMemo(() => {
+    const selected = Object.entries(goalieSourceControls).filter(([, ctrl]) =>
+      ctrl.isSelected
+    );
+    return (
+      selected.length > 0 &&
+      selected.every(([id]) => id.startsWith("custom_csv"))
+    );
+  }, [goalieSourceControls]);
+
+  const fallbackBannerMessages = useMemo(() => {
+    const messages: string[] = [];
+    if (onlyCustomSkater && skaterFallbackCount > 0) {
+      messages.push(
+        `${skaterFallbackCount} skater${skaterFallbackCount === 1 ? "" : "s"}`
+      );
+    }
+    if (onlyCustomGoalie && goalieFallbackCount > 0) {
+      messages.push(
+        `${goalieFallbackCount} goalie${goalieFallbackCount === 1 ? "" : "s"}`
+      );
+    }
+    return messages;
+  }, [onlyCustomSkater, skaterFallbackCount, onlyCustomGoalie, goalieFallbackCount]);
+
+  const showFallbackBanner =
+    (draftSettings.allowCustomNameFallback ?? true) &&
+    fallbackBannerMessages.length > 0;
+
+  const coverageThreshold = draftSettings.customSourceMinimumCoverage ?? 25;
+  const lowCoverageSources = useMemo(
+    () =>
+      Object.entries(mergedCustomResolutions).filter(
+        ([, res]) => res && res.coverage * 100 < coverageThreshold
+      ),
+    [mergedCustomResolutions, coverageThreshold]
+  );
 
   // Debug logging to see what data we're getting
   console.log("Debug - DraftDashboard projections (skaters/goalies):", {
@@ -1633,6 +1720,14 @@ const DraftDashboard: React.FC = () => {
         }}
       />
 
+      {showFallbackBanner && (
+        <div className={styles.warningBanner}>
+          {`Name-fallback used for ${fallbackBannerMessages.join(" and ")}.`}
+          {lowCoverageSources.length > 0 &&
+            ` Coverage remains below ${coverageThreshold.toFixed(0)}%.`}
+        </div>
+      )}
+
       {/* Full-width Suggested Picks above the three panels */}
       <section className={styles.suggestedSection}>
         <SuggestedPicks
@@ -1771,12 +1866,38 @@ const DraftDashboard: React.FC = () => {
       <ImportCsvModal
         open={isImportCsvOpen}
         onClose={() => setIsImportCsvOpen(false)}
-        onImported={({ headers, rows, sourceId, label }) => {
+        minimumCoveragePercent={
+          draftSettings.customSourceMinimumCoverage ?? 25
+        }
+        allowNameFallback={draftSettings.allowCustomNameFallback ?? true}
+        onFallbackSettingsChange={({
+          allowCustomNameFallback,
+          minimumCoveragePercent
+        }) => {
+          setDraftSettings((prev) => ({
+            ...prev,
+            allowCustomNameFallback,
+            customSourceMinimumCoverage: minimumCoveragePercent
+          }));
+        }}
+        onImported={({ headers, rows, sourceId, label, resolution }) => {
           // Append to list with incremental id custom_csv_1..n
           const list = getCsvList();
           const nextIndex = list.length + 1;
           const id = `custom_csv_${nextIndex}`;
-          const next = [...list, { id, label, headers, rows }];
+          const next = [
+            ...list,
+            {
+              id,
+              label,
+              headers,
+              rows,
+              resolution: {
+                ...resolution,
+                lastUpdated: resolution.lastUpdated || Date.now()
+              }
+            }
+          ];
           setCsvList(next);
           // Add/enable the custom source control so it appears in settings (skater controls by default)
           setSourceControls((prev) => ({

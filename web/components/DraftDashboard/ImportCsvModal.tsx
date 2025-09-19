@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Papa from "papaparse";
 import { useDropzone } from "react-dropzone";
-import {
-  standardizePlayerName,
-  titleCase
-} from "../../lib/standardization/nameStandardization";
+import { standardizePlayerName } from "../../lib/standardization/nameStandardization";
+import { teamsInfo } from "../../lib/teamsInfo";
 import supabase from "lib/supabase";
-import { standardizeColumnName } from "../../lib/standardization/columnStandardization";
+import {
+  defaultCanonicalColumnMap,
+  standardizeColumnName
+} from "../../lib/standardization/columnStandardization";
 
 export type CsvPreviewRow = Record<string, string | number | null>;
 
@@ -14,6 +15,8 @@ type HeaderConfig = {
   original: string;
   standardized: string;
   selected: boolean;
+  status?: "supported" | "unsupported" | "required";
+  error?: string | null;
 };
 
 const REQUIRED_COLUMNS = [
@@ -24,7 +27,15 @@ const REQUIRED_COLUMNS = [
   "Assists"
 ];
 
-const SESSION_KEY = "draft.customCsv.v1" as const;
+const CANONICAL_COLUMN_OPTIONS = Array.from(
+  new Set([
+    ...Object.values(defaultCanonicalColumnMap),
+    "player_id"
+  ])
+).sort();
+
+const ALLOWED_COLUMNS = new Set<string>(CANONICAL_COLUMN_OPTIONS);
+const REQUIRED_COLUMN_SET = new Set(REQUIRED_COLUMNS);
 
 // Normalization helper: lower-case, strip punctuation (periods, apostrophes, dashes), remove accents
 function normalizeForMatch(name: string): string {
@@ -37,21 +48,111 @@ function normalizeForMatch(name: string): string {
     .trim();
 }
 
+function stdName(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function levenshteinDistance(a: string, b: string): number {
+  const s = a.toLowerCase();
+  const t = b.toLowerCase();
+  const m = s.length;
+  const n = t.length;
+  const dp = Array.from({ length: m + 1 }, () => new Array<number>(n + 1));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = s[i - 1] === t[j - 1] ? 0 : 1;
+      dp[i][j] = Math.min(
+        dp[i - 1][j] + 1,
+        dp[i][j - 1] + 1,
+        dp[i - 1][j - 1] + cost
+      );
+    }
+  }
+  return dp[m][n];
+}
+
+type PlayerIndexRecord = {
+  id: number;
+  fullName: string;
+  position: string | null;
+  lastName?: string | null;
+  teamId?: number | null;
+  teamAbbrev?: string | null;
+  std: string;
+};
+
+type ResolutionStats = {
+  totalRows: number;
+  idMatched: number;
+  nameMatched: number;
+  fuzzyMatched: number;
+  manualOverrides: number;
+  unresolved: number;
+  invalidIds: number;
+  coverage: number;
+  lastUpdated: number;
+  unresolvedNames: string[];
+};
+
+type RowResolutionDetail = {
+  name: string;
+  method: string;
+  playerId: number | null;
+  invalidOriginalId: boolean;
+};
+
+const TEAM_ID_BY_ABBREV = new Map<string, number>();
+const TEAM_ABBREV_BY_ID = new Map<number, string>();
+for (const [abbr, info] of Object.entries(teamsInfo)) {
+  const upper = abbr.toUpperCase();
+  TEAM_ID_BY_ABBREV.set(upper, info.id);
+  TEAM_ABBREV_BY_ID.set(info.id, upper);
+}
+
 type ImportCsvModalProps = {
   open: boolean;
   onClose: () => void;
+  minimumCoveragePercent?: number;
+  allowNameFallback?: boolean;
+  onFallbackSettingsChange?: (settings: {
+    allowCustomNameFallback: boolean;
+    minimumCoveragePercent: number;
+  }) => void;
   onImported: (args: {
     headers: HeaderConfig[];
     rows: CsvPreviewRow[];
     sourceId: string;
     label: string;
+    resolution: {
+      totalRows: number;
+      idMatched: number;
+      nameMatched: number;
+      fuzzyMatched: number;
+      manualOverrides: number;
+      unresolved: number;
+      invalidIds: number;
+      coverage: number;
+      lastUpdated: number;
+      unresolvedNames: string[];
+    };
   }) => void;
 };
 
 export default function ImportCsvModal({
   open,
   onClose,
-  onImported
+  onImported,
+  minimumCoveragePercent = 25,
+  allowNameFallback = true,
+  onFallbackSettingsChange
 }: ImportCsvModalProps) {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const [allRows, setAllRows] = useState<CsvPreviewRow[]>([]);
@@ -67,6 +168,8 @@ export default function ImportCsvModal({
       fullName: string;
       position: string | null;
       lastName?: string | null;
+      teamId?: number | null;
+      teamAbbrev?: string | null;
     }>
   >([]);
   const [ambiguousChoices, setAmbiguousChoices] = useState<
@@ -78,7 +181,44 @@ export default function ImportCsvModal({
   const [searchInputs, setSearchInputs] = useState<Record<string, string>>({});
   const [forceImportDespiteUnresolved, setForceImportDespiteUnresolved] =
     useState(false);
+  const [requireFullMapping, setRequireFullMapping] = useState(false);
+  const [collapseHeaderMapping, setCollapseHeaderMapping] = useState(false);
+  const [collapseUnresolved, setCollapseUnresolved] = useState(false);
+  const [collapseAmbiguities, setCollapseAmbiguities] = useState(false);
   const loggedTargetsRef = useRef(false);
+  const rosterIndex = useMemo(() => {
+    const ids = new Set<number>();
+    const byStdName = new Map<string, PlayerIndexRecord[]>();
+    const byTeamAbbrev = new Map<string, PlayerIndexRecord[]>();
+    const byId = new Map<number, PlayerIndexRecord>();
+    dbPlayers.forEach((p) => {
+      const std = stdName(p.fullName);
+      const record: PlayerIndexRecord = {
+        id: p.id,
+        fullName: p.fullName,
+        position: p.position ?? null,
+        lastName: p.lastName,
+        teamId: p.teamId ?? null,
+        teamAbbrev: p.teamAbbrev ?? null,
+        std
+      };
+      ids.add(record.id);
+      if (!byStdName.has(std)) byStdName.set(std, []);
+      byStdName.get(std)!.push(record);
+      if (record.teamAbbrev) {
+        const key = record.teamAbbrev.toUpperCase();
+        if (!byTeamAbbrev.has(key)) byTeamAbbrev.set(key, []);
+        byTeamAbbrev.get(key)!.push(record);
+      }
+      byId.set(record.id, record);
+    });
+    return {
+      ids,
+      byStdName,
+      byTeamAbbrev,
+      byId
+    };
+  }, [dbPlayers]);
 
   const focusFirst = useCallback(() => {
     const el = dialogRef.current;
@@ -102,7 +242,7 @@ export default function ImportCsvModal({
           while (true) {
             const { data, error } = await supabase
               .from("players")
-              .select("id, fullName, position, lastName")
+              .select("id, fullName, position, lastName, team_id")
               .range(from, from + pageSize - 1);
             if (error) break;
             if (!data || !data.length) break;
@@ -117,7 +257,12 @@ export default function ImportCsvModal({
                 id: Number(r.id),
                 fullName: String(r.fullName),
                 position: (r as any).position ?? null,
-                lastName: (r as any).lastName ?? null
+                lastName: (r as any).lastName ?? null,
+                teamId: (r as any).team_id ?? null,
+                teamAbbrev:
+                  typeof (r as any).team_id === "number"
+                    ? TEAM_ABBREV_BY_ID.get((r as any).team_id) || null
+                    : null
               }))
             );
             try {
@@ -184,7 +329,7 @@ export default function ImportCsvModal({
       try {
         const { data, error } = await supabase
           .from("players")
-          .select("id, fullName, position, lastName")
+          .select("id, fullName, position, lastName, team_id")
           .in("lastName", missing);
         if (!error && Array.isArray(data) && data.length) {
           setDbPlayers((prev) => {
@@ -195,7 +340,12 @@ export default function ImportCsvModal({
                 id: Number(r.id),
                 fullName: String(r.fullName),
                 position: (r as any).position ?? null,
-                lastName: (r as any).lastName ?? null
+                lastName: (r as any).lastName ?? null,
+                teamId: (r as any).team_id ?? null,
+                teamAbbrev:
+                  typeof (r as any).team_id === "number"
+                    ? TEAM_ABBREV_BY_ID.get((r as any).team_id) || null
+                    : null
               }));
             return extra.length ? [...prev, ...extra] : prev;
           });
@@ -246,6 +396,31 @@ export default function ImportCsvModal({
     return () => document.removeEventListener("keydown", handleKey);
   }, [open, onClose]);
 
+  const classifyColumn = useCallback(
+    (standardized: string) => {
+      if (REQUIRED_COLUMN_SET.has(standardized)) {
+        return {
+          status: "required" as HeaderConfig["status"],
+          selected: true,
+          error: null
+        };
+      }
+      if (ALLOWED_COLUMNS.has(standardized)) {
+        return {
+          status: "supported" as HeaderConfig["status"],
+          selected: true,
+          error: null
+        };
+      }
+      return {
+        status: "unsupported" as HeaderConfig["status"],
+        selected: false,
+        error: "Unrecognized column. Choose a supported option or uncheck."
+      };
+    },
+    []
+  );
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setError(null);
     const file = acceptedFiles[0];
@@ -265,11 +440,17 @@ export default function ImportCsvModal({
         // Build headers map
         const firstRow = data[0] as Record<string, any>;
         const incomingHeaders = Object.keys(firstRow);
-        const processed = incomingHeaders.map((h) => ({
-          original: h,
-          standardized: standardizeColumnName(h),
-          selected: true
-        }));
+        const processed = incomingHeaders.map((h) => {
+          const standardized = standardizeColumnName(h);
+          const classification = classifyColumn(standardized);
+          return {
+            original: h,
+            standardized,
+            selected: classification.selected,
+            status: classification.status,
+            error: classification.error
+          } as HeaderConfig;
+        });
         setHeaders(processed);
         // Guess player column
         const guess =
@@ -285,7 +466,7 @@ export default function ImportCsvModal({
         setIsParsing(false);
       }
     });
-  }, []);
+  }, [classifyColumn]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -328,6 +509,265 @@ export default function ImportCsvModal({
       return out;
     });
   }, [allRows, rawRows, headers, playerHeader]);
+
+  const resolutionResult = useMemo(() => {
+    const baseRows = allRows.length ? allRows : rawRows;
+    const selectedHeaders = headers.filter((h) => h.selected);
+    if (!baseRows.length || !selectedHeaders.length) {
+      const emptyStats: ResolutionStats = {
+        totalRows: 0,
+        idMatched: 0,
+        nameMatched: 0,
+        fuzzyMatched: 0,
+        manualOverrides: 0,
+        unresolved: 0,
+        invalidIds: 0,
+        coverage: 0,
+        lastUpdated: Date.now(),
+        unresolvedNames: []
+      };
+      return {
+        rows: [] as CsvPreviewRow[],
+        stats: emptyStats,
+        detail: [] as RowResolutionDetail[]
+      };
+    }
+
+    const playerIdKeys = selectedHeaders
+      .map((h) => h.standardized)
+      .filter((key) => key.replace(/_/g, "").toLowerCase() === "playerid");
+
+    const rows: CsvPreviewRow[] = [];
+    const unresolvedNames = new Set<string>();
+    const detail: RowResolutionDetail[] = [];
+    let idMatched = 0;
+    let nameMatched = 0;
+    let fuzzyMatched = 0;
+    let manualOverrides = 0;
+    let resolvedCount = 0;
+    let invalidIds = 0;
+    const now = Date.now();
+
+    baseRows.forEach((row) => {
+      const out: CsvPreviewRow = {};
+      let canonicalName = "";
+      selectedHeaders.forEach((h) => {
+        const v = (row as any)[h.original];
+        if (
+          (playerHeader && h.original === playerHeader) ||
+          (!playerHeader && h.standardized === "Player_Name")
+        ) {
+          canonicalName = standardizePlayerName(String(v ?? ""));
+          out[h.standardized] = canonicalName;
+        } else {
+          out[h.standardized] = v as any;
+        }
+      });
+
+      if (!canonicalName) {
+        const fallback = standardizePlayerName(
+          String(
+            (row as any).Player_Name ||
+              (row as any).player_name ||
+              (row as any).Name ||
+              ""
+          )
+        );
+        if (fallback) {
+          canonicalName = fallback;
+          (out as any).Player_Name = fallback;
+        }
+      }
+
+      const trimmedName = canonicalName.trim();
+      const stdKey = trimmedName ? stdName(trimmedName) : "";
+      const manualChoice = trimmedName
+        ? ambiguousChoices[trimmedName]
+        : undefined;
+      const csvTeamRaw =
+        (out as any).Team_Abbreviation ??
+        (out as any).Team ??
+        (out as any).team_abbreviation ??
+        (out as any).team;
+      const csvTeamAbbrev =
+        typeof csvTeamRaw === "string" && csvTeamRaw.trim() !== ""
+          ? csvTeamRaw.trim().toUpperCase()
+          : null;
+      const csvTeamId = csvTeamAbbrev
+        ? (TEAM_ID_BY_ABBREV.get(csvTeamAbbrev) ?? null)
+        : null;
+
+      let finalId: number | null = null;
+      let method = "unresolved";
+      let invalidOriginalId = false;
+
+      if (typeof manualChoice === "number" && Number.isFinite(manualChoice)) {
+        finalId = manualChoice;
+        method = "manual";
+        manualOverrides++;
+        resolvedCount++;
+      } else {
+        let originalId: number | null = null;
+        for (const key of playerIdKeys) {
+          const rawVal = (out as any)[key];
+          if (rawVal == null || rawVal === "") continue;
+          const numeric = Number(rawVal);
+          if (Number.isFinite(numeric)) {
+            originalId = numeric;
+            break;
+          }
+        }
+
+        if (originalId != null) {
+          if (rosterIndex.ids.has(originalId)) {
+            finalId = originalId;
+            method = "id";
+            idMatched++;
+            resolvedCount++;
+          } else {
+            invalidOriginalId = true;
+          }
+        }
+
+        if (finalId == null && stdKey) {
+          const candidates = rosterIndex.byStdName.get(stdKey) || [];
+          if (candidates.length === 1) {
+            finalId = candidates[0].id;
+            method = "name";
+            nameMatched++;
+            resolvedCount++;
+          } else if (candidates.length > 1 && csvTeamAbbrev) {
+            const filtered = candidates.filter((cand) => {
+              const candTeam = cand.teamAbbrev?.toUpperCase();
+              if (candTeam) return candTeam === csvTeamAbbrev;
+              if (csvTeamId != null && typeof cand.teamId === "number") {
+                return cand.teamId === csvTeamId;
+              }
+              return false;
+            });
+            if (filtered.length === 1) {
+              finalId = filtered[0].id;
+              method = "name";
+              nameMatched++;
+              resolvedCount++;
+            }
+          }
+
+          if (finalId == null && csvTeamAbbrev) {
+            const teamCandidates =
+              rosterIndex.byTeamAbbrev.get(csvTeamAbbrev) || [];
+            let bestCandidate: PlayerIndexRecord | undefined;
+            let bestDist = Number.POSITIVE_INFINITY;
+            teamCandidates.forEach((candidate) => {
+              const dist = levenshteinDistance(stdKey, candidate.std);
+              if (dist <= 2 && dist < bestDist) {
+                bestDist = dist;
+                bestCandidate = candidate;
+              }
+            });
+            if (bestCandidate) {
+              finalId = bestCandidate.id;
+              method = "fuzzy";
+              fuzzyMatched++;
+              resolvedCount++;
+            }
+          }
+        }
+      }
+
+      if (invalidOriginalId) invalidIds++;
+
+      const playerIdTargets = Array.from(
+        new Set(
+          playerIdKeys.length ? [...playerIdKeys, "player_id"] : ["player_id"]
+        )
+      );
+
+      if (finalId != null) {
+        playerIdTargets.forEach((key) => {
+          (out as any)[key] = finalId;
+        });
+      } else {
+        playerIdTargets.forEach((key) => {
+          delete (out as any)[key];
+        });
+        if (trimmedName) unresolvedNames.add(trimmedName);
+      }
+
+      (out as any).__resolution = {
+        method,
+        stdKey,
+        team: csvTeamAbbrev,
+        manualOverride: method === "manual",
+        invalidOriginalId
+      };
+
+      detail.push({
+        name: trimmedName,
+        method,
+        playerId: finalId,
+        invalidOriginalId
+      });
+      rows.push(out);
+    });
+
+    const totalRows = rows.length;
+    const resolved = resolvedCount;
+    const unresolved = totalRows - resolved;
+    const coverage = totalRows ? resolved / totalRows : 0;
+
+    const stats: ResolutionStats = {
+      totalRows,
+      idMatched,
+      nameMatched,
+      fuzzyMatched,
+      manualOverrides,
+      unresolved,
+      invalidIds,
+      coverage,
+      lastUpdated: now,
+      unresolvedNames: Array.from(unresolvedNames).sort()
+    };
+
+    return { rows, stats, detail };
+  }, [allRows, rawRows, headers, playerHeader, ambiguousChoices, rosterIndex]);
+
+  const resolvedRows = resolutionResult.rows;
+  const resolutionStats = resolutionResult.stats;
+  const [localAllowFallback, setLocalAllowFallback] =
+    useState(allowNameFallback);
+  const [localMinCoverage, setLocalMinCoverage] = useState(
+    minimumCoveragePercent
+  );
+  useEffect(() => {
+    setLocalAllowFallback(allowNameFallback);
+  }, [allowNameFallback]);
+  useEffect(() => {
+    setLocalMinCoverage(minimumCoveragePercent);
+  }, [minimumCoveragePercent]);
+  const coverageThreshold = Math.max(0, localMinCoverage) / 100;
+  const coverageBelowThreshold =
+    resolutionStats.totalRows > 0 &&
+    resolutionStats.coverage < coverageThreshold;
+  const hasUnresolvedRows = resolutionStats.unresolved > 0;
+  const coveragePercentDisplay = (resolutionStats.coverage * 100).toFixed(1);
+  const mappedCount = resolutionStats.totalRows - resolutionStats.unresolved;
+  const unresolvedNames = resolutionStats.unresolvedNames;
+  const confirmDisabled =
+    (requireFullMapping && resolutionStats.coverage < 1) ||
+    (!forceImportDespiteUnresolved &&
+      (hasUnresolvedRows || coverageBelowThreshold));
+
+  useEffect(() => {
+    if (requireFullMapping) {
+      setForceImportDespiteUnresolved(false);
+    }
+  }, [requireFullMapping]);
+
+  useEffect(() => {
+    if (!open) return;
+    setForceImportDespiteUnresolved(false);
+  }, [open, resolutionStats.totalRows]);
 
   // Build ambiguities for preview rows: if standardized Player_Name matches multiple DB players by last name
   const previewAmbiguities = useMemo(() => {
@@ -416,26 +856,10 @@ export default function ImportCsvModal({
   }, [mappedAllRows, dbPlayers]);
 
   // ---------- Fuzzy Matching Helpers ----------
-  const levenshtein = useCallback((a: string, b: string) => {
-    a = a.toLowerCase();
-    b = b.toLowerCase();
-    const m = a.length,
-      n = b.length;
-    const dp = Array.from({ length: m + 1 }, () => new Array<number>(n + 1));
-    for (let i = 0; i <= m; i++) dp[i][0] = i;
-    for (let j = 0; j <= n; j++) dp[0][j] = j;
-    for (let i = 1; i <= m; i++) {
-      for (let j = 1; j <= n; j++) {
-        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-        dp[i][j] = Math.min(
-          dp[i - 1][j] + 1,
-          dp[i][j - 1] + 1,
-          dp[i - 1][j - 1] + cost
-        );
-      }
-    }
-    return dp[m][n];
-  }, []);
+  const levenshtein = useCallback(
+    (a: string, b: string) => levenshteinDistance(a, b),
+    []
+  );
 
   const ambiguousWithSuggestions = useMemo(() => {
     if (!previewAmbiguities.length)
@@ -514,94 +938,104 @@ export default function ImportCsvModal({
     return REQUIRED_COLUMNS.filter((r) => !set.has(r));
   }, [headers]);
 
-  const mapRows = (rows: CsvPreviewRow[]) => {
-    const selected = headers.filter((h) => h.selected);
-    return rows.map((row) => {
-      const out: CsvPreviewRow = {};
-      let stdName = "";
-      for (const h of selected) {
-        const v = row[h.original];
-        if (playerHeader && h.original === playerHeader) {
-          stdName = standardizePlayerName(String(v ?? ""));
-          out[h.standardized] = stdName;
-        } else {
-          out[h.standardized] = v as any;
-        }
-      }
-      // If user selected a specific player for this standardized name, attach player_id
-      const sel = ambiguousChoices[stdName];
-      if (sel && typeof sel === "number") {
-        (out as any).player_id = sel;
-      } else if (!sel && stdName) {
-        // Attempt exact match by full name
-        const exact = dbPlayers.filter(
-          (p) => p.fullName.toLowerCase() === stdName.toLowerCase()
-        );
-        if (exact.length === 1) {
-          (out as any).player_id = exact[0].id;
-        } else {
-          // Fallback: unique last name
-          const parts = stdName.split(/\s+/);
-          const last = parts[parts.length - 1].toLowerCase();
-          const lastMatches = dbPlayers.filter(
-            (p) => p.fullName.split(" ").slice(-1)[0].toLowerCase() === last
-          );
-          if (lastMatches.length === 1) {
-            (out as any).player_id = lastMatches[0].id;
-          }
-        }
-      }
-      return out;
-    });
-  };
-
   const handleConfirm = () => {
     if (missingRequired.length) {
       setError(`Missing required columns: ${missingRequired.join(", ")}`);
       return;
     }
-    // Unresolved ambiguous names guard
-    if (unresolvedCount > 0 && !forceImportDespiteUnresolved) {
+    const coverageThreshold = Math.max(0, localMinCoverage) / 100;
+    const coverageBelowThreshold =
+      resolutionStats.totalRows > 0 &&
+      resolutionStats.coverage < coverageThreshold;
+    const hasUnresolvedRows = resolutionStats.unresolved > 0;
+    if (requireFullMapping && resolutionStats.coverage < 1) {
       setError(
-        `There are still ${unresolvedCount} unresolved ambiguous name(s). Resolve or force import.`
+        "Require full mapping is enabled. Resolve all players before importing."
       );
       return;
     }
-    const mapped = mapRows(allRows.length ? allRows : rawRows);
-    const unmapped = mapped.filter(
-      (r) => (r as any).Player_Name && !(r as any).player_id
-    );
-    if (unmapped.length > 0 && !forceImportDespiteUnresolved) {
+    if (
+      (hasUnresolvedRows || coverageBelowThreshold) &&
+      !forceImportDespiteUnresolved
+    ) {
       setError(
-        `Detected ${unmapped.length} row(s) without player_id. Review or force import.`
+        coverageBelowThreshold
+          ? `Coverage ${(resolutionStats.coverage * 100).toFixed(1)}% is below the minimum ${localMinCoverage}%. Review or force import.`
+          : `There are still ${resolutionStats.unresolved} unresolved players. Review or force import.`
       );
       return;
     }
+    const mapped = resolvedRows;
+    if (!mapped.length) {
+      setError("No rows available to import.");
+      return;
+    }
+    const resolutionPayload: ResolutionStats = {
+      ...resolutionStats,
+      lastUpdated: Date.now(),
+      unresolvedNames: [...resolutionStats.unresolvedNames]
+    };
+    onFallbackSettingsChange?.({
+      allowCustomNameFallback: localAllowFallback,
+      minimumCoveragePercent: localMinCoverage
+    });
+    try {
+      console.log(
+        `[ImportCsvModal] Resolution summary: total=${resolutionPayload.totalRows}, id=${resolutionPayload.idMatched}, name=${resolutionPayload.nameMatched}, fuzzy=${resolutionPayload.fuzzyMatched}, manual=${resolutionPayload.manualOverrides}, unresolved=${resolutionPayload.unresolved}, invalidIds=${resolutionPayload.invalidIds}, coverage=${(resolutionPayload.coverage * 100).toFixed(1)}%`
+      );
+    } catch {}
     const payload = {
       headers,
       rows: mapped,
       sourceId: "custom_csv",
-      label: sourceName
+      label: sourceName,
+      resolution: resolutionPayload
     } as const;
-    try {
-      sessionStorage.setItem(
-        SESSION_KEY,
-        JSON.stringify({ headers, rows: payload.rows, label: sourceName })
-      );
-    } catch {}
     onImported(payload);
     onClose();
   };
 
   const handleHeaderToggle = (idx: number) => {
     setHeaders((prev) =>
-      prev.map((h, i) => (i === idx ? { ...h, selected: !h.selected } : h))
+      prev.map((h, i) => {
+        if (i !== idx) return h;
+        if (h.status === "required") return h;
+        return { ...h, selected: !h.selected };
+      })
     );
   };
 
   const handleHeaderNameChange = (idx: number, value: string) => {
     setHeaders((prev) =>
-      prev.map((h, i) => (i === idx ? { ...h, standardized: value } : h))
+      prev.map((h, i) => {
+        if (i !== idx) return h;
+        let nextStandardized = value.trim();
+        if (
+          !ALLOWED_COLUMNS.has(nextStandardized) &&
+          !REQUIRED_COLUMN_SET.has(nextStandardized)
+        ) {
+          nextStandardized = standardizeColumnName(value);
+        }
+        const classification = classifyColumn(nextStandardized);
+        const wasUnsupported = h.status === "unsupported";
+        const nextSelected =
+          classification.status === "required"
+            ? true
+            : classification.status === "supported"
+              ? true
+              : classification.status === "unsupported"
+                ? wasUnsupported
+                  ? h.selected
+                  : false
+                : h.selected;
+        return {
+          ...h,
+          standardized: nextStandardized,
+          status: classification.status,
+          selected: nextSelected,
+          error: classification.error
+        };
+      })
     );
   };
 
@@ -614,18 +1048,7 @@ export default function ImportCsvModal({
   );
 
   // Live mapped rows & unmapped count (for banner guard) – lightweight derivation
-  const liveMappedRows = useMemo(
-    () => mapRows(allRows.length ? allRows : rawRows),
-    [allRows, rawRows, ambiguousChoices, dbPlayers, headers, playerHeader]
-  );
-  const liveUnmapped = useMemo(
-    () =>
-      liveMappedRows.filter(
-        (r) => (r as any).Player_Name && !(r as any).player_id
-      ),
-    [liveMappedRows]
-  );
-
+  const liveMappedRows = resolvedRows;
   // One-time targeted mapping logging
   useEffect(() => {
     if (loggedTargetsRef.current) return;
@@ -666,14 +1089,15 @@ export default function ImportCsvModal({
             ×
           </button>
         </div>
-        <div
-          {...getRootProps()}
-          style={{
-            ...dropzoneStyle,
-            borderColor: isDragActive ? "#4caf50" : "#888"
-          }}
-          aria-label="CSV Dropzone"
-        >
+        <div style={contentStyle}>
+          <div
+            {...getRootProps()}
+            style={{
+              ...dropzoneStyle,
+              borderColor: isDragActive ? "#4caf50" : "#888"
+            }}
+            aria-label="CSV Dropzone"
+          >
           <input {...getInputProps()} aria-label="CSV File Input" />
           {isDragActive ? (
             <p>Drop the CSV here…</p>
@@ -681,171 +1105,419 @@ export default function ImportCsvModal({
             <p>Drag and drop a CSV here, or click to browse</p>
           )}
         </div>
-        {isParsing && <p>Parsing…</p>}
-        {error && (
-          <p role="alert" style={{ color: "#d32f2f" }}>
-            {error}
-          </p>
-        )}
+          {isParsing && <p>Parsing…</p>}
+          {error && (
+            <p role="alert" style={{ color: "#d32f2f" }}>
+              {error}
+            </p>
+          )}
 
-        {headers.length > 0 && (
-          <div style={{ maxHeight: 320, overflow: "auto", marginTop: 12 }}>
-            <h3 style={{ margin: "8px 0" }}>Header mapping</h3>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <th align="left">Include</th>
-                  <th align="left">Original</th>
-                  <th align="left">Standardized</th>
-                  <th align="left">Player Column</th>
-                </tr>
-              </thead>
-              <tbody>
-                {headers.map((h, idx) => (
-                  <tr key={h.original}>
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={h.selected}
-                        onChange={() => handleHeaderToggle(idx)}
-                        aria-label={`Toggle include ${h.original}`}
-                      />
-                    </td>
-                    <td>{h.original}</td>
-                    <td>
-                      <input
-                        type="text"
-                        value={h.standardized}
-                        onChange={(e) =>
-                          handleHeaderNameChange(
-                            idx,
-                            titleCase(e.target.value.replace(/\s+/g, "_"))
-                          )
-                        }
-                        aria-label={`Standardized name for ${h.original}`}
-                        style={{ width: "100%" }}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="radio"
-                        name="playerColumn"
-                        checked={playerHeader === h.original}
-                        onChange={() => setPlayerHeader(h.original)}
-                        aria-label={`Set ${h.original} as player column`}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {missingRequired.length > 0 && (
-              <p style={{ color: "#d32f2f" }}>
-                Missing required: {missingRequired.join(", ")}
-              </p>
-            )}
+          <div
+            style={{
+              marginTop: 12,
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 16,
+              alignItems: "center"
+            }}
+          >
+            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <input
+                type="checkbox"
+                checked={localAllowFallback}
+                onChange={(e) => setLocalAllowFallback(e.target.checked)}
+              />
+              <span style={{ fontSize: 13 }}>
+                Allow name fallback when player IDs are missing
+              </span>
+            </label>
+            <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 13 }}>Minimum coverage (%):</span>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={localMinCoverage}
+                onChange={(e) => {
+                  const raw = parseFloat(e.target.value);
+                  if (Number.isNaN(raw)) return;
+                  setLocalMinCoverage(Math.max(0, Math.min(100, raw)));
+                }}
+                onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
+                style={{
+                  width: 70,
+                  padding: "4px 6px",
+                  borderRadius: 4,
+                  border: "1px solid #555",
+                  background: "#181818",
+                  color: "#f5f5f5"
+                }}
+              />
+            </label>
+            <p style={{ margin: 0, fontSize: 12, opacity: 0.75 }}>
+              Use standardized names to fill missing IDs automatically and gate
+              import when matches fall below your coverage threshold.
+            </p>
+          </div>
 
-            <h3 style={{ margin: "12px 0 4px" }}>Preview (first 50 rows)</h3>
+          {headers.length > 0 && (
+            <div style={{ marginTop: 12 }}>
             <div
               style={{
-                maxHeight: 200,
-                overflow: "auto",
-                border: "1px solid #ddd"
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 6
               }}
             >
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                <thead>
-                  <tr>
-                    {headers
-                      .filter((h) => h.selected)
-                      .map((h) => (
-                        <th
-                          key={h.original}
-                          style={{ borderBottom: "1px solid #ccc" }}
-                        >
-                          {h.standardized}
-                        </th>
-                      ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {mappedPreview.map((row, i) => (
-                    <tr key={i}>
-                      {headers
-                        .filter((h) => h.selected)
-                        .map((h) => (
-                          <td
-                            key={h.original}
-                            style={{ borderBottom: "1px solid #eee" }}
-                          >
-                            {String(row[h.standardized] ?? "")}
-                          </td>
-                        ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <h3 style={{ margin: 0 }}>Header mapping</h3>
+              <button
+                type="button"
+                onClick={() => setCollapseHeaderMapping((v) => !v)}
+                style={smallSecondaryBtn}
+              >
+                {collapseHeaderMapping ? "Expand" : "Collapse"}
+              </button>
             </div>
-          </div>
-        )}
-
-        {ambiguousWithSuggestions.length > 0 && (
-          <div style={{ marginTop: 12 }}>
-            <h3 style={{ margin: "8px 0" }}>Resolve Ambiguous Names</h3>
-            <p style={{ opacity: 0.8, marginTop: 0 }}>
-              We auto-resolve perfect unique matches. Accept or override others
-              below. Use search if needed.
-            </p>
-            {/* Auto-resolved list */}
-            {ambiguousWithSuggestions.some((r) => ambiguousChoices[r.key]) && (
-              <div style={{ marginBottom: 12 }}>
-                <strong>Auto-Resolved</strong>
-                <ul
+            {!collapseHeaderMapping && (
+              <>
+                <div
                   style={{
-                    margin: "4px 0 0",
-                    paddingLeft: 18,
-                    maxHeight: 100,
-                    overflowY: "auto"
+                    maxHeight: 240,
+                    overflow: "auto",
+                    border: "1px solid #2f2f2f",
+                    borderRadius: 6
+                  }}
+                >
+                  <datalist id="import-csv-header-options">
+                    {CANONICAL_COLUMN_OPTIONS.map((option) => (
+                      <option key={option} value={option} />
+                    ))}
+                  </datalist>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        <th align="left">Include</th>
+                        <th align="left">Original</th>
+                        <th align="left">Standardized</th>
+                        <th align="left">Player Column</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                        {headers.map((h, idx) => {
+                          const isRequired = h.status === "required";
+                          const isUnsupported = h.status === "unsupported";
+                          const rowStyle: React.CSSProperties | undefined =
+                            isUnsupported
+                              ? {
+                                  background: "rgba(211, 50, 47, 0.12)",
+                                  borderLeft: "3px solid #d32f2f"
+                                }
+                              : undefined;
+                          const inputStyle: React.CSSProperties = {
+                            width: "100%",
+                            border: `1px solid ${isUnsupported ? "#d32f2f" : "#444"}`,
+                            background: "#181818",
+                            color: "#f5f5f5",
+                            borderRadius: 4,
+                            padding: "4px 6px"
+                          };
+                          return (
+                            <tr key={h.original} style={rowStyle}>
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  checked={h.selected}
+                                  onChange={() => handleHeaderToggle(idx)}
+                                  aria-label={`Toggle include ${h.original}`}
+                                  disabled={isRequired}
+                                />
+                              </td>
+                              <td>{h.original}</td>
+                              <td>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 4
+                                  }}
+                                >
+                                  <input
+                                    type="text"
+                                    list="import-csv-header-options"
+                                    value={h.standardized}
+                                    onChange={(e) =>
+                                      handleHeaderNameChange(idx, e.target.value)
+                                    }
+                                    aria-label={`Standardized name for ${h.original}`}
+                                    style={inputStyle}
+                                  />
+                                  {h.error && (
+                                    <span
+                                      style={{
+                                        color: "#ff8a80",
+                                        fontSize: 11
+                                      }}
+                                    >
+                                      {h.error}
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+                              <td>
+                                <input
+                                  type="radio"
+                                  name="playerColumn"
+                                  checked={playerHeader === h.original}
+                                  onChange={() => setPlayerHeader(h.original)}
+                                  aria-label={`Set ${h.original} as player column`}
+                                />
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+                {missingRequired.length > 0 && (
+                  <p style={{ color: "#d32f2f", marginTop: 6 }}>
+                    Missing required: {missingRequired.join(", ")}
+                  </p>
+                )}
+
+                <h3 style={{ margin: "12px 0 4px" }}>
+                  Preview (first 50 rows)
+                </h3>
+                <div
+                  style={{
+                    maxHeight: 180,
+                    overflow: "auto",
+                    border: "1px solid #2f2f2f",
+                    borderRadius: 6
+                  }}
+                >
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        {headers
+                          .filter((h) => h.selected)
+                          .map((h) => (
+                            <th
+                              key={h.original}
+                              style={{ borderBottom: "1px solid #333" }}
+                            >
+                              {h.standardized}
+                            </th>
+                          ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {mappedPreview.map((row, i) => (
+                        <tr key={i}>
+                          {headers
+                            .filter((h) => h.selected)
+                            .map((h) => (
+                              <td
+                                key={h.original}
+                                style={{ borderBottom: "1px solid #2a2a2a" }}
+                              >
+                                {String(row[h.standardized] ?? "")}
+                              </td>
+                            ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+            </div>
+          )}
+
+          {(resolutionStats.totalRows > 0 || unresolvedNames.length > 0) && (
+            <div
+              style={{
+                marginTop: 16,
+                display: "grid",
+                gap: 16,
+                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))"
+              }}
+            >
+              {resolutionStats.totalRows > 0 && (
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    border: "1px solid #295644",
+                    borderRadius: 8,
+                    background: "rgba(41, 86, 68, 0.2)"
+                  }}
+                >
+                <h3 style={{ margin: "0 0 6px" }}>Name → ID Mapping Summary</h3>
+                <p style={{ margin: 0, fontSize: 13 }}>
+                  Coverage: <strong>{coveragePercentDisplay}%</strong> (
+                  {mappedCount}/{resolutionStats.totalRows} rows mapped). ID
+                  matches: {resolutionStats.idMatched}, Name matches:{" "}
+                  {resolutionStats.nameMatched}
+                  {resolutionStats.fuzzyMatched > 0
+                    ? ` (fuzzy: ${resolutionStats.fuzzyMatched})`
+                    : ""}
+                  , Manual: {resolutionStats.manualOverrides}, Unresolved:{" "}
+                  {resolutionStats.unresolved}.
+                </p>
+                {resolutionStats.invalidIds > 0 && (
+                  <p
+                    style={{
+                      margin: "6px 0 0",
+                      fontSize: 12,
+                      color: "#ffb74d"
+                    }}
+                  >
+                    {resolutionStats.invalidIds} player_id value(s) not present
+                    in the roster were repaired via name matching.
+                  </p>
+                )}
+                {!localAllowFallback && hasUnresolvedRows && (
+                  <p
+                    style={{
+                      margin: "6px 0 0",
+                      fontSize: 12,
+                      color: "#ff8a80"
+                    }}
+                  >
+                    Name fallback is disabled. Unresolved rows will be ignored
+                    until mapped.
+                  </p>
+                )}
+                </div>
+              )}
+              {unresolvedNames.length > 0 && (
+                <div>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 6
+                    }}
+                  >
+                    <h4 style={{ margin: 0 }}>
+                      Unresolved Players ({unresolvedNames.length})
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setCollapseUnresolved((v) => !v)}
+                      style={smallSecondaryBtn}
+                    >
+                      {collapseUnresolved ? "Expand" : "Collapse"}
+                    </button>
+                  </div>
+                  {!collapseUnresolved && (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 6,
+                        maxHeight: 160,
+                        overflowY: "auto"
+                      }}
+                    >
+                      {unresolvedNames.map((name) => (
+                        <span
+                          key={name}
+                          style={{
+                            background: "#2b2b2b",
+                            border: "1px solid #444",
+                            padding: "4px 10px",
+                            borderRadius: 16,
+                            fontSize: 12
+                          }}
+                        >
+                          {name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {ambiguousWithSuggestions.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: 6
+              }}
+            >
+              <h3 style={{ margin: 0 }}>Resolve Ambiguous Names</h3>
+              <button
+                type="button"
+                onClick={() => setCollapseAmbiguities((v) => !v)}
+                style={smallSecondaryBtn}
+              >
+                {collapseAmbiguities ? "Expand" : "Collapse"}
+              </button>
+            </div>
+            {!collapseAmbiguities && (
+              <>
+                <p style={{ opacity: 0.8, marginTop: 0 }}>
+                  We auto-resolve perfect unique matches. Accept or override
+                  others below. Use search if needed.
+                </p>
+                {ambiguousWithSuggestions.some(
+                  (r) => ambiguousChoices[r.key]
+                ) && (
+                  <div style={{ marginBottom: 12 }}>
+                    <strong>Auto-Resolved</strong>
+                    <ul
+                      style={{
+                        margin: "4px 0 0",
+                        paddingLeft: 18,
+                        maxHeight: 100,
+                        overflowY: "auto"
+                      }}
+                    >
+                      {ambiguousWithSuggestions
+                        .filter((r) => ambiguousChoices[r.key])
+                        .map((r) => {
+                          const id = ambiguousChoices[r.key];
+                          const cand = r.candidates.find((c) => c.id === id);
+                          if (!cand) return null;
+                          return (
+                            <li key={r.key} style={{ fontSize: 12 }}>
+                              {r.key} → {cand.fullName}{" "}
+                              <span
+                                style={{
+                                  background: "#2e7d32",
+                                  color: "#fff",
+                                  padding: "1px 6px",
+                                  borderRadius: 10,
+                                  fontSize: 10
+                                }}
+                              >
+                                auto
+                              </span>
+                            </li>
+                          );
+                        })}
+                    </ul>
+                  </div>
+                )}
+                <div
+                  style={{
+                    maxHeight: 320,
+                    overflowY: "auto",
+                    paddingRight: 4,
+                    borderTop: "1px solid #333",
+                    paddingTop: 8
                   }}
                 >
                   {ambiguousWithSuggestions
-                    .filter((r) => ambiguousChoices[r.key])
+                    .filter((r) => !ambiguousChoices[r.key])
                     .map((r) => {
-                      const id = ambiguousChoices[r.key];
-                      const cand = r.candidates.find((c) => c.id === id);
-                      if (!cand) return null;
-                      return (
-                        <li key={r.key} style={{ fontSize: 12 }}>
-                          {r.key} → {cand.fullName}{" "}
-                          <span
-                            style={{
-                              background: "#2e7d32",
-                              color: "#fff",
-                              padding: "1px 6px",
-                              borderRadius: 10,
-                              fontSize: 10
-                            }}
-                          >
-                            auto
-                          </span>
-                        </li>
-                      );
-                    })}
-                </ul>
-              </div>
-            )}
-            <div
-              style={{
-                maxHeight: 320,
-                overflowY: "auto",
-                paddingRight: 4,
-                borderTop: "1px solid #333",
-                paddingTop: 8
-              }}
-            >
-              {ambiguousWithSuggestions
-                .filter((r) => !ambiguousChoices[r.key])
-                .map((r) => {
                   const csvMeta = (() => {
                     const raw = previewAmbiguities.find((p) => p.key === r.key);
                     const t = raw?.csvTeam || "CSV?";
@@ -1014,12 +1686,14 @@ export default function ImportCsvModal({
                       )}
                     </div>
                   );
-                })}
+                    })}
+                </div>
+              </>
+            )}
             </div>
-          </div>
-        )}
+          )}
 
-        <div style={{ marginBottom: 12 }}>
+          <div style={{ marginBottom: 12 }}>
           <label
             htmlFor="sourceName"
             style={{ display: "block", marginBottom: 4 }}
@@ -1039,73 +1713,91 @@ export default function ImportCsvModal({
             }}
             placeholder="Enter a name for this source"
           />
-        </div>
+          </div>
 
-        {/* Unresolved / Unmapped summary banners */}
-        <div style={{ marginTop: "12px" }}>
-          {unresolvedCount > 0 && !forceImportDespiteUnresolved && (
-            <div
-              style={{
-                background: "#fff3cd",
-                border: "1px solid #ffeeba",
-                color: "#856404",
-                padding: "8px 12px",
-                borderRadius: 4,
-                marginBottom: 12
-              }}
-            >
-              {unresolvedCount} unresolved ambiguous name
-              {unresolvedCount !== 1 ? "s" : ""}. Resolve them or{" "}
-              <button
-                style={{ textDecoration: "underline" }}
-                onClick={() => setForceImportDespiteUnresolved(true)}
-              >
-                force import anyway
-              </button>
-              .
-            </div>
-          )}
-          {unresolvedCount === 0 &&
-            liveUnmapped.length > 0 &&
+          {/* Unresolved / coverage warnings */}
+          <div style={{ marginTop: "12px" }}>
+          {(hasUnresolvedRows || coverageBelowThreshold) &&
             !forceImportDespiteUnresolved && (
               <div
                 style={{
-                  background: "#cce5ff",
-                  border: "1px solid #b8daff",
-                  color: "#004085",
-                  padding: "8px 12px",
+                  background: "#fff3cd",
+                  border: "1px solid #ffeeba",
+                  color: "#856404",
+                  padding: "10px 12px",
                   borderRadius: 4,
                   marginBottom: 12
                 }}
               >
-                {liveUnmapped.length} row{liveUnmapped.length !== 1 ? "s" : ""}{" "}
-                lack a player_id. You can still{" "}
-                <button
-                  style={{ textDecoration: "underline" }}
-                  onClick={() => setForceImportDespiteUnresolved(true)}
+                <strong>Low ID match rate.</strong> {resolutionStats.unresolved}{" "}
+                unresolved row
+                {resolutionStats.unresolved === 1 ? "" : "s"}; coverage{" "}
+                {coveragePercentDisplay}% (minimum {localMinCoverage}%).
+                <div
+                  style={{
+                    marginTop: 8,
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 12,
+                    alignItems: "center"
+                  }}
                 >
-                  force import
-                </button>{" "}
-                or adjust mappings.
+                  <button
+                    style={{
+                      background: "#1976d2",
+                      color: "white",
+                      border: 0,
+                      padding: "6px 10px",
+                      borderRadius: 4,
+                      cursor: "pointer"
+                    }}
+                    onClick={() => setForceImportDespiteUnresolved(true)}
+                  >
+                    Enable anyway
+                  </button>
+                  <span style={{ fontSize: 12, opacity: 0.85 }}>
+                    {localAllowFallback
+                      ? "We'll use name fallback during aggregation, but accuracy may drop."
+                      : "Name fallback is disabled; unresolved rows won't project."}
+                  </span>
+                </div>
               </div>
             )}
-          {(unresolvedCount > 0 || liveUnmapped.length > 0) &&
+
+          {(hasUnresolvedRows || coverageBelowThreshold) &&
             forceImportDespiteUnresolved && (
               <div
                 style={{
                   background: "#f8d7da",
                   border: "1px solid #f5c6cb",
                   color: "#721c24",
-                  padding: "8px 12px",
+                  padding: "10px 12px",
                   borderRadius: 4,
                   marginBottom: 12
                 }}
               >
-                Forcing import with {unresolvedCount} unresolved ambiguous name
-                {unresolvedCount !== 1 ? "s" : ""} and {liveUnmapped.length}{" "}
-                unmapped row{liveUnmapped.length !== 1 ? "s" : ""}.
+                Import will proceed with {resolutionStats.unresolved} unresolved
+                row{resolutionStats.unresolved === 1 ? "" : "s"} (
+                {coveragePercentDisplay}% coverage).
               </div>
             )}
+
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 13
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={requireFullMapping}
+              onChange={(e) => setRequireFullMapping(e.target.checked)}
+            />
+            Require full mapping (100% coverage)
+          </label>
+          </div>
         </div>
 
         <div className="modalFooter" style={footerStyle}>
@@ -1114,11 +1806,7 @@ export default function ImportCsvModal({
           </button>
           <button
             onClick={handleConfirm}
-            disabled={
-              !forceImportDespiteUnresolved &&
-              (unresolvedCount > 0 ||
-                (unresolvedCount === 0 && liveUnmapped.length > 0))
-            }
+            disabled={confirmDisabled}
             style={primaryButtonStyle}
           >
             Confirm Import
@@ -1142,27 +1830,29 @@ const backdropStyle: React.CSSProperties = {
 const modalStyle: React.CSSProperties = {
   background: "#121212",
   color: "#f5f5f5",
-  width: "min(1000px, 96vw)",
-  maxHeight: "90vh",
-  borderRadius: 8,
-  boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
-  padding: 12,
-  outline: "none"
+  width: "min(1150px, 96vw)",
+  maxHeight: "92vh",
+  borderRadius: 10,
+  boxShadow: "0 18px 40px rgba(0,0,0,0.5)",
+  padding: 0,
+  outline: "none",
+  display: "flex",
+  flexDirection: "column"
 };
 const headerStyle: React.CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   paddingBottom: 8,
-  borderBottom: "1px solid #333"
+  borderBottom: "1px solid #333",
+  padding: "12px 16px"
 };
 const footerStyle: React.CSSProperties = {
   display: "flex",
   justifyContent: "flex-end",
   gap: 8,
-  marginTop: 12,
   borderTop: "1px solid #333",
-  paddingTop: 8
+  padding: "12px 16px"
 };
 const buttonStyle: React.CSSProperties = {
   background: "transparent",
@@ -1170,6 +1860,14 @@ const buttonStyle: React.CSSProperties = {
   color: "#fff",
   fontSize: 20,
   cursor: "pointer"
+};
+const contentStyle: React.CSSProperties = {
+  padding: "0 16px 16px",
+  overflowY: "auto",
+  flex: 1,
+  display: "flex",
+  flexDirection: "column",
+  gap: 12
 };
 const primaryButtonStyle: React.CSSProperties = {
   background: "#1976d2",

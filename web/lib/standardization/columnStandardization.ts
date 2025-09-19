@@ -6,12 +6,14 @@ export const defaultCanonicalColumnMap: Record<string, string> = {
   player: "Player_Name",
   name: "Player_Name",
   "player name": "Player_Name",
+  player_id: "player_id",
   team: "Team_Abbreviation",
   pos: "Position",
   position: "Position",
 
   // Standard Stats
   gp: "Games_Played",
+  games: "Games_Played",
   g: "Goals",
   goals: "Goals",
   a: "Assists",
