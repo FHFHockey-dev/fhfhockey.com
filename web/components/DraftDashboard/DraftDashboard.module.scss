@@ -25,6 +25,17 @@
   box-shadow: v.$box-shadow-default;
 }
 
+.warningBanner {
+  width: 100%;
+  background: rgba(v.$warning-color, 0.15);
+  border: 1px solid color.adjust(v.$warning-color, $lightness: -10%);
+  color: v.$text-primary;
+  border-radius: v.$border-radius-md;
+  padding: v.$space-sm v.$space-md;
+  font-size: v.$font-size-sm;
+  box-shadow: v.$box-shadow-default;
+}
+
 /* =================== Settings Actions =================== */
 .settingsActions {
   display: flex;

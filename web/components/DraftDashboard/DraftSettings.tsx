@@ -307,9 +307,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
   const DEBOUNCE_MS = 200;
   const toPercent = (scalar: number) => Math.round(scalar * 100);
   const sharePercent = (scalar: number, total: number, selected: boolean) =>
-    selected && total > 0
-      ? `${Math.round((scalar / total) * 100)}%`
-      : "-";
+    selected && total > 0 ? `${Math.round((scalar / total) * 100)}%` : "-";
   const shareValue = (scalar: number, total: number, selected: boolean) => {
     if (!selected) return 0;
     if (total > 0) {
@@ -387,7 +385,7 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
         value = parseFloat((remainder - allocated).toFixed(3));
       } else {
         value = parseFloat(
-          (((item.weight / weightSum) * remainder) || 0).toFixed(3)
+          ((item.weight / weightSum) * remainder || 0).toFixed(3)
         );
         allocated += value;
       }
@@ -690,6 +688,58 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoNormalize, sourceControls, goalieSourceControls, isNormalized]);
+
+  // Defensive: auto-coerce incoming percent-style weights (e.g., 0–100) back to scalars and normalize
+  React.useEffect(() => {
+    if (!sourceControls || !onSourceControlsChange) return;
+    // Detect obvious percent values
+    const needsCoerce = Object.values(sourceControls).some(
+      (v) => typeof v.weight === "number" && v.weight > 2.0001
+    );
+    if (!needsCoerce) return;
+
+    const converted = Object.fromEntries(
+      Object.entries(sourceControls).map(([id, ctrl]) => [
+        id,
+        {
+          ...ctrl,
+          weight: parseFloat(
+            (ctrl.weight > 2 ? ctrl.weight / 100 : ctrl.weight).toFixed(3)
+          )
+        }
+      ])
+    );
+    onSourceControlsChange(normalizeWeights(converted)!);
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[DraftSettings] Coerced incoming skater source weights from percents to scalars."
+    );
+  }, [sourceControls, onSourceControlsChange]);
+
+  React.useEffect(() => {
+    if (!goalieSourceControls || !onGoalieSourceControlsChange) return;
+    const needsCoerce = Object.values(goalieSourceControls).some(
+      (v) => typeof v.weight === "number" && v.weight > 2.0001
+    );
+    if (!needsCoerce) return;
+
+    const converted = Object.fromEntries(
+      Object.entries(goalieSourceControls).map(([id, ctrl]) => [
+        id,
+        {
+          ...ctrl,
+          weight: parseFloat(
+            (ctrl.weight > 2 ? ctrl.weight / 100 : ctrl.weight).toFixed(3)
+          )
+        }
+      ])
+    );
+    onGoalieSourceControlsChange(normalizeWeights(converted)!);
+    // eslint-disable-next-line no-console
+    console.warn(
+      "[DraftSettings] Coerced incoming goalie source weights from percents to scalars."
+    );
+  }, [goalieSourceControls, onGoalieSourceControlsChange]);
 
   // Order sources: active first, then disabled
   const orderSources = <T extends { isSelected: boolean }>(
@@ -2628,54 +2678,56 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                               <span className={styles.popoverSourceName}>
                                 {displayName}
                               </span>
-                              </label>
-                              <span className={styles.shareBadge}>{share}</span>
-                            </div>
-                            <div className={styles.popoverSliderRow}>
-                              <input
-                                type="range"
-                                min={0}
-                                max={100}
-                                step={1}
-                                value={ctrl.isSelected ? sliderValue : 0}
-                                onChange={(e) =>
-                                  applyDebouncedSourceWeight(
-                                    id,
-                                    parseInt(e.target.value, 10) / 100
-                                  )
-                                }
-                                disabled={!ctrl.isSelected}
-                                aria-label={`${displayName} weight share (%)`}
-                                aria-valuetext={`${sliderValue}% (${weightScalar.toFixed(2)}x)`}
-                                className={`${styles.rangeInput} ${styles.popoverSlider}`}
-                              />
-                              <input
-                                type="number"
-                                step={0.1}
-                                min={0}
-                                max={2}
-                                value={Number.isFinite(weightScalar) ? weightScalar : 0}
-                                onChange={(e) =>
-                                  handleDirectWeightInput(
-                                    id,
-                                    parseFloat(e.target.value || "0"),
-                                    false
-                                  )
-                                }
-                                disabled={!ctrl.isSelected}
-                                className={styles.weightNumberInput}
-                                aria-label={`${displayName} numeric weight multiplier`}
-                              />
-                              {isCustom && onRemoveCustomSource && (
-                                <button
-                                  type="button"
-                                  className={styles.inlineResetBtn}
-                                  onClick={() => onRemoveCustomSource(id)}
-                                  title="Remove this custom source"
-                                >
-                                  Remove
-                                </button>
-                              )}
+                            </label>
+                            <span className={styles.shareBadge}>{share}</span>
+                          </div>
+                          <div className={styles.popoverSliderRow}>
+                            <input
+                              type="range"
+                              min={0}
+                              max={100}
+                              step={1}
+                              value={ctrl.isSelected ? sliderValue : 0}
+                              onChange={(e) =>
+                                applyDebouncedSourceWeight(
+                                  id,
+                                  parseInt(e.target.value, 10) / 100
+                                )
+                              }
+                              disabled={!ctrl.isSelected}
+                              aria-label={`${displayName} weight share (%)`}
+                              aria-valuetext={`${sliderValue}% (${weightScalar.toFixed(2)}x)`}
+                              className={`${styles.rangeInput} ${styles.popoverSlider}`}
+                            />
+                            <input
+                              type="number"
+                              step={0.1}
+                              min={0}
+                              max={2}
+                              value={
+                                Number.isFinite(weightScalar) ? weightScalar : 0
+                              }
+                              onChange={(e) =>
+                                handleDirectWeightInput(
+                                  id,
+                                  parseFloat(e.target.value || "0"),
+                                  false
+                                )
+                              }
+                              disabled={!ctrl.isSelected}
+                              className={styles.weightNumberInput}
+                              aria-label={`${displayName} numeric weight multiplier`}
+                            />
+                            {isCustom && onRemoveCustomSource && (
+                              <button
+                                type="button"
+                                className={styles.inlineResetBtn}
+                                onClick={() => onRemoveCustomSource(id)}
+                                title="Remove this custom source"
+                              >
+                                Remove
+                              </button>
+                            )}
                           </div>
                         </div>
                       );
@@ -2789,7 +2841,11 @@ const DraftSettings: React.FC<DraftSettingsProps> = ({
                                 step={0.1}
                                 min={0}
                                 max={2}
-                                value={Number.isFinite(weightScalar) ? weightScalar : 0}
+                                value={
+                                  Number.isFinite(weightScalar)
+                                    ? weightScalar
+                                    : 0
+                                }
                                 onChange={(e) =>
                                   handleDirectWeightInput(
                                     id,
