@@ -587,4 +587,220 @@ This single document will accumulate file-by-file findings and cross-references 
 - Download PNG produces a readable image of the visible content; no CORS font errors; file name includes today’s date.
 - Highlights: Changing a pick to one with extreme ADP delta updates Biggest Steal/Reach; providing `vorpMetrics` updates Top VORP pick.
 - Leaderboard: Top 3 rows styled gold/silver/bronze; ordering matches sort by projectedPoints.
-- Rounds/counts: Header "Rounds" equals `totalRounds`; recap columns match that count for each team.
+
+---
+
+## useProcessedProjectionsData.tsx
+
+- Summary: Core ingestion/processing hook that blends multiple projection sources (built-ins + custom CSV), enriches with ADP/mappings constrained by `CURRENT_YAHOO_GAME_PREFIX`, computes combined stats, and prepares table-friendly `ProcessedPlayer` rows. Supports injecting round summary rows and pulls actual season totals from Supabase for diffs.
+
+**Inputs/Outputs**
+- Inbound (props object): active sources (built-in + `CustomAdditionalProjectionSource[]`), season/game prefix, league type, enabled stat keys, forward grouping, and options for round summaries and caching.
+- Outbound: `{ players, allPlayers, isLoading, error, availableSkaterStatKeys, availableGoalieStatKeys, ... }` (names inferred from usage in parent/components).
+
+**Pipeline**
+- Source fetch: `fetchAllSourceData(supabaseClient, activeSourceConfigs, uniqueNhlPlayerIds, type, currentSeasonId, ...)` paginates via `fetchAllSupabaseData` with `SUPABASE_PAGE_SIZE=1000` and label/timing logs. Applies per-source stat-key mappings.
+- Merge & standardize: Collates per-player stat entries into `combinedStats` with projected/actual placeholders and attaches metadata (ADP, team, positions). `stdName` ensures consistent name lookups.
+- Actuals: Defines `ACTUAL_*_STATS_TABLE` + `ACTUAL_STATS_COLUMN_MAP` to pull last-season totals and compute `% diff` via `calculateDiffPercentage`.
+- Round summaries: `addRoundSummariesToPlayers(sortedPlayers, calculateDiffFn, teamCount)` injects summary rows between players for UI grouping.
+- Caching: Exposes snapshot info types for cache layers (`CachedBasePlayerData`, `CachedFullPlayerData`).
+
+**Efficiency Gaps & Recommendations**
+- Supabase paging: Multiple full-table loads per source can be costly.
+  - Recommendation: Narrow selects; prefer `in(nhl_player_id, ids)` when CSV/name-matched maps are available; chunk queries to reduce bandwidth.
+- Key-mapping cost: Per-source stat remap repeated across renders.
+  - Recommendation: Pre-compile mapping functions per source and memoize by config hash to reduce object churn.
+- Actuals joins: Fetch and join actual stats per player can be heavy.
+  - Recommendation: Cache actuals per season in `sessionStorage` with ETag-like key; only refetch on season change or explicit refresh.
+- Name index: `stdName` runs broadly; avoid repeated normalization for the same strings.
+  - Recommendation: Build a `Map<string,string>` normalization cache for hot paths; size-bound to avoid growth.
+- Round summary injection: Increases array size and sort complexity for very large pools.
+  - Recommendation: Make summary insertion lazy or behind a UI toggle to keep base arrays lean during heavy interactions.
+
+**Actionables**
+- Add a `debug` flag to gate timing logs; provide simple metrics for source fetch duration.
+- Memoize per-source mapping functions; include hash of `ProjectionSourceConfig` in deps.
+- Introduce a simple in-memory LRU for actuals/ADP joins keyed by `nhl_player_id`.
+- Expose a `skipRoundSummaries` option and move summary insertion to the view layer.
+
+**Connections**
+- `DraftDashboard.tsx`: Primary consumer, drives players lists and enabled stat keys.
+- `ProjectionsTable`/`ComparePlayersModal`: Depend on `availableSkaterStatKeys`/`availableGoalieStatKeys` and consistent stat naming.
+
+---
+
+## useProjectionSourceAnalysis.ts
+
+- Summary: Manages source controls (enable/disable + integer weights 0–100), persists them to localStorage (v3), migrates legacy v2 float weights, and derives per-source normalized shares.
+
+**State & Persistence**
+- `controls: SourceControl[]` with `{ id, label, enabled, weight }`.
+- Persistence: Debounced save to `LOCAL_KEY_V3` with change-detection to avoid redundant writes. Legacy migration from `LEGACY_KEY_V2` (0–2 floats) to integer 0–100 handled.
+- Auto-reconcile: Ensures `initialSources` appear with defaults, drops missing sources.
+
+**API**
+- `setEnabled(id, enabled)`: Re-enabling restores last non-zero weight via `lastNonZeroWeightRef` (min 1%).
+- `setWeight(id, weight)`: Sets weight and auto-enables when >0; disables when 0.
+- `removeSource(id)`: Hard-removes a source.
+- `effectiveShares`: Normalized shares across enabled, weight>0 sources; 0 when none enabled.
+
+**Efficiency & UX Notes**
+- Debounced persistence: Good; 180ms likely sufficient. Consider grouping with other settings to a single namespace key.
+- Last-weight restore: Solid UX; ensure ref is hydrated when migrating legacy data.
+
+**Actionables**
+- Add validation to cap weights [0,100]; coerce invalid values from legacy payloads.
+- Provide a hook return for `saveInProgress` to show a subtle saving indicator near sliders.
+- Add optional `onChange(controls, effectiveShares)` callback for analytics or external sync.
+
+**Connections**
+- `DraftSettings.tsx`: UI for sliders/toggles; uses `effectiveShares` to show normalized percent.
+- `useProcessedProjectionsData`: Consumes `effectiveShares`/enable flags to weight-blend source stats.
+
+---
+
+## projectionWeights.ts
+
+- Summary: Integer-based helpers for distributing and normalizing source weights.
+
+**Functions**
+- `evenlyDistribute(count)`: Returns integer array summing to 100; early indices get +1 remainder.
+- `normalizeWithAnchor(weights, anchorIndex)`: Preserves anchor’s value exactly, scales others proportionally to sum to 100 (last non-anchor absorbs drift; anchor bounded at 100 if overweight).
+- `normalize(weights)`: Picks first positive weight as anchor (or 0) and normalizes.
+
+**Edge Cases & Guarantees**
+- Empty arrays → `[]`; negative/oversized anchor indexes coerced to 0.
+- If `othersTotal <= 0`, all weight to anchor (capped at 100), others 0.
+- Rounding drift corrected deterministically to largest non-anchor (or anchor).
+
+**Actionables**
+- Add unit tests for drift handling and anchor overweight scenarios.
+- Provide a `clampWeights` helper to coerce external inputs into [0,100] before normalize.
+
+---
+
+## fantasyPointsConfig.ts
+
+- Summary: Default fantasy point weights for skaters and goalies, plus `getDefaultFantasyPointsConfig` to select a baseline by player type.
+
+**Notes**
+- Keys should match `STATS_MASTER_LIST` keys. Non-listed stats default to 0. Skaters and goalies separated.
+
+**Actionables**
+- Document any league presets (e.g., Yahoo standard) and expose a merge helper to overlay custom values cleanly.
+- Consider versioning the defaults to aid migrations and user education.
+
+---
+
+## projectionSourcesConfig.ts
+
+- Summary: Schema for projection sources and stat mappings. Each source declares where to fetch, which stats it provides, and how to map to canonical keys.
+
+**Key Types**
+- `SourceStatMapping`: Per-stat mapping config (project-specific fields omitted here).
+- `ProjectionSourceConfig`: Source metadata, table names, stat maps, skater/goalie type, and weightability.
+
+**Actionables**
+- Keep mappings centralized and validated at startup; log missing/unknown keys vs `STATS_MASTER_LIST`.
+- Provide example mapping snippets for custom CSV to guide users.
+
+---
+
+## columnStandardization.ts
+
+- Summary: Canonical column-name mapping and header normalization utility used by CSV import and source processing.
+
+**Helpers**
+- `defaultCanonicalColumnMap`: Rich map covering player info, standard stats, special provider keys (e.g., A&G, Bangers), goalie stats, and fantasy point columns.
+- `standardizeColumnName(rawHeader, customMap?)`: Lowercases and trims; matches via merged map; else title-cases and replaces non-alphanumerics with `_`.
+
+**Notes & Actionables**
+- Ensure `titleCase` import is correct (already included) and resilient to nullish headers (guard present).
+- Add round-trip tests for common vendor headers; keep goalie vs skater distinctions tight.
+- Consider exporting `CANONICAL_COLUMN_OPTIONS` for UI autocompletes (mirrors ImportCsvModal behavior).
+
+---
+
+## ComparePlayersModal.tsx
+
+- Summary: Two-player comparison modal with radar chart (Chart.js) and percentile tables across selected metrics. Picks default metric set based on whether any selected is a goalie.
+
+**Data Flows**
+- Filters `allPlayers` by `selectedIds` (first 2). Chooses metric keys (`defaultsSkater` vs `defaultsGoalie`). Computes percentiles per metric across `allPlayers`, then constructs radar datasets and per-game derived rows.
+
+**Efficiency & UX**
+- Percentiles across allPlayers recomputed per open; acceptable for moderate sizes. Consider memoizing a global index of sorted values per key when available.
+- Uses global keydown; ensure handler respects focus in inputs.
+- Image headshots list built per player; can cache URLs per playerId.
+
+**Actionables**
+- Add a11y parity (role="dialog", focus trap, Escape handling like ImportCsvModal).
+- Provide metric selection UI; persist last selection. Allow toggling per-game vs totals.
+- Memoize `byKeySorted` across opens or cache in a context when pool unchanged.
+
+**Connections**
+- `ProjectionsTable`: Launches modal; relies on stat keys consistency in `STATS_MASTER_LIST`.
+
+---
+
+## useVORPCalculations.ts
+
+- Summary: Core value engine computing comparable value (`value`), VORP, VONA, VBD, best position, and replacement baselines. Supports points and categories leagues, forward grouping, personalized replacement, expected picks before next turn, 82-game proration, and custom fantasy scoring.
+
+**Inputs/Outputs**
+- In: `UseVORPParams` including `players`, `availablePlayers`, `draftSettings`, `picksUntilNext`, `leagueType`, `baselineMode`, `categoryWeights`, `forwardGrouping`, `myFilledSlots`, `personalizeReplacement`, `prorate82`, `fantasyPointSettings`.
+- Out: `{ playerMetrics: Map<string, PlayerVorpMetrics>, replacementByPos, expectedTakenByPos?, expectedN? }`.
+
+**Algorithm Highlights**
+- Eligibility parsing from `displayPosition`, honoring forward grouping.
+- Points mode: Computes fantasy points (integrates proration via `prorate82` + `fantasyPointSettings`) and derives VORP-like metrics vs baselines.
+- Categories mode: Z-score per category with goalie rate regression (`PRIOR_SHOTS`, `PRIOR_STARTS`), inversion for lower-better stats, and weighted sum via `categoryWeights` to a composite `value`.
+- Replacement: Baseline can be among remaining or full pool; accounts for my filled slots when `personalizeReplacement` is on.
+- Expected runs: Estimates `expectedTakenByPos` and `expectedN` using `picksUntilNext` to modulate VBD/VONA.
+
+**Efficiency & Recommendations**
+- Heavy memos: Good use of `useMemo`; ensure dependencies include all tuning knobs.
+- Map/array builds: Build `playerById`/`posBuckets` once; avoid repeated `combinedStats` property traversal when possible.
+- Regression params: Consider exposing `PRIOR_*` as configurable tunables via props for experimentation.
+
+**Actionables**
+- Add small helper for projected stat access with optional proration baked in to reduce branching.
+- Expose debug diagnostics (counts per position, baseline picks) when `__DEV__`.
+- Provide a reference doc of metric definitions to align UI labels and tooltips across components.
+
+**Connections**
+- Consumed by `DraftDashboard.tsx`, `ProjectionsTable`, and `SuggestedPicks`; keep semantics identical across displays.
+
+---
+
+## proration.ts
+
+- Summary: Utilities to compute 82-game pacing for skater counting stats and recompute fantasy points accordingly without mutating original projections.
+
+**API**
+- `PRORATE_82_STAT_KEYS`: Set of skater stat keys to prorate (excludes rates/percentages/goalie stats).
+- `isGoaliePlayer(player)`: Detects goalie by `displayPosition`.
+- `getProratedStat(player, statKey, enable)`: Returns `(raw/GP)*82` for eligible stats; guards nulls, goalie roles, and invalid GP.
+- `computeProratedFantasyPoints(player, enable, customScoring?)`: Merges defaults (`DEFAULT_*_FANTASY_POINTS`) with overrides and sums `proratedStat * weight` when enabled; else returns existing projected FP.
+
+**Actionables**
+- Cache per-player GP and derived prorated values for hot keys to avoid repeated property lookups in tight loops (e.g., in VORP calculations).
+- Provide a batch function to map a list of players to prorated FP for table precompute.
+
+**Connections**
+- `useVORPCalculations`: Consumes via `prorate82` to affect points-league `value`.
+- `ProjectionsTable`: Should reflect proration in displayed fantasy points when toggle is on to avoid UI mismatch.
+
+---
+
+## statsMasterList.ts
+
+- Summary: Source of truth for `StatDefinition` and the list of stat keys/metadata used across the app (display names, units, higherIsBetter, player type, etc.).
+
+**Governance**
+- Keep keys stable and aligned with canonical names used by `columnStandardization` and processing hooks.
+- Mark category-vs-points roles explicitly; include goalie vs skater tags to drive defaults in UI (e.g., Compare modal metric sets).
+
+**Actionables**
+- Add docstrings/comments on any non-obvious stat semantics and units.
+- Provide a small validator that runs in dev to ensure no duplicates, all keys are uppercase, and every used key in code exists in this list.
